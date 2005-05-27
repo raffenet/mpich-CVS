@@ -688,13 +688,18 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 	for (i=0; i<nprocs; i++)
 	    if (count[i]) flag = 1;
 
+	printf("*** send_size[0] %d, send_size[1] %d\n", send_size[0], send_size[1]);
+
 #ifdef PROFILE
         MPE_Log_event(14, 0, "end computation");
 #endif
+	printf("CP1\n");
 	if (flag) {
+	    printf("CP1.1 - calling ReadContig with for_cur_iter %d size %d offset %Ld\n", for_curr_iter, size, off);
 	    ADIO_ReadContig(fd, read_buf+for_curr_iter, size, MPI_BYTE,
 			    ADIO_EXPLICIT_OFFSET, off, &status, error_code);
 	    if (*error_code != MPI_SUCCESS) return;
+	    printf("CP1.2\n");
 	}
 	
 	for_curr_iter = for_next_iter;
@@ -702,6 +707,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 #ifdef PROFILE
         MPE_Log_event(7, 0, "start communication");
 #endif
+	printf("CP2\n");
 	ADIOI_R_Exchange_data(fd, buf, flat_buf, offset_list, len_list,
 			    send_size, recv_size, count, 
        			    start_pos, partial_send, recd_from_proc, nprocs,
@@ -710,7 +716,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 			    min_st_offset, fd_size, fd_start, fd_end,
 			    others_req, 
                             m, buftype_extent, buf_idx); 
-
+	printf("CP3\n");
 #ifdef PROFILE
         MPE_Log_event(8, 0, "end communication");
 #endif
@@ -777,7 +783,12 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 /* exchange send_size info so that each process knows how much to
    receive from whom and how much memory to allocate. */
 
+    printf("### send_size[0] %d, send_size[1] %d\n", send_size[0], send_size[1]); fflush(stdout);
+
     MPI_Alltoall(send_size, 1, MPI_INT, recv_size, 1, MPI_INT, fd->comm);
+    
+    printf("### recv_size[0] %d, recv_size[1] %d\n", recv_size[0], recv_size[1]);
+    fflush(stdout);
 
     nprocs_recv = 0;
     for (i=0; i < nprocs; i++) if (recv_size[i]) nprocs_recv++;
@@ -808,7 +819,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 	for (i=0; i < nprocs; i++) 
 	    if (recv_size[i]) recv_buf[i] = 
                                   (char *) ADIOI_Malloc(recv_size[i]);
-
+     
 	    j = 0;
 	    for (i=0; i < nprocs; i++) 
 		if (recv_size[i]) {

@@ -63,9 +63,10 @@ int main(int argc, char **argv)
     sprintf(filename, "%s.%d", tmp, rank);
 
     MPI_Info_create(&info);
-    sprintf(infoval, "%d", 4*1048576); /* 4MB */
-    MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval); 
-    
+    sprintf(infoval, "%d", 16384); /* 4MB */
+    MPI_Info_set(info, "LN_IO_BUFFER_SIZE", infoval); 
+    MPI_Info_set(info, "LN_DEPOT_LIST", "ibp.accre.vanderbilt.edu:6715,tsiln.ccs.ornl.gov:6714");
+
     MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
 		  info/*MPI_INFO_NULL*/, &fh);
     MPI_File_write(fh, buf, nints, MPI_INT, &status);
@@ -73,6 +74,7 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
 
     /* reopen the file and read the data back */
+    printf("reopening.....\n");
 
     for (i=0; i<nints; i++) buf[i] = 0;
     MPI_File_open(MPI_COMM_SELF, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, 

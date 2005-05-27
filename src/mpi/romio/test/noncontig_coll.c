@@ -11,7 +11,7 @@
 
 /* tests noncontiguous reads/writes using collective I/O */
 
-#define SIZE 10 //5000
+#define SIZE 5000 
 
 #define VERBOSE 0
 int main(int argc, char **argv)
@@ -81,15 +81,15 @@ int main(int argc, char **argv)
     MPI_Type_free(&typevec);
     
     if (!mynod) {
-#if VERBOSE
+	/*#if VERBOSE*/
 	fprintf(stderr, "\ntesting noncontiguous in memory, noncontiguous in file using collective I/O\n");
-#endif
+	/*#endif*/
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     
     MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-		  info /*MPI_INFO_NULL*/, &fh);
+		  info, &fh);
     
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", MPI_INFO_NULL);
     
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     MPI_File_write_all(fh, buf, 1, newtype, &status);
 
     MPI_Barrier(MPI_COMM_WORLD);
-        
+
     for (i=0; i<SIZE; i++) buf[i] = -1;
     
     MPI_File_read_at_all(fh, 0, buf, 1, newtype, &status);
@@ -132,20 +132,18 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
     
     MPI_Barrier(MPI_COMM_WORLD);
-
-    printf("***************************************************\n");
-
+    
     if (!mynod) {
-#if VERBOSE
+	/*#if VERBOSE*/
 	fprintf(stderr, "\ntesting noncontiguous in memory, contiguous in file using collective I/O\n");
-#endif
+	/*#endif*/
 	MPI_File_delete(filename, MPI_INFO_NULL);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     
-    // MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-    //            info/*MPI_INFO_NULL*/, &fh);
-    /*
+    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
+		  info/*MPI_INFO_NULL*/, &fh);
+    
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;
     MPI_File_write_at_all(fh, mynod*(SIZE/2)*sizeof(int), buf, 1, newtype, &status);
 
@@ -185,20 +183,19 @@ int main(int argc, char **argv)
     MPI_File_close(&fh);
     
     MPI_Barrier(MPI_COMM_WORLD);
-    */
-    printf("###############################################\n");
-
+    
+				 
     if (!mynod) {
-#if VERBOSE
+	/*#if VERBOSE*/
 	fprintf(stderr, "\ntesting contiguous in memory, noncontiguous in file using collective I/O\n");
-#endif
-	MPI_File_delete(filename, MPI_INFO_NULL);
+	/*#endif*/
+		MPI_File_delete(filename, MPI_INFO_NULL);
 	}
     MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
-                info/*MPI_INFO_NULL*/, &fh);
-    
+          MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR,
+	  info/*MPI_INFO_NULL*/, &fh);
+	  
     MPI_File_set_view(fh, 0, MPI_INT, newtype, "native", MPI_INFO_NULL);
 
     for (i=0; i<SIZE; i++) buf[i] = i + mynod*SIZE;

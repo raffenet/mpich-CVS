@@ -44,9 +44,8 @@ void ADIOI_LN_WriteContig(ADIO_File fd, void *buf, int count,
 
     fd->fp_sys_posn = offset;
 
-    
     err = ADIOI_LNIO_Write(fd, buf, len);
-    printf("ADIOI_LNIO_Write returns %d, len %d\n", err, len);
+    if (err != len) printf("### ADIOI_LNIO_Write returned %d instead of %d\n", err, len);
     /* --BEGIN ERROR HANDLING-- */
     if (err == -1) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -71,34 +70,44 @@ void ADIOI_LN_WriteContig(ADIO_File fd, void *buf, int count,
 #endif
 
     *error_code = MPI_SUCCESS;
-    printf("Exiting ADIOI_LNIO_Write\n"); fflush(stdout);
 }
-
-/*void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
-			   MPI_Datatype datatype, int file_ptr_type,
-			   ADIO_Offset offset, ADIO_Status *status,
-			   int *error_code)
-{
-#ifdef JLEE_DEBUG
-    int myrank, nprocs;
-
-    MPI_Comm_size(fd->comm, &nprocs);
-    MPI_Comm_rank(fd->comm, &myrank);
-    FPRINTF(stdout, "[%d/%d] ADIOI_LN_WriteStrided called on %s\n", 
-	    myrank, nprocs, fd->filename);
-    FPRINTF(stdout, "[%d/%d]    calling ADIOI_GEN_WriteStrided\n", 
-	    myrank, nprocs);
-#endif
-
-    ADIOI_GEN_WriteStrided(fd, buf, count, datatype, file_ptr_type, offset, 
-			   status, error_code);
-}*/
 
 
 void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
-			   MPI_Datatype buftype, int file_ptr_type,
+			   MPI_Datatype buftype, int file_ptr_type, 
 			   ADIO_Offset offset, ADIO_Status *status, 
 			   int *error_code)
+{
+    int buftype_is_contig, filetype_is_contig;
+
+    *error_code = MPI_SUCCESS;  /* changed below if error */
+    
+    ADIOI_Datatype_iscontig(buftype, &buftype_is_contig);
+    ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
+
+    if (buftype_is_contig && filetype_is_contig) {
+	printf("WriteStrided shouldn't be called for this case\n");
+	exit(1);
+    }
+    
+    if (!buftype_is_contig && filetype_is_contig) {
+	/* noncontiguous in memory, contiguous in file. */
+	/* use a generic routine to handle this situation */
+	ADIOI_GEN_WriteStrided(fd, buf, count, buftype, file_ptr_type,
+			       offset, status, error_code);
+    } else {
+	/* call an LNIO function optimized for noncontiguous in file case */
+	ADIOI_LNIO_WriteStrided(fd, buf, count, buftype, file_ptr_type,
+				offset, status);
+	/* how to handle error_code and status? */
+    }
+}
+
+ 
+void ADIOI_LN_WriteStrided_naive(ADIO_File fd, void *buf, int count,
+				 MPI_Datatype buftype, int file_ptr_type,
+				 ADIO_Offset offset, ADIO_Status *status, 
+				 int *error_code)
 {
     ADIOI_Flatlist_node *flat_buf, *flat_file;
     /* bwr == buffer write; fwr == file write */
@@ -116,7 +125,6 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 
     /* A variant of ADIOI_GEN_WriteStrided_naive */
     
-    printf("ADIOI_LN_WriteStrided: entering\n");
 
     /* offset is in units of etype relative to the filetype. */
     
@@ -125,97 +133,39 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Datatype_iscontig(buftype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
 
-    MPI_Type_size(fd->filetype, &filetype_size);
-    if ( ! filetype_size ) {
-	*error_code = MPI_SUCCESS; 
-	return;
+    if (buftype_is_contig && filetype_is_contig) {
+	printf("Error: Both buftype and filetype are contiguous. ADIOI_LN_WriteStrided shouldn't be called.\n");
+	return -1;
     }
-
-    MPI_Type_extent(fd->filetype, &filetype_extent);
-    MPI_Type_size(buftype, &buftype_size);
-    MPI_Type_extent(buftype, &buftype_extent);
-    etype_size = fd->etype_size;
-
-    bufsize = buftype_size * count;
-
-    /* contiguous in buftype and filetype is handled elsewhere */
 
     if (!buftype_is_contig && filetype_is_contig) {
-	int b_count;
 	/* noncontiguous in memory, contiguous in file. */
-	printf("ADIOI_LN_WriteStrided: noncontiguous in mem, contiguous in file\n");
 	
-	ADIOI_Flatten_datatype(buftype);
-	flat_buf = ADIOI_Flatlist;
-	while (flat_buf->type != buftype) flat_buf = flat_buf->next;
-	
-        off = (file_ptr_type == ADIO_INDIVIDUAL) ? fd->fp_ind : 
-	    fd->disp + etype_size * offset;
-	
-	start_off = off;
-	end_offset = off + bufsize - 1;
-	
-	/* if atomicity is true, lock (exclusive) the region to be accessed */
-	/* no support for atomicity yet */
-	/*
-        if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && 
-	    (fd->file_system != ADIO_PVFS))
-	    {
-		ADIOI_WRITE_LOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
-	    }
-	*/
+	/* just call ADIOI_WriteStrided, because we don't need data sieving
+	   (and thus no locking) in this case */
+	ADIOI_GEN_WriteStrided(fd, buf, count, buftype, file_ptr_type, 
+			       offset, status, error_code);
 
-	/* for each region in the buffer, grab the data and put it in
-	 * place
-	 */
-        for (b_count=0; b_count < count; b_count++) {
-            for (b_index=0; b_index < flat_buf->count; b_index++) {
-                userbuf_off = b_count*buftype_extent + 
-		              flat_buf->indices[b_index];
-		req_off = off;
-		req_len = flat_buf->blocklens[b_index];
+	/* but need to take care of atomic mode later */
 
-		printf("b_count %d count %d flat_buf->count %d req_len %d, ", b_count, count, flat_buf->count, req_len);
-		printf("userbuf_off %Ld, ", userbuf_off);
-		printf("req_off %Ld\n", req_off);
-
-		if (req_len > 0)
-		ADIO_WriteContig(fd, 
-				(char *) buf + userbuf_off,
-				req_len, 
-				MPI_BYTE, 
-		    		ADIO_EXPLICIT_OFFSET,
-				req_off,
-				&status1,
-				error_code);
-		if (*error_code != MPI_SUCCESS) { 
-		    printf("ADIO_WriteContig failed\n");
-		    return;
-		}
-
-		/* off is (potentially) used to save the final offset later */
-                off += flat_buf->blocklens[b_index];
-            }
-	}
-
-	/* no support for atomicity yet */
-	/*        if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && 
-		  (fd->file_system != ADIO_PVFS))
-		  {
-		  ADIOI_UNLOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
-		  }
-	*/
-
-        if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
-
-    }
-
-    else {  /* noncontiguous in file */
-    	int f_index, st_fwr_size, st_index = 0, st_n_filetypes;
+    } else { /* noncontiguous in file */
+	int f_index, st_fwr_size, st_index = 0, st_n_filetypes;
 	int flag;
 	
-
-        /* First we're going to calculate a set of values for use in all
+	MPI_Type_size(fd->filetype, &filetype_size);
+	if ( ! filetype_size ) {
+	    *error_code = MPI_SUCCESS; 
+	    return;
+	}
+	
+	MPI_Type_extent(fd->filetype, &filetype_extent);
+	MPI_Type_size(buftype, &buftype_size);
+	MPI_Type_extent(buftype, &buftype_extent);
+	etype_size = fd->etype_size;
+	
+	bufsize = buftype_size * count;
+	 	
+	/* First we're going to calculate a set of values for use in all
 	 * the noncontiguous in file cases:
 	 * start_off - starting byte position of data in file
 	 * end_offset - last byte offset to be acessed in the file
@@ -228,32 +178,32 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 	 *               into writing this block of the filetype
 	 *
 	 */
-
+	
 	/* filetype already flattened in ADIO_Open */
 	flat_file = ADIOI_Flatlist;
 	while (flat_file->type != fd->filetype) flat_file = flat_file->next;
 	disp = fd->disp;
-
+	
 	if (file_ptr_type == ADIO_INDIVIDUAL) {
 	    start_off = fd->fp_ind; /* in bytes */
 	    n_filetypes = -1;
 	    flag = 0;
 	    while (!flag) {
-                n_filetypes++;
+		n_filetypes++;
 		for (f_index=0; f_index < flat_file->count; f_index++) {
 		    if (disp + flat_file->indices[f_index] + 
-                       (ADIO_Offset) n_filetypes*filetype_extent + 
-		       flat_file->blocklens[f_index] >= start_off) 
-		    {
-		    	/* this block contains our starting position */
-
-			st_index = f_index;
-			fwr_size = (int) (disp + flat_file->indices[f_index] + 
-		 	           (ADIO_Offset) n_filetypes*filetype_extent + 
-				   flat_file->blocklens[f_index] - start_off);
-			flag = 1;
-			break;
-		    }
+			(ADIO_Offset) n_filetypes*filetype_extent + 
+			flat_file->blocklens[f_index] >= start_off) 
+			{
+			    /* this block contains our starting position */
+			    
+			    st_index = f_index;
+			    fwr_size = (int) (disp + flat_file->indices[f_index] + 
+					      (ADIO_Offset) n_filetypes*filetype_extent + 
+					      flat_file->blocklens[f_index] - start_off);
+			    flag = 1;
+			    break;
+			}
 		}
 	    }
 	}
@@ -262,7 +212,7 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 	    n_filetypes = (int) (offset / n_etypes_in_filetype);
 	    etype_in_filetype = (int) (offset % n_etypes_in_filetype);
 	    size_in_filetype = etype_in_filetype * etype_size;
- 
+	    
 	    sum = 0;
 	    for (f_index=0; f_index < flat_file->count; f_index++) {
 		sum += flat_file->blocklens[f_index];
@@ -270,26 +220,26 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 		    st_index = f_index;
 		    fwr_size = sum - size_in_filetype;
 		    abs_off_in_filetype = flat_file->indices[f_index] +
-			                  size_in_filetype - 
-			                  (sum - flat_file->blocklens[f_index]);
+			size_in_filetype - 
+			(sum - flat_file->blocklens[f_index]);
 		    break;
 		}
 	    }
-
+	    
 	    /* abs. offset in bytes in the file */
 	    start_off = disp + (ADIO_Offset) n_filetypes*filetype_extent + 
-	    	        abs_off_in_filetype;
+		abs_off_in_filetype;
 	}
-
+	
 	st_fwr_size = fwr_size;
 	st_n_filetypes = n_filetypes;
-
+	
 	/* start_off, st_n_filetypes, st_index, and st_fwr_size are 
 	 * all calculated at this point
 	 */
-
-        /* Calculate end_offset, the last byte-offset that will be accessed.
-         * e.g., if start_off=0 and 100 bytes to be written, end_offset=99
+	
+	/* Calculate end_offset, the last byte-offset that will be accessed.
+	 * e.g., if start_off=0 and 100 bytes to be written, end_offset=99
 	 */
 	userbuf_off = 0;
 	f_index = st_index;
@@ -298,19 +248,19 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 	while (userbuf_off < bufsize) {
 	    userbuf_off += fwr_size;
 	    end_offset = off + fwr_size - 1;
-
+	    
 	    if (f_index < (flat_file->count - 1)) f_index++;
 	    else {
 		f_index = 0;
 		n_filetypes++;
 	    }
-
+	    
 	    off = disp + flat_file->indices[f_index] + 
-	          (ADIO_Offset) n_filetypes*filetype_extent;
+		(ADIO_Offset) n_filetypes*filetype_extent;
 	    fwr_size = ADIOI_MIN(flat_file->blocklens[f_index], 
-	                         bufsize-(int)userbuf_off);
+				 bufsize-(int)userbuf_off);
 	}
-
+	
 	/* End of calculations.  At this point the following values have
 	 * been calculated and are ready for use:
 	 * - start_off
@@ -319,71 +269,68 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 	 * - st_index
 	 * - st_fwr_size
 	 */
-
+	
 	/* if atomicity is true, lock (exclusive) the region to be accessed */
-        /*if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && 
-	   (fd->file_system != ADIO_PVFS))
-	{
-            ADIOI_WRITE_LOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
-	    }*/
-
+	/*if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && 
+	  (fd->file_system != ADIO_PVFS))
+	  {
+	  ADIOI_WRITE_LOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
+	  }*/
+	
 	if (buftype_is_contig && !filetype_is_contig) {
 	    /* contiguous in memory, noncontiguous in file. should be the
 	     * most common case.
 	     */
-
-	    printf("ADIOI_LN_WriteStrided: contiguous in mem, noncontiguous in file\n");
+	    
 	    userbuf_off = 0;
 	    f_index = st_index;
 	    off = start_off;
 	    n_filetypes = st_n_filetypes;
 	    fwr_size = ADIOI_MIN(st_fwr_size, bufsize);
-
+	    
 	    /* while there is still space in the buffer, write more data */
 	    while (userbuf_off < bufsize) {
-		printf("userbuf_off %d bufsize %d\n", userbuf_off, bufsize);
-                if (fwr_size) { 
-                    /* TYPE_UB and TYPE_LB can result in 
-                       fwr_size = 0. save system call in such cases */ 
+		if (fwr_size) { 
+		    /* TYPE_UB and TYPE_LB can result in 
+		       fwr_size = 0. save system call in such cases */ 
 		    req_off = off;
 		    req_len = fwr_size;
-
+		    
 		    ADIO_WriteContig(fd, 
-				    (char *) buf + userbuf_off,
-				    req_len, 
-				    MPI_BYTE, 
-				    ADIO_EXPLICIT_OFFSET,
-				    req_off,
-				    &status1,
-				    error_code);
+				     (char *) buf + userbuf_off,
+				     req_len, 
+				     MPI_BYTE, 
+				     ADIO_EXPLICIT_OFFSET,
+				     req_off,
+				     &status1,
+				     error_code);
 		    if (*error_code != MPI_SUCCESS) return;
 		}
 		userbuf_off += fwr_size;
-
-		printf("I am here 0\n");
-                if (off + fwr_size < disp + flat_file->indices[f_index] +
-                   flat_file->blocklens[f_index] + 
-		   (ADIO_Offset) n_filetypes*filetype_extent)
-		{
-		    /* important that this value be correct, as it is
-		     * used to set the offset in the fd near the end of
-		     * this function.
-		     */
-                    off += fwr_size;
-		}
-                /* did not reach end of contiguous block in filetype.
-                 * no more I/O needed. off is incremented by fwr_size.
+		
+		if (off + fwr_size < disp + flat_file->indices[f_index] +
+		    flat_file->blocklens[f_index] + 
+		    (ADIO_Offset) n_filetypes*filetype_extent)
+		    {
+			/* important that this value be correct, as it is
+			 * used to set the offset in the fd near the end of
+			 * this function.
+			 */
+			off += fwr_size;
+		    }
+		/* did not reach end of contiguous block in filetype.
+		 * no more I/O needed. off is incremented by fwr_size.
 		 */
-                else {
+		else {
 		    if (f_index < (flat_file->count - 1)) f_index++;
 		    else {
 			f_index = 0;
 			n_filetypes++;
 		    }
 		    off = disp + flat_file->indices[f_index] + 
-                          (ADIO_Offset) n_filetypes*filetype_extent;
+			(ADIO_Offset) n_filetypes*filetype_extent;
 		    fwr_size = ADIOI_MIN(flat_file->blocklens[f_index], 
-		                         bufsize-(int)userbuf_off);
+					 bufsize-(int)userbuf_off);
 		}
 	    }
 	}
@@ -391,11 +338,11 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 	    int i, tmp_bufsize = 0;
 	    /* noncontiguous in memory as well as in file */
 	    printf("ADIOI_LN_WriteStrided: noncontiguous in mem, noncontiguous in file\n");
-
+	    
 	    ADIOI_Flatten_datatype(buftype);
 	    flat_buf = ADIOI_Flatlist;
 	    while (flat_buf->type != buftype) flat_buf = flat_buf->next;
-
+	    
 	    b_index = buf_count = 0;
 	    i = (int) (flat_buf->indices[0]);
 	    f_index = st_index;
@@ -403,32 +350,29 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 	    n_filetypes = st_n_filetypes;
 	    fwr_size = st_fwr_size;
 	    bwr_size = flat_buf->blocklens[0];
-
+	    
 	    /* while we haven't read size * count bytes, keep going */
 	    while (tmp_bufsize < bufsize) {
-    		int new_bwr_size = bwr_size, new_fwr_size = fwr_size;
-
-		printf("tmp_bufsize %d bufsize %d\n", tmp_bufsize, bufsize);
-
+		int new_bwr_size = bwr_size, new_fwr_size = fwr_size;
+		
 		size = ADIOI_MIN(fwr_size, bwr_size);
 		if (size) {
 		    req_off = off;
 		    req_len = size;
 		    userbuf_off = i;
-
+		    
 		    ADIO_WriteContig(fd, 
-				    (char *) buf + userbuf_off,
-				    req_len, 
-				    MPI_BYTE, 
-				    ADIO_EXPLICIT_OFFSET,
-				    req_off,
-				    &status1,
-				    error_code);
+				     (char *) buf + userbuf_off,
+				     req_len, 
+				     MPI_BYTE, 
+				     ADIO_EXPLICIT_OFFSET,
+				     req_off,
+				     &status1,
+				     error_code);
 		    if (*error_code != MPI_SUCCESS) return;
 		}
-
-		printf("I an here - 10\n");
-
+		
+		
 		if (size == fwr_size) {
 		    /* reached end of contiguous block in file */
 		    if (f_index < (flat_file->count - 1)) f_index++;
@@ -436,25 +380,24 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 			f_index = 0;
 			n_filetypes++;
 		    }
-
+		    
 		    off = disp + flat_file->indices[f_index] + 
-                          (ADIO_Offset) n_filetypes*filetype_extent;
-
+			(ADIO_Offset) n_filetypes*filetype_extent;
+		    
 		    new_fwr_size = flat_file->blocklens[f_index];
 		    if (size != bwr_size) {
 			i += size;
 			new_bwr_size -= size;
 		    }
 		}
-
-		printf("I am here 11\n");
+		
 		if (size == bwr_size) {
 		    /* reached end of contiguous block in memory */
-
+		    
 		    b_index = (b_index + 1)%flat_buf->count;
 		    buf_count++;
 		    i = (int) (buftype_extent*(buf_count/flat_buf->count) +
-			flat_buf->indices[b_index]);
+			       flat_buf->indices[b_index]);
 		    new_bwr_size = flat_buf->blocklens[b_index];
 		    if (size != fwr_size) {
 			off += size;
@@ -463,32 +406,30 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 		}
 		tmp_bufsize += size;
 		fwr_size = new_fwr_size;
-                bwr_size = new_bwr_size;
+		bwr_size = new_bwr_size;
 	    }
 	}
-
+	
 	/* unlock the file region if we locked it */
-        /*if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && 
-	   (fd->file_system != ADIO_PVFS))
-	{
-            ADIOI_UNLOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
-	    }*/
-
+	/*if ((fd->atomicity) && (fd->file_system != ADIO_PIOFS) && 
+	  (fd->file_system != ADIO_PVFS))
+	  {
+	  ADIOI_UNLOCK(fd, start_off, SEEK_SET, end_offset-start_off+1);
+	  }*/
+	
 	if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind = off;
-    } /* end of (else noncontiguous in file) */
-
+    } 
+    
     fd->fp_sys_posn = -1;   /* mark it as invalid. */
-
+    
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, buftype, bufsize);
     /* This is a temporary way of filling in status. The right way is to 
      * keep track of how much data was actually written and placed in buf 
      */
 #endif
-
+    
     if (!buftype_is_contig) ADIOI_Delete_flattened(buftype);
-
-    printf("ADIOI_LN_WriteStrided: exiting\n");
 }
 
 void ADIOI_LN_WriteStridedColl(ADIO_File fd, void *buf, int count,
@@ -496,9 +437,11 @@ void ADIOI_LN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 			       ADIO_Offset offset, ADIO_Status *status, 
 			       int *error_code)
 {
+    struct lnio_handle_t *handle = (struct lnio_handle_t *)fd->fs_ptr;
+
     ADIOI_GEN_WriteStridedColl(fd, buf, count, datatype, file_ptr_type,
 			       offset, status, error_code); 
     
-    /* sync exnodes - there might be an independent read after this */
-    ADIOI_LNIO_Flush(fd);
+    /* sync exnodes - there might be an independent read after this */  
+    if (handle->sync_at_collective_io) ADIOI_LNIO_Flush(fd); 
 }

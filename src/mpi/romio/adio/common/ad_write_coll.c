@@ -89,7 +89,6 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
  * is stored in the hints off the ADIO_File structure
  */
     nprocs_for_coll = fd->hints->cb_nodes;
-    printf("[%d/%d] nprocs_for_coll = %d\n", myrank, nprocs, nprocs_for_coll);
     orig_fp = fd->fp_ind;
 
     /* only check for interleaving if cb_write isn't disabled */
@@ -130,6 +129,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     if (fd->hints->cb_write == ADIOI_HINT_DISABLE ||
 	(!interleave_count && (fd->hints->cb_write == ADIOI_HINT_AUTO)))
     {
+	printf("I am here - WHY? %d\n", interleave_count);
 	/* use independent accesses */
 	if (fd->hints->cb_write != ADIOI_HINT_DISABLE) {
 	    ADIOI_Free(offset_list);
@@ -196,6 +196,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     }
     ADIOI_Free(my_req);
 
+    printf("I am here - RIGHT\n");
 /* exchange data and write in sizes of no more than coll_bufsize. */
     ADIOI_Exch_and_write(fd, buf, datatype, nprocs, myrank,
                         others_req, offset_list,

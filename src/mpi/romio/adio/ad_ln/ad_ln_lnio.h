@@ -30,9 +30,9 @@
 
 #define LBONE_SERVER "vertex.cs.utk.edu" 
 #define LBONE_PORT 6767
-#define LBONE_LOCATION "zip= 37996"
+#define LBONE_LOCATION "zip= 90210" /*"zip= 37996"*/
 #define LORS_BLOCKSIZE 1  /* 1 MB */
-#define LORS_DURATION 60*10 /* 10 mins // 60*60*24*2  // 2 days */
+#define LORS_DURATION 60*60*10 /* 10 hours // 60*60*24*2  // 2 days */
 #define LORS_COPIES 1
 #define LORS_THREADS 2 
 #define LORS_TIMEOUT 30 /* 1800 */
@@ -64,6 +64,9 @@ struct lnio_handle_t {
   off_t          buf_lb;
   off_t          buf_ub;
   int            dirty_buffer;
+  
+  int            sync_at_collective_io;
+  IBP_depot     *depot_array;
 };
 
 typedef struct lnio_mclist_item_t {
@@ -100,7 +103,10 @@ int ADIOI_LNIO_Flush(ADIO_File fd);
 int ADIOI_LNIO_lorsSetMappingVersion(LorsSet *set, int version);
 int ADIOI_LNIO_lorsSetAddUpdatedMappings(struct lnio_handle_t *handle,
 					 LorsSet *updates, LorsExnode *ex);
+int ADIOI_LNIO_lorsExtractDepotList(LorsExnode *exnode, IBP_depot **dp_array,
+				    int num_user_depot);
 ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count);
 ssize_t ADIOI_LNIO_Buffered_write(ADIO_File fd, const void *buf, size_t count);
 int ADIOI_LNIO_Buffer_flush(ADIO_File fd, off_t flush_start_offset, size_t flush_size);
+int ADIOI_LNIO_lorsCreateDepot(LorsDepot **depot, int dpid , IBP_depot ibpdepot, double bandwidth, double proximity);
 #endif

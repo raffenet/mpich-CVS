@@ -141,8 +141,10 @@ int main(int argc, char **argv)
 #endif
 
     MPI_Info_create(&info);
-    sprintf(infoval, "%d", 32768);
-    MPI_Info_set(info, "LORS_IO_BUFFER_SIZE", infoval);
+    sprintf(infoval, "%d", 4 * 1048576);
+    MPI_Info_set(info, "LN_IO_BUFFER_SIZE", infoval);
+    MPI_Info_set(info, "LN_NO_SYNC_AT_COLLECTIVE_IO", infoval);
+    MPI_Info_set(info, "LN_DEPOT_LIST", "ibp.accre.vanderbilt.edu:6715,tsiln.ccs.ornl.gov:6714");
 
     /* write the array to the file */
     errcode = MPI_File_open(MPI_COMM_WORLD, filename, 
@@ -175,7 +177,7 @@ int main(int argc, char **argv)
     for (i=0; i<bufcount; i++) {
 	if (readbuf[i] != writebuf[i]) {
 	    errs++;
-	    fprintf(stderr, "Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);
+	    /*	    fprintf(stderr, "Process %d, readbuf %d, writebuf %d, i %d\n", mynod, readbuf[i], writebuf[i], i);*/
 	}
     }
 

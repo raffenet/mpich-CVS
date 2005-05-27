@@ -44,10 +44,7 @@ void ADIOI_LN_ReadContig(ADIO_File fd, void *buf, int count,
 	/* --END ERROR HANDLING-- */
     }
 
-    printf("ADIOI_LN_Read: calling ADIOI_LNIO_Read, len %d\n", len);
-
     err = ADIOI_LNIO_Read(fd, buf, len);
-    printf("ADIOI_LN_Read: ADIOI_LNIO_Read returned %d\n", err);
 
     /* --BEGIN ERROR HANDLING-- */
     if (err == -1) {
@@ -81,14 +78,12 @@ void ADIOI_LN_ReadStridedColl(ADIO_File fd, void *buf, int count,
 			      ADIO_Offset offset, ADIO_Status *status, 
 			      int *error_code)
 {
+    struct lnio_handle_t *handle = (struct lnio_handle_t *)fd->fs_ptr;
+    
     /* sync exnodes first - there could have been an independent write */
-    printf("ADIOI_LN_ReadStridedColl: Entering\n");
-
-    ADIOI_LNIO_Flush(fd);
- 
+    if (handle->sync_at_collective_io) ADIOI_LNIO_Flush(fd);
+    
     ADIOI_GEN_ReadStridedColl(fd, buf, count, datatype, file_ptr_type,
 			      offset, status, error_code); 
-
-    printf("ADIOI_LN_ReadStridedColl: Exiting\n");
 }
 
