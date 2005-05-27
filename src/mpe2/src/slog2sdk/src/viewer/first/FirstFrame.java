@@ -103,7 +103,7 @@ public class FirstFrame extends JFrame
         checkVersion();
         parseCmdLineArgs( args );
 
-	viewer.zoomable.Debug.initTextArea();
+        viewer.zoomable.Debug.initTextArea();
         // viewer.zoomable.Profile.initTextArea();
 
         System.out.println( "Starting the SLOG-2 Display Program ..... " );
