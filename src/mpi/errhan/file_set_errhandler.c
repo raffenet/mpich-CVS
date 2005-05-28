@@ -71,6 +71,8 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
 
+#ifdef MPI_MODE_RDONLY
+
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -122,7 +124,6 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
     if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 #       ifdef USE_ROMIO_FILE
 	{
@@ -157,6 +158,10 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 	file_ptr->errhandler = errhan_ptr;
     }
 #   endif
+#else
+    /* Dummy in case ROMIO is not defined */
+    mpi_errno = MPI_ERR_INTERN;
+#endif
     
     /* ... end of body of routine ... */
 
@@ -174,6 +179,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 	    "**mpi_file_set_errhandler %F %E", file, errhandler);
     }
 #   endif
+#ifdef MPI_MODE_RDONLY
 #   ifdef USE_ROMIO_FILE
     {
 	mpi_errno = MPIO_Err_return_file( file, mpi_errno );
@@ -183,6 +189,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 	mpi_errno = MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
     }
 #   endif
+#endif
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

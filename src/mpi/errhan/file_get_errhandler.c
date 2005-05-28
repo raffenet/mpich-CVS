@@ -70,6 +70,7 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_GET_ERRHANDLER);
 
+#ifdef MPI_MODE_RDONLY
     /* Validate parameters, especially handles needing to be converted */
     /* FIXME: check for a valid file handle (fh) before converting to a pointer */
     
@@ -127,7 +128,11 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 	}
     }
 #   endif
-    
+
+#else
+    /* Dummy in case ROMIO is not defined */
+    mpi_errno = MPI_ERR_INTERN;
+#endif    
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -144,6 +149,7 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 	    "**mpi_file_get_errhandler %F %p", file, errhandler);
     }
 #   endif
+#ifdef MPI_MODE_RDONLY
 #   ifdef USE_ROMIO_FILE
     {
 	mpi_errno = MPIO_Err_return_file( file, mpi_errno );
@@ -153,6 +159,7 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 	mpi_errno = MPIR_Err_return_file( file_ptr, FCNAME, mpi_errno );
     }
 #   endif
+#endif
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
