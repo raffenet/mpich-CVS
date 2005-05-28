@@ -53,9 +53,10 @@ AC_DEFUN(PAC_ARG_SHAREDLIBS,[
 AC_ARG_ENABLE(sharedlibs,
 [--enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gcc     - Standard gcc and GNU ld options for creating shared libraries
-    libtool - GNU libtool 
+    gcc-osx - Special options for gcc needed only on OS/X
+    solaris - Solaris native (SPARC) compilers for 32 bit systems
     none    - same as --disable-sharedlibs
-Only gcc is currently supported],
+Only gcc, gcc-osc, and solaris are currently supported],
 ,enable_sharedlibs=none;enable_shared=no)
 dnl
 CC_SHL=true
@@ -96,7 +97,7 @@ case "$enable_sharedlibs" in
     esac
     ;;
     libtool)
-    AC_MSG_WARN([Creating shared libraries using libtool not yet supported])
+    AC_MSG_ERROR([Creating shared libraries using libtool not yet supported])
 dnl     dnl Using libtool requires a heavy-weight process to test for 
 dnl     dnl various stuff that libtool needs.  Without this, you'll get a
 dnl     dnl bizarre error message about libtool being unable to find
@@ -138,7 +139,7 @@ dnl Other, such as solaris-cc
     C_LINKPATH_SHL="-R"
     ;;
     *)
-    AC_MSG_WARN([Unknown value $enable_sharedlibs for enable-sharedlibs])
+    AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs])
     enable_sharedlibs=no
     ;;  
 esac
