@@ -13,7 +13,7 @@ pt2pt
 rma
 spawn
 topo
-io
+@iodir@
 @f77dir@
 @cxxdir@
 @f90dir@

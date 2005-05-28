@@ -21,6 +21,9 @@ AC_ARG_ENABLE(f90,
 [--enable-f90 - Turn on Fortran 90 tests (if f90 available)],,enable_f90=default)
 AC_ARG_ENABLE(cxx,
 [--enable-cxx - Turn on C++ tests (default)],,enable_cxx=yes)
+AC_ARG_ENABLE(romio,
+[--enable-romio - Enable ROMIO MPI I/O implementation],
+,enable_romio=yes)
 AC_ARG_WITH(mpi,
 [--with-mpi=dir - Use the selected MPI; compilation scripts for mpicc, mpif77
                   and mpicxx should be in dir/bin],,)
@@ -542,6 +545,13 @@ if test "$enable_cxx" = yes ; then
     CXX=$CXXsave
     AC_LANG_RESTORE
 fi
+# IO
+iodir="#"
+if test "$enable_romio" != no ; then
+    iodir=io
+fi
+AC_SUBST(iodir)
+
 # Find perl; used to create some of the tests from template and 
 # defintion files
 AC_PATH_PROG(PERL,perl)
@@ -632,4 +642,7 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/rma/Makefile \
 	  cxx/spawn/Makefile \
 	  testlist \
+	  cxx/testlist \
+	  f77/testlist \
+	  f90/testlist \
 	  )
