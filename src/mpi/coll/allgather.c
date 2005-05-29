@@ -662,7 +662,7 @@ int MPIR_Allgather_inter (
 */
 
     static const char FCNAME[] = "MPIR_Allgather_inter";
-    int rank, local_size, remote_size, mpi_errno, root;
+    int rank, local_size, remote_size, mpi_errno = MPI_SUCCESS, root;
     MPI_Comm newcomm;
     MPI_Aint true_extent, true_lb, extent, send_extent;
     void *tmp_buf=NULL;
