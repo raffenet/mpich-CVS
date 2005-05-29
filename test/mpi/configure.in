@@ -444,14 +444,14 @@ if test "$enable_f90" = default -a "$enable_f77" = yes ; then
         F90=$BASEF90
     fi
     PAC_PROG_F90
-    if test -n "$F90" ; then
+    if test -z "$F90" -o "$pac_cv_prog_f90_works" != yes ; then
+        AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
+	enable_f90=no
+    elif test -n "$F90" ; then
         # Make sure that the compilers are compatible.  This 
 	# will also make sure that the program named in F90 is
 	# a working Fortran 90 compiler
         PAC_F90_AND_F77_COMPATIBLE(enable_f90=yes,enable_f90=no)
-    elif test "$pac_cv_prog_f90_works" = no; then
-        AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
-	enable_f90=no
     fi
     if test -n "$BASEF90" ; then
         F90=$saveF90
