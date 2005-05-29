@@ -1,0 +1,13 @@
+attr
+coll
+datatype
+pt2pt
+info
+spawn
+@iodir@
+rma
+init
+comm
+# ext is not included because the only test so far is a test of the 
+# Fortran "pointer" extension, which is not implemented by some compilers,
+# particularly not by g77
