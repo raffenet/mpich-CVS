@@ -1749,14 +1749,19 @@ extern Datatype TWOINTEGER;
     }
 
     # MPI Mode
-    foreach $int (APPEND, CREATE, DELETE_ON_CLOSE, EXCL, NOCHECK,
-		  NOPRECEDE, NOPUT, NOSTORE, NOSUCCEED, RDONLY, 
-		  RDWR, SEQUENTIAL, UNIQUE_OPEN, WRONLY) {
+    foreach $int (APPEND, CREATE, DELETE_ON_CLOSE, EXCL, 
+		  RDONLY, RDWR, SEQUENTIAL, UNIQUE_OPEN, WRONLY) {
 	print $OUTFD "${extern}const int MODE_$int";
 	if ($giveValue) { print $OUTFD " = MPI_MODE_$int;\n"; }
 	else            { print $OUTFD ";\n"; }
     }
     print $OUTFD "#endif // IO\n";
+    # Some modes are for RMA, not I/O
+    foreach $int (NOCHECK,NOPRECEDE, NOPUT, NOSTORE, NOSUCCEED) {
+	print $OUTFD "${extern}const int MODE_$int";
+	if ($giveValue) { print $OUTFD " = MPI_MODE_$int;\n"; }
+	else            { print $OUTFD ";\n"; }
+    }
 
     # MPI Combiners
     foreach $int (CONTIGUOUS, DARRAY, DUP, F90_COMPLEX, F90_INTEGER, 
