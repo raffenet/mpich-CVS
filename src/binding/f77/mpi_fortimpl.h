@@ -237,3 +237,10 @@ typedef char *MPID_FCHAR_T;
 /* Ditto the null datarep conversion */
 #undef MPI_CONVERSION_FN_NULL
 #endif /* MPI_DUP_FN */
+
+/* A special case to help out when ROMIO is disabled */
+#ifndef MPI_MODE_RDONLY
+#ifndef MPI_File_f2c
+#define MPI_File_f2c(a) ((MPI_File*)(a))
+#endif
+#endif /* MPI_MODE_RDONLY */
