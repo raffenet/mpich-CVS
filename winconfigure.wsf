@@ -132,6 +132,11 @@
 			helpstring = "update the smpd version in smpd.h"
 			require = "false"
 		/>
+		<unnamed
+			name = "--ia64"
+			helpstring = "use definitions for Win64 IA64 instead of X64"
+			require = "false"
+		/>
 <!--		<unnamed
 			name = "--mt"
 			helpstring = "build multithreaded libraries"
@@ -165,7 +170,7 @@ Function cEcho(str)
 End Function
 
 'bMultiThreaded = false
-x64 = False
+x64 = True
 bVS2005 = False
 bUseIbRDMA = False
 bUsePinCache = False
@@ -320,6 +325,8 @@ For arg = 0 To argCount - 1
   ElseIf argValue = "--smpd_version" Then
     UpdateSMPDVersion()
     WScript.Quit
+  ElseIf argValue = "--ia64" Then
+    x64 = False
 '  ElseIf argValue = "--mt" Then
 '    bMultiThreaded = true
   ElseIf argValue = "--help" Then
@@ -3212,7 +3219,7 @@ If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
 	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
 	fout.WriteLine("#define __WIN__")
 	If x64 then
-		fout.WriteLine("#define __x64__")
+		fout.WriteLine("#define __x86_64__")
 	else
 		fout.WriteLine("#define __ia64__")
 	End If
