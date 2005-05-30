@@ -106,7 +106,7 @@ static void MPIR_Init_err_dyncodes( void )
 #endif
 }
 
-/*+
+/*
   MPIR_Err_set_msg - Change the message for an error code or class
 
   Input Parameter:
@@ -115,10 +115,7 @@ static void MPIR_Init_err_dyncodes( void )
 
   Notes:
   This routine is needed to implement 'MPI_Add_error_string'.
- 
-  Module:
-  Error
-+*/
+*/
 int MPIR_Err_set_msg( int code, const char *msg_string )
 {
     int errcode, errclass;
@@ -196,29 +193,21 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
     return MPI_SUCCESS;
 }
 
-/*+
-  MPIR_Err_add_class - Add an error class with an associated string
-
-  Input Parameters:
-. msg_string - Message text for this class.  A null string may be used, in
-  which case 'MPIR_Err_set_msg' should be called later.
+/*
+  MPIR_Err_add_class - Creata a new error class
 
   Return value:
   An error class.  Returns -1 if no more classes are available.
 
   Notes:
   This is used to implement 'MPI_Add_error_class'; it may also be used by a 
-  device to add device-specific error classes.  Unlike the MPI version, this 
-  combines returning a class with setting the associated message.  
+  device to add device-specific error classes.  
 
   Predefined classes are handled directly; this routine is not used to 
   initialize the predefined MPI error classes.  This is done to reduce the
   number of steps that must be executed when starting an MPI program.
-
-  Module:
-  Error
-  @*/
-int MPIR_Err_add_class( const char *msg_string )
+*/
+int MPIR_Err_add_class()
 {
     int new_class;
 
@@ -236,37 +225,28 @@ int MPIR_Err_add_class( const char *msg_string )
     /* --END ERROR HANDLING-- */
 
     /* Note that the MPI interface always adds an error class without
-       a string.  The option for including a string was included 
-       as an eaiser way to add error messages for modules that are 
-       dynamically added to an MPICH2 implementation */
-    if (msg_string) {
-	user_class_msgs[new_class] = MPIU_Strdup( msg_string );
-    }
-    else {
-	user_class_msgs[new_class] = 0;
-    }
+       a string.  */
+    user_class_msgs[new_class] = 0;
+
     return (new_class | ERROR_DYN_MASK);
 }
 
-/*+
-  MPIR_Err_add_code - Add an error code with an associated string
+/*
+  MPIR_Err_add_code - Create a new error code that is associated with an 
+  existing error class
 
   Input Parameters:
-+ class - Class that the code belongs to
-- msg_string - Message text for this code
+. class - Error class to which the code belongs.
 
   Return value:
   An error code.
 
   Notes:
   This is used to implement 'MPI_Add_error_code'; it may also be used by a 
-  device to add device-specific error codes.  Unlike the MPI version, this 
-  combines returning a code with setting the associated message.  
- 
-  Module:
-  Error
-  @*/
-int MPIR_Err_add_code( int class, const char *msg_string )
+  device to add device-specific error codes.  
+
+  */
+int MPIR_Err_add_code( int class )
 {
     int new_code;
 
@@ -287,13 +267,15 @@ int MPIR_Err_add_code( int class, const char *msg_string )
     /* Create the full error code */
     new_code = class | ERROR_DYN_MASK | (new_code << ERROR_GENERIC_SHIFT);
 
+    /* FIXME: For robustness, we should make sure that the associated string
+       is initialized to null */
     return new_code;
 }
 
 #ifdef USE_ERRDELETE
 /* These were added for completeness and for any other modules that 
    might be loaded with MPICH2.  No code uses these at this time */
-/*+
+/*
   MPIR_Err_delete_code - Delete an error code and its associated string
 
   Input Parameter:
@@ -305,10 +287,7 @@ int MPIR_Err_add_code( int class, const char *msg_string )
   included both for completeness and to remind the implementation to 
   carefully manage the memory used for dynamically created error codes and
   classes.
-
-  Module:
-  Error
-  @*/
+  */
 void MPIR_Err_delete_code( int code )
 {
     if (not_initialized)
@@ -316,15 +295,12 @@ void MPIR_Err_delete_code( int code )
     /* FIXME : mark as free */
 }
 
-/*+
+/*
   MPIR_Err_delete_class - Delete an error class and its associated string
 
   Input Parameter:
 . class - Class to delete.
- 
-  Module:
-  Error
-  @*/
+  */
 void MPIR_Err_delete_class( int class )
 {
     if (not_initialized)
@@ -340,7 +316,7 @@ void MPIR_Err_delete_class( int class )
 */
 #endif
 
-/*+
+/*
   MPIR_Err_get_dynerr_string - Get the message string that corresponds to a
   dynamically created error class or code
 
@@ -356,11 +332,7 @@ void MPIR_Err_delete_class( int class )
   Notes:
   This routine is used to implement 'MPI_ERROR_STRING'.  It is only called
   for dynamic error codes.  
-
-  Module:
-  Error 
-
-  @*/
+  */
 const char *MPIR_Err_get_dynerr_string( int code )
 {
     int errcode, errclass;

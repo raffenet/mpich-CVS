@@ -72,7 +72,7 @@ int MPI_Add_error_code(int errorclass, int *errorcode)
     
     /* ... body of routine ...  */
     
-    new_code = MPIR_Err_add_code( errorclass, 0 );
+    new_code = MPIR_Err_add_code( errorclass );
     MPIU_ERR_CHKANDJUMP(new_code<0,mpi_errno,MPI_ERR_OTHER,"**noerrcodes");
 
     *errorcode = new_code;

@@ -68,7 +68,7 @@ int MPI_Add_error_class(int *errorclass)
     
     /* ... body of routine ...  */
     
-    new_class = MPIR_Err_add_class( 0 );
+    new_class = MPIR_Err_add_class( );
     MPIU_ERR_CHKANDJUMP(new_class<0,mpi_errno,MPI_ERR_OTHER,"**noerrclasses");
 
     *errorclass = ERROR_DYN_MASK | new_class;
