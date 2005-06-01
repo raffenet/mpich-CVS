@@ -168,7 +168,7 @@ int smpd_encrypt_data(char *input, int input_length, char *output, int output_le
     /* copy the input data to the temporary buffer and encrypt in-place */
     memcpy(buffer, input, input_length);
     dwLength = input_length;
-    if (!CryptEncrypt(hKey, 0, TRUE, 0, buffer, &dwLength, input_length*2))
+    if (!CryptEncrypt(hKey, 0, TRUE, 0, (BYTE*)buffer, &dwLength, input_length*2))
     {
 	smpd_err_printf("Error during CryptEncrypt: %s\n", crypt_error(GetLastError()));
 	ret_val = SMPD_FAIL;
@@ -336,7 +336,7 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 
     /* decrypt the data blob back to plaintext */
     dwLength = length;
-    if (!CryptDecrypt(hKey, 0, TRUE, 0, buffer, &dwLength))
+    if (!CryptDecrypt(hKey, 0, TRUE, 0, (BYTE*)buffer, &dwLength))
     {
 	smpd_err_printf("Error during CryptDecrypt: %s\n", crypt_error(GetLastError()));
 	ret_val = SMPD_FAIL;

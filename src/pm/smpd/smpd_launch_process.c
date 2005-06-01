@@ -332,7 +332,7 @@ int smpd_get_user_name(char *account, char *domain, char *full_domain)
     {
 	for (i=0; i<strlen(name); i++)
 	{
-	    name[i] = tolower(name[i]);
+	    name[i] = (char)(tolower(name[i]));
 	}
 	separator = strchr(name, '\\');
 	if (separator)
@@ -352,7 +352,7 @@ int smpd_get_user_name(char *account, char *domain, char *full_domain)
 	{
 	    for (i=0; i<strlen(name); i++)
 	    {
-		name[i] = tolower(name[i]);
+		name[i] = (char)(tolower(name[i]));
 	    }
 	    separator = strchr(name, '\\');
 	    if (separator)
@@ -704,7 +704,7 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
 	{
 	    if (num_read == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK)
 	    {
-		int optval = TRUE;
+		u_long optval = (u_long)TRUE;
 		ioctlsocket(hIn, FIONBIO, &optval);
 		continue;
 	    }
@@ -844,7 +844,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char tSavedPath[MAX_PATH] = ".";
     DWORD launch_flag = 0;
     int nError = 0, result = 0;
-    unsigned long blocking_flag = 0;
+    /*unsigned long blocking_flag = 0;*/
     MPIDU_Sock_t sock_in = MPIDU_SOCK_INVALID_SOCK, sock_out = MPIDU_SOCK_INVALID_SOCK, sock_err = MPIDU_SOCK_INVALID_SOCK, sock_pmi = MPIDU_SOCK_INVALID_SOCK;
     SECURITY_ATTRIBUTES saAttr;
     char str[8192], sock_str[20];

@@ -634,7 +634,7 @@ static SMPD_BOOL smpd_get_smpd_data_from_environment(const char *key, char *valu
 	env = &env_option[strlen(SMPD_ENV_OPTION_PREFIX)];
 	while (*key != '\0')
 	{
-	    *env = toupper(*key);
+	    *env = (char)(toupper(*key));
 	    key++;
 	    env++;
 	}
@@ -791,7 +791,7 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
     index = 0;
     name_length = SMPD_MAX_NAME_LENGTH;
     value_length = SMPD_MAX_VALUE_LENGTH;
-    enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, value, &value_length);
+    enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, (LPBYTE)value, &value_length);
     while (enum_result == ERROR_SUCCESS)
     {
 	item = (smpd_data_t*)malloc(sizeof(smpd_data_t));
@@ -809,7 +809,7 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
 	index++;
 	name_length = SMPD_MAX_NAME_LENGTH;
 	value_length = SMPD_MAX_VALUE_LENGTH;
-	enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, value, &value_length);
+	enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, (LPBYTE)value, &value_length);
     }
     RegCloseKey(tkey);
     *data = list;
