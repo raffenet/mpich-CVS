@@ -2315,6 +2315,7 @@ int MPIR_Call_datarep_extent_fn( MPI_Datatype datatype, MPI_Aint *extent,
     err =  (ldata->extent_fn)( (Datatype)datatype, myextent, 
 			       ldata->orig_extra_state);
     *extent = myextent;
+    return err;
 }
 } /* extern C */
 void Register_datarep( const char *datarep, 
@@ -2508,7 +2509,8 @@ extern \"C\" int MPIR_Grequest_call_cancel_fn( void *extra_data, int done )
     MPI::Status s;
     MPIR_Grequest_data *d = (MPIR_Grequest_data *)extra_data;
     
-    err = (d->cancel_fn)( d->orig_extra_data, done );
+    // Pass a C++ bool to the C++ version of the cancel function
+    err = (d->cancel_fn)( d->orig_extra_data, done ? true : false );
     return err;
 }
 Grequest Grequest::Start( Grequest::Query_function query_fn,
