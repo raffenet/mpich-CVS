@@ -3966,7 +3966,7 @@ Function GenBuild()
 	bfile.WriteLine("nmake %SILENT% /NOLOGO sfort")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO irlog2rlog")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO TraceInput")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO impgen")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO gcc_libs")
 	bfile.Close()
 
 	Set mfile = f.CreateTextFile("winbuild\makefile", true)
@@ -4190,6 +4190,7 @@ Function GenBuild()
 	mfile.WriteLine("RLOG_OUTDIR = $(CPU)\$(CFG)\rlog")
 	mfile.WriteLine("MPE_OUTDIR = $(CPU)\$(CFG)\mpe")
 	mfile.WriteLine("MPE_WRAP_OUTDIR = $(CPU)\$(CFG)\mpe_wrap")
+	mfile.WriteLine("GCC_OUTDIR = $(CPU)\$(CFG)\gcc")
 	mfile.WriteLine
 	mfile.WriteLine("# The first rule gets built if nothing is specified on the nmake command line")
 	mfile.WriteLine("all_redirect: all")
@@ -4224,6 +4225,9 @@ Function GenBuild()
 	mfile.WriteLine("$(MPE_WRAP_OUTDIR) :")
 	mfile.WriteLine("	if not exist ""$(MPE_WRAP_OUTDIR)\$(NULL)"" mkdir $(MPE_WRAP_OUTDIR)")
 	mfile.WriteLine
+	mfile.WriteLine("$(GCC_OUTDIR) :")
+	mfile.WriteLine("	if not exist ""$(GCC_OUTDIR)\$(NULL)"" mkdir $(GCC_OUTDIR)")
+	mfile.WriteLine
 	mfile.WriteLine("# clean destroys everything, even user generated files")
 	mfile.WriteLine("CLEAN:")
 	mfile.WriteLine("	if exist $(OUTDIR)\$(NULL) rd /s /q $(OUTDIR)")
@@ -4243,6 +4247,7 @@ Function GenBuild()
 	mfile.WriteLine("	if exist $(RLOG_OUTDIR)\$(NULL) rd /s /q $(RLOG_OUTDIR)")
 	mfile.WriteLine("	if exist $(MPE_OUTDIR)\$(NULL) rd /s /q $(MPE_OUTDIR)")
 	mfile.WriteLine("	if exist $(MPE_WRAP_OUTDIR)\$(NULL) rd /s /q $(MPE_WRAP_OUTDIR)")
+	mfile.WriteLine("	if exist $(GCC_OUTDIR)\$(NULL) rd /s /q $(GCC_OUTDIR)")
 	mfile.WriteLine
 
 	trimlength = Len(f.GetFolder(".").Path) + 1
@@ -4566,6 +4571,13 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("fort: $(FORT_OUTDIR) $(FORT_OUTDIR)\fmpich2$(D).dll")
 	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
+	mfile.WriteLine("# Only one calling convention for Win64 so gfort and sfort are not necessary")
+	mfile.WriteLine("gfort: $(GFORT_OUTDIR)")
+	mfile.WriteLine
+	mfile.WriteLine("sfort: $(SFORT_OUTDIR)")
+	mfile.WriteLine
+	mfile.WriteLine("!ELSE")
 	outdir = "GFORT_OUTDIR"
 	extra_flags = "$(gfcflags)"
 	fort_prefix = "g"
@@ -4625,6 +4637,8 @@ Function GenBuild()
 	mfile.WriteLine("	$(link) $(dlllflags) $(sfort_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\binding\f77\mpich2fs.def -out:$(SFORT_OUTDIR)\fmpich2s$(D).dll")
 	mfile.WriteLine
 	mfile.WriteLine("sfort: $(SFORT_OUTDIR) $(SFORT_OUTDIR)\fmpich2s$(D).dll")
+	mfile.WriteLine
+	mfile.WriteLine("!ENDIF")
 	extra_flags = ""
 	fort_prefix = ""
 
@@ -4779,13 +4793,34 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("# impgen")
 	mfile.WriteLine
-	mfile.WriteLine("$(OUTDIR)\gccimpgen.obj: ..\maint\gccimpgen.c")
-	mfile.WriteLine("	$(cc) $(cflags) /Fo""$(OUTDIR)\\"" /Fd""$(OUTDIR)\\"" ..\maint\gccimpgen.c")
+	mfile.WriteLine("$(GCC_OUTDIR)\gccimpgen.obj: ..\maint\gccimpgen.c")
+	mfile.WriteLine("	$(cc) $(cflags) /Fo""$(GCC_OUTDIR)\\"" /Fd""$(GCC_OUTDIR)\\"" ..\maint\gccimpgen.c")
 	mfile.WriteLine
-	mfile.WriteLine("$(BIN_OUTDIR)\impgen.exe: $(OUTDIR)\gccimpgen.obj")
-	mfile.WriteLine("	$(link) $(conlflags) $(OUTDIR)\gccimpgen.obj $(common_libs) -out:$(BIN_OUTDIR)\impgen.exe")
+	mfile.WriteLine("$(GCC_OUTDIR)\impgen.exe: $(GCC_OUTDIR)\gccimpgen.obj")
+	mfile.WriteLine("	$(link) $(conlflags) $(GCC_OUTDIR)\gccimpgen.obj $(common_libs) -out:$(GCC_OUTDIR)\impgen.exe")
 	mfile.WriteLine
-	mfile.WriteLine("impgen: $(BIN_OUTDIR) $(BIN_OUTDIR)\impgen.exe")
+	mfile.WriteLine("impgen: $(GCC_OUTDIR) $(GCC_OUTDIR)\impgen.exe")
+	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
+	mfile.WriteLine("# Add 64bit gcc stuff here")
+	mfile.WriteLine("gcc_libs: $(GCC_OUTDIR)")
+	mfile.WriteLine
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("gcc_libs: impgen")
+	mfile.WriteLine("	IF EXIST ""$(GCC_OUTDIR)\mpich2gcc$(D).def"" del $(GCC_OUTDIR)\mpich2gcc$(D).def")
+	mfile.WriteLine("	$(GCC_OUTDIR)\impgen.exe $(SOCK_OUTDIR)\mpich2$(D).dll > $(GCC_OUTDIR)\mpich2gcc$(D).def")
+	mfile.WriteLine("	dlltool --dllname mpich2$(D).dll --def $(GCC_OUTDIR)\mpich2gcc$(D).def --output-lib $(GCC_OUTDIR)\libmpich2$(D).a")
+	mfile.WriteLine("	del $(GCC_OUTDIR)\mpich2gcc$(D).def")
+	mfile.WriteLine("	IF EXIST ""$(GCC_OUTDIR)\mpich2mpi$(D).def"" del $(GCC_OUTDIR)\mpich2mpi$(D).def")
+	mfile.WriteLine("	$(GCC_OUTDIR)\impgen.exe $(MPI_OUTDIR)\mpich2mpi$(D).dll > $(GCC_OUTDIR)\mpich2mpi$(D).def")
+	mfile.WriteLine("	dlltool --dllname mpich2mpi$(D).dll --def $(GCC_OUTDIR)\mpich2mpi$(D).def --output-lib $(GCC_OUTDIR)\libmpi$(D).a")
+	mfile.WriteLine("	del $(GCC_OUTDIR)\mpich2mpi$(D).def")
+	mfile.WriteLine("	IF EXIST ""$(GCC_OUTDIR)\fmpich2gcc$(D).def"" del $(GCC_OUTDIR)\fmpich2gcc$(D).def")
+	mfile.WriteLine("	$(GCC_OUTDIR)\impgen.exe $(GFORT_OUTDIR)\fmpich2g$(D).dll > $(GCC_OUTDIR)\fmpich2gcc$(D).def")
+	mfile.WriteLine("	dlltool --dllname fmpich2g$(D).dll --def $(GCC_OUTDIR)\fmpich2gcc$(D).def --output-lib $(GCC_OUTDIR)\libfmpich2g$(D).a")
+	mfile.WriteLine("	del $(GCC_OUTDIR)\fmpich2gcc$(D).def")
+	mfile.WriteLine
+	mfile.WriteLine("!ENDIF")
 
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""sock""")
