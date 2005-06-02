@@ -183,7 +183,7 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
 	    {
 		if (CryptUnprotectData(&blob, NULL, NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &password_blob))
 		{
-		    strcpy(szPassword, password_blob.pbData);
+		    strcpy(szPassword, (const char *)(password_blob.pbData));
 		    LocalFree(password_blob.pbData);
 		}
 		else

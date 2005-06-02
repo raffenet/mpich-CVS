@@ -226,7 +226,7 @@ int smpd_start_win_mgr(smpd_context_t *context, SMPD_BOOL use_context_user_handl
 	if (!AssignProcessToJobObject(job, pInfo.hProcess))
 	{
 	    smpd_err_printf("AssignProcessToJobObject failed: %d\n", GetLastError());
-	    TerminateProcess(pInfo.hProcess, -1);
+	    TerminateProcess(pInfo.hProcess, (UINT)-1);
 	    result = SMPD_FAIL;
 	}
 	else

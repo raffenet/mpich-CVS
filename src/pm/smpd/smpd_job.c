@@ -223,7 +223,7 @@ int smpd_remove_job_key(const char *key)
 		CloseHandle(iter->user_handle);
 	    if (iter->job != NULL && iter->job != INVALID_HANDLE_VALUE)
 	    {
-		TerminateJobObject(iter->job, -1);
+		TerminateJobObject(iter->job, (UINT)-1);
 		CloseHandle(iter->job);
 	    }
 	    free(iter);

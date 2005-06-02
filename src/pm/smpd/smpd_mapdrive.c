@@ -82,7 +82,7 @@ static BOOL EnumerateDisksFunc(LPNETRESOURCE lpnr, DWORD dwScope, DWORD dwType, 
     DWORD dwResult, dwResultEnum;
     HANDLE hEnum;
     DWORD cbBuffer = 16384;      /* 16K is a good size */
-    DWORD cEntries = -1;         /* enumerate all possible entries */
+    DWORD cEntries = (DWORD)-1;         /* enumerate all possible entries */
     LPNETRESOURCE lpnrLocal;     /* pointer to enumerated structures */
     DWORD i;
 
@@ -181,7 +181,7 @@ static SMPD_BOOL MatchesExistingMapping(char *pszDrive, char *pszShare)
     if (pszDrive == NULL || pszShare == NULL)
 	return SMPD_FALSE;
 
-    ch = toupper(*pszDrive);
+    ch = (char)(toupper(*pszDrive));
     EnumerateDisksFunc(NULL, RESOURCE_CONNECTED, RESOURCETYPE_DISK, &ch, pszShare, &bFound, &bMatched);
     if (bMatched)
 	return SMPD_TRUE;
