@@ -848,7 +848,7 @@ int smpd_decrypt_data(char *input, int input_length, char *output, int *output_l
 int smpd_get_all_smpd_data(smpd_data_t **data);
 int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context);
 int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context);
-int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port, smpd_sspi_type_t type);
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, int port, smpd_sspi_type_t type);
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
 SMPD_BOOL smpd_setup_scp();
 SMPD_BOOL smpd_remove_scp();
