@@ -787,7 +787,6 @@ static HRESULT AllowAccessToScpProperties(
     IADsAccessControlEntry *pACE1 = NULL;
     IADsAccessControlEntry *pACE2 = NULL;
     IDispatch *pDispACE = NULL;
-    long lFlags = 0L;
     CComBSTR sbstrTrustee;
     CComBSTR sbstrSecurityDescriptor = L"nTSecurityDescriptor";
     VARIANT varSD;
