@@ -62,7 +62,7 @@ void *ib_malloc_register(size_t size, VAPI_mr_hndl_t *mhp, VAPI_lkey_t *lp, VAPI
     memset(&mem, 0, sizeof(VAPI_mrw_t));
     memset(&mem_out, 0, sizeof(VAPI_mrw_t));
     mem.type = VAPI_MR;
-    mem.start = (VAPI_virt_addr_t)ptr;
+    mem.start = (VAPI_virt_addr_t)(MT_virt_addr_t)ptr;
     mem.size = size;
     mem.pd_hndl = IBU_Process.pd_handle;
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
@@ -309,7 +309,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     memset(&mem, 0, sizeof(VAPI_mrw_t));
     memset(&mem_out, 0, sizeof(VAPI_mrw_t));
     mem.type = VAPI_MR;
-    mem.start = (VAPI_virt_addr_t)buf;
+    mem.start = (VAPI_virt_addr_t)(MT_virt_addr_t)buf;
     mem.size = len;
     mem.pd_hndl = IBU_Process.pd_handle;
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
@@ -411,7 +411,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     memset(&mem, 0, sizeof(VAPI_mrw_t));
     memset(&mem_out, 0, sizeof(VAPI_mrw_t));
     mem.type = VAPI_MR;
-    mem.start = (VAPI_virt_addr_t)buf;
+    mem.start = (VAPI_virt_addr_t)(MT_virt_addr_t)buf;
     mem.size = len;
     mem.pd_hndl = IBU_Process.pd_handle;
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;
@@ -620,7 +620,7 @@ int ibu_nocache_register_memory(void *buf, int len, ibu_mem_t *state)
     memset(&mem, 0, sizeof(VAPI_mrw_t));
     memset(&mem_out, 0, sizeof(VAPI_mrw_t));
     mem.type = VAPI_MR;
-    mem.start = (VAPI_virt_addr_t)buf;
+    mem.start = (VAPI_virt_addr_t)(MT_virt_addr_t)buf;
     mem.size = len;
     mem.pd_hndl = IBU_Process.pd_handle;
     mem.acl = VAPI_EN_LOCAL_WRITE | VAPI_EN_REMOTE_WRITE | VAPI_EN_REMOTE_READ;

@@ -35,7 +35,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_WRITE);
 
     data.len = len;
-    data.addr = (VAPI_virt_addr_t)sbuf;
+    data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)sbuf;
     data.lkey = smem->lkey;
 
     work_req.opcode = VAPI_RDMA_WRITE;
@@ -50,7 +50,7 @@ int ibu_rdma_write(ibu_t ibu, void *sbuf, ibu_mem_t *smem, void *rbuf, ibu_mem_t
     work_req.ethertype = 0;
     work_req.eecn = 0;
     work_req.set_se = 0;
-    work_req.remote_addr = (VAPI_virt_addr_t)rbuf;
+    work_req.remote_addr = (VAPI_virt_addr_t)(MT_virt_addr_t)rbuf;
     work_req.r_key = rmem->rkey;
     work_req.compare_add = 0;
     work_req.swap = 0;
@@ -112,7 +112,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     MPIDI_FUNC_ENTER(MPID_STATE_IBU_RDMA_READ);
 
     data.len = len;
-    data.addr = (VAPI_virt_addr_t)rbuf;
+    data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)rbuf;
     data.lkey = rmem->lkey;
 
     work_req.opcode = VAPI_RDMA_READ;
@@ -127,7 +127,7 @@ int ibu_rdma_read(ibu_t ibu, void *rbuf, ibu_mem_t *rmem, void *sbuf, ibu_mem_t 
     work_req.ethertype = 0;
     work_req.eecn = 0;
     work_req.set_se = 0;
-    work_req.remote_addr = (VAPI_virt_addr_t)sbuf;
+    work_req.remote_addr = (VAPI_virt_addr_t)(MT_virt_addr_t)sbuf;
     work_req.r_key = smem->rkey;
     work_req.compare_add = 0;
     work_req.swap = 0;

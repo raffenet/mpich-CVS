@@ -634,7 +634,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	total += length;
 	data.len = msg_size; /*Mellanox descriptor holds additional header */
 	/* Data.addr points to Beginning of original buffer */
-	data.addr = (VAPI_virt_addr_t)(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size));
+	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size));
 	data.lkey = GETLKEY(mem_ptr);
 	/*MPIU_Assert(data.lkey == s_lkey);*/
 
@@ -651,7 +651,7 @@ int ibu_write(ibu_t ibu, void *buf, int len, int *num_bytes_ptr)
 	work_req.ethertype = 0;
 	work_req.eecn = 0;
 	work_req.set_se = 0;
-	work_req.remote_addr	= (VAPI_virt_addr_t)(ibu->remote_RDMA_buf_base + (ibu->remote_RDMA_head + 1));
+	work_req.remote_addr	= (VAPI_virt_addr_t)(MT_virt_addr_t)(ibu->remote_RDMA_buf_base + (ibu->remote_RDMA_head + 1));
 	work_req.remote_addr   -= msg_size;
 	work_req.r_key		= ibu->remote_RDMA_buf_hndl.rkey;
 	work_req.compare_add = 0;
@@ -857,7 +857,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	MPIU_Assert(data.len);
 
 	/* Data.addr points to Beginning of original buffer */
-	data.addr = (VAPI_virt_addr_t)(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size)); 
+	data.addr = (VAPI_virt_addr_t)(MT_virt_addr_t)(((ibu_rdma_buf_t*)mem_ptr)->alignment + (IBU_RDMA_BUF_SIZE - msg_size)); 
 	data.lkey = GETLKEY(mem_ptr);
 	/*MPIU_Assert(data.lkey == s_lkey);*/
 
@@ -874,7 +874,7 @@ int ibu_writev(ibu_t ibu, MPID_IOV *iov, int n, int *num_bytes_ptr)
 	work_req.ethertype = 0;
 	work_req.eecn = 0;
 	work_req.set_se = 0;
-	work_req.remote_addr	= (VAPI_virt_addr_t)(ibu->remote_RDMA_buf_base + (ibu->remote_RDMA_head + 1));
+	work_req.remote_addr	= (VAPI_virt_addr_t)(MT_virt_addr_t)(ibu->remote_RDMA_buf_base + (ibu->remote_RDMA_head + 1));
 	work_req.remote_addr   -= msg_size;
 	work_req.r_key		= ibu->remote_RDMA_buf_hndl.rkey;
 	work_req.compare_add = 0;
