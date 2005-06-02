@@ -1677,6 +1677,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\register_datarepf.c">
+			</File>
+			<File
 				RelativePath=".\reqgetstatf.c">
 			</File>
 			<File
