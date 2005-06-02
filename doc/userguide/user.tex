@@ -619,6 +619,9 @@ A small number of environment variables affect the behavior of
   original MPICH (e.g. versions 1.2.0 -- 1.2.6)
   instead of its native PMI interface, as a way for application
   processes to interact with the process management system.
+\item[\texttt{MPD\_CON\_EXT}] Adds a string to the default Unix socket
+  name used by \texttt{mpiexec} to find the local \texttt{mpd}.  This
+  allows one to run multiple mpd rings at the same time.
 \end{description}
 
 
