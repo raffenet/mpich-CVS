@@ -724,8 +724,7 @@ EXPORTS
 	mpi_type_null_delete_fn__=pmpi_type_null_delete_fn__
 	pmpi_type_null_copy_fn__
 	mpi_type_null_copy_fn__=pmpi_type_null_copy_fn__
-	pmpi_conversion_fn_null__
-	mpi_conversion_fn_null__=pmpi_conversion_fn_null__
+	mpi_conversion_fn_null__
 ;	pmpi_status_c2f__
 ;	mpi_status_c2f__=pmpi_status_c2f__
 ;	pmpi_status_f2c__
