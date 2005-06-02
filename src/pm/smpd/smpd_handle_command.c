@@ -680,7 +680,6 @@ int smpd_handle_result(smpd_context_t *context)
     int listener_port;
     char context_str[20];
     smpd_context_t *orig_context;
-    int received_sspi_buffer_length = -1;
     int num_decoded;
 
     smpd_enter_fn(FCNAME);
@@ -3869,7 +3868,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 
 #undef FCNAME
 #define FCNAME "smpd_sspi_context_init"
-int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, short port, smpd_sspi_type_t type)
+int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, int port, smpd_sspi_type_t type)
 {
 #ifdef HAVE_WINDOWS_H
     int result;
@@ -3882,8 +3881,10 @@ int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const
     TimeStamp ts;
     SecPkgInfo *info;
     smpd_sspi_client_context_t *sspi_context;
+    /*
     char account[SMPD_MAX_ACCOUNT_LENGTH] = "";
     char domain[SMPD_MAX_ACCOUNT_LENGTH] = "";
+    */
     char target_[SMPD_MAX_NAME_LENGTH] = "", *target = target_;
     double t1, t2;
 
@@ -4220,7 +4221,6 @@ int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr
 {
 #ifdef HAVE_WINDOWS_H
     char err_msg[256];
-    SEC_WINNT_AUTH_IDENTITY *identity = NULL;
     SECURITY_STATUS sec_result, sec_result_copy;
     SecBufferDesc outbound_descriptor, inbound_descriptor;
     SecBuffer outbound_buffer, inbound_buffer;
