@@ -15,15 +15,15 @@ int ADIOI_LNIO_File_exists(char *);
 
 int ADIOI_LNIO_Debug_msg(char *format, ... )
 { /* almost same as lorsDebugPrint from lors_util.c in LoRS library */
-#ifdef LNIO_DEBUG
+  if (LNIO_DEBUG) {
     va_list marker;
     
     va_start(marker,format);
     vfprintf(stderr, format,marker);
     fflush(stderr);
     va_end( marker);
-#endif
-};
+  }
+}
 
 
 
@@ -384,24 +384,24 @@ int ADIOI_LNIO_Open(ADIO_File fd)
        for both cases, create a depot pool by calling lorsGetDepotPool */
 
     /* for the test purpose... */
-    depot_array = (IBP_depot *)calloc(2, sizeof(IBP_depot));
-    for (i = 0; i < 1; i++)
-      depot_array[i] = (IBP_depot)calloc(1, sizeof(struct ibp_depot));
-    depot_array[1] = NULL; 
-    
-    
-    strcpy(depot_array[0]->host, "ibp.accre.vanderbilt.edu");
-    depot_array[0]->port = 6715;
-    
-    /*strcpy(depot_array[0]->host, "tsiln.ccs.ornl.gov");
-    depot_array[0]->port = 6714;
+    /*    depot_array = (IBP_depot *)calloc(2, sizeof(IBP_depot));
+	  for (i = 0; i < 1; i++)
+	  depot_array[i] = (IBP_depot)calloc(1, sizeof(struct ibp_depot));
+	  depot_array[1] = NULL; 
+	  
+	  
+	  strcpy(depot_array[0]->host, "ibp.accre.vanderbilt.edu");
+	  depot_array[0]->port = 6715;
+	  
+	  strcpy(depot_array[0]->host, "tsiln.ccs.ornl.gov");
+	  depot_array[0]->port = 6714;
     */
     
     ret = lorsGetDepotPool(&handle->dp, 			  
 			   /* handle->lbone_server,
 			      handle->lbone_port,*/
 			   NULL, 0, 
-			   /*handle->*/depot_array,
+			   handle->depot_array,
 			   handle->lors_servers,
 			   handle->lbone_location, 
 			   (handle->lors_size - 1) / MEGA + 1,
@@ -1820,7 +1820,7 @@ int ADIOI_LNIO_Flush(ADIO_File fd)
   
   count = 0;
   status.MPI_SOURCE = -1;
-  printf("I'm HERE -2\n"); fflush(stdout);
+
   /* receive dirty mappings from other procs */
   for (i = 0; i < size; i++) { 
     if (i == rank || !em_vector[i]) continue;
