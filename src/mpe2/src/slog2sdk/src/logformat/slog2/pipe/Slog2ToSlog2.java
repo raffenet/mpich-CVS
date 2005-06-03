@@ -21,6 +21,7 @@ import logformat.slog2.CategoryMap;
 import logformat.slog2.LineIDMapList;
 import logformat.slog2.TraceName;
 import logformat.slog2.output.TreeTrunk;
+import logformat.slog2.output.OutputLog;
 
 import java.util.Date;
 import java.util.Arrays;
@@ -40,24 +41,24 @@ public class Slog2ToSlog2
 
     public static final void main( String[] args )
     {
-        PipedInputLog                       dobj_ins;
-        logformat.slog2.output.OutputLog    slog_outs;
-        Kind                                next_kind;
-        Topology                            topo;
-        CategoryMap                         objdefs;   // Drawable def'n
-        Map                                 shadefs;   // Shadow   def'n
-        Category                            objdef;
-        LineIDMapList                       lineIDmaps;
-        LineIDMap                           lineIDmap;
-        Primitive                           prime_obj;
-        Composite                           cmplx_obj;
-        long                                Nobjs;
+        PipedInputLog      dobj_ins;
+        OutputLog          slog_outs;
+        Kind               next_kind;
+        Topology           topo;
+        CategoryMap        objdefs;   // Drawable def'n
+        Map                shadefs;   // Shadow   def'n
+        Category           objdef;
+        LineIDMapList      lineIDmaps;
+        LineIDMap          lineIDmap;
+        Primitive          prime_obj;
+        Composite          cmplx_obj;
+        long               Nobjs;
 
-        TreeTrunk                           treetrunk;
-        double                              prev_dobj_endtime;
-        double                              curr_dobj_endtime;
-        long                                offended_Nobjs;
-        Drawable                            offended_dobj;
+        TreeTrunk          treetrunk;
+        double             prev_dobj_endtime;
+        double             curr_dobj_endtime;
+        long               offended_Nobjs;
+        Drawable           offended_dobj;
 
 
 
@@ -95,7 +96,7 @@ public class Slog2ToSlog2
         dobj_ins.initialize();
 
         /* */    Date time1 = new Date();
-        slog_outs  = new logformat.slog2.output.OutputLog( out_filename );
+        slog_outs  = new OutputLog( out_filename );
 
         //  Set Tree properties, !optional!
         //  TreeNode's minimum size, without any drawable/shadow, is 38 bytes.
@@ -111,7 +112,7 @@ public class Slog2ToSlog2
         else
             slog_outs.setNumChildrenPerNode( dobj_ins.getNumChildrenPerNode() );
 
-        treetrunk = new logformat.slog2.output.TreeTrunk( slog_outs, shadefs );
+        treetrunk = new TreeTrunk( slog_outs, shadefs );
         /* */    Date time2 = new Date();
         while ( ( next_kind = dobj_ins.peekNextKind() ) != Kind.EOF ) {
             if ( next_kind == Kind.TOPOLOGY ) {
