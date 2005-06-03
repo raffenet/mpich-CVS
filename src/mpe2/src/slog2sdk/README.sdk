@@ -25,7 +25,8 @@ and installed.  The programs are
 
 jumpshot:        A visualization tool for SLOG-2 file.
 logconvertor     A GUI front end for all the logfile convertor.
-slog2filter      A SLOG-2 formating and filtering program
+slog2filter      A SLOG-2 formating and filtering program.
+slog2updater     A SLOG-2 format update program.
 slog2print:      A SLOG-2 serial printing program, i.e. scalable.
 slog2navigator:  Another SLOG-2 printing program with navigation feature.
                  aka. baby jumpshot.
@@ -166,7 +167,11 @@ mentioned above has its bytecode archived by the following jar file
 of the same name.  They are
 
 slog2filter.jar: executable jar file that filters or modifies the content
-                 of the slog2 file.
+                 of the slog2 file, e.g. removal of undesirable categories
+                 and their drawables.
+
+slog2updater.jar: executable jar file that updates the file with older slog2 
+                  format to the latest slog2 format.
 
 slog2print.jar: executable jar file prints the slog2 file
                 usage: java -jar slog2print.jar slog2filename
@@ -210,7 +215,7 @@ Using SLOG2 command line utility programs
    preview bands in Jumpshot if the default one does not produce a desirable
    view in Jumpshot.
 
-2) Print Specific Information of SLOG2 File.
+2) Print Specific Information of SLOG2 File:
    a) slog2print prints drawables in the 4 time orders as listed by
       "slog2print -h".
    b) Also, slog2print can print specific features of slog2 file,
@@ -220,7 +225,7 @@ Using SLOG2 command line utility programs
 
    which prints the CategoryMap of flash2.slog2
 
-3) Removal of Undesirable Categories of Drawables.
+3) Removal of Undesirable Categories of Drawables:
    slog2filter can delete specific categories of drawables.
    i.e. using "slog2print -c" to identify the category indexes of undesirable
    drawables, say id1,id2,...idN.  Then do
@@ -230,3 +235,12 @@ Using SLOG2 command line utility programs
    which will create a new_flash2.slog2 file that does not have drawables
    with category indexes, id1,id2,...idN, and with similar file structure
    as the original one.
+
+4) Format Updater:
+   slog2updater updates the logfile with older slog2 format to the latest one.
+
+   slog2filter -o fpilog_new.slog2 fpilog_old.slog2
+
+   which converts the fpilog_old.slog2 with older slog2 format to the
+   latest one named fpilog_new.slog2.
+

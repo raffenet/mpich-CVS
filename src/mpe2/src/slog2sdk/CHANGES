@@ -56,3 +56,20 @@ of TRACE-API in trace_sample/
          corresponding category is undefined.  In that case, the category is
          assumed to be a State category with name UnknownType-INDEX where INDEX
          is the category index that defines the drawable.
+
+2/8/05  Added the support for Event drawable.
+
+3/16/05 Added 4 basic iterator orders: INCRE_STARTTIME, DECRE_STARTTIME,
+        INCRE_FINALTIME, DECRE_FINALTIME for TimeBoundingBox as well as
+        Drawable.  The 4 iterator orders forms the foundation of different
+        iterators allowed by logformat.slog2's input and output APIs.
+
+3/19/05 Added slog2filter that removes undesirable categories of drawables
+        as well as alters the slog2 file structure
+
+5/20/05 Updated SLOG-2 format from version 2.0.5 to 2.0.6 which contains
+        count of real drawables in the preview drawable.  The counts are
+        also available in the category table.
+
+6/2/05 added slog2updater that updates the older slog2 format to the latest
+       one.

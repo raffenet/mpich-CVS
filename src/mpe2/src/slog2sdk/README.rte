@@ -23,6 +23,8 @@ traceTOslog2.jar
 TraceInput.dll
 slog2printserial.jar
 slog2printrecur.jar
+slog2filter.jar
+slog2updater.jar
 clogprint.jar
 traceprint.jar
 
