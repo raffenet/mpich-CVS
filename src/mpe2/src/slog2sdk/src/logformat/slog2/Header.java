@@ -11,9 +11,10 @@ package logformat.slog2;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.io.MixedDataIO;
 import base.io.MixedRandomAccessFile;
 
-public class Header
+public class Header implements MixedDataIO
 {
     public static final int
         BYTESIZE = MixedRandomAccessFile.getStringByteSize( Const.version_ID )
