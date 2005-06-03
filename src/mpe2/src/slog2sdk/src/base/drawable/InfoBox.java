@@ -15,8 +15,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 
 import base.io.MixedDataInputStream;
+import base.io.DataIO;
 
 public class InfoBox extends TimeBoundingBox
+                     implements DataIO
 {
     private static final int INIT_BYTESIZE = 4  /* type_idx */
                                            + 2  /* infobuffer.length */ ; 

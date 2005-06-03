@@ -13,7 +13,10 @@ import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
+import base.io.DataIO;
+
 public class CategorySummary extends CategoryRatios
+                             implements DataIO
 {
     public  static final int         BYTESIZE        = CategoryRatios.BYTESIZE
                                                      + 8; // num_real_objs

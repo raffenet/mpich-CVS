@@ -18,7 +18,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 
-public class ColorAlpha extends Color implements Comparable
+import base.io.DataIO;
+
+public class ColorAlpha extends Color
+                        implements Comparable, DataIO
 {
     public static final int         BYTESIZE         = 5;
 
@@ -57,6 +60,14 @@ public class ColorAlpha extends Color implements Comparable
     public ColorAlpha( Color color, int alpha )
     {
         super( color.getRed(), color.getGreen(), color.getBlue(), alpha );
+        isModifiable  = true;
+    }
+
+    // Used by logformat.slog2.update.UpdatedInputLog
+    public ColorAlpha( Color color )
+    {
+        super( color.getRed(), color.getGreen(), color.getBlue(),
+               color.getAlpha() );
         isModifiable  = true;
     }
 

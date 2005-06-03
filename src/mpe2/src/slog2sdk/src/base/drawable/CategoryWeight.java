@@ -14,10 +14,13 @@ import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
+import base.io.DataIO;
+
 /*
    CategoryWeight extends CategorySummary which extends CategoryRatios
 */
 public class CategoryWeight extends CategorySummary
+                            implements DataIO
 {
     public  static final int         BYTESIZE        = CategorySummary.BYTESIZE
                                                      + 4;  // type_idx

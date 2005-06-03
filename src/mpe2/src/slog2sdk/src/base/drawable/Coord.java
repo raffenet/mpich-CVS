@@ -12,7 +12,9 @@ package base.drawable;
 import java.io.DataInput;
 import java.io.DataOutput;
 
-public class Coord
+import base.io.DataIO;
+
+public class Coord implements DataIO
 {
     public static final int  BYTESIZE = 8  /* time */
                                       + 4  /* lineID */ ;

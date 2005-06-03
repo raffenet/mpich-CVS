@@ -13,7 +13,9 @@ import java.util.Comparator;
 import java.io.DataInput;
 import java.io.DataOutput;
 
-public class CategoryRatios
+import base.io.DataIO;
+
+public class CategoryRatios implements DataIO
 {
     public  static final int         BYTESIZE          = 4   // incl_ratio
                                                        + 4;  // excl_ratio
