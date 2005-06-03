@@ -23,6 +23,7 @@ import base.drawable.YCoordMap;
 import base.drawable.Method;
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.io.MixedDataIO;
 import base.io.MixedDataInputStream;
 import base.io.MixedDataOutputStream;
 
@@ -35,6 +36,7 @@ import base.io.MixedDataOutputStream;
     LineIDMap's value is of type Integer[ num_treenodes ]
 */
 public class LineIDMap extends TreeMap
+                       implements MixedDataIO
 {
     private int       num_treenodes;
     private String    title_label;
