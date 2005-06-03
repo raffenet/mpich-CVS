@@ -93,7 +93,7 @@ int ADIOI_Calc_aggregator(ADIO_File fd,
     /* we index into fd_end with rank_index, and fd_end was allocated to be no
      * bigger than fd->hins->cb_nodes.   If we ever violate that, we're
      * overrunning arrays.  Obviously, we should never ever hit this abort */
-    if (rank_index < fd->hints->cb_nodes)
+    if (rank_index >= fd->hints->cb_nodes)
 	    MPI_Abort(MPI_COMM_WORLD, 1);
 
     /* remember here that even in Rajeev's original code it was the case that
