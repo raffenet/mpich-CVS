@@ -41,6 +41,11 @@ public class YCoordMap
             methods = null;
     }
 
+    public void setMethods( Method[] in_methods )
+    {
+        methods  = in_methods;
+    }
+
     public int getNumOfRows()
     {
         return num_rows;
