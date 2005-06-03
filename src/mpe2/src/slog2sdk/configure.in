@@ -336,30 +336,41 @@ AC_SUBST(logfilesbuild_dir)
 
 
 # Options to disselect individual subpackage
-AC_ARG_ENABLE( build,
+# slog2_enable_{build|source|sample|rlog} are env. variables set by MPE2
+AC_ARG_ENABLE(build,
 [--enable-build                     - Build the jar files from the java source
                                      and the sample TRACE-API implementation.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_build=${slog2_enable_build:-yes} )
+,enable_build=${slog2_enable_build:-yes})
 
-AC_ARG_ENABLE( source,
+AC_ARG_ENABLE(source,
 [--enable-source                    - Build the jar files from the java source.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_source=${slog2_enable_source:-yes} )
+,enable_source=${slog2_enable_source:-yes})
 
-AC_ARG_ENABLE( sample,
+AC_ARG_ENABLE(sample,
 [--enable-sample                    - Build sample TRACE-API implementation.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_sample=${slog2_enable_sample:-yes} )
+,enable_sample=${slog2_enable_sample:-yes})
 
-AC_ARG_ENABLE( rlog,
+AC_ARG_ENABLE(rlog,
 [--enable-rlog                      - Build RLOG TRACE-API implementation.
                                      Java Standard Development Kit, SDK,
                                      is needed.  The default is enable=yes.],
-,enable_rlog=${slog2_enable_rlog:-yes} )
+,enable_rlog=${slog2_enable_rlog:-yes})
+
+AC_ARG_WITH(oldsource,
+[--with-oldsource=OLD_SRCDIR        - Build the old jar files from the given OLD
+                                     Java source and to build slog2updater.
+                                     This option is ignored if --enable-source
+                                     is turned off.  The option should be set
+                                     with a valid directory name. e.g. src_205,
+                                     then --with-oldsource=src_205.
+                                     The default is no.],
+,with_oldsource="")
 
 if test "$enable_build" = "no" ; then
     enable_source=no;
@@ -373,6 +384,13 @@ sample_dirname="trace_sample"
 rlog_dirname="trace_rlog"
 
 trial_pkgs="source sample rlog"
+
+# The XXX in XXX_dirname below must match with AC_ARG_WITH( XXX, .. ) above
+if test "$enable_source" = "yes" \
+     -a "X$with_oldsource" != "X" ; then
+    oldsource_dirname="$with_oldsource"
+    trial_pkgs="$trial_pkgs oldsource"
+fi
 
 dnl Cleanup the subpackages' Makefiles if they exist
 AC_MSG_CHECKING( [for leftover Makefiles in subpackages] )
@@ -414,9 +432,13 @@ if test "$enable_rlog" = "yes" \
     selected_pkgs="$selected_pkgs rlog"
     AC_CONFIG_SUBDIRS(trace_rlog)
 fi
-
+if test "X$with_oldsource" != "X" \
+     -a -s $srcdir/$oldsource_dirname/configure ; then
+    selected_pkgs="$selected_pkgs oldsource"
+    AC_CONFIG_SUBDIRS([$oldsource_dirname])
+fi
 # Define bindir's executables, and pass them down to sbindir's install-package
-BASIC_PGMS="clogprint clogTOslog2 clog2print clog2TOslog2 slog2navigator slog2print slog2filter logconvertor jumpshot"
+BASIC_PGMS="clogprint clogTOslog2 clog2print clog2TOslog2 slog2navigator slog2print slog2filter slog2updater logconvertor jumpshot"
 TRACE_PGMS="traceprint traceTOslog2"
 
 if test "x$TRACE_LIBDIR" != "x" ; then
