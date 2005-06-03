@@ -11,7 +11,7 @@ import inspect
 from  sys       import  version_info, stdout, exit
 from  os        import  path, environ, getuid, strerror, unlink, read, access, R_OK, X_OK
 from  os        import  error as os_error, close as osclose
-from  marshal   import  dumps, loads
+from  cPickle   import  dumps, loads
 from  pwd       import  getpwuid, getpwnam
 from  grp       import  getgrall
 from  types     import  TupleType
