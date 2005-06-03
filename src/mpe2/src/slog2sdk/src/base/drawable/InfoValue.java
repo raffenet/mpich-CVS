@@ -11,8 +11,9 @@ package base.drawable;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.io.MixedDataIO;
 
-public class InfoValue
+public class InfoValue implements MixedDataIO
 {
     private InfoType  type;
     private Object    value;

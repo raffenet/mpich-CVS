@@ -27,6 +27,7 @@ import java.util.Iterator;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.io.MixedDataIO;
 import base.topology.Line;
 import base.topology.PreviewEvent;
 import base.topology.PreviewState;
@@ -36,6 +37,7 @@ import base.topology.State;
 */
 
 public class Shadow extends Primitive
+                    implements MixedDataIO
 {
     private static final int     BYTESIZE   = TimeBoundingBox.BYTESIZE /*super*/
                                             + 8  /* num_real_objs */

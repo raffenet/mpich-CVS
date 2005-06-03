@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import base.io.MixedDataInputStream;
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.io.MixedDataIO;
 import base.topology.Line;
 import base.topology.Arrow;
 import base.topology.State;
@@ -32,6 +33,7 @@ import base.topology.Event;
 
 // Cloneable interface is for the creation of Shadow. 
 public class Composite extends Drawable
+                       implements MixedDataIO
 //                       implements Cloneable
 {
     private static final int INIT_BYTESIZE   = 2  /* primes.length */ ; 
