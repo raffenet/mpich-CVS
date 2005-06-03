@@ -12,7 +12,9 @@ package base.drawable;
 import java.io.DataInput;
 import java.io.DataOutput;
 
-public class InfoType
+import base.io.DataIO;
+
+public class InfoType implements DataIO
 {
     public static final int       BYTESIZE = 1;
 
@@ -46,7 +48,8 @@ public class InfoType
     {
         return (    this.equals( STR )   || this.equals( INT2 )
                  || this.equals( INT4 )  || this.equals( INT8 )
-                 || this.equals( BYTE4 ) || this.equals( BYTE8 ) );
+                 || this.equals( BYTE4 ) || this.equals( BYTE8 )
+                 || this.equals( FLT4 )  || this.equals( FLT8 ) );
     }
 
     public void writeObject( DataOutput outs )
