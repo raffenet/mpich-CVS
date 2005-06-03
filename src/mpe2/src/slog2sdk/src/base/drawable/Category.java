@@ -16,9 +16,10 @@ import java.util.Iterator;
 
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
+import base.io.MixedDataIO;
 // import java.awt.Shape;
 
-public class Category
+public class Category implements MixedDataIO
 {
     private int             index;
     private String          name;
@@ -149,6 +150,18 @@ public class Category
         return color;
     }
 
+    // For logformat.slog2.update.UpdatedInputLog
+    public void setWidth( int in_width )
+    {
+        width      = in_width;
+    }
+
+    // For logformat.slog2.update.UpdatedInputLog
+    public int getWidth()
+    {
+        return width;
+    }
+
     public void setInfoKeys( String labels )
     {
         if ( labels != null ) {
@@ -196,9 +209,21 @@ public class Category
         }
     }
 
+    // For logformat.slog2.update.UpdatedInputLog
+    public void setInfoKeys( String[] in_infokeys )
+    {
+        this.infokeys = in_infokeys;
+    }
+
     public String[] getInfoKeys()
     {
         return this.infokeys;
+    }
+
+    // For logformat.slog2.update.UpdatedInputLog
+    public void setInfoTypes( InfoType[] in_infotypes )
+    {
+        this.infotypes = in_infotypes;
     }
 
     public InfoType[] getInfoTypes()
@@ -206,7 +231,7 @@ public class Category
         return this.infotypes;
     }
 
-    /*  For DobjDef constructor */
+    // For TRACE-API's DobjDef constructor
     public void setMethodIDs( int[] methodIDs )
     {
         if ( methodIDs != null && methodIDs.length > 0 ) {
@@ -217,6 +242,18 @@ public class Category
         else
             methods = null;
     }
+
+    // For logformat.slog2.update.UpdatedInputLog
+    public void setMethods( Method[] in_methods )
+    {
+        methods = in_methods;
+    }
+
+    // For logformat.slog2.update.UpdatedInputLog
+    public Method[] getMethods()
+    {
+        return methods;
+    } 
 
     public CategorySummary getSummary()
     {
