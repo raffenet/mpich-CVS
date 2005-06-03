@@ -36,7 +36,10 @@ import logformat.slog2.LineIDMap;
    base.drawable.InputAPI, this class essentially extends both
    base.drawable.InputAPI and old_base.drawable.InputAPI which are conflicting
    to each other, e.g. getNextKind() is returning both old_base.drawable.Kind
-   as well as base.drawable.Kind.
+   as well as base.drawable.Kind.  Since old_base.drawable.InputAPI is
+   being implemented first in the class hierarchy, old_base.drawable.InputAPI
+   will be the one found when compiling this class.  The causes compilation
+   failure.
    
    public class WrappedInputLog extends PipedInputLog
                                 implements InputAPI
@@ -52,14 +55,17 @@ public class WrappedInputLog implements InputAPI
     // The following map could be made static ?
     private Map                   kind_map;
     private Map                   topo_map;
-/*
-    private Map                   infotype_map;
-    private Map                   method_map;
-*/
 
     private MemoryPipedStream     mem_pipe;
     private int                   mem_pipe_resize_count;
 
+    /*
+       updateObject()'s mem_pipe receives old_obj as input and
+       spits new_obj as output.  Since the mechanism relies on MixedDataIO
+       interface, the output new_obj will be corrected as long as
+       the beginning portion of the memory layout done by the writeObject()
+       matches that done by the readObject().
+    */
     private void updateObject( final old_base.io.MixedDataIO  old_obj,
                                      MixedDataIO              new_obj )
     {
@@ -109,22 +115,6 @@ public class WrappedInputLog implements InputAPI
         topo_map.put( old_base.drawable.Topology.EVENT, Topology.EVENT );
         topo_map.put( old_base.drawable.Topology.STATE, Topology.STATE );
         topo_map.put( old_base.drawable.Topology.ARROW, Topology.ARROW );
-
-/*
-        infotype_map  = new HashMap();
-        infotype_map.put( old_base.drawable.InfoType.STR,   InfoType.STR );
-        infotype_map.put( old_base.drawable.InfoType.INT2,  InfoType.INT2 );
-        infotype_map.put( old_base.drawable.InfoType.INT4,  InfoType.INT4 );
-        infotype_map.put( old_base.drawable.InfoType.INT8,  InfoType.INT8 );
-        infotype_map.put( old_base.drawable.InfoType.BYTE4, InfoType.BYTE4 );
-        infotype_map.put( old_base.drawable.InfoType.BYTE8, InfoType.BYTE8 );
-        infotype_map.put( old_base.drawable.InfoType.FLT4,  InfoType.FLT4 );
-        infotype_map.put( old_base.drawable.InfoType.FLT8,  InfoType.INT8 );
-
-        method_map    = new HashMap();
-        method_map.put( old_base.drawable.Method.CONNECT_COMPOSITE_STATE,
-                        Method.CONNECT_COMPOSITE_STATE );
-*/
     }
 
     public boolean isSLOG2()
@@ -163,51 +153,6 @@ public class WrappedInputLog implements InputAPI
         return (Topology) topo_map.get( old_dobj_ins.getNextTopology() );
     }
 
-/*
-    public Category getNextCategory()
-    {
-        old_base.drawable.Category    old_type;
-        Category                      new_type;
-        old_base.drawable.InfoType[]  old_infotypes;
-        InfoType[]                    new_infotypes;
-        old_base.drawable.Method[]    old_methods;
-        Method[]                      new_methods;
-        ColorAlpha                    new_color;
-        Topology                      new_topo;
-
-        old_type  = old_dobj_ins.getNextCategory();
-        new_topo  = (Topology) topo_map.get( old_type.getTopology() );
-        new_color = new ColorAlpha( (Color) old_type.getColor() );
-        new_type  = new Category( old_type.getIndex(), old_type.getName(),
-                                  new_topo, new_color, old_type.getWidth() );
-
-        new_type.setInfoKeys( old_type.getInfoKeys() );
-
-        old_infotypes = old_type.getInfoTypes();
-        new_infotypes = null;
-        if ( old_infotypes != null && old_infotypes.length > 0 ) {
-            new_infotypes  = new InfoType[ old_infotypes.length ];
-            for ( int idx = 0; idx < new_infotypes.length; idx++ ) {
-                new_infotypes[ idx ]
-                = (InfoType) infotype_map.get( old_infotypes[ idx ] );
-            }
-        }
-        new_type.setInfoTypes( new_infotypes );
-
-        old_methods = old_type.getMethods();
-        new_methods = null;
-        if ( old_methods != null && old_methods.length > 0 ) {
-            new_methods  = new Method[ old_methods.length ];
-            for ( int idx = 0; idx < new_methods.length; idx++ ) {
-                new_methods[ idx ]
-                = (Method) method_map.get( old_methods[ idx ] );
-            }
-        }
-        new_type.setMethods( new_methods );
-
-        return new_type;
-    }
-*/
     public Category getNextCategory()
     {
         old_base.drawable.Category    old_type;
@@ -220,36 +165,6 @@ public class WrappedInputLog implements InputAPI
         return new_type;
     }
 
-/*
-    public YCoordMap getNextYCoordMap()
-    {
-        old_base.drawable.YCoordMap   old_ymap;
-        YCoordMap                     new_ymap;
-        old_base.drawable.Method[]    old_methods;
-        Method[]                      new_methods;
-
-        old_ymap  = old_dobj_ins.getNextYCoordMap();
-        new_ymap  = new YCoordMap( old_ymap.getNumOfRows(),
-                                   old_ymap.getNumOfColumns(),
-                                   old_ymap.getTitleName(),
-                                   old_ymap.getColumnNames(),
-                                   old_ymap.getMapElems(),
-                                   null );
-
-        old_methods = old_ymap.getMethods();
-        new_methods = null;
-        if ( old_methods != null && old_methods.length > 0 ) {
-            new_methods  = new Method[ old_methods.length ];
-            for ( int idx = 0; idx < new_methods.length; idx++ ) {
-                new_methods[ idx ]
-                = (Method) method_map.get( old_methods[ idx ] );
-            }
-        }
-        new_ymap.setMethods( new_methods );
-
-        return new_ymap;
-    }
-*/
     public YCoordMap getNextYCoordMap()
     {
         old_base.drawable.YCoordMap   old_ymap;
