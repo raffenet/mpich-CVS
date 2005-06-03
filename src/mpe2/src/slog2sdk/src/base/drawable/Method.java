@@ -12,8 +12,10 @@ package base.drawable;
 import java.io.DataInput;
 import java.io.DataOutput;
 
+import base.io.DataIO;
+
 //  A place holder for "Method".  It is meant to be extended
-public class Method
+public class Method implements DataIO
 {
     public static final  int       CONNECT_COMPOSITE_STATE_ID  = 1;
 

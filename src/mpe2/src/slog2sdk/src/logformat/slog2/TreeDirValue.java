@@ -12,9 +12,10 @@ package logformat.slog2;
 import java.io.DataInput;
 import java.io.DataOutput;
 
+import base.io.DataIO;
 import base.drawable.TimeBoundingBox;
 
-public class TreeDirValue
+public class TreeDirValue implements DataIO
 {
     public static final int  BYTESIZE = TimeBoundingBox.BYTESIZE
                                       + FileBlockPtr.BYTESIZE;

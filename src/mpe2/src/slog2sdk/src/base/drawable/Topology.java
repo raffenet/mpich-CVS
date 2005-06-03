@@ -12,8 +12,10 @@ package base.drawable;
 import java.io.DataInput;
 import java.io.DataOutput;
 
+import base.io.DataIO;
+
 //  A place holder for "shape".  It is meant to be extended
-public class Topology
+public class Topology implements DataIO
 {
     public static final  int         EVENT_ID  = 0;
     public static final  int         STATE_ID  = 1;

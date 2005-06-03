@@ -13,7 +13,9 @@ import java.util.Comparator;
 import java.io.DataOutput;
 import java.io.DataInput;
 
-public class TreeNodeID // implements Comparable
+import base.io.DataIO;
+
+public class TreeNodeID implements DataIO // , Comparable
 {
     public static final int BYTESIZE = 2  /* depth */
                                      + 4  /* xpos  */ ;

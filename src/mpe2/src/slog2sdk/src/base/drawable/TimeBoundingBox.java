@@ -13,7 +13,9 @@ import java.util.Comparator;
 import java.io.DataOutput;
 import java.io.DataInput;
 
-public class TimeBoundingBox
+import base.io.DataIO;
+
+public class TimeBoundingBox implements DataIO
 {
     public  static final TimeBoundingBox  ALL_TIMES
                          = new TimeBoundingBox( Double.NEGATIVE_INFINITY,
