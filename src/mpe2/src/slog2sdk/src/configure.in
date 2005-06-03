@@ -77,6 +77,16 @@ AC_ARG_WITH(jflags,
                                      optimization flags, -O, to the java 
                                      compiler], JFLAGS="$withval")
 
+AC_ARG_WITH(oldsource,
+[--with-oldsource=OLD_SRCDIR        - Build slog2updater from the given OLD
+                                     Java source directory OLD_SRCDIR which
+                                     should be a valid directory name in the
+                                     parent directory of this configure.
+                                     e.g. src_205, --with-oldsource=src_205.
+                                     The default is old_src.],
+old_slog2srcdir="$withval", old_slog2srcdir="old_src")
+AC_SUBST(old_slog2srcdir)
+
 # Append "-g" to JFLAGS if enable_g=yes
 if test "$enable_g" = "yes" ; then
     if test -z "`echo $JFLAGS | grep "\-g"`" ; then
@@ -389,4 +399,4 @@ if test ! -d $libbuild_dir ; then
 fi
 AC_SUBST(libbuild_dir)
 
-AC_OUTPUT(Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/clog2/Makefile logformat/clog2TOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile logformat/slog2/pipe/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile viewer/launcher/Makefile)
+AC_OUTPUT(Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/clog2/Makefile logformat/clog2TOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile logformat/slog2/pipe/Makefile logformat/slog2/update/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile viewer/launcher/Makefile)
