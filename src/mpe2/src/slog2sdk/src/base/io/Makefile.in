@@ -22,8 +22,8 @@ TARGET  = $(libbuild_dir)/io.jar
 PACKAGE = base.io
 SRC     = MixedDataInput.java MixedDataOutput.java \
           MixedDataInputStream.java MixedDataOutputStream.java \
-          MixedRandomAccessFile.java BufArrayOutputStream.java \
-          DataIO.java MixedDataIO.java
+          MixedRandomAccessFile.java DataIO.java MixedDataIO.java \
+          BufArrayOutputStream.java BufArrayPipedStream.java
 
 OBJ    = $(SRC:.java=.class)
 
