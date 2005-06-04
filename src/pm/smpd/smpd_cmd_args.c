@@ -354,14 +354,13 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	smpd_get_opt(argcp, argvp, "/RegServer"))
     {
 	char phrase[SMPD_PASSPHRASE_MAX_LENGTH]="", port_str[12]="";
-	char version[100]="";
 
 	if (smpd_remove_service(SMPD_FALSE) == SMPD_FALSE)
 	{
 	    printf("Unable to remove the previous installation, install failed.\n");
 	    ExitProcess(0);
 	}
-	
+
 	if (smpd_get_opt_string(argcp, argvp, "-phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH) ||
 	    smpd_get_win_opt_string(argcp, argvp, "/phrase", phrase, SMPD_PASSPHRASE_MAX_LENGTH))
 	{
