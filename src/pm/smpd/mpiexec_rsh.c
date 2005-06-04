@@ -195,7 +195,7 @@ int start_pmi_server(int nproc, char *host, int len, int *port)
 {
     char cmd[100];
     char line[1024];
-    char *argv0;
+    char *argv0 = NULL;
 
     if (smpd_process.mpiexec_argv0 != NULL)
     {
@@ -250,7 +250,7 @@ int mpiexec_rsh()
     char *env_str;
     int maxlen;
     MPIDU_Sock_t abort_sock;
-    smpd_context_t *abort_context;
+    smpd_context_t *abort_context = NULL;
     smpd_command_t *cmd_ptr;
 
     smpd_enter_fn("mpiexec_rsh");
