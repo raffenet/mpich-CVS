@@ -54,7 +54,7 @@ restart:
 	    index = 0;
 	    len = 100;
 	    temp_list = NULL;
-	    while (1)
+	    for(;;)
 	    {
 		result = RegEnumKeyEx(hKey, index, name, &len, NULL, NULL, NULL, &t);
 		if (result == ERROR_NO_MORE_ITEMS)
@@ -66,7 +66,7 @@ restart:
 		    if (RegOpenKeyEx(hKey, name, 0, KEY_READ, &hProcKey) == ERROR_SUCCESS)
 		    {
 			len = 1024;
-			if (RegQueryValueEx(hProcKey, "exe", NULL, NULL, value, &len) == ERROR_SUCCESS)
+			if (RegQueryValueEx(hProcKey, "exe", NULL, NULL, (LPBYTE)value, &len) == ERROR_SUCCESS)
 			{
 			    node = malloc(sizeof(smpd_registry_proc));
 			    strcpy(node->pid, name);
@@ -192,7 +192,7 @@ restart:
 		}
 		index = 0;
 		len = 100;
-		while (1)
+		for(;;)
 		{
 		    result = RegEnumKeyEx(hKey, index, name, &len, NULL, NULL, NULL, &t);
 		    if (result == ERROR_NO_MORE_ITEMS)
