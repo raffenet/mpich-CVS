@@ -11,6 +11,7 @@
 #include "mpichconf.h"
 #include "mpichtimer.h"
 #include <stdio.h>
+#define MPIU_UNREFERENCED_ARG(a) a
 
 /*
  * Windows only mpi binding
@@ -1653,6 +1654,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     char name[MAX_DLL_NAME];
     BOOL result = TRUE;
 
+    MPIU_UNREFERENCED_ARG(hinstDLL);
+    MPIU_UNREFERENCED_ARG(lpReserved);
+
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
@@ -2594,6 +2598,7 @@ int MPI_Get_processor_name( char *name, int *resultlen )
 
 int MPI_Pcontrol(const int level, ...)
 {
+    MPIU_UNREFERENCED_ARG(level);
     return MPI_SUCCESS;
 }
 
@@ -4261,6 +4266,7 @@ int PMPI_Get_processor_name( char *name, int *resultlen )
 
 int PMPI_Pcontrol(const int level, ...)
 {
+    MPIU_UNREFERENCED_ARG(level);
     return MPI_SUCCESS;
 }
 
