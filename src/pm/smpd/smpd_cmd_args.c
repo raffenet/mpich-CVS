@@ -404,7 +404,7 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	if (!smpd_setup_scp())
 	{
 	    printf("Failed to register smpd's Service Principal Name with the domain controller.\n");
-	    ExitProcess(-1);
+	    ExitProcess((UINT)-1);
 	}
 	printf("Service Principal Name registered with the domain controller.\n");
 	printf("SMPD is now capable of launching processes using passwordless delegation.\n");
