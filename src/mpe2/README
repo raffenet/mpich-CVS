@@ -310,7 +310,12 @@ logconvertor : a standalone GUI based convertor that invokes clog2TOslog2
 slog2filter : a SLOG-2 to SLOG-2 logfile convertor.  It allows for removal
               unwanted categories (when used with slog2print -c).  It also
               allows for changing of the SLOG-2 internal structure, e.g.
-              modify the duration of preview drawable.
+              modify the duration of preview drawable.  The tool reads
+              and writes SLOG-2 file of same version.
+
+slog2updater: a SLOG-2 file format update utility.  It is essentially
+              a slog2filter that reads in older SLOG-2 file and writes
+              out the latest SLOG-2 file format.
 
 
 Log Format Print Programs
