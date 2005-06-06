@@ -7,7 +7,6 @@
 /* style: allow:fprintf:1 sig:0 */
 
 #include "mpiimpl.h"
-#include "namepub.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Finalize */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -142,13 +141,6 @@ int MPI_Finalize( void )
     /* FIXME: Why is this not one of the finalize callbacks?.  Do we need
        pre and post MPID_Finalize callbacks? */
     MPIU_Timer_finalize();
-
-#ifdef HAVE_NAMEPUB_SERVICE
-    if (MPIR_Namepub)
-        mpi_errno = MPID_NS_Free( &MPIR_Namepub );
-#endif
-
-    MPIR_Free_err_dyncodes();
 
     mpi_errno = MPID_Finalize();
     MPIU_ERR_CHKANDSTMT((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**fail");
