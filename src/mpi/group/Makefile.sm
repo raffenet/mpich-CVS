@@ -5,7 +5,9 @@ mpi_sources = group_compare.c group_difference.c group_excl.c \
 
 HEADERS = group.h
 
-lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} grouputil.c groupdebug.c
+#  groupdebug.c contains routines that were used for debugging the 
+#  group routines, but are not needed or used in the current code.
+lib${MPILIBNAME}_a_SOURCES = ${mpi_sources} grouputil.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 profilelib_${MPILIBNAME} = ${PMPILIBNAME}
 profilelib_${MPILIBNAME}_SOURCES = ${mpi_sources}
