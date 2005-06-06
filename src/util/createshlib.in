@@ -35,6 +35,8 @@ srclibname=""
 destlibname=""
 destdir=""
 Show=eval
+exportDefs=""
+dependentLibs=""
 
 # Get the options
 nextarg=""
@@ -46,6 +48,12 @@ for arg in "$@" ; do
 	   ;;
 	   -rpath)
 	   destdir=$arg
+	   ;;
+	   -export)
+	   # The libtool option is -export-symbols, and the file is
+	   # standardized as foo.sym, containing only the symbols
+	   # to export, one per line.
+	   exportDefs=$arg
 	   ;;
 	   *)
 	   # Ignoring things like version info for now
@@ -61,11 +69,14 @@ for arg in "$@" ; do
 
    case $arg in 
        --mode=*) mode=$option ;;
-       -o|-rpath|-version-info) # next arg is value for this option
+       -o|-rpath|-version-info|-export) # next arg is value for this option
        nextarg=$arg
        ;;
        -echo) set -x ;;
        -dryrun) Show=echo ;;
+       -l*|-L*)
+       dependentLibs="$dependentLibs $arg"
+       ;;
        *)
        # The remaining arguments are used for install
        if [ -z "$srclibname" ] ; then
@@ -125,19 +136,44 @@ if [ $mode = link ] ; then
     # though many systems can use a similar model
 
     case $libtype in 
-    gcc-osx)
-    # Mac OS/X
-    if [ -z "$destlibname" ] ; then
-	abssrclibdir=`(cd $srclibdir && pwd)`
-        destlibname="$abssrclibdir/$srclibbase.$SHLIB_EXT"
-    fi
-    $Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT \
-		  -install_name $destlibname .tmp/*.o
-		  ;;		
-    *)
-    # This is the default model
-    $Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT .tmp/*.o
-    ;;
+	gcc-osx|osx-gcc)
+        # Mac OS/X
+	if [ -z "$destlibname" ] ; then
+	    abssrclibdir=`(cd $srclibdir && pwd)`
+	    destlibname="$abssrclibdir/$srclibbase.$SHLIB_EXT"
+	fi
+	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT \
+	    -install_name $destlibname .tmp/*.o
+	;;		
+
+	cygwin|cygwin-gcc)
+	# Experimental (incomplete) code to create a cygwin dll
+	# Create the dll and the import library.  A file 
+	# foo.def, containing 
+	#    EXPORTS
+	#    symbol names, one per line
+	# will cause only those symbols to be exported.
+	# Note that we include any dependent libs because these are needed
+	# for Windows-style dlls
+	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT $exportDefs \
+	    -Wl,--out-implib,$srclibbase.a \
+	    .tmp/*.o $dependentLibs
+	# Create the import library
+	#dlltool --export-all-symbols --dllname $srclibbase.$SHLIB_EXT \
+	#    --output-lib $srclibbase.lib
+	# instead of using dlltool, later versions of gcc allow you to use
+	# -Wl,--out-implib,$srclibbase.a
+	# Note that we need to find a way to separate the import
+	# library from the static library.
+	# It is also very useful to have a file that provides the
+	# names of the symbols that need to be exported, such as 
+	# mpi.def
+	;;
+
+	*)
+        # This is the default model
+	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT .tmp/*.o
+	;;
     esac
 
     # Common cleanup code
@@ -157,4 +193,10 @@ if [ "$postmode" = install ] ; then
 	destlibname="$destdir/$srclibname.$SHLIB_EXT"
     fi
     $Show $INSTALL_PROGRAM $srclibdir/$srclibbase.$SHLIB_EXT $destlibname
+    if [ "$libtype" = "cygwin-gcc" ] ; then
+	# We must also install the import library
+	# Eventually, we might want to install the .dll and the .a 
+	# into different directories
+	$Show $INSTALL_PROGRAM $srclibdir/$srclibbase.a $destdir/$srclibbase.a
+    fi
 fi
