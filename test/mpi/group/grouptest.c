@@ -22,12 +22,6 @@ int main( int argc, char *argv[] )
 
     MPI_Init(0,0);
 
-/* #define MPIR_TEST_GROUPS */
-#ifdef MPIR_TEST_GROUPS
-    /* Process for each rank in the group */
-    for (myrank=0; myrank<16; myrank++) {
-	MPITEST_Group_create( 16, myrank, &g1 ); 
-#else
 	MPI_Comm_group( MPI_COMM_WORLD, &g1 );
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
 	MPI_Comm_size( MPI_COMM_WORLD, &size );
@@ -37,7 +31,7 @@ int main( int argc, char *argv[] )
 		     size );
 	    errs++;
 	}
-#endif
+
 	/* 16 members, this process is rank 0, return in group 1 */
 	ranks[0] = myrank; ranks[1] = 2; ranks[2] = 7;
 	if (myrank == 2) ranks[1] = 3;
@@ -175,14 +169,7 @@ int main( int argc, char *argv[] )
 	MPI_Group_free( &g45 );
         MPI_Group_free( &g1 );
 
-#ifdef MPIR_TEST_GROUPS
-    }
-#endif
-    
-#ifdef MPIR_TEST_GROUPS
-#else
-    if (myrank == 0)
-#endif
+    if (myrank == 0) 
     {
 	if (errs == 0) {
 	    printf( " No Errors\n" );

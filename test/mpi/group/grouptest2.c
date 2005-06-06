@@ -117,34 +117,12 @@ int main( int argc, char **argv )
    together again */
 
 /* Exclude 0 */
-#ifdef DEBUG
-    if (rank == 0) { 
-	printf( "basegroup:\n" );
-	MPITEST_Group_print( basegroup );
-    }
-#endif
     for (i=0; i<size; i++) ranks[i] = i;
     MPI_Group_excl( basegroup, 1, ranks, &g4 );
-#ifdef DEBUG
-    if (rank == 0) {
-	printf( "g4:\n" ); MPITEST_Group_print( g4 ); }
-#endif
 /* Exclude 1-(size-1) */
     MPI_Group_excl( basegroup, size-1, ranks+1, &g5 );
-#ifdef DEBUG
-    if (rank == 0) { 
-	printf( "g5:\n" ); MPITEST_Group_print( g5 ); }
-#endif
     MPI_Group_union( g5, g4, &g6 );
     MPI_Group_compare( basegroup, g6, &result );
-#ifdef DEBUG
-    if (rank == 0) {
-	printf ("basegroup\n" );
-	MPITEST_Group_print( basegroup );
-	printf( "g6\n" );
-	MPITEST_Group_print( g6 );
-    }
-#endif
     if (result != MPI_IDENT) {
 	int usize;
 	errs++;
@@ -171,11 +149,6 @@ int main( int argc, char **argv )
     range[0][1] = size-1;
     range[0][2] = 1;
     MPI_Group_range_excl( basegroup, 1, range, &g8 );
-#ifdef DEBUG
-    if (rank == 0) {
-	MPITEST_Group_print( g8 );
-    }
-#endif
     /* printf( "out  of range excl\n" ); fflush( stdout ); */
     MPI_Group_compare( g5, g8, &result );
     /* printf( "out of compare\n" ); fflush( stdout ); */

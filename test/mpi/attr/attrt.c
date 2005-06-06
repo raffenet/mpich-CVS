@@ -292,13 +292,6 @@ int test_communicators( void )
     MPI_Group_range_incl(world_group, 1, ranges, &rev_group );
     MPI_Comm_create(world_comm, rev_group, &rev_comm );
 
-#ifdef DEBUG
-    printf ("[%d] reverse group\n", world_rank );
-    MPITEST_Group_print( rev_group );
-    printf ("[%d] world group\n", world_rank );
-    MPITEST_Group_print( world_group );
-#endif
-
     MPI_Comm_compare(world_comm, rev_comm, &result );
     if (result != MPI_SIMILAR && world_size != 1) {
 	errs++;

@@ -273,13 +273,6 @@ int test_communicators( void )
     rev_group = world_group.Range_incl( 1, ranges );
     rev_comm  = world_comm.Create( rev_group );
 
-#ifdef DEBUG
-    cout << "[" << world_rank << "] reverse group\n";
-    MPITEST_Group_print( rev_group );
-    cout << "[" << world_rank << "] world group\n";
-    MPITEST_Group_print( world_group );
-#endif
-
     result = MPI::Comm::Compare(world_comm, rev_comm );
     if (result != MPI::SIMILAR && world_size != 1) {
 	errs++;
