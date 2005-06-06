@@ -188,6 +188,14 @@ optinstall_LIB = lib/lib${MPICXXLIBNAME}.a
 #optinstall_SHLIB = lib/lib${MPIFLIBNAME}.@SHLIB_EXT@
 #optinstall_SHLIB = lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@
 
+# Extra information on creating shared libraries, needed on some platforms
+# On the platforms that require these options, we require that 
+# PMPILIBNAME and MPILIBNAME be the same.
+# UNUSED, example for experimentation only
+#lib${MPILIBNAME}_so_EXPORTS = maint/mpi.def
+#libf${MPILIBNAME}_so_EXPORTS = maint/fmpi.def
+#libf${MPILIBNAME}_so_LIBS = -L. -l$(MPILIBNAME)
+
 install_INCLUDE = src/include/mpi.h
 
 optinstall_LIB = lib/lib${PMPILIBNAME}.a
