@@ -5,5 +5,6 @@
 *.gcov
 Makefile
 Makefile.in
+createshlib
 .deps
 .libs
