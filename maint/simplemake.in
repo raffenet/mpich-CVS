@@ -263,6 +263,7 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 # at the top level, particularly for installation.  srcdir is needed only for
 # VPATH builds
 $srcdir_name =               "srcdir          = \@srcdir\@";
+$abs_srcdir_name =           "abs_srcdir      = \@abs_srcdir\@";
 $master_topsrcdir_name =     "master_top_srcdir  = \@master_top_srcdir\@";
 $topsrcdir_name =            "top_srcdir      = \@top_srcdir\@";
 $prefix_name =               "prefix          = \@prefix\@"; 
@@ -281,6 +282,7 @@ $sysconfdir_name =           "sysconfdir      = \@sysconfdir\@";
 $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 
 %dirdefs = ( 'srcdir'     => $srcdir_name,
+             'abs_srcdir' => $abs_srcdir_name,
 	     'top_srcdir' => $topsrcdir_name,
 	     'prefix'     => $prefix_name,
 	     'exec_prefix'=> $exec_prefix_name,
@@ -598,6 +600,16 @@ sub ReadMfile {
 	    # Keep track of source files
 	    &SaveSrcNames( $libsource );
 	    # We need to include .lo as a necessary suffix.
+        }
+        elsif (/^lib([@\${}\(\)\w-]*)_so_EXPORTS\s*=\s*(.*)$/) {
+            $libname = "$1";
+            $libexports = $2;
+            $shared_libraries_exports{ $libname } = $libexports;
+        }
+        elsif (/^lib([@\${}\(\)\w-]*)_so_LIBS\s*=\s*(.*)$/) {
+            $libname = "$1";
+            $dependentlibs = $2;
+            $shared_libraries_libs{ $libname } = $dependentlibs;
         }
         elsif (/^lib([@\${}\(\)\w-]*)_a_DIR\s*=\s*(\S+)\s*$/) {
 	    # This is an extension over automake.  It makes it easy
@@ -1427,7 +1439,10 @@ sub FindPgmSrcType {
 sub ClearVars {
     # Extensions seen is a property of the makefile
     %ext_seen = ();
-    %dirs_seen = ( "srcdir" => 1 );
+    # We include abs_srcdir because it is useful to know and some
+    # steps may conditionally need it (so we may not know that we also
+    # need abs_srcdir until it is too late to add it)
+    %dirs_seen = ( "srcdir" => 1, "abs_srcdir" => 1 );
     $other_vars = "";
     $other_text = "";
     $regular_sources = "";
@@ -1446,6 +1461,8 @@ sub ClearVars {
     $libcount = 0;
     %libnum    = ();    # Gives number associated with library
     %shared_libraries = ();
+    %shared_libraries_exports = ();
+    %shared_libraries_libs = ();
     %profile_libraries = ();
     %profile_libraries_basename = (); # inverse of profile_libraries
     %profile_library_sources = ();
@@ -2517,7 +2534,7 @@ sub TargetSharedLibraries {
 
 #
 # This is the routine that creates a shared library from a library of
-# shared objects.  NOT TESTED
+# shared objects.  
 # This must be called from the directory containing the library.
 # Still to do: provide a separate directory for the library, so 
 # that a build library may be used instead
@@ -2529,6 +2546,11 @@ sub TargetSharedLibraries {
 # Note that we need to ensure that C_LINK_SHL is defined.  In turn,
 # C_LINK_SHL may need CC, so we add that
 #
+# Another special feature: For some libraries, we may need an exports
+# definition (by default, we'll export all symbols).  This is specified
+# by defining the exports for a given library with a simplemake command:
+# lib(name)_so_EXPORTS = filename
+
 sub TargetSharedLibraryFinal {
     my $libname = $_[0];
     my $newlibname = $_[1];
@@ -2545,35 +2567,27 @@ library, or new library name)\n" if $debug;
 	my $rule = $extdef{"c:o"}; 
 	print FD "$rule\n";
     }
-    if (1) {
-	print FD "# Build the shared library from the shared object files\n";
-	print FD "$libdir/$newlibname: $libdir/$libname
-\t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname -rpath \$(libdir))\n";
+
+    # See if this library needs an exports list
+    my $exports = "";
+    my $libbasename = $libname;
+    $libbasename =~ s/^lib//;
+    $libbasename =~ s/\.la$//;
+    if (defined($shared_libraries_exports{$libbasename})) {
+	my $exportFile = $shared_libraries_exports{$libbasename};
+	if ($libdir ne "." && !($exportFile =~ /^\//)) {
+	    # make sure the exportFile refers to the correct location
+	    $exportFile = "\$(abs_srcdir)/$exportFile";
+	}
+	$exports = "-export $exportFile";
     }
-    else {
-    print FD "# Build the shared library from the shared object files
-$libdir/$newlibname: $libdir/$libname
-\tif [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi
-\t\$(MKDIR_P) $libdir/.tmp
-\t(cd $libdir/.tmp && ar x ../$libname && \\
-\tfor file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\
-\t\tmv \$\$file \$\$bfile.o ; done; \\
-\t\${C_LINK_SHL} -o ../$newlibname *.o)
-\trm -rf $libdir/.tmp\n";
-}
-    # FIXME: Here are the directions for building a shared library under
-    # cygwin:
-    #\t(cd $libdir/.tmp && ar x ../$libname && \\
-    #\tfor file in *.lo ; do bfile=\`basename \$file .lo\` ; \\
-    #\t\tmv \$\$file \$\$bfile.o ; done; \\
-    #\tdlltool -e exports.o -l $libbase.lib *.o
-    #\tgcc -shared *.o -o $newlibname)
-    #
-    # where libbase is like "libmpich", not "libmpich.a", and
-    # the extension is dll, not so, e.g.,
-    # dlltool -e exports.o -l libmpich.lib *.o
-    # gcc -shared *.o -o libmpich.dll
-    #
+    my $otherlibs = "";
+    if (defined($shared_libraries_libs{$libbasename})) {
+	$otherlibs = $shared_libraries_libs{$libbasename};
+    }
+    print FD "# Build the shared library from the shared object files\n";
+    print FD "$libdir/$newlibname: $libdir/$libname
+\t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname $exports -rpath \$(libdir) $otherlibs)\n";
 
     # If there is a profiling library, we need to build it
     # now, as part of this target, to handle the case where the
@@ -2592,19 +2606,25 @@ $libdir/$newlibname: $libdir/$libname
 	}
 	print FD "\tif [ -n \"\@NO_WEAK_SYM\@\" -a \\
 \t\t\"$libbase\" != \"$newbase\" ] ; then \\\n";
-	if (1) {
-	    print FD "\t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname -rpath \$(libdir));\\\n";
+
+	my $libbasename = $libname;
+	$libbasename =~ s/^lib//;
+	$libbasename =~ s/\.la$//;
+	if (defined($shared_libraries_exports{$libbasename})) {
+	    my $exportFile = $shared_libraries_exports{$libbasename};
+	    if ($libdir ne "." && !($exportFile =~ /^\//)) {
+		# make sure the exportFile refers to the correct location
+		$exportFile = "\$(abs_srcdir)/$exportFile";
+	    }
+	    $exports = "-export $exportFile";
 	}
-	else {
-	print FD \
-"\t    if [ -d $libdir/.tmp ] ; then rm -rf $libdir/.tmp ; fi ;\\
-\t    \$(MKDIR_P) $libdir/.tmp ;\\
-\t    (cd $libdir/.tmp && ar x ../$libname && \\
-\t    for file in *.lo ; do bfile=\`basename \$\$file .lo\` ; \\
-\t\tmv \$\$file \$\$bfile.o ; done; \\
-\t    \${C_LINK_SHL} -o ../$newlibname *.o) ;\\
-\t    rm -rf $libdir/.tmp ;\\\n";
-    }
+	my $otherlibs = "";
+	if (defined($shared_libraries_libs{$libbasename})) {
+	    $otherlibs = $shared_libraries_libs{$libbasename};
+	}
+
+	print FD "\t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname $exports -rpath \$(libdir) $otherlibs);\\\n";
+
 	print FD "\tfi\n";
     }
 }
