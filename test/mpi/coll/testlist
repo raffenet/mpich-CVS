@@ -54,6 +54,8 @@ icallgatherv 5
 icgatherv 5
 icscatterv 5
 icalltoall 5
+icalltoallv 5
+icalltoallw 5
 # the opxxx tests look at optional types, and are included for MPICH2 testing.
 # MPI implementations may instead signal errors for these types
 opland 4
