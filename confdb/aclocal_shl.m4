@@ -35,14 +35,16 @@ dnl is 'dylib', and under Windows (including cygwin), this is 'dll'.
 dnl
 dnl Supported values of 'kind' include \:
 dnl+    gcc - Use gcc to create both shared objects and libraries
-dnl.    gcc-osx - Use gcc on Mac OS/X to create both shared objects and
+dnl.    osx-gcc - Use gcc on Mac OS/X to create both shared objects and
 dnl               libraries
+dnl.    solaris-cc - Use native Solaris cc to create shared objects and 
+dnl               libraries
+dnl.    cygwin-gcc - Use gcc on Cygwin to create shared objects and libraries
 dnl-    none - The same as '--disable-sharedlibs'
 dnl
 dnl Others will be added as experience dictates.  Likely names are
 dnl + libtool - For general GNU libtool
-dnl . linux-pgcc - For Portland group under Linux
-dnl - solaris-cc - For Solaris C compiler
+dnl - linux-pgcc - For Portland group under Linux
 dnl
 dnl Notes:
 dnl Shared libraries are only partially implemented.  Additional symbols
@@ -53,10 +55,11 @@ AC_DEFUN(PAC_ARG_SHAREDLIBS,[
 AC_ARG_ENABLE(sharedlibs,
 [--enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gcc     - Standard gcc and GNU ld options for creating shared libraries
-    gcc-osx - Special options for gcc needed only on OS/X
-    solaris - Solaris native (SPARC) compilers for 32 bit systems
+    osx-gcc - Special options for gcc needed only on OS/X
+    solaris-cc - Solaris native (SPARC) compilers for 32 bit systems
+    cygwin-gcc - Special options for gcc needed only for cygwin
     none    - same as --disable-sharedlibs
-Only gcc, gcc-osc, and solaris are currently supported],
+Only gcc, osx-gcc, and solaris-cc are currently supported],
 ,enable_sharedlibs=none;enable_shared=no)
 dnl
 CC_SHL=true
@@ -67,14 +70,15 @@ SHLIB_INSTALL='$(INSTALL_PROGRAM)'
 case "$enable_sharedlibs" in 
     no|none)
     ;;
-    gcc-osx)
+    gcc-osx|osx-gcc)
     AC_MSG_RESULT([Creating shared libraries using GNU for Mac OSX])
-    # Not quite right yet.  See mpich2 req # 1393
     C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flat_namespace'
     CC_SHL='${CC} -fPIC'
-    # No way in osx to specify the location of the shared libraries???!?
+    # No way in osx to specify the location of the shared libraries at link
+    # time (see the code in createshlib in mpich2/src/util)
     C_LINKPATH_SHL=""
     SHLIB_EXT="dylib"
+    enable_sharedlibs="osx-gcc"
     ;;
     gcc)
     AC_MSG_RESULT([Creating shared libraries using GNU])
@@ -91,11 +95,25 @@ case "$enable_sharedlibs" in
     # simple hack
     osname=`uname -s`
     case $osname in 
-    *Darwin*|*darwin*)
-	AC_MSG_ERROR([You must specify --enable-sharedlibs=gcc-osx for Mac OS/X])
-    ;;	
+        *Darwin*|*darwin*)
+	AC_MSG_ERROR([You must specify --enable-sharedlibs=osx-gcc for Mac OS/X])
+        ;;	
+        *CYGWIN*|*cygwin*)
+	AC_MSG_ERROR([You must specify --enable-sharedlibs=cygwin-gcc for Cygwin])
+	;;
     esac
     ;;
+
+    cygwin|cygwin-gcc)
+    AC_MSG_RESULT([Creating shared libraries using GNU under CYGWIN])
+    C_LINK_SHL='${CC} -shared'
+    CC_SHL='${CC}'
+    # DLL Libraries need to be in the user's path (!)
+    C_LINKPATH_SHL=""
+    SHLIB_EXT="dll"
+    enable_sharedlibs="cygwin-gcc"
+    ;;	
+
     libtool)
     AC_MSG_ERROR([Creating shared libraries using libtool not yet supported])
 dnl     dnl Using libtool requires a heavy-weight process to test for 
@@ -134,9 +152,11 @@ dnl
 dnl Other, such as solaris-cc
     solaris|solaris-cc)
     AC_MSG_RESULT([Creating shared libraries using Solaris])
+    # pic32 is appropriate for both 32 and 64 bit Solaris
     C_LINK_SHL='${CC} -G -xcode=pic32'
     CC_SHL='${CC} -xcode=pic32'
     C_LINKPATH_SHL="-R"
+    enable_sharedlibs="solaris-cc"
     ;;
     *)
     AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs])
