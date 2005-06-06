@@ -61,6 +61,8 @@ const char *MPIR_Err_get_dynerr_string( int code );
    defined in the error_string.c file that allowed this package to set 
    the routine. */
 
+static int MPIR_Dynerrcodes_finalize( void * );
+
 /* Local routine to initialize the data structures for the dynamic
    error classes and codes.
 
@@ -97,6 +99,9 @@ static void MPIR_Init_err_dyncodes( void )
     /* Set the routine to provides access to the dynamically created
        error strings */
     MPIR_Process.errcode_to_string = MPIR_Err_get_dynerr_string;
+
+    /* Add a finalize handler to free any allocated space */
+    MPIR_Add_finalize( MPIR_Dynerrcodes_finalize, (void*)0, 9 );
 
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     /* Release the other threads */
@@ -363,20 +368,21 @@ const char *MPIR_Err_get_dynerr_string( int code )
 }
 
 
-void MPIR_Free_err_dyncodes( void )
+static int MPIR_Dynerrcodes_finalize( void *p )
 {
     int i;
 
     if (not_initialized == 0) {
 
-        for (i=0; i<ERROR_MAX_NCLASS; i++) {
+        for (i=0; i<first_free_class; i++) {
             if (user_class_msgs[i])
                 MPIU_Free((char *) user_class_msgs[i]);
         }
 
-        for (i=0; i<ERROR_MAX_NCODE; i++) {
+        for (i=0; i<first_free_code; i++) {
             if (user_code_msgs[i])
                 MPIU_Free((char *) user_code_msgs[i]);
         }
     }
+    return 0;
 }
