@@ -472,6 +472,9 @@ if [ $do_build_configure = yes ] ; then
 	if [ ! -s maint/conftimestamp ] ; then
 	    echo "Rebuilding all configure script because of missing confdbtimestamp"
 	    find . -name configure -print | grep -v maint/configure | xargs rm -f
+	    # If we don't delete the autom4te.cache files, bugs in 
+	    # autoconf may fail to correctly update configure
+	    find . -name autom4te.cache | xargs -r rm -f
 	    date > maint/conftimestamp
 	else
 	    # We can't us a status check here because find will always
