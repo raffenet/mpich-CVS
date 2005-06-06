@@ -101,6 +101,7 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 	{
 	    mpi_errno = MPID_NS_Create( info_ptr, &MPIR_Namepub );
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    MPIR_Add_finalize( (int (*)(void*))MPID_NS_Free, &MPIR_Namepub, 9 );
 	}
 
 	mpi_errno = MPID_NS_Publish( MPIR_Namepub, info_ptr, 
