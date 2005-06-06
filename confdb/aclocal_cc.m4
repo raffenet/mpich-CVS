@@ -984,7 +984,10 @@ if test "$enable_strict_done" != "yes" ; then
 	all)
         enable_strict_done="yes"
         if test "$CC" = "gcc" ; then 
-            COPTIONS="${COPTIONS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long -std=c89"
+	    # Note that -Wall does not include all of the warnings that
+	    # the gcc documentation claims that it does; in particular,
+	    # the -Wunused-parameter option is *not* part of -Wall
+            COPTIONS="${COPTIONS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long -Wunused-parameter -Wunused-value -std=c89"
         fi
 	;;
 
@@ -1038,7 +1041,7 @@ if test "$enable_strict_done" != "yes" ; then
 	all)
         enable_strict_done="yes"
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long -std=c89"
+            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long -std=c89"
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
