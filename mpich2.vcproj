@@ -2595,9 +2595,6 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 				RelativePath=".\src\mpi\errhan\errhandler_set.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\common\error.c">
-			</File>
-			<File
 				RelativePath=".\src\mpi\errhan\error_class.c">
 			</File>
 			<File
