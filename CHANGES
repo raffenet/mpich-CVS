@@ -25,6 +25,26 @@
     is a slog2filter that reads in older logfile format, 2.0.5, and 
     writes out the latest format 2.0.6.
 
+- The following changes have been made to MPD:
+
+  - Nearly all code has been replaced by new code that follows a more
+    object-oriented approach than before.  This has not changed any
+    fundamental behavior or interfaces.
+
+  - There is info support in spawn and spawn_multiple for providing
+    parts of the environment for spawned processes such as search-path
+    and current working directory.  See the Standard for the required
+    fields.
+
+  - mpdcheck has been enhanced to help users debug their cluster and
+    network configurations.
+
+  - CPickle has replaced marshal as the source module for dumps and loads.
+
+  - The mpigdb command has been replaced by mpiexec -gdb.
+
+  - Alternate interfaces can be used.  See the Installer's Guide.
+ 
 
 ===============================================================================
 			       Changes in 1.0.1
