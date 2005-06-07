@@ -1,4 +1,22 @@
 ===============================================================================
+			       Changes in 1.0.2
+===============================================================================
+
+- The following changes have been made to MPE2:
+
+  - MPE2 now build the MPI collective and datatype checking library.
+
+  - SLOG-2 format has been upgraded to 2.0.6 which supports event drawables
+    and provides count of real drawables in preview drawables.
+
+  - new slog2 tools, slog2filter and slog2updater, which both are logfile
+    format convertors.  slog2filter removes undesirable categories of
+    drawables as well as alters the slog2 file structure.  slog2updater
+    is a slog2filter that reads in older logfile format, 2.0.5, and 
+    writes out the latest format 2.0.6.
+
+
+===============================================================================
 			       Changes in 1.0.1
 ===============================================================================
 
