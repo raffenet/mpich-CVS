@@ -99,12 +99,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_44C7027073E84A1E8D8BB85A12E4E133"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_4B04B7DBB6C64D42BEFD64D27B8B07FA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -118,12 +112,6 @@
         "Entry"
         {
         "MsmKey" = "8:_4E24D94FA816421EB7C8570369A0AC6D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_50625EB256D147A880EC8EEFE0547A4A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -775,26 +763,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_44C7027073E84A1E8D8BB85A12E4E133"
-            {
-            "SourcePath" = "8:..\\lib\\mpid.lib"
-            "TargetName" = "8:mpid.lib"
-            "Tag" = "8:"
-            "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_4B04B7DBB6C64D42BEFD64D27B8B07FA"
             {
             "SourcePath" = "8:..\\src\\include\\mpicxx.h"
@@ -841,26 +809,6 @@
             "TargetName" = "8:jumpshot.ico"
             "Tag" = "8:"
             "Folder" = "8:_60A6F950058D46528E9BED665C89BFBF"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_50625EB256D147A880EC8EEFE0547A4A"
-            {
-            "SourcePath" = "8:..\\lib\\mpich2mpid.dll"
-            "TargetName" = "8:mpich2mpid.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1955,7 +1903,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MPICH2"
         "ProductCode" = "8:{CC200C31-7B1B-4284-9480-1EC37774E4CF}"
-        "PackageCode" = "8:{49124069-A2DB-470E-8A07-105BA9531314}"
+        "PackageCode" = "8:{7FB33BF1-9DDC-482A-9B1C-3D851BF0C78B}"
         "UpgradeCode" = "8:{2CC63CCF-15DA-4D23-97BE-D82ACE5600E1}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
