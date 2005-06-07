@@ -13,16 +13,6 @@
             required = "false"
         />
         <unnamed
-            name = "--win64"
-            helpstring = "Generate sizes for 64 bit Windows"
-            required = "false"
-        />
-        <unnamed
-            name = "--win32"
-            helpstring = "Generate sizes for 32 bit Windows"
-            required = "false"
-        />
-        <unnamed
             name = "--enable-timer-type=x86cycle"
             helpstring = "Use the Pentium rdtsc instruction for timing"
             required = "false"
@@ -32,11 +22,12 @@
             helpstring = "Use QueryPerformanceCounter for timing"
             required = "false"
         />
-        <unnamed
+<!--        <unnamed
 			name = "--with-mcxx"
 			helpstring = "Generate the managed C++ interface"
 			required = "false"
 		/>
+-->
 		<unnamed
 			name = "--f77_name_lower"
 			helpstring = "Generate lowercase Fortran interface"
@@ -99,7 +90,7 @@
 		/>
 		<unnamed
 			name = "--cleancode"
-			helpstring = "Clean up the code"
+			helpstring = "Clean up the c++ header file"
 			required = "false"
 		/>
 		<unnamed
@@ -125,6 +116,16 @@
 		<unnamed
 			name = "--genbuild"
 			helpstring = "generate a build script and nmake file"
+			require = "false"
+		/>
+		<unnamed
+			name = "--genbuildfiles"
+			helpstring = "generate the DIRS, SOURCES, etc files necessary for the build tool"
+			require = "false"
+		/>
+		<unnamed
+			name = "--rmbuildfiles"
+			helpstring = "delete the DIRS, SOURCES, etc files created by --genbuildfiles"
 			require = "false"
 		/>
 		<unnamed
@@ -200,6 +201,7 @@ outdir = "OUTDIR"
 cxxflags = "impl_cxxflags"
 extra_flags = ""
 fort_prefix = ""
+remove_buildfiles = false
 '
 ' Miscellaneous settings
 '
@@ -243,13 +245,6 @@ fin.Close()
 argCount = WScript.Arguments.Count
 For arg = 0 To argCount - 1
   argValue = WScript.Arguments(arg)
-'  If argValue = "--win64" Then
-'    bWin64 = True
-'    MPI_AINT64 = "__int64"
-'    BSEND_OVERHEAD64 = "95"
-'    bUseCycleCounter = False
-'  ElseIf argValue = "--win32" Then
-'    bWin64 = False
   If argValue = "--enable-timer-type=x86cycle" Then
     bUseCycleCounter = True
   ElseIf argValue = "--enable-timer-type=queryperformancecounter" Then
@@ -321,6 +316,13 @@ For arg = 0 To argCount - 1
     bVS2005 = True
   ElseIf argValue = "--genbuild" Then
     GenBuild()
+    WScript.Quit
+  ElseIf argValue = "--genbuildfiles" Then
+    GenBuildFiles(".")
+    WScript.Quit
+  ElseIf argValue = "--rmbuildfiles" Then
+    remove_buildfiles = true
+    GenBuildFiles(".")
     WScript.Quit
   ElseIf argValue = "--smpd_version" Then
     UpdateSMPDVersion()
@@ -3954,7 +3956,6 @@ Function GenBuild()
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=shm RLOG=1")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm RLOG=1")
-	' The following paths obviously only work for the x86 code
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install RLOG=1")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI")
@@ -4869,6 +4870,217 @@ End Function
 
 cEcho "Creating winbuild directory"
 GenBuild()
+
+Function ParseDirs(filename)
+	Dim line, fullline
+	'cEcho filename
+	Set fin = f.OpenTextFile(filename)
+	fullline = ""
+	while not fin.AtEndOfStream
+		line = MyTrim(fin.ReadLine)
+		If Left(line, 1) <> "#" Then
+			If Right(line, 1) = "\" Then
+				If fullline = "" Then
+					fullline = Left(line, len(line)-1)
+				Else
+					fullline = fullline & " " & Left(line, len(line)-1)
+				End If
+			Else
+				If fullline = "" Then
+					fullline = line
+				Else
+					fullline = fullline & " " & line
+				End If
+				'OutputLine Right(file.ParentFolder, Len(file.ParentFolder) - trimpath), fullline
+				If Left(fullline, 10) = "SUBDIRS = " Then
+					line = Right(fullline, Len(fullline) - 10)
+					'cEcho line
+					fin.Close
+					ParseDirs = Split(line)
+					Exit Function
+				End If
+				fullline = ""
+			End If
+		End If
+	wend
+	fin.Close
+	ParseDirs = Array() ' return an empty array
+End Function
+
+Function ParseSrcFiles(filename)
+	Dim line, fullline, src_line
+	'cEcho filename
+	Set fin = f.OpenTextFile(filename)
+	fullline = ""
+	src_line = ""
+	while not fin.AtEndOfStream
+		line = MyTrim(fin.ReadLine)
+		If Left(line, 1) <> "#" Then
+			If Right(line, 1) = "\" Then
+				If fullline = "" Then
+					fullline = Left(line, len(line)-1)
+				Else
+					fullline = fullline & " " & Left(line, len(line)-1)
+				End If
+			Else
+				If fullline = "" Then
+					fullline = line
+				Else
+					fullline = fullline & " " & line
+				End If
+				'OutputLine Right(file.ParentFolder, Len(file.ParentFolder) - trimpath), fullline
+				If Left(fullline, 14) = "mpi_sources = " Then
+					src_line = src_line & " " & Right(fullline, Len(fullline) - 14)
+					'cEcho src_line
+				End If
+				If Left(fullline, 14) = "win_sources = " Then
+					src_line = src_line & " " & Right(fullline, Len(fullline) - 14)
+					'cEcho src_line
+				End If
+				If Left(fullline, 28) = "lib${MPILIBNAME}_a_SOURCES =" Then
+					src_line = src_line & " " & Right(fullline, Len(fullline) - 28)
+					'cEcho src_line
+				End If
+				fullline = ""
+			End If
+		End If
+	wend
+	fin.Close
+	ParseSrcFiles = Split(src_line)
+End Function
+
+Function TraverseSubdir(byref dirname)
+	TraverseSubdir = true
+	If dirname = "." Then
+		TraverseSubdir = false
+	End If
+	If dirname = "@device_name@" Then
+		dirname = "ch3"
+	ElseIf dirname = "@channel_name@" Then
+		dirname = "sock"
+	ElseIf dirname = "@pm_name@" Then
+		dirname = "smpd"
+	ElseIf dirname = "@pmi_name@" Then
+		dirname = "smpd"
+	Elseif Left(dirname, 1) = "@" Then
+		TraverseSubdir = false
+	End If
+	If Left(dirname, 1) = "$" Then
+		TraverseSubdir = false
+	End If
+	If dirname = "" Then
+		TraverseSubdir = false
+	End If
+	If dirname = "binding" Then
+		TraverseSubdir = false
+	End If
+End Function
+
+Function GenBuildFiles(dirname)
+	Dim dirs
+	Dim dirs_fout, srcs_fout, mfile, first
+	first = true
+	dirs = ParseDirs(dirname & "\Makefile.sm")
+	For Each subdir in dirs
+		If TraverseSubdir(subdir) Then
+			If remove_buildfiles Then
+				If f.FileExists(dirname & "\DIRS") Then
+					cEcho "del " & dirname & "\DIRS"
+					f.DeleteFile(dirname & "\DIRS")
+				End If
+			Else
+				If first Then
+					Set dirs_fout = f.CreateTextFile(dirname & "\DIRS", true)
+					dirs_fout.Write("DIRS = ")
+					first = false
+				End If
+				dirs_fout.Write("\" & vbCrLf & " " & subdir)
+			End If
+			'cEcho "subdir: '" & dirname & "\" & subdir & "'"
+			GenBuildFiles(dirname & "\" & subdir)
+		End If
+	Next
+	If Not first Then
+		dirs_fout.WriteLine
+		dirs_fout.Close
+		cEcho dirname & "\DIRS"
+	End If
+	If remove_buildfiles Then
+		If f.FileExists(dirname & "\SOURCES") Then
+			cEcho "del " & dirname & "\SOURCES"
+			f.DeleteFile(dirname & "\SOURCES")
+		End If
+		If f.FileExists(dirname & "\makefile") Then
+			cEcho "del " & dirname & "\makefile"
+			f.DeleteFile(dirname & "\makefile")
+		End If
+	Else
+		first = true
+		For Each src_filename in ParseSrcFiles(dirname & "\Makefile.sm")
+			If CompileFile(src_filename) Then
+				'cEcho dirname & "\Makefile.sm" & ": " & src_filename
+				If first Then
+					Set srcs_fout = f.CreateTextFile(dirname & "\SOURCES")
+					srcs_fout.Write("SOURCES = ")
+					first = false
+				End If
+				srcs_fout.Write("\" & vbCrLf & " " & src_filename)
+			End If
+		Next
+		If Not first Then
+			srcs_fout.WriteLine
+			srcs_fout.WriteLine
+			Dim ex, dotdots, includes
+			Set ex = New RegExp
+			ex.Global = True
+			ex.Pattern = "\w+\\"
+			dotdots = ex.Replace(dirname & "\", "..\")
+			srcs_fout.WriteLine("TARGETPATH=." & dotdots & "obj$(BUILD_ALT_DIR)")
+			srcs_fout.WriteLine
+			srcs_fout.WriteLine("TARGETTYPE=LIBRARY")'DYNLINK")
+			srcs_fout.WriteLine
+			srcs_fout.WriteLine("TARGETNAME=mpich2")
+			srcs_fout.WriteLine
+			srcs_fout.WriteLine("DLLDEF=" & dotdots & "mpich2.def")
+			srcs_fout.WriteLine
+			includes = dotdots & "src\include;" & _
+				dotdots & "src\include\win32;" & _
+				dotdots & "src\mpid\ch3\include;" & _
+				dotdots & "src\mpid\ch3\channels\sock\include;" & _
+				dotdots & "src\mpid\ch3\channels\sock\src;" & _
+				dotdots & "src\mpid\common\sock;" & _
+				dotdots & "src\mpid\common\sock\iocp;" & _
+				dotdots & "src\mpi\romio\mpi-io;" & _
+				dotdots & "src\mpi\romio\adio\include;" & _
+				dotdots & "src\mpid\common\datatype;" & _
+				dotdots & "src\mpid\common\locks;" & _
+				dotdots & "src\mpi\datatype;" & _
+				dotdots & "src\pm\smpd;" & _
+				dotdots & "src\mpi\spawn;" & _
+				dotdots & "src\binding\f77"
+			srcs_fout.WriteLine("INCLUDES=$(INCLUDES);" & includes)
+			srcs_fout.WriteLine
+			srcs_fout.WriteLine("C_DEFINES=$(C_DEFINES) -DHAVE_WINDOWS_H -DUSE_WINCONF_H -DMPIO_BUILD_PROFILING -DROMIO_INSIDE_MPICH2 -DHAVE_FORTRAN_BINDING -DMPICH_SKIP_MPICXX")
+			srcs_fout.WriteLine
+			srcs_fout.WriteLine("MSC_WARNING_LEVEL= /W4")
+			srcs_fout.WriteLine
+			srcs_fout.Close
+			cEcho dirname & "\SOURCES"
+			Set mfile = f.CreateTextFile(dirname & "\makefile")
+			mfile.WriteLine("#")
+			mfile.WriteLine("# DO NOT EDIT THIS FILE!!!  Edit .\sources. if you want to add a new source file to this component.")
+			mfile.WriteLine("#")
+			mfile.WriteLine
+			mfile.WriteLine("!INCLUDE $(NTMAKEENV)\makefile.def")
+			mfile.Close
+			cEcho dirname & "\makefile"
+		End If
+	End If
+End Function
+
+' Only build these files if specified: "winconfigure --genbuildfiles"
+'cEcho "Creating build tool files"
+'GenBuildFiles(".")
 
 Function ReplaceBetweenTags(str, tag1, find_str, tag2, replace_str)
 	Dim index, left_str, right_str, start_index, end_index
