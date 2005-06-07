@@ -128,6 +128,12 @@
 			helpstring = "delete the DIRS, SOURCES, etc files created by --genbuildfiles"
 			require = "false"
 		/>
+		<named
+			name = "channel"
+			helpstring = "specify the channel for --genbuildfiles (sock,shm,sshm,ssm,essm,ib)"
+			type = "string"
+			require = "false"
+		/>
 		<unnamed
 			name = "--smpd_version"
 			helpstring = "update the smpd version in smpd.h"
@@ -202,6 +208,7 @@ cxxflags = "impl_cxxflags"
 extra_flags = ""
 fort_prefix = ""
 remove_buildfiles = false
+buildfiles_channel = "sock"
 '
 ' Miscellaneous settings
 '
@@ -242,6 +249,9 @@ mpid_thread_funcs = Replace(mpid_thread_funcs, "sched_yield()", "Sleep(0)")
 fin.Close()
 
 ' Process arguments
+If WScript.Arguments.Named.Exists("channel") Then
+	buildfiles_channel = WScript.Arguments.Named.Item("channel")
+End If
 argCount = WScript.Arguments.Count
 For arg = 0 To argCount - 1
   argValue = WScript.Arguments(arg)
@@ -4957,7 +4967,7 @@ Function TraverseSubdir(byref dirname)
 	If dirname = "@device_name@" Then
 		dirname = "ch3"
 	ElseIf dirname = "@channel_name@" Then
-		dirname = "sock"
+		dirname = buildfiles_channel
 	ElseIf dirname = "@pm_name@" Then
 		dirname = "smpd"
 	ElseIf dirname = "@pmi_name@" Then
@@ -5046,8 +5056,8 @@ Function GenBuildFiles(dirname)
 			includes = dotdots & "src\include;" & _
 				dotdots & "src\include\win32;" & _
 				dotdots & "src\mpid\ch3\include;" & _
-				dotdots & "src\mpid\ch3\channels\sock\include;" & _
-				dotdots & "src\mpid\ch3\channels\sock\src;" & _
+				dotdots & "src\mpid\ch3\channels\" & buildfiles_channel & "\include;" & _
+				dotdots & "src\mpid\ch3\channels\" & buildfiles_channel & "\src;" & _
 				dotdots & "src\mpid\common\sock;" & _
 				dotdots & "src\mpid\common\sock\iocp;" & _
 				dotdots & "src\mpi\romio\mpi-io;" & _
