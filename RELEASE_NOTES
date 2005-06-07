@@ -12,12 +12,7 @@
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
-- Several of the tests in the MPICH2 test suite may fail.  On the other hand, a
-  few hundred pass :-)
-
-  The scancel test is expected to fail for all configurations.
-
-  The sock channel is the only channel that implements dynamic process support
+- The sock channel is the only channel that implements dynamic process support
   (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, etc.).  All other
   channels will experience failures for tests exercising dynamic process
   functionality.
@@ -58,21 +53,9 @@
   in B.
 
 - C++ Binding:
-  The following functions do not yet have C++ bindings
-  Grequest::Create
-  Comm::Join  
   
-  There is an unidentified problem with the intercommunicator collective
-  routines, except for Intercomm::Barrier.
-
   The MPI datatypes corresponding to Fortran datatypes are not available
   (e.g., no MPI::DOUBLE_PRECISION).
-
-  The Comm class is not an Abstract Base Class (ABC).  This does not 
-  affect correct MPI programs, but will allow some incorrect programs to 
-  compile.  In addition, no functions are virtual; the standard requires
-  most (but not all) to be declared virtual. Again, most correct programs
-  will not notice this limitation.
 
   The C++ binding does not implement a separate profiling interface, 
   as allowed by the MPI-2 Standard (Section 10.1.10 Profiling).  
@@ -95,24 +78,6 @@
   alternative commands for MPICH2.  Likewise, MPE_AUTOCONF and MPE_AUTOHEADER
   can be set to specify alternative commands for MPE2.  Obviously, these
   environment variables must be set before running "maint/updatefiles" or
-  "make dist".  At present, we use a patched version of 2.13 for MPICH2 and
-  2.59 for MPE2 for releases, although 2.53 appears to work fine for both
-  packages.  The patch for 2.13 is located in maint/ac2.13.diff.  Later 
-  versions, such as 2.59, have also been used for MPICH2, though only after 
-  some difficulty due to incompatibilities between the various autoconf 
-  versions.
-
-  Developers should also be aware that some versions of autoconf dynamically
-  choose the version based on the contents of the configure.in file.
-  Unfortunately, this means that autoconf may choose incompatible versions of
-  autoconf for different configure.in files in the same project (specifically,
-  some versions of configure pass the values of some of the environment on the
-  command line; earlier versions of configure view these as target platform
-  specifications and generate obscure error messages).  This is made even
-  worse by the fact that, while AC_PREREQ() is supoosed to select the minimum
-  version of autoconf to be used with a configure.in file, these autoconf
-  scripts often use this as the *maximum* version number to use.  You may see
-  this come up in some of the MPICH2 or MPE2 subdirectories; if you do, the
-  best workaround for these buggy versions of autoconf is to select a specific
-  version rather than the version that tries to determine the autoconf version
-  for you.
+  "make dist".  In order to handle incompatibilities between different
+  minor versions of autoconf, we've selected autoconf 2.59 as the version
+  required for MPE2 and MPICH2.
