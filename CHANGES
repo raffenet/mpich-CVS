@@ -2,6 +2,16 @@
 			       Changes in 1.0.2
 ===============================================================================
 
+- Optimizations to the MPI-2 one-sided communication functions for the
+  sshm (scalable shared memory) channel when window memory is
+  allocated with MPI_Alloc_mem (for all three synchronization methods).
+
+- Numerous bug fixes and code cleanup. 
+
+- Fixed memory leaks.
+
+- Fixed shared library builds.
+
 - The following changes have been made to MPE2:
 
   - MPE2 now builds the MPI collective and datatype checking library by default.

@@ -17,9 +17,6 @@
   channels will experience failures for tests exercising dynamic process
   functionality.
 
-  The implementation of MPI-IO has a few outstanding issues with 64-bit
-  pointers, so test failures in these areas are expected on 64-bit platforms.
-
 - Support for the "external32" data representation is incomplete.  This affects
   the MPI_PACK_EXTERNAL and MPI_UNPACK_EXTERNAL routines, as well the external
   data representation capabilities of ROMIO.
