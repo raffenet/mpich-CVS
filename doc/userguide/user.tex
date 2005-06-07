@@ -1006,12 +1006,11 @@ to the include path and
     C:\Program Files\MPICH2\lib
 \end{verbatim}
 to
-the library path.  Add \texttt{cxx.lib} and \texttt{mpi.lib} to the
-Release target link command.  Add \texttt{cxxd.lib} and
-\texttt{mpid.lib} to the Debug target.
+the library path.  Add \texttt{mpi.lib} and \texttt{cxx.lib} to the
+link command.  Add \texttt{cxxd.lib} to the Debug target link instead of
+\texttt{cxx.lib}.
 
-Intel Fortran 8 users should add \texttt{fmpich2d.lib} and
-\texttt{mpich2d.lib} to the link command. 
+Intel Fortran 8 users should add \texttt{fmpich2.lib} to the link command. 
 
 Cygwin users should use \texttt{libmpich2.a} \texttt{libfmpich2g.a}.
 
