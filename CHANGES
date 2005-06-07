@@ -4,7 +4,7 @@
 
 - The following changes have been made to MPE2:
 
-  - MPE2 now build the MPI collective and datatype checking library.
+  - MPE2 now builds the MPI collective and datatype checking library by default.
 
   - SLOG-2 format has been upgraded to 2.0.6 which supports event drawables
     and provides count of real drawables in preview drawables.
