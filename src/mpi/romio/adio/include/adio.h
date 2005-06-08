@@ -389,6 +389,15 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype, 
 		MPI_Datatype filetype, MPI_Info info,  int *error_code);
 
+/* functions to help deal with the array datatypes */
+int ADIO_Type_create_subarray(int ndims,
+                              int *array_of_sizes,
+                              int *array_of_subsizes,
+                              int *array_of_starts,
+                              int order,
+                              MPI_Datatype oldtype,
+                              MPI_Datatype *newtype);
+
 /* MPI_File management functions (in mpio_file.c) */
 MPI_File MPIO_File_create(int size);
 ADIO_File MPIO_File_resolve(MPI_File mpi_fh);

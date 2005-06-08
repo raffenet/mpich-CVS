@@ -27,7 +27,8 @@ AD_OBJECTS = ad_close.o ad_init.o ad_end.o ad_open.o flatten.o \
       ad_read_str_naive.o gencheck.o ad_set_view.o ad_iopen.o \
       ad_write_str_naive.o ad_resize.o ad_read.o ad_write.o ad_iread.o \
       ad_iwrite.o ad_done.o ad_wait.o adi_close.o ad_prealloc.o ad_fcntl.o \
-      ad_iread_fake.o ad_iwrite_fake.o ad_done_fake.o ad_wait_fake.o
+      ad_iread_fake.o ad_iwrite_fake.o ad_done_fake.o ad_wait_fake.o \
+      ad_subarray.o
 
 all: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
