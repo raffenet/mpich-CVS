@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
- *   $Id$
  *
  *   Copyright (C) 2005 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
