@@ -1,9 +1,12 @@
           ROMIO: A High-Performance, Portable MPI-IO Implementation
 
-                      Version <DATE>, <UNRELEASED>
+                      Version 2005-06-09
 
 Major Changes in this version:
 ------------------------------
+* Fixed performance problems with the darray and subarray datatypes
+  when using MPICH2.
+
 * Better support for building against existing MPICH and MPICH2 versions.
 
   When building against an existing MPICH installation, use the
