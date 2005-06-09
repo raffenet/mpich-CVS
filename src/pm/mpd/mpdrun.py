@@ -771,7 +771,12 @@ def get_parms_from_xml_file(parmdb,conSock,msgToMPD):
     fileContents = parmsXMLFile.read()
     if parmdb['delXMLFile']:
         unlink(inXmlFilename)
-    parsedXML = xml.dom.minidom.parseString(fileContents)
+    try:
+        parsedXML = xml.dom.minidom.parseString(fileContents)
+    except:
+        print "mpdrun failed parsing xml file (perhaps from mpiexec); here is the content:"
+        print fileContents
+        exit(-1)
     if parsedXML.documentElement.tagName != 'create-process-group':
         print 'expecting create-process-group; got unrecognized doctype: %s' % \
               (parsedXML.documentElement.tagName)
@@ -940,7 +945,7 @@ def get_parms_from_xml_file(parmdb,conSock,msgToMPD):
         envVarList = p.getElementsByTagName('env')
         for envVarElem in envVarList:
             envkey = envVarElem.getAttribute('name')
-            envval = envVarElem.getAttribute('value')
+            envval = unquote(envVarElem.getAttribute('value'))
             envVals[envkey] = envval
         msgToMPD['envvars'][(loRange,hiRange)] = envVals
     for i in range(len(covered)):

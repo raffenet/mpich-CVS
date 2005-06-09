@@ -408,7 +408,7 @@ def handle_argset(argset,xmlDOC,xmlCPG,machineFileInfo):
             xmlENVVAR = xmlDOC.createElement('env')
             xmlPROCSPEC.appendChild(xmlENVVAR)
             xmlENVVAR.setAttribute('name',  '%s' % (envvar))
-            xmlENVVAR.setAttribute('value', '%s' % (envToSend[envvar]))
+            xmlENVVAR.setAttribute('value', '%s' % quote((envToSend[envvar])))
         if usize:
             xmlENVVAR = xmlDOC.createElement('env')
             xmlPROCSPEC.appendChild(xmlENVVAR)
