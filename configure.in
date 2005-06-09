@@ -189,7 +189,7 @@ AC_ARG_WITH(namepublisher,
                              include
                                no (no service available)
 			       file:directory
-			       mpd],,
+			       ],,
 with_namepublisher=file)
 dnl
 AC_ARG_WITH(cxxlibname,
@@ -1547,6 +1547,10 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     ;;
 
     mpd)
+    # When the mpd nameserver is fixed, also update the A C WITH 
+    # command for the nameserver above.  This has been left in to 
+    # simplify testing of the mpd nameserver.
+    AC_MSG_WARN([The mpd nameserver has bugs.])
     nameserv_name="mpd"
     ;;
 
