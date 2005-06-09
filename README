@@ -591,18 +591,22 @@ MPICH2 includes all of MPI-1 and the following parts of MPI-2:
 MPI-I/O, except for the external data representations (e.g., MPICH2
 includes all of ROMIO)
 
-The active target remote memory access (one-sided) routines are working
-(MPI_Put, MPI_Get, and the related routines).  The passive-target
-routines (MPI_Win_Lock, MPI_Win_Unlock) are working according to the MPI
-standard, but may not perform as expected, since they will not complete
-until an MPI call is made at the target.
+Active-target one-sided communication is implemented. Passive target
+one-sided communication (with MPI_Win_lock and MPI_Win_unlock) is
+implemented but relies on MPI functions at the target for progress to
+occur (the function could well be MPI_Win_free).  The one exception is
+in the sshm channel when window memory is allocated with
+MPI_Alloc_mem. In this case, communication happens without any action
+from the target.
 
 The dynamic process management routines (MPI_Comm_spawn,
 MPI_Comm_Connect, and MPI_Comm_Accept, and their relations) are
-supported for the mpd and smpd process managers.
+supported but only for the sock channel.
 
-Name publishing is supported on shared file systems and within an mpd
-ring.
+Name publishing is supported on shared file systems by
+default. Without a shared file system, it may also work with the MPD
+process manager within a single mpd ring, but this feature is not
+extensively tested.
 
 The "singleton init" feature, whereby a process not started by mpiexec
 can become an MPI process, is supported under the mpd process manager.
