@@ -94,7 +94,7 @@ dist: dist-check
 snap:
 	@version=snap-`date "+%Y%m%d%H%M"` ; \
 	$(MAKE) version=$${version} tag=HEAD doc=no dist-with-version
-	
+
 dist-with-version:
 	@if [ -z "$(version)" ] ; then \
 	    echo "Must invoke with make version=value tag=value dist-with-version" ;\
@@ -111,15 +111,19 @@ dist-with-version:
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
 	( cd tmpdir/${PACKAGE}-${version}/src/mpid && /bin/rm -rf mm rdma globus)
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes develop )
-	( cd tmpdir/${PACKAGE}-${version}/src/pm && /bin/rm -rf forker rmpd ompd)
+	( cd tmpdir/${PACKAGE}-${version}/src/pm && /bin/rm -rf forker rmpd ompd remshell )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'autom4te.cache' \
 	  -print | xargs -r rm -rf)
+	( cd tmpdir//${PACKAGE}-${version} && rm -rf src/mpe2/src/slog2sdk/doc/jumpshot-4/tex  )
 	if test "$(doc)" = "yes" ; then \
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
-	    ( cd tmpdir2 && ./configure && ${MAKE} mandoc && ${MAKE} htmldoc && ${MAKE} latexdoc ) >manlog.txt 2>&1 ; \
+	    ( cd tmpdir2 && ./configure --without-mpe --disable-f90 \
+              --disable-f7 && \
+              ${MAKE} mandoc && ${MAKE} htmldoc && \
+              ${MAKE} latexdoc ) >manlog.txt 2>&1 ; \
 	    if [ ! -d tmpdir2/man ] ; then echo "WARNING: unable to build manpages" ; \
 		(cd tmpdir2 && ls ) ; \
 	    fi ; \
