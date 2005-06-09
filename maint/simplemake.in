@@ -1504,6 +1504,8 @@ sub ClearVars {
     $subdirs_has_autoconf = 0;
     # Suffix definitions
     $ExplicitSuffixes = "";
+    $suffixes = "";
+
     # Document sources and directories
     %docdir = ();
     %docsrc = ();
@@ -2914,7 +2916,7 @@ sub SubForSuffixes {
 # Generate the documentation targets.
 #
 sub TargetDocs {
-    if (! $do_docs || $maint_targets) { return; }
+    if (! $do_docs || ! $maint_targets) { return; }
     my %didkind = ( "html" => 0, "man" => 0, "latex" => 0 );
 
     print FD $makeBlockSep;
