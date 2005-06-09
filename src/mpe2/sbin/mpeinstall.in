@@ -451,17 +451,18 @@ for pkg in logging graphics ; do
         FixInstallFile $libbuild_dir/../$dirvalue/Makefile \
                        $examplesdir/Makefile
 
-        if [ -x $bindir/mpiexec -o -x $DESTDIR$bindir/mpiexec ] ; then
-            $Show "( cd $DESTDIR$examplesdir && \
-                     $RM -f mpiexec && \
-                     $LN_S $bindir/mpiexec mpiexec )"
-            filelist="$filelist $examplesdir/mpiexec" 
-        elif [ -x $bindir/mpirun -o -x $DESTDIR$bindir/mpirun ] ; then
-            $Show "( cd $DESTDIR$examplesdir && \
-                     $RM -f mpirun && \
-                     $LN_S $bindir/mpirun mpirun )"
-            filelist="$filelist $examplesdir/mpirun" 
-        fi
+#        MPICH2 1.0.2 mpd does not sypport symbolic link to mpiexec
+#        if [ -x $bindir/mpiexec -o -x $DESTDIR$bindir/mpiexec ] ; then
+#            $Show "( cd $DESTDIR$examplesdir && \
+#                     $RM -f mpiexec && \
+#                     $LN_S $bindir/mpiexec mpiexec )"
+#            filelist="$filelist $examplesdir/mpiexec" 
+#        elif [ -x $bindir/mpirun -o -x $DESTDIR$bindir/mpirun ] ; then
+#            $Show "( cd $DESTDIR$examplesdir && \
+#                     $RM -f mpirun && \
+#                     $LN_S $bindir/mpirun mpirun )"
+#            filelist="$filelist $examplesdir/mpirun" 
+#        fi
     fi
 done
 
