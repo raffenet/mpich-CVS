@@ -13,54 +13,11 @@
 #endif */
 
 void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type);
-void ADIOI_Flatten_subarray(int ndims,
-			    int *array_of_sizes,
-			    int *array_of_subsizes,
-			    int *array_of_starts,
-			    int order,
-			    MPI_Datatype oldtype,
-			    ADIOI_Flatlist_node *flat,
-			    ADIO_Offset start_offset,
-			    int *inout_index_p);
-void ADIOI_Flatten_darray(int size,
-			  int rank,
-			  int ndims,
-			  int array_of_gsizes[],
-			  int array_of_distribs[],
-			  int array_of_dargs[],
-			  int array_of_psizes[],
-			  int order,
-			  MPI_Datatype oldtype,
-			  ADIOI_Flatlist_node *flat,
-			  ADIO_Offset start_offset,
-			  int *inout_index_p);
 void ADIOI_Flatten_copy_type(ADIOI_Flatlist_node *flat,
 			     int old_type_start,
 			     int old_type_end,
 			     int new_type_start,
 			     ADIO_Offset offset_adjustment);
-
-/* darray helper functions */
-#ifdef MPIIMPL_HAVE_MPI_COMBINER_DARRAY
-static int index_of_type(int type_nr,
-			 int dim_size,
-			 int dim_rank,
-			 int dim_ranks,
-			 int k);
-static int get_cyclic_k(int dim_size,
-			int dim_ranks,
-			int dist,
-			int d_arg);
-static void get_darray_position(int rank,
-				int ranks,
-				int ndims,
-				int array_of_psizes[],
-				int r[]);
-static int local_types_in_dim(int dim_size,
-			      int dim_rank,
-			      int dim_ranks,
-			      int k);
-#endif
 
 /* flatten datatype and add it to Flatlist */
 void ADIOI_Flatten_datatype(MPI_Datatype datatype)
@@ -170,21 +127,6 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 #endif
 #ifdef MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY
     case MPI_COMBINER_SUBARRAY:
-#if 0
-	{
-	    int dims = ints[0];
-	    ADIOI_Flatten_subarray(dims,
-				   &ints[1],        /* sizes */
-				   &ints[dims+1],   /* subsizes */
-				   &ints[2*dims+1], /* starts */
-				   ints[3*dims+1],  /* order */
-				   types[0],        /* type */
-				   flat,
-				   st_offset,
-				   curr_index);
-				   
-	}
-#endif
         {
 	    int dims = ints[0];
 	    MPI_Datatype stype;
@@ -205,18 +147,20 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
     case MPI_COMBINER_DARRAY:
 	{
 	    int dims = ints[2];
-	    ADIOI_Flatten_darray(ints[0],         /* size */
-				 ints[1],         /* rank */
-				 dims,
-				 &ints[3],        /* gsizes */
-				 &ints[dims+3],   /* distribs */
-				 &ints[2*dims+3], /* dargs */
-				 &ints[3*dims+3], /* psizes */
-				 ints[4*dims+3],  /* order */
-				 types[0],
-				 flat,
-				 st_offset,
-				 curr_index);
+	    MPI_Datatype dtype;
+
+	    ADIO_Type_create_darray(ints[0],         /* size */
+				    ints[1],         /* rank */
+				    dims,
+				    &ints[3],        /* gsizes */
+				    &ints[dims+3],   /* distribs */
+				    &ints[2*dims+3], /* dargs */
+				    &ints[3*dims+3], /* psizes */
+				    ints[4*dims+3],  /* order */
+				    types[0],
+				    &dtype);
+	    ADIOI_Flatten(dtype, flat, st_offset, curr_index);
+	    MPI_Type_free(&dtype);
 	}
 	break;
 #endif
@@ -594,44 +538,6 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 #endif
 #ifdef MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY
     case MPI_COMBINER_SUBARRAY:
-#if 0
-	/* first get an upper bound (since we're not optimizing) on the
-	 * number of blocks in the child type.
-	 */
-	MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
-			      &old_ntypes, &old_combiner);
-	ADIOI_Datatype_iscontig(types[0], &old_is_contig);
-
-
-	prev_index = *curr_index;
-	if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig)) {
-	    count = ADIOI_Count_contiguous_blocks(types[0], curr_index);
-	}
-	else {
-	    count = 1;
-	    (*curr_index)++;
-	}
-
-	/* now multiply that by the number of types in the subarray.
-	 *
-	 * note: we could be smarter about this, because chances are
-	 * our data is contiguous in the first dimension if the child
-	 * type is contiguous.
-	 *
-	 * ints[0] - ndims
-	 * ints[ndims+1..2*ndims] - subsizes
-	 */
-	top_count = 1; /* going to tally up # of types in here */
-	for (i=0; i < ints[0]; i++) {
-	    top_count *= ints[ints[0]+1+i];
-	}
-
-	if (top_count > 1) {
-	    num = *curr_index - prev_index;
-	    count *= top_count;
-	    *curr_index += (top_count - 1) * num;
-	}
-#endif
         {
 	    int dims = ints[0];
 	    MPI_Datatype stype;
@@ -655,48 +561,24 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 #ifdef MPIIMPL_HAVE_MPI_COMBINER_DARRAY
     case MPI_COMBINER_DARRAY:
 	{
-	    int dims, k, *ranks;
+	    int dims = ints[2];
+	    MPI_Datatype dtype;
 
-	    MPI_Type_get_envelope(types[0], &old_nints, &old_nadds,
-				  &old_ntypes, &old_combiner);
-	    ADIOI_Datatype_iscontig(types[0], &old_is_contig);
-
-	    prev_index = *curr_index;
-	    if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig)) {
-		count = ADIOI_Count_contiguous_blocks(types[0], curr_index);
-	    }
-	    else {
-		count = 1;
-		(*curr_index)++;
-	    }
-	    
-	    top_count = 1;
-	    dims = ints[2];
-	    ranks = ADIOI_Malloc(sizeof(int) * dims);
-	    get_darray_position(ints[1],         /* rank */
-				ints[0],         /* size */
-				dims,
-				&ints[3*dims+3], /* psizes */
-				ranks);
-
-	    for (i=0; i < dims; i++) {
-		k = get_cyclic_k(ints[3+i],         /* gsize */
-				 ints[3*dims+3+i],  /* psize */
-				 ints[dims+3+i],    /* distrib */
-				 ints[2*dims+3+i]); /* darg */
-
-		top_count *= local_types_in_dim(ints[3+i],       /* gsize */
-						ranks[i],        /* dim rank */
-						ints[3*dims+3+i],/* psize */
-						k);
-	    }
-	    ADIOI_Free(ranks);
-
-	    if (top_count > 1) {
-		num = *curr_index - prev_index;
-		count *= top_count;
-		*curr_index += (top_count - 1) * num;
-	    }
+	    ADIO_Type_create_darray(ints[0],         /* size */
+				    ints[1],         /* rank */
+				    dims,
+				    &ints[3],        /* gsizes */
+				    &ints[dims+3],   /* distribs */
+				    &ints[2*dims+3], /* dargs */
+				    &ints[3*dims+3], /* psizes */
+				    ints[4*dims+3],  /* order */
+				    types[0],
+				    &dtype);
+	    count = ADIOI_Count_contiguous_blocks(dtype, curr_index);
+	    /* curr_index will have already been updated; just pass
+	     * count back up.
+	     */
+	    MPI_Type_free(&dtype);
 	}
 	break;
 #endif
@@ -894,8 +776,6 @@ void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type)
     return;
 }
 
-/****************************************************************/
-
 void ADIOI_Delete_flattened(MPI_Datatype datatype)
 {
     ADIOI_Flatlist_node *flat, *prev;
@@ -912,176 +792,6 @@ void ADIOI_Delete_flattened(MPI_Datatype datatype)
 	ADIOI_Free(flat);
     }
 }
-
-/****************************************************************/
-
-#ifdef MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY
-/* ADIOI_Flatten_subarray()
- *
- * ndims - number of dimensions in the array
- * array_of_sizes - dimensions of the array (one value per dim)
- * array_of_subsizes - dimensions of the subarray (one value per dim)
- * array_of_starts - starting offsets of the subarray (one value per dim)
- * order - MPI_ORDER_FORTRAN or MPI_ORDER_C
- * oldtype - type on which this subarray as built
- * flat - ...
- * start_offset - offset of this type to begin with
- * inout_index_p - as an input holds the count of indices (and blocklens)
- *                 that have already been used (also the index to the next
- *                 location to fill in!)
- */
-void ADIOI_Flatten_subarray(int ndims,
-			    int *array_of_sizes,
-			    int *array_of_subsizes,
-			    int *array_of_starts,
-			    int order,
-			    MPI_Datatype oldtype,
-			    ADIOI_Flatlist_node *flat,
-			    ADIO_Offset start_offset,
-			    int *inout_index_p)
-{
-    int i, j, total_types, *dim_sz, flatten_start_offset,
-	flatten_end_offset;
-    int old_nints, old_nadds, old_ntypes, old_combiner;
-    ADIO_Offset subarray_start_offset, type_offset, *dim_skipbytes;
-    MPI_Aint oldtype_extent;
-
-    MPI_Type_extent(oldtype, &oldtype_extent);
-
-    /* TODO: optimization for 1-dimensional types -- treat like a contig */
-
-    /* general case - make lots of copies of the offsets, adjusting 
-     * the indices as necessary.
-     */
-
-    /* allocate space for temporary values */
-    dim_sz = (int *) ADIOI_Malloc(sizeof(int)*(ndims));
-    dim_skipbytes = (ADIO_Offset *) ADIOI_Malloc(sizeof(ADIO_Offset)*(ndims));
-
-    /* get a count of the total number of types (of type oldtype) in
-     * the subarray.
-     */
-    total_types = 1;
-    for (i=0; i < ndims; i++) total_types *= array_of_subsizes[i];
-
-    /* fill in the temporary values dim_sz and dim_skipbytes.
-     *
-     * these are used to calculate the starting offset for each instance
-     * of oldtype in the subarray.  we precalculate these values so that
-     * we can avoid calculating them for every instance.  this is all done
-     * so that we can avoid a recursive algorithm here, which could be very
-     * expensive if done for every dimension.
-     *
-     * finally, we're going to store these in C order regardless of how the
-     * arrays were described in the first place.
-     *
-     * dim_sz is a value describing the number of types that go into a single
-     * block in this dimension.  dim_skipbytes is the distance necessary to
-     * move from one block to the next in this dimension.
-     *
-     * this is a little misleading, because actually dim_sz[ndims-1] is
-     * always 1 and the dim_skipbytes[ndims-1] is always the extent...
-     *
-     * the dim_sz values are in terms of types, the dim_skipbytes are in
-     * terms of bytes, and do *not* include the starting offset calculated
-     * above.
-     */
-
-    /* priming the loop more or less */
-    dim_sz[ndims-1] = 1;
-    dim_skipbytes[ndims-1] = oldtype_extent;
-
-    for (i=ndims-2; i >= 0; i--) {
-	dim_sz[i] = dim_sz[i+1];
-	dim_skipbytes[i] = dim_skipbytes[i+1];
-	if (order == MPI_ORDER_FORTRAN) {
-	    dim_sz[i] *= array_of_subsizes[ndims-2-i];
-	    dim_skipbytes[i] *= array_of_sizes[ndims-2-i];
-	}
-	else {
-	    dim_sz[i] *= array_of_subsizes[i+1];
-	    dim_skipbytes[i] *= array_of_sizes[i+1];
-	}
-    }
-
-    /* determine our starting offset for use later; this is a lot
-     * easier to do now that we have the dim_skipbytes[] array from
-     * above.
-     */
-    subarray_start_offset = 0;
-    for (i=0; i < ndims; i++) {
-	if (order == MPI_ORDER_FORTRAN) {
-	    subarray_start_offset += array_of_starts[ndims-1-i]*dim_skipbytes[i];
-	}
-	else {
-	    subarray_start_offset += array_of_starts[i]*dim_skipbytes[i];
-	}
-    }
-    subarray_start_offset += start_offset; /* add in input parameter */
-
-    /* flatten one of the type to get the offsets that we need;
-     * really we need the starting offset to be right in order to
-     * do this in-place.
-     *
-     * we save the offset to the first piece of the flattened type
-     * so we can know what to make copies of in the next step.
-     */
-    flatten_start_offset = *inout_index_p;
-    MPI_Type_get_envelope(oldtype, &old_nints, &old_nadds,
-			  &old_ntypes, &old_combiner); 
-    if (old_combiner != MPI_COMBINER_NAMED)
-    {
-	ADIOI_Flatten(oldtype, flat, subarray_start_offset, inout_index_p);
-    }
-    else {
-	int oldtype_size;
-
-	flat->indices[flatten_start_offset] = subarray_start_offset;
-	MPI_Type_size(oldtype, &oldtype_size);
-	flat->blocklens[flatten_start_offset] = oldtype_size;
-	(*inout_index_p)++;
-    }
-
-    /* note this is really one larger than the end offset, but
-     * that's what we want below.
-     */
-    flatten_end_offset = *inout_index_p;
-
-    /* now we run through all the blocks, calculating their effective
-     * offset and then making copies of all the regions for the type
-     * for this instance.
-     */
-    for (i=1; i < total_types; i++) {
-	int block_nr = i;
-	type_offset = 0;
-
-	for (j=0; j < ndims; j++) {
-	    /* move through dimensions from least frequently changing
-	     * to most frequently changing, calculating offset to get
-	     * to a particular block, then reducing our block number
-	     * so that we can correctly calculate based on the next 
-	     * dimension's size.
-	     */
-	    int dim_index = block_nr / dim_sz[j];
-
-	    if (dim_index) type_offset += dim_index * dim_skipbytes[j];
-	    block_nr %= dim_sz[j];
-	}
-
-	/* do the copy */
-	ADIOI_Flatten_copy_type(flat,
-				flatten_start_offset,
-				flatten_end_offset,
-				flatten_start_offset + i * (flatten_end_offset - flatten_start_offset),
-				type_offset);
-    }
-
-    /* free our temp space */
-    ADIOI_Free(dim_sz);
-    ADIOI_Free(dim_skipbytes);
-    *inout_index_p = flatten_start_offset + total_types * (flatten_end_offset - flatten_start_offset);
-}
-#endif
 
 /* ADIOI_Flatten_copy_type()
  * flat - pointer to flatlist node holding offset and lengths
@@ -1105,318 +815,3 @@ void ADIOI_Flatten_copy_type(ADIOI_Flatlist_node *flat,
     }
 }
 
-/****************************************************************/
-
-#ifdef MPIIMPL_HAVE_MPI_COMBINER_DARRAY
-/* ADIOI_Flatten_darray()
- *
- * size - number of processes across which darray is defined
- * rank - our rank in the group of processes
- * ndims - number of dimensions of darray type
- * gsizes - dimensions of the array in types (order varies)
- * distribs - type of dist. for each dimension (order varies)
- * dargs - argument to dist. for each dimension (order varies)
- * psizes - number of processes across which each dimension
- *          is split (always C order)
- * order - order of parameters (c or fortran)
- * oldtype - type on which this darray is built
- * flat - ...
- * start_offset - offset of this type to begin with
- * inout_index_p - count of indices already used on input, updated
- *                 for output
- *
- * The general approach is to convert everything into cyclic-k and process
- * it from there.
- */
-void ADIOI_Flatten_darray(int size,
-			  int rank,
-			  int ndims,
-			  int array_of_gsizes[],
-			  int array_of_distribs[],
-			  int array_of_dargs[],
-			  int array_of_psizes[],
-			  int order,
-			  MPI_Datatype oldtype,
-			  ADIOI_Flatlist_node *flat,
-			  ADIO_Offset start_offset,
-			  int *inout_index_p)
-{
-    int i, j, total_types, flatten_start_offset,
-	flatten_end_offset, oldtype_nints, oldtype_nadds, oldtype_ntypes,
-	oldtype_combiner, *dim_ranks, *dim_ks, *dim_localtypes;
-    ADIO_Offset darray_start_offset, first_darray_offset;
-    MPI_Aint oldtype_extent, *dim_skipbytes;
-
-    MPI_Type_extent(oldtype, &oldtype_extent);
-
-    dim_localtypes = ADIOI_Malloc(sizeof(int) * ndims);
-    dim_skipbytes = ADIOI_Malloc(sizeof(MPI_Aint) * ndims);
-    dim_ranks = (int *) ADIOI_Malloc(sizeof(int) * ndims);
-    dim_ks = (int *) ADIOI_Malloc(sizeof(int) * ndims);
-
-    /* fill in dim_ranks, C order (just like psizes) */
-    get_darray_position(rank, size, ndims, array_of_psizes, dim_ranks);
-
-    /* calculate all k values; store in same order as arrays */
-    for (i=0; i < ndims; i++) {
-	dim_ks[i] = get_cyclic_k(array_of_gsizes[i],
-				 array_of_psizes[i],
-				 array_of_distribs[i],
-				 array_of_dargs[i]);
-    }
-
-    /* calculate total number of oldtypes in this type */
-    total_types = 1;
-    for (i=0; i < ndims; i++) {
-	total_types *= local_types_in_dim(array_of_gsizes[i],
-					  dim_ranks[i],
-					  array_of_psizes[i],
-					  dim_ks[i]);
-    }
-
-    /* fill in temporary values; these are just cached so we aren't
-     * calculating them for every type instance.
-     *
-     * dim_localtypes holds the # of types this process has in the given
-     * dimension.
-     *
-     * dim_skipbytes (in this function) is going to hold the distance
-     * to skip to move from one type to the next in that dimension, in
-     * bytes, in terms of the darray as a whole.  sort of like the stride
-     * for a vector.
-     * 
-     * we keep this stuff in row-major (C) order -- least-frequently changing
-     * first.
-     */
-    for (i=0; i < ndims; i++) {
-	int idx = (order == MPI_ORDER_C) ? i : ndims-1-i;
-
-	dim_localtypes[i] = local_types_in_dim(array_of_gsizes[idx],
-					       dim_ranks[idx],
-					       array_of_psizes[idx],
-					       dim_ks[idx]);
-    }
-
-    dim_skipbytes[ndims-1] = oldtype_extent;
-    for (i=ndims-2; i >= 0; i--) {
-	int idx = (order == MPI_ORDER_C) ? i+1 : ndims-2-i;
-
-	dim_skipbytes[i] = array_of_gsizes[idx] * dim_skipbytes[i+1];
-    }
-
-#if 0
-    for (i=0; i < ndims; i++) {
-	MPIU_dbg_printf("dim_skipbytes[%d] = %d, dim_localtypes[%d] = %d\n",
-			i, (int) dim_skipbytes[i], i, dim_localtypes[i]);
-    }
-#endif
-
-
-    /* determine starting offset */
-    darray_start_offset = start_offset;
-    first_darray_offset = 0;
-    for (i=0; i < ndims; i++) {
-	ADIO_Offset this_dim_off;
-	int idx = (order == MPI_ORDER_C) ? i : ndims-1-i;
-
-	this_dim_off = index_of_type(0,
-				     array_of_gsizes[idx],
-				     dim_ranks[i],
-				     array_of_psizes[i],
-				     dim_ks[idx]);
-
-	this_dim_off *= (ADIO_Offset) dim_skipbytes[i];
-	darray_start_offset += this_dim_off;
-	first_darray_offset += this_dim_off;
-    }
-    
-    /* flatten one of the type to get the offsets that we need;
-     * we need an accurate starting offset to do this in-place.
-     *
-     * we save the starting offset so we can adjust when copying
-     * later on.
-     */
-    flatten_start_offset = *inout_index_p;
-    MPI_Type_get_envelope(oldtype,
-			  &oldtype_nints,
-			  &oldtype_nadds,
-			  &oldtype_ntypes,
-			  &oldtype_combiner);
-    if (oldtype_combiner != MPI_COMBINER_NAMED) {
-	ADIOI_Flatten(oldtype, flat, darray_start_offset, inout_index_p);
-    }
-    else {
-	int oldtype_size;
-
-	MPI_Type_size(oldtype, &oldtype_size);
-
-	flat->indices[flatten_start_offset]   = darray_start_offset;
-	flat->blocklens[flatten_start_offset] = oldtype_size;
-	(*inout_index_p)++;
-    }
-    flatten_end_offset = *inout_index_p;
-
-    /* now run through all the types, calculating the effective
-     * offset and then making a copy of the flattened regions for the
-     * type (and adjusting the offsets of them appropriately)
-     */
-    for (i=0; i < total_types; i++) {
-	int block_nr = i;
-	ADIO_Offset type_offset = 0;
-
-	for (j=ndims-1; j >= 0; j--) {
-	    ADIO_Offset dim_off;
-	    int idx = (order == MPI_ORDER_C) ? j : ndims-1-j;
-	    int dim_index = block_nr % dim_localtypes[j];
-
-	    dim_off = index_of_type(dim_index,
-				    array_of_gsizes[idx],
-				    dim_ranks[j],
-				    array_of_psizes[j],
-				    dim_ks[idx]);
-
-
-	    if (dim_off) type_offset += (ADIO_Offset) dim_off *
-			     (ADIO_Offset) dim_skipbytes[j];
-#if 0
-	    {
-		char s1[] = " ", s2[] = "  ", s3[] = "   ";
-		MPIU_dbg_printf("%sindex of type %d (pass %d,%d) is %d; new offset = %d\n",
-				(j == 0) ? s1 : ((j == 1) ? s2 : s3),
-				dim_index, i, j, (int) dim_off, (int) type_offset);
-	    }
-#endif
-	    block_nr /= dim_localtypes[j];
-	}
-
-	/* perform copy; noting in this case that the type offsets that
-	 * we are calculating here are relative to the beginning of the
-	 * darray as a whole, not relative to the first of our elements.
-	 *
-	 * because of that we have to subtract off the first_darray_offset
-	 * in order to get the right offset adjustment.
-	 */
-	ADIOI_Flatten_copy_type(flat,
-				flatten_start_offset,
-				flatten_end_offset,
-				flatten_start_offset + i * (flatten_end_offset - flatten_start_offset),
-				type_offset - first_darray_offset);
-    }
-    
-    /* free temp space */
-    ADIOI_Free(dim_skipbytes);
-    ADIOI_Free(dim_localtypes);
-    ADIOI_Free(dim_ranks);
-    ADIOI_Free(dim_ks);
-
-    *inout_index_p = flatten_start_offset + total_types *
-	(flatten_end_offset - flatten_start_offset);
-}
-
-/* darray processing helper functions */
-static int index_of_type(int type_nr,
-			 int dim_size,
-			 int dim_rank,
-			 int dim_ranks,
-			 int k)
-{
-    int cycle, leftover, index;
-
-    /* handle MPI_DISTRIBUTE_NONE case */
-    if (k == 0) return type_nr;
-
-    cycle = type_nr / k;
-    leftover = type_nr % k;
-
-    index = (dim_rank * k) + (dim_ranks * k * cycle) + leftover;
-
-    return index;
-}
-
-static int get_cyclic_k(int dim_size,
-			int dim_ranks,
-			int dist,
-			int d_arg)
-{
-    int k;
-
-    /* calculate correct "k" if DFLT_DARG passed in */
-    if (dist == MPI_DISTRIBUTE_NONE) return 0; /* indicates NONE */
-    else if (d_arg == MPI_DISTRIBUTE_DFLT_DARG) {
-	if (dist == MPI_DISTRIBUTE_BLOCK) {
-	    k = (dim_size + dim_ranks - 1) / dim_ranks;
-	}
-	else {
-	    k = 1;
-	}
-    }
-    else {
-	k = d_arg;
-    }
-
-    return k;
-}
-
-static int local_types_in_dim(int dim_size,
-			      int dim_rank,
-			      int dim_ranks,
-			      int k)
-{
-    int count, n_blocks, n_types, leftover;
-
-    if (k == 0) {
-	/* indicates MPI_DISTRIBUTE_NONE */
-	return dim_size;
-    }
-
-    /* blocks are regions of (up to k) types; this count
-     * includes partials
-     */
-    n_blocks = (dim_size + k - 1) / k;
-
-    /* count gets us a total # of blocks that the particular
-     * rank gets, including possibly a partial block
-     */
-    count = n_blocks / dim_ranks;
-    leftover = n_blocks - (count * dim_ranks);
-    if (dim_rank < leftover) count++;
-
-    n_types = count * k;
-
-    /* subtract off the types that are missing from the final
-     * partial block, if there is a partial and this rank is
-     * the one that has it.
-     */
-    if ((dim_rank == leftover - 1) && (dim_size % k != 0)) {
-	n_types -= k - (dim_size - ((dim_size / k) * k));
-    }
-
-    return n_types;
-}
-
-/* get_darray_position(rank, ranks, ndims, array_of_psizes, r[])
- *
- * Calculates the position of this process in the darray
- * given the rank of the process passed to the darray create
- * and the total number of processes also passed to the darray
- * create.
- *
- * Assumes that the array (r[]) has already been allocated.
- */
-static void get_darray_position(int rank,
-				int ranks,
-				int ndims,
-				int array_of_psizes[],
-				int r[])
-{
-    int i;
-    int t_rank = rank;
-    int t_size = ranks;
-
-    for (i = 0; i < ndims; i++) {
-	t_size = t_size / array_of_psizes[i];
-	r[i] = t_rank / t_size;
-	t_rank = t_rank % t_size;
-    }
-} 
-#endif
