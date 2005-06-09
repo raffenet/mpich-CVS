@@ -296,7 +296,9 @@ If you have completed all of the above steps, you have successfully
 installed MPICH2 and run an MPI example.  
 
 More details on arguments to mpiexec are given in the User's Guide in
-the doc subdirectory.
+the doc subdirectory.  Also in the User's Guide you will find help on
+debugging.  MPICH2 has some some support for the TotalView debugger, as
+well as some other approaches described there.
 
 
 Alternatives
