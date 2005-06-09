@@ -603,10 +603,7 @@ The dynamic process management routines (MPI_Comm_spawn,
 MPI_Comm_Connect, and MPI_Comm_Accept, and their relations) are
 supported but only for the sock channel.
 
-Name publishing is supported on shared file systems by
-default. Without a shared file system, it may also work with the MPD
-process manager within a single mpd ring, but this feature is not
-extensively tested.
+Name publishing is supported on shared file systems.
 
 The "singleton init" feature, whereby a process not started by mpiexec
 can become an MPI process, is supported under the mpd process manager.
