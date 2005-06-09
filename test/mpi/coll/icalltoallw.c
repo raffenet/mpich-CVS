@@ -27,7 +27,7 @@ int main( int argc, char **argv )
 
     MPI_Comm comm;
     int      *sbuf, *rbuf;
-    int      rank, size;
+    int      rank, size, lsize, asize;
     int      *sendcounts, *recvcounts, *rdispls, *sdispls;
     int      i, j, *p, err;
     MPI_Datatype *sendtypes, *recvtypes;
@@ -40,10 +40,12 @@ int main( int argc, char **argv )
       if (comm == MPI_COMM_NULL) continue;
 
       /* Create the buffer */
+      MPI_Comm_size( comm, &lsize );
       MPI_Comm_remote_size( comm, &size );
+      asize = (lsize > size) ? lsize : size;
       MPI_Comm_rank( comm, &rank );
       sbuf = (int *)malloc( size * size * sizeof(int) );
-      rbuf = (int *)malloc( size * size * sizeof(int) );
+      rbuf = (int *)malloc( asize * asize * sizeof(int) );
       if (!sbuf || !rbuf) {
 	fprintf( stderr, "Could not allocated buffers!\n" );
 	MPI_Abort( comm, 1 );
