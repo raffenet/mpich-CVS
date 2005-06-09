@@ -257,7 +257,7 @@ if [ -z "${F90INC}" ] ; then
     # may be too many to link)
     if [ ! -r mpif.h ] ; then
         #echo "Adding a symbolic link for mpif.h"
-	trap "$Show /bin/rm mpif.h" 0
+	trap "$Show /bin/rm -f mpif.h" 0
 	# This should really be the (related) f77includedir (see mpif77).
 	$Show ln -s ${includedir}/mpif.h mpif.h
 	# Remember to remove this file
@@ -291,10 +291,10 @@ fi
 # libraries
 
 if [ "$linking" = yes ] ; then
-    $Show $F90 $F90FLAGS $LDFLAGS $F90INCDIRS $F90MODDIRS -L$libdir $allargs $F90MODLIBS $mpilibs $MPI_OTHERLIBS
+    $Show $F90 $F90FLAGS $LDFLAGS $allargs $F90INCDIRS $F90MODDIRS -L$libdir $F90MODLIBS $mpilibs $MPI_OTHERLIBS
     rc=$?
 else
-    $Show $F90 $F90FLAGS $F90INCDIRS $F90MODDIRS $allargs
+    $Show $F90 $F90FLAGS $allargs $F90INCDIRS $F90MODDIRS
     rc=$?
 fi
 if [ -n "$rmfiles" ] ; then
