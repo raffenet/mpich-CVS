@@ -397,6 +397,11 @@ int ADIO_Type_create_subarray(int ndims,
                               int order,
                               MPI_Datatype oldtype,
                               MPI_Datatype *newtype);
+int ADIO_Type_create_darray(int size, int rank, int ndims, 
+			    int *array_of_gsizes, int *array_of_distribs, 
+			    int *array_of_dargs, int *array_of_psizes, 
+			    int order, MPI_Datatype oldtype, 
+			    MPI_Datatype *newtype);
 
 /* MPI_File management functions (in mpio_file.c) */
 MPI_File MPIO_File_create(int size);

@@ -153,6 +153,7 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
 					  "Invalid order argument", 0);
 	return MPIO_Err_return_comm(MPI_COMM_SELF, error_code);
     }
+    /* --END ERROR HANDLING-- */
 
     err = ADIO_Type_create_subarray(ndims,
 				    array_of_sizes,
@@ -161,12 +162,14 @@ int MPI_Type_create_subarray(int ndims, int *array_of_sizes,
 				    order,
 				    oldtype,
 				    newtype);
+    /* --BEGIN ERROR HANDLING-- */
     if (err != MPI_SUCCESS) {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					  MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__, err,
 					  "Internal error", 0);
     }
+    /* --END ERROR HANDLING-- */
 
     return MPI_SUCCESS;
 }
