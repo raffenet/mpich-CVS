@@ -312,7 +312,6 @@ class MPDSock(object):
             readyToRecv = 1
         if readyToRecv:
             try:
-	        # socket.error: (104, 'Connection reset by peer')
                 pickledLen = self.sock.recv(8)
                 if pickledLen:
                     pickledLen = int(pickledLen)
@@ -323,11 +322,13 @@ class MPDSock(object):
                         pickledMsg += recvdMsg
                         lenLeft -= len(recvdMsg)
                     msg = loads(pickledMsg)
-            except socket.error, data:
-                if data[0] == EINTR:
+            except socket.error, errinfo:
+                if errinfo[0] == EINTR:
                     return msg
+                elif errinfo[0] == ECONNRESET:   # connection reset (treat as eof)
+                    pass   # socket.error: (104, 'Connection reset by peer')
                 else:
-                    mpd_print_tb(1, 'recv_dict_msg: socket error: data=:%s:' % (data) )
+                    mpd_print_tb(1,'recv_dict_msg: socket error: errinfo=:%s:' % (errinfo))
             except StandardError, errmsg:    # any built-in exceptions
                 mpd_print_tb(1, 'recv_dict_msg: errmsg=:%s:' % (errmsg) )
             except Exception, errmsg:
