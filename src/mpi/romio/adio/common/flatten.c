@@ -1,5 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /* 
+ *   $Id$
  *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
@@ -169,6 +170,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 #endif
 #ifdef MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY
     case MPI_COMBINER_SUBARRAY:
+#if 0
 	{
 	    int dims = ints[0];
 	    ADIOI_Flatten_subarray(dims,
@@ -181,6 +183,21 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 				   st_offset,
 				   curr_index);
 				   
+	}
+#endif
+        {
+	    int dims = ints[0];
+	    MPI_Datatype stype;
+
+	    ADIO_Type_create_subarray(dims,
+				      &ints[1],        /* sizes */
+				      &ints[dims+1],   /* subsizes */
+				      &ints[2*dims+1], /* starts */
+				      ints[3*dims+1],  /* order */
+				      types[0],        /* type */
+				      &stype);
+	    ADIOI_Flatten(stype, flat, st_offset, curr_index);
+	    MPI_Type_free(&stype);
 	}
 	break;
 #endif
@@ -577,6 +594,7 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 #endif
 #ifdef MPIIMPL_HAVE_MPI_COMBINER_SUBARRAY
     case MPI_COMBINER_SUBARRAY:
+#if 0
 	/* first get an upper bound (since we're not optimizing) on the
 	 * number of blocks in the child type.
 	 */
@@ -612,6 +630,25 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 	    num = *curr_index - prev_index;
 	    count *= top_count;
 	    *curr_index += (top_count - 1) * num;
+	}
+#endif
+        {
+	    int dims = ints[0];
+	    MPI_Datatype stype;
+
+	    ADIO_Type_create_subarray(dims,
+				      &ints[1],        /* sizes */
+				      &ints[dims+1],   /* subsizes */
+				      &ints[2*dims+1], /* starts */
+				      ints[3*dims+1],  /* order */
+				      types[0],        /* type */
+				      &stype);
+	    count = ADIOI_Count_contiguous_blocks(stype, curr_index);
+	    /* curr_index will have already been updated; just pass
+	     * count back up.
+	     */
+	    MPI_Type_free(&stype);
+
 	}
 	break;
 #endif
