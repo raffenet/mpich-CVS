@@ -12,6 +12,8 @@
 
 - Fixed shared library builds.
 
+- Fixed performance problems with MPI_Type_create_subarray/darray 
+
 - The following changes have been made to MPE2:
 
   - MPE2 now builds the MPI collective and datatype checking library by default.
