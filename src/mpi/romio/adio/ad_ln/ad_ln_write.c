@@ -12,6 +12,11 @@
 #include "adio_extern.h"
 #include "ad_ln_lnio.h"
 
+void ADIOI_LN_WriteStrided_naive(ADIO_File fd, void *buf, int count,
+				 MPI_Datatype buftype, int file_ptr_type,
+				 ADIO_Offset offset, ADIO_Status *status, 
+				 int *error_code);
+
 void ADIOI_LN_WriteContig(ADIO_File fd, void *buf, int count, 
 			  MPI_Datatype datatype, int file_ptr_type,
 			  ADIO_Offset offset, ADIO_Status *status, int
@@ -97,8 +102,12 @@ void ADIOI_LN_WriteStrided(ADIO_File fd, void *buf, int count,
 			       offset, status, error_code);
     } else {
 	/* call an LNIO function optimized for noncontiguous in file case */
-	ADIOI_LNIO_WriteStrided(fd, buf, count, buftype, file_ptr_type,
-				offset, status);
+	if (((struct lnio_handle_t *)fd->fs_ptr)->noncontig_write_naive)
+	    ADIOI_LN_WriteStrided_naive(fd, buf, count, buftype, file_ptr_type,
+					offset, status, error_code);
+	else
+	    *error_code = ADIOI_LNIO_WriteStrided(fd, buf, count, buftype, 
+						 file_ptr_type, offset, status);
 	/* how to handle error_code and status? */
     }
 }

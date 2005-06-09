@@ -165,6 +165,14 @@ int ADIOI_LNIO_Open(ADIO_File fd)
     handle->sync_at_collective_io = 1; 
   }
 
+  /***** TEST PURPOSE *****/
+  MPI_Info_get(fd->info, "LN_NONCONTIG_WRITE_NAIVE", MPI_MAX_INFO_VAL, value, &flag);
+  if (flag) {
+    handle->noncontig_write_naive = 1;
+  } else {
+    handle->noncontig_write_naive = 0; 
+  }
+
   MPI_Info_get(fd->info, "LN_DEPOT_LIST", MPI_MAX_INFO_VAL, value, &flag);
   if (flag) {
     /* parse the depot list (depot1:port1,depot2:port2,...) */

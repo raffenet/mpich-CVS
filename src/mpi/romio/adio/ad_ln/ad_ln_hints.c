@@ -66,7 +66,13 @@ void ADIOI_LN_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
       MPI_Info_get(users_info, "LN_DEPOT_LIST", MPI_MAX_INFO_VAL,
 		   value, &flag);
       if (flag) MPI_Info_set(fd->info, "LN_DEPOT_LIST", value);
- 
+
+      /*** TEST PURPOSE ONLY ***/
+      MPI_Info_get(users_info, "LN_NONCONTIG_WRITE_NAIVE", MPI_MAX_INFO_VAL,
+		   value, &flag);
+      if (flag) MPI_Info_set(fd->info, "LN_NONCONTIG_WRITE_NAIVE", value);
+      /*************************/
+
       ADIOI_Free(value);
     }
     

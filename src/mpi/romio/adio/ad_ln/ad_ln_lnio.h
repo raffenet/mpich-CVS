@@ -64,7 +64,8 @@ struct lnio_handle_t {
   off_t          buf_lb;
   off_t          buf_ub;
   int            dirty_buffer;
-  
+
+  int            noncontig_write_naive;
   int            sync_at_collective_io;
   IBP_depot     *depot_array;
 };
