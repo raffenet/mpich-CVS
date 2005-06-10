@@ -566,6 +566,9 @@
 				RelativePath="src\mpi\romio\adio\common\ad_close.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_darray.c">
+			</File>
+			<File
 				RelativePath="src\mpi\romio\adio\common\ad_delete.c">
 			</File>
 			<File
@@ -642,6 +645,9 @@
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\ad_set_view.c">
+			</File>
+			<File
+				RelativePath=".\src\mpi\romio\adio\common\ad_subarray.c">
 			</File>
 			<File
 				RelativePath="src\mpi\romio\adio\common\ad_write_coll.c">
