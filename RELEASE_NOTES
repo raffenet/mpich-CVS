@@ -64,6 +64,9 @@
   that will cause progress to occur. Progress occurs only when the user
   calls an MPI function at the target (which could well be MPI_WIN_FREE).
 
+- --enable-sharedlibs=gcc does not work on Solaris because of difference
+  between the GNU ld program and the Solaris ld program
+
 
 -------------------------------------------------------------------------------
 			Issues for Developers
