@@ -2098,9 +2098,13 @@ Function ReplaceAts( str, use_f77, b64 )
 			Case "@DEFINE_HAVE_MPI_GREQUEST@"
 				str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "#define HAVE_MPI_GREQUEST")
 			Case "@ADDRESS_KIND@"
-				str = Replace(str, "@ADDRESS_KIND@", "4")
+				If b64 then
+					str = Replace(str, "@ADDRESS_KIND@", "8")
+				Else
+					str = Replace(str, "@ADDRESS_KIND@", "4")
+				End If
 			Case "@OFFSET_KIND@"
-				str = Replace(str, "@OFFSET_KIND@", "4")
+				str = Replace(str, "@OFFSET_KIND@", "8")
 			Case "@F77_COMPLEX16@"
 				str = Replace(str, "@F77_COMPLEX16@", F77_COMPLEX16)
 			Case "@F77_COMPLEX32@"
