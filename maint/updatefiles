@@ -670,6 +670,11 @@ if [ $do_build_configure = yes ] ; then
             if [ "$dir" = "./src/pmi/winmpd" ] ; then
 	        continue
             fi
+	    if [ -s $dir/Makefile.sm -a ! -s $dir/Makefile.in ] ; then
+		# This is an old directory that is no longer processed
+		# by simplemake; these are ignored
+		continue
+	    fi
             echo "Could not build configure from configure.in in $dir"
 	    echo "Aborting updatefiles!"
 	    exit 1
