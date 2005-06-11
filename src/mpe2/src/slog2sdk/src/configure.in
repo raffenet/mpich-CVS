@@ -77,6 +77,13 @@ AC_ARG_WITH(jflags,
                                      optimization flags, -O, to the java 
                                      compiler], JFLAGS="$withval")
 
+AC_ARG_ENABLE(clog,
+[--enable-clog                      - Build CLOG related utility jar files,
+                                     clog2TOslog2.jar, clog2print.jar....
+                                     Java Standard Development Kit, SDK,
+                                     is needed.  The default is enable=yes.],
+,enable_clog=yes)
+
 AC_ARG_WITH(oldsource,
 [--with-oldsource=OLD_SRCDIR        - Build slog2updater from the given OLD
                                      Java source directory OLD_SRCDIR which
@@ -399,4 +406,34 @@ if test ! -d $libbuild_dir ; then
 fi
 AC_SUBST(libbuild_dir)
 
-AC_OUTPUT(Makefile base/io/Makefile base/topology/Makefile base/drawable/Makefile base/statistics/Makefile logformat/clog/Makefile logformat/clogTOdrawable/Makefile logformat/clog2/Makefile logformat/clog2TOdrawable/Makefile logformat/trace/Makefile logformat/slog2/Makefile logformat/slog2/output/Makefile logformat/slog2/input/Makefile logformat/slog2/pipe/Makefile logformat/slog2/update/Makefile viewer/common/Makefile viewer/convertor/Makefile viewer/legends/Makefile viewer/zoomable/Makefile viewer/histogram/Makefile viewer/timelines/Makefile viewer/first/Makefile viewer/launcher/Makefile)
+# Define the "dirs" components
+base_dirs="base/io base/drawable base/statistics base/topology"
+logformat_clog_dirs="logformat/clog logformat/clogTOdrawable logformat/clog2 logformat/clog2TOdrawable"
+logformat_basic_dirs="logformat/trace logformat/slog2"
+logformat_slog2_dirs="logformat/slog2/output logformat/slog2/input logformat/slog2/pipe logformat/slog2/update"
+viewer_dirs="viewer/common viewer/convertor viewer/legends viewer/zoomable viewer/histogram viewer/timelines viewer/first viewer/launcher"
+
+# Initial the "dirs" components: slog2_make_dirs, slog2_makefile_dirs.
+slog2_make_dirs="$base_dirs"
+slog2_makefile_dirs="$base_dirs"
+if test "$enable_clog" = "yes" ; then
+    slog2_make_dirs="$slog2_make_dirs $logformat_clog_dirs"
+    slog2_makefile_dirs="$slog2_makefile_dirs $logformat_clog_dirs"
+fi
+slog2_make_dirs="$slog2_make_dirs $logformat_basic_dirs"
+slog2_makefile_dirs="$slog2_makefile_dirs $logformat_basic_dirs"
+# Only slog2_makefile_dirs needs logformat/slog2's subdirectory list
+slog2_makefile_dirs="$slog2_makefile_dirs $logformat_slog2_dirs"
+slog2_make_dirs="$slog2_make_dirs $viewer_dirs"
+slog2_makefile_dirs="$slog2_makefile_dirs $viewer_dirs"
+
+# Output all the directories that needs to do "make"
+AC_SUBST(slog2_make_dirs)
+
+# Append each directory slog2_makefile_dirs with "/Makefile"
+slog2_makefiles="Makefile"
+for dir in $slog2_makefile_dirs ; do
+    slog2_makefiles="$slog2_makefiles $dir/Makefile"
+done
+
+AC_OUTPUT($slog2_makefiles)

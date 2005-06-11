@@ -2,15 +2,8 @@ MAKE=@MAKE@
 RM=@RM@
 SHELL=/bin/sh
 
-TARGETS = base/io base/drawable base/statistics base/topology \
-          logformat/clog logformat/clogTOdrawable \
-          logformat/clog2 logformat/clog2TOdrawable \
-          logformat/trace logformat/slog2 \
-          viewer/common viewer/convertor viewer/legends \
-          viewer/zoomable viewer/histogram viewer/timelines viewer/first \
-          viewer/launcher
+TARGETS = @slog2_make_dirs@
 
-#          viewer/swingextn viewer/timelines
 
 all:
 	@for dir in $(TARGETS) ; do \
