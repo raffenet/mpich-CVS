@@ -362,6 +362,12 @@ AC_ARG_ENABLE(rlog,
                                      is needed.  The default is enable=yes.],
 ,enable_rlog=${slog2_enable_rlog:-yes})
 
+AC_ARG_ENABLE(clog,
+[--enable-clog                      - Build CLOG related wrappers, e.g.
+                                     clog2TOslog2, clog2print....
+                                     The default is enable=yes.],
+,enable_clog=yes)
+
 AC_ARG_WITH(oldsource,
 [--with-oldsource=OLD_SRCDIR        - Build the old jar files from the given OLD
                                      Java source and to build slog2updater.
@@ -438,8 +444,13 @@ if test "X$with_oldsource" != "X" \
     AC_CONFIG_SUBDIRS([$oldsource_dirname])
 fi
 # Define bindir's executables, and pass them down to sbindir's install-package
-BASIC_PGMS="clogprint clogTOslog2 clog2print clog2TOslog2 slog2navigator slog2print slog2filter slog2updater logconvertor jumpshot"
+BASIC_PGMS="slog2print slog2navigator slog2filter slog2updater logconvertor jumpshot"
 TRACE_PGMS="traceprint traceTOslog2"
+
+CLOG_PGMS="clogprint clogTOslog2 clog2print clog2TOslog2"
+if test "$enable_clog" = "yes" ; then
+    BASIC_PGMS="$BASIC_PGMS $CLOG_PGMS"
+fi
 
 if test "x$TRACE_LIBDIR" != "x" ; then
     AC_MSG_CHECKING([for libTraceInput.so and TraceInput.dll])
