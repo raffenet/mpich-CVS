@@ -28,7 +28,7 @@ Usage:
 
 -h|-help         - Display this message.
 -echo            - Do set -x.
--show            - Print out the mencoder command, no actual action.
+-show            - Print out the commands to be executed, no actual action.
 -prefix          - Set new prefix, default is "old_"
 EOF
             exit 1
@@ -106,11 +106,10 @@ FixJavaFile() {
     $1 > $2
 }
 
-# The directory of this script is located
-PWD=`pwd`
-curr_dir="$PWD/`dirname $0`"
 # The parent directory of where this script is located
-master_dir="`dirname $curr_dir`"
+saved_wd=`pwd`
+cd `dirname $0`/.. && master_dir=`pwd`
+cd $saved_wd
 
 # change to the working directory
 if cd $master_dir/$OLD_SRC_DIR ; then
