@@ -89,14 +89,17 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
-	    /* NOTE: MPI_STATUS_IGNORE != NULL */
-	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    if (count != 0) {
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+		/* NOTE: MPI_STATUS_IGNORE != NULL */
+		MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    }
+	    MPIR_ERRTEST_ARGNULL(index, "index", mpi_errno);
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    for (i = 0; i < count; i++)
 	    {
-			MPIR_ERRTEST_REQUEST_OR_NULL(array_of_requests[i], mpi_errno);
+		MPIR_ERRTEST_REQUEST_OR_NULL(array_of_requests[i], mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
@@ -144,7 +147,8 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
     if (n_inactive == count)
     {
 	*index = MPI_UNDEFINED;
-	MPIR_Status_set_empty(status);
+	if (status != NULL)    /* could be null if count=0 */
+	    MPIR_Status_set_empty(status);
 	goto fn_exit;
     }
     

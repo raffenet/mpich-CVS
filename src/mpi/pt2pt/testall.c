@@ -100,11 +100,13 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag,
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+	    if (count != 0) {
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+		/* NOTE: MPI_STATUSES_IGNORE != NULL */
+		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
+	    }
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
-	    /* NOTE: MPI_STATUSES_IGNORE != NULL */
-	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    for (i = 0; i < count; i++)
 	    {

@@ -85,13 +85,15 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+
+	    if (count != 0) {
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+		/* NOTE: MPI_STATUS_IGNORE != NULL */
+		MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+	    }
 	    MPIR_ERRTEST_ARGNULL(index, "index", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
-	    /* NOTE: MPI_STATUS_IGNORE != NULL */
-	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    
 	    for (i = 0; i < count; i++)
 	    {
@@ -140,7 +142,8 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     {
 	*flag = TRUE;
 	*index = MPI_UNDEFINED;
-	MPIR_Status_set_empty(status);
+	if (status != NULL)  /* could be null if count=0 */
+	    MPIR_Status_set_empty(status);
 	goto fn_exit;
     }
     

@@ -91,11 +91,13 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-	    MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+	    if (incount != 0) {
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices", mpi_errno);
+		/* NOTE: MPI_STATUSES_IGNORE != NULL */
+		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
+	    }
 	    MPIR_ERRTEST_ARGNULL(outcount, "outcount", mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices", mpi_errno);
-	    /* NOTE: MPI_STATUSES_IGNORE != NULL */
-	    MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
  
 	    for (i = 0; i < incount; i++)
