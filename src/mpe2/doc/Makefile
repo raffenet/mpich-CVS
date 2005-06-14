@@ -1,7 +1,7 @@
 #  Output Directory
 
-MAN_DIR  = mpe/man/man3
-HTML_DIR = mpe/html
+MAN_DIR  = man/man3
+HTML_DIR = html
 
 #  Input Directory
 
