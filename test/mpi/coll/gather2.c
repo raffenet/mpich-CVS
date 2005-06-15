@@ -71,7 +71,15 @@ int main( int argc, char **argv )
 	}
 	MTestFreeComm( &comm );
     }
-    
+
+    /* do a zero length gather */
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+    if ( rank == 0 ) {
+	MPI_Gather( MPI_IN_PLACE, -1, MPI_DATATYPE_NULL, NULL, 0, MPI_BYTE, 0, MPI_COMM_WORLD );
+    } else {
+	MPI_Gather( NULL, 0, MPI_BYTE, NULL, 0, MPI_BYTE, 0, MPI_COMM_WORLD );
+    }
+
     MTest_Finalize( errs );
     MPI_Finalize();
     return 0;
