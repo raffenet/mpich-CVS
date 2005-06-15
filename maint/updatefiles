@@ -695,6 +695,8 @@ fi
 if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
 fi
+echo Creating smpd_verion.h
+echo \#define SMPD_VERSION \"`cat maint/Version`\" > src/pm/smpd/smpd_version.h
 #
 # The following must be the last statements executed
 if [ -n "$error_summary" ] ; then
