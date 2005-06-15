@@ -212,8 +212,10 @@ int MPIR_MAXLOC_check_dtype( MPI_Datatype type )
 #endif
 #endif
         return MPI_SUCCESS;
+	/* --BEGIN ERROR HANDLING-- */
     default: 
         return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MAXLOC" );
+	/* --END ERROR HANDLING-- */
     }
 }
 
