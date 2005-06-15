@@ -780,7 +780,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     MPI_Request R;
     MPI_Errhandler E;
     char *s;
-    int d, mpi_errno=MPI_SUCCESS;
+    int t, i, d, mpi_errno=MPI_SUCCESS;
     void *p;
 
     fmt = MPIU_Strdup(fmt_orig);
@@ -814,13 +814,56 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	    d = va_arg(list, int);
 	    MPIU_Snprintf(str, maxlen, "%d", d);
 	    break;
+	case (int)'i':
+	    i = va_arg(list, int);
+	    switch (i)
+	    {
+	    case MPI_ANY_SOURCE:
+		MPIU_Strncpy(str, "MPI_ANY_SOURCE", maxlen);
+		break;
+	    case MPI_PROC_NULL:
+		MPIU_Strncpy(str, "MPI_PROC_NULL", maxlen);
+		break;
+	    case MPI_ROOT:
+		MPIU_Strncpy(str, "MPI_ROOT", maxlen);
+		break;
+	    case MPI_UNDEFINED_RANK:
+		MPIU_Strncpy(str, "MPI_UNDEFINED_RANK", maxlen);
+		break;
+	    default:
+		MPIU_Snprintf(str, maxlen, "%d", i);
+		break;
+	    }
+	    break;
+	case (int)'t':
+	    t = va_arg(list, int);
+	    switch (t)
+	    {
+	    case MPI_ANY_TAG:
+		MPIU_Strncpy(str, "MPI_ANY_TAG", maxlen);
+		break;
+	    case MPI_UNDEFINED:
+		MPIU_Strncpy(str, "MPI_UNDEFINED", maxlen);
+		break;
+	    default:
+		MPIU_Snprintf(str, maxlen, "%d", t);
+		break;
+	    }
+	    break;
 	case (int)'p':
 	    p = va_arg(list, void *);
+	    if (p == MPI_IN_PLACE)
+	    {
+		MPIU_Strncpy(str, "MPI_IN_PLACE", maxlen);
+	    }
+	    else
+	    {
 #ifdef HAVE_WINDOWS_H
-	    MPIU_Snprintf(str, maxlen, "0x%p", p);
+		MPIU_Snprintf(str, maxlen, "0x%p", p);
 #else
-	    MPIU_Snprintf(str, maxlen, "%p", p);
+		MPIU_Snprintf(str, maxlen, "%p", p);
 #endif
+	    }
 	    break;
 	case (int)'C':
 	    C = va_arg(list, MPI_Comm);
@@ -923,9 +966,11 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
 	default:
 	    /* Error: unhandled output type */
 	    return 0;
+	    /*
 	    if (maxlen > 0 && str != NULL)
 		*str = '\0';
 	    break;
+	    */
 	}
 	len = strlen(str);
 	maxlen -= len;
