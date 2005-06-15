@@ -55,8 +55,15 @@ later, in the section "Alternative configurations".
     - PyXML and an XML parser like expat (in order to use mpiexec with
       the MPD process manager)
 
-    -  A Fortran-90 compiler if you configure with --enable-f90 .  Only
-       MPI-2 "basic" support is provided at this time (no F90 module).  
+    - If a Fortran 90 compiler is found, by default MPICH2 will
+      attempt to build a basic MPI module.  This module contains the
+      MPI routines that do not contain "choice" arguments; i.e., the module
+      does not contain any of the communication routines, such as
+      MPI_Send, that can take arguments of different type.  You may still
+      use those routines, however, the MPI module does not contain
+      interface specifications for them. If you have trouble with the
+      configuration step and do not need Fortran 90, configure with
+      --disable-f90 . 
 
     Configure will check for these prerequisites and try to work around
     deficiencies if possible.  (If you don't have Fortran, you will
