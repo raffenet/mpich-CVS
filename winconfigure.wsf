@@ -2140,9 +2140,17 @@ Function ReplaceAts( str, use_f77, b64 )
 			Case "@HAVE_CXX_EXCEPTIONS@"
 				str = Replace(str, "@HAVE_CXX_EXCEPTIONS@", "1")
 			Case "@F77_MPI_ADDRESS@"
-				str = Replace(str, "@F77_MPI_ADDRESS@", "INTEGER")
+				If b64 then
+					str = Replace(str, "@F77_MPI_ADDRESS@", "INTEGER*8")
+				Else
+					str = Replace(str, "@F77_MPI_ADDRESS@", "INTEGER")
+				End If
 			Case "@F77_MPI_OFFSET@"
-				str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER*8")
+				If b64 then
+					str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER*8")
+				Else
+					str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER")
+				End If
 			Case "@PCONTROL_LIST@"
 				'str = Replace(str, "@PCONTROL_LIST@", "")
 			Case "@configure_input@"
@@ -3524,8 +3532,10 @@ Function ConfigureTestDir
 		' attraints.h
 		'
 		If f.FileExists("test\mpi\f77\attr\attraints.h.in") Then
-			cEcho "Creating test\mpi\f77\attr\attraints.h"
-			Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
+			'cEcho "Creating test\mpi\f77\attr\attraints.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints.h")
+			cEcho "Creating src\include\win32\attraints.h"
+			Set fout = f.CreateTextFile("src\include\win32\attraints.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
 			contents = fin.ReadAll()
 			contents = ReplaceAts(contents, false, false)
@@ -3533,14 +3543,14 @@ Function ConfigureTestDir
 			fin.Close()
 			fout.Close()
 
-'			cEcho "Creating test\mpi\f77\attr\attraints64.h"
-'			Set fout = f.CreateTextFile("test\mpi\f77\attr\attraints64.h")
-'			Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
-'			contents = fin.ReadAll()
-'			contents = ReplaceAts(contents, false, true)
-'			fout.Write(contents)
-'			fin.Close()
-'			fout.Close()
+			cEcho "Creating src\include\win64\attraints.h"
+			Set fout = f.CreateTextFile("src\include\win64\attraints.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\attr\attraints.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
 		Else
 			cEcho "Skipping file: attraints.h"
 		End If
@@ -3549,8 +3559,10 @@ Function ConfigureTestDir
 		' typeaints.h
 		'
 		If f.FileExists("test\mpi\f77\datatype\typeaints.h.in") Then
-			cEcho "Creating test\mpi\f77\datatype\typeaints.h"
-			Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
+			'cEcho "Creating test\mpi\f77\datatype\typeaints.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints.h")
+			cEcho "Creating src\include\win32\typeaints.h"
+			Set fout = f.CreateTextFile("src\include\win32\typeaints.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
 			contents = fin.ReadAll()
 			contents = ReplaceAts(contents, false, false)
@@ -3558,24 +3570,53 @@ Function ConfigureTestDir
 			fin.Close()
 			fout.Close()
 
-'			cEcho "Creating test\mpi\f77\datatype\typeaints64.h"
-'			Set fout = f.CreateTextFile("test\mpi\f77\datatype\typeaints64.h")
-'			Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
-'			contents = fin.ReadAll()
-'			contents = ReplaceAts(contents, false, true)
-'			fout.Write(contents)
-'			fin.Close()
-'			fout.Close()
+			cEcho "Creating src\include\win64\typeaints.h"
+			Set fout = f.CreateTextFile("src\include\win64\typeaints.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\datatype\typeaints.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
 		Else
 			cEcho "Skipping file: typeaints.h"
+		End If
+
+		'
+		' ioaint.h
+		'
+		If f.FileExists("test\mpi\f77\io\ioaint.h.in") Then
+			'cEcho "Creating test\mpi\f77\io\ioaint.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\io\ioaint.h")
+			cEcho "Creating src\include\win32\ioaint.h"
+			Set fout = f.CreateTextFile("src\include\win32\ioaint.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\io\ioaint.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+			cEcho "Creating src\include\win64\ioaint.h"
+			Set fout = f.CreateTextFile("src\include\win64\ioaint.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\io\ioaint.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		Else
+			cEcho "Skipping file: ioaint.h"
 		End If
 
 		'
 		' iooffset.h
 		'
 		If f.FileExists("test\mpi\f77\io\iooffset.h.in") Then
-			cEcho "Creating test\mpi\f77\io\iooffset.h"
-			Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
+			'cEcho "Creating test\mpi\f77\io\iooffset.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset.h")
+			cEcho "Creating src\include\win32\iooffset.h"
+			Set fout = f.CreateTextFile("src\include\win32\iooffset.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
 			contents = fin.ReadAll()
 			contents = ReplaceAts(contents, false, false)
@@ -3583,14 +3624,14 @@ Function ConfigureTestDir
 			fin.Close()
 			fout.Close()
 
-'			cEcho "Creating test\mpi\f77\io\iooffset64.h"
-'			Set fout = f.CreateTextFile("test\mpi\f77\io\iooffset64.h")
-'			Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
-'			contents = fin.ReadAll()
-'			contents = ReplaceAts(contents, false, true)
-'			fout.Write(contents)
-'			fin.Close()
-'			fout.Close()
+			cEcho "Creating src\include\win64\iooffset.h"
+			Set fout = f.CreateTextFile("src\include\win64\iooffset.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\io\iooffset.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
 		Else
 			cEcho "Skipping file: iooffset.h"
 		End If
@@ -3599,8 +3640,10 @@ Function ConfigureTestDir
 		' iodisp.h
 		'
 		If f.FileExists("test\mpi\f77\io\iodisp.h.in") Then
-			cEcho "Creating test\mpi\f77\io\iodisp.h"
-			Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp.h")
+			'cEcho "Creating test\mpi\f77\io\iodisp.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp.h")
+			cEcho "Creating src\include\win32\iodisp.h"
+			Set fout = f.CreateTextFile("src\include\win32\iodisp.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
 			contents = fin.ReadAll()
 			contents = ReplaceAts(contents, false, false)
@@ -3608,14 +3651,14 @@ Function ConfigureTestDir
 			fin.Close()
 			fout.Close()
 
-'			cEcho "Creating test\mpi\f77\io\iodisp64.h"
-'			Set fout = f.CreateTextFile("test\mpi\f77\io\iodisp64.h")
-'			Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
-'			contents = fin.ReadAll()
-'			contents = ReplaceAts(contents, false, true)
-'			fout.Write(contents)
-'			fin.Close()
-'			fout.Close()
+			cEcho "Creating src\include\win64\iodisp.h"
+			Set fout = f.CreateTextFile("src\include\win64\iodisp.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\io\iodisp.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
 		Else
 			cEcho "Skipping file: iodisp.h"
 		End If
@@ -3624,8 +3667,10 @@ Function ConfigureTestDir
 		' addsize.h
 		'
 		If f.FileExists("test\mpi\f77\rma\addsize.h.in") Then
-			cEcho "Creating test\mpi\f77\rma\addsize.h"
-			Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
+			'cEcho "Creating test\mpi\f77\rma\addsize.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize.h")
+			cEcho "Creating src\include\win32\addsize.h"
+			Set fout = f.CreateTextFile("src\include\win32\addsize.h")
 			Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
 			contents = fin.ReadAll()
 			contents = ReplaceAts(contents, false, false)
@@ -3633,16 +3678,43 @@ Function ConfigureTestDir
 			fin.Close()
 			fout.Close()
 
-'			cEcho "Creating test\mpi\f77\rma\addsize64.h"
-'			Set fout = f.CreateTextFile("test\mpi\f77\rma\addsize64.h")
-'			Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
-'			contents = fin.ReadAll()
-'			contents = ReplaceAts(contents, false, true)
-'			fout.Write(contents)
-'			fin.Close()
-'			fout.Close()
+			cEcho "Creating src\include\win64\addsize.h"
+			Set fout = f.CreateTextFile("src\include\win64\addsize.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\rma\addsize.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
 		Else
 			cEcho "Skipping file: addsize.h"
+		End If
+
+		'
+		' type1aint.h
+		'
+		If f.FileExists("test\mpi\f77\spawn\type1aint.h.in") Then
+			'cEcho "Creating test\mpi\f77\spawn\type1aint.h"
+			'Set fout = f.CreateTextFile("test\mpi\f77\spawn\type1aint.h")
+			cEcho "Creating src\include\win32\type1aint.h"
+			Set fout = f.CreateTextFile("src\include\win32\type1aint.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\spawn\type1aint.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+			cEcho "Creating src\include\win64\type1aint.h"
+			Set fout = f.CreateTextFile("src\include\win64\type1aint.h")
+			Set fin = f.OpenTextFile("test\mpi\f77\spawn\type1aint.h.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+		Else
+			cEcho "Skipping file: type1aint.h"
 		End If
 
 	End If
