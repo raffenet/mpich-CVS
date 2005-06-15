@@ -229,7 +229,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_sendrecv_replace",
-	    "**mpi_sendrecv_replace %p %d %D %d %d %d %d %C %p", buf, count, datatype, dest, sendtag,
+	    "**mpi_sendrecv_replace %p %d %D %i %t %i %t %C %p", buf, count, datatype, dest, sendtag,
 	    source, recvtag, comm, status);
     }
 #   endif

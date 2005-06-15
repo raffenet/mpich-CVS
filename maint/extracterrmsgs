@@ -399,6 +399,16 @@ sub AddTestCall {
 		print TESTFD "    int i$narg = $narg;\n";
 		$args[$#args+1] = "i$narg";
 	    }
+	    elsif ($type eq "i")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
+	    elsif ($type eq "t")
+	    {
+		print TESTFD "    int i$narg = $narg;\n";
+		$args[$#args+1] = "i$narg";
+	    }
 	    elsif ($type eq "s")
 	    {
 		print TESTFD "    char s$narg\[\] = \"string$narg\";\n";
@@ -649,7 +659,7 @@ sub ProcessFile
 		    if ($followchar ne "%") {
 			$nargs ++;
 		    }
-		    if (! ($followchar =~ /[%sdpDCRWOEIGFA]/) ) {
+		    if (! ($followchar =~ /[%sditpDCRWOEIGFA]/) ) {
 			print STDERR "Warning: Unrecognized format specifier in specific message $specific_msg in $filename\n";
 		    }
 		}

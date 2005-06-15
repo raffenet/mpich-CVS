@@ -214,7 +214,7 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_sendrecv",
-	    "**mpi_sendrecv %p %d %D %d %d %p %d %D %d %d %C %p", sendbuf, sendcount, sendtype, dest, sendtag,
+	    "**mpi_sendrecv %p %d %D %i %t %p %d %D %i %t %C %p", sendbuf, sendcount, sendtype, dest, sendtag,
 	    recvbuf, recvcount, recvtype, source, recvtag, comm, status);
     }
 #   endif

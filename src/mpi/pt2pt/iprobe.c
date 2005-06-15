@@ -118,7 +118,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_iprobe",
-	    "**mpi_iprobe %d %d %C %p %p", source, tag, comm, flag, status);
+	    "**mpi_iprobe %i %t %C %p %p", source, tag, comm, flag, status);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

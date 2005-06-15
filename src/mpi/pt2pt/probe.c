@@ -110,7 +110,7 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_probe",
-	    "**mpi_probe %d %d %C %p", source, tag, comm, status);
+	    "**mpi_probe %i %t %C %p", source, tag, comm, status);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

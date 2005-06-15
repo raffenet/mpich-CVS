@@ -143,7 +143,7 @@ int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source,
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_recv_init",
-	    "**mpi_recv_init %p %d %D %d %d %C %p", buf, count, datatype, source, tag, comm, request);
+	    "**mpi_recv_init %p %d %D %i %t %C %p", buf, count, datatype, source, tag, comm, request);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
