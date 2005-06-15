@@ -1742,6 +1742,32 @@ BuildIFaces()
 '	cmd_output = oExec.StdOut.ReadAll()
 '	RunCmd = cmd_output
 'End Function
+'Function RunCmd(cmd_line)
+'	Dim results(2), runcmd_done
+'	Set WshShell = CreateObject("WScript.Shell")
+'	cEcho WshShell.CurrentDirectory & ">" & cmd_line
+'	Set oExec = WshShell.Exec(cmd_line)
+'	cmd_output = ""
+'	err_output = ""
+'	runcmd_more = true
+'	Do While runcmd_more
+'		runcmd_more = false
+'		If Not oExec.StdOut.AtEndOfStream Then
+'			runcmd_more = true
+'			cmd_output = cmd_output & oExec.StdOut.ReadLine & vbCrLf
+'		End If
+'		If Not oExec.StdErr.AtEndOfStream Then
+'			runcmd_more = true
+'			err_output = err_output & oExec.StdErr.ReadLine & vbCrLf
+'		End If
+'	Loop
+'	Do While oExec.Status <> 1
+'		WScript.Sleep 10
+'	Loop
+'	results(0) = cmd_output
+'	results(1) = err_output
+'	RunCmd = results
+'End Function
 Function RunCmd(cmd_line)
 	Dim results(2)
 	Set WshShell = CreateObject("WScript.Shell")
