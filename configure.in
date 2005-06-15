@@ -1267,9 +1267,12 @@ EOF
     fi
     # ------------------------------------------------
 
+    # Note that we don't install mpif.h into src/include, since this
+    # is done by the Fortran 77 step (if you replace it, make sure that
+    # you include the replacement of C with ! as the comment marker
+    # where possible.
     AC_OUTPUT_COMMANDS([if test $enable_f90 = yes ; then 
     chmod a+x src/env/mpif90
-    cp src/binding/f77/mpif.h src/include
     if test ! -d bin  ; then mkdir bin ; fi 
     sed -e 's%includedir=.*%includedir='$includebuild_dir% \
         -e 's%modincdir=.*%modincdir='$modincbuild_dir% \
