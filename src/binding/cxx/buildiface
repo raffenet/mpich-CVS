@@ -2876,7 +2876,7 @@ sub Status_methods {
 sub Clone_method {
     my $OUTFD = $_[0];
     my $classname = $_[1];
-    print $OUTFD "    $classname & Clone(void) const { 
+    print $OUTFD "    virtual $classname & Clone(void) const { 
         MPI_Comm ncomm;
         MPI_Comm_dup( (MPI_Comm)the_real_comm, &ncomm); 
         $classname *clone = new $classname(ncomm); 
@@ -2949,7 +2949,7 @@ sub Nullcomm_methods {
     # We can't use Clone_method because 
     # there is no (oldcomm) initializer.
     #&Clone_method( $OUTFD, "Nullcomm" );
-    print $OUTFD "    Nullcomm & Clone(void) const { 
+    print $OUTFD "    virtual Nullcomm & Clone(void) const { 
         Nullcomm *clone = new Nullcomm();
         return *clone; };\n";
 }
