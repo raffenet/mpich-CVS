@@ -1214,8 +1214,10 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
   int ncmap_cnt, ncmap_size;
   ADIO_Offset packed_off, acc_blk_size, new_len;
   char *packed_buf;
-  int ret, i;
+  int ret, i, j;
   JRB node;
+  int lm_array_size, lm_array_cnt;
+  LorsMapping **lm_array;
 
   ADIOI_Flatlist_node *flat_buf, *flat_file;
   /* bwr == buffer write; fwr == file write */
@@ -1596,13 +1598,40 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
   ret = lorsSetEnum (set, &list);
   LNIO_ERROR_CHECK(ret != LORS_SUCCESS, ret, "lorsSetEnum failed", EIO);
   
-  /* need to check the order of multiple blocks 
+  /* TODO: need to check the order of multiple blocks 
      -> first thing first? or last things first? */
-  i = 0;
-  acc_blk_size = 0;
-  while (1) { 
+  lm_array_size = 4;
+  lm_array = (LorsMapping **)calloc(sizeof(LorsMapping *), lm_array_size);
+  lm_array_cnt = 0;
+  while (1) {
     ret = lorsEnumNext(list, &it, &lm);
     if (ret == LORS_END) break;
+
+    lm_array[lm_array_cnt] = lm;
+    lm_array_cnt++;
+    if (lm_array_cnt == lm_array_size) {
+      lm_array_size *= 2;
+      lm_array = (LorsMapping **)realloc(lm_array, (sizeof(LorsMapping *) * 
+						    lm_array_size));
+    }
+  }
+  for (i = 0; i < lm_array_cnt - 1; i++) 
+    for (j = i + 1; j < lm_array_cnt; j++) 
+      if (lm_array[i]->exnode_offset > lm_array[j]->exnode_offset) {
+	lm = lm_array[i];
+	lm_array[i] = lm_array[j];
+	lm_array[j] = lm;
+      }
+
+  i = 0;
+  acc_blk_size = 0;
+  /*  while (1) { 
+    ret = lorsEnumNext(list, &it, &lm);
+    if (ret == LORS_END) break;*/
+  
+  for (j = 0; j < lm_array_cnt; j++) {
+    lm = lm_array[j];
+    
     while (i < ncmap_cnt && 
 	   ncmap[i].packed_offset + ncmap[i].length - 1 - acc_blk_size < 
 	   lm->alloc_length) { 
@@ -1648,7 +1677,7 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
       acc_blk_size += lm->alloc_length;
     } 
   }
-
+  
   ret = lorsEnumFree(list);
   LNIO_ERROR_CHECK(ret != LORS_SUCCESS, ret, "lorsEnumFree failed", EIO);
   
@@ -1667,6 +1696,8 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
 #endif
   
   if (!buftype_is_contig) ADIOI_Delete_flattened(buftype);
+
+  return 0;
 }
 
 
