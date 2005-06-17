@@ -269,6 +269,8 @@ Fortran integer (value is %ld)
 **attrcopy %d:User defined attribute copy routine returned a non-zero return code %d
 **intern:Internal MPI error!
 **intern %s:Internal MPI error!  %s
+**internrc:Internal MPI error!  Unexpected return code from internal function.
+**internrc %d:Internal MPI error!  Unexpected return code from internal function (rc=%d).
 **instatus:See the MPI_ERROR field in MPI_Status for the error code
 **inpending:Pending request (no error)
 **request:Invalid MPI_Request
@@ -451,6 +453,25 @@ with MPI_Alloc_mem.
 
 
 #
+# Errors common to several devices
+#
+**dev|pg_init:unable to initialize the process group management module
+**dev|pg_create:unable to create a new process group
+**dev|pg_finalize:unable to shutdown the process group management module
+**dev|pg_not_found:the specified process group object could not be located
+**dev|pg_not_found %p:the specified process group object could not be located (pg=%p)
+**dev|pg_destroy_failed:attempt to destroy a process group failed
+**dev|pg_destroy_failed %p:attempt to destroy a process group failed (pg=%p)
+**dev|pg_destroy|pg_not_found %p:process group being destroyed was not in the process group list (pg=%p)
+**dev|pg_destroy|pg_not_found:process group being destroyed was not in the process group list
+**dev|pg_finalize|list_not_empty:process group list was not empty
+**dev|selfsenddeadlock:DEADLOCK: attempting to send a message to the local process without a prior matching receive
+**dev|vcrt_create:failed to a create VCRT
+**dev|vcrt_create %s:failed to create VCRT for %s
+**dev|vcrt_get_ptr:failed to get a pointer to VCR table
+**dev|vcrt_get_ptr %s:failed to get a pointer to VCR table for %s
+
+#
 # CH3 errors
 #
 **ch3|badca %d:specified completion action in not known (%d)
@@ -473,9 +494,6 @@ with MPI_Alloc_mem.
 **ch3|loadsendiov:failure occurred while loading the send I/O vector
 **ch3|nopktcontainermem:failed to allocate memory for a packet reorder container
 **ch3|ooocancelreq:UNIMPLEMENTED: unable to process out-of-order cancellation requests
-**ch3|pg_destroy|pg_not_found %p:process group being destroyed was not in the process group list (pg=%p)
-**ch3|pg_destroy|pg_not_found:process group being destroyed was not in the process group list
-**ch3|pg_finalize|list_not_empty:process group list was not empty
 **ch3|pktordered:failure occurred while processing a reordered packet
 **ch3|postrecv %s:failure occurred while posting a receive for message data (%s)
 **ch3|postrecv:failure occurred while posting a receive for message data
@@ -484,7 +502,6 @@ with MPI_Alloc_mem.
 **ch3|recvdata:failure occurred while attempting to receive message data
 **ch3|rmamsg:failure occurred while attempting to send an RMA message
 **ch3|rtspkt:failure occurred while attempting to send RTS packet
-**ch3|selfsenddeadlock:DEADLOCK: attempting to send a message to the local process without a prior matching receive
 **ch3|senddata:failure occurred while attempting to send message data
 **ch3|syncack:failure occurred while attempting to send eager synchronization packet
 **ch3|unknownpkt %d:received unknown packet type (type=%d)
@@ -495,10 +512,6 @@ with MPI_Alloc_mem.
 **opnotpredefined:only predefined ops are valid
 **opundefined_rma %d:RMA target received unknown RMA operation type %d
 **opundefined_rma:RMA target received unknown RMA operation
-**ch3|vcrt_create:failed to a create VCRT
-**ch3|vcrt_create %s:failed to create VCRT for %s
-**ch3|vcrt_get_ptr:failed to get a pointer to VCR table
-**ch3|vcrt_get_ptr %s:failed to get a pointer to VCR table for %s
 **ch3|get_parent_port:spawn process group was unable to obtain parent port name from the channel
 **ch3|get_parent_port_err_bcast:an error occurred while broadcasting the error code from MPIDI_CH3_Get_parent_port()
 **ch3|conn_parent:spawned process group was unable to connect back to the parent
@@ -513,14 +526,6 @@ with MPI_Alloc_mem.
 #
 **init_vcrt:failed to create VCRT
 **init_getptr:failed to get the vcr
-
-#
-# CH3 errors common to all channels
-#
-**ch3|pg_init:unable to initialize the process group management module
-**ch3|pg_create:unable to create a new process group
-**ch3|pg_not_found:the specified process group object could not be located
-**ch3|pg_not_found %p:the specified process group object could not be located (pg=%p)
 
 #
 # CH3:sock errors
@@ -834,6 +839,91 @@ with MPI_Alloc_mem.
 **shmsize %d:Shared memory subsystem unable to allocate a block of the requested size, %d bytes
 
 #
+# CH3:rdma
+#
+**ch3progress:Unable to make message passing progress
+**read_progress:Unable to make read progress
+**handle_read:Unable to handle the read data
+**process_group:Process group initialization failed
+**ch3_finalize:Channel finalization failed
+**ch3_send:send failed
+**rdma_finalize:Channel rdma finalization failed
+**ch3_init:Channel init failed
+**init:Initialization failed
+**rdma_init:Channel rdma initialization failed
+**poke:progress_poke failed
+**postpkt:Unable to post a read for the next packet header
+**write_progress:Write progress failed
+**ch3progress %d:Channel progress engine failed on line %d
+
+#
+# CH3:ib
+#
+**ibu_wait:ibu_wait failed
+**ibu_wait %d:ibu_wait failed (errno %d)
+**init_ibu:infiniband initialization failed
+**init_ibu_set:unable to create an infinband completion queue
+**ca_guids:unable to get the guids from the infiniband access layer
+**ca_guids %s:unable to get the infiniband guids - %s
+**get_guids:unable to get the guids for the infiniband channel adapter
+**noca:unable to find an active infiniband channel adapter
+**pd_alloc:unable to allocate a protection domain
+**pd_alloc %s:unable to allocate a protection domain - %s
+**finish_qp:unable to establish a queue pair connection
+**setup_connections:MPIDI_CH3I_Setup_connections failed
+
+#
+# Globus device
+#
+**globus|bc_init:failed to initialize the business card module
+**globus|cm_add_contact:an error occurred while a communication module was adding its contact information to the business card
+**globus|cm_add_contact %s:an error occurred while the '%s' communication module was adding its contact information to the business card
+**globus|cm_finalize:an error occurred while shutting down a communication module
+**globus|cm_finalize %s:an error occurred while shutting down the '%s' communication module
+**globus|cm_init:an error occured while initializing a communication module
+**globus|cm_init %s:an error occured while initializing the '%s' communication module
+**globus|cm_no_module:no communication module was selected
+**globus|cm_no_module %s %d:no communication module was selection for process %s:%d
+**globus|cm_select_module:an error ocurred when a communication module was asked to perform selection
+**globus|cm_select_module %s %s %d:an error ocurred when the '%s' communication module was asked to perform selection for process %s:%d
+**globus|cm_self_hostname:the 'self' communication module was unable to obtain the machine's hostname
+**globus|cm_xio_ver:the 'xio' communication module detected a protocol incompatibility
+**globus|duroc_sjrank:a error occurred while retrieving the rank of this process within its subjob
+**globus|duroc_sjsize:a error occurred while retrieving the size of the subjob to which this process belongs
+**globus|module_activate:attempt to activate a Globus module failed
+**globus|module_activate %s:attempt to activate the Globus %s module failed
+**globus|module_deactivate:attempt to deactivate a Globus module failed
+**globus|module_deactivate %s:attempt to deactivate the Globus %s module failed
+**globus|pm_init_failed:an error occurred while initializing the process management module
+**globus|pm_not_init:attempt to use the process manangement module before initialization
+**globus|pm_finalized:attempt to use the process manangement module after shutdown
+**globus|pm_no_pg_id:the process manager is unable to supply the process group ID at this time
+**globus|pm_no_pg_rank:the process manager is unable to supply the process group rank at this time
+**globus|pm_no_pg_size:the process manager is unable to supply the process group size at this time
+**globus|pm_xchg:an error occurred while exchanging business cards with the other processes
+**globus|recvq_init:an error occurred while initialized the receive queue modules
+**globus|vmpi_init:an error occurred while initializing the vendor MPI
+**globus|vmpi_get_comm_rank:attempt to obtain the rank of the process from a vendor MPI communicator failed
+**globus|vmpi_get_comm_size:attempt to obtain the size of a vendor MPI communicator failed
+**globus|vmpi_get_comm_world:attempt to obtain the vendor MPI_COMM_WORLD failed
+**globus|xio_handle_create:an error occurred while creating a new globus_xio handle
+**globus|xio_handle_create %s:an error occurred while creating a new globus_xio handle\n%s
+**globus|xio_msg_hdr_trunc:the XIO communication module received a truncated message header
+**globus|xio_reg_accept:an error occurred while performing a globus_xio_register_accept()
+**globus|xio_reg_accept %s:an error occurred while performing a globus_xio_register_accept()\n%s
+**globus|xio_reg_close:an error occurred while performing a globus_xio_register_close()
+**globus|xio_reg_close %s:an error occurred while performing a globus_xio_register_close()\n%s
+**globus|xio_reg_open:an error occurred while performing a globus_xio_register_open()
+**globus|xio_reg_open %s:an error occurred while performing a globus_xio_register_open()\n%s
+**globus|xio_reg_read:an error occurred while performing a globus_xio_register_read()
+**globus|xio_reg_read %s:an error occurred while performing a globus_xio_register_read()\n%s
+**globus|xio_reg_write:an error occurred while performing a globus_xio_register_write()
+**globus|xio_reg_write %s:an error occurred while performing a globus_xio_register_write()\n%s
+**globus|xio_server_init:an error occurred while constructing the listener object
+**globus|xio_server_init %s:an error occurred while constructing the listener object:\n%s
+**globus|xio_server_multiple_fail:the XIO communication module encountered too many errors while accepting connections from the listener
+
+#
 # Sock
 #
 **sock|setalloc:unable to allocate a new sock set object
@@ -932,40 +1022,6 @@ with MPI_Alloc_mem.
 **sock|poll|unhandledstate %d:encountered an unexpected state (%d)
 **sock|poll|unhandledtype:encountered an unexpected sock type
 **sock|poll|unhandledtype %d:encountered an unexpected sock type (%d)
-
-#
-# CH3:rdma
-#
-**ch3progress:Unable to make message passing progress
-**read_progress:Unable to make read progress
-**handle_read:Unable to handle the read data
-**process_group:Process group initialization failed
-**ch3_finalize:Channel finalization failed
-**ch3_send:send failed
-**rdma_finalize:Channel rdma finalization failed
-**ch3_init:Channel init failed
-**init:Initialization failed
-**rdma_init:Channel rdma initialization failed
-**poke:progress_poke failed
-**postpkt:Unable to post a read for the next packet header
-**write_progress:Write progress failed
-**ch3progress %d:Channel progress engine failed on line %d
-
-#
-# CH3:ib
-#
-**ibu_wait:ibu_wait failed
-**ibu_wait %d:ibu_wait failed (errno %d)
-**init_ibu:infiniband initialization failed
-**init_ibu_set:unable to create an infinband completion queue
-**ca_guids:unable to get the guids from the infiniband access layer
-**ca_guids %s:unable to get the infiniband guids - %s
-**get_guids:unable to get the guids for the infiniband channel adapter
-**noca:unable to find an active infiniband channel adapter
-**pd_alloc:unable to allocate a protection domain
-**pd_alloc %s:unable to allocate a protection domain - %s
-**finish_qp:unable to establish a queue pair connection
-**setup_connections:MPIDI_CH3I_Setup_connections failed
 
 #
 # pmi

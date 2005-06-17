@@ -42,7 +42,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    if (sreq != NULL && sreq->cc != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**ch3|selfsenddeadlock", 0);
+						 "**dev|selfsenddeadlock", 0);
 		goto fn_exit;
 	    }
 	}

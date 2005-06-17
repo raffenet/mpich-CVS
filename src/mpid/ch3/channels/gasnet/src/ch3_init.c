@@ -177,7 +177,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					 FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|pg_init", NULL);
+					 "**dev|pg_init", NULL);
 	return mpi_errno;
 	/* --END ERROR HANDLING-- */
     }
@@ -191,7 +191,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					 FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|pg_create", NULL);
+					 "**dev|pg_create", NULL);
 	if (pg != NULL)
 	{
 	    MPIDI_PG_Destroy(pg);

@@ -139,7 +139,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|vcrt_create", "**ch3|vcrt_create %s", "MPI_COMM_WORLD");
+					 "**dev|vcrt_create", "**dev|vcrt_create %s", "MPI_COMM_WORLD");
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
@@ -149,7 +149,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|vcrt_get_ptr", "ch3|vcrt_get_ptr %s", "MPI_COMM_WORLD");
+					 "**dev|vcrt_get_ptr", "dev|vcrt_get_ptr %s", "MPI_COMM_WORLD");
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
@@ -173,7 +173,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|vcrt_create", "**ch3|vcrt_create %s", "MPI_COMM_SELF");
+					 "**dev|vcrt_create", "**dev|vcrt_create %s", "MPI_COMM_SELF");
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
@@ -183,7 +183,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|vcrt_get_ptr", "ch3|vcrt_get_ptr %s", "MPI_COMM_WORLD");
+					 "**dev|vcrt_get_ptr", "dev|vcrt_get_ptr %s", "MPI_COMM_WORLD");
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
