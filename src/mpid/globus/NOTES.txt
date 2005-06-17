@@ -1,0 +1,27 @@
+TODO:
+
+- Generate function renaming
+
+- Include definitions from device into mpi.h, allowing function renaming, etc.
+
+- Add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
+
+- update the outdated mpid compiler scripts to be more like those in src/env
+
+- Singleton init
+
+
+Open questions:
+
+- ...
+
+
+Things needed from Globus:
+
+- Support for long double and fixed sized integers (ex: uint32_t) in the Globus data conversion module
+
+
+Things needed from MPICH2:
+
+- Allow long long and long double support to be explicitly disabled even if the compiler support those types.  The vendor MPI
+  may not support MPI_LONG_LONG or MPI_LONG_LONG_INT, and the Globus data conversion library doesn't support long double.

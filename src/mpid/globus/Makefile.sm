@@ -1,0 +1,94 @@
+# 
+# Globus device code:          Copyright 2005 Northern Illinois University
+# Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory and Northern Illinois University
+# Borrowed MPICH2 device code: Copyright 2001 Argonne National Laboratory
+# 
+# XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+# 
+
+MPIG_SOURCE_DIR=@MPIG_SOURCE_DIR@
+MPIG_BUILD_DIR=@MPIG_BUILD_DIR@
+
+#
+# Add top-level include directory
+#
+INCLUDES = -I../../include -I${master_top_srcdir}/src/include
+
+#
+# List of header files that all sources depend upon
+#
+HEADERS = mpidconf.h mpidimpl.h mpidpre.h mpidpost.h
+
+#
+# List of file to compile and include in the MPICH2 library
+#
+lib${MPILIBNAME}_a_SOURCES =	\
+    mpid_env.c			\
+    mpid_progress.c		\
+    mpid_pt2pt.c		\
+    mpid_services.c		\
+    mpid_vc.c			\
+    mpid_win.c			\
+    mpig_bc.c			\
+    mpig_cm_other.c		\
+    mpig_cm_self.c		\
+    mpig_cm_vmpi.c		\
+    mpig_cm_xio.c		\
+    mpig_pg.c			\
+    mpig_misc.c			\
+    mpig_pm_gk.c		\
+    mpig_recvq.c		\
+    mpig_request.c
+
+#
+# Install device compiler scripts, and  modify the previously installed MPICH2 compiler scripts to use the installed
+#  device scripts
+#
+install_BIN = mpich2-globus-cc
+optinstall_BIN = mpich2-globus-cxx mpich2-globus-f77 mpich2-globus-f90
+
+install-local:
+	# XXX: The file permissions are assumed to be 755 for the compilers scripts and 644 for the configuration files.  This
+	#      seemed reasonable given that those are those are the values used by autoconf 2.59.
+	@echo "Updating the paths in the MPICH2 compiler scripts" ; \
+	for f in mpicc mpicxx mpif77 mpif90 ; do \
+	    ff=${bindir}/$${f} ; \
+	    if test -f $${ff} ; then \
+	        mv $${ff} $${ff}.orig ; \
+	        sed -e "s!${MPIG_BUILD_DIR}!${bindir}!" $${ff}.orig >$${ff} ; \
+	        chmod 755 $${ff} ; \
+	        rm -f $${ff}.orig ; \
+	    fi ; \
+	    ff=${sysconfdir}/$${f}.conf ; \
+	    if test -f $${ff} ; then \
+	        mv $${ff} $${ff}.orig ; \
+	        sed -e "s!${MPIG_BUILD_DIR}!${bindir}!" $${ff}.orig >$${ff} ; \
+	        chmod 644 $${ff} ; \
+	        rm -f $${ff}.orig ; \
+	    fi ; \
+	done
+
+#
+# Clean up files created by configure
+#
+distclean-local:
+	-rm -f globus-settings.mk
+	-rm -f mpidconf.h
+	-rm -f mpich2-globus-cc
+	-rm -f mpich2-globus-cxx
+	-rm -f mpich2-globus-f77
+	-rm -f mpich2-globus-f90
+	-rm -f mpich2-globus-settings
+
+#
+# Clean up files created by maint/updatefiles (autoheader, autoconf, etc.)
+#
+maintainer-clean-local:
+	-rm -f mpidconf.h.in
+
+#
+# echomaxprocname gives the maximum length of a processor name, as used
+# by MPI_GET_PROCESSOR_NAME.  This is initialized in MPID_Init().
+#
+echomaxprocname:
+	@echo 128

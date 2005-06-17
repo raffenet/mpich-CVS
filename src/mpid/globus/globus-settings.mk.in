@@ -1,0 +1,78 @@
+# 
+# Globus device code:          Copyright 2005 Northern Illinois University
+# Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory and Northern Illinois University
+# Borrowed MPICH2 device code: Copyright 2001 Argonne National Laboratory
+# 
+# XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+# 
+
+#
+# This makefile is used to bridge knowledge from Globus to MPICH, so that MPICH is built using the same compiler settings, and
+# linking the correct libraries.
+#
+
+@MPIG_GLOBUS_HEADER_MK@
+
+#
+# Are the Globus libraries built for use with a vendor implementation of MPI?
+#
+vmpi:
+	@mpi=$(GLOBUS_MP); if test "$${mpi}" = "mpi" ; then echo "yes"; else echo "no"; fi
+
+#
+# Are the Globus libraries multi-threaded?
+#
+multi-threaded:
+	@thr=$(GLOBUS_THREADS); if test "$${thr}" = "none" -o -z "$${thr}" ; then echo "no"; else echo "yes"; fi
+
+#
+# Libraries and linking flags
+#
+ldflags:
+	@echo $(GLOBUS_LDFLAGS)
+
+libs:
+	@echo $(GLOBUS_PKG_LIBS) $(GLOBUS_LIBS)
+
+
+#
+# C compiler and flags
+#
+cc:
+	@echo $(GLOBUS_CC)
+
+cflags:
+	@echo $(GLOBUS_CFLAGS) $(GLOBUS_INCLUDES)
+
+
+#
+# C++ compiler and flags
+#
+cxx:
+	@echo $(GLOBUS_CXX)
+
+cxxflags:
+	@echo $(GLOBUS_CXXFLAGS) $(GLOBUS_INCLUDES)
+
+
+
+#
+# F77 compiler and flags
+#
+f77:
+	@echo $(GLOBUS_F77)
+
+f77flags:
+	@echo $(GLOBUS_F77FLAGS) $(GLOBUS_INCLUDES)
+
+
+
+#
+# F90 compiler and flags
+#
+f90:
+	@echo $(GLOBUS_F90)
+
+f90flags:
+	@echo $(GLOBUS_F90FLAGS) $(GLOBUS_INCLUDES)
+

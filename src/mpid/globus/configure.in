@@ -1,0 +1,117 @@
+# 
+# Globus device code:          Copyright 2005 Northern Illinois University
+# Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory and Northern Illinois University
+# Borrowed MPICH2 device code: Copyright 2001 Argonne National Laboratory
+# 
+# XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+# 
+
+AC_PREREQ(2.59)
+
+AC_INIT(configure.in)
+dnl AC_INIT(MPI-G, 20050501, mpi@globus.org, mpig)
+
+dnl
+dnl Set the directory that contains support scripts such as install-sh and
+dnl config.guess
+dnl
+AC_CONFIG_AUX_DIR(../../../confdb)
+
+dnl
+dnl Definitions will be placed in this file rather than in the DEFS variable
+dnl
+AC_CONFIG_HEADER(mpidconf.h)
+
+echo ""
+echo "START OF CONFIGURE THE FOR GLOBUS DEVICE"
+echo ""
+
+#
+# First check that we have a clean build if we are doing a VPATH build
+#
+if test "`cd $srcdir && pwd`" != "`pwd`" && \
+   test -f $srcdir/config.status ; then
+    AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
+    configured.  Run "make distclean" in $srcdir first.])
+fi
+
+AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
+PAC_PROG_MKDIR_P
+PAC_PROG_MAKE
+
+AC_CHECK_HEADERS(unistd.h)
+
+AC_CHECK_FUNCS(gethostname)
+if test "$ac_cv_func_gethostname" = "yes" ; then
+    # Do we need to declare gethostname?
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],gethostname)
+fi
+
+AC_CACHE_CHECK([whether CPP accepts variable length argument lists],
+lac_cv_have_cpp_varargs,[
+AC_TRY_COMPILE([
+#include <stdio.h>
+#define MY_PRINTF(rank, fmt, args...)  printf("%d: " fmt, rank, ## args)
+],[
+MY_PRINTF(0, "hello");
+MY_PRINTF(1, "world %d", 3);
+], lac_cv_have_cpp_varargs=yes, lac_cv_have_cpp_varargs=no)
+])
+if test $lac_cv_have_cpp_varargs = "yes" ; then
+    AC_DEFINE(HAVE_CPP_VARARGS,,[Define if CPP supports macros with a variable number arguments])
+fi
+
+#
+# Settings from mpich2prereq
+#
+AC_DEFINE_UNQUOTED(MPIG_ALIGNED_T,${MPIG_ALIGNED_T},[type to use insure proper memory alignment for all types])
+AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T},[size of type used for aligning memory accesses])
+AC_DEFINE_UNQUOTED(MEMALIGN_MPIG_ALIGNED_T,${MEMALIGN_MPIG_ALIGNED_T},[memory alignment of MPIG_ALIGNED_T])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_COMM,${SIZEOF_VMPI_COMM},[size of vendor MPI_COMM])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_DATATYPE,${SIZEOF_VMPI_DATATYPE},[size of vendor MPI_DATATYPE])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_REQUEST,${SIZEOF_VMPI_REQUEST},[size of vendor MPI_REQUEST type])
+if test "${HAVE_MPI_2COMPLEX}" != "no" ; then
+    AC_DEFINE(HAVE_MPI_2COMPLEX,1,[define if vendor has MPI_2COMPLEX])
+fi
+if test "${HAVE_VMPI_2DOUBLE_COMPLEX}" != "no" ; then
+    AC_DEFINE(HAVE_VMPI_2DOUBLE_COMPLEX,1,[define if vendor has MPI_2DOUBLE_COMPLEX])
+fi
+if test "${HAVE_VMPI_LONG_LONG}" != "no" ; then
+    AC_DEFINE(HAVE_VMPI_LONG_LONG,1,[define if vendor has MPI_LONG_LONG])
+fi
+if test "${HAVE_VMPI_LONG_LONG_INT}" != "no" ; then
+    AC_DEFINE(HAVE_VMPI_LONG_LONG_INT,1,[define if vendor has MPI_LONG_LONG_INT])
+fi
+AC_SUBST(MPIG_SOURCE_DIR)
+AC_SUBST(MPIG_BUILD_DIR)
+
+#
+# Settings imported from the top-level configure
+# 
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
+AC_SUBST(MPILIBNAME)
+AC_SUBST(PMPILIBNAME)
+AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(DEFS)
+AC_SUBST(LDFLAGS)
+PAC_CC_SUBDIR_SHLIBS
+AC_SUBST(master_top_srcdir)
+AC_SUBST(master_top_builddir)
+
+#
+# Dependency handling
+#
+AC_SUBST(MAKE_DEPEND_C)
+
+#
+# Create Makefiles, etc.
+#
+AC_OUTPUT(Makefile)
+
+echo ""
+echo "END OF CONFIGURE THE FOR GLOBUS DEVICE"
+echo ""
