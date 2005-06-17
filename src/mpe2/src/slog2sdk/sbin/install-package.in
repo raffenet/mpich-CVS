@@ -37,8 +37,8 @@ bindir=@bindir@
 sbindir=@sbindir@
 datadir=@datadir@
 sysconfdir=@sysconfdir@
-docdir=$prefix/doc
-logfilesdir=$prefix/logfiles
+docdir=@docdir@
+logfilesdir=@logfilesdir@
 etcdir=$sysconfdir
 sharedir=$datadir
 
