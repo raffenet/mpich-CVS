@@ -35,6 +35,9 @@ bindir=@bindir@
 sbindir=@sbindir@
 datadir=@datadir@
 sysconfdir=@sysconfdir@
+mandir=@mandir@
+htmldir=@htmldir@
+docdir=@docdir@
 
 # Assume PROF_LIBNAME=MPE_LIBNAME.
 PROF_LIBNAME=@MPE_LIBNAME@
@@ -386,6 +389,9 @@ fi
 # echo "sbindir = $sbindir"
 # echo "datadir = $datadir"
 # echo "sysconfdir = $sysconfdir"
+# echo "mandir = $mandir"
+# echo "htmldir = $htmldir"
+# echo "docdir = $docdir"
 
 # If the prefix was set, we want to override these choices
 if [ "$prefix_override" = 1 ] ; then
@@ -394,6 +400,9 @@ if [ "$prefix_override" = 1 ] ; then
     bindir=$prefix/bin
     sbindir=$prefix/sbin
     datadir=$prefix/share
+    mandir=$prefix/man
+    htmldir=$prefix/html
+    docdir=$prefix/doc
     if [ $appendUninstall = 0 ] ; then
         UNINSTALLFILE=$DESTDIR${sbindir}/${UNINSTALL_base}
     fi
@@ -463,6 +472,21 @@ for pkg in logging graphics ; do
 #                     $LN_S $bindir/mpirun mpirun )"
 #            filelist="$filelist $examplesdir/mpirun" 
 #        fi
+    fi
+done
+
+# Copy documentation related files if they exist,
+# ie CP $top_srcdir/doc  $docdir
+#    CP $top_srcdir/man  $mandir
+#    CP $top_srcdir/html $htmldir
+for dir in doc man html ; do
+    dirname=${dir}dir
+    eval dirvalue=\$"$dirname"
+    if [ -d $top_srcdir/$dir ] ; then
+        if [ ! -d $DESTDIR$dirvalue ] ; then
+            MkDir $dirvalue
+        fi
+        CopyDirRecurP $top_srcdir/$dir $dirvalue $MODE
     fi
 done
 
