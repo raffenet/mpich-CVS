@@ -479,14 +479,15 @@ done
 # ie CP $top_srcdir/doc  $docdir
 #    CP $top_srcdir/man  $mandir
 #    CP $top_srcdir/html $htmldir
-for dir in doc man html ; do
-    dirname=${dir}dir
-    eval dirvalue=\$"$dirname"
-    if [ -d $top_srcdir/$dir ] ; then
-        if [ ! -d $DESTDIR$dirvalue ] ; then
-            MkDir $dirvalue
+for type in doc man html ; do
+    typename=${type}dir
+    eval typevalue=\$"$typename"
+    if [ -d $top_srcdir/$type ] ; then
+        if [ ! -d $DESTDIR$typevalue ] ; then
+            MkDir $typevalue
         fi
-        CopyDirRecurP $top_srcdir/$dir $dirvalue $MODE
+        echo "Copying MPE $type to $DESTDIR$typevalue"
+        CopyDirRecurP $top_srcdir/$type $typevalue $MODE
     fi
 done
 
