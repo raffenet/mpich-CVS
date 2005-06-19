@@ -618,6 +618,8 @@ def get_parms_from_env(parmdb,parmsToOverride):
             parmdb[('env',envvar)] = environ[envvar]
 
 def get_special_parms_from_cmdline(parmdb):
+    if len(argv) <= 1:
+        usage()
     if argv[1] == '-h'  or  argv[1] == '--help':
         usage()
     if len(argv) == 3  and  argv[1] == '-delxmlfile':  # special case for mpiexec
