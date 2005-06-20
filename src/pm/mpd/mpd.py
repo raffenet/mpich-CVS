@@ -430,6 +430,11 @@ class MPD(object):
         if not self.conSock:
             (self.conSock,newConnAddr) = sock.accept()
             line = self.conSock.recv_char_msg().rstrip()
+            if not line:    # caller went away (perhaps another mpd seeing if I am here)
+                self.streamHandler.del_handler(self.conSock)
+                self.conSock.close()
+                self.conSock = 0
+                return
             try:
                 splitLine = line.split('=',1)
             except:
