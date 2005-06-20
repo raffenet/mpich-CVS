@@ -341,6 +341,14 @@ class MPDSock(object):
         msg = ''
         try:
             c = self.sock.recv(1)
+        except socket.error, errinfo:
+            if errinfo[0] == EINTR:   # sigchld, sigint, etc.
+                return msg
+            elif errinfo[0] == ECONNRESET:   # connection reset (treat as eof)
+                return msg
+            else:
+                print '%s: recv error: %s' % (mpd_my_id,strerror(errinfo[0]))
+                exit(-1)
         except Exception, errmsg:
             c = ''
             msg = ''
@@ -350,6 +358,14 @@ class MPDSock(object):
                 msg += c
                 try:
                     c = self.sock.recv(1)
+                except socket.error, errinfo:
+                    if errinfo[0] == EINTR:   # sigchld, sigint, etc.
+                        return msg
+                    elif errinfo[0] == ECONNRESET:   # connection reset (treat as eof)
+                        return msg
+                    else:
+                        print '%s: recv error: %s' % (mpd_my_id,strerror(errinfo[0]))
+                        exit(-1)
                 except Exception, errmsg:
                     c = ''
                     msg = ''
