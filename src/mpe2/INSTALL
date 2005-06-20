@@ -340,14 +340,20 @@ do
     make install PREFIX=${MPE_INSTALL_DIR}
     make installcheck PREFIX=${MPE_INSTALL_DIR}
 
-LAM 6.5.6 to 6.5.9 has a bug that interferes with MPE's configure and make
-in enabling byte swapping on little endian machine, e.g. intel box.  For 
-details, see
+LAM 6.5.6 to 6.5.9 has a bug on autoconf variable, WORDS_BIGENDIAN, that
+interferes with MPE's configure in the correct detection of endianiness
+of the machine, e.g. enabling byte swapping on little endian machine,
+e.g. intel box.  For details, see
 
-http://www.lam-mpi.org/MailArchives/lam/msg04894.php
-http://www.lam-mpi.org/MailArchives/lam/msg04896.php
+http://www.lam-mpi.org/MailArchives/lam/2002/09/4893.php
+http://www.lam-mpi.org/MailArchives/lam/2002/09/4894.php
+http://www.lam-mpi.org/MailArchives/lam/2002/09/4895.php
+http://www.lam-mpi.org/MailArchives/lam/2002/09/4896.php
 
-Solution: Upgrade to newer version of LAM.
+Preferred Solution: Upgrade to newer version of LAM.
+         Or
+Temporary Solution: Hand edit src/logging/mpe_logging_conf.h to define
+                    correct WORDS_BIGENDIAN.
 
 LAM 7.0 has included libpmpi.a into libmpi.a, so --with-mpilibs may not be
 needed.
