@@ -304,13 +304,14 @@ class MPD(object):
                 splitLine = []
             if len(splitLine) == 2:
                 (k,v) = splitLine
+                origKey = k
                 k = k.upper()
                 if not k.startswith('MPD'):   # may also be MPDRUN_ etc.
                     k = 'MPD_' + k    # default to an mpd parm
                 if k in self.parmsToOverride.keys():
                     self.parmdb[('rcfile',k)] = v
                 else:
-                    mpd_print(1,'invalid key in rc file; line=:%s:' % (line) )
+                    mpd_print(1,'invalid key in rc file; key=:%s:' % (origKey) )
                     exit(-1)
             else:
                 mpd_print(0, 'skipping .mpd.conf file line = :%s:' % (line) )
