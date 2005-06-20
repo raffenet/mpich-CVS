@@ -385,19 +385,10 @@ int MPIR_Allreduce (
                     
                     /* This algorithm is used only for predefined ops
                        and predefined ops are always commutative. */
-#ifdef HAVE_CXX_BINDING
-                    if (is_cxx_uop) {
-                        (*MPIR_Process.cxx_call_op_fn)((char *) tmp_buf +
-                                                       disps[recv_idx]*extent,
-                                                       (char *) recvbuf + 
-                                                       disps[recv_idx]*extent, 
-                                                     recv_cnt, datatype, uop);
-                    }
-                    else 
-#endif
-                        (*uop)((char *) tmp_buf + disps[recv_idx]*extent,
-                               (char *) recvbuf + disps[recv_idx]*extent, 
-                               &recv_cnt, &datatype);
+
+		    (*uop)((char *) tmp_buf + disps[recv_idx]*extent,
+			   (char *) recvbuf + disps[recv_idx]*extent, 
+			   &recv_cnt, &datatype);
                     
                     /* update send_idx for next iteration */
                     send_idx = recv_idx;
