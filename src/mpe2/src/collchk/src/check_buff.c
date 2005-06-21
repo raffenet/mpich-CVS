@@ -11,6 +11,7 @@ int CollChk_check_buff(MPI_Comm comm, void *buff, char* call)
     int   rank, size;
     char  err_str[COLLCHK_STD_STRLEN];
 
+#if defined( HAVE_MPI_IN_PLACE )
     /* get the rank and size */
     MPI_Comm_size(comm, &size);
 
@@ -29,6 +30,7 @@ int CollChk_check_buff(MPI_Comm comm, void *buff, char* call)
     if (!is_consistent) {
         return CollChk_err_han(err_str, COLLCHK_ERR_INPLACE, call, comm);
     }
+#endif
 
     return MPI_SUCCESS;
 }

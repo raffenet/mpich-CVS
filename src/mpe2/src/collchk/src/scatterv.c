@@ -26,8 +26,12 @@ int MPI_Scatterv(void *sbuff, int *scnts, int* displs, MPI_Datatype stype,
         CollChk_same_root(comm, root, call);
 
         /* check for datatype signature consistency */
+#if defined( HAVE_MPI_IN_PLACE )
         /* are2buffs = ( rbuff != MPI_IN_PLACE || rank != root ); */
         are2buffs = ( rank == root ? rbuff != MPI_IN_PLACE : 1 );
+#else
+        are2buffs = 1;
+#endif
         CollChk_dtype_scatterv(comm, stype, scnts, rtype, rcnt,
                               root, are2buffs, call);
 

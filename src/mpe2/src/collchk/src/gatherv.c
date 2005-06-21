@@ -26,7 +26,11 @@ int MPI_Gatherv(void *sbuff, int scnt, MPI_Datatype stype,
         CollChk_same_root(comm, root, call);
 
         /* check for datatype signature consistency */
+#if defined( HAVE_MPI_IN_PLACE )
         are2buffs = ( rank == root ? sbuff != MPI_IN_PLACE : 1 );
+#else
+        are2buffs = 1;
+#endif
         CollChk_dtype_scatterv(comm, rtype, rcnts, stype, scnt,
                                root, are2buffs, call);
 

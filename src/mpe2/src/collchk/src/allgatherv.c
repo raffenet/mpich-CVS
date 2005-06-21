@@ -26,7 +26,11 @@ int MPI_Allgatherv( void* sbuff, int scnt, MPI_Datatype stype,
         CollChk_check_buff( comm, sbuff, call );
 
         /* check data signature consistency */
+#if defined( HAVE_MPI_IN_PLACE )
         are2buffs = ( sbuff != MPI_IN_PLACE );
+#else
+        are2buffs = 1;
+#endif
         CollChk_dtype_allgatherv(comm, stype, scnt, rtype, rcnts,
                                  are2buffs, call);
 
