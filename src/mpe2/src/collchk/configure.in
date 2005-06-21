@@ -170,9 +170,9 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         if test "$mpe_link_ok" = "yes" ; then
             AC_MSG_RESULT(yes)
+            AC_DEFINE( HAVE_MPI_IN_PLACE, 1, [Define if MPI_IN_PLACE exists] )
         else
-            AC_MSG_RESULT([no, exiting...])
-            PAC_MSG_ERROR( $enable_softerror, [requires MPI_IN_PLACE!] )
+            AC_MSG_RESULT(no)
         fi
     fi
 fi
