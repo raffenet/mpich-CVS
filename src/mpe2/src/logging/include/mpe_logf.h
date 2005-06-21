@@ -1,21 +1,21 @@
-C      /* -*- Mode: Fortran; -*- */
-C
-C  (C) 2001 by Argonne National Laboratory.
-C      See COPYRIGHT in top-level directory.
-C
-C
-C
-C  MPE Logging Return Codes
-C
+!      /* -*- Mode: Fortran; -*- */
+!
+!  (C) 2001 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
+!
+!
+!
+!  MPE Logging Return Codes
+!
       integer MPE_LOG_OK, MPE_LOG_LOCKED_OUT,
      &        MPE_LOG_NO_MEMORY, MPE_LOG_FILE_PROB,
      &        MPE_LOG_NOT_INITIALIZED, MPE_LOG_PACK_FAIL
       parameter ( MPE_LOG_OK = 0, MPE_LOG_LOCKED_OUT = 1,
      &            MPE_LOG_NO_MEMORY = 2,  MPE_LOG_FILE_PROB = 3,
      &            MPE_LOG_NOT_INITIALIZED = 4, MPE_LOG_PACK_FAIL = 5 )
-C
-C  MPE Logging Function Prototypes
-C
+!
+!  MPE Logging Function Prototypes
+!
       integer  MPE_Init_log
       external MPE_Init_log
       integer  MPE_Initialized_logging
