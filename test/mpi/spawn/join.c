@@ -9,6 +9,7 @@
 #include <stdio.h>
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
+#include <ws2tcpip.h> /* socklen_t */
 #else
 #include <sys/socket.h>
 #include <sys/types.h>
