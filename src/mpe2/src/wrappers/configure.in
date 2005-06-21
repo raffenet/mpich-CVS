@@ -342,7 +342,43 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                                   [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
             if test "$mpe_link_ok" = "yes" ; then
                 AC_MSG_RESULT(yes)
-                AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA available] )
+                AC_DEFINE(HAVE_MPI_RMA, 1, [Define if MPI-RMA available])
+                AC_MSG_CHECKING([for the C version of MPI_Win_lock/unlock])
+                PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                                     [ int itmp; MPI_Win win ],
+                                     [
+#ifndef NULL
+#define NULL 0
+#endif
+    itmp=MPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win );
+    itmp=MPI_Win_lock( MPI_LOCK_EXCLUSIVE, 0, 0, win );
+    itmp=MPI_Win_unlock( 0, win )
+                                     ],
+                [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+                if test "$mpe_link_ok" = "yes" ; then
+                    AC_MSG_RESULT(yes)
+                    AC_MSG_CHECKING([for the C version of PMPI_Win_lock/unlock])
+                    PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                                         [ int itmp; MPI_Win win ],
+                                         [
+#ifndef NULL
+#define NULL 0
+#endif
+    itmp=PMPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win );
+    itmp=PMPI_Win_lock( MPI_LOCK_EXCLUSIVE, 0, 0, win );
+    itmp=PMPI_Win_unlock( 0, win )
+                                         ],
+                    [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+                    if test "$mpe_link_ok" = "yes" ; then
+                        AC_MSG_RESULT(yes)
+                        AC_DEFINE(HAVE_MPI_RMA_LOCK, 1,
+                                  [Define if MPI_Win_lock/unlock are available])
+                    else
+                        AC_MSG_RESULT(no)
+                    fi
+                else
+                    AC_MSG_RESULT(no)
+                fi
             else
                 AC_MSG_RESULT([no, assumed No MPI-RMA routines])
             fi
@@ -354,6 +390,8 @@ else
 dnl if MPICH2, assume MPI-RMA is available.
     if test "$MPI_IMPL" = "MPICH2" ; then
         AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA available] )
+        AC_DEFINE( HAVE_MPI_RMA_LOCK, 1,
+                   [Define if MPI_Win_lock/unlock are available] )
     fi
 fi
 

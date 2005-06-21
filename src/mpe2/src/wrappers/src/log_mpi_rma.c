@@ -350,6 +350,7 @@ int MPI_Win_get_name( MPI_Win win, char *win_name, int *resultlen )
   return returnVal;
 }
 
+#if defined( HAVE_MPI_RMA_LOCK )
 int MPI_Win_lock( int lock_type, int rank, int assert, MPI_Win win )
 {
   int returnVal;
@@ -368,6 +369,7 @@ int MPI_Win_lock( int lock_type, int rank, int assert, MPI_Win win )
 
   return returnVal;
 }
+#endif
 
 int MPI_Win_post( MPI_Group group, int assert, MPI_Win win )
 {
@@ -426,6 +428,7 @@ int MPI_Win_start( MPI_Group group, int assert, MPI_Win win )
   return returnVal;
 }
 
+#if defined( HAVE_MPI_RMA_LOCK )
 int MPI_Win_test( MPI_Win win, int *flag )
 {
   int returnVal;
@@ -444,7 +447,9 @@ int MPI_Win_test( MPI_Win win, int *flag )
 
   return returnVal;
 }
+#endif
 
+#if defined( HAVE_MPI_RMA_LOCK )
 int MPI_Win_unlock( int rank, MPI_Win win )
 {
   int returnVal;
@@ -463,6 +468,7 @@ int MPI_Win_unlock( int rank, MPI_Win win )
 
   return returnVal;
 }
+#endif
 
 int MPI_Win_wait( MPI_Win win )
 {
