@@ -12,7 +12,7 @@ MPI_LIBS      = @MPI_LIBS@
 CFLAGS        = @CFLAGS@
 MPE_INCDIR    = @includebuild_dir@
 MPE_LIBDIR    = @libbuild_dir@
-COLLCHK_LIBS  = -L$(MPE_LIBDIR) @COLLCHK_LIBS@ $(MPI_LIBS)
+COLLCHK_LIBS  = -L$(MPE_LIBDIR) @COLLCHK_LIBS@
 
 C_INCS        = -I$(MPE_INCDIR) $(MPI_INC)
 RM            = @RM@
@@ -43,7 +43,7 @@ OPT_EXECS     = time_bcast_nochk@EXEEXT@ time_allreduce_nochk@EXEEXT@ \
 	$(MPI_CC) $(CC_FLAGS) -c $<
 
 .@OBJEXT@@EXEEXT@:
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $< $(COLLCHK_LIBS)
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $< $(COLLCHK_LIBS) $(MPI_LIBS)
 
 default: $(OBJS) $(EXECS) $(OPT_EXECS)
 
@@ -51,16 +51,16 @@ clean:
 	@-$(RM) -f $(EXECS) $(OPT_EXECS) $(OBJS) *.@OBJEXT@
 
 time_bcast_nochk@EXEEXT@: time_bcast.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
 time_allreduce_nochk@EXEEXT@: time_allreduce.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
 time_alltoallv_nochk@EXEEXT@: time_alltoallv.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
 time_alltoallv0_nochk@EXEEXT@: time_alltoallv0.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $?
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
 distclean: clean
 	@-$(RM) -f Makefile
