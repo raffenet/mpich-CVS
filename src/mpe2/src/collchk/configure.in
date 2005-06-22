@@ -310,8 +310,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                     COLLCHK_BUILD_IO=yes
                 else
                     AC_MSG_RESULT(no)
-                    AC_DEFINE( HAVE_NO_MPIO_REQUEST, 1,
-                               [Define if no MPIO_Request] )
                     COLLCHK_BUILD_IO=no
                 fi
             else
