@@ -28,8 +28,7 @@ int main(int argc, char *argv[])
     else
 	next = myid+1;
 
-    /* for (idx = 0; idx < 30000; idx++) { */
-    for (idx = 0; idx < 10000; idx++) {
+    for (idx = 0; idx < 30000; idx++) {
         if (myid == 0) {
    	    printf("%d sending '%s' \n",myid,buffer);
 	    MPI_Send(buffer, strlen(buffer)+1, MPI_CHAR, next, 99,
@@ -52,7 +51,7 @@ int main(int argc, char *argv[])
                      MPI_COMM_WORLD);
 	    printf("%d sent '%s' \n",myid,buffer);
         }
-        // MPI_Barrier(MPI_COMM_WORLD);
+        /* MPI_Barrier(MPI_COMM_WORLD); */
         if ( idx % 100 == 0 )
             MPE_Log_sync_clocks();
     }
