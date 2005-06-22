@@ -19,6 +19,13 @@
 
 #include "mpi.h"
 
+#if ! defined( HAVE_MPI_ERR_FNS )
+int MPI_Add_error_class(int *errorclass);
+int MPI_Add_error_code(int errorclass, int *errorcode);
+int MPI_Add_error_string(int errorcode, char *string);
+int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode);
+#endif
+
 /* file handlers */
 typedef struct {
         MPI_File fh;
@@ -121,7 +128,6 @@ int CollChk_same_high_low(MPI_Comm comm, int high_low, char* call);
 int CollChk_same_int(MPI_Comm comm, int val, char* call, char* check,
                      char* err_str);
 int CollChk_same_local_leader(MPI_Comm comm, int ll, char* call);
-char* CollChk_get_op_string(MPI_Op op);
 int CollChk_same_op(MPI_Comm comm, MPI_Op op, char* call);
 int CollChk_same_root(MPI_Comm comm, int root, char* call);
 int CollChk_same_tag(MPI_Comm comm, int tag, char* call);

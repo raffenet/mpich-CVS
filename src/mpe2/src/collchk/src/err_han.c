@@ -4,6 +4,28 @@
 */
 #include "collchk.h" 
 
+#if ! defined( HAVE_MPI_ERR_FNS )
+int MPI_Add_error_class(int *errorclass)
+{ return MPI_SUCCESS; }
+
+int MPI_Add_error_code(int errorclass, int *errorcode)
+{ return MPI_SUCCESS; }
+
+int MPI_Add_error_string(int errorcode, char *string)
+{
+    fprintf(stderr, "%s", string);
+    fflush(stderr);
+    return MPI_SUCCESS;
+}
+
+int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
+{
+    /* Wait for few seconds so others can finish printing error messages */
+    sleep(5);
+    return MPI_Abort(comm, 1);
+}
+#endif
+
 int CollChk_err_han(char *err_str, int err_code, char *call, MPI_Comm comm)
 {
     int   rank;
@@ -17,7 +39,6 @@ int CollChk_err_han(char *err_str, int err_code, char *call, MPI_Comm comm)
         MPI_Comm_rank(comm, &rank);
         sprintf(msg, "\n\nCollective Checking: %s (Rank %d) --> %s\n\n",
                      call, rank, err_str);
-        fflush(stdout); fflush(stderr);
         MPI_Add_error_string(err_code, msg);
     }
     else {
