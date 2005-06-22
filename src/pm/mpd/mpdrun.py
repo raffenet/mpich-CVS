@@ -585,8 +585,9 @@ def get_parms_from_rcfile(parmdb,parmsToOverride):
         parmsRCFilename = environ['HOME'] + '/.mpd.conf'
         parmsRCFile = open(parmsRCFilename,'r')
     except:
-        print 'unable to open rc file:', parmsRCFilename
-        exit(-1)
+        # print 'unable to open rc file:', parmsRCFilename
+        # exit(-1)
+        return
     for line in parmsRCFile:
         if line[0] == '#':
             continue
