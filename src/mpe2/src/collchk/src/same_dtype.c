@@ -52,195 +52,221 @@ int CollChk_hash_equal(const CollChk_hash_t *alpha,
     return alpha->count == beta->count && alpha->value == beta->value;
 }
 
+#if defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+#include "lam_f2c_dtype.h"
+#endif
 
 unsigned int CollChk_basic_value(MPI_Datatype type);
 unsigned int CollChk_basic_value(MPI_Datatype type)
 {
-    switch (type) {
-        /*
-           MPI_Datatype's that return 0x0 are as if they are being
-           skipped/ignored in the comparison of any 2 MPI_Datatypes.
-        */
-        case MPI_DATATYPE_NULL :
-        case MPI_UB :
-        case MPI_LB :
-            return 0x0;
+    /*
+       MPI_Datatype's that return 0x0 are as if they are being
+       skipped/ignored in the comparison of any 2 MPI_Datatypes.
+    */
+    if ( type == MPI_DATATYPE_NULL || type == MPI_UB || type == MPI_LB )
+        return 0x0;
+    else if ( type == MPI_CHAR )
+        return 0x1;
+    else if ( type == MPI_CHAR )
+        return 0x1;
+#if defined( HAVE_MPI_SIGNED_CHAR )
+    else if ( type == MPI_SIGNED_CHAR )
+        return 0x3;
+#endif
+    else if ( type == MPI_UNSIGNED_CHAR )
+        return 0x5;
+    else if ( type == MPI_BYTE )
+        return 0x7;
+    else if ( type == MPI_WCHAR )
+        return 0x9;
+    else if ( type == MPI_SHORT )
+        return 0xb;
+    else if ( type == MPI_UNSIGNED_SHORT )
+        return 0xd;
+    else if ( type == MPI_INT )
+        return 0xf;
+    else if ( type == MPI_UNSIGNED )
+        return 0x11;
+    else if ( type == MPI_LONG )
+        return 0x13;
+    else if ( type == MPI_UNSIGNED_LONG )
+        return 0x15;
+    else if ( type == MPI_FLOAT )
+        return 0x17;
+    else if ( type == MPI_DOUBLE )
+        return 0x19;
+    else if ( type == MPI_LONG_DOUBLE )
+        return 0x1b;
+    /* else if( type = MPI_LONG_LONG_INT ) return 0x1d; */
+    else if ( type == MPI_LONG_LONG )
+        return 0x1f;
+    else if ( type == MPI_UNSIGNED_LONG_LONG )
+        return 0x21;
+    else if ( type == MPI_PACKED )
+        return 0x23;
 
-        case MPI_CHAR :
-            return 0x1;
-        case MPI_SIGNED_CHAR :
-            return 0x3;
-        case MPI_UNSIGNED_CHAR :
-            return 0x5;
-        case MPI_BYTE :
-            return 0x7;
-        case MPI_WCHAR :
-            return 0x9;
-        case MPI_SHORT :
-            return 0xb;
-        case MPI_UNSIGNED_SHORT :
-            return 0xd;
-        case MPI_INT :
-            return 0xf;
-        case MPI_UNSIGNED :
-            return 0x11;
-        case MPI_LONG :
-            return 0x13;
-        case MPI_UNSIGNED_LONG :
-            return 0x15;
-        case MPI_FLOAT :
-            return 0x17;
-        case MPI_DOUBLE :
-            return 0x19;
-        case MPI_LONG_DOUBLE :
-            return 0x1b;
-        /* case MPI_LONG_LONG_INT : return 0x1d; */
-        case MPI_LONG_LONG :
-            return 0x1f;
-        case MPI_UNSIGNED_LONG_LONG :
-            return 0x21;
-        case MPI_PACKED :
-            return 0x23;
+    else if ( type == MPI_FLOAT_INT )
+        return 0x8;       /* (0x17,1)@(0xf,1) */
+    else if ( type == MPI_DOUBLE_INT )
+        return 0x6;       /* (0x19,1)@(0xf,1) */
+    else if ( type == MPI_LONG_INT )
+        return 0xc;       /* (0x13,1)@(0xf,1) */
+    else if ( type == MPI_SHORT_INT )
+        return 0x14;      /* (0xb,1)@(0xf,1) */
+    else if ( type == MPI_2INT )
+        return 0x10;      /* (0xf,1)@(0xf,1) */
+    else if ( type == MPI_LONG_DOUBLE_INT )
+        return 0x4;       /* (0x1b,1)@(0xf,1) */
 
-        case MPI_FLOAT_INT :
-            return 0x8;       /* (0x17,1)@(0xf,1) */
-        case MPI_DOUBLE_INT :
-            return 0x6;       /* (0x19,1)@(0xf,1) */
-        case MPI_LONG_INT :
-            return 0xc;       /* (0x13,1)@(0xf,1) */
-        case MPI_SHORT_INT :
-            return 0x14;      /* (0xb,1)@(0xf,1) */
-        case MPI_2INT :
-            return 0x10;      /* (0xf,1)@(0xf,1) */
-        case MPI_LONG_DOUBLE_INT :
-            return 0x4;       /* (0x1b,1)@(0xf,1) */
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_IN_C )
+    else if ( type == MPI_COMPLEX )
+        return 0x101;
+    else if ( type == MPI_DOUBLE_COMPLEX )
+        return 0x103;
+    else if ( type == MPI_LOGICAL )
+        return 0x105;
+    else if ( type == MPI_REAL )
+        return 0x107;
+    else if ( type == MPI_DOUBLE_PRECISION )
+        return 0x109;
+    else if ( type == MPI_INTEGER )
+        return 0x10b;
+    else if ( type == MPI_CHARACTER )
+        return 0x10d;
 
-        case MPI_COMPLEX :
-            return 0x101;
-        case MPI_DOUBLE_COMPLEX :
-            return 0x103;
-        case MPI_LOGICAL :
-            return 0x105;
-        case MPI_REAL :
-            return 0x107;
-        case MPI_DOUBLE_PRECISION :
-            return 0x109;
-        case MPI_INTEGER :
-            return 0x10b;
-        case MPI_CHARACTER :
-            return 0x10d;
+    else if ( type == MPI_2INTEGER )
+        return 0x33c;      /* (0x10b,1)@(0x10b,1) */
+#if ! defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+    else if ( type == MPI_2COMPLEX )
+        return 0x323;      /* (0x101,1)@(0x101,1) */
+    else if ( type == MPI_2DOUBLE_COMPLEX )
+        return 0x325;      /* (0x103,1)@(0x103,1) */
+#endif
+    else if ( type == MPI_2REAL )
+        return 0x329;      /* (0x107,1)@(0x107,1) */
+    else if ( type == MPI_2DOUBLE_PRECISION )
+        return 0x33a;      /* (0x109,1)@(0x109,1) */
 
-        case MPI_2INTEGER :
-            return 0x33c;      /* (0x10b,1)@(0x10b,1) */
-        case MPI_2COMPLEX :
-            return 0x323;      /* (0x101,1)@(0x101,1) */
-        case MPI_2DOUBLE_COMPLEX :
-            return 0x325;      /* (0x103,1)@(0x103,1) */
-        case MPI_2REAL :
-            return 0x329;      /* (0x107,1)@(0x107,1) */
-        case MPI_2DOUBLE_PRECISION :
-            return 0x33a;      /* (0x109,1)@(0x109,1) */
+    else if ( type == MPI_REAL4 )
+        return 0x201;
+    else if ( type == MPI_REAL8 )
+        return 0x203;
+    /* else if ( type == MPI_REAL16 ) return 0x205; */
+#if ! defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+    else if ( type == MPI_COMPLEX8 )
+        return 0x207;
+    else if ( type == MPI_COMPLEX16 )
+        return 0x209;
+#endif
+    /* else if ( type == MPI_COMPLEX32 ) return 0x20b; */
+    else if ( type == MPI_INTEGER1 )
+        return 0x211;
+    else if ( type == MPI_INTEGER2 )
+        return 0x213;
+    else if ( type == MPI_INTEGER4 )
+        return 0x215;
+    else if ( type == MPI_INTEGER8 )
+        return 0x217;
+    /* else if ( type == MPI_INTEGER16 ) return 0x219; */
+#endif
 
-        case MPI_REAL4 :
-            return 0x201;
-        case MPI_REAL8 :
-            return 0x203;
-        /* case MPI_REAL16 : return 0x205; */
-        case MPI_COMPLEX8 :
-            return 0x207;
-        case MPI_COMPLEX16 :
-            return 0x209;
-        /* case MPI_COMPLEX32 : return 0x20b; */
-        case MPI_INTEGER1 :
-            return 0x211;
-        case MPI_INTEGER2 :
-            return 0x213;
-        case MPI_INTEGER4 :
-            return 0x215;
-        case MPI_INTEGER8 :
-            return 0x217;
-        /* case MPI_INTEGER16 : return 0x219; */
-
-        default :
-            fprintf( stderr, "CollChk_basic_value(): "
-                             "Unknown basic MPI datatype %x.\n", type );
-            fflush( stderr );
-            return 0;
+    else {
+#if ! defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+        fprintf( stderr, "CollChk_basic_value()) "
+                         "Unknown basic MPI datatype %x.\n", type );
+#else
+        fprintf( stderr, "CollChk_basic_value()) "
+                         "Unknown basic MPI datatype %p.\n", type );
+#endif
+        fflush( stderr );
+        return 0;
     }
 }
 
 unsigned int CollChk_basic_count(MPI_Datatype type);
 unsigned int CollChk_basic_count(MPI_Datatype type)
 {
-    switch (type) {
-        /* MPI_Datatype's that return 0 are being skipped/ignored. */
-        case MPI_DATATYPE_NULL :
-        case MPI_UB :
-        case MPI_LB :
-            return 0;
+    /* MPI_Datatype's that return 0 are being skipped/ignored. */
+    if (    type == MPI_DATATYPE_NULL
+         || type == MPI_UB
+         || type == MPI_LB
+    ) return 0;
 
-        case MPI_CHAR :
-        case MPI_SIGNED_CHAR :
-        case MPI_UNSIGNED_CHAR :
-        case MPI_BYTE :
-        case MPI_WCHAR :
-        case MPI_SHORT :
-        case MPI_UNSIGNED_SHORT :
-        case MPI_INT :
-        case MPI_UNSIGNED :
-        case MPI_LONG :
-        case MPI_UNSIGNED_LONG :
-        case MPI_FLOAT :
-        case MPI_DOUBLE :
-        case MPI_LONG_DOUBLE :
-        case MPI_LONG_LONG_INT :
-        /* case MPI_LONG_LONG : */
-        case MPI_UNSIGNED_LONG_LONG :
-        case MPI_PACKED :
-            return 1;
+    else if (    type == MPI_CHAR
+#if defined( HAVE_MPI_SIGNED_CHAR )
+              || type == MPI_SIGNED_CHAR
+#endif
+              || type == MPI_UNSIGNED_CHAR
+              || type == MPI_BYTE
+              || type == MPI_WCHAR
+              || type == MPI_SHORT
+              || type == MPI_UNSIGNED_SHORT
+              || type == MPI_INT
+              || type == MPI_UNSIGNED
+              || type == MPI_LONG
+              || type == MPI_UNSIGNED_LONG
+              || type == MPI_FLOAT
+              || type == MPI_DOUBLE
+              || type == MPI_LONG_DOUBLE
+              || type == MPI_LONG_LONG_INT
+              /* || type == MPI_LONG_LONG */
+              || type == MPI_UNSIGNED_LONG_LONG
+              || type == MPI_PACKED
+    ) return 1;
 
-        case MPI_FLOAT_INT :        
-        case MPI_DOUBLE_INT :
-        case MPI_LONG_INT :
-        case MPI_SHORT_INT :
-        case MPI_2INT :
-        case MPI_LONG_DOUBLE_INT :
-            return 2;
+    else if (    type == MPI_FLOAT_INT
+              || type == MPI_DOUBLE_INT
+              || type == MPI_LONG_INT
+              || type == MPI_SHORT_INT
+              || type == MPI_2INT
+              || type == MPI_LONG_DOUBLE_INT
+    ) return 2;
 
-        case MPI_COMPLEX :
-        case MPI_DOUBLE_COMPLEX :
-        case MPI_LOGICAL :
-        case MPI_REAL :
-        case MPI_DOUBLE_PRECISION :
-        case MPI_INTEGER :
-        case MPI_CHARACTER :
-            return 1;
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_IN_C )
+    else if ( type == MPI_COMPLEX
+              || type == MPI_DOUBLE_COMPLEX
+              || type == MPI_LOGICAL
+              || type == MPI_REAL
+              || type == MPI_DOUBLE_PRECISION
+              || type == MPI_INTEGER
+              || type == MPI_CHARACTER
+    ) return 1;
 
-        case MPI_2INTEGER :
-        case MPI_2COMPLEX :
-        case MPI_2DOUBLE_COMPLEX :
-        case MPI_2REAL :
-        case MPI_2DOUBLE_PRECISION :
-            return 2;
+    else if ( type == MPI_2INTEGER
+#if ! defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+              || type == MPI_2COMPLEX
+              || type == MPI_2DOUBLE_COMPLEX
+#endif
+              || type == MPI_2REAL
+              || type == MPI_2DOUBLE_PRECISION
+    ) return 2;
 
-        case MPI_REAL4 :
-        case MPI_REAL8 :
-        /* case MPI_REAL16 : */
-        case MPI_COMPLEX8 :
-        case MPI_COMPLEX16 :
-        /* case MPI_COMPLEX32 : */
-        case MPI_INTEGER1 :
-        case MPI_INTEGER2 :
-        case MPI_INTEGER4 :
-        case MPI_INTEGER8 :
-        /* case MPI_INTEGER16 : */
-            return 1;
+    else if ( type == MPI_REAL4
+              || type == MPI_REAL8
+        /* || type == MPI_REAL16 */
+#if ! defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+              || type == MPI_COMPLEX8
+              || type == MPI_COMPLEX16
+#endif
+        /* || type == MPI_COMPLEX32 */
+              || type == MPI_INTEGER1
+              || type == MPI_INTEGER2
+              || type == MPI_INTEGER4
+              || type == MPI_INTEGER8
+        /* || type == MPI_INTEGER16 */
+    ) return 1;
+#endif
 
-        default :
-            fprintf( stderr, "CollChk_basic_count(): "
-                             "Unknown basic MPI datatype %x.\n", type );
-            fflush( stderr );
-            return 0;
+    else {
+#if ! defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+        fprintf( stderr, "CollChk_basic_count(): "
+                         "Unknown basic MPI datatype %x.\n", type );
+#else
+        fprintf( stderr, "CollChk_basic_count(): "
+                         "Unknown basic MPI datatype %p.\n", type );
+#endif
+        fflush( stderr );
+        return 0;
     }
 }
 
