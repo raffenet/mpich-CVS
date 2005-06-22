@@ -433,6 +433,8 @@ dnl if MPICH2, assume MPI-RMA is available.
         AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA available] )
         AC_DEFINE( HAVE_MPI_RMA_LOCK, 1,
                    [Define if MPI_Win_lock/unlock are available] )
+        AC_DEFINE(HAVE_MPI_RMA_TEST, 1,
+                   [Define if MPI_Win_test is available])
     fi
 fi
 
