@@ -97,9 +97,9 @@ unsigned int CollChk_basic_value(MPI_Datatype type)
         return 0x19;
     else if ( type == MPI_LONG_DOUBLE )
         return 0x1b;
-    /* else if( type = MPI_LONG_LONG_INT ) return 0x1d; */
-    else if ( type == MPI_LONG_LONG )
-        return 0x1f;
+    else if ( type == MPI_LONG_LONG_INT )
+        return 0x1d;
+    /* else if ( type == MPI_LONG_LONG ) return 0x1f; */
     else if ( type == MPI_UNSIGNED_LONG_LONG )
         return 0x21;
     else if ( type == MPI_PACKED )
