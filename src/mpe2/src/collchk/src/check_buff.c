@@ -6,12 +6,12 @@
 
 int CollChk_check_buff(MPI_Comm comm, void *buff, char* call)
 {
+#if defined( HAVE_MPI_IN_PLACE )
     int   num_buffs_in_place;
     int   is_consistent;
     int   rank, size;
     char  err_str[COLLCHK_STD_STRLEN];
 
-#if defined( HAVE_MPI_IN_PLACE )
     /* get the rank and size */
     MPI_Comm_size(comm, &size);
 
