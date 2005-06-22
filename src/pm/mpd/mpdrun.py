@@ -101,7 +101,7 @@ def mpdrun():
                         'MPDRUN_SINGINIT_PORT'      :  0,
                         'MPDRUN_MPICH1_COMPAT'      :  0,
                         'MPDRUN_TIMEOUT'            :  0,
-                        'MPDRUN_EXITCODES_FILENAME' :  '',
+                        'MPDRUN_EXIT_CODES_FILENAME' :  '',
                       }
     for (k,v) in parmsToOverride.items():
         parmdb[('thispgm',k)] = v
@@ -192,8 +192,8 @@ def mpdrun():
     for i in range(nprocs):
         linesPerRank[i] = []
 
-    if parmdb['MPDRUN_EXITCODES_FILENAME']:
-        outXmlECFile = open(parmdb['MPDRUN_EXITCODES_FILENAME'],'w')
+    if parmdb['MPDRUN_EXIT_CODES_FILENAME']:
+        outXmlECFile = open(parmdb['MPDRUN_EXIT_CODES_FILENAME'],'w')
         outXmlDoc = xml.dom.minidom.Document()
         outXmlECs = outXmlDoc.createElement('exit-codes')
         outXmlDoc.appendChild(outXmlECs)
@@ -680,7 +680,7 @@ def get_parms_from_cmdline(parmdb,msgToMPD):
                 parmdb[('cmdline','MPDRUN_JOB_ALIAS')] = argv[argidx+1]
                 argidx += 2
             elif argv[argidx] == '-r':
-                parmdb[('cmdline','MPDRUN_EXITCODES_FILENAME')] = argv[argidx+1]
+                parmdb[('cmdline','MPDRUN_EXIT_CODES_FILENAME')] = argv[argidx+1]
                 argidx += 2
             elif argv[argidx] == '-ifhn':
                 parmdb[('cmdline','MPDRUN_IFHN')] = argv[argidx+1]
@@ -719,7 +719,8 @@ def get_parms_from_cmdline(parmdb,msgToMPD):
             elif argv[argidx] == '-delxmlfile':
                 argidx += 2    # already handled as special above
             elif argv[argidx] == '-f':
-                argidx += 2    # already handled as special above
+                print '** the -f option should be used alone'
+                usage()
             elif argv[argidx] == '-gdba':
                 argidx += 2    # already handled as special above
             elif argv[argidx] == '-p':
@@ -803,7 +804,7 @@ def get_parms_from_xml_file(parmdb,conSock,msgToMPD):
     if cpg.hasAttribute('ifhn'):
         parmdb[('xml','MPDRUN_IFHN')] = cpg.getAttribute('ifhn')
     if cpg.hasAttribute('exit_codes_filename'):
-        parmdb[('xml','MPDRUN_EXITCODES_FILENAME')] = cpg.getAttribute('exitcodes_filename')
+        parmdb[('xml','MPDRUN_EXIT_CODES_FILENAME')] = cpg.getAttribute('exit_codes_filename')
     if cpg.hasAttribute('gdb'):
         gdbFlag = int(cpg.getAttribute('gdb'))
         if gdbFlag:
