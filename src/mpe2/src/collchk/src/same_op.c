@@ -5,49 +5,35 @@
 #include "collchk.h" 
 
 
-char* CollChk_get_op_string(MPI_Op op)
+static char* CollChk_get_op_string(MPI_Op op);
+static char* CollChk_get_op_string(MPI_Op op)
 {
-    switch (op) {
-        case MPI_MAX :
-            return "MPI_MAX\0";
-            break;
-        case MPI_MIN :
-            return "MPI_MIN\0";
-            break;
-        case MPI_SUM :
-            return "MPI_SUM\0";
-            break;
-        case MPI_PROD :
-            return "MPI_PROD\0";
-            break;
-        case MPI_LAND :
-            return "MPI_LAND\0";
-            break;
-        case MPI_BAND :
-            return "MPI_BAND\0";
-            break;
-        case MPI_LOR :
-            return "MPI_LOR\0";
-            break;
-        case MPI_BOR :
-            return "MPI_BOR\0";
-            break;
-        case MPI_LXOR :
-            return "MPI_LXOR\0";
-            break;
-        case MPI_BXOR :
-            return "MPI_BXOR\0";
-            break;
-        case MPI_MAXLOC :
-            return "MPI_MAXLOC\0";
-            break;
-        case MPI_MINLOC :
-            return "MPI_MINLOC\0";
-            break;
-        default :
-            return "USER_OP\0";
-            break;
-    }
+    if ( op == MPI_MAX )
+        return "MPI_MAX";
+    else if ( op == MPI_MIN )
+        return "MPI_MIN";
+    else if ( op == MPI_SUM )
+        return "MPI_SUM";
+    else if ( op == MPI_PROD )
+        return "MPI_PROD";
+    else if ( op == MPI_LAND )
+        return "MPI_LAND";
+    else if ( op == MPI_BAND )
+        return "MPI_BAND";
+    else if ( op == MPI_LOR )
+        return "MPI_LOR";
+    else if ( op == MPI_BOR )
+        return "MPI_BOR";
+    else if ( op == MPI_LXOR )
+        return "MPI_LXOR";
+    else if ( op == MPI_BXOR )
+        return "MPI_BXOR";
+    else if ( op == MPI_MAXLOC )
+        return "MPI_MAXLOC";
+    else if ( op == MPI_MINLOC )
+        return "MPI_MINLOC";
+    else
+        return "USER_OP\0";
 }
 
 
