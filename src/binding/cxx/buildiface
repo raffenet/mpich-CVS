@@ -2610,8 +2610,10 @@ sub PrintClassHead {
     }
     my $parent = "";
 
+    my $baseclass = "";
     if (defined($derived_class{$shortclass})) {
-	$parent = ": public $derived_class{$shortclass}";
+        $baseclass = $derived_class{$shortclass};
+	$parent = ": public $baseclass";
     }
     
     print $OUTFD "\nclass $class $parent {\n";
@@ -2632,25 +2634,75 @@ sub PrintClassHead {
     }
   print $OUTFD "\
   public:
-    // new/delete
+    // new/delete\n";
+    if (0) {
+	print $OUTFD "\
     inline $class($mpi_type obj) { the_real_$lctopclass = obj; }\n";
-    if (defined($class_has_no_default{$class})) {
-	print $OUTFD "    inline $class(void) {}\n";
     }
     else {
-	print $OUTFD "    inline $class(void) {the_real_$lctopclass = $mpi_null_type;}\n";
+	if ($lcclass eq $lctopclass) {
+	    print $OUTFD "\
+    inline $class($mpi_type obj) : the_real_$lctopclass(obj) {}\n";
+	}
+	else {
+	    print $OUTFD "\
+    inline $class($mpi_type obj) : $baseclass(obj) {}\n";
+	}
+    }
+
+    if (defined($class_has_no_default{$class})) {
+	if (0) {
+	    print $OUTFD "    inline $class(void) {}\n";
+	}
+	else {
+	    if ($lcclass eq $lctopclass) {
+		print $OUTFD "    inline $class(void) : the_real_$lctopclass() {}\n";
+	}
+	    else {
+		print $OUTFD "    inline $class(void) : $baseclass\(\) {}\n";
+	    }
+	}
+    }
+    else {
+	if (0) {
+	    print $OUTFD "    inline $class(void) { the_real_$lctopclass = $mpi_null_type; }\n";
+	}
+	else {
+	    if ($lcclass eq $lctopclass) {
+		print $OUTFD "    inline $class(void) : the_real_$lctopclass($mpi_null_type) {}\n";
+	}
+	    else {
+		print $OUTFD "    inline $class(void) : $baseclass\(\) {}\n";
+	    }
+	}
     }
     
     # These had $class :: $class..., but pgCC complained,
     # so the $class :: was removed
     print $OUTFD "\
     virtual ~$class() {}
-    // copy/assignment
-    $class(const $class &obj) {
-      the_real_$lctopclass = obj.the_real_$lctopclass; }
+    // copy/assignment\n";
+    # Three cases (two that we should really use):
+    # If the base class, initialize directly
+    # If a derived class, initialize with the base class initializer
+    if (0) {
+	print $OUTFD "\
+    $class(const $class &obj) { 
+      the_real_$lctopclass = obj.the_real_$lctopclass; }\n";
+    }
+    else {
+	if ($lcclass eq $lctopclass) {
+	    print $OUTFD "\
+    $class(const $class &obj) : the_real_$lctopclass(obj.the_real_$lctopclass){}\n";
+	}
+	else {
+	    print $OUTFD "\
+    $class(const $class &obj) : $baseclass(obj) {}\n";
+	}
+    }
+    print $OUTFD "\
     $class& operator=(const $class &obj) {
       the_real_$lctopclass = obj.the_real_$lctopclass; return *this; }\n";
-
     if (!defined($class_has_no_compare{$class})) {
 	# Some classes (e.g., Status) do not have compare operations
 	# *or* they are derived classes that must use the parent's
