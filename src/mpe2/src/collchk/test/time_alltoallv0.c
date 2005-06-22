@@ -114,7 +114,7 @@ int main( int argc, char **argv )
       for ( ii = 0; ii < length; ii++) {
           if (p[ii] != ii + 100000 * left) {
               if (err < 10) {
-                  fprintf( stderr, "[%d from %d] got %d expected %d for %dth\n",
+                  fprintf( stderr, "[%d from %d] got %f expected %d for %dth\n",
                            rank, left, p[ii], ii + 100000 * left, ii );
               }
               err++;
@@ -125,7 +125,7 @@ int main( int argc, char **argv )
       for ( ii = 0; ii < length; ii++) {
           if (p[ii] != ii + 100000 * right) {
               if (err < 10) {
-                  fprintf( stderr, "[%d from %d] got %d expected %d for %dth\n", 
+                  fprintf( stderr, "[%d from %d] got %f expected %d for %dth\n",
                            rank, right, p[ii], ii + 100000 * right, ii );
               }
               err++;
