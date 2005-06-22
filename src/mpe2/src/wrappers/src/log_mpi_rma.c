@@ -428,7 +428,7 @@ int MPI_Win_start( MPI_Group group, int assert, MPI_Win win )
   return returnVal;
 }
 
-#if defined( HAVE_MPI_RMA_LOCK )
+#if defined( HAVE_MPI_RMA_TEST )
 int MPI_Win_test( MPI_Win win, int *flag )
 {
   int returnVal;
