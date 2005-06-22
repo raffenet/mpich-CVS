@@ -157,6 +157,39 @@ AC_CHECK_HEADERS( stdio.h stdlib.h string.h unistd.h )
 
 AC_FUNC_ALLOCA
 
+dnl Check MPI_Add_error_class, MPI_Add_error_code, MPI_Add_error_string
+dnl and MPI_Comm_call_errhandler
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    if test "$enable_checkMPI" = "yes" ; then
+        AC_MSG_CHECKING( [for MPI Error functions] )
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                              [
+    int itmp, err_class, err_code;
+    char err_str[]="test";
+                              ],
+                              [
+    itmp=MPI_Add_error_class( &err_class );
+    itmp=MPI_Add_error_code( err_class, &err_code );
+    itmp=MPI_Add_error_string( err_code, err_str );
+    itmp=MPI_Comm_call_errhandler( MPI_COMM_WORLD, err_code );
+                              ],
+                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        if test "$mpe_link_ok" = "yes" ; then
+            AC_MSG_RESULT(yes)
+            AC_DEFINE( HAVE_MPI_ERR_FNS, 1,
+                       [Define if MPI Error functions exist] )
+        else
+            AC_MSG_RESULT(no)
+        fi
+    fi
+else
+dnl if MPICH2, assume MPI_IN_PLACE is available, not in MPICH1
+    if test "$MPI_IMPL" = "MPICH2" ; then
+        AC_DEFINE( HAVE_MPI_ERR_FNS, 1, [Define if MPI Error functions exist] )
+    fi
+fi
+
+
 dnl Check MPI_IN_PLACE
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     if test "$enable_checkMPI" = "yes" ; then
@@ -175,7 +208,81 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
             AC_MSG_RESULT(no)
         fi
     fi
+else
+dnl if MPICH2, assume MPI_IN_PLACE is available, not in MPICH1
+    if test "$MPI_IMPL" = "MPICH2" ; then
+        AC_DEFINE( HAVE_MPI_IN_PLACE, 1, [Define if MPI_IN_PLACE exists] )
+    fi
 fi
+
+dnl Check MPI_SIGNED_CHAR
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    if test "$enable_checkMPI" = "yes" ; then
+        AC_MSG_CHECKING( [for MPI_SIGNED_CHAR] )
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                              [ MPI_Datatype type; ],
+                              [ type = MPI_SIGNED_CHAR ],
+                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        if test "$mpe_link_ok" = "yes" ; then
+            AC_MSG_RESULT(yes)
+            AC_DEFINE( HAVE_MPI_SIGNED_CHAR, 1,
+                       [Define if MPI_SIGNED_CHAR exists] )
+        else
+            AC_MSG_RESULT(no)
+        fi
+    fi
+else
+dnl if MPICH2, assume MPI_SIGNED_CHAR is available, not in MPICH1
+    if test "$MPI_IMPL" = "MPICH2" ; then
+        AC_DEFINE( HAVE_MPI_SIGNED_CHAR, 1,
+                   [Define if MPI_SIGNED_CHAR exists] )
+    fi
+fi
+
+dnl Check Fortran MPI_Datatype definition in C
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    if test "$enable_checkMPI" = "yes" ; then
+        AC_MSG_CHECKING( [for Fortran MPI_Datatype in C] )
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                              [ MPI_Datatype type ],
+                              [
+    type = MPI_COMPLEX;
+                              ],
+                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        if test "$mpe_link_ok" = "yes" ; then
+            AC_MSG_RESULT(yes)
+            AC_DEFINE( HAVE_FORTRAN_MPI_DATATYPE_IN_C, 1,
+                       [Define if Fortran MPI_Datatype exists in C] )
+        else
+            AC_MSG_RESULT(no)
+            AC_MSG_CHECKING( [for LAM/MPI Fortran MPI_Datatype in C] )
+            PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                                  [ MPI_Datatype type ],
+                                  [
+#define MPI_COMPLEX   ((MPI_Datatype) &lam_mpi_cplex)
+    type = MPI_COMPLEX;
+                                  ],
+                                  [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+            if test "$mpe_link_ok" = "yes" ; then
+                AC_MSG_RESULT(yes)
+                AC_DEFINE( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C, 1,
+                           [Define if LAM Fortran MPI_Datatype exists in C] )
+            else
+                AC_MSG_RESULT(no)
+            fi
+        fi
+    fi
+else
+dnl if MPICH2, assume Fortran MPI_Datatypes are available in C, same for MPICH1.
+    if test "$MPI_IMPL" = "MPICH2" ; then
+       AC_DEFINE( HAVE_FORTRAN_MPI_DATATYPE_IN_C, 1,
+                  [Define if Fortran MPI_Datatype exists in C] )
+    else
+       AC_DEFINE( HAVE_FORTRAN_MPI_DATATYPE_IN_C, 1,
+                  [Define if Fortran MPI_Datatype exists in C] )
+    fi
+fi
+
 
 dnl Check MPI-IO
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
@@ -194,7 +301,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                                   [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
             if test "$mpe_link_ok" = "yes" ; then
                 AC_MSG_RESULT(yes)
-                AC_DEFINE( HAVE_MPI_IO, 1, [Define if MPI-IO available] )
                 AC_MSG_CHECKING( [for ROMIO's MPIO_Request] )
                 PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                       [ MPIO_Request  io_request], ,
@@ -221,7 +327,6 @@ else
 dnl When it is built with MPICHx, MPE configure observes --with[out]-mpiio
 dnl if test \( "$MPI_IMPL" = "MPICH" -o "$MPI_IMPL" = "MPICH2" \) \
     if test "$with_mpiio" = "yes" ; then
-        AC_DEFINE( HAVE_MPI_IO, 1, [Define if MPI-IO available] )
         COLLCHK_BUILD_IO=yes
     else
         COLLCHK_BUILD_IO=no
@@ -255,7 +360,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                                   [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
             if test "$mpe_link_ok" = "yes" ; then
                 AC_MSG_RESULT(yes)
-                AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA available] )
                 COLLCHK_BUILD_RMA=yes
             else
                 AC_MSG_RESULT([no, assumed No MPI-RMA routines])
@@ -269,7 +373,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 else
 dnl if MPICH2, assume MPI-RMA is available.
     if test "$MPI_IMPL" = "MPICH2" ; then
-        AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA available] )
         COLLCHK_BUILD_RMA=yes
      else
         COLLCHK_BUILD_RMA=no
@@ -307,7 +410,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                                   [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
             if test "$mpe_link_ok" = "yes" ; then
                 AC_MSG_RESULT(yes)
-                AC_DEFINE( HAVE_MPI_COMMS, 1, [Define if MPI-COMMS available] )
                 COLLCHK_BUILD_COMMS=yes
             else
                 AC_MSG_RESULT([no, assumed No MPI-COMMS routines])
@@ -321,7 +423,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 else
 dnl if MPICH2, assume MPI_COMMS is available.
     if test "$MPI_IMPL" = "MPICH2" ; then
-        AC_DEFINE( HAVE_MPI_COMMS, 1, [Define if MPI-COMMS available] )
         COLLCHK_BUILD_COMMS=yes
      else
         COLLCHK_BUILD_COMMS=no
