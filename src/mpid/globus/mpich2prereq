@@ -338,7 +338,7 @@ if test "${with_ccache}" = "yes" ; then
 fi
 if test "${enable_gcc_strict}" = "yes" ; then
     MPIG_CFLAGS="${MPIG_CFLAGS} -Wall -DGCC_WALL -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
-    MPIG_CFLAGS="${MPIG_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith -Wcast-qual -Wconversion"
+    MPIG_CFLAGS="${MPIG_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith -Wconversion"
     MPIG_CFLAGS="${MPIG_CFLAGS} -Wsign-compare -Wwrite-strings"
 fi
 echo "${ECHO_T}done"
@@ -728,7 +728,6 @@ if test "${MPIG_VMPI}" -ne 0 ; then
     mpig_num=`expr ${SIZEOF_VMPI_STATUS} + ${SIZEOF_MPIG_ALIGNED_T} - 1`
     mpig_num=`expr ${mpig_num} / ${SIZEOF_MPIG_ALIGNED_T}`
     EXTRA_STATUS_DECL="${MPIG_ALIGNED_T} vmpi_status[${mpig_num}];"
-    echo "adding \"${EXTRA_STATUS_DECL}\" to MPI_STATUS"
 else
     SIZEOF_VMPI_COMM=0
     SIZEOF_VMPI_DATATYPE=0
@@ -745,9 +744,10 @@ else
     export VMPI_2DOUBLE_COMPLEX
     export VMPI_LONG_LONG
     export VMPI_LONG_LONG_INT
-
-    # EXTRA_STATUS_DECL="unsigned long vmpi_status[${mpig_num}];"
 fi
+EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} int mpig_dc_format;"
+
+
 
 #
 # XXX: The Globus data conversion library does not support long double.  Therefore, we need to disable support for that type (for

@@ -21,10 +21,22 @@ MPIG_STATIC int mpig_cm_other_adi3_send(const void * buf, int cnt, MPI_Datatype 
 MPIG_STATIC int mpig_cm_other_adi3_isend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 					 int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_recv(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+MPIG_STATIC int mpig_cm_other_adi3_rsend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					 int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_other_adi3_irsend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					  int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_other_adi3_ssend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					 int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_other_adi3_issend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					  int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_other_adi3_recv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 					int ctxoff, MPI_Status * status, MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_irecv(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+MPIG_STATIC int mpig_cm_other_adi3_irecv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 					 int ctxoff, MPID_Request ** rreqp);
 
 
@@ -35,10 +47,10 @@ MPIG_STATIC mpig_cm_funcs_t mpig_cm_other_funcs =
 {
     mpig_cm_other_adi3_send,
     mpig_cm_other_adi3_isend,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    mpig_cm_other_adi3_rsend,
+    mpig_cm_other_adi3_irsend,
+    mpig_cm_other_adi3_ssend,
+    mpig_cm_other_adi3_issend,
     mpig_cm_other_adi3_recv,
     mpig_cm_other_adi3_irecv
 };
@@ -56,7 +68,9 @@ int mpig_cm_other_init(int * argc, char *** argv)
     mpig_vc_t * vc;
     MPIU_CHKPMEM_DECL(1);
     int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_init);
 
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_init);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 
     MPIU_CHKPMEM_MALLOC(vc, mpig_vc_t *, sizeof(mpig_vc_t), mpi_errno, "VC for processing MPI_ANY_SOURCE/MPI_PROC_NULL");
@@ -69,6 +83,7 @@ int mpig_cm_other_init(int * argc, char *** argv)
     
   fn_return:
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_init);
     return mpi_errno;
 
   fn_fail:
@@ -88,13 +103,16 @@ int mpig_cm_other_init(int * argc, char *** argv)
 int mpig_cm_other_finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_finalize);
 
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_finalize);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 
     MPIU_Free(mpig_cm_other_vc);
     mpig_cm_other_vc = NULL;
     
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_finalize);
     return mpi_errno;
 }
 /* mpig_cm_other_finalize() */
@@ -112,12 +130,15 @@ int mpig_cm_other_finalize(void)
 int mpig_cm_other_add_contact_info(mpig_bc_t * bc)
 {
     int mpi_errno = MPI_SUCCESS;
-    
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_add_contact_info);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_add_contact_info);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
     
     /* ...nothing to do... */
 
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_add_contact_info);
     return mpi_errno;
 }
 /* mpig_cm_other_add_contact_info() */
@@ -142,12 +163,15 @@ int mpig_cm_other_add_contact_info(mpig_bc_t * bc)
 int mpig_cm_other_select_module(mpig_bc_t * bc, mpig_vc_t * vc, int * flag)
 {
     int mpi_errno = MPI_SUCCESS;
-    
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_select_module);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_select_module);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
     
     *flag = FALSE;
     
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_select_module);
     return mpi_errno;
 }
 /* int mpig_cm_other_select_module([IN] business card, [IN/OUT] virtual connection, [OUT] flag) */
@@ -164,21 +188,33 @@ MPIG_STATIC int mpig_cm_other_adi3_send(const void * buf, int cnt, MPI_Datatype 
 					int ctxoff, MPID_Request ** sreqp)
 {
     int mpi_errno = MPI_SUCCESS;
-    
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_send);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_send);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 
     if (rank == MPI_PROC_NULL)
     { 
 	*sreqp = NULL;
     }
+    else if (rank == MPI_ANY_SOURCE)
+    {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_send_any_source");
+    }
     else
     {
-	/* XXX: error */
-	mpi_errno = MPI_ERR_INTERN;
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_dest", "**globus|cm_other_invalid_dest %d", rank);
     }
     
+  fn_return:
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_send);
     return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_other_adi3_send(...) */
 
@@ -193,39 +229,30 @@ MPIG_STATIC int mpig_cm_other_adi3_send(const void * buf, int cnt, MPI_Datatype 
 MPIG_STATIC int mpig_cm_other_adi3_isend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 					 int ctxoff, MPID_Request ** sreqp)
 {
-    MPID_Request * sreq;
+    const int ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
-    
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_isend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_isend);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 
     if (rank == MPI_PROC_NULL)
-    { 
-	/* allocate request */
-	sreq = mpig_request_create();
-	MPIU_ERR_CHKANDJUMP1((sreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
-
-	/* set MPICH fields */
-	MPIU_Object_set_ref(sreq, 1);
-	sreq->kind = MPID_REQUEST_SEND;
-	sreq->cc = 0;
-	sreq->cc_ptr = &sreq->cc;
-	sreq->comm = NULL;
-	MPIR_Status_set_empty(&sreq->status);
-
-	/* set device fields */
-	mpig_request_state_init(sreq);
-	sreq->dev.dtp = NULL;
-    
-	*sreqp = sreq;
+    {
+	mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+	MPIG_DBG_PRINTF((15, FCNAME, "MPI_PROC_NULL send request allocated, handle=0x%08x, ptr=%p", (*sreqp)->handle, *sreqp));
+    }
+    else if (rank == MPI_ANY_SOURCE)
+    {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_send_any_source");
     }
     else
     {
-	/* XXX: error */
-	mpi_errno = MPI_ERR_INTERN;
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_dest", "**globus|cm_other_invalid_dest %d", rank);
     }
 
   fn_return:
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_isend);
     return mpi_errno;
 
   fn_fail:
@@ -237,17 +264,191 @@ MPIG_STATIC int mpig_cm_other_adi3_isend(const void * buf, int cnt, MPI_Datatype
 
 
 /*
+ * int mpig_cm_other_adi3_rsend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_other_adi3_rsend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_other_adi3_rsend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					 int ctxoff, MPID_Request ** sreqp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_rsend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_rsend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    if (rank == MPI_PROC_NULL)
+    { 
+	*sreqp = NULL;
+    }
+    else if (rank == MPI_ANY_SOURCE)
+    {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_send_any_source");
+    }
+    else
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_dest", "**globus|cm_other_invalid_dest %d", rank);
+    }
+    
+  fn_return:
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_rsend);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_other_adi3_rsend(...) */
+
+
+/*
+ * int mpig_cm_other_adi3_irsend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_other_adi3_irsend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_other_adi3_irsend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					  int ctxoff, MPID_Request ** sreqp)
+{
+    const int ctx = comm->context_id + ctxoff;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_irsend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_irsend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    if (rank == MPI_PROC_NULL)
+    {
+	mpig_request_create_isreq(MPIG_REQUEST_TYPE_RSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+	MPIG_DBG_PRINTF((15, FCNAME, "MPI_PROC_NULL send request allocated, handle=0x%08x, ptr=%p", (*sreqp)->handle, *sreqp));
+    }
+    else if (rank == MPI_ANY_SOURCE)
+    {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_send_any_source");
+    }
+    else
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_dest", "**globus|cm_other_invalid_dest %d", rank);
+    }
+
+  fn_return:
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_irsend);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_other_adi3_irsend(...) */
+
+
+/*
+ * int mpig_cm_other_adi3_ssend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_other_adi3_ssend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_other_adi3_ssend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					 int ctxoff, MPID_Request ** sreqp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_ssend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_ssend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    if (rank == MPI_PROC_NULL)
+    { 
+	*sreqp = NULL;
+    }
+    else if (rank == MPI_ANY_SOURCE)
+    {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_send_any_source");
+    }
+    else
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_dest", "**globus|cm_other_invalid_dest %d", rank);
+    }
+    
+  fn_return:
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_ssend);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_other_adi3_ssend(...) */
+
+
+/*
+ * int mpig_cm_other_adi3_issend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_other_adi3_issend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_other_adi3_issend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					  int ctxoff, MPID_Request ** sreqp)
+{
+    const int ctx = comm->context_id + ctxoff;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_issend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_issend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    if (rank == MPI_PROC_NULL)
+    {
+	mpig_request_create_isreq(MPIG_REQUEST_TYPE_SSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+	MPIG_DBG_PRINTF((15, FCNAME, "MPI_PROC_NULL send request allocated, handle=0x%08x, ptr=%p", (*sreqp)->handle, *sreqp));
+    }
+    else if (rank == MPI_ANY_SOURCE)
+    {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_send_any_source");
+    }
+    else
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_dest", "**globus|cm_other_invalid_dest %d", rank);
+    }
+
+  fn_return:
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_issend);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_other_adi3_issend(...) */
+
+
+/*
  * int mpig_cm_other_adi3_recv(...)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_recv
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC int mpig_cm_other_adi3_recv(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+MPIG_STATIC int mpig_cm_other_adi3_recv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 					int ctxoff, MPI_Status * status, MPID_Request ** rreqp)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_recv);
 
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_recv);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 
     if (rank == MPI_PROC_NULL)
@@ -256,17 +457,23 @@ MPIG_STATIC int mpig_cm_other_adi3_recv(const void * buf, int cnt, MPI_Datatype 
     }
     else if (rank == MPI_ANY_SOURCE)
     {
-	/* XXX: MPI ANY SOURCE!!! */
-	mpi_errno = MPI_ERR_INTERN;
+	/* XXX: MPI ANY SOURCE not implemented!!! */
+	MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
     }
     else
     {
-	/* XXX: error */
-	mpi_errno = MPI_ERR_INTERN;
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_src", "**globus|cm_other_invalid_src %d", rank);
     }
     
+  fn_return:
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_recv);
     return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_other_adi3_recv(...) */
 
@@ -275,50 +482,38 @@ MPIG_STATIC int mpig_cm_other_adi3_recv(const void * buf, int cnt, MPI_Datatype 
  * int mpig_cm_other_adi3_irecv(...)
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_other_adi3_recv
+#define FUNCNAME mpig_cm_other_adi3_irecv
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC int mpig_cm_other_adi3_irecv(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+MPIG_STATIC int mpig_cm_other_adi3_irecv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 					 int ctxoff, MPID_Request ** rreqp)
 {
-    MPID_Request * rreq;
+    const int ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_irecv);
 
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_irecv);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
     
     if (rank == MPI_PROC_NULL)
-    { 
-	/* allocate request */
-	rreq = mpig_request_create();
-	MPIU_ERR_CHKANDJUMP1((rreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
-
-	/* set MPICH fields */
-	MPIU_Object_set_ref(rreq, 1);
-	rreq->kind = MPID_REQUEST_RECV;
-	rreq->cc = 0;
-	rreq->cc_ptr = &rreq->cc;
-	rreq->comm = NULL;
-	MPIR_Status_set_procnull(&rreq->status);
-	
-	/* set device fields */
-	mpig_request_state_init(rreq);
-	rreq->dev.dtp = NULL;
-	
-	*rreqp = NULL;
+    {
+	mpig_request_create_irreq(1, 0, buf, cnt, dt, rank, tag, ctx, comm, rreqp);
+	MPIR_Status_set_procnull(&(*rreqp)->status);
+	MPIG_DBG_PRINTF((15, FCNAME, "MPI_PROC_NULL receive request allocated, handle=0x%08x, ptr=%p", (*rreqp)->handle, *rreqp));
     }
     else if (rank == MPI_ANY_SOURCE)
     {
-	/* XXX: MPI ANY SOURCE!!! */
-	mpi_errno = MPI_ERR_INTERN;
+	/* XXX: MPI ANY SOURCE not implemented!!! */
+	MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
     }
     else
     {
-	/* XXX: error */
-	mpi_errno = MPI_ERR_INTERN;
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_RANK, "**globus|cm_other_invalid_src", "**globus|cm_other_invalid_src %d", rank);
     }
     
   fn_return:
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_irecv);
     return mpi_errno;
 
   fn_fail:

@@ -9,6 +9,16 @@
 #if !defined(MPICH2_MPIDPOST_H_INCLUDED)
 #define MPICH2_MPIDPOST_H_INCLUDED
 
+
+/*>>>>>>>>>>>>>>>>>>>>
+  COMMUNICATOR SECTION
+  >>>>>>>>>>>>>>>>>>>>*/
+#define mpig_comm_get_vc(comm_, rank_)  (((rank_) >= 0) ? ((comm_)->vcr[(rank_)]) : (mpig_cm_other_vc))
+/*<<<<<<<<<<<<<<<<<<<<
+  COMMUNICATOR SECTION
+  <<<<<<<<<<<<<<<<<<<<*/
+
+
 /*>>>>>>>>>>>>>>>
   REQUEST SECTION
   >>>>>>>>>>>>>>>*/
@@ -22,10 +32,6 @@
 
 
 MPID_Request * mpig_request_create(void);
-void mpig_request_add_ref(MPID_Request * req);
-void mpig_request_release_ref(MPID_Request * req, int * ref_flag);
-void mpig_request_decrement_cc(MPID_Request * req, int * incomplete);
-void mpig_request_increment_cc(MPID_Request * req, int * was_complete);
 void mpig_request_destroy(MPID_Request * req);
 
 /*
@@ -34,24 +40,50 @@ void mpig_request_destroy(MPID_Request * req);
  *
  * NOTE: Some of these macros may also be implemented in mpid_request.c.  Any changes made here should also be made there.
  */
-#define mpig_request_add_ref(req_)		\
+#define mpig_request_set_ref(req_, ref_cnt_)	\
 {						\
-    MPIU_Object_add_ref(req_);			\
+    (req_)->ref_count = (ref_cnt_);		\
 }
 
-#define mpig_request_release_ref(req_, ref_flag_)	\
+#define mpig_request_inc_ref(req_, ref_flag_)	\
+{						\
+    *(ref_flag_) = ((req_)->ref_count)++;	\
+}
+
+#define mpig_request_dec_ref(req_, ref_flag_)	\
+{						\
+    *(ref_flag_) = --((req_)->ref_count);	\
+}
+
+#define mpig_request_set_cc(req_, cc_)		\
+{						\
+    (req_)->cc = (cc_);				\
+}
+
+#define mpig_request_inc_cc(req_, cc_flag_)	\
+{						\
+    *(cc_flag_) = (*(req_)->cc_ptr)++;		\
+}
+
+#define mpig_request_dec_cc(req_, cc_flag_)	\
+{						\
+    *(cc_flag_) = --(*(req_)->cc_ptr);		\
+}
+
+#define mpig_request_complete(reqp_)			\
 {							\
-    MPIU_Object_release_ref((req_), (ref_flag_));	\
-}
-
-#define mpig_request_decrement_cc(req_, cc_zero_flag_)	\
-{							\
-    *(cc_zero_flag_) = --(*(req_)->cc_ptr);		\
-}
-
-#define mpig_request_increment_cc(req_, cc_was_nonzero_flag_)	\
-{								\
-    *(cc_was_nonzero_flag_) = (*(req_)->cc_ptr)++;		\
+    int flag__;						\
+							\
+    mpig_request_dec_cc(*(reqp_), &flag__);		\
+    if (flag__ == FALSE)				\
+    {							\
+	mpig_request_dec_ref(*(reqp_), &flag__);	\
+	if (flag__ == FALSE)				\
+	{						\
+	    mpig_request_destroy(*(reqp_));		\
+	    *(reqp_) = NULL;				\
+	}						\
+    }							\
 }
 
 /*
@@ -61,10 +93,10 @@ void mpig_request_destroy(MPID_Request * req);
 
 #define MPID_Request_release(req_)				\
 {								\
-    int ref_flag;						\
+    int ref_flag__;						\
 								\
-    mpig_request_release_ref((req_), &ref_flag);		\
-    if (ref_flag == FALSE)					\
+    mpig_request_dec_ref((req_), &ref_flag__);			\
+    if (ref_flag__ == FALSE)					\
     {								\
 	mpig_request_destroy(req_);				\
     }								\
@@ -98,12 +130,6 @@ void mpig_request_destroy(MPID_Request * req);
 /*>>>>>>>>>>>>>
   PT2PT SECTION
   >>>>>>>>>>>>>*/
-int mpig_adi3_recv_(void * buf, int count, MPI_Datatype datatype, int tag, MPID_Comm * comm, int context_offset,
-		    MPI_Status * status, MPID_Request ** request);
-
-int mpig_adi3_irecv(void * buf, int count, MPI_Datatype datatype, int tag, MPID_Comm * comm, int context_offset,
-		    MPID_Request ** request);
-    
 #define MPID_Send(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)			\
     (mpig_comm_get_vc((comm_), (rank_))->cm_funcs.					\
      adi3_send((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
@@ -135,7 +161,6 @@ int mpig_adi3_irecv(void * buf, int count, MPI_Datatype datatype, int tag, MPID_
 #define MPID_Irecv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)			\
      (mpig_comm_get_vc((comm_), (rank_))->cm_funcs.					\
       adi3_irecv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
 /*<<<<<<<<<<<<<
   PT2PT SECTION
   <<<<<<<<<<<<<*/

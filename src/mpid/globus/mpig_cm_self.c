@@ -20,8 +20,26 @@ int mpig_cm_self_vc_create(mpig_vc_t * vc);
 MPIG_STATIC int mpig_cm_self_adi3_send(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 				       int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_recv(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+MPIG_STATIC int mpig_cm_self_adi3_isend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+				       int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_self_adi3_rsend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_self_adi3_irsend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					 int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_self_adi3_ssend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_self_adi3_issend(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+				       int ctxoff, MPID_Request ** sreqp);
+
+MPIG_STATIC int mpig_cm_self_adi3_recv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
 				       int ctxoff, MPI_Status * status, MPID_Request ** rreqp);
+
+MPIG_STATIC int mpig_cm_self_adi3_irecv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					int ctxoff, MPID_Request ** rreqp);
 
 
 /*
@@ -30,13 +48,13 @@ MPIG_STATIC int mpig_cm_self_adi3_recv(const void * buf, int cnt, MPI_Datatype d
 MPIG_STATIC mpig_cm_funcs_t mpig_cm_self_funcs =
 {
     mpig_cm_self_adi3_send,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    mpig_cm_self_adi3_isend,
+    mpig_cm_self_adi3_rsend,
+    mpig_cm_self_adi3_irsend,
+    mpig_cm_self_adi3_ssend,
+    mpig_cm_self_adi3_issend,
     mpig_cm_self_adi3_recv,
-    NULL
+    mpig_cm_self_adi3_irecv
 };
 
 
@@ -44,8 +62,8 @@ MPIG_STATIC mpig_cm_funcs_t mpig_cm_self_funcs =
  * Prototypes for internal routines
  */
 
-MPIG_STATIC int mpig_cm_self_send(const void * buf, int cnt, MPI_Datatype datatype, int rank, int tag, int ctx, int type,
-				  MPID_Request ** request);
+MPIG_STATIC int mpig_cm_self_send(int type, const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, int ctx,
+				  MPID_Comm * comm, MPID_Request ** sreqp);
 
 MPIG_STATIC void mpig_cm_self_buffer_copy(
     const void * const sbuf, int scnt, MPI_Datatype sdt, int * smpi_errno,
@@ -59,7 +77,7 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 #define FUNCNAME mpig_cm_self_init
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_cm_self_init(int * argc, char *** argv)
+int mpig_cm_self_init(int * const argc, char *** const argv)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -109,7 +127,7 @@ int mpig_cm_self_finalize(void)
 #define FUNCNAME mpig_cm_self_add_contact_info
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_cm_self_add_contact_info(mpig_bc_t * bc)
+int mpig_cm_self_add_contact_info(mpig_bc_t * const bc)
 {
     char pid[64];
     int mpi_errno = MPI_SUCCESS;
@@ -151,7 +169,7 @@ int mpig_cm_self_add_contact_info(mpig_bc_t * bc)
 #define FUNCNAME mpig_cm_self_select_module
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_cm_self_select_module(mpig_bc_t * bc, mpig_vc_t * vc, int * flag)
+int mpig_cm_self_select_module(mpig_bc_t * const bc, mpig_vc_t * const vc, int * const flag)
 {
     char * hostname_str = NULL;
     char * pid_str = NULL;
@@ -227,20 +245,26 @@ int mpig_cm_self_select_module(mpig_bc_t * bc, mpig_vc_t * vc, int * flag)
 #define FUNCNAME mpig_cm_self_adi3_send
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC int mpig_cm_self_adi3_send(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
-				       int ctxoff, MPID_Request ** sreqp)
+MPIG_STATIC int mpig_cm_self_adi3_send(const void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+				       const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
 {
-    MPID_Request * sreq;
+    const int ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_send);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_send);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-    
+
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+#   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+    {
+	MPIU_ERR_CHKANDJUMP(((*sreqp)->cc != 0), mpi_errno, MPI_ERR_OTHER, "**dev|selfsenddeadlock");
+    }
+#   endif
 
   fn_return:
     MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_send);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_send);
     return mpi_errno;
 
   fn_fail:
@@ -252,95 +276,58 @@ MPIG_STATIC int mpig_cm_self_adi3_send(const void * buf, int cnt, MPI_Datatype d
 
 
 /*
- * int mpig_cm_self_adi3_recv(...)
+ * int mpig_cm_self_adi3_isend(...)
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_self_adi3_recv
+#define FUNCNAME mpig_cm_self_adi3_isend
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC int mpig_cm_self_adi3_recv(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
-				       int ctxoff, MPI_Status * status, MPID_Request ** rreqp)
+MPIG_STATIC int mpig_cm_self_adi3_isend(const void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+					const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
 {
-    int found;
-    MPID_Request * rreq;
+    const int ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_recv);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_isend);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_recv);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_isend);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-    
-    rreq = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, comm->context_id + ctxoff, &found);
-    MPIU_ERR_CHKANDJUMP1((rreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
-    
-    /* set MPICH fields */
-    rreq->cc_ptr = &rreq->cc;
-    rreq->kind = MPID_REQUEST_RECV;
-    rreq->comm = NULL;
-    MPIR_Status_set_procnull(&rreq->status);
-	
-    rreq->comm = comm;
-    MPIR_Comm_add_ref(comm);
-    rreq->dev.buf = buf;
-    rreq->dev.cnt = cnt;
-    rreq->dev.dt = dt;
 
-    /* set device fields */
-    mpig_request_state_init(rreq);
-	
-    if (found)
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_isend);
+    return mpi_errno;
+}
+/* mpig_cm_self_adi3_isend(...) */
+
+
+/*
+ * int mpig_cm_self_adi3_rsend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_adi3_rsend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_self_adi3_rsend(const void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+					const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
+{
+    const int ctx = comm->context_id + ctxoff;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_rsend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_rsend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+#   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
     {
-	MPID_Request * const sreq = rreq->partner_request;
-
-	if (sreq != NULL)
-	{
-	    MPI_Aint data_sz;
-	    
-	    mpig_cm_self_buffer_copy(sreq->dev.buf, sreq->dev.cnt, sreq->dev.dt, &sreq->status.MPI_ERROR,
-				     buf, cnt, dt, &data_sz, &rreq->status.MPI_ERROR);
-	    rreq->status.count = (int)data_sz;
-	    MPID_Request_set_completed(sreq);
-	    MPID_Request_release(sreq);
-	}
-	else
-	{
-	    /* XXX: The sreq is missing which means an error occurred.  rreq->status.MPI_ERROR should have been set when the
-	       error was detected. */
-	}
-
-	if (status != MPI_STATUS_IGNORE)
-	{
-	    *status = rreq->status;
-	}
-
-	/* no other thread can possibly be waiting on rreq, so it is safe to reset ref_count and cc */
-	MPIU_Object_set_ref(rreq, 1);
-	rreq->cc = 0;
-	MPIG_DBG_PRINTF((15, FCNAME, "request found in unexpected queue, req=0x%08x, ptr=%p", rreq->handle, rreq));
+	MPIU_ERR_CHKANDJUMP(((*sreqp)->cc != 0), mpi_errno, MPI_ERR_OTHER, "**dev|selfsenddeadlock");
     }
-    else
-    {
-	/* Message has yet to arrived.  The request has been placed on the list of posted receive requests and populated with
-           information supplied in the arguments. */
-	MPIG_DBG_PRINTF((15, FCNAME, "request allocated in posted queue, req=0x%08x, ptr=%p", rreq->handle, rreq));
-	
-	MPIU_Object_set_ref(rreq, 2);
-	rreq->cc = 1;
-	
-	if (HANDLE_GET_KIND(dt) != HANDLE_KIND_BUILTIN)
-	{
-	    MPID_Datatype_get_ptr(dt, rreq->dev.dtp);
-	    MPID_Datatype_add_ref(rreq->dev.dtp);
-	}
-    }
-    
+#   endif
+
   fn_return:
-    if (rreq != NULL)
-    {
-	mpig_request_unlock(rreq);
-    }
-
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_recv);
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_rsend);
     return mpi_errno;
 
   fn_fail:
@@ -348,7 +335,201 @@ MPIG_STATIC int mpig_cm_self_adi3_recv(const void * buf, int cnt, MPI_Datatype d
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_self_adi3_recv(...) */
+/* mpig_cm_self_adi3_rsend(...) */
+
+
+/*
+ * int mpig_cm_self_adi3_irsend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_adi3_irsend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_self_adi3_irsend(const void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+					 const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
+{
+    const int ctx = comm->context_id + ctxoff;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_irsend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irsend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_irsend);
+    return mpi_errno;
+}
+/* mpig_cm_self_adi3_irsend(...) */
+
+
+/*
+ * int mpig_cm_self_adi3_ssend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_adi3_ssend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_self_adi3_ssend(const void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+					const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
+{
+    const int ctx = comm->context_id + ctxoff;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_ssend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_ssend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+#   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+    {
+	MPIU_ERR_CHKANDJUMP(((*sreqp)->cc != 0), mpi_errno, MPI_ERR_OTHER, "**dev|selfsenddeadlock");
+    }
+#   endif
+
+  fn_return:
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_ssend);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_self_adi3_ssend(...) */
+
+
+/*
+ * int mpig_cm_self_adi3_issend(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_adi3_issend
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_self_adi3_issend(const void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+					const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
+{
+    const int ctx = comm->context_id + ctxoff;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_issend);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_issend);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_issend);
+    return mpi_errno;
+}
+/* mpig_cm_self_adi3_issend(...) */
+
+
+/*
+ * int mpig_cm_self_adi3_recv(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_adi3_recv
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_self_adi3_recv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+				       int ctxoff, MPI_Status * status, MPID_Request ** rreqp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_recv);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_recv);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    mpi_errno = mpig_cm_self_adi3_irecv(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
+    /* the status will be extracted by MPI_Recv() once the request is complete */
+    
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_recv);
+    return mpi_errno;
+}
+
+/*
+ * int mpig_cm_self_adi3_irecv(...)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_adi3_irecv
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_STATIC int mpig_cm_self_adi3_irecv(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+					int ctxoff, MPID_Request ** rreqp)
+{
+    MPID_Request * sreq = NULL;
+    MPID_Request * rreq;
+    const int ctx = comm->context_id + ctxoff;
+    int found;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_irecv);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irecv);
+    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+
+    rreq = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, ctx, &found);
+    MPIU_ERR_CHKANDJUMP1((rreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
+    
+    if (found)
+    {
+	void * sreq_buf;
+	int sreq_cnt;
+	MPI_Datatype sreq_dt;
+	MPI_Aint data_sz;
+
+	sreq = rreq->partner_request;
+	MPIU_Assertp(sreq != NULL);
+	/* XXX: MT: needed for release consistent systems??? */
+	mpig_request_lock(sreq);
+
+	MPIG_DBG_PRINTF((15, FCNAME, "request found in unexpected queue...copying data, req=0x%08x, ptr=%p", rreq->handle, rreq));
+
+	mpig_request_get_buffer(sreq, &sreq_buf, &sreq_cnt, &sreq_dt);
+	mpig_cm_self_buffer_copy(sreq_buf, sreq_cnt, sreq_dt, &sreq->status.MPI_ERROR,
+				 buf, cnt, dt, &data_sz, &rreq->status.MPI_ERROR);
+
+	mpig_request_set_buffer(rreq, buf, cnt, dt);
+	rreq->status.count = (int) data_sz;
+	/* no one else has a handle to the receive req, so it is safe to just set the ref count and CC before returning rreq */
+	mpig_request_set_ref(rreq, 1);
+	mpig_request_set_cc(rreq, 0);
+	
+	mpig_request_complete(&sreq);
+    }
+    else
+    {
+	/* Message has yet to arrived.  The request has been placed on the posted receive queue. */
+	MPIG_DBG_PRINTF((15, FCNAME, "request allocated in posted queue, req=0x%08x, ptr=%p", rreq->handle, rreq));
+	mpig_request_init_irreq(rreq, 2, 1, buf, cnt, dt, rank, tag, ctx, comm);
+    }
+
+    *rreqp = rreq;
+    
+  fn_return:
+    if (rreq != NULL)
+    {
+	mpig_request_unlock(rreq);
+    }
+    if (sreq != NULL)
+    {
+	/* XXX: MT: needed for release consistent systems??? */
+	mpig_request_unlock(sreq);
+    }
+
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_irecv);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_self_adi3_irecv(...) */
 
 
 /*
@@ -358,99 +539,92 @@ MPIG_STATIC int mpig_cm_self_adi3_recv(const void * buf, int cnt, MPI_Datatype d
 #define FUNCNAME mpig_cm_self_send
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC int mpig_cm_self_send(const void * buf, int cnt, MPI_Datatype datatype, int rank, int tag, int ctx, int type,
-				  MPID_Request ** request)
+MPIG_STATIC int mpig_cm_self_send(const int type, const void * const buf, const int cnt, MPI_Datatype dt, const int rank,
+				  const int tag, const int ctx, MPID_Comm * const comm, MPID_Request ** const sreqp)
 {
-#if XXX
-    mpig_envelope_t envl;
     MPID_Request * sreq = NULL;
     MPID_Request * rreq = NULL;
-    mpig_vc_t * vc;
     int found;
-#endif
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_send);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_send);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 	
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    mpig_request_create_isreq(type, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, &sreq);
     
-#if XXX
-    envl.rank = rank;
-    envl.tag = tag;
-    envl.ctx = ctx;
-    rreq = mpig_recvq_deq_posted_or_enq_unexpected(&envl, &found);
+    rreq = mpig_recvq_deq_posted_or_enq_unexp(rank, tag, ctx, &found);
     MPIU_ERR_CHKANDJUMP1((rreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
-
-    rreq->status.MPI_SOURCE = rank;
-    rreq->status.MPI_TAG = tag;
     
     if (found)
     {
 	MPI_Aint data_sz;
-	
-	MPIG_DBG_PRINTF((20, FCNAME, "found posted receive request; copying data"));
 	    
-	mpig_cm_self_buffer_copy(buf, cnt, dt, &sreq->status.MPI_ERROR, rreq->dev.buf, rreq->dev.cnt, rreq->dev.dt,
+	MPIG_DBG_PRINTF((20, FCNAME, "found posted receive request; copying data"));
+	mpig_cm_self_buffer_copy(buf, cnt, dt, &rreq->status.MPI_ERROR, rreq->dev.buf, rreq->dev.cnt, rreq->dev.dt,
 				 &data_sz, &rreq->status.MPI_ERROR);
-	rreq->status.count = (int)data_sz;
-	MPID_Request_set_completed(rreq);
-	MPID_Request_release(rreq);
+
+	mpig_request_set_envelope(rreq, rank, tag, ctx);
+	rreq->status.MPI_SOURCE = rank;
+	rreq->status.MPI_TAG = tag;
+	rreq->status.count = (int) data_sz;
+	mpig_request_complete(&rreq);
+
+	mpig_request_set_ref(sreq, 1);
+	mpig_request_set_cc(sreq, 0);
     }
     else
     {
+	MPI_Aint dt_sz;
+	
 	if (type != MPIG_REQUEST_TYPE_RSEND)
 	{
-	    int dt_sz;
-	
-	    /* FIXME: Insert code here to buffer small sends in a temporary buffer? */
-
 	    MPIG_DBG_PRINTF((20, FCNAME, "adding receive request to unexpected queue; attaching send request"));
-	    mpig_request_create_sreq(sreq, mpi_errno, goto fn_exit);
-	    mpig_request_set_type(sreq, type);
-	    mpig_request_set_proto(sreq, MPIG_REQUEST_PROTO_SELF);
-    
-	    if (HANDLE_GET_KIND(dt) != HANDLE_KIND_BUILTIN)
-	    {
-		MPID_Datatype_get_ptr(dt, sreq->dev.dtp);
-		MPID_Datatype_add_ref(sreq->dev.dtp);
-	    }
+	    mpig_request_init_irreq(rreq, 2, 1, NULL, 0, MPI_DATATYPE_NULL, rank, tag, ctx, comm);
+	    rreq->status.MPI_SOURCE = rank;
+	    rreq->status.MPI_TAG = tag;
 	    rreq->partner_request = sreq;
-	    rreq->dev.sreq_id = sreq->handle;
+	    mpig_request_set_sreq_id(rreq, sreq->handle);
+
+	    /* This is needed for MPI_Probe() and MPI_Iprobe() */
 	    MPID_Datatype_get_size_macro(dt, dt_sz);
 	    rreq->status.count = cnt * dt_sz;
 	}
 	else
 	{
-	    /* --BEGIN ERROR HANDLING-- */
+	    int err = MPI_SUCCESS;
+	    
 	    MPIG_DBG_PRINTF((15, FCNAME, "ready send unable to find matching recv req"));
-	    MPI_ERR_SETANDSTMT2(mpi_errno, MPI_ERR_OTHER, {;}, "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
-	    rreq->status.MPI_ERROR = mpi_errno;
-	    
-	    rreq->partner_request = NULL;
-	    rreq->dev.sreq_id = MPI_REQUEST_NULL;
-	    rreq->status.count = 0;
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	    MPIU_ERR_SETANDSTMT2(err, MPI_ERR_OTHER, {;}, "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
+
+	    mpig_request_init_irreq(rreq, 1, 0, NULL, 0, MPI_DATATYPE_NULL, rank, tag, ctx, comm);
+	    rreq->status.MPI_SOURCE = rank;
+	    rreq->status.MPI_TAG = tag;
+	    rreq->status.MPI_ERROR = err;
+
+	    mpig_request_set_ref(sreq, 1);
+	    mpig_request_set_cc(sreq, 0);
+	    sreq->status.MPI_ERROR = err;
 	}
-	    
-	mpig_request_set_msg_type(rreq, MPIG_REQUEST_SELF_MSG);
-	MPID_Request_initialized_set(rreq);
-
     }
-    
-  fn_exit:
-	*request = sreq;
-#endif
 
+    *sreqp = sreq;
+    
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    if (rreq != NULL)
+    { 
+	mpig_request_unlock();
+    }
+    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_send);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
+    if (sreq != NULL)
+    {
+	mpig_request_destroy(sreq);
+    }
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
@@ -465,8 +639,8 @@ MPIG_STATIC int mpig_cm_self_send(const void * buf, int cnt, MPI_Datatype dataty
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
 MPIG_STATIC void mpig_cm_self_buffer_copy(
-    const void * const sbuf, int scnt, MPI_Datatype sdt, int * smpi_errno,
-    void * const rbuf, int rcnt, MPI_Datatype rdt, MPI_Aint * rsz, int * rmpi_errno)
+    const void * const sbuf, const int scnt, const MPI_Datatype sdt, int * const smpi_errno,
+    void * const rbuf, const int rcnt, const MPI_Datatype rdt, MPI_Aint * const rsz, int * const rmpi_errno)
 {
     int sdt_contig;
     int rdt_contig;

@@ -50,12 +50,14 @@ int mpig_recvq_init(void)
  * mpig_recvq_find_unexp()
  *
  * Find a matching request in the unexpected queue and return a pointer to the request object; otherwise, return NULL.
+ *
+ * NOTE: the returned request is locked.  The calling routine must unlock it.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_recvq_find_unexp
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPID_Request * mpig_recvq_find_unexp(mpig_rank_t rank, mpig_tag_t tag, mpig_ctx_t ctx)
+MPID_Request * mpig_recvq_find_unexp(int rank, int tag, int ctx)
 {
     MPID_Request * rreq;
     MPIG_STATE_DECL(MPID_STATE_mpig_recvq_find_unexp);
@@ -65,59 +67,32 @@ MPID_Request * mpig_recvq_find_unexp(mpig_rank_t rank, mpig_tag_t tag, mpig_ctx_
 
     mpig_recvq_lock();
     {
-	if (tag != MPI_ANY_TAG && rank != MPI_ANY_SOURCE)
-	{
-	    rreq = mpig_recvq_unexp_head;
-	    while(rreq != NULL)
-	    {
-		if (mpig_envelope_equal_tuple(&rreq->dev.envl, rank, tag, ctx))
-		{
-		    mpig_request_add_ref(rreq);
-		    break;
-		}
-	    
-		rreq = rreq->dev.next;
-	    }
-	}
-	else
-	{
-	    mpig_envelope_t envl_val;
-	    mpig_envelope_t envl_mask;
+	const int rank_mask = (rank == MPI_ANY_SOURCE) ? 0 : ~0;;
+	const int tag_mask = (tag == MPI_ANY_TAG) ? 0 : ~0;
 
-	    envl_val.ctx = ctx;
-	    envl_mask.ctx = ~0;
-	    if (tag == MPI_ANY_TAG)
-	    {
-		envl_val.tag = 0;
-		envl_mask.tag = 0;
-	    }
-	    else
-	    {
-		envl_val.tag = tag;
-		envl_mask.tag = ~0;
-	    }
-	    if (rank == MPI_ANY_SOURCE)
-	    {
-		envl_val.rank = 0;
-		envl_mask.rank = 0;
-	    }
-	    else
-	    {
-		envl_val.rank = rank;
-		envl_mask.rank = ~0;
-	    }
-	
-	    rreq = mpig_recvq_unexp_head;
-	    while (rreq != NULL)
-	    {
-		if (mpig_envelope_equal_masked(&rreq->dev.envl, &envl_val, &envl_mask))
-		{
-		    mpig_request_add_ref(rreq);
-		    break;
-		}
+	rreq = mpig_recvq_unexp_head;
+	while(rreq != NULL)
+	{
+	    int rreq_rank;
+	    int rreq_tag;
+	    int rreq_ctx;
+		
+	    mpig_request_get_envelope(rreq, &rreq_rank, &rreq_tag, &rreq_ctx);
 	    
-		rreq = rreq->dev.next;
+	    if (rreq_ctx == ctx && (rreq_rank & rank_mask) == (rank & rank_mask) && (rreq_tag & tag_mask) == (tag & tag_mask))
+	    {
+		MPIG_DBG_PRINTF((15, FCNAME, "MATCHED req=0x%08x, reqp=%p, rank=%d, tag=%d, ctx=%d", rreq->handle, rreq,
+				 rreq_rank, rreq_tag, rreq_ctx));
+		mpig_request_lock(rreq);
+		break;
 	    }
+	    else
+	    {
+		MPIG_DBG_PRINTF((15, FCNAME, "skipping req=0x%08x, reqp=%p, rank=%d, tag=%d, ctx=%d", rreq->handle, rreq,
+				 rreq_rank, rreq_tag, rreq_ctx));
+	    }
+	    
+	    rreq = rreq->dev.next;
 	}
     }
     mpig_recvq_unlock();
@@ -139,7 +114,7 @@ MPID_Request * mpig_recvq_find_unexp(mpig_rank_t rank, mpig_tag_t tag, mpig_ctx_
 #define FUNCNAME mpig_recvq_deq_unexp_sreq
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPID_Request * mpig_recvq_deq_unexp_sreq(mpig_envelope_t * envl, MPI_Request sreq_id)
+MPID_Request * mpig_recvq_deq_unexp_sreq(int rank, int tag, int ctx, MPI_Request sreq_id)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -160,7 +135,12 @@ MPID_Request * mpig_recvq_deq_unexp_sreq(mpig_envelope_t * envl, MPI_Request sre
 	cur_rreq = mpig_recvq_unexp_head;
 	while(cur_rreq != NULL)
 	{
-	    if (cur_rreq->dev.sreq_id == sreq_id && mpig_envelope_equal(&cur_rreq->dev.envl, envl))
+	    int rreq_rank;
+	    int rreq_tag;
+	    int rreq_ctx;
+		
+	    mpig_request_get_envelope(cur_rreq, &rreq_rank, &rreq_tag, &rreq_ctx);
+	    if (rreq_ctx == ctx && rreq_rank == rank && rreq_tag == tag)
 	    {
 		matching_prev_rreq = prev_rreq;
 		matching_cur_rreq = cur_rreq;
@@ -187,6 +167,7 @@ MPID_Request * mpig_recvq_deq_unexp_sreq(mpig_envelope_t * envl, MPI_Request sre
 	    }
 
 	    rreq = matching_cur_rreq;
+	    rreq->dev.next = NULL;
 	}
 	else
 	{
@@ -207,12 +188,14 @@ MPID_Request * mpig_recvq_deq_unexp_sreq(mpig_envelope_t * envl, MPI_Request sre
  *
  * Find a matching request in the unexpected queue and dequeue it; otherwise allocate a new request and enqueue it in the posted
  * queue.  This is an atomic operation.
+ *
+ * NOTE: the returned request is locked.  The calling routine must unlock it.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_recvq_deq_unexp_or_enq_posted
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(mpig_rank_t rank, mpig_tag_t tag, mpig_ctx_t ctx, int * foundp)
+MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, int * foundp)
 {
     int found;
     MPID_Request * rreq;
@@ -222,105 +205,61 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(mpig_rank_t rank, mpig_tag_t t
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_unexp_or_enq_posted);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-
+    MPIG_DBG_PRINTF((15, FCNAME, "searching for rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+    
     lock_held = TRUE;
     mpig_recvq_lock();
     {
-	if (tag != MPI_ANY_TAG && rank != MPI_ANY_SOURCE)
-	{
-	    prev_rreq = NULL;
-	    rreq = mpig_recvq_unexp_head;
-	    while(rreq != NULL)
-	    {
-		if (mpig_envelope_equal_tuple(&rreq->dev.envl, rank, tag, ctx))
-		{
-		    if (prev_rreq != NULL)
-		    {
-			prev_rreq->dev.next = rreq->dev.next;
-		    }
-		    else
-		    {
-			mpig_recvq_unexp_head = rreq->dev.next;
-		    }
-		    if (rreq->dev.next == NULL)
-		    {
-			mpig_recvq_unexp_tail = prev_rreq;
-		    }
-		    found = TRUE;
-		    goto lock_exit;
-		}
+	const int rank_mask = (rank == MPI_ANY_SOURCE) ? 0 : ~0;;
+	const int tag_mask = (tag == MPI_ANY_TAG) ? 0 : ~0;;
 	    
-		prev_rreq = rreq;
-		rreq = rreq->dev.next;
-	    }
-	}
-	else
+	prev_rreq = NULL;
+	rreq = mpig_recvq_unexp_head;
+	while(rreq != NULL)
 	{
-	    mpig_envelope_t envl_val;
-	    mpig_envelope_t envl_mask;
-
-	    envl_val.ctx = ctx;
-	    envl_mask.ctx = ~0;
-	    if (tag == MPI_ANY_TAG)
+	    int rreq_rank;
+	    int rreq_tag;
+	    int rreq_ctx;
+		
+	    mpig_request_get_envelope(rreq, &rreq_rank, &rreq_tag, &rreq_ctx);
+	    
+	    if (rreq_ctx == ctx && (rreq_rank & rank_mask) == (rank & rank_mask) && (rreq_tag & tag_mask) == (tag & tag_mask))
 	    {
-		envl_val.tag = 0;
-		envl_mask.tag = 0;
+		if (prev_rreq != NULL)
+		{
+		    prev_rreq->dev.next = rreq->dev.next;
+		}
+		else
+		{
+		    mpig_recvq_unexp_head = rreq->dev.next;
+		}
+		if (rreq->dev.next == NULL)
+		{
+		    mpig_recvq_unexp_tail = prev_rreq;
+		}
+		MPIG_DBG_PRINTF((15, FCNAME, "MATCHED req=0x%08x, reqp=%p, rank=%d, tag=%d, ctx=%d", rreq->handle, rreq,
+				 rreq_rank, rreq_tag, rreq_ctx));
+		found = TRUE;
+		goto lock_exit;
 	    }
 	    else
 	    {
-		envl_val.tag = tag;
-		envl_mask.tag = ~0;
+		MPIG_DBG_PRINTF((15, FCNAME, "skipping req=0x%08x, reqp=%p, rank=%d, tag=%d, ctx=%d", rreq->handle, rreq,
+				 rreq_rank, rreq_tag, rreq_ctx));
 	    }
-	    if (rank == MPI_ANY_SOURCE)
-	    {
-		envl_val.rank = 0;
-		envl_mask.rank = 0;
-	    }
-	    else
-	    {
-		envl_val.rank = rank;
-		envl_mask.rank = ~0;
-	    }
-	
-	    prev_rreq = NULL;
-	    rreq = mpig_recvq_unexp_head;
-	    while (rreq != NULL)
-	    {
-		if (mpig_envelope_equal_masked(&rreq->dev.envl, &envl_val, &envl_mask))
-		{
-		    if (prev_rreq != NULL)
-		    {
-			prev_rreq->dev.next = rreq->dev.next;
-		    }
-		    else
-		    {
-			mpig_recvq_unexp_head = rreq->dev.next;
-		    }
-		    if (rreq->dev.next == NULL)
-		    {
-			mpig_recvq_unexp_tail = prev_rreq;
-		    }
-		    found = TRUE;
-		    goto lock_exit;
-		}
-	    
-		prev_rreq = rreq;
-		rreq = rreq->dev.next;
-	    }
-	}
 
+	    prev_rreq = rreq;
+	    rreq = rreq->dev.next;
+	}
 
 	/* A matching request was not found in the unexpected queue, so we need to allocate a new request and add it to the
 	   posted queue */
 	rreq = mpig_request_create();
 	if (rreq == NULL) goto fn_fail;
 
-	/* XXX: MT: mpig_request_lock(rreq); */
-	rreq->kind = MPID_REQUEST_RECV;
-	rreq->dev.envl.tag = tag;
-	rreq->dev.envl.rank = rank;
-	rreq->dev.envl.ctx = ctx;
-	rreq->dev.next = NULL;
+	/* the request lock is acquired before inserting the req into the queue so that another thread doesn't dequeue it and
+	   attempt to use it before the calling routine has a chance to initialized it */
+	mpig_request_lock(rreq);
 	
 	if (mpig_recvq_posted_tail != NULL)
 	{
@@ -339,9 +278,12 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(mpig_rank_t rank, mpig_tag_t t
     mpig_recvq_unlock();
     lock_held = FALSE;
 
+    rreq->dev.next = NULL;
+
     if (found)
     {
-	/* XXX: MT: mpig_request_lock(rreq); */
+	/* wait until the request has been initialized */
+	mpig_request_lock(rreq);
     }
 
     *foundp = found;
@@ -405,6 +347,7 @@ int mpig_recvq_deq_posted_rreq(MPID_Request * rreq)
 		    mpig_recvq_posted_tail = prev_rreq;
 		}
 	    
+		cur_rreq->dev.next = NULL;
 		found = TRUE;
 		break;
 	    }
@@ -425,13 +368,16 @@ int mpig_recvq_deq_posted_rreq(MPID_Request * rreq)
 /*
  * mpig_recvq_deq_posted_or_enq_unexp()
  *
- * Locate a request in the posted queue and dequeue it, or allocate a new request and enqueue it in the unexpected queue
+ * Find a matching request in the posted queue and dequeue it; otherwise allocate a new request and enqueue it in the expected
+ * queue.  This is an atomic operation.  
+ *
+ * NOTE: the returned request is locked.  The calling routine must unlock it.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_recvq_deq_posted_or_enq_unexp
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(mpig_envelope_t * envl, int * foundp)
+MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, int * foundp)
 {
     int found;
     MPID_Request * rreq;
@@ -441,102 +387,63 @@ MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(mpig_envelope_t * envl, int * 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_posted_or_enq_unexp);
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DBG_PRINTF((15, FCNAME, "searching for rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
 
     mpig_recvq_lock();
     lock_held = TRUE;
     {
-	if (envl->tag != MPI_ANY_TAG && envl->rank != MPI_ANY_SOURCE)
+	prev_rreq = NULL;
+	rreq = mpig_recvq_posted_head;
+	while(rreq != NULL)
 	{
-	    prev_rreq = NULL;
-	    rreq = mpig_recvq_posted_head;
-	    while(rreq != NULL)
-	    {
-		if (mpig_envelope_equal(&rreq->dev.envl, envl))
-		{
-		    if (prev_rreq != NULL)
-		    {
-			prev_rreq->dev.next = rreq->dev.next;
-		    }
-		    else
-		    {
-			mpig_recvq_posted_head = rreq->dev.next;
-		    }
-		    if (rreq->dev.next == NULL)
-		    {
-			mpig_recvq_posted_tail = prev_rreq;
-		    }
-		    found = TRUE;
-		    goto lock_exit;
-		}
+	    int rreq_rank;
+	    int rreq_tag;
+	    int rreq_ctx;
+	    int rank_mask;
+	    int tag_mask;
 	    
-		prev_rreq = rreq;
-		rreq = rreq->dev.next;
+	    mpig_request_get_envelope(rreq, &rreq_rank, &rreq_tag, &rreq_ctx);
+	    rank_mask = (rreq_rank == MPI_ANY_SOURCE) ? 0 : ~0;
+	    tag_mask = (rreq_tag == MPI_ANY_TAG) ? 0 : ~0;
+		
+	    if (rreq_ctx == ctx && (rreq_rank & rank_mask) == (rank & rank_mask) && (rreq_tag & tag_mask) == (tag & tag_mask))
+	    {
+		if (prev_rreq != NULL)
+		{
+		    prev_rreq->dev.next = rreq->dev.next;
+		}
+		else
+		{
+		    mpig_recvq_posted_head = rreq->dev.next;
+		}
+		if (rreq->dev.next == NULL)
+		{
+		    mpig_recvq_posted_tail = prev_rreq;
+		}
+		
+		MPIG_DBG_PRINTF((15, FCNAME, "MATCHED req=0x%08x, reqp=%p, rank=%d, tag=%d, ctx=%d", rreq->handle, rreq,
+				     rreq_rank, rreq_tag, rreq_ctx));
+		found = TRUE;
+		goto lock_exit;
 	    }
+	    else
+	    {
+		MPIG_DBG_PRINTF((15, FCNAME, "skipping req=0x%08x, reqp=%p, rank=%d, tag=%d, ctx=%d", rreq->handle, rreq,
+				 rreq_rank, rreq_tag, rreq_ctx));
+	    }
+	    
+	    prev_rreq = rreq;
+	    rreq = rreq->dev.next;
 	}
-	else
-	{
-	    mpig_envelope_t envl_val;
-	    mpig_envelope_t envl_mask;
-
-	    envl_val.ctx = envl->ctx;
-	    envl_mask.ctx = ~0;
-	    if (envl->tag == MPI_ANY_TAG)
-	    {
-		envl_val.tag = 0;
-		envl_mask.tag = 0;
-	    }
-	    else
-	    {
-		envl_val.tag = envl->tag;
-		envl_mask.tag = ~0;
-	    }
-	    if (envl->rank == MPI_ANY_SOURCE)
-	    {
-		envl_val.rank = 0;
-		envl_mask.rank = 0;
-	    }
-	    else
-	    {
-		envl_val.rank = envl->rank;
-		envl_mask.rank = ~0;
-	    }
 	
-	    prev_rreq = NULL;
-	    rreq = mpig_recvq_posted_head;
-	    while (rreq != NULL)
-	    {
-		if (mpig_envelope_equal_masked(&rreq->dev.envl, &envl_val, &envl_mask))
-		{
-		    if (prev_rreq != NULL)
-		    {
-			prev_rreq->dev.next = rreq->dev.next;
-		    }
-		    else
-		    {
-			mpig_recvq_posted_head = rreq->dev.next;
-		    }
-		    if (rreq->dev.next == NULL)
-		    {
-			mpig_recvq_posted_tail = prev_rreq;
-		    }
-		    found = TRUE;
-		    goto lock_exit;
-		}
-	    
-		prev_rreq = rreq;
-		rreq = rreq->dev.next;
-	    }
-	}
-
 	/* A matching request was not found in the posted queue, so we need to allocate a new request and add it to the
 	   unexpected queue */
 	rreq = mpig_request_create();
 	if (rreq == NULL) goto fn_fail;
 
-	/* XXX: MT: mpig_request_lock(rreq); */
-	rreq->kind = MPID_REQUEST_RECV;
-	rreq->dev.envl = *envl;
-	rreq->dev.next = NULL;
+	/* the request lock is acquired before inserting the req into the queue so that another thread doesn't dequeue it and
+	   attempt to use it before the calling routine has a chance to initialized it */
+	mpig_request_lock(rreq);
 	
 	if (mpig_recvq_unexp_tail != NULL)
 	{
@@ -556,9 +463,12 @@ MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(mpig_envelope_t * envl, int * 
     mpig_recvq_unlock();
     lock_held=FALSE;
     
+    rreq->dev.next = NULL;
+    
     if (found)
     { 
-	/* XXX: MT: mpig_request_lock(rreq); */
+	/* wait until the request has been initialized */
+	mpig_request_lock(rreq);
     }
 
     *foundp = found;

@@ -1,0 +1,66 @@
+#!@SHELL@
+
+usage()
+{
+    echo "usage: $0 -n <nprocs> <pgm>"
+    exit 1
+}
+
+if test $# -ne 3 -o "$1" != "-n" ; then
+    usage
+fi
+
+nprocs=`echo $2 | sed 's/[^0-9]*//g'`
+if test "$2" != "$nprocs" ; then
+    usage
+fi
+
+pgm="$3"
+if test ! -x "$pgm" ; then
+    echo "ERROR: "'"'"$pgm"'"'" is not executable"
+    exit 1
+fi
+
+shift 3
+
+if test -z "$GLOBUS_GRAM_CONTACT" ; then
+    echo "ERROR: the environment variable GLOBUS_GRAM_CONTACT is not set"
+    exit 1
+fi
+
+if test -z "$GLOBUS_LOCATION" ; then
+    echo "ERROR: the environment variable GLOBUS_LOCATION is not set"
+    exit 1
+fi
+
+if test ! -d "$GLOBUS_LOCATION" ; then
+    echo "ERROR: the environment variable GLOBUS_LOCATION does not point at a valid directory"
+    exit 1
+fi
+
+if test ! -x "$GLOBUS_LOCATION/bin/globusrun" ; then
+    echo "ERROR: the environment variable GLOBUS_LOCATION does not point at a valid directory"
+    exit 1
+fi
+
+rsl=.mpich2-globus-rsl.$$
+curpath=`pwd`
+
+cat >$rsl <<EOF
++
+( &(resourceManagerContact="$GLOBUS_GRAM_CONTACT")
+   (count=$nprocs)
+   (label="subjob 0")
+   (environment=(GLOBUS_DUROC_SUBJOB_INDEX 0)
+	(LD_LIBRARY_PATH $GLOBUS_LOCATION/lib)
+	(MPICH_DBG_OUTPUT file))
+   (directory=$curpath)
+   (executable=$pgm)
+   (arguments="$*")
+)
+EOF
+
+$GLOBUS_LOCATION/bin/globusrun -w -f $rsl
+if test $? -eq 0 ; then
+    rm -f $rsl
+fi

@@ -350,8 +350,6 @@ int mpig_cm_xio_init(int * argc, char *** argv)
     MPIU_ERR_CHKANDJUMP1((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|xio_server_init",
 			 "**globus|xio_server_init %s", globus_error_print_chain(globus_error_peek(grc)));
 
-    fprintf(stderr, "%d: contact string: %s\n", mpig_process.my_pg_rank, mpig_cm_xio_server_cs);
-
     grc = globus_xio_server_register_accept(mpig_cm_xio_server, mpig_cm_xio_handle_server_accept, NULL);
     MPIU_ERR_CHKANDJUMP1((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|xio_server_init",
 			 "**globus|xio_server_init %s", globus_error_print_chain(globus_error_peek(grc)));

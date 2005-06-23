@@ -187,15 +187,16 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	mpig_vc_t * vc;
 	int flag;
-	    
+	
+#       if defined(MPICH_DBG_OUTPUT)	    
 	{
 	    char * bc_str;
 
 	    mpig_bc_serialize_object(&bcs[p], &bc_str);
-	    printf("[%d]: BC for process %d - %s\n", pg_rank, p, bc_str);
-	    fflush(stdout);
+	    mpig_dbg_printf(30, FCNAME, "[%d]: BC for process %d - %s\n", pg_rank, p, bc_str);
 	    mpig_bc_free_serialized_object(bc_str);
 	}
+#       endif
 	
 	mpig_pg_get_vc(pg, p, &vc);
 	

@@ -110,8 +110,15 @@ AC_SUBST(MAKE_DEPEND_C)
 #
 # Create Makefiles, etc.
 #
-AC_OUTPUT(Makefile)
-
+AC_OUTPUT(Makefile mpiexec,
+[
+    chmod 755 mpiexec
+    cp -pf mpiexec $master_top_builddir/bin/mpiexec
+],
+[
+    master_top_builddir=$master_top_builddir
+])
+AC_OUTPUT_COMMANDS
 echo ""
 echo "END OF CONFIGURE THE FOR GLOBUS DEVICE"
 echo ""

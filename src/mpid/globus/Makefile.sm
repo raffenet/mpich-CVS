@@ -32,19 +32,20 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpig_bc.c			\
     mpig_cm_other.c		\
     mpig_cm_self.c		\
-    mpig_cm_vmpi.c		\
     mpig_cm_xio.c		\
+    mpig_cm_vmpi.c		\
     mpig_pg.c			\
     mpig_misc.c			\
     mpig_pm_gk.c		\
     mpig_recvq.c		\
     mpig_request.c
 
+
 #
 # Install device compiler scripts, and  modify the previously installed MPICH2 compiler scripts to use the installed
 #  device scripts
 #
-install_BIN = mpich2-globus-cc
+install_BIN = mpich2-globus-cc mpiexec
 optinstall_BIN = mpich2-globus-cxx mpich2-globus-f77 mpich2-globus-f90
 
 install-local:
@@ -73,12 +74,13 @@ install-local:
 #
 distclean-local:
 	-rm -f globus-settings.mk
-	-rm -f mpidconf.h
 	-rm -f mpich2-globus-cc
 	-rm -f mpich2-globus-cxx
 	-rm -f mpich2-globus-f77
 	-rm -f mpich2-globus-f90
 	-rm -f mpich2-globus-settings
+	-rm -f mpidconf.h
+	-rm -f mpiexec
 
 #
 # Clean up files created by maint/updatefiles (autoheader, autoconf, etc.)

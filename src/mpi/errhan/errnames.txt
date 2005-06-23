@@ -875,6 +875,8 @@ with MPI_Alloc_mem.
 #
 # Globus device
 #
+**globus|badreqtype:request contained an invalid request type
+**globus|badreqtype %d:request contained an invalid request type (%d)
 **globus|bc_init:failed to initialize the business card module
 **globus|cm_add_contact:an error occurred while a communication module was adding its contact information to the business card
 **globus|cm_add_contact %s:an error occurred while the '%s' communication module was adding its contact information to the business card
@@ -888,6 +890,11 @@ with MPI_Alloc_mem.
 **globus|cm_select_module %s %s %d:an error ocurred when the '%s' communication module was asked to perform selection for process %s:%d
 **globus|cm_self_hostname:the 'self' communication module was unable to obtain the machine's hostname
 **globus|cm_xio_ver:the 'xio' communication module detected a protocol incompatibility
+**globus|cm_other_send_any_source:MPI_ANY_SOURCE is not a valid destination
+**globus|cm_other_invalid_dest:destination rank may only be MPI_ANY_SOURCE or MPI_PROC_NULL
+**globus|cm_other_invalid_dest %d:destination rank may only be MPI_PROC_NULL, not %d
+**globus|cm_other_invalid_src:source rank may only be MPI_ANY_SOURCE or MPI_PROC_NULL
+**globus|cm_other_invalid_src %d:source rank may only be MPI_ANY_SOURCE or MPI_PROC_NULL, not %d
 **globus|duroc_sjrank:a error occurred while retrieving the rank of this process within its subjob
 **globus|duroc_sjsize:a error occurred while retrieving the size of the subjob to which this process belongs
 **globus|module_activate:attempt to activate a Globus module failed
