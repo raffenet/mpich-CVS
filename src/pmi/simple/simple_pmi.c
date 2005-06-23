@@ -407,8 +407,7 @@ int PMI_Finalize( )
 
 int PMI_Abort(int exit_code, const char error_msg[])
 {
-    fprintf(stderr, "aborting job:\n%s\n", error_msg);
-    fflush(stderr);
+    PMIU_printf(1, "aborting job:\n%s\n", error_msg);
     exit(exit_code);
     return -1;
 }
@@ -694,9 +693,6 @@ int PMI_Publish_name( const char service_name[], const char port[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    /****
-    printf("PMI_Publish_name called for service name %s, port %s\n", service_name, port);
-    ****/
     if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
     {
         MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=publish_name service=%s port=%s\n",
@@ -730,9 +726,6 @@ int PMI_Unpublish_name( const char service_name[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    /****
-    printf("PMI_Unpublish_name called for service name %s\n", service_name);
-    ****/
     if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
     {
         MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=unpublish_name service=%s\n", service_name );
@@ -765,9 +758,6 @@ int PMI_Lookup_name( const char service_name[], char port[] )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    /****
-    printf("PMI_Lookup_name called for service name %s\n", service_name);
-    ****/
     if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
     {
         MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=lookup_name service=%s\n", service_name );
@@ -815,9 +805,6 @@ int PMI_Spawn_multiple(int count,
     int  i,rc,argcnt,spawncnt;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-    /* printf("CMD0 = :%s:\n",cmds[0]);  fflush(stdout);  */
-    /* printf("ARG00=:%s:\n",argvs[0][0]);  fflush(stdout);  */
-    /* MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=spawn execname=/bin/hostname nprocs=1\n" ); */
 #ifdef USE_PMI_PORT
     if (PMI_initialized < 2)
     {
@@ -895,12 +882,6 @@ int PMI_Spawn_multiple(int count,
         MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
 	for (i=0; i < info_keyval_sizes[spawncnt]; i++)
 	{
-	    /****
-	    printf("RMB: SPAWN_MULT: for cmd %d  keyval%d = (%s,%s)\n",
-		   spawncnt,i,
-		   info_keyval_vectors[spawncnt][i].key,
-		   info_keyval_vectors[spawncnt][i].val);
-	    ****/
 	    /* FIXME: Check for tempbuf too short */
 	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_key_%d=%s\n",i,info_keyval_vectors[spawncnt][i].key);
 	    /* FIXME: Check for error (buf too short for line) */
@@ -1065,7 +1046,7 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "response_to_init", PMIU_MAXLINE ) != 0 ) {
-	sprintf(errmsg,"got unexpected response to init :%s:\n", buf );
+	MPIU_Snprintf(errmsg, PMIU_MAXLINE, "got unexpected response to init :%s:\n", buf );
 	PMI_Abort( -1, errmsg );
     }
     else {
@@ -1074,7 +1055,7 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
         if ( strncmp( buf, "0", PMIU_MAXLINE ) != 0 ) {
             PMIU_getval( "pmi_version", buf, PMIU_MAXLINE );
             PMIU_getval( "pmi_subversion", buf1, PMIU_MAXLINE );
-	    sprintf(errmsg, "pmi_version mismatch; client=%d.%d mgr=%s.%s\n",
+	    MPIU_Snprintf(errmsg, PMIU_MAXLINE, "pmi_version mismatch; client=%d.%d mgr=%s.%s\n",
 		    PMI_VERSION, PMI_SUBVERSION, buf, buf1 );
 	    PMI_Abort( -1, errmsg );
         }
@@ -1316,7 +1297,7 @@ static int mpd_singinit()
     rc = bind(singinit_listen_sock, (struct sockaddr *)&sin ,sizeof(sin));
     len = sizeof(struct sockaddr_in);
     rc = getsockname( singinit_listen_sock, (struct sockaddr *) &sin, &len ); 
-    sprintf(port_c,"%d",ntohs(sin.sin_port));
+    MPIU_Snprintf(port_c, 8, "%d",ntohs(sin.sin_port));
     rc = listen(singinit_listen_sock, 5);
 
     pid = fork();
@@ -1329,21 +1310,20 @@ static int mpd_singinit()
     {
 	newargv[0] = "mpdrun.py";
 	newargv[1] = "-p";
-	sprintf(charpid,"%d",getpid());
+	MPIU_Snprintf(charpid, 8, "%d",getpid());
 	newargv[2] = charpid;
 	newargv[3] = port_c;
 	newargv[4] = "unknown_via_singinit";
 	newargv[5] = NULL;
 	rc = execvp(newargv[0],newargv);
 	perror("mpd_singinit: execv failed");
-	printf("  This singleton init program attempted to access some feature\n");
-	printf("  for which mpd support was required, e.g. spawn or universe_size.\n");
-	printf("  But, the necessary mpd program (mpdrun) is not in your path.\n");
+	PMIU_printf(1, "  This singleton init program attempted to access some feature\n");
+	PMIU_printf(1, "  for which mpd support was required, e.g. spawn or universe_size.\n");
+	PMIU_printf(1, "  But, the necessary mpd program (mpdrun) is not in your path.\n");
 	return(-1);
     }
     else
     {
-	/* printf("mpd_singinit: accepting pmi conn from mpdman\n"); */
 	pmi_sock = accept_one_connection(singinit_listen_sock);
 	PMI_fd = pmi_sock;
 	stdin_sock  = accept_one_connection(singinit_listen_sock);
@@ -1352,7 +1332,6 @@ static int mpd_singinit()
 	dup2(stdout_sock,1);
 	stderr_sock = accept_one_connection(singinit_listen_sock);
 	dup2(stderr_sock,2);
-	/* printf("mpd_singinit: past accepting\n");  fflush(stdout); */
     }
     return(0);
 }
@@ -1374,7 +1353,7 @@ static int accept_one_connection(int list_sock)
 		continue;
 	    else
 	    {
-		printf("accept failed\n");
+		PMIU_printf(1, "accept failed in accept_one_connection\n");
 		exit(-1);
 	    }
 	}
