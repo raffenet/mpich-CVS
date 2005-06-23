@@ -14,7 +14,7 @@ Some long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
      mpd -h donner -p 4268 -n
   is equivalent to
-     mpd --host=donner --port=4268 --noconsole
+     mpd --host=magpie --port=4268 --noconsole
 
 --host and --port must be specified together; they tell the new mpd where
   to enter an existing ring;  if they are omitted, the new mpd forms a
@@ -330,7 +330,11 @@ class MPD(object):
                 self.parmdb[('cmdline','MPD_ENTRY_IFHN')] = argv[argidx+1]
                 argidx += 2
             elif argv[argidx].startswith('--host'):
-                entryHost = argv[argidx].split('=',1)[1]
+                try:
+                    entryHost = argv[argidx].split('=',1)[1]
+                except:
+                    print 'failed to parse --host option'
+                    self.usage()
                 self.parmdb[('cmdline','MPD_ENTRY_IFHN')] = entryHost
                 argidx += 1
             elif argv[argidx] == '-p':
@@ -343,21 +347,33 @@ class MPD(object):
                 self.parmdb[('cmdline','MPD_ENTRY_PORT')] = int(argv[argidx+1])
                 argidx += 2
             elif argv[argidx].startswith('--port'):
-                entryPort = argv[argidx].split('=',1)[1]
+                try:
+                    entryPort = argv[argidx].split('=',1)[1]
+                except:
+                    print 'failed to parse --port option'
+                    self.usage()
                 if not entryPort.isdigit():
                     print 'invalid port %s ; must be numeric' % (entryPort)
                     exit(-1)
                 self.parmdb[('cmdline','MPD_ENTRY_PORT')] = int(entryPort)
                 argidx += 1
             elif argv[argidx].startswith('--ncpus'):
-                NCPUs = argv[argidx].split('=',1)[1]
+                try:
+                    NCPUs = argv[argidx].split('=',1)[1]
+                except:
+                    print 'failed to parse --ncpus option'
+                    self.usage()
                 if not NCPUs.isdigit():
                     print 'invalid ncpus %s ; must be numeric' % (NCPUs)
                     exit(-1)
                 self.parmdb[('cmdline','MPD_NCPUS')] = int(NCPUs)
                 argidx += 1
             elif argv[argidx].startswith('--pid'):
-                splitPid = argv[argidx].split('=')
+                try:
+                    splitPid = argv[argidx].split('=')
+                except:
+                    print 'failed to parse --pid option'
+                    self.usage()
                 if len(splitPid) == 1  or  not splitPid[1]:
                     pidFilename = '/var/run/mpd.pid'
                 else:
@@ -365,7 +381,11 @@ class MPD(object):
                 self.parmdb[('cmdline','MPD_PID_FILENAME')] = pidFilename
                 argidx += 1
             elif argv[argidx].startswith('--ifhn'):
-                ifhn = argv[argidx].split('=',1)[1]
+                try:
+                    ifhn = argv[argidx].split('=',1)[1]
+                except:
+                    print 'failed to parse --ifhn option'
+                    self.usage()
                 try:
                     hostinfo = gethostbyname_ex(ifhn)
                     ifhn = hostinfo[2][0]
@@ -384,7 +404,11 @@ class MPD(object):
                 self.parmdb[('cmdline','MPD_LISTEN_PORT')] = int(argv[argidx+1])
                 argidx += 2
             elif argv[argidx].startswith('--listenport'):
-                myListenPort = argv[argidx].split('=',1)[1]
+                try:
+                    myListenPort = argv[argidx].split('=',1)[1]
+                except:
+                    print 'failed to parse --listenport option'
+                    self.usage()
                 if not myListenPort.isdigit():
                     print 'invalid listenport %s ; must be numeric' % (myListenPort)
                     exit(-1)
