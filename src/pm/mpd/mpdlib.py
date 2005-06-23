@@ -130,7 +130,11 @@ def mpd_sockpair():
     rc = sock1.sock.listen(5)
     port1 = sock1.sock.getsockname()[1]
     sock2 = MPDSock()
-    rc = sock2.sock.connect(('',port1))
+    try:
+        rc = sock2.sock.connect(('localhost',port1))
+    except:
+        # we have seen at least one machine that needs it this way
+        rc = sock2.sock.connect(('',port1))
     (sock3,addr) = sock1.sock.accept()
     sock3 = MPDSock(sock=sock3)
     sock1.close()
