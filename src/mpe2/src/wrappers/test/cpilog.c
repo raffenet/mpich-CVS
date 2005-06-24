@@ -39,9 +39,9 @@ int main( int argc, char *argv[] )
         liblmpe.a is linked with this program.  In that case,
         MPI_Init() would have called MPE_Init_log() already.
     */
-/*
+#if defined( NO_MPI_LOGGING )
     MPE_Init_log();
-*/
+#endif
 
     /*  Get event ID from MPE, user should NOT assign event ID  */
     event1a = MPE_Log_get_event_number(); 
@@ -97,9 +97,12 @@ int main( int argc, char *argv[] )
 
         MPE_Log_sync_clocks();
     }
-/*
-    MPE_Finish_log( "cpilog" );
-*/
+#if defined( NO_MPI_LOGGING )
+    if ( argv != NULL )
+        MPE_Finish_log( argv[0] );
+    else
+        MPE_Finish_log( "cpilog" );
+#endif
 
     if ( myid == 0 ) {
         endwtime = MPI_Wtime();

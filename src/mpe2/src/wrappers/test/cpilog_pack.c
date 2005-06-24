@@ -13,7 +13,7 @@ double f( double a )
     return (4.0 / (1.0 + a*a));
 }
 
-int main( int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
     int  n, myid, numprocs, ii, jj;
     double PI25DT = 3.141592653589793238462643;
@@ -42,9 +42,9 @@ int main( int argc, char *argv[])
         liblmpe.a is linked with this program.  In that case,
         MPI_Init() would have called MPE_Init_log() already.
     */
-/*
+#if defined( NO_MPI_LOGGING )
     MPE_Init_log();
-*/
+#endif
 
     /*  Get event ID from MPE, user should NOT assign event ID  */
     event1a = MPE_Log_get_event_number(); 
@@ -109,9 +109,12 @@ int main( int argc, char *argv[])
             MPE_Log_pack( bytebuf, &bytebuf_pos, 'd', 1, &jj );
         MPE_Log_event( event4b, 0, bytebuf );
     }
-/*
-    MPE_Finish_log( "cpilog" );
-*/
+#if defined( NO_MPI_LOGGING )
+    if ( argv != NULL )
+        MPE_Finish_log( argv[0] );
+    else
+        MPE_Finish_log( "cpilog" );
+#endif
 
     if ( myid == 0 ) {
         endwtime = MPI_Wtime();

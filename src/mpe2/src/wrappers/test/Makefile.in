@@ -3,6 +3,7 @@
 
 MAKE                 = @MAKE@
 
+CPP                  = @CPP@
 MPI_CC               = @MPI_CC@
 MPI_F77              = @MPI_F77@
 MPI_CLINKER          = $(MPI_CC)
@@ -15,10 +16,14 @@ CFLAGS               = @CFLAGS@
 FFLAGS               = @FFLAGS@
 MPE_INCDIR           = @includebuild_dir@
 MPE_LIBDIR           = @libbuild_dir@
+PROF_LIBS            = -L$(MPE_LIBDIR) @PROF_LIBS@ $(MPI_LIBS)
 LOG_LIBS             = -L$(MPE_LIBDIR) @LOG_LIBS@ $(MPI_LIBS)
 TRACE_LIBS           = -L$(MPE_LIBDIR) @TRACE_LIBS@ $(MPI_LIBS)
 F2CMPI_LIBS          = @F2CMPI_LIBS@
-FLIB_PATH            = @FLIB_PATH_LEADER@$(MPE_LIBDIR) \
+PROF_FLIBS           = @FLIB_PATH_LEADER@$(MPE_LIBDIR) \
+                       $(F2CMPI_LIBS) @PROF_LIBS@ \
+                       $(MPI_LIBS)
+LOG_FLIBS            = @FLIB_PATH_LEADER@$(MPE_LIBDIR) \
                        $(F2CMPI_LIBS) @LOG_LIBS@ \
                        $(MPI_LIBS)
 #
@@ -40,12 +45,29 @@ CC_LDFLAGS    = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
 EXECS         = cpilog@EXEEXT@ cpilog_pack@EXEEXT@ srtest@EXEEXT@
 
-.SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
+.SUFFIXES: .c .f .n@OBJEXT@ .@OBJEXT@ @EXEEXT@
 
 .c.@OBJEXT@:
 	$(MPI_CC) $(CC_FLAGS) -c $<
+
 .f.@OBJEXT@:
 	$(MPI_F77) $(FC_FLAGS) -c $<
+
+.c.n@OBJEXT@:
+	$(MPI_CC) -DNO_MPI_LOGGING $(CC_FLAGS) -c $<
+	mv -f $*.@OBJEXT@ $*.n@OBJEXT@
+
+.F.@OBJEXT@:
+	rm -f mpe2tmp.f mpe2tmp.@OBJEXT@
+	$(CPP) $< > mpe2tmp.f && \
+	$(MPI_F77) $(FC_FLAGS) -c mpe2tmp.f
+	mv -f mpe2tmp.@OBJEXT@ $*.@OBJEXT@
+
+.F.n@OBJEXT@:
+	rm -f mpe2tmp.f mpe2tmp.@OBJEXT@
+	$(CPP) -DNO_MPI_LOGGING $< > mpe2tmp.f && \
+	$(MPI_F77) $(FC_FLAGS) -c mpe2tmp.f
+	mv -f mpe2tmp.@OBJEXT@ $*.n@OBJEXT@
 
 default: $(EXECS)
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
@@ -65,11 +87,20 @@ cpilog@EXEEXT@: cpilog.@OBJEXT@
 cpilog_pack@EXEEXT@: cpilog_pack.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
+ncpilog@EXEEXT@: cpilog.n@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
+
+ncpilog_pack@EXEEXT@: ncpilog_pack.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
+
 fpilog@EXEEXT@: fpilog.@OBJEXT@
-	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(FLIB_PATH) $(DEBUG_LIBS) -lm
+	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
 
 fpilog_pack@EXEEXT@: fpilog_pack.@OBJEXT@
-	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(FLIB_PATH) $(DEBUG_LIBS) -lm
+	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
+
+nfpilog_pack@EXEEXT@: fpilog_pack.n@OBJEXT@
+	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(PROF_FLIBS) $(DEBUG_LIBS) -lm
 
 srtest@EXEEXT@: srtest.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
