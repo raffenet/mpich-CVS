@@ -20,7 +20,6 @@ mpiexec [global args] [local args] executable [args]
       -ifhn                        # network interface to use locally
       -tv                          # run procs under totalview (must be installed)
       -gdb                         # run procs under gdb
-      -gdba jobid                  # gdb-attach to existing jobid
     and local args may be
       -n <n> or -np <n>            # number of processes to start
       -wdir <dirname>              # working directory to start in
@@ -34,6 +33,7 @@ mpiexec [global args] [local args] executable [args]
       -envlist <list of env var names> # pass current values of these vars
       -env <name> <value>          # pass this value of this env var
 mpiexec [global args] [local args] executable args : [local args] executable...
+mpiexec -gdba jobid                # gdb-attach to existing jobid
 mpiexec -configfile filename       # filename contains cmd line segs as lines
   (See User Guide for more details)
 
@@ -65,7 +65,7 @@ def mpiexec():
     global totalProcs, nextRange, argvCopy, configLines, configIdx, appnum
     global validGlobalArgs, globalArgs, validLocalArgs, localArgSets
 
-    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-gdba' : 1, '-bnr' : 0, '-tv' : 0,
+    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
                         '-ifhn' : 1, '-machinefile' : 1, '-kx' : 0, '-s' : 1, '-1' : 0,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
 			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1, '-gumask' : 1,
@@ -198,9 +198,6 @@ def collect_args(args):
         garg = args[argidx]
 	if garg == '-gnp':    # alias for '-gn'
 	    garg = '-gn'
-	if garg == '-gdba':
-	    print '-gdba must appear alone with jobid'
-            exit(-1)
         if validGlobalArgs[garg] > 0:
             if garg == '-genv':
                 globalArgs['-genv'][args[argidx+1]] = args[argidx+2]
