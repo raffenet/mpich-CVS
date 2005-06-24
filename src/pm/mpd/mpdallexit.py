@@ -33,7 +33,7 @@ def mpdallexit():
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=8.0)
     if not msg:
-        print 'no msg recvd from mpd before timeout'
+        mpd_print(1,'no msg recvd from mpd before timeout')
     elif msg['cmd'] != 'mpdallexit_ack':
         mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
         exit(-1)
