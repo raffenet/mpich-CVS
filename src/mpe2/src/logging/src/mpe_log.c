@@ -44,11 +44,11 @@ int             MPE_Log_hasBeenClosed  = 0;
 
 
 /*@
-    MPE_Init_log - Initialize for logging
+    MPE_Init_log - Initialize the logging of events.
 
     Notes:
     Initializes the MPE logging package.  This must be called before any of
-    the other MPE logging routines.  It is collective over 'MPI_COMM_WORLD'
+    the other MPE logging routines.  It is collective over 'MPI_COMM_WORLD'.
 
     Notes:
     MPE_Init_log() & MPE_Finish_log() are NOT needed when liblmpe.a is linked
@@ -87,7 +87,7 @@ int MPE_Init_log( void )
 }
 
 /*@
-    MPE_Start_log - Begin logging of events
+    MPE_Start_log - Start the logging of events.
 @*/
 int MPE_Start_log( void )
 {
@@ -98,7 +98,7 @@ int MPE_Start_log( void )
 }
 
 /*@
-    MPE_Stop_log - Stop logging events
+    MPE_Stop_log - Stop the logging of events
 @*/
 int MPE_Stop_log( void )
 {
@@ -162,12 +162,13 @@ N*/
 - format       - printf style %-token format control string for the state.
                  maximum length of the NULL-terminated string is,
                  sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
-                 equivalent to calling MPE_Describe_state().  For fortran
-                 interface, zero-length string, i.e. "", is considered NULL.
+                 equivalent to calling MPE_Describe_state().  The fortran
+                 interface of this routine considers the zero-length string,
+                 "", and single-blank string, " ", as NULL.
 
     Notes:
     Adds a state definition to the logfile.
-    States are added to a log file by calling 'MPE_Log_event()'
+    States are added to a logfile by calling 'MPE_Log_event()'
     for the start and end event numbers.
 
 .N MPE_LOG_BYTE_FORMAT
@@ -269,8 +270,9 @@ int MPE_Describe_state( int start_etype, int final_etype,
 - format       - printf style %-token format control string for the event.
                  maximum length of the NULL-terminated string is,
                  sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
-                 equivalent to calling MPE_Describe_event().  For fortran
-                 interface, zero-length string, i.e. "", is considered NULL.
+                 equivalent to calling MPE_Describe_event(). The fortran
+                 interface of this routine considers the zero-length string,
+                 "", and single-blank string, " ", as NULL.
 
     Notes:
     Adds a event definition to the logfile.
@@ -566,10 +568,10 @@ int MPE_Log_sync_clocks( void )
     MPE_Finish_log() & MPE_Init_log() are NOT needed when liblmpe.a is linked
     because MPI_Finalize) would have called MPE_Finish_log() already.
     liblmpe.a will be included in the final executable if it is linked with
-    mpicc -mpe=log
+    mpicc -mpe=log.
 
-    This routine dumps a logfile in clog2 format.  It is collective over
-    'MPI_COMM_WORLD'.
+    This routine dumps the logfile in clog2 format.
+    It is collective over 'MPI_COMM_WORLD'.
 
 @*/
 int MPE_Finish_log( char *filename )
