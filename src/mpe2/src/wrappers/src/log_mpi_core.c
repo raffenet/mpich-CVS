@@ -2344,9 +2344,17 @@ char *** argv;
   MPE_Init_MPIRMA();
 #endif
 
+#ifdef HAVE___ARGV
+  if ( argv == NULL )
+      argv = __argv;
+#endif
+
   /*  Set default logfilename  */  
   /*  sprintf( logFileName_0, "%s_profile.log", (*argv)[0] ); */
-  sprintf( logFileName_0, "%s", (*argv)[0] );
+  if ( argv != NULL )
+      sprintf( logFileName_0, "%s", (*argv)[0] );
+  else
+      sprintf( logFileName_0, "mpe2_trace" );
 
   /* Enable the basic states */
   for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
