@@ -274,7 +274,7 @@ int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 				      mpig_pm_sj_num, mpig_pm_sj_addrs, inbuf, inbuf_len, outbufs, outbufs_lens);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 #else
-    distribute_byte_array(bc_str, strlen(bc_str) + 1, mpig_pm_my_sj_rank, mpig_pm_my_sj_size, mpig_pm_sj_addrs,
+    distribute_byte_array(bc_str, (int) strlen(bc_str) + 1, mpig_pm_my_sj_rank, mpig_pm_my_sj_size, mpig_pm_sj_addrs,
 			  mpig_pm_my_pg_size, mpig_pm_sj_num, mpig_pm_my_pg_rank, bc_strs, bc_lens);
 
 #endif    
@@ -927,7 +927,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    /* tagging and copying my byte array for distribution */
 	    sprintf(t,              "%d ",  pg_rank);
 	    sprintf(t+INT_MAX_STRLEN,    "%d ",  inbuf_len);
-	    memcpy(t+(2*INT_MAX_STRLEN), inbuf, inbuf_len);
+	    memcpy(t+(2*INT_MAX_STRLEN), inbuf, (size_t) inbuf_len);
 
 	    {
 		char tag[SUBJOB_MAX_TAG_SIZE];
@@ -1118,7 +1118,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    sprintf(my_subjob_buf+INT_MAX_STRLEN,     "%d ",  pg_rank);
 	    sprintf(my_subjob_buf+(2*INT_MAX_STRLEN), "%d ",  inbuf_len);
 
-	    memcpy(my_subjob_buf+(3*INT_MAX_STRLEN),  inbuf, inbuf_len);
+	    memcpy(my_subjob_buf+(3*INT_MAX_STRLEN),  inbuf, (size_t) inbuf_len);
 
 	    dest = my_subjob_buf + (3*INT_MAX_STRLEN) + inbuf_len;
 
@@ -1127,7 +1127,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    {
 		sprintf(dest, "%d ", pg_rank+i);
 		sprintf(dest+INT_MAX_STRLEN, "%d ", rcounts[i]);
-		memcpy(dest+(2*INT_MAX_STRLEN), temp_buf+displs[i], rcounts[i]);
+		memcpy(dest+(2*INT_MAX_STRLEN), temp_buf+displs[i], (size_t) rcounts[i]);
 		dest += ((2*INT_MAX_STRLEN)+rcounts[i]);
 	    } /* endfor */
 
@@ -1155,7 +1155,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    sprintf(t,               "%d ",  sj_size);
 	    sprintf(t+INT_MAX_STRLEN,     "%d ",  pg_rank);
 	    sprintf(t+(2*INT_MAX_STRLEN), "%d ",  inbuf_len);
-	    memcpy(t+(3*INT_MAX_STRLEN),  inbuf, inbuf_len);
+	    memcpy(t+(3*INT_MAX_STRLEN),  inbuf, (size_t) inbuf_len);
 
 	    {
 		char tag[SUBJOB_MAX_TAG_SIZE];
@@ -1366,7 +1366,7 @@ MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *b
 	    ? max_payload_size-INT_MAX_STRLEN 
 	    : nbytes;
 
-    memcpy(send_buf+INT_MAX_STRLEN, buf, ncpy);
+    memcpy(send_buf+INT_MAX_STRLEN, buf, (size_t) ncpy);
 
     sprintf(t, "%s0", tag_base);
     globus_duroc_runtime_intra_subjob_send(dest, t, INT_MAX_STRLEN + ncpy, (globus_byte_t *) send_buf);
@@ -1375,7 +1375,7 @@ MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *b
     for (i = 1, bytes_sent = ncpy, src = buf+ncpy; bytes_sent < nbytes; i ++)
     {
 	ncpy = max_payload_size < nbytes-bytes_sent ? max_payload_size : nbytes-bytes_sent;
-	memcpy(send_buf, src, ncpy);
+	memcpy(send_buf, src, (size_t) ncpy);
 	sprintf(t, "%s%d", tag_base, i);
 	globus_duroc_runtime_intra_subjob_send(dest, t, ncpy, (globus_byte_t *) send_buf);
 
@@ -1433,7 +1433,7 @@ MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **b
 	exit(1);
     } /* endif */
 
-    memcpy(*buf, rcv_buf+INT_MAX_STRLEN, nr-INT_MAX_STRLEN);
+    memcpy(*buf, rcv_buf+INT_MAX_STRLEN, (size_t) nr-INT_MAX_STRLEN);
 
     /* receiving remaining data */
     for (i = 1, bytes_rcvd = nr-INT_MAX_STRLEN, dest = *buf+(nr-INT_MAX_STRLEN); 
@@ -1444,7 +1444,7 @@ MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **b
 	    t,                           /* tag */
 	    &nr,                         /* nbytes received? */
 	    (globus_byte_t *) rcv_buf); /* message */
-	memcpy(dest, rcv_buf, nr);
+	memcpy(dest, rcv_buf, (size_t) nr);
 
 	bytes_rcvd += nr;
 	dest       += nr;
@@ -1494,7 +1494,7 @@ MPIG_STATIC void extract_byte_arrays(char *rbuf,
 	    exit(1);
 	} /* endif */
 
-	memcpy(outbufs[id], src+(2*INT_MAX_STRLEN), outbuflens[id]);
+	memcpy(outbufs[id], src+(2*INT_MAX_STRLEN), (size_t) outbuflens[id]);
 
 	src += ((2*INT_MAX_STRLEN)+outbuflens[id]);
     } /* endfor */
@@ -1660,7 +1660,7 @@ MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int 
 	exit(1);
     } /* endif */
 
-    memcpy(my_subjob_buf,  inbuf, inbuflen);
+    memcpy(my_subjob_buf,  inbuf, (size_t) inbuflen);
     dest = my_subjob_buf + inbuflen;
 
     for (mask = 0x1; 
@@ -1698,7 +1698,7 @@ MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int 
 
 	    } /* endif */
 
-	    memcpy(dest, rbuf, buflen);
+	    memcpy(dest, rbuf, (size_t) (size_t) buflen);
 	    dest += buflen;
 
 	    MPIU_Free(rbuf);
@@ -1906,7 +1906,7 @@ MPIG_STATIC void get_topology(int rank_in_my_subjob,
 		globus_duroc_runtime_inter_subjob_send(
 		    (*subjob_addresses)[sj0_master_idx], /* dest */
 		    tag,                                 /* tag */
-		    strlen(topology_buff)+1,             /* nbytes */
+		    (int) strlen(topology_buff)+1,       /* nbytes */
 		    (globus_byte_t *) topology_buff);    /* data */
 
 		sprintf(tag, "%s%d", 
@@ -2037,7 +2037,7 @@ MPIG_STATIC void get_topology(int rank_in_my_subjob,
 		    globus_duroc_runtime_inter_subjob_send(
 			(*subjob_addresses)[i],           /* dest */
 			tag,                              /* tag */
-			strlen(topology_buff)+1,          /* nbytes */
+			(int) strlen(topology_buff)+1,    /* nbytes */
 			(globus_byte_t *) topology_buff); /* data */
 		} /* endfor */
 	    }
@@ -2081,10 +2081,10 @@ MPIG_STATIC void get_topology(int rank_in_my_subjob,
 		for (i = 1; i < my_subjob_size; i ++)
 		{
 		    sprintf(topology_buff, "%d %d", *nprocs, (*my_grank) + i);
-		    intra_subjob_send(i,                     /* dest */
-				    tag,                     /* tag */
-				    strlen(topology_buff)+1, /* nbytes */
-				    topology_buff);          /* data */
+		    intra_subjob_send(i,				/* dest */
+				    tag,				/* tag */
+				    (int) strlen(topology_buff)+1,	/* nbytes */
+				    topology_buff);			/* data */
 		} /* endfor */
 	    }
         }
@@ -2187,10 +2187,10 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    char *t;
 	    char tagged_intrabuff[GRAM_MYJOB_MAX_BUFFER_LENGTH];
 
-	    if (sizeof(tagged_intrabuff) < (2*HEADERLEN)+inbufflen)
+	    if (sizeof(tagged_intrabuff) < (size_t) (2*HEADERLEN)+inbufflen)
 	    {
 		if (!(bigbuff = 
-		    (char *) globus_libc_malloc((2*HEADERLEN)+inbufflen)))
+		    (char *) globus_libc_malloc((size_t) (2*HEADERLEN)+inbufflen)))
 		{
 		    globus_libc_fprintf(stderr, 
 			"ERROR: failed malloc of %d bytes\n", 
@@ -2208,7 +2208,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    /* tagging and copying my byte array for distribution */
 	    sprintf(t,              "%d ",  my_grank);
 	    sprintf(t+HEADERLEN,    "%d ",  inbufflen);
-	    memcpy(t+(2*HEADERLEN), inbuff, inbufflen);
+	    memcpy(t+(2*HEADERLEN), inbuff, (size_t) inbufflen);
 
 	    {
 		char tag[200];
@@ -2257,7 +2257,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 		    exit(1);
 		} /* endif */
 
-		if (!(rbuff = (char *) globus_libc_malloc(bsize)))
+		if (!(rbuff = (char *) globus_libc_malloc((size_t) bsize)))
 		{
 		    globus_libc_fprintf(stderr, 
 			"ERROR: distribute_byte_array(): "
@@ -2363,7 +2363,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 		if (i)
 		    displs[i] = displs[i-1] + rcounts[i-1];
 	    } /* endfor */
-	    if (!(temp_buff = (char *) globus_libc_malloc(my_subjob_buffsize)))
+	    if (!(temp_buff = (char *) globus_libc_malloc((size_t) my_subjob_buffsize)))
 	    {
 		globus_libc_fprintf(stderr, 
 		    "ERROR: failed malloc of %d bytes\n", my_subjob_buffsize);
@@ -2397,7 +2397,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 
 	    my_subjob_buffsize += (HEADERLEN+(my_subjob_size*2*HEADERLEN));
 	    if (!(my_subjob_buff = 
-		    (char *) globus_libc_malloc(my_subjob_buffsize)))
+		    (char *) globus_libc_malloc((size_t) my_subjob_buffsize)))
 	    {
 		globus_libc_fprintf(stderr, 
 		    "ERROR: failed malloc of %d bytes\n", my_subjob_buffsize);
@@ -2407,7 +2407,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    sprintf(my_subjob_buff+HEADERLEN,     "%d ",  my_grank);
 	    sprintf(my_subjob_buff+(2*HEADERLEN), "%d ",  inbufflen);
 
-	    memcpy(my_subjob_buff+(3*HEADERLEN),  inbuff, inbufflen);
+	    memcpy(my_subjob_buff+(3*HEADERLEN),  inbuff, (size_t) inbufflen);
 
 	    dest = my_subjob_buff + (3*HEADERLEN) + inbufflen;
 
@@ -2416,7 +2416,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    {
 		sprintf(dest, "%d ", my_grank+i);
 		sprintf(dest+HEADERLEN, "%d ", rcounts[i]);
-		memcpy(dest+(2*HEADERLEN), temp_buff+displs[i], rcounts[i]);
+		memcpy(dest+(2*HEADERLEN), temp_buff+displs[i], (size_t) rcounts[i]);
 		dest += ((2*HEADERLEN)+rcounts[i]);
 	    } /* endfor */
 
@@ -2434,7 +2434,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    char *t;
 	    int t_len = (3*HEADERLEN)+inbufflen;
 
-	    if (!(t = (char *) globus_libc_malloc(t_len)))
+	    if (!(t = (char *) globus_libc_malloc((size_t) t_len)))
 	    {
 		globus_libc_fprintf(stderr, 
 		    "ERROR: failed malloc of %d bytes\n", t_len);
@@ -2444,7 +2444,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    sprintf(t,               "%d ",  my_subjob_size);
 	    sprintf(t+HEADERLEN,     "%d ",  my_grank);
 	    sprintf(t+(2*HEADERLEN), "%d ",  inbufflen);
-	    memcpy(t+(3*HEADERLEN),  inbuff, inbufflen);
+	    memcpy(t+(3*HEADERLEN),  inbuff, (size_t) inbufflen);
 
 	    {
 		char tag[200];
@@ -2660,7 +2660,7 @@ MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *b
 	    ? max_payload_size-HEADERLEN 
 	    : nbytes;
 
-    memcpy(send_buff+HEADERLEN, buff, ncpy);
+    memcpy(send_buff+HEADERLEN, buff, (size_t) ncpy);
 
     sprintf(t, "%s0", tag_base);
     globus_duroc_runtime_intra_subjob_send(
@@ -2675,7 +2675,7 @@ MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *b
 	ncpy = max_payload_size < nbytes-bytes_sent
 		? max_payload_size
 		: nbytes-bytes_sent;
-	memcpy(send_buff, src, ncpy);
+	memcpy(send_buff, src, (size_t) ncpy);
 	sprintf(t, "%s%d", tag_base, i);
 	globus_duroc_runtime_intra_subjob_send(
 	    dest,                         /* dest */
@@ -2728,14 +2728,14 @@ MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **b
 	&nr,                         /* nbytes received? */
 	(globus_byte_t *) rcv_buff); /* message */
     sscanf(rcv_buff, "%d ", rcvd_nbytes);
-    if (!(*buff = (char *) globus_libc_malloc(*rcvd_nbytes)))
+    if (!(*buff = (char *) globus_libc_malloc((size_t) *rcvd_nbytes)))
     {
 	globus_libc_fprintf(stderr,
 	    "ERROR: failed malloc of %d bytes\n", *rcvd_nbytes);
 	exit(1);
     } /* endif */
 
-    memcpy(*buff, rcv_buff+HEADERLEN, nr-HEADERLEN);
+    memcpy(*buff, rcv_buff+HEADERLEN, (size_t) nr-HEADERLEN);
 
     /* receiving remaining data */
     for (i = 1, bytes_rcvd = nr-HEADERLEN, dest = *buff+(nr-HEADERLEN); 
@@ -2746,7 +2746,7 @@ MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **b
 	    t,                           /* tag */
 	    &nr,                         /* nbytes received? */
 	    (globus_byte_t *) rcv_buff); /* message */
-	memcpy(dest, rcv_buff, nr);
+	memcpy(dest, rcv_buff, (size_t) nr);
 
 	bytes_rcvd += nr;
 	dest       += nr;
@@ -2789,14 +2789,14 @@ MPIG_STATIC void extract_byte_arrays(char *rbuff,
 
 	sscanf(src+HEADERLEN, "%d ", outbufflens+id);
 	if (!(outbuffs[id] = 
-	    (globus_byte_t *) globus_libc_malloc(outbufflens[id])))
+	    (globus_byte_t *) globus_libc_malloc((size_t) outbufflens[id])))
 	{
 	    globus_libc_fprintf(stderr, 
 		"ERROR: failed malloc of %d bytes\n", outbufflens[id]);
 	    exit(1);
 	} /* endif */
 
-	memcpy(outbuffs[id], src+(2*HEADERLEN), outbufflens[id]);
+	memcpy(outbuffs[id], src+(2*HEADERLEN), (size_t) outbufflens[id]);
 
 	src += ((2*HEADERLEN)+outbufflens[id]);
     } /* endfor */
@@ -2966,7 +2966,7 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
      */
 
     my_subjob_buffsize = my_subjob_size*inbufflen+100;
-    if (!(my_subjob_buff = (char *) globus_libc_malloc(my_subjob_buffsize)))
+    if (!(my_subjob_buff = (char *) globus_libc_malloc((size_t) my_subjob_buffsize)))
     {
 	globus_libc_fprintf(stderr, 
 	    "ERROR: failed my_subjob_buff malloc of %d bytes\n", 
@@ -2974,7 +2974,7 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
 	exit(1);
     } /* endif */
 
-    memcpy(my_subjob_buff,  inbuff, inbufflen);
+    memcpy(my_subjob_buff,  inbuff, (size_t) inbufflen);
     dest = my_subjob_buff + inbufflen;
 
     for (mask = 0x1; 
@@ -3000,7 +3000,7 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
 
 		if (!(my_subjob_buff = 
 			(char *) globus_libc_realloc(my_subjob_buff, 
-						    my_subjob_buffsize)))
+						     (size_t) my_subjob_buffsize)))
 		{
 		    globus_libc_fprintf(stderr, 
 			"ERROR: failed realloc of %d bytes\n", 
@@ -3012,7 +3012,7 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
 
 	    } /* endif */
 
-	    memcpy(dest, rbuff, bufflen);
+	    memcpy(dest, rbuff, (size_t) bufflen);
 	    dest += bufflen;
 
 	    globus_libc_free(rbuff);
