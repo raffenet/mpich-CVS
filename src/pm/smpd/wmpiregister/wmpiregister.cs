@@ -295,6 +295,11 @@ namespace wmpiregister
 			//string error;
 			try
 			{
+				if (password_textBox.Text.Length == 0)
+				{
+					MessageBox.Show("MPICH2 cannot use user credentials with empty passwords, please select another user");
+					return;
+				}
 				Process process = new Process();
 				process.StartInfo.FileName = get_mpiexec();
 				process.StartInfo.Arguments = "-register";

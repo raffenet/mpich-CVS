@@ -857,25 +857,34 @@ void smpd_get_account_and_password(char *account, char *password)
 
     do
     {
-	fprintf(stderr, "account (domain\\user): ");
-	fflush(stderr);
-	*account = '\0';
-	fgets(account, 100, stdin);
-	while (strlen(account))
+	do
 	{
-	    len = strlen(account);
-	    if (account[len-1] == '\r' || account[len-1] == '\n')
-		account[len-1] = '\0';
-	    else
-		break;
-	}
-    } 
-    while (strlen(account) == 0);
-    
-    fprintf(stderr, "password: ");
-    fflush(stderr);
+	    fprintf(stderr, "account (domain\\user): ");
+	    fflush(stderr);
+	    *account = '\0';
+	    fgets(account, 100, stdin);
+	    while (strlen(account))
+	    {
+		len = strlen(account);
+		if (account[len-1] == '\r' || account[len-1] == '\n')
+		    account[len-1] = '\0';
+		else
+		    break;
+	    }
+	} 
+	while (strlen(account) == 0);
 
-    smpd_get_password(password);
+	fprintf(stderr, "password: ");
+	fflush(stderr);
+
+	smpd_get_password(password);
+	if (strlen(password) == 0)
+	{
+	    fprintf(stderr, "MPICH2 is unable to manage jobs using credentials with a blank password.\nPlease enter another account.\n");
+	}
+    }
+    while (strlen(password) == 0);
+
     smpd_exit_fn(FCNAME);
 }
 
