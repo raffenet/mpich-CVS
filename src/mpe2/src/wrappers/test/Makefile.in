@@ -75,11 +75,11 @@ default: $(EXECS)
 	     $(MAKE) fpilog_pack@EXEEXT@ ; \
 	 fi
 
-cpi_log@EXEEXT@: cpi.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
-
 cpi_trace@EXEEXT@: cpi.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(TRACE_LIBS) $(DEBUG_LIBS) -lm
+
+cpi_log@EXEEXT@: cpi.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 cpilog@EXEEXT@: cpilog.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
@@ -90,7 +90,7 @@ cpilog_pack@EXEEXT@: cpilog_pack.@OBJEXT@
 ncpilog@EXEEXT@: cpilog.n@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
 
-ncpilog_pack@EXEEXT@: ncpilog_pack.@OBJEXT@
+ncpilog_pack@EXEEXT@: cpilog_pack.n@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
 
 fpilog@EXEEXT@: fpilog.@OBJEXT@
@@ -112,34 +112,34 @@ linktest: linktest_C
 
 linktest_C: 
 	@-echo ; \
-	echo "** Testing if C application can be linked with logging library" ; \
-	$(RM) -f cpi_log@EXEEXT@ ; \
-	$(MAKE) cpi_log@EXEEXT@ ; \
-	if test -x cpi_log@EXEEXT@ ; then \
-	    echo "** C application can be linked with logging library" ; \
-	    $(RM) -f cpi_log@EXEEXT@ ; \
-	else \
-	    echo "** C application CANNOT be linked with logging library" ; \
-	fi 
-	@-echo ; \
-	echo "** Testing if C application can be linked with tracing library" ; \
+	echo "** Testing if C program can be linked with MPI tracing library..." ; \
 	$(RM) -f cpi_trace@EXEEXT@ ; \
 	$(MAKE) cpi_trace@EXEEXT@ ; \
 	if test -x cpi_trace@EXEEXT@ ; then \
-	    echo "** C application can be linked with tracing library" ; \
+	    echo "** C program can be linked with MPI tracing library." ; \
 	    $(RM) -f cpi_trace@EXEEXT@ ; \
 	else \
-	    echo "** C application CANNOT be linked with tracing library" ; \
+	    echo "** C program CANNOT be linked with MPI tracing library." ; \
 	fi 
 	@-echo ; \
-	echo "** Testing if C application can use both automatic and manual logging together" ; \
+	echo "** Testing if C program can be linked with MPI logging library..." ; \
+	$(RM) -f cpi_log@EXEEXT@ ; \
+	$(MAKE) cpi_log@EXEEXT@ ; \
+	if test -x cpi_log@EXEEXT@ ; then \
+	    echo "** C program can be linked with MPI logging library." ; \
+	    $(RM) -f cpi_log@EXEEXT@ ; \
+	else \
+	    echo "** C program CANNOT be linked with MPI logging library." ; \
+	fi 
+	@-echo ; \
+	echo "** Testing if C program can do both MPI and manual logging together..." ; \
 	$(RM) -f cpilog@EXEEXT@ ; \
 	$(MAKE) cpilog@EXEEXT@ ; \
 	if test -x cpilog@EXEEXT@ ; then \
-	    echo "** C application can use both automatic and manual logging together" ; \
+	    echo "** C program can do both MPI and manual logging together." ; \
 	    $(RM) -f cpilog@EXEEXT@ ; \
 	else \
-	    echo "** C application CANNOT use both automatic and manual logging together" ; \
+	    echo "** C program CANNOT do both MPI and manual logging together." ; \
 	fi ; \
 	echo
 	@-$(MAKE) clean
@@ -147,14 +147,14 @@ linktest_C:
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	    echo ; \
-	    echo "** Testing if Fortran77 application can be linked with logging library" ; \
+	    echo "** Testing if Fortran77 program can do both MPI and manual logging together..." ; \
 	    $(RM) -f fpilog@EXEEXT@ ; \
 	    $(MAKE) fpilog@EXEEXT@ ; \
 	    if test -x fpilog@EXEEXT@ ; then \
-	        echo "** Fortran77 application can be linked with logging library" ; \
+	        echo "** Fortran77 program can do both MPI and manual logging together." ; \
 	        $(RM) -f fpilog@EXEEXT@ ; \
 	    else \
-	        echo "** Fortran77 application CANNOT be linked with logging library" ; \
+	        echo "** Fortran77 program CANNOT do both MPI and manual logging together." ; \
 	    fi ; \
 	    echo ; \
 	    $(MAKE) clean ; \
