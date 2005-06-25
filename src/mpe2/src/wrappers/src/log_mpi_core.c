@@ -1715,7 +1715,8 @@ int  MPI_Finalize( )
 
     MPE_Finish_log( logFileName_0 );
     if (procid_0 == 0)
-        fprintf( stderr, "Finished writing logfile %s.\n", logFileName_0 );
+        fprintf( stderr, "Finished writing logfile %s.\n",
+                 MPE_Log_merged_logfilename() );
 
      /* Recover all of the allocated requests */
      rq_end( requests_avail_0 );
@@ -2350,11 +2351,10 @@ char *** argv;
 #endif
 
   /*  Set default logfilename  */  
-  /*  sprintf( logFileName_0, "%s_profile.log", (*argv)[0] ); */
   if ( argv != NULL )
       sprintf( logFileName_0, "%s", (*argv)[0] );
   else
-      sprintf( logFileName_0, "mpe2_trace" );
+      sprintf( logFileName_0, "Unknown" );
 
   /* Enable the basic states */
   for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
