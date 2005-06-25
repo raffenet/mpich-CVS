@@ -97,7 +97,12 @@ int MPE_Log_sync_clocks( void )
     return MPE_LOG_OK;
 }
 
-int MPE_Finish_log( char *filename )
+int MPE_Finish_log( const char *filename )
 {
     return MPE_LOG_OK;
+}
+
+const char *MPE_Log_merged_logfilename( void )
+{
+    return NULL;
 }
