@@ -561,6 +561,9 @@ int MPE_Log_sync_clocks( void )
 }
 
 
+/* Declare clog_merged_filename same as CLOG_Merger_t.out_filename */
+static char clog_merged_filename[ CLOG_PATH_STRLEN ] = "0";
+
 /*@
     MPE_Finish_log - Send log to master, who writes it out
 
@@ -574,7 +577,7 @@ int MPE_Log_sync_clocks( void )
     It is collective over 'MPI_COMM_WORLD'.
 
 @*/
-int MPE_Finish_log( char *filename )
+int MPE_Finish_log( const char *filename )
 {
 /*
    The environment variable MPE_LOG_FORMAT is NOT read
@@ -593,11 +596,13 @@ int MPE_Finish_log( char *filename )
             CLOG_Converge_init( clog_stream, env_logfile_prefix );
         else
             CLOG_Converge_init( clog_stream, filename );
+
         /*
-           Update the "filename" with the real output filename
-           Assuming the filename[]'s length = merger->out_filename[]'s length.
+           Save the merged filename in the local memory so
+           CLOG_Stream_t can be freed to be destroyed
         */
-        strcpy( filename, clog_stream->merger->out_filename );
+        strncpy( clog_merged_filename, clog_stream->merger->out_filename,
+                 CLOG_PATH_STRLEN );
         CLOG_Converge_sort( clog_stream );
         CLOG_Converge_finalize( clog_stream );
 
@@ -611,4 +616,15 @@ int MPE_Finish_log( char *filename )
         MPE_Log_hasBeenClosed = 1;
     }
     return MPE_LOG_OK;
+}
+
+/*@
+    MPE_Log_merged_logfilename - returns the merged final logfile name.
+
+    Notes:
+    This function has no fortran interface.
+@*/
+const char *MPE_Log_merged_logfilename( void )
+{
+    return clog_merged_filename;
 }

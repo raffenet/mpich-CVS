@@ -94,8 +94,11 @@ int MPE_Log_sync_clocks( void );
 int MPE_Stop_log( void );
   /* stop logging events */
 
-int MPE_Finish_log( char *filename );
+int MPE_Finish_log( const char *filename );
   /* write out data to a file */
+
+const char* MPE_Log_merged_logfilename( void );
+  /* get the merged logfile name */
 
 #endif
 
