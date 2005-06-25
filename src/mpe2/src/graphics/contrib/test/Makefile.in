@@ -62,24 +62,24 @@ linktest: linktest_C
 
 linktest_C: 
 	@-echo ; \
-	echo "** Testing if C application can be linked with animation library" ; \
+	echo "** Testing if C program can be linked with animation library..." ; \
 	$(RM) -f cpi_anim@EXEEXT@ ; \
 	$(MAKE) cpi_anim@EXEEXT@ ; \
 	if test -x cpi_anim@EXEEXT@ ; then \
-	    echo "** C application can be linked with animation library" ; \
+	    echo "** C program can be linked with animation library." ; \
 	    $(RM) -f cpi_anim@EXEEXT@ ; \
 	else \
-	    echo "** C application CANNOT be linked with animation library" ; \
+	    echo "** C program CANNOT be linked with animation library." ; \
 	fi
 	@-echo ; \
-	echo "** Testing if C application can be linked with graphics library" ; \
+	echo "** Testing if C program can be linked with graphics library..." ; \
 	$(RM) -f cxgraphics@EXEEXT@ ; \
 	$(MAKE) cxgraphics@EXEEXT@ ; \
 	if test -x cxgraphics@EXEEXT@ ; then \
-	    echo "** C application can be linked with graphics library" ; \
+	    echo "** C program can be linked with graphics library." ; \
 	    $(RM) -f cxgraphics@EXEEXT@ ; \
 	else \
-	    echo "** C application CANNOT be linked with graphics library" ; \
+	    echo "** C program CANNOT be linked with graphics library." ; \
 	fi ; \
 	echo
 	@-$(MAKE) clean
@@ -87,14 +87,14 @@ linktest_C:
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	      echo ; \
-	      echo "** Testing if Fortran77 application can be linked with graphics library" ; \
+	      echo "** Testing if Fortran77 program can be linked with graphics library..." ; \
 	      $(RM) -f fxgraphics@EXEEXT@ ; \
 	      $(MAKE) fxgraphics@EXEEXT@ ; \
 	      if test -x fxgraphics@EXEEXT@ ; then \
-	          echo "** Fortran77 application can be linked with graphics library" ; \
+	          echo "** Fortran77 program can be linked with graphics library." ; \
 	          $(RM) -f fxgraphics@EXEEXT@ ; \
 	      else \
-	          echo "** Fortran77 application CANNOT be linked with graphics library" ; \
+	          echo "** Fortran77 program CANNOT be linked with graphics library." ; \
 	      fi ; \
 	      echo ; \
 	      $(MAKE) clean ; \
