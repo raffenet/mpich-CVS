@@ -8,12 +8,14 @@
 #ifndef DEBUG_ALL
 #define DEBUG_ALL
 #endif
-#include <stdio.h>
 #include "mpe_conf.h"
 #include "mpe_logging_conf.h"
-#include "mpe_log.h"
 
-#ifdef HAVE_STDLIB_H
+#if defined( HAVE_STDIO_H ) || defined( STDC_HEADERS )
+#include <stdio.h>
+#endif
+
+#if defined( HAVE_STDLIB_H ) || defined( STDC_HEADERS )
 #include <stdlib.h>
 #else
 extern char *malloc();
@@ -23,6 +25,9 @@ extern void free();
 #if defined(HAVE_STRING_H) || defined(STDC_HEADERS)
 #include <string.h>
 #endif
+
+#include "clog_util.h"
+#include "mpe_log.h"
 
 /* This is needed to process Cray - style character data */
 #if defined(MPI_CRAY) || defined(_CRAY)
@@ -101,7 +106,11 @@ int  d;
 {
     char *p;
     p = (char *)malloc( d + 1 );
-    if (!p) ;
+    if (!p) {
+        fprintf( stderr,
+                 "MPE Fortran to C wrapper: malloc() fails! Aborting..." );
+        CLOG_Util_abort( 1 );
+    }
     strncpy( p, s, d );
     p[d] = 0;
     return p;
