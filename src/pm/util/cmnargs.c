@@ -104,7 +104,8 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
     int        optionArgs = 0; /* Keep track of where we got 
 				 the options */
     int        optionCmdline = 0;
-    ProcessApp *pApp, **nextAppPtr;
+    ProcessApp *pApp = 0, **nextAppPtr;
+    EnvInfo    *appEnv = 0;
 
     /* FIXME: Get values from the environment first.  Command line options
        override the environment */
@@ -227,9 +228,16 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 	    pApp->nextApp = 0;
 	    pUniv->worlds[0].nApps++;
 	    pApp->pWorld = &pUniv->worlds[0];
-	    pApp->env    = 0;
+	    if (appEnv) {
+		/* Initialize the env items */
+		MPIE_EnvInitData( appEnv->envPairs, 0 );
+		MPIE_EnvInitData( appEnv->envNames, 1 );
+	    }
+	    pApp->env    = appEnv;
+	    appEnv       = 0;
 
 	    pApp->pState  = 0;
+
 	    /* Save the properties of this app */
 	    pApp->exename  = exename;
 	    pApp->arch     = arch;
@@ -271,7 +279,8 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 	    int incr = 0;
 	    /* Unrecognized argument.  First check for environment variable 
 	       controls */
-	    incr = MPIE_ArgsCheckForEnv( argc, argv, &pUniv->worlds[0] );
+	    incr = MPIE_ArgsCheckForEnv( argc-i, &argv[i], &pUniv->worlds[0], 
+					 &appEnv );
 	    if (incr == 0) {
 		/* Use the callback routine to handle any unknown arguments
 		   before the program name */
@@ -279,6 +288,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 		    incr = ProcessArg( argc, argv, extraData );
 		}
 	    }
+
 	    if (incr) {
 		/* increment by one less because the for loop will also
 		   increment i */
@@ -331,12 +341,18 @@ int MPIE_CheckEnv( ProcessUniverse *pUniv,
 /*@
   MPIE_ArgDescription - Return a pointer to a description of the
   arguments handled by MPIE_Args
+
+  This includes the handling of the env arguments
   @*/
 const char *MPIE_ArgDescription( void )
 {
-    return "-n <numprocs> -soft <softness> -host <hostname> \\\n\
+    return "-usize <universesize> -maxtime <seconds> -exitinfo -l\\\n\
+               -n <numprocs> -soft <softness> -host <hostname> \\\n\
                -wdir <working directory> -path <search path> \\\n\
-               -file <filename> -configfile <filename> execname <args>\\\n\
+               -file <filename> -configfile <filename> \\\n\
+               -genvnone -genvlist <name1,name2,...> -genv name value\\\n\
+               -envnone -envlist <name1,name2,...> -env name value\\\n\
+               execname <args>\\\n\
                [ : -n <numprocs> ... execname <args>]\n";
 }
 

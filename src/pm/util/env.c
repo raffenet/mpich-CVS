@@ -25,13 +25,13 @@
  * 
  */
 
-static EnvInfo *curAppEnv = 0;
 /* 
  * This routine may be called by MPIE_Args to handle any environment arguments
  * Returns the number of arguments to skip (0 if argument is not recognized
  * as an environment control)
  */
-int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
+int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld,
+			  EnvInfo **appEnv )
 
 {
     int      i, incr=0;
@@ -39,14 +39,15 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
     char    *cmd;
 
     if ( strncmp( argv[0], "-env",  4) == 0) {
-	if (!curAppEnv) {
+	if (!*appEnv) {
 	    env = (EnvInfo *)MPIU_Malloc( sizeof(EnvInfo) );
 	    env->includeAll = 1;
 	    env->envPairs   = 0;
 	    env->envNames   = 0;
-	    curAppEnv       = env;
+	    *appEnv         = env;
 	}
-	env = curAppEnv;
+	else 
+	    env = *appEnv;
 	cmd = argv[0] + 4;
     }
     else if (strncmp( argv[0], "-genv", 5 ) == 0) {
@@ -72,6 +73,7 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
 	p             = (EnvData *)MPIU_Malloc( sizeof(EnvData) );
 	p->name       = (const char *)MPIU_Strdup( argv[1] );
 	p->value      = (const char *)MPIU_Strdup( argv[2] );
+	p->envvalue   = 0;
 	p->nextData   = env->envPairs;
 	env->envPairs = p;
 	
@@ -82,7 +84,7 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
 	incr = 1;
     }
     else if (strcmp( cmd, "list" ) == 0) {
-	/* argv[1] has a list of names */
+	/* argv[1] has a list of names, separated by commas */
 	EnvData *p;
 	char    *lPtr = argv[1], *name;
 	int      namelen;
@@ -94,11 +96,13 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
 	    p             = (EnvData *)MPIU_Malloc( sizeof(EnvData) );
 	    p->value      = 0;
 	    p->name       = (const char *)MPIU_Malloc( namelen + 1 );
+	    p->envvalue   = 0;
 	    for (i=0; i<namelen; i++) ((char *)p->name)[i] = name[i];
 	    ((char *)p->name)[namelen] = 0;
 
 	    p->nextData   = env->envNames;
 	    env->envNames = p;
+	    if (*lPtr == ',') lPtr++;
 	}		
 	incr = 2;
     }
@@ -113,61 +117,99 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld )
 /*
   Setup the environment of a process for a given process state.  
   This handles the options for the process world and app 
+
+  Input Arguments:
+  pState - process state structure
+  envp   - Base (pre-existing) environment
+  maxclient - size of client_envp array
+
+  Output Arguments:
+  client_envp - 
+
+  Side Effects:
+  If envnone or genvnone was selected, the environment variables in envp
+  will be removed with unsetenv().
+
+  Returns the number of items set in client_envp, or -1 on error.
  */
-int MPIE_EnvSetup( ProcessState *pState, char *envp[] )
+int MPIE_EnvSetup( ProcessState *pState, const char *envp[],
+		   char *client_envp[], int maxclient )
 {
     ProcessWorld *pWorld;
     ProcessApp   *app;
     EnvInfo      *env;
-    EnvData      *wPairs,*wNames, *aPairs, *aNames;
-    int          includeAll, j;
+    EnvData      *wPairs = 0,*wNames = 0, *aPairs = 0, *aNames = 0;
+    int          includeAll = 1, j;
     int          irc = 0;
+    int          debug = 1;
 
     app    = pState->app;
     pWorld = app->pWorld;
 
     /* Get the world defaults */
     env        = pWorld->genv;
-    includeAll = env->includeAll;
-    wPairs     = env->envPairs;
-    wNames     = env->envNames;
-    
+    if (env) {
+	includeAll = env->includeAll;
+	wPairs     = env->envPairs;
+	wNames     = env->envNames;
+    }
+
     /* Get the app values (overrides includeAll) */
     env        = app->env;
-    includeAll = env->includeAll;
-    aPairs     = env->envPairs;
-    aNames     = env->envNames;
+    if (env) {
+	if (includeAll) {
+	    /* Let the local env set envnone (there is no way to undo 
+	       -genvnone) */
+	    includeAll = env->includeAll;
+	}
+	aPairs     = env->envPairs;
+	aNames     = env->envNames;
+    }
 
     if (includeAll) {
-	for (j=0; envp[j]; j++) {
-	    putenv( envp[j] );
+	for (j=0; envp[j] && j < maxclient; j++) {
+	    putenv( (char *)envp[j] );
+	    client_envp[j] = (char *)envp[j];
 	}
+	irc = j;
+    }
+    else {
+	for (j=0; envp[j]; j++) {
+	    unsetenv( (char *)envp[j] );
+	}
+	irc = 0;
     }
 
     while (wPairs) {
 	if (putenv( (char *)(wPairs->envvalue) )) {
-	    irc = 1;
+	    irc = -1;
+	    if (debug) perror( "putenv(wPairs) failed: " );
 	}
 	wPairs = wPairs->nextData;
     }
 
     while (wNames) {
 	if (putenv( (char *)(wNames->envvalue) )) {
-	    irc = 1;
+	    irc = -1;
+	    if (debug) perror( "putenv(wNames) failed: " );
 	}
 	wNames = wNames->nextData;
     }
 
     while (aPairs) {
 	if (putenv( (char *)(aPairs->envvalue) )) {
-	    irc = 1;
+	    irc = -1;
+	    if (debug) perror( "putenv(aPairs) failed: " );
 	}
 	aPairs = aPairs->nextData;
     }
 
     while (aNames) {
 	if (putenv( (char *)(aNames->envvalue) )) {
-	    irc = 1;
+	    irc = -1;
+	    if (debug) {
+		perror( "putenv(aNames) failed: " );
+	    }
 	}
 	aNames = aNames->nextData;
     }
@@ -185,7 +227,7 @@ int MPIE_EnvInitData( EnvData *elist, int getValue )
 {
     const char *value;
     char       *str;
-    int        slen;
+    int        slen, rc;
 
     while (elist) {
 	if (getValue) {
@@ -194,18 +236,26 @@ int MPIE_EnvInitData( EnvData *elist, int getValue )
 	else {
 	    value = elist->value;
 	}
+	if (!value) {
+	    /* Special case for an empty value */
+	    value = "";
+	}
 	slen = strlen( elist->name ) + strlen(value) + 2;
 	str  = (char *)MPIU_Malloc( slen );
 	if (!str) {
-	    break;
+	    return 1;
 	}
 	MPIU_Strncpy( str, elist->name, slen );
 	if (value && *value) {
-	    MPIU_Strnapp( str, "=", slen );
-	    MPIU_Strnapp( str, value, slen );
+	    rc = MPIU_Strnapp( str, "=", slen );
+	    rc += MPIU_Strnapp( str, value, slen );
+	    if (rc) {
+		return 1;
+	    }
 	}
 	elist->envvalue = (const char *)str;
 
 	elist = elist->nextData;
     }
+    return 0;
 }

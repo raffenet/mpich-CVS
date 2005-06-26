@@ -214,7 +214,7 @@ int MPIE_ProcessGetExitStatus( void )
 #define MAXNAMELEN 1024
 int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 {
-    int j, rc;
+    int j, rc, nj;
     ProcessApp *app;
 
     /* Provide local variables in which to hold new environment variables. */
@@ -230,7 +230,14 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 
     app = pState->app;
 
-    /* build environment for client */
+    /* build environment for client. */
+    j = MPIE_EnvSetup( pState, envp, client_env, MAX_CLIENT_ENV-7 );
+    if (j < 0) {
+	MPIU_Error_printf( "Failure setting up environment\n" );
+    }
+    nj = j;  /* nj is the first entry of client_env that will be set by
+		this routine */
+#if 0
     if (envp) {
 	for ( j = 0; envp[j] && j < MAX_CLIENT_ENV-7; j++ )
 	    client_env[j] = envp[j]; /* copy mpiexec environment */
@@ -238,6 +245,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     else {
 	j = 0;
     }
+#endif
     if (j == MAX_CLIENT_ENV-7) {
 	MPIU_Error_printf( "Environment is too large (max is %d)\n",
 			   MAX_CLIENT_ENV-7);
@@ -264,14 +272,14 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	client_env[j++] = env_pmi_id;
     }
 
-    /* FIXME: Get the correct universe size */
     MPIU_Snprintf( env_appnum, MAXNAMELEN, "MPI_APPNUM=%d", app->myAppNum );
     client_env[j++] = env_appnum;
-    MPIU_Snprintf( env_universesize, MAXNAMELEN, "MPI_UNIVERSE_SIZE=%d", 0 );
+    MPIU_Snprintf( env_universesize, MAXNAMELEN, "MPI_UNIVERSE_SIZE=%d", 
+		   pUniv.size );
     client_env[j++] = env_universesize;
     
     client_env[j]   = 0;
-    for ( j = 0; client_env[j]; j++ )
+    for ( j = nj; client_env[j]; j++ )
 	if (putenv( client_env[j] )) {
 	    MPIU_Internal_sys_error_printf( "mpiexec", errno, 
 			     "Could not set environment %s", client_env[j] );
