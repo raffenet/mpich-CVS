@@ -99,21 +99,25 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
     /* Get to the end of dest */
     i = (int)n;
     while (i-- > 0 && *d_ptr++) ;
-    /* The last ++ moved us past the null */
+    /* The last ++ moved us past the null (unless we ran out of room) */
+    if (*d_ptr) return 1;
+
     d_ptr--;
+
     /* Append */
-    while (i-- > 0 && *s_ptr) {
+    while (*s_ptr && i-- > 0) {
 	*d_ptr++ = *s_ptr++;
     }
 
-    if (i > 0) { 
+    /* We allow i >= (not just >) here because the first while decrements
+       i by one more than there are characters, leaving room for the null */
+    if (i >= 0) { 
 	*d_ptr = 0;
 	return 0;
     }
     else {
 	/* Force the null at the end */
-	d_ptr--;
-	*d_ptr = 0;
+	*--d_ptr = 0;
     
 	/* We may want to force an error message here, at least in the
 	   debugging version */
