@@ -437,7 +437,7 @@ class MPDMan(object):
             if self.holdingJobgoLoop1 or clientExited:
                 selectTime = 0.05
             else:
-                selectTime = 4
+                selectTime = 2
             rv = self.streamHandler.handle_active_streams(timeout=selectTime)
             if rv[0] < 0:
                 if type(rv[1]) == ClassType  and  rv[1] == KeyboardInterrupt: # ^C
