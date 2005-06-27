@@ -828,7 +828,7 @@ class MPDParmDB(dict):
             self.db[src] = {}
     def __setitem__(self,sk_tup,val):
         if type(sk_tup) != TupleType  or  len(sk_tup) != 2:
-            mpd_print(1,"must use a 2-tuple as key in a parm db; invalid: %s" % (sk_tup) )
+            mpd_print_tb(1,"must use a 2-tuple as key in a parm db; invalid: %s" % (sk_tup) )
             exit(-1)
         s,k = sk_tup
         for src in self.orderedSources:
@@ -836,7 +836,7 @@ class MPDParmDB(dict):
                 self.db[src][k] = val
                 break
         else:
-            mpd_print(1,"invalid src specified for insert into parm db; src=%s" % (src) )
+            mpd_print_tb(1,"invalid src specified for insert into parm db; src=%s" % (src) )
             exit(-1)
     def __getitem__(self,key):
         for src in self.orderedSources:
