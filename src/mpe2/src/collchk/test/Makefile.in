@@ -45,7 +45,7 @@ C_SRC         = wrong_composite.c wrong_scatterv.c \
                 composite.c scatterv.c \
                 time_bcast.c time_allreduce.c \
                 time_alltoallv.c time_alltoallv0.c
-F_SRC         = fwrong_int_byte.f
+F_SRC         = wrong_reals.f
 C_OBJS        = $(C_SRC:.c=.@OBJEXT@)
 F_OBJS        = $(F_SRC:.f=.@OBJEXT@)
 C_EXECS       = $(C_OBJS:.o=)
@@ -53,7 +53,7 @@ C_EXECS       = $(C_OBJS:.o=)
 OPT_C_EXECS   = time_bcast_nochk@EXEEXT@ time_allreduce_nochk@EXEEXT@ \
                 time_alltoallv0_nochk@EXEEXT@ time_alltoallv_nochk@EXEEXT@
 
-OPT_F_EXECS   = fwrong_int_byte@EXEEXT@ fwrong_int_byte_nochk@EXEEXT@
+OPT_F_EXECS   = wrong_reals@EXEEXT@ wrong_reals_nochk@EXEEXT@
 
 .c.@OBJEXT@:
 	$(MPI_CC) $(CC_FLAGS) -c $<
@@ -76,10 +76,10 @@ time_alltoallv_nochk@EXEEXT@: time_alltoallv.@OBJEXT@
 time_alltoallv0_nochk@EXEEXT@: time_alltoallv0.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
-fwrong_int_byte@EXEEXT@: fwrong_int_byte.@OBJEXT@
+wrong_reals@EXEEXT@: wrong_reals.@OBJEXT@
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(COLLCHK_FLIBS)
 
-fwrong_int_byte_nochk@EXEEXT@: fwrong_int_byte.@OBJEXT@
+wrong_reals_nochk@EXEEXT@: wrong_reals.@OBJEXT@
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
 default: $(C_OBJS) $(C_EXECS) $(OPT_C_EXECS)
@@ -102,11 +102,11 @@ linktest_F77:
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	    echo ; \
 	    echo "** Testing if Fortran77 program can be linked with MPI collective and datatype checking library..." ; \
-	    $(RM) -f fwrong_int_byte@EXEEXT@ ; \
-	    $(MAKE) fwrong_int_byte@EXEEXT@ ; \
-	    if test -x fwrong_int_byte@EXEEXT@ ; then \
+	    $(RM) -f wrong_reals@EXEEXT@ ; \
+	    $(MAKE) wrong_reals@EXEEXT@ ; \
+	    if test -x wrong_reals@EXEEXT@ ; then \
 	        echo "** Fortran77 program can be linked with MPI collective and datatype checking library." ; \
-	        $(RM) -f fwrong_int_byte@EXEEXT@ ; \
+	        $(RM) -f wrong_reals@EXEEXT@ ; \
 	    else \
 	        echo "** Fortran77 program CANNOT be linked with MPI collective and datatype checking library." ; \
 	    fi ; \

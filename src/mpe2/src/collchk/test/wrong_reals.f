@@ -3,7 +3,7 @@
 !      See COPYRIGHT in top-level directory.
 !
 
-      program  wrong_int_byte
+      program  wrong_reals
       implicit none
 
       include 'mpif.h'
