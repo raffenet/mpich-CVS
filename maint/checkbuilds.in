@@ -573,7 +573,9 @@ sub RunMpichTestSuite {
     if (defined($chosenEnable{"romio"})) {
 	$config[$nargs++] = "--enable-io";
     }
-    if (!defined($chosenEnable{"f77"}) || ! $has_f77) {
+    # f77 is now the default, so we should run with the f77 tests
+    # unless we did not build f77
+    if (! $has_f77) {  # !defined($chosenEnable{"f77"}) 
 	$config[$nargs++] = "--disable-f77";
     }
 
