@@ -108,7 +108,8 @@ fi
 # Set up Examples directory for the MPE Logging programs
 logging_dirname="src/wrappers/test"
 graphics_dirname="src/graphics/contrib/test"
-for pkg in logging graphics ; do
+collchk_dirname="src/collchk/test"
+for pkg in logging graphics collchk ; do
     dirname=${pkg}_dirname
     eval dirvalue=\$"$dirname"
     examplesdir=$datadir/examples_${pkg}
