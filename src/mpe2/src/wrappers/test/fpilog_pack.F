@@ -147,7 +147,7 @@ C         if ( n .le. 0 ) goto 30
       enddo
 
 #if defined( NO_MPI_LOGGING )
-      ierr = MPE_FINISH_LOG( "fpilog" )
+      ierr = MPE_FINISH_LOG( "nfpilog_pack" )
 #endif
       call MPI_Finalize( rc )
 
