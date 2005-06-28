@@ -98,13 +98,10 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
 
     /* Get to the end of dest */
     i = (int)n;
-    while (i-- > 0 && *d_ptr++) ;
-    /* The last ++ moved us past the null (unless we ran out of room) */
-    if (*d_ptr) return 1;
+    while (i-- > 0 && *d_ptr) d_ptr++;
+    if (i <= 0) return 1;
 
-    d_ptr--;
-
-    /* Append */
+    /* Append.  d_ptr points at first null and i is remaining space. */
     while (*s_ptr && i-- > 0) {
 	*d_ptr++ = *s_ptr++;
     }
