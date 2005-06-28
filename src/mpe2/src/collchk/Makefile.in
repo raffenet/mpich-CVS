@@ -45,8 +45,18 @@ build_lib_bin:
 linktest_all: linktest_C linktest_F77
 
 linktest_C:
+	@if [ "$(MPI_IMPL)" != "MPICH" -a "$(MPI_IMPL)" != "MPICH2" ] ; then \
+	     ( cd test && $(MAKE) linktest_C ) ; \
+	 fi
 
 linktest_F77:
+	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	     if [    "$(MPI_IMPL)" != "MPICH" \
+	          -a "$(MPI_IMPL)" != "MPICH2" ] ; then \
+	         ( cd test && $(MAKE) linktest_F77 ) ; \
+	     fi ; \
+	 fi
+	@echo
 
 ########  Cleaning
 # This is always a VPATH build, cleaning up the MPE_HEADERS
