@@ -16,7 +16,7 @@ int main( int argc, char *argv[] )
 
     if ( rank == size-1 )
         /* Create pathological case */
-        MPI_Bcast( &ibuff, 4, MPI_BYTE, 0, MPI_COMM_WORLD );
+        MPI_Bcast( &ibuff, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD );
     else
         MPI_Bcast( &ibuff, 1, MPI_INT, 0, MPI_COMM_WORLD );
 
