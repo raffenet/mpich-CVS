@@ -14,7 +14,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 #mpiexec_DEPADD = ../../../lib/lib${MPILIBNAME}.a
 #smpd_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
 #smpd_DEPADD = ../../../lib/lib${MPILIBNAME}.a
-all-local: mpiexec smpd
+all-postamble: mpiexec smpd
 mpiexec: mpiexec.o mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o ../../../lib/lib${MPILIBNAME}.a
 	../../../bin/mpicc -o mpiexec mpiexec.o mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o
 smpd: smpd.o smpd_cmd_args.o smpd_watchprocs.o ../../../lib/lib${MPILIBNAME}.a
