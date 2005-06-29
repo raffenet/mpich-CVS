@@ -124,6 +124,25 @@ AC_CHECK_FUNCS(setsid isatty getsid)
 if test "$enable_newsession" = "yes" ; then
     AC_DEFINE(USE_NEW_SESSION,1,[Define if mpiexec should create a new process group session])
 fi
+# Check for convenient functions for the environment
+AC_CHECK_FUNCS(unsetenv)
+if test "$ac_cv_func_unsetenv" != yes ; then
+    # Look for alternatives.  Is environ in unistd.h?
+    AC_CACHE_CHECK([for environ in unistd.h],pac_cv_has_environ_in_unistd,[
+    AC_TRY_COMPILE([#include <unistd.h>],[char **ep = environ;],
+    pac_cv_has_environ_in_unistd=yes,pac_cv_has_environ_in_unistd=no)])
+
+    if test "$pac_cv_has_environ_in_unistd" != "yes" ; then
+        # Can we declare it and use it?
+	AC_CACHE_CHECK([for extern environ in runtime],
+	pac_cv_has_environ_decl,[
+	AC_TRY_LINK([extern char **environ;],[char **ep = environ;],
+	pac_cv_has_environ_decl=no,pac_cv_has_environ_decl=yes)])
+	if test "$pac_cv_has_environ_decl" = "yes" ; then
+	    AC_DEFINE(HAVE_ENVIRON_DECL,1,[Define if environ decl needed] )
+        fi
+    fi
+fi
 dnl
 dnl Check for special compile characteristics
 dnl
@@ -151,7 +170,6 @@ dnl Check for functions.  This invokes another test if the function is
 dnl found.  The braces around the second test are essential. 
 dnl AC_CHECK_FUNC(setpgrp,[AC_FUNC_SETPGRP])
 AC_CHECK_FUNCS(strsignal)
-AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_strsignal" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <string.h>],strsignal)
 fi
@@ -211,7 +229,7 @@ if test -z "$master_top_srcdir" ; then
    master_top_srcdir='${srcdir}/../../..'
 fi
 
-AC_CHECK_HEADERS(string.h sys/time.h unistd.h stdlib.h sys/socket.h wait.h errno.h)
+AC_CHECK_HEADERS(string.h sys/time.h stdlib.h sys/socket.h wait.h errno.h)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)

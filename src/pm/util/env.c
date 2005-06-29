@@ -120,7 +120,8 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld,
 
   Input Arguments:
   pState - process state structure
-  envp   - Base (pre-existing) environment
+  envp   - Base (pre-existing) environment.  Note that this should
+           be the envp from main() (see below)
   maxclient - size of client_envp array
 
   Output Arguments:
@@ -128,11 +129,13 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld,
 
   Side Effects:
   If envnone or genvnone was selected, the environment variables in envp
-  will be removed with unsetenv().
+  will be removed with unsetenv() or by direct manipulation of the envp
+  array (for systems that do not support unsetenv, envp must be the
+  array pass into main()).
 
   Returns the number of items set in client_envp, or -1 on error.
  */
-int MPIE_EnvSetup( ProcessState *pState, const char *envp[],
+int MPIE_EnvSetup( ProcessState *pState, char *envp[],
 		   char *client_envp[], int maxclient )
 {
     ProcessWorld *pWorld;
@@ -168,15 +171,13 @@ int MPIE_EnvSetup( ProcessState *pState, const char *envp[],
 
     if (includeAll) {
 	for (j=0; envp[j] && j < maxclient; j++) {
-	    putenv( (char *)envp[j] );
-	    client_envp[j] = (char *)envp[j];
+	    putenv( envp[j] );
+	    client_envp[j] = envp[j];
 	}
 	irc = j;
     }
     else {
-	for (j=0; envp[j]; j++) {
-	    unsetenv( (char *)envp[j] );
-	}
+	MPIE_UnsetAllEnv( envp );
 	irc = 0;
     }
 
@@ -259,3 +260,37 @@ int MPIE_EnvInitData( EnvData *elist, int getValue )
     }
     return 0;
 }
+
+/* Unset all environment variables.
+   Not all systems support unsetenv (e.g., System V derived systems such 
+   as Solaris), so we have to provide our own implementation.
+*/
+#ifdef HAVE_UNSETENV
+int MPIE_UnsetAllEnv( char *envp[] )
+{
+    int j;
+
+    for (j=0; envp[j]; j++) {
+	unsetenv( envp[j] );
+    }
+    return 0;
+}
+#elif HAVE_EXTERN_ENVIRON
+#ifndef HAVE_ENVIRON_DECL
+extern char **environ;
+#endif
+int MPIE_UnsetAllEnv( char *envp[] )
+{ 
+    /* Ignore envp because environ is the real array that controls
+       the environment used by getenv/putenv/etc */
+    char **ep = environ;
+    while (*ep) *ep++ = 0;
+    return 0;
+}
+#else
+/* No known way to unset the environment.  Return failure */
+int MPIE_UnsetAllEnv( char *envp[] )
+{
+    return 1;
+}
+#endif
