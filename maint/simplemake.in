@@ -1062,9 +1062,15 @@ sub DefaultVariables {
 	}
     }
 
-    # If there are subdirs, we need make
-    if (($#subdirs >= 0 || $#doc_subdirs >= 0) && 
-	! defined($makevars{"MAKE"})) {
+    # If there are subdirs, we need make.  Also needed by 
+    #    shared library support
+    #    profile library support
+    #    postambles
+    #    local targets
+    #    install (but a subset of subdir)
+    # so we always add MAKE (originally checked for $#subdirs >= 0
+    # and $#doc_subdirs >= 0)
+    if (! defined($makevars{"MAKE"}) ) {
 	printMakeVariable( FD, "MAKE", "\@MAKE\@" );
     }
 
@@ -1703,7 +1709,8 @@ sub ListTargets {
       }
       print_make_line( FD,  " $target" );
   }
-}			       
+}
+
 
 #
 # Add to a target the designate operation in all subdirs (except for .)
@@ -1903,9 +1910,16 @@ sub TargetAll {
 	    $has_dot = 1;
 	    print FD "\t\${MAKE} all-local$newline";
 	}
+	
 	if ($has_dot && !defined($usertargets{"all-local"})) {
+	    # Add the default definition of all-local for the case where
+	    # a . is in the SUBDIR line
 	    print_make_line( FD, "all-local:" );
 	    &ListTargets;
+	    # ListTargets does *not* end the line
+	    print_make_endline( FD );
+	    # Add generation of shared libraries if necessary
+	    &TargetAllCommandsForSharedLibs;
 	}
 	
 	#  Create the final shared library (typically .so) from the .la file
@@ -1966,39 +1980,8 @@ sub TargetAll {
 	    }
 	    print FD "\tfi";
 	}
-	if ($do_sharedlibs && $#allshlibtargets >= 0) {
-	    # Add a conditional step
-	    print_make_endline( FD );
-	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
-	    foreach $shlib (@allshlibtargets) {
-		# Get the library stamp name from the lib name
-		my $libbase = $shlib;
-		if ($shlib =~ /.*\/lib([^\/]*)/) {
-		    $libbase = $1;
-		}
-		my $libstamp = $shlib;
-		if (defined($libnum{$libbase})) {
-		    $libstamp = ".libstamp" . $libnum{$libbase};
-		}
-		print FD "\t    \${MAKE} $libstamp ; \\\n";
-	    }
-	    if ($found_profilelib) {
-		print FD "\t    if [ -n \"\@NO_WEAK_SYM\@\" ] ; then \\\n";
-		foreach my $lib (keys(%profile_libraries)) {
-		    my $proflib = $profile_libraries{$lib};
-		    my $libloc = &GetLibLoc( $lib );
-		    my $fullname = "${libloc}lib$proflib.la";
-		    my $libstamp = ".libstamp" . $libnum{$proflib.".la"};
-		    print FD "\t        \${MAKE} $libstamp ; \\\n";
-#		    print FD "\t        \${MAKE} $fullname ; \\\n";
-		}
-		print FD "\t    fi ; \\\n";
-	    }
-	    print FD "\tfi\n";
-	}
-	else {
-	    print_make_endline( FD );
-	}
+	print_make_endline( FD );
+	&TargetAllCommandsForSharedLibs;
 	&TargetPostamble( "all" );
     }
     print_make_endline( FD );
@@ -2018,6 +2001,50 @@ sub TargetPostamble {
 	print FD "\t\${MAKE} $name$newline";
     }
 }
+# --------------------------------------------------------------------------
+# Helper routines for the implementation of the "all" target.  Two
+# complications here are that the handling of leaf Makefile.sm (those with 
+# no SUBDIRS) and non-leaf Makefile.sm are different for the "all" target.
+# (a better long-term solution may be to redesign the handling of the all
+# target).
+# --------------------------------------------------------------------------
+
+# Add the commands to build shared libraries if any are defined 
+# (either explicitly or because we generate shared libraries for all
+# libraries).
+sub TargetAllCommandsForSharedLibs {
+    if ($do_sharedlibs && $#allshlibtargets >= 0) {
+	# Add a conditional step
+	print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
+	foreach $shlib (@allshlibtargets) {
+	    # Get the library stamp name from the lib name
+	    my $libbase = $shlib;
+	    if ($shlib =~ /.*\/lib([^\/]*)/) {
+		$libbase = $1;
+	    }
+	    my $libstamp = $shlib;
+	    if (defined($libnum{$libbase})) {
+		$libstamp = ".libstamp" . $libnum{$libbase};
+	    }
+	    print FD "\t    \${MAKE} $libstamp ; \\\n";
+	}
+	if ($found_profilelib) {
+	    print FD "\t    if [ -n \"\@NO_WEAK_SYM\@\" ] ; then \\\n";
+	    foreach my $lib (keys(%profile_libraries)) {
+		my $proflib = $profile_libraries{$lib};
+		my $libloc = &GetLibLoc( $lib );
+		my $fullname = "${libloc}lib$proflib.la";
+		my $libstamp = ".libstamp" . $libnum{$proflib.".la"};
+		print FD "\t        \${MAKE} $libstamp ; \\\n";
+#		print FD "\t        \${MAKE} $fullname ; \\\n";
+	    }
+	    print FD "\t    fi ; \\\n";
+	}
+	print FD "\tfi\n";
+    }
+}
+
+# --------------------------------------------------------------------------
 #
 # ===========================================================================
 # The "clean" target
