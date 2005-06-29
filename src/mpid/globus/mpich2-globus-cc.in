@@ -59,7 +59,18 @@ while test $# -gt 0 ; do
 	DoLink=0
 	HasDashC=1
 	;;
-        -o)
+	-S|-E|-M|-MM)
+	DoLink=0
+	HasDashC=1
+	compile_args="$compile_args $1"	
+	;;
+        -MT)
+	DoLink=0
+	HasDashC=1
+        compile_args="$compile_args $1 '$2'"
+	shift
+	;;
+	-o)
 	# Need to link
         if [ $HasDashC = 1 ] ; then
             # Some BUT NOT ALL compilers support -o with -c.  Allow
@@ -71,13 +82,6 @@ while test $# -gt 0 ; do
 	    DoLink=1
 	    shift
         fi
-	;;
-	-E|-M)
-	# For compilers that support -E as a way to get at the C preprocessor
-	# Also, for compilers that support -M for creating dependencies
-	compile_args="$compile_args $1"
-	HasDashC=1
-	DoLink=0
 	;;
 	-O* | -g)
 	RemoveDefaultOpt=1
