@@ -126,3 +126,22 @@ rv = mpdtest.run(cmd="%s/mpiexec%s -n 1 spawnintra" % (olddir,PYEXT),  # -n 2
                  grepOut=1, expOut=expout )
 os.chdir(olddir)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+
+# test: namepub
+print "TEST namepub"
+PYEXT = '.py'
+NMPDS = 1
+HFILE = 'temph'
+import os,socket
+from mpdlib import MPDTest
+mpdtest = MPDTest()
+os.environ['MPD_CON_EXT'] = 'testing'
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
+expout = ['No Errors']
+olddir = os.getcwd()
+os.chdir('%s/test/mpi/spawn' % (MPIDir))
+rv = mpdtest.run(cmd="%s/mpiexec%s -n 1 namepub" % (olddir,PYEXT),  # -n 2
+                 grepOut=1, expOut=expout )
+os.chdir(olddir)
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )

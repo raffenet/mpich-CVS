@@ -84,9 +84,9 @@ foo
 shakey
 donner% 
 
-You can run something with mpdrun
+You can run something with mpiexec
 
-donner% mpdrun -np 2 hostname 
+donner% mpiexec -np 2 hostname 
 donner.mcs.anl.gov
 foo.mcs.anl.gov
 donner%
@@ -150,31 +150,6 @@ all through the broadcast together.
 
 Example of running  mpiexec with -gdb:
 
-(magpie:51) % ./mpiexec.py -gdb -n 8 ~/mpich2/examples/cpi
-0-7:  (gdb) l 36
-0-7:  31	
-0-7:  32	    fprintf(stdout,"Process %d of %d is on %s\n",
-0-7:  33		    myid, numprocs, processor_name);
-0-7:  34	    fflush(stdout);
-0-7:  35	
-0-7:  36	    n = 10000;			/* default # of rectangles */
-0-7:  37	    if (myid == 0)
-0-7:  38		startwtime = MPI_Wtime();
-0-7:  39	
-0-7:  40	    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-0-7:  (gdb) b 36
-0-7:  Breakpoint 2 at 0x80493ac: file cpi.c, line 36.
-0-7:  (gdb) n
-0-2,4:  The program is not being run.
-0-2,4:  (gdb) 3,5-7:  The program is not being run.
-3,5-7:  (gdb) n
-0-7:  The program is not being run.
-0-7:  (gdb) n
-0-7:  The program is not being run.
-0-7:  (gdb) n
-0-7:  The program is not being run.
-0-7:  (gdb) q
-0-7:  MPIGDB ENDING
 (magpie:52) % ./mpiexec.py -gdb -n 8 ~/mpich2/examples/cpi
 0-7:  (gdb) l 36
 0-7:  31	

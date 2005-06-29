@@ -101,8 +101,8 @@ temph = open(HFILE,'w')
 for host in clusterHosts: print >>temph, host
 temph.close()
 os.system("mpdboot%s -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-os.system("mpdrun%s -s -a ralph -n 2 infloop -p &" % (PYEXT))  # -p => don't print
-import time    ## give the mpdrun
+os.system("mpiexec%s -s all -a ralph -n 2 infloop -p &" % (PYEXT))  # -p => don't print
+import time    ## give the mpiexec
 time.sleep(2)  ##     time to get going
 expout = ['ralph']
 rv = mpdtest.run(cmd="mpdlistjobs%s #1" % (PYEXT), grepOut=1, expOut=expout )
@@ -126,8 +126,8 @@ temph = open(HFILE,'w')
 for host in clusterHosts: print >>temph, host
 temph.close()
 os.system("mpdboot%s -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-os.system("mpdrun%s -s -a ralph -n 2 infloop -p &" % (PYEXT))  # -p => don't print
-import time    ## give the mpdrun
+os.system("mpiexec%s -s all -a ralph -n 2 infloop -p &" % (PYEXT))  # -p => don't print
+import time    ## give the mpiexec
 time.sleep(2)  ##     time to get going
 expout = ['ralph']
 rv = mpdtest.run(cmd="mpdlistjobs%s #1" % (PYEXT), grepOut=1, expOut=expout )

@@ -9,7 +9,7 @@
 import os, sys, commands
 sys.path += [os.getcwd()]  # do this once
 
-print "mpiexec / mpdrun  tests-------------------------------------------"
+print "mpiexec tests-------------------------------------------"
 
 clusterHosts = [ 'bp4%02d' % (i)  for i in range(0,8) ]
 print "clusterHosts=", clusterHosts
@@ -83,7 +83,22 @@ mpdtest.run(cmd="mpiexec%s -n 1 echo hello : -n 1 echo bye" % (PYEXT),expOut=exp
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
-print "TEST -kx"
+print "TEST -m"
+PYEXT = '.py'
+NMPDS = 1
+HFILE = 'temph'
+import os,socket
+from mpdlib import MPDTest
+mpdtest = MPDTest()
+os.environ['MPD_CON_EXT'] = 'testing'
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
+expout = '0-1: hello\n1: bye\n'
+mpdtest.run(cmd="mpiexec%s -n 2 echo hello" % (PYEXT),expOut=expout)
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+
+# test:
+print "TEST -ecfn"
 PYEXT = '.py'
 NMPDS = 1
 HFILE = 'temph'
@@ -94,12 +109,12 @@ os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
 expout = '0: hello\n'
-rv = mpdtest.run(cmd="mpiexec%s -kx -n 1 echo hello" % (PYEXT),expOut=expout)
+rv = mpdtest.run(cmd="mpiexec%s -ecfn tempxout -n 1 echo hello" % (PYEXT),expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
-linesAsStr = commands.getoutput("cat /tmp/%s_tempxml_%d" % (os.environ['USER'],rv['pid']) )
-if linesAsStr.find('create-process-group') < 0:
-    print "kx: Failed to keep correct contents of xml file:"
-    print "      /tmp/%s_tempxml_%d" % (os.environ['USER'],rv['pid'])
+linesAsStr = commands.getoutput("cat tempxout")
+os.unlink("tempxout")
+if linesAsStr.find('exit-codes') < 0:
+    print "ecfn: Failed to create correct contents of xml file:"
     print linesAsStr
     sys.exit(-1)
 

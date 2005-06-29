@@ -49,7 +49,7 @@ rv = mpdtest.run(cmd="mpiexec%s -bnr -n 3 %s/examples/cpi" % (PYEXT,MPI_1_Dir),
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
-print "TEST ^C to mpdrun"
+print "TEST ^C to mpiexec"
 PYEXT = '.py'
 NMPDS = 1
 HFILE = 'temph'
@@ -63,8 +63,8 @@ for host in clusterHosts: print >>temph, host
 temph.close()
 os.system("mpdboot%s -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
 import popen2
-runner = popen2.Popen4("mpdrun%s -n 2 infloop -p" % (PYEXT))  # -p => don't print
-import time    ## give the mpdrun
+runner = popen2.Popen4("mpiexec%s -n 2 infloop -p" % (PYEXT))  # -p => don't print
+import time    ## give the mpiexec
 time.sleep(2)  ##     time to get going
 os.system("kill -INT %d" % (runner.pid) )  # simulate user ^C
 expout = ''

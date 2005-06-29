@@ -97,40 +97,12 @@ if test -z "$PYTHON" ; then  ## user did not give us a python; find one
             continue
         fi
         
-        AC_MSG_CHECKING([that the xml minidom module is available for $pypgm])
-        if $pypgm -c 'from xml.dom.minidom import parseString'  >/dev/null 2>&1 ; then
-            AC_MSG_RESULT(yes)
-        else
-            AC_MSG_RESULT(no)
-            continue
-        fi
-
-        AC_MSG_CHECKING([that the xml minidom module works])
-        if $pypgm -c 'from xml.dom.minidom import parseString; parseString("<x>x</x>")'  >/dev/null 2>&1 ; then
-            AC_MSG_RESULT(yes)
-        else
-            AC_MSG_RESULT(no)
-            continue
-        fi
         PYTHON="$pypgm"
         break
     done
 else  ### user-supplied with_python
         dnl See if the user's python has the right modules
-        AC_MSG_CHECKING([that the xml minidom module is available for $PYTHON])
-        if $PYTHON -c 'from xml.dom.minidom import parseString'  >/dev/null 2>&1 ; then
-            AC_MSG_RESULT(yes)
-        else
-            AC_MSG_RESULT(no)
-            continue
-        fi
-        AC_MSG_CHECKING([that the xml minidom module works])
-        if $PYTHON -c 'from xml.dom.minidom import parseString; parseString("<x>x</x>")'  >/dev/null 2>&1 ; then
-            AC_MSG_RESULT(yes)
-        else
-            AC_MSG_RESULT(no)
-            continue
-        fi
+	continue
 fi
 #
 if test -z "$PYTHON" ; then

@@ -15,10 +15,10 @@ mpdringtest   test how long it takes for a message to circle the ring
 mpdexit       remove one mpd from the ring
 mpdallexit    take down all daemons in ring
 mpdcleanup    repair local Unix socket if ring crashed badly
-mpdrun        start a parallel job
 mpdlistjobs   list processes of jobs (-a or --all: all jobs for all users)
 mpdkilljob    kill all processes of a single job
 mpdsigjob     deliver a specific signal to the application processes of a job
+mpiexec       start a parallel job
 
 Each command can be invoked with the --help argument, which prints usage
 information for the command without running it.

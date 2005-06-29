@@ -306,7 +306,9 @@ class MPD(object):
                 (k,v) = splitLine
                 origKey = k
                 k = k.upper()
-                if not k.startswith('MPD'):   # may also be MPDRUN_ etc.
+                if k.startswith('MPIEXEC_'):  # may need to chk for other mpd pgms also
+                    continue
+                if not k.startswith('MPD_'):
                     k = 'MPD_' + k    # default to an mpd parm
                 if k in self.parmsToOverride.keys():
                     self.parmdb[('rcfile',k)] = v
