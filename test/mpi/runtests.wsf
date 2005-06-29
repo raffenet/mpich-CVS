@@ -72,7 +72,7 @@ Function GetTestLists(folder)
 End Function
 
 Function RunTest(cmd_line)
-	Set oExec = WshShell.Exec(cmd_line)
+	Set oExec = WshShell.Exec("cmd /c " & cmd_line & " 2>&1") 'WshShell.Exec(cmd_line)
 	cmd_output = oExec.StdOut.ReadAll()
 	cmd_output = cmd_output & oExec.StdErr.ReadAll()
 	RunTest = cmd_output
