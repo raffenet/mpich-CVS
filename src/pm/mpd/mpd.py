@@ -516,8 +516,10 @@ class MPD(object):
             else:
                 self.ring.rhsSock.send_dict_msg(msg)
             # send ack after job is going
-        elif msg['cmd'] == 'get_mpd_version':
-            msgToSend = { 'cmd' : 'mpd_version_response', 'mpd_version' : mpd_version() }
+        elif msg['cmd'] == 'get_mpdrun_values':
+            msgToSend = { 'cmd' : 'response_get_mpdrun_values',
+	                  'mpd_version' : mpd_version(),
+	                  'mpd_ifhn' : self.myIfhn }
             self.conSock.send_dict_msg(msgToSend)
         elif msg['cmd'] == 'mpdtrace':
             msgToSend = { 'cmd'     : 'mpdtrace_info',

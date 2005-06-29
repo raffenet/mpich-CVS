@@ -99,7 +99,7 @@ def mpiexec():
                         '-a'           :  '',
                         '-usize'       :  0,
                         '-gdb'         :  0,
-                        '-ifhn'        :  myIP,
+                        '-ifhn'        :  '',    # use one I get from mpd as default
                         '-m'           :  0,
                         '-s'           :  '0',
                         '-machinefile' :  '',
@@ -193,19 +193,21 @@ def mpiexec():
     listenSock = MPDListenSock('',0,name='socket_to_listen_for_man')
     listenPort = listenSock.getsockname()[1]
     conSock = MPDConsClientSock()  # looks for MPD_UNIX_SOCKET in env
-    msgToSend = { 'cmd' : 'get_mpd_version' }
+    msgToSend = { 'cmd' : 'get_mpdrun_values' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
     if not msg:
         mpd_print(1, 'no msg recvd from mpd during version check')
         exit(-1)
-    elif msg['cmd'] != 'mpd_version_response':
+    elif msg['cmd'] != 'response_get_mpdrun_values':
         mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
         exit(-1)
     if msg['mpd_version'] != mpd_version():
         mpd_print(1,'mpd version %s does not match mpiexec version %s' % \
                   (msg['mpd_version'],mpd_version()) )
         exit(-1)
+    if not parmdb['-ifhn']:    # if user did not specify one, use mpd's
+        parmdb[('thispgm','-ifhn')] = msg['mpd_ifhn']    # not really thispgm here
 
     if parmdb['gdb_attach_jobid']:
         get_vals_for_attach(parmdb,conSock,msgToMPD)
