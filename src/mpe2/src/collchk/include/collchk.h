@@ -26,6 +26,7 @@ int MPI_Add_error_string(int errorcode, char *string);
 int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode);
 #endif
 
+#if defined( HAVE_MPI_IO )
 /* file handlers */
 typedef struct {
         MPI_File fh;
@@ -35,7 +36,9 @@ typedef struct {
 CollChk_fh_t *CollChk_fh_list;
 
 int CollChk_fh_cnt;
+#endif
 
+#if defined( HAVE_MPI_RMA )
 /* windows */
 typedef struct {
         MPI_Win win;
@@ -45,6 +48,7 @@ typedef struct {
 CollChk_win_t *CollChk_win_list;
 
 int CollChk_win_cnt;
+#endif
 
 /* begin string */
 char CollChk_begin_str[128];
@@ -76,8 +80,14 @@ int     COLLCHK_CALLED_BEGIN,
         COLLCHK_ERR_FILE_NOT_OPEN;
 
 
+#if defined( HAVE_MPI_IO )
 void CollChk_add_fh( MPI_File fh, MPI_Comm comm );
+int CollChk_get_fh(MPI_File fh, MPI_Comm *comm);
+#endif
+#if defined( HAVE_MPI_RMA )
 void CollChk_add_win( MPI_Win win, MPI_Comm comm );
+int CollChk_get_win(MPI_Win win, MPI_Comm *comm);
+#endif
 void CollChk_set_begin(char* in);
 void CollChk_unset_begin(void);
 int CollChk_check_buff(MPI_Comm comm, void * buff, char* call);
@@ -86,8 +96,6 @@ int CollChk_check_graph(MPI_Comm comm, int nnodes, int *index, int* edges,
                         char* call);
 int CollChk_check_size(MPI_Comm comm, int size, char* call);
 int CollChk_err_han(char * err_str, int err_code, char * call, MPI_Comm comm);
-int CollChk_get_fh(MPI_File fh, MPI_Comm *comm);
-int CollChk_get_win(MPI_Win win, MPI_Comm *comm);
 int CollChk_is_init(void);
 int CollChk_same_amode(MPI_Comm comm, int amode, char* call);
 int CollChk_same_call(MPI_Comm comm, char* call);
