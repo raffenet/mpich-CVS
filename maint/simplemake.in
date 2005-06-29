@@ -2244,12 +2244,18 @@ sub LibraryBuild {
 	    $ext = $2;
 	}
 	else {
-	    print STDERR "Sourcefile is $sourcefile\n";
+	    # Don't warn about autoconf variables (see below)
+	    if (! ($sourcefile =~ /^\@/) ) { 
+		print STDERR "Sourcefile is $sourcefile\n";
+	    }
 	}
 	# The special case for an extension of h handles the case where the
 	# .h files are derived, and hence have special rules for creating
-	# them
-	if ( (!defined($extrules{"$ext:o"}) && ($ext ne "h"))) { 
+	# them.  We also ignore autoconf variables (eventually, we might
+	# want to insist that valid values for that autoconf variable be
+	# available).
+	if ( (!defined($extrules{"$ext:o"}) && ($ext ne "h") &&
+	      ! ($sourcefile =~ /^\@/))) { 
 	    # Sometimes we use our own rules for building objects.
 	    # We allow the user to specify the object files rather than
 	    # the source files
@@ -3605,7 +3611,7 @@ sub ReadAutoconf {
 		    }
 		    else {
 			print STDERR "Shell variable $varname will not be added to the list\
-of known autoconf file files for ";
+of known autoconf files for ";
 			if (defined($lcurdir) && $lcurdir ne "") {
 			    print STDERR "$lcurdir.\n";
 			}
