@@ -239,18 +239,18 @@ later, in the section "Alternative configurations".
 
 13. Test that the ring can run a multiprocess job:
 
-      mpdrun -n <number> hostname
+      mpiexec -n <number> hostname
 
     The number of processes need not match the number of hosts in the
     ring;  if there are more, they will wrap around.  You can see the
     effect of this by getting rank labels on the stdout:
 
-      mpdrun -l -n 30 hostname
+      mpiexec -l -n 30 hostname
 
     You probably didn't have to give the full pathname of the hostname
     command because it is in your path.  If not, use the full pathname:
 
-      mpdrun -l -n 30 /bin/hostname
+      mpiexec -l -n 30 /bin/hostname
 
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
@@ -261,11 +261,11 @@ later, in the section "Alternative configurations".
 
       mpiexec -n 5 cpi
 
-    As with mpdrun (which is used internally by mpiexec), the number of
-    processes need not match the number of hosts.  The cpi example will
-    tell you which hosts it is running on.  By default, the processes
-    are launched one after the other on the hosts in the mpd ring, so it
-    is not necessary to specify hosts when running a job with mpiexec.
+    The number of processes need not match the number of hosts.
+    The cpi example will tell you which hosts it is running on.
+    By default, the processes are launched one after the other on the hosts
+    in the mpd ring, so it is not necessary to specify hosts when running a
+    job with mpiexec.
 
     There are many options for mpiexec, by which multiple executables
     can be run, hosts can be specified (as long as they are in the mpd
