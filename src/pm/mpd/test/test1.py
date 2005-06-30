@@ -93,7 +93,7 @@ import os,socket
 from mpdlib import MPDTest
 mpdtest = MPDTest()
 temph = open(HFILE,'w')
-for i in clusterHosts: print >>temph, host
+for host in clusterHosts: print >>temph, host
 temph.close()
 os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
