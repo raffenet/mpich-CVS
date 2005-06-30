@@ -143,11 +143,14 @@ def mpiexec():
 	    usage()
         parmdb[('cmdline','inXmlFilename')] = argv[2]
     elif argv[1] == '-p':
-        parmdb[('cmdline','MPIEXEC_SINGINIT_PID')]  = argv[2]
-        parmdb[('cmdline','MPIEXEC_SINGINIT_PORT')] = argv[3]
+        parmdb[('cmdline','singinitpid')]  = argv[2]
+        parmdb[('cmdline','singinitport')] = argv[3]
         parmdb[('cmdline','userpgm')] = argv[4]
         parmdb[('cmdline','nprocs')] = 1
-        parmdb[('cmdline','-1')] = 1
+        parmdb[('cmdline','-1')] = 0
+        machineFileInfo = {}
+        tempargv = [argv[0],argv[4]]
+        collect_args(tempargv,localArgSets)
     else:
         if argv[1] == '-configfile':
 	    if len(argv) != 3:

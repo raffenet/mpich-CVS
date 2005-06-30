@@ -159,7 +159,7 @@ class MPD(object):
         if self.parmdb['MPD_ECHO_PORT_FLAG']:    # do this before becoming a daemon
             print self.parmdb['MPD_LISTEN_PORT']
             sys.stdout.flush()
-            ##### RMB: NEXT 2 for debugging
+            ##### NEXT 2 for debugging
             print >>sys.stderr, self.parmdb['MPD_LISTEN_PORT']
             sys.stderr.flush()
         self.myRealUsername = mpd_get_my_username()
