@@ -33,10 +33,14 @@ int MPI_Init(int * c, char *** v)
     MPI_Add_error_code(COLLCHK_ERRORS, &COLLCHK_ERR_PREVIOUS_BEGIN);
     MPI_Add_error_code(COLLCHK_ERRORS, &COLLCHK_ERR_FILE_NOT_OPEN);
 
+#if defined( HAVE_MPI_IO )
     /* setup the fh_list counter */
     CollChk_fh_cnt = 0;
+#endif
+#if defined( HAVE_MPI_RMA )
     /* setup the win_list counter */
     CollChk_win_cnt = 0;
+#endif
     /* setup the begin flag */
     COLLCHK_CALLED_BEGIN = 0;
 
