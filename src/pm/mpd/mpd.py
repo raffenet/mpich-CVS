@@ -264,7 +264,7 @@ class MPD(object):
         except:
             pass
     def get_parms_from_env(self):
-        for k in self.parmsToOverride:
+        for k in self.parmsToOverride.keys():
             if environ.has_key(k):
                 self.parmdb[('env',k)] = environ[k]
     def get_parms_from_rcfile(self):
