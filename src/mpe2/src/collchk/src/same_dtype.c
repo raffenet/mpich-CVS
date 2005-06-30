@@ -75,8 +75,10 @@ unsigned int CollChk_basic_value(MPI_Datatype type)
         return 0x5;
     else if ( type == MPI_BYTE )
         return 0x7;
+#if defined( HAVE_MPI_WCHAR )
     else if ( type == MPI_WCHAR )
         return 0x9;
+#endif
     else if ( type == MPI_SHORT )
         return 0xb;
     else if ( type == MPI_UNSIGNED_SHORT )
@@ -98,10 +100,10 @@ unsigned int CollChk_basic_value(MPI_Datatype type)
     else if ( type == MPI_LONG_LONG_INT )
         return 0x1d;
     /* else if ( type == MPI_LONG_LONG ) return 0x1f; */
+#if defined( HAVE_MPI_UNSIGNED_LONG_LONG )
     else if ( type == MPI_UNSIGNED_LONG_LONG )
         return 0x21;
-    else if ( type == MPI_PACKED )
-        return 0x23;
+#endif
 
     else if ( type == MPI_FLOAT_INT )
         return 0x8;       /* (0x17,1)@(0xf,1) */
@@ -134,29 +136,20 @@ unsigned int CollChk_basic_value(MPI_Datatype type)
 
     else if ( type == MPI_2INTEGER )
         return 0x33c;      /* (0x10b,1)@(0x10b,1) */
-#if defined( HAVE_RARE_FORTRAN_MPI_DATATYPE_IN_C )
+    else if ( type == MPI_2REAL )
+        return 0x329;      /* (0x107,1)@(0x107,1) */
+    else if ( type == MPI_2DOUBLE_PRECISION )
+        return 0x33a;      /* (0x109,1)@(0x109,1) */
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_COMPLEXX_IN_C )
     else if ( type == MPI_2COMPLEX )
         return 0x323;      /* (0x101,1)@(0x101,1) */
     else if ( type == MPI_2DOUBLE_COMPLEX )
         return 0x325;      /* (0x103,1)@(0x103,1) */
 #endif
-    else if ( type == MPI_2REAL )
-        return 0x329;      /* (0x107,1)@(0x107,1) */
-    else if ( type == MPI_2DOUBLE_PRECISION )
-        return 0x33a;      /* (0x109,1)@(0x109,1) */
 
-    else if ( type == MPI_REAL4 )
+    else if ( type == MPI_PACKED )
         return 0x201;
-    else if ( type == MPI_REAL8 )
-        return 0x203;
-    /* else if ( type == MPI_REAL16 ) return 0x205; */
-#if defined( HAVE_RARE_FORTRAN_MPI_DATATYPE_IN_C )
-    else if ( type == MPI_COMPLEX8 )
-        return 0x207;
-    else if ( type == MPI_COMPLEX16 )
-        return 0x209;
-#endif
-    /* else if ( type == MPI_COMPLEX32 ) return 0x20b; */
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_INTEGERX_IN_C )
     else if ( type == MPI_INTEGER1 )
         return 0x211;
     else if ( type == MPI_INTEGER2 )
@@ -166,6 +159,22 @@ unsigned int CollChk_basic_value(MPI_Datatype type)
     else if ( type == MPI_INTEGER8 )
         return 0x217;
     /* else if ( type == MPI_INTEGER16 ) return 0x219; */
+#endif
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_REALX_IN_C )
+    else if ( type == MPI_REAL4 )
+        return 0x221;
+    else if ( type == MPI_REAL8 )
+        return 0x223;
+    /* else if ( type == MPI_REAL16 ) return 0x205; */
+#endif
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_COMPLEXX_IN_C )
+    else if ( type == MPI_COMPLEX8 )
+        return 0x231;
+    else if ( type == MPI_COMPLEX16 )
+        return 0x233;
+    /* else if ( type == MPI_COMPLEX32 ) return 0x20b; */
+#endif
+
 #endif
 
     else {
@@ -196,7 +205,9 @@ unsigned int CollChk_basic_count(MPI_Datatype type)
 #endif
               || type == MPI_UNSIGNED_CHAR
               || type == MPI_BYTE
+#if defined( HAVE_MPI_WCHAR )
               || type == MPI_WCHAR
+#endif
               || type == MPI_SHORT
               || type == MPI_UNSIGNED_SHORT
               || type == MPI_INT
@@ -208,8 +219,9 @@ unsigned int CollChk_basic_count(MPI_Datatype type)
               || type == MPI_LONG_DOUBLE
               || type == MPI_LONG_LONG_INT
               /* || type == MPI_LONG_LONG */
+#if defined( HAVE_MPI_UNSIGNED_LONG_LONG )
               || type == MPI_UNSIGNED_LONG_LONG
-              || type == MPI_PACKED
+#endif
     ) return 1;
 
     else if (    type == MPI_FLOAT_INT
@@ -221,7 +233,7 @@ unsigned int CollChk_basic_count(MPI_Datatype type)
     ) return 2;
 
 #if defined( HAVE_FORTRAN_MPI_DATATYPE_IN_C )
-    else if ( type == MPI_COMPLEX
+    else if (    type == MPI_COMPLEX
               || type == MPI_DOUBLE_COMPLEX
               || type == MPI_LOGICAL
               || type == MPI_REAL
@@ -230,28 +242,33 @@ unsigned int CollChk_basic_count(MPI_Datatype type)
               || type == MPI_CHARACTER
     ) return 1;
 
-    else if ( type == MPI_2INTEGER
-#if defined( HAVE_RARE_FORTRAN_MPI_DATATYPE_IN_C )
+    else if (    type == MPI_2INTEGER
+              || type == MPI_2REAL
+              || type == MPI_2DOUBLE_PRECISION
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_COMPLEXX_IN_C )
               || type == MPI_2COMPLEX
               || type == MPI_2DOUBLE_COMPLEX
 #endif
-              || type == MPI_2REAL
-              || type == MPI_2DOUBLE_PRECISION
     ) return 2;
 
-    else if ( type == MPI_REAL4
-              || type == MPI_REAL8
-        /* || type == MPI_REAL16 */
-#if defined( HAVE_RARE_FORTRAN_MPI_DATATYPE_IN_C )
-              || type == MPI_COMPLEX8
-              || type == MPI_COMPLEX16
-#endif
-        /* || type == MPI_COMPLEX32 */
+    else if (    type == MPI_PACKED
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_INTEGERX_IN_C )
               || type == MPI_INTEGER1
               || type == MPI_INTEGER2
               || type == MPI_INTEGER4
               || type == MPI_INTEGER8
         /* || type == MPI_INTEGER16 */
+#endif
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_REALX_IN_C )
+              || type == MPI_REAL4
+              || type == MPI_REAL8
+        /* || type == MPI_REAL16 */
+#endif
+#if defined( HAVE_FORTRAN_MPI_DATATYPE_COMPLEXX_IN_C )
+              || type == MPI_COMPLEX8
+              || type == MPI_COMPLEX16
+        /* || type == MPI_COMPLEX32 */
+#endif
     ) return 1;
 #endif
 
@@ -273,33 +290,49 @@ int CollChk_derived_count(int idx, int *ints, int combiner);
 int CollChk_derived_count(int idx, int *ints, int combiner)
 {
     int ii, tot_cnt;
+#if defined( HAVE_RARE_MPI_COMBINERS )
     int dim_A, dim_B;
+#endif
     
     tot_cnt = 0;
     switch(combiner) {
+#if defined( HAVE_RARE_MPI_COMBINERS )
         case MPI_COMBINER_DUP : 
         case MPI_COMBINER_F90_REAL :
         case MPI_COMBINER_F90_COMPLEX :
         case MPI_COMBINER_F90_INTEGER :
         case MPI_COMBINER_RESIZED :
             return 1;
+#endif
+
         case MPI_COMBINER_CONTIGUOUS :
             return ints[0];
-        case MPI_COMBINER_VECTOR :
-        case MPI_COMBINER_HVECTOR :
+
+#if defined( HAVE_RARE_MPI_COMBINERS )
         case MPI_COMBINER_HVECTOR_INTEGER :
         case MPI_COMBINER_INDEXED_BLOCK :
+#endif
+        case MPI_COMBINER_VECTOR :
+        case MPI_COMBINER_HVECTOR :
             return ints[0]*ints[1];
+
+#if defined( HAVE_RARE_MPI_COMBINERS )
+        case MPI_COMBINER_HINDEXED_INTEGER :
+#endif
         case MPI_COMBINER_INDEXED :
         case MPI_COMBINER_HINDEXED :
-        case MPI_COMBINER_HINDEXED_INTEGER :
             for ( ii = ints[0]; ii > 0; ii-- ) {
                  tot_cnt += ints[ ii ];
             }
             return tot_cnt;
-        case MPI_COMBINER_STRUCT :
+
+#if defined( HAVE_RARE_MPI_COMBINERS )
         case MPI_COMBINER_STRUCT_INTEGER :
+#endif
+        case MPI_COMBINER_STRUCT :
             return ints[idx+1];
+
+#if defined( HAVE_RARE_MPI_COMBINERS )
         case MPI_COMBINER_SUBARRAY :
             dim_A   = ints[ 0 ] + 1;
             dim_B   = 2 * ints[ 0 ];
@@ -312,6 +345,7 @@ int CollChk_derived_count(int idx, int *ints, int combiner)
                 tot_cnt += ints[ ii ];
             }
             return tot_cnt;
+#endif
     }
     return tot_cnt;
 }
@@ -319,9 +353,9 @@ int CollChk_derived_count(int idx, int *ints, int combiner)
 
 void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
 {
-    int             nints, nadds, ntypes, combiner;
+    int             nints, naddrs, ntypes, combiner;
     int             *ints; 
-    MPI_Aint        *adds; 
+    MPI_Aint        *addrs; 
     MPI_Datatype    *types;
     CollChk_hash_t  curr_hash, next_hash;
     int             type_cnt;
@@ -335,15 +369,15 @@ void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
         return;
     }
 
-    MPI_Type_get_envelope(type, &nints, &nadds, &ntypes, &combiner);
+    MPI_Type_get_envelope(type, &nints, &naddrs, &ntypes, &combiner);
     if (combiner != MPI_COMBINER_NAMED) {
 #if ! defined( HAVE_ALLOCA )
         ints = NULL;
         if ( nints > 0 )
             ints = (int *) malloc(nints * sizeof(int)); 
-        adds = NULL;
-        if ( nadds > 0 )
-            adds = (MPI_Aint *) malloc(nadds * sizeof(MPI_Aint)); 
+        addrs = NULL;
+        if ( naddrs > 0 )
+            addrs = (MPI_Aint *) malloc(naddrs * sizeof(MPI_Aint)); 
         types = NULL;
         if ( ntypes > 0 )
             types = (MPI_Datatype *) malloc(ntypes * sizeof(MPI_Datatype));
@@ -351,15 +385,15 @@ void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
         ints = NULL;
         if ( nints > 0 )
             ints = (int *) alloca(nints * sizeof(int)); 
-        adds = NULL;
-        if ( nadds > 0 )
-            adds = (MPI_Aint *) alloca(nadds * sizeof(MPI_Aint)); 
+        addrs = NULL;
+        if ( naddrs > 0 )
+            addrs = (MPI_Aint *) alloca(naddrs * sizeof(MPI_Aint)); 
         types = NULL;
         if ( ntypes > 0 )
             types = (MPI_Datatype *) alloca(ntypes * sizeof(MPI_Datatype));
 #endif
 
-        MPI_Type_get_contents(type, nints, nadds, ntypes, ints, adds, types);
+        MPI_Type_get_contents(type, nints, naddrs, ntypes, ints, addrs, types);
         type_cnt = CollChk_derived_count(0, ints, combiner);
         CollChk_dtype_hash(types[0], type_cnt, &curr_hash);
 
@@ -375,8 +409,8 @@ void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
 #if ! defined( HAVE_ALLOCA )
         if ( ints != NULL )
             free( ints );
-        if ( adds != NULL )
-            free( adds );
+        if ( addrs != NULL )
+            free( addrs );
         if ( types != NULL )
             free( types );
 #endif
