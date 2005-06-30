@@ -76,11 +76,12 @@ void CLOG_Sync_init( CLOG_Sync_t *sync )
 {
 #if !defined( CLOG_NOMPI )
     char         *env_forced_sync;
+    int           local_is_ok_to_sync;
 
     if ( CLOG_Util_is_MPIWtime_synchronized() == CLOG_BOOL_TRUE )
-        sync->is_ok_to_sync = CLOG_BOOL_FALSE;
+        local_is_ok_to_sync = CLOG_BOOL_FALSE;
     else
-        sync->is_ok_to_sync = CLOG_BOOL_TRUE;
+        local_is_ok_to_sync = CLOG_BOOL_TRUE;
 
     env_forced_sync = (char *) getenv( "MPE_CLOCKS_SYNC" );
     if ( env_forced_sync != NULL) {
@@ -88,19 +89,19 @@ void CLOG_Sync_init( CLOG_Sync_t *sync )
              || strcmp( env_forced_sync, "TRUE" ) == 0
              || strcmp( env_forced_sync, "yes" ) == 0
              || strcmp( env_forced_sync, "YES" ) == 0 )
-            sync->is_ok_to_sync = CLOG_BOOL_TRUE;
+            local_is_ok_to_sync = CLOG_BOOL_TRUE;
         else if (    strcmp( env_forced_sync, "false" ) == 0
                   || strcmp( env_forced_sync, "FALSE" ) == 0
                   || strcmp( env_forced_sync, "no" ) == 0
                   || strcmp( env_forced_sync, "NO" ) == 0 )
-            sync->is_ok_to_sync = CLOG_BOOL_FALSE;
+            local_is_ok_to_sync = CLOG_BOOL_FALSE;
         /*
         else
             Use What MPI_WTIME_IS_GLOBAL said.
         */
     }
 
-    PMPI_Allreduce( &(sync->is_ok_to_sync), &(sync->is_ok_to_sync),
+    PMPI_Allreduce( &local_is_ok_to_sync, &(sync->is_ok_to_sync),
                     1, MPI_INT, MPI_MAX, MPI_COMM_WORLD );
 #endif
 }
