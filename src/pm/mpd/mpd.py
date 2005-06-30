@@ -304,11 +304,10 @@ class MPD(object):
             if len(splitLine) == 2:
                 (k,v) = splitLine
                 origKey = k
-                k = k.upper()
                 if k.startswith('MPIEXEC_'):  # may need to chk for other mpd pgms also
                     continue
                 if not k.startswith('MPD_'):
-                    k = 'MPD_' + k    # default to an mpd parm
+                    k = 'MPD_' + k.upper()    # default to an mpd parm
                 if k in self.parmsToOverride.keys():
                     if v.isdigit():
                         v = int(v)
