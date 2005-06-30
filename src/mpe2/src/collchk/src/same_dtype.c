@@ -427,6 +427,17 @@ void CollChk_dtype_hash(MPI_Datatype type, int cnt, CollChk_hash_t *type_hash)
     }
 }
 
+/*
+    A wrapper that calls PMPI_Allreduce() provides different send and receive
+    buffers so use of MPI_Allreduce() conforms to MPI-1 standard, section 2.2.
+*/
+int CollChk_Allreduce_int( int ival, MPI_Op op, MPI_Comm comm );
+int CollChk_Allreduce_int( int ival, MPI_Op op, MPI_Comm comm )
+{
+    int  local_ival;
+    PMPI_Allreduce( &ival, &local_ival, 1, MPI_INT, op, comm );
+    return local_ival;
+}
 
 /*
    Checking if (type,cnt) is the same in all processes within the communicator.
@@ -464,8 +475,7 @@ int CollChk_dtype_bcast(MPI_Comm comm, MPI_Datatype type, int cnt, int root,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out if there is unequal hashes in the communicator */
-    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
-                    MPI_LAND, comm );
+    are_hashes_equal = CollChk_Allreduce_int(are_hashes_equal, MPI_LAND, comm);
 
     if ( !are_hashes_equal )
         return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
@@ -530,8 +540,7 @@ int CollChk_dtype_scatter(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out if there is unequal hashes in the communicator */
-    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
-                    MPI_LAND, comm );
+    are_hashes_equal = CollChk_Allreduce_int(are_hashes_equal, MPI_LAND, comm);
 
     if ( !are_hashes_equal )
         return CollChk_err_han(err_str, COLLCHK_ERR_DTYPE, call, comm);
@@ -600,8 +609,7 @@ int CollChk_dtype_scatterv(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out if there is unequal hashes in the communicator */
-    PMPI_Allreduce( &are_hashes_equal, &are_hashes_equal, 1, MPI_INT,
-                    MPI_LAND, comm );
+    are_hashes_equal = CollChk_Allreduce_int(are_hashes_equal, MPI_LAND, comm);
 
 #if ! defined( HAVE_ALLOCA )
     if ( hashes != NULL )
@@ -699,8 +707,7 @@ int CollChk_dtype_allgather(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
-                    MPI_SUM, comm );
+    err_rank_size = CollChk_Allreduce_int(err_rank_size, MPI_SUM, comm);
 
 #if ! defined( HAVE_ALLOCA )
     if ( hashes != NULL )
@@ -801,8 +808,7 @@ int CollChk_dtype_allgatherv(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
-                    MPI_SUM, comm );
+    err_rank_size = CollChk_Allreduce_int(err_rank_size, MPI_SUM, comm);
 
 #if ! defined( HAVE_ALLOCA )
     if ( hashes != NULL )
@@ -900,8 +906,7 @@ int CollChk_dtype_alltoallv(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
-                    MPI_SUM, comm );
+    err_rank_size = CollChk_Allreduce_int(err_rank_size, MPI_SUM, comm);
 
 #if ! defined( HAVE_ALLOCA )
     if ( send_hashes != NULL )
@@ -995,8 +1000,7 @@ int CollChk_dtype_alltoallw(MPI_Comm comm,
         sprintf(err_str, COLLCHK_NO_ERROR_STR);
 
     /* Find out the total number of unequal hashes in the communicator */
-    PMPI_Allreduce( &err_rank_size, &err_rank_size, 1, MPI_INT,
-                    MPI_SUM, comm );
+    err_rank_size = CollChk_Allreduce_int(err_rank_size, MPI_SUM, comm);
 
 #if ! defined( HAVE_ALLOCA )
     if ( send_hashes != NULL )
