@@ -126,7 +126,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		case MPID_LANG_CXX:
 #endif
 		    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userquery %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -136,7 +136,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, MPI
 		    ((MPIR_Grequest_f77_query_function *)(request_ptr->query_fn))( 
 			request_ptr->grequest_extra_state, &request_ptr->status, &ierr );
 		    rc = (int)ierr;
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userquery %d", rc);
 		}
 		break;
 #endif	    
@@ -250,7 +250,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 		case MPID_LANG_CXX:
 #endif
 		    rc = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userquery %d", rc);
 		    break;
 #ifdef HAVE_FORTRAN_BINDING
 		case MPID_LANG_FORTRAN:
@@ -261,7 +261,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 			request_ptr->grequest_extra_state, &request_ptr->status,
 			&ierr );
 		    rc = (int) ierr;
-		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userfree %d", rc);
+		    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**user", "**userquery %d", rc);
 		    break;
 		}
 #endif
