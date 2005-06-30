@@ -93,22 +93,22 @@ def mpiexec():
         exit(-1)
     myIP = hostinfo[2][0]
 
-    parmdb = MPDParmDB(orderedSources=['cmdline','xml','rcfile','thispgm'])
+    parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
     parmsToOverride = {
-                        '-l'           :  0,
-                        '-a'           :  '',
-                        '-usize'       :  0,
-                        '-gdb'         :  0,
-                        '-ifhn'        :  '',    # use one I get from mpd as default
-                        '-m'           :  0,
-                        '-s'           :  '0',
-                        '-machinefile' :  '',
-                        '-bnr'         :  0,
-                        '-tv'          :  0,
-                        '-ecfn'        :  '',
-                        '-1'           :  0,
-                        'MPIEXEC_TIMEOUT'   :  0,
-                        'MPIEXEC_HOST_LIST' :  [],
+                        'MPIEXEC_LINE_LABELS'         :  0,
+                        'MPIEXEC_JOB_ALIAS'           :  '',
+                        'MPIEXEC_USIZE'               :  0,
+                        'MPIEXEC_GDB'                 :  0,
+                        'MPIEXEC_IFHN'                :  '',  # use one from mpd as default
+                        'MPIEXEC_MERGE_OUTPUT'        :  0,
+                        'MPIEXEC_STDIN_DEST'          :  '0',
+                        'MPIEXEC_MACHINEFILE'         :  '',
+                        'MPIEXEC_BNR'                 :  0,
+                        'MPIEXEC_TOTALVIEW'           :  0,
+                        'MPIEXEC_EXITCODES_FILENAME'  :  '',
+                        'MPIEXEC_TRY_1ST_LOCALLY'     :  1,
+                        'MPIEXEC_TIMEOUT'             :  0,
+                        'MPIEXEC_HOST_LIST'           :  [],
                       }
     for (k,v) in parmsToOverride.items():
         parmdb[('thispgm',k)] = v
@@ -116,7 +116,6 @@ def mpiexec():
     parmdb[('thispgm','rship')] = ''
     parmdb[('thispgm','userpgm')] = ''
     parmdb[('thispgm','nprocs')] = 0
-    parmdb[('thispgm','try_1st_locally')] = 1
     parmdb[('thispgm','ecfn_format')] = ''
     parmdb[('thispgm','gdb_attach_jobid')] = ''
     parmdb[('thispgm','singinitpid')] = 0
@@ -127,6 +126,7 @@ def mpiexec():
     parmdb[('thispgm','print_parmdb_all')] = 0
     parmdb[('thispgm','print_parmdb_def')] = 0
 
+    get_parms_from_env(parmsToOverride)
     get_parms_from_rcfile(parmsToOverride)
 
     appnum = 0
@@ -147,7 +147,7 @@ def mpiexec():
         parmdb[('cmdline','singinitport')] = argv[3]
         parmdb[('cmdline','userpgm')] = argv[4]
         parmdb[('cmdline','nprocs')] = 1
-        parmdb[('cmdline','-1')] = 0
+        parmdb[('cmdline','MPIEXEC_TRY_1ST_LOCALLY')] = 1
         machineFileInfo = {}
         tempargv = [argv[0],argv[4]]
         collect_args(tempargv,localArgSets)
@@ -168,7 +168,7 @@ def mpiexec():
             collect_args(tempargv,localArgSets)
         else:
             collect_args(argv,localArgSets)
-        machineFileInfo = read_machinefile(parmdb['-machinefile'])
+        machineFileInfo = read_machinefile(parmdb['MPIEXEC_MACHINEFILE'])
 
     # mostly old mpdrun below here
     numDoneWithIO = 0
@@ -209,22 +209,20 @@ def mpiexec():
         mpd_print(1,'mpd version %s does not match mpiexec version %s' % \
                   (msg['mpd_version'],mpd_version()) )
         exit(-1)
-    if not parmdb['-ifhn']:    # if user did not specify one, use mpd's
-        parmdb[('thispgm','-ifhn')] = msg['mpd_ifhn']    # not really thispgm here
+    if not parmdb['MPIEXEC_IFHN']:    # if user did not specify one, use mpd's
+        parmdb[('thispgm','MPIEXEC_IFHN')] = msg['mpd_ifhn']    # not really thispgm here
 
     if parmdb['gdb_attach_jobid']:
         get_vals_for_attach(parmdb,conSock,msgToMPD)
     elif parmdb['inXmlFilename']:    # get these after we have a conn to mpd
-        get_parms_from_xml_file(parmdb,conSock,msgToMPD)
+        get_parms_from_xml_file(conSock,msgToMPD)
     else:
         parmdb[('cmdline','nprocs')] = 0  # for incr later
         for k in localArgSets.keys():
 	    handle_local_argset(localArgSets[k],machineFileInfo,msgToMPD)
 
-    if parmdb['-m']  and  not parmdb['-l']:
-        parmdb[('thispgm','-l')] = 1   # causes line labels also
-    if parmdb['-1']:
-        parmdb[('thispgm','try_1st_locally')] = 0  # reverse the meaning
+    if parmdb['MPIEXEC_MERGE_OUTPUT']  and  not parmdb['MPIEXEC_LINE_LABELS']:
+        parmdb[('thispgm','MPIEXEC_LINE_LABELS')] = 1   # causes line labels also
 
     if parmdb['print_parmdb_all']:
         parmdb.printall()
@@ -257,7 +255,7 @@ def mpiexec():
     for i in range(parmdb['nprocs']):
         linesPerRank[i] = []
 
-    if parmdb['-ecfn']:
+    if parmdb['MPIEXEC_EXITCODES_FILENAME']:
         if parmdb['ecfn_format'] == 'xml':
             try:
                 import xml.dom.minidom
@@ -275,28 +273,28 @@ def mpiexec():
     msgToMPD['limits'][(0,parmdb['nprocs']-1)]  = {}
     msgToMPD['conport'] = listenPort
     msgToMPD['conip'] = myIP
-    msgToMPD['conifhn'] = parmdb['-ifhn']
-    if parmdb['-a']:
-        msgToMPD['jobalias'] = parmdb['-a']
+    msgToMPD['conifhn'] = parmdb['MPIEXEC_IFHN']
+    if parmdb['MPIEXEC_JOB_ALIAS']:
+        msgToMPD['jobalias'] = parmdb['MPIEXEC_JOB_ALIAS']
     else:
         msgToMPD['jobalias'] = ''
-    if parmdb['try_1st_locally']:
+    if parmdb['MPIEXEC_TRY_1ST_LOCALLY']:
         msgToMPD['try_1st_locally'] = 1
-    if parmdb['-l']:
+    if parmdb['MPIEXEC_LINE_LABELS']:
         msgToMPD['line_labels'] = 1
     if parmdb['rship']:
         msgToMPD['rship'] = parmdb['rship']
         msgToMPD['mship_host'] = gethostname()
         msgToMPD['mship_port'] = mshipPort
-    if parmdb['-bnr']:
+    if parmdb['MPIEXEC_BNR']:
         msgToMPD['doing_bnr'] = 1
-    if parmdb['-s'] == 'all':
+    if parmdb['MPIEXEC_STDIN_DEST'] == 'all':
         stdinDest = '0-%d' % (parmdb['nprocs']-1)
     else:
-        stdinDest = parmdb['-s']
+        stdinDest = parmdb['MPIEXEC_STDIN_DEST']
     msgToMPD['stdin_dest'] = stdinDest
-    msgToMPD['gdb'] = parmdb['-gdb']
-    msgToMPD['totalview'] = parmdb['-tv']
+    msgToMPD['gdb'] = parmdb['MPIEXEC_GDB']
+    msgToMPD['totalview'] = parmdb['MPIEXEC_TOTALVIEW']
     msgToMPD['singinitpid'] = parmdb['singinitpid']
     msgToMPD['singinitport'] = parmdb['singinitport']
     msgToMPD['host_spec_pool'] = parmdb['MPIEXEC_HOST_LIST']
@@ -371,7 +369,7 @@ def mpiexec():
             else:
                 outECs += 'jobid=%s\n' % (jobid.strip())
         # print 'mpiexec: job %s started' % (jobid)
-        if parmdb['-tv']:
+        if parmdb['MPIEXEC_TOTALVIEW']:
             if not mpd_which('totalview'):
                 print 'cannot find "totalview" in your $PATH:'
                 print '    ', environ['PATH']
@@ -414,19 +412,19 @@ def mpiexec():
         rv = streamHandler.handle_active_streams(timeout=1.0)
         if rv[0] < 0:  # will handle some sigs at top of next loop
             pass       # may have to handle some err conditions here
-        if parmdb['-m']:
+        if parmdb['MPIEXEC_MERGE_OUTPUT']:
             if timeForPrint < time():
                 print_ready_merged_lines(1,parmdb,linesPerRank)
                 timeForPrint = time() + timeDelayForPrints
             else:
                 print_ready_merged_lines(parmdb['nprocs'],parmdb,linesPerRank)
 
-    if parmdb['-m']:
+    if parmdb['MPIEXEC_MERGE_OUTPUT']:
         print_ready_merged_lines(1,parmdb,linesPerRank)
     if mshipPid:
         (donePid,status) = wait()    # waitpid(mshipPid,0)
-    if parmdb['-ecfn']:
-        outECFile = open(parmdb['-ecfn'],'w')
+    if parmdb['MPIEXEC_EXITCODES_FILENAME']:
+        outECFile = open(parmdb['MPIEXEC_EXITCODES_FILENAME'],'w')
         if parmdb['ecfn_format'] == 'xml':
             print >>outECFile, outXmlDoc.toprettyxml(indent='   ')
         else:
@@ -458,32 +456,90 @@ def collect_args(args,localArgSets):
     argidx = 1
     while argidx < len(args)  and  args[argidx] in validGlobalArgs.keys():
         garg = args[argidx]
-	if garg == '-gnp':    # alias for '-gn'
-	    garg = '-gn'
-        if validGlobalArgs[garg] > 0:
-            if garg == '-genv':
-                parmdb['genv'][args[argidx+1]] = args[argidx+2]
-                argidx += 3
+        if garg == '-genv':
+            parmdb['genv'][args[argidx+1]] = args[argidx+2]
+            argidx += 3
+        elif garg == '-gn'  or  garg == '-gnp':
+            if args[argidx+1].isdigit():
+                parmdb[('cmdline','-gn')] = int(args[argidx+1])
             else:
-		if garg == '-garch':
-                    print '** -garch is accepted but not used'
-		if garg == '-usize'  or  garg == '-gn':
-                    if args[argidx+1].isdigit():
-                        parmdb[('cmdline',garg)] = int(args[argidx+1])
-                    else:
-                        print 'argument to %s must be numeric' % (garg)
-                        usage()
-		elif garg == '-ghost':
-                    try:
-                        parmdb[('cmdline',garg)] = gethostbyname_ex(args[argidx+1])[2][0]
-                    except:
-                        print 'unable to do find info for host %s' % (args[argidx+1])
-                        exit(-1)
-		else:
-                    parmdb[('cmdline',garg)] = args[argidx+1]
-                argidx += 2
-        else:
-            parmdb[('cmdline',garg)] = 1
+                print 'argument to %s must be numeric' % (garg)
+                usage()
+            argidx += 2
+        elif garg == '-ghost':
+            try:
+                parmdb[('cmdline',garg)] = gethostbyname_ex(args[argidx+1])[2][0]
+            except:
+                print 'unable to do find info for host %s' % (args[argidx+1])
+                exit(-1)
+            argidx += 2
+        elif garg == '-gpath':
+            parmdb[('cmdline','-gpath')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-gwdir':
+            parmdb[('cmdline','-gwdir')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-gumask':
+            parmdb[('cmdline','-gumask')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-gsoft':
+            parmdb[('cmdline','-gsoft')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-garch':
+            parmdb[('cmdline','-garch')] = args[argidx+1]
+            argidx += 2
+            print '** -garch is accepted but not used'
+        elif garg == '-gexec':
+            parmdb[('cmdline','-gexec')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-genv':
+            parmdb[('cmdline','-genv')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-genvlist':
+            parmdb[('cmdline','-genvlist')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-genvnone':
+            parmdb[('cmdline','-genvnone')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-l':
+            parmdb[('cmdline','MPIEXEC_LINE_LABELS')] = 1
+            argidx += 1
+        elif garg == '-a':
+            parmdb[('cmdline','MPIEXEC_JOB_ALIAS')] = args[argidx+1]
+            argidx += 1
+        elif garg == '-usize':
+            if args[argidx+1].isdigit():
+                parmdb[('cmdline','MPIEXEC_USIZE')] = int(args[argidx+1])
+            else:
+                print 'argument to %s must be numeric' % (garg)
+                usage()
+            argidx += 2
+        elif garg == '-gdb':
+            parmdb[('cmdline','MPIEXEC_GDB')] = 1
+            argidx += 1
+        elif garg == '-ifhn':
+            parmdb[('cmdline','MPIEXEC_IFHN')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-m':
+            parmdb[('cmdline','MPIEXEC_MERGE_OUTPUT')] = 1
+            argidx += 1
+        elif garg == '-s':
+            parmdb[('cmdline','MPIEXEC_STDIN_DEST')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-machinefile':
+            parmdb[('cmdline','MPIEXEC_MACHINEFILE')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-bnr':
+            parmdb[('cmdline','MPIEXEC_BNR')] = 1
+            argidx += 1
+        elif garg == '-tv':
+            parmdb[('cmdline','MPIEXEC_TOTALVIEW')] = 1
+            argidx += 1
+        elif garg == '-ecfn':
+            parmdb[('cmdline','MPIEXEC_EXITCODES_FILENAME')] = args[argidx+1]
+            argidx += 2
+        elif garg == '-1':
+            parmdb[('cmdline','MPIEXEC_TRY_1ST_LOCALLY')] = 0  # reverses meaning
             argidx += 1
     if args[argidx] == ':':
         argidx += 1
@@ -507,7 +563,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
     umask  = parmdb['-gumask']
     wpath  = parmdb['-gpath']
     nProcs = parmdb['-gn']
-    usize  = parmdb['-usize']
+    usize  = parmdb['MPIEXEC_USIZE']
     gexec  = parmdb['-gexec']
     softness =  parmdb['-gsoft']
     if parmdb['-genvnone']:
@@ -526,7 +582,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
                 print 'invalid "local" arg: %s' % argset[argidx]
                 usage()
             break                       # since now at executable
-        if parmdb['-machinefile']:
+        if parmdb['MPIEXEC_MACHINEFILE']:
             if argset[argidx] == '-host'  or  parmdb['-ghost']:
                 print '-host (or -ghost) and -machinefile are incompatible'
                 exit(-1)
@@ -827,13 +883,13 @@ def handle_man_input(sock,streamHandler):
 
 def handle_cli_stdout_input(sock,parmdb,streamHandler,linesPerRank):
     global numDoneWithIO
-    if parmdb['-m']:
+    if parmdb['MPIEXEC_MERGE_OUTPUT']:
         line = sock.recv_one_line()
         if not line:
             streamHandler.del_handler(sock)
             numDoneWithIO += 1
         else:
-            if parmdb['-gdb']:
+            if parmdb['MPIEXEC_GDB']:
                 line = line.replace('(gdb)\n','(gdb) ')
             try:
                 (rank,rest) = line.split(':',1)
@@ -874,7 +930,7 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
     except IOError:
         stdin.flush()  # probably does nothing
     else:
-        gdbFlag = parmdb['-gdb']
+        gdbFlag = parmdb['MPIEXEC_GDB']
         if line:    # not EOF
             msgToSend = { 'cmd' : 'stdin_from_user', 'line' : line } # default
             if gdbFlag and line.startswith('z'):
@@ -997,34 +1053,36 @@ def get_parms_from_rcfile(parmsToOverride):
     except:
         return  # OK; treat as empty file
     for line in parmsRCFile:
-        if line[0] == '#':
+        line = line.strip()
+        withoutComments = line.split('#')[0]    # will at least be ''
+        splitLine = withoutComments.rstrip().split('=')
+        if splitLine  and  not splitLine[0]:    # ['']
             continue
-        line = line.rstrip()
-        try:
-            withoutComments = line.split('#')[0]
-            splitLine = withoutComments.split('=')
-        except:
-            splitLine = []
         if len(splitLine) == 2:
             (k,v) = splitLine
-            if not k.startswith('MPIEXEC_'):
+            origKey = k
+            if not k.startswith('MPIEXEC_'):  # may need to chk for other mpd pgms also
                 continue
-            k = k[8:]    # strip off the MPIEXEC_
+            if k in parmsToOverride.keys():
+                if v.isdigit():
+                    v = int(v)
+                parmdb[('rcfile',k)] = v
+            else:
+                mpd_print(1,'invalid key in mpd conf file; key=:%s:' % (origKey) )
+                exit(-1)
         else:
-            continue    # just skip it as unrecognized (perhaps a blank line)
-        if k in parmsToOverride.keys():
-            parmdb[('rcfile',k)] = v
-        else:
-            print 'mpiexec: invalid key in rc file; line=', line,
+            mpd_print(1, 'line in mpd conf is not key=val pair; line=:%s:' % (line) )
 
-def get_parms_from_env(parmdb,parmsToOverride):
+def get_parms_from_env(parmsToOverride):
+    global parmdb
     if environ.has_key('MPIEXEC_TIMEOUT'):             # special case for mpiexec
         parmdb[('env','MPIEXEC_TIMEOUT')] = int(environ['MPIEXEC_TIMEOUT'])
-    for envvar in environ.keys():
-        if envvar in parmsToOverride.keys():
-            parmdb[('env',envvar)] = environ[envvar]
+    for k in parmsToOverride.keys():
+        if environ.has_key(k):
+            parmdb[('env',k)] = environ[k]
 
-def get_parms_from_xml_file(parmdb,conSock,msgToMPD):
+def get_parms_from_xml_file(conSock,msgToMPD):
+    global parmdb
     try:
         import xml.dom.minidom
     except:
@@ -1057,29 +1115,29 @@ def get_parms_from_xml_file(parmdb,conSock,msgToMPD):
         print '** totalprocs not specified in %s' % inXmlFilename
         exit(-1)
     if cpg.hasAttribute('try_1st_locally'):
-        parmdb[('xml','-1')] = int(cpg.getAttribute('try_1st_locally'))
+        parmdb[('xml','MPIEXEC_TRY_1ST_LOCALLY')] = int(cpg.getAttribute('try_1st_locally'))
     if cpg.hasAttribute('output')  and  cpg.getAttribute('output') == 'label':
-        parmdb[('xml','-l')] = 1
+        parmdb[('xml','MPIEXEC_LINE_LABELS')] = 1
     if cpg.hasAttribute('pgid'):    # our jobalias
-        parmdb[('xml','-a')] = cpg.getAttribute('pgid')
+        parmdb[('xml','MPIEXEC_JOB_ALIAS')] = cpg.getAttribute('pgid')
     if cpg.hasAttribute('stdin_dest'):
-        parmdb[('xml','-s')] = cpg.getAttribute('stdin_dest')
+        parmdb[('xml','MPIEXEC_STDIN_DEST')] = cpg.getAttribute('stdin_dest')
     if cpg.hasAttribute('doing_bnr'):
-        parmdb[('xml','-bnr')] = int(cpg.getAttribute('doing_bnr'))
+        parmdb[('xml','MPIEXEC_BNR')] = int(cpg.getAttribute('doing_bnr'))
     if cpg.hasAttribute('ifhn'):
-        parmdb[('xml','-ifhn')] = cpg.getAttribute('ifhn')
+        parmdb[('xml','MPIEXEC_IFHN')] = cpg.getAttribute('ifhn')
     if cpg.hasAttribute('exit_codes_filename'):
-        parmdb[('xml','-ecfn')] = cpg.getAttribute('exit_codes_filename')
+        parmdb[('xml','MPIEXEC_EXITCODES_FILENAME')] = cpg.getAttribute('exit_codes_filename')
         parmdb[('xml','ecfn_format')] = 'xml'
     if cpg.hasAttribute('gdb'):
         gdbFlag = int(cpg.getAttribute('gdb'))
         if gdbFlag:
-            parmdb[('xml','-gdb')]     = 1
-            parmdb[('xml','-m')] = 1   # implied
-            parmdb[('xml','-l')]  = 1   # implied
-            parmdb[('xml','-s')]   = 'all'
+            parmdb[('xml','MPIEXEC_GDB')]     = 1
+            parmdb[('xml','MPIEXEC_MERGE_OUTPUT')] = 1   # implied
+            parmdb[('xml','MPIEXEC_LINE_LABELS')]  = 1   # implied
+            parmdb[('xml','MPIEXEC_STDIN_DEST')]   = 'all'
     if cpg.hasAttribute('tv'):
-        parmdb[('xml','-tv')] = int(cpg.getAttribute('tv'))
+        parmdb[('xml','MPIEXEC_TOTALVIEW')] = int(cpg.getAttribute('tv'))
     hostSpec = cpg.getElementsByTagName('host-spec')
     if hostSpec:
         hostList = []
