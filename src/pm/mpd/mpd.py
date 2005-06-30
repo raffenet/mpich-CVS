@@ -313,7 +313,7 @@ class MPD(object):
                         v = int(v)
                     self.parmdb[('rcfile',k)] = v
                 else:
-                    mpd_print(1,'invalid key in rc file; key=:%s:' % (origKey) )
+                    mpd_print(1,'invalid key in mpd conf file; key=:%s:' % (origKey) )
                     exit(-1)
             else:
                 mpd_print(1, 'line in mpd conf is not key=val pair; line=:%s:' % (line) )
