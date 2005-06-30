@@ -209,7 +209,7 @@ export MPIG_BUILD_DIR
 #
 # Create the makefile for extract settings from Globus
 #
-MPIG_GMH_PKGS="globus_xio globus_duroc_runtime"
+MPIG_GMH_PKGS="globus_xio globus_duroc_runtime globus_rendezvous"
 MPIG_GLOBUS_HEADER_MK=${MPIG_BUILD_DIR}/.globus-header.mk
 MPIG_GLOBUS_HEADER_ERR=${MPIG_BUILD_DIR}/.globus-header.mk
 MPIG_GLOBUS_SETTINGS_MK_IN=${MPIG_SOURCE_DIR}/globus-settings.mk.in
