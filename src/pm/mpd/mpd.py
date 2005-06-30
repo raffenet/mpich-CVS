@@ -264,7 +264,9 @@ class MPD(object):
         except:
             pass
     def get_parms_from_env(self):
-        pass  # none right now
+        for k in self.parmsToOverride:
+            if environ.has_key(k):
+                self.parmdb[('env',k)] = environ[k]
     def get_parms_from_rcfile(self):
         if getuid() == 0:    # if ROOT
             parmsRCFilename = '/etc/mpd.conf'
