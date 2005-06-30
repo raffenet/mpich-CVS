@@ -294,14 +294,11 @@ class MPD(object):
             exit(-1)
         parmsRCFile = open(parmsRCFilename)
         for line in parmsRCFile:
-            if line[0] == '#':
+            line = line.strip()
+            withoutComments = line.split('#')[0]    # will at least be ''
+            splitLine = withoutComments.rstrip().split('=')
+            if splitLine  and  not splitLine[0]:    # ['']
                 continue
-            line = line.rstrip()
-            try:
-                withoutComments = line.split('#')[0]
-                splitLine = withoutComments.split('=')
-            except:
-                splitLine = []
             if len(splitLine) == 2:
                 (k,v) = splitLine
                 origKey = k
@@ -311,12 +308,14 @@ class MPD(object):
                 if not k.startswith('MPD_'):
                     k = 'MPD_' + k    # default to an mpd parm
                 if k in self.parmsToOverride.keys():
+                    if v.isdigit():
+                        v = int(v)
                     self.parmdb[('rcfile',k)] = v
                 else:
                     mpd_print(1,'invalid key in rc file; key=:%s:' % (origKey) )
                     exit(-1)
             else:
-                mpd_print(0, 'skipping .mpd.conf file line = :%s:' % (line) )
+                mpd_print(1, 'line in mpd conf is not key=val pair; line=:%s:' % (line) )
         if not self.parmdb.has_key('MPD_SECRETWORD'):
             print 'parmsRCFile %s has no secretword' % (parmsRCFilename)
             exit(-1)
