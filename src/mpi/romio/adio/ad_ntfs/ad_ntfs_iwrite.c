@@ -12,8 +12,8 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
 			     int *error_code)  
 {
     int len, typesize;
-    int err=FALSE;
-    static char myname[] = "ADIOI_NTFS_IWRITECONTIG";
+    int err;
+    static char myname[] = "ADIOI_NTFS_IwriteContig";
 
     *request = ADIOI_Malloc_request();
     (*request)->optype = ADIOI_WRITE;
@@ -23,21 +23,29 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
-    if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
+    if (file_ptr_type == ADIO_INDIVIDUAL)
+    {
+	offset = fd->fp_ind;
+    }
     err = ADIOI_NTFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
-    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
+    if (file_ptr_type == ADIO_INDIVIDUAL)
+    {
+	fd->fp_ind += len;
+    }
 
     (*request)->queued = 1;
     ADIOI_Add_req_to_list(request);
 
-    if (err == FALSE) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+    /* --BEGIN ERROR HANDLING-- */
+    if (err != MPI_SUCCESS)
+    {
+	*error_code = MPIO_Err_create_code(err, MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__, MPI_ERR_IO,
-					   "**io",
-					   "**io %s", strerror(errno));
+					   "**io", 0);
 	return;
     }
-    else *error_code = MPI_SUCCESS;
+    /* --END ERROR HANDLING-- */
+    *error_code = MPI_SUCCESS;
 
     fd->fp_sys_posn = -1;   /* set it to null. */
     fd->async_count++;
@@ -47,16 +55,16 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
 /* This function is for implementation convenience. It is not user-visible.
  * If wr==1 write, wr==0 read.
  *
- * Returns TRUE on success, FALSE on failure.  Error code construction is
- * handled above this function.
+ * Returns MPI_SUCCESS on success, mpi_errno on failure.
  */
 int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		   int wr, void *handle)
 {
-    DWORD dwNumWritten=0, dwNumRead=0;
+    static char myname[] = "ADIOI_NTFS_aio";
+    static DWORD dwNumWritten, dwNumRead;
     BOOL ret_val = FALSE;
     FDTYPE fd_sys;
-
+    int mpi_errno = MPI_SUCCESS;
     OVERLAPPED *pOvl;
 
     fd_sys = fd->fd_sys;
@@ -69,38 +77,56 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     if (wr)
     {
 	ret_val = WriteFile(fd_sys, buf, len, &dwNumWritten, pOvl);
-	/*
-	ret_val = WriteFile(fd_sys, buf, len, &dwNumWritten, NULL);
-	if (ret_val && dwNumWritten) printf("written immediately: %d\n", dwNumWritten);
-	*/
     }
     else
     {
 	ret_val = ReadFile(fd_sys, buf, len, &dwNumRead, pOvl);
-	/*ret_val = ReadFile(fd_sys, buf, len, &dwNumRead, NULL);*/
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     if (ret_val == FALSE) 
     {
-	errno = GetLastError();
-	if (errno != ERROR_IO_PENDING)
+	mpi_errno = GetLastError();
+	if (mpi_errno != ERROR_IO_PENDING)
 	{
-	    if (wr) {
-		FPRINTF(stderr,
-			"WriteFile error (%d): len %d, dwNumWritten %d\n",
-			errno, len, dwNumWritten);
-	    }
-	    else {
-		FPRINTF(stderr,
-			"ReadFile error (%d): len %d, dwNumRead %d\n",
-			errno, len, dwNumRead);
-	    }
-	    return FALSE;
+	    mpi_errno = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+		myname, __LINE__, MPI_ERR_IO,
+		"**io",
+		"**io %s", ADIOI_NTFS_Strerror(mpi_errno));
+	    return mpi_errno;
 	}
-	ret_val = TRUE;
+	mpi_errno = MPI_SUCCESS;
     }
+    /* --END ERROR HANDLING-- */
 
     *((OVERLAPPED **) handle) = pOvl;
 
-    return ret_val;
+    return mpi_errno;
+}
+
+const char * ADIOI_NTFS_Strerror(int error)
+{
+    /* obviously not thread safe to store a message like this */
+    static char msg[1024];
+    HLOCAL str;
+    int num_bytes;
+    num_bytes = FormatMessage(
+	FORMAT_MESSAGE_FROM_SYSTEM |
+	FORMAT_MESSAGE_ALLOCATE_BUFFER,
+	0,
+	error,
+	MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+	(LPTSTR) &str,
+	0,0);
+    if (num_bytes == 0)
+    {
+	*msg = '\0';
+    }
+    else
+    {
+	memcpy(msg, str, num_bytes+1);
+	LocalFree(str);
+	strtok(msg, "\r\n");
+    }
+    return msg;
 }

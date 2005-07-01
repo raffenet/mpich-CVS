@@ -61,4 +61,6 @@ void ADIOI_NTFS_IwriteStrided(ADIO_File fd, void *buf, int count,
 void ADIOI_NTFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_NTFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 
+const char * ADIOI_NTFS_Strerror(int error);
+
 #endif

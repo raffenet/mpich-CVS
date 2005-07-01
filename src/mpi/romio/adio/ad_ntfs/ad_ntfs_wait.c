@@ -10,43 +10,44 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
 			     int *error_code)  
 {
     DWORD ret_val;
-    static char myname[] = "ADIOI_NTFS_READCOMPLETE";
+    static char myname[] = "ADIOI_NTFS_ReadComplete";
 
-    if (*request == ADIO_REQUEST_NULL) {
+    if (*request == ADIO_REQUEST_NULL)
+    {
 	*error_code = MPI_SUCCESS;
 	return;
     }
     
-    if ((*request)->queued) {
+    if ((*request)->queued)
+    {
 	ret_val = GetOverlappedResult((*request)->fd, (*request)->handle,
 				      &(*request)->nbytes, TRUE);
-
-	/* Is this a busy wait on the aio handle?
-	do {
-	    err = aio_suspend((const aiocb_t **) &((*request)->handle), 1, 0);
-	} while ((err == -1) && (errno == EINTR));
-	*/
 
 	if (!ret_val)
 	    (*request)->nbytes = -1;
 
-	if (ret_val == FALSE) {
+	/* --BEGIN ERROR HANDLING-- */
+	if (ret_val == FALSE)
+	{
+	    ret_val = GetLastError();
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					       MPIR_ERR_RECOVERABLE, myname,
 					       __LINE__, MPI_ERR_IO, "**io",
-					       "**io %s", strerror(errno));
+					       "**io %s", ADIOI_NTFS_Strerror(ret_val));
 	    return;
 	}
-	else *error_code = MPI_SUCCESS;
+	/* --END ERROR HANDLING-- */
     } /* if ((*request)->queued) ... */
-    else *error_code = MPI_SUCCESS;
+    *error_code = MPI_SUCCESS;
 #ifdef HAVE_STATUS_SET_BYTES
     if ((*request)->nbytes != -1)
+    {
 	MPIR_Status_set_bytes(status, (*request)->datatype, (*request)->nbytes);
+    }
 #endif
 
-    if ((*request)->queued != -1) {
-
+    if ((*request)->queued != -1)
+    {
 	/* queued = -1 is an internal hack used when the request must
 	   be completed, but the request object should not be
 	   freed. This is used in ADIOI_Complete_async, because the user
@@ -68,12 +69,20 @@ void ADIOI_NTFS_ReadComplete(ADIO_Request *request, ADIO_Status *status,
 	ADIOI_Free_request((ADIOI_Req_node *) (*request));
 	*request = ADIO_REQUEST_NULL;
     }
-
 }
 
 
 void ADIOI_NTFS_WriteComplete(ADIO_Request *request, ADIO_Status *status,
 			      int *error_code)
 {
+    static char myname[] = "ADIOI_NTFS_WriteComplete";
     ADIOI_NTFS_ReadComplete(request, status, error_code);
+    /* --BEGIN ERROR HANDLING-- */
+    if (*error_code != MPI_SUCCESS)
+    {
+	*error_code = MPIO_Err_create_code(*error_code,
+	    MPIR_ERR_RECOVERABLE, myname,
+	    __LINE__, MPI_ERR_IO, "**io", 0);
+    }
+    /* --END ERROR HANDLING-- */
 }
