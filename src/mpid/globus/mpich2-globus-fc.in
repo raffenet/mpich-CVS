@@ -62,6 +62,7 @@ while test $# -gt 0 ; do
 	    compile_args="$compile_args -o $outputfilename"
         fi
 	DoLink=0
+	DoCompile=1
 	HasDashC=1
 	;;
         -o)
@@ -81,8 +82,9 @@ while test $# -gt 0 ; do
 	# For compilers that support -E as a way to get at the C preprocessor
 	# Also, for compilers that support -M for creating dependencies
 	compile_args="$compile_args $1"
-	HasDashC=1
 	DoLink=0
+	HasDashC=1
+	DoCompile=1
 	;;
 	-O* | -g)
 	RemoveDefaultOpt=1

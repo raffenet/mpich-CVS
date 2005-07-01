@@ -57,15 +57,18 @@ while test $# -gt 0 ; do
 	    compile_args="$compile_args -o $outputfilename"
         fi
 	DoLink=0
+	DoCompile=1
 	HasDashC=1
 	;;
 	-S|-E|-M|-MM)
 	DoLink=0
+	DoCompile=1
 	HasDashC=1
 	compile_args="$compile_args $1"	
 	;;
         -MT)
 	DoLink=0
+	DoCompile=1
 	HasDashC=1
         compile_args="$compile_args $1 '$2'"
 	shift
