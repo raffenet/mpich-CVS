@@ -541,7 +541,7 @@ int MPIOI_File_iread(MPI_File fh,
 #   define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, ADIOI_LOCK_CMD, LOCKFILE_EXCLUSIVE_LOCK, offset, whence, len)
 #   define ADIOI_READ_LOCK(fd, offset, whence, len) \
-          ADIOI_Set_lock((fd)->fd_sys, ADIOLOCK, 0, offset, whence, len)
+          ADIOI_Set_lock((fd)->fd_sys, ADIOI_LOCK_CMD, 0, offset, whence, len)
 #   define ADIOI_UNLOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, ADIOI_UNLOCK_CMD, LOCKFILE_FAIL_IMMEDIATELY, offset, whence, len)
 
