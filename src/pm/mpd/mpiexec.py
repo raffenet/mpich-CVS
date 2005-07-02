@@ -506,7 +506,7 @@ def collect_args(args,localArgSets):
             argidx += 1
         elif garg == '-a':
             parmdb[('cmdline','MPIEXEC_JOB_ALIAS')] = args[argidx+1]
-            argidx += 1
+            argidx += 2
         elif garg == '-usize':
             if args[argidx+1].isdigit():
                 parmdb[('cmdline','MPIEXEC_USIZE')] = int(args[argidx+1])
@@ -1075,11 +1075,12 @@ def get_parms_from_rcfile(parmsToOverride):
 
 def get_parms_from_env(parmsToOverride):
     global parmdb
-    if environ.has_key('MPIEXEC_TIMEOUT'):             # special case for mpiexec
-        parmdb[('env','MPIEXEC_TIMEOUT')] = int(environ['MPIEXEC_TIMEOUT'])
     for k in parmsToOverride.keys():
         if environ.has_key(k):
-            parmdb[('env',k)] = environ[k]
+            v = environ[k]
+            if v.isdigit():
+                v = int(v)
+            parmdb[('env',k)] = v
 
 def get_parms_from_xml_file(conSock,msgToMPD):
     global parmdb
