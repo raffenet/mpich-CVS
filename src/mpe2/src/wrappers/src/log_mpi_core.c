@@ -2347,7 +2347,7 @@ char *** argv;
 
 #ifdef HAVE___ARGV
   if ( argv == NULL )
-      argv = __argv;
+      argv = &__argv;
 #endif
 
   /*  Set default logfilename  */  
