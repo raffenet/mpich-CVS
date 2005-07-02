@@ -3,31 +3,31 @@ LDADD = -L../../../../lib ../util/mtest.o
 DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 
-iwriteat_SOURCES     = iwriteat.cxx
-iwrite_SOURCES       = iwrite.cxx
-iwritesh_SOURCES     = iwritesh.cxx
-write_SOURCES        = write.cxx
-writeat_SOURCES      = writeat.cxx
-writeall_SOURCES     = writeall.cxx
-writeatall_SOURCES   = writeatall.cxx
-writeallbe_SOURCES   = writeallbe.cxx
-writeord_SOURCES     = writeord.cxx
-writeordbe_SOURCES   = writeordbe.cxx
-writesh_SOURCES      = writesh.cxx
-writeatallbe_SOURCES = writeatallbe.cxx
+iwriteatx_SOURCES     = iwriteatx.cxx
+iwritex_SOURCES       = iwritex.cxx
+iwriteshx_SOURCES     = iwriteshx.cxx
+writex_SOURCES        = writex.cxx
+writeatx_SOURCES      = writeatx.cxx
+writeallx_SOURCES     = writeallx.cxx
+writeatallx_SOURCES   = writeatallx.cxx
+writeallbex_SOURCES   = writeallbex.cxx
+writeordx_SOURCES     = writeordx.cxx
+writeordbex_SOURCES   = writeordbex.cxx
+writeshx_SOURCES      = writeshx.cxx
+writeatallbex_SOURCES = writeatallbex.cxx
 
-iwriteatnos_SOURCES     = iwriteatnos.cxx
-iwritenos_SOURCES       = iwritenos.cxx
-iwriteshnos_SOURCES     = iwriteshnos.cxx
-writenos_SOURCES        = writenos.cxx
-writeatnos_SOURCES      = writeatnos.cxx
-writeallnos_SOURCES     = writeallnos.cxx
-writeatallnos_SOURCES   = writeatallnos.cxx
-writeallbenos_SOURCES   = writeallbenos.cxx
-writeordnos_SOURCES     = writeordnos.cxx
-writeordbenos_SOURCES   = writeordbenos.cxx
-writeshnos_SOURCES      = writeshnos.cxx
-writeatallbenos_SOURCES = writeatallbenos.cxx
+iwriteatnosx_SOURCES     = iwriteatnosx.cxx
+iwritenosx_SOURCES       = iwritenosx.cxx
+iwriteshnosx_SOURCES     = iwriteshnosx.cxx
+writenosx_SOURCES        = writenosx.cxx
+writeatnosx_SOURCES      = writeatnosx.cxx
+writeallnosx_SOURCES     = writeallnosx.cxx
+writeatallnosx_SOURCES   = writeatallnosx.cxx
+writeallbenosx_SOURCES   = writeallbenosx.cxx
+writeordnosx_SOURCES     = writeordnosx.cxx
+writeordbenosx_SOURCES   = writeordbenosx.cxx
+writeshnosx_SOURCES      = writeshnosx.cxx
+writeatallbenosx_SOURCES = writeatallbenosx.cxx
 
 
 fileerrx_SOURCES      = fileerrx.cxx
@@ -36,14 +36,14 @@ shpositionx_SOURCES   = shpositionx.cxx
 setinfox_SOURCES      = setinfox.cxx
 filemiscx_SOURCES     = filemiscx.cxx
 
-# These IO tests are build from a template and a set of definitions.
-iwriteat.cxx write.cxx writeat.cxx writeatall.cxx writeall.cxx writeallbe.cxx \
-writeord.cxx writeordbe.cxx writesh.cxx writeatallbe.cxx \
-iwrite.cxx iwritesh.cxx \
-iwriteatnos.cxx iwritenos.cxx iwriteshnos.cxx writenos.cxx \
-writeatnos.cxx writeallnos.cxx writeatallnos.cxx writeallbenos.cxx \
-writeordnos.cxx writeordbenos.cxx writeshnos.cxx \
-writeatallbenos.cxx : ioharness.tlt ioharness.defn
+# These IO tests are built from a template and a set of definitions.
+iwriteatx.cxx writex.cxx writeatx.cxx writeatallx.cxx writeallx.cxx \
+writeallbex.cxx writeordx.cxx writeordbex.cxx writeshx.cxx \
+writeatallbex.cxx iwritex.cxx iwriteshx.cxx \
+iwriteatnosx.cxx iwritenosx.cxx iwriteshnosx.cxx writenosx.cxx \
+writeatnosx.cxx writeallnosx.cxx writeatallnosx.cxx writeallbenosx.cxx \
+writeordnosx.cxx writeordbenosx.cxx writeshnosx.cxx \
+writeatallbenosx.cxx : ioharness.tlt ioharness.defn
 	../../maint/testmerge -defn=$(top_srcdir)/maint/common.defn \
 		$(srcdir)/ioharness.defn $(srcdir)/ioharness.tlt
 

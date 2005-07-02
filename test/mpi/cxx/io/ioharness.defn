@@ -145,7 +145,7 @@ if (r == 0) {
 # ----------------------------------------------------------------------------
 # This test uses the individual file pointers.
 # To reach the correct locations, we seek to the position
-<TESTDEFN filename="write.cxx">
+<TESTDEFN filename="writex.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -183,7 +183,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writenos.cxx">
+<TESTDEFN filename="writenosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Offset offset;
@@ -219,7 +219,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses independent I/O with thread-safe, individual file pointers
-<TESTDEFN filename="writeat.cxx">
+<TESTDEFN filename="writeatx.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -251,7 +251,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writeatnos.cxx">
+<TESTDEFN filename="writeatnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Offset offset;
@@ -281,7 +281,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses collective I/O with thread-safe, individual file pointers
-<TESTDEFN filename="writeatall.cxx">
+<TESTDEFN filename="writeatallx.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans ;
@@ -313,7 +313,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writeatallnos.cxx">
+<TESTDEFN filename="writeatallnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans ;
 MPI::Offset offset;
@@ -343,7 +343,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses collective I/O with thread-safe, individual file pointers
-<TESTDEFN filename="writeatallbe.cxx">
+<TESTDEFN filename="writeatallbex.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -381,7 +381,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writeatallbenos.cxx">
+<TESTDEFN filename="writeatallbenosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Offset offset;
@@ -417,7 +417,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses nonblocking I/O with independent file pointers
-<TESTDEFN filename="iwriteat.cxx">
+<TESTDEFN filename="iwriteatx.cxx">
 <writefiledecl>
 MPI::Status statuses[2];
 int buf[MAX_BUFFER], buf2[MAX_BUFFER], ans;
@@ -476,7 +476,7 @@ for (k=0; k<b; k+=2) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="iwriteatnos.cxx">
+<TESTDEFN filename="iwriteatnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], buf2[MAX_BUFFER], ans;
 MPI::Request req[2];
@@ -536,7 +536,7 @@ for (k=0; k<b; k+=2) {
 
 # This test uses nonblocking I/O with independent file pointers and explicit
 # seeks
-<TESTDEFN filename="iwrite.cxx">
+<TESTDEFN filename="iwritex.cxx">
 <writefiledecl>
 MPI::Status statuses[2];
 int buf[MAX_BUFFER], buf2[MAX_BUFFER], ans;
@@ -599,7 +599,7 @@ for (k=0; k<b; k+=2) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="iwritenos.cxx">
+<TESTDEFN filename="iwritenosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], buf2[MAX_BUFFER], ans;
 MPI::Request req[2]; 
@@ -662,7 +662,7 @@ for (k=0; k<b; k+=2) {
 </TESTDEFN>
 
 # This test uses nonblocking I/O with shared file pointers
-<TESTDEFN filename="iwritesh.cxx">
+<TESTDEFN filename="iwriteshx.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -706,7 +706,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses nonblocking I/O with shared file pointers
-<TESTDEFN filename="iwriteshnos.cxx">
+<TESTDEFN filename="iwriteshnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 int src, dest;
@@ -748,7 +748,7 @@ for (k=0; k<b; k++) {
 
 
 # This test uses collective I/O
-<TESTDEFN filename="writeall.cxx">
+<TESTDEFN filename="writeallx.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -782,7 +782,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses collective I/O
-<TESTDEFN filename="writeallnos.cxx">
+<TESTDEFN filename="writeallnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Datatype filetype;
@@ -813,7 +813,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses split collective I/O
-<TESTDEFN filename="writeallbe.cxx">
+<TESTDEFN filename="writeallbex.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -853,7 +853,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses split collective I/O
-<TESTDEFN filename="writeallbenos.cxx">
+<TESTDEFN filename="writeallbenosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Datatype filetype;
@@ -890,7 +890,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses the shared file pointers collectively.
-<TESTDEFN filename="writeord.cxx">
+<TESTDEFN filename="writeordx.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -920,7 +920,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writeordnos.cxx">
+<TESTDEFN filename="writeordnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Offset offset;
@@ -948,7 +948,7 @@ for (k=0; k<b; k++) {
 </TESTDEFN>
 
 # This test uses the shared file pointers with split collectives.
-<TESTDEFN filename="writeordbe.cxx">
+<TESTDEFN filename="writeordbex.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -984,7 +984,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writeordbenos.cxx">
+<TESTDEFN filename="writeordbenosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 MPI::Offset offset;
@@ -1019,7 +1019,7 @@ for (k=0; k<b; k++) {
 
 # This test uses the shared file pointers independently.
 # We pass a token to control the oredering
-<TESTDEFN filename="writesh.cxx">
+<TESTDEFN filename="writeshx.cxx">
 <writefiledecl>
 MPI::Status status;
 int buf[MAX_BUFFER], ans;
@@ -1059,7 +1059,7 @@ for (k=0; k<b; k++) {
 </readfile>
 </TESTDEFN>
 
-<TESTDEFN filename="writeshnos.cxx">
+<TESTDEFN filename="writeshnosx.cxx">
 <writefiledecl>
 int buf[MAX_BUFFER], ans;
 int src, dest;
