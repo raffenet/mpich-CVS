@@ -21,3 +21,4 @@ EXPORTS
     MPE_Log_sync_clocks
     MPE_Stop_log
     MPE_Finish_log
+	MPE_Log_merged_logfilename
