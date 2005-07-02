@@ -2877,6 +2877,10 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* NEEDS_GETHOSTNAME_DECL */")
 				Case "NEEDS_MKSTEMP_DECL"
 					fout.WriteLine("/* NEEDS_MKSTEMP_DECL */")
+				Case "HAVE_MPI_RMA_LOCK"
+					fout.WriteLine("#define HAVE_MPI_RMA_LOCK 1")
+				Case "HAVE_MPI_RMA_TEST"
+					fout.WriteLine("#define HAVE_MPI_RMA_TEST 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
