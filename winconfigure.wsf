@@ -3388,6 +3388,7 @@ If f.FolderExists("src\mpe2") Then
 		Call WriteHeader(fout, "mpe_wrappers_")
 		Call AddDefinitions(fout, "src\mpe2\src\wrappers\mpe_wrappers_conf.h.in", true)
 		fout.WriteLine("#define HAVE_WINDOWS_H 1")
+		fout.WriteLine("#define HAVE___ARGV 1")
 		Call WriteFooter(fout)
 		fout.Close()
 	Else
