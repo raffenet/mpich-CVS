@@ -1861,6 +1861,43 @@ If bForce Then
 End If
 
 '
+' Generate the c++ and fortran tests from their templates
+'
+Function GenerateTemplatedTests()
+
+	set f = WScript.CreateObject("Scripting.FileSystemObject")
+	If f.FileExists("test\mpi\maint\testmerge.in") Then
+
+		set fin = f.OpenTextFile("test\mpi\maint\testmerge.in")
+		cEcho "Creating test\mpi\maint\testmerge"
+		set fout = f.CreateTextFile("test\mpi\maint\testmerge")
+		contents = fin.ReadAll()
+		contents = Replace(contents, "@PERL@", "perl")
+		fout.Write(contents)
+		fin.Close()
+		fout.Close()
+		Set WshShell = CreateObject("WScript.Shell")
+		WshShell.CurrentDirectory = "test\mpi\cxx\io"
+		cEcho WshShell.CurrentDirectory & ">perl ..\..\maint\testmerge -defn=..\..\maint\common.defn ioharness.defn ioharness.tlt"
+		WshShell.Run "perl ..\..\maint\testmerge -defn=..\..\maint\common.defn ioharness.defn ioharness.tlt", 0, true
+		WshShell.CurrentDirectory = "..\..\f77\io"
+		cEcho WshShell.CurrentDirectory & ">perl ..\..\maint\testmerge -defn=..\..\maint\common.defn ioharness.defn ioharness.tlt"
+		WshShell.Run "perl ..\..\maint\testmerge -defn=..\..\maint\common.defn ioharness.defn ioharness.tlt", 0, true
+		WshShell.CurrentDirectory = "..\..\..\.."
+
+	Else
+
+		cEcho "Missing file: test\mpi\maint\testmerge.in"
+
+	End If
+
+End Function
+
+If bForce Then
+	GenerateTemplatedTests()
+End If
+
+'
 ' Validate .in files
 '
 
