@@ -267,6 +267,12 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 	printf("Not implemented.\n");
 	smpd_exit(0);
     }
+    if (smpd_get_opt(argcp, argvp, "-query"))
+    {
+	printf("querying hosts in the default domain:\n");
+	printf("Not implemented.\n");
+	smpd_exit(0);
+    }
 
     /* check for the service/silent option */
 #ifdef HAVE_WINDOWS_H
