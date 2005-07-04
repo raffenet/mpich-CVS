@@ -1012,6 +1012,21 @@ namespace wmpiconfig
 				{
 					get_settings_button_Click(null, null);
 				}
+				if (hosts_list.SelectedItems[0].BackColor == Color.LightGray)
+				{
+					list.BackColor = Color.LightGray;
+					list.Enabled = false;
+				}
+				else
+				{
+					list.BackColor = orig_background;
+					list.Enabled = true;
+				}
+			}
+			else
+			{
+				list.BackColor = orig_background;
+				list.Enabled = true;
 			}
 		}
 
