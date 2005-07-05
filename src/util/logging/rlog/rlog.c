@@ -30,7 +30,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 
     while (length)
     {
-	num_written = fwrite(pBuffer, 1, length, fout);
+	num_written = (int)fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
 	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
@@ -97,7 +97,7 @@ RLOG_Struct* RLOG_InitLog(int rank, int size)
     return pRLOG;
 }
 
-int RLOG_FinishLog(RLOG_Struct* pRLOG, const char *filename)
+int RLOG_FinishLog(RLOG_Struct* pRLOG)
 {
     RLOG_HEADER header;
 
