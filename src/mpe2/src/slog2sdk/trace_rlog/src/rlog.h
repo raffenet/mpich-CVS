@@ -176,7 +176,7 @@ typedef struct RLOG_Struct
 
 /* logging functions */
 RLOG_Struct* RLOG_InitLog(int rank, int size);
-int RLOG_FinishLog(RLOG_Struct* pRLOG, const char *filename);
+int RLOG_FinishLog(RLOG_Struct* pRLOG);
 /*void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion);*/
 void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size);
 void RLOG_LogRecv(RLOG_Struct* pRLOG, int src, int tag, int size);

@@ -270,7 +270,7 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 		    temp_time = arrow.start_time;
 		    arrow.start_time = arrow.end_time;
 		    arrow.end_time = temp_time;
-		    arrow.leftright = (arrow.leftright = RLOG_ARROW_LEFT) ? RLOG_ARROW_RIGHT : RLOG_ARROW_LEFT;
+		    arrow.leftright = (arrow.leftright == RLOG_ARROW_LEFT) ? RLOG_ARROW_RIGHT : RLOG_ARROW_LEFT;
 		}
 		pArray[i] = arrow;
 	    }
@@ -930,7 +930,7 @@ static RLOG_BOOL FindMaxGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level
 int RLOG_ResetGlobalIter(RLOG_IOStruct *pInput)
 {
     int i,j, n;
-    RLOG_EVENT min_event;
+    RLOG_EVENT min_event = {0};
     RLOG_BOOL bMinSet = RLOG_FALSE;
 
     if (pInput == NULL)
