@@ -17,7 +17,7 @@ static int ReadFileData(char *pBuffer, int length, FILE *fin)
 
     while (length)
     {
-	num_read = fread(pBuffer, 1, length, fin);
+	num_read = (int)fread(pBuffer, 1, length, fin);
 	if (num_read == -1)
 	{
 	    MPIU_Error_printf("Error: fread failed - %s\n", strerror(errno));
@@ -38,7 +38,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 
     while (length)
     {
-	num_written = fwrite(pBuffer, 1, length, fout);
+	num_written = (int)fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
 	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
@@ -74,7 +74,7 @@ IRLOG_IOStruct *IRLOG_CreateInputStruct(const char *filename)
 	return NULL;
     }
     /* read some data */
-    num_read = fread(pInput->buffer, 1, RLOG_BUFFSIZE, pInput->f);
+    num_read = (int)fread(pInput->buffer, 1, RLOG_BUFFSIZE, pInput->f);
     if (num_read == 0)
     {
 	MPIU_Error_printf("Unable to read data from the input file.\n");
@@ -134,7 +134,7 @@ int IRLOG_GetNextRecord(IRLOG_IOStruct *pInput)
 
     if (pInput->pEnd - pInput->pCurHeader < sizeof(RLOG_HEADER))
     {
-	num_valid = pInput->pEnd - pInput->pCurHeader;
+	num_valid = (int)(pInput->pEnd - pInput->pCurHeader);
 	if (pInput->pCurHeader != pInput->buffer)
 	    memcpy(pInput->buffer, pInput->pCurHeader, num_valid);
 	ReadFileData(pInput->buffer + num_valid, sizeof(RLOG_HEADER) - num_valid, pInput->f);
@@ -153,10 +153,10 @@ int IRLOG_GetNextRecord(IRLOG_IOStruct *pInput)
 
     while (pInput->pCurHeader + pInput->header.length > pInput->pEnd)
     {
-	num_valid = pInput->pEnd - pInput->pCurHeader;
+	num_valid = (int)(pInput->pEnd - pInput->pCurHeader);
 	if (pInput->pCurHeader != pInput->buffer)
 	    memcpy(pInput->buffer, pInput->pCurHeader, num_valid);
-	num_read = fread(pInput->buffer + num_valid, 1, RLOG_BUFFSIZE - num_valid, pInput->f);
+	num_read = (int)fread(pInput->buffer + num_valid, 1, RLOG_BUFFSIZE - num_valid, pInput->f);
 	if (num_read == 0)
 	{
 	    MPIU_Error_printf("RLOG Error: unable to get the next record.\n");
@@ -202,7 +202,7 @@ int IRLOG_WriteRecord(RLOG_HEADER *pRecord, IRLOG_IOStruct *pOutput)
 {
     if (pOutput->pCurHeader + pRecord->length > pOutput->pEnd)
     {
-	WriteFileData(pOutput->buffer, pOutput->pCurHeader - pOutput->buffer, pOutput->f);
+	WriteFileData(pOutput->buffer, (int)(pOutput->pCurHeader - pOutput->buffer), pOutput->f);
 	pOutput->pCurHeader = pOutput->buffer;
     }
 
@@ -224,7 +224,7 @@ int IRLOG_CloseInputStruct(IRLOG_IOStruct **ppInput)
 
 int IRLOG_CloseOutputStruct(IRLOG_IOStruct **ppOutput)
 {
-    WriteFileData((*ppOutput)->buffer, (*ppOutput)->pCurHeader - (*ppOutput)->buffer, (*ppOutput)->f);
+    WriteFileData((*ppOutput)->buffer, (int)((*ppOutput)->pCurHeader - (*ppOutput)->buffer), (*ppOutput)->f);
     fclose((*ppOutput)->f);
     MPIU_Free(*ppOutput);
     *ppOutput = NULL;
