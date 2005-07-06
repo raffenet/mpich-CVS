@@ -170,7 +170,7 @@ class MPD(object):
         else:
             self.conExt = ''
         self.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username() + self.conExt
-        if self.parmdb['MPD_PID_FILENAME']:
+        if self.parmdb['MPD_PID_FILENAME']:  # may overwrite it below
             pidFile = open(self.parmdb['MPD_PID_FILENAME'],'w')
             print >>pidFile, "%d" % (getpid())
             pidFile.close()
@@ -186,6 +186,10 @@ class MPD(object):
             rc = fork()
             if rc != 0:
                 exit(0)
+            if self.parmdb['MPD_PID_FILENAME']:  # overwrite one above before chg usmask
+                pidFile = open(self.parmdb['MPD_PID_FILENAME'],'w')
+                print >>pidFile, "%d" % (getpid())
+                pidFile.close()
             chdir("/")  # free up filesys for umount
             umask(0)
             try:    unlink(self.logFilename)
