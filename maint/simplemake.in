@@ -3464,8 +3464,12 @@ sub TargetDependenciesDynamic {
 	# Use $found_profilelib to decide whether to add _xxx.o to the
 	# target name.  This requires that the MAKE_DEPEND_C compiler
 	# accept the -MT option
+	#
 	foreach $lib (keys(%libraries)) {
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
+		# FIXME: If, for some reason, the source file is created by
+		# configure, then simplemake will get confused.
+		my $srcdirloc = '$(srcdir)/';
 		$ext = $sourcefile;
 		$ext =~ s/^.*\.//g;
 		$sourcebasename = $sourcefile;
@@ -3478,8 +3482,14 @@ sub TargetDependenciesDynamic {
 		# some Make programs do not handle them properly (Solaris,
 		# for one)
 		if ($ext eq "c") {
-		    print FD "\$(DEPS_DIR)/$sourcebasename.d: \$(srcdir)/$sourcefile$newline";
-		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts \$(srcdir)/$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    if (! -s $sourcefile) {
+			print STDERR "Sourcefile $curdir/$sourcefile does not exist.\
+simplemake is assuming that this file will be created by the configure step\
+in the build directory\n";
+			$srcdirloc = '';
+		    }
+		    print FD "\$(DEPS_DIR)/$sourcebasename.d: $srcdirloc$sourcefile$newline";
+		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
 		}
 	    }
 	}
@@ -3501,16 +3511,20 @@ sub TargetDependenciesDynamic {
 	print FD "\trm -f \$(DEPS_DIR)/newalldeps$newline";
 	foreach $lib (keys(%libraries)) {
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
+		my $srcdirloc = '$(srcdir)/';
 		$ext = $sourcefile;
 		$ext =~ s/^.*\.//g;
 		$sourcebasename = $sourcefile;
 		$sourcebasename =~ s/\.\w*$//;
 		if ($ext eq "c") {
+		    if (! -s $sourcefile) {
+			$srcdirloc = '';
+		    }
 		    $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
 		    if (!$found_profilelib) {
 			$targetOpts = "";
 		    }
-		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts \$(srcdir)/$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
 		    print FD "\techo \"$makeInclude \$(DEPS_DIR)/$sourcebasename.d\" >>\$(DEPS_DIR)/newalldeps$newline";
 		}
 	    }
