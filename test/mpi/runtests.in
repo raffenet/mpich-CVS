@@ -500,6 +500,8 @@ sub TestTimeout {
 	if (/FORTRAN STOP/) { next; }
 	$inline .= $_;
 	if (/[Tt]imeout/) { next; }
+	# Allow 'signaled with Interrupt' (see gforker mpiexec)
+	if (/signaled with Interrupt/) { next; }
 	# ANY output is an error (other than timeout) 
 	if (! /^\s*$/) {
 	    print STDERR "Unexpected output in $programname: $_";
