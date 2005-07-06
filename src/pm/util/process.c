@@ -20,6 +20,7 @@
 #include "pmutil.h"
 #include "ioloop.h"
 #include "process.h"
+#include "env.h"
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"
 #ifdef HAVE_ERRNO_H
@@ -177,14 +178,16 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
 /*@
   MPIE_ProcessGetExitStatus - Return an integer exit status based on the
   return status of all processes in the process universe; returns the
-  maximum value seen
+  maximum value seen.
+
+  
   @*/
-int MPIE_ProcessGetExitStatus( void )
+int MPIE_ProcessGetExitStatus( int *signaled )
 {
     ProcessWorld *world;
     ProcessApp   *app;
     ProcessState *pState;
-    int          i, rc = 0;
+    int          i, rc = 0, sig = 0;
 
     world = pUniv.worlds;
     while (world) {
@@ -195,11 +198,15 @@ int MPIE_ProcessGetExitStatus( void )
 		if (pState[i].exitStatus.exitStatus > rc) {
 		    rc = pState[i].exitStatus.exitStatus;
 		}
+		if (pState[i].exitStatus.exitReason == EXIT_SIGNALLED) {
+		    sig = 1;
+		}
 	    }
 	    app = app->nextApp;
 	}
 	world = world->nextWorld;
     }
+    *signaled = sig;
     return rc;
 }
 /*
@@ -237,6 +244,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     }
     nj = j;  /* nj is the first entry of client_env that will be set by
 		this routine */
+    DBG_PRINTF( ( "Setup env (j=%d)\n", j ) );
 #if 0
     if (envp) {
 	for ( j = 0; envp[j] && j < MAX_CLIENT_ENV-7; j++ )
@@ -252,6 +260,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	exit(-1);
     }
 
+    DBG_PRINTF( ( "Creating pmi env\n" ) );
     if (pState->initWithEnv) {
 	MPIU_Snprintf( env_pmi_rank, MAXNAMELEN, "PMI_RANK=%d", 
 		       pState->wRank );
@@ -286,6 +295,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	    exit( 1 );
 	}
     
+    DBG_PRINTF( ( "Setup env, starting with wdir\n" ) );
     /* change working directory if specified, replace argv[0], 
        and exec client */
     if (app->wdir) {
@@ -302,6 +312,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	}
     }
 
+    DBG_PRINTF( ( "Setup command-line args\n" ) );
     /* Set up the command-line arguments */
     client_arg[0] = (char *)app->exename;
     for (j=0; j<app->nArgs; j++) {
@@ -317,6 +328,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 		       app->path );
 	putenv( pathstring );
     }
+    DBG_PRINTF( ( "Exec the application %s\n", app->exename ) );
     rc = execvp( app->exename, client_arg );
 
     if ( rc < 0 ) {
@@ -795,12 +807,12 @@ void MPIE_PrintFailureReasons( FILE *fp )
 			    (sig != SIGKILL && sig != SIGINT))) {
 #ifdef HAVE_STRSIGNAL
 		    MPIU_Error_printf( 
-				      "[%d]%d:Return code = %d, signaled with %s\n", 
-				      worldnum, wrank, rc, strsignal(sig) );
+			      "[%d]%d:Return code = %d, signaled with %s\n", 
+			      worldnum, wrank, rc, strsignal(sig) );
 #else
 		    MPIU_Error_printf( 
-				      "[%d]%d:Return code = %d, signaled with %d\n", 
-				      worldnum, wrank, rc, sig );
+			      "[%d]%d:Return code = %d, signaled with %d\n", 
+			      worldnum, wrank, rc, sig );
 #endif
 		}
 		else if (MPIE_Debug || rc) {

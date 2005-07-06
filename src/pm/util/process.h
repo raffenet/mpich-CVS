@@ -151,7 +151,7 @@ int MPIE_ExecProgram( ProcessState *, char *[] );
 ProcessState *MPIE_FindProcessByPid( pid_t );
 void MPIE_ProcessInit( void );
 void MPIE_SetupSigChld( void );
-int MPIE_ProcessGetExitStatus( void );
+int MPIE_ProcessGetExitStatus( int * );
 void MPIE_ProcessSetExitStatus( ProcessState *, int );
 int MPIE_InitWorldWithSoft( ProcessWorld *, int );
 void MPIE_PrintFailureReasons( FILE * );

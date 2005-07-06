@@ -91,7 +91,7 @@ int main( int argc, char *argv[], char *envp[] )
 {
     int          rc;
     int          erc = 0;  /* Other (exceptional) return codes */
-    int          reason;
+    int          reason, signaled = 0;
     SetupInfo    s;
 
     /* MPIE_ProcessInit initializes the global pUniv */
@@ -162,10 +162,11 @@ int main( int argc, char *argv[], char *envp[] )
     MPIE_WaitForProcesses( &pUniv, 2 );
 
     /* Compute the return code (max for now) */
-    rc = MPIE_ProcessGetExitStatus();
+    rc = MPIE_ProcessGetExitStatus( &signaled );
 
     /* Optionally provide detailed information about failed processes */
-    if (rc && printFailure) 
+    /* For now, always print if a process died on an uncaught signal */
+    if ( (rc && printFailure) || signaled) 
 	MPIE_PrintFailureReasons( stderr );
 
     /* If the processes exited normally (or were already gone) but we
