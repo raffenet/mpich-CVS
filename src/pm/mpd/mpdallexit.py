@@ -19,7 +19,8 @@ from os     import environ, close
 from sys    import argv, exit
 from socket import socket, AF_UNIX, SOCK_STREAM, fromfd
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
-from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_uncaught_except_tb, MPDConsClientSock
+from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_uncaught_except_tb, \
+                   mpd_print, MPDConsClientSock
 
 def mpdallexit():
     import sys    # to get access to excepthook in next line
