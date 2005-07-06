@@ -31,7 +31,8 @@ do_getstates=yes
 do_makefiles=yes
 
 # List of steps that we will consider
-AllSteps="depend geterrmsgs bindings f77 f77tof90 build_configure genstates getstates makefiles"
+# (We do not include depend because the values for depend are not just yes/no)
+AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates getstates makefiles"
 stepsCleared=no
 
 # Options for some steps
