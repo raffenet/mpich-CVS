@@ -39,8 +39,13 @@
 #include "mpimem.h"
 
 /* Temporary debug definitions */
+#if 0
 #define DBG_PRINTF(args) printf args ; fflush(stdout)
 #define DBG_FPRINTF(args) fprintf args 
+#else
+#define DBG_PRINTF(args)
+#define DBG_FPRINTF(args)
+#endif
 
 #include "pmi.h"
 #include "simple_pmiutil.h"
@@ -894,10 +899,14 @@ int PMI_Spawn_multiple(int count,
 
 	/* FIXME: Check for error (buf too short for line) */
         MPIU_Strnapp(buf, "endcmd\n", PMIU_MAXLINE);
+	DBG_PRINTF( ( "About to writeline %s\n", buf ) );
         PMIU_writeline( PMI_fd, buf );
     }
+    DBG_PRINTF( ( "About to readline\n" ) );
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+    DBG_PRINTF( ( "About to parse\n" ) );
     PMIU_parse_keyvals( buf ); 
+    DBG_PRINTF( ( "About to getval\n" ) );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
 	PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
