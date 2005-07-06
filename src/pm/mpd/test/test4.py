@@ -73,7 +73,7 @@ os.system("mpdboot%s -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
 linesAsStr = commands.getoutput("mpdtrace%s -l" % (PYEXT) )
 for line in linesAsStr.split('\n'):
     if line.find(clusterHosts[0]) >= 0:
-        mpdid = line.strip()
+        mpdid = line.split(' ')[0]  # strip off the (ifhn) stuff
         break
 else:
     mpdid = ''

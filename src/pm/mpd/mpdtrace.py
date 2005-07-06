@@ -7,7 +7,7 @@
 """
 usage: mpdtrace [-l]
 Lists the (short) hostname of each of the mpds in the ring
-The -l (long) option shows full hostnames and listening ports
+The -l (long) option shows full hostnames and listening ports and ifhn
 """
 
 from time import ctime
@@ -45,7 +45,7 @@ def mpdtrace():
             exit(-1)
         if msg['cmd'] == 'mpdtrace_info':
             if len(argv) > 1 and argv[1] == '-l':
-                print msg['id']
+                print '%s (%s)' % (msg['id'],msg['ifhn'])
             else:
                 print sub(r'[\._].*', '', msg['id'])    # strip off domain and port
         elif msg['cmd'] == 'mpdtrace_trailer':
