@@ -170,11 +170,15 @@ int MPIE_EnvSetup( ProcessState *pState, char *envp[],
     }
 
     if (includeAll) {
-	for (j=0; envp[j] && j < maxclient; j++) {
-	    putenv( envp[j] );
-	    client_envp[j] = envp[j];
+	if (envp) {
+	    for (j=0; envp[j] && j < maxclient; j++) {
+		putenv( envp[j] );
+		client_envp[j] = envp[j];
+	    }
+	    irc = j;
 	}
-	irc = j;
+	else 
+	    irc = 0;
     }
     else {
 	MPIE_UnsetAllEnv( envp );
