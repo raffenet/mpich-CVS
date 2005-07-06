@@ -386,6 +386,10 @@ sub RunMPIProgram {
 	}
 	if ($found_noerror == 0) {
 	    print STDERR "Program $programname exited without No Errors\n";
+	    if (!$found_error) {
+		$found_error = 1;
+		$err_count ++;
+	    }
 	}
 	$rc = close ( MPIOUT );
 	if ($rc == 0) {
