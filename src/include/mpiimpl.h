@@ -120,9 +120,9 @@ typedef enum MPIU_dbg_state_t
 }
 MPIU_dbg_state_t;
 int MPIU_dbg_init(int rank);
-int MPIU_dbg_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
-int MPIU_dbglog_printf(char *str, ...) ATTRIBUTE((format(printf,1,2)));
-int MPIU_dbglog_vprintf(char *str, va_list ap);
+int MPIU_dbg_printf(const char *str, ...) ATTRIBUTE((format(printf,1,2)));
+int MPIU_dbglog_printf(const char *str, ...) ATTRIBUTE((format(printf,1,2)));
+int MPIU_dbglog_vprintf(const char *str, va_list ap);
 #if defined(MPICH_DBG_OUTPUT)
 #define MPIU_DBG_PRINTF(e)			\
 {						\
@@ -149,7 +149,7 @@ extern FILE * MPIUI_dbg_fp;
     }							\
 }
 void MPIU_dump_dbg_memlog_to_stdout(void);
-void MPIU_dump_dbg_memlog_to_file(char *filename);
+void MPIU_dump_dbg_memlog_to_file(const char *filename);
 void MPIU_dump_dbg_memlog(FILE * fp);
 /* The follow is temporarily provided for backward compatibility.  Any code
    using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
@@ -187,10 +187,10 @@ int MPIR_IDebug( const char * );
 /* mpimsg.h */
 /* ------------------------------------------------------------------------- */
 /* Message printing */
-int MPIU_Usage_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Msg_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Internal_error_printf( char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Usage_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Msg_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Error_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
+int MPIU_Internal_error_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Internal_sys_error_printf( const char *, int, const char *str, ... ) ATTRIBUTE((format(printf,3,4)));
 
 /* ------------------------------------------------------------------------- */

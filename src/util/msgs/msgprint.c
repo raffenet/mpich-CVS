@@ -11,11 +11,11 @@
 
 /* style: allow:vprintf:2 sig:0 */
 
-int MPIU_Usage_printf(char *str, ...)
+int MPIU_Usage_printf(const char *str, ...)
 {
     int n;
     va_list list;
-    char *format_str;
+    const char *format_str;
 
     va_start(list, str);
 #ifdef USE_GETTEXT
@@ -33,11 +33,11 @@ int MPIU_Usage_printf(char *str, ...)
     return n;
 }
 
-int MPIU_Error_printf(char *str, ...)
+int MPIU_Error_printf(const char *str, ...)
 {
     int n;
     va_list list;
-    char *format_str;
+    const char *format_str;
 
     va_start(list, str);
 #ifdef USE_GETTEXT
@@ -55,11 +55,11 @@ int MPIU_Error_printf(char *str, ...)
     return n;
 }
 
-int MPIU_Internal_error_printf(char *str, ...)
+int MPIU_Internal_error_printf(const char *str, ...)
 {
     int n;
     va_list list;
-    char *format_str;
+    const char *format_str;
 
     va_start(list, str);
 #ifdef USE_GETTEXT
@@ -124,11 +124,11 @@ int MPIU_Internal_sys_error_printf(const char *name, int errnum,
     return n;
 }
 
-int MPIU_Msg_printf(char *str, ...)
+int MPIU_Msg_printf(const char *str, ...)
 {
     int n;
     va_list list;
-    char *format_str;
+    const char *format_str;
 
     va_start(list, str);
 #ifdef USE_GETTEXT

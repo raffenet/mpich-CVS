@@ -142,7 +142,7 @@ static void dbg_init(void)
     }
 }
 
-int MPIU_dbglog_printf(char *str, ...)
+int MPIU_dbglog_printf(const char *str, ...)
 {
     int n = 0;
     va_list list;
@@ -200,7 +200,7 @@ int MPIU_dbglog_printf(char *str, ...)
     return n;
 }
 
-int MPIU_dbglog_vprintf(char *str, va_list ap)
+int MPIU_dbglog_vprintf(const char *str, va_list ap)
 {
     int n = 0;
     va_list list;
@@ -256,7 +256,7 @@ int MPIU_dbglog_vprintf(char *str, va_list ap)
     return n;
 }
 
-int MPIU_dbg_printf(char * str, ...)
+int MPIU_dbg_printf(const char * str, ...)
 {
     int n;
     
@@ -280,7 +280,7 @@ void MPIU_dump_dbg_memlog_to_stdout(void)
     MPIU_dump_dbg_memlog(stdout);
 }
 
-void MPIU_dump_dbg_memlog_to_file(char *filename)
+void MPIU_dump_dbg_memlog_to_file(const char *filename)
 {
     FILE *fout;
     fout = fopen(filename, "wb");
