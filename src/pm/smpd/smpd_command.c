@@ -742,9 +742,9 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
 	return SMPD_SUCCESS;
     }
 
-    cmd->iov[0].MPID_IOV_BUF = cmd->cmd_hdr_str;
+    cmd->iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)cmd->cmd_hdr_str;
     cmd->iov[0].MPID_IOV_LEN = SMPD_CMD_HDR_LENGTH;
-    cmd->iov[1].MPID_IOV_BUF = cmd->cmd;
+    cmd->iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)cmd->cmd;
     cmd->iov[1].MPID_IOV_LEN = cmd->length;
     /*smpd_dbg_printf("command at this moment: \"%s\"\n", cmd->cmd);*/
     smpd_dbg_printf("smpd_post_write_command on the %s context sock %d: %d bytes for command: \"%s\"\n",

@@ -1734,9 +1734,9 @@ int smpd_state_writing_cmd(smpd_context_t *context, MPIDU_Sock_event_t *event_pt
     if (cmd_ptr)
     {
 	context->write_state = SMPD_WRITING_CMD;
-	cmd_ptr->iov[0].MPID_IOV_BUF = cmd_ptr->cmd_hdr_str;
+	cmd_ptr->iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)cmd_ptr->cmd_hdr_str;
 	cmd_ptr->iov[0].MPID_IOV_LEN = SMPD_CMD_HDR_LENGTH;
-	cmd_ptr->iov[1].MPID_IOV_BUF = cmd_ptr->cmd;
+	cmd_ptr->iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)cmd_ptr->cmd;
 	cmd_ptr->iov[1].MPID_IOV_LEN = cmd_ptr->length;
 	smpd_dbg_printf("smpd_handle_written: posting write(%d bytes) for command: \"%s\"\n",
 	    cmd_ptr->iov[0].MPID_IOV_LEN + cmd_ptr->iov[1].MPID_IOV_LEN, cmd_ptr->cmd);
