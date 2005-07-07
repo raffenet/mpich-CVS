@@ -36,8 +36,8 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
 {
     static const char FCNAME[] = "MPIR_Cart_create";
     int       i, newsize, rank, nranks, mpi_errno = MPI_SUCCESS;
-    MPID_Comm *newcomm_ptr;
-    MPIR_Topology *cart_ptr;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPIR_Topology *cart_ptr = NULL;
     MPIU_CHKPMEM_DECL(4);
     
     /* Check for invalid arguments */

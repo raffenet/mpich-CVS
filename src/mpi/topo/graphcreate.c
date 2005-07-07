@@ -35,8 +35,8 @@ int MPIR_Graph_create( const MPID_Comm *comm_ptr, int nnodes,
     static const char FCNAME[] = "MPIR_Graph_create";
     int mpi_errno = MPI_SUCCESS;
     int i, nedges;
-    MPID_Comm *newcomm_ptr;
-    MPIR_Topology *graph_ptr;
+    MPID_Comm *newcomm_ptr = NULL;
+    MPIR_Topology *graph_ptr = NULL;
     MPIU_CHKPMEM_DECL(3);
 
     /* Create a new communicator */
