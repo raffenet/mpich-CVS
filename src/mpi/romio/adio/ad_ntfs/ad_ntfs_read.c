@@ -11,7 +11,7 @@ void ADIOI_NTFS_ReadContig(ADIO_File fd, void *buf, int count,
 			   ADIO_Offset offset, ADIO_Status *status,
 			   int *error_code)
 {
-    DWORD dwTemp;
+    LONG dwTemp;
     DWORD dwNumRead = 0;
     int err=-1, datatype_size, len;
     static char myname[] = "ADIOI_NTFS_ReadContig";

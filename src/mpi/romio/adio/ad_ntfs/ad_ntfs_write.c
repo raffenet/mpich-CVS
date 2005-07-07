@@ -12,7 +12,7 @@ void ADIOI_NTFS_WriteContig(ADIO_File fd, void *buf, int count,
 			    int *error_code)
 {
     static char myname[] = "ADIOI_NTFS_WriteContig";
-    DWORD dwTemp;
+    LONG dwTemp;
     DWORD dwNumWritten = 0;
     int err=-1, datatype_size, len;
     OVERLAPPED *pOvl;
