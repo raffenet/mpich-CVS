@@ -236,7 +236,7 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
 void MPID_Wtime_todouble( MPID_Time_t *t, double *val )
 {
 }
-void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
 {
 }
 double MPID_Wtick( void ) 
@@ -352,9 +352,9 @@ void MPID_Wtime_diff( MPID_Time_t *t1, MPID_Time_t *t2, double *diff )
     n.QuadPart = t2->QuadPart - t1->QuadPart;
     *diff = (double)n.QuadPart * g_seconds_per_tick;
 }
-void MPID_Wtime_acc( MPID_Time_t *t1,MPID_Time_t *t2, MPID_Time_t *t3 )
+void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
 {
-  /* ??? */
+    t3->QuadPart += ((t2->QuadPart) - (t1->QuadPart));
 }
 
 
