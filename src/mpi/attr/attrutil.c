@@ -168,7 +168,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
     MPID_Attribute     *p, *new_p, **next_new_attr_ptr = new_attr;
     MPID_Copy_function copyfn;
     MPID_Lang_t        language;
-    void               *new_value;
+    void               *new_value = NULL;
     int                flag;
     int                mpi_errno = 0;
 
