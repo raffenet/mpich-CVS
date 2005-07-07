@@ -14,6 +14,8 @@ configure.lineno
 *.cache
 pmiconf.h.in
 pmiconf.h
+localdefs
+.libstamp*
 *Debug*
 *Release*
 .deps
