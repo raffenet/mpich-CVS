@@ -1,0 +1,16 @@
+#! /bin/sh
+#
+# Test the commands provided as part of MPICH2
+#
+# mpicc, mpicxx - handle -Dname="foo bar" and -Dname='"foo bar"'
+# (not done yet - see mpich1 test/command/runtests)
+#
+# mpiexec env handling
+# We assume that we can run non-MPI programs
+export TestEnvVar="test var name"
+echo "Try some environment args"
+mpiexec=../../bin/mpiexec
+set -x
+$mpiexec -envnone -envlist PATH printenv
+$mpiexec -genvnone -genvlist PATH printenv
+$mpiexec -genvnone -genvlist PATH printenv : -envlist TestEnvVar,PATH printenv 
