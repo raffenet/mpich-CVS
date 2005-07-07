@@ -301,6 +301,8 @@ static SMPD_BOOL isnumbers_with_colon(char *str)
 #ifdef HAVE_WINDOWS_H
 static int mpiexec_assert_hook( int reportType, char *message, int *returnValue )
 {
+    SMPD_UNREFERENCED_ARG(reportType);
+
     fprintf(stderr, "%s", message);
     if (returnValue != NULL)
 	exit(*returnValue);
@@ -372,7 +374,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     char path[SMPD_MAX_PATH_LENGTH];
     char gpath[SMPD_MAX_PATH_LENGTH];
     char temp_password[SMPD_MAX_PASSWORD_LENGTH];
-    FILE *fin_config;
+    FILE *fin_config = NULL;
     int result;
     int maxlen;
     int appnum = 0;

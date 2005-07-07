@@ -34,6 +34,9 @@ static LPTSTR smpd_get_last_error_text( LPTSTR lpszBuf, DWORD dwSize );
 */
 void smpd_service_main(int argc, char *argv[])
 {
+    SMPD_UNREFERENCED_ARG(argc);
+    SMPD_UNREFERENCED_ARG(argv);
+
     /* register our service control handler: */
     smpd_process.sshStatusHandle = RegisterServiceCtrlHandler( TEXT(SMPD_SERVICE_NAME), smpd_service_ctrl);
     
@@ -163,7 +166,8 @@ SMPD_BOOL smpd_report_status_to_sc_mgr(DWORD dwCurrentState, DWORD dwWin32ExitCo
 	smpd_process.ssStatus.dwCheckPoint = dwCheckPoint++;
 
     /* Report the status of the service to the service control manager. */
-    if (!(fResult = SetServiceStatus( smpd_process.sshStatusHandle, &smpd_process.ssStatus)))
+    fResult = SetServiceStatus( smpd_process.sshStatusHandle, &smpd_process.ssStatus);
+    if (!fResult)
     {
 	smpd_add_error_to_message_log(TEXT("SetServiceStatus"));
     }
@@ -649,10 +653,10 @@ static LPTSTR smpd_get_last_error_text( LPTSTR lpszBuf, DWORD dwSize )
 /* A bomb thread can be used to guarantee that the service will exit when a stop command is processed */
 void smpd_bomb_thread()
 {
-    if (WaitForSingleObject(smpd_process.hBombDiffuseEvent, 10000) == WAIT_TIMEOUT)
+    if (WaitForSingleObject(smpd_process.hBombDiffuseEvent, (DWORD)10000) == WAIT_TIMEOUT)
     {
 	smpd_dbg_printf("smpd_bomb_thread timed out, exiting.\n");
-	ExitProcess(-1);
+	ExitProcess((UINT)-1);
     }
 }
 
@@ -701,9 +705,9 @@ void smpd_service_stop()
     {
 	smpd_err_printf("MPIDU_Sock_create_set failed,\nsock error: %s\n", get_sock_error_string(result));
 	SetEvent(smpd_process.hBombDiffuseEvent);
-	WaitForSingleObject(smpd_process.hBombThread, 3000);
+	WaitForSingleObject(smpd_process.hBombThread, (DWORD)3000);
 	CloseHandle(smpd_process.hBombThread);
-	ExitProcess(-1);
+	ExitProcess((UINT)-1);
     }
     result = MPIDU_Sock_post_connect(set, NULL, host, smpd_process.port, &sock);
     if (result != MPI_SUCCESS)
@@ -711,9 +715,9 @@ void smpd_service_stop()
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
 	SetEvent(smpd_process.hBombDiffuseEvent);
-	WaitForSingleObject(smpd_process.hBombThread, 3000);
+	WaitForSingleObject(smpd_process.hBombThread, (DWORD)3000);
 	CloseHandle(smpd_process.hBombThread);
-	ExitProcess(-1);
+	ExitProcess((UINT)-1);
     }
     result = MPIDU_Sock_wait(set, MPIDU_SOCK_INFINITE_TIME, &event);
     if (result != MPI_SUCCESS)
@@ -721,8 +725,8 @@ void smpd_service_stop()
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
 	    smpd_process.host_list->host, smpd_process.port, get_sock_error_string(result));
 	SetEvent(smpd_process.hBombDiffuseEvent);
-	WaitForSingleObject(smpd_process.hBombThread, 3000);
+	WaitForSingleObject(smpd_process.hBombThread, (DWORD)3000);
 	CloseHandle(smpd_process.hBombThread);
-	ExitProcess(-1);
+	ExitProcess((UINT)-1);
     }
 }

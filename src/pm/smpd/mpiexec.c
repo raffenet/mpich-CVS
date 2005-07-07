@@ -13,6 +13,9 @@ void timeout_thread(void *p)
 {
     MPIU_Size_t num_written;
     char ch = -1;
+
+    SMPD_UNREFERENCED_ARG(p);
+
     Sleep(smpd_process.timeout * 1000);
     smpd_err_printf("\nmpiexec terminated job due to %d second timeout.\n", smpd_process.timeout);
     if (smpd_process.timeout_sock != MPIDU_SOCK_INVALID_SOCK)
@@ -20,7 +23,7 @@ void timeout_thread(void *p)
 	MPIDU_Sock_write(smpd_process.timeout_sock, &ch, 1, &num_written);
 	Sleep(30000); /* give the engine 30 seconds to shutdown and then force an exit */
     }
-    ExitProcess(-1);
+    ExitProcess((UINT)-1);
 }
 #else
 #ifdef SIGALRM
