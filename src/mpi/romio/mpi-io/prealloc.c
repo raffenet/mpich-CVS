@@ -35,7 +35,7 @@ Input Parameters:
 int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 {
     ADIO_Fcntl_t *fcntl_struct;
-    int error_code, mynod;
+    int error_code=0, mynod=0;
     ADIO_File fh;
     static char myname[] = "MPI_FILE_PREALLOCATE";
     MPI_Offset tmp_sz;

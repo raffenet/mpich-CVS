@@ -16,10 +16,9 @@ int ADIO_Type_create_subarray(int ndims,
 			      MPI_Datatype oldtype, 
 			      MPI_Datatype *newtype)
 {
-    MPI_Aint extent, disps[3], size, size_with_aint;
+    MPI_Aint extent, disps[3], size;
     int i, blklens[3];
     MPI_Datatype tmp1, tmp2, types[3];
-    MPI_Offset size_with_offset;
 
     MPI_Type_extent(oldtype, &extent);
 

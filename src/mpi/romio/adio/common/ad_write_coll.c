@@ -69,7 +69,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
        whose request lies in this process's file domain. */
 
     int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
-    int contig_access_count, interleave_count = 0, buftype_is_contig;
+    int contig_access_count=0, interleave_count = 0, buftype_is_contig;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
     ADIO_Offset orig_fp, start_offset, end_offset, fd_size, min_st_offset, off;
     ADIO_Offset *offset_list = NULL, *st_offsets = NULL, *fd_start = NULL,
@@ -928,7 +928,7 @@ static void ADIOI_Heap_merge(ADIOI_Access *others_req, int *count,
            removed the recursion so that there are no function calls.
            Function calls are too expensive. */
 	k = i;
-	while (1) {
+	for(;;) {
 	    l = 2*(k+1) - 1;
 	    r = 2*(k+1);
 
@@ -979,7 +979,7 @@ static void ADIOI_Heap_merge(ADIOI_Access *others_req, int *count,
 
 	/* Heapify(a, 0, heapsize); */
 	k = 0;
-	while (1) {
+	for (;;) {
 	    l = 2*(k+1) - 1;
 	    r = 2*(k+1);
 

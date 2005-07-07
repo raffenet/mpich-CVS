@@ -24,7 +24,7 @@ int ADIO_Type_create_darray(int size, int rank, int ndims,
 			    int order, MPI_Datatype oldtype, 
 			    MPI_Datatype *newtype) 
 {
-    MPI_Datatype type_old, type_new, types[3];
+    MPI_Datatype type_old, type_new=MPI_DATATYPE_NULL, types[3];
     int procs, tmp_rank, i, tmp_size, blklens[3], *coords;
     MPI_Aint *st_offsets, orig_extent, disps[3];
 
