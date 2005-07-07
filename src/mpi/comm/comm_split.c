@@ -96,7 +96,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     splittype *table, *keytable;
-    int       rank, size, i, new_size, first_entry, *last_ptr;
+    int       rank, size, i, new_size, first_entry = 0, *last_ptr;
     MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
 

@@ -911,7 +911,7 @@ int MPIR_Reduce_scatter_inter (
     
     static const char FCNAME[] = "MPIR_Reduce_scatter_inter";
     int rank, mpi_errno, root, local_size, total_count, i;
-    MPI_Aint true_extent, true_lb, extent;
+    MPI_Aint true_extent, true_lb = 0, extent;
     void *tmp_buf=NULL;
     int *disps=NULL;
     MPID_Comm *newcomm_ptr = NULL;

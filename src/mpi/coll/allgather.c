@@ -88,7 +88,7 @@ int MPIR_Allgather (
     MPI_Comm comm;
     MPI_Status status;
     int mask, dst_tree_root, my_tree_root, is_homogeneous,  
-        send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
+        send_offset, recv_offset, last_recv_cnt = 0, nprocs_completed, k,
         offset, tmp_mask, tree_root;
 #ifdef MPID_HAS_HETERO
     int position, tmp_buf_size, nbytes;
@@ -162,7 +162,8 @@ int MPIR_Allgather (
                 
                 my_tree_root = rank >> i;
                 my_tree_root <<= i;
-                
+
+		/* FIXME: saving an MPI_Aint into an int */
                 send_offset = my_tree_root * recvcount * recvtype_extent;
                 recv_offset = dst_tree_root * recvcount * recvtype_extent;
                 
@@ -215,7 +216,8 @@ int MPIR_Allgather (
                         k++;
                     }
                     k--;
-                    
+
+		    /* FIXME: saving an MPI_Aint into an int */
                     offset = recvcount * (my_tree_root + mask) * recvtype_extent;
                     tmp_mask = mask >> 1;
                     
@@ -664,7 +666,7 @@ int MPIR_Allgather_inter (
     static const char FCNAME[] = "MPIR_Allgather_inter";
     int rank, local_size, remote_size, mpi_errno = MPI_SUCCESS, root;
     MPI_Comm newcomm;
-    MPI_Aint true_extent, true_lb, extent, send_extent;
+    MPI_Aint true_extent, true_lb = 0, extent, send_extent;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
 

@@ -457,7 +457,7 @@ int MPIR_Scatter_inter (
     int rank, local_size, remote_size, mpi_errno=MPI_SUCCESS;
     int i, nbytes, sendtype_size, recvtype_size;
     MPI_Status status;
-    MPI_Aint extent, true_extent, true_lb;
+    MPI_Aint extent, true_extent, true_lb = 0;
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;

@@ -163,7 +163,7 @@ int MPIR_Datatype_builtin_fillin(void)
     int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Datatype *dptr;
-    MPI_Datatype  d;
+    MPI_Datatype  d = MPI_DATATYPE_NULL;
     static int is_init = 0;
     char error_msg[1024];
 

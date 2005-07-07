@@ -366,7 +366,7 @@ int MPI_Type_create_darray(int size,
 
     int procs, tmp_rank, tmp_size, blklens[3], *coords;
     MPI_Aint *st_offsets, orig_extent, disps[3];
-    MPI_Datatype type_old, type_new, types[3];
+    MPI_Datatype type_old, type_new = MPI_DATATYPE_NULL, types[3];
 
     int *ints;
     MPID_Datatype *datatype_ptr = NULL;
