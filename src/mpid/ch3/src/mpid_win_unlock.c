@@ -35,7 +35,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
         MPIDI_CH3_Pkt_t upkt;
         MPIDI_CH3_Pkt_lock_t *lock_pkt = &upkt.lock;
         MPIDI_VC_t * vc;
-        int wait_for_rma_done_pkt;
+        int wait_for_rma_done_pkt = 0;
         
         if (dest == MPI_PROC_NULL) goto fn_exit;
         
@@ -493,7 +493,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         lock_put_unlock_pkt->count = rma_op->target_count;
         lock_put_unlock_pkt->datatype = rma_op->target_datatype;
 
-        iov[0].MPID_IOV_BUF = (void*) lock_put_unlock_pkt;
+        iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) lock_put_unlock_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*lock_put_unlock_pkt);
     }
     
@@ -512,7 +512,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         lock_accum_unlock_pkt->datatype = rma_op->target_datatype;
         lock_accum_unlock_pkt->op = rma_op->op;
 
-        iov[0].MPID_IOV_BUF = (void*) lock_accum_unlock_pkt;
+        iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) lock_accum_unlock_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*lock_accum_unlock_pkt);
     }
 
@@ -535,7 +535,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     {
 	/* basic datatype on origin */
 
-        iov[1].MPID_IOV_BUF = rma_op->origin_addr;
+        iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rma_op->origin_addr;
         iov[1].MPID_IOV_LEN = rma_op->origin_count * origin_type_size;
         iovcnt = 2;
 
@@ -719,7 +719,7 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
     lock_get_unlock_pkt->datatype = rma_op->target_datatype;
     lock_get_unlock_pkt->request_handle = rreq->handle;
 
-    iov[0].MPID_IOV_BUF = (void*) lock_get_unlock_pkt;
+    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) lock_get_unlock_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*lock_get_unlock_pkt);
 
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);

@@ -25,7 +25,7 @@
     sreq->kind = MPID_REQUEST_SEND; \
     MPIU_Assert(pkt_sz == sizeof(MPIDI_CH3_Pkt_t)); \
     sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb); \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \

@@ -33,9 +33,9 @@
 	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
 	/*MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));*/ \
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt; \
     } \
-    sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
+    sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->ch.iov_offset = offset; \
     sreq->dev.iov_count = count; \

@@ -167,7 +167,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    MPID_WRITE_BARRIER();
 	    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
-	    cur_pos = iov[i].MPID_IOV_BUF + dest_avail;
+	    cur_pos = (unsigned char*)iov[i].MPID_IOV_BUF + dest_avail;
 	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
 	    while (cur_avail)
 	    {
@@ -362,8 +362,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 			iter_ptr += num_bytes;
 			/* update the iov */
 			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN -= num_bytes;
-			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF = 
-			    (char*)(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes;
+			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
+			    (char*)(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes);
 			num_bytes = 0;
 		    }
 		}

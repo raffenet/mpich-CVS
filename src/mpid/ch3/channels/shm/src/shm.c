@@ -406,8 +406,8 @@ int shmi_readv_unex(MPIDI_VC_t *vc_ptr)
 	    vc_ptr->ch.unex_list->length -= num_bytes;
 	    /* update the iov */
 	    vc_ptr->ch.read.iov[vc_ptr->ch.read.index].MPID_IOV_LEN -= num_bytes;
-	    vc_ptr->ch.read.iov[vc_ptr->ch.read.index].MPID_IOV_BUF = 
-		(char*)(vc_ptr->ch.read.iov[vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes;
+	    vc_ptr->ch.read.iov[vc_ptr->ch.read.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
+		(char*)(vc_ptr->ch.read.iov[vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes);
 	    if (vc_ptr->ch.read.iov[vc_ptr->ch.read.index].MPID_IOV_LEN == 0)
 	    {
 		vc_ptr->ch.read.index++;
@@ -1372,8 +1372,8 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			iter_ptr += num_bytes;
 			/* update the iov */
 			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN -= num_bytes;
-			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF = 
-			    (char*)(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes;
+			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
+			    (char*)(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes);
 			num_bytes = 0;
 		    }
 		}

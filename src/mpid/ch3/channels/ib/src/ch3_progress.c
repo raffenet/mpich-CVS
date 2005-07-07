@@ -48,7 +48,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 	}
 	else
 	{
-	    req->dev.iov[offset].MPID_IOV_BUF = (char*)req->dev.iov[offset].MPID_IOV_BUF + nb;
+	    req->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*)req->dev.iov[offset].MPID_IOV_BUF + nb);
 	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
 	    req->ch.iov_offset = offset;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));

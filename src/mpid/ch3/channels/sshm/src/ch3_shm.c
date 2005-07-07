@@ -366,8 +366,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 			iter_ptr += num_bytes;
 			/* update the iov */
 			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN -= num_bytes;
-			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF = 
-			    (char*)(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes;
+			recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
+			    (char*)(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF) + num_bytes);
 			num_bytes = 0;
 		    }
 		}

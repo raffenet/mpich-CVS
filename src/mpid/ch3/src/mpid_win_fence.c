@@ -420,7 +420,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         put_pkt->target_win_handle = target_win_handle;
         put_pkt->source_win_handle = source_win_handle;
 
-        iov[0].MPID_IOV_BUF = (void*) put_pkt;
+        iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) put_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*put_pkt);
     }
     else
@@ -435,7 +435,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         accum_pkt->target_win_handle = target_win_handle;
         accum_pkt->source_win_handle = source_win_handle;
 
-        iov[0].MPID_IOV_BUF = (void*) accum_pkt;
+        iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) accum_pkt;
         iov[0].MPID_IOV_LEN = sizeof(*accum_pkt);
     }
 
@@ -516,7 +516,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         if (!target_dt_derived)
 	{
 	    /* basic datatype on target */
-            iov[1].MPID_IOV_BUF = rma_op->origin_addr;
+            iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rma_op->origin_addr;
             iov[1].MPID_IOV_LEN = rma_op->origin_count * origin_type_size;
             iovcnt = 2;
         }
@@ -525,10 +525,10 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 	    /* derived datatype on target */
             iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
-            iov[2].MPID_IOV_BUF = *dataloop;
+            iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)*dataloop;
             iov[2].MPID_IOV_LEN = target_dtp->dataloop_size;
 
-            iov[3].MPID_IOV_BUF = rma_op->origin_addr;
+            iov[3].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rma_op->origin_addr;
             iov[3].MPID_IOV_LEN = rma_op->origin_count * origin_type_size;
             iovcnt = 4;
         }
@@ -557,7 +557,7 @@ int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 	    /* derived datatype on target */
             iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)dtype_info;
             iov[1].MPID_IOV_LEN = sizeof(*dtype_info);
-            iov[2].MPID_IOV_BUF = *dataloop;
+            iov[2].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)*dataloop;
             iov[2].MPID_IOV_LEN = target_dtp->dataloop_size;
             iovcnt = 3;
         }

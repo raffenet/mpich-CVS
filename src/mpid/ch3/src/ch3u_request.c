@@ -73,7 +73,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, sreq->dev.tmpbuf);
 	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->dev.segment_first, last));
-	iov[0].MPID_IOV_BUF = sreq->dev.tmpbuf;
+	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.tmpbuf;
 	iov[0].MPID_IOV_LEN = last - sreq->dev.segment_first;
 	*iov_n = 1;
 	if (last == sreq->dev.segment_size)
@@ -131,7 +131,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    {
 		data_sz = tmpbuf_sz;
 	    }
-	    rreq->dev.iov[0].MPID_IOV_BUF = (char *) rreq->dev.tmpbuf + rreq->dev.tmpbuf_off;
+	    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) rreq->dev.tmpbuf + rreq->dev.tmpbuf_off);
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
 	    MPIU_Assert(rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
@@ -242,7 +242,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    rreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	}
 	
-	rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.tmpbuf;
+	rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.tmpbuf;
 	rreq->dev.iov_count = 1;
     }
     

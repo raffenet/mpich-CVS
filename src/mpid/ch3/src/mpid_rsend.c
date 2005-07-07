@@ -86,7 +86,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
     
-    iov[0].MPID_IOV_BUF = (char *)ready_pkt;
+    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
 
     if (dt_contig)
@@ -94,7 +94,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	/* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
-	iov[1].MPID_IOV_BUF = (void *)((char *) buf + dt_true_lb);
+	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) buf + dt_true_lb);
 	iov[1].MPID_IOV_LEN = data_sz;
 	    
 	MPIDI_VC_FAI_send_seqnum(vc, seqnum);

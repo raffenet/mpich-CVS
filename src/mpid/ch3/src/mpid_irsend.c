@@ -90,7 +90,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
     
-    iov[0].MPID_IOV_BUF = (void*)ready_pkt;
+    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)ready_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*ready_pkt);
 
     if (dt_contig)
@@ -100,7 +100,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	/* FIXME: handle case where data_sz is greater than what can be stored in iov.MPID_IOV_LEN.  hand off to segment code? */
-	iov[1].MPID_IOV_BUF = (void *)((char*) buf + dt_true_lb);
+	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*) buf + dt_true_lb);
 	iov[1].MPID_IOV_LEN = data_sz;
 
 	MPIDI_VC_FAI_send_seqnum(vc, seqnum);

@@ -21,7 +21,7 @@
 	return mpi_errno; \
     } \
     sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb); \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
     sreq->ch.iov_offset = 0; \
@@ -33,7 +33,7 @@
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
     sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt; \
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt + nb; \
+    sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb); \
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
     sreq->ch.iov_offset = 0; \

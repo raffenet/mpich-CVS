@@ -231,7 +231,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
                 get_resp_pkt->request_handle = rreq->dev.request_handle;
                 
-                iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+                iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) get_resp_pkt;
                 iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
 
                 MPID_Segment_init(sreq->dev.user_buf,
@@ -924,10 +924,10 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
     MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
     get_resp_pkt->request_handle = lock_queue->pt_single_op->request_handle;
     
-    iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) get_resp_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
     
-    iov[1].MPID_IOV_BUF = lock_queue->pt_single_op->addr;
+    iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)lock_queue->pt_single_op->addr;
     MPID_Datatype_get_size_macro(lock_queue->pt_single_op->datatype, type_size);
     iov[1].MPID_IOV_LEN = lock_queue->pt_single_op->count * type_size;
     

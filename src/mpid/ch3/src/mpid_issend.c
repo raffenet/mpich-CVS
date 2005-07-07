@@ -111,14 +111,14 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	es_pkt->sender_req_id = sreq->handle;
 	es_pkt->data_sz = data_sz;
 
-	iov[0].MPID_IOV_BUF = (void*)es_pkt;
+	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)es_pkt;
 	iov[0].MPID_IOV_LEN = sizeof(*es_pkt);
 
 	if (dt_contig)
 	{
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
-	    iov[1].MPID_IOV_BUF = (void *) ((char *)buf + dt_true_lb);
+	    iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
 	    iov[1].MPID_IOV_LEN = data_sz;
     
 	    MPIDI_VC_FAI_send_seqnum(vc, seqnum);

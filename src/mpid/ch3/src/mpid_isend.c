@@ -108,7 +108,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	eager_pkt->sender_req_id = sreq->handle;
 	eager_pkt->data_sz = data_sz;
 	
-	iov[0].MPID_IOV_BUF = (char *)eager_pkt;
+	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)eager_pkt;
 	iov[0].MPID_IOV_LEN = sizeof(*eager_pkt);
 	
 	if (dt_contig)
@@ -117,7 +117,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
-	    iov[1].MPID_IOV_BUF = (void *) ((char *)buf + dt_true_lb);
+	    iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
 	    iov[1].MPID_IOV_LEN = data_sz;
 
 	    MPIDI_VC_FAI_send_seqnum(vc, seqnum);

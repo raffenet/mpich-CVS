@@ -28,9 +28,9 @@
 	    return mpi_errno; \
 	} \
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->ch.pkt; \
     } \
-    sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
+    sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->dev.iov_count = count; \
     sreq->ch.iov_offset = offset; \
@@ -49,9 +49,9 @@
     if (offset == 0) \
     { \
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->dev.iov[0].MPID_IOV_BUF = (void*)&sreq->ch.pkt; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&sreq->ch.pkt; \
     } \
-    sreq->dev.iov[offset].MPID_IOV_BUF = (char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb; \
+    sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->dev.iov_count = count; \
     sreq->ch.iov_offset = offset; \
