@@ -4016,7 +4016,7 @@ top_srcdir=$top_srcdir)
 #    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
 AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
     find . -type d -print | sed -e 's%\(.*\)%(cd \1 \&\& grep MAKE_DEPEND_C Makefile >/dev/null 2>\&1 \&\& ( test -d .deps || mkdir .deps) \&\& touch .deps/alldeps)%g' | sh
-fi],enable_dependencies=$enable_dependencies)
+fi],enable_dependencies="$enable_dependencies")
 
 AC_OUTPUT_COMMANDS([chmod +x doc/mansrc/createhtmlindex])
 
