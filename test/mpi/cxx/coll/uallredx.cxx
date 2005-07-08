@@ -184,11 +184,11 @@ int main( int argc, char *argv[] )
 	mattype.Commit();
 
 	max_offset = count * size * size;
-	buf = (int *)malloc( max_offset * sizeof(int) );
+	buf = new int[max_offset];
 	if (!buf) {
 	    MPI::COMM_WORLD.Abort( 1 );
 	}
-	bufout = (int *)malloc( max_offset * sizeof(int) );
+	bufout = new int[max_offset];
 	if (!bufout) {
 	    MPI::COMM_WORLD.Abort( 1 );
 	}
@@ -202,8 +202,8 @@ int main( int argc, char *argv[] )
 	comm.Allreduce( MPI_IN_PLACE, bufout, count, mattype, op );
 	errs += isIdentity( comm, bufout );
 
-	free( buf );
-	free( bufout );
+	delete [] buf;
+	delete [] bufout;
 
 	mattype.Free();
 	MTestFreeComm( comm );
