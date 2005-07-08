@@ -39,7 +39,7 @@ print >>f, """
 """
 f.close()
 expout = 'hello again\nhello again\nhello again\n'
-mpdtest.run(cmd="mpiexec%s -file %s" % (PYEXT,tempfilename),expOut=expout)
+mpdtest.run(cmd="mpiexec%s -file %s" % (PYEXT,tempfilename),chkOut=1,expOut=expout)
 os.unlink(tempfilename)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
@@ -56,14 +56,10 @@ os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
 tempfilename = '/tmp/%s_tempin2' % (os.environ['USER'])
 f = open(tempfilename,'w')
-print >>f, """
--l 
--n 1 echo hello there
--n 1 echo hello again
-"""
+print >>f, "-l\n-n 1 echo hello there\n-n 1 echo hello again"
 f.close()
 expout = '0: hello there\n1: hello again\n'
-mpdtest.run(cmd="mpiexec%s -configfile %s" % (PYEXT,tempfilename),expOut=expout)
+mpdtest.run(cmd="mpiexec%s -configfile %s" % (PYEXT,tempfilename),chkOut=1,expOut=expout)
 os.unlink(tempfilename)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
@@ -79,7 +75,7 @@ os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
 expout = '0: hello\n1: bye\n'
-mpdtest.run(cmd="mpiexec%s -n 1 echo hello : -n 1 echo bye" % (PYEXT),expOut=expout)
+mpdtest.run(cmd="mpiexec%s -l -n 1 echo hello : -n 1 echo bye" % (PYEXT),chkOut=1,expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
@@ -93,8 +89,8 @@ mpdtest = MPDTest()
 os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-expout = '0-1: hello\n1: bye\n'
-mpdtest.run(cmd="mpiexec%s -n 2 echo hello" % (PYEXT),expOut=expout)
+expout = '0-1:  hello\n'
+mpdtest.run(cmd="mpiexec%s -m -n 2 echo hello" % (PYEXT),chkOut=1,expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
@@ -108,8 +104,8 @@ mpdtest = MPDTest()
 os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-expout = '0: hello\n'
-rv = mpdtest.run(cmd="mpiexec%s -ecfn tempxout -n 1 echo hello" % (PYEXT),expOut=expout)
+expout = 'hello\n'
+rv = mpdtest.run(cmd="mpiexec%s -ecfn tempxout -n 1 echo hello" % (PYEXT),chkOut=1,expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 linesAsStr = commands.getoutput("cat tempxout")
 os.unlink("tempxout")
@@ -135,8 +131,8 @@ mpdtest = MPDTest()
 os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-expout = '0: %s\n1: bp400\n2: bp400\n3: bp401\n' % (socket.gethostname())
-mpdtest.run(cmd="mpiexec%s -machinefile %s -n 4 hostname" % (PYEXT,'tempm'),expOut=expout)
+expout = '0: bp400\n1: bp400\n2: bp401\n3: bp401'   # 2 per host because of :2's in tempm
+mpdtest.run(cmd="mpiexec%s -l -machinefile %s -n 3 hostname" % (PYEXT,'tempm'), chkOut=1, expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
@@ -216,7 +212,7 @@ os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
 expout = '0: hello\n1: bye\n'
-mpdtest.run(cmd="mpiexec%s -n 1 echo hello : -n 1 echo bye" % (PYEXT),expOut=expout)
+mpdtest.run(cmd="mpiexec%s -l -n 1 echo hello : -n 1 echo bye" % (PYEXT),chkOut=1,expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
