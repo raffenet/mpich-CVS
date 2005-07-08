@@ -500,7 +500,7 @@ def collect_args(args,localArgSets):
             argidx += 2
         elif garg == '-genvnone':
             parmdb[('cmdline','-genvnone')] = args[argidx+1]
-            argidx += 2
+            argidx += 1
         elif garg == '-l':
             parmdb[('cmdline','MPIEXEC_LINE_LABELS')] = 1
             argidx += 1
@@ -583,7 +583,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
                 usage()
             break                       # since now at executable
         if parmdb['MPIEXEC_MACHINEFILE']:
-            if argset[argidx] == '-host'  or  parmdb['-ghost']:
+            if argset[argidx] == '-host'  or  argset[argidx] == ['-ghost']:
                 print '-host (or -ghost) and -machinefile are incompatible'
                 exit(-1)
         if argset[argidx] == '-n' or argset[argidx] == '-np':
@@ -699,8 +699,15 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         msgToMPD['paths'][asRange]  = wpath
         msgToMPD['cwds'][asRange]   = wdir
         msgToMPD['umasks'][asRange] = umask
-        msgToMPD['hosts'][asRange]  = host
         msgToMPD['args'][asRange]   = cmdAndArgs[1:]
+        if host.startswith('_any_'):
+            msgToMPD['hosts'][(loRange,hiRange)] = host
+        else:
+            try:
+                msgToMPD['hosts'][asRange] = gethostbyname_ex(host)[2][0]
+            except:
+                print 'unable to do find info for host %s' % (host)
+                exit(-1)
 
         envToSend = {}
         if envall:
