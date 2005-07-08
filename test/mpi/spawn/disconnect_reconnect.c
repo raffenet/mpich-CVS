@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
     int errs = 0;
     int rank, size, rsize, i, data, num_loops = 100;
     int np = 3;
-    int errcodes[2];
     MPI_Comm      parentcomm, intercomm;
     MPI_Status    status;
     char port[MPI_MAX_PORT_NAME];
@@ -36,7 +35,7 @@ int main(int argc, char *argv[])
 	/* Create 2 more processes */
 	MPI_Comm_spawn("./disconnect_reconnect", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
-			&intercomm, errcodes);
+			&intercomm, MPI_ERRCODES_IGNORE);
     }
     else
     {
