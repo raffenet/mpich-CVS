@@ -303,8 +303,10 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
     }
 
     /* Initialize the genv items */
-    MPIE_EnvInitData( pUniv->worlds->genv->envPairs, 0 );
-    MPIE_EnvInitData( pUniv->worlds->genv->envNames, 1 );
+    if (pUniv->worlds->genv) {
+	MPIE_EnvInitData( pUniv->worlds->genv->envPairs, 0 );
+	MPIE_EnvInitData( pUniv->worlds->genv->envNames, 1 );
+    }
 
     if (optionArgs && optionCmdline) {
 	MPIU_Error_printf( "-configfile may not be used with other options\n" );
