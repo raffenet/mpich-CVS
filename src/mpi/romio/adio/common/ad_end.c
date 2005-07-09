@@ -95,6 +95,11 @@ int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void
 {
     int error_code;
 
+    MPIU_UNREFERENCED_ARG(comm);
+    MPIU_UNREFERENCED_ARG(keyval);
+    MPIU_UNREFERENCED_ARG(attribute_val);
+    MPIU_UNREFERENCED_ARG(extra_state);
+
     ADIO_End(&error_code);
     return error_code;
 }

@@ -882,7 +882,6 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
 {
     int mpi_errno;
     char host[100];
-    DWORD num_read = 0;
     sock_state_t * listen_state, **listener_copies;
     int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_LISTEN);
@@ -964,7 +963,8 @@ int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * u
     int mpi_errno;
     BOOL b;
     /*struct linger linger;*/
-    int optval, len;
+    u_long optval;
+    int len;
     sock_state_t *accept_state, *iter;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_ACCEPT);
 
@@ -1127,7 +1127,7 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
     int connect_errno = MPI_SUCCESS;
     char pszNetMask[50];
     char *pEnv, *token;
-    unsigned int nNicNet, nNicMask;
+    unsigned int nNicNet=0, nNicMask=0;
     int use_subnet = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
 
@@ -1493,7 +1493,8 @@ int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t minbr, MPIU_
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_READ);
-    sock->read.tiov.MPID_IOV_BUF = buf;
+    MPIU_UNREFERENCED_ARG(maxbr);
+    sock->read.tiov.MPID_IOV_BUF = (MPID_IOV_BUF_CAST)buf;
     sock->read.tiov.MPID_IOV_LEN = minbr;
     mpi_errno = MPIDU_Sock_post_readv(sock, &sock->read.tiov, 1, fn);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_READ);
@@ -1617,7 +1618,8 @@ int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t min, MPIU_S
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_POST_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_WRITE);
-    sock->write.tiov.MPID_IOV_BUF = buf;
+    MPIU_UNREFERENCED_ARG(max);
+    sock->write.tiov.MPID_IOV_BUF = (MPID_IOV_BUF_CAST)buf;
     sock->write.tiov.MPID_IOV_LEN = min;
     mpi_errno = MPIDU_Sock_post_writev(sock, &sock->write.tiov, 1, fn);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_WRITE);
@@ -1868,8 +1870,8 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			else
 			{
 			    sock->read.iov[sock->read.index].MPID_IOV_LEN -= num_bytes;
-			    sock->read.iov[sock->read.index].MPID_IOV_BUF = 
-				(char*)(sock->read.iov[sock->read.index].MPID_IOV_BUF) + num_bytes;
+			    sock->read.iov[sock->read.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
+				(char*)(sock->read.iov[sock->read.index].MPID_IOV_BUF) + num_bytes);
 			    num_bytes = 0;
 			}
 		    }
@@ -2100,8 +2102,8 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 				/*MPIU_DBG_PRINTF(("sock_wait: partial data written [%d].len = %d, num_bytes = %d\n", sock->write.index,
 				sock->write.iov[sock->write.index].MPID_IOV_LEN, num_bytes));*/
 				sock->write.iov[sock->write.index].MPID_IOV_LEN -= num_bytes;
-				sock->write.iov[sock->write.index].MPID_IOV_BUF =
-				    (char*)(sock->write.iov[sock->write.index].MPID_IOV_BUF) + num_bytes;
+				sock->write.iov[sock->write.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
+				    (char*)(sock->write.iov[sock->write.index].MPID_IOV_BUF) + num_bytes);
 				num_bytes = 0;
 			    }
 			}
@@ -2600,10 +2602,12 @@ int MPIDU_Sock_wakeup(MPIDU_Sock_set_t set)
 int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_read)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_IOV iov = {len, buf};
+    MPID_IOV iov;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_READ);
+    iov.buf = buf;
+    iov.len = len;
     mpi_errno = MPIDU_Sock_readv(sock, &iov, 1, num_read);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_READ);
     return mpi_errno;
@@ -2678,10 +2682,12 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
 int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_written)
 {
     int mpi_errno;
-    MPID_IOV iov = {len, buf};
+    MPID_IOV iov;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WRITE);
+    iov.len = len;
+    iov.buf = buf;
     mpi_errno = MPIDU_Sock_writev(sock, &iov, 1, num_written);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WRITE);
     return MPI_SUCCESS;

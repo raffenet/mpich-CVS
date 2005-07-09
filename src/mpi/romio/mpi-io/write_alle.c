@@ -55,6 +55,8 @@ int MPIOI_File_write_all_end(MPI_File mpi_fh,
     int error_code;
     ADIO_File fh;
 
+    MPIU_UNREFERENCED_ARG(buf);
+
     MPID_CS_ENTER();
     MPIR_Nest_incr();
 

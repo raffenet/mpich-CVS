@@ -41,6 +41,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
+    MPIU_UNREFERENCED_ARG(argc);
+    MPIU_UNREFERENCED_ARG(argv);
+    MPIU_UNREFERENCED_ARG(requested);
+
     /*
      * Initialize the device's process information structure
      */

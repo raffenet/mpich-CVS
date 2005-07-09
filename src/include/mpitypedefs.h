@@ -57,6 +57,13 @@ typedef MPIU_INT64_T int64_t;
 #endif
 #endif
 
+/* Use this macro for each parameter to a function that is not referenced in the body of the function */
+#ifdef HAVE_WINDOWS_H
+#define MPIU_UNREFERENCED_ARG(a) a
+#else
+#define MPIU_UNREFERENCED_ARG(a)
+#endif
+
 #define MPIDU_MAX(a,b)    (((a) > (b)) ? (a) : (b))
 #define MPIDU_MIN(a,b)    (((a) < (b)) ? (a) : (b))
 

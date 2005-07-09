@@ -61,6 +61,8 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
     MPI_Status status;
     MPI_Request req = ibsend_info->req->handle;
 
+    MPIU_UNREFERENCED_ARG(complete);
+
     /* Try to cancel the underlying request */
     MPIR_Nest_incr();
     NMPI_Cancel( &req );

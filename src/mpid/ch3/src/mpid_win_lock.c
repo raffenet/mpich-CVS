@@ -17,6 +17,8 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_LOCK);
 
+    MPIU_UNREFERENCED_ARG(assert);
+
     if (MPIDI_Use_optimized_rma) {
 #       ifdef MPIDI_CH3_IMPLEMENTS_START_PT_EPOCH
         {

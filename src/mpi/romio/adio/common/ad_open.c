@@ -27,10 +27,11 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     int orig_amode_excl, orig_amode_wronly, err, rank, procs, agg_rank;
     char *value;
     static char myname[] = "ADIO_OPEN";
-
     int rank_ct, max_error_code;
     int *tmp_ranklist;
     MPI_Comm aggregator_comm = MPI_COMM_NULL; /* just for deferred opens */
+
+    ADIOI_UNREFERENCED_ARG(iomode);
 
     *error_code = MPI_SUCCESS;
 

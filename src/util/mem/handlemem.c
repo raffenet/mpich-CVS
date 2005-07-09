@@ -195,6 +195,7 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
 
 void MPIU_Handle_obj_alloc_start(MPIU_Object_alloc_t *objmem)
 {
+    MPIU_UNREFERENCED_ARG(objmem);
     /* FIXME: we should use memory atomic routines to acquire an item from
        the list without the lock (see 3.12.5 in the MPICH2 coding document) */
     /* Lock if necessary */

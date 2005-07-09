@@ -28,6 +28,8 @@ int MPIR_Cart_map( const MPID_Comm *comm_ptr, int ndims, const int dims[],
 {		   
     int rank, nranks, i, size, mpi_errno;
 
+    MPIU_UNREFERENCED_ARG(periodic);
+
     /* Determine number of processes needed for topology */
     nranks = dims[0];
     for ( i=1; i<ndims; i++ )

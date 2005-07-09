@@ -19,6 +19,8 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     OVERLAPPED Overlapped;
     DWORD dwFlags;
 
+    ADIOI_UNREFERENCED_ARG(whence);
+
     dwFlags = type;
 
     Overlapped.hEvent = /*0;*/CreateEvent(NULL, TRUE, FALSE, NULL);

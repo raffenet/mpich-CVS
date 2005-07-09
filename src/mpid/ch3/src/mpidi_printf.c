@@ -14,6 +14,7 @@
 #undef MPIDI_dbg_printf
 void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
 {
+    MPIU_UNREFERENCED_ARG(level);
     MPID_Common_thread_lock();
     {
 	va_list list;

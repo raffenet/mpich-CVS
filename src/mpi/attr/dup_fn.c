@@ -17,6 +17,10 @@ int MPIR_Dup_fn ( MPI_Comm comm, int keyval, void *extra_state, void *attr_in,
 {
     /* No error checking at present */
 
+    MPIU_UNREFERENCED_ARG(comm);
+    MPIU_UNREFERENCED_ARG(keyval);
+    MPIU_UNREFERENCED_ARG(extra_state);
+
     /* Set attr_out, the flag and return success */
     (*(void **)attr_out) = attr_in;
     (*flag) = 1;

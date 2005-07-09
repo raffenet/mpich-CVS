@@ -80,6 +80,8 @@ int ADIOI_Calc_aggregator(ADIO_File fd,
     int rank_index, rank;
     ADIO_Offset avail_bytes;
 
+    ADIOI_UNREFERENCED_ARG(fd_start);
+
 #ifdef AGG_DEBUG
 #if 0
     FPRINTF(stdout, "off = %lld, min_off = %lld, len = %lld, fd_size = %lld\n",

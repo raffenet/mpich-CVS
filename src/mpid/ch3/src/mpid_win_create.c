@@ -32,7 +32,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     MPIDI_STATE_DECL(MPID_STATE_MPID_WIN_CREATE);
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
-    
+
+    MPIU_UNREFERENCED_ARG(info);
+
     MPIR_Nest_incr();
         
 #   if defined(MPIDI_CH3_IMPLEMENTS_WIN_CREATE)

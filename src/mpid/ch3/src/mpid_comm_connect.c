@@ -18,7 +18,9 @@ int MPID_Comm_connect(char * port_name, MPID_Info * info, int root, MPID_Comm * 
     /* FIXME: pass info through to channel */
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_CONNECT);
-    
+
+    MPIU_UNREFERENCED_ARG(info);
+
 #   if defined(MPIDI_CH3_IMPLEMENTS_COMM_CONNECT)
     {
 	mpi_errno = MPIDI_CH3_Comm_connect(port_name, root, comm, newcomm_ptr); 

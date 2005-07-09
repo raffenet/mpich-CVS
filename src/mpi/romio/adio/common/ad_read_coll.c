@@ -68,7 +68,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
        whose request lies in this process's file domain. */
 
     int i, filetype_is_contig, nprocs, nprocs_for_coll, myrank;
-    int contig_access_count, interleave_count = 0, buftype_is_contig;
+    int contig_access_count=0, interleave_count = 0, buftype_is_contig;
     int *count_my_req_per_proc, count_my_req_procs, count_others_req_procs;
     ADIO_Offset start_offset, end_offset, orig_fp, fd_size, min_st_offset, off;
     ADIO_Offset *offset_list = NULL, *st_offsets = NULL, *fd_start = NULL,
@@ -936,8 +936,10 @@ static void ADIOI_Fill_user_buffer(ADIO_File fd, void *buf, ADIOI_Flatlist_node
     int i, p, flat_buf_idx, size, buf_incr;
     int flat_buf_sz, size_in_buf, n_buftypes;
     ADIO_Offset off, len, rem_len, user_buf_idx;
-
     int *curr_from_proc, *done_from_proc, *recv_buf_idx;
+
+    ADIOI_UNREFERENCED_ARG(requests);
+    ADIOI_UNREFERENCED_ARG(statuses);
 
 /*  curr_from_proc[p] = amount of data recd from proc. p that has already
                         been accounted for so far

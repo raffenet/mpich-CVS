@@ -382,25 +382,20 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 #endif /* STAT APPROACH */
 
 #ifdef ROMIO_NTFS
+    ADIOI_UNREFERENCED_ARG(filename);
+    ADIOI_UNREFERENCED_ARG(error_code);
     *fstype = ADIO_NTFS; /* only supported FS on Windows */
-    return;
-#endif
-
-#ifdef ROMIO_NFS
+#elif defined(ROMIO_NFS)
     *fstype = ADIO_NFS;
-    return;
-#endif
-
-#ifdef ROMIO_UFS
+#elif defined(ROMIO_UFS)
     *fstype = ADIO_UFS;
-    return;
-#endif
-
+#else
     /* --BEGIN ERROR HANDLING-- */
     *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 				       myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
 				       "**filename", "**filename %s", filename);
     /* --END ERROR HANDLING-- */
+#endif
 }
 
 /*

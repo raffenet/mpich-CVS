@@ -32,6 +32,8 @@ int MPID_Close_port(char *port_name)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CLOSE_PORT);
 
+    MPIU_UNREFERENCED_ARG(port_name);
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CLOSE_PORT);
     return mpi_errno;
 }

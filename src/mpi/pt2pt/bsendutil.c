@@ -610,6 +610,8 @@ static int MPIR_Bsend_finalize( void *p )
     void *b;
     int  s;
 
+    MPIU_UNREFERENCED_ARG(p);
+
     if (BsendBuffer.buffer) {
 	/* Use detach to complete any communication */
 	MPIR_Bsend_detach( &b, &s );

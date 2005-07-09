@@ -41,6 +41,8 @@ int MPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
     static char myname[] = "MPI_FILE_WRITE_ORDERED_END";
     ADIO_File fh;
 
+    MPIU_UNREFERENCED_ARG(buf);
+
     MPID_CS_ENTER();
 
     fh = MPIO_File_resolve(mpi_fh);

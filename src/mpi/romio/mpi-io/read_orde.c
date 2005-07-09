@@ -41,6 +41,8 @@ int MPI_File_read_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
     ADIO_File fh;
     static char myname[] = "MPI_FILE_READ_ORDERED_END";
 
+    MPIU_UNREFERENCED_ARG(buf);
+
     MPID_CS_ENTER();
 
     fh = MPIO_File_resolve(mpi_fh);

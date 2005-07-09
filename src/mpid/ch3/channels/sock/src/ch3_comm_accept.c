@@ -23,11 +23,11 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     int i, bizcards_len, rank, kvs_namelen, recv_ints[2],
         send_ints[3];
     int remote_comm_size=0, pgid_len;
-    MPID_Comm *tmp_comm, *intercomm, *commself_ptr;
+    MPID_Comm *tmp_comm = NULL, *intercomm, *commself_ptr;
     char *bizcards=NULL, *bizcard_ptr;
     MPIDI_PG_t ** remote_pgs_array;
     MPIDI_PG_t * new_pg;
-    MPIDI_VC_t * vc, *new_vc;
+    MPIDI_VC_t * vc, *new_vc = NULL;
     int n_local_pgs=1, *local_pg_sizes=NULL, n_remote_pgs, *remote_pg_sizes;
     int sendtag=0, recvtag=0, local_comm_size, pg_no;
     char **local_pg_ids=NULL, **remote_pg_ids;
@@ -42,6 +42,9 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
+
+    /* FIXME: multiple port_names should be allowed and matched */
+    MPIU_UNREFERENCED_ARG(port_name);
 
 /* Algorithm: First dequeue the vc from the accept queue (it was
    enqueued by the progress engine in response to a connect request
@@ -84,7 +87,6 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
            engine (the connection is returned in the form of a vc). If
            not, poke the progress engine. */
 
-        new_vc = NULL;
 	MPID_Progress_start(&progress_state);
         for(;;)
 	{

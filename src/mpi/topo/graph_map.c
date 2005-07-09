@@ -25,6 +25,9 @@
 int MPIR_Graph_map( const MPID_Comm *comm_ptr, int nnodes, const int index[], 
 		    const int edges[], int *newrank )
 {
+    MPIU_UNREFERENCED_ARG(index);
+    MPIU_UNREFERENCED_ARG(edges);
+
     /* This is the trivial version that does not remap any processes. */
     if (comm_ptr->rank < nnodes) {
 	*newrank = comm_ptr->rank;

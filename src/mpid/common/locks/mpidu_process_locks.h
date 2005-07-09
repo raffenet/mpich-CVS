@@ -338,10 +338,12 @@ static inline int MPIDU_Compare_swap( void **dest, void *new_val, void *compare_
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_COMPARE_SWAP);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_COMPARE_SWAP);
 #ifdef HAVE_NT_LOCKS
+    MPIU_UNREFERENCED_ARG(lock);
     /**original_val = InterlockedCompareExchange(dest, new_val, compare_val);*/
     /**original_val = (void*)InterlockedCompareExchange((LONG*)dest, (LONG)new_val, (LONG)compare_val);*/
     *original_val = (void*)InterlockedCompareExchangePointer(dest, new_val, compare_val);
 #elif defined(HAVE_COMPARE_AND_SWAP)
+    MPIU_UNREFERENCED_ARG(lock);
     if (compare_and_swap((volatile long *)dest, (long)compare_val, (long)new_val))
         *original_val = new_val;
 #elif defined(HAVE_SPARC_INLINE_PROCESS_LOCKS) || defined(HAVE_PTHREAD_H) || defined(HAVE_MUTEX_INIT)

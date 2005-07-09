@@ -47,6 +47,8 @@ int MPI_File_delete(char *filename, MPI_Info info)
                 MPI_FILE_NULL, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
+    MPIU_UNREFERENCED_ARG(info);
+
     MPID_CS_ENTER();
     MPIR_Nest_incr();
 

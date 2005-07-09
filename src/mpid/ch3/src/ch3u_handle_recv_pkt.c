@@ -513,7 +513,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	    
 	    MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
 	    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
-	    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
+	    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rs_pkt;
 	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
 
 	    MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
@@ -524,7 +524,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		
 		sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 		
-		iov[1].MPID_IOV_BUF = (char *)sreq->dev.user_buf + dt_true_lb;
+		iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);
 		iov[1].MPID_IOV_LEN = data_sz;
 		iov_n = 2;
 	    }
@@ -883,10 +883,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
                 get_resp_pkt->request_handle = get_pkt->request_handle;
                 
-                iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+                iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) get_resp_pkt;
                 iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
 
-                iov[1].MPID_IOV_BUF = get_pkt->addr;
+                iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)get_pkt->addr;
                 MPID_Datatype_get_size_macro(get_pkt->datatype, type_size);
                 iov[1].MPID_IOV_LEN = get_pkt->count * type_size;
 	    
@@ -1301,10 +1301,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
                 get_resp_pkt->request_handle = lock_get_unlock_pkt->request_handle;
                 
-                iov[0].MPID_IOV_BUF = (void*) get_resp_pkt;
+                iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) get_resp_pkt;
                 iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
 
-                iov[1].MPID_IOV_BUF = lock_get_unlock_pkt->addr;
+                iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)lock_get_unlock_pkt->addr;
                 MPID_Datatype_get_size_macro(lock_get_unlock_pkt->datatype, type_size);
                 iov[1].MPID_IOV_LEN = lock_get_unlock_pkt->count * type_size;
 	    
@@ -1474,7 +1474,12 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     MPIDI_msg_sz_t data_sz;
     MPID_Request * rreq = *rreqp;
     int mpi_errno = MPI_SUCCESS;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
+
+    MPIU_UNREFERENCED_ARG(vc);
+
     MPIDI_DBG_PRINTF((30, FCNAME, "entering"));
 
     if (rreq->dev.recv_data_sz == 0)
@@ -1513,7 +1518,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 	    /* user buffer is contiguous and large enough to store the
 	       entire message */
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for contiguous read"));
-	    rreq->dev.iov[0].MPID_IOV_BUF = (char*)(rreq->dev.user_buf) + dt_true_lb;
+	    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*)(rreq->dev.user_buf) + dt_true_lb);
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
@@ -1547,7 +1552,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 	rreq->dev.tmpbuf = MPIU_Malloc(rreq->dev.recv_data_sz);
 	rreq->dev.tmpbuf_sz = rreq->dev.recv_data_sz;
 		
-	rreq->dev.iov[0].MPID_IOV_BUF = rreq->dev.tmpbuf;
+	rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.tmpbuf;
 	rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.recv_data_sz;
 	rreq->dev.iov_count = 1;
 	rreq->dev.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
@@ -1557,6 +1562,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 
 fn_exit:
     MPIDI_DBG_PRINTF((30, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
     return mpi_errno;
 }
 

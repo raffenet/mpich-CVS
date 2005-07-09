@@ -20,6 +20,8 @@ int MPID_Comm_accept(char * port_name, MPID_Info * info_ptr, int root, MPID_Comm
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_ACCEPT);
 
+    MPIU_UNREFERENCED_ARG(info_ptr);
+
 #   if defined(MPIDI_CH3_IMPLEMENTS_COMM_ACCEPT)
     {
 	mpi_errno = MPIDI_CH3_Comm_accept(port_name, root, comm_ptr, newcomm);

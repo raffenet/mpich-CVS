@@ -36,11 +36,38 @@ MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevan
  */
 static int assert_hook( int reportType, char *message, int *returnValue )
 {
+    MPIU_UNREFERENCED_ARG(reportType);
     fprintf(stderr, "%s", message);
     if (returnValue != NULL)
 	exit(*returnValue);
-    ExitProcess(-1);
+    ExitProcess((UINT)(-1));
     return TRUE;
+}
+
+/* MPICH2 dll entry point */
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+    BOOL result = TRUE;
+    hinstDLL;
+    lpReserved;
+
+    switch (fdwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+            break;
+
+        case DLL_THREAD_ATTACH:
+	    /* allocate thread specific data */
+            break;
+
+        case DLL_THREAD_DETACH:
+	    /* free thread specific data */
+            break;
+
+        case DLL_PROCESS_DETACH:
+            break;
+    }
+    return result;
 }
 #endif
 

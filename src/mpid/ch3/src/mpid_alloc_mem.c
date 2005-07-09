@@ -23,6 +23,7 @@ void *MPID_Alloc_mem( size_t size, MPID_Info *info_ptr )
 	ap = MPIDI_CH3_Alloc_mem(size, info_ptr);
     }
 #   else
+    MPIU_UNREFERENCED_ARG(info_ptr);
     {
         ap = MPIU_Malloc(size);
     }

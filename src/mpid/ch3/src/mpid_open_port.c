@@ -27,14 +27,14 @@
 int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 {
     int mpi_errno=MPI_SUCCESS;
-
     MPIDI_STATE_DECL(MPID_STATE_MPID_OPEN_PORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_OPEN_PORT);
 
+    MPIU_UNREFERENCED_ARG(info_ptr);
+
     mpi_errno = MPIDI_CH3_Open_port(port_name);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_OPEN_PORT);
-
     return mpi_errno;
 }

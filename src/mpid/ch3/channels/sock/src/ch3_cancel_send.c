@@ -16,6 +16,9 @@ int MPIDI_CH3_Cancel_send(MPIDI_VC_t * vc, MPID_Request * sreq, int * cancelled)
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CANCEL_SEND);
 
+    MPIU_UNREFERENCED_ARG(vc);
+    MPIU_UNREFERENCED_ARG(sreq);
+
     *cancelled = FALSE;
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CANCEL_SEND);

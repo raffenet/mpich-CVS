@@ -26,6 +26,11 @@
 #define MPID_CS_ENTER()
 #define MPIR_Nest_incr()
 #define MPIR_Nest_decr()
+#ifdef HAVE_WINDOWS_H
+#define MPIU_UNREFERENCED_ARG(a) a
+#else
+#define MPIU_UNREFERENCED_ARG(a)
+#endif
 #endif
 
 /* info is a linked list of these structures */

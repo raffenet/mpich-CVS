@@ -293,6 +293,8 @@ static void DLOOP_Type_indexed_array_copy(int count,
 {
     int i, cur_idx = 0;
 
+    MPIU_UNREFERENCED_ARG(contig_count);
+
     out_blklen_array[0] = in_blklen_array[0];
 
     if (!dispinbytes)

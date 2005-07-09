@@ -25,6 +25,7 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
 {
     static const char FCNAME[] = "MPID_NS_Create";
 
+    MPIU_UNREFERENCED_ARG(info_ptr);
     *handle_ptr = NULL;		/* The name service needs no local data */
     return 0;
 }
@@ -36,6 +37,8 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 {
     int rc;
     static const char FCNAME[] = "MPID_NS_Publish";
+    MPIU_UNREFERENCED_ARG(info_ptr);
+    MPIU_UNREFERENCED_ARG(handle);
 
     rc = PMI_Publish_name( service_name, port );
     if (rc != PMI_SUCCESS) {
@@ -55,6 +58,8 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 {
     int rc;
     static const char FCNAME[] = "MPID_NS_Lookup";
+    MPIU_UNREFERENCED_ARG(info_ptr);
+    MPIU_UNREFERENCED_ARG(handle);
 
     rc = PMI_Lookup_name( service_name, port );
     if (rc != PMI_SUCCESS) {
@@ -74,6 +79,8 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 {
     int rc;
     static const char FCNAME[] = "MPID_NS_Unpublish";
+    MPIU_UNREFERENCED_ARG(info_ptr);
+    MPIU_UNREFERENCED_ARG(handle);
 
     rc = PMI_Unpublish_name( service_name );
     if (rc != PMI_SUCCESS) {
@@ -91,7 +98,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 int MPID_NS_Free( MPID_NS_Handle *handle_ptr )
 {
     /* MPID_NS_Handle is Null */
-
+    MPIU_UNREFERENCED_ARG(handle_ptr);
     return 0;
 }
 

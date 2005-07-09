@@ -60,7 +60,8 @@ int MPI_Pcontrol(const int level, ...)
     
     /* This is a dummy routine that does nothing.  It is intended for 
        use by the user (or a tool) with the profiling interface */
-    
+    MPIU_UNREFERENCED_ARG(level);
+
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
     MPID_CS_EXIT();

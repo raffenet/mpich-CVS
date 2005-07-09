@@ -816,6 +816,8 @@ static int MPID_Segment_vector_unpack_to_buf(DLOOP_Offset *blocks_p,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_VECTOR_UNPACK_TO_BUF);
 
+    MPIU_UNREFERENCED_ARG(count);
+
     basic_size = MPID_Datatype_get_basic_size(el_type);
 
     whole_count = (blksz > 0) ? (*blocks_p / blksz) : 0;
@@ -890,7 +892,12 @@ static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
     DLOOP_Offset blocks_left = *blocks_p;
     char *cbufp = (char *) bufp + rel_off;
     struct MPID_Segment_piece_params *paramp = v_paramp;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_BLKIDX_UNPACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_BLKIDX_UNPACK_TO_BUF);
+
+    MPIU_UNREFERENCED_ARG(count);
+
     el_size = MPID_Datatype_get_basic_size(el_type);
 
     while (blocks_left) {
@@ -919,6 +926,7 @@ static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
 	blocks_left -= blocklen;
 	curblock++;
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_BLKIDX_UNPACK_TO_BUF);
     return 0;
 }
 
@@ -937,7 +945,12 @@ static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
     DLOOP_Offset cur_block_sz, blocks_left = *blocks_p;
     char *cbufp = (char *) bufp + rel_off;
     struct MPID_Segment_piece_params *paramp = v_paramp;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_INDEX_UNPACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_INDEX_UNPACK_TO_BUF);
+
+    MPIU_UNREFERENCED_ARG(count);
+
     el_size = MPID_Datatype_get_basic_size(el_type);
 
     while (blocks_left) {
@@ -964,6 +977,7 @@ static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
 	blocks_left -= cur_block_sz;
 	curblock++;
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_INDEX_UNPACK_TO_BUF);
     return 0;
 }
 
@@ -1034,6 +1048,8 @@ static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
     MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_BUF);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_VECTOR_PACK_TO_BUF);
+
+    MPIU_UNREFERENCED_ARG(count);
 
     basic_size = MPID_Datatype_get_basic_size(el_type);
 
@@ -1109,7 +1125,12 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
     DLOOP_Offset cur_block_sz, blocks_left = *blocks_p;
     char *cbufp;
     struct MPID_Segment_piece_params *paramp = v_paramp;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_INDEX_PACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_INDEX_PACK_TO_BUF);
+
+    MPIU_UNREFERENCED_ARG(count);
+
     el_size = MPID_Datatype_get_basic_size(el_type);
 
 #ifdef MPID_SP_VERBOSE
@@ -1157,6 +1178,7 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 	blocks_left -= cur_block_sz;
 	curblock++;
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_INDEX_PACK_TO_BUF);
     return 0;
 }
 
@@ -1176,7 +1198,12 @@ static int MPID_Segment_blkidx_pack_to_buf(DLOOP_Offset *blocks_p,
     DLOOP_Offset blocks_left = *blocks_p;
     char *cbufp;
     struct MPID_Segment_piece_params *paramp = v_paramp;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_BLKIDX_PACK_TO_BUF);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_BLKIDX_PACK_TO_BUF);
+
+    MPIU_UNREFERENCED_ARG(count);
+
     el_size = MPID_Datatype_get_basic_size(el_type);
 
     while (blocks_left) {
@@ -1207,5 +1234,6 @@ static int MPID_Segment_blkidx_pack_to_buf(DLOOP_Offset *blocks_p,
 	blocks_left -= blocklen;
 	curblock++;
     }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_BLKIDX_PACK_TO_BUF);
     return 0;
 }

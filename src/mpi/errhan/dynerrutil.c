@@ -372,6 +372,8 @@ static int MPIR_Dynerrcodes_finalize( void *p )
 {
     int i;
 
+    MPIU_UNREFERENCED_ARG(p);
+
     if (not_initialized == 0) {
 
         for (i=0; i<first_free_class; i++) {

@@ -49,6 +49,9 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
     char *c;
 #endif
 
+    ADIOI_UNREFERENCED_ARG(argc);
+    ADIOI_UNREFERENCED_ARG(argv);
+
 /* initialize the linked list containing flattened datatypes */
     ADIOI_Flatlist = (ADIOI_Flatlist_node *) ADIOI_Malloc(sizeof(ADIOI_Flatlist_node));
     ADIOI_Flatlist->type = MPI_DATATYPE_NULL;
