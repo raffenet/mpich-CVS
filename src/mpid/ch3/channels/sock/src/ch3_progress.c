@@ -1859,7 +1859,7 @@ static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
 	}
 	else
 	{
-	    iov[offset].MPID_IOV_BUF = (char *) iov[offset].MPID_IOV_BUF + nb;
+	    iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) iov[offset].MPID_IOV_BUF + nb);
 	    iov[offset].MPID_IOV_LEN -= nb;
 	    break;
 	}

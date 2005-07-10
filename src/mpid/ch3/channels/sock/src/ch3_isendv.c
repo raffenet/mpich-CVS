@@ -36,9 +36,9 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 	*/
 	MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;
+	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt;
     }
-    sreq->dev.iov[iov_offset].MPID_IOV_BUF = (char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb;
+    sreq->dev.iov[iov_offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb);
     sreq->dev.iov[iov_offset].MPID_IOV_LEN -= nb;
     sreq->dev.iov_count = iov_count;
 
