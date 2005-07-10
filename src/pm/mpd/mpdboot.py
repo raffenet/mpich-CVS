@@ -380,7 +380,7 @@ def mpdboot():
         try:
             (readyFDs,unused1,unused2) = select(fdsToSelect,[],[],0.1)
         except error, errmsg:
-            mpd_print(1111,'mpdboot: select failed: errmsg=:%s:' % (errmsg) )
+            mpd_print(1,'mpdboot: select failed: errmsg=:%s:' % (errmsg) )
             exit(-1)
         if lfd  and  lfd in readyFDs:
             line = lfd.readline()
