@@ -15,6 +15,8 @@
 #include <string.h>
 #endif
 
+#define IF_VERBOSE(a) if (verbose) { printf a ; fflush(stdout); }
+
 static char MTEST_Descrip[] = "A simple test of Comm_connect/accept/disconnect";
 
 int main(int argc, char *argv[])
@@ -25,6 +27,15 @@ int main(int argc, char *argv[])
     MPI_Comm      parentcomm, intercomm;
     MPI_Status    status;
     char port[MPI_MAX_PORT_NAME];
+    int verbose = 0;
+    char *env;
+
+    env = getenv("MPITEST_VERBOSE");
+    if (env)
+    {
+	if (*env != '0')
+	    verbose = 1;
+    }
 
     MTest_Init( &argc, &argv );
 
@@ -32,6 +43,7 @@ int main(int argc, char *argv[])
 
     if (parentcomm == MPI_COMM_NULL)
     {
+	IF_VERBOSE(("spawning %d processes\n", np));
 	/* Create 2 more processes */
 	MPI_Comm_spawn("./disconnect_reconnect", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
@@ -50,7 +62,7 @@ int main(int argc, char *argv[])
 
     if (parentcomm == MPI_COMM_NULL)
     {
-	/*printf("parent rank %d alive.\n", rank);fflush(stdout);*/
+	IF_VERBOSE(("parent rank %d alive.\n", rank));
 	/* Parent */
 	if (rsize != np)
 	{
@@ -61,11 +73,14 @@ int main(int argc, char *argv[])
 	if (rank == 0)
 	{
 	    MPI_Open_port(MPI_INFO_NULL, port);
+	    IF_VERBOSE(("port = %s\n", port));
 	    MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm);
 	}
+	IF_VERBOSE(("disconnecting child communicator\n"));
 	MPI_Comm_disconnect(&intercomm);
 	for (i=0; i<num_loops; i++)
 	{
+	    IF_VERBOSE(("accepting connection\n"));
 	    MPI_Comm_accept(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
 	    if (rank == 0)
 	    {
@@ -77,6 +92,7 @@ int main(int argc, char *argv[])
 		    errs++;
 		}
 	    }
+	    IF_VERBOSE(("disconnecting communicator\n"));
 	    MPI_Comm_disconnect(&intercomm);
 	}
 
@@ -90,7 +106,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-	/*printf("child rank %d alive.\n", rank);fflush(stdout);*/
+	IF_VERBOSE(("child rank %d alive.\n", rank));
 	/* Child */
 	if (size != np)
 	{
