@@ -11,6 +11,7 @@
 #include "mpichconf.h"
 #include "mpichtimer.h"
 #include <stdio.h>
+#include <stdarg.h>
 #define MPIU_UNREFERENCED_ARG(a) a
 
 /*
@@ -2598,8 +2599,13 @@ int MPI_Get_processor_name( char *name, int *resultlen )
 
 int MPI_Pcontrol(const int level, ...)
 {
-    MPIU_UNREFERENCED_ARG(level);
-    return MPI_SUCCESS;
+    int ret_val;
+    va_list list;
+
+    va_start(list, level);
+    ret_val = fn.MPI_Pcontrol(level, list);
+    va_end(list);
+    return ret_val;
 }
 
 int MPI_Get_version( int *version, int *subversion )
@@ -4266,8 +4272,13 @@ int PMPI_Get_processor_name( char *name, int *resultlen )
 
 int PMPI_Pcontrol(const int level, ...)
 {
-    MPIU_UNREFERENCED_ARG(level);
-    return MPI_SUCCESS;
+    int ret_val;
+    va_list list;
+
+    va_start(list, level);
+    ret_val = fn.PMPI_Pcontrol(level, list);
+    va_end(list);
+    return ret_val;
 }
 
 int PMPI_Get_version( int *version, int *subversion )
