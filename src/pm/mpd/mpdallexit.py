@@ -20,7 +20,7 @@ from sys    import argv, exit
 from socket import socket, AF_UNIX, SOCK_STREAM, fromfd
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_uncaught_except_tb, \
-                   mpd_print, MPDConsClientSock
+                   mpd_print, MPDConClientSock
 
 def mpdallexit():
     import sys    # to get access to excepthook in next line
@@ -29,7 +29,7 @@ def mpdallexit():
         print __doc__
         exit(-1)
     mpd_set_my_id(myid='mpdallexit')
-    conSock = MPDConsClientSock()  # looks for MPD_UNIX_SOCKET in env
+    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
     msgToSend = { 'cmd' : 'mpdallexit' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=8.0)

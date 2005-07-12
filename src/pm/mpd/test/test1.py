@@ -132,3 +132,22 @@ if len(lines) > 0:
         print "probable error in ifhn test using 127.0.0.1; printing lines of output next:"
         print lines
         sys.exit(-1)
+
+# test:
+print "TEST MPD_TEST_INET_CON"
+PYEXT = '.py'
+NMPDS = 1
+HFILE = 'temph'
+import os,socket
+from mpdlib import MPDTest
+mpdtest = MPDTest()
+os.environ['MPD_CON_EXT'] = 'testing'
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+temph = open(HFILE,'w')
+for host in clusterHosts: print >>temph, host
+temph.close()
+os.environ['MPD_TEST_INET_CON'] = '1'    # after mpdallexit and before mpdboot
+os.system("mpdboot%s -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
+expout = ['0: hello']
+rv = mpdtest.run(cmd="mpiexec%s -l -n 1 echo hello" % (PYEXT), expOut=expout,grepOut=1)
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )

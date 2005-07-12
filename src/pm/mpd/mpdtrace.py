@@ -20,7 +20,7 @@ from  sys     import  argv, exit
 from  re      import  sub
 from  signal  import  signal, SIGINT
 from  mpdlib  import  mpd_set_my_id, mpd_uncaught_except_tb, mpd_print, \
-                      mpd_handle_signal, mpd_get_my_username, MPDConsClientSock
+                      mpd_handle_signal, mpd_get_my_username, MPDConClientSock
 
 def mpdtrace():
     import sys    # to get access to excepthook in next line
@@ -30,7 +30,7 @@ def mpdtrace():
             usage()
     signal(SIGINT, sig_handler)
     mpd_set_my_id(myid='mpdtrace')
-    conSock = MPDConsClientSock()  # looks for MPD_UNIX_SOCKET in env
+    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
     msgToSend = { 'cmd' : 'mpdtrace' }
     conSock.send_dict_msg(msgToSend)
     # Main Loop

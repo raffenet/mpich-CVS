@@ -67,7 +67,7 @@ from  time   import time
 from  urllib import unquote
 from  mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_version, mpd_print, \
                     mpd_uncaught_except_tb, mpd_handle_signal, mpd_which, \
-                    MPDListenSock, MPDStreamHandler, MPDConsClientSock, MPDParmDB
+                    MPDListenSock, MPDStreamHandler, MPDConClientSock, MPDParmDB
 
 global parmdb, nextRange, appnum
 global numDoneWithIO, myExitStatus, sigOccurred, outXmlDoc, outECs
@@ -195,7 +195,7 @@ def mpiexec():
 
     listenSock = MPDListenSock('',0,name='socket_to_listen_for_man')
     listenPort = listenSock.getsockname()[1]
-    conSock = MPDConsClientSock()  # looks for MPD_UNIX_SOCKET in env
+    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
     msgToSend = { 'cmd' : 'get_mpdrun_values' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=recvTimeout)

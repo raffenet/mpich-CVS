@@ -53,18 +53,18 @@ import sys    # so I can chg excepthook, stdout, etc.
 
 from  sys         import  argv, exit, settrace
 from  os          import  environ, getpid, fork, getuid, setsid, chdir, path, \
-                          umask, stat, dup2, unlink, setpgrp, fdopen, \
+                          umask, dup2, unlink, setpgrp, fdopen, \
                           setreuid, setregid, setgroups, waitpid, WNOHANG, kill
 from  os          import  open  as osopen, close as osclose, \
                           O_CREAT, O_WRONLY, O_EXCL
-from  socket      import  gethostname, gethostbyname_ex
+from  socket      import  gethostname, gethostbyname_ex, AF_UNIX, AF_INET
 from  signal      import  signal, SIGCHLD, SIGHUP, SIG_IGN, SIGKILL
 from  re          import  sub
 from  pwd         import  getpwnam
 from  atexit      import  register
 from  cPickle     import  dumps
 from  types       import  ClassType
-from  random      import  seed
+from  random      import  seed, randrange, random
 from  time        import  sleep
 from  syslog      import  openlog, syslog, closelog, LOG_DAEMON, LOG_INFO, LOG_ERR
 from  md5         import  new as md5new
@@ -72,7 +72,7 @@ from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair,
                           mpd_print, mpd_get_my_username, \
                           mpd_get_groups_for_username, mpd_uncaught_except_tb, \
                           mpd_set_procedures_to_trace, mpd_trace_calls, \
-                          MPDSock, MPDListenSock, MPDConsServerSock, \
+                          MPDSock, MPDListenSock, MPDConListenSock, \
                           MPDStreamHandler, MPDRing, MPDParmDB
 from  mpdman      import  MPDMan
 
@@ -100,6 +100,7 @@ class MPD(object):
         openlog("mpd",0,LOG_DAEMON)
         syslog(LOG_INFO,"mpd starting; no mpdid yet")
         sys.excepthook = mpd_uncaught_except_tb
+
         self.parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
         self.parmsToOverride = {
                                  'MPD_SECRETWORD'       :  '',
@@ -118,8 +119,12 @@ class MPD(object):
         for (k,v) in self.parmsToOverride.items():
             self.parmdb[('thispgm',k)] = v
         self.get_parms_from_cmdline()
-        self.get_parms_from_rcfile()
-        self.get_parms_from_env()
+        self.parmdb.get_parms_from_rcfile(self.parmsToOverride)
+        if not self.parmdb['MPD_SECRETWORD']:
+            print 'mpd conf file has no secretword'
+            exit(-1)
+        self.parmdb.get_parms_from_env(self.parmsToOverride)
+
         self.myIfhn = self.parmdb['MPD_MY_IFHN']    # variable for convenience
         self.myPid = getpid()
         self.listenSock = MPDListenSock(name='ring_listen_sock',
@@ -203,7 +208,7 @@ class MPD(object):
             dup2(logFile.fileno(),sys.__stdout__.fileno())
             dup2(logFile.fileno(),sys.__stderr__.fileno())
         if self.parmdb['MPD_CONSOLE_FLAG']:
-            self.conListenSock = MPDConsServerSock()
+            self.conListenSock = MPDConListenSock()
             self.streamHandler.set_handler(self.conListenSock,
                                            self.handle_console_connection)
         register(self.cleanup)
@@ -267,63 +272,6 @@ class MPD(object):
             closelog()
         except:
             pass
-    def get_parms_from_env(self):
-        for k in self.parmsToOverride.keys():
-            if environ.has_key(k):
-                self.parmdb[('env',k)] = environ[k]
-    def get_parms_from_rcfile(self):
-        if getuid() == 0:    # if ROOT
-            parmsRCFilename = '/etc/mpd.conf'
-        else:
-            parmsRCFilename = environ['HOME'] + '/.mpd.conf'
-        try:
-            mode = stat(parmsRCFilename)[0]
-        except:
-            mode = ''
-        if not mode:
-            print 'configuration file %s not found' % (parmsRCFilename)
-            print 'A file named .mpd.conf file must be present in the user\'s home'
-            print 'directory (/etc/mpd.conf if root) with read and write access'
-            print 'only for the user, and must contain at least a line with:'
-            print 'MPD_SECRETWORD=<secretword>'
-            print 'One way to safely create this file is to do the following:'
-            print '  cd $HOME'
-            print '  touch .mpd.conf'
-            print '  chmod 600 .mpd.conf'
-            print 'and then use an editor to insert a line like'
-            print '  MPD_SECRETWORD=mr45-j9z'
-            print 'into the file.  (Of course use some other secret word than mr45-j9z.)' 
-            exit(-1)
-        if  (mode & 0x3f):
-            print 'configuration file %s is accessible by others' % (parmsRCFilename)
-            print 'change permissions to allow read and write access only by you'
-            exit(-1)
-        parmsRCFile = open(parmsRCFilename)
-        for line in parmsRCFile:
-            line = line.strip()
-            withoutComments = line.split('#')[0]    # will at least be ''
-            splitLine = withoutComments.rstrip().split('=')
-            if splitLine  and  not splitLine[0]:    # ['']
-                continue
-            if len(splitLine) == 2:
-                (k,v) = splitLine
-                origKey = k
-                if k.startswith('MPIEXEC_'):  # may need to chk for other mpd pgms also
-                    continue
-                if not k.startswith('MPD_'):
-                    k = 'MPD_' + k.upper()    # default to an mpd parm
-                if k in self.parmsToOverride.keys():
-                    if v.isdigit():
-                        v = int(v)
-                    self.parmdb[('rcfile',k)] = v
-                else:
-                    mpd_print(1,'invalid key in mpd conf file; key=:%s:' % (origKey) )
-                    exit(-1)
-            else:
-                mpd_print(1, 'line in mpd conf is not key=val pair; line=:%s:' % (line) )
-        if not self.parmdb.has_key('MPD_SECRETWORD'):
-            print 'parmsRCFile %s has no secretword' % (parmsRCFilename)
-            exit(-1)
     def get_parms_from_cmdline(self):
         argidx = 1
         while argidx < len(argv):
@@ -460,28 +408,55 @@ class MPD(object):
     def handle_console_connection(self,sock):
         if not self.conSock:
             (self.conSock,newConnAddr) = sock.accept()
-            line = self.conSock.recv_char_msg().rstrip()
-            if not line:    # caller went away (perhaps another mpd seeing if I am here)
-                self.streamHandler.del_handler(self.conSock)
-                self.conSock.close()
-                self.conSock = 0
-                return
-            try:
-                splitLine = line.split('=',1)
-            except:
-                return
-            if len(splitLine) < 2  or  splitLine[0] != 'realusername':
-                mpd_print(0, 'console sent bad msg :%s:' % line)
-                try:  # try to let console know
-                    self.conSock.send_dict_msg( {'cmd':'invalid_msg_received_from_you'} )
+            if sock.family == AF_UNIX:
+                line = self.conSock.recv_char_msg().rstrip()
+                if not line:  # caller went away (perhaps another mpd seeing if I am here)
+                    self.streamHandler.del_handler(self.conSock)
+                    self.conSock.close()
+                    self.conSock = 0
+                    return
+                try:
+                    splitLine = line.split('=',1)
                 except:
-                    pass
-                self.streamHandler.del_handler(self.conSock)
-                self.conSock.close()
-                self.conSock = 0
-                return
+                    return
+                if len(splitLine) < 2  or  splitLine[0] != 'realusername':
+                    mpd_print(0, 'console sent bad msg :%s:' % line)
+                    try:  # try to let console know
+                        self.conSock.send_dict_msg({'cmd':'invalid_msg_received_from_you'})
+                    except:
+                        pass
+                    self.streamHandler.del_handler(self.conSock)
+                    self.conSock.close()
+                    self.conSock = 0
+                    return
+                self.conSock.realUsername = splitLine[1]
+                self.conSock.beingChallenged = 0
+            else:
+                msg = self.conSock.recv_dict_msg()
+                if not msg:    # caller went away (perhaps another mpd seeing if I am here)
+                    self.streamHandler.del_handler(self.conSock)
+                    self.conSock.close()
+                    self.conSock = 0
+                    return
+                if not msg.has_key('cmd')  or  msg['cmd'] != 'con_init':
+                    mpd_print(1, 'console sent bad msg :%s:' % (msg) )
+                    try:  # try to let console know
+                        self.conSock.send_dict_msg({'cmd':'invalid_msg_received_from_you'})
+                    except:
+                        pass
+                    self.streamHandler.del_handler(self.conSock)
+                    self.conSock.close()
+                    self.conSock = 0
+                    return
+                self.streamHandler.set_handler(self.conSock,self.handle_console_input)
+                self.conSock.beingChallenged = 1
+                self.conSock.name = 'console'
+                randNum = randrange(1,10000)
+                randVal = sock.secretconval + str(randNum)
+                self.conSock.expectedResponse = md5new(randVal).digest()
+                self.conSock.send_dict_msg({'cmd' : 'con_challenge', 'randnum' : randNum })
+                self.conSock.realUsername = mpd_get_my_username()
             self.streamHandler.set_handler(self.conSock,self.handle_console_input)
-            self.conSock.realUsername = splitLine[1]
             self.conSock.name = 'console'
         else:
             return  ## postpone it; hope the other one frees up soon
@@ -503,7 +478,39 @@ class MPD(object):
             self.conSock.close()
             self.conSock = 0
             return
-        if msg['cmd'] == 'mpdrun':
+        if self.conSock.beingChallenged  and  msg['cmd'] != 'con_challenge_response':
+            mpd_print(1, 'console did not respond to con_challenge; msg=:%s:' % msg)
+            try:  # try to let console know
+                self.conSock.send_dict_msg({ 'cmd':'expected_con_challenge_response' })
+            except:
+                pass
+            self.streamHandler.del_handler(self.conSock)
+            self.conSock.close()
+            self.conSock = 0
+            return
+        if msg['cmd'] == 'con_challenge_response':
+            self.conSock.beingChallenged = 0
+            self.conSock.realUsername = msg['realusername']
+            if not msg.has_key('response'):
+                try:  # try to let console know
+                    self.conSock.send_dict_msg({ 'cmd':'missing_response_in_msg' })
+                except:
+                    pass
+                self.streamHandler.del_handler(self.conSock)
+                self.conSock.close()
+                self.conSock = 0
+                return
+            elif msg['response'] != self.conSock.expectedResponse:
+                try:  # try to let console know
+                    self.conSock.send_dict_msg({ 'cmd':'invalid_response' })
+                except:
+                    pass
+                self.streamHandler.del_handler(self.conSock)
+                self.conSock.close()
+                self.conSock = 0
+                return
+            self.conSock.send_dict_msg({ 'cmd':'valid_response' })
+        elif msg['cmd'] == 'mpdrun':
             # permit anyone to run but use THEIR own username
             #   thus, override any username specified by the user
             if self.conSock.realUsername != 'root':

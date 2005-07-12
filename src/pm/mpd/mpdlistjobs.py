@@ -23,7 +23,7 @@ from  socket  import  socket, fromfd, AF_UNIX, SOCK_STREAM
 from  re      import  sub
 from  signal  import  signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from  mpdlib  import  mpd_set_my_id, mpd_uncaught_except_tb, mpd_print, \
-                      mpd_handle_signal, mpd_get_my_username, MPDConsClientSock
+                      mpd_handle_signal, mpd_get_my_username, MPDConClientSock
 
 def mpdlistjobs():
     import sys    # to get access to excepthook in next line
@@ -81,7 +81,7 @@ def mpdlistjobs():
             else:
                 print 'unrecognized arg: %s' % argv[aidx]
                 exit(-1)
-    conSock = MPDConsClientSock()  # looks for MPD_UNIX_SOCKET in env
+    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
     msgToSend = { 'cmd' : 'mpdlistjobs' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=5.0)
