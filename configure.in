@@ -1147,6 +1147,7 @@ EOF
     chmod a+x src/env/mpif77
     if test "$has_exclaim" = "yes" ; then
         sed -e 's/^C/\!/g' src/binding/f77/mpif.h > src/include/mpif.h
+	cp src/include/mpif.h src/binding/f77/mpif.h
     else
         cp src/binding/f77/mpif.h src/include
     fi
