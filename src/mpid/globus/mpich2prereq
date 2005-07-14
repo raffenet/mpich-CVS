@@ -329,82 +329,96 @@ MPIG_CLD=${MPIG_CC}
 MPIG_TEST_CC=${MPIG_CC}
 MPIG_TEST_CFLAGS=${MPIG_CFLAGS}
 MPIG_TEST_CLD=${MPIG_CLD}
+echo "${ECHO_T}done"
+
 if test "${with_insure}" = "yes" ; then
     MPIG_CC="insure"
     MPIG_CLD="insure -Zsl"
 fi
+
 if test "${with_ccache}" = "yes" ; then
     MPIG_CC="ccache ${MPIG_CC}"
 fi
+
 if test "${enable_gcc_strict}" = "yes" ; then
     MPIG_CFLAGS="${MPIG_CFLAGS} -Wall -DGCC_WALL -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
     MPIG_CFLAGS="${MPIG_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith -Wconversion"
     MPIG_CFLAGS="${MPIG_CFLAGS} -Wsign-compare -Wwrite-strings"
 fi
-echo "${ECHO_T}done"
 
 #
 # Gather C++ compiler and flags information
 #
-echo ${ECHO_N} "extacting C++ compiler information from Globus... ${ECHO_C}"
 if test "${enable_cxx}" != "no" ; then
+    echo ${ECHO_N} "extacting C++ compiler information from Globus... ${ECHO_C}"
     mpig_get_globus_setting MPIG_CXX cxx
     mpig_get_globus_setting MPIG_CXXFLAGS cxxflags
     MPIG_CXXLD=${MPIG_CXXLD}
     MPIG_TEST_CXX=${MPIG_CXX}
     MPIG_TEST_CXXFLAGS=${MPIG_CXXFLAGS}
     MPIG_TEST_CXXLD=${MPIG_CXXLD}
-if test "${with_insure}" = "yes" ; then
-    MPIG_CXX="insure"
-    MPIG_CXXLD="insure -Zsl"
-fi
-if test "${with_ccache}" = "yes" ; then
-    MPIG_CXX="ccache ${MPIG_CXX}"
-fi
-fi
-echo "${ECHO_T}done"
-if test -z "${MPIG_CXX}" ; then
-    echo "INFO: C++ compiler not defined by Globus.  Disabling C++ subsystem."
-    enable_cxx=no
-    ac_configure_args="${ac_configure_args} --disable-cxx"
+    echo "${ECHO_T}done"
+
+    if test "${with_insure}" = "yes" ; then
+	MPIG_CXX="insure"
+	MPIG_CXXLD="insure -Zsl"
+    fi
+
+    if test "${with_ccache}" = "yes" ; then
+	MPIG_CXX="ccache ${MPIG_CXX}"
+    fi
+
+    if test -z "${MPIG_CXX}" ; then
+	echo "INFO: C++ compiler not defined by Globus.  Disabling C++ subsystem."
+	enable_cxx=no
+	ac_configure_args="${ac_configure_args} --disable-cxx"
+    fi
+else
+    echo "INFO: C++ subsystem disabled.  Skipping extraction of C++ information from Globus."
 fi
 
 #
 # Gather F77 compiler and flags information
 #
-echo ${ECHO_N} "extacting F77 compiler information from Globus... ${ECHO_C}"
 if test "${enable_f77}" != "no" ; then
+    echo ${ECHO_N} "extacting F77 compiler information from Globus... ${ECHO_C}"
     mpig_get_globus_setting MPIG_F77 f77
     mpig_get_globus_setting MPIG_F77FLAGS f77flags
     MPIG_F77LD=${MPIG_F77}
     MPIG_TEST_F77=${MPIG_F77}
     MPIG_TEST_F77FLAGS=${MPIG_F77FLAGS}
     MPIG_TEST_F77LD=${MPIG_F77LD}
-fi
-echo "${ECHO_T}done"
-if test -z "${MPIG_F77}" ; then
-    echo "INFO: F77 compiler not defined by Globus.  Disabling F77 subsystem."
-    enable_f77=no
-    ac_configure_args="${ac_configure_args} --disable-f77"
+    echo "${ECHO_T}done"
+
+    if test -z "${MPIG_F77}" ; then
+	echo "INFO: F77 compiler not defined by Globus.  Disabling F77 subsystem."
+	enable_f77=no
+	ac_configure_args="${ac_configure_args} --disable-f77"
+    fi
+else
+    echo "INFO: F77 subsystem disabled.  Skipping extraction of F77 information from Globus."
 fi
 
 #
 # Gather F90 compiler and linker information
 #
-echo ${ECHO_N} "extacting F90 compiler information from Globus... ${ECHO_C}"
-if test "enable_f90" != "no" ; then
+if test "${enable_f90}" != "no" ; then
+    echo ${ECHO_N} "extacting F90 compiler information from Globus... ${ECHO_C}"
     mpig_get_globus_setting MPIG_F90 f90
     mpig_get_globus_setting MPIG_F90FLAGS f90flags
     MPIG_F90LD=${MPIG_F90}
     MPIG_TEST_F90=${MPIG_F90}
     MPIG_TEST_F90FLAGS=${MPIG_F90FLAGS}
     MPIG_TEST_F90LD=${MPIG_F90LD}
-fi
-echo "${ECHO_T}done"
-if test -z "${MPIG_F90}" ; then
-    echo "INFO: F90 compiler not defined by Globus.  Disabling F90 subsystem."
-    enable_f90=no
-    ac_configure_args="${ac_configure_args} --disable-f90"
+    echo "${ECHO_T}done"
+
+    if test -z "${MPIG_F90}" ; then
+	echo "INFO: F90 compiler not defined by Globus.  Disabling F90 subsystem."
+	enable_f90=no
+	ac_configure_args="${ac_configure_args} --disable-f90"
+    fi
+else
+    echo "INFO: F90 subsystem disabled.  Skipping extraction of F90 information from Globus."
 fi
 
 #
