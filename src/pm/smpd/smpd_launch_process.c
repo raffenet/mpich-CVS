@@ -1514,6 +1514,7 @@ static void set_environment_variables(char *bEnv)
 }
 */
 
+#ifdef HAVE_SETENV
 static void set_environment_variables(char *bEnv)
 {
     char name[1024], equals[3], value[8192];
@@ -1536,6 +1537,59 @@ static void set_environment_variables(char *bEnv)
 	setenv(name, value, 1);
     }
 }
+#else
+static int get_env_size(char *bEnv, int *count)
+{
+    char name[1024], equals[3], value[8192];
+    int size = 0;
+
+    while (1)
+    {
+	name[0] = '\0';
+	equals[0] = '\0';
+	value[0] = '\0';
+	if (MPIU_Str_get_string(&bEnv, name, 1024) != MPIU_STR_SUCCESS)
+	    break;
+	if (name[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, equals, 3) != MPIU_STR_SUCCESS)
+	    break;
+	if (equals[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, value, 8192) != MPIU_STR_SUCCESS)
+	    break;
+	*count = *count + 1;
+	size = size + strlen(name) + strlen(value) + 2; /* length of 'name=value\0' */
+    }
+    return size;
+}
+
+static void add_environment_variables(char *str, char **vars, char *bEnv)
+{
+    char name[1024], equals[3], value[8192];
+    int i = 0;
+
+    while (1)
+    {
+	name[0] = '\0';
+	equals[0] = '\0';
+	value[0] = '\0';
+	if (MPIU_Str_get_string(&bEnv, name, 1024) != MPIU_STR_SUCCESS)
+	    break;
+	if (name[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, equals, 3) != MPIU_STR_SUCCESS)
+	    break;
+	if (equals[0] == '\0')
+	    break;
+	if (MPIU_Str_get_string(&bEnv, value, 8192) != MPIU_STR_SUCCESS)
+	    break;
+	vars[i] = str;
+	str += sprintf(str, "%s=%s", name, value) + 1;
+	i++;
+    }
+}
+#endif
 
 #undef FCNAME
 #define FCNAME "smpd_launch_process"
@@ -1557,6 +1611,10 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char *temp_str;
     char temp_exe[SMPD_MAX_EXE_LENGTH];
     smpd_command_t *cmd_ptr;
+    static char *pPutEnv = NULL;
+    char *pLastEnv, *env_iter;
+    int env_count, env_size;
+    char **pEnvArray;
 
     smpd_enter_fn(FCNAME);
 
@@ -1636,6 +1694,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	/* child process */
 	smpd_dbg_printf("client is alive and about to exec '%s'\n", argv[0]);
 
+#ifdef HAVE_SETENV
 	if (process->pmi != NULL)
 	{
 	    sprintf(str, "%d", process->rank);
@@ -1670,7 +1729,46 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	    setenv("PMI_CLIQUE", str, 1);
 	}
 	set_environment_variables(process->env);
-
+#else
+	pLastEnv = pPutEnv;
+	env_count = 0;
+	env_size = get_env_size(process->env, &env_count) + 1024;
+	env_count += 10;
+	pPutEnv = (char*)malloc(env_size * sizeof(char));
+	pEnvArray = (char**)malloc(env_count * sizeof(char*));
+	env_iter = pPutEnv;
+	pEnvArray[0] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_RANK=%d", process->rank) + 1;
+	pEnvArray[1] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_SIZE=%d", process->nproc) + 1;
+	pEnvArray[2] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_KVS=%s", process->kvs_name) + 1;
+	pEnvArray[3] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_DOMAIN=%s", process->domain_name) + 1;
+	pEnvArray[4] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_SMPD_FD=%d", pmi_pipe_fds[1]) + 1;
+	pEnvArray[5] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_SMPD_ID=%d", smpd_process.id) + 1;
+	pEnvArray[6] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_SMPD_KEY=%d", process->id) + 1;
+	pEnvArray[7] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_SPAWN=%d", process->spawned) + 1;
+	pEnvArray[8] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_APPNUM=%d", process->appnum) + 1;
+	pEnvArray[9] = env_iter;
+	env_iter += sprintf(env_iter, "PMI_CLIQUE=%s", process->clique) + 1;
+	add_environment_variables(env_iter, &pEnvArray[10], process->env);
+	for (i=0; i<env_count; i++)
+	{
+	    result = putenv(pEnvArray[i]);
+	    if (result != 0)
+	    {
+		smpd_err_printf("putenv failed: %d\n", errno);
+	    }
+	}
+	if (pLastEnv != NULL)
+	    free(pLastEnv);
+#endif
 	result = dup2(stdin_pipe_fds[0], 0);   /* dup a new stdin */
 	if (result == -1)
 	{
