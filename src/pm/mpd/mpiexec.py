@@ -337,7 +337,7 @@ def mpiexec():
             mpd_print(1, 'unexpected message from mpd: %s' % (msg) )
             exit(-1)
     conSock.close()
-    jobTimeout = parmdb['MPIEXEC_TIMEOUT']
+    jobTimeout = int(parmdb['MPIEXEC_TIMEOUT'])
     if jobTimeout:
         alarm(jobTimeout)
 
