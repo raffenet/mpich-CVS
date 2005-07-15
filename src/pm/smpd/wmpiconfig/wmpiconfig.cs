@@ -51,6 +51,8 @@ namespace wmpiconfig
 		private System.Windows.Forms.Button toggle_button;
 		private System.Windows.Forms.ProgressBar scan_progressBar;
 		private ToolTip tool_tip;
+		private System.Windows.Forms.Button versions_button;
+		private System.Windows.Forms.ColumnHeader VersionHeader;
 		private Color orig_background;
 
 		public wmpiconfig()
@@ -142,6 +144,8 @@ namespace wmpiconfig
 			this.click_checkBox = new System.Windows.Forms.CheckBox();
 			this.toggle_button = new System.Windows.Forms.Button();
 			this.scan_progressBar = new System.Windows.Forms.ProgressBar();
+			this.versions_button = new System.Windows.Forms.Button();
+			this.VersionHeader = new System.Windows.Forms.ColumnHeader();
 			this.SuspendLayout();
 			// 
 			// host_label
@@ -222,7 +226,7 @@ namespace wmpiconfig
 			this.cancel_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.cancel_button.Location = new System.Drawing.Point(416, 448);
 			this.cancel_button.Name = "cancel_button";
-			this.cancel_button.TabIndex = 5;
+			this.cancel_button.TabIndex = 14;
 			this.cancel_button.Text = "&Cancel";
 			this.cancel_button.Click += new System.EventHandler(this.cancel_button_Click);
 			// 
@@ -231,13 +235,14 @@ namespace wmpiconfig
 			this.hosts_list.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
 				| System.Windows.Forms.AnchorStyles.Left)));
 			this.hosts_list.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-																						 this.HostsHeader});
+																						 this.HostsHeader,
+																						 this.VersionHeader});
 			this.hosts_list.FullRowSelect = true;
 			this.hosts_list.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-			this.hosts_list.Location = new System.Drawing.Point(8, 112);
+			this.hosts_list.Location = new System.Drawing.Point(8, 144);
 			this.hosts_list.Name = "hosts_list";
-			this.hosts_list.Size = new System.Drawing.Size(128, 360);
-			this.hosts_list.TabIndex = 6;
+			this.hosts_list.Size = new System.Drawing.Size(128, 328);
+			this.hosts_list.TabIndex = 12;
 			this.hosts_list.View = System.Windows.Forms.View.Details;
 			this.hosts_list.KeyUp += new System.Windows.Forms.KeyEventHandler(this.hosts_list_KeyUp);
 			this.hosts_list.SelectedIndexChanged += new System.EventHandler(this.hosts_list_SelectedIndexChanged);
@@ -245,7 +250,7 @@ namespace wmpiconfig
 			// HostsHeader
 			// 
 			this.HostsHeader.Text = "Hosts";
-			this.HostsHeader.Width = 107;
+			this.HostsHeader.Width = 91;
 			// 
 			// domain_label
 			// 
@@ -274,7 +279,7 @@ namespace wmpiconfig
 			this.output_textBox.ReadOnly = true;
 			this.output_textBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
 			this.output_textBox.Size = new System.Drawing.Size(256, 32);
-			this.output_textBox.TabIndex = 10;
+			this.output_textBox.TabIndex = 15;
 			this.output_textBox.Text = "";
 			// 
 			// ok_button
@@ -283,7 +288,7 @@ namespace wmpiconfig
 			this.ok_button.Location = new System.Drawing.Point(336, 448);
 			this.ok_button.Name = "ok_button";
 			this.ok_button.Size = new System.Drawing.Size(72, 23);
-			this.ok_button.TabIndex = 11;
+			this.ok_button.TabIndex = 13;
 			this.ok_button.Text = "OK";
 			this.ok_button.Click += new System.EventHandler(this.ok_button_Click);
 			// 
@@ -292,15 +297,15 @@ namespace wmpiconfig
 			this.domain_comboBox.Location = new System.Drawing.Point(8, 24);
 			this.domain_comboBox.Name = "domain_comboBox";
 			this.domain_comboBox.Size = new System.Drawing.Size(112, 21);
-			this.domain_comboBox.TabIndex = 12;
+			this.domain_comboBox.TabIndex = 6;
 			this.domain_comboBox.DropDown += new System.EventHandler(this.domain_comboBox_DropDown);
 			// 
 			// get_hosts_button
 			// 
 			this.get_hosts_button.Location = new System.Drawing.Point(8, 48);
 			this.get_hosts_button.Name = "get_hosts_button";
-			this.get_hosts_button.TabIndex = 13;
-			this.get_hosts_button.Text = "&Get Hosts";
+			this.get_hosts_button.TabIndex = 7;
+			this.get_hosts_button.Text = "Get &Hosts";
 			this.get_hosts_button.Click += new System.EventHandler(this.get_hosts_button_Click);
 			// 
 			// apply_all_button
@@ -308,7 +313,7 @@ namespace wmpiconfig
 			this.apply_all_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
 			this.apply_all_button.Location = new System.Drawing.Point(168, 448);
 			this.apply_all_button.Name = "apply_all_button";
-			this.apply_all_button.TabIndex = 14;
+			this.apply_all_button.TabIndex = 5;
 			this.apply_all_button.Text = "Apply All";
 			this.apply_all_button.Click += new System.EventHandler(this.apply_all_button_Click);
 			// 
@@ -318,7 +323,7 @@ namespace wmpiconfig
 			this.append_checkBox.Location = new System.Drawing.Point(88, 51);
 			this.append_checkBox.Name = "append_checkBox";
 			this.append_checkBox.Size = new System.Drawing.Size(16, 16);
-			this.append_checkBox.TabIndex = 15;
+			this.append_checkBox.TabIndex = 8;
 			this.append_checkBox.Text = "+";
 			// 
 			// click_checkBox
@@ -327,7 +332,7 @@ namespace wmpiconfig
 			this.click_checkBox.Location = new System.Drawing.Point(96, 80);
 			this.click_checkBox.Name = "click_checkBox";
 			this.click_checkBox.Size = new System.Drawing.Size(40, 24);
-			this.click_checkBox.TabIndex = 16;
+			this.click_checkBox.TabIndex = 10;
 			this.click_checkBox.Text = "click";
 			// 
 			// toggle_button
@@ -336,22 +341,36 @@ namespace wmpiconfig
 			this.toggle_button.Location = new System.Drawing.Point(144, 448);
 			this.toggle_button.Name = "toggle_button";
 			this.toggle_button.Size = new System.Drawing.Size(16, 23);
-			this.toggle_button.TabIndex = 17;
+			this.toggle_button.TabIndex = 16;
 			this.toggle_button.Text = "^";
 			this.toggle_button.Click += new System.EventHandler(this.toggle_button_Click);
 			// 
 			// scan_progressBar
 			// 
-			this.scan_progressBar.Location = new System.Drawing.Point(8, 104);
+			this.scan_progressBar.Location = new System.Drawing.Point(8, 136);
 			this.scan_progressBar.Name = "scan_progressBar";
 			this.scan_progressBar.Size = new System.Drawing.Size(128, 8);
 			this.scan_progressBar.Step = 1;
-			this.scan_progressBar.TabIndex = 18;
+			this.scan_progressBar.TabIndex = 17;
+			// 
+			// versions_button
+			// 
+			this.versions_button.Location = new System.Drawing.Point(8, 112);
+			this.versions_button.Name = "versions_button";
+			this.versions_button.Size = new System.Drawing.Size(128, 23);
+			this.versions_button.TabIndex = 11;
+			this.versions_button.Text = "Scan for &Versions";
+			this.versions_button.Click += new System.EventHandler(this.versions_button_Click);
+			// 
+			// VersionHeader
+			// 
+			this.VersionHeader.Text = "Version";
 			// 
 			// wmpiconfig
 			// 
 			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
 			this.ClientSize = new System.Drawing.Size(496, 483);
+			this.Controls.Add(this.versions_button);
 			this.Controls.Add(this.scan_progressBar);
 			this.Controls.Add(this.toggle_button);
 			this.Controls.Add(this.cancel_button);
@@ -363,12 +382,12 @@ namespace wmpiconfig
 			this.Controls.Add(this.domain_comboBox);
 			this.Controls.Add(this.ok_button);
 			this.Controls.Add(this.output_textBox);
+			this.Controls.Add(this.host_textBox);
 			this.Controls.Add(this.scan_button);
 			this.Controls.Add(this.domain_label);
 			this.Controls.Add(this.hosts_list);
 			this.Controls.Add(this.list);
 			this.Controls.Add(this.get_settings_button);
-			this.Controls.Add(this.host_textBox);
 			this.Controls.Add(this.host_label);
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.MinimumSize = new System.Drawing.Size(504, 256);
@@ -562,6 +581,24 @@ namespace wmpiconfig
 			scan_progressBar.PerformStep();
 		}
 
+		delegate void ScanHostVersionDelegate(string host);
+		private void ScanHostVersion(string host)
+		{
+			string version;
+			version = get_version(host);
+
+			UpdateHostScanVersionResultDelegate rd = new UpdateHostScanVersionResultDelegate(UpdateHostScanVersionResult);
+			object [] list = new object[2] { host, version };
+			Invoke(rd, list);
+		}
+
+		delegate void UpdateHostScanVersionResultDelegate(string host, string version);
+		private void UpdateHostScanVersionResult(string host, string version)
+		{
+			add_host_version_to_list(host, version);
+			scan_progressBar.PerformStep();
+		}
+
 		private void scan_button_Click(object sender, System.EventArgs e)
 		{
 			scan_progressBar.Value = 0;
@@ -676,6 +713,38 @@ namespace wmpiconfig
 				hash.Add("error", host + ": MPICH2 not installed or unable to query the host");
 			}
 			return hash;
+		}
+
+		private string get_version(string host)
+		{
+			string version = "";
+
+			Process p = new Process();
+			p.StartInfo.FileName = smpd;
+			p.StartInfo.Arguments = string.Format("-version {0}", host);
+			p.StartInfo.RedirectStandardOutput = true;
+			p.StartInfo.CreateNoWindow = true;
+			p.StartInfo.UseShellExecute = false;
+
+			//MessageBox.Show("About to launch: " + p.StartInfo.FileName + " " + p.StartInfo.Arguments);
+			try
+			{
+				p.Start();
+				version = p.StandardOutput.ReadToEnd();
+				if (!p.WaitForExit(20000))
+				{
+					p.Kill();
+				}
+				if (p.ExitCode != 0)
+				{
+					version = "";
+				}
+				p.Close();
+			}
+			catch (Exception)
+			{
+			}
+			return version.Trim();
 		}
 
 		private void set_settings(string host, Hashtable h)
@@ -927,6 +996,21 @@ namespace wmpiconfig
 			}
 		}
 
+		private void add_host_version_to_list(string host, string version)
+		{
+			foreach (ListViewItem item in hosts_list.Items)
+			{
+				if (String.Compare(item.Text, host, true) == 0)
+				{
+					if (item.SubItems.Count == 2)
+						item.SubItems[1].Text = version;
+					else
+						item.SubItems.Add(version);
+					return;
+				}
+			}
+		}
+
 		delegate void SetHostBackgroundDelegate(string host, bool success);
 		private void set_host_background(string host, bool success)
 		{
@@ -1086,6 +1170,7 @@ namespace wmpiconfig
 			tool_tip.SetToolTip(scan_button, "Retrieve the settings from the hosts in the host list");
 			tool_tip.SetToolTip(get_hosts_button, "Get the host names from the specified domain");
 			tool_tip.SetToolTip(toggle_button, "Check or uncheck all the checked settings");
+			tool_tip.SetToolTip(versions_button, "Retrieve the version from the hosts in the host list");
 		}
 
 		bool check_recursed = false;
@@ -1169,6 +1254,18 @@ namespace wmpiconfig
 				{
 					hosts_list.Items.Remove(hosts_list.FocusedItem);
 				}
+			}
+		}
+
+		private void versions_button_Click(object sender, System.EventArgs e)
+		{
+			scan_progressBar.Value = 0;
+			scan_progressBar.Maximum = hosts_list.Items.Count;
+			output_textBox.Text = "";
+			foreach (ListViewItem item in hosts_list.Items)
+			{
+				ScanHostVersionDelegate shd = new ScanHostVersionDelegate(ScanHostVersion);
+				shd.BeginInvoke(item.Text, null, null);
 			}
 		}
 	}
