@@ -633,6 +633,18 @@ int smpd_parse_command_args(int *argcp, char **argvp[])
 #endif
     }
 
+    if (smpd_get_opt_string(argcp, argvp, "-version", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
+    {
+	smpd_process.do_console = 1;
+	smpd_process.builtin_cmd = SMPD_CMD_VERSION;
+    }
+    else if (smpd_get_opt(argcp, argvp, "-version"))
+    {
+	printf("%s\n", SMPD_VERSION);
+	fflush(stdout);
+	smpd_exit(0);
+    }
+
     /* These commands are handled by mpiexec although doing them here is an alternate solution.
     if (smpd_get_opt_two_strings(argcp, argvp, "-add_job", smpd_process.job_key, SMPD_MAX_NAME_LENGTH, smpd_process.job_key_account, SMPD_MAX_ACCOUNT_LENGTH))
     {

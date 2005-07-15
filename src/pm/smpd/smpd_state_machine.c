@@ -622,6 +622,15 @@ int smpd_state_reading_challenge_string(smpd_context_t *context, MPIDU_Sock_even
     smpd_dbg_printf("read challenge string: '%s'\n", context->pszChallengeResponse);
     context->read_state = SMPD_IDLE;
 
+    /* check to see if we are simply trying to get the version */
+    if (smpd_process.do_console == 1 && smpd_process.builtin_cmd == SMPD_CMD_VERSION)
+    {
+	strtok(context->pszChallengeResponse, " ");
+	printf("%s\n", context->pszChallengeResponse);
+	fflush(stdout);
+	smpd_exit(0);
+    }
+
     if (smpd_verify_version(context->pszChallengeResponse) == SMPD_TRUE)
     {
 	strcpy(phrase, smpd_process.passphrase);
