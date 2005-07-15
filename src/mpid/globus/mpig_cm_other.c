@@ -74,7 +74,7 @@ int mpig_cm_other_init(int * argc, char *** argv)
     MPIG_DBG_PRINTF((10, FCNAME, "entering"));
 
     MPIU_CHKPMEM_MALLOC(vc, mpig_vc_t *, sizeof(mpig_vc_t), mpi_errno, "VC for processing MPI_ANY_SOURCE/MPI_PROC_NULL");
-    mpig_vc_create(vc);
+    mpig_vc_construct(vc);
     mpig_vc_set_state(vc, MPIG_VC_STATE_CONNECTED);
     mpig_vc_set_cm_type(vc, MPIG_CM_TYPE_OTHER);
     mpig_vc_set_cm_funcs(vc, mpig_cm_other_funcs);

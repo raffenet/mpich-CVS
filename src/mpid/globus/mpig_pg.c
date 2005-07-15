@@ -92,10 +92,10 @@ int mpig_pg_create(int pg_size, mpig_pg_t ** pg_ptr)
      */
     for (p = 0; p < pg_size; p++)
     {
-	mpig_vc_create(&pg->vct[p]);
+	mpig_vc_construct(&pg->vct[p]);
 	pg->vct[p].pg = pg;
 	pg->vct[p].pg_rank = p;
-	MPIDI_LPID_get_next(&pg->vct[p].lpid);
+	mpig_lpid_get_next(&pg->vct[p].lpid);
     }
 
     /*

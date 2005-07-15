@@ -6,8 +6,8 @@
  * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
  */
 
-#if !defined(MPICH2_MPIG_CM_XIO_H_INCLUDED)
-#define MPICH2_MPIG_CM_XIO_H_INCLUDED
+#if !defined(MPIG_CM_XIO_H_INCLUDED)
+#define MPIG_CM_XIO_H_INCLUDED
 
 #include "globus_xio.h"
 
@@ -20,6 +20,7 @@
  */
 #define MPIG_CM_TYPE_XIO_LIST			\
     ,MPIG_CM_TYPE_XIO
+
 
 /*
  * Define the communication module structure to be included in a VC
@@ -37,16 +38,16 @@ struct mpig_vc_cm_xio							\
     globus_xio_handle_t handle;						\
 									\
     /* Active send and receive requests */				\
-    volatile struct MPID_Request * active_sreq;				\
-    volatile struct MPID_Request * active_rreq;				\
+    struct MPID_Request * active_sreq;					\
+    struct MPID_Request * active_rreq;					\
 									\
     /* Send queue */							\
-    volatile struct MPID_Request * sendq_head;				\
-    volatile struct MPID_Request * sendq_tail;				\
+    struct MPID_Request * sendq_head;					\
+    struct MPID_Request * sendq_tail;					\
 									\
     /* Receive State */							\
     mpig_cm_xio_recv_state_t recv_state;				\
-    int msg_hdr_sz;							\
+    int msg_hdr_size;							\
     									\
     /* Internal receive buffer for small headers and messages */	\
     unsigned char rbuf[MPIG_CM_XIO_RECV_BUF_SIZE];			\
@@ -59,34 +60,55 @@ xio;
 /*
  * Define the communication module structure to be included in a request
  */
-#define MPIG_REQUEST_CM_XIO_DECL												  \
-struct mpig_request_cm_xio													  \
-{																  \
-    /* Size of the data received, or to be received. */										  \
-    MPI_Aint recv_data_sz;													  \
-																  \
-    /* segment, segment_first, and segment_size are used when processing non-contiguous datatypes */				  \
-    MPID_Segment seg;														  \
-    MPI_Aint seg_first;														  \
-    MPI_Aint seg_sz;														  \
-																  \
-    /* iov and iov_count define the data to be transferred/received */								  \
-    MPID_IOV iov[MPID_IOV_LIMIT];												  \
-    int iov_cnt;														  \
-																  \
-    /* The CA (completion action) field identifies the action to take once the operation described by the iov has completed. */	  \
-    /* XXX: MPIDI_CA_t ca; */													  \
-																  \
-    /* Space for a message header, and perhaps a small amount of data */							  \
-    unsigned char msgbuf[MPIG_CM_XIO_SEND_BUF_SIZE];										  \
-																  \
-    /* Temporary data storage used for things like unexpected eager messages and packing/unpacking buffers. */			  \
-    struct mpig_databuf * databuf;												  \
-																  \
-    /* Extra data to receive resulting from a truncated or canceled message */							  \
-    MPI_Aint recv_pending_count;												  \
-}																  \
+#define MPIG_REQUEST_CM_XIO_DECL												\
+struct mpig_request_cm_xio													\
+{																\
+    /* Type of message being sent or received */										\
+    mpig_cm_xio_msg_types_t msg_type;												\
+																\
+    /* Information about the user buffer being sent/received.  The segment object is used to help process buffers that are	\
+       noncontiguous or data that is heterogeneous. */										\
+    int buf_contig;														\
+    MPI_Aint buf_pos;														\
+    MPI_Aint buf_size;														\
+    MPID_Segment seg;														\
+																\
+    /* The I/O vector define the data to be transferred/received */								\
+    MPID_IOV iov[MPID_IOV_LIMIT];												\
+    int iov_cnt;														\
+    int iov_bytes;														\
+																\
+    /* This completion counter is used to identify when all of the data has been received.  It is indepent of the request	\
+       completion counter. */													\
+    MPI_Aint recv_data_cc;													\
+																\
+    /* This field is the size of the data received, or to be received. */							\
+    MPI_Aint recv_data_size;													\
+																\
+    /* Space for a message header, and perhaps a small amount of data */							\
+    unsigned char msgbuf[MPIG_CM_XIO_SEND_BUF_SIZE];										\
+																\
+    /* Temporary data storage used for things like unexpected eager messages and packing/unpacking buffers. */			\
+    struct mpig_databuf * databuf;												\
+}																\
 xio;
+
+
+/*
+ * Types of messages that can be sent or received
+ */
+typedef enum mpig_cm_xio_msg_types
+{
+    MPIG_CM_XIO_MSG_TYPE_FIRST = 0,
+    MPIG_CM_XIO_MSG_TYPE_EAGER_SEND,
+    MPIG_CM_XIO_MSG_TYPE_RNDV_RTS_SEND,
+    MPIG_CM_XIO_MSG_TYPE_RNDV_CTS,
+    MPIG_CM_XIO_MSG_TYPE_RNDV_DATA,
+    MPIG_CM_XIO_MSG_TYPE_OPEN_REQ,
+    MPIG_CM_XIO_MSG_TYPE_OPEN_RESP,
+    MPIG_CM_XIO_MSG_TYPE_LAST
+}
+mpig_cm_xio_msg_types_t;
 
 
 /*

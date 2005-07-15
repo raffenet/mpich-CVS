@@ -56,9 +56,9 @@ int gethostname(char *name, size_t len);
 # endif
 
 
-/*>>>>>>>>>>>>>>>>>>>>
-  PROCESS DATA SECTION
-  >>>>>>>>>>>>>>>>>>>>*/
+/**********************************************************************************************************************************
+						   BEGIN PROCESS DATA SECTION
+**********************************************************************************************************************************/
 /*
  * The value 128 is returned by the echomaxprocname target in src/mpid/globus/Makefile.sm.  If the value is modified here, it
  * also needs to be modified in Makefile.sm.
@@ -99,17 +99,18 @@ mpig_process_t;
 extern mpig_process_t mpig_process;
 
 /* XXX: MT: needs to be made thread safe */
-#define MPIDI_LPID_get_next(lpid_)		\
+#define mpig_lpid_get_next(lpid_)		\
 {						\
     *(lpid_) = mpig_process.lpid_counter++;	\
 }
-/*<<<<<<<<<<<<<<<<<<<<
-  PROCESS DATA SECTION
-  <<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						    END PROCESS DATA SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>
-  BUSINESS CARD SECTION
-  >>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						   BEGIN BUSINESS CARD SECTION
+**********************************************************************************************************************************/
 /*
  * NOTE: to insure that the memory associated with the strings returned by mpig_bc_get_contact() and mpig_bc_serialize_object()
  * is freed, the caller is responsible mpig_bc_free_contact() and mpig_bc_free_serialized_object() respectively.
@@ -129,16 +130,17 @@ void mpig_bc_free_serialized_object(char * str);
 int mpig_bc_deserialize_object(const char *, mpig_bc_t * bc);
 
 int mpig_bc_destroy(mpig_bc_t * bc);
-/*<<<<<<<<<<<<<<<<<<<<<
-  BUSINESS CARD SECTION
-  <<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						    END BUSINESS CARD SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>
-  PROCESS GROUP SECTION
-  >>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						   BEGIN PROCESS GROUP SECTION
+**********************************************************************************************************************************/
 int mpig_pg_init(void);
 int mpig_pg_finalize(void);
-int mpig_pg_create(int vct_sz, mpig_pg_t ** pgp);
+int mpig_pg_create(int vct_size, mpig_pg_t ** pgp);
 int mpig_pg_destroy(mpig_pg_t * pg);
 void mpig_pg_add_ref(mpig_pg_t * pg);
 void mpig_pg_release_ref(mpig_pg_t * pg, int * inuse);
@@ -177,14 +179,15 @@ int mpig_pg_compare_ids(const char * id1, const char * id2);
 }
 
 #define mpig_pg_compare_ids(id1_, id2_) (strcmp((id1_), (id2_)))
-/*<<<<<<<<<<<<<<<<<<<<<
-  PROCESS GROUP SECTION
-  <<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						    END PROCESS GROUP SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>
-  VIRTUAL CONNECTION SECTION
-  >>>>>>>>>>>>>>>>>>>>>>>>>>*/
-#define mpig_vc_create(vc_)					\
+
+/**********************************************************************************************************************************
+						BEGIN VIRTUAL CONNECTION SECTION
+**********************************************************************************************************************************/
+#define mpig_vc_construct(vc_)					\
 {								\
     (vc_)->ref_count = 0;					\
     mpig_vc_set_state((vc_), MPIG_VC_STATE_UNINITIALIZED);	\
@@ -193,7 +196,7 @@ int mpig_pg_compare_ids(const char * id1, const char * id2);
     (vc_)->lpid = -1;						\
 }
 
-#define mpig_vc_destroy(vc_) {;}
+#define mpig_vc_destruct(vc_) {;}
 
 #define mpig_vc_add_ref(vc_)			\
 {						\
@@ -216,13 +219,14 @@ int mpig_pg_compare_ids(const char * id1, const char * id2);
 /* XXX: MT: define */
 #define mpig_vc_lock(vc)
 #define mpig_vc_unlock(vc)
-/*<<<<<<<<<<<<<<<<<<<<<<<<<<
-  VIRTUAL CONNECTION SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						 END VIRTUAL CONNECTION SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>
-  REQUEST SECTION
-  >>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						      BEGIN REQUEST SECTION
+**********************************************************************************************************************************/
 #define mpig_request_set_envelope(req_, rank_, tag_, ctx_)	\
 {								\
     (req_)->dev.rank = (rank_);					\
@@ -374,41 +378,47 @@ int mpig_pg_compare_ids(const char * id1, const char * id2);
     mpig_request_add_comm(*(rreqp_), (comm_));											\
     mpig_request_add_dt(*(rreqp_), (dt_));											\
 }
-/*<<<<<<<<<<<<<<<
-  REQUEST SECTION
-  <<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						       END REQUEST SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>
-  DATATYPE SECTION
-  >>>>>>>>>>>>>>>>*/
-#define mpig_datatype_get_info(count_, dt_, dt_contig_, data_sz_, dt_ptr_, dt_true_lb_)			\
-{													\
-    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)							\
-    {													\
-	*(dt_ptr_) = NULL;										\
-	*(dt_contig_) = TRUE;										\
-        *(dt_true_lb_) = 0;										\
-	*(data_sz_) = (count_) * MPID_Datatype_get_basic_size(dt_);					\
-	MPIG_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIG_AINT_FMT,	\
-			  *(dt_contig_), MPID_Datatype_get_basic_size(dt_), *(data_sz_)));		\
-    }													\
-    else												\
-    {													\
-	MPID_Datatype_get_ptr((dt_), *(dt_ptr_));							\
-	*(dt_contig_) = (*(dt_ptr_))->is_contig;							\
-	*(data_sz_) = (count_) * (*(dt_ptr_))->size;							\
-        *(dt_true_lb_) = (*(dt_ptr_))->true_lb;								\
-	MPIG_DBG_PRINTF((15, FCNAME, "user defined dt: dt_contig=%d, dt_sz=%d, data_sz=" MPIG_AINT_FMT,	\
-			  *(dt_contig_), (*(dt_ptr_))->size, *(data_sz_)));				\
-    }													\
+
+/**********************************************************************************************************************************
+						     BEGIN DATATYPE SECTION
+**********************************************************************************************************************************/
+int mpig_datatype_set_my_bc(mpig_bc_t * bc);
+int mpig_datatype_process_bc(const mpig_bc_t * bc, mpig_vc_t * vc);
+void mpig_datatype_get_src_ctype(const mpig_vc_t * vc, const mpig_ftype_t ftype, mpig_ctype_t * ctype);
+
+#define mpig_datatype_get_info(count_, dt_, dt_contig_, data_size_, dt_ptr_, dt_true_lb_)			\
+{														\
+    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)								\
+    {														\
+	*(dt_ptr_) = NULL;											\
+	*(dt_contig_) = TRUE;											\
+        *(dt_true_lb_) = 0;											\
+	*(data_size_) = (count_) * MPID_Datatype_get_basic_size(dt_);						\
+	MPIG_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, dt_size=%d, data_size=" MPIG_AINT_FMT,	\
+			  *(dt_contig_), MPID_Datatype_get_basic_size(dt_), *(data_size_)));			\
+    }														\
+    else													\
+    {														\
+	MPID_Datatype_get_ptr((dt_), *(dt_ptr_));								\
+	*(dt_contig_) = (*(dt_ptr_))->is_contig;								\
+	*(data_size_) = (count_) * (*(dt_ptr_))->size;								\
+        *(dt_true_lb_) = (*(dt_ptr_))->true_lb;									\
+	MPIG_DBG_PRINTF((15, FCNAME, "user defined dt: dt_contig=%d, dt_size=%d, data_size=" MPIG_AINT_FMT,	\
+			  *(dt_contig_), (*(dt_ptr_))->size, *(data_size_)));					\
+    }														\
 }
-/*<<<<<<<<<<<<<<<<
-  DATATYPE SECTION
-  <<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						      END DATATYPE SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>
-  RECEIVE QUEUE SECTION
-  >>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						   BEGIN RECEIVE QUEUE SECTION
+**********************************************************************************************************************************/
 int mpig_recvq_init(void);
 
 struct MPID_Request * mpig_recvq_find_unexp(int rank, int tag, int ctx);
@@ -422,13 +432,14 @@ int mpig_recvq_deq_posted_rreq(struct MPID_Request * rreq);
 struct MPID_Request * mpig_recvq_deq_posted(int rank, int tag, int ctx);
 
 struct MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, int * found);
-/*<<<<<<<<<<<<<<<<<<<<<
-  RECEIVE QUEUE SECTION
-  <<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						    END RECEIVE QUEUE SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>
-  PROCESS MANAGEMENT SECTION
-  >>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						BEGIN PROCESS MANAGEMENT SECTION
+**********************************************************************************************************************************/
 int mpig_pm_init(void);
 
 int mpig_pm_finalize(void);
@@ -442,13 +453,14 @@ int mpig_pm_get_pg_size(int * pg_size);
 int mpig_pm_get_pg_rank(int * pg_rank);
 
 int mpig_pm_get_pg_id(const char ** pg_id);
-/*<<<<<<<<<<<<<<<<<<<<<<<<<<
-  PROCESS MANAGEMENT SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						 END PROCESS MANAGEMENT SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>
-  DEBUGGING OUTPUT SECTION
-  >>>>>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						 BEGIN DEBUGGING OUTPUT SECTION
+**********************************************************************************************************************************/
 void mpig_dbg_printf(int level, const char * fcname, const char * fmt, ...);
 void mpig_dbg_vprintf(int level, const char * fcname, const char * fmt, va_list ap);
 
@@ -479,8 +491,8 @@ void mpig_dbg_vprintf(int level, const char * fcname, const char * fmt, va_list 
 		       (func_), (level_), ## args_);										  \
 }
 #endif
-/*<<<<<<<<<<<<<<<<<<<<<<<<
-  DEBUGGING OUTPUT SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						  END DEBUGGING OUTPUT SECTION
+**********************************************************************************************************************************/
 
 #endif /* MPICH2_MPIDIMPL_H_INCLUDED */

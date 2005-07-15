@@ -36,21 +36,68 @@ struct mpig_vc;
 #define MPIG_AINT_FMT "%d"  /* XXX: get this from mpich2prereq */
 
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>
-  VENDOR MPI TYPES SECTION
-  >>>>>>>>>>>>>>>>>>>>>>>>*/
+/**********************************************************************************************************************************
+						 BEGIN VENDOR MPI TYPES SECTION
+**********************************************************************************************************************************/
 #if defined(MPIG_VMPI)
 typedef MPIG_ALIGNED_T mpig_vmpi_comm_t[(SIZEOF_VMPI_COMM + SIZEOF_MPIG_ALIGNED_T - 1) / SIZEOF_MPIG_ALIGNED_T];
 typedef MPIG_ALIGNED_T mpig_vmpi_datatype_t[(SIZEOF_VMPI_DATATYPE + SIZEOF_MPIG_ALIGNED_T - 1) / SIZEOF_MPIG_ALIGNED_T];
 typedef MPIG_ALIGNED_T mpig_vmpi_request_t[(SIZEOF_VMPI_REQUEST + SIZEOF_MPIG_ALIGNED_T - 1) / SIZEOF_MPIG_ALIGNED_T];
 #endif
-/*<<<<<<<<<<<<<<<<<<<<<<<<
-  VENDOR MPI TYPES SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						  END VENDOR MPI TYPES SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>
-  BUSINESS CARD SECTION
-  >>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						     BEGIN DATATYPE SECTION
+**********************************************************************************************************************************/
+typedef enum mpig_ftype
+{
+    MPIG_FTYPE_CHARACTER,
+    MPIG_FTYPE_LOGICAL,
+    MPIG_FTYPE_INTEGER,
+    MPIG_FTYPE_INTEGER1,
+    MPIG_FTYPE_INTEGER2,
+    MPIG_FTYPE_INTEGER4,
+    MPIG_FTYPE_INTEGER8,
+    MPIG_FTYPE_INTEGER16,
+    MPIG_FTYPE_REAL,
+    MPIG_FTYPE_REAL2,
+    MPIG_FTYPE_REAL4,
+    MPIG_FTYPE_REAL8,
+    MPIG_FTYPE_REAL16,
+    MPIG_FTYPE_DOBULE_PRECISION,
+    MPIG_FTYPE_COMPLEX,
+    MPIG_FTYPE_COMPLEX4,
+    MPIG_FTYPE_COMPLEX8,
+    MPIG_FTYPE_COMPLEX16,
+    MPIG_FTYPE_COMPLEX32,
+    MPIG_FTYPE_DOUBLE_COMPLEX
+}
+mpig_ftype_t;
+
+typedef enum mpig_ctype
+{
+    MPIG_CTYPE_NONE,
+    MPIG_CTYPE_CHAR,
+    MPIG_CTYPE_SHORT,
+    MPIG_CTYPE_INT,
+    MPIG_CTYPE_LONG,
+    MPIG_CTYPE_LONG_LONG,
+    MPIG_CTYPE_FLOAT,
+    MPIG_CTYPE_DOUBLE,
+    MPIG_CTYPE_LONG_DOUBLE
+}
+mpig_ctype_t;
+/**********************************************************************************************************************************
+						      END DATATYPE SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						   BEGIN BUSINESS CARD SECTION
+**********************************************************************************************************************************/
 typedef struct mpig_bc
 {
     char * str_begin;
@@ -59,13 +106,14 @@ typedef struct mpig_bc
     int str_left;
 }
 mpig_bc_t;
-/*<<<<<<<<<<<<<<<<<<<<<
-  BUSINESS CARD SECTION
-  <<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						    END BUSINESS CARD SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  CONNECTION MANAGEMENT SECTION
-  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+					       BEGIN CONNECTION MANAGEMENT SECTION
+**********************************************************************************************************************************/
 typedef int (*mpig_cm_adi3_send_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
 				      int ctxoff, struct MPID_Request ** reqp);
 
@@ -112,13 +160,13 @@ typedef enum mpig_cm_type
     MPIG_CM_TYPE_OTHER_LIST
 }
 mpig_cm_type_t;
-/*<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  CONNECTION MANAGEMENT SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						END CONNECTION MANAGEMENT SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>>>>>>>
-  PROCESS GROUP SECTION
-  >>>>>>>>>>>>>>>>>>>>>*/
+/**********************************************************************************************************************************
+						   BEGIN PROCESS GROUP SECTION
+**********************************************************************************************************************************/
 typedef struct mpig_pg
 {
     volatile int ref_count;
@@ -170,8 +218,12 @@ mpig_vc_state_t;
 
 typedef struct mpig_vc
 {
+    /* mutex tp protect data and insure RC systems see updates */
+    globus_mutex_t mutex;
+    
     volatile int ref_count;
 
+    /* connection state */
     mpig_vc_state_t state;
 
     /* Process group to which the process associated with this VC belongs, and the rank of that process in the process group */
@@ -193,13 +245,14 @@ typedef struct mpig_vc
     cm;
 }
 mpig_vc_t;
-/*<<<<<<<<<<<<<<<<<<<<<<<<<<
-  VIRTUAL CONNECTION SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+						 END VIRTUAL CONNECTION SECTION
+**********************************************************************************************************************************/
 
-/*>>>>>>>>>>>>>>>
-  REQUEST SECTION
-  >>>>>>>>>>>>>>>*/
+
+/**********************************************************************************************************************************
+						      BEGIN REQUEST SECTION
+**********************************************************************************************************************************/
 typedef enum mpig_request_type
 {
     MPIG_REQUEST_TYPE_RECV = 1,
@@ -236,8 +289,8 @@ struct mpig_request_dev														 \
        request structure. */													 \
     int sreq_id;														 \
 																 \
-    /* Request canceled flag */													 \
-    int canceled;														 \
+    /* Request cancelled flag */												 \
+    int cancelled;														 \
 																 \
     /* Pointer allowing the request to be inserted into any number of lists/queues */						 \
     struct MPID_Request * next;													 \
@@ -252,14 +305,14 @@ union						\
     MPIG_REQUEST_CM_XIO_DECL			\
     MPIG_REQUEST_CM_OTHER_DECL			\
 } cm;
+/**********************************************************************************************************************************
+						       END REQUEST SECTION
+**********************************************************************************************************************************/
 
-/*<<<<<<<<<<<<<<<
-  REQUEST SECTION
-  <<<<<<<<<<<<<<<*/
 
-/*>>>>>>>>>>>>>>>>>>>>>>>
-  PROGRESS ENGINE SECTION
-  >>>>>>>>>>>>>>>>>>>>>>>*/
+/**********************************************************************************************************************************
+						  BEGIN PROGRESS ENGINE SECTION
+**********************************************************************************************************************************/
 /*
  * MPID_PROGRESS_STATE_DECL
  *
@@ -275,8 +328,8 @@ struct mpig_Progress_state
 };
 
 #define MPID_PROGRESS_STATE_DECL struct mpig_Progress_state dev;
-/*<<<<<<<<<<<<<<<<<<<<<<<
-  PROGRESS ENGINE SECTION
-  <<<<<<<<<<<<<<<<<<<<<<<*/
+/**********************************************************************************************************************************
+END PROGRESS ENGINE SECTION
+**********************************************************************************************************************************/
 
 #endif /* MPICH2_MPIDPRE_H_INCLUDED */
