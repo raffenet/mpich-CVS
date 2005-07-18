@@ -245,11 +245,25 @@ sub printLine {
 	# Compute length
 	my $length = length($line);
 	while ($length > $maxPrintLine) {
+	    # For Fortran 90 and C/C++, lines must be
+	    # broken at whitespace.  Fortran 77 ignores whitespace,
 	    my $subline = substr $line, 0, $maxPrintLine;
+	    # Now, break subline at the last non-letter
+	    if ($subline =~ /(.*)([^\w]\S*)$/) {
+		$subline = $1;
+		$line    = $2 . $line;
+		# Add blanks to end of the subline to match what was stripped
+		# off
+		my $len = length($2);
+		for (my $i=0; $i < $len; $i++) { 
+		    $subline .= " ";
+		}
+	    }
+	    print $OFD $subline . $postLine . "\n";
+
 	    $line = substr $line, $maxPrintLine;
 	    $line = $preLine . $line;
 	    $length = length($line);
-	    print $OFD $subline . $postLine . "\n";
 	}
         print $OFD $line . "\n";
     }
