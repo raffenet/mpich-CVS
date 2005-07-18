@@ -562,9 +562,17 @@ if [ $do_build_configure = yes ] ; then
 		    # work on your platform, simply comment out this test
 		    # and set builtConfigure to true (or use find with
 		    # -newer if you want to replace the test)
-		    if [ $dir/configure -nt $dir/mf.newer ] ; then
-			builtConfigure=yes
-		    fi
+		    # Test for support of -nt
+		    rm -f .foo
+		    test $dir/configure -nt $dir/mf.newer 2>.foo
+		    # If .foo is empty, there was no error in test with -nt
+		    if [ ! -s ".foo" ] ; then
+		        if [ $dir/configure -nt $dir/mf.newer ] ; then
+			    builtConfigure=yes
+		        fi
+                    fi
+		    rm -f .foo
+		    #
 		    rm -f $dir/mf.newer
 		    if [ ! -x $dir/configure ] ; then
 		        echo "Error! Could not build configure in $dir with make configure"
