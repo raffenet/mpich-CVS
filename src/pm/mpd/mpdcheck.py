@@ -61,12 +61,13 @@ __credits__ = ""
 
 import re
 
-from sys    import argv, exit, stdout
-from os     import path, kill, system
-from signal import SIGKILL
-from socket import gethostname, getfqdn, gethostbyname_ex, gethostbyaddr, socket
-from popen2 import Popen3
-from select import select, error
+from  sys      import argv, exit, stdout
+from  os       import path, kill, system
+from  signal   import SIGKILL
+from  socket   import gethostname, getfqdn, gethostbyname_ex, gethostbyaddr, socket
+from  popen2   import Popen3
+from  select   import select, error
+from  commands import getoutput
 
 
 if __name__ == '__main__':    # so I can be imported by pydoc
@@ -110,18 +111,26 @@ if __name__ == '__main__':    # so I can be imported by pydoc
             sock.close()
             exit(0)
         elif argv[argidx] == '-pc':
+            print "--- print results of: gethostbyname_ex(gethostname())"
+            print gethostbyname_ex(gethostname())
             print "--- try to run /bin/hostname"
-            system('/bin/hostname')
+            linesAsStr = getoutput("/bin/hostname")
+            print linesAsStr
             print "--- try to run uname -a"
-            system('/bin/uname -a')
+            linesAsStr = getoutput("/bin/uname -a")
+            print linesAsStr
             print "--- try to print /etc/hosts"
-            system('/bin/cat /etc/hosts')
+            linesAsStr = getoutput("/bin/cat /etc/hosts")
+            print linesAsStr
             print "--- try to print /etc/resolv.conf"
-            system('/bin/cat /etc/resolv.conf')
+            linesAsStr = getoutput("/bin/cat /etc/resolv.conf")
+            print linesAsStr
             print "--- try to run /sbin/ifconfig -a"
-            system('/sbin/ifconfig -a')
+            linesAsStr = getoutput("/sbin/ifconfig -a")
+            print linesAsStr
             print "--- try to print /etc/nsswitch.conf"
-            system('/bin/cat /etc/nsswitch.conf')
+            linesAsStr = getoutput("/bin/cat /etc/nsswitch.conf")
+            print linesAsStr
             exit(0)
         elif argv[argidx] == '-v':
             verbose = 1
