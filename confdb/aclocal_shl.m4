@@ -101,6 +101,9 @@ case "$enable_sharedlibs" in
         *CYGWIN*|*cygwin*)
 	AC_MSG_ERROR([You must specify --enable-sharedlibs=cygwin-gcc for Cygwin])
 	;;
+	*SunOS*)
+	AC_MSG_ERROR([You must specify --enable-sharedlibs=solaris-gcc for Solaris with gcc])
+	;;
     esac
     ;;
 
@@ -157,6 +160,15 @@ dnl Other, such as solaris-cc
     CC_SHL='${CC} -xcode=pic32'
     C_LINKPATH_SHL="-R"
     enable_sharedlibs="solaris-cc"
+    ;;
+
+    solaris-gcc)
+    # This is the same as gcc, except for the C_LINKPATH_SHL
+    AC_MSG_RESULT([Creating shared libraries using Solaris with gcc])
+    C_LINK_SHL='${CC} -shared'
+    CC_SHL='${CC} -fpic'
+    C_LINKPATH_SHL="-R"
+    enable_sharedlibs="solaris-gcc"
     ;;
     *)
     AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs])
