@@ -185,6 +185,8 @@ sub ConvertMakefile {
 
     open( INF, "<$indir/$filename" ) || die "Cannot open $indir/$filename\n";
     open( OUTF, ">$outdir/$filename.new" ) || die "Cannot open $outdir/$filename.new\n";
+    print OUTF "# This $filename generated automatically by f77tof90\n";
+    print OUTF "# from $indir/$filename.  DO NOT EDIT\n"; 
     while (<INF>) {
         # First, check for sources that are not present.  These
 	# may be derived files (see f77/io for an example).  For now,
