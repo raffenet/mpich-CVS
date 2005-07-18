@@ -759,7 +759,11 @@ AC_SUBST(device_name)
 # with-pmi
 if test "$with_pmi" != "no" ; then
     if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
-        with_pmi=simple
+        if test "$with_pm" = "smpd" ; then
+	    with_pmi=smpd
+	else
+            with_pmi=simple
+        fi
     fi
     pmi_name=$with_pmi
     
