@@ -166,7 +166,7 @@ dnl Other, such as solaris-cc
     # This is the same as gcc, except for the C_LINKPATH_SHL
     AC_MSG_RESULT([Creating shared libraries using Solaris with gcc])
     C_LINK_SHL='${CC} -shared'
-    CC_SHL='${CC} -fpic'
+    CC_SHL='${CC} -fPIC'
     C_LINKPATH_SHL="-R"
     enable_sharedlibs="solaris-gcc"
     ;;
