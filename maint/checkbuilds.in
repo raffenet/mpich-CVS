@@ -31,6 +31,13 @@ $fcname = "f77";
 $has_f77 = 1;
 $has_cxx = 1;
 #
+# Some process managers require separate startup and rundown steps.  The 
+# following variables are used to handle this
+$StartDemon = "";     # Name of routine to start demons
+$StopDemon  = "";     # Name of routine to stop demons
+$hasDemon   = 0;
+
+#
 # Set available options.  For enable and with, the values are
 # {with,enable}-name[;possiblevalues]*
 # We need a way to keep these consistent with the arguments recognized by
@@ -349,8 +356,9 @@ sub RunTest {
 	# print "rc = $rc\n";
 	if ($rc == 0) {
 	    print $OUTFD $MakeStart;
-	    # Remove mpd just in case (see below)
+	    # Remove mpd and smpd just in case (see below)
 	    unlink "bin/mpd";
+	    unlink "bin/smpd";
 	    $rc = &RunProgram( $makepgm );
 	    print $OUTFD $MakeEnd;
 	    $make_status = $rc;
@@ -374,9 +382,18 @@ sub RunTest {
 		}
 		print $OUTFD $MakeInstEnd;
 		if ($install_status == 0) {
-		    # Get mpd status from the with args ...
+		    # FIXME: Get mpd status from the with args ...
 		    if (-x "bin/mpd") {
-			$built_for_mpd = 1;
+			$hasDemon   = 1;
+			$StartDemon = "RunMPD";
+			$StopDemon  = "StopMPD";
+		    }
+		    elsif (-x "bin/smpd") {
+			$hasDemon   = 1;
+			$StartDemon = "RunSMPD";
+			$StopDemon  = "StopSMPD";
+			# FIXME: Remaining problem: smpd needs to be told what
+			# port to use on the mpiexec line
 		    }
 		    $test_status = &RunTestSuites;
 		}
@@ -620,15 +637,14 @@ sub RunMpichTestSuite {
     $ENV{MPIEXEC_TIMEOUT} = "180";
     $rc = &RunProgram( @config );
     if ($rc == 0) {
-	# HACK for mpd for now.
-	if ($built_for_mpd) {
-	    &RunMPD;
+	if ($hasDemon) {
+	    &$StartDemon;
 	}
 	$rc = &RunProgram( "$makepgm testing" );
 	$test_status = $rc;
 	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
-	if ($built_for_mpd) {
-	    `$instdir/bin/mpdallexit`;
+	if ($hasDemon) {
+	    &$StopDemon;
 	}
     }
     else {
@@ -691,9 +707,8 @@ sub RunCxxTestSuite {
     $ENV{MPIEXEC_TIMEOUT} = "180";
     $rc = &RunProgram( @config );
     if ($rc == 0) {
-	# HACK for mpd for now.
-	if ($built_for_mpd) {
-	    &RunMPD;
+	if ($hasDemon) {
+	    &$StartDemon;
 	}
 	$rc = &RunProgram( "$makepgm run-tests" );
 	$test_status = $rc;
@@ -701,8 +716,8 @@ sub RunCxxTestSuite {
 	# This step converts the summary.xml file into a valid XML file
 	# by adding the appropriate header and footer
 	$rc = &RunProgram( "$makepgm get-summary" );
-	if ($built_for_mpd) {
-	    &StopMPD;
+	if ($hasDemon) {
+	    &$StopDemon;
 	}
     }
     else {
@@ -760,15 +775,14 @@ sub RunIntelTestSuite {
     $ENV{MPIEXEC_TIMEOUT} = "180";
     $rc = &RunProgram( @config );
     if ($rc == 0) {
-	# HACK for mpd for now.
-	if ($built_for_mpd) {
-	    &RunMPD;
+	if ($hasDemon) {
+	    &$StartDemon;
 	}
 	$rc = &RunProgram( "$makepgm $testname" );
 	$test_status = $rc;
 	if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
-	if ($built_for_mpd) {
-	    &StopMPD;
+	if ($hasDemon) {
+	    &$StopDemon;
 	}
 	if ($test_status != 0) {
 	    # Try to figure out what went wrong.  
@@ -836,16 +850,15 @@ sub RunMPICH2TestSuite {
     # This timeout needs to be made uniform for all mpiruns
     # 3 minutes is enough for some of our slower machines
     $ENV{MPIEXEC_TIMEOUT} = "180";
-    # HACK for mpd for now.
-    if ($built_for_mpd) {
-	&RunMPD;
+    if ($hasDemon) {
+	&$StartDemon;
     }
     # The MPICH2 test suite has a program for running the tests
     $rc = &RunProgram( "./runtests -mpiexec=$instdir/bin/mpiexec -srcdir=$srcdir/test/mpi -tests=testlist -xmlfile=summary.xml" );
     $test_status = $rc;
     if ($run_status == 0 && $rc != 0) { $run_status = $rc; }
-    if ($built_for_mpd) {
-	&StopMPD;
+    if ($hasDemon) {
+	&$StopDemon;
     }
     %ENV = %saveENV;
     chdir $cwd;
@@ -959,6 +972,29 @@ sub StopMPD {
     kill 9, $pid;
     waitpid $pid,0;
 }
+# ---------------------------------------------------------------------------
+#
+# We need a variation of this that will start MPDs on mulitple hosts.
+# 
+sub RunSMPD {
+    system "$instdir/bin/smpd -port 10101 -s";
+    # FIXME: Placeholder for correct environment variable for providing
+    # mpiexec with the smpd port that should be used.
+    $ENV{"MPIEXEC_SMPD_PORT"} = 10101;
+    $rc = $? >> 8;
+    if ($rc != 0) {
+	print $OUTFD "Error running $instdir/bin/smpd -port 10101 -s\n";
+    }
+    else {
+	print $OUTFD "Started mpd in demon mode\n";
+    }
+    sleep 1;
+    return;
+}
+sub StopSMPD {
+    `$instdir/bin/smpd -port 10101 -shutdown`;
+}
+# ---------------------------------------------------------------------------
 #
 # Change output style
 sub XMLStyle {
