@@ -85,8 +85,8 @@ int main(int argc, char *argv[])
 	    if (rank == 0)
 	    {
 		data = i;
-		MPI_Send(&data, 1, MPI_INT, 100, 1, intercomm);
-		MPI_Recv(&data, 1, MPI_INT, 100, 1, intercomm, &status);
+		MPI_Send(&data, 1, MPI_INT, 1, 100, intercomm);
+		MPI_Recv(&data, 1, MPI_INT, 1, 100, intercomm, &status);
 		if (data != i)
 		{
 		    errs++;
@@ -114,21 +114,24 @@ int main(int argc, char *argv[])
 	    printf("(Child) Did not create %d processes (got %d)\n", np, size);
 	    fflush(stdout);
 	}
-	MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm, &status);
+
+	if (rank == 0)
+	    MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm, &status);
+
 	MPI_Comm_disconnect(&intercomm);
 	for (i=0; i<num_loops; i++)
 	{
 	    MPI_Comm_connect(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
 	    if (rank == 1)
 	    {
-		MPI_Recv(&data, 1, MPI_INT, 100, 0, intercomm, &status);
+		MPI_Recv(&data, 1, MPI_INT, 0, 100, intercomm, &status);
 		if (data != i)
 		{
 		    printf("expected %d but received %d\n", i, data);
 		    fflush(stdout);
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
-		MPI_Send(&data, 1, MPI_INT, 100, 0, intercomm);
+		MPI_Send(&data, 1, MPI_INT, 0, 100, intercomm);
 	    }
 	    MPI_Comm_disconnect(&intercomm);
 	}
