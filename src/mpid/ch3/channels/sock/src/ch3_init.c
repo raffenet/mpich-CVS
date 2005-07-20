@@ -15,7 +15,7 @@
 
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
-
+int MPIDI_CH3I_Port_name_tag=0;
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
@@ -47,7 +47,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     
     MPIDI_CH3I_Process.parent_port_name = NULL;
     MPIDI_CH3I_Process.acceptq_head = NULL;
-    MPIDI_CH3I_Process.acceptq_tail = NULL;
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     {
 	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);

@@ -38,16 +38,11 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
     /* --END ERROR HANDLING-- */
 
     q_item->vc = vc;
-    q_item->next = NULL;
 
     MPIDI_Acceptq_lock();
 
-    if  (MPIDI_CH3I_Process.acceptq_tail != NULL)
-        MPIDI_CH3I_Process.acceptq_tail->next = q_item;
-    else
-        MPIDI_CH3I_Process.acceptq_head = q_item;
-    
-    MPIDI_CH3I_Process.acceptq_tail = q_item;
+    q_item->next = MPIDI_CH3I_Process.acceptq_head;
+    MPIDI_CH3I_Process.acceptq_head = q_item;
 
     MPIDI_Acceptq_unlock();
 
@@ -57,11 +52,11 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 }
 
 
-/* Attempt to dequeue a vc from the accept queue. If the queue is
-   empty, return a NULL vc. */
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc)
+/* Attempt to dequeue a vc from the accept queue if it matches the port_name_tag. If the queue is
+   empty or the port_name_tag doesn't match, return a NULL vc. */
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 {
-    MPIDI_CH3I_Acceptq_t *q_item;
+    MPIDI_CH3I_Acceptq_t *q_item, *prev;
     int mpi_errno=MPI_SUCCESS;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
@@ -69,18 +64,27 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
 
     MPIDI_Acceptq_lock();
-    if (MPIDI_CH3I_Process.acceptq_head != NULL) {
-        q_item = MPIDI_CH3I_Process.acceptq_head;
-        MPIDI_CH3I_Process.acceptq_head = q_item->next;
 
-        if (MPIDI_CH3I_Process.acceptq_head == NULL) 
-            MPIDI_CH3I_Process.acceptq_tail = NULL;
+    *vc = NULL;
+    q_item = MPIDI_CH3I_Process.acceptq_head;
+    prev = q_item;
+    while (q_item != NULL) {
+	if (q_item->vc->ch.port_name_tag == port_name_tag) {
+	    *vc = q_item->vc;
 
-        *vc = q_item->vc;
-        MPIU_Free(q_item);
+	    if ( q_item == MPIDI_CH3I_Process.acceptq_head )
+		MPIDI_CH3I_Process.acceptq_head = q_item->next;
+	    else
+		prev->next = q_item->next;
+
+	    MPIU_Free(q_item);
+	    break;;
+	}
+	else {
+	    prev = q_item;
+	    q_item = q_item->next;
+	}
     }
-    else
-        *vc = NULL;
 
     MPIDI_Acceptq_unlock();
 

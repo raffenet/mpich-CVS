@@ -746,6 +746,7 @@ with MPI_Alloc_mem.
 **vc_state %d:invalid vc state (%d)
 **argstr_hostd:no space for the host description
 **argstr_port:no space for the listener port
+**argstr_port_name_tag:no space for port_name tag
 **argstr_shmhost:no space for the host name
 **argstr_shmq:no space for the shared memory queue name
 **bad_set:bad set parameter

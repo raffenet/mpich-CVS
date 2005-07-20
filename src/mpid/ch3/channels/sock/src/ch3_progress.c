@@ -825,6 +825,8 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    vc->ch.sock = conn->sock;
 		    vc->ch.conn = conn;
 		    conn->vc = vc;
+
+		    vc->ch.port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
                         
 		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		    conn->pkt.sc_open_resp.ack = TRUE;
@@ -1135,9 +1137,18 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    else
 	    {
 		/* CONN_STATE_CONNECT_ACCEPT */
+		int port_name_tag;
+
 		conn->state = CONN_STATE_OPEN_CSEND;
+
+		/* pkt contains port name tag. In memory debugging mode, MPIDI_Pkt_init resets the packet contents. Therefore,
+                   save the port name tag and then add it back. */
+		port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
+
 		MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
-		/* pkt contains nothing */
+
+		conn->pkt.sc_conn_accept.port_name_tag = port_name_tag;
+
 		mpi_errno = connection_post_send_pkt(conn);
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
@@ -1503,7 +1514,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 {
     /* Used in ch3_comm_connect to connect with the process calling ch3_comm_accept */
     char host_description[MAX_HOST_DESCRIPTION_LEN];
-    int port;
+    int port, port_name_tag;
     MPIDI_VC_t * vc;
     MPIDI_CH3I_Connection_t * conn;
     int mpi_errno = MPI_SUCCESS;
@@ -1526,6 +1537,16 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_port", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
+    
+    mpi_errno = MPIU_Str_get_int_arg(port_name, MPIDI_CH3I_PORT_NAME_TAG_KEY, &port_name_tag);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_port_name_tag", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
 	return mpi_errno;
     }
@@ -1572,6 +1593,10 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
         conn->state = CONN_STATE_CONNECT_ACCEPT;
         conn->send_active = NULL;
         conn->recv_active = NULL;
+
+	/* place the port name tag in the pkt that will eventually be sent to the other side */
+	conn->pkt.sc_conn_accept.port_name_tag = port_name_tag;
+
     }
     /* --BEGIN ERROR HANDLING-- */
     else

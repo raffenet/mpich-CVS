@@ -19,7 +19,6 @@ typedef struct MPIDI_CH3I_Process_s
 {
     char * parent_port_name;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
-    MPIDI_CH3I_Acceptq_t * acceptq_tail;
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     MPID_Thread_lock_t acceptq_mutex;
 #endif
@@ -27,6 +26,9 @@ typedef struct MPIDI_CH3I_Process_s
 MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+
+extern int MPIDI_CH3I_Port_name_tag;
+/* this tag is incremented and added to the business card, which is then returned as the port name */
 
 enum MPIDI_CH3I_Conn_state
 {
@@ -103,6 +105,7 @@ typedef struct MPIDI_CH3I_Connection
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_PORT_KEY              "port"
+#define MPIDI_CH3I_PORT_NAME_TAG_KEY     "tag"
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
@@ -111,7 +114,7 @@ int MPIDI_CH3I_Get_business_card(char * value, int length);
 int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
 
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
 
 int MPIDI_CH3I_Add_to_bizcard_cache(char *pg_id, int pg_size, int rank, char *bizcard);
 int MPIDI_CH3I_Lookup_bizcard_cache(char *pg_id, int rank, char *bizcard, int len, int *found);

@@ -57,7 +57,12 @@ typedef struct															  \
 }																  \
 MPIDI_CH3I_Pkt_sc_close_t;                                                                                                        \
                                                                                                                                   \
-typedef MPIDI_CH3I_Pkt_sc_close_t MPIDI_CH3I_Pkt_sc_conn_accept_t;
+typedef struct															  \
+{																  \
+    MPIDI_CH3_Pkt_type_t type;													  \
+    int port_name_tag; 													          \
+}																  \
+MPIDI_CH3I_Pkt_sc_conn_accept_t;
 
 #define MPIDI_CH3_PKT_DECL			\
 MPIDI_CH3I_Pkt_sc_open_req_t sc_open_req;	\
@@ -90,6 +95,7 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_VC_state_t state;
     MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
+    int port_name_tag;
 }
 MPIDI_CH3I_VC;
 

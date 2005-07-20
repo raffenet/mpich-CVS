@@ -43,9 +43,6 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
 
-    /* FIXME: multiple port_names should be allowed and matched */
-    MPIU_UNREFERENCED_ARG(port_name);
-
 /* Algorithm: First dequeue the vc from the accept queue (it was
    enqueued by the progress engine in response to a connect request
    from the root on the connect side). Use this vc to create an
@@ -81,7 +78,19 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     
     if (rank == root) {
 	MPID_Progress_state progress_state;
-	
+	int port_name_tag;
+
+	/* extract the tag from the port_name */
+	mpi_errno = MPIU_Str_get_int_arg(port_name, MPIDI_CH3I_PORT_NAME_TAG_KEY, &port_name_tag);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPIU_STR_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    goto fn_exit;
+	}
+	/* --END ERROR HANDLING-- */
+
+
         /* dequeue the accept queue to see if a connection with the
            root on the connect side has been formed in the progress
            engine (the connection is returned in the form of a vc). If
@@ -90,7 +99,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 	MPID_Progress_start(&progress_state);
         for(;;)
 	{
-            MPIDI_CH3I_Acceptq_dequeue(&new_vc);
+            MPIDI_CH3I_Acceptq_dequeue(&new_vc, port_name_tag);
             if (new_vc != NULL)
 	    {
 		break;
