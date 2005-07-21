@@ -1,7 +1,8 @@
 
 # JAVA_HOME = /pkgs/lang/java/jdk117_v3
 # JAVA_HOME = /pkgs/lang/java/jdk1.3.1
-JAVA_HOME = /pkgs/lang/java/j2sdk1.4.2
+# JAVA_HOME = /pkgs/lang/java/j2sdk1.4.2
+JAVA_HOME = /soft/com/packages/j2sdk1.4.2_04
 SHELL     = /bin/sh
 JC        = $(JAVA_HOME)/bin/javac
 JVM       = $(JAVA_HOME)/bin/java
