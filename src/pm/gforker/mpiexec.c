@@ -65,6 +65,7 @@
 #include "pmiserv.h"
 #include "ioloop.h"
 #include "labelout.h"
+#include "env.h"
 #include "simple_pmiutil.h"
 
 /* mpimem.h contains prototypes for MPIU_Strncpy etc. */
@@ -140,6 +141,7 @@ int main( int argc, char *argv[], char *envp[] )
 #endif
 
     PMIServInit(myspawn,&s);
+    s.pmiinfo.pWorld = &pUniv.worlds[0];
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals();
     MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
@@ -236,8 +238,12 @@ int myspawn( ProcessWorld *pWorld, void *data )
     }
     *pPtr = pWorld;
 
+    /* Fork Processes may call a routine that is passed s but not pWorld;
+       this makes sure that all routines can access the current world */
+    s->pmiinfo.pWorld = pWorld;
+
     /* FIXME: This should be part of the PMI initialization in the clients */
-    putenv( "PMI_SPAWNED=1" );
+    MPIE_Putenv( pWorld, "PMI_SPAWNED=1" );
     MPIE_ForkProcesses( pWorld, 0, mypreamble, s,
 			mypostfork, 0, mypostamble, 0 );
     return 0;

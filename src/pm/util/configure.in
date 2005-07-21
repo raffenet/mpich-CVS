@@ -126,22 +126,26 @@ if test "$enable_newsession" = "yes" ; then
 fi
 # Check for convenient functions for the environment
 AC_CHECK_FUNCS(unsetenv)
-if test "$ac_cv_func_unsetenv" != yes ; then
-    # Look for alternatives.  Is environ in unistd.h?
-    AC_CACHE_CHECK([for environ in unistd.h],pac_cv_has_environ_in_unistd,[
-    AC_TRY_COMPILE([#include <unistd.h>],[char **ep = environ;],
-    pac_cv_has_environ_in_unistd=yes,pac_cv_has_environ_in_unistd=no)])
 
-    if test "$pac_cv_has_environ_in_unistd" != "yes" ; then
-        # Can we declare it and use it?
-	AC_CACHE_CHECK([for extern environ in runtime],
-	pac_cv_has_environ_decl,[
-	AC_TRY_LINK([extern char **environ;],[char **ep = environ;],
-	pac_cv_has_environ_decl=no,pac_cv_has_environ_decl=yes)])
-	if test "$pac_cv_has_environ_decl" = "yes" ; then
-	    AC_DEFINE(HAVE_ENVIRON_DECL,1,[Define if environ decl needed] )
-        fi
+# Look for alternatives.  Is environ in unistd.h?
+AC_CACHE_CHECK([for environ in unistd.h],pac_cv_has_environ_in_unistd,[
+AC_TRY_COMPILE([#include <unistd.h>],[char **ep = environ;],
+pac_cv_has_environ_in_unistd=yes,pac_cv_has_environ_in_unistd=no)])
+
+if test "$pac_cv_has_environ_in_unistd" != "yes" ; then
+    # Can we declare it and use it?
+    AC_CACHE_CHECK([for extern environ in runtime],
+    pac_cv_has_extern_environ,[
+    AC_TRY_LINK([extern char **environ;],[char **ep = environ;],
+    pac_cv_has_extern_environ=yes,pac_cv_has_extern_environ=no)])
+    if test "$pac_cv_has_extern_environ" = "yes" ; then
+	AC_DEFINE(NEEDS_ENVIRON_DECL,1,[Define if environ decl needed] )
     fi
+else
+    pac_cv_has_extern_environ=yes
+fi
+if test "$pac_cv_has_extern_environ" = "yes" ; then
+    AC_DEFINE(HAVE_EXTERN_ENVIRON,1,[Define if environ extern is available])
 fi
 dnl
 dnl Check for special compile characteristics

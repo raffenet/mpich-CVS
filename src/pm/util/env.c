@@ -142,7 +142,7 @@ int MPIE_EnvSetup( ProcessState *pState, char *envp[],
     ProcessApp   *app;
     EnvInfo      *env;
     EnvData      *wPairs = 0,*wNames = 0, *aPairs = 0, *aNames = 0;
-    int          includeAll = 1, j;
+    int          includeAll = 1;
     int          irc = 0;
     int          debug = 1;
 
@@ -171,6 +171,7 @@ int MPIE_EnvSetup( ProcessState *pState, char *envp[],
 
     if (includeAll) {
 	if (envp) {
+	    int j;
 	    for (j=0; envp[j] && j < maxclient; j++) {
 		putenv( envp[j] );
 		client_envp[j] = envp[j];
@@ -235,52 +236,87 @@ int MPIE_EnvInitData( EnvData *elist, int getValue )
     int        slen, rc;
 
     while (elist) {
-	if (getValue) {
-	    value = (const char *)getenv( elist->name );
-	}
-	else {
-	    value = elist->value;
-	}
-	if (!value) {
-	    /* Special case for an empty value */
-	    value = "";
-	}
-	slen = strlen( elist->name ) + strlen(value) + 2;
-	str  = (char *)MPIU_Malloc( slen );
-	if (!str) {
-	    return 1;
-	}
-	MPIU_Strncpy( str, elist->name, slen );
-	if (value && *value) {
-	    rc = MPIU_Strnapp( str, "=", slen );
-	    rc += MPIU_Strnapp( str, value, slen );
-	    if (rc) {
+	/* Skip variables that already have value strings */
+	if (!elist->envvalue) {
+	    if (getValue) {
+		value = (const char *)getenv( elist->name );
+	    }
+	    else {
+		value = elist->value;
+	    }
+	    if (!value) {
+		/* Special case for an empty value */
+		value = "";
+	    }
+	    slen = strlen( elist->name ) + strlen(value) + 2;
+	    str  = (char *)MPIU_Malloc( slen );
+	    if (!str) {
 		return 1;
 	    }
+	    MPIU_Strncpy( str, elist->name, slen );
+	    if (value && *value) {
+		rc = MPIU_Strnapp( str, "=", slen );
+		rc += MPIU_Strnapp( str, value, slen );
+		if (rc) {
+		    return 1;
+		}
+	    }
+	    elist->envvalue = (const char *)str;
 	}
-	elist->envvalue = (const char *)str;
-
 	elist = elist->nextData;
     }
     return 0;
 }
 
-/* Unset all environment variables.
-   Not all systems support unsetenv (e.g., System V derived systems such 
-   as Solaris), so we have to provide our own implementation.
-*/
-#ifdef HAVE_UNSETENV
-int MPIE_UnsetAllEnv( char *envp[] )
+/*
+ * Add an enviroinment variable to the global list of variables
+ */
+int MPIE_Putenv( ProcessWorld *pWorld, char *env_string )
 {
-    int j;
+    EnvInfo *genv;
+    EnvData *p;
 
-    for (j=0; envp[j]; j++) {
-	unsetenv( envp[j] );
+    /* FIXME: This should be getGenv (so allocation/init in one place) */
+    if (!pWorld->genv) {
+	genv = (EnvInfo *)MPIU_Malloc( sizeof(EnvInfo) );
+	genv->includeAll = 1;
+	genv->envPairs   = 0;
+	genv->envNames   = 0;
+	pWorld->genv     = genv;
     }
+    genv           = pWorld->genv;
+
+    p              = (EnvData *)MPIU_Malloc( sizeof(EnvData) );
+    if (!p) return 1;
+    p->name        = 0;
+    p->value       = 0;
+    p->envvalue    = (const char *)MPIU_Strdup( env_string );
+    if (!p->envvalue) return 1;
+    p->nextData    = genv->envPairs;
+    genv->envPairs = p;
+
     return 0;
 }
-#elif HAVE_EXTERN_ENVIRON
-#ifndef HAVE_ENVIRON_DECL
+
+
+/* Unset all environment variables.
+
+   Not all systems support unsetenv (e.g., System V derived systems such 
+   as Solaris), so we have to provide our own implementation.
+
+   In addition, there are various ways to determine the "current" environment
+   variables.  One is to pass a third arg to main; the other is a global
+   variable.
+
+   Also, we prefer the environ variable over envp, because exec often
+   prefers what is in environ rather than the envp (envp appears to be a 
+   copy, and unsetting the env doesn't always change the environment
+   that exec creates.  This seems wrong, but it was what was observed
+   on Linux).
+
+*/
+#ifdef HAVE_EXTERN_ENVIRON
+#ifdef NEEDS_ENVIRON_DECL
 extern char **environ;
 #endif
 int MPIE_UnsetAllEnv( char *envp[] )
@@ -288,7 +324,18 @@ int MPIE_UnsetAllEnv( char *envp[] )
     /* Ignore envp because environ is the real array that controls
        the environment used by getenv/putenv/etc */
     char **ep = environ;
+
     while (*ep) *ep++ = 0;
+    return 0;
+}
+#elif defined(HAVE_UNSETENV)
+int MPIE_UnsetAllEnv( char *envp[] )
+{
+    int j;
+
+    for (j=0; envp[j]; j++) {
+	unsetenv( envp[j] );
+    }
     return 0;
 }
 #else

@@ -87,6 +87,7 @@ typedef struct {
 				client and the server */
     char       *portName;    /* Optional portname if the fd is not provided
 			        at startup */
+    ProcessWorld *pWorld;    /* World to which this setup applies */
 } PMISetup;
 
 /* version to check with client PMI library */

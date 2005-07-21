@@ -245,15 +245,7 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     nj = j;  /* nj is the first entry of client_env that will be set by
 		this routine */
     DBG_PRINTF( ( "Setup env (j=%d)\n", j ) );
-#if 0
-    if (envp) {
-	for ( j = 0; envp[j] && j < MAX_CLIENT_ENV-7; j++ )
-	    client_env[j] = envp[j]; /* copy mpiexec environment */
-    }
-    else {
-	j = 0;
-    }
-#endif
+
     if (j == MAX_CLIENT_ENV-7) {
 	MPIU_Error_printf( "Environment is too large (max is %d)\n",
 			   MAX_CLIENT_ENV-7);
@@ -286,8 +278,8 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     MPIU_Snprintf( env_universesize, MAXNAMELEN, "MPI_UNIVERSE_SIZE=%d", 
 		   pUniv.size );
     client_env[j++] = env_universesize;
-    
     client_env[j]   = 0;
+
     for ( j = nj; client_env[j]; j++ )
 	if (putenv( client_env[j] )) {
 	    MPIU_Internal_sys_error_printf( "mpiexec", errno, 

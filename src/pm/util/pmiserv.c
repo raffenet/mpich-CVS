@@ -154,6 +154,11 @@ int PMISetupSockets( int usePort, PMISetup *pmiinfo )
  * of them.  It is ok to use static variable since this is called only within
  * the client; this routine will be called only once (in the forked process, 
  * before the exec).
+ *
+ * Another wrinkle is that in order to support -(g)envnone (no environment
+ * variables in context of created process), we need to add the environment
+ * variables to the ones set *after* environment variables are removed, rather
+ * than using putenv.
  */
 int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 {
@@ -164,9 +169,8 @@ int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 	close( pmiinfo->fdpair[0] );
 	MPIU_Snprintf( env_pmi_fd, sizeof(env_pmi_fd), "PMI_FD=%d" , 
 		       pmiinfo->fdpair[1] );
-	if (putenv( env_pmi_fd )) {
+	if (MPIE_Putenv( pmiinfo->pWorld, env_pmi_fd )) {
 	    MPIU_Internal_error_printf( "Could not set environment PMI_FD" );
-	    perror( "Reason: " );
 	    return 1;
 	}
     }
@@ -174,7 +178,7 @@ int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 	/* We must communicate the port name to the process */
 	MPIU_Snprintf( env_pmi_port, sizeof(env_pmi_port), "PMI_PORT=%s",
 		       pmiinfo->portName );
-	if (putenv( env_pmi_port )) {
+	if (MPIE_Putenv( pmiinfo->pWorld, env_pmi_port )) {
 	    MPIU_Internal_error_printf( "Could not set environment PMI_PORT" );
 	    perror( "Reason: " );
 	    return 1;
@@ -182,7 +186,7 @@ int PMISetupInClient( int usePort, PMISetup *pmiinfo )
 	
     }
     /* Indicate that this is a spawned process */
-    /* putenv( "PMI_SPAWNED=1" ); */
+    /* MPIE_Putenv( pmiinfo->pWorld, "PMI_SPAWNED=1" ); */
     return 0;
 }
 
