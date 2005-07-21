@@ -964,7 +964,11 @@ sub RunMPD {
 #      }
 }
 sub StopMPD {
-    `$instdir/bin/mpdallexit`;
+    my $mpdlocalsock = "/tmp/mpd2.console_". $ENV{"LOGNAME"};
+    if (-S $mpdlocalsock) {
+	system "$instdir/bin/mpdallexit";
+	# `$instdir/bin/mpdallexit`;
+    }
     # Are these kill's obsolete (do they apply only to the commented out
     # code above for running the demon in the background?)
     kill 2, $pid;
