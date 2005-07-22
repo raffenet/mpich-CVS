@@ -82,10 +82,13 @@
 
 
 #if defined(HAVE_THR_YIELD)
+#undef MPID_Thread_yield
 #define MPID_Thread_yield() thr_yield()
 #elif defined(HAVE_SCHED_YIELD)
+#undef MPID_Thread_yield
 #define MPID_Thread_yield() sched_yield()
 #elif defined(HAVE_YIELD)
+#undef MPID_Thread_yield
 #define MPID_Thread_yield() yield()
 #endif
 

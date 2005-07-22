@@ -1865,8 +1865,6 @@ typedef struct MPICH_PerProcess_t {
     int               thread_provided;  /* Provided level of thread support */
 #if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)    
     MPID_Thread_tls_t thread_storage;   /* Id for perthread data */
-#endif
-#if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)    
     MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
 #endif
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
