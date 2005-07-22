@@ -1,5 +1,4 @@
 #include "mpi.h"
-#include "mpio.h"  /* not necessary with MPICH 1.1.1 or HPMPI 1.4 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
