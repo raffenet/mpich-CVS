@@ -52,9 +52,6 @@ later, in the section "Alternative configurations".
 
     - Python 2.2 or later (for the default MPD process manager)
 
-    - PyXML and an XML parser like expat (in order to use mpiexec with
-      the MPD process manager)
-
     - If a Fortran 90 compiler is found, by default MPICH2 will
       attempt to build a basic MPI module.  This module contains the
       MPI routines that do not contain "choice" arguments; i.e., the module
@@ -143,8 +140,10 @@ later, in the section "Alternative configurations".
     and tested.  More details on interacting with MPD can be found in
     the README file in mpich2-1.0.2/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
-    use the mpigdb debugger.  The instructions given here should be
-    enough to get you started.
+    use the mpigdb debugger.
+    If you have problems getting the mpd ring established, see the
+    Installation Guide for instructions on how to diagnose problems
+    with your system configuration that may be preventing it.
 
     Begin by placing in your home directory a file named .mpd.conf,
     containing the line 
@@ -167,6 +166,9 @@ later, in the section "Alternative configurations".
 
     The output of mpdtrace should be the hostname of the machine you are
     running on.  The mpdallexit causes the mpd daemon to exit.
+    If you have problems getting the mpd ring established, see the
+    Installation Guide for instructions on how to diagnose problems
+    with your system configuration that may be preventing it.
 
 10. Now we will bring up a ring of mpd's on a set of machines.  Create a
     file consisting of a list of machine names, one per line.  Name this
