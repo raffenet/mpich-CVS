@@ -18,7 +18,7 @@ __credits__ = ""
 from os     import environ, close, getuid, path
 from sys    import argv, exit
 from socket import socket, AF_UNIX, SOCK_STREAM, fromfd
-from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
+from signal import signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_uncaught_except_tb, \
                    mpd_print, MPDConClientSock, MPDParmDB
 

@@ -22,7 +22,7 @@ from sys    import argv, exit
 from os     import environ, getuid, close, path
 from socket import socket, fromfd, AF_UNIX, SOCK_STREAM
 from re     import sub
-from signal import alarm, signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
+from signal import signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from  mpdlib  import  mpd_set_my_id, mpd_uncaught_except_tb, mpd_print, \
                       mpd_handle_signal, mpd_get_my_username, \
                       MPDConClientSock, MPDParmDB
