@@ -48,7 +48,8 @@ os.system("sudo %s/bin/mpdallexit%s 1> /dev/null 2> /dev/null" % (ROOTDIR,PYEXT)
 os.system("sudo %s/bin/mpd%s -d" % (ROOTDIR,PYEXT) )  # not using boot here
 import time
 time.sleep(2)
-os.system("%s/bin/mpdtrace%s -l" % (ROOTDIR,PYEXT))
+os.environ['MPD_USE_ROOT_MPD'] = '1'
+# os.system("%s/bin/mpdtrace%s -l" % (ROOTDIR,PYEXT))
 expout = ['%s' % (socket.gethostname())]
 rv = mpdtest.run(cmd="%s/bin/mpdtrace%s -l" % (ROOTDIR,PYEXT), grepOut=1, expOut=expout )
 

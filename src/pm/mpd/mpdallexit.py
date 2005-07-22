@@ -15,12 +15,12 @@ __version__ = "$Revision$"
 __credits__ = ""
 
 
-from os     import environ, close
+from os     import environ, close, getuid, path
 from sys    import argv, exit
 from socket import socket, AF_UNIX, SOCK_STREAM, fromfd
 from signal import signal, alarm, SIG_DFL, SIGINT, SIGTSTP, SIGCONT, SIGALRM
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_uncaught_except_tb, \
-                   mpd_print, MPDConClientSock
+                   mpd_print, MPDConClientSock, MPDParmDB
 
 def mpdallexit():
     import sys    # to get access to excepthook in next line
@@ -29,7 +29,23 @@ def mpdallexit():
         print __doc__
         exit(-1)
     mpd_set_my_id(myid='mpdallexit')
-    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
+
+    parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
+    parmsToOverride = {
+                        'MPD_USE_ROOT_MPD'            :  0,
+                        'MPD_SECRETWORD'              :  '',
+                      }
+    for (k,v) in parmsToOverride.items():
+        parmdb[('thispgm',k)] = v
+    parmdb.get_parms_from_env(parmsToOverride)
+    parmdb.get_parms_from_rcfile(parmsToOverride)
+    if getuid() == 0  or  parmdb['MPD_USE_ROOT_MPD']:
+        fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
+        mpdroot = fullDirName + '/mpdroot'
+        conSock = MPDConClientSock(mpdroot=mpdroot,secretword=parmdb['MPD_SECRETWORD'])
+    else:
+        conSock = MPDConClientSock(secretword=parmdb['MPD_SECRETWORD'])
+
     msgToSend = { 'cmd' : 'mpdallexit' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=8.0)

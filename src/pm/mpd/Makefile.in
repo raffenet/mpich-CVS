@@ -127,7 +127,7 @@ install: all
 	-@cd ${bindir} && @LN_S@ mpdboot.py mpdboot
 	-@for cmd in ${CMDS} ; do \
 	    ( cd ${bindir} && rm -f $$cmd ; ) ; \
-	    ( cd ${bindir} && @LN_S@ mpdroot $$cmd ; ) \
+	    ( cd ${bindir} && @LN_S@ $$cmd.py $$cmd ; ) \
 	done
 	-@( rm -f ${bindir}/mpdrun >/dev/null 2>&1 || exit 0 )
 	-@( rm -f ${bindir}/mpdrun.py >/dev/null 2>&1 || exit 0 )

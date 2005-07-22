@@ -30,8 +30,11 @@ Some long parameter names may be abbreviated to their first letters by using
   e.g. may be used to specify the alias for an interface other than default
 --listenport specifies a port for this mpd to listen on; by default it will
   acquire one from the system
---pid=filename writes the mpd pid into the specified file, or 
---pid alone writes it into /var/run/mpd.pid
+--conlistenport specifies a port for this mpd to listen on for console
+  connections (only used when employing inet socket for console); by default it
+  will acquire one from the system
+--pid=filename writes the mpd pid into the specified file, or --pid alone
+  writes it into /var/run/mpd.pid
 
 A file named .mpd.conf file must be present in the user's home directory
   with read and write access only for the user, and must contain at least
@@ -53,7 +56,7 @@ import sys    # so I can chg excepthook, stdout, etc.
 
 from  sys         import  argv, exit, settrace
 from  os          import  environ, getpid, fork, getuid, setsid, chdir, path, \
-                          umask, dup2, unlink, setpgrp, fdopen, \
+                          umask, stat, dup2, unlink, setpgrp, fdopen, \
                           setreuid, setregid, setgroups, waitpid, WNOHANG, kill
 from  os          import  open  as osopen, close as osclose, \
                           O_CREAT, O_WRONLY, O_EXCL
@@ -100,7 +103,6 @@ class MPD(object):
         openlog("mpd",0,LOG_DAEMON)
         syslog(LOG_INFO,"mpd starting; no mpdid yet")
         sys.excepthook = mpd_uncaught_except_tb
-
         self.parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
         self.parmsToOverride = {
                                  'MPD_SECRETWORD'       :  '',
@@ -120,11 +122,7 @@ class MPD(object):
             self.parmdb[('thispgm',k)] = v
         self.get_parms_from_cmdline()
         self.parmdb.get_parms_from_rcfile(self.parmsToOverride)
-        if not self.parmdb['MPD_SECRETWORD']:
-            print 'mpd conf file has no secretword'
-            exit(-1)
         self.parmdb.get_parms_from_env(self.parmsToOverride)
-
         self.myIfhn = self.parmdb['MPD_MY_IFHN']    # variable for convenience
         self.myPid = getpid()
         self.listenSock = MPDListenSock(name='ring_listen_sock',
@@ -208,7 +206,7 @@ class MPD(object):
             dup2(logFile.fileno(),sys.__stdout__.fileno())
             dup2(logFile.fileno(),sys.__stderr__.fileno())
         if self.parmdb['MPD_CONSOLE_FLAG']:
-            self.conListenSock = MPDConListenSock()
+            self.conListenSock = MPDConListenSock(secretword=self.parmdb['MPD_SECRETWORD'])
             self.streamHandler.set_handler(self.conListenSock,
                                            self.handle_console_connection)
         register(self.cleanup)
@@ -415,21 +413,34 @@ class MPD(object):
                     self.conSock.close()
                     self.conSock = 0
                     return
+                errorMsg = ''
                 try:
-                    splitLine = line.split('=',1)
+                    (kv1,kv2) = line.split(' ',1)  # 'realusername=xxx secretword=yyy'
                 except:
-                    return
-                if len(splitLine) < 2  or  splitLine[0] != 'realusername':
-                    mpd_print(0, 'console sent bad msg :%s:' % line)
-                    try:  # try to let console know
-                        self.conSock.send_dict_msg({'cmd':'invalid_msg_received_from_you'})
+                    errorMsg = 'failed to split this msg on " ": %s' % line
+                try:
+                    (k1,self.conSock.realUsername) = kv1.split('=',1)
+                except:
+                    errorMsg = 'failed to split first kv pair on "=": %s' % line
+                try:
+                    (k2,secretword) = kv2.split('=',1)
+                except:
+                    errorMsg = 'failed to split second kv pair on "=": %s' % line
+                if k1 != 'realusername':
+                    errorMsg = 'first key is not realusername'
+                if k2 != 'secretword':
+                    errorMsg = 'second key is not secretword'
+                if getuid() == 0  and  secretword != self.parmdb['MPD_SECRETWORD']:
+                    errorMsg = 'invalid secretword to root mpd'
+                if errorMsg:
+                    try:
+                        self.conSock.send_dict_msg({'error_msg': errorMsg})
                     except:
                         pass
                     self.streamHandler.del_handler(self.conSock)
                     self.conSock.close()
                     self.conSock = 0
                     return
-                self.conSock.realUsername = splitLine[1]
                 self.conSock.beingChallenged = 0
             else:
                 msg = self.conSock.recv_dict_msg()
@@ -452,7 +463,7 @@ class MPD(object):
                 self.conSock.beingChallenged = 1
                 self.conSock.name = 'console'
                 randNum = randrange(1,10000)
-                randVal = sock.secretconval + str(randNum)
+                randVal = sock.secretword + str(randNum)
                 self.conSock.expectedResponse = md5new(randVal).digest()
                 self.conSock.send_dict_msg({'cmd' : 'con_challenge', 'randnum' : randNum })
                 self.conSock.realUsername = mpd_get_my_username()

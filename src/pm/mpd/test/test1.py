@@ -6,7 +6,7 @@
 # for one or more of:
 #     PYEXT, NMPDS, HFILE
 
-import os, sys, commands
+import os, sys, commands, time
 sys.path += [os.getcwd()]  # do this once
 
 print "mpd tests---------------------------------------------------"
@@ -134,7 +134,7 @@ if len(lines) > 0:
         sys.exit(-1)
 
 # test:
-print "TEST MPD_TEST_INET_CON"
+print "TEST MPD_CON_INET_HOST_PORT"
 PYEXT = '.py'
 NMPDS = 1
 HFILE = 'temph'
@@ -146,8 +146,9 @@ os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 temph = open(HFILE,'w')
 for host in clusterHosts: print >>temph, host
 temph.close()
-os.environ['MPD_TEST_INET_CON'] = '1'    # after mpdallexit and before mpdboot
-os.system("mpdboot%s -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
+os.environ['MPD_CON_INET_HOST_PORT'] = 'localhost:4444'
+os.system("mpd.py &")
+time.sleep(1)  ##     time to get going
 expout = ['0: hello']
 rv = mpdtest.run(cmd="mpiexec%s -l -n 1 echo hello" % (PYEXT), expOut=expout,grepOut=1)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )

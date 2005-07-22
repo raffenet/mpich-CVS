@@ -95,6 +95,8 @@ def mpiexec():
 
     parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
     parmsToOverride = {
+                        'MPD_USE_ROOT_MPD'            :  0,
+                        'MPD_SECRETWORD'              :  '',
                         'MPIEXEC_LINE_LABELS'         :  0,
                         'MPIEXEC_JOB_ALIAS'           :  '',
                         'MPIEXEC_USIZE'               :  0,
@@ -109,6 +111,7 @@ def mpiexec():
                         'MPIEXEC_TRY_1ST_LOCALLY'     :  1,
                         'MPIEXEC_TIMEOUT'             :  0,
                         'MPIEXEC_HOST_LIST'           :  [],
+                        'MPIEXEC_HOST_CHECK'          :  [],
                       }
     for (k,v) in parmsToOverride.items():
         parmdb[('thispgm',k)] = v
@@ -125,9 +128,6 @@ def mpiexec():
     parmdb[('thispgm','inXmlFilename')] = ''
     parmdb[('thispgm','print_parmdb_all')] = 0
     parmdb[('thispgm','print_parmdb_def')] = 0
-
-    get_parms_from_env(parmsToOverride)
-    get_parms_from_rcfile(parmsToOverride)
 
     appnum = 0
     nextRange = 0
@@ -170,13 +170,6 @@ def mpiexec():
             collect_args(argv,localArgSets)
         machineFileInfo = read_machinefile(parmdb['MPIEXEC_MACHINEFILE'])
 
-    # mostly old mpdrun below here
-    numDoneWithIO = 0
-    outXmlDoc = ''
-    outECs = ''
-    outECFile = None
-    sigOccurred = 0
-
     # set some default values for mpd; others added as discovered below
     msgToMPD = { 'cmd'            : 'mpdrun',
                  'conhost'        : myHost,
@@ -193,9 +186,52 @@ def mpiexec():
                  'envvars'        : {},
                }
 
+    if parmdb['inXmlFilename']:
+        get_parms_from_xml_file(msgToMPD)  # fills in some more values of msgToMPD
+    else:
+        parmdb.get_parms_from_env(parmsToOverride)
+        parmdb.get_parms_from_rcfile(parmsToOverride)
+
+    # mostly old mpdrun below here
+    numDoneWithIO = 0
+    outXmlDoc = ''
+    outECs = ''
+    outECFile = None
+    sigOccurred = 0
+
     listenSock = MPDListenSock('',0,name='socket_to_listen_for_man')
     listenPort = listenSock.getsockname()[1]
-    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
+    if getuid() == 0  or  parmdb['MPD_USE_ROOT_MPD']:
+        fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
+        mpdroot = fullDirName + '/mpdroot'
+        conSock = MPDConClientSock(mpdroot=mpdroot,secretword=parmdb['MPD_SECRETWORD'])
+    else:
+        conSock = MPDConClientSock(secretword=parmdb['MPD_SECRETWORD'])
+
+    if parmdb['MPIEXEC_HOST_CHECK']:    # if this was requested in the xml file
+        msgToSend = { 'cmd' : 'verify_hosts_in_ring',
+                      'host_list' : parmdb['MPD_HOST_LIST'] }
+        conSock.send_dict_msg(msgToSend)
+        msg = conSock.recv_dict_msg(timeout=recvTimeout)
+        if not msg:
+            mpd_print(1,'no msg recvd from mpd for verify_hosts_in_ring')
+            exit(-1)
+        elif msg['cmd'] != 'verify_hosts_in_ring_response':
+            mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
+            exit(-1)
+        if msg['host_list']:
+            print 'These hosts are not in the mpd ring:'
+            for host in  msg['host_list']:
+                if host[0].isdigit():
+                    print '    %s' % (host),
+                    try:
+                        print ' (%s)' % (gethostbyaddr(host)[0])
+                    except:
+                        print ''
+                else:
+                    print '    %s' % (host)
+            exit(-1)
+
     msgToSend = { 'cmd' : 'get_mpdrun_values' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
@@ -209,14 +245,21 @@ def mpiexec():
         mpd_print(1,'mpd version %s does not match mpiexec version %s' % \
                   (msg['mpd_version'],mpd_version()) )
         exit(-1)
-    if not parmdb['MPIEXEC_IFHN']:    # if user did not specify one, use mpd's
+
+    # if using/testing the INET CONSOLE
+    if environ.has_key('MPD_CON_INET_HOST_PORT'):
+        try:
+            myIfhn = gethostbyname_ex(myHost)[2][0]
+        except:
+            print 'mpiexec failed: gethostbyname_ex failed for %s' % (myHost)
+            exit(-1)
+        parmdb[('thispgm','MPIEXEC_IFHN')] = myIfhn
+    elif not parmdb['MPIEXEC_IFHN']:    # if user did not specify one, use mpd's
         parmdb[('thispgm','MPIEXEC_IFHN')] = msg['mpd_ifhn']    # not really thispgm here
 
     if parmdb['gdb_attach_jobid']:
         get_vals_for_attach(parmdb,conSock,msgToMPD)
-    elif parmdb['inXmlFilename']:    # get these after we have a conn to mpd
-        get_parms_from_xml_file(conSock,msgToMPD)
-    else:
+    elif not parmdb['inXmlFilename']:
         parmdb[('cmdline','nprocs')] = 0  # for incr later
         for k in localArgSets.keys():
 	    handle_local_argset(localArgSets[k],machineFileInfo,msgToMPD)
@@ -560,7 +603,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
 			'-envall' : 0, '-env' : 2, '-envnone' : 0, '-envlist' : 1 }
     host   = parmdb['-ghost']
     wdir   = parmdb['-gwdir']
-    umask  = parmdb['-gumask']
+    wumask = parmdb['-gumask']
     wpath  = parmdb['-gpath']
     nProcs = parmdb['-gn']
     usize  = parmdb['MPIEXEC_USIZE']
@@ -622,7 +665,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
             if len(argset) < (argidx+2):
                 print '** missing arg to -umask'
                 usage()
-            umask = argset[argidx+1]
+            wumask = argset[argidx+1]
             argidx += 2
         elif argset[argidx] == '-soft':
             if len(argset) < (argidx+2):
@@ -698,7 +741,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         msgToMPD['execs'][asRange]  = cmdAndArgs[0]
         msgToMPD['paths'][asRange]  = wpath
         msgToMPD['cwds'][asRange]   = wdir
-        msgToMPD['umasks'][asRange] = umask
+        msgToMPD['umasks'][asRange] = wumask
         msgToMPD['args'][asRange]   = cmdAndArgs[1:]
         if host.startswith('_any_'):
             msgToMPD['hosts'][(loRange,hiRange)] = host
@@ -1052,44 +1095,7 @@ def print_ready_merged_lines(minRanks,parmdb,linesPerRank):
                 printFlag = 1
     stdout.flush()
 
-def get_parms_from_rcfile(parmsToOverride):
-    global parmdb
-    try:
-        parmsRCFilename = environ['HOME'] + '/.mpd.conf'
-        parmsRCFile = open(parmsRCFilename,'r')
-    except:
-        return  # OK; treat as empty file
-    for line in parmsRCFile:
-        line = line.strip()
-        withoutComments = line.split('#')[0]    # will at least be ''
-        splitLine = withoutComments.rstrip().split('=')
-        if splitLine  and  not splitLine[0]:    # ['']
-            continue
-        if len(splitLine) == 2:
-            (k,v) = splitLine
-            origKey = k
-            if not k.startswith('MPIEXEC_'):  # may need to chk for other mpd pgms also
-                continue
-            if k in parmsToOverride.keys():
-                if v.isdigit():
-                    v = int(v)
-                parmdb[('rcfile',k)] = v
-            else:
-                mpd_print(1,'invalid key in mpd conf file; key=:%s:' % (origKey) )
-                exit(-1)
-        else:
-            mpd_print(1, 'line in mpd conf is not key=val pair; line=:%s:' % (line) )
-
-def get_parms_from_env(parmsToOverride):
-    global parmdb
-    for k in parmsToOverride.keys():
-        if environ.has_key(k):
-            v = environ[k]
-            if v.isdigit():
-                v = int(v)
-            parmdb[('env',k)] = v
-
-def get_parms_from_xml_file(conSock,msgToMPD):
+def get_parms_from_xml_file(msgToMPD):
     global parmdb
     try:
         import xml.dom.minidom
@@ -1144,6 +1150,8 @@ def get_parms_from_xml_file(conSock,msgToMPD):
             parmdb[('xml','MPIEXEC_MERGE_OUTPUT')] = 1   # implied
             parmdb[('xml','MPIEXEC_LINE_LABELS')]  = 1   # implied
             parmdb[('xml','MPIEXEC_STDIN_DEST')]   = 'all'
+    if cpg.hasAttribute('use_root_pm'):
+        parmdb[('xml','MPD_USE_ROOT_MPD')] = int(cpg.getAttribute('use_root_pm'))
     if cpg.hasAttribute('tv'):
         parmdb[('xml','MPIEXEC_TOTALVIEW')] = int(cpg.getAttribute('tv'))
     hostSpec = cpg.getElementsByTagName('host-spec')
@@ -1164,27 +1172,7 @@ def get_parms_from_xml_file(conSock,msgToMPD):
     if hostSpec and hostSpec[0].hasAttribute('check'):
         hostSpecMode = hostSpec[0].getAttribute('check')
         if hostSpecMode == 'yes':
-            msgToSend = { 'cmd' : 'verify_hosts_in_ring', 'host_list' : hostList }
-            conSock.send_dict_msg(msgToSend)
-            msg = conSock.recv_dict_msg(timeout=recvTimeout)
-            if not msg:
-                mpd_print(1,'no msg recvd from mpd mpd during chk hosts up')
-                exit(-1)
-            elif msg['cmd'] != 'verify_hosts_in_ring_response':
-                mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
-                exit(-1)
-            if msg['host_list']:
-                print 'These hosts are not in the mpd ring:'
-                for host in  msg['host_list']:
-                    if host[0].isdigit():
-                        print '    %s' % (host),
-                        try:
-                            print ' (%s)' % (gethostbyaddr(host)[0])
-                        except:
-                            print ''
-                    else:
-                        print '    %s' % (host)
-                exit(-1)
+            parmdb['MPIEXEC_HOST_CHECK'] = 1
     covered = [0] * parmdb['nprocs'] 
     procSpec = cpg.getElementsByTagName('process-spec')
     if not procSpec:

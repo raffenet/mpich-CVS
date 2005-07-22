@@ -16,12 +16,12 @@ __credits__ = ""
 
 
 from  socket  import  socket, fromfd, AF_UNIX, SOCK_STREAM
-from  os      import  environ, getuid, close
+from  os      import  environ, getuid, close, path
 from  sys     import  argv, exit
 from  time    import  time
 from  signal  import  signal, SIG_DFL, SIGINT, SIGTSTP, SIGCONT
 from  mpdlib  import  mpd_set_my_id, mpd_uncaught_except_tb, mpd_print, \
-                      mpd_handle_signal, mpd_get_my_username, MPDConClientSock
+                      mpd_handle_signal, mpd_get_my_username, MPDConClientSock, MPDParmDB
 
 def mpdringtest():
     import sys    # to get access to excepthook in next line
@@ -34,7 +34,23 @@ def mpdringtest():
 	numLoops = int(argv[1])
     signal(SIGINT, sig_handler)
     mpd_set_my_id(myid='mpdringtest')
-    conSock = MPDConClientSock()  # looks for MPD_UNIX_SOCKET in env
+
+    parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
+    parmsToOverride = {
+                        'MPD_USE_ROOT_MPD'            :  0,
+                        'MPD_SECRETWORD'              :  '',
+                      }
+    for (k,v) in parmsToOverride.items():
+        parmdb[('thispgm',k)] = v
+    parmdb.get_parms_from_env(parmsToOverride)
+    parmdb.get_parms_from_rcfile(parmsToOverride)
+    if getuid() == 0  or  parmdb['MPD_USE_ROOT_MPD']:
+        fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
+        mpdroot = fullDirName + '/mpdroot'
+        conSock = MPDConClientSock(mpdroot=mpdroot,secretword=parmdb['MPD_SECRETWORD'])
+    else:
+        conSock = MPDConClientSock(secretword=parmdb['MPD_SECRETWORD'])
+
     msgToSend = { 'cmd' : 'mpdringtest', 'numloops' : numLoops }
     conSock.send_dict_msg(msgToSend)
     starttime = time()

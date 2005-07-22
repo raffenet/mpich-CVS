@@ -11,8 +11,9 @@ import inspect
 from  sys       import  version_info, stdout, exit
 from  os        import  path, environ, getuid, strerror, unlink, read, access, \
                         R_OK, X_OK, O_CREAT, O_WRONLY, O_EXCL
-from  os        import  stat, error as os_error, close as osclose, \
-                        open as osopen, write as oswrite
+from  os        import  fork, execvpe, waitpid, stat, error as os_error, \
+                        close as osclose, open as osopen, write as oswrite, \
+                        WIFSIGNALED, WEXITSTATUS
 from  cPickle   import  dumps, loads
 from  pwd       import  getpwuid, getpwnam
 from  grp       import  getgrall
@@ -765,21 +766,25 @@ class MPDRing(object):
             self.rhsSock.name = 'rhs'
 
 class MPDConListenSock(MPDListenSock):
-    def __init__(self,name='console_listen',**kargs):
+    def __init__(self,name='console_listen',secretword='',**kargs):
         if environ.has_key('MPD_CON_EXT'):
             self.conExt = '_'  + environ['MPD_CON_EXT']
         else:
             self.conExt = ''
         self.conFilename = '/tmp/mpd2.console_' + mpd_get_my_username() + self.conExt
+        self.secretword = secretword
         consoleAlreadyExists = 0
         if hasattr(socket,'AF_UNIX'):
             sockFamily = socket.AF_UNIX
         else:
             sockFamily = socket.AF_INET
-        if environ.has_key('MPD_TEST_INET_CON'):    # override above for testing
-            unlink(self.conFilename)
-            sockFamily = socket.AF_INET
-            print "testing with inet sock"
+        if environ.has_key('MPD_CON_INET_HOST_PORT'):
+            sockFamily = socket.AF_INET    # override above-assigned value
+            # print "1111: testing with inet sock"
+            (conHost,conPort) = environ['MPD_CON_INET_HOST_PORT'].split(':')
+            conPort = int(conPort)
+        else:
+            (conHost,conPort) = ('',0)
         if access(self.conFilename,R_OK):    # if console is there, see if mpd is listening
             if sockFamily == socket.AF_UNIX:
                 tempSock = MPDSock(family=socket.AF_UNIX)
@@ -790,16 +795,17 @@ class MPDConListenSock(MPDListenSock):
                     unlink(self.conFilename)
                 tempSock.close()
             else:
-                conFile = open(self.conFilename)
-                for line in conFile:
-                    line = line.strip()
-                    (k,v) = line.split('=')
-                    if k == 'port':
-                        mpdPort = int(v)
-                conFile.close()
+                if not conPort:
+                    conFile = open(self.conFilename)
+                    for line in conFile:
+                        line = line.strip()
+                        (k,v) = line.split('=')
+                        if k == 'port':
+                            conPort = int(v)
+                    conFile.close()
                 tempSock = MPDSock()
                 try:
-                    tempSock.sock.connect(('localhost',mpdPort))
+                    tempSock.sock.connect(('localhost',conPort))
                     consoleAlreadyExists = 1
                 except Exception, errmsg:
                     unlink(self.conFilename)
@@ -816,36 +822,51 @@ class MPDConListenSock(MPDListenSock):
                                    filename=self.conFilename,listen=1,name=name)
         else:
             MPDListenSock.__init__(self,family=sockFamily,socktype=socket.SOCK_STREAM,
-                                   listen=1,name=name)
+                                   port=conPort,listen=1,name=name)
             conFD = osopen(self.conFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
             self.port = self.sock.getsockname()[1]
-            self.secretconval = 'SV_%s' % randrange(1,99999999)
             oswrite(conFD,'port=%d\n' % (self.port) )
-            oswrite(conFD,'secretconval=%s\n' % (self.secretconval) )
             osclose(conFD)
 
 class MPDConClientSock(MPDSock):
-    def __init__(self,name='console_to_mpd',**kargs):
+    def __init__(self,name='console_to_mpd',mpdroot='',secretword='',**kargs):
         MPDSock.__init__(self)
         self.sock = 0
         if environ.has_key('MPD_CON_EXT'):
             self.conExt = '_'  + environ['MPD_CON_EXT']
         else:
             self.conExt = ''
-        self.conFilename = '/tmp/mpd2.console_' + mpd_get_my_username() + self.conExt
-        if environ.has_key('MPD_UNIX_SOCKET'):    # put there by mpdroot
-            conFD = int(environ['MPD_UNIX_SOCKET'])
-            self.sock = socket.fromfd(conFD,socket.AF_UNIX,socket.SOCK_STREAM)
-            self.sock = MPDSock(sock=self.sock,name=name)
-            osclose(conFD)
+        self.secretword = secretword
+        if mpdroot:
+            self.conFilename = '/tmp/mpd2.console_root' + self.conExt
+            self.sock = MPDSock(family=socket.AF_UNIX,name=name)
+            rootpid = fork()
+            if rootpid == 0:
+                execvpe(mpdroot,[mpdroot,self.conFilename,str(self.sock.fileno())],{})
+                mpd_print(1,'failed to exec mpdroot (%s)' % mpdroot )
+                exit(-1)
+            else:
+                (pid,status) = waitpid(rootpid,0)
+                if WIFSIGNALED(status):
+                    status = status & 0x007f  # AND off core flag
+                else:
+                    status = WEXITSTATUS(status)
+                if status != 0:
+                    mpd_print(1,'forked process failed; status=' % status)
+                    exit(-1)
         else:
+            self.conFilename = '/tmp/mpd2.console_' + mpd_get_my_username() + self.conExt
             if hasattr(socket,'AF_UNIX'):
                 sockFamily = socket.AF_UNIX
             else:
                 sockFamily = socket.AF_INET
-            if environ.has_key('MPD_TEST_INET_CON'):    # override above for testing
-                sockFamily = socket.AF_INET
-                print "testing with inet sock"
+            if environ.has_key('MPD_CON_INET_HOST_PORT'):
+                sockFamily = socket.AF_INET    # override above-assigned value
+                (conHost,conPort) = environ['MPD_CON_INET_HOST_PORT'].split(':')
+                conPort = int(conPort)
+                # print "1111: testing with inet sock"
+            else:
+                (conHost,conPort) = ('',0)
             self.sock = MPDSock(family=sockFamily,socktype=socket.SOCK_STREAM,name=name)
             if sockFamily == socket.AF_UNIX:
                 oldAlarmTime = alarm(8)
@@ -857,23 +878,29 @@ class MPDConClientSock(MPDSock):
                 alarm(oldAlarmTime)
                 if self.sock:
                     # this is done by mpdroot otherwise
-                    msgToSend = 'realusername=%s\n' % mpd_get_my_username()
+                    msgToSend = 'realusername=%s secretword=UNUSED\n' % \
+                                mpd_get_my_username()
                     self.sock.send_char_msg(msgToSend)
             else:
-                conFile = open(self.conFilename)
-                for line in conFile:
-                    line = line.strip()
-                    (k,v) = line.split('=')
-                    if k == 'port':
-                        mpdPort = int(v)
-                    elif k == 'secretconval':
-                        self.secretconval = v
-                conFile.close()
+                if not conPort:
+                    conFile = open(self.conFilename)
+                    for line in conFile:
+                        line = line.strip()
+                        (k,v) = line.split('=')
+                        if k == 'port':
+                            conPort = int(v)
+                    conFile.close()
+                if conHost:
+                    conIfhn = socket.gethostbyname_ex(conHost)[2][0]
+                else:
+                    conIfhn = 'localhost'
                 self.sock = MPDSock(name=name)
                 oldAlarmTime = alarm(8)
                 try:
-                    self.sock.connect(('localhost',mpdPort))
+                    self.sock.connect((conIfhn,conPort))
                 except Exception, errmsg:
+                    mpd_print(1,"failed to connect to host %s port %d" % \
+                              (conIfhn,conPort) )
                     self.sock.close()
                     self.sock = 0
                 alarm(oldAlarmTime)
@@ -892,7 +919,7 @@ class MPDConClientSock(MPDSock):
                 if msg['cmd'] != 'con_challenge':
                     mpd_print(1,'expected con_challenge from mpd; got msg=:%s:' % (msg) )
                     exit(-1)
-                randVal = self.secretconval + str(msg['randnum'])
+                randVal = self.secretword + str(msg['randnum'])
                 response = md5new(randVal).digest()
                 msgToSend = { 'cmd' : 'con_challenge_response', 'response' : response,
                               'realusername' : mpd_get_my_username() }
