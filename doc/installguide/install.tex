@@ -132,11 +132,10 @@ For the default installation, you will need:
 \item A fortran-77, Fortran-90, and/or C++ compiler if you wish to write
   MPI programs in any of these languages.
 \item Python 2.2 or later version, for building the default process
-  management system, MPD.  In addition, you will need 
-  PyXML and an XML parser such as expat (in order
-  to use mpiexec with the MPD process manager).  Most systems have
-  Python, PyXML, and expat pre-installed, but you can get them free from
-  \texttt{www.python.org}.  You may assume they are there unless the
+  management system, MPD.
+  Most systems have
+  Python pre-installed, but you can get it free from
+  \texttt{www.python.org}.  You may assume it is there unless the
   \texttt{configure} step below complains.
 \item Any one of a number of Unix operating systems, such as IA32-Linux.
   MPICH2 is most extensively tested on Linux;  there remain some
@@ -302,8 +301,8 @@ down.
 \end{verbatim}
 The output of mpdtrace should be the hostname of the machine you are
 running on.  The \texttt{mpdallexit} causes the mpd daemon to exit.
-If you encounter problems,
-you should check the troubleshooting section in Appendix~\ref{app:mpd}.
+If you encounter problems, you should check the troubleshooting section 
+of Appendix~\ref{app:mpd}.
 
 \item
 The next sanity check is to run a non-MPI program using the daemon.
@@ -542,6 +541,34 @@ consistent (and required) for use of version 2 GNU \texttt{autoconf}.
 Other differences between MPICH1 and MPICH2 include the handling of
 process managers and the choice of communication device.
 
+For example, the new mpd has a new format and slightly different
+semantics for the -machinefile option.  Assume that you type this
+data into a file named \texttt{machfile}:
+\begin{verbatim}
+bp400:2
+bp401:2
+bp402:2
+bp403:2
+\end{verbatim}
+
+If you then run a parallel job with this machinefile, you would expect
+ranks 0 and 1 to run on bp400 because it says to run 2 processes there
+before going on to bp401.  Ranks 2 and 3 would run on bp401, and rank
+4 on bp402, e.g.:
+
+\begin{verbatim}
+    mpiexec.py -l -machinefile machfile -n 5 hostname
+\end{verbatim}
+
+produces:
+\begin{verbatim}
+0: bp400
+1: bp400
+2: bp401
+3: bp401
+4: bp402
+\end{verbatim}
+
 \section{Installing and Managing Process Managers}
 \label{sec:process-managers}
 MPICH2 has been designed to work with multiple process managers; that
@@ -629,16 +656,54 @@ So for example, to see a complete list of the possible arguments for
 \subsubsection{Options for \texttt{mpd}}
 
 \begin{description}
-\item[-ncpus] is used when allowing MPD to pick the hosts: it tells MPD
-  how many processes should be started by each MPD in the ring as the
-  processes are started in round-robin fashion.
+\item[--help] causes mpd to print a list and description of all options
 \end{description}
+
+\subsubsection{Running MPD on multi-homed systems}
+\label{sec:mpd-multi-homed}
+
+If you plan to use one or more multi-homed systems, it is of course useful if
+the default hostname is associated with the interface that mpd will need
+to use for communications.  If not however, you can cause mpd to use a
+specific interface by using the \emph{---ifhn} (interface-hostname) option, e.g.:
+\begin{verbatim}
+    n1 $  mpd --ifhn=192.168.1.1 &
+\end{verbatim}
+
+If you then run mpiexec on n1 connecting to that mpd, the mpiexec will
+use the same ifhn for communications with remote processes that connect
+back to it.  mpiexec will also accept a -ifhn option (mpiexec --help)
+in the unlikely event that you wish it to use a separate interface from
+the mpd.
+
+mpdboot can also designate the ifhn to be used by both the local and remote
+mpds which it starts, e.g.:
+\begin{verbatim}
+    n1 $  mpdboot --totalnum=4 --ifhn=192.168.1.1 
+\end{verbatim}
+where mpd.hosts contains:
+\begin{verbatim}
+  n2 ifhn=192.168.1.2
+  n3 ifhn=192.168.1.3
+\end{verbatim}
+will start one mpd locally, one on n2 and one on n3.  Each will use the
+respectively designated ifhn.
+
 
 \subsubsection{Running MPD as Root}
 \label{sec:mpd-root}
 
-How to run mpd as root for other people to use.  Test whether all that
-is necessary is for root to be the one who runs the install step.
+MPD can run as root to support multiple users simultaneously.  To do this,
+it easiest to simply do the ``make install'' in the mpd sub-directory as
+root.  This will cause the \texttt{mpdroot} program to be installed in
+the bin directory with setuid-root permissions.  Individual users then
+have the option of starting and using their own mpd rings, or they can run
+with a ring started by root.  To use root's ring, they must use an option
+named \emph{MPD\_USE\_ROOT\_MPD}.  This option may either be set as an environment
+variable or they can set it in their own .mpd.conf file, e.g.:
+\begin{verbatim}
+MPD_USE_MPD_ROOT=1
+\end{verbatim}
 
 \subsection{SMPD}
 \label{sec:smpd}
@@ -1039,7 +1104,7 @@ Only gcc is currently supported
 \appendix
 
 
-\section{Troubleshooting the mpd's}
+\section{Troubleshooting MPDs}
 \label{app:mpd}
 
 
@@ -1048,16 +1113,38 @@ Only gcc is currently supported
 \label{sec:getting-started}
 
 \texttt{mpd} stands for multi-purpose daemon.  We sometimes use the term
-mpd to refer to the combination of mpd daemon and its helper programs that
-collectively form a process management system for executing
-parallel jobs, including mpich jobs.  The mpd daemon must
-run on each host where you wish to execute parallel programs.
-The mpd daemons form a ring to facilitate rapid startup.
-Therefore, each host must be configured in such a way that the
-mpd's can connect to each other and pass messages via sockets.
-Sometimes this configuration can be a bit tricky to get right.
-In this section, we will walk slowly through a series of steps
-that will help to ensure success in running mpd's on a large cluster.
+mpd to refer to the combination of the mpd daemon and its helper programs
+that collectively form a process management system for executing parallel
+jobs, including mpich jobs.  The mpd daemon must run on each host where
+you wish to execute parallel programs.  The mpd daemons form a ring to
+facilitate rapid process startup.  Even a single mpd on a single host
+forms a loop.  Therefore, each host must be configured in such a way
+that the mpds can connect to each other and pass messages via sockets.
+
+It can be rather tricky to configure one or more hosts in such a way
+that they adequately support client-server applications like mpd.
+In particular, each host must not only know its own name, but must
+identify itself correctly to other hosts when necessary.  Further, certain
+information must be readily accessible to each host.  For example, each
+host must be able to map another host's name to its IP address.  In this
+section, we will walk slowly through a series of steps that will help
+to ensure success in running mpds on a single host or on a large cluster.
+
+If you can \texttt{ssh} from each machine to \emph{itself}, and from
+each machine to each other machine in your set (and back), then you
+probably have an adequate environment for mpd.  However, there may
+still be problems.  For example, if you are blocking all ports except
+the ports used by ssh/sshd, then mpd will still fail to operate correctly.
+
+To begin using mpd, the sequence of steps that we recommend is this:
+\begin{enumerate}
+    \item get one mpd working alone on a first test node
+    \item get one mpd working alone on a second test node
+    \item get two new mpds to work together on the two test nodes
+    \item boot two new mpds on the two test nodes via mpdboot
+\end{enumerate}
+
+\subsubsection{Following the steps}
 
 \begin{enumerate}
 \item Install mpich2, and thus mpd.
@@ -1065,251 +1152,311 @@ that will help to ensure success in running mpd's on a large cluster.
 \item Make sure the mpich2 bin directory is in your path.
 Below, we will refer to it as \texttt{MPDDIR}.
 
-\item At a shell prompt (\$ below), type:
+\item Kill old mpd processes.
+If you are coming to this guide from elsewhere, e.g. a Quick Start guide
+for mpich2, because you encountered mpd problems, you should make sure
+that all mpd processes are terminated on the hosts where you have been
+testing.  \texttt{mpdallexit} may assist in this, but probably not if
+you were having problems.  You may need to use the Unix \texttt{kill}
+command to terminate the processes.
+
+\item Run a first mpd (alone on a first node).
+As mentioned above, mpd uses client-server communications to perform
+its work.  So, before running an mpd, let's run a simpler program
+(\texttt{mpdcheck}) to verify that these communications are likely to be
+successful.  Even on hosts where communications are well supported,
+sometimes there are problems associated with hostname resolution, etc.
+So, it is worth the effort to proceed a bit slowly.  Below, we assume
+that you have installed mpd and have it in your path.
+
+Select a test node, let's call it \texttt{n1}.  Login to n1.
+
+First, we will run mpdcheck as a server and a client.  To run it as a
+server, get into a window with a command-line and run this:
 \begin{verbatim}
-    $ mpd &
+    n1 $  mpdcheck -s
 \end{verbatim}
-If the executable is not found, make sure that you have
-\texttt{MPDDIR} in your path and that mpd is in that dir.
-
-If you get something like:
-\begin{small}
+It will print something like this:
 \begin{verbatim}
-    configuration file /home/you/.mpd.conf not found
-    A file named .mpd.conf must be present in the users home
-    directory (/etc/mpd.conf if root) with read and write access
-    only for the user, and must contain at least a line with:
-    secretword=<secretword>
-\end{verbatim}
-\end{small}
-then create a file named \texttt{.mpd.conf} (note the leading dot) in your
-home directory using an editor.  That file must contain a line
-\begin{verbatim}
-    secretword=<secretword>
-\end{verbatim}
-where you replace \verb+<secretword>+ with some string
-you like.  Then make sure the file has mode 600 (\texttt{chmod 600 .mpd.conf}).
-
-Then, try mpd again.
-
-% $   Comment to end fake math mode
-
-If mpd still fails to start, you may have a configuration problem that
-\texttt{mpdcheck} will be able to help you with (see
-Section~\ref{sec:mpdcheck}).
-
-To stop the mpd:
-\begin{verbatim}
-   $ mpdallexit
+    server listening at INADDR_ANY on: n1 1234
 \end{verbatim}
 
-
-\item Now, run mpdtrace:
+Now, run the client side (in another window if convenient) and see
+if it can find the server and communicate.  Be sure to use the \emph{same}
+hostname and portnumber printed by the server (above: n1 1234):
 \begin{verbatim}
-    $ mpdtrace -l
+    n1 $  mpdcheck -c n1 1234
 \end{verbatim}
 
-This should print something like:
+If all goes well, the server will print something like:
 \begin{verbatim}
-    yourhost_1234
+    server has conn on
+        <socket._socketobject object at 0x40200f2c>
+            from ('192.168.1.1', 1234)
+    server successfully recvd msg from client:
+        hello_from_client_to_server
 \end{verbatim}
-where the 1234 is a port number that mpd is using to listen for
-connections from other mpds.
+and the client will print:
+\begin{verbatim}
+    client successfully recvd ack from server:
+        ack_from_server_to_client
+\end{verbatim}
 
-\item Try to run a parallel (non-MPI) job:
-\begin{verbatim}
-    $ mpiexec -n 2 hostname    
-\end{verbatim}
-We assume \texttt{}hostname is in your path.
+If the experiment failed, you have some network or machine configuration
+problem which will also be a problem later when you try to use mpd.
+Even if the experiment succeeded, but the hostname printed by the server
+was \emph{localhost}, then you will probably have problems later if you
+try to use mpd on n1 in conjunction with other hosts.  In either case,
+skip to the section ``Debugging host/network configuration problems''.
 
-\item Try to run a parallel mpi job:
+If the experiment succeeded, then you should be ready to try mpd on
+this one host. To start an mpd, you will use the mpd command.  To run
+parallel programs, you will use the mpiexec program.  All mpd commands
+accept the -h or --help arguments, e.g.:
 \begin{verbatim}
-  $ mpiexec -n 2 /MPI_EXAMPLES_DIR/cpi    
+    n1 $  mpd --help 
+    n1 $  mpiexec --help
 \end{verbatim}
+
+Try a few tests:
+\begin{verbatim}
+    n1 $  mpd &
+    n1 $  mpiexec -n 1 /bin/hostname
+    n1 $  mpiexec -l -n 4 /bin/hostname
+    n1 $  mpiexec -n 2 PATH_TO_MPICH2_EXAMPLES/cpi
+\end{verbatim}
+
+To terminate the mpd:
+\begin{verbatim}
+    n1 $  mpdallexit
+\end{verbatim}
+
+
+\item Run a second mpd (alone on a second node).
+To verify that things are fine on a second host (say \emph{n2}), login
+to n2 and perform the same set of tests that you did on n1.  Make sure
+that you use mpdallexit to terminate the mpd so you will be ready for
+further tests.
+
+
+\item Run a ring of two mpds on two hosts.
+Before running a ring of mpds on n1 and n2, we will again use mpdcheck,
+but this time between the two machines.  We do this because the two nodes
+may have trouble locating each other or communicating between them and
+it is easier to check this out with the smaller program.
+
+First, we will make sure that a server on n1 can service a client from n2.
+On n1:
+\begin{verbatim}
+    n1 $  mpdcheck -s
+\end{verbatim}
+which will print a hostname (hopefully n1) and a portnumber (say 3333 here).
+On n2:
+\begin{verbatim}
+    n2 $  mpdcheck -c n1 3333
+\end{verbatim}
+
+If this experiment fails, skip to the section ``Debugging host/network
+configuration problems''.
+
+Second, we will make sure that a server on n2 can service a client from n1.
+On n2:
+\begin{verbatim}
+    n2 $  mpdcheck -s
+\end{verbatim}
+which will print a hostname (hopefully n2) and a portnumber (say 7777 here).
+On n2:
+\begin{verbatim}
+    n2 $  mpdcheck -c n2 7777
+\end{verbatim}
+
+If this experiment fails, skip to the section ``Debugging host/network
+configuration problems''.
+
+If all went well, we are ready to try a pair of mpds on n1 and n2.
+First, make sure that all mpds have terminated on both n1 and n2.  Use
+mpdallexit or simply kill them with:
+\begin{verbatim}
+kill -9 PID_OF_MPD
+\end{verbatim}
+where you have obtained the PID\_OF\_MPD by some means such as the ps command.
+
+On n1:
+\begin{verbatim}
+    n1 $  mpd &
+    n1 $  mpdtrace -l
+\end{verbatim}
+This will print a list of machines in the ring, in this case just n1.
+The output will be something like:
+\begin{verbatim}
+    n1_6789 (192.168.1.1)
+\end{verbatim}
+The 6789 is the port that the mpd is listeneing on for connections from other
+mpds wishing to enter the ring.  We will use that port in a moment to get an mpd
+from n2 into the ring.  The value in parentheses should be the IP address of n1.
+
+On n2:
+\begin{verbatim}
+    n2 $  mpd -h n1 -p 6789 &
+\end{verbatim}
+where 6789 is the listeneing port on n1 (from mpdtrace above).
+Now try:
+\begin{verbatim}
+    n2 $  mpdtrace -l
+\end{verbatim}
+You should see both mpds in the ring.
+
+To run some programs in parallel:
+\begin{verbatim}
+    n1 $  mpiexec -n 2 /bin/hostname
+    n1 $  mpiexec -n 4 /bin/hostname
+    n1 $  mpiexec -l -n 4 /bin/hostname
+    n1 $  mpiexec -l -n 4 PATH_TO_MPICH2_EXAMPLES/cpi
+\end{verbatim}
+
+To bring down the ring of mpds:
+\begin{verbatim}
+    n1 $  mpdallexit
+\end{verbatim}
+
+
+\item Boot a ring of two mpds via mpdboot.
+Please be aware that mpdboot uses ssh by default to start remote mpds.
+It will expect that you can run ssh from n1 to n2 (and from n2 to n1)
+without entering a password.
+
+First, make sure that you terminate the mpd processes from any prior
+tests.
+
+On n1, create a file named mpd.hosts containing the name of n2:
+\begin{verbatim}
+n2
+\end{verbatim}
+
+Then, on n1 run:
+\begin{verbatim}
+    n1 $  mpdboot -n 2
+    n1 $  mpdtrace -l
+    n1 $  mpiexec -l -n 2 /bin/hostname
+\end{verbatim}
+The mpdboot command should read the mpd.hosts file created above and
+run an mpd on each of the two machines.  The mpdtrace and mpiexec show
+the ring up and functional.
+To bring the ring down:
+\begin{verbatim}
+    n1 $  mpdallexit
+\end{verbatim}
+
+If mpdboot works on the two machines n1 and n2, it will probably work on
+your others as well.  But, there could be configuration problems using a
+new machine on which you have not yet tested mpd.  An easy way to check,
+is to gradually add them to mpd.hosts and try an mpdboot with a -n arg
+that uses them all each time.  Use mpdallexit after each test.
 
 \end{enumerate}
 
 
-\subsection{mpdcheck}
-\label{sec:mpdcheck}
-
-\texttt{mpdcheck} is a program that tries to verify that your set
-of machines is configured properly to support a ring of mpd's.  So,
-before trying to start a whole set of mpd's on a collection of machines
-with \texttt{mpdboot}, we have found that it is typically a \emph{very}
-good idea to run a few tests with \texttt{mpdcheck} that help to ensure
-later success.
-
-If you are troubleshooting, it is best to select two machines (call them
-m1 and m2) for which you are having problems connecting into an mpd ring,
-and use the pair to do debugging with mpdcheck.  Sometimes we find that
-folks get a pair of machines working correctly, and then have trouble
-bringing a third one into the ring.  In that case, it is generally best
-to try this troubleshooting section with the new machine and just one
-of the original ones.
-
-There are cluster configurations that can be a bit tricky to get right.
-For example, if you have a cluster which has a \texttt{head node} that
-is special because it has two interfaces (and thus two IP addresses),
-the head node must be configured such that mpd's running on it and
-the \texttt{internal} nodes can form a ring.  Among other things, this
-implies that processes running on the internal nodes will need to be
-able to identify (via DNS, /etc/hosts, etc.) and reach the head node.
-While this seems obvious, it requires some care.  If the head node
-generally identifies itself by its \texttt{external} address, that can
-cause confusion when a process runs there, but wishes to identify its
-location to a process running on an internal node.
-
-Currently \texttt{mpdcheck} does not try to identify all possible methods
-by which mpd may be made to work on a pair of machines.  It simply tries
-to see if the configuration is such that a simple client-server pair
-of processes can connect and communicate.  Thus, we recommend below
-that when running the client-server trials below (-s and -c options),
-that you run them ``in both directions'', i.e. first run the server on m1
-and the client on m2; then, run the server on m2 and the client on m1.
-
-\begin{enumerate}
-\item \verb+ $ mpdcheck -h +
-
-This prints a fairly long help message but gives you some
-idea about what mpdcheck might do for you and an
-explanation of some of the runs we will do here.
-
-\item \verb+ $ mpdcheck +
-
-With no args, mpdcheck tries to determine if there seem to
-be configuration problems with the current machine that
-would cause issues when mpd's on multiple hosts try to
-connect and communicate.  The goal here is to get no
-output.  Output indicates potential problems.  If you find
-the messages too short/cryptic, you can use the \texttt{-l} option
-(long messages) and get better info.  You will probably want to run
-this once on each of the pair of machines which you are debugging.
-
-\item Create an \texttt{mpd.hosts} file using an editor.  For now, just
-    list the local machine's name on one line and the name of
-    another machine in your cluster on the next line.  (Later,
-    we will list all machines in the cluster.)  Now, try:
+\subsection{Debugging host/network configuration problems}
+We use mpdcheck as our first attempt to debug host or network
+configuration problems.  If you run:
 \begin{verbatim}
-    $ mpdcheck -f mpd.hosts
+    n1 $  mpdcheck --help
 \end{verbatim}
-    If this produces no error output, try:
+you should receive a fairly long help message describing a wide variety
+of arguments which can be supplied to mpdcheck to help you debug.
+
+The first thing to try is to simply login to a node, say n1 and run:
 \begin{verbatim}
-    $ mpdcheck -f mpd.hosts -ssh
+    n1 $  mpdcheck
 \end{verbatim}
-These tests will try to verify that the localhost can
-discover the other host, and with the \texttt{-ssh} option try to
-run some \texttt{ssh} tests between the 2 machines to make sure
-that those kinds of things work also.
-
-\item Next, you should try running
-the previous test from the second machine in the file.
-
-\item If all above went fine above, you can probably skip this step.
-This step was attempted automatically in the previous one.  But,
-if there were problems, you may find it useful to rerun by hand and
-keep the output.  On your two machines in the \texttt{mpd.hosts}
-file (call them m1 and m2), try the following:
-
-Do this on m1 and read the output for host and port:
+mpdcheck will produce no output here if it finds no problems.
+If mpdcheck does find potenital problems, it will print them with *** at
+the beginning of the line.  You can cause mpdcheck to be verbose by using
+the -v option, e.g.:
 \begin{verbatim}
-    $ mpdcheck -s
+    n1 $  mpdcheck -v
 \end{verbatim}
-Do this on m2:
+Also, if mpdcheck offers comments about how you might repair certain problems,
+you can get a longer version of those messages by using the -l option, e.g.:
 \begin{verbatim}
-    $ mpdcheck -c host port
-\end{verbatim}
-where you use the host and port printed by \texttt{mpdcheck} on m1.
-Then, try running this client-server test from m2.
-
-\item Try running a pair of mpd's on the two machines.  First, on both
-  machines:
-\begin{verbatim}
-    $ mpdallexit
-\end{verbatim}
-just to make sure you have no old mpd's running.
-
-Run mpd on m1 and use the -e option to cause mpd to echo
-the port it is using:
-\begin{verbatim}
-    $ mpd -e &        
-\end{verbatim}
-    Then, run mpd on m2 and cause it to enter the ring at m1:
-\begin{verbatim}
-    $ mpd -h m1 -p the_echoed_port_at_m1 &
-    $ mpdtrace
-\end{verbatim}
-The \texttt{mpdtrace} should show both mpds in the ring.  If so,
-you should be able to run a parallel job:
-\begin{verbatim}
-    $ mpiexec -n 2 hostname        
-\end{verbatim}
-and see both hostnames printed.
-
-\item \verb+ $ mpdcheck -pc +
-With the -pc arg, mpdcheck prints configuration files and other
-info on the current machine.  This output, along with some of the previous
-ones mentioned, may be useful info to provide if you are planning to request
-debugging help.
-
-\end{enumerate}
-
-
-\subsection{mpdboot}
-\label{sec:mpdboot}
-
-You are now ready to try to use \texttt{mpdboot} to start mpd's on a
-set of machines.  To keep it simple, try using just the two
-hosts listed in your existing \texttt{mpd.hosts} file from above.
-
-\begin{enumerate}
-
-\item  \verb+$ mpdallexit +
-Next, boot a single mpd on the local machine.
-\begin{verbatim}
-    $ mpdboot -n 1
-    $ mpdtrace -l
+    n1 $  mpdcheck -l
 \end{verbatim}
 
-\item \verb+ $ mpdallexit +
+If you run mpdcheck on each node and find no problems, you may still wish to
+use it further to debug issues between two nodes.  For example, you might
+login to n1 and create file named mpd.hosts which contains the name of another
+node which is having trouble communicating with n1, e.g. n2.
+Then, you may want to run:
 \begin{verbatim}
-    $ mpdboot -n 2    
+    n1 $  mpdcheck -f mpd.hosts
 \end{verbatim}
-See if mpd's are running on both machines.
+This test will see if n1 is having trouble discovering information about
+n2.  If not, you wish to try:
 \begin{verbatim}
-    $ mpdtrace -l
-    $ mpiexec -n 2 hostname
+    n1 $  mpdcheck -f mpd.hosts -ssh
+\end{verbatim}
+This will also try to test ssh support between n1 and n2.
+
+If these 2 experiments go OK, you should probably try them again but
+this time logged into n2 and trying to connect back to n1.  Do not 
+forget to change the contents of mpd.hosts to contain the name of n1.
+
+If none of these get you past the problems, you may need to ask for help.
+If so, it will probably useful to run mpdcheck once more on each of the
+nodes which are of concern:
+\begin{verbatim}
+    n1 $  mpdcheck -pc
+    n2 $  mpdcheck -pc
+\end{verbatim}
+These will produce quite a bit of output which may be useful in determining
+the problem.  The -pc option does not really try to offer any comemnts about
+what may be wrong.  It merely prints potentially useful debugging info.
+
+
+\subsection{Firewalls, etc.}
+
+If the output from any of mpdcheck, mpd, or mpdboot leads you to believe
+that one or more of your hosts are having trouble communicating due to
+firewall issues, we can offer a few simple suggestions.  If the problems
+are due to an "enterprise" firewall computer, then we can only point you
+to your local network admin for assistance.
+
+In other cases, there are a few quick things that you can try to see if
+there some common protections in place which may be causing your problems.
+
+First, you might see if iptables is active.  You will probably need to
+be root to do this:
+\begin{verbatim}
+    n1 #  iptables -L
+\end{verbatim}
+This will show a set of 3 current iptables chains being applied for each
+of INPUT, FORWARD, and OUTPUT.  If the chains are non-empty, then you may
+have something blocked.  This could be a result of a software firewall 
+package you are running (e.g. shorewall) or some home-grown set of chains.
+If you are unfamiliar with iptables, you will need to get local help to 
+decipher the rules and determine if any of them may be affecting you.  There
+are options such as -F to iptables that will disable the chains, but that is
+dangerous of course if you require them for protection.
+
+Next, you might see if any tcp-wrappers are active.  You may need to be 
+root to do this:
+\begin{verbatim}
+    n1 #  cat /etc/hosts.deny /etc/hosts.allow
+\end{verbatim}
+If there are any uncommented lines, they likely designate any (or ALL)
+daemons which have their tcp communications blocked.  This can be
+particularly problematic for mpdboot which uses ssh (and thus the ssh
+daemon, sshd).
+
+Next, you might wish to see if you have available ephemeral ports:
+\begin{verbatim}
+    n1 $  cat /proc/sys/net/ipv4/ip_local_port_range
+\end{verbatim}
+This should print a range something like:
+\begin{verbatim}
+    32768   61000
 \end{verbatim}
 
-\end{enumerate}
-
-If \texttt{mpdboot} works on the two machines, it will probably work on
-all of them.  But, there could be configuration problems on one machine,
-for example.  An easy way to check, is to gradually add them to
-\texttt{mpd.hosts} and try an \texttt{mpdboot} with a \texttt{-n} arg
-that uses them all each time.
-
-\texttt{mpdboot} can be used to start mpd's on machines that have multiple
-interfaces.  Each mpd needs to be able to identify the interface that it uses
-to communicate with other mpd's in the ring.  We do not actually use interface
-names (e.g. eth0), but use hostnames or actual IP addresses associated with
-the address.  We refer to this information as the \texttt{ifhn}, the
-interface-hostname.  To specify the ifhn on the local machine, i.e. for the
-local mpd, use the \texttt{--ifhn} arg:
-\begin{verbatim}
-    $ mpdboot --ifhn=192.168.1.1 -n 2
-\end{verbatim}
-This example uses the IP address associated with an alternative interface.
-Similarly you can specify alternative interfaces for machines listed in an
-mpd.hosts file.  For example:
-\begin{verbatim}
-    frontend:1 ifhn=192.168.1.1
-    backend1:2
-\end{verbatim}
-This file indicates that the frontend machine in the cluster has a single 
-cpu and uses its itnerface with IP address to communicate with nodes in the
-cluster.  Host backend1 has 2 cpus and uses its default (or only) interface
-for communication in the cluster..
 
 \end{document}
 
