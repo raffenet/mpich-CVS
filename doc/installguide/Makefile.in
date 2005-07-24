@@ -16,6 +16,9 @@ srcdir = @srcdir@
 .dvi.pdf:
 	dvipdfm $*
 
+.dvi.ps:
+	dvips $*
+
 all-redirect: install.pdf
 
 mandoc:
