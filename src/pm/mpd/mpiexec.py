@@ -65,6 +65,7 @@ from  urllib import quote
 from  socket import gethostname, gethostbyname_ex, gethostbyaddr
 from  time   import time
 from  urllib import unquote
+from  pwd    import getpwuid
 from  mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_version, mpd_print, \
                     mpd_uncaught_except_tb, mpd_handle_signal, mpd_which, \
                     MPDListenSock, MPDStreamHandler, MPDConClientSock, MPDParmDB
