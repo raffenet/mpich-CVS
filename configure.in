@@ -1009,7 +1009,10 @@ calls.  Consider specifying a particular parameter to your Fortran compiler
 to select either upper or lower case names.  For the Absoft compiler, 
 -f selects lower case and -N109 selects upper case.  Specify new command
 line options by setting the environment variable FFLAGS to include
-the options (e.g., setenv FLAGS -f)])
+the options (e.g., setenv FLAGS -f).  In addition, make sure that your
+Fortran 90 compiler uses a compatible naming choice.  For the 
+Absoft Fortran 90, -YALL_NAMES=LCS selects lower case names.  Pass this
+information to configure with the F90FLAGS environment variable.])
         # If Fortran implicitly enable, disable it now.  Otherwise,
 	# abort the configure since warning messages are often lost in
 	# the output.
