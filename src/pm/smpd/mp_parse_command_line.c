@@ -628,6 +628,27 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     result = smpd_get_smpd_data("app_path", smpd_setting_path, SMPD_MAX_PATH_LENGTH);
     smpd_process.plaintext = smpd_option_on("plaintext");
     smpd_setting_localonly = smpd_option_on("localonly");
+    result = smpd_get_smpd_data("port", smpd_setting_tmp_buffer, 20);
+    if (result == SMPD_SUCCESS)
+    {
+	if (isnumber(smpd_setting_tmp_buffer))
+	{
+	    result = atoi(smpd_setting_tmp_buffer);
+	    if (result != 0)
+		smpd_process.port = result;
+	}
+    }
+
+    env_str = getenv("MPIEXEC_SMPD_PORT");
+    if (env_str)
+    {
+	if (isnumber(env_str))
+	{
+	    result = atoi(env_str);
+	    if (result != 0)
+		smpd_process.port = result;
+	}
+    }
 
     /* check for mpi options */
     /*
