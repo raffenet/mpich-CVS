@@ -2928,21 +2928,32 @@ sub Status_methods {
 sub Clone_method {
     my $OUTFD = $_[0];
     my $classname = $_[1];
-    print $OUTFD "    virtual $classname & Clone(void) const { 
+    print $OUTFD "    
+// If the compiler does not support variable return types, return a 
+// reference to Comm.  The user must then cast this to the correct type
+// (Standard-conforming C++ compilers support variable return types)
+#ifdef HAVE_NO_VARIABLE_RETURN_TYPE_SUPPORT
+    virtual Comm & Clone(void) const { 
+        MPI_Comm ncomm;
+        MPI_Comm_dup( (MPI_Comm)the_real_comm, &ncomm); 
+        Comm *clone = new Comm(ncomm); 
+        return *clone; 
+    };
+#else
+    virtual $classname & Clone(void) const { 
         MPI_Comm ncomm;
         MPI_Comm_dup( (MPI_Comm)the_real_comm, &ncomm); 
         $classname *clone = new $classname(ncomm); 
-        return *clone; };\n";
+        return *clone; 
+    };
+#endif\n";
 }
 sub Comm_methods {
     my $OUTFD = $_[0];
 
     # The Clone method is pure virtual in the Comm class
     # To accommodate C++ compilers that don't support 
-    print $OUTFD "#ifndef HAVE_NO_ABC_SUPPORT\n";
     print $OUTFD "    virtual Comm &Clone(void) const = 0;\n";
-    print $OUTFD "#endif\n";
-    #&Clone_method( $OUTFD, "Comm" );
 
     # Typedefs
     print $OUTFD  "
