@@ -927,16 +927,15 @@ sub RunProgram {
 sub RunMPD {
     # We need to background the mpd.
     # If there is already an mpd running (for us), we want to stop it
-    $mpdlocalsock = "/tmp/mpd2.console_". $ENV{"LOGNAME"};
+    my $mpdlocalsock = "/tmp/mpd2.console_". $ENV{"LOGNAME"};
+    my $rc = 0;
     if (-S $mpdlocalsock) {
 	system "$instdir/bin/mpdallexit";
+        $rc = $? >> 8;
+        if ($rc != 0) {
+            print $OUTFD "Error running $instdir/bin/mpdallexit before starting MPD ($mpdlocalsock exists)\n";
+        }
     }
-    $rc = $? >> 8;
-    # It is ok if allexit fails; all that means is that there was no
-    # mpd to stop.
-#    if ($rc != 0) {
-#	print $OUTFD "Error running $instdir/bin/mpdallexit\n";
-#    }
     system "$instdir/bin/mpd -d";
     $rc = $? >> 8;
     if ($rc != 0) {
@@ -945,36 +944,19 @@ sub RunMPD {
     else {
 	print $OUTFD "Started mpd in demon mode\n";
     }
+    # Wait for the mpd to start
     sleep 1;
     return;
-
-#      # Run the mpd in the background.  Eventually, decide what to 
-#      # do with stdout and stderr. FIXME
-#      $pid = fork();
-#      if ($pid == 0) {
-#  	# Child runs this
-#  	open STDERR, ">>&STDOUT";
-#  	open STDIN, '/dev/null';
-#  	exec split(/\s+/, "$instdir/bin/mpd -d");
-#  	die "Failed to run mpd";
-#      }
-#      else {
-#  	# Wait a little for the mpd to start.
-#  	sleep 1;
-#      }
 }
 sub StopMPD {
     my $mpdlocalsock = "/tmp/mpd2.console_". $ENV{"LOGNAME"};
     if (-S $mpdlocalsock) {
 	system "$instdir/bin/mpdallexit";
-	# `$instdir/bin/mpdallexit`;
+        my $rc = $? >> 8;
+        if ($rc != 0) {
+            print $OUTFD "Error running $instdir/bin/mpdallexit in StopMPD ($mpdlocalsock exists)\n";
+        }
     }
-    # Are these kill's obsolete (do they apply only to the commented out
-    # code above for running the demon in the background?)
-    kill 2, $pid;
-    kill 3, $pid;
-    kill 9, $pid;
-    waitpid $pid,0;
 }
 # ---------------------------------------------------------------------------
 #
