@@ -51,9 +51,8 @@ __date__ = ctime()
 __version__ = "$Revision$"
 __credits__ = ""
 
-from signal import signal, alarm, \
-     SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, SIGCONT, SIGALRM, SIGTTIN
-signal(SIGTTIN,SIG_IGN)
+import signal
+signal.signal(signal.SIGTTIN,signal.SIG_IGN)    # asap
 
 import sys, os, socket, re
 
@@ -346,10 +345,10 @@ def mpiexec():
     msgToMPD['host_spec_pool'] = parmdb['MPIEXEC_HOST_LIST']
 
     # set sig handlers up right before we send mpdrun msg to mpd
-    signal(SIGINT, sig_handler)
-    signal(SIGTSTP,sig_handler)
-    signal(SIGCONT,sig_handler)
-    signal(SIGALRM,sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
+    signal.signal(signal.SIGTSTP,sig_handler)
+    signal.signal(signal.SIGCONT,sig_handler)
+    signal.signal(signal.SIGALRM,sig_handler)
 
     conSock.send_dict_msg(msgToMPD)
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
@@ -385,7 +384,18 @@ def mpiexec():
     conSock.close()
     jobTimeout = int(parmdb['MPIEXEC_TIMEOUT'])
     if jobTimeout:
-        alarm(jobTimeout)
+        if hasattr(signal,'alarm'):
+            signal.alarm(jobTimeout)
+        else:
+            def timeout_function():
+                mpd_print(1,'job ending due to env var MPIEXEC_TIMEOUT=%d' % jobTimeout)
+                thread.interrupt_main()
+            try:
+                import thread, threading
+                timer = threading.Timer(jobTimeout,timeout_function)
+                timer.start()
+            except:
+                print 'unable to establish timeout for MPIEXEC_TIMEOUT'
 
     streamHandler = MPDStreamHandler()
 
@@ -1024,28 +1034,29 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
 
 def handle_sig_occurred(manSock):
     global sigOccurred
-    if sigOccurred == SIGINT:
+    if sigOccurred == signal.SIGINT:
         if manSock:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
             manSock.send_dict_msg(msgToSend)
             manSock.close()
         sys.exit(-1)
-    elif sigOccurred == SIGALRM:
+    elif sigOccurred == signal.SIGALRM:
         if manSock:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
             manSock.send_dict_msg(msgToSend)
             manSock.close()
-        mpd_print(1,'job terminating due to timeout')
+        mpd_print(1,'job ending due to env var MPIEXEC_TIMEOUT=%s' % \
+                  os.environ['MPIEXEC_TIMEOUT'])
         sys.exit(-1)
-    elif sigOccurred == SIGTSTP:
+    elif sigOccurred == signal.SIGTSTP:
         sigOccurred = 0  # do this before kill below
         if manSock:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGTSTP' }
             manSock.send_dict_msg(msgToSend)
-        signal(SIGTSTP,SIG_DFL)      # stop myself
-        os.kill(os.getpid(),SIGTSTP)
-        signal(SIGTSTP,sig_handler)  # restore this handler
-    elif sigOccurred == SIGCONT:
+        signal.signal(signal.SIGTSTP,signal.SIG_DFL)      # stop myself
+        os.kill(os.getpid(),signal.SIGTSTP)
+        signal.signal(signal.SIGTSTP,sig_handler)  # restore this handler
+    elif sigOccurred == signal.SIGCONT:
         sigOccurred = 0  # do it before handling
         if manSock:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGCONT' }
