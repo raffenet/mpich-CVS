@@ -273,7 +273,7 @@ class MPD(object):
                               (self.myId) )
                 syslog.closelog()
             if self.conListenSock:    # only del if I created
-                os.unlink(self.conListenSock.conListenName)
+                os.unlink(self.conListenSock.conFilename)
         except:
             pass
     def get_parms_from_cmdline(self):
