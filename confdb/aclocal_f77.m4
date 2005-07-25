@@ -125,9 +125,9 @@ case $pac_namecheck in
 esac
 AC_SUBST(F77_NAME_MANGLE)
 if test "X$pac_cv_test_stdcall" = "X" ; then
-        AC_DEFINE(STDCALL,,[Define calling convention])
+        AC_DEFINE(STDCALL,,[Define calling convention as default])
 else
-        AC_DEFINE(STDCALL,__stdcall,[Define calling convention])
+        AC_DEFINE(STDCALL,__stdcall,[Define calling convention as __stdcall])
 fi
 ],[$1])
 ])
