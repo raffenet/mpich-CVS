@@ -51,29 +51,30 @@ __date__ = ctime()
 __version__ = "$Revision$"
 __credits__ = ""
 
-from signal import signal, alarm, SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, SIGCONT, SIGALRM, SIGTTIN
+from signal import signal, alarm, \
+     SIG_DFL, SIG_IGN, SIGINT, SIGTSTP, SIGCONT, SIGALRM, SIGTTIN
 signal(SIGTTIN,SIG_IGN)
 
-import re
-from  sys    import argv, exit, stdin, stdout, stderr
-from  os     import environ, execvpe, getpid, getuid, getcwd, access, X_OK, path, unlink, \
-                    open as osopen, fdopen, O_CREAT, O_WRONLY, O_EXCL, O_RDONLY,  \
-                    fork, wait, waitpid, kill, unlink, umask, system, _exit,  \
-                    WIFSIGNALED, WEXITSTATUS
-from  popen2 import Popen3
+import sys, os, socket, re
+
 from  urllib import quote
-from  socket import gethostname, gethostbyname_ex, gethostbyaddr
 from  time   import time
 from  urllib import unquote
-from  pwd    import getpwuid
 from  mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_version, mpd_print, \
                     mpd_uncaught_except_tb, mpd_handle_signal, mpd_which, \
                     MPDListenSock, MPDStreamHandler, MPDConClientSock, MPDParmDB
+
+try:
+    import pwd
+    pwd_module_available = 1
+except:
+    pwd_module_available = 0
 
 global parmdb, nextRange, appnum
 global numDoneWithIO, myExitStatus, sigOccurred, outXmlDoc, outECs
 
 recvTimeout = 20  # const
+
 
 def mpiexec():
     global parmdb, nextRange, appnum
@@ -83,15 +84,16 @@ def mpiexec():
     sys.excepthook = mpd_uncaught_except_tb
 
     myExitStatus = 0
-    if len(argv) < 2  or  argv[1] == '-h'  or  argv[1] == '-help'  or  argv[1] == '--help':
+    if len(sys.argv) < 2  or  sys.argv[1] == '-h'  \
+    or  sys.argv[1] == '-help'  or  sys.argv[1] == '--help':
 	usage()
-    myHost = gethostname()
+    myHost = socket.gethostname()
     mpd_set_my_id(myid='mpiexec_%s' % (myHost) )
     try:
-        hostinfo = gethostbyname_ex(myHost)
+        hostinfo = socket.gethostbyname_ex(myHost)
     except:
         print 'mpd failed: gethostbyname_ex failed for %s' % (myHost)
-        exit(-1)
+        sys.exit(-1)
     myIP = hostinfo[2][0]
 
     parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
@@ -134,41 +136,41 @@ def mpiexec():
     nextRange = 0
     localArgSets = { 0 : [] }
 
-    if argv[1] == '-gdba':
-	if len(argv) != 3:
+    if sys.argv[1] == '-gdba':
+	if len(sys.argv) != 3:
             print '-gdba arg must appear only with jobid'
 	    usage()
-    elif argv[1] == '-file'  or  argv[1] == '-f':
-	if len(argv) != 3:
+    elif sys.argv[1] == '-file'  or  sys.argv[1] == '-f':
+	if len(sys.argv) != 3:
             print '-file (-f) arg must appear alone'
 	    usage()
-        parmdb[('cmdline','inXmlFilename')] = argv[2]
-    elif argv[1] == '-p':
-        parmdb[('cmdline','singinitpid')]  = argv[2]
-        parmdb[('cmdline','singinitport')] = argv[3]
-        parmdb[('cmdline','userpgm')] = argv[4]
+        parmdb[('cmdline','inXmlFilename')] = sys.argv[2]
+    elif sys.argv[1] == '-p':
+        parmdb[('cmdline','singinitpid')]  = sys.argv[2]
+        parmdb[('cmdline','singinitport')] = sys.argv[3]
+        parmdb[('cmdline','userpgm')] = sys.argv[4]
         parmdb[('cmdline','nprocs')] = 1
         parmdb[('cmdline','MPIEXEC_TRY_1ST_LOCALLY')] = 1
         machineFileInfo = {}
-        tempargv = [argv[0],argv[4]]
+        tempargv = [sys.argv[0],sys.argv[4]]
         collect_args(tempargv,localArgSets)
     else:
-        if argv[1] == '-configfile':
-	    if len(argv) != 3:
+        if sys.argv[1] == '-configfile':
+	    if len(sys.argv) != 3:
 	        usage()
-            configFileFD = osopen(argv[2],O_RDONLY)
-            configFile = fdopen(configFileFD,'r',0)
+            configFile = open(sys.argv[2],'r',0)
             configLines = configFile.readlines()
             configLines = [ x.strip() + ' : '  for x in configLines if x[0] != '#' ]
             tempargv = []
             for line in configLines:
-                shOut = Popen3("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % (line))
-                for shline in shOut.fromchild:
-                    tempargv.append(shline[1:].strip())    # 1: strips off the leading _
-	    tempargv = [argv[0]] + tempargv[0:-1]   # strip off the last : I added
+                (shellIn,shellOut) = \
+                    os.popen4("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % (line))
+                for shellLine in shellOut:
+                    tempargv.append(shellLine[1:].strip())    # 1: strips off the leading _
+	    tempargv = [sys.argv[0]] + tempargv[0:-1]   # strip off the last : I added
             collect_args(tempargv,localArgSets)
         else:
-            collect_args(argv,localArgSets)
+            collect_args(sys.argv,localArgSets)
         machineFileInfo = read_machinefile(parmdb['MPIEXEC_MACHINEFILE'])
 
     # set some default values for mpd; others added as discovered below
@@ -202,9 +204,9 @@ def mpiexec():
 
     listenSock = MPDListenSock('',0,name='socket_to_listen_for_man')
     listenPort = listenSock.getsockname()[1]
-    if getuid() == 0  or  parmdb['MPD_USE_ROOT_MPD']:
-        fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
-        mpdroot = fullDirName + '/mpdroot'
+    if (hasattr(os,'getuid')  and  os.getuid() == 0)  or  parmdb['MPD_USE_ROOT_MPD']:
+        fullDirName = os.path.abspath(os.path.split(sys.argv[0])[0])  # normalize
+        mpdroot = os.path.join(fullDirName,'mpdroot')
         conSock = MPDConClientSock(mpdroot=mpdroot,secretword=parmdb['MPD_SECRETWORD'])
     else:
         conSock = MPDConClientSock(secretword=parmdb['MPD_SECRETWORD'])
@@ -216,44 +218,44 @@ def mpiexec():
         msg = conSock.recv_dict_msg(timeout=recvTimeout)
         if not msg:
             mpd_print(1,'no msg recvd from mpd for verify_hosts_in_ring')
-            exit(-1)
+            sys.exit(-1)
         elif msg['cmd'] != 'verify_hosts_in_ring_response':
             mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
-            exit(-1)
+            sys.exit(-1)
         if msg['host_list']:
             print 'These hosts are not in the mpd ring:'
             for host in  msg['host_list']:
                 if host[0].isdigit():
                     print '    %s' % (host),
                     try:
-                        print ' (%s)' % (gethostbyaddr(host)[0])
+                        print ' (%s)' % (socket.gethostbyaddr(host)[0])
                     except:
                         print ''
                 else:
                     print '    %s' % (host)
-            exit(-1)
+            sys.exit(-1)
 
     msgToSend = { 'cmd' : 'get_mpdrun_values' }
     conSock.send_dict_msg(msgToSend)
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
     if not msg:
         mpd_print(1, 'no msg recvd from mpd during version check')
-        exit(-1)
+        sys.exit(-1)
     elif msg['cmd'] != 'response_get_mpdrun_values':
         mpd_print(1,'unexpected msg from mpd :%s:' % (msg) )
-        exit(-1)
+        sys.exit(-1)
     if msg['mpd_version'] != mpd_version():
         mpd_print(1,'mpd version %s does not match mpiexec version %s' % \
                   (msg['mpd_version'],mpd_version()) )
-        exit(-1)
+        sys.exit(-1)
 
     # if using/testing the INET CONSOLE
-    if environ.has_key('MPD_CON_INET_HOST_PORT'):
+    if os.environ.has_key('MPD_CON_INET_HOST_PORT'):
         try:
-            myIfhn = gethostbyname_ex(myHost)[2][0]
+            myIfhn = socket.gethostbyname_ex(myHost)[2][0]
         except:
             print 'mpiexec failed: gethostbyname_ex failed for %s' % (myHost)
-            exit(-1)
+            sys.exit(-1)
         parmdb[('thispgm','MPIEXEC_IFHN')] = myIfhn
     elif not parmdb['MPIEXEC_IFHN']:    # if user did not specify one, use mpd's
         parmdb[('thispgm','MPIEXEC_IFHN')] = msg['mpd_ifhn']    # not really thispgm here
@@ -276,20 +278,20 @@ def mpiexec():
     if parmdb['mship']:
         mshipSock = MPDListenSock('',0,name='socket_for_mship')
         mshipPort = mshipSock.getsockname()[1]
-        mshipPid = fork()
+        mshipPid = os.fork()
         if mshipPid == 0:
             conSock.close()
-            environ['MPDCP_AM_MSHIP'] = '1'
-            environ['MPDCP_MSHIP_PORT'] = str(mshipPort)
-            environ['MPDCP_MSHIP_FD'] = str(mshipSock.fileno())
-            environ['MPDCP_MSHIP_NPROCS'] = str(parmdb['nprocs'])
+            os.environ['MPDCP_AM_MSHIP'] = '1'
+            os.environ['MPDCP_MSHIP_PORT'] = str(mshipPort)
+            os.environ['MPDCP_MSHIP_FD'] = str(mshipSock.fileno())
+            os.environ['MPDCP_MSHIP_NPROCS'] = str(parmdb['nprocs'])
             try:
-                execvpe(parmdb['mship'],[parmdb['MPIEXEC_MSHIP']],environ)
+                os.execvpe(parmdb['mship'],[parmdb['MPIEXEC_MSHIP']],os.environ)
             except Exception, errmsg:
                 mpd_print(1,'execvpe failed for copgm %s; errmsg=:%s:' % \
                           (parmdb['MPIEXEC_MSHIP'],errmsg))
-                exit(-1)
-            _exit(0);  # do NOT do cleanup
+                sys.exit(-1)
+            os._exit(0);  # do NOT do cleanup
         mshipSock.close()
     else:
         mshipPid = 0
@@ -306,7 +308,7 @@ def mpiexec():
             except:
                 print 'you requested to save the exit codes in an xml file, but'
                 print '  I was unable to import the xml.dom.minidom module'
-                exit(-1)
+                sys.exit(-1)
             outXmlDoc = xml.dom.minidom.Document()
             outECs = outXmlDoc.createElement('exit-codes')
             outXmlDoc.appendChild(outECs)
@@ -328,7 +330,7 @@ def mpiexec():
         msgToMPD['line_labels'] = 1
     if parmdb['rship']:
         msgToMPD['rship'] = parmdb['rship']
-        msgToMPD['mship_host'] = gethostname()
+        msgToMPD['mship_host'] = socket.gethostname()
         msgToMPD['mship_port'] = mshipPort
     if parmdb['MPIEXEC_BNR']:
         msgToMPD['doing_bnr'] = 1
@@ -353,14 +355,14 @@ def mpiexec():
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
     if not msg:
         mpd_print(1, 'no msg recvd from mpd when expecting ack of request')
-        exit(-1)
+        sys.exit(-1)
     elif msg['cmd'] == 'mpdrun_ack':
         currRingSize = msg['ringsize']
         currRingNCPUs = msg['ring_ncpus']
     else:
         if msg['cmd'] == 'already_have_a_console':
             print 'mpd already has a console (e.g. for long ringtest); try later'
-            exit(-1)
+            sys.exit(-1)
         elif msg['cmd'] == 'job_failed':
             if  msg['reason'] == 'some_procs_not_started':
                 print 'mpiexec: unable to start all procs; may have invalid machine names'
@@ -368,7 +370,7 @@ def mpiexec():
                 for host in msg['remaining_hosts'].values():
                     if host != '_any_':
                         try:
-                            print '        %s (%s)' % (host,gethostbyaddr(host)[0])
+                            print '        %s (%s)' % (host,socket.gethostbyaddr(host)[0])
                         except:
                             print '        %s' % (host)
             elif  msg['reason'] == 'invalid_username':
@@ -376,10 +378,10 @@ def mpiexec():
                       (msg['username'],msg['host'])
             else:
                 print 'mpiexec: job failed; reason=:%s:' % (msg['reason'])
-            exit(-1)
+            sys.exit(-1)
         else:
             mpd_print(1, 'unexpected message from mpd: %s' % (msg) )
-            exit(-1)
+            sys.exit(-1)
     conSock.close()
     jobTimeout = int(parmdb['MPIEXEC_TIMEOUT'])
     if jobTimeout:
@@ -390,21 +392,22 @@ def mpiexec():
     (manSock,addr) = listenSock.accept()
     if not manSock:
         mpd_print(1, 'mpiexec: failed to obtain sock from manager')
-        exit(-1)
+        sys.exit(-1)
     streamHandler.set_handler(manSock,handle_man_input,args=(streamHandler,))
-    streamHandler.set_handler(stdin,handle_stdin_input,args=(parmdb,streamHandler,manSock))
+    streamHandler.set_handler(sys.stdin,handle_stdin_input,
+                              args=(parmdb,streamHandler,manSock))
     # first, do handshaking with man
     msg = manSock.recv_dict_msg()
     if (not msg  or  not msg.has_key('cmd') or msg['cmd'] != 'man_checking_in'):
         mpd_print(1, 'mpiexec: from man, invalid msg=:%s:' % (msg) )
-        exit(-1)
+        sys.exit(-1)
     msgToSend = { 'cmd' : 'ringsize', 'ring_ncpus' : currRingNCPUs,
                   'ringsize' : currRingSize }
     manSock.send_dict_msg(msgToSend)
     msg = manSock.recv_dict_msg()
     if (not msg  or  not msg.has_key('cmd')):
         mpd_print(1, 'mpiexec: from man, invalid msg=:%s:' % (msg) )
-        exit(-1)
+        sys.exit(-1)
     if (msg['cmd'] == 'job_started'):
         jobid = msg['jobid']
         if outECs:
@@ -416,11 +419,11 @@ def mpiexec():
         if parmdb['MPIEXEC_TOTALVIEW']:
             if not mpd_which('totalview'):
                 print 'cannot find "totalview" in your $PATH:'
-                print '    ', environ['PATH']
-                exit(-1)
+                print '    ', os.environ['PATH']
+                sys.exit(-1)
             import mtv
-            tv_cmd = 'dattach python ' + `getpid()` + '; dgo; dassign MPIR_being_debugged 1'
-            system('totalview -e "%s" &' % (tv_cmd) )
+            tv_cmd = 'dattach python ' + `os.getpid()` + '; dgo; dassign MPIR_being_debugged 1'
+            os.system('totalview -e "%s" &' % (tv_cmd) )
             mtv.wait_for_debugger()
             mtv.allocate_proctable(parmdb['nprocs'])
             # extract procinfo (rank,hostname,exec,pid) tuples from msg
@@ -435,7 +438,7 @@ def mpiexec():
             manSock.send_dict_msg(msgToSend)
     else:
         mpd_print(1, 'mpiexec: from man, unknown msg=:%s:' % (msg) )
-        exit(-1)
+        sys.exit(-1)
 
     (manCliStdoutSock,addr) = listenSock.accept()
     streamHandler.set_handler(manCliStdoutSock,
@@ -466,7 +469,7 @@ def mpiexec():
     if parmdb['MPIEXEC_MERGE_OUTPUT']:
         print_ready_merged_lines(1,parmdb,linesPerRank)
     if mshipPid:
-        (donePid,status) = wait()    # waitpid(mshipPid,0)
+        (donePid,status) = os.wait()    # os.waitpid(mshipPid,0)
     if parmdb['MPIEXEC_EXITCODES_FILENAME']:
         outECFile = open(parmdb['MPIEXEC_EXITCODES_FILENAME'],'w')
         if parmdb['ecfn_format'] == 'xml':
@@ -485,11 +488,11 @@ def collect_args(args,localArgSets):
 			'-gsoft' : 1, '-garch' : 1, '-gexec' : 1, '-gumask' : 1,
 			'-genvall' : 0, '-genv' : 2, '-genvnone' : 0,
 			'-genvlist' : 1 }
-    currumask = umask(0) ; umask(currumask)  # grab it and set it back
+    currumask = os.umask(0) ; os.umask(currumask)  # grab it and set it back
     parmdb[('cmdline','-gn')]          = 1
     parmdb[('cmdline','-ghost')]       = '_any_'
-    parmdb[('cmdline','-gpath')]       = environ['PATH']
-    parmdb[('cmdline','-gwdir')]       = path.abspath(getcwd())
+    parmdb[('cmdline','-gpath')]       = os.environ['PATH']
+    parmdb[('cmdline','-gwdir')]       = os.path.abspath(os.getcwd())
     parmdb[('cmdline','-gumask')]      = str(currumask)
     parmdb[('cmdline','-gsoft')]       = 0
     parmdb[('cmdline','-garch')]       = ''
@@ -512,10 +515,10 @@ def collect_args(args,localArgSets):
             argidx += 2
         elif garg == '-ghost':
             try:
-                parmdb[('cmdline',garg)] = gethostbyname_ex(args[argidx+1])[2][0]
+                parmdb[('cmdline',garg)] = socket.gethostbyname_ex(args[argidx+1])[2][0]
             except:
                 print 'unable to do find info for host %s' % (args[argidx+1])
-                exit(-1)
+                sys.exit(-1)
             argidx += 2
         elif garg == '-gpath':
             parmdb[('cmdline','-gpath')] = args[argidx+1]
@@ -629,7 +632,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         if parmdb['MPIEXEC_MACHINEFILE']:
             if argset[argidx] == '-host'  or  argset[argidx] == ['-ghost']:
                 print '-host (or -ghost) and -machinefile are incompatible'
-                exit(-1)
+                sys.exit(-1)
         if argset[argidx] == '-n' or argset[argidx] == '-np':
             if len(argset) < (argidx+2):
                 print '** missing arg to -n'
@@ -645,10 +648,10 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
                 print '** missing arg to -host'
                 usage()
             try:
-                host = gethostbyname_ex(argset[argidx+1])[2][0]
+                host = socket.gethostbyname_ex(argset[argidx+1])[2][0]
             except:
                 print 'unable to do find info for host %s' % (argset[argidx+1])
-                exit(-1)
+                sys.exit(-1)
             argidx += 2
         elif argset[argidx] == '-path':
             if len(argset) < (argidx+2):
@@ -728,7 +731,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         if machineFileInfo:
             if len(machineFileInfo) <= hiRange:
                 print 'too few entries in machinefile'
-                exit(-1)
+                sys.exit(-1)
             host = machineFileInfo[loRange]['host']
             ifhn = machineFileInfo[loRange]['ifhn']
             for i in range(loRange+1,hiRange+1):
@@ -748,25 +751,25 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
             msgToMPD['hosts'][(loRange,hiRange)] = host
         else:
             try:
-                msgToMPD['hosts'][asRange] = gethostbyname_ex(host)[2][0]
+                msgToMPD['hosts'][asRange] = socket.gethostbyname_ex(host)[2][0]
             except:
                 print 'unable to do find info for host %s' % (host)
-                exit(-1)
+                sys.exit(-1)
 
         envToSend = {}
         if envall:
-            for envvar in environ.keys():
-                envToSend[envvar] = environ[envvar]
+            for envvar in os.environ.keys():
+                envToSend[envvar] = os.environ[envvar]
         for envvar in parmdb['-genvlist']:
-            if not environ.has_key(envvar):
+            if not os.environ.has_key(envvar):
                 print '%s in envlist does not exist in your env' % (envvar)
-                exit(-1)
-            envToSend[envvar] = environ[envvar]
+                sys.exit(-1)
+            envToSend[envvar] = os.environ[envvar]
         for envvar in localEnvlist:
-            if not environ.has_key(envvar):
+            if not os.environ.has_key(envvar):
                 print '%s in envlist does not exist in your env' % (envvar)
-                exit(-1)
-            envToSend[envvar] = environ[envvar]
+                sys.exit(-1)
+            envToSend[envvar] = os.environ[envvar]
         for envvar in parmdb['-genv'].keys():
             envToSend[envvar] = parmdb['-genv'][envvar]
         for envvar in localEnv.keys():
@@ -836,7 +839,7 @@ def read_machinefile(machineFilename):
         machineFile = open(machineFilename,'r')
     except:
         print '** unable to open machinefile'
-        exit(-1)
+        sys.exit(-1)
     procID = 0
     machineFileInfo = {}
     for line in machineFile:
@@ -857,7 +860,7 @@ def read_machinefile(machineFilename):
                 kvps[k] = v
             else:  # may be other kv pairs later
                 print 'unrecognized key in machinefile:', k
-                exit(-1)
+                sys.exit(-1)
         for i in range(procID,procID+nprocs):
             machineFileInfo[i] = { 'host' : host, 'nprocs' : nprocs }
             machineFileInfo[i].update(kvps)
@@ -873,7 +876,7 @@ def handle_man_input(sock,streamHandler):
         numDoneWithIO += 1
     elif not msg.has_key('cmd'):
         mpd_print(1,'mpiexec: from man, invalid msg=:%s:' % (msg) )
-        exit(-1)
+        sys.exit(-1)
     elif msg['cmd'] == 'execution_problem':
         # print 'rank %d (%s) in job %s failed to find executable %s' % \
               # ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
@@ -886,14 +889,14 @@ def handle_man_input(sock,streamHandler):
         print 'rank %d in job %s caused collective abort of all ranks' % \
               ( msg['rank'], msg['jobid'] )
         status = msg['exit_status']
-        if WIFSIGNALED(status):
+        if os.WIFSIGNALED(status):
             if status > myExitStatus:
                 myExitStatus = status
             killed_status = status & 0x007f  # AND off core flag
             print '  exit status of rank %d: killed by signal %d ' % \
                   (msg['rank'],killed_status)
         else:
-            exit_status = WEXITSTATUS(status)
+            exit_status = os.WEXITSTATUS(status)
             if exit_status > myExitStatus:
                 myExitStatus = exit_status
             print '  exit status of rank %d: return code %d ' % \
@@ -917,14 +920,14 @@ def handle_man_input(sock,streamHandler):
               # (msg['cli_rank'],msg['cli_host'],
                # msg['cli_pid'],msg['cli_status'])
         status = msg['cli_status']
-        if WIFSIGNALED(status):
+        if os.WIFSIGNALED(status):
             if status > myExitStatus:
                 myExitStatus = status
             killed_status = status & 0x007f  # AND off core flag
             # print 'exit status of rank %d: killed by signal %d ' % \
             #        (msg['cli_rank'],killed_status)
         else:
-            exit_status = WEXITSTATUS(status)
+            exit_status = os.WEXITSTATUS(status)
             if exit_status > myExitStatus:
                 myExitStatus = exit_status
             # print 'exit status of rank %d: return code %d ' % \
@@ -955,8 +958,8 @@ def handle_cli_stdout_input(sock,parmdb,streamHandler,linesPerRank):
             streamHandler.del_handler(sock)
             numDoneWithIO += 1
         else:
-            stdout.write(msg)
-            stdout.flush()
+            sys.stdout.write(msg)
+            sys.stdout.flush()
 
 
 def handle_cli_stderr_input(sock,streamHandler):
@@ -966,8 +969,8 @@ def handle_cli_stderr_input(sock,streamHandler):
         streamHandler.del_handler(sock)
         numDoneWithIO += 1
     else:
-        stderr.write(msg)
-        stderr.flush()
+        sys.stderr.write(msg)
+        sys.stderr.flush()
 
 # NOTE: stdin is supposed to be slow, low-volume.  We read it all here (as it
 # appears on the fd) and send it immediately to the receivers.  If the user 
@@ -979,7 +982,7 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
     try:
         line = stdin_stream.readline()
     except IOError:
-        stdin.flush()  # probably does nothing
+        sys.stdin.flush()  # probably does nothing
     else:
         gdbFlag = parmdb['MPIEXEC_GDB']
         if line:    # not EOF
@@ -996,7 +999,7 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
                             print 'invalid arg to z :%s:' % i
                             continue
                 msgToSend = { 'cmd' : 'stdin_dest', 'stdin_procs' : line[2:] }
-                stdout.softspace = 0
+                sys.stdout.softspace = 0
                 print '%s:  (gdb) ' % (line[2:]),
             elif gdbFlag and line.startswith('q'):
                 msgToSend = { 'cmd' : 'stdin_dest',
@@ -1013,8 +1016,8 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
             if manSock:
                 manSock.send_dict_msg(msgToSend)
         else:
-            streamHandler.del_handler(stdin)
-            stdin.close()
+            streamHandler.del_handler(sys.stdin)
+            sys.stdin.close()
             if manSock:
                 msgToSend = { 'cmd' : 'stdin_from_user', 'eof' : '' }
                 manSock.send_dict_msg(msgToSend)
@@ -1026,21 +1029,21 @@ def handle_sig_occurred(manSock):
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGINT' }
             manSock.send_dict_msg(msgToSend)
             manSock.close()
-        exit(-1)
+        sys.exit(-1)
     elif sigOccurred == SIGALRM:
         if manSock:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGKILL' }
             manSock.send_dict_msg(msgToSend)
             manSock.close()
         mpd_print(1,'job terminating due to timeout')
-        exit(-1)
+        sys.exit(-1)
     elif sigOccurred == SIGTSTP:
         sigOccurred = 0  # do this before kill below
         if manSock:
             msgToSend = { 'cmd' : 'signal', 'signo' : 'SIGTSTP' }
             manSock.send_dict_msg(msgToSend)
         signal(SIGTSTP,SIG_DFL)      # stop myself
-        kill(getpid(),SIGTSTP)
+        os.kill(os.getpid(),SIGTSTP)
         signal(SIGTSTP,sig_handler)  # restore this handler
     elif sigOccurred == SIGCONT:
         sigOccurred = 0  # do it before handling
@@ -1089,12 +1092,12 @@ def print_ready_merged_lines(minRanks,parmdb,linesPerRank):
                     sortedRanks.append(r2)
             if len(sortedRanks) >= minRanks:
                 fsr = format_sorted_ranks(sortedRanks)
-                stdout.softspace = 0
+                sys.stdout.softspace = 0
                 print '%s: %s' % (fsr,lineToPrint),
                 for r2 in sortedRanks:
                     linesPerRank[r2] = linesPerRank[r2][1:]
                 printFlag = 1
-    stdout.flush()
+    sys.stdout.flush()
 
 def get_parms_from_xml_file(msgToMPD):
     global parmdb
@@ -1103,7 +1106,7 @@ def get_parms_from_xml_file(msgToMPD):
     except:
         print 'you requested to parse an xml file, but'
         print '  I was unable to import the xml.dom.minidom module'
-        exit(-1)
+        sys.exit(-1)
     known_rlimit_types = ['core','cpu','fsize','data','stack','rss',
                           'nproc','nofile','ofile','memlock','as','vmem']
     try:
@@ -1111,24 +1114,24 @@ def get_parms_from_xml_file(msgToMPD):
         parmsXMLFile = open(inXmlFilename,'r')
     except:
         print 'could not open job xml specification file %s' % (inXmlFilename)
-        exit(-1)
+        sys.exit(-1)
     fileContents = parmsXMLFile.read()
     try:
         parsedXML = xml.dom.minidom.parseString(fileContents)
     except:
         print "mpiexec failed parsing xml file (perhaps from mpiexec); here is the content:"
         print fileContents
-        exit(-1)
+        sys.exit(-1)
     if parsedXML.documentElement.tagName != 'create-process-group':
         print 'expecting create-process-group; got unrecognized doctype: %s' % \
               (parsedXML.documentElement.tagName)
-        exit(-1)
+        sys.exit(-1)
     cpg = parsedXML.getElementsByTagName('create-process-group')[0]
     if cpg.hasAttribute('totalprocs'):
         parmdb[('xml','nprocs')] = int(cpg.getAttribute('totalprocs'))
     else:
         print '** totalprocs not specified in %s' % inXmlFilename
-        exit(-1)
+        sys.exit(-1)
     if cpg.hasAttribute('try_1st_locally'):
         parmdb[('xml','MPIEXEC_TRY_1ST_LOCALLY')] = int(cpg.getAttribute('try_1st_locally'))
     if cpg.hasAttribute('output')  and  cpg.getAttribute('output') == 'label':
@@ -1164,10 +1167,10 @@ def get_parms_from_xml_file(msgToMPD):
             for hostname in hostnames:
                 if hostname:    # some may be the empty string
                     try:
-                        ipaddr = gethostbyname_ex(hostname)[2][0]
+                        ipaddr = socket.gethostbyname_ex(hostname)[2][0]
                     except:
                         print 'unable to determine IP info for host %s' % (hostname)
-                        exit(-1)
+                        sys.exit(-1)
                     hostList.append(ipaddr)
         parmdb[('xml','MPIEXEC_HOST_LIST')] = hostList
     if hostSpec and hostSpec[0].hasAttribute('check'):
@@ -1194,55 +1197,55 @@ def get_parms_from_xml_file(msgToMPD):
             nprocs = parmdb['nprocs']
             if i >= nprocs:
                 print '*** exiting; rank %d is greater than nprocs' % (nprocs)
-                exit(-1)
+                sys.exit(-1)
             if covered[i]:
                 print '*** exiting; rank %d is doubly used in proc specs' % (nprocs)
-                exit(-1)
+                sys.exit(-1)
             covered[i] = 1
         if p.hasAttribute('exec'):
             msgToMPD['execs'][(loRange,hiRange)] = p.getAttribute('exec')
         else:
             print '*** exiting; range %d-%d has no exec' % (loRange,hiRange)
-            exit(-1)
+            sys.exit(-1)
         if p.hasAttribute('user'):
-            tempuser = p.getAttribute('user')
-            try:
-                pwent = getpwnam(tempuser)
-            except:
-                pwent = None
-            if not pwent:
-                print tempuser, 'is an invalid username'
-                exit(-1)
-            if tempuser == mpd_get_my_username()  or  getuid() == 0:
+            username = p.getAttribute('user')
+            if pwd_module_available:
+                try:
+                    pwent = pwd.getpwnam(username)
+                except:
+                    print username, 'is an invalid username'
+                    sys.exit(-1)
+            if username == mpd_get_my_username()  \
+            or (hasattr(os,'getuid') and os.getuid() == 0):
                 msgToMPD['users'][(loRange,hiRange)] = p.getAttribute('user')
             else:
-                print tempuser, 'username does not match yours and you are not root'
-                exit(-1)
+                print username, 'username does not match yours and you are not root'
+                sys.exit(-1)
         else:
             msgToMPD['users'][(loRange,hiRange)] = mpd_get_my_username()
         if p.hasAttribute('cwd'):
             msgToMPD['cwds'][(loRange,hiRange)] = p.getAttribute('cwd')
         else:
-            msgToMPD['cwds'][(loRange,hiRange)] = path.abspath(getcwd())
+            msgToMPD['cwds'][(loRange,hiRange)] = os.path.abspath(os.getcwd())
         if p.hasAttribute('umask'):
             msgToMPD['umasks'][(loRange,hiRange)] = p.getAttribute('umask')
         else:
-            currumask = umask(0) ; umask(currumask)
+            currumask = os.umask(0) ; os.umask(currumask)
             msgToMPD['umasks'][(loRange,hiRange)] = str(currumask)
         if p.hasAttribute('path'):
             msgToMPD['paths'][(loRange,hiRange)] = p.getAttribute('path')
         else:
-            msgToMPD['paths'][(loRange,hiRange)] = environ['PATH']
+            msgToMPD['paths'][(loRange,hiRange)] = os.environ['PATH']
         if p.hasAttribute('host'):
             host = p.getAttribute('host')
             if host.startswith('_any_'):
                 msgToMPD['hosts'][(loRange,hiRange)] = host
             else:
                 try:
-                    msgToMPD['hosts'][(loRange,hiRange)] = gethostbyname_ex(host)[2][0]
+                    msgToMPD['hosts'][(loRange,hiRange)] = socket.gethostbyname_ex(host)[2][0]
                 except:
                     print 'unable to do find info for host %s' % (host)
-                    exit(-1)
+                    sys.exit(-1)
         else:
             if hostSpec  and  hostList:
                 msgToMPD['hosts'][(loRange,hiRange)] = '_any_from_pool_'
@@ -1264,7 +1267,7 @@ def get_parms_from_xml_file(msgToMPD):
                 limitDict[typ] = limitElem.getAttribute('value')
             else:
                 print 'mpiexec: invalid type in limit: %s' % (typ)
-                exit(-1)
+                sys.exit(-1)
         msgToMPD['limits'][(loRange,hiRange)] = limitDict
         envVals = {}
         envVarList = p.getElementsByTagName('env')
@@ -1277,7 +1280,7 @@ def get_parms_from_xml_file(msgToMPD):
         if not covered[i]:
             print '*** exiting; %d procs are requested, but proc %d is not described' % \
                   (parmdb['nprocs'],i)
-            exit(-1)
+            sys.exit(-1)
         
 def get_vals_for_attach(parmdb,conSock,msgToMPD):
     sjobid = parmdb['-gdba'].split('@')    # jobnum and originating host
@@ -1286,10 +1289,10 @@ def get_vals_for_attach(parmdb,conSock,msgToMPD):
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
     if not msg:
         mpd_print(1,'no msg recvd from mpd before timeout')
-        exit(-1)
+        sys.exit(-1)
     if msg['cmd'] != 'local_mpdid':     # get full id of local mpd for filters later
         mpd_print(1,'did not recv local_mpdid msg from local mpd; recvd: %s' % msg)
-        exit(-1)
+        sys.exit(-1)
     else:
         if len(sjobid) == 1:
             sjobid.append(msg['id'])
@@ -1298,7 +1301,7 @@ def get_vals_for_attach(parmdb,conSock,msgToMPD):
         msg = conSock.recv_dict_msg()
         if not msg.has_key('cmd'):
             mpd_print(1,'invalid message from mpd :%s:' % (msg))
-            exit(-1)
+            sys.exit(-1)
         if msg['cmd'] == 'mpdlistjobs_info':
             got_info = 1
             smjobid = msg['jobid'].split('  ')  # jobnum, mpdid, and alias (if present)
@@ -1307,25 +1310,25 @@ def get_vals_for_attach(parmdb,conSock,msgToMPD):
                 msgToMPD['users'][(rank,rank)]   = msg['username']
                 msgToMPD['hosts'][(rank,rank)]   = msg['ifhn']
                 msgToMPD['execs'][(rank,rank)]   = msg['pgm']
-                msgToMPD['cwds'][(rank,rank)]    = path.abspath(getcwd())
-                msgToMPD['paths'][(rank,rank)]   = environ['PATH']
+                msgToMPD['cwds'][(rank,rank)]    = os.path.abspath(os.getcwd())
+                msgToMPD['paths'][(rank,rank)]   = os.environ['PATH']
                 msgToMPD['args'][(rank,rank)]    = [msg['clipid']]
                 msgToMPD['envvars'][(rank,rank)] = {}
                 msgToMPD['limits'][(rank,rank)]  = {}
         elif  msg['cmd'] == 'mpdlistjobs_trailer':
             if not got_info:
                 print 'no info on this jobid; probably invalid'
-                exit(-1)
+                sys.exit(-1)
             break
         else:
             print 'invaild msg from mpd :%s:' % (msg)
-            exit(-1)
+            sys.exit(-1)
     parmdb[('thispgm','nprocs')] = len(msgToMPD['execs'].keys())  # all dicts are same len
     
 
 def usage():
     print __doc__
-    exit(-1)
+    sys.exit(-1)
 
 
 if __name__ == '__main__':
@@ -1333,5 +1336,5 @@ if __name__ == '__main__':
         mpiexec()
     except SystemExit, errmsg:
         pass
-    exit(myExitStatus)
+    sys.exit(myExitStatus)
 

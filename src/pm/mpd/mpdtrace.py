@@ -16,20 +16,19 @@ __date__ = ctime()
 __version__ = "$Revision$"
 __credits__ = ""
 
-from  sys     import  argv, exit
-from  os      import  environ, path, getuid
+import sys, os, signal
+
 from  re      import  sub
-from  signal  import  signal, SIGINT
 from  mpdlib  import  mpd_set_my_id, mpd_uncaught_except_tb, mpd_print, \
                       mpd_handle_signal, mpd_get_my_username, MPDConClientSock, MPDParmDB
 
 def mpdtrace():
     import sys    # to get access to excepthook in next line
     sys.excepthook = mpd_uncaught_except_tb
-    if len(argv) > 1:
-        if (argv[1] == '-h' or argv[1] == '--help') or (argv[1] != '-l'):
+    if len(sys.argv) > 1:
+        if (sys.argv[1] == '-h' or sys.argv[1] == '--help') or (sys.argv[1] != '-l'):
             usage()
-    signal(SIGINT, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
     mpd_set_my_id(myid='mpdtrace')
 
     parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
@@ -41,9 +40,9 @@ def mpdtrace():
         parmdb[('thispgm',k)] = v
     parmdb.get_parms_from_env(parmsToOverride)
     parmdb.get_parms_from_rcfile(parmsToOverride)
-    if getuid() == 0  or  parmdb['MPD_USE_ROOT_MPD']:
-        fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
-        mpdroot = fullDirName + '/mpdroot'
+    if (hasattr(os,'getuid')  and  os.getuid() == 0)  or  parmdb['MPD_USE_ROOT_MPD']:
+        fullDirName = os.path.abspath(os.path.split(sys.argv[0])[0])  # normalize
+        mpdroot = os.path.join(fullDirName,'mpdroot')
         conSock = MPDConClientSock(mpdroot=mpdroot,secretword=parmdb['MPD_SECRETWORD'])
     else:
         conSock = MPDConClientSock(secretword=parmdb['MPD_SECRETWORD'])
@@ -56,12 +55,12 @@ def mpdtrace():
         msg = conSock.recv_dict_msg(timeout=5.0)
         if not msg:    # also get this on ^C
             mpd_print(1, 'got eof on console')
-            exit(-1)
+            sys.exit(-1)
         elif not msg.has_key('cmd'):
             print 'mpdtrace: unexpected msg from mpd=:%s:' % (msg)
-            exit(-1)
+            sys.exit(-1)
         if msg['cmd'] == 'mpdtrace_info':
-            if len(argv) > 1 and argv[1] == '-l':
+            if len(sys.argv) > 1 and sys.argv[1] == '-l':
                 print '%s (%s)' % (msg['id'],msg['ifhn'])
             else:
                 print sub(r'[\._].*', '', msg['id'])    # strip off domain and port
@@ -71,11 +70,11 @@ def mpdtrace():
 
 def sig_handler(signum,frame):
     mpd_handle_signal(signum,frame)  # not nec since I exit next
-    exit(-1)
+    sys.exit(-1)
 
 def usage():
     print __doc__
-    exit(-1)
+    sys.exit(-1)
 
 if __name__ == '__main__':
     mpdtrace()

@@ -455,7 +455,7 @@ if __name__ == '__main__':    # so I can be imported by pydoc
     
     # see if we can run mpdcheck on remote hosts
     for host in hostsFromFile:
-        cmd1 = "%s/mpdcheck.py -s" % (fullDirName)
+        cmd1 = path.join(fullDirName,mpdcheck.py) + ' -s'
         if verbose:
             print 'starting server: %s' % (cmd1)
         runner1 = Popen3(cmd1,1,0)
@@ -514,7 +514,7 @@ if __name__ == '__main__':    # so I can be imported by pydoc
             except:
                 pass
             exit(-1)
-        cmd2 = "ssh %s -x -n %s/mpdcheck.py -c %s %s" % (host,fullDirName,fqhn1,port)
+        cmd2 = "ssh %s -x -n %s%smpdcheck.py -c %s %s" % (host,fullDirName,path.sep,fqhn1,port)
         if verbose:
             print 'starting client: %s' % (cmd2)
         runner2 = Popen3(cmd2,1,0)

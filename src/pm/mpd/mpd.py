@@ -52,24 +52,14 @@ __version__ += "  " + str(mpd_version())
 __credits__ = ""
 
 
-import sys    # so I can chg excepthook, stdout, etc.
+import sys, os, signal, socket
 
-from  sys         import  argv, exit, settrace
-from  os          import  environ, getpid, fork, getuid, setsid, chdir, path, \
-                          umask, stat, dup2, unlink, setpgrp, fdopen, \
-                          setreuid, setregid, setgroups, waitpid, WNOHANG, kill
-from  os          import  open  as osopen, close as osclose, \
-                          O_CREAT, O_WRONLY, O_EXCL
-from  socket      import  gethostname, gethostbyname_ex, AF_UNIX, AF_INET
-from  signal      import  signal, SIGCHLD, SIGHUP, SIG_IGN, SIGKILL
 from  re          import  sub
-from  pwd         import  getpwnam
 from  atexit      import  register
 from  cPickle     import  dumps
 from  types       import  ClassType
 from  random      import  seed, randrange, random
 from  time        import  sleep
-from  syslog      import  openlog, syslog, closelog, LOG_DAEMON, LOG_INFO, LOG_ERR
 from  md5         import  new as md5new
 from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair, \
                           mpd_print, mpd_get_my_username, \
@@ -79,12 +69,23 @@ from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair,
                           MPDStreamHandler, MPDRing, MPDParmDB
 from  mpdman      import  MPDMan
 
+try:
+    import pwd
+    pwd_module_available = 1
+except:
+    pwd_module_available = 0
+try:
+    import  syslog
+    syslog_module_available = 1
+except:
+    syslog_module_available = 0
+
 
 def sigchld_handler(signum,frame):
     done = 0
     while not done:
         try:
-            (pid,status) = waitpid(-1,WNOHANG)
+            (pid,status) = os.waitpid(-1,os.WNOHANG)
             if pid == 0:    # no existing child process is finished
                 done = 1
         except:    # no more child processes to be waited for
@@ -92,16 +93,17 @@ def sigchld_handler(signum,frame):
             
 class MPD(object):
     def __init__(self):
-        self.myHost        = gethostname()
+        self.myHost = socket.gethostname()
         try:
-            hostinfo = gethostbyname_ex(self.myHost)
+            hostinfo = socket.gethostbyname_ex(self.myHost)
             self.myIfhn = hostinfo[2][0]    # chgd below when I get the real value
         except:
             print 'mpd failed: gethostbyname_ex failed for %s' % (self.myHost)
-            exit(-1)
+            sys.exit(-1)
     def run(self):
-        openlog("mpd",0,LOG_DAEMON)
-        syslog(LOG_INFO,"mpd starting; no mpdid yet")
+        if syslog_module_available:
+            syslog.openlog("mpd",0,syslog.LOG_DAEMON)
+            syslog.syslog(syslog.LOG_INFO,"mpd starting; no mpdid yet")
         sys.excepthook = mpd_uncaught_except_tb
         self.parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
         self.parmsToOverride = {
@@ -124,7 +126,7 @@ class MPD(object):
         self.parmdb.get_parms_from_rcfile(self.parmsToOverride)
         self.parmdb.get_parms_from_env(self.parmsToOverride)
         self.myIfhn = self.parmdb['MPD_MY_IFHN']    # variable for convenience
-        self.myPid = getpid()
+        self.myPid = os.getpid()
         self.listenSock = MPDListenSock(name='ring_listen_sock',
                                         port=self.parmdb['MPD_LISTEN_PORT'])
         self.parmdb[('thispgm','MPD_LISTEN_PORT')] = self.listenSock.sock.getsockname()[1]
@@ -152,13 +154,15 @@ class MPD(object):
                     # print symbol
                     proceduresToTrace.append(symbol)
             mpd_set_procedures_to_trace(proceduresToTrace)
-            settrace(mpd_trace_calls)
-        syslog(LOG_INFO,"mpd has mpdid=%s (port=%d)" % (self.myId,self.parmdb['MPD_LISTEN_PORT']) )
+            sys.settrace(mpd_trace_calls)
+        if syslog_module_available:
+            syslog.syslog(syslog.LOG_INFO,"mpd has mpdid=%s (port=%d)" % \
+                          (self.myId,self.parmdb['MPD_LISTEN_PORT']) )
         vinfo = mpd_check_python_version()
         if vinfo:
             print "mpd: your python version must be >= 2.2 ; current version is:", vinfo
-            exit(-1)
-        osclose(0)
+            sys.exit(-1)
+        os.close(0)
         if self.parmdb['MPD_ECHO_PORT_FLAG']:    # do this before becoming a daemon
             print self.parmdb['MPD_LISTEN_PORT']
             sys.stdout.flush()
@@ -168,43 +172,43 @@ class MPD(object):
         self.myRealUsername = mpd_get_my_username()
         self.currRingSize = 1    # default
         self.currRingNCPUs = 1   # default
-        if environ.has_key('MPD_CON_EXT'):
-            self.conExt = '_'  + environ['MPD_CON_EXT']
+        if os.environ.has_key('MPD_CON_EXT'):
+            self.conExt = '_'  + os.environ['MPD_CON_EXT']
         else:
             self.conExt = ''
         self.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username() + self.conExt
         if self.parmdb['MPD_PID_FILENAME']:  # may overwrite it below
             pidFile = open(self.parmdb['MPD_PID_FILENAME'],'w')
-            print >>pidFile, "%d" % (getpid())
+            print >>pidFile, "%d" % (os.getpid())
             pidFile.close()
 
         self.conListenSock = 0    # don't want one when I do cleanup for forked daemon procs
         if self.parmdb['MPD_DAEMON_FLAG']:      # see if I should become a daemon with no controlling tty
-            rc = fork()
+            rc = os.fork()
             if rc != 0:   # parent exits; child in background
-                exit(0)
-            setsid()  # become session leader; no controlling tty
-            signal(SIGHUP,SIG_IGN)  # make sure no sighup when leader ends
+                sys.exit(0)
+            os.setsid()  # become session leader; no controlling tty
+            signal.signal(signal.SIGHUP,signal.SIG_IGN)  # make sure no sighup when leader ends
             ## leader exits; svr4: make sure do not get another controlling tty
-            rc = fork()
+            rc = os.fork()
             if rc != 0:
-                exit(0)
+                sys.exit(0)
             if self.parmdb['MPD_PID_FILENAME']:  # overwrite one above before chg usmask
                 pidFile = open(self.parmdb['MPD_PID_FILENAME'],'w')
-                print >>pidFile, "%d" % (getpid())
+                print >>pidFile, "%d" % (os.getpid())
                 pidFile.close()
-            chdir("/")  # free up filesys for umount
-            umask(0)
-            try:    unlink(self.logFilename)
+            os.chdir("/")  # free up filesys for umount
+            os.umask(0)
+            try:    os.unlink(self.logFilename)
             except: pass
-            logFileFD = osopen(self.logFilename,O_CREAT|O_WRONLY|O_EXCL,0600)
-            logFile = fdopen(logFileFD,'w',0)
+            logFileFD = os.open(self.logFilename,os.O_CREAT|os.O_WRONLY|os.O_EXCL,0600)
+            logFile = os.fdopen(logFileFD,'w',0)
             sys.stdout = logFile
             sys.stderr = logFile
-            print >>sys.stdout, 'logfile for mpd with pid %d' % getpid()
+            print >>sys.stdout, 'logfile for mpd with pid %d' % os.getpid()
             sys.stdout.flush()
-            dup2(logFile.fileno(),sys.__stdout__.fileno())
-            dup2(logFile.fileno(),sys.__stderr__.fileno())
+            os.dup2(logFile.fileno(),sys.__stdout__.fileno())
+            os.dup2(logFile.fileno(),sys.__stderr__.fileno())
         if self.parmdb['MPD_CONSOLE_FLAG']:
             self.conListenSock = MPDConListenSock(secretword=self.parmdb['MPD_SECRETWORD'])
             self.streamHandler.set_handler(self.conListenSock,
@@ -220,9 +224,9 @@ class MPD(object):
                                   rhsHandler=self.handle_rhs_input)
         if rc < 0:
             mpd_print(1,"failed to enter ring")
-            exit(-1)
+            sys.exit(-1)
         self.pmi_published_names = {}
-        signal(SIGCHLD,sigchld_handler)
+        signal.signal(signal.SIGCHLD,sigchld_handler)
         if not self.parmdb['MPD_BULLETPROOF_FLAG']:
             #    import profile ; profile.run('self.runmainloop()')
             self.runmainloop()
@@ -232,7 +236,7 @@ class MPD(object):
             except:
                 print '*** mpd terminating'
                 print '    bulletproof option must be able to import threading-Thread'
-                exit(-1)
+                sys.exit(-1)
             # may use SIG_IGN on all but SIGCHLD and SIGHUP (handled above)
             while 1:
                 mpdtid = Thread(target=self.runmainloop)
@@ -254,75 +258,77 @@ class MPD(object):
             rv = self.streamHandler.handle_active_streams(timeout=8.0)
             if rv[0] < 0:
                 if type(rv[1]) == ClassType  and  rv[1] == KeyboardInterrupt: # ^C
-                    exit(-1)
+                    sys.exit(-1)
             if self.exiting  or  self.allExiting:
                 break
     def usage(self):
         print __doc__
         print "This version of mpd is", mpd_version()
-        exit(-1)
+        sys.exit(-1)
     def cleanup(self):
         try:
             mpd_print(0, "CLEANING UP" )
-            syslog(LOG_INFO,"mpd ending mpdid=%s (inside cleanup)" % (self.myId) )
+            if syslog_module_available:
+                syslog.syslog(syslog.LOG_INFO,"mpd ending mpdid=%s (inside cleanup)" % \
+                              (self.myId) )
+                syslog.closelog()
             if self.conListenSock:    # only del if I created
-                unlink(self.conListenSock.conListenName)
-            closelog()
+                os.unlink(self.conListenSock.conListenName)
         except:
             pass
     def get_parms_from_cmdline(self):
         argidx = 1
-        while argidx < len(argv):
-            if argv[argidx] == '--help':
+        while argidx < len(sys.argv):
+            if sys.argv[argidx] == '--help':
                 self.usage()
                 argidx += 1
-            elif argv[argidx] == '-h':
-                if len(argv) < 3:
+            elif sys.argv[argidx] == '-h':
+                if len(sys.argv) < 3:
                     self.usage()
-                self.parmdb[('cmdline','MPD_ENTRY_IFHN')] = argv[argidx+1]
+                self.parmdb[('cmdline','MPD_ENTRY_IFHN')] = sys.argv[argidx+1]
                 argidx += 2
-            elif argv[argidx].startswith('--host'):
+            elif sys.argv[argidx].startswith('--host'):
                 try:
-                    entryHost = argv[argidx].split('=',1)[1]
+                    entryHost = sys.argv[argidx].split('=',1)[1]
                 except:
                     print 'failed to parse --host option'
                     self.usage()
                 self.parmdb[('cmdline','MPD_ENTRY_IFHN')] = entryHost
                 argidx += 1
-            elif argv[argidx] == '-p':
-                if argidx >= (len(argv)-1):
+            elif sys.argv[argidx] == '-p':
+                if argidx >= (len(sys.argv)-1):
                     print 'missing arg for -p'
-                    exit(-1)
-                if not argv[argidx+1].isdigit():
-                    print 'invalid port %s ; must be numeric' % (argv[argidx+1])
-                    exit(-1)
-                self.parmdb[('cmdline','MPD_ENTRY_PORT')] = int(argv[argidx+1])
+                    sys.exit(-1)
+                if not sys.argv[argidx+1].isdigit():
+                    print 'invalid port %s ; must be numeric' % (sys.argv[argidx+1])
+                    sys.exit(-1)
+                self.parmdb[('cmdline','MPD_ENTRY_PORT')] = int(sys.argv[argidx+1])
                 argidx += 2
-            elif argv[argidx].startswith('--port'):
+            elif sys.argv[argidx].startswith('--port'):
                 try:
-                    entryPort = argv[argidx].split('=',1)[1]
+                    entryPort = sys.argv[argidx].split('=',1)[1]
                 except:
                     print 'failed to parse --port option'
                     self.usage()
                 if not entryPort.isdigit():
                     print 'invalid port %s ; must be numeric' % (entryPort)
-                    exit(-1)
+                    sys.exit(-1)
                 self.parmdb[('cmdline','MPD_ENTRY_PORT')] = int(entryPort)
                 argidx += 1
-            elif argv[argidx].startswith('--ncpus'):
+            elif sys.argv[argidx].startswith('--ncpus'):
                 try:
-                    NCPUs = argv[argidx].split('=',1)[1]
+                    NCPUs = sys.argv[argidx].split('=',1)[1]
                 except:
                     print 'failed to parse --ncpus option'
                     self.usage()
                 if not NCPUs.isdigit():
                     print 'invalid ncpus %s ; must be numeric' % (NCPUs)
-                    exit(-1)
+                    sys.exit(-1)
                 self.parmdb[('cmdline','MPD_NCPUS')] = int(NCPUs)
                 argidx += 1
-            elif argv[argidx].startswith('--pid'):
+            elif sys.argv[argidx].startswith('--pid'):
                 try:
-                    splitPid = argv[argidx].split('=')
+                    splitPid = sys.argv[argidx].split('=')
                 except:
                     print 'failed to parse --pid option'
                     self.usage()
@@ -332,81 +338,81 @@ class MPD(object):
                     pidFilename = splitPid[1]
                 self.parmdb[('cmdline','MPD_PID_FILENAME')] = pidFilename
                 argidx += 1
-            elif argv[argidx].startswith('--ifhn'):
+            elif sys.argv[argidx].startswith('--ifhn'):
                 try:
-                    ifhn = argv[argidx].split('=',1)[1]
+                    ifhn = sys.argv[argidx].split('=',1)[1]
                 except:
                     print 'failed to parse --ifhn option'
                     self.usage()
                 try:
-                    hostinfo = gethostbyname_ex(ifhn)
+                    hostinfo = socket.gethostbyname_ex(ifhn)
                     ifhn = hostinfo[2][0]
                 except:
                     print 'mpd failed: gethostbyname_ex failed for %s' % (ifhn)
-                    exit(-1)
+                    sys.exit(-1)
                 self.parmdb[('cmdline','MPD_MY_IFHN')] = ifhn
                 argidx += 1
-            elif argv[argidx] == '-l':
-                if argidx >= (len(argv)-1):
+            elif sys.argv[argidx] == '-l':
+                if argidx >= (len(sys.argv)-1):
                     print 'missing arg for -l'
-                    exit(-1)
-                if not argv[argidx+1].isdigit():
-                    print 'invalid listenport %s ; must be numeric' % (argv[argidx+1])
-                    exit(-1)
-                self.parmdb[('cmdline','MPD_LISTEN_PORT')] = int(argv[argidx+1])
+                    sys.exit(-1)
+                if not sys.argv[argidx+1].isdigit():
+                    print 'invalid listenport %s ; must be numeric' % (sys.argv[argidx+1])
+                    sys.exit(-1)
+                self.parmdb[('cmdline','MPD_LISTEN_PORT')] = int(sys.argv[argidx+1])
                 argidx += 2
-            elif argv[argidx].startswith('--listenport'):
+            elif sys.argv[argidx].startswith('--listenport'):
                 try:
-                    myListenPort = argv[argidx].split('=',1)[1]
+                    myListenPort = sys.argv[argidx].split('=',1)[1]
                 except:
                     print 'failed to parse --listenport option'
                     self.usage()
                 if not myListenPort.isdigit():
                     print 'invalid listenport %s ; must be numeric' % (myListenPort)
-                    exit(-1)
+                    sys.exit(-1)
                 self.parmdb[('cmdline','MPD_LISTEN_PORT')] = int(myListenPort)
                 argidx += 1
-            elif argv[argidx] == '-hp':
-                if argidx >= (len(argv)-1):
+            elif sys.argv[argidx] == '-hp':
+                if argidx >= (len(sys.argv)-1):
                     print 'missing arg for -hp'
-                    exit(-1)
+                    sys.exit(-1)
                 try:
-                    (entryIfhn,entryPort) = argv[argidx+1].split('_')
+                    (entryIfhn,entryPort) = sys.argv[argidx+1].split('_')
                 except:
-                    print 'invalid entry host: %s' % (argv[argidx+1])
-                    exit(-1)
+                    print 'invalid entry host: %s' % (sys.argv[argidx+1])
+                    sys.exit(-1)
                 if not entryPort.isdigit():
-                    print 'invalid port %s ; must be numeric' % (argv[argidx+1])
-                    exit(-1)
+                    print 'invalid port %s ; must be numeric' % (sys.argv[argidx+1])
+                    sys.exit(-1)
                 self.parmdb[('cmdline','MPD_ENTRY_IFHN')] = entryIfhn
                 self.parmdb[('cmdline','MPD_ENTRY_PORT')] = int(entryPort)
                 argidx += 2
-            elif argv[argidx] == '-t'  or  argv[argidx] == '--trace':
+            elif sys.argv[argidx] == '-t'  or  sys.argv[argidx] == '--trace':
                 self.parmdb[('cmdline','MPD_TRACE_FLAG')] = 1
                 argidx += 1
-            elif argv[argidx] == '-n'  or  argv[argidx] == '--noconsole':
+            elif sys.argv[argidx] == '-n'  or  sys.argv[argidx] == '--noconsole':
                 self.parmdb[('cmdline','MPD_CONSOLE_FLAG')] = 0
                 argidx += 1
-            elif argv[argidx] == '-e'  or  argv[argidx] == '--echo':
+            elif sys.argv[argidx] == '-e'  or  sys.argv[argidx] == '--echo':
                 self.parmdb[('cmdline','MPD_ECHO_PORT_FLAG')] = 1 
                 argidx += 1
-            elif argv[argidx] == '-d'  or  argv[argidx] == '--daemon':
+            elif sys.argv[argidx] == '-d'  or  sys.argv[argidx] == '--daemon':
                 self.parmdb[('cmdline','MPD_DAEMON_FLAG')] = 1 
                 argidx += 1
-            elif argv[argidx] == '-b'  or  argv[argidx] == '--bulletproof':
+            elif sys.argv[argidx] == '-b'  or  sys.argv[argidx] == '--bulletproof':
                 self.parmdb[('cmdline','MPD_BULLETPROOF_FLAG')] = 1 
                 argidx += 1
             else:
-                print 'unrecognized arg: %s' % (argv[argidx])
-                exit(-1)
+                print 'unrecognized arg: %s' % (sys.argv[argidx])
+                sys.exit(-1)
         if (self.parmdb['MPD_ENTRY_IFHN']  and  not self.parmdb['MPD_ENTRY_PORT']) \
         or (self.parmdb['MPD_ENTRY_PORT']  and  not self.parmdb['MPD_ENTRY_IFHN']):
             print 'host and port must be specified together'
-            exit(-1)
+            sys.exit(-1)
     def handle_console_connection(self,sock):
         if not self.conSock:
             (self.conSock,newConnAddr) = sock.accept()
-            if sock.family == AF_UNIX:
+            if hasattr(socket,'AF_UNIX')  and  sock.family == socket.AF_UNIX:
                 line = self.conSock.recv_char_msg().rstrip()
                 if not line:  # caller went away (perhaps another mpd seeing if I am here)
                     self.streamHandler.del_handler(self.conSock)
@@ -430,7 +436,7 @@ class MPD(object):
                     errorMsg = 'first key is not realusername'
                 if k2 != 'secretword':
                     errorMsg = 'second key is not secretword'
-                if getuid() == 0  and  secretword != self.parmdb['MPD_SECRETWORD']:
+                if os.getuid() == 0  and  secretword != self.parmdb['MPD_SECRETWORD']:
                     errorMsg = 'invalid secretword to root mpd'
                 if errorMsg:
                     try:
@@ -634,7 +640,8 @@ class MPD(object):
             self.conSock.send_dict_msg(msgToSend)
             badMsg = 'invalid msg received from console: %s' % (str(msg))
             mpd_print(1, badMsg)
-            syslog(LOG_ERR,badMsg)
+            if syslog_module_available:
+                syslog.syslog(syslog.LOG_ERR,badMsg)
     def handle_man_input(self,sock):
         msg = sock.recv_dict_msg()
         if not msg:
@@ -851,10 +858,10 @@ class MPD(object):
                         or msg['username'] == 'root':
                             try:
                                 pgrp = manPid * (-1)  # neg manPid -> group
-                                kill(pgrp,SIGKILL)
+                                os.kill(pgrp,signal.SIGKILL)
                                 cliPid = self.activeJobs[jobid][manPid]['clipid']
                                 pgrp = cliPid * (-1)  # neg Pid -> group
-                                kill(pgrp,SIGKILL)  # neg Pid -> group
+                                os.kill(pgrp,signal.SIGKILL)  # neg Pid -> group
                                 handledHere = 1
                             except:
                                 pass
@@ -879,10 +886,10 @@ class MPD(object):
                             sleep(0.5)  # give man a brief chance to deal with this
                         try:
                             pgrp = manPid * (-1)  # neg manPid -> group
-                            kill(pgrp,SIGKILL)
+                            os.kill(pgrp,signal.SIGKILL)
                             cliPid = self.activeJobs[jobid][manPid]['clipid']
                             pgrp = cliPid * (-1)  # neg Pid -> group
-                            kill(pgrp,SIGKILL)  # neg Pid -> group
+                            os.kill(pgrp,signal.SIGKILL)  # neg Pid -> group
                         except:
                             pass
                     # del self.activeJobs[jobid]  ## handled when child goes away
@@ -960,7 +967,7 @@ class MPD(object):
                                             ntries=10)
                 if rc < 0:
                     mpd_print(1,"failed to reenter ring")
-                    exit(-1)
+                    sys.exit(-1)
             return
         if msg['cmd'] == 'pulse_ack':
             self.pulse_ctr = 0
@@ -980,7 +987,7 @@ class MPD(object):
                                            numTries=3)
                 if rv[0] <=  0:  # connect did not succeed; may try again
                     mpd_print(1,"rhs connect failed")
-                    exit(-1)
+                    sys.exit(-1)
                 return
             self.ring.rhsSock = MPDSock(name='rhs')
             self.ring.rhsSock.connect((self.ring.rhsIfhn,self.ring.rhsPort))
@@ -1093,14 +1100,6 @@ class MPD(object):
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
                 username = users[ranks]
-                try:
-                    pwent = getpwnam(username)
-                except:
-                    mpd_print(1,'invalid username :%s: on %s' % (username,self.myHost))
-                    msgToSend = {'cmd' : 'job_failed', 'reason' : 'invalid_username',
-                                 'username' : username, 'host' : self.myHost }
-                    self.conSock.send_dict_msg(msgToSend)
-                    return
                 break
         execs = msg['execs']
         for ranks in execs.keys():
@@ -1145,67 +1144,75 @@ class MPD(object):
                 pgmUmask = umasks[ranks]
                 break
         jobid = msg['jobid']
-        manPid = fork()
+        manPid = os.fork()
         if manPid == 0:
             self.conListenSock = 0    # don't want to clean up console if I am manager
             self.myId = '%s_man_%d' % (self.myHost,self.myPid)
             mpd_set_my_id(self.myId)
             self.streamHandler.close_all_active_streams()
             toManSock.close()
-            setpgrp()
-            environ['MPDMAN_MYHOST'] = self.myHost
-            environ['MPDMAN_MYIFHN'] = self.myIfhn
-            environ['MPDMAN_JOBID'] = jobid
-            environ['MPDMAN_CLI_PGM'] = pgm
-            environ['MPDMAN_CLI_PATH'] = pathForExec
-            environ['MPDMAN_PGM_ARGS'] = pgmArgs
-            environ['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
-            environ['MPDMAN_PGM_LIMITS'] = pgmLimits
-            environ['MPDMAN_CWD'] = cwd
-            environ['MPDMAN_UMASK'] = pgmUmask
-            environ['MPDMAN_SPAWNED'] = str(msg['spawned'])
-            environ['MPDMAN_NPROCS'] = str(msg['nprocs'])
-            environ['MPDMAN_MPD_LISTEN_PORT'] = str(self.parmdb['MPD_LISTEN_PORT'])
-            environ['MPDMAN_MPD_CONF_SECRETWORD'] = self.parmdb['MPD_SECRETWORD']
-            environ['MPDMAN_CONHOST'] = msg['conhost']
-            environ['MPDMAN_CONIFHN'] = msg['conifhn']
-            environ['MPDMAN_CONPORT'] = str(msg['conport'])
-            environ['MPDMAN_RANK'] = str(currRank)
-            environ['MPDMAN_POS_IN_RING'] = str(msg['nstarted'])
-            environ['MPDMAN_MY_LISTEN_PORT'] = str(manListenPort)
-            environ['MPDMAN_POS0_HOST'] = msg['pos0_host']
-            environ['MPDMAN_POS0_IFHN'] = msg['pos0_ifhn']
-            environ['MPDMAN_POS0_PORT'] = msg['pos0_port']
-            environ['MPDMAN_LHS_IFHN']  = manEntryIfhn
-            environ['MPDMAN_LHS_PORT'] = str(manEntryPort)
-            environ['MPDMAN_KVS_TEMPLATE'] = manKVSTemplate
-            environ['MPDMAN_MY_LISTEN_FD'] = str(manListenSock.fileno())
-            environ['MPDMAN_TO_MPD_FD'] = str(toMpdSock.fileno())
-            environ['MPDMAN_STDIN_DEST'] = msg['stdin_dest']
-            environ['MPDMAN_TOTALVIEW'] = str(msg['totalview'])
-            environ['MPDMAN_GDB'] = str(msg['gdb'])
-            fullDirName = path.abspath(path.split(argv[0])[0])  # normalize
-            environ['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
-            environ['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])
-            environ['MPDMAN_SINGINIT_PORT'] = str(msg['singinitport'])
+            os.setpgrp()
+            os.environ['MPDMAN_MYHOST'] = self.myHost
+            os.environ['MPDMAN_MYIFHN'] = self.myIfhn
+            os.environ['MPDMAN_JOBID'] = jobid
+            os.environ['MPDMAN_CLI_PGM'] = pgm
+            os.environ['MPDMAN_CLI_PATH'] = pathForExec
+            os.environ['MPDMAN_PGM_ARGS'] = pgmArgs
+            os.environ['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
+            os.environ['MPDMAN_PGM_LIMITS'] = pgmLimits
+            os.environ['MPDMAN_CWD'] = cwd
+            os.environ['MPDMAN_UMASK'] = pgmUmask
+            os.environ['MPDMAN_SPAWNED'] = str(msg['spawned'])
+            os.environ['MPDMAN_NPROCS'] = str(msg['nprocs'])
+            os.environ['MPDMAN_MPD_LISTEN_PORT'] = str(self.parmdb['MPD_LISTEN_PORT'])
+            os.environ['MPDMAN_MPD_CONF_SECRETWORD'] = self.parmdb['MPD_SECRETWORD']
+            os.environ['MPDMAN_CONHOST'] = msg['conhost']
+            os.environ['MPDMAN_CONIFHN'] = msg['conifhn']
+            os.environ['MPDMAN_CONPORT'] = str(msg['conport'])
+            os.environ['MPDMAN_RANK'] = str(currRank)
+            os.environ['MPDMAN_POS_IN_RING'] = str(msg['nstarted'])
+            os.environ['MPDMAN_MY_LISTEN_PORT'] = str(manListenPort)
+            os.environ['MPDMAN_POS0_HOST'] = msg['pos0_host']
+            os.environ['MPDMAN_POS0_IFHN'] = msg['pos0_ifhn']
+            os.environ['MPDMAN_POS0_PORT'] = msg['pos0_port']
+            os.environ['MPDMAN_LHS_IFHN']  = manEntryIfhn
+            os.environ['MPDMAN_LHS_PORT'] = str(manEntryPort)
+            os.environ['MPDMAN_KVS_TEMPLATE'] = manKVSTemplate
+            os.environ['MPDMAN_MY_LISTEN_FD'] = str(manListenSock.fileno())
+            os.environ['MPDMAN_TO_MPD_FD'] = str(toMpdSock.fileno())
+            os.environ['MPDMAN_STDIN_DEST'] = msg['stdin_dest']
+            os.environ['MPDMAN_TOTALVIEW'] = str(msg['totalview'])
+            os.environ['MPDMAN_GDB'] = str(msg['gdb'])
+            fullDirName = os.path.abspath(os.path.split(sys.argv[0])[0])  # normalize
+            os.environ['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
+            os.environ['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])
+            os.environ['MPDMAN_SINGINIT_PORT'] = str(msg['singinitport'])
             if msg.has_key('line_labels'):
-                environ['MPDMAN_LINE_LABELS'] = '1'
+                os.environ['MPDMAN_LINE_LABELS'] = '1'
             else:
-                environ['MPDMAN_LINE_LABELS'] = '0'
+                os.environ['MPDMAN_LINE_LABELS'] = '0'
             if msg.has_key('rship'):
-                environ['MPDMAN_RSHIP'] = msg['rship']
-                environ['MPDMAN_MSHIP_HOST'] = msg['mship_host']
-                environ['MPDMAN_MSHIP_PORT'] = str(msg['mship_port'])
+                os.environ['MPDMAN_RSHIP'] = msg['rship']
+                os.environ['MPDMAN_MSHIP_HOST'] = msg['mship_host']
+                os.environ['MPDMAN_MSHIP_PORT'] = str(msg['mship_port'])
             if msg.has_key('doing_bnr'):
-                environ['MPDMAN_DOING_BNR'] = '1'
+                os.environ['MPDMAN_DOING_BNR'] = '1'
             else:
-                environ['MPDMAN_DOING_BNR'] = '0'
-            if getuid() == 0:
+                os.environ['MPDMAN_DOING_BNR'] = '0'
+            if hasattr(os,'getuid')  and  os.getuid() == 0  and  pwd_module_available:
+                try:
+                    pwent = pwd.getpwnam(username)
+                except:
+                    mpd_print(1,'invalid username :%s: on %s' % (username,self.myHost))
+                    msgToSend = {'cmd' : 'job_failed', 'reason' : 'invalid_username',
+                                 'username' : username, 'host' : self.myHost }
+                    self.conSock.send_dict_msg(msgToSend)
+                    return
                 uid = pwent[2]
                 gid = pwent[3]
-                setgroups(mpd_get_groups_for_username(username))
-                setregid(gid,gid)
-                setreuid(uid,uid)
+                os.setgroups(mpd_get_groups_for_username(username))
+                os.setregid(gid,gid)
+                os.setreuid(uid,uid)
             import atexit    # need to use full name of _exithandlers
             atexit._exithandlers = []    # un-register handlers in atexit module
             # import profile
@@ -1213,7 +1220,7 @@ class MPD(object):
             # profile.run('mpdman()')
             mpdman = MPDMan()
             mpdman.run()
-            exit(0)  # do NOT do cleanup
+            sys.exit(0)  # do NOT do cleanup
         else:
             manListenSock.close()
             toMpdSock.close()

@@ -19,10 +19,10 @@ __version__ = "$Revision$"
 __credits__ = ""
 
 
-from sys    import argv, exit
-from os     import environ, system
+import sys, os
+
 from getopt import getopt
-from mpdlib import mpd_set_my_id, mpd_get_my_username
+from mpdlib import mpd_get_my_username
 
 def mpdcleanup():
     rshCmd    = 'ssh'
@@ -30,7 +30,7 @@ def mpdcleanup():
     cleanCmd  = '/bin/rm -f '
     hostsFile = ''
     try:
-	(opts, args) = getopt(argv[1:], 'hf:r:u:c:', ['help', 'file=', 'rsh=', 'user=', 'clean='])
+	(opts, args) = getopt(sys.argv[1:], 'hf:r:u:c:', ['help', 'file=', 'rsh=', 'user=', 'clean='])
     except:
         print 'invalid arg(s) specified'
 	usage()
@@ -50,12 +50,12 @@ def mpdcleanup():
         print 'invalid arg(s) specified: ' + ' '.join(args)
 	usage()
 
-    if environ.has_key('MPD_CON_EXT'):
-        conExt = '_' + environ['MPD_CON_EXT']
+    if os.environ.has_key('MPD_CON_EXT'):
+        conExt = '_' + os.environ['MPD_CON_EXT']
     else:
         conExt = ''
     cleanFile = '/tmp/mpd2.console_' + user + conExt
-    system( '%s %s' % (cleanCmd,cleanFile) )
+    os.system( '%s %s' % (cleanCmd,cleanFile) )
     if rshCmd == 'ssh':
 	xOpt = '-x'
     else:
@@ -66,18 +66,18 @@ def mpdcleanup():
 	    f = open(hostsFile,'r')
         except:
 	    print 'Not cleaning up on remote hosts; file %s not found' % hostsFile
-	    exit(0)
+	    sys.exit(0)
         hosts  = f.readlines()
         for host in hosts:
 	    host = host.strip()
 	    if host[0] != '#':
 	        cmd = '%s %s -n %s %s %s &' % (rshCmd, xOpt, host, cleanCmd, cleanFile)
 	        # print 'cmd=:%s:' % (cmd)
-	        system(cmd)
+	        os.system(cmd)
 
 def usage():
     print __doc__
-    exit(-1)
+    sys.exit(-1)
 
 
 if __name__ == '__main__':
