@@ -17,8 +17,6 @@ __credits__ = ""
 
 import sys, os, signal, socket
 
-from resource import setrlimit  # others imported in set_limits as needed
-
 from types    import ClassType
 from re       import findall, sub
 from cPickle  import loads
@@ -1338,45 +1336,37 @@ def parse_pmi_msg(msg):
     return parsed_msg
 
 def set_limits(limits):
+    try:
+        import resource
+    except:
+        return 'unable to import resource module to set limits'
     for limtype in limits.keys():
         limit = int(limits[limtype])
         try:
             if   limtype == 'core':
-                from resource import RLIMIT_CORE
-                setrlimit(RLIMIT_CORE,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_CORE,(limit,limit))
             elif limtype == 'cpu':
-                from resource import RLIMIT_CPU
-                setrlimit(RLIMIT_CPU,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_CPU,(limit,limit))
             elif limtype == 'fsize':
-                from resource import RLIMIT_FSIZE
-                setrlimit(RLIMIT_FSIZE,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_FSIZE,(limit,limit))
             elif limtype == 'data':
-                from resource import RLIMIT_DATA
-                setrlimit(RLIMIT_DATA,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_DATA,(limit,limit))
             elif limtype == 'stack':
-                from resource import RLIMIT_STACK
-                setrlimit(RLIMIT_STACK,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_STACK,(limit,limit))
             elif limtype == 'rss':
-                from resource import RLIMIT_RSS
-                setrlimit(RLIMIT_RSS,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_RSS,(limit,limit))
             elif limtype == 'nproc':
-                from resource import RLIMIT_NPROC
-                setrlimit(RLIMIT_NPROC,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_NPROC,(limit,limit))
             elif limtype == 'nofile':
-                from resource import RLIMIT_NOFILE
-                setrlimit(RLIMIT_NOFILE,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_NOFILE,(limit,limit))
             elif limtype == 'ofile':
-                from resource import RLIMIT_OFILE
-                setrlimit(RLIMIT_OFILE,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_OFILE,(limit,limit))
             elif limtype == 'memloc':
-                from resource import RLIMIT_MEMLOCK
-                setrlimit(RLIMIT_MEMLOCK,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_MEMLOCK,(limit,limit))
             elif  limtype == 'as':
-                from resource import RLIMIT_AS
-                setrlimit(RLIMIT_AS,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_AS,(limit,limit))
             elif  limtype == 'vmem':
-                from resource import RLIMIT_VMEM
-                setrlimit(RLIMIT_VMEM,(limit,limit))
+                resource.setrlimit(resource.RLIMIT_VMEM,(limit,limit))
             else:
                 raise NameError, 'invalid resource name: %s' % limtype  # validated at mpdrun
         except (NameError,ImportError), errmsg:
