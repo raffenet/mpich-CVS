@@ -5,7 +5,7 @@
 #
 
 
-import sys, os, signal, socket, select, inspect
+import sys, os, signal, popen2, socket, select, inspect
 
 from  cPickle   import  dumps, loads
 from  types     import  TupleType
@@ -15,7 +15,6 @@ from  errno     import  EINTR, ECONNRESET
 from  md5       import  new as md5new
 from  time      import  sleep
 from  random    import  randrange, random
-from  popen2    import  Popen4
 
 try:
     import pwd
@@ -32,6 +31,11 @@ try:
     syslog_module_available = 1
 except:
     syslog_module_available = 0
+try:
+    import subprocess
+    subprocess_module_available = 1
+except:
+    subprocess_module_available = 0
 
 
 # some global vars for some utilities
@@ -1069,25 +1073,38 @@ class MPDParmDB(dict):
 class MPDTest(object):
     def __init__(self):
         pass
-    def run(self,cmd='',
-            expIn = '',
-            chkEC=0,expEC=0,
-            chkOut=0,expOut='',ordOut=0,
-            grepOut=0,
-            exitOnFail=1):
+    def run(self,cmd='',expIn = '',chkEC=0,expEC=0,chkOut=0,expOut='',ordOut=0,
+            grepOut=0, exitOnFail=1):
         rv = {}
         if chkOut and grepOut:
             print "grepOut and chkOut are mutually exclusive"
             sys.exit(-1)
-        runner = Popen4(cmd)
-        rv['pid'] = runner.pid
-        if expIn:
-            runner.tochild.write(expIn)
-        runner.tochild.close()
         outLines = []
-        for line in runner.fromchild:
-            outLines.append(line[:-1])    # strip newlines
-        rv['EC'] = runner.wait()
+        if subprocess_module_available:
+            import re
+            cmd = re.split(r'\s+',cmd)
+            runner = subprocess.Popen(cmd,bufsize=0,env=os.environ,close_fds=True,
+                                      stdin=subprocess.PIPE,stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+            if expIn:
+                runner.stdin.write(expIn)
+            runner.stdin.close()
+            for line in runner.stdout:
+                outLines.append(line[:-1])    # strip newlines
+            rv['pid'] = runner.pid
+            rv['EC'] = runner.wait()
+        elif hasattr(popen2,'Popen4'):    # delete when python2.4+ is common
+            runner = popen2.Popen4(cmd)
+            if expIn:
+                runner.tochild.write(expIn)
+            runner.tochild.close()
+            for line in runner.fromchild:
+                outLines.append(line[:-1])    # strip newlines
+            rv['pid'] = runner.pid
+            rv['EC'] = runner.wait()
+        else:
+            mpd_print(1,'can not run with either subprocess or popen2-Popen4')
+            sys.exit(-1)
         rv['OUT'] = outLines[:]
         if chkEC  and  expEC != rv['EC']:
             print "bad exit code from test: %s" % (cmd)
