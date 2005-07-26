@@ -77,7 +77,12 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
 
 #else
 
+#ifdef HAVE_MD5_CALC
+#include <md5.h>
+#define MD5_DIGEST_LENGTH 16
+#else
 #include <openssl/md5.h>
+#endif
 
 int smpd_hash(char *input, int input_length, char *output, int output_length)
 {
@@ -89,7 +94,11 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
 	return SMPD_FAIL;
     }
 
+#ifdef HAVE_MD5_CALC
+    md5_calc(hash, input, input_length);
+#else
     MD5(input, input_length, hash);
+#endif
 
     /*
     for (i=0; i<MD5_DIGEST_LENGTH; i++)
