@@ -213,6 +213,8 @@ sub ConvertMakefile {
 	s/\.F/.F90/g;
 	s/f77/f90/g;
 	s/F77/F90/g;
+	# Update any per-program LDADD values
+        s/f_LDADD/f90_LDADD/g;
 	# Eventually need some way to update directory paths (particularly
 	# relative ones) and add F90 compile rules when not present.
 	print OUTF $_;
