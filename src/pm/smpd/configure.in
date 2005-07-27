@@ -103,7 +103,9 @@ AC_SEARCH_LIBS( MD5, ssl crypto )
 AC_SEARCH_LIBS( md5_calc, md5 )
 AC_TRY_COMPILE([
 #include <md5.h>
-],[unsigned char hash[16];char c='a';md5_calc(hash,&c,1);],ac_cv_have_md5_calc=yes,ac_cv_have_md5_calc=no)])
+],[[unsigned char hash[16];
+char c='a';
+md5_calc(hash,&c,1);]],ac_cv_have_md5_calc=yes,ac_cv_have_md5_calc=no)
 if test "$ac_cv_have_md5_calc" = yes ; then
     AC_DEFINE(HAVE_MD5_CALC,1,[Define if you have the md5_calc function.])
 fi
