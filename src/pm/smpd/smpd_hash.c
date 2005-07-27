@@ -95,7 +95,7 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
     }
 
 #ifdef HAVE_MD5_CALC
-    md5_calc(hash, input, input_length);
+    md5_calc(hash, (unsigned char *)input, (unsigned int)input_length);
 #else
     MD5(input, input_length, hash);
 #endif
