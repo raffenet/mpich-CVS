@@ -419,6 +419,40 @@ EOF
     PAC_PROG_F77_NAME_MANGLE
     F77=$saveF77
     CC=$saveCC
+
+    # Check whether we need -lU77 to get iargc and getarg, which 
+    # are used for a few of the tests in spawn
+    # FIXME: if we can't figure out how to get iargc/getarg, then 
+    # we should really turn off those spawn tests
+    AC_MSG_CHECKING([for Fortran libraries needed for getarg])
+    AC_TRY_LINK(,[character*64 s
+        integer i
+        i = iargc()
+        call getarg(i,s)],
+    pac_cv_getarg_needs_u77=no,pac_cv_getarg_needs_u77=unknown)
+    if test "$pac_cv_getarg_needs_u77" != "yes" ; then
+        # Try again with -lU77
+        saveLIBS="$LIBS"
+        LIBS="$LIBS -lU77"
+        AC_TRY_LINK(,[character*64 s
+        integer i
+        i = iargc()
+        call getarg(i,s)],
+        pac_cv_getarg_needs_u77=yes,pac_cv_getarg_needs_u77=unavailable)
+        LIBS="$saveLIBS"
+        if test "$pac_cv_getarg_needs_u77" = "yes" ; then
+            F77_GETARG_LIBS=-lU77
+        fi
+    fi
+    if test -n "$F77_GETARG_LIBS" ; then
+        AC_MSG_RESULT($F77_GETARG_LIBS)
+    else
+        AC_MSG_RESULT([none needed])
+    fi
+    AC_SUBST(F77_GETARG_LIBS)
+    # FIXME: Currently, we hope that F90 accepts the same library
+    F90_GETARG_LIBS="$F77_GETARG_LIBS"
+    AC_SUBST(F90_GETARG_LIBS)
 fi
 # Set a default for the Fortran 77 version of MPI_Offset.
 if test -z "$F77_MPI_OFFSET" ; then
