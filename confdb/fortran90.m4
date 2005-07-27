@@ -1214,7 +1214,7 @@ cat >conftest.$ac_ext <<EOF
       integer, dimension(10) :: n
       end
 EOF
-if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeect} ; then
+if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext} ; then
     pac_cv_prog_f90_works="yes"
     if (./conftest; exit) 2>/dev/null ; then
         pac_cv_prog_f90_cross="no"
