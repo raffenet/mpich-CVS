@@ -1025,7 +1025,9 @@ class MPDParmDB(dict):
             if os.environ.has_key(k):
                 self[('env',k)] = os.environ[k]
     def get_parms_from_rcfile(self,parmsToOverride):
-        if os.getuid() == 0:    # if ROOT
+        if os.environ.has_key('MPD_CONF_FILE'):
+            parmsRCFilename = os.environ['MPD_CONF_FILE']
+        elif hasattr(os,'getuid')  and  os.getuid() == 0:    # if ROOT
             parmsRCFilename = '/etc/mpd.conf'
         else:
             parmsRCFilename = os.environ['HOME'] + '/.mpd.conf'
