@@ -23,9 +23,10 @@ BOOL WINAPI smpd_ctrl_handler(DWORD dwCtrlType)
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
     case CTRL_CLOSE_EVENT:
-    case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
 	break;
+    case CTRL_LOGOFF_EVENT:
+	return FALSE;
     }
     smpd_kill_all_processes();
     return TRUE;
