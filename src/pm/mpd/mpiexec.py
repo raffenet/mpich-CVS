@@ -1345,7 +1345,7 @@ def usage():
 if __name__ == '__main__':
     try:
         mpiexec()
-    except SystemExit, errmsg:
-        pass
+    except SystemExit, errExitStatus:  # bounced to here by sys.exit inside mpiexec()
+        myExitStatus = errExitStatus
     sys.exit(myExitStatus)
 
