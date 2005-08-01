@@ -438,12 +438,58 @@ dnl if MPICH2, assume MPI-RMA is available.
     fi
 fi
 
+dnl   Determine if MPI_STATUS_IGNORE exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for MPI_STATUS_IGNORE] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+              MPI_Status*     tmp_status;
+              tmp_status = MPI_STATUS_IGNORE;
+                          ], ,
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+    # All known impls, including MPICH, support STATUS_IGNORE
+    # (The MPICH support may have a few bugs, but it is close enough
+    # for our needs)
+    mpe_link_ok=yes
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_MPI_STATUS_IGNORE, 1,
+               [Define if MPI_STATUS_IGNORE available] )
+fi
+
+dnl   Determine if MPI_STATUSES_IGNORE exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for MPI_STATUSES_IGNORE] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+              MPI_Status*     tmp_status;
+              tmp_status = MPI_STATUSES_IGNORE;
+                          ], ,
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+    # All known impls, including MPICH, support STATUS_IGNORE
+    # (The MPICH support may have a few bugs, but it is close enough
+    # for our needs)
+    mpe_link_ok=yes
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_MPI_STATUSES_IGNORE, 1,
+               [Define if MPI_STATUSES_IGNORE available] )
+fi
+
 dnl This is temporary!  Eventually MPICH-2 will have its own f2c MPI wrappers.
 dnl When MPICH-2 has the wrappers ready, the following block should be removed
 if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
      -a "$MPI_IMPL" = "MPICH2" ; then
 
 #   FIXME: MPICH2 include MPI_Fint, Need to fetch the value somehow.
+
+#   CHECK: MPICH2 does not have MPI_F_STATUS_IGNORE, MPI_F_STATUSES_IGNORE
+dnl AC_DEFINE( HAVE_F_MPI_STATUS_IGNORE, 1,
+dnl            [Define if MPI_F_STATUS_IGNORE available] )
+dnl AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
+dnl            [Define if MPI_F_STATUSES_IGNORE available] )
 
 #   MPICH2 has MPI_Comm_f2c()/c2f()
     AC_DEFINE( HAVE_MPI_COMM_F2C, 1,
@@ -520,6 +566,32 @@ dnl (same test done in graphics's configure.in)
         MPI_FINT_TYPE=int
         AC_DEFINE( MPI_Fint, int, [Define MPI_Fint as int] )
     fi
+
+dnl Determine if MPI_F_STATUS_IGNORE exists
+    AC_MSG_CHECKING( [for MPI_F_STATUS_IGNORE] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+              ${MPI_FINT_TYPE}  *f_status;
+              f_status = MPI_F_STATUS_IGNORE;
+                          ], ,
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_F_MPI_STATUS_IGNORE, 1,
+               [Define if MPI_F_STATUS_IGNORE available] )
+fi
+
+dnl Determine if MPI_F_STATUSES_IGNORE exists
+    AC_MSG_CHECKING( [for MPI_F_STATUSES_IGNORE] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+              ${MPI_FINT_TYPE}  *f_statuses;
+              f_statuses = MPI_F_STATUSES_IGNORE;
+                          ], ,
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
+               [Define if MPI_F_STATUSES_IGNORE available] )
+fi
 
 dnl Determmine if MPI_Comm_f2c() and MPI_Comm_c2f() are there
 dnl (same test done in graphics's configure.in)
@@ -763,46 +835,6 @@ int main()
 
 dnl endif test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}"
 dnl         -a "$MPI_IMPL" != "MPICH2" ; then
-fi
-
-dnl   Determine if MPI_STATUS_IGNORE exists
-if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-    AC_MSG_CHECKING( [for MPI_STATUS_IGNORE] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
-              MPI_Status*     tmp_status;
-              tmp_status = MPI_STATUS_IGNORE;
-                          ], ,
-              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
-    AC_MSG_RESULT($mpe_link_ok)
-else
-    # All known impls, including MPICH, support STATUS_IGNORE
-    # (The MPICH support may have a few bugs, but it is close enough
-    # for our needs)
-    mpe_link_ok=yes
-fi
-if test "$mpe_link_ok" = "yes" ; then
-    AC_DEFINE( HAVE_MPI_STATUS_IGNORE, 1,
-               [Define if MPI_STATUS_IGNORE available] )
-fi
-
-dnl   Determine if MPI_STATUSES_IGNORE exists
-if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-    AC_MSG_CHECKING( [for MPI_STATUSES_IGNORE] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
-              MPI_Status*     tmp_status;
-              tmp_status = MPI_STATUSES_IGNORE;
-                          ], ,
-              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
-    AC_MSG_RESULT($mpe_link_ok)
-else
-    # All known impls, including MPICH, support STATUS_IGNORE
-    # (The MPICH support may have a few bugs, but it is close enough
-    # for our needs)
-    mpe_link_ok=yes
-fi
-if test "$mpe_link_ok" = "yes" ; then
-    AC_DEFINE( HAVE_MPI_STATUSES_IGNORE, 1,
-               [Define if MPI_STATUSES_IGNORE available] )
 fi
 
 AC_SUBST(MPI_IMPL)
