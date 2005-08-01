@@ -583,7 +583,10 @@ void mpi_iprobe_( MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm,
     *__ierr = MPI_Iprobe((int)*source,(int)*tag,MPI_Comm_f2c(*comm),
                          &lflag,&c_status);
     *flag = MPIR_TO_FLOG(lflag);
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_irecv_ ( void *, MPI_Fint *, MPI_Fint *, MPI_Fint *,
@@ -676,7 +679,10 @@ void mpi_probe_( MPI_Fint *source, MPI_Fint *tag, MPI_Fint *comm,
 
     *__ierr = MPI_Probe((int)*source, (int)*tag, MPI_Comm_f2c(*comm),
                         &c_status);
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_recv_ ( void *, MPI_Fint *, MPI_Fint *, MPI_Fint *,
@@ -691,7 +697,10 @@ void mpi_recv_( void *buf, MPI_Fint *count, MPI_Fint *datatype,
     *__ierr = MPI_Recv(MPIR_F_PTR(buf), (int)*count,MPI_Type_f2c(*datatype),
                        (int)*source, (int)*tag,
                        MPI_Comm_f2c(*comm), &c_status);
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_rsend_init_ ( void *, MPI_Fint *, MPI_Fint *, MPI_Fint *,
@@ -746,7 +755,10 @@ void mpi_sendrecv_( void *sendbuf, MPI_Fint *sendcount, MPI_Fint *sendtype,
                            (int)*recvcount, MPI_Type_f2c(*recvtype),
                            (int)*source, (int)*recvtag,
                            MPI_Comm_f2c(*comm), &c_status);
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_sendrecv_replace_ ( void *, MPI_Fint *, MPI_Fint *,
@@ -765,7 +777,10 @@ void mpi_sendrecv_replace_( void *buf, MPI_Fint *count, MPI_Fint *datatype,
                                    MPI_Type_f2c(*datatype), (int)*dest,
                                    (int)*sendtag, (int)*source, (int)*recvtag,
                                    MPI_Comm_f2c(*comm), &c_status );
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_ssend_init_ ( void *, MPI_Fint *, MPI_Fint *, MPI_Fint *,
@@ -879,11 +894,14 @@ void mpi_testall_( MPI_Fint *count, MPI_Fint array_of_requests[],
     *flag = MPIR_TO_FLOG(lflag);
     /* We must only copy for those elements that corresponded to non-null
        requests, and only if there is a change */
-    if (lflag) {
-        for (i=0; i<(int)*count; i++) {
-            MPI_Status_c2f( &c_status[i], &(array_of_statuses[i][0]) );
+#if defined( HAVE_MPI_F_STATUSES_IGNORE )
+    if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+#endif
+        if (lflag) {
+            for (i=0; i<(int)*count; i++) {
+                MPI_Status_c2f( &c_status[i], &(array_of_statuses[i][0]) );
+            }
         }
-    }
 
     if ((int)*count > MPIR_USE_LOCAL_ARRAY) {
         FREE( lrequest );
@@ -934,8 +952,13 @@ void mpi_testany_( MPI_Fint *count, MPI_Fint array_of_requests[],
     /* See the description of waitany in the standard; the Fortran index ranges
        are from 1, not zero */
     *index = (MPI_Fint)lindex;
-    if ((int)*index >= 0) *index = *index + 1;
-    MPI_Status_c2f(&c_status, status);
+    if ((int)*index >= 0)
+        *index = *index + 1;
+
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_test_cancelled_ ( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -961,8 +984,12 @@ void mpi_test_ ( MPI_Fint *request, MPI_Fint *flag, MPI_Fint *status,
     *request = MPI_Request_c2f(lrequest);
 
     *flag = MPIR_TO_FLOG(l_flag);
-    if (l_flag)
-        MPI_Status_c2f(&c_status, status);
+
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        if (l_flag)
+            MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_testsome_ ( MPI_Fint *, MPI_Fint [], MPI_Fint *,
@@ -1033,7 +1060,10 @@ void mpi_testsome_( MPI_Fint *incount, MPI_Fint array_of_requests[],
                                 l_indices, c_status );
 
     for (i=0; i<loutcount; i++) {
-        MPI_Status_c2f(&c_status[i], &(array_of_statuses[i][0]) );
+#if defined( HAVE_MPI_F_STATUSES_IGNORE )
+        if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+#endif
+            MPI_Status_c2f(&c_status[i], &(array_of_statuses[i][0]) );
         if (l_indices[i] >= 0)
             array_of_indices[i] = l_indices[i] + 1;
     }
@@ -1364,8 +1394,11 @@ void mpi_waitall_( MPI_Fint *count, MPI_Fint array_of_requests[],
     else 
         *__ierr = MPI_Waitall((int)*count,(MPI_Request *)0, c_status );
 
-    for (i=0; i<(int)*count; i++) 
-        MPI_Status_c2f(&(c_status[i]), &(array_of_statuses[i][0]) );
+#if defined( HAVE_MPI_F_STATUSES_IGNORE )
+    if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+#endif
+        for (i=0; i<(int)*count; i++) 
+            MPI_Status_c2f(&(c_status[i]), &(array_of_statuses[i][0]) );
     
     if ((int)*count > MPIR_USE_LOCAL_ARRAY) {
         FREE( lrequest );
@@ -1418,7 +1451,10 @@ void mpi_waitany_( MPI_Fint *count, MPI_Fint array_of_requests[],
        are from 1, not zero */
     *index = (MPI_Fint)lindex;
     if ((int)*index >= 0) *index = (MPI_Fint)*index + 1;
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_wait_ ( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -1431,7 +1467,10 @@ void mpi_wait_ ( MPI_Fint *request, MPI_Fint *status, MPI_Fint *__ierr )
     *__ierr = MPI_Wait(&lrequest, &c_status);
     *request = MPI_Request_c2f(lrequest);
 
-    MPI_Status_c2f(&c_status, status);
+#if defined( HAVE_MPI_F_STATUS_IGNORE )
+    if ( status != MPI_F_STATUS_IGNORE )
+#endif
+        MPI_Status_c2f(&c_status, status);
 }
 
 void mpi_waitsome_ ( MPI_Fint *, MPI_Fint [], MPI_Fint *,
@@ -1507,7 +1546,10 @@ void mpi_waitsome_( MPI_Fint *incount, MPI_Fint array_of_requests[],
                                 l_indices, c_status );
 
     for (i=0; i<loutcount; i++) {
-        MPI_Status_c2f( &c_status[i], &(array_of_statuses[i][0]) );
+#if defined( HAVE_MPI_F_STATUSES_IGNORE )
+        if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+#endif
+            MPI_Status_c2f( &c_status[i], &(array_of_statuses[i][0]) );
         if (l_indices[i] >= 0)
             array_of_indices[i] = l_indices[i] + 1;
 
