@@ -599,6 +599,12 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	smpd_process.noprompt = SMPD_TRUE;
 	smpd_process.credentials_prompt = SMPD_FALSE;
     }
+    env_str = getenv("MPIEXEC_NOPROMPT");
+    if (env_str)
+    {
+	smpd_process.noprompt = SMPD_TRUE;
+	smpd_process.credentials_prompt = SMPD_FALSE;
+    }
     smpd_setting_tmp_buffer[0] = '\0';
     result = smpd_get_smpd_data("priority", smpd_setting_tmp_buffer, 20);
     if (result == SMPD_SUCCESS)
