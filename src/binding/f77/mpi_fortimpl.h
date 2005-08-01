@@ -156,8 +156,12 @@ extern MPI_Fint MPIR_F_TRUE, MPIR_F_FALSE;
 extern FORT_DLL_SPEC int  MPIR_F_NeedInit;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
-extern FORT_DLL_SPEC void *MPI_F_STATUS_IGNORE;
-extern FORT_DLL_SPEC void *MPI_F_STATUSES_IGNORE;
+/* MPI_F_STATUS(ES)_IGNORE are defined in mpi.h and are intended for C 
+   programs. */
+/*
+extern FORT_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE;
+extern FORT_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE;
+*/
 extern FORT_DLL_SPEC int  *MPI_F_ERRCODES_IGNORE;
 extern FORT_DLL_SPEC void *MPI_F_ARGVS_NULL;
 /* MPIR_F_PTR checks for the Fortran MPI_BOTTOM and provides the value 

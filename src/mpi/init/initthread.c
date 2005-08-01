@@ -28,7 +28,16 @@
 #define MPI_Init_thread PMPI_Init_thread
 
 /* Any internal routines can go here.  Make them static if possible */
+
+/* Global variables can be initialized here */
 MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
+
+/* These are initialized as null (avoids making these into common symbols).
+   If the Fortran binding is supported, these can be initialized to 
+   their Fortran values (MPI only requires that they be valid between
+   MPI_Init and MPI_Finalize) */
+MPI_Fint *MPI_F_STATUS_IGNORE = 0;
+MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
 #ifdef HAVE_WINDOWS_H
 /* User-defined abort hook function.  Exiting here will prevent the system from
@@ -238,6 +247,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIU_trid( 1 );
 #endif
 
+    /* FIXME: There is no code for this comment */
     /* We now initialize the Fortran symbols from within the Fortran 
        interface in the routine that first needs the symbols.
        This fixes a problem with symbols added by a Fortran compiler that 

@@ -37,8 +37,12 @@ const MPI_Fint MPIR_F_FALSE=F77_FALSE_VALUE;
 int  MPIR_F_NeedInit        = 1;
 void *MPIR_F_MPI_BOTTOM     = 0;
 void *MPIR_F_MPI_IN_PLACE   = 0;
+/* MPI_F_STATUS_IGNORE etc must be declared within mpi.h (MPI-2 standard 
+   requires this) */
+/* 
 void *MPI_F_STATUS_IGNORE   = 0;
 void *MPI_F_STATUSES_IGNORE = 0;
+*/
 int  *MPI_F_ERRCODES_IGNORE = 0;
 void *MPI_F_ARGVS_NULL      = 0;
 #endif
@@ -49,8 +53,8 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d,
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPIR_F_MPI_IN_PLACE   = b;
-    MPI_F_STATUS_IGNORE   = c;
-    MPI_F_STATUSES_IGNORE = d;
+    MPI_F_STATUS_IGNORE   = (MPI_Fint *)c;
+    MPI_F_STATUSES_IGNORE = (MPI_Fint *)d;
     MPI_F_ERRCODES_IGNORE = (int *)e;
     MPI_F_ARGVS_NULL      = f;
 }
