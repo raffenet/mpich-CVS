@@ -4465,7 +4465,6 @@ int MPI_Pcontrol(const int level, ...)
 }
 
 #ifdef HAVE_MPI_IO
-#include "mpio.h"
 #include "log_mpi_io.c"
 #endif
 
