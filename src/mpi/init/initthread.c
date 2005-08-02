@@ -48,7 +48,7 @@ static int assert_hook( int reportType, char *message, int *returnValue )
     MPIU_UNREFERENCED_ARG(reportType);
     fprintf(stderr, "%s", message);
     if (returnValue != NULL)
-	exit(*returnValue);
+	ExitProcess((UINT)(*returnValue));
     ExitProcess((UINT)(-1));
     return TRUE;
 }
