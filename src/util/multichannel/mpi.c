@@ -66,6 +66,9 @@
 #endif
 #define MAX_DLL_NAME              100
 
+MPI_Fint *MPI_F_STATUS_IGNORE;
+MPI_Fint *MPI_F_STATUSES_IGNORE;
+
 static struct fn_table
 {
     /* MPI */
@@ -690,6 +693,10 @@ static struct fn_table
     /*int (*MPIR_Dup_fn)(MPI_Comm, int, void *, void *, void *, int *);*/
     int (*MPIR_Err_create_code)(int , int , const char [], int , int , const char [], const char [], ...);
     int (*MPIR_Err_return_comm)(struct MPID_Comm *, const char [], int);
+
+    /* global variables */
+    MPI_Fint **MPI_F_STATUS_IGNORE;
+    MPI_Fint **MPI_F_STATUSES_IGNORE;
 } fn;
 
 static HMODULE hMPIModule = NULL;
@@ -1645,6 +1652,10 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     fn.MPIR_Err_create_code = (int (*)(int , int , const char [], int , int , const char [], const char [], ...))GetProcAddress(hPMPIModule, "MPIR_Err_create_code");
     fn.MPIR_Err_return_comm = (int (*)(struct MPID_Comm *, const char [], int ))GetProcAddress(hPMPIModule, "MPIR_Err_return_comm");
 
+    /* global variables */
+    fn.MPI_F_STATUS_IGNORE = (MPI_Fint**)GetProcAddress(hPMPIModule, "MPI_F_STATUS_IGNORE");
+    fn.MPI_F_STATUSES_IGNORE = (MPI_Fint**)GetProcAddress(hPMPIModule, "MPI_F_STATUSES_IGNORE");
+
     return TRUE;
 }
 
@@ -1775,12 +1786,20 @@ void MPID_Wtime_todouble(MPID_Time_t *t, double *val)
 /* MPI versions */
 int MPI_Init( int *argc, char ***argv )
 {
-    return fn.MPI_Init(argc, argv);
+    int result;
+    result = fn.MPI_Init(argc, argv);
+    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
+    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    return result;
 }
 
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
-    return fn.MPI_Init_thread(argc, argv, required, provided);
+    int result;
+    result = fn.MPI_Init_thread(argc, argv, required, provided);
+    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
+    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    return result;
 }
 
 int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
@@ -3448,12 +3467,20 @@ double MPI_Wtick()
 /* PMPI versions */
 int PMPI_Init( int *argc, char ***argv )
 {
-    return fn.PMPI_Init(argc, argv);
+    int result;
+    result = fn.PMPI_Init(argc, argv);
+    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
+    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    return result;
 }
 
 int PMPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
-    return fn.PMPI_Init_thread(argc, argv, required, provided);
+    int result;
+    result = fn.PMPI_Init_thread(argc, argv, required, provided);
+    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
+    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    return result;
 }
 
 int PMPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )

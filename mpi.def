@@ -715,3 +715,5 @@ EXPORTS
 	MPI_DUP_FN=MPIR_Dup_fn
 	MPIR_Err_create_code
 	MPIR_Err_return_comm
+	MPI_F_STATUS_IGNORE
+	MPI_F_STATUSES_IGNORE
