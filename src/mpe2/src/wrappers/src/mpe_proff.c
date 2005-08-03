@@ -895,7 +895,7 @@ void mpi_testall_( MPI_Fint *count, MPI_Fint array_of_requests[],
     /* We must only copy for those elements that corresponded to non-null
        requests, and only if there is a change */
 #if defined( HAVE_MPI_F_STATUSES_IGNORE )
-    if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+    if ( (MPI_Fint *) array_of_statuses != MPI_F_STATUSES_IGNORE )
 #endif
         if (lflag) {
             for (i=0; i<(int)*count; i++) {
@@ -1061,7 +1061,7 @@ void mpi_testsome_( MPI_Fint *incount, MPI_Fint array_of_requests[],
 
     for (i=0; i<loutcount; i++) {
 #if defined( HAVE_MPI_F_STATUSES_IGNORE )
-        if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+        if ( (MPI_Fint *) array_of_statuses != MPI_F_STATUSES_IGNORE )
 #endif
             MPI_Status_c2f(&c_status[i], &(array_of_statuses[i][0]) );
         if (l_indices[i] >= 0)
@@ -1395,7 +1395,7 @@ void mpi_waitall_( MPI_Fint *count, MPI_Fint array_of_requests[],
         *__ierr = MPI_Waitall((int)*count,(MPI_Request *)0, c_status );
 
 #if defined( HAVE_MPI_F_STATUSES_IGNORE )
-    if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+    if ( (MPI_Fint *) array_of_statuses != MPI_F_STATUSES_IGNORE )
 #endif
         for (i=0; i<(int)*count; i++) 
             MPI_Status_c2f(&(c_status[i]), &(array_of_statuses[i][0]) );
@@ -1547,7 +1547,7 @@ void mpi_waitsome_( MPI_Fint *incount, MPI_Fint array_of_requests[],
 
     for (i=0; i<loutcount; i++) {
 #if defined( HAVE_MPI_F_STATUSES_IGNORE )
-        if ( array_of_statuses != MPI_F_STATUSES_IGNORE )
+        if ( (MPI_Fint *) array_of_statuses != MPI_F_STATUSES_IGNORE )
 #endif
             MPI_Status_c2f( &c_status[i], &(array_of_statuses[i][0]) );
         if (l_indices[i] >= 0)
