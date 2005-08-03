@@ -27,6 +27,13 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_read_nbytes, \
                      mpd_get_my_username,                         \
                      MPDSock, MPDListenSock, MPDStreamHandler, MPDRing
 
+try:
+    import  subprocess
+    subprocess_module_available = 1
+except:
+    subprocess_module_available = 0
+
+
 global clientPid, clientExited, clientExitStatus, clientExitStatusSent
 
 class MPDMan(object):
@@ -36,7 +43,8 @@ class MPDMan(object):
         global clientPid, clientExited, clientExitStatus, clientExitStatusSent
         clientExited = 0
         clientExitStatusSent = 0
-        signal.signal(signal.SIGCHLD,sigchld_handler)
+        if hasattr(signal,'SIGCHLD'):
+            signal.signal(signal.SIGCHLD,sigchld_handler)
         self.myHost    = os.environ['MPDMAN_MYHOST']
         self.myIfhn    = os.environ['MPDMAN_MYIFHN']
         self.myRank    = int(os.environ['MPDMAN_RANK'])
@@ -51,6 +59,38 @@ class MPDMan(object):
         except Exception, errmsg:
             errmsg =  '%s: invalid dir: %s' % (self.myId,os.environ['MPDMAN_CWD'])
             # print errmsg    ## may syslog it in some cases ?
+        if os.environ['MPDMAN_HOW_LAUNCHED'] == 'FORK':
+            self.listenRingPort = int(os.environ['MPDMAN_MY_LISTEN_PORT'])
+            listenRingFD = int(os.environ['MPDMAN_MY_LISTEN_FD'])  # closed in loop below
+            self.listenRingSock = socket.fromfd(listenRingFD,socket.AF_INET,socket.SOCK_STREAM)
+            self.listenRingSock = MPDSock(sock=self.listenRingSock)
+            mpdFD = int(os.environ['MPDMAN_TO_MPD_FD'])  # closed in loop below
+            self.mpdSock = socket.fromfd(mpdFD,socket.AF_INET,socket.SOCK_STREAM)
+            self.mpdSock = MPDSock(sock=self.mpdSock)
+        elif os.environ['MPDMAN_HOW_LAUNCHED'] == 'SUBPROCESS':
+            self.listenRingSock = MPDListenSock()
+            self.listenRingPort = self.listenRingSock.getsockname()[1]
+            mpdPort = int(os.environ['MPDMAN_MPD_PORT'])
+            self.mpdSock = MPDSock()
+            self.mpdSock.connect((self.myIfhn,mpdPort))
+            self.mpdSock.send_dict_msg( {'man_listen_port' : self.listenRingPort} )
+        else:
+            mpd_print(1,'I cannot figure out how I was launched')
+            sys.exit(-1)
+        if self.myRank == 0:
+            self.pos0Ifhn = self.myIfhn
+            self.pos0Port = self.listenRingPort
+        else:
+            self.pos0Ifhn = os.environ['MPDMAN_POS0_IFHN']
+            self.pos0Port = int(os.environ['MPDMAN_POS0_PORT'])
+        # close unused fds before I grab any more
+        try:     max_fds = os.sysconf('SC_OPEN_MAX')
+        except:  max_fds = 1024
+        for fd in range(3,max_fds):
+            if fd == self.mpdSock.fileno()  or  fd == self.listenRingSock.fileno():
+                continue
+            try:    os.close(fd)
+            except: pass
         self.umask = os.environ['MPDMAN_UMASK']
         if self.umask.startswith('0x'):
             self.umask = int(self.umask,16)
@@ -68,24 +108,11 @@ class MPDMan(object):
         self.mpdPort = int(os.environ['MPDMAN_MPD_LISTEN_PORT'])
         self.mpdConfPasswd = os.environ['MPDMAN_MPD_CONF_SECRETWORD']
         os.environ['MPDMAN_MPD_CONF_SECRETWORD'] = ''  ## do NOT pass it on to clients
+        self.kvs_template_from_env = os.environ['MPDMAN_KVS_TEMPLATE']
         self.conIfhn  = os.environ['MPDMAN_CONIFHN']
         self.conPort  = int(os.environ['MPDMAN_CONPORT'])
         self.lhsIfhn  = os.environ['MPDMAN_LHS_IFHN']
         self.lhsPort  = int(os.environ['MPDMAN_LHS_PORT'])
-        self.pos0Ifhn = os.environ['MPDMAN_POS0_IFHN']
-        self.pos0Port = int(os.environ['MPDMAN_POS0_PORT'])
-        self.kvs_template_from_env = os.environ['MPDMAN_KVS_TEMPLATE']
-        self.streamHandler = MPDStreamHandler()
-        self.listenRingPort = int(os.environ['MPDMAN_MY_LISTEN_PORT'])
-        listenRingFD = int(os.environ['MPDMAN_MY_LISTEN_FD'])
-        self.listenRingSock = socket.fromfd(listenRingFD,socket.AF_INET,socket.SOCK_STREAM)
-        self.listenRingSock = MPDSock(sock=self.listenRingSock)
-        os.close(listenRingFD)
-        mpdFD = int(os.environ['MPDMAN_TO_MPD_FD'])
-        self.mpdSock = socket.fromfd(mpdFD,socket.AF_INET,socket.SOCK_STREAM)
-        self.mpdSock = MPDSock(sock=self.mpdSock)
-        self.streamHandler.set_handler(self.mpdSock,self.handle_mpd_input)
-        os.close(mpdFD)
         self.stdinDest = os.environ['MPDMAN_STDIN_DEST']
         self.totalview = int(os.environ['MPDMAN_TOTALVIEW'])
         self.gdb = int(os.environ['MPDMAN_GDB'])
@@ -101,6 +128,8 @@ class MPDMan(object):
         self.doingBNR = int(os.environ['MPDMAN_DOING_BNR'])
         self.listenNonRingSock = MPDListenSock('',0,name='nonring_listen_sock')
         self.listenNonRingPort = self.listenNonRingSock.getsockname()[1]
+        self.streamHandler = MPDStreamHandler()
+        self.streamHandler.set_handler(self.mpdSock,self.handle_mpd_input)
         self.streamHandler.set_handler(self.listenNonRingSock,
                                        self.handle_nonring_connection)
 
@@ -118,12 +147,12 @@ class MPDMan(object):
         self.default_kvsname = sub('\.','_',self.default_kvsname)  # magpie.cs to magpie_cs
         self.default_kvsname = sub('\-','_',self.default_kvsname)  # chg node-0 to node_0
         self.KVSs[self.default_kvsname] = {}
-        cli_environ = {}
+        cli_env = {}
         for k in self.clientPgmEnv.keys():
             if k.startswith('MPI_APPNUM'):
                 self.appnum = self.clientPgmEnv[k]    # don't put in application env
             else:
-                cli_environ[k] = self.clientPgmEnv[k]
+                cli_env[k] = self.clientPgmEnv[k]
         self.kvs_next_id = 1
         self.jobEndingEarly = 0
         self.pmiCollectiveJob = 0
@@ -218,6 +247,12 @@ class MPDMan(object):
                 self.stderrToConSock.send_dict_msg(msgToSend)
         else:
             self.conSock = 0
+        if self.myRank == 0:
+            self.parentStdoutSock = self.stdoutToConSock
+            self.parentStderrSock = self.stderrToConSock
+        else:
+            self.parentStdoutSock = 0
+            self.parentStderrSock = 0
         msg = self.ring.lhsSock.recv_dict_msg()    # recv msg containing ringsize
         if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'ringsize':
             mpd_print(1,'invalid msg from lhs; expecting ringsize got: %s' % (msg) )
@@ -231,7 +266,10 @@ class MPDMan(object):
         if self.doingBNR:
             (self.pmiSock,self.cliBNRSock) = mpd_sockpair()
             self.streamHandler.set_handler(self.pmiSock,self.handle_pmi_input)
-            cli_environ['MAN_MSGS_FD'] = str(self.cliBNRSock.fileno())       ## BNR
+            cli_env['MAN_MSGS_FD'] = str(self.cliBNRSock.fileno())       ## BNR
+        self.numDone = 0
+        self.numWithIO = 2    # stdout and stderr so far
+        self.numConndWithIO = 2
         if self.singinitPORT:
             self.pmiListenSock = 0
             self.pmiSock = MPDSock(name='pmi')
@@ -249,117 +287,61 @@ class MPDMan(object):
             sock_read_cli_stderr.connect((self.myIfhn,self.singinitPORT))
             self.fd_read_cli_stderr = sock_read_cli_stderr.fileno()
         else:
-            self.cliListenSock = MPDListenSock('',0,name='cli_listen_sock')
-            self.cliListenPort = self.cliListenSock.getsockname()[1]
-            (self.fd_read_cli_stdin, self.fd_write_cli_stdin ) = os.pipe()
-            (self.fd_read_cli_stdout,self.fd_write_cli_stdout) = os.pipe()
-            (self.fd_read_cli_stderr,self.fd_write_cli_stderr) = os.pipe()
-            (self.pipe_cli_end,self.pipe_man_end) = os.pipe()
+            self.cliListenSock = MPDListenSock('',0,name='cli_listen_sock')  ## BNR
+            self.cliListenPort = self.cliListenSock.getsockname()[1]         ## BNR
             self.pmiListenSock = MPDListenSock('',0,name='pmi_listen_sock')
             self.pmiListenPort = self.pmiListenSock.getsockname()[1]
         if self.singinitPID:
             clientPid = self.singinitPID
         else:
-            clientPid = os.fork()
-        if clientPid == 0:
-            mpd_set_my_id(socket.gethostname() + '_man_before_exec_client_' + `os.getpid()`)
-            self.ring.lhsSock.close()
-            self.ring.rhsSock.close()
-            self.listenRingSock.close()
-            if self.conSock:
-                self.streamHandler.del_handler(self.conSock)
-                self.conSock.close()
-            self.pmiListenSock.close()
-            os.setpgrp()
-
-            os.close(self.fd_write_cli_stdin)
-            os.dup2(self.fd_read_cli_stdin,0)  # closes fd 0 (stdin) if open
-
-            # to simply print on the mpd's tty:
-            #     comment out the next lines
-            os.close(self.fd_read_cli_stdout)
-            os.dup2(self.fd_write_cli_stdout,1)  # closes fd 1 (stdout) if open
-            os.close(self.fd_write_cli_stdout)
-            os.close(self.fd_read_cli_stderr)
-            os.dup2(self.fd_write_cli_stderr,2)  # closes fd 2 (stderr) if open
-            os.close(self.fd_write_cli_stderr)
-
-            msg = mpd_read_nbytes(self.pipe_cli_end,2)
-            if msg != 'go':
-                mpd_print(1,'%s: invalid go msg from man :%s:' % (self.myId,msg) )
-                sys.exit(-1)
-            os.close(self.pipe_cli_end)
-
-            self.clientPgmArgs = [self.clientPgm] + self.clientPgmArgs
-            cli_environ['PATH']      = os.environ['MPDMAN_CLI_PATH']
-            cli_environ['PMI_PORT']  = '%s:%s' % (self.myIfhn,self.pmiListenPort)
-            cli_environ['PMI_SIZE']  = str(self.nprocs)
-            cli_environ['PMI_RANK']  = str(self.myRank)
-            cli_environ['PMI_DEBUG'] = str(0)
-            cli_environ['PMI_TOTALVIEW'] = str(self.totalview)
+            cli_env['PATH']      = os.environ['MPDMAN_CLI_PATH']
+            cli_env['PMI_PORT']  = '%s:%s' % (self.myIfhn,self.pmiListenPort)
+            cli_env['PMI_SIZE']  = str(self.nprocs)
+            cli_env['PMI_RANK']  = str(self.myRank)
+            cli_env['PMI_DEBUG'] = str(0)
+            cli_env['PMI_TOTALVIEW'] = str(self.totalview)
             if self.spawned:
-                cli_environ['PMI_SPAWNED'] = '1'
+                cli_env['PMI_SPAWNED'] = '1'
             else:
-                cli_environ['PMI_SPAWNED'] = '0'
-            cli_environ['MPD_TVDEBUG'] = str(0)                         ## BNR
-            cli_environ['MPD_JID'] = os.environ['MPDMAN_JOBID']            ## BNR
-            cli_environ['MPD_JSIZE'] = str(self.nprocs)                 ## BNR
-            cli_environ['MPD_JRANK'] = str(self.myRank)                 ## BNR
-
-            cli_environ['CLIENT_LISTENER_FD'] = str(self.cliListenSock.fileno())   ## BNR
-            errmsg = set_limits(self.clientPgmLimits)
-            if errmsg:
-                self.pmiSock = MPDSock(name='pmi')
-                self.pmiSock.connect((self.myIfhn,self.pmiListenPort))
-                reason = quote(str(errmsg))
-                pmiMsgToSend = 'cmd=execution_problem reason=%s exec=%s\n' % \
-                               (reason,self.clientPgm)
-                self.pmiSock.send_char_msg(pmiMsgToSend)
-                sys.exit(0)
-            try:
-                mpd_print(0000, 'execing clientPgm=:%s:' % (self.clientPgm) )
-                if self.gdb:
-                    fullDirName = os.environ['MPDMAN_FULLPATHDIR']
-                    gdbdrv = os.path.join(fullDirName,'mpdgdbdrv.py')
-                    if not os.access(gdbdrv,os.X_OK):
-                        print 'mpdman: cannot execute mpdgdbdrv %s' % gdbdrv
-                        sys.exit(0);
-                    self.clientPgmArgs.insert(0,self.clientPgm)
-                    os.execvpe(gdbdrv,self.clientPgmArgs,cli_environ)    # client
+                cli_env['PMI_SPAWNED'] = '0'
+            cli_env['MPD_TVDEBUG'] = str(0)                                   ## BNR
+            cli_env['MPD_JID'] = os.environ['MPDMAN_JOBID']                   ## BNR
+            cli_env['MPD_JSIZE'] = str(self.nprocs)                           ## BNR
+            cli_env['MPD_JRANK'] = str(self.myRank)                           ## BNR
+            cli_env['CLIENT_LISTENER_FD'] = str(self.cliListenSock.fileno())  ## BNR
+            if hasattr(os,'fork'):
+                (self.fd_read_cli_stdin, self.fd_write_cli_stdin ) = os.pipe()
+                (self.fd_read_cli_stdout,self.fd_write_cli_stdout) = os.pipe()
+                (self.fd_read_cli_stderr,self.fd_write_cli_stderr) = os.pipe()
+                (self.handshake_sock_man_end,self.handshake_sock_cli_end) = mpd_sockpair()
+                self.subproc = 0    # using fork instead of subprocess
+                clientPid = self.launch_client_via_fork_exec(cli_env)
+                if clientPid:
+                    self.handshake_sock_cli_end.close()
                 else:
-                    os.environ['PATH'] = cli_environ['PATH']
-                    os.execvpe(self.clientPgm,self.clientPgmArgs,cli_environ)    # client
-            except Exception, errmsg:
-                # print '%s: could not run %s; probably executable file not found' % \
-                #        (self.myId,clientPgm)
-                self.pmiSock = MPDSock(name='pmi')
-                self.pmiSock.connect((self.myIfhn,self.pmiListenPort))
-                reason = quote(str(errmsg))
-                pmiMsgToSend = 'cmd=execution_problem reason=%s exec=%s\n' % \
-                               (reason,self.clientPgm)
-                self.pmiSock.send_char_msg(pmiMsgToSend)
-                sys.exit(0)
-            sys.exit(0)
+                    self.handshake_sock_man_end.close()
+            elif subprocess_module_available:
+                clientPid = self.launch_client_via_subprocess(cli_env)
+            else:
+                mpd_print(1,'neither fork nor subprocess is available')
+                sys.exit(-1)
         # if not initially a recvr of stdin (e.g. gdb) then give immediate eof to client
         if not in_stdinRcvrs(self.myRank,self.stdinDest):
-            os.close(self.fd_write_cli_stdin)
+            if self.subproc:    # must close subproc's file (not just the fd)
+                self.subproc.stdin.close()
+            else:
+                os.close(self.fd_write_cli_stdin)
         if self.doingBNR:
             self.cliBNRSock.close()
-        msgToSend = { 'cmd' : 'client_pid', 'jobid' : self.jobid,
+        msgToSend = { 'cmd' : 'client_info', 'jobid' : self.jobid,
                       'manpid' : os.getpid(), 'clipid' : clientPid,
                       'rank' : self.myRank }
         self.mpdSock.send_dict_msg(msgToSend)
-        if not self.singinitPORT:
-            os.close(self.fd_read_cli_stdin)
-            os.close(self.fd_write_cli_stdout)
-            os.close(self.fd_write_cli_stderr)
-            self.cliListenSock.close()
-        self.cliStdoutFD = self.fd_read_cli_stdout
-        self.streamHandler.set_handler(self.cliStdoutFD,self.handle_cli_stdout_input)
-        self.cliStderrFD = self.fd_read_cli_stderr
-        self.streamHandler.set_handler(self.cliStderrFD,self.handle_cli_stderr_input)
-        self.numWithIO = 2    # stdout and stderr so far
-        self.numConndWithIO = 2
+        if not self.subproc:
+            self.streamHandler.set_handler(self.fd_read_cli_stdout,
+                                           self.handle_cli_stdout_input)
+            self.streamHandler.set_handler(self.fd_read_cli_stderr,
+                                           self.handle_cli_stderr_input)
         self.waitPids = [clientPid]
 
         if self.pmiListenSock:
@@ -384,12 +366,6 @@ class MPDMan(object):
                           'parent_ifhn'   : self.myIfhn,
                           'parent_port' : self.listenNonRingPort }
             self.ring.rhsSock.send_dict_msg(msgToSend)
-        if self.myRank == 0:
-            self.parentStdoutSock = self.stdoutToConSock
-            self.parentStderrSock = self.stderrToConSock
-        else:
-            self.parentStdoutSock = 0
-            self.parentStderrSock = 0
 
         if os.environ.has_key('MPDMAN_RSHIP'):
             rship = os.environ['MPDMAN_RSHIP']
@@ -423,10 +399,9 @@ class MPDMan(object):
             self.holdingJobgoLoop1 = 0
         self.jobStarted = 0
         self.endBarrierDone = 0
-        self.numDone = 0
         # Main Loop
         while not self.endBarrierDone:
-            if self.numDone >= self.numWithIO  and  self.singinitPID:
+            if self.numDone >= self.numWithIO  and  (self.singinitPID or self.subproc):
                 clientExited = 1
                 clientExitStatus = 0
             if self.holdingJobgoLoop1 or clientExited:
@@ -514,8 +489,8 @@ class MPDMan(object):
             if self.myRank != 0:
                 self.ring.rhsSock.send_dict_msg(msg)  # forward it on
             if not self.singinitPID:
-                os.write(self.pipe_man_end,'go')
-                os.close(self.pipe_man_end)
+                self.handshake_sock_man_end.send_char_msg('go\n')
+                self.handshake_sock_man_end.close()
             self.jobStarted = 1
         elif msg['cmd'] == 'info_from_parent_in_tree':
             if int(msg['to_rank']) == self.myRank:
@@ -699,7 +674,10 @@ class MPDMan(object):
                 self.ring.rhsSock.send_dict_msg(msg)
                 if in_stdinRcvrs(self.myRank,self.stdinDest):
                     if msg.has_key('eof'):
-                        os.close(self.fd_write_cli_stdin)
+                        if self.subproc:    # must close subproc's file (not just the fd)
+                            self.subproc.stdin.close()
+                        else:
+                            os.close(self.fd_write_cli_stdin)
                     else:
                         os.write(self.fd_write_cli_stdin,msg['line'])
         elif msg['cmd'] == 'stdin_dest':
@@ -726,16 +704,19 @@ class MPDMan(object):
         else:
             mpd_print(1, 'unexpected msg recvd on lhsSock :%s:' % msg )
     def handle_rhs_input(self,sock):
-        msg = self.ring.rhsSock.recv_dict_msg()  #### RMB: NOT USING msg; should I ?
+        msg = self.ring.rhsSock.recv_dict_msg()  #### NOT USING msg; should I ?
         mpd_print(0000, 'rhs died' )
         self.streamHandler.del_handler(self.ring.rhsSock)
         self.ring.rhsSock.close()
         self.ring.rhsSock = 0
     def handle_cli_stdout_input(self,sock):
-        line = mpd_read_nbytes(self.cliStdoutFD,1024)
+        line = mpd_read_nbytes(sock,1024)  # sock is self.fd_read_cli_stdout
         if not line:
-            self.streamHandler.del_handler(self.cliStdoutFD)
-            os.close(self.cliStdoutFD)
+            if self.subproc:    # must close subproc's file (not just the fd)
+                self.subproc.stdout.close()
+            else:
+                self.streamHandler.del_handler(self.fd_read_cli_stdout)
+                os.close(self.fd_read_cli_stdout)
             self.numDone += 1
             if self.numDone >= self.numWithIO:
                 if self.parentStdoutSock:
@@ -763,11 +744,15 @@ class MPDMan(object):
                     if self.startStdoutLineLabel:
                         line = line + '\n'
                 self.parentStdoutSock.send_char_msg(line,errprint=0)
+        return line
     def handle_cli_stderr_input(self,sock):
-        line = mpd_read_nbytes(self.cliStderrFD,1024)
+        line = mpd_read_nbytes(sock,1024)  # sock is self.fd_read_cli_stderr
         if not line:
-            self.streamHandler.del_handler(self.cliStderrFD)
-            os.close(self.cliStderrFD)
+            if self.subproc:    # must close subproc's file (not just the fd)
+                self.subproc.stderr.close()
+            else:
+                self.streamHandler.del_handler(self.fd_read_cli_stderr)
+                os.close(self.fd_read_cli_stderr)
             self.numDone += 1
             if self.numDone >= self.numWithIO:
                 if self.parentStdoutSock:
@@ -795,6 +780,7 @@ class MPDMan(object):
                     if self.startStderrLineLabel:
                         line = line + '\n'
                 self.parentStderrSock.send_char_msg(line,errprint=0)
+        return line
     def handle_child_stdout_tree_input(self,sock):
         if self.lineLabels:
             line = sock.recv_one_line()
@@ -1249,7 +1235,10 @@ class MPDMan(object):
             if in_stdinRcvrs(self.myRank,self.stdinDest):
                 try:
                     if msg.has_key('eof'):
-                        os.close(self.fd_write_cli_stdin)
+                        if self.subproc:    # must close subproc's file (not just the fd)
+                            self.subproc.stdin.close()
+                        else:
+                            os.close(self.fd_write_cli_stdin)
                     else:
                         os.write(self.fd_write_cli_stdin,msg['line'])
                 except:
@@ -1310,6 +1299,112 @@ class MPDMan(object):
             self.pmiSock.send_char_msg(pmiMsgToSend)
         else:
             mpd_print(1, 'invalid msg recvd on mpdSock :%s:' % msg )
+    def launch_client_via_fork_exec(self,cli_env):
+        cliPid = os.fork()
+        if cliPid == 0:
+            mpd_set_my_id(socket.gethostname() + '_man_before_exec_client_' + `os.getpid()`)
+            self.ring.lhsSock.close()
+            self.ring.rhsSock.close()
+            self.listenRingSock.close()
+            if self.conSock:
+                self.streamHandler.del_handler(self.conSock)
+                self.conSock.close()
+            self.pmiListenSock.close()
+            os.setpgrp()
+
+            os.close(self.fd_write_cli_stdin)
+            os.dup2(self.fd_read_cli_stdin,0)  # closes fd 0 (stdin) if open
+
+            # to simply print on the mpd's tty:
+            #     comment out the next lines
+            os.close(self.fd_read_cli_stdout)
+            os.dup2(self.fd_write_cli_stdout,1)  # closes fd 1 (stdout) if open
+            os.close(self.fd_write_cli_stdout)
+            os.close(self.fd_read_cli_stderr)
+            os.dup2(self.fd_write_cli_stderr,2)  # closes fd 2 (stderr) if open
+            os.close(self.fd_write_cli_stderr)
+
+            msg = self.handshake_sock_cli_end.recv_char_msg()
+            if not msg.startswith('go'):
+                mpd_print(1,'%s: invalid go msg from man :%s:' % (self.myId,msg) )
+                sys.exit(-1)
+            self.handshake_sock_cli_end.close()
+
+            self.clientPgmArgs = [self.clientPgm] + self.clientPgmArgs
+            errmsg = set_limits(self.clientPgmLimits)
+            if errmsg:
+                self.pmiSock = MPDSock(name='pmi')
+                self.pmiSock.connect((self.myIfhn,self.pmiListenPort))
+                reason = quote(str(errmsg))
+                pmiMsgToSend = 'cmd=execution_problem reason=%s exec=%s\n' % \
+                               (reason,self.clientPgm)
+                self.pmiSock.send_char_msg(pmiMsgToSend)
+                sys.exit(0)
+            try:
+                mpd_print(0000, 'execing clientPgm=:%s:' % (self.clientPgm) )
+                if self.gdb:
+                    fullDirName = os.environ['MPDMAN_FULLPATHDIR']
+                    gdbdrv = os.path.join(fullDirName,'mpdgdbdrv.py')
+                    if not os.access(gdbdrv,os.X_OK):
+                        print 'mpdman: cannot execute mpdgdbdrv %s' % gdbdrv
+                        sys.exit(0);
+                    self.clientPgmArgs.insert(0,self.clientPgm)
+                    os.execvpe(gdbdrv,self.clientPgmArgs,cli_env)    # client
+                else:
+                    os.environ['PATH'] = cli_env['PATH']
+                    os.execvpe(self.clientPgm,self.clientPgmArgs,cli_env)    # client
+            except Exception, errmsg:
+                # print '%s: could not run %s; probably executable file not found' % \
+                #        (self.myId,clientPgm)
+                self.pmiSock = MPDSock(name='pmi')
+                self.pmiSock.connect((self.myIfhn,self.pmiListenPort))
+                reason = quote(str(errmsg))
+                pmiMsgToSend = 'cmd=execution_problem reason=%s exec=%s\n' % \
+                               (reason,self.clientPgm)
+                self.pmiSock.send_char_msg(pmiMsgToSend)
+                sys.exit(0)
+            sys.exit(0)
+        if not self.singinitPORT:
+            os.close(self.fd_read_cli_stdin)
+            os.close(self.fd_write_cli_stdout)
+            os.close(self.fd_write_cli_stderr)
+            self.cliListenSock.close()
+        return cliPid
+    def launch_client_via_subprocess(self,cli_env):
+        import threading
+        def read_fd_with_func(fd,func):
+            line = 'x'
+            while line:
+                line = func(fd)
+        tempListenSock = MPDListenSock()
+        tempListenPort = tempListenSock.getsockname()[1]
+        # python_executable = '\Python24\python.exe'
+        python_executable = 'python2.4'
+        fullDirName = os.environ['MPDMAN_FULLPATHDIR']
+        mpdwrapcli = os.path.join(fullDirName,'mpdwrapcli.py')
+        wrapCmdAndArgs = [ mpdwrapcli, str(tempListenPort),
+                           self.clientPgm, self.clientPgm ] + self.clientPgmArgs
+        cli_env.update(os.environ) ######  RMB: MAY NEED VARS OTHER THAN PATH ?????
+        self.subproc = subprocess.Popen([python_executable,'-u'] + wrapCmdAndArgs,
+                                        bufsize=0,env=cli_env,close_fds=False,
+                                        stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+        self.fd_write_cli_stdin = self.subproc.stdin.fileno()
+        stdout_thread = threading.Thread(target=read_fd_with_func,
+                                         args=(self.subproc.stdout.fileno(),
+                                               self.handle_cli_stdout_input))
+        stdout_thread.start()
+        stderr_thread = threading.Thread(target=read_fd_with_func,
+                                         args=(self.subproc.stderr.fileno(),
+                                               self.handle_cli_stderr_input))
+        stderr_thread.start()
+        (self.handshake_sock_man_end,tempAddr) = tempListenSock.accept()
+        cliPid = self.subproc.pid
+        ## an mpd_print wreaks havoc here; simple prints are OK (probably a stack issue)
+        # mpd_print(0000,"CLIPID=%d" % cliPid)  
+        # print "CLIPID=%d" % cliPid  ;  sys.stdout.flush()
+        return cliPid
 
 def in_stdinRcvrs(myRank,stdinDest):
     s1 = stdinDest.split(',')

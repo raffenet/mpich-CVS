@@ -52,7 +52,8 @@ __version__ = "$Revision$"
 __credits__ = ""
 
 import signal
-signal.signal(signal.SIGTTIN,signal.SIG_IGN)    # asap
+if hasattr(signal,'SIGTTIN'):
+    signal.signal(signal.SIGTTIN,signal.SIG_IGN)    # asap
 
 import sys, os, socket, re
 
@@ -345,10 +346,14 @@ def mpiexec():
     msgToMPD['host_spec_pool'] = parmdb['MPIEXEC_HOST_LIST']
 
     # set sig handlers up right before we send mpdrun msg to mpd
-    signal.signal(signal.SIGINT, sig_handler)
-    signal.signal(signal.SIGTSTP,sig_handler)
-    signal.signal(signal.SIGCONT,sig_handler)
-    signal.signal(signal.SIGALRM,sig_handler)
+    if hasattr(signal,'SIGINT'):
+        signal.signal(signal.SIGINT, sig_handler)
+    if hasattr(signal,'SIGTSTP'):
+        signal.signal(signal.SIGTSTP,sig_handler)
+    if hasattr(signal,'SIGCONT'):
+        signal.signal(signal.SIGCONT,sig_handler)
+    if hasattr(signal,'SIGALRM'):
+        signal.signal(signal.SIGALRM,sig_handler)
 
     conSock.send_dict_msg(msgToMPD)
     msg = conSock.recv_dict_msg(timeout=recvTimeout)
@@ -404,8 +409,17 @@ def mpiexec():
         mpd_print(1, 'mpiexec: failed to obtain sock from manager')
         sys.exit(-1)
     streamHandler.set_handler(manSock,handle_man_input,args=(streamHandler,))
-    streamHandler.set_handler(sys.stdin,handle_stdin_input,
-                              args=(parmdb,streamHandler,manSock))
+    if hasattr(os,'fork'):
+        streamHandler.set_handler(sys.stdin,handle_stdin_input,
+                                  args=(parmdb,streamHandler,manSock))
+    else:  # not using select on fd's when using subprocess module (probably M$)
+        import threading
+        def read_fd_with_func(fd,func):
+            line = 'x'
+            while line:
+                line = func(fd)
+        stdin_thread = threading.Thread(target=read_fd_with_func,
+                                        args=(sys.stdin.fileno(),handle_stdin_input))
     # first, do handshaking with man
     msg = manSock.recv_dict_msg()
     if (not msg  or  not msg.has_key('cmd') or msg['cmd'] != 'man_checking_in'):
@@ -899,18 +913,20 @@ def handle_man_input(sock,streamHandler):
         print 'rank %d in job %s caused collective abort of all ranks' % \
               ( msg['rank'], msg['jobid'] )
         status = msg['exit_status']
-        if os.WIFSIGNALED(status):
+        if hasattr(os,'WIFSIGNALED')  and  os.WIFSIGNALED(status):
             if status > myExitStatus:
                 myExitStatus = status
             killed_status = status & 0x007f  # AND off core flag
             print '  exit status of rank %d: killed by signal %d ' % \
                   (msg['rank'],killed_status)
-        else:
+        elif hasattr(os,'WEXITSTATUS'):
             exit_status = os.WEXITSTATUS(status)
             if exit_status > myExitStatus:
                 myExitStatus = exit_status
             print '  exit status of rank %d: return code %d ' % \
                   (msg['rank'],exit_status)
+        else:
+            myExitStatus = 0
     elif msg['cmd'] == 'job_aborted':
         print 'job aborted; reason = %s' % (msg['reason'])
     elif msg['cmd'] == 'client_exit_status':
@@ -930,18 +946,20 @@ def handle_man_input(sock,streamHandler):
               # (msg['cli_rank'],msg['cli_host'],
                # msg['cli_pid'],msg['cli_status'])
         status = msg['cli_status']
-        if os.WIFSIGNALED(status):
+        if hasattr(os,'WIFSIGNALED')  and  os.WIFSIGNALED(status):
             if status > myExitStatus:
                 myExitStatus = status
             killed_status = status & 0x007f  # AND off core flag
             # print 'exit status of rank %d: killed by signal %d ' % \
             #        (msg['cli_rank'],killed_status)
-        else:
+        elif hasattr(os,'WEXITSTATUS'):
             exit_status = os.WEXITSTATUS(status)
             if exit_status > myExitStatus:
                 myExitStatus = exit_status
             # print 'exit status of rank %d: return code %d ' % \
             #       (msg['cli_rank'],exit_status)
+        else:
+            myExitStatus = 0
     else:
         print 'unrecognized msg from manager :%s:' % msg
 
@@ -970,7 +988,6 @@ def handle_cli_stdout_input(sock,parmdb,streamHandler,linesPerRank):
         else:
             sys.stdout.write(msg)
             sys.stdout.flush()
-
 
 def handle_cli_stderr_input(sock,streamHandler):
     global numDoneWithIO
@@ -1031,6 +1048,7 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
             if manSock:
                 msgToSend = { 'cmd' : 'stdin_from_user', 'eof' : '' }
                 manSock.send_dict_msg(msgToSend)
+    return line
 
 def handle_sig_occurred(manSock):
     global sigOccurred
@@ -1348,4 +1366,3 @@ if __name__ == '__main__':
     except SystemExit, errExitStatus:  # bounced to here by sys.exit inside mpiexec()
         myExitStatus = errExitStatus
     sys.exit(myExitStatus)
-

@@ -177,10 +177,10 @@ def mpd_version():
 def mpd_get_my_username():
     if pwd_module_available:
         username = pwd.getpwuid(os.getuid())[0]    # favor this over env
-    elif os.environ.has_key['USER']:
+    elif os.environ.has_key('USER'):
         username = environ['USER']
-    elif os.environ.has_key['USERNAME']:
-        username = environ['USERNAME']
+    elif os.environ.has_key('USERNAME'):
+        username = os.environ['USERNAME']
     else:
         username = 'unknown_username'
     return username
@@ -333,7 +333,7 @@ class MPDSock(object):
                     if mpd_signum == signal.SIGINT  or  mpd_signum == signal.SIGALRM:
                         pass   # assume timedout; returns {} below
                 else:
-                    print 'select error: %s' % os.strerror(errinfo[0])
+                    print '%s: select error: %s' % (mpd_my_id,os.strerror(errinfo[0]))
             except KeyboardInterrupt, errinfo:
                 # print 'recv_dict_msg: keyboard interrupt during select'
                 return msg
@@ -461,7 +461,8 @@ class MPDStreamHandler(object):
                     else:
                         continue
                 else:
-                    print 'select error: %s' % os.strerror(errinfo[0])
+                    print '%s: handle_active_streams: select error: %s' % \
+                          (mpd_my_id,os.strerror(errinfo[0]))
                     return (-1,os.strerror(errinfo[0]))
             except KeyboardInterrupt, errinfo:
                 # print 'handle_active_streams: keyboard interrupt during select'
@@ -806,13 +807,12 @@ class MPDConListenSock(MPDListenSock):
             sockFamily = socket.AF_INET
         if os.environ.has_key('MPD_CON_INET_HOST_PORT'):
             sockFamily = socket.AF_INET    # override above-assigned value
-            # print "1111: testing with inet sock"
             (conHost,conPort) = os.environ['MPD_CON_INET_HOST_PORT'].split(':')
             conPort = int(conPort)
         else:
             (conHost,conPort) = ('',0)
         if os.access(self.conFilename,os.R_OK):    # if console there, see if mpd listening
-            if sockFamily == socket.AF_UNIX:
+            if hasattr(socket,'AF_UNIX')  and  sockFamily == socket.AF_UNIX:
                 tempSock = MPDSock(family=socket.AF_UNIX)
                 try:
                     tempSock.connect(self.conFilename)
@@ -845,7 +845,7 @@ class MPDConListenSock(MPDListenSock):
                               "%s: exiting; an mpd is already using the console" % \
                               (mpd_my_id))
             sys.exit(-1)
-        if sockFamily == socket.AF_UNIX:
+        if hasattr(socket,'AF_UNIX')  and  sockFamily == socket.AF_UNIX:
             MPDListenSock.__init__(self,family=sockFamily,socktype=socket.SOCK_STREAM,
                                    filename=self.conFilename,listen=1,name=name)
         else:
@@ -892,11 +892,10 @@ class MPDConClientSock(MPDSock):
                 sockFamily = socket.AF_INET    # override above-assigned value
                 (conHost,conPort) = os.environ['MPD_CON_INET_HOST_PORT'].split(':')
                 conPort = int(conPort)
-                # print "1111: testing with inet sock"
             else:
                 (conHost,conPort) = ('',0)
             self.sock = MPDSock(family=sockFamily,socktype=socket.SOCK_STREAM,name=name)
-            if sockFamily == socket.AF_UNIX:
+            if hasattr(socket,'AF_UNIX')  and  sockFamily == socket.AF_UNIX:
                 if hasattr(signal,'alarm'):
                     oldAlarmTime = signal.alarm(8)
                 else:    # assume python2.3 or later
@@ -1028,13 +1027,21 @@ class MPDParmDB(dict):
         if os.environ.has_key('MPD_CONF_FILE'):
             parmsRCFilename = os.environ['MPD_CONF_FILE']
         elif hasattr(os,'getuid')  and  os.getuid() == 0:    # if ROOT
-            parmsRCFilename = '/etc/mpd.conf'
+            parmsRCFilename = os.path.abspath('/etc/mpd.conf')
+        elif os.environ.has_key('HOME'):
+            parmsRCFilename = os.path.join(os.environ['HOME'],'.mpd.conf')
+        elif os.environ.has_key('HOMEPATH'):    # e.g. win32
+            parmsRCFilename = os.path.join(os.environ['HOMEPATH'],'.mpd.conf')
         else:
-            parmsRCFilename = os.environ['HOME'] + '/.mpd.conf'
-        try:
-            mode = os.stat(parmsRCFilename)[0]
-        except:
-            mode = ''
+            print 'unable to find mpd.conf file'
+            sys.exit(-1)
+        if sys.platform == 'win32':
+            mode = 0x80   # fake it
+        else:
+            try:
+                mode = os.stat(parmsRCFilename)[0]
+            except:
+                mode = ''
         if not mode:
             print 'configuration file %s not found' % (parmsRCFilename)
             print 'A file named .mpd.conf file must be present in the user\'s home'

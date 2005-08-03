@@ -79,6 +79,11 @@ try:
     syslog_module_available = 1
 except:
     syslog_module_available = 0
+try:
+    import  subprocess
+    subprocess_module_available = 1
+except:
+    subprocess_module_available = 0
 
 
 def sigchld_handler(signum,frame):
@@ -220,13 +225,15 @@ class MPD(object):
         self.conSock       = 0
         self.allExiting    = 0
         self.exiting       = 0    # for mpdexit
+        self.kvs_cntr      = 0    # for mpdman
         rc = self.ring.enter_ring(lhsHandler=self.handle_lhs_input,
                                   rhsHandler=self.handle_rhs_input)
         if rc < 0:
             mpd_print(1,"failed to enter ring")
             sys.exit(-1)
         self.pmi_published_names = {}
-        signal.signal(signal.SIGCHLD,sigchld_handler)
+        if hasattr(signal,'SIGCHLD'):
+            signal.signal(signal.SIGCHLD,sigchld_handler)
         if not self.parmdb['MPD_BULLETPROOF_FLAG']:
             #    import profile ; profile.run('self.runmainloop()')
             self.runmainloop()
@@ -666,7 +673,7 @@ class MPD(object):
             self.streamHandler.del_handler(sock)
             sock.close()
             return
-        if msg['cmd'] == 'client_pid':
+        if msg['cmd'] == 'client_info':
             jobid = msg['jobid']
             manPid = msg['manpid']
             self.activeJobs[jobid][manPid]['clipid'] = msg['clipid']
@@ -1071,30 +1078,6 @@ class MPD(object):
             msg['ring_ncpus'] += self.parmdb['MPD_NCPUS']
         self.ring.rhsSock.send_dict_msg(msg)  # forward it on around
     def run_one_cli(self,currRank,msg):
-        manListenSock = MPDListenSock('',0,name='tempsock')
-        manListenPort = manListenSock.getsockname()[1]
-        if not msg.has_key('entry_host'):
-            manEntryIfhn = ''
-            manEntryPort = 0
-            manKVSTemplate = '%s_%d' % (self.myHost,manListenPort)
-            manKVSTemplate = sub('\.','_',manKVSTemplate)  # chg magpie.cs to magpie_cs
-            manKVSTemplate = sub('\-','_',manKVSTemplate)  # chg node-0 to node_0
-            msg['kvs_template'] = manKVSTemplate
-        else:
-            manEntryIfhn  = msg['entry_ifhn']
-            manEntryPort = msg['entry_port']
-            manKVSTemplate = msg['kvs_template']
-        (toManSock,toMpdSock) = mpd_sockpair()
-        toManSock.name = 'to_man'
-        toMpdSock.name = 'to_mpd'  ## to be used by mpdman below
-        self.streamHandler.set_handler(toManSock,self.handle_man_input)
-        msg['entry_host'] = self.myHost
-        msg['entry_ifhn'] = self.myIfhn
-        msg['entry_port'] = manListenPort
-        if msg['nstarted'] == 0:
-            msg['pos0_host'] = self.myHost
-            msg['pos0_ifhn'] = self.myIfhn
-            msg['pos0_port'] = str(manListenPort)
         users = msg['users']
         for ranks in users.keys():
             (lo,hi) = ranks
@@ -1143,63 +1126,107 @@ class MPD(object):
             if currRank >= lo  and  currRank <= hi:
                 pgmUmask = umasks[ranks]
                 break
+        man_env = {}
+        man_env.update(os.environ)    # may only want to mov non-MPD_ stuff
+        man_env['MPDMAN_MYHOST'] = self.myHost
+        man_env['MPDMAN_MYIFHN'] = self.myIfhn
+        man_env['MPDMAN_JOBID'] = msg['jobid']
+        man_env['MPDMAN_CLI_PGM'] = pgm
+        man_env['MPDMAN_CLI_PATH'] = pathForExec
+        man_env['MPDMAN_PGM_ARGS'] = pgmArgs
+        man_env['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
+        man_env['MPDMAN_PGM_LIMITS'] = pgmLimits
+        man_env['MPDMAN_CWD'] = cwd
+        man_env['MPDMAN_UMASK'] = pgmUmask
+        man_env['MPDMAN_SPAWNED'] = str(msg['spawned'])
+        man_env['MPDMAN_NPROCS'] = str(msg['nprocs'])
+        man_env['MPDMAN_MPD_LISTEN_PORT'] = str(self.parmdb['MPD_LISTEN_PORT'])
+        man_env['MPDMAN_MPD_CONF_SECRETWORD'] = self.parmdb['MPD_SECRETWORD']
+        man_env['MPDMAN_CONHOST'] = msg['conhost']
+        man_env['MPDMAN_CONIFHN'] = msg['conifhn']
+        man_env['MPDMAN_CONPORT'] = str(msg['conport'])
+        man_env['MPDMAN_RANK'] = str(currRank)
+        man_env['MPDMAN_POS_IN_RING'] = str(msg['nstarted'])
+        man_env['MPDMAN_STDIN_DEST'] = msg['stdin_dest']
+        man_env['MPDMAN_TOTALVIEW'] = str(msg['totalview'])
+        man_env['MPDMAN_GDB'] = str(msg['gdb'])
+        fullDirName = os.path.abspath(os.path.split(sys.argv[0])[0])  # normalize
+        man_env['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
+        man_env['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])
+        man_env['MPDMAN_SINGINIT_PORT'] = str(msg['singinitport'])
+        if msg.has_key('line_labels'):
+            man_env['MPDMAN_LINE_LABELS'] = '1'
+        else:
+            man_env['MPDMAN_LINE_LABELS'] = '0'
+        if msg.has_key('rship'):
+            man_env['MPDMAN_RSHIP'] = msg['rship']
+            man_env['MPDMAN_MSHIP_HOST'] = msg['mship_host']
+            man_env['MPDMAN_MSHIP_PORT'] = str(msg['mship_port'])
+        if msg.has_key('doing_bnr'):
+            man_env['MPDMAN_DOING_BNR'] = '1'
+        else:
+            man_env['MPDMAN_DOING_BNR'] = '0'
+        if currRank == 0:
+            manKVSTemplate = '%s_%s_%d' % \
+                             (self.myHost,self.parmdb['MPD_LISTEN_PORT'],self.kvs_cntr)
+            manKVSTemplate = sub('\.','_',manKVSTemplate)  # chg magpie.cs to magpie_cs
+            manKVSTemplate = sub('\-','_',manKVSTemplate)  # chg node-0 to node_0
+            self.kvs_cntr += 1
+            msg['kvs_template'] = manKVSTemplate
+        man_env['MPDMAN_KVS_TEMPLATE'] = msg['kvs_template']
+	msg['username'] = username
+        if hasattr(os,'fork'):
+            (manPid,toManSock) = self.launch_mpdman_via_fork(msg,man_env)
+        elif subprocess_module_available:
+            (manPid,toManSock) = self.launch_mpdman_via_subprocess(msg,man_env)
+        else:
+            mpd_print(1,'neither fork nor subprocess is available')
+            sys.exit(-1)
         jobid = msg['jobid']
+        if not self.activeJobs.has_key(jobid):
+            self.activeJobs[jobid] = {}
+        self.activeJobs[jobid][manPid] = { 'pgm' : pgm, 'rank' : currRank,
+                                           'username' : username,
+                                           'clipid' : -1,    # until report by man
+                                           'socktoman' : toManSock }
+    def launch_mpdman_via_fork(self,msg,man_env):
+        man_env['MPDMAN_HOW_LAUNCHED'] = 'FORK'
+        currRank = int(man_env['MPDMAN_RANK'])
+        manListenSock = MPDListenSock('',0,name='tempsock')
+        manListenPort = manListenSock.getsockname()[1]
+        if currRank == 0:
+            manEntryIfhn = ''
+            manEntryPort = 0
+            msg['pos0_host'] = self.myHost
+            msg['pos0_ifhn'] = self.myIfhn
+            msg['pos0_port'] = str(manListenPort)
+        else:
+            manEntryIfhn = msg['entry_ifhn']
+            manEntryPort = msg['entry_port']
+            man_env['MPDMAN_POS0_IFHN'] = msg['pos0_ifhn']
+            man_env['MPDMAN_POS0_PORT'] = msg['pos0_port']
+        man_env['MPDMAN_LHS_IFHN']  = manEntryIfhn
+        man_env['MPDMAN_LHS_PORT'] = str(manEntryPort)
+        man_env['MPDMAN_MY_LISTEN_FD'] = str(manListenSock.fileno())
+        man_env['MPDMAN_MY_LISTEN_PORT'] = str(manListenPort)
+        (toManSock,toMpdSock) = mpd_sockpair()
+        toManSock.name = 'to_man'
+        toMpdSock.name = 'to_mpd'  ## to be used by mpdman below
+        man_env['MPDMAN_TO_MPD_FD'] = str(toMpdSock.fileno())
+        self.streamHandler.set_handler(toManSock,self.handle_man_input)
+        msg['entry_host'] = self.myHost
+        msg['entry_ifhn'] = self.myIfhn
+        msg['entry_port'] = manListenPort
         manPid = os.fork()
         if manPid == 0:
             self.conListenSock = 0    # don't want to clean up console if I am manager
             self.myId = '%s_man_%d' % (self.myHost,self.myPid)
             mpd_set_my_id(self.myId)
             self.streamHandler.close_all_active_streams()
-            toManSock.close()
             os.setpgrp()
-            os.environ['MPDMAN_MYHOST'] = self.myHost
-            os.environ['MPDMAN_MYIFHN'] = self.myIfhn
-            os.environ['MPDMAN_JOBID'] = jobid
-            os.environ['MPDMAN_CLI_PGM'] = pgm
-            os.environ['MPDMAN_CLI_PATH'] = pathForExec
-            os.environ['MPDMAN_PGM_ARGS'] = pgmArgs
-            os.environ['MPDMAN_PGM_ENVVARS'] = pgmEnvVars
-            os.environ['MPDMAN_PGM_LIMITS'] = pgmLimits
-            os.environ['MPDMAN_CWD'] = cwd
-            os.environ['MPDMAN_UMASK'] = pgmUmask
-            os.environ['MPDMAN_SPAWNED'] = str(msg['spawned'])
-            os.environ['MPDMAN_NPROCS'] = str(msg['nprocs'])
-            os.environ['MPDMAN_MPD_LISTEN_PORT'] = str(self.parmdb['MPD_LISTEN_PORT'])
-            os.environ['MPDMAN_MPD_CONF_SECRETWORD'] = self.parmdb['MPD_SECRETWORD']
-            os.environ['MPDMAN_CONHOST'] = msg['conhost']
-            os.environ['MPDMAN_CONIFHN'] = msg['conifhn']
-            os.environ['MPDMAN_CONPORT'] = str(msg['conport'])
-            os.environ['MPDMAN_RANK'] = str(currRank)
-            os.environ['MPDMAN_POS_IN_RING'] = str(msg['nstarted'])
-            os.environ['MPDMAN_MY_LISTEN_PORT'] = str(manListenPort)
-            os.environ['MPDMAN_POS0_HOST'] = msg['pos0_host']
-            os.environ['MPDMAN_POS0_IFHN'] = msg['pos0_ifhn']
-            os.environ['MPDMAN_POS0_PORT'] = msg['pos0_port']
-            os.environ['MPDMAN_LHS_IFHN']  = manEntryIfhn
-            os.environ['MPDMAN_LHS_PORT'] = str(manEntryPort)
-            os.environ['MPDMAN_KVS_TEMPLATE'] = manKVSTemplate
-            os.environ['MPDMAN_MY_LISTEN_FD'] = str(manListenSock.fileno())
-            os.environ['MPDMAN_TO_MPD_FD'] = str(toMpdSock.fileno())
-            os.environ['MPDMAN_STDIN_DEST'] = msg['stdin_dest']
-            os.environ['MPDMAN_TOTALVIEW'] = str(msg['totalview'])
-            os.environ['MPDMAN_GDB'] = str(msg['gdb'])
-            fullDirName = os.path.abspath(os.path.split(sys.argv[0])[0])  # normalize
-            os.environ['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
-            os.environ['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])
-            os.environ['MPDMAN_SINGINIT_PORT'] = str(msg['singinitport'])
-            if msg.has_key('line_labels'):
-                os.environ['MPDMAN_LINE_LABELS'] = '1'
-            else:
-                os.environ['MPDMAN_LINE_LABELS'] = '0'
-            if msg.has_key('rship'):
-                os.environ['MPDMAN_RSHIP'] = msg['rship']
-                os.environ['MPDMAN_MSHIP_HOST'] = msg['mship_host']
-                os.environ['MPDMAN_MSHIP_PORT'] = str(msg['mship_port'])
-            if msg.has_key('doing_bnr'):
-                os.environ['MPDMAN_DOING_BNR'] = '1'
-            else:
-                os.environ['MPDMAN_DOING_BNR'] = '0'
+            os.environ = man_env
             if hasattr(os,'getuid')  and  os.getuid() == 0  and  pwd_module_available:
+		username = msg['username']
                 try:
                     pwent = pwd.getpwnam(username)
                 except:
@@ -1220,20 +1247,63 @@ class MPD(object):
             # profile.run('mpdman()')
             mpdman = MPDMan()
             mpdman.run()
-            sys.exit(0)  # do NOT do cleanup
+            sys.exit(0)  # do NOT do cleanup (eliminated atexit handlers above)
+        manListenSock.close()
+        toMpdSock.close()
+        return (manPid,toManSock)
+    def launch_mpdman_via_subprocess(self,msg,man_env):
+        man_env['MPDMAN_HOW_LAUNCHED'] = 'SUBPROCESS'
+        currRank = int(man_env['MPDMAN_RANK'])
+        if currRank == 0:
+            manEntryIfhn = ''
+            manEntryPort = 0
         else:
-            manListenSock.close()
-            toMpdSock.close()
-            if not self.activeJobs.has_key(jobid):
-                self.activeJobs[jobid] = {}
-            self.activeJobs[jobid][manPid] = { 'pgm' : pgm, 'rank' : currRank,
-                                               'username' : username,
-                                               'clipid' : -1,    # until report by man
-                                               'socktoman' : toManSock }
-
+            manEntryIfhn = msg['entry_ifhn']
+            manEntryPort = msg['entry_port']
+            man_env['MPDMAN_POS0_IFHN'] = msg['pos0_ifhn']
+            man_env['MPDMAN_POS0_PORT'] = msg['pos0_port']
+        man_env['MPDMAN_LHS_IFHN']  = manEntryIfhn
+        man_env['MPDMAN_LHS_PORT'] = str(manEntryPort)
+        tempListenSock = MPDListenSock()
+        man_env['MPDMAN_MPD_PORT'] = str(tempListenSock.getsockname()[1])
+        # python_executable = '\Python24\python.exe'
+        python_executable = 'python2.4'
+        fullDirName = man_env['MPDMAN_FULLPATHDIR']
+        manCmd = os.path.join(fullDirName,'mpdman.py')
+        runner = subprocess.Popen([python_executable,'-u',manCmd],  # only one 'python' arg
+                                  bufsize=0,
+                                  env=man_env,
+                                  close_fds=False)
+                                  ### stdin=subprocess.PIPE,stdout=subprocess.PIPE,
+                                  ### stderr=subprocess.PIPE)
+        manPid = runner.pid
+        oldTimeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(8)
+        try:
+            (toManSock,toManAddr) = tempListenSock.accept()
+        except Exception, errmsg:
+            toManSock = 0
+        socket.setdefaulttimeout(oldTimeout)
+        tempListenSock.close()
+        if not toManSock:
+            mpd_print(1,'failed to recv msg from launched man')
+            return (0,0)
+        msgFromMan = toManSock.recv_dict_msg()
+        if not msgFromMan  or  not msgFromMan.has_key('man_listen_port'):
+            toManSock.close()
+            mpd_print(1,'invalid msg from launched man')
+            return (0,0)
+        manListenPort = msgFromMan['man_listen_port']
+        if currRank == 0:
+            msg['pos0_host'] = self.myHost
+            msg['pos0_ifhn'] = self.myIfhn
+            msg['pos0_port'] = str(manListenPort)
+        msg['entry_host'] = self.myHost
+        msg['entry_ifhn'] = self.myIfhn
+        msg['entry_port'] = manListenPort
+        return (manPid,toManSock)
 
 # code for testing
-
 if __name__ == '__main__':
     mpd = MPD()
     mpd.run()
