@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-
+#
+#   (C) 2001 by Argonne National Laboratory.
+#       See COPYRIGHT in top-level directory.
+#
 # Note that I repeat code for each test just in case I want to
 # run one separately.  I can simply copy it out of here and run it. 
 # A single test can typically be chgd simply by altering its value(s)
