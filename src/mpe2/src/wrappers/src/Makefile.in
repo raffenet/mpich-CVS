@@ -24,6 +24,7 @@ INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
 LOG_LIBNAME          = @LOG_LIBNAME@
 TRACE_LIBNAME        = @TRACE_LIBNAME@
 F2CMPI_LIBNAME       = @F2CMPI_LIBNAME@
+F2CMPI_LIBS          = @F2CMPI_LIBS@
 CFLAGS               = @CFLAGS@
 MPE_LIBDIR           = @libbuild_dir@
 LIB_PATH             = $(MPI_LIBS)
@@ -84,11 +85,16 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 default_all: default
 profile_all: 
 
-#
+# MPE_BUILD_FORTRAN2C=yes is a necessary but insufficient condition to build
+# libmpe_f2cmpi.a.  Because MPE_BUILD_FORTRAN2C is a directive from top-level
+# configure, src/wrappers needs, "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" set
+# by src/wrappers/configure, to be fulfilled to guarantee that libmpe_f2cmpi.a
+# is needed and all the pre-requisites of libmpe_f2cmpi.a are met.
 default: clean
 	 $(MAKE) ${libbuild_dir}/lib$(LOG_LIBNAME).a
 	 $(MAKE) ${libbuild_dir}/lib$(TRACE_LIBNAME).a
-	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	@if [    "$(MPE_BUILD_FORTRAN2C)" = "yes" \
+	      -a "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" ] ; then \
 	     $(MAKE) ${libbuild_dir}/lib$(F2CMPI_LIBNAME).a ; \
 	 fi
 	 $(MAKE) ${libbuild_dir}/mpe_prof.@OBJEXT@
