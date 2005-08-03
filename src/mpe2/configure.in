@@ -87,7 +87,16 @@ dnl
 AC_ARG_ENABLE( g,
 [--enable-g                         - Turn on/off the compilation flag -g.
                                      The default is enable=no.] )
-dnl
+
+dnl MPE_BUILD_FORTRAN2C=yes means that ALL subpackages will be building
+dnl the fortran2c wrapper libraries.  This does not necessarily mean that
+dnl specific subpackage has to build fortran2c wrapper library.  One example:
+dnl src/wrappers may have --with-f2cmpilibs set by user, so src/wrappers's
+dnl own libmpe_f2cmpi.a will not be built but MPE_BUILD_FORTRAN2C could
+dnl still be set to yes because it means other subpackages like src/graphics
+dnl and src/logging will build their fortran2c wrapper objects.  So treat
+dnl MPE_BUILD_FORTRAN2C as a directive, i.e. generally a necessary but
+dnl insufficient condition to build fortran2c wrapper library.
 AC_ARG_ENABLE( f77,
 [--enable-f77                       - Compile routines that require a Fortran
                                      compiler.  If configuring with MPICH, the
