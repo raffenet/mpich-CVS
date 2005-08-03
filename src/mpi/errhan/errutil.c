@@ -89,12 +89,15 @@ static MPID_Thread_lock_t error_ring_mutex;
 /* turn this flag on until we debug and release mpich2 */
 int MPIR_Err_print_stack_flag = TRUE;
 static int MPIR_Err_abort_on_error = FALSE;
+static int MPIR_Err_chop_error_stack = FALSE;
+static int MPIR_Err_chop_width = 80;
 
 void MPIR_Err_init( void )
 {
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	char *env;
+	int n;
 
 	error_ring_mutex_create();
 	
@@ -121,6 +124,43 @@ void MPIR_Err_init( void )
 	    if (strcmp(env, "0") == 0 || strcmp(env, "off") == 0 || strcmp(env, "no") == 0)
 	    {
 		MPIR_Err_print_stack_flag = FALSE;
+	    }
+	}
+
+	env = getenv("MPICH_CHOP_ERROR_STACK");
+	if (env)
+	{
+#ifdef HAVE_WINDOWS_H
+	    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	    if (hConsole != INVALID_HANDLE_VALUE)
+	    {
+		CONSOLE_SCREEN_BUFFER_INFO info;
+		if (GetConsoleScreenBufferInfo(hConsole, &info))
+		{
+		    MPIR_Err_chop_width = info.dwMaximumWindowSize.X;
+		}
+	    }
+#endif
+	    n = atoi(env);
+	    if (n > 0)
+	    {
+		MPIR_Err_chop_error_stack = TRUE;
+		MPIR_Err_chop_width = n;
+	    }
+	    else if (n == 0)
+	    {
+		if (*env == '\0')
+		{
+		    MPIR_Err_chop_error_stack = TRUE;
+		}
+		else
+		{
+		    MPIR_Err_chop_error_stack = FALSE;
+		}
+	    }
+	    else
+	    {
+		MPIR_Err_chop_error_stack = TRUE;
 	    }
 	}
     }
@@ -1594,11 +1634,46 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
     {
 	error_ring_mutex_lock();
 	{
+	    /* Find the longest fcname in the stack */
+	    int max_fcname_len = 0;
+	    int tmp_errcode = errcode;
+	    while (tmp_errcode != MPI_SUCCESS)
+	    {
+		int ring_idx;
+		int ring_id;
+		int generic_idx;
+
+		ring_idx    = (tmp_errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+		ring_id = tmp_errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+		generic_idx = ((tmp_errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+
+		if (generic_idx < 0)
+		{
+		    break;
+		}
+		    
+		if (ErrorRing[ring_idx].id == ring_id)
+		{
+
+		    len = (int)strlen(ErrorRing[ring_idx].fcname);
+		    max_fcname_len = MPIR_MAX(max_fcname_len, len);
+		    tmp_errcode = ErrorRing[ring_idx].prev_error;
+		}
+		else
+		{
+		    break;
+		}
+	    }
+	    max_fcname_len += 2; /* add space for the ": " */
+	    /*printf("max_fcname_len = %d\n", max_fcname_len);fflush(stdout);*/
+	    /* print the error stack */
 	    while (errcode != MPI_SUCCESS)
 	    {
 		int ring_idx;
 		int ring_id;
 		int generic_idx;
+		int i;
+		char *cur_pos;
 
 		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
 		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
@@ -1611,10 +1686,85 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
 		    
 		if (ErrorRing[ring_idx].id == ring_id)
 		{
+		    MPIU_Snprintf(str, maxlen, "%s", ErrorRing[ring_idx].fcname);
+		    len = (int)strlen(str);
+		    maxlen -= len;
+		    str += len;
+		    for (i=0; i<max_fcname_len - (int)strlen(ErrorRing[ring_idx].fcname) - 2; i++)
+		    {
+			if (MPIU_Snprintf(str, maxlen, "."))
+			{
+			    maxlen--;
+			    str++;
+			}
+		    }
+		    if (MPIU_Snprintf(str, maxlen, ":"))
+		    {
+			maxlen--;
+			str++;
+		    }
+		    if (MPIU_Snprintf(str, maxlen, " "))
+		    {
+			maxlen--;
+			str++;
+		    }
+
+		    if (MPIR_Err_chop_error_stack)
+		    {
+			cur_pos = ErrorRing[ring_idx].msg;
+			len = (int)strlen(cur_pos);
+			if (len == 0)
+			{
+			    if (MPIU_Snprintf(str, maxlen, "\n"))
+			    {
+				maxlen--;
+				str++;
+			    }
+			}
+			while (len)
+			{
+			    if (len >= MPIR_Err_chop_width - max_fcname_len)
+			    {
+				if (len > maxlen)
+				    break;
+				MPIU_Snprintf(str, MPIR_Err_chop_width - 1 - max_fcname_len, "%s", cur_pos);
+				str[MPIR_Err_chop_width - 1 - max_fcname_len] = '\n';
+				cur_pos += MPIR_Err_chop_width - 1 - max_fcname_len;
+				str += MPIR_Err_chop_width - max_fcname_len;
+				maxlen -= MPIR_Err_chop_width - max_fcname_len;
+				if (maxlen < max_fcname_len)
+				    break;
+				for (i=0; i<max_fcname_len; i++)
+				{
+				    MPIU_Snprintf(str, maxlen, " ");
+				    maxlen--;
+				    str++;
+				}
+				len = (int)strlen(cur_pos);
+			    }
+			    else
+			    {
+				MPIU_Snprintf(str, maxlen, "%s\n", cur_pos);
+				len = (int)strlen(str);
+				maxlen -= len;
+				str += len;
+				len = 0;
+			    }
+			}
+		    }
+		    else
+		    {
+			MPIU_Snprintf(str, maxlen, "%s\n", ErrorRing[ring_idx].msg);
+			len = (int)strlen(str);
+			maxlen -= len;
+			str += len;
+		    }
+		    /*
 		    MPIU_Snprintf(str, maxlen, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
 		    len = (int)strlen(str);
 		    maxlen -= len;
 		    str += len;
+		    */
 		    errcode = ErrorRing[ring_idx].prev_error;
 		}
 		else
@@ -1687,11 +1837,46 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
     {
 	error_ring_mutex_lock();
 	{
+	    /* Find the longest fcname in the stack */
+	    int max_fcname_len = 0;
+	    int tmp_errcode = errcode;
+	    while (tmp_errcode != MPI_SUCCESS)
+	    {
+		int ring_idx;
+		int ring_id;
+		int generic_idx;
+
+		ring_idx    = (tmp_errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
+		ring_id = tmp_errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+		generic_idx = ((tmp_errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+
+		if (generic_idx < 0)
+		{
+		    break;
+		}
+		    
+		if (ErrorRing[ring_idx].id == ring_id)
+		{
+
+		    len = (int)strlen(ErrorRing[ring_idx].fcname);
+		    max_fcname_len = MPIR_MAX(max_fcname_len, len);
+		    tmp_errcode = ErrorRing[ring_idx].prev_error;
+		}
+		else
+		{
+		    break;
+		}
+	    }
+	    max_fcname_len += 2; /* add space for the ": " */
+	    /*printf("max_fcname_len = %d\n", max_fcname_len);fflush(stdout);*/
+	    /* print the error stack */
 	    while (errcode != MPI_SUCCESS)
 	    {
 		int ring_idx;
 		int ring_id;
 		int generic_idx;
+		int i;
+		char *cur_pos;
 
 		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
 		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
@@ -1704,10 +1889,85 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 		    
 		if (ErrorRing[ring_idx].id == ring_id)
 		{
+		    MPIU_Snprintf(str, maxlen, "%s", ErrorRing[ring_idx].fcname);
+		    len = (int)strlen(str);
+		    maxlen -= len;
+		    str += len;
+		    for (i=0; i<max_fcname_len - (int)strlen(ErrorRing[ring_idx].fcname) - 2; i++)
+		    {
+			if (MPIU_Snprintf(str, maxlen, "."))
+			{
+			    maxlen--;
+			    str++;
+			}
+		    }
+		    if (MPIU_Snprintf(str, maxlen, ":"))
+		    {
+			maxlen--;
+			str++;
+		    }
+		    if (MPIU_Snprintf(str, maxlen, " "))
+		    {
+			maxlen--;
+			str++;
+		    }
+
+		    if (MPIR_Err_chop_error_stack)
+		    {
+			cur_pos = ErrorRing[ring_idx].msg;
+			len = (int)strlen(cur_pos);
+			if (len == 0)
+			{
+			    if (MPIU_Snprintf(str, maxlen, "\n"))
+			    {
+				maxlen--;
+				str++;
+			    }
+			}
+			while (len)
+			{
+			    if (len >= MPIR_Err_chop_width - max_fcname_len)
+			    {
+				if (len > maxlen)
+				    break;
+				MPIU_Snprintf(str, MPIR_Err_chop_width - 1 - max_fcname_len, "%s", cur_pos);
+				str[MPIR_Err_chop_width - 1 - max_fcname_len] = '\n';
+				cur_pos += MPIR_Err_chop_width - 1 - max_fcname_len;
+				str += MPIR_Err_chop_width - max_fcname_len;
+				maxlen -= MPIR_Err_chop_width - max_fcname_len;
+				if (maxlen < max_fcname_len)
+				    break;
+				for (i=0; i<max_fcname_len; i++)
+				{
+				    MPIU_Snprintf(str, maxlen, " ");
+				    maxlen--;
+				    str++;
+				}
+				len = (int)strlen(cur_pos);
+			    }
+			    else
+			    {
+				MPIU_Snprintf(str, maxlen, "%s\n", cur_pos);
+				len = (int)strlen(str);
+				maxlen -= len;
+				str += len;
+				len = 0;
+			    }
+			}
+		    }
+		    else
+		    {
+			MPIU_Snprintf(str, maxlen, "%s\n", ErrorRing[ring_idx].msg);
+			len = (int)strlen(str);
+			maxlen -= len;
+			str += len;
+		    }
+		    /*
 		    MPIU_Snprintf(str, maxlen, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
 		    len = (int)strlen(str);
 		    maxlen -= len;
 		    str += len;
+		    */
 		    errcode = ErrorRing[ring_idx].prev_error;
 		}
 		else
