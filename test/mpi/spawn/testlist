@@ -7,6 +7,7 @@ spawnargv 1
 spawnmult2 2
 spaconacc 1
 selfconacc 2
+spaiccreate 2
 join 2
 disconnect_reconnect 3
 disconnect_reconnect2 3
