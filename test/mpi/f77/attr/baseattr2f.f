@@ -14,7 +14,7 @@ C
         call mpi_init( ierr )
 
         call mpi_comm_size( MPI_COMM_WORLD, commsize, ierr )
-	call mpi_comm_rank( MPI_COMM_WORLD, commrank, ierr )
+        call mpi_comm_rank( MPI_COMM_WORLD, commrank, ierr )
 
         call mpi_attr_get( MPI_COMM_WORLD, MPI_TAG_UB, value, flag, ierr
      $       ) 
@@ -55,7 +55,7 @@ C
         call mpi_attr_get( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL, value,
      $       flag, ierr )
         if (flag) then
-C	    Wtime need not be set
+C          Wtime need not be set
            if (value .lt.  0 .or. value .gt. 1) then 
               errs = errs + 1
               print *, "Invalid value for WTIME_IS_GLOBAL (got ", value,
@@ -90,7 +90,7 @@ C     MPI_UNIVERSE_SIZE need not be set
 C Last used code must be defined and >= MPI_ERR_LASTCODE
         if (flag) then
            if (value .lt. MPI_ERR_LASTCODE) then
-	    errs = errs + 1
+            errs = errs + 1
             print *, "MPI_LASTUSEDCODE points to an integer (",
      $           MPI_ERR_LASTCODE, ") smaller than MPI_ERR_LASTCODE (",
      $           value, ")"
