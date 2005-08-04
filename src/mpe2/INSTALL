@@ -355,8 +355,20 @@ Preferred Solution: Upgrade to newer version of LAM.
 Temporary Solution: Hand edit src/logging/mpe_logging_conf.h to define
                     correct WORDS_BIGENDIAN.
 
-LAM 7.0 has included libpmpi.a into libmpi.a, so --with-mpilibs may not be
-needed.
+LAM 7.0 or later has included libpmpi.a into libmpi.a, so --with-mpilibs
+may not be needed.
+
+LAM 7.1.2b23 or older has a bug on MPI_*_c2f( MPI_*_NULL ) that causes
+seg. fault, see
+http://www.lam-mpi.org/MailArchives/lam/2005/08/11073.php
+So fortran LAM/MPI program that uses Isend/Irecv cannot use libmpe_f2cmpi.a,
+(the reason is that MPI_Wait on the request from Isend/Irecv returns
+MPI_REQUEST_NULL which could not be translated by MPI_Request_c2f() in
+libmpe_f2cmpi.a)
+
+Preferred Solution: Upgrade to newer version of LAM, 7.1.2b24 or later
+         Or
+Temporary Solution: Configured with --with-f2cmpilibs=-llamf77mpi. 
 
 
 For prebuilt version of MPICH-1.1.2 or MPICH-1.2.0, e.g. donner, do
