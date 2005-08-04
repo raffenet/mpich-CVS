@@ -33,17 +33,11 @@
 /* Possible values for USE_LOGGING */
 #define MPID_LOGGING_NONE 0
 #define MPID_LOGGING_RLOG 1
-#define MPID_LOGGING_DLOG 2
-#define MPID_LOGGING_LWLOG 3
 #define MPID_LOGGING_EXTERNAL 4
 
 /* Include the macros specific to the selected logging library */
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
 #include "rlog_macros.h"
-#elif (USE_LOGGING == MPID_LOGGING_DLOG)
-#include "dlog_macros.h"
-#elif (USE_LOGGING == MPID_LOGGING_LWLOG)
-#include "lwlog.h"
 #elif (USE_LOGGING == MPID_LOGGING_EXTERNAL)
 #include "mpilogging.h"
 #else
