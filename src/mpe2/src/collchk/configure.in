@@ -183,10 +183,12 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         AC_MSG_CHECKING( [for MPI_Datatype decoding functions] )
         PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                               [
-    int nints, naddrs, ntypes, combiner;
-    int *ints, *addrs, *types;
-    MPI_Datatype type;
-    int itmp
+    int           nints, naddrs, ntypes, combiner;
+    int          *ints; 
+    MPI_Aint     *addrs;
+    MPI_Datatype *types;
+    MPI_Datatype  type;
+    int           itmp
                               ],
                               [
     itmp=MPI_Type_get_envelope( type, &nints, &naddrs, &ntypes, &combiner );
@@ -477,6 +479,30 @@ dnl if MPICH1, assume only basic Fortran MPI_Datatypes are available in C
          AC_DEFINE( HAVE_FORTRAN_MPI_DATATYPE_IN_C, 1,
                     [Define if Fortran MPI_Datatype exists in C] )
     fi
+fi
+
+dnl Check if MPI_Datatype is pointer or int
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    if test "$enable_checkMPI" = "yes" ; then
+        AC_MSG_CHECKING( [for MPI_Datatype] )
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                              [ MPI_Datatype type ],
+                              [ type = type / 5 ],
+                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        if test "$mpe_link_ok" = "yes" ; then
+            AC_MSG_RESULT([int])
+            AC_DEFINE( HAVE_INT_MPI_DATATYPE, 1,
+                       [Define if MPI_Datatype is int] )
+        else
+            AC_MSG_RESULT([void*])
+            AC_DEFINE( HAVE_PTR_MPI_DATATYPE, 1,
+                       [Define if MPI_Datatype is void*] )
+        fi
+    fi
+else
+dnl if MPICH2 or MPICH1, assume MPI_Datatype is int
+    AC_DEFINE( HAVE_INT_MPI_DATATYPE, 1,
+               [Define if MPI_Datatype is int] )
 fi
 
 
