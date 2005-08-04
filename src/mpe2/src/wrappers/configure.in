@@ -485,11 +485,11 @@ if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
 
 #   FIXME: MPICH2 include MPI_Fint, Need to fetch the value somehow.
 
-#   CHECK: MPICH2 does not have MPI_F_STATUS_IGNORE, MPI_F_STATUSES_IGNORE
-dnl AC_DEFINE( HAVE_MPI_F_STATUS_IGNORE, 1,
-dnl            [Define if MPI_F_STATUS_IGNORE available] )
-dnl AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
-dnl            [Define if MPI_F_STATUSES_IGNORE available] )
+#   MPICH2 after 1.0.2 release has MPI_F_STATUS_IGNORE, MPI_F_STATUSES_IGNORE
+    AC_DEFINE( HAVE_MPI_F_STATUS_IGNORE, 1,
+               [Define if MPI_F_STATUS_IGNORE available] )
+    AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
+               [Define if MPI_F_STATUSES_IGNORE available] )
 
 #   MPICH2 has MPI_Comm_f2c()/c2f()
     AC_DEFINE( HAVE_MPI_COMM_F2C, 1,
