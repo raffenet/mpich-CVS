@@ -4176,6 +4176,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  doc/installguide/Makefile \
 	  doc/userguide/Makefile \
 	  doc/logging/Makefile \
-	  doc/smpd/Makefile )
+	  doc/smpd/Makefile \
+	  doc/windev/Makefile )
 
 echo 'Configuration completed.'

@@ -1,0 +1,90 @@
+\documentclass[dvipdfm,11pt]{article}
+\usepackage[dvipdfm]{hyperref} % Upgraded url package
+\parskip=.1in
+
+% Formatting conventions for contributors
+% 
+% A quoting mechanism is needed to set off things like file names, command
+% names, code fragments, and other strings that would confuse the flow of
+% text if left undistinguished from preceding and following text.  In this
+% document we use the LaTeX macro '\texttt' to indicate such text in the
+% source, which normally produces, when used as in '\texttt{special text}',
+% the typewriter font.
+
+% It is particularly easy to use this convention if one is using emacs as
+% the editor and LaTeX mode within emacs for editing LaTeX documents.  In
+% such a case the key sequence ^C^F^T (hold down the control key and type
+% 'cft') produces '\texttt{}' with the cursor positioned between the
+% braces, ready for the special text to be typed.  The closing brace can
+% be skipped over by typing ^e (go to the end of the line) if entering
+% text or ^C-} to just move the cursor past the brace.
+
+% LaTeX mode is usually loaded automatically.  At Argonne, one way to 
+% get several useful emacs tools working for you automatically is to put
+% the following in your .emacs file.
+
+% (require 'tex-site)
+% (setq LaTeX-mode-hook '(lambda ()
+%          		 (auto-fill-mode 1)
+%          		 (flyspell-mode 1)
+%          		 (reftex-mode 1)
+% 			 (setq TeX-command "latex")))
+
+
+\begin{document}
+\markright{MPICH2 Windows Development Guide}
+\title{{\bf MPICH2 Windows Development Guide}\thanks{This work was supported by the
+    Mathematical, Information, and Computational Sciences Division
+    subprogram of the Office of Advanced Scientific Computing Research,
+    SciDAC Program, Office of Science, U.S. Department of Energy, under
+    Contract
+    W-31-109-ENG-38.}\\
+  Version 1.0.2\\
+  Mathematics and Computer Science Division\\
+  Argonne National Laboratory}
+
+\author{David Ashton}
+
+\maketitle
+\cleardoublepage
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\section{Introduction}
+\label{sec:intro}
+This manual describes how to set up a Windows machine to build MPICH2 on.
+
+\section{Build machine}
+\label{sec:machine}
+
+Build a Windows XP or Windows Server 2003 machine.
+
+\section{Test machine}
+\label{sec:test_machine}
+
+Build a Windows XP or Windows Server 2003 machine on a 32bit CPU.
+Also build a Windows Server 2003 X64 machine to test the Win64 distribution.
+
+\section{Software}
+
+This section describes the software necessary to build MPICH2.
+
+\subsection{Prerequisites}
+\label{sec:prerequisites}
+
+To build MPICH2 you will need:
+\begin{enumerate}
+\item Microsoft Developer Studio .NET 2003
+\item Microsoft Platform SDK
+\item cygwin - full installation
+\item Intel Fortran compiler
+\item Intel Fortran compiler EMT64
+\item Mellanox 32bit and 64bit Infiniband libraries
+\end{enumerate}
+
+\end{document}
