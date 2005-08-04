@@ -978,6 +978,9 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	pWorld->nextWorld  = 0;
 	pWorld->nApps      = 0;
 	pWorld->worldNum   = pUniv.nWorlds++;
+	/* FIXME: What should be the defaults for the spawned env? 
+	   Should the default be the env ov the spawner? */
+	pWorld->genv       = 0;
 	pentry->spawnKVS   = fPMIKVSAllocate();
     }
     else {
@@ -1005,6 +1008,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
     app->nProcess  = 0;
     app->pState    = 0;
     app->nextApp   = 0;
+    app->env       = 0;
     app->pWorld    = pWorld;
 
     /* Add to the pentry spawn structure */
