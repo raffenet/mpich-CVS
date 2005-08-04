@@ -9,7 +9,7 @@
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 
 MPIDU_Sock_set_t sock_set;
-int MPIDI_CH3I_listener_port = 0;
+/* int MPIDI_CH3I_listener_port = 0; brad : now in ch3u_get_business_card_sock.c */
 MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
 int shutting_down = FALSE;
@@ -42,6 +42,8 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     return mpi_errno;
 }
 
+/* brad : function now in ch3u_get_business_card.c */
+#if 0
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Listener_get_port
 #undef FCNAME
@@ -54,6 +56,7 @@ int MPIDI_CH3I_Listener_get_port()
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT);
     return MPIDI_CH3I_listener_port;
 }
+#endif
 
 static unsigned int GetIP(char *pszIP)
 {
@@ -193,6 +196,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 {
+    /* brad : this could be static (it is only called in this file) */
     int mpi_errno;
     char hostname[256];
     char queue_name[100];
@@ -263,8 +267,26 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
     /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
     shm_info.info = vc->ch.shm_write_queue_info;
     /*shm_info.pg_id = 0;*/
-    MPIU_Strncpy(shm_info.pg_id, vc->pg->id, 100);
-    shm_info.pg_rank = MPIR_Process.comm_world->rank;
+    /* brad : must do communicator translation in the case of INTERcomms, so that we get
+     *          the correct pg_id.  kvs_name wasn't being used for spawned pg's so i
+     *          use it to store the pg->id for the intracommunicator used when this 
+     *          intercommunicator was created with spawn. if the values are identical, then
+     *          its MPI-1, but if not it's MPI-2
+     */
+    if ( strcmp(vc->pg->id, vc->pg->ch.kvs_name))
+    {
+        MPIU_Strncpy(shm_info.pg_id, vc->pg->ch.kvs_name, 100);  /* INTERcomm */
+        shm_info.is_intercomm = 1;
+    }
+    else
+    {
+        MPIU_Strncpy(shm_info.pg_id, vc->pg->id, 100);          /* INTRAcomm */
+        shm_info.is_intercomm = 0;
+    }
+    shm_info.pg_rank = MPIR_Process.comm_world->rank;  /* brad : comm_world!?! will be changed on other side
+                                                        *         for INTERcomms
+                                                        *  this also implies that pg's map onto MPI_COMM_WORLDs
+                                                        */
     shm_info.pid = getpid();
     MPIU_DBG_PRINTF(("MPIDI_CH3I_Shm_connect: sending bootstrap queue info from rank %d to msg queue %s\n", MPIR_Process.comm_world->rank, queue_name));
     mpi_errno = MPIDI_CH3I_BootstrapQ_send_msg(queue, &shm_info, sizeof(shm_info));
@@ -298,13 +320,14 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
-    char * key;
+    char * key = NULL;
     char * val;
     int key_max_sz;
     int val_max_sz;
     char host_description[256];
     int port;
     int rc;
+    int found;
     MPIDI_CH3I_Connection_t * conn;
     int mpi_errno = MPI_SUCCESS;
     int connected;
@@ -324,17 +347,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     /* get the business card */
-    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-    }
-    key = MPIU_Malloc(key_max_sz);
-    if (key == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
-    }
     mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (mpi_errno != PMI_SUCCESS)
     {
@@ -347,27 +359,55 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
-    if (rc < 0 || rc > key_max_sz)
+    /* first lookup bizcard cache to see if bizcard is there. needed for spawn/connect/accept */
+    mpi_errno = MPIDI_CH3I_Lookup_bizcard_cache(vc->pg->id, vc->pg_rank, val, 
+                                                val_max_sz, &found);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */    
+
+    if (!found) {
+        mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+        if (mpi_errno != PMI_SUCCESS)
+        {
+        }
+        key = MPIU_Malloc(key_max_sz);
+        if (key == NULL)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
+            return mpi_errno;
+        }
+        rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
+        if (rc < 0 || rc > key_max_sz)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
+            return mpi_errno;
+        }
+
+        rc = PMI_KVS_Get(vc->pg->ch.kvs_name, key, val, val_max_sz);
+        if (rc != PMI_SUCCESS)
+        {
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
+            MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
+            return mpi_errno;
+        }
+
+        /* brad : key free'd here in sock */
+
+        /* brad : should this be added to the bizcache? */
     }
 
-    rc = PMI_KVS_Get(vc->pg->ch.kvs_name, key, val, val_max_sz);
-    if (rc != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
-    }
-
-    MPIU_DBG_PRINTF(("%s: %s\n", key, val));
+/*     MPIU_DBG_PRINTF(("%s: %s\n", key, val)); */
 
     /* attempt to connect through shared memory */
     connected = FALSE;
-    MPIU_DBG_PRINTF(("business card: <%s> = <%s>\n", key, val));
+/*     MPIU_DBG_PRINTF(("business card: <%s> = <%s>\n", key, val)); */
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -381,7 +421,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	int count = 0;
 
 	MPIU_Free(val);
-	MPIU_Free(key);
+	if(key) MPIU_Free(key);
 
 	/*MPIU_DBG_PRINTF(("shmem connected\n"));*/
 	vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
@@ -454,8 +494,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     }
 
     MPIU_Free(val);
-    MPIU_Free(key);
-
+    if(key) MPIU_Free(key);
+ fn_exit:
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
     return mpi_errno;

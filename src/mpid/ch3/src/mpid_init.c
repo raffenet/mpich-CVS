@@ -12,6 +12,18 @@
 #include <unistd.h>
 #endif
 
+/* added by brad */
+#include "pmi.h"
+/* static int MPIDI_CH3I_PMI_Init(); */
+static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                               char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
+static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
+#include "mpidi_ch3_impl.h"  /* for extern'd MPIDI_CH3I_Process  */
+
+MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+
+
 
 /* The value 128 is returned by the ch3/Makefile for the echomaxprocname target.  */
 #if !defined(MPIDI_PROCESSOR_NAME_SIZE)
@@ -36,6 +48,14 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     int p;
     char * env;
     int mpi_errno = MPI_SUCCESS;
+
+    /* added by brad */
+    char *publish_bc_orig = NULL;
+    char *bc_key = NULL;
+    char *bc_val = NULL;
+    int val_max_remaining;
+    
+    
     MPIDI_STATE_DECL(MPID_STATE_MPID_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
@@ -111,11 +131,29 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
      */
     MPIR_Process.attrs.tag_ub          = MPIDI_TAG_UB;
 
+
+    /*
+     * Perform channel-independent PMI initialization
+     */
+/*     printf("before MPIDI_CH3I_PMI_Init\n"); */
+    mpi_errno = MPIDI_CH3I_PMI_Init(has_args, has_env, &has_parent, &pg, &pg_rank,
+                               &publish_bc_orig, &bc_key, &bc_val, &val_max_remaining);
+/*     printf("after MPIDI_CH3I_PMI_Init\n"); */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+        /* brad : acceptable to use the returned mpi_errno? */
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }    
     
     /*
      * Let the channel perform any necessary initialization
      */
-    mpi_errno = MPIDI_CH3_Init(has_args, has_env, &has_parent, &pg, &pg_rank);
+/*     printf("before MPIDI_CH3_Init\n"); */
+    mpi_errno = MPIDI_CH3_Init(has_args, has_env, &has_parent, &pg, &pg_rank,
+                              &publish_bc_orig, &bc_key, &bc_val, &val_max_remaining);
+/*     printf("after MPIDI_CH3_Init\n"); */
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -124,8 +162,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	/* --END ERROR HANDLING-- */
     }
 
+    
     pg_size = MPIDI_PG_Get_size(pg);
-    MPIDI_Process.my_pg = pg;
+    MPIDI_Process.my_pg = pg;  /* brad : this is rework for shared memories because they need this set earlier
+                                *         for getting the business card
+                                */
     MPIDI_Process.my_pg_rank = pg_rank;
     MPIDI_PG_Add_ref(pg);
 
@@ -201,7 +242,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     
     if (has_parent)
     {
-#	if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
+#	if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)   /* brad : nobody defines this */
 	{
 	    mpi_errno = MPIDI_CH3_Comm_get_parent(&comm);
 	    if (mpi_errno != MPI_SUCCESS)
@@ -308,6 +349,16 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
 
   fn_exit:
+    /* brad : free PMI business card bufs here */
+    if(bc_key != NULL)
+    {
+        MPIU_Free(bc_key);
+    }
+    if(publish_bc_orig != NULL)
+    {
+        MPIU_Free(publish_bc_orig);
+    }           
+    
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return mpi_errno;
@@ -322,3 +373,340 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
+
+
+
+/*  MPIDI_CH3I_PMI_Init -  does channel independent initializations
+ *      TODO - brad :  needs to additionally accept all arguments that the MPIDI_CH3U_Init_* upcalls do
+ *                      
+ *
+ */
+
+static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                               char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
+{
+    MPIDI_PG_t * pg = NULL;
+    int pg_rank;
+    int pg_size;
+    char * pg_id = NULL;
+    int pmi_errno = PMI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
+    int pg_id_sz;
+    int kvs_name_sz;
+    int key_max_sz;
+/*     int val_max_sz;   brad : replaced by val_max_sz_p */
+    int appnum;
+/*     char * key = NULL;  brad : replaced by publish_bc_p (and bc_key_p) */
+/*     char * val = NULL;  brad : replaced by bc_val_p   */
+    int i=0;
+/*     printf("debug(%d)\n", i++);//0 */
+
+#ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT    
+    MPIDI_CH3I_Process.parent_port_name = NULL;    /* brad : not originally present in sshm? */
+#endif
+    
+#ifdef MPIDI_CH3_USES_ACCEPTQ
+    MPIDI_CH3I_Process.acceptq_head = NULL;   /* brad : not originally present in sshm? */
+/*     MPIDI_CH3I_Process.acceptq_tail = NULL;  brad : tail seems obsolete in post-merge */
+#endif
+
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+    {
+	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
+    }
+#   endif    
+
+    
+    /*
+     * Intial the process manangement interface (PMI), and get rank and size information about our process group
+     */
+    pmi_errno = PMI_Init(has_parent);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_init",
+					 "**pmi_init %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//1 */
+
+    pmi_errno = PMI_Get_rank(&pg_rank);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_rank",
+					 "**pmi_get_rank %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//2 */
+
+    pmi_errno = PMI_Get_size(&pg_size);
+    if (pmi_errno != 0)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size",
+					 "**pmi_get_size %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//3 */
+
+    pmi_errno = PMI_Get_appnum(&appnum);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_appnum",
+					 "**pmi_get_appnum %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//4 */
+
+    if (appnum != -1)
+    {
+	MPIR_Process.attrs.appnum = appnum;
+    }
+
+    /*
+     * Get the process group id
+     */
+    pmi_errno = PMI_Get_id_length_max(&pg_id_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//5 */
+
+    pg_id = MPIU_Malloc(pg_id_sz + 1);
+    if (pg_id == NULL)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//6 */
+    
+    pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id",
+					 "**pmi_get_id %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//7 */
+
+
+    /*
+     * Initialize the process group tracking subsystem
+     */
+    mpi_errno = MPIDI_PG_Init(MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**dev|pg_init", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//8 */
+
+    /*
+     * Create a new structure to track the process group
+     */
+    mpi_errno = MPIDI_PG_Create(pg_size, pg_id, &pg);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**dev|pg_create", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    pg->ch.kvs_name = NULL;
+/*     printf("debug(%d)\n", i++);//9 */
+
+    /*
+     * Get the name of the key-value space (KVS)
+     */
+    pmi_errno = PMI_KVS_Get_name_length_max(&kvs_name_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//10 */
+
+    pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
+    if (pg->ch.kvs_name == NULL)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//11 */
+    
+    pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//12 */
+
+    /*
+     *  brad : VC initialization is now in MPIDI_CH3_Init (and some in MPIDI_CH3U_Init_* upcalls)
+     */
+    
+    /*
+     * Initialize Progress Engine.  This must occur before the business card is requested because part of progress engine
+     * initialization is setting up the listener socket.  The port of the listener socket needs to be included in the business
+     * card.
+     */
+    mpi_errno = MPIDI_CH3I_Progress_init();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**init_progress", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }    
+/*     printf("debug(%d)\n", i++);//13 */
+
+    /*
+     * Publish the contact information (a.k.a. business card) for this process into the PMI keyval space associated with this
+     * process group.
+     */
+    pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//14 */
+    
+    *bc_key_p = MPIU_Malloc(key_max_sz);
+    if (*bc_key_p == NULL)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//15 */
+
+    pmi_errno = PMI_KVS_Get_value_length_max(val_max_sz_p);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**pmi_kvs_get_value_length_max", "**pmi_kvs_get_value_length_max %d", pmi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+/*     printf("debug(%d)\n", i++);//16 */
+    
+    *bc_val_p = MPIU_Malloc(*val_max_sz_p);
+    if (*bc_val_p == NULL)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    *publish_bc_p = *bc_val_p;  /* need to keep a pointer to the front of the front of this buffer to publish */
+/*     printf("debug(%d)\n", i++);//17 */
+
+    /* could put MPIU_Snprintf("P%d-businesscard") call here...  then take boolean publish_bc to
+     *   the MPIDI_CH3U_Init_* upcalls (for sshm, it will make 2 upcalls but we don't want to publish after the
+     *   first call) which will be called from within the respective MPIDI_CH3_Init channels.
+     *
+     * val and business_card variables are used differently from channel to channel... */
+    
+    mpi_errno = MPIU_Snprintf(*bc_key_p, key_max_sz, "P%d-businesscard", pg_rank);
+    if (mpi_errno < 0 || mpi_errno > key_max_sz)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf",
+					 "**snprintf %d", mpi_errno);
+	goto fn2_fail;
+	/* --END ERROR HANDLING-- */
+    }
+    mpi_errno = MPI_SUCCESS;
+/*     printf("debug(%d)\n", i++);//18 */
+    
+    
+    /* FIXME: has_args and has_env need to come from PMI eventually... */
+    *has_args = TRUE;
+    *has_env = TRUE;
+
+    *pg_p = pg;
+    *pg_rank_p = pg_rank;
+    
+  fn2_exit:
+    /* brad : only free in the case of error in the upper level function MPID_Init since these are used other places */
+    
+/*     if (*bc_val_p != NULL) */
+/*     {  */
+/* 	MPIU_Free(*bc_val_p); */
+/*     } */
+/*     if (*bc_key_p != NULL) */
+/*     {  */
+/* 	MPIU_Free(*bc_key_p); */
+/*     } */
+
+    
+    return mpi_errno;
+
+  fn2_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    if (pg != NULL)
+    {
+	/* MPIDI_CH3I_PG_Destroy(), which is called by MPIDI_PG_Destroy(), frees pg->ch.kvs_name */
+	MPIDI_PG_Destroy(pg);
+    }
+
+    goto fn2_exit;
+    /* --END ERROR HANDLING-- */    
+}
+
+static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
+{
+    return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
+}
+
+
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
+{
+    if (pg->ch.kvs_name != NULL)
+    {
+	MPIU_Free(pg->ch.kvs_name);
+    }
+
+    if (id != NULL)
+    { 
+	MPIU_Free(id);
+    }
+    
+    return MPI_SUCCESS;
+}
+

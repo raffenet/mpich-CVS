@@ -531,7 +531,7 @@ int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p)
 
    Notes: This function unlinks and detaches a shared memory segment. It is called in
           MPIDI_CH3I_Free_mem (for rma).
-          
+         brad : it is also called in MIPDI_CH3_Finalize and MPIDI_CH3_Win_free 
 @*/
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_Unlink_and_detach_mem

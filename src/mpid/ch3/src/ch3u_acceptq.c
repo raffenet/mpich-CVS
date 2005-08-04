@@ -7,8 +7,10 @@
 #include "mpidi_ch3_impl.h"
 
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#define MPIDI_Acceptq_lock() MPID_Thread_lock(&MPIDI_CH3I_Process.acceptq_mutex)
-#define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&MPIDI_CH3I_Process.acceptq_mutex)
+#  ifdef MPIDI_CH3_USES_ACCEPTQ
+#   define MPIDI_Acceptq_lock() MPID_Thread_lock(&MPIDI_CH3I_Process.acceptq_mutex)
+#   define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&MPIDI_CH3I_Process.acceptq_mutex)
+#  endif
 #else
 #define MPIDI_Acceptq_lock()
 #define MPIDI_Acceptq_unlock()
@@ -20,8 +22,9 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 {
-    MPIDI_CH3I_Acceptq_t *q_item;
     int mpi_errno=MPI_SUCCESS;
+#ifdef MPIDI_CH3_USES_ACCEPTQ
+    MPIDI_CH3I_Acceptq_t *q_item;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
 
@@ -38,33 +41,51 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
     /* --END ERROR HANDLING-- */
 
     q_item->vc = vc;
+/*     q_item->next = NULL;  brad : old pre-branched code */
 
     MPIDI_Acceptq_lock();
 
+    /* brad : acceptq_tail was in acceptq's in code originally branched from but seemingly since
+     *         it has been understood that they are useless.
+     */
+    
+    /* brad : pre-branch code */
+/*     if  (MPIDI_CH3I_Process.acceptq_tail != NULL) */
+/*         MPIDI_CH3I_Process.acceptq_tail->next = q_item; */
+/*     else */
+/*         MPIDI_CH3I_Process.acceptq_head = q_item; */
+    
+/*     MPIDI_CH3I_Process.acceptq_tail = q_item; */
+
+    /* brad : post-merge code, always put on front, don't rely on tail */
     q_item->next = MPIDI_CH3I_Process.acceptq_head;
     MPIDI_CH3I_Process.acceptq_head = q_item;
-
+    
     MPIDI_Acceptq_unlock();
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
+#endif
     return mpi_errno;
 }
 
 
-/* Attempt to dequeue a vc from the accept queue if it matches the port_name_tag. If the queue is
+/* Attempt to dequeue a vc from the accept queue. If the queue is
    empty or the port_name_tag doesn't match, return a NULL vc. */
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 {
-    MPIDI_CH3I_Acceptq_t *q_item, *prev;
-    int mpi_errno=MPI_SUCCESS;
 
+    int mpi_errno=MPI_SUCCESS;
+#ifdef MPIDI_CH3_USES_ACCEPTQ
+    MPIDI_CH3I_Acceptq_t *q_item, *prev;
+    
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
 
     MPIDI_Acceptq_lock();
 
+    /* brad : post-merge code */
     *vc = NULL;
     q_item = MPIDI_CH3I_Process.acceptq_head;
     prev = q_item;
@@ -85,9 +106,24 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 	    q_item = q_item->next;
 	}
     }
+    
+    /* brad : pre-branch code */
+/*     if (MPIDI_CH3I_Process.acceptq_head != NULL) { */
+/*         q_item = MPIDI_CH3I_Process.acceptq_head; */
+/*         MPIDI_CH3I_Process.acceptq_head = q_item->next; */
+
+/*         if (MPIDI_CH3I_Process.acceptq_head == NULL)  */
+/*             MPIDI_CH3I_Process.acceptq_tail = NULL; */
+
+/*         *vc = q_item->vc; */
+/*         MPIU_Free(q_item); */
+/*     } */
+/*     else */
+/*         *vc = NULL; */
 
     MPIDI_Acceptq_unlock();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
+#endif
     return mpi_errno;
 }

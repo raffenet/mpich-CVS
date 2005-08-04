@@ -11,6 +11,17 @@
 #include "mpidi_ch3i_ssm_conf.h"
 #include "mpidi_ch3_conf.h"
 
+/* brad : these are for having the appropriate upcalls compiled */
+#define MPIDI_CH3_USES_SOCK
+#define MPIDI_CH3_USES_SSHM
+#define MPIDI_CH3_USES_ACCEPTQ
+
+/* brad : features added to ssm to do MPI-2 dynamic process functionality (via socks first) */
+#define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
+#define MPIDI_CH3_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+#define MPIDI_CH3_IMPLEMENTS_COMM_ACCEPT
+#define MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
+
 #if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
 #define USE_POSIX_SHM
 #elif defined (HAVE_SHMGET) && defined (HAVE_SHMAT) && defined (HAVE_SHMCTL) && defined (HAVE_SHMDT)
@@ -52,6 +63,10 @@ typedef struct MPIDI_Process_group_s
     int nShmWaitYieldCount;
     MPIDI_CH3I_BootstrapQ bootstrapQ;
     char shm_hostname[MAXHOSTNAMELEN];
+    char * bootstrapQ_name; /* brad : added for easy access when creating shared memory business card.
+                             *         this field was added to the bizcard because prior bootstrapQ_name's
+                             *         were (incorrectly) generated on rank 0 of all process groups.
+                             */
     /*struct MPIDI_Process_group_s *next;*/
 }
 MPIDI_CH3I_Process_group_t;
@@ -96,10 +111,18 @@ typedef struct															  \
 {																  \
     MPIDI_CH3_Pkt_type_t type;													  \
 }																  \
-MPIDI_CH3I_Pkt_sc_close_t;
+MPIDI_CH3I_Pkt_sc_close_t;                                                                                                                                    \
+                                                                                                                                                              \
+typedef struct															  \
+{																  \
+    MPIDI_CH3_Pkt_type_t type;													  \
+    int port_name_tag; 													          \
+}																  \
+MPIDI_CH3I_Pkt_sc_conn_accept_t;
 
 #define MPIDI_CH3_PKT_DECL			\
 MPIDI_CH3I_Pkt_sc_open_req_t sc_open_req;	\
+MPIDI_CH3I_Pkt_sc_conn_accept_t sc_conn_accept;  \
 MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	\
 MPIDI_CH3I_Pkt_sc_close_t sc_close;
 
@@ -160,6 +183,7 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_VC_state_t state;
     MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
+    int port_name_tag; /* brad : added post-merge */
     BOOL bShm;
     MPIDI_CH3I_Shmem_block_request_result shm_write_queue_info, shm_read_queue_info;
     int shm_reading_pkt;

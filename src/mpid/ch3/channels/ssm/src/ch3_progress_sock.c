@@ -396,7 +396,9 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    vc->ch.sock = conn->sock;
 		    vc->ch.conn = conn;
 		    conn->vc = vc;
-                        
+
+		    vc->ch.port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
+                    
 		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		    conn->pkt.sc_open_resp.ack = TRUE;
                         
@@ -668,9 +670,18 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    else
 	    {
 		/* CONN_STATE_CONNECT_ACCEPT */
+                   int port_name_tag;
+       
 		conn->state = CONN_STATE_OPEN_CSEND;
+
+		/* pkt contains port name tag. In memory debugging mode, MPIDI_Pkt_init resets the packet contents. Therefore,
+                   save the port name tag and then add it back. */
+		port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
+                
 		MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
-		/* pkt contains nothing */
+
+		conn->pkt.sc_conn_accept.port_name_tag = port_name_tag;
+                
 		mpi_errno = connection_post_send_pkt(conn);
 		if (mpi_errno != MPI_SUCCESS)
 		{

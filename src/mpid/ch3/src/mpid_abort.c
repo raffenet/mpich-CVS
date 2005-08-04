@@ -6,6 +6,11 @@
 
 #include "mpidimpl.h"
 
+/* added by brad */
+#include "pmi.h"
+static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg);
+
+                            
 #undef FUNCNAME
 #define FUNCNAME MPID_Abort
 #undef FCNAME
@@ -38,7 +43,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 
     if (error_msg != NULL)
     {
-	MPIDI_CH3_Abort(exit_code, error_msg);
+	MPIDI_CH3I_PMI_Abort(exit_code, error_msg);
     }
     else
     {
@@ -53,7 +58,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 	    MPIU_Snprintf(error_str, MPI_MAX_ERROR_STRING + 100, "internal ABORT - process %d", rank);
 	}
 
-	MPIDI_CH3_Abort(exit_code, error_str);
+	MPIDI_CH3I_PMI_Abort(exit_code, error_str);
     }
 
     /* ch3_abort should not return but if it does, exit here */
@@ -71,3 +76,30 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
     return MPI_ERR_INTERN;
 }
 
+
+/* brad : these were extracted from ch3/channel/<dir>/src/ch3_abort.c since
+ *         they were all identical.
+ */
+static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg)
+{
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ABORT);
+    
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ABORT);
+
+    PMI_Abort(exit_code, error_msg);
+
+    /* if abort returns for some reason, exit here */
+
+    MPIU_Error_printf("%s", error_msg);
+    fflush(stderr);
+
+#ifdef HAVE_WINDOWS_H
+    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
+    ExitProcess(exit_code);
+#else
+    exit(exit_code);
+#endif
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ABORT);
+    return MPI_ERR_INTERN;    
+}

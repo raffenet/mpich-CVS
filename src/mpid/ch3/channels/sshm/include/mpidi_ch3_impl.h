@@ -293,6 +293,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 #define MPIDI_CH3I_PORT_KEY              "port"
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
+#define MPIDI_CH3I_SHM_BOOTSTRAPQ_NAME_KEY "bootstrapQ_name"
 
 #define MPIDI_BOOTSTRAP_NAME_LEN 100
 #define BOOTSTRAP_MAX_NUM_MSGS 2048
@@ -324,6 +325,13 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t *vc, void *buf, int len, int *num_bytes_ptr)
 int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_read(MPIDI_VC_t *vc, void *buf, int len);
 int MPIDI_CH3I_SHM_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n);
+
+/* brad : for now, only sshm uses this so it is here. if this
+ *         changes, move this definition to mpidpost.h (and
+ *         change it's name from CH3I to CH3
+ */
+MPIDI_CH3I_Alloc_mem_list_t * MPIDI_CH3I_Get_mem_list_head();
+
 
 /*int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);*/
 

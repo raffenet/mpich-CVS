@@ -209,6 +209,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	*/
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 
+        /* brad : error not caught ! */
 	MPIDI_CH3I_VC_post_connect(vc);
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)

@@ -405,6 +405,7 @@ void MPIDI_PG_Add_ref(MPIDI_PG_t * pg);
 void MPIDI_PG_Release_ref(MPIDI_PG_t * pg, int * inuse);
 int MPIDI_PG_Find(void * id, MPIDI_PG_t ** pgp);
 int MPIDI_PG_Get_next(MPIDI_PG_t ** pgp);
+int MPIDI_PG_Iterate_reset();
 int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc);
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 

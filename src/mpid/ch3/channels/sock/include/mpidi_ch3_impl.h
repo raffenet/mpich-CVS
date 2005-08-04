@@ -107,6 +107,7 @@ typedef struct MPIDI_CH3I_Connection
 #define MPIDI_CH3I_PORT_KEY              "port"
 #define MPIDI_CH3I_PORT_NAME_TAG_KEY     "tag"
 
+
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);

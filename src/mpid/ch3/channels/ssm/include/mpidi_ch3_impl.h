@@ -148,7 +148,7 @@ typedef struct MPIDI_CH3I_Process_s
     MPIDI_VC_t *shm_reading_list, *shm_writing_list;
     int num_cpus;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
-    MPIDI_CH3I_Acceptq_t * acceptq_tail;
+    MPIDI_CH3I_Acceptq_t * acceptq_tail;  /* brad : doesn't seem to be used in post-branch code */
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     MPID_Thread_lock_t acceptq_mutex;
 #endif
@@ -156,6 +156,9 @@ typedef struct MPIDI_CH3I_Process_s
 MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+
+extern int MPIDI_CH3I_Port_name_tag;
+/* this tag is incremented and added to the business card, which is then returned as the port name */
 
 /*#define USE_FIXED_ACTIVE_PROGRESS*/
 /*#define USE_FIXED_SPIN_WAITS*/
@@ -282,7 +285,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t *vc);
-int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t **vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t **vc, int port_name_tag);
 
 #define MPIDU_MAX_SHM_BLOCK_SIZE ((unsigned int)2*1024*1024*1024)
 
@@ -291,12 +294,13 @@ typedef struct MPIDI_CH3I_Shmem_queue_info
     int /*pg_id, */pg_rank, pid;
     char pg_id[100];
     int type;
+    int is_intercomm;
     MPIDI_CH3I_Shmem_block_request_result info;
 } MPIDI_CH3I_Shmem_queue_info;
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
-int MPIDI_CH3I_Listener_get_port(void);
+/* int MPIDI_CH3I_Listener_get_port(void); brad : now in mpidpost.h */
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC_t *, MPID_Request *);
@@ -305,8 +309,10 @@ int MPIDI_CH3I_Get_business_card(char *value, int length);
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"
 #define MPIDI_CH3I_PORT_KEY              "port"
+#define MPIDI_CH3I_PORT_NAME_TAG_KEY     "tag"
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
+#define MPIDI_CH3I_SHM_BOOTSTRAPQ_NAME_KEY "bootstrapQ_name"
 
 #define MPIDI_BOOTSTRAP_NAME_LEN 100
 #define BOOTSTRAP_MAX_NUM_MSGS 2048

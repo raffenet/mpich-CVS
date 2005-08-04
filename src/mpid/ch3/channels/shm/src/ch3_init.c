@@ -59,7 +59,8 @@ static void generate_shm_string(char *str)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_pptr, int * pg_rank_ptr)
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_pptr, int * pg_rank_ptr,
+                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMI_SUCCESS;

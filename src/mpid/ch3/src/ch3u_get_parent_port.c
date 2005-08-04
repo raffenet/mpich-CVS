@@ -16,6 +16,7 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
     int val_max_sz;
     int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
+#ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
     
     if (MPIDI_CH3I_Process.parent_port_name == NULL)
     { 
@@ -56,5 +57,6 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
     *parent_port = MPIDI_CH3I_Process.parent_port_name;
 
   fn_exit:
+#endif    
     return mpi_errno;
 }

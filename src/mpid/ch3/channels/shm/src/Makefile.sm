@@ -5,4 +5,6 @@ lib${MPILIBNAME}_a_SOURCES = \
     ch3_request.c ch3_progress.c \
     ch3_cancel_send.c shm_memory.c shm.c \
     ch3_comm_spawn_multiple.c ch3_comm_connect.c ch3_comm_accept.c ch3_open_port.c \
-    ch3_abort.c ch3_istartrndvmsg.c ch3_istartrndvtransfer.c
+    ch3_abort.c ch3_istartrndvmsg.c ch3_istartrndvtransfer.c \
+    ch3i_get_business_card.c
+

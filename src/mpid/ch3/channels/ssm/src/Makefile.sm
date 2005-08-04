@@ -5,6 +5,4 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_request.c ch3i_get_business_card.c ch3_progress.c \
  ch3_shm_memory.c ch3i_bootstrapq.c ch3_shm.c \
  ch3_progress_shm.c ch3_progress_sock.c ch3_progress_connect.c \
- ch3_comm_spawn_multiple.c ch3i_shm_bootstrapq.c \
- ch3_comm_accept.c ch3_comm_connect.c ch3_open_port.c ch3i_acceptq.c \
- ch3_abort.c ch3_get_parent_port.c
+ ch3i_shm_bootstrapq.c 

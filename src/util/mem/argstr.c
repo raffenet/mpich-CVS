@@ -790,6 +790,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
 	return MPIU_STR_FAIL;
 
     /* add the flag */
+/*     printf("strstr flag\n"); */
     if (strstr(flag, MPIU_STR_SEPAR_STR) || strstr(flag, MPIU_STR_DELIM_STR) || flag[0] == MPIU_STR_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, flag);
@@ -814,6 +815,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - 1;
 
     /* add the value string */
+/*     printf("strstr val\n"); */
     if (strstr(val, MPIU_STR_SEPAR_STR) || strstr(val, MPIU_STR_DELIM_STR) || val[0] == MPIU_STR_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(*str_ptr, *maxlen_ptr, val);

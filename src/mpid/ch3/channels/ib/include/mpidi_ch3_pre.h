@@ -182,7 +182,10 @@ typedef struct MPIDI_CH3I_Alloc_mem_list_t
     struct MPIDI_CH3I_Alloc_mem_list_t *next;
 } MPIDI_CH3I_Alloc_mem_list_t;
 
-extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
+/* brad : in sshm/src/ch3_mem.c for the moment (might be promoted if other shared
+ *         memory channels need it)
+ */
+/* extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head; */
 
 #define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
 #define MPIDI_CH3_IMPLEMENTS_FREE_MEM

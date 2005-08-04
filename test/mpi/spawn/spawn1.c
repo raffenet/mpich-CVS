@@ -22,9 +22,12 @@ int main( int argc, char *argv[] )
     int errs = 0, err;
     int rank, size, rsize, i;
     int np = 2;
+    int brad=1;
     int errcodes[2];
     MPI_Comm      parentcomm, intercomm;
     MPI_Status    status;
+
+//    while(brad);
 
     MTest_Init( &argc, &argv );
 

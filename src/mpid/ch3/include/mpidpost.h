@@ -24,8 +24,8 @@
   Return value:
   A MPI error class.
 E*/
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_ptr, int * pg_rank);
-
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_ptr, int * pg_rank,
+                   char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
 
 /*E
   MPIDI_CH3_Finalize - Shutdown the channel implementation.
@@ -53,7 +53,7 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
 #endif
 
 
-#if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
+#if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)  /* brad : nobody has this defines */
 /*E
   MPIDI_CH3_Comm_get_parent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
 
@@ -564,11 +564,33 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rreqp);
 
 
+/* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be executed by two or more channels */
+int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                         char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);                         
+int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                         char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
+
+/* added by brad. required for (socket version) upcall to Connect_to_root */
+#ifdef MPIDI_CH3_USES_SOCK
+extern MPIDU_Sock_set_t sock_set;
+#endif
+
+/* added by brad.  business card related global and functions */
+#define MAX_HOST_DESCRIPTION_LEN 256
+extern int MPIDI_CH3I_listener_port;
+int MPIDI_CH3I_Listener_get_port(void);
+int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
+int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
+
+/* added by brad.  finalization related upcalls */
+int MPIDI_CH3U_Finalize_sshm();
+
 /* RMA (optional) */
 void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr);
 int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info, 
                     MPID_Comm *comm_ptr, MPID_Win **win_ptr);
 int MPIDI_CH3_Free_mem(void *ptr);
+void MPIDI_CH3_Cleanup_mem();  /* brad : called during finalize replacing what sshm does/did  */
 int MPIDI_CH3_Start_PT_epoch(int lock_type, int dest, int assert, MPID_Win *win_ptr);
 int MPIDI_CH3_End_PT_epoch(int dest, MPID_Win *win_ptr);
 int MPIDI_CH3_Win_free(MPID_Win **win_ptr);

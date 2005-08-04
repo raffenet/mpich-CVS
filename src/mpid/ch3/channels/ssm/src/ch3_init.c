@@ -25,9 +25,47 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_pptr, int * pg_rank_ptr)
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
+    int pg_size;
+    int p;
+
+    MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
+    
+/*     printf("before MPIDI_CH3U_Init_sock\n"); */
+    /* initialize aspects specific to sockets.  do NOT publish business card yet  */
+    mpi_errno = MPIDI_CH3U_Init_sock(has_args, has_env, has_parent, pg_p, pg_rank_p,
+                               NULL, bc_key_p, bc_val_p, val_max_sz_p);
+/*     printf("after MPIDI_CH3U_Init_sock\n"); */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+
+/*     printf("before MPIDI_CH3U_Init_sshm\n"); */
+    /* initialize aspects specific to sshm.  now publish business card   */
+    mpi_errno = MPIDI_CH3U_Init_sshm(has_args, has_env, has_parent, pg_p, pg_rank_p,
+                               publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
+/*     printf("after MPIDI_CH3U_Init_sshm\n"); */
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }
+
+    /* brad : these variables are no longer used but instead Init occurs via generic
+     *         PMI code in mpid_init.c and also upcalls to ch3u_init_sock.c and
+     *         ch3u_init_sshm.c to do the same thing
+     */
+ 
+#if 0  /* brad : start */
     int pmi_errno = PMI_SUCCESS;
     MPIDI_PG_t * pg = NULL;
     int pg_rank;
@@ -57,6 +95,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
 #   endif
 
+    /* brad : this code is all independent and now in MPIDI_CH3I_PMI_Init.  the upcalls
+     *         above get the code specific to sockets and shared memory.
+     */
+    
     /*
      * Extract process group related information from PMI and initialize structures that track the process group connections,
      * MPI_COMM_WORLD, and MPI_COMM_SELF
@@ -73,13 +115,18 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_rank", "**pmi_get_rank %d", mpi_errno);
 	return mpi_errno;
     }
+#endif /* brad : end if 0.  need pg_size for pg->vct[p].ch.bShm initialization */
+    
     mpi_errno = PMI_Get_size(&pg_size);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
 	return mpi_errno;
     }
-
+#if 0  /* brad : below is common */
+    
+    /* brad : common code in MPIDI_CH3I_PMI_Init does appnum adjustments here */
+    
     /*
      * Get the process group id
      */
@@ -174,6 +221,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
 
+    /* brad : specific to this channel.  similar in essm and sshm */
     MPIDI_CH3I_Process.shm_reading_list = NULL;
     MPIDI_CH3I_Process.shm_writing_list = NULL;
     MPIDI_CH3I_Process.num_cpus = -1;
@@ -219,13 +267,17 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 #endif
 #endif
 #ifndef HAVE_WINDOWS_H
-    pg->ch.nShmWaitSpinCount = 1;
+    pg->ch.nShmWaitSpinCount = 1;   /* brad - does this mean non-windows systems are all 1? */
     g_nLockSpinCount = 1;
 #endif
 
+
+#endif /* brad : VCs initialized in MPIDI_CH3U_init_* upcalls.  still need to initialize bShm.  */
+    
     /* Allocate and initialize the VC table associated with this process group (and thus COMM_WORLD) */
     for (p = 0; p < pg_size; p++)
     {
+#if 0 /* brad : bShm only */
 	pg->vct[p].ch.sendq_head = NULL;
 	pg->vct[p].ch.sendq_tail = NULL;
 	pg->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
@@ -240,9 +292,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	pg->vct[p].ch.shm_state = 0;
 	pg->vct[p].ch.shm_next_reader = NULL;
 	pg->vct[p].ch.shm_next_writer = NULL;
-	pg->vct[p].ch.bShm = FALSE;
+#endif /* brad : bShm only */
+/*         printf("\tvc init (%d)\n", p); */
+	(*pg_p)->vct[p].ch.bShm = FALSE;
     }
-    
+
+#if 0 /* brad : below is common in MPIDI_CH3I_PMI_Init */
     /*
      * Initialize Progress Engine (and setup listener socket)
      */
@@ -270,6 +325,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     if (mpi_errno != PMI_SUCCESS)
     {
     }
+    /* brad : separating malloc's for val and business_card not done in new MPIDI_CH3I_PMI_Init.  if
+     *         still required for business card, they can be malloced locally in business card
+     *         related functions done in upcalls (MPIDI_CH3U_Get_business_card_*())
+     */
     val = MPIU_Malloc(val_max_sz);
     if (val == NULL)
     {
@@ -294,6 +353,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
     */
+
+    /* brad : the sock portion of the business card creation is now handled by the upcall
+     *          MPIDI_CH3U_Get_business_card_sock within MPIDI_CH3I_Get_business_card
+     */
     port = MPIDI_CH3I_Listener_get_port();
     mpi_errno = MPIDU_Sock_get_host_description(host_description, 256);
     if (mpi_errno != MPI_SUCCESS)
@@ -581,7 +644,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
 #endif
 
+#endif /* brad : all above is common */
+    
 fn_exit:
+
+    /* brad : these are handled (or their equivalent bc_*) in MPID_Init now */
+#if 0
     if (val != NULL)
     {
 	MPIU_Free(val);
@@ -594,17 +662,20 @@ fn_exit:
     {
 	MPIU_Free(bc_orig);
     }
-    
+#endif
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
     return mpi_errno;
 
 fn_fail:
-    if (pg != NULL)
+    if ((*pg_p) != NULL)
     {
-	MPIDI_PG_Destroy(pg);
+	MPIDI_PG_Destroy(*pg_p);
     }
     goto fn_exit;
 }
 
+#if 0 /* brad : now in mpid_init.c */
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {
     return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
@@ -624,3 +695,4 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
+#endif

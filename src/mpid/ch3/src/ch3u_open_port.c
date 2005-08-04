@@ -15,7 +15,9 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Open_port(char *port_name)
 {
-    int mpi_errno = MPI_SUCCESS, len;
+    int mpi_errno = MPI_SUCCESS;
+#ifdef MPIDI_CH3_USES_SOCK
+    int len;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_OPEN_PORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_OPEN_PORT);
@@ -30,11 +32,11 @@ int MPIDI_CH3_Open_port(char *port_name)
     }
     /* --END ERROR HANDLING-- */
 
-    MPIDI_CH3I_Port_name_tag++;
-    
+    MPIDI_CH3I_Port_name_tag++;    
     mpi_errno = MPIDI_CH3I_Get_business_card(port_name, MPI_MAX_PORT_NAME);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_OPEN_PORT);
+#endif
     return mpi_errno;
 }

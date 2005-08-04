@@ -257,6 +257,23 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
     int mpi_errno;
+
+    mpi_errno = MPIDI_CH3U_Get_business_card_sock(&value, &length);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+        return mpi_errno;
+    }
+
+    return MPIDI_CH3U_Get_business_card_sshm(&value, &length);
+            
+    /* brad : now this is accomplished through upcalls.  prior, this wasn't used anyway but
+     *           accomplished within ch3_init.c itself.  now that code is common and uses
+     *           the business card methods
+     */
+    /* brad : eventually, we want to add bizcard functionality to ssm (full cache only in
+     *         sock initially)
+     */
+#if 0    
     int port;
     char host_description[256];
     char host[100];
@@ -320,4 +337,5 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 	return mpi_errno;
     }
     return MPI_SUCCESS;
+#endif
 }

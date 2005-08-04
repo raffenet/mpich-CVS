@@ -9,12 +9,17 @@
 
 #include "mpidu_sock.h"
 
+/* brad : these are for having the appropriate upcalls compiled */
+#define MPIDI_CH3_USES_SOCK
+#define MPIDI_CH3_USES_ACCEPTQ
+
+
 /*
  * Features needed or implemented by the channel
  */
 #undef MPID_USE_SEQUENCE_NUMBERS
 #undef MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT
-#define MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE
+/* #define MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE brad : factored up to mpid/ch3/src dir */
 #define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
 #define MPIDI_CH3_IMPLEMENTS_COMM_SPAWN_MULTIPLE
 #define MPIDI_CH3_IMPLEMENTS_COMM_ACCEPT

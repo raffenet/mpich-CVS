@@ -6,6 +6,9 @@
 
 #include "mpidimpl.h"
 
+/* added by brad */
+#include "pmi.h"
+static int MPIDI_CH3I_PMI_Finalize();
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
@@ -138,7 +141,7 @@ int MPID_Finalize()
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**ch3|close_progress", 0);
-	    break;
+	    break;  /* brad : why is this only a break? */
 	}
 	/* --END ERROR HANDLING-- */
     }
@@ -154,6 +157,11 @@ int MPID_Finalize()
 	}
     }
 
+    mpi_errno = MPIDI_CH3I_PMI_Finalize();
+    if(mpi_errno != MPI_SUCCESS)
+    {
+        return mpi_errno;  /* brad : what more should i do?  print something? create_code? */
+    }
     mpi_errno = MPIDI_CH3_Finalize();
     
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
@@ -167,5 +175,40 @@ int MPID_Finalize()
 
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_CH3I_PMI_Finalize()
+{
+    int mpi_errno = MPI_SUCCESS;
+    int rc;
+
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
+
+    /* Shutdown the progress engine */
+    mpi_errno = MPIDI_CH3I_Progress_finalize();
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					 "**ch3|sock|progress_finalize", 0);
+          return mpi_errno;
+	/* --END ERROR HANDLING-- */
+    }
+
+    /* Let PMI know the process is about to exit */
+    rc = PMI_Finalize();
+    if (rc != 0)
+    {
+          /* --BEGIN ERROR HANDLING-- */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+					 MPI_ERR_OTHER, "**ch3|sock|pmi_finalize", "**ch3|sock|pmi_finalize %d", rc);
+          return mpi_errno;
+          /* --END ERROR HANDLING-- */
+    }
     return mpi_errno;
 }

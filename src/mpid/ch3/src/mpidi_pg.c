@@ -209,3 +209,13 @@ int MPIDI_PG_Get_next(MPIDI_PG_t ** pg_ptr)
 
     return MPI_SUCCESS;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PG_Iterate_reset
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_PG_Iterate_reset()
+{
+    MPIDI_PG_iterator_next = MPIDI_PG_list;
+    return MPI_SUCCESS;
+}

@@ -4,6 +4,18 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* brad : originally, this file was simply copied from channels/sock/src/ch3i_bizcard_cache.c
+ *         to see if it compiled independently.  it did, and the functions haven't been changed
+ *         from CH3I yet perhaps misleadingly.  this was so the calling functions didn't (yet)
+ *         have to be changed but in the future they might need to be changed.
+ *
+ *        also, it may need to be more deeply investigated as to whether this implementation
+ *         of a bizcard cache contained here is in some way sock-specific (i.e. would a (scalable)
+ *         shared memory one look different?).
+ *
+ *        the error messages below have "..ch3|sock.." hard-coded into them.
+ */
+
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
@@ -105,7 +117,7 @@ int MPIDI_CH3I_Add_to_bizcard_cache(char *pg_id, int pg_size, int rank, char *bi
         MPIDI_CH3I_Bizcard_cache_head = curr_ptr;
     }
 
-    /* Add the bizcard to the cache */
+    /* Add the bizcard to the cache (brad : this might as well still be in the else brackets) */
 
     curr_ptr->bizcards[rank] = (char *) MPIU_Malloc(strlen(bizcard)+1);
     /* --BEGIN ERROR HANDLING-- */
@@ -197,4 +209,41 @@ int MPIDI_CH3I_Bizcard_cache_free(void)
     MPIDI_CH3I_Bizcard_cache_head = NULL;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BIZCARD_CACHE_FREE);
     return MPI_SUCCESS;
+}
+
+/* brad : returns rank if found or -1 if not. only used for intercommunicator in shared mem since
+*          the rank-vc mappings (usually) differ on each side of an intercommunicator
+*/
+int MPIDI_CH3I_Bizcard_Search(char *pg_id, int pid)
+{
+#ifdef MPIDI_CH3_USES_SSHM
+    int mpi_errno, i;
+    char val[1000],  val2[1000];
+    char my_hostname[256];
+    MPIDI_CH3I_Bizcard_cache_t *curr_ptr = MPIDI_CH3I_Bizcard_cache_head;
+
+    while  ( curr_ptr && ((strcmp(pg_id, curr_ptr->pg_id) != 0)) )
+        curr_ptr = curr_ptr->next;
+
+    if(curr_ptr)
+    {
+        gethostname(my_hostname, 256);
+        for(i=0; i < curr_ptr->pg_size; i++)
+        {
+            /* get rid of 1000, fix error conditions */
+            mpi_errno = MPIU_Str_get_string_arg(curr_ptr->bizcards[i],MPIDI_CH3I_SHM_QUEUE_KEY, val, 1000);
+            if (mpi_errno != MPIU_STR_SUCCESS)
+                return -1;
+            mpi_errno = MPIU_Str_get_string_arg(curr_ptr->bizcards[i],MPIDI_CH3I_SHM_HOST_KEY, val2, 1000);
+            if (mpi_errno != MPIU_STR_SUCCESS)
+                return -1;
+            /* brad : could have same pid on different host */
+            if(pid == atoi(val) && strcmp(val2, my_hostname) == 0)
+                return i;
+        }
+    }
+
+#endif
+    /* not found */
+    return -1;
 }

@@ -34,6 +34,9 @@ int main(int argc, char *argv[])
     MPI_Status status;
     MPI_Info spawn_path = MPI_INFO_NULL;
     int verbose = 0;
+    int brad=1;
+
+//    while(brad);
 
     if (getenv("MPITEST_VERBOSE"))
     {

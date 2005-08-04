@@ -10,6 +10,9 @@
 #include "mpidi_ch3i_sshm_conf.h"
 #include "mpidi_ch3_conf.h"
 
+/* brad : this are for having the appropriate upcalls compiled */
+#define MPIDI_CH3_USES_SSHM
+
 #if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
 #define USE_POSIX_SHM
 #elif defined (HAVE_SHMGET) && defined (HAVE_SHMAT) && defined (HAVE_SHMCTL) && defined (HAVE_SHMDT)
@@ -203,7 +206,8 @@ typedef struct MPIDI_CH3I_Alloc_mem_list_t {
     struct MPIDI_CH3I_Alloc_mem_list_t *next;
 } MPIDI_CH3I_Alloc_mem_list_t;
 
-extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head;
+/* brad : static in ch3_mem.c now */
+/* extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head; */
 
 /*
  * MPIDI_CH3_WIN_DECL (additions to MPID_Win)
@@ -244,6 +248,7 @@ int *exposure_epoch_grp_ranks_in_win;
 #define MPIDI_CH3_IMPLEMENTS_WIN_FREE
 #define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
 #define MPIDI_CH3_IMPLEMENTS_FREE_MEM
+#define MPIDI_CH3_IMPLEMENTS_CLEANUP_MEM /* brad : new */
 #define MPIDI_CH3_IMPLEMENTS_START_PT_EPOCH
 #define MPIDI_CH3_IMPLEMENTS_END_PT_EPOCH
 

@@ -642,7 +642,7 @@ int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
     }
 
     iter = g_queue_list;
-    while (iter->next)
+    while (iter->next)  /* brad : why does this search begin at iter->next? */
     {
 	iter = iter->next;
 	if (strcmp(iter->name, name) == 0)

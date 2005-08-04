@@ -13,7 +13,7 @@
 #endif
 
 #undef USE_CH3I_PROGRESS_DELAY_QUEUE
-#define MAX_HOST_DESCRIPTION_LEN 256
+/* #define MAX_HOST_DESCRIPTION_LEN 256 brad : now in mpidpost.h */
 
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
@@ -46,8 +46,10 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #endif
 
 
-static MPIDU_Sock_set_t sock_set; 
-static int MPIDI_CH3I_listener_port = 0;
+/* static brad : now in mpidpost.h for Connect_to_root upcall */
+MPIDU_Sock_set_t sock_set; 
+/* static int MPIDI_CH3I_listener_port = 0; brad : now an extern in mpidpost.h and
+     defined in ch3u_get_business_card */
 static MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
@@ -147,6 +149,8 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
      *
      * This is presently not possible, and thus the code is commented out.
      */
+
+    /* brad : what does this comment above mean by "the following code"? */
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     {
 	if (progress_state->ch.completion_count != MPIDI_CH3I_progress_completion_count)
@@ -225,6 +229,9 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 	/*
 	 * Awaken any threads which are waiting for the progress that just occurred
 	 */
+          /* brad : should this be called within the do-while? how does
+           *           MPIDI_CH3I_Progress_handle_sock_event react to multithreading?
+           */
 	MPIDI_CH3I_Progress_continue(MPIDI_CH3I_progress_completion_count);
     }
 #   endif
@@ -412,6 +419,10 @@ void MPIDI_CH3I_Progress_wakeup(void)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
+    /* brad : now accomplished through upcall */
+    return MPIDI_CH3U_Get_business_card_sock(&value, &length);
+
+#if 0
     int mpi_errno;
     char host_description[MAX_HOST_DESCRIPTION_LEN];
 
@@ -456,6 +467,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     }
     /* --END ERROR HANDLING-- */
     return MPI_SUCCESS;
+#endif
 }
 
 
@@ -1355,6 +1367,9 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
+    /* brad : this really should be in some sort of socket upcall because this should be
+     *         done the same exact way in the socket portion of ssm and essm.
+     */
     char * key;
     char * val;
     char * val_p;
@@ -1441,10 +1456,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
         }
 	/* --END ERROR HANDLING-- */
 
+        /* brad : should this business card acquired from KVS be added to the bizcache?  */
+
         MPIU_Free(key);
     }
 
-    val_p = val;
+    val_p = val;  /* brad : seems to have no purpose */
 
     mpi_errno = MPIU_Str_get_string_arg(val, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, MAX_HOST_DESCRIPTION_LEN);
     /* --BEGIN ERROR HANDLING-- */
@@ -1505,6 +1522,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 }
 /* end MPIDI_CH3I_VC_post_connect() */
 
+#if 0 /* brad : currently in ch3/src/ch3u_connect_to_root.c */
 
 #undef FUNCNAME
 #define FUNCNAME  MPIDI_CH3I_Connect_to_root
@@ -1628,6 +1646,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     return mpi_errno;
 }
 /* MPIDI_CH3I_Connect_to_root() */
+#endif /* brad : end */
 
 
 #undef FUNCNAME

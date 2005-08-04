@@ -408,7 +408,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	    
 	    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
 	    /* decrement CC (but don't mark data transfer as complete since the transfer could still be in progress) */
-	    MPIDI_CH3U_Request_complete(sreq);
+	    MPIDI_CH3U_Request_complete(sreq);  /* brad : seen this segfault in ssm dynamic process...? */
 
 	    *rreqp = NULL;
 	    break;

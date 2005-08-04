@@ -43,7 +43,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 #ifdef MPICH_DBG_OUTPUT
     if (is_blocking)
     {
-	MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
+	MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));  /* brad : "false" never printed */
     }
 #endif
     do
@@ -340,6 +340,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    }
 	}
 
+        /* brad : condition commented out in naive version */
 	if (((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0) || !is_blocking)
 	{
 	    /* check for new shmem queue connection requests */
@@ -362,6 +363,19 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		MPIDI_PG_t *pg;
 
 		MPIDI_PG_Find(info.pg_id, &pg);
+                /* brad : must deduce rank in the case of INTERcomms, so that we get
+                 *          the correct vc.  pg_rank is filled based on MPI_COMM_WORLD so it
+                 *          doesn't work in the case of different MPI_COMM_WORLDs.
+                 */                
+                   if (info.is_intercomm)
+                   {
+                       info.pg_rank = MPIDI_CH3I_Bizcard_Search(pg->id, info.pid);
+                       if(info.pg_rank == -1)
+                       {
+                           mpi_errno = -1;
+                           goto fn_exit;
+                       }
+                   }
 		MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
 		/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
 		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);

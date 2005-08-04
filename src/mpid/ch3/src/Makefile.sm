@@ -1,10 +1,23 @@
 INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 lib${MPILIBNAME}_a_SOURCES =	\
+    ch3u_acceptq.c		\
+    ch3u_bizcard_cache.c	\
     ch3u_buffer.c		\
+    ch3u_comm_accept.c		\
+    ch3u_comm_connect.c		\
+    ch3u_comm_spawn_multiple.c	\
+    ch3u_connect_to_root.c	\
+    ch3u_finalize_sshm.c	\
+    ch3u_get_business_card_sock.c	\
+    ch3u_get_business_card_sshm.c	\
+    ch3u_get_parent_port.c	\
     ch3u_handle_connection.c	\
     ch3u_handle_recv_pkt.c	\
     ch3u_handle_recv_req.c	\
     ch3u_handle_send_req.c	\
+    ch3u_init_sock.c		\
+    ch3u_init_sshm.c		\
+    ch3u_open_port.c		\
     ch3u_recvq.c		\
     ch3u_request.c		\
     mpid_abort.c		\
@@ -51,8 +64,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_win_lock.c		\
     mpid_win_free.c		\
     mpid_win_test.c		\
-    mpid_alloc_mem.c		\
-    mpid_free_mem.c		\
+    mpid_mem.c			\
     mpidi_isend_self.c		\
     mpidi_pg.c			\
     mpidi_printf.c		\

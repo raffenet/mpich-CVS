@@ -18,16 +18,34 @@
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
+#if 0
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_pptr, int * pg_rank_ptr)
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                   char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
+
+    mpi_errno = MPIDI_CH3U_Init_sshm(has_args, has_env, has_parent, pg_p, pg_rank_p,
+                               publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
+
+    if(mpi_errno != MPI_SUCCESS && (*pg_p) != NULL)
+    {
+	MPIDI_PG_Destroy(*pg_p);
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
+    return mpi_errno;
+
+#if 0 /* brad : now accomplished through upcall */
     int pmi_errno = PMI_SUCCESS;
     MPIDI_PG_t * pg = NULL;
     int pg_rank;
@@ -69,6 +87,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
 
+    /* brad : common code in MPIDI_CH3I_PMI_Init does appnum adjustments here */
+    
     /*
      * Get the process group id
      */
@@ -206,7 +226,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
 #endif
 #endif
-#ifndef HAVE_WINDOWS_H
+#ifndef HAVE_WINDOWS_H    /* brad - can nShmWaitSpinCount be uninitialized? */
     g_nLockSpinCount = 1;
 #endif
 
@@ -511,8 +531,10 @@ fn_fail:
 	MPIDI_PG_Destroy(pg);
     }
     goto fn_exit;
+#endif  /* brad : end of common code */
 }
 
+#if 0 /* brad : now in mpid_init.c */
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {
     return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
@@ -532,3 +554,4 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
+#endif

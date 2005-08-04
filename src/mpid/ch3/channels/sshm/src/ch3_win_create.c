@@ -163,7 +163,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
        optimizations. For example, where the window is allocated in
        shared memory on one process and others call win_create with NULL. */
 
-    curr_ptr = MPIDI_CH3I_Alloc_mem_list_head;
+    curr_ptr = MPIDI_CH3I_Get_mem_list_head();
     if (base == NULL) {
         found = 1;
     }

@@ -15,18 +15,30 @@
 
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
-int MPIDI_CH3I_Port_name_tag=0;
+/* int MPIDI_CH3I_Port_name_tag=0; brad : now in upcall for all channels using sockets */
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 
 
+/*
+ *  MPIDI_CH3_Init  - makes socket specific initializations.  Most of this functionality
+ *                      is in the MPIDI_CH3U_Init_sock upcall because the same tasks need
+ *                      to be done for the ssh (sock + shm) channel.  As a result, it
+ *                      must except a lot more arguements.
+ */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p)
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
+    /* brad : none of these are used any more.  generic PMI code in mpid_init.c and also upcalls
+    *           to ch3u_init_sock.c accomplish the same thing
+    */
+#if 0
     MPIDI_PG_t * pg = NULL;
     int pg_rank;
     int pg_size;
@@ -40,11 +52,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     char * val = NULL;
     int p;
     int pmi_errno = PMI_SUCCESS;
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
-    
+
+    /* brad : these have moved into MPIDI_CH3I_PMI_Init now */
+#if 0
     MPIDI_CH3I_Process.parent_port_name = NULL;
     MPIDI_CH3I_Process.acceptq_head = NULL;
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
@@ -52,7 +67,22 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
     }
 #   endif
+#endif
 
+    /* initialize aspects specific to sockets  */
+    mpi_errno = MPIDI_CH3U_Init_sock(has_args, has_env, has_parent, pg_p, pg_rank_p,
+                               publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	/* --BEGIN ERROR HANDLING-- */
+	goto fn_fail;
+	/* --END ERROR HANDLING-- */
+    }    
+
+    /* brad : this code is all independent and now in MPIDI_CH3I_PMI_Init.  the upcall
+     *         above gets the code specific to sockets (ssm uses it too).
+     */    
+#if 0
     /*
      * Intial the process manangement interface (PMI), and get rank and size information about our process group
      */
@@ -192,10 +222,15 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
 
+    /*   brad : the following is now taken care of in MPIDI_CH3U_Init_sock although
+     *           in time, this VC for-loop executes AFTER the code still in this method...
+     *           question : does MPIDI_CH3I_Progress_init() depend on these fields?
+     */
 
     /*
      * Initialize the VCs associated with this process group (and thus MPI_COMM_WORLD)
      */
+
     for (p = 0; p < pg_size; p++)
     {
 	pg->vct[p].ch.sendq_head = NULL;
@@ -204,6 +239,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	pg->vct[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
 	pg->vct[p].ch.conn = NULL;
     }
+
+    /*
+     *  brad : the following is now taken care of in MPIDI_CH3_PMI_Init
+     */
+
     
     /*
      * Initialize Progress Engine.  This must occur before the business card is requested because part of progress engine
@@ -271,7 +311,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
-    
+
+    /* brad :  the following code has migrated to MPIDI_CH3U_Init_sock */
+
+    /*  TODO brad : must implement this the same in ssm as in sock.  where should the code go? upcalls
+     *        to mpid/src/ch3u_get_business_card.c perhaps? */
     mpi_errno = MPIDI_CH3I_Get_business_card(val, val_max_sz);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -280,6 +324,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
+
     pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
     if (pmi_errno != PMI_SUCCESS)
     {
@@ -317,6 +362,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
 
+    /* brad : if was here originally */
 #if 0
     {
 	for (p = 0; p < pg_size; p++)
@@ -343,16 +389,23 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	    MPIU_dbg_printf("[%d] businesscard=%s\n", pg_rank, val);
 	}
     }
+    /* brad : endif here originally */
 #endif
 
+    /* brad : the following was here previously */
     /* FIXME: has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
     *has_env = TRUE;
 
     *pg_p = pg;
     *pg_rank_p = pg_rank;
-    
+
+    /* brad : a close to my if 0 */
+#endif
   fn_exit:
+
+    /* brad : these are handled (or their equivalent bc_*) in MPID_Init now */
+#if 0
     if (val != NULL)
     { 
 	MPIU_Free(val);
@@ -361,23 +414,28 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     { 
 	MPIU_Free(key);
     }
-
+#endif
+    
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
+    /* brad : this is handled in MPIDI_CH3I_Init_sock now */
+#if 0    
     if (pg != NULL)
     {
 	/* MPIDI_CH3I_PG_Destroy(), which is called by MPIDI_PG_Destroy(), frees pg->ch.kvs_name */
 	MPIDI_PG_Destroy(pg);
     }
+#endif
 
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 
-
+/* these were identical in each channel so were moved up to mpid_init.c */
+#if 0
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {
     return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
@@ -398,3 +456,4 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
+#endif
