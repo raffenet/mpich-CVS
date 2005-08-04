@@ -21,7 +21,7 @@
 #define FUNCNAME connection_alloc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
+int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_Connection_t * conn = NULL;

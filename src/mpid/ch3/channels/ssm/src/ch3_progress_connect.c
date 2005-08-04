@@ -501,6 +501,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     return mpi_errno;
 }
 
+/*
 #undef FUNCNAME
 #define FUNCNAME connection_alloc
 #undef FCNAME
@@ -555,7 +556,7 @@ int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 
     goto fn_exit;
 }
-
+*/
 
 #undef FUNCNAME
 #define FUNCNAME connection_free

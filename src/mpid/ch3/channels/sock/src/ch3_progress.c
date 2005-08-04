@@ -54,7 +54,7 @@ static MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
-static inline int connection_alloc(MPIDI_CH3I_Connection_t **);
+int connection_alloc(MPIDI_CH3I_Connection_t **);
 static inline void connection_free(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
@@ -1648,7 +1648,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 /* MPIDI_CH3I_Connect_to_root() */
 #endif /* brad : end */
 
-
+#if 0 /* this is now in ch3/src/ch3u_connect_to_root.c*/
 #undef FUNCNAME
 #define FUNCNAME connection_alloc
 #undef FCNAME
@@ -1711,7 +1711,7 @@ static inline int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME connection_free
