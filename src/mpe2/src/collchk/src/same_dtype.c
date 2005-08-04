@@ -178,12 +178,15 @@ unsigned int CollChk_basic_value(MPI_Datatype type)
 #endif
 
     else {
-#if defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+#if defined( HAVE_INT_MPI_DATATYPE )
+        fprintf( stderr, "CollChk_basic_value()) "
+                         "Unknown basic MPI datatype %x.\n", type );
+#elif defined( HAVE_PTR_MPI_DATATYPE )
         fprintf( stderr, "CollChk_basic_value()) "
                          "Unknown basic MPI datatype %p.\n", type );
 #else
         fprintf( stderr, "CollChk_basic_value()) "
-                         "Unknown basic MPI datatype %x.\n", type );
+                         "Unknown basic MPI datatype.\n" );
 #endif
         fflush( stderr );
         return 0;
@@ -273,12 +276,15 @@ unsigned int CollChk_basic_count(MPI_Datatype type)
 #endif
 
     else {
-#if defined( HAVE_LAM_FORTRAN_MPI_DATATYPE_IN_C )
+#if defined( HAVE_INT_MPI_DATATYPE )
+        fprintf( stderr, "CollChk_basic_count(): "
+                         "Unknown basic MPI datatype %x.\n", type );
+#elif defined( HAVE_PTR_MPI_DATATYPE )
         fprintf( stderr, "CollChk_basic_count(): "
                          "Unknown basic MPI datatype %p.\n", type );
 #else
         fprintf( stderr, "CollChk_basic_count(): "
-                         "Unknown basic MPI datatype %x.\n", type );
+                         "Unknown basic MPI datatype.\n" );
 #endif
         fflush( stderr );
         return 0;
