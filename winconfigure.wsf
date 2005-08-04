@@ -2881,6 +2881,10 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#define HAVE_MPI_RMA_LOCK 1")
 				Case "HAVE_MPI_RMA_TEST"
 					fout.WriteLine("#define HAVE_MPI_RMA_TEST 1")
+				Case "HAVE_MPI_F_STATUS_IGNORE"
+					fout.WriteLine("#define HAVE_MPI_F_STATUS_IGNORE 1")
+				Case "HAVE_MPI_F_STATUSES_IGNORE"
+					fout.WriteLine("#define HAVE_MPI_F_STATUSES_IGNORE 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
