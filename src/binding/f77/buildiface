@@ -64,6 +64,21 @@ $prototype_file = "../../include/mpi.h.in";
 %mpiRoutinesFile = ();
 
 # Handle special initializations
+#
+# Notes on this string.  Some symbols need to be initialized at runtime.
+# These are typically the addresses of the "special" Fortran symbols, 
+# such as MPIR_F_MPI_BOTTOM.  Because MPI-2 requires that MPI_Init and 
+# MPI_Init_thread, called in *any* language, initalize MPI for *all*
+# languages, we can't depend on having the Fortran versions of MPI_Init or
+# MPI_Init_thread called before these values might be used in a Fortran
+# wrapper function.
+# We also cannot have the C version of MPI_Init and MPI_Init_thread call 
+# the initialization routine, because some Fortran compilers will require
+# special routines from that particular vendors Fortran runtime library for
+# any executable that uses routines that are compiled with the Fortran 
+# compiler, forcing user programs that are entirely C to link with the 
+# Fortran runtime.  Thus, we must check whether the values are initialized
+# before any use in any routine.
 $specialInitAdded = 0;
 $specialInitString = "\
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }";
@@ -2368,6 +2383,8 @@ sub build_specials {
 #   error \"Fortran values must be determined at configure time\"
 #endif
 ";
+    # See the discussion on MPIR_F_NeedInit at the head of this file
+    print $OUTFD "    mpirinitf_(); MPIR_F_NeedInit = 0;\n";
     print $OUTFD "    *ierr = MPI_Init( 0, 0 );\n";
     # Still to do:
     #   Initialize the Fortran versions of the predefined keyvals.
@@ -2390,6 +2407,8 @@ sub build_specials {
     &print_routine_type_decl( $OUTFD, "init_thread" );
     &print_args( $OUTFD, $args, 0, "init_thread" );
     print $OUTFD "{\n";
+    # See the discussion on MPIR_F_NeedInit at the head of this file
+    print $OUTFD "    mpirinitf_(); MPIR_F_NeedInit = 0;\n";
     print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );\n";
     print $OUTFD "}\n";
     close ($OUTFD);
