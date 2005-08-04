@@ -486,7 +486,7 @@ if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
 #   FIXME: MPICH2 include MPI_Fint, Need to fetch the value somehow.
 
 #   CHECK: MPICH2 does not have MPI_F_STATUS_IGNORE, MPI_F_STATUSES_IGNORE
-dnl AC_DEFINE( HAVE_F_MPI_STATUS_IGNORE, 1,
+dnl AC_DEFINE( HAVE_MPI_F_STATUS_IGNORE, 1,
 dnl            [Define if MPI_F_STATUS_IGNORE available] )
 dnl AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
 dnl            [Define if MPI_F_STATUSES_IGNORE available] )
@@ -576,7 +576,7 @@ dnl Determine if MPI_F_STATUS_IGNORE exists
               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
     AC_MSG_RESULT($mpe_link_ok)
 if test "$mpe_link_ok" = "yes" ; then
-    AC_DEFINE( HAVE_F_MPI_STATUS_IGNORE, 1,
+    AC_DEFINE( HAVE_MPI_F_STATUS_IGNORE, 1,
                [Define if MPI_F_STATUS_IGNORE available] )
 fi
 
