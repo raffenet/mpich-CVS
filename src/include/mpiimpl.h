@@ -1477,6 +1477,11 @@ void *MPID_Alloc_mem( size_t size, MPID_Info *info );
   @*/
 int MPID_Free_mem( void *ptr );
 
+/* brad : added as means to cleanup.  default implementation does nothing.  sshm
+ *         uses this within finalize (and potentially abort?)
+ */
+void MPID_Cleanup_mem();
+
 /*@
   MPID_Mem_was_alloced - Return true if this memory was allocated with 
   'MPID_Alloc_mem'
@@ -1497,7 +1502,7 @@ int MPID_Free_mem( void *ptr );
   Module:
   Win
   @*/
-int MPID_Mem_was_alloced( void *ptr );
+int MPID_Mem_was_alloced( void *ptr );  /* brad : this isn't used or implemented anywhere */
 
 /* ------------------------------------------------------------------------- */
 /* end of also in mpirma.h ? */
