@@ -153,6 +153,22 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     vc->ch.sock = MPIDU_SOCK_INVALID_SOCK;
     vc->ch.conn = NULL;
+#ifdef MPIDI_CH3_USES_SSHM
+    /* this will be essentially only ssm because the ifdef is nested within USES_SOCK */
+    vc->ch.sendq_head = NULL;
+    vc->ch.sendq_tail = NULL;
+    vc->ch.recv_active = NULL;
+    vc->ch.send_active = NULL;
+    vc->ch.req = NULL;
+    vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    vc->ch.read_shmq = NULL;
+    vc->ch.write_shmq = NULL;
+    vc->ch.shm = NULL;
+    vc->ch.shm_state = 0;
+    vc->ch.shm_next_reader = NULL;
+    vc->ch.shm_next_writer = NULL;
+    vc->ch.bShm = FALSE;
+#endif    
     
     mpi_errno = connection_alloc(&conn);
     /* --BEGIN ERROR HANDLING-- */
