@@ -57,12 +57,16 @@
 
 \section{Introduction}
 \label{sec:intro}
-This manual describes how to set up a Windows machine to build MPICH2 on.
+This manual describes how to set up a Windows machine to build and test MPICH2 on.
 
 \section{Build machine}
 \label{sec:machine}
 
-Build a Windows XP or Windows Server 2003 machine.
+Build a Windows XP or Windows Server 2003 machine.  Place this machine in the MPICH domain
+and create a user in the domain with the same name as your MCS user name.  Use your MCS 
+password for this new account.  This isn't a requirement; you can create any username you
+want with any password you want and it doesn't have to be part of the MPICH domain.
+But it makes life a lot easier if you do.
 
 \section{Test machine}
 \label{sec:test_machine}
@@ -74,17 +78,254 @@ Also build a Windows Server 2003 X64 machine to test the Win64 distribution.
 
 This section describes the software necessary to build MPICH2.
 
-\subsection{Prerequisites}
-\label{sec:prerequisites}
+\subsection{Packages}
+\label{sec:packages}
 
 To build MPICH2 you will need:
 \begin{enumerate}
 \item Microsoft Developer Studio .NET 2003
 \item Microsoft Platform SDK
 \item cygwin - full installation
-\item Intel Fortran compiler
+\item Intel Fortran compiler IA32
 \item Intel Fortran compiler EMT64
 \item Mellanox 32bit and 64bit Infiniband libraries
 \end{enumerate}
+
+Microsoft Developer Studio can be found on the CDs from an MSDN subscription.  The
+2003 version is needed to get a compiler that is up to date on standards compliance.  This
+is needed to compile the C++ interface and handle types like ``long long''.
+
+The Platform SDK can also be found on the MSDN CDs or downloaded from Microsoft.com.  The
+latest version as of the writing of this document was Platform SDK - Windows Server 2003 SP1.
+This package needs to be installed to get the Win64 compilers.
+
+The Intel Fortran compilers need to be installed after Developer Studio and the PSDK because
+they integrate themselves into those two products.  The regular IA32 compiler needs to be 
+installed and the EMT64 compiler needs to be installed.  They are two separate packages and 
+they require a license file to use.  The license file is for a single user on a single 
+machine.
+
+The Mellanox Infiniband libraries are simply a package that needs to be unzipped.  They don't
+need to be installed because the build machine won't have Infiniband hardware on it.  I put
+the 32bit package in C:$\backslash$Mellanox and the 64bit package in C:$\backslash$Mellanox64.
+If different pathes are chosen then the scripts and Visual Studio project files will need to 
+be updated to reflect this change.
+
+cygwin needs to be installed to get cvs, perl and ssh.  MPICH2 can also be built completely
+under cygwin just like a Unix build so I install all of cygwin.  The latest cygwin packages
+are needed to build MPICH2 under cygwin and the MCS mirror site for cygwin does not contain
+the latest versions.  So I would select a download site other than the mcs mirror site during
+the cygwin install.  I also select to use the DOS file format during the install process for 
+cygwin.
+
+After installing cygwin, bring up a cygwin bash shell and generate some ssh keys.  I believe
+the command is: \texttt{ssh-keygen -t dsa}.  Then copy the public key generated to your
+mcs \texttt{~/.ssh/authorized\_keys} file.  This will allow you to ssh from this machine
+to harley.mcs.anl.gov without typing a password.  This is important in order for the 
+automated scripts to run without user intervention.
+
+Assuming you installed cygwin to the default \texttt{c:$\backslash$cygwin} directory, add 
+\texttt{c:$\backslash$cygwin$\backslash$bin} to your path environment variable.  This is 
+required so the automated scripts can run tools like ssh and perl without specifying the 
+full path.
+
+\section{Building MPICH2}
+\label{sec:building}
+
+This section describes how to make various packages once you have a working build machine.
+
+\subsection{Developer Studio automated 32bit build}
+\label{sec:devstudiobuild}
+
+The easist way to build an MPICH2 distribution is to use the Developer Studio environment
+and the makewindist.bat script from the top level of the mpich2 source tree.  You can check
+out mpich2 from CVS or you can simply copy this batch file from the distribution.  The batch
+file knows how to check out mpich2 so it the only file required to make a distribution.
+
+Bring up a build command prompt by selecting Start$\to$Progams$\to$Microsoft Visual Studio 
+.NET 2003$\to$Visual Studio .NET Tools$\to$Visual Studio .NET 2003 Command Prompt.
+
+Change directories to wherever you want to create the distribution.  mpich2 will be checked 
+out under the current directory.  Run the makewindist batch file:
+
+\begin{verbatim}
+makewindist.bat --with-checkout
+\end{verbatim}
+
+Since there are no bugs in MPICH2 everything will work automatically.  The batch file does the
+following steps:
+\begin{enumerate}
+\item check out mpich2allWithMPE and change into the mpich2 directory
+\item ssh to harley.mcs.anl.gov and checkout mpich2.  Then run \texttt{maint/updatefiles} on
+harley, collect all the generated \texttt{.h.in} files and copy them back to the Windows
+machine.
+\item run ``\texttt{winconfigure.wsf --cleancode}'' to configure mpich2 for Windows and output
+all the generated files like mpi.h and the fortran interface files, etc.
+\item run the Developer Studio command line tool to build all the pieces of MPICH2.  This
+includes each of the channels - sock, ssm, shm, sshm, essm, ib, and the multi-threaded sock
+channel.  Two versions of each channel are built, the regular release build and the rlog
+profiled version.  The mpi wrapper channel selector dll is built and three Fortran interfaces
+are built, one for each set of common symbol types and calling conventions.  mpiexec and
+smpd are built along with the Windows GUI tools and the cygwin libraries.  (These are the cygwin
+link libraries to use the Windows native build of MPICH2, not a Unix-style build of MPICH2
+under cygwin.)
+\item package up everthing into \texttt{maint$\backslash$ReleaseMSI$\backslash$mpich2.msi}.
+\end{enumerate}
+
+When the batch file is finished you will be left with a mpich2.msi file that can be used to
+install MPICH2 on any Win32 machine.  This file can be re-named to match our release naming 
+conventions.
+
+\subsection{Platform SDK builds}
+\label{sec:psdk_build}
+
+The makefile in the \texttt{mpich2$\backslash$winbuild} directory builds a distribution based 
+on what compilers are specified in the environment so it can be used to compile any version of
+MPICH2.  The following targets can all be built with this mechanism:
+\begin{itemize}
+\item Win64 X64
+\item Win64 IA64
+\item Win32 x86
+\end{itemize}
+
+But first you need to have mpich2 checked out and configured before building.
+\begin{enumerate}
+\item bring up a command prompt and check out mpich2: 
+
+\texttt{cvs -d :ext:ashton@harley.mcs.anl.gov:/home/MPI/cvsMaster co mpich2allWithMPE}.  Replace ashton with your own username.
+\item cd into mpich2
+\item run \texttt{getdotin.bat}
+\item run \texttt{winconfigure.wsf --cleancode}
+\end{enumerate}
+
+To build the Win64 X64 distribution do the following:
+\begin{enumerate}
+\item Bring up a build command prompt from the PSDK.  It can be found here: Start$\to$Programs
+$\to$Microsoft Platform SDK for Windows Server 2003 SP1$\to$Open Build Environment Window$\to$
+Windows Server 2003 64-bit Build Environment$\to$Set Win Svr 2003 x64 Build Env (Retail)
+\item Run \texttt{$\backslash$Program Files$\backslash$Intel$\backslash$Fortran$\backslash$compiler80$\backslash$Ia32e$\backslash$Bin$\backslash$ifortvars.bat}
+\item cd into \texttt{mpich2$\backslash$winbuild}
+\item run \texttt{build.bat 2>\&1 | tee build.x64.out}
+\end{enumerate}
+
+To build the Win64 IA64 distribution do the following:
+\begin{enumerate}
+\item Bring up a build command prompt from the PSDK.  It can be found here: Start$\to$Programs
+$\to$Microsoft Platform SDK for Windows Server 2003 SP1$\to$Open Build Environment Window$\to$
+Windows Server 2003 64-bit Build Environment$\to$Set Win Svr 2003 IA64 Build Env (Retail)
+\item Run \texttt{$\backslash$Program Files$\backslash$Intel$\backslash$Fortran$\backslash$compiler80$\backslash$Itanium$\backslash$Bin$\backslash$ifortvars.bat}
+\item cd into \texttt{mpich2$\backslash$winbuild}
+\item run \texttt{build.bat 2>\&1 | tee build.ia64.out}
+\end{enumerate}
+
+To build the Win32 x86 distribution do the following:
+\begin{enumerate}
+\item Bring up a build command prompt from the PSDK.  It can be found here: Start$\to$Programs
+$\to$Microsoft Platform SDK for Windows Server 2003 SP1$\to$Open Build Environment Window$\to$
+Windows 2000 Build Environment$\to$Set Windows 2000 Build Environment (Retail)
+\item Run \texttt{$\backslash$Program Files$\backslash$Intel$\backslash$Fortran$\backslash$compiler80$\backslash$Ia32$\backslash$Bin$\backslash$ifortvars.bat}
+\item cd into \texttt{mpich2$\backslash$winbuild}
+\item run \texttt{build.bat 2>\&1 | tee build.x86.out}
+\end{enumerate}
+
+\section{Distributing MPICH2 builds}
+\label{sec:distribute}
+
+If you built an .msi file using the Developer Studio build process \ref{sec:devstudiobuild} then
+all you have to do is rename the \texttt{mpich2.msi} file to something appropriate like
+\texttt{mpich2-1.0.3-1-win32-ia32.msi}
+
+If you built using the Platform SDK build process \ref{sec:psdk_build} then the output files
+are left in their build locations and need to be collected and put in a zip file for
+distributing.  This process should be automated with a script.
+
+\section{Testing MPICH2}
+\label{sec:testing}
+
+Run the \texttt{testmpich2.wsf} script to checkout mpich2, build it, install it, checkout 
+the test suites, build them, run the test suites, and collect the results in a web page.
+
+\subsection{Testing from scratch}
+
+\subsection{Testing an existing installation}
+
+\section{Runtime environment}
+
+This section describes the mpiexec environment that is particular to Windows.
+
+\subsection{User credentials}
+mpiexec must have the user name and password to launch MPI applications in the context of
+that user.  This information can be stored in a secure encrypted manner for each user on a
+machine.  Run \texttt{mpiexec -register} to save your username and password.  Then mpiexec
+will not prompt you for this information.
+
+This is also true for a nightly build script.  The user context under which the script is 
+run must have saved credentials so mpiexec doesn't prompt for them.  So scripts won't hang,
+mpiexec provides a flag, -noprompt, that will cause mpiexec to print out errors in cases when
+it normally would prompt for user input.  This can also be specified in the environment with
+the variable MPIEXEC\_NOPROMPT.
+
+\subsection{MPICH2 channel selection}
+MPICH2 for Windows comes with multiple complete implementations of MPI.  These are called
+channels and each build represents a different transport mechanism used to move MPI messages.
+The default channel uses sockets for communication.  There are two channels that use only
+shared memory.  There is a channel that uses both sockets and shared memory.  There is a
+channel that uses Infiniband.  There is a version of the sockets+shared memory channel that 
+uses events to eliminate the need for polling to cause message progress.  And there is a
+thread-safe version of the sockets channel.
+
+The short names for the channels are: sock, shm, sshm, ssm, ib, essm, mt.
+
+These channels can be selected at runtime with an environment variable - MPICH2\_CHANNEL.
+The following is an example that uses the Infiniband channel instead of the default sockets
+channel:
+
+\begin{verbatim}
+mpiexec -env MPICH2_CHANNEL ib -n 4 myapp.exe
+or
+mpiexec -channel ib -n 4 myapp.exe
+\end{verbatim}
+
+If you specify \texttt{auto} for the channel then mpiexec will automatically choose a
+channel for you.
+\begin{verbatim}
+mpiexec -channel auto -n 4 myapp.exe
+\end{verbatim}
+The rules are:
+\begin{enumerate}
+\item If numprocs is less than 8 on one machine, use the shm channel
+\item If numprocs is greater than 7 on one machine, use the sshm channel
+\item If running on multiple machines, use the ssm channel.  This channel can be changed 
+using winconfigure.
+\end{enumerate}
+
+\subsection{MPI apps with GUI}
+Many users on Windows machines want to build GUI apps that are also MPI applications.  This is
+completely acceptable as long as the application follows the rules of MPI.  MPI\_Init must be
+called before any other MPI function and it needs to be called soon after each process starts.
+The processes must be started with mpiexec but they are not required to be console applications.
+
+The one catch is that MPI applications are hidden from view so any Windows that a user 
+application brings up will not be able to be seen.  mpiexec has an option to allow the MPI 
+processes on the local machine to be able to bring up GUIs.  Add -localroot to the mpiexec
+command to enable this capability.  But even with this option, all GUIs from processes on 
+remote machines will be hidden.
+
+\subsection{Security}
+MPICH2 can use Microsoft's SSPI interface to launch processes without using any user 
+passwords.  This is the most secure way to launch MPI jobs but it requires the machines to be 
+configured in a certain way.
+\begin{itemize}
+\item All machines must be part of a Windows domain.
+\item Each machine must have delegation enabled.
+\item Each user that will run jobs must be allowed to use delegation.
+\end{itemize}
+
+If the machines are set up this way then an administrator can set up MPICH2 for passwordless
+authentication.  On each node, a domain administrator needs to execute the following:
+``\texttt{smpd -register\_spn}''.
+
+Then a user can add the -delegate flag to their mpiexec commands and the job startup will be 
+done without any passwords.
 
 \end{document}
