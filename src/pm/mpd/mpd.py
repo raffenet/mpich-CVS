@@ -181,7 +181,7 @@ class MPD(object):
             self.conExt = '_'  + os.environ['MPD_CON_EXT']
         else:
             self.conExt = ''
-        self.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username() + self.conExt
+        self.logFilename = '/sandbox/mpd2.logfile_' + mpd_get_my_username() + self.conExt
         if self.parmdb['MPD_PID_FILENAME']:  # may overwrite it below
             pidFile = open(self.parmdb['MPD_PID_FILENAME'],'w')
             print >>pidFile, "%d" % (os.getpid())
