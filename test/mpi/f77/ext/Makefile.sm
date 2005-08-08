@@ -2,9 +2,10 @@ LDADD = ../util/mtestf.o
 DEPADD = @MPILIBLOC@ ../util/mtestf.o
 smvar_do_sharedlibs = 0
 
-EXTRA_PROGRAMS = allocmem
+# allocmemf is an "extra" program because it requires a Fortran extension
+EXTRA_PROGRAMS = allocmemf
 
-allocmem_SOURCES = allocmem.f
+allocmemf_SOURCES = allocmemf.f
 c2f2cf_SOURCES = c2f2c.c c2f2cf.f
 
 ../util/mtestf.o: 
