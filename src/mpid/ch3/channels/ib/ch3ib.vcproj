@@ -262,9 +262,6 @@
 				RelativePath=".\src\ch3_abort.c">
 			</File>
 			<File
-				RelativePath=".\src\ch3_alloc_mem.c">
-			</File>
-			<File
 				RelativePath=".\src\ch3_cancel_send.c">
 			</File>
 			<File
@@ -278,9 +275,6 @@
 			</File>
 			<File
 				RelativePath=".\src\ch3_finalize.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_free_mem.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_init.c">
@@ -302,6 +296,9 @@
 			</File>
 			<File
 				RelativePath=".\src\ch3_istartrndvtransfer.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_mem.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_open_port.c">
@@ -373,9 +370,6 @@
 				RelativePath="..\..\src\mpid_accumulate.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_alloc_mem.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_bsend_init.c">
 			</File>
 			<File
@@ -403,9 +397,6 @@
 				RelativePath="..\..\src\mpid_finalize.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_free_mem.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_get.c">
 			</File>
 			<File
@@ -431,6 +422,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_issend.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_mem.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_open_port.c">
