@@ -936,7 +936,9 @@ sub RunMPD {
             print $OUTFD "Error running $instdir/bin/mpdallexit before starting MPD ($mpdlocalsock exists)\n";
         }
     }
-    system "$instdir/bin/mpd -d";
+    #system "$instdir/bin/mpd -d";
+    # Try to background mpd
+    system "$instdir/bin/mpd &";
     $rc = $? >> 8;
     if ($rc != 0) {
 	print $OUTFD "Error running $instdir/bin/mpd -d\n";
