@@ -10,7 +10,7 @@
 #define MPID_REQUEST_PREALLOC 8
 #endif
 
-MPID_Request MPID_Request_direct[MPID_REQUEST_PREALLOC];
+MPID_Request MPID_Request_direct[MPID_REQUEST_PREALLOC] = {{0}};
 MPIU_Object_alloc_t MPID_Request_mem = {
     0, 0, 0, 0, MPID_REQUEST, sizeof(MPID_Request), MPID_Request_direct,
     MPID_REQUEST_PREALLOC };
