@@ -453,6 +453,12 @@ EOF
     # FIXME: Currently, we hope that F90 accepts the same library
     F90_GETARG_LIBS="$F77_GETARG_LIBS"
     AC_SUBST(F90_GETARG_LIBS)
+
+    # ALLOCMEMF is set in f77/ext/testlist if we can try this
+    # Fortran extension
+    ALLOCMEMF=""
+    PAC_PROG_F77_HAS_POINTER(ALLOCMEMF="allocmemf 1")
+    AC_SUBST(ALLOCMEMF)
 fi
 # Set a default for the Fortran 77 version of MPI_Offset.
 if test -z "$F77_MPI_OFFSET" ; then
@@ -646,6 +652,7 @@ AC_OUTPUT(maint/testmerge \
 	  f77/spawn/type1aint.h \
 	  f77/rma/Makefile \
 	  f77/ext/Makefile \
+	  f77/ext/testlist \
           f77/io/Makefile \
 	  f77/io/iooffset.h \
 	  f77/io/iodisp.h \
