@@ -57,6 +57,15 @@ while ($file = readdir(DIR)) {
     if ($file =~ /^(.*)\.([^\.]*)$/) {
 	$name = $1;
 	$ext  = $2;
+	# Special handling for C files, if any
+	if ($ext eq "c") {
+	    my $name90 = $name;
+	    $name90 =~ s/f/f90/g;
+	    &ConvertCFile( "$indir/$file", "$outdir/$name90.c.new" );
+	    &ReplaceIfDifferent( "$outdir/$name90.c", 
+				 "$outdir/$name90.c.new" );
+	    next;
+	}
 	# Skip if the file isn't a Fortran source file
 	if ($ext ne "f" && $ext ne "F") { next; }
 	&ConvertToF90( "$indir/$file", "$outdir/${name}90.${ext}90.new" );
@@ -161,6 +170,33 @@ sub ConvertToF90 {
     close (OUTF);
 }
 
+#
+# A very simple routine for creating a version of a C file that refers
+# to F90 instead of F77.
+sub ConvertCFile {
+    my $infile = $_[0];
+    my $outfile = $_[1];
+    
+    open (INF, "<$infile" ) || die "Could not open $infile\n";
+    open (OUTF, ">$outfile" ) || die "Could not open $outfile\n";
+
+    print OUTF "/* This file created from $infile with f77tof90 */\n";
+    while (<INF>) {
+	if (/\r/) { $newline = "\r\n"; }
+	# Remove any end-of-line characters
+	s/[\r\n]*//g;
+	# replace F77 with F90, mostly for CPP tests, except for name
+	# mapping
+	if (! /F77_NAME/) {
+	    s/F77/F90/g;
+	}
+	print OUTF "$_$newline";
+    }
+
+    close (INF);
+    close (OUTF);
+}
+
 # Create a makefile from a template.  Replace @EXECS@ with the programs
 # in the filelist.
 # CreateMakefile( "filelist", $outdir )
@@ -215,6 +251,14 @@ sub ConvertMakefile {
 	s/F77/F90/g;
 	# Update any per-program LDADD values
         s/f_LDADD/f90_LDADD/g;
+	#
+	# Handle special cases:  
+	# Force the c2f2c test to use the f90 compiler
+	s/c2f2cf90_SOURCES.*/c2f2cf90_SOURCES = c2f2cf90.f90 c2f902c.c/;
+	if (/EXTRA_PROGRAMS/) {
+	    s/allocmemf/allocmemf90/;   # allocmemf test is special 
+	}
+
 	# Eventually need some way to update directory paths (particularly
 	# relative ones) and add F90 compile rules when not present.
 	print OUTF $_;
