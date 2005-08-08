@@ -2976,8 +2976,21 @@ EOF
     # will read directives for other compilers and then flag as fatal
     # errors directives that it does not support but does recognize.
 
-DLLIMPORT=""
-AC_SUBST(DLLIMPORT)
+    DLLIMPORT=""
+    AC_SUBST(DLLIMPORT)
+
+    # FIXME:
+    # Eventually, need to add 
+    # SIZEOF_F90_INTEGER
+    # SIZEOF_F90_REAL
+    # SIZEOF_F90_CHARACTER
+    # SIZEOF_F90_DOUBLE_PRECISION
+    # We also need to include
+    # SIZEOF_F90_MPI_OFFSET
+    # SIZEOF_F90_MPI_AINT
+    # 
+    # If other "kinds" are supported, MPI_SIZEOF needs to identify 
+    # those as well.  This is very difficult to do in a general way.
 
     AC_LANG_C
 fi
@@ -3810,17 +3823,6 @@ dnl PAC_SUBDIR_CACHE_CLEANUP
 #    fi
 #done
 #
-# The language bindings must be done *last* because they may need to 
-# know values from the localdefs of the previous configures
-dnl PAC_CONFIG_SUBDIRS_IMMEDIATE($bindingsubsystems)
-#
-# Get any localdefs that the subsystems created. Use a guard in case
-# the list is empty
-#for dir in $bindingsubsystems /dev/null ; do 
-#    if test -f $dir/localdefs ; then
-#        . $dir/localdefs
-#    fi
-#done
 # Make subsystems available to makefiles.
 subsystems="$devsubsystems $subsystems $bindingsubsystems"
 AC_SUBST(subsystems)
