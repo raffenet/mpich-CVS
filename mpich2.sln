@@ -104,10 +104,6 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MPICH2InstallerSimple", "ma
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3essm", "src\mpid\ch3\channels\essm\ch3essm.vcproj", "{2B25AF63-3E57-455C-85BB-591426ACEF8F}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3essmDebug = ch3essmDebug
@@ -1374,46 +1370,6 @@ Global
 		{40E6F394-DA8B-4F93-AC39-79F262764538}.Release.ActiveCfg = Release
 		{40E6F394-DA8B-4F93-AC39-79F262764538}.sfortDebug.ActiveCfg = Debug
 		{40E6F394-DA8B-4F93-AC39-79F262764538}.sfortRelease.ActiveCfg = Release
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3essmDebug.ActiveCfg = ch3essmDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3essmDebug.Build.0 = ch3essmDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3essmPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3essmPRelease.Build.0 = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3essmRelease.ActiveCfg = ch3essmRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3essmRelease.Build.0 = ch3essmRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ibIbalDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ibIbalPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ibIbalRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ibVapiDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ibVapiPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ibVapiRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3shmDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3shmPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3shmRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockmtDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockmtPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockmtRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockPliteRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sockRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sshmDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sshmPDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sshmPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3sshmRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ssmDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ssmPDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ssmPRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.ch3ssmRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.Debug.ActiveCfg = ch3essmDebug|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.DebugStatic.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.fortDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.fortRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.gfortDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.gfortRelease.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.Installer.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.Release.ActiveCfg = ch3essmRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.sfortDebug.ActiveCfg = ch3essmPRelease|Win32
-		{2B25AF63-3E57-455C-85BB-591426ACEF8F}.sfortRelease.ActiveCfg = ch3essmPRelease|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
