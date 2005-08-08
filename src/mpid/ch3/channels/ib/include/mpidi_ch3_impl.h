@@ -106,5 +106,6 @@ int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank);
 int MPIDI_CH3I_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq);
 int MPIDI_CH3I_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq);
 int MPIDI_CH3I_Switch_rndv_to_eager(MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t* pkt);
+MPIDI_CH3I_Alloc_mem_list_t * MPIDI_CH3I_Get_mem_list_head();
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */
