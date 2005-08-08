@@ -29,8 +29,8 @@
    using weak symbols to implement the MPI routines. */
 typedef struct Factors { int val, cnt; } Factors;
 /* This routine may be global if we are not using weak symbols */
-PMPI_LOCAL int factor( int, Factors [], int * );
-PMPI_LOCAL int chooseFactors( int, Factors [], int, int, int [] );
+PMPI_LOCAL int MPIR_Factor( int, Factors [], int * );
+PMPI_LOCAL int MPIR_ChooseFactors( int, Factors [], int, int, int [] );
 
 #ifndef MPICH_MPI_FROM_PMPI
 #define MPI_Dims_create PMPI_Dims_create
@@ -58,7 +58,7 @@ PMPI_LOCAL int chooseFactors( int, Factors [], int, int, int [] );
 	  877,  881,  883,  887,  907,  911,  919,  929,  937,  941, 
 	  947,  953,  967,  971,  977,  983,  991,  997};
 
-PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
+PMPI_LOCAL int MPIR_Factor( int n, Factors factors[], int *ndivisors )
 {
     int n_tmp, n_root;
     int i, nfactors=0, nall=0;
@@ -141,8 +141,8 @@ PMPI_LOCAL int factor( int n, Factors factors[], int *ndivisors )
    sizes
 
  */
-PMPI_LOCAL int chooseFactors( int nfactors, Factors factors[], int nnodes, 
-			      int needed, int chosen[] )
+PMPI_LOCAL int MPIR_ChooseFactors( int nfactors, Factors factors[], 
+				   int nnodes, int needed, int chosen[] )
 {
     int nodes_needed = nnodes;
     int target_size = nodes_needed / needed;
@@ -254,7 +254,7 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
     */
 
     /* Get the factors */
-    nfactors = factor( nnodes, factors, &ndivisors );
+    nfactors = MPIR_Factor( nnodes, factors, &ndivisors );
 
     /* Divide into 3 major cases:
        1. Fewer divisors than needed dimensions.  Just use all of the
@@ -277,7 +277,7 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
     /* Distribute the factors among the dimensions */
     if (ndivisors <= dims_needed) {
 	/* Just use the factors as needed.  */
-	chooseFactors( nfactors, factors, nnodes, dims_needed, chosen );
+	MPIR_ChooseFactors( nfactors, factors, nnodes, dims_needed, chosen );
 	j = 0;
 	for (i=0; i<ndims; i++) {
 	    if (dims[i] == 0) {
@@ -330,7 +330,8 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 	}	    
 	else {
 	    /* Here is the general case.  */
-	    chooseFactors( nfactors, factors, nnodes, dims_needed, chosen );
+	    MPIR_ChooseFactors( nfactors, factors, nnodes, dims_needed, 
+				chosen );
 	    j = 0;
 	    for (i=0; i<ndims; i++) {
 		if (dims[i] == 0) {
