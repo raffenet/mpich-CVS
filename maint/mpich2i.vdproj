@@ -33,24 +33,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_0F8055312749472E92FD7D97438534C2"
-        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_0F8055312749472E92FD7D97438534C2"
-        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_0F8055312749472E92FD7D97438534C2"
-        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_18284BA670D94FB4B543537D61A1E538"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -111,12 +93,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_43238230661E4944A47B129FDF04C3D9"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_4B04B7DBB6C64D42BEFD64D27B8B07FA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -166,12 +142,6 @@
         "Entry"
         {
         "MsmKey" = "8:_6554112CB61046CD9A18A45F7910568C"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_6E4674E8B484456EBB01C5D4A24C91A9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -333,6 +303,24 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B9B4261616354B8789A6DD2D43D7FD85"
+        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B9B4261616354B8789A6DD2D43D7FD85"
+        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B9B4261616354B8789A6DD2D43D7FD85"
+        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_BBAFE33C18B7484888D21FA23C69372B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -357,12 +345,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C8967AC901D645D9BFCBB043904C000F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_D11A51D35A3442938C608920FA632E9E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -370,12 +352,6 @@
         "Entry"
         {
         "MsmKey" = "8:_D252FCCAF18446E4AD9F15AE3E54AAB4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D590E2ECEB2940AD8D1D69A5BE44C40A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -804,26 +780,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_43238230661E4944A47B129FDF04C3D9"
-            {
-            "SourcePath" = "8:..\\lib\\mpich2essmp.lib"
-            "TargetName" = "8:mpich2essmp.lib"
-            "Tag" = "8:"
-            "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_4B04B7DBB6C64D42BEFD64D27B8B07FA"
             {
             "SourcePath" = "8:..\\src\\include\\mpicxx.h"
@@ -928,7 +884,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.1984.19444, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.2042.21663, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_55B5CAEEC65B41548EFC545A48218F87"
@@ -999,26 +955,6 @@
             {
             "SourcePath" = "8:..\\lib\\mpi.lib"
             "TargetName" = "8:mpi.lib"
-            "Tag" = "8:"
-            "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_6E4674E8B484456EBB01C5D4A24C91A9"
-            {
-            "SourcePath" = "8:..\\lib\\mpich2essm.lib"
-            "TargetName" = "8:mpich2essm.lib"
             "Tag" = "8:"
             "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
             "Condition" = "8:"
@@ -1239,7 +1175,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.1984.19443, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.2042.21663, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_9456918885EA443184468C81D254F3F3"
@@ -1430,7 +1366,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.1984.19443, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.2042.21663, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_AD63A10BAE3B42AE9BA9DDBE274523EE"
@@ -1657,26 +1593,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C8967AC901D645D9BFCBB043904C000F"
-            {
-            "SourcePath" = "8:..\\lib\\mpich2essmp.dll"
-            "TargetName" = "8:mpich2essmp.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D11A51D35A3442938C608920FA632E9E"
             {
             "SourcePath" = "8:..\\lib\\mpich2p.dll"
@@ -1703,26 +1619,6 @@
             "TargetName" = "8:setup.jpg"
             "Tag" = "8:"
             "Folder" = "8:_3E78E778239C46D6AEB696355EB2F1DE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_D590E2ECEB2940AD8D1D69A5BE44C40A"
-            {
-            "SourcePath" = "8:..\\lib\\mpich2essm.dll"
-            "TargetName" = "8:mpich2essm.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3185,7 +3081,7 @@
         }
         "MergeModule"
         {
-            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_0F8055312749472E92FD7D97438534C2"
+            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_B9B4261616354B8789A6DD2D43D7FD85"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
