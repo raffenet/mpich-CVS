@@ -73,13 +73,13 @@ typedef struct MPIDI_CH3I_Connection
     MPID_IOV iov[2];
 } MPIDI_CH3I_Connection_t;
 
-extern MPIDU_Sock_set_t sock_set;
+extern MPIDU_Sock_set_t MPIDI_CH3I_sock_set;
 /* extern int MPIDI_CH3I_listener_port /\*= 0*\/; brad : now in mpidpost.h */
 extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn /*= NULL*/;
 
 extern int shutting_down;
 
-int connection_alloc(MPIDI_CH3I_Connection_t **);
+int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 void connection_free(MPIDI_CH3I_Connection_t * conn);
 int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);

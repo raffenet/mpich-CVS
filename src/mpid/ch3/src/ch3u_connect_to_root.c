@@ -18,10 +18,10 @@
 
 
 #undef FUNCNAME
-#define FUNCNAME connection_alloc
+#define FUNCNAME MPIDI_CH3I_Connection_alloc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
+int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_Connection_t * conn = NULL;
@@ -170,7 +170,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     vc->ch.bShm = FALSE;
 #endif    
     
-    mpi_errno = connection_alloc(&conn);
+    mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -181,7 +181,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 
     /* conn->pg_id is not used for this conection */
 
-    mpi_errno = MPIDU_Sock_post_connect(sock_set, conn, host_description, port, &conn->sock);
+    mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, host_description, port, &conn->sock);
     if (mpi_errno == MPI_SUCCESS)
     {
         vc->ch.sock = conn->sock;

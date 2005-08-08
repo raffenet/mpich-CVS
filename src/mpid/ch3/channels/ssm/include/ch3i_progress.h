@@ -79,7 +79,7 @@ extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn /*= NULL*/;
 
 extern int shutting_down;
 
-int connection_alloc(MPIDI_CH3I_Connection_t **);
+int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 void connection_free(MPIDI_CH3I_Connection_t * conn);
 int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);

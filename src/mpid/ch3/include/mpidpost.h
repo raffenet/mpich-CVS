@@ -572,7 +572,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 
 /* added by brad. required for (socket version) upcall to Connect_to_root */
 #ifdef MPIDI_CH3_USES_SOCK
-extern MPIDU_Sock_set_t sock_set;
+extern MPIDU_Sock_set_t MPIDI_CH3I_sock_set;
 #endif
 
 /* added by brad.  business card related global and functions */

@@ -14,7 +14,7 @@
 #include "pmi.h"
 
 
-MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+/* MPIDI_CH3I_Process_t MPIDI_CH3I_Process;*/
 /* int MPIDI_CH3I_Port_name_tag=0; brad : now in upcall for all channels using sockets */
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);

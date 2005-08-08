@@ -16,7 +16,7 @@
 #include <unistd.h>
 #endif
 
-MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+/* MPIDI_CH3I_Process_t MPIDI_CH3I_Process;*/
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);

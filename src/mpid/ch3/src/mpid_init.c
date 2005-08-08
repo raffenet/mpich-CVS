@@ -21,8 +21,7 @@ static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 #include "mpidi_ch3_impl.h"  /* for extern'd MPIDI_CH3I_Process  */
 
-MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
-
+MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
 
 /* The value 128 is returned by the ch3/Makefile for the echomaxprocname target.  */
@@ -32,7 +31,7 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
 int MPIDI_Use_optimized_rma=0;
 
-MPIDI_Process_t MPIDI_Process;
+MPIDI_Process_t MPIDI_Process = {NULL};
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Init

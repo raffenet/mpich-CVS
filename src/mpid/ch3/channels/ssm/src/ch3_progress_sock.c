@@ -614,14 +614,14 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	{
 	    MPIDI_CH3I_Connection_t * conn;
 
-	    mpi_errno = connection_alloc(&conn);
+	    mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
 	    if (mpi_errno != MPI_SUCCESS)
 	    { 
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						 "**ch3|sock|accept", NULL);
 		goto fn_exit;
 	    }
-	    mpi_errno = MPIDU_Sock_accept(MPIDI_CH3I_listener_conn->sock, sock_set, conn, &conn->sock);
+	    mpi_errno = MPIDU_Sock_accept(MPIDI_CH3I_listener_conn->sock, MPIDI_CH3I_sock_set, conn, &conn->sock);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
