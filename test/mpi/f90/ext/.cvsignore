@@ -2,5 +2,6 @@ Makefile.sm
 Makefile
 Makefile.in
 testlist
-allocmem90.f90
+allocmemf90.f90
 c2f2cf90.f90
+c2f902c.c
