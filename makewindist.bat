@@ -143,10 +143,10 @@ devenv.com mpich2.sln /build ch3ibIbalPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 REM devenv.com mpich2.sln /build ch3essmDebug
 REM if %errorlevel% NEQ 0 goto BUILDERROR
-devenv.com mpich2.sln /build ch3essmRelease
-if %errorlevel% NEQ 0 goto BUILDERROR
-devenv.com mpich2.sln /build ch3essmPRelease
-if %errorlevel% NEQ 0 goto BUILDERROR
+REM devenv.com mpich2.sln /build ch3essmRelease
+REM if %errorlevel% NEQ 0 goto BUILDERROR
+REM devenv.com mpich2.sln /build ch3essmPRelease
+REM if %errorlevel% NEQ 0 goto BUILDERROR
 REM devenv.com mpich2.sln /build ch3sockmtDebug
 REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3sockmtRelease
