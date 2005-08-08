@@ -3015,9 +3015,21 @@ sub Nullcomm_methods {
     # We can't use Clone_method because 
     # there is no (oldcomm) initializer.
     #&Clone_method( $OUTFD, "Nullcomm" );
-    print $OUTFD "    virtual Nullcomm & Clone(void) const { 
+    print $OUTFD "
+// If the compiler does not support variable return types, return a 
+// reference to Comm.  The user must then cast this to the correct type
+// (Standard-conforming C++ compilers support variable return types)
+#ifdef HAVE_NO_VARIABLE_RETURN_TYPE_SUPPORT
+    virtual Comm & Clone(void) const { 
+        Comm *clone = new Comm(MPI_COMM_NULL); 
+        return *clone; 
+    };
+#else
+    virtual Nullcomm & Clone(void) const { 
         Nullcomm *clone = new Nullcomm();
-        return *clone; };\n";
+        return *clone; 
+    };
+#endif\n";
 }
 
 sub Cartcomm_methods {
