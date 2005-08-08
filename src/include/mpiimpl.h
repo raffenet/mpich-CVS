@@ -1480,7 +1480,7 @@ int MPID_Free_mem( void *ptr );
 /* brad : added as means to cleanup.  default implementation does nothing.  sshm
  *         uses this within finalize (and potentially abort?)
  */
-void MPID_Cleanup_mem();
+void MPID_Cleanup_mem( void );
 
 /*@
   MPID_Mem_was_alloced - Return true if this memory was allocated with 
