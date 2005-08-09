@@ -30,7 +30,7 @@ void add2list(void *p)
 {
     mem_node_t *node;
 
-    node = (mem_node_t*)malloc(sizeof(mem_node_t));
+    node = (mem_node_t*)MPIU_Malloc(sizeof(mem_node_t));
     node->p = p;
     node->next = g_pList;
     g_pList = node;
@@ -61,13 +61,13 @@ void removefromlist(void *p)
 	    if (iter == g_pList)
 	    {
 		g_pList = g_pList->next;
-		free(iter);
+		MPIU_Free(iter);
 		return;
 	    }
 	    else
 	    {
 		trailer->next = iter->next;
-		free(iter);
+		MPIU_Free(iter);
 		return;
 	    }
 	}

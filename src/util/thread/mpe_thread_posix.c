@@ -32,7 +32,7 @@ void MPE_Thread_create(MPE_Thread_func_t func, void * data, MPE_Thread_id_t * id
     int err = MPE_THREAD_SUCCESS;
 
     /* FIXME: faster allocation, or avoid it all together? */
-    thread_info = (struct MPEI_Thread_info *) malloc(sizeof(struct MPEI_Thread_info));
+    thread_info = (struct MPEI_Thread_info *) MPIU_Malloc(sizeof(struct MPEI_Thread_info));
     if (thread_info != NULL)
     {
 	pthread_attr_t attr;
@@ -72,7 +72,7 @@ void * MPEI_Thread_start(void * arg)
     MPE_Thread_func_t func = thread_info->func;
     void * data = thread_info->data;
 
-    free(arg);
+    MPIU_Free(arg);
 
     func(data);
     

@@ -30,7 +30,7 @@ void MPE_Thread_create(MPE_Thread_func_t func, void * data, MPE_Thread_id_t * id
     struct MPEI_Thread_info * thread_info;
     int err = MPE_THREAD_SUCCESS;
 
-    thread_info = (struct MPEI_Thread_info *) malloc(sizeof(struct MPEI_Thread_info));
+    thread_info = (struct MPEI_Thread_info *) MPIU_Malloc(sizeof(struct MPEI_Thread_info));
     if (thread_info != NULL)
     {
 	thread_info->func = func;
@@ -65,7 +65,7 @@ DWORD WINAPI MPEI_Thread_start(LPVOID arg)
     MPE_Thread_func_t func = thread_info->func;
     void * data = thread_info->data;
 
-    free(arg);
+    MPIU_Free(arg);
 
     func(data);
     
@@ -245,7 +245,7 @@ void MPE_Thread_cond_destroy(MPE_Thread_cond_t * cond, int * err)
     {
 	iter = cond->fifo_head;
 	cond->fifo_head = cond->fifo_head->next;
-	free(iter);
+	MPIU_Free(iter);
     }
     MPE_Thread_mutex_destroy(&cond->fifo_mutex, err);
     if (err != NULL && *err != MPE_THREAD_SUCCESS)
@@ -294,12 +294,12 @@ void MPE_Thread_cond_wait(MPE_Thread_cond_t * cond, MPE_Thread_mutex_t * mutex, 
     }
     if (cond->fifo_tail == NULL)
     {
-	cond->fifo_tail = (MPE_Thread_cond_fifo_t*)malloc(sizeof(MPE_Thread_cond_fifo_t));
+	cond->fifo_tail = (MPE_Thread_cond_fifo_t*)MPIU_Malloc(sizeof(MPE_Thread_cond_fifo_t));
 	cond->fifo_head = cond->fifo_tail;
     }
     else
     {
-	cond->fifo_tail->next = (MPE_Thread_cond_fifo_t*)malloc(sizeof(MPE_Thread_cond_fifo_t));
+	cond->fifo_tail->next = (MPE_Thread_cond_fifo_t*)MPIU_Malloc(sizeof(MPE_Thread_cond_fifo_t));
 	cond->fifo_tail = cond->fifo_tail->next;
     }
     if (cond->fifo_tail == NULL)
@@ -380,7 +380,7 @@ void MPE_Thread_cond_broadcast(MPE_Thread_cond_t * cond, int * err)
 	}
 	temp = fifo;
 	fifo = fifo->next;
-	free(temp);
+	MPIU_Free(temp);
     }
     if (err != NULL)
     {
@@ -413,10 +413,10 @@ void MPE_Thread_cond_signal(MPE_Thread_cond_t * cond, int * err)
 	if (!SetEvent(fifo->event) && err != NULL)
 	{
 	    *err = GetLastError();
-	    free(fifo);
+	    MPIU_Free(fifo);
 	    return;
 	}
-	free(fifo);
+	MPIU_Free(fifo);
     }
     if (err != NULL)
     {

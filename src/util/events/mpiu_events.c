@@ -311,7 +311,7 @@ int MPIU_Event_create(MPIU_Event *event, char *name, int length)
     int mpi_errno;
     int *p;
 
-    p = (int*)malloc(sizeof(int));
+    p = (int*)MPIU_Malloc(sizeof(int));
     if (p == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIU_Event_create", __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -334,7 +334,7 @@ int MPIU_Event_open(MPIU_Event *event, char *name)
 
 int MPIU_Event_close(MPIU_Event event)
 {
-    free(event);
+    MPIU_Free(event);
     return MPI_SUCCESS;
 }
 

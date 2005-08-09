@@ -147,7 +147,7 @@ int find_mem(void *p)
 }
 void add_mem(void *p)
 {
-    regmem_t *r = (regmem_t*)malloc(sizeof(regmem_t));
+    regmem_t *r = (regmem_t*)MPIU_Malloc(sizeof(regmem_t));
     if (find_mem(p))
     {
 	printf("registering mem pointer twice: %p\n", p);
@@ -177,7 +177,7 @@ void remove_mem(void *p)
 	    {
 		trailer->next = iter->next;
 	    }
-	    free(iter);
+	    MPIU_Free(iter);
 	    printf("deregistered: %p\n", p);fflush(stdout);
 	    return;
 	}
@@ -228,7 +228,7 @@ static int ibui_add_nodes_to_cache(ibu_mem_node_t *node)
     /* insert node in the global tree */
     if (node->ref_count == 0)
     {
-	free(node);
+	MPIU_Free(node);
     }
     else
     {
@@ -365,7 +365,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 		    goto start_over;
 		}
 
-		iter->left = (ibu_mem_node_t*)malloc(sizeof(ibu_mem_node_t));
+		iter->left = (ibu_mem_node_t*)MPIU_Malloc(sizeof(ibu_mem_node_t));
 		iter = iter->left;
 		iter->left = NULL;
 		iter->right = NULL;
@@ -386,7 +386,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
 		    goto start_over;
 		}
 
-		iter->right = (ibu_mem_node_t*)malloc(sizeof(ibu_mem_node_t));
+		iter->right = (ibu_mem_node_t*)MPIU_Malloc(sizeof(ibu_mem_node_t));
 		iter = iter->right;
 		iter->left = NULL;
 		iter->right = NULL;
@@ -400,7 +400,7 @@ int ibu_register_memory(void *buf, int len, ibu_mem_t *state)
     }
     if (iter == NULL)
     {
-	iter = (ibu_mem_node_t*)malloc(sizeof(ibu_mem_node_t));
+	iter = (ibu_mem_node_t*)MPIU_Malloc(sizeof(ibu_mem_node_t));
 	iter->buf = buf;
 	iter->len = len;
 	iter->left = NULL;

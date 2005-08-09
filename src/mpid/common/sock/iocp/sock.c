@@ -551,7 +551,7 @@ static int already_used_or_add(char *host, socki_host_name_t **list)
     }
 
     /* the host has not been used so add a node for it */
-    iter = (socki_host_name_t*)malloc(sizeof(socki_host_name_t));
+    iter = (socki_host_name_t*)MPIU_Malloc(sizeof(socki_host_name_t));
     if (!iter)
     {
 	/* if out of memory then treat it as not found */
@@ -585,7 +585,7 @@ static void socki_free_host_list(socki_host_name_t *list)
     {
 	iter = list;
 	list = list->next;
-	free(iter);
+	MPIU_Free(iter);
     }
 }
 

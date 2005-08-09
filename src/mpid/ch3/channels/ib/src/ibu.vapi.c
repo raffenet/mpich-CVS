@@ -998,7 +998,7 @@ static VAPI_ret_t ibui_get_list_of_hcas(VAPI_hca_id_t **hca_id_buf_p, u_int32_t 
 	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
 	return VAPI_OK;
     case VAPI_EAGAIN:
-	hca_id_buf = malloc(sizeof(VAPI_hca_id_t)*local_num_of_hcas);
+	hca_id_buf = MPIU_Malloc(sizeof(VAPI_hca_id_t)*local_num_of_hcas);
 	if ( !hca_id_buf )
 	{
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
@@ -1007,7 +1007,7 @@ static VAPI_ret_t ibui_get_list_of_hcas(VAPI_hca_id_t **hca_id_buf_p, u_int32_t 
 	rc = EVAPI_list_hcas(local_num_of_hcas, &local_num_of_hcas, hca_id_buf);
 	if ( rc != VAPI_OK )
 	{
-	    free(hca_id_buf);
+	    MPIU_Free(hca_id_buf);
 	    MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
 	    return VAPI_ERR;
 	}
@@ -1019,6 +1019,14 @@ static VAPI_ret_t ibui_get_list_of_hcas(VAPI_hca_id_t **hca_id_buf_p, u_int32_t 
     MPIDI_FUNC_EXIT(MPID_STATE_IBUI_GET_LIST_OF_HCAS);
     return VAPI_ERR;
 }
+
+
+/* For the style checker: allowing one instance of malloc and free
+   (instead of MPIU_Malloc and MPIU_Free) below because they are being
+   passed to a function */
+
+/* style: allow:malloc:1 sig:0 */
+/* style: allow:free:1 sig:0 */
 
 #undef FUNCNAME
 #define FUNCNAME ibu_init
@@ -1072,7 +1080,7 @@ int ibu_init()
 	return status;
     }
     strncpy(id, hca_id_buf[0], sizeof(VAPI_hca_id_t));
-    if ( hca_id_buf ) free(hca_id_buf);
+    if ( hca_id_buf ) MPIU_Free(hca_id_buf);
 
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);
     if (status != VAPI_OK)
