@@ -4,8 +4,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef MTEST_INCLUDED
-#define MTEST_INCLUDED
+#ifndef MPITEST_H_INCLUDED
+#define MPITEST_H_INCLUDED
 
 #include "mpitestconf.h"
 

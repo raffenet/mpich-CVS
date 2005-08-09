@@ -5,8 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef ERRCODES_INCLUDED
-#define ERRCODES_INCLUDED
+#ifndef ERRCODES_H_INCLUDED
+#define ERRCODES_H_INCLUDED
 
 /* Prototypes for internal routines for the errhandling module */
 int MPIR_Err_set_msg( int, const char * );
