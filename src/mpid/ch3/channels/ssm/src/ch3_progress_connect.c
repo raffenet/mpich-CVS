@@ -8,7 +8,6 @@
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 
-MPIDU_Sock_set_t sock_set;
 /* int MPIDI_CH3I_listener_port = 0; brad : now in ch3u_get_business_card_sock.c */
 MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
@@ -469,7 +468,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
     if (mpi_errno == MPI_SUCCESS)
     {
-	mpi_errno = MPIDU_Sock_post_connect(sock_set, conn, host_description, port, &conn->sock);
+	mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, host_description, port, &conn->sock);
 	if (mpi_errno == MPI_SUCCESS)
 	{
 	    vc->ch.sock = conn->sock;
@@ -485,7 +484,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 		"**ch3|sock|postconnect %d %d %s", MPIR_Process.comm_world->rank, vc->pg_rank, val);
 
 	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
-	    connection_free(conn);
+	    MPIDI_CH3I_Connection_free(conn);
 	}
     }
     else
@@ -559,129 +558,18 @@ int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 */
 
 #undef FUNCNAME
-#define FUNCNAME connection_free
+#define FUNCNAME MPIDI_CH3I_Connection_free
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-void connection_free(MPIDI_CH3I_Connection_t * conn)
+static void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn)
 {
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_FREE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECTION_FREE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_FREE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_CONNECTION_FREE);
 
     MPIU_Free(conn->pg_id);
     MPIU_Free(conn);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_FREE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECTION_FREE);
 }
 
-#undef FUNCNAME
-#define FUNCNAME connection_post_sendq_req
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
-    /* post send of next request on the send queue */
-    conn->send_active = MPIDI_CH3I_SendQ_head(conn->vc); /* MT */
-    if (conn->send_active != NULL)
-    {
-	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = connection_send_fail(conn, mpi_errno);
-	}
-    }
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME connection_post_send_pkt
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SEND_PKT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SEND_PKT);
-    
-    mpi_errno = MPIDU_Sock_post_write(conn->sock, &conn->pkt, sizeof(conn->pkt), sizeof(conn->pkt), NULL);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = connection_send_fail(conn, mpi_errno);
-    }
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT);
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME connection_post_recv_pkt
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_RECV_PKT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_RECV_PKT);
-
-    mpi_errno = MPIDU_Sock_post_read(conn->sock, &conn->pkt, sizeof(conn->pkt), sizeof(conn->pkt), NULL);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = connection_recv_fail(conn, mpi_errno);
-    }
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_RECV_PKT);
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME connection_send_fail
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
-{
-    int mpi_errno;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_SEND_FAIL);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_SEND_FAIL);
-
-    mpi_errno = MPIR_Err_create_code(sock_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-
-#   if 0
-    {
-	conn->state = CONN_STATE_FAILED;
-	if (conn->vc != NULL)
-	{
-	    conn->vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
-	    MPIDI_CH3U_VC_send_failure(conn->vc, mpi_errno);
-	}
-    }
-#   endif
-
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_SEND_FAIL);
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME connection_recv_fail
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno)
-{
-    int mpi_errno;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_RECV_FAIL);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_RECV_FAIL);
-
-    mpi_errno = MPIR_Err_create_code(sock_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_RECV_FAIL);
-    return mpi_errno;
-}

@@ -80,18 +80,10 @@ extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn /*= NULL*/;
 extern int shutting_down;
 
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
-void connection_free(MPIDI_CH3I_Connection_t * conn);
-int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
-int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
-int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
-int connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
-int connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
-void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
-int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
+void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn);
 
 int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
-int handle_shm_read(MPIDI_VC_t *vc, int nb);
 int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc);
 
 #endif

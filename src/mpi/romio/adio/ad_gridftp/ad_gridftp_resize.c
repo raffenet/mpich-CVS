@@ -149,7 +149,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 	    size_t urllen;
 
 	    urllen=strlen(fd->filename);
-	    urlold=(char *)malloc(urllen+5);
+	    urlold=(char *)ADIOI_Malloc(urllen+5);
 	    sprintf(urlold,"%s.old",fd->filename);
 	    resize_done=GLOBUS_FALSE;
 	    resize_success=GLOBUS_FALSE;
@@ -229,6 +229,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 		    ADIOI_Error(fd,*error_code,myname);
 		    return;
 		}
+	    ADIOI_Free(urlold);
 	}
     globus_mutex_destroy(&resize_lock);
     globus_cond_destroy(&resize_cond);

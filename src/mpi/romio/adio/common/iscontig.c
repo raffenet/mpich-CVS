@@ -24,7 +24,7 @@ void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
     if (*flag) {
         MPI_Aint true_extent, true_lb;
         
-        PMPI_Type_get_true_extent(datatype, &true_lb, &true_extent);
+        MPI_Type_get_true_extent(datatype, &true_lb, &true_extent);
 
         if (true_lb > 0)
             *flag = 0;

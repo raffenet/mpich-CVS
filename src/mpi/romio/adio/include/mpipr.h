@@ -60,6 +60,8 @@
 #define MPI_Cart_sub PMPI_Cart_sub
 #undef MPI_Cartdim_get
 #define MPI_Cartdim_get PMPI_Cartdim_get
+#undef MPI_Comm_call_error_handler
+#define MPI_Comm_call_error_handler PMPI_Comm_call_error_handler
 #undef MPI_Comm_compare
 #define MPI_Comm_compare PMPI_Comm_compare
 #undef MPI_Comm_create
@@ -276,6 +278,8 @@
 #define MPI_Type_get_contents PMPI_Type_get_contents
 #undef MPI_Type_get_envelope
 #define MPI_Type_get_envelope PMPI_Type_get_envelope
+#undef MPI_Type_get_true_extent
+#define MPI_Type_get_true_extent PMPI_Type_get_true_extent
 #undef MPI_Type_hindexed
 #define MPI_Type_hindexed PMPI_Type_hindexed
 #undef MPI_Type_hvector

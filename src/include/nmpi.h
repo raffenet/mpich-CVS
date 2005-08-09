@@ -72,7 +72,7 @@
 #define NMPI_Type_get_true_extent MPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks MPI_Group_translate_ranks
 #define NMPI_Type_create_indexed_block MPI_Type_create_indexed_block
-#define NMPI_Wtime MPI_Wtime MPI_Wtime MPI_Wtime
+#define NMPI_Wtime MPI_Wtime 
 #define NMPI_Info_get_nkeys MPI_Info_get_nkeys
 #define NMPI_Info_get_nthkey MPI_Info_get_nthkey
 #define NMPI_Info_get_valuelen MPI_Info_get_valuelen

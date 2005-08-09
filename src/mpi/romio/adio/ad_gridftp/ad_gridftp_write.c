@@ -435,14 +435,14 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
 
 
 	    /* squeeze contents of main buffer into intermediate buffer*/
-	    intermediate=(globus_byte_t *)malloc((size_t)bufsize);
+	    intermediate=(globus_byte_t *)ADIOI_Malloc((size_t)bufsize);
 	    MPI_Pack(buf,count,datatype,intermediate,bufsize,&posn,fd->comm);
 
 	    /* write contiguous data from intermediate buffer */
 	    ADIOI_GRIDFTP_WriteContig(fd, intermediate, bufsize, MPI_BYTE,
 				     file_ptr_type, offset, status, error_code);
 
-	    free(intermediate);
+	    ADIOI_Free(intermediate);
 	}
     else if ( !buf_contig && !file_contig )
 	{
@@ -454,14 +454,14 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
 	    fflush(stderr);
 
 	    /* squeeze contents of main buffer into intermediate buffer*/
-	    intermediate=(globus_byte_t *)malloc((size_t)bufsize);
+	    intermediate=(globus_byte_t *)ADIOI_Malloc((size_t)bufsize);
 	    MPI_Pack(buf,count,datatype,intermediate,bufsize,&posn,fd->comm);
 
 	    /* write contiguous data from intermediate buffer */
 	    ADIOI_GRIDFTP_WriteDiscontig(fd, intermediate, bufsize, MPI_BYTE,
 				     file_ptr_type, offset, status, error_code);
 
-	    free(intermediate);
+	    ADIOI_Free(intermediate);
 	}
     else 
 	{

@@ -288,7 +288,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 	    return;
 	}
     end=start+(globus_off_t)extent;
-    tmp=(globus_byte_t *)malloc((size_t)extent*sizeof(globus_byte_t));
+    tmp=(globus_byte_t *)ADIOI_Malloc((size_t)extent*sizeof(globus_byte_t));
 
     /* start up the globus partial read */
     globus_mutex_init(&readdiscontig_ctl_lock, GLOBUS_NULL);
@@ -366,7 +366,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 		}
 	    nblks++;
 	}
-    free(tmp);
+    ADIOI_Free(tmp);
 
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, datatype, bytes_read);
@@ -435,14 +435,14 @@ void ADIOI_GRIDFTP_ReadStrided(ADIO_File fd, void *buf, int count,
 	    int posn=0;
 
 	    /* read contiguous data into intermediate buffer */
-	    intermediate=(globus_byte_t *)malloc((size_t)bufsize);
+	    intermediate=(globus_byte_t *)ADIOI_Malloc((size_t)bufsize);
 	    ADIOI_GRIDFTP_ReadContig(fd, intermediate, bufsize, MPI_BYTE,
 				     file_ptr_type, offset, status, error_code);
 
 	    /* explode contents of intermediate buffer into main buffer */
 	    MPI_Unpack(intermediate,bufsize,&posn,buf,count,datatype,fd->comm);
 
-	    free(intermediate);
+	    ADIOI_Free(intermediate);
 	}
     else if ( !buf_contig && !file_contig )
 	{
@@ -450,7 +450,7 @@ void ADIOI_GRIDFTP_ReadStrided(ADIO_File fd, void *buf, int count,
 	    int posn=0;
 
 	    /* Read discontiguous data into intermediate buffer */
-	    intermediate=(globus_byte_t *)malloc((size_t)bufsize);
+	    intermediate=(globus_byte_t *)ADIOI_Malloc((size_t)bufsize);
 	    ADIOI_GRIDFTP_ReadDiscontig(fd, intermediate, bufsize, MPI_BYTE,
 					file_ptr_type, offset, status, error_code);
 
@@ -458,7 +458,7 @@ void ADIOI_GRIDFTP_ReadStrided(ADIO_File fd, void *buf, int count,
 	    posn=0;
 	    MPI_Unpack(intermediate,bufsize,&posn,buf,count,datatype,fd->comm);
 
-	    free(intermediate);
+	    ADIOI_Free(intermediate);
 	}
     else 
 	{

@@ -5,8 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef __MPIDEXT32SEGMENT_H
-#define __MPIDEXT32SEGMENT_H
+#ifndef MPIDEXT32SEGMENT_H
+#define MPIDEXT32SEGMENT_H
 
 #include "mpichconf.h"
 
@@ -393,4 +393,4 @@ static inline void BASIC_convert128(char *src, char *dest)
 #error "Cannot detect a float type that is 8 bytes long"
 #endif
 
-#endif /* __MPIDEXT32SEGMENT_H */
+#endif /* MPIDEXT32SEGMENT_H */

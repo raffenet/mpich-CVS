@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* 
+ *
+ *   Copyright (C) 2003 University of Chicago, Ohio Supercomputer Center. 
+ *   See COPYRIGHT notice in top-level directory.
+ */
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/uio.h>
