@@ -476,6 +476,8 @@ class MPDStreamHandler(object):
                 (handler,args) = self.activeStreams[stream]
                 handler(stream,*args)
             else:
+                # this is not nec bad; an active stream (handler) may
+                # have been deleted by earlier handler in this loop
                 print '*** OOPS, unknown stream in handle_active_streams'
         return (len(readyStreams),0)  #  len >= 0
 
