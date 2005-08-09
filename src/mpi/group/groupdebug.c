@@ -8,6 +8,7 @@
 #include "group.h"
 
 /* style: allow:fprintf:2 sig:0 */
+/* style: PMPIuse:PMPI_Abort:2 sig:0 */
 
 /*
  * This file contains routines that are used only to perform testing
