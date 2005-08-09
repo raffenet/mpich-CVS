@@ -12,8 +12,6 @@ int MPIDI_CH3I_sock_read_active = 0;
 int MPIDI_CH3I_sock_write_active = 0;
 int MPIDI_CH3I_active_flag = 0;
 
-static int handle_shm_read(MPIDI_VC_t *vc, int nb);
-
 MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL; 
 
 #ifdef USE_NAIVE_PROGRESS_ENGINE
@@ -61,7 +59,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    if (rc == MPI_SUCCESS)
 	    {
 		MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		mpi_errno = MPIDI_CH3I_Handle_shm_read(vc_ptr, num_bytes);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -241,7 +239,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    if (rc == MPI_SUCCESS)
 	    {
 		MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		mpi_errno = MPIDI_CH3I_Handle_shm_read(vc_ptr, num_bytes);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -526,7 +524,7 @@ int MPIDI_CH3_Progress_test()
 	if (rc == MPI_SUCCESS)
 	{
 	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-	    mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+	    mpi_errno = MPIDI_CH3I_Handle_shm_read(vc_ptr, num_bytes);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_test", 0);
@@ -652,7 +650,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state *state)
 		if (rc == MPI_SUCCESS)
 		{
 		    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		    mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		    mpi_errno = MPIDI_CH3I_Handle_shm_read(vc_ptr, num_bytes);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -1026,7 +1024,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		if (rc == MPI_SUCCESS)
 		{
 		    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
-		    mpi_errno = handle_shm_read(vc_ptr, num_bytes);
+		    mpi_errno = MPIDI_CH3I_Handle_shm_read(vc_ptr, num_bytes);
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress", 0);
@@ -1415,68 +1413,4 @@ fn_exit:
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME handle_shm_read
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int handle_shm_read(MPIDI_VC_t *vc, int nb)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPID_Request * req;
-    int complete;
-    MPIDI_STATE_DECL(MPID_STATE_HANDLE_SHM_READ);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_SHM_READ);
-
-    req = vc->ch.recv_active;
-    if (req == NULL)
-    {
-	MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-	return MPI_SUCCESS;
-    }
-
-    if (nb > 0)
-    {
-	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
-	{
-	    /* Read operation complete */
-	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req, &complete);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    }
-	    if (complete)
-	    {
-		vc->ch.recv_active = NULL;
-		vc->ch.shm_reading_pkt = TRUE;
-	    }
-	    else
-	    {
-		vc->ch.recv_active = req;
-		mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, req->dev.iov, req->dev.iov_count, NULL);
-	    }
-	}
-	else
-	{
-#ifdef MPICH_DBG_OUTPUT
-	    if (req->ch.iov_offset >= req->dev.iov_count)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
-		MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-		return mpi_errno;
-	    }
-#endif
-	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-	    return MPI_SUCCESS;
-	}
-    }
-    else
-    {
-	MPIDI_DBG_PRINTF((65, FCNAME, "Read args were iov=%x, count=%d",
-	    req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset));
-    }
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_SHM_READ);
-    return MPI_SUCCESS;
-}
 

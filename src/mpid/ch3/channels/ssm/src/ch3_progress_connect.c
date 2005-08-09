@@ -561,7 +561,7 @@ int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 #define FUNCNAME MPIDI_CH3I_Connection_free
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn)
+void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECTION_FREE);
 

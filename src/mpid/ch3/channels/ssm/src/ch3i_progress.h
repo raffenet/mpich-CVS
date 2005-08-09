@@ -81,9 +81,8 @@ extern int shutting_down;
 
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn);
-
 int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
-
+int MPIDI_CH3I_Handle_shm_read(MPIDI_VC_t *vc, int nb);
 int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc);
 
 #endif

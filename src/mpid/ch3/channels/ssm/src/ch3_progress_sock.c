@@ -6,13 +6,13 @@
 
 #include "ch3i_progress.h"
 
-static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 static void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
 static int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
 static int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
 static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 static int connection_send_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
 static int connection_recv_fail(MPIDI_CH3I_Connection_t * conn, int sock_errno);
+static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 
 #undef FUNCNAME
 #define FUNCNAME connection_send_fail
