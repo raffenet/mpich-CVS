@@ -4,8 +4,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef MPIHANDLE_H
-#define MPIHANDLE_H
+#ifndef MPIHANDLE_H_INCLUDED
+#define MPIHANDLE_H_INCLUDED
 
 /*TOpaqOverview.tex
   MPI Opaque Objects:

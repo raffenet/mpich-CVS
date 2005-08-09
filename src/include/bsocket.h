@@ -3,8 +3,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef BSOCKET_H
-#define BSOCKET_H
+#ifndef BSOCKET_H_INCLUDED
+#define BSOCKET_H_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {

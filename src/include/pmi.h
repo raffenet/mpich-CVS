@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef PMI_H
-#define PMI_H
+#ifndef PMI_H_INCLUDED
+#define PMI_H_INCLUDED
 
 /* prototypes for the PMI interface in MPICH2 */
 

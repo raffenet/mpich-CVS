@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPIIMPLATOMIC_H
-#define MPIIMPLATOMIC_H
+#ifndef MPIIMPLATOMIC_H_INCLUDED
+#define MPIIMPLATOMIC_H_INCLUDED
 
 #if !defined(MPICH_SINGLE_THREADED) && defined(USE_ATOMIC_UPDATES)
 

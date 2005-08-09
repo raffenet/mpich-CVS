@@ -3,8 +3,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef MPIIOV_H
-#define MPIIOV_H
+#ifndef MPIIOV_H_INCLUDED
+#define MPIIOV_H_INCLUDED
 
 /* IOVs */
 /* The basic channel interface uses IOVs */

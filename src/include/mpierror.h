@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPIERROR_H
-#define MPIERROR_H
+#ifndef MPIERROR_H_INCLUDED
+#define MPIERROR_H_INCLUDED
 
 /* Error severity */
 #define MPIR_ERR_FATAL 1

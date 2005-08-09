@@ -4,14 +4,17 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef MPIIMPL_INCLUDED
-#define MPIIMPL_INCLUDED
+#ifndef MPIIMPL_H_INCLUDED
+#define MPIIMPL_H_INCLUDED
 
 /*
  * This file is the temporary home of most of the definitions used to 
  * implement MPICH.  We will eventually divide this file into logical
  * pieces once we are certain of the relationships between the components.
  */
+
+/* style: define:vsnprintf:1 sig:0 */
+/* style: allow:printf:3 sig:0 */
 
 /* Include the mpi definitions */
 #include "mpi.h"

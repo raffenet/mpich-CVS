@@ -4,8 +4,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef MPISTATES_H
-#define MPISTATES_H
+#ifndef MPISTATES_H_INCLUDED
+#define MPISTATES_H_INCLUDED
 
 /* Insert all the states to be logged here */
 
