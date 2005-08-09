@@ -27,6 +27,13 @@
 #include <malloc.h>
 #endif
 
+/* for the style checker */
+/* style: allow:malloc:1 sig:0 */
+/* style: allow:free:1 sig:0 */
+/* style: allow:calloc:1 sig:0 */
+/* style: allow:realloc:1 sig:0 */
+
+
 #define FPRINTF fprintf
 void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname);
 void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, char *fname);
