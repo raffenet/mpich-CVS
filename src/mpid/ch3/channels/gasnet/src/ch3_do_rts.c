@@ -26,7 +26,7 @@ int MPIDI_CH3_do_rts(MPIDI_VC_t *vc, MPID_Request *sreq,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_DO_RTS);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(n_iov <= MPID_IOV_LIMIT);
+    MPIU_Assert(n_iov <= MPID_IOV_LIMIT);
 
     DUMP_REQUEST(sreq);
     MPIDI_DBG_Print_packet(rts_pkt);
@@ -52,7 +52,7 @@ int MPIDI_CH3_do_rts(MPIDI_VC_t *vc, MPID_Request *sreq,
 	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 	
 	rts_sreq = MPIDI_CH3_Request_create();
-	assert(rts_sreq != NULL);	
+	MPIU_Assert(rts_sreq != NULL);	
 	sreq->kind = MPID_REQUEST_SEND;
 	
 	rts_sreq->gasnet.pkt = *rts_pkt;

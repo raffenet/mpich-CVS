@@ -59,7 +59,7 @@ int MPIDI_CH3_iRead(MPIDI_VC_t * vc, MPID_Request * rreq)
 		rreq->gasnet.iov_offset = i;
 		/* vc->gasnet.data += vc->gasnet.data_sz; */
 		vc->gasnet.data_sz = 0;
-		assert (vc->gasnet.recv_active == NULL ||
+		MPIU_Assert (vc->gasnet.recv_active == NULL ||
 			vc->gasnet.recv_active == rreq);
 		vc->gasnet.recv_active = rreq;
 		goto fn_exit;

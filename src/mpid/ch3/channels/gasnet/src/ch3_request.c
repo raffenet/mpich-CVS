@@ -31,7 +31,7 @@ MPID_Request * MPIDI_CH3_Request_create()
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "allocated request, handle=0x%08x",
 			  req->handle));
-	assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+	MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
 	MPIDI_CH3U_Request_create(req);
     }
     else
@@ -54,7 +54,7 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
     MPIU_Object_add_ref(req);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
 }
@@ -69,9 +69,9 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
     MPIU_Object_release_ref(req, ref_count);
-    assert(req->ref_count >= 0);
+    MPIU_Assert(req->ref_count >= 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
 }
 #endif
@@ -86,8 +86,8 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
     MPIDI_DBG_PRINTF((60, FCNAME, "freeing request, handle=0x%08x",
 		      req->handle));
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
-    assert(req->ref_count == 0);
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+    MPIU_Assert(req->ref_count == 0);
     MPIDI_CH3U_Request_destroy(req);
     MPIU_Handle_obj_free(&MPID_Request_mem, req);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);

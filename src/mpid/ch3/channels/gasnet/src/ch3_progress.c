@@ -60,7 +60,7 @@ int MPIDI_CH3I_Progress(int is_blocking)
 
     /* we better not be inside the handler: we can't send from inside
      * the handler, so we wouldn't be able to make progress */
-    assert (!MPIDI_CH3I_inside_handler);
+    MPIU_Assert (!MPIDI_CH3I_inside_handler);
 
     do
     {
@@ -278,7 +278,7 @@ MPIDI_CH3_continue_packet_handler (gasnet_token_t token, void* buf,
     vc->gasnet.data_sz = data_sz;
     rreq = vc->gasnet.recv_active;
     
-    assert (rreq);
+    MPIU_Assert (rreq);
 
     mpi_errno = MPIDI_CH3_iRead (vc, rreq);
     if (mpi_errno != MPI_SUCCESS)
@@ -312,7 +312,7 @@ MPIDI_CH3_CTS_packet_handler (gasnet_token_t token, void* buf, size_t buf_sz,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CTS_PACKET_HANDLER);
 
-    assert (n_iov * sizeof (MPID_IOV) == buf_sz);
+    MPIU_Assert (n_iov * sizeof (MPID_IOV) == buf_sz);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     MPIDI_CH3I_inside_handler = 1;
@@ -428,7 +428,7 @@ MPIDI_CH3_reload_IOV_reply_handler (gasnet_token_t token, void *buf, int buf_sz,
     MPIDI_CH3I_inside_handler = 1;
     MPIDI_CH3I_gasnet_token = token;
 
-    assert (buf_sz = n_iov * sizeof (MPID_IOV));
+    MPIU_Assert (buf_sz = n_iov * sizeof (MPID_IOV));
     
     MPID_Request_get_ptr (sreq_id, sreq);
 
@@ -535,8 +535,8 @@ send_enqueuedv (MPIDI_VC_t * vc, MPID_Request * sreq)
     MPIDI_FUNC_ENTER(MPID_STATE_SEND_ENQUEUEDV);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(n_iov <= MPID_IOV_LIMIT);
-    assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
+    MPIU_Assert(n_iov <= MPID_IOV_LIMIT);
+    MPIU_Assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
     /* The channel uses a fixed length header, the size of which is
      * the maximum of all possible packet headers */
 

@@ -26,8 +26,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(n_iov <= MPID_IOV_LIMIT);
-    assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
+    MPIU_Assert(n_iov <= MPID_IOV_LIMIT);
+    MPIU_Assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* The channel uses a fixed length header, the size of which is
      * the maximum of all possible packet headers */
@@ -73,7 +73,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 	    sreq->dev.iov_count = n_iov - i;
 	    sreq->gasnet.vc = vc;
 	    MPIDI_CH3I_SendQ_enqueue_head (sreq, CH3_NORMAL_QUEUE);
-	    assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
+	    MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
 	    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
 	}
 	else
@@ -94,7 +94,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 		sreq->gasnet.iov_offset = 0;
 		sreq->gasnet.vc = vc;
 		MPIDI_CH3I_SendQ_enqueue_head (sreq, CH3_NORMAL_QUEUE);
-		assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
+		MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
 		MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
 	    }
 	}    

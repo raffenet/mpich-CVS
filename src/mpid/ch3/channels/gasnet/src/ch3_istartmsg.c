@@ -30,7 +30,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which is
      * the maximum of all possible packet headers */
@@ -56,7 +56,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 
 	/* create a request */
 	sreq = MPIDI_CH3_Request_create();
-	assert(sreq != NULL);
+	MPIU_Assert(sreq != NULL);
 	MPIU_Object_set_ref(sreq, 2);
 	sreq->kind = MPID_REQUEST_SEND;
 
