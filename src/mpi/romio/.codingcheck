@@ -46,5 +46,9 @@
 	'MPIHP'=> romio,
 	);
 
-&PushDefinesNames( "romioDefines", "tree", "add" );
+# Only invoke this function if the function is defined (in case the
+# user removed the cpp defines check with -rmchecks=cppdefines)
+if (defined(&PushDefinesNames)) {
+   &PushDefinesNames( "romioDefines", "tree", "add" );
+}
 	
