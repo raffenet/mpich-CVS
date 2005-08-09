@@ -583,14 +583,14 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
 
 /* added by brad.  finalization related upcalls */
-int MPIDI_CH3U_Finalize_sshm();
+int MPIDI_CH3U_Finalize_sshm(void);
 
 /* RMA (optional) */
 void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr);
 int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info, 
                     MPID_Comm *comm_ptr, MPID_Win **win_ptr);
 int MPIDI_CH3_Free_mem(void *ptr);
-void MPIDI_CH3_Cleanup_mem();  /* brad : called during finalize replacing what sshm does/did  */
+void MPIDI_CH3_Cleanup_mem(void);  /* brad : called during finalize replacing what sshm does/did  */
 int MPIDI_CH3_Start_PT_epoch(int lock_type, int dest, int assert, MPID_Win *win_ptr);
 int MPIDI_CH3_End_PT_epoch(int dest, MPID_Win *win_ptr);
 int MPIDI_CH3_Win_free(MPID_Win **win_ptr);
