@@ -82,6 +82,7 @@ $n_with    = $#with_array + 1;
 $n_env     = $#env_array + 1;
 $show      = 0;
 $debug     = 0;
+$echoSteps = 1;         # Set to one to echo each run program to stdout
 $report_signals = 1;    # Set to one to generate a message about signals
                         # received by a program
 $max_count = 5;
@@ -868,7 +869,14 @@ sub RunMPICH2TestSuite {
 sub RunProgram {
     my $signal_num = 0;
 
-    # perl does not correctly handle "2>&1 >>foo" redirection in system
+    if ($echoSteps) {
+	my $cmd = join(' ',@_);
+	my $curdir = `pwd`;
+	chomp $curdir;
+	print STDOUT "Running $cmd in $curdir\n";
+    }
+
+    # perl does not correctly handle ">>foo 2>&1" redirection in system
     # correctly (some stderr escapes to the prior stderr).  This
     # code attempts to do the correct thing.
     # By reopening stdout and stderr, we can ensure that all of the 
@@ -917,6 +925,9 @@ sub RunProgram {
 	if ($signal_num != 0 && $report_signals) {
 	    print OUTFD "Process exited with signal $signalnum\n";
 	}
+    }
+    if ($echoSteps) {
+	print STDOUT "Completed command with status $rc\n";
     }
     return $rc;
 }
