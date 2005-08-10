@@ -9,9 +9,10 @@
 #include "ibu.h"
 
 /* MPIDI_CH3I_Process_t MPIDI_CH3I_Process;*/
-
+#if 0
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
@@ -22,18 +23,20 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMI_SUCCESS;
-    MPIDI_PG_t * pg = NULL;
-    int pg_rank;
+    /*MPIDI_PG_t * pg = NULL;*/
+    int pg_rank = *pg_rank_p;
     int pg_size;
+    /*
     char * pg_id = NULL;
     int pg_id_sz;
-    int p;
+    */
+    /*int p;*/
     int port;
     char * key = NULL;
     char * val = NULL;
     int key_max_sz;
     int val_max_sz;
-    int kvs_name_sz;
+    /*int kvs_name_sz;*/
 
     MPIU_DBG_PRINTF(("entering ch3_init.\n"));
     /*
@@ -41,6 +44,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
      * structures that track the process group connections, MPI_COMM_WORLD, and
      * MPI_COMM_SELF
      */
+    /*
     pmi_errno = PMI_Init(has_parent);
     if (pmi_errno != 0)
     {
@@ -53,6 +57,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_rank", "**pmi_get_rank %d", pmi_errno);
 	return mpi_errno;
     }
+    */
     pmi_errno = PMI_Get_size(&pg_size);
     if (pmi_errno != 0)
     {
@@ -63,7 +68,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     /* Call dbg_init as soon as the rank is available */
     MPIU_dbg_init(pg_rank);
     /*MPIU_Timer_init(pg_rank, pg_size);*/
-    
+
+#if 0
     /*
      * Get the process group id
      */
@@ -122,7 +128,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
-    pg->ch.kvs_name = NULL;
+    (*pg_p)->ch.kvs_name = NULL;
     
     /*
      * Get the name of the key-value space (KVS)
@@ -137,8 +143,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
     
-    pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
-    if (pg->ch.kvs_name == NULL)
+    (*pg_p)->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
+    if ((*pg_p)->ch.kvs_name == NULL)
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
@@ -146,7 +152,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	/* --END ERROR HANDLING-- */
     }
     
-    pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
+    pmi_errno = PMI_KVS_Get_my_name((*pg_p)->ch.kvs_name, kvs_name_sz);
     if (pmi_errno != PMI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -155,8 +161,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
-	pg->ch.rank = pg_rank;
-	MPIU_DBG_PRINTF(("pg->ch.rank =%d\n", pg->ch.rank));
+	(*pg_p)->ch.rank = pg_rank;
+	MPIU_DBG_PRINTF(("pg->ch.rank =%d\n", (*pg_p)->ch.rank));
     MPIDI_CH3I_Process.pg = pg;
     
     /* Initialize the VC table associated with this process
@@ -171,6 +177,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	pg->vct[p].ch.send_active = NULL;
 	pg->vct[p].ch.reading_pkt = TRUE;
     }
+#endif
 
     /* Initialize Progress Engine */
     mpi_errno = MPIDI_CH3I_Progress_init();
@@ -237,7 +244,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
     mpi_errno = MPI_SUCCESS; /* reset errno after successful snprintf calls */
-    pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+    pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, key, val);
     if (pmi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
@@ -246,7 +253,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     MPIU_DBG_PRINTF(("Published lid=%d\n", port));
     
-    pmi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
+    pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
     if (pmi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
@@ -265,7 +272,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	{
 	    mpi_errno = snprintf(key, key_max_sz, "P%d-lid", p);
 	    MPIU_Assert(mpi_errno > -1 && mpi_errno < key_max_sz);
-	    pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	    pmi_errno = PMI_KVS_Get((*pg_p)->ch.kvs_name, key, val, val_max_sz);
 	    MPIU_Assert(pmi_errno == 0);
 	    
 	    dbg_printf("[%d] port[%d]=%s\n", pg_rank, p, val);
@@ -279,8 +286,10 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     *has_args = TRUE;
     *has_env = TRUE;
 
+#if 0
     *pg_p = pg;
     *pg_rank_p = pg_rank;
+#endif
 
 #if 0
     if (*has_parent)
@@ -290,7 +299,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
         if (pg_rank == 0)
 	{
             /* get the port name of the root of the parents */
-            pmi_errno = PMI_KVS_Get(pg->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
+            pmi_errno = PMI_KVS_Get((*pg_p)->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
             if (pmi_errno != 0)
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
@@ -312,11 +321,12 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     /* for now, connect all the processes at init time */
     MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);
-    mpi_errno = MPIDI_CH3I_Setup_connections(pg, pg_rank);
+    mpi_errno = MPIDI_CH3I_Setup_connections(*pg_p, pg_rank);
     MPIDI_DBG_PRINTF((65, "ch3_init", "connections formed, exiting\n"));fflush(stdout);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**setup_connections", 0);
+	goto fn_fail;
     }
 
  fn_exit:
@@ -331,13 +341,14 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     return mpi_errno;
  fn_fail:
-    if (pg != NULL)
+    if ((*pg_p) != NULL)
     {
-	MPIDI_PG_Destroy(pg);
+	MPIDI_PG_Destroy(*pg_p);
     }
     goto fn_exit;
 }
 
+#if 0
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {
     return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
@@ -346,9 +357,9 @@ static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
 {
-    if (pg->ch.kvs_name != NULL)
+    if ((*pg_p)->ch.kvs_name != NULL)
     {
-	MPIU_Free(pg->ch.kvs_name);
+	MPIU_Free((*pg_p)->ch.kvs_name);
     }
 
     if (id != NULL)
@@ -358,3 +369,4 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
+#endif
