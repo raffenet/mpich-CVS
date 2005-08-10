@@ -60,8 +60,8 @@
 #define MPI_Cart_sub PMPI_Cart_sub
 #undef MPI_Cartdim_get
 #define MPI_Cartdim_get PMPI_Cartdim_get
-#undef MPI_Comm_call_error_handler
-#define MPI_Comm_call_error_handler PMPI_Comm_call_error_handler
+#undef MPI_Comm_call_errhandler
+#define MPI_Comm_call_errhandler PMPI_Comm_call_errhandler
 #undef MPI_Comm_compare
 #define MPI_Comm_compare PMPI_Comm_compare
 #undef MPI_Comm_create
