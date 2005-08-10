@@ -11,4 +11,8 @@
 #
 # Also add additional CPP names
 %gTestNames = ( 'DEBUG' => 1 );
-&PushDefinesNames( "gTestNames", "tree", "add" );
+if (defined(&PushDefinesNames)) {
+   &PushDefinesNames( "gTestNames", "tree", "add" );
+}
+
+1;

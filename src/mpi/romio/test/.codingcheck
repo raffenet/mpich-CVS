@@ -6,4 +6,8 @@
 	'malloc' => sys, 'free' => sys, 'calloc' => sys, 'strdup' => sys,
 	'assert' => sys,
 	);
-&PushAllowFuncNames( "romioTestRoutines", "tree", "add" );
+if (defined(&PushAllowFuncNames)) {
+    &PushAllowFuncNames( "romioTestRoutines", "tree", "add" );
+}
+
+1;

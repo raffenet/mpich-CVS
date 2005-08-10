@@ -10,7 +10,9 @@
 
 # Allow #ifdef DEBUG in the examples
 %exampleDefines = ( 'DEBUG' => 1 );
-&PushDefinesNames( "exampleDefines", "tree", "add" );
+if (defined(&PushDefinesNames)) {
+   &PushDefinesNames( "exampleDefines", "tree", "add" );
+}
 
 #
 # Tell the preamble code not to complain about missing mode comments
