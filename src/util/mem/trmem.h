@@ -4,8 +4,8 @@
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef _TRMEM_INCLUDED
-#define _TRMEM_INCLUDED
+#ifndef _TRMEM_H_INCLUDED
+#define _TRMEM_H_INCLUDED
 
 void MPIU_trinit( int );
 void *MPIU_trmalloc( unsigned int, int, const char [] );
