@@ -32,7 +32,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
 #ifdef MPIDI_CH3_USES_SSHM
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     int pg_size;
     int pg_rank = *pg_rank_p;
@@ -387,7 +387,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	MPIU_Free(key);
     }
 #endif /* MPIDI_CH3_USES_SSHM */    
-    return MPI_SUCCESS;
+    return mpi_errno;
 #ifdef MPIDI_CH3_USES_SSHM
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
