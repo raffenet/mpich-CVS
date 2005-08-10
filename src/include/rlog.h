@@ -5,8 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef RLOG_H
-#define RLOG_H
+#ifndef RLOG_H_INCLUDED
+#define RLOG_H_INCLUDED
 
 #include <stdio.h>
 

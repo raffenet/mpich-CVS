@@ -647,10 +647,6 @@ char * simplify_fmt_string(const char *str)
 }
 #endif
 
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
-
 #define ASSERT_STR_MAXLEN 256
 
 static const char * GetAssertString(int d)
@@ -835,7 +831,10 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list
     end = strchr(fmt, '%');
     while (end)
     {
-	len = min(maxlen, (size_t)(end - begin));
+	len = maxlen;
+	if (len > (size_t)(end - begin)) {
+	    len = (size_t)(end - begin);
+	}
 	if (len)
 	{
 	    memcpy(str, begin, len);

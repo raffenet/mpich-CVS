@@ -5,8 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef RLOG_MACROS_H
-#define RLOG_MACROS_H
+#ifndef RLOG_MACROS_H_INCLUDED
+#define RLOG_MACROS_H_INCLUDED
 
 #include "rlog.h"
 #include "mpichtimer.h"

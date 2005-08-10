@@ -5,8 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPITIMERIMPL_H
-#define MPITIMERIMPL_H
+#ifndef MPITIMERIMPL_H_INCLUDED
+#define MPITIMERIMPL_H_INCLUDED
 
 /* Possible values for timing */
 #define MPID_TIMING_KIND_NONE 0
