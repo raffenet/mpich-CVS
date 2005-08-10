@@ -124,7 +124,7 @@ class MPD(object):
                                  'MPD_DAEMON_FLAG'      :  0,
                                  'MPD_BULLETPROOF_FLAG' :  0,
                                  'MPD_PID_FILENAME'     :  '',
-                                 'MPD_LOGFILE_TRUNC_SZ' :  -1,  # don't trunc
+                                 'MPD_LOGFILE_TRUNC_SZ' :  4000000,  # -1 -> don't trunc
                                }
         for (k,v) in self.parmsToOverride.items():
             self.parmdb[('thispgm',k)] = v
