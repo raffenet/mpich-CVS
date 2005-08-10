@@ -17,6 +17,7 @@
 #include <string.h>
 #endif
 #include "trace_API.h"
+#include "mpimem.h"
 
 #define TRACEINPUT_SUCCESS 0
 #define TRACEINPUT_FAIL    -1

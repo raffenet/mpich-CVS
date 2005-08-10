@@ -14,6 +14,7 @@
 #include "logformat_trace_InputLog.h"
 #include "trace_API.h"
 #include <stdlib.h>
+#include "mpimem.h"
 
 #define ACHAR_LENGTH   256
 #define AINT_LENGTH    100

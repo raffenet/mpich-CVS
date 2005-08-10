@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h> /* isdigit */
+#include "mpimem.h"
 
 #ifndef BOOL
 #define BOOL int
