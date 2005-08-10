@@ -31,8 +31,8 @@
 int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
-#ifdef MPIDI_CH3_USES_SSHM
     int mpi_errno = MPI_SUCCESS;
+#ifdef MPIDI_CH3_USES_SSHM
     int pmi_errno;
     int pg_size;
     int pg_rank = *pg_rank_p;

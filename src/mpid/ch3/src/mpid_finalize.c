@@ -157,11 +157,13 @@ int MPID_Finalize()
 	}
     }
 
+#ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
     mpi_errno = MPIDI_CH3I_PMI_Finalize();
     if(mpi_errno != MPI_SUCCESS)
     {
         return mpi_errno;  /* brad : what more should i do?  print something? create_code? */
     }
+#endif
     mpi_errno = MPIDI_CH3_Finalize();
     
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);

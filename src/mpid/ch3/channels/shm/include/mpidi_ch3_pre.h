@@ -10,6 +10,10 @@
 #include "mpidi_ch3i_shm_conf.h"
 #include "mpid_locksconf.h"
 
+/* brad : added so that factored init functionality isn't called twice */
+#define MPIDI_CH3_UNFACTORED_INIT
+#define MPIDI_CH3_UNFACTORED_FINALIZE
+
 /*#define MPICH_DBG_OUTPUT*/
 
 #if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)

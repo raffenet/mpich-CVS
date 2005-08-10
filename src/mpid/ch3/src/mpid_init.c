@@ -134,10 +134,9 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     /*
      * Perform channel-independent PMI initialization
      */
-/*     printf("before MPIDI_CH3I_PMI_Init\n"); */
+#ifndef MPIDI_CH3_UNFACTORED_INIT
     mpi_errno = MPIDI_CH3I_PMI_Init(has_args, has_env, &has_parent, &pg, &pg_rank,
                                &publish_bc_orig, &bc_key, &bc_val, &val_max_remaining);
-/*     printf("after MPIDI_CH3I_PMI_Init\n"); */
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -145,14 +144,13 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }    
+#endif
     
     /*
      * Let the channel perform any necessary initialization
      */
-/*     printf("before MPIDI_CH3_Init\n"); */
     mpi_errno = MPIDI_CH3_Init(has_args, has_env, &has_parent, &pg, &pg_rank,
                               &publish_bc_orig, &bc_key, &bc_val, &val_max_remaining);
-/*     printf("after MPIDI_CH3_Init\n"); */
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
