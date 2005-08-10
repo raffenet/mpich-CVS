@@ -17,7 +17,8 @@
 #include "mpiimpl.h"
 #include "namepub.h"
 
-/* style: allow:fprintf:1 sig:0 */   /* For writing the name/service pair */
+/* For writing the name/service pair */
+/* style: allow:fprintf:1 sig:0 */   
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
