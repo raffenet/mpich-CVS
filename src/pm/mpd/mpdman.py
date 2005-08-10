@@ -28,6 +28,11 @@ from mpdlib   import mpd_set_my_id, mpd_print, mpd_read_nbytes, \
                      MPDSock, MPDListenSock, MPDStreamHandler, MPDRing
 
 try:
+    import  syslog  
+    syslog_module_available = 1
+except:
+    syslog_module_available = 0
+try:
     import  subprocess
     subprocess_module_available = 1
 except:
@@ -84,6 +89,7 @@ class MPDMan(object):
             self.pos0Ifhn = os.environ['MPDMAN_POS0_IFHN']
             self.pos0Port = int(os.environ['MPDMAN_POS0_PORT'])
         # close unused fds before I grab any more
+        # NOTE: this will also close syslog's fd inherited from mpd; re-opened below
         try:     max_fds = os.sysconf('SC_OPEN_MAX')
         except:  max_fds = 1024
         for fd in range(3,max_fds):
@@ -91,6 +97,9 @@ class MPDMan(object):
                 continue
             try:    os.close(fd)
             except: pass
+        if syslog_module_available:
+            syslog.openlog("mpdman",0,syslog.LOG_DAEMON)
+            syslog.syslog(syslog.LOG_INFO,"mpdman starting new log; %s" % (self.myId) )
         self.umask = os.environ['MPDMAN_UMASK']
         if self.umask.startswith('0x'):
             self.umask = int(self.umask,16)
@@ -852,11 +861,29 @@ class MPDMan(object):
         else:
             mpd_print(1, "unrecognized msg from spawned child :%s:" % msg )
     def handle_pmi_connection(self,sock):
+        if self.pmiSock:  # already have one
+            pmiMsgToSend = 'cmd=you_already_have_an_open_pmi_conn_to_me\n'
+            self.pmiSock.send_char_msg(pmiMsgToSend)
+            self.streamHandler.del_handler(self.pmiSock)
+            self.pmiSock.close()
+            self.pmiSock = 0
+            # mpd_print(1,"invalid attempt by client to have 2 simultaneous pmi connections")
+            print "invalid attempt by client to have 2 simultaneous pmi connections"
+            clientExitStatus = 137  # assume kill -9 below
+            msgToSend = { 'cmd' : 'collective_abort',
+                          'src' : self.myId, 'rank' : self.myRank,
+                          'exit_status' : clientExitStatus }
+            self.ring.rhsSock.send_dict_msg(msgToSend)
+            return
         (self.pmiSock,tempConnAddr) = self.pmiListenSock.accept()
         # the following lines are commented out so that we can support a process
         # that runs 2 MPI pgms in tandem  (e.g. mpish at ANL)
         ##### del socksToSelect[pmiListenSock]
         ##### pmiListenSock.close()
+        if not self.pmiSock:
+            mpd_print(1,"failed accept for pmi connection from client")
+            sys.exit(-1)
+        self.pmiSock.name = 'pmi'
         self.streamHandler.set_handler(self.pmiSock,self.handle_pmi_input)
         if self.tvReady:
             pmiMsgToSend = 'cmd=tv_ready\n'
