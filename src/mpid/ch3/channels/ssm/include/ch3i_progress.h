@@ -3,8 +3,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef CH3I_PROGRESS_H
-#define CH3I_PROGRESS_H
+#ifndef CH3I_PROGRESS_H_INCLUDED
+#define CH3I_PROGRESS_H_INCLUDED
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
