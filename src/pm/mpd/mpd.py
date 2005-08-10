@@ -52,7 +52,7 @@ __version__ += "  " + str(mpd_version())
 __credits__ = ""
 
 
-import sys, os, signal, socket
+import sys, os, signal, socket, stat
 
 from  re          import  sub
 from  atexit      import  register
@@ -124,6 +124,7 @@ class MPD(object):
                                  'MPD_DAEMON_FLAG'      :  0,
                                  'MPD_BULLETPROOF_FLAG' :  0,
                                  'MPD_PID_FILENAME'     :  '',
+                                 'MPD_LOGFILE_TRUNC_SZ' :  -1,  # don't trunc
                                }
         for (k,v) in self.parmsToOverride.items():
             self.parmdb[('thispgm',k)] = v
@@ -181,7 +182,7 @@ class MPD(object):
             self.conExt = '_'  + os.environ['MPD_CON_EXT']
         else:
             self.conExt = ''
-        self.logFilename = '/sandbox/mpd2.logfile_' + mpd_get_my_username() + self.conExt
+        self.logFilename = '/tmp/mpd2.logfile_' + mpd_get_my_username() + self.conExt
         if self.parmdb['MPD_PID_FILENAME']:  # may overwrite it below
             pidFile = open(self.parmdb['MPD_PID_FILENAME'],'w')
             print >>pidFile, "%d" % (os.getpid())
@@ -207,13 +208,13 @@ class MPD(object):
             try:    os.unlink(self.logFilename)
             except: pass
             logFileFD = os.open(self.logFilename,os.O_CREAT|os.O_WRONLY|os.O_EXCL,0600)
-            logFile = os.fdopen(logFileFD,'w',0)
-            sys.stdout = logFile
-            sys.stderr = logFile
+            self.logFile = os.fdopen(logFileFD,'w',0)
+            sys.stdout = self.logFile
+            sys.stderr = self.logFile
             print >>sys.stdout, 'logfile for mpd with pid %d' % os.getpid()
             sys.stdout.flush()
-            os.dup2(logFile.fileno(),sys.__stdout__.fileno())
-            os.dup2(logFile.fileno(),sys.__stderr__.fileno())
+            os.dup2(self.logFile.fileno(),sys.__stdout__.fileno())
+            os.dup2(self.logFile.fileno(),sys.__stderr__.fileno())
         if self.parmdb['MPD_CONSOLE_FLAG']:
             self.conListenSock = MPDConListenSock(secretword=self.parmdb['MPD_SECRETWORD'])
             self.streamHandler.set_handler(self.conListenSock,
@@ -1026,6 +1027,13 @@ class MPD(object):
             mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
         return
     def do_mpdrun(self,msg):
+        if self.parmdb['MPD_LOGFILE_TRUNC_SZ'] >= 0:
+            try:
+                logSize = os.stat(self.logFilename)[stat.ST_SIZE]
+                if logSize > self.parmdb['MPD_LOGFILE_TRUNC_SZ']:
+                    self.logFile.truncate(self.parmdb['MPD_LOGFILE_TRUNC_SZ'])
+            except:
+                pass
         if msg.has_key('jobid'):
             jobid = msg['jobid']
         else:
