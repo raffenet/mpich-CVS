@@ -45,7 +45,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->fp_ind = disp;
     fd->fp_sys_posn = 0;
     fd->comm = comm;       /* dup'ed in MPI_File_open */
-    fd->filename = strdup(filename);
+    fd->filename = ADIOI_Strdup(filename);
     fd->file_system = file_system;
 
     /* TODO: VERIFY THAT WE DON'T NEED TO ALLOCATE THESE, THEN DON'T. */
@@ -107,7 +107,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	fd->hints->cb_nodes = rank_ct;
 	/* TEMPORARY -- REMOVE WHEN NO LONGER UPDATING INFO FOR FS-INDEP. */
 	value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
-	sprintf(value, "%d", rank_ct);
+	ADIOI_Snprintf(value, MPI_MAX_INFO_VAL+1, "%d", rank_ct);
 	MPI_Info_set(fd->info, "cb_nodes", value);
 	ADIOI_Free(value);
     }
@@ -253,7 +253,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
         }
 
 	if (fd->fns) ADIOI_Free(fd->fns);
-	if (fd->filename) free(fd->filename);
+	if (fd->filename) ADIOI_Free(fd->filename);
 	if (fd->info != MPI_INFO_NULL) MPI_Info_free(&(fd->info));
 	ADIOI_Free(fd);
         fd = ADIO_FILE_NULL;

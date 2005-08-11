@@ -116,7 +116,7 @@ void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *ierr,
     key += lead_blanks;
 
     newkey = (char *) ADIOI_Malloc((new_keylen+1)*sizeof(char));
-    strncpy(newkey, key, new_keylen);
+    ADIOI_Strncpy(newkey, key, new_keylen);
     newkey[new_keylen] = '\0';
 
 
@@ -135,7 +135,7 @@ void mpi_info_set_(MPI_Fint *info, char *key, char *value, int *ierr,
     value += lead_blanks;
 
     newvalue = (char *) ADIOI_Malloc((new_vallen+1)*sizeof(char));
-    strncpy(newvalue, value, new_vallen);
+    ADIOI_Strncpy(newvalue, value, new_vallen);
     newvalue[new_vallen] = '\0';
 
  

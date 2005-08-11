@@ -110,7 +110,7 @@ void mpi_info_delete_(MPI_Fint *info, char *key, int *ierr, int keylen)
     key += lead_blanks;
 
     newkey = (char *) ADIOI_Malloc((new_keylen+1)*sizeof(char));
-    strncpy(newkey, key, new_keylen);
+    ADIOI_Strncpy(newkey, key, new_keylen);
     newkey[new_keylen] = '\0';
 
     info_c = MPI_Info_f2c(*info);

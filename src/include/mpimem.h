@@ -357,9 +357,6 @@ if (!(pointer_)) { \
     stmt_;\
 }}
 
-/* Utilities: Safe string copy and sprintf */
-int MPIU_Strncpy( char *, const char *, size_t );
-
 /* Provide a fallback snprintf for systems that do not have one */
 /* Define attribute as empty if it has no definition */
 #ifndef ATTRIBUTE

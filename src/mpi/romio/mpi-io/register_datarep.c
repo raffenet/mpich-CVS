@@ -143,7 +143,7 @@ int MPI_Register_datarep(char *name,
 #ifdef MPICH2
     datarep->name = MPIU_Strdup(name);
 #else
-    datarep->name = strdup(name);
+    datarep->name = ADIOI_Strdup(name);
 #endif
     datarep->state         = state;
     datarep->read_conv_fn  = read_conv_fn;

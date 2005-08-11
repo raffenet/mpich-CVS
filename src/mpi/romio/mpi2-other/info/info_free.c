@@ -46,8 +46,8 @@ int MPI_Info_free(MPI_Info *info)
 
     while (curr) {
 	next = curr->next;
-	free(curr->key);
-	free(curr->value);
+	ADIOI_Free(curr->key);
+	ADIOI_Free(curr->value);
 	ADIOI_Free(curr);
 	curr = next;
     }

@@ -76,7 +76,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, int *flag)
 
     while (curr) {
 	if (!strcmp(curr->key, key)) {
-	    strncpy(value, curr->value, valuelen);
+	    ADIOI_Strncpy(value, curr->value, valuelen);
 	    value[valuelen] = '\0';
 	    *flag = 1;
 	    break;

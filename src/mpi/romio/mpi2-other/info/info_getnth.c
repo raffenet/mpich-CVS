@@ -68,7 +68,7 @@ int MPI_Info_get_nthkey(MPI_Info info, int n, char *key)
 	curr = curr->next;
 	i++;
     }
-    strcpy(key, curr->key);
+    ADIOI_Strncpy(key, curr->key, MPI_MAX_INFO_KEY);
 
     return MPI_SUCCESS;
 }

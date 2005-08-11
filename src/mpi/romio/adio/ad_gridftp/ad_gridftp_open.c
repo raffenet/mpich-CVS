@@ -15,7 +15,7 @@ static void exists_cb(void *myargs, globus_ftp_client_handle_t *handle, globus_o
 {    
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     else
 	{
@@ -29,7 +29,7 @@ static void touch_ctl_cb(void *myargs, globus_ftp_client_handle_t *handle, globu
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     globus_mutex_lock(&lock);
     touch_ctl_done=GLOBUS_TRUE;
@@ -42,7 +42,7 @@ static void touch_data_cb(void *myargs, globus_ftp_client_handle_t *handle, glob
 			  globus_bool_t eof)
 {
     if (error)
-	fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
     globus_ftp_client_register_read(handle,buffer,length,touch_data_cb,myargs);
     return;
 }
@@ -232,7 +232,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 		}
 	}
     else
-	fprintf(stderr,"no MPI_Info object associated with %s\n",fd->filename);
+	FPRINTF(stderr,"no MPI_Info object associated with %s\n",fd->filename);
 
     /* Create the ftp handle */
     result=globus_ftp_client_handle_init(&(gridftp_fh[fd->fd_sys]),&hattr)
@@ -336,7 +336,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	{
 	    if ( myrank==0 )
 		{
-		    fprintf(stderr,"WARNING:  read-only file %s does not exist!\n",fd->filename);
+		    FPRINTF(stderr,"WARNING:  read-only file %s does not exist!\n",fd->filename);
 		}
 	}
     num_gridftp_handles++;
@@ -350,71 +350,71 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	    globus_ftp_control_type_t filetype;
 	    globus_ftp_control_parallelism_t parallelism;
 
-	    fprintf(stderr,"--gridftp details for %s--\n",
+	    FPRINTF(stderr,"--gridftp details for %s--\n",
 		    fd->filename);
 
 	    /* 
-	    fprintf(stderr,"Connection caching: ");
+	    FPRINTF(stderr,"Connection caching: ");
 	    globus_ftp_client_handleattr_get_cache_all(&hattr,&cached);
 	    if ( cached==GLOBUS_TRUE )
-		fprintf(stderr,"Y\n");
+		FPRINTF(stderr,"Y\n");
 	    else
-		fprintf(stderr,"N\n");
+		FPRINTF(stderr,"N\n");
 	    */
 
-	    fprintf(stderr,"Control mode:  ");
+	    FPRINTF(stderr,"Control mode:  ");
 	    globus_ftp_client_operationattr_get_mode(&(oattr[fd->fd_sys]),&mode);
 	    if ( mode==GLOBUS_FTP_CONTROL_MODE_BLOCK )
-		fprintf(stderr,"block\n");
+		FPRINTF(stderr,"block\n");
 	    else if ( mode==GLOBUS_FTP_CONTROL_MODE_COMPRESSED )
-		fprintf(stderr,"compressed\n");
+		FPRINTF(stderr,"compressed\n");
 	    else if ( mode==GLOBUS_FTP_CONTROL_MODE_EXTENDED_BLOCK )
-		fprintf(stderr,"extended block\n");
+		FPRINTF(stderr,"extended block\n");
 	    else if ( mode==GLOBUS_FTP_CONTROL_MODE_STREAM )
-		fprintf(stderr,"stream\n");
+		FPRINTF(stderr,"stream\n");
 	    else
-		fprintf(stderr,"unknown\n");
+		FPRINTF(stderr,"unknown\n");
 
-	    fprintf(stderr,"File type:  ");
+	    FPRINTF(stderr,"File type:  ");
 	    globus_ftp_client_operationattr_get_type(&(oattr[fd->fd_sys]),&filetype);
 	    if ( filetype==GLOBUS_FTP_CONTROL_TYPE_ASCII )
-		fprintf(stderr,"ASCII\n");
+		FPRINTF(stderr,"ASCII\n");
 	    else if ( filetype==GLOBUS_FTP_CONTROL_TYPE_IMAGE )
-		fprintf(stderr,"binary\n");
+		FPRINTF(stderr,"binary\n");
 	    else if ( filetype==GLOBUS_FTP_CONTROL_TYPE_EBCDIC )
-		fprintf(stderr,"EBCDIC\n");
+		FPRINTF(stderr,"EBCDIC\n");
 	    else
-		fprintf(stderr,"unknown\n");
+		FPRINTF(stderr,"unknown\n");
 
-	    fprintf(stderr,"Parallelism:  ");
+	    FPRINTF(stderr,"Parallelism:  ");
 	    globus_ftp_client_operationattr_get_parallelism(&(oattr[fd->fd_sys]),&parallelism);
 	    if ( parallelism.mode==GLOBUS_FTP_CONTROL_PARALLELISM_NONE )
-		fprintf(stderr,"none\n");
+		FPRINTF(stderr,"none\n");
 	    else if ( parallelism.mode==GLOBUS_FTP_CONTROL_PARALLELISM_FIXED )
-		fprintf(stderr,"fixed with %d streams\n",parallelism.fixed.size);
+		FPRINTF(stderr,"fixed with %d streams\n",parallelism.fixed.size);
 	    else
-		fprintf(stderr,"unknown\n");
+		FPRINTF(stderr,"unknown\n");
 
-	    fprintf(stderr,"Striping:  ");
+	    FPRINTF(stderr,"Striping:  ");
 	    globus_ftp_client_operationattr_get_striped(&(oattr[fd->fd_sys]),&striped);
 	    if ( striped==GLOBUS_TRUE )
 		{
 		    globus_ftp_control_layout_t layout;
 
-		    fprintf(stderr,"Y\nLayout:  ");
+		    FPRINTF(stderr,"Y\nLayout:  ");
 		    globus_ftp_client_operationattr_get_layout(&(oattr[fd->fd_sys]),
 									       &layout);
 		    if ( layout.mode==GLOBUS_FTP_CONTROL_STRIPING_NONE )
-			fprintf(stderr,"none\n");
+			FPRINTF(stderr,"none\n");
 		    else if ( layout.mode==GLOBUS_FTP_CONTROL_STRIPING_PARTITIONED )
-			fprintf(stderr,"partitioned, size=%d\n",layout.partitioned.size);
+			FPRINTF(stderr,"partitioned, size=%d\n",layout.partitioned.size);
 		    else if ( layout.mode==GLOBUS_FTP_CONTROL_STRIPING_BLOCKED_ROUND_ROBIN )
-			fprintf(stderr,"round-robin, block size=%d\n",layout.round_robin.block_size);
+			FPRINTF(stderr,"round-robin, block size=%d\n",layout.round_robin.block_size);
 		    else
-			fprintf(stderr,"unknown\n");
+			FPRINTF(stderr,"unknown\n");
 		}
 	    else
-		fprintf(stderr,"N\n");
+		FPRINTF(stderr,"N\n");
 
 	    fflush(stderr);
 	}

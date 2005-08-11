@@ -125,7 +125,7 @@ void mpi_file_set_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
     real_len = i + 1;
 
     newstr = (char *) ADIOI_Malloc((real_len+1)*sizeof(char));
-    strncpy(newstr, datarep, real_len);
+    ADIOI_Strncpy(newstr, datarep, real_len);
     newstr[real_len] = '\0';
     
     fh_c = MPI_File_f2c(*fh);
@@ -170,7 +170,7 @@ FORTRAN_API void FORT_CALL mpi_file_set_view_( MPI_Fint *fh, MPI_Offset *disp, M
     real_len = i + 1;
 
     newstr = (char *) ADIOI_Malloc((real_len+1)*sizeof(char));
-    strncpy(newstr, datarep, real_len);
+    ADIOI_Strncpy(newstr, datarep, real_len);
     newstr[real_len] = '\0';
     
     fh_c = MPI_File_f2c(*fh);

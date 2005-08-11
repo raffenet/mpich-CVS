@@ -157,10 +157,10 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
                 {
                     /* (err == -1) && (errno == ENOENT) */
                     /* File does not exist */
-                    path = strdup(fd->filename);
+                    path = ADIOI_Strdup(fd->filename);
                     slash = strrchr(path, '/');
                     if (!slash)
-                        strcpy(path, ".");
+                        ADIOI_Strncpy(path, ".", 2);
                     else {
                         if (slash == path) 
                             *(path + 1) = '\0';
@@ -187,7 +187,7 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
                         file_create_args.mode = perm;
                         file_create_args.version = PAN_FS_CLIENT_LAYOUT_VERSION;
                         file_create_args.flags = PAN_FS_CLIENT_LAYOUT_CREATE_F__NONE;
-                        strcpy(file_create_args.filename, file_name_ptr); 
+                        ADIOI_Strncpy(file_create_args.filename, file_name_ptr, strlen(fd->filename)+1); 
                         file_create_args.layout.agg_type = layout_type;
                         file_create_args.layout.layout_is_valid = 1;
                         if(layout_type == PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE)
@@ -210,7 +210,7 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
                         }
                         err = close(fd_dir);
                     }
-                    free(path);
+                    ADIOI_Free(path);
                 }
             }
             MPI_Barrier(fd->comm);
@@ -255,28 +255,28 @@ void ADIOI_PANFS_Open(ADIO_File fd, int *error_code)
         }
         else 
         {
-            snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.agg_type);
+            ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.agg_type);
             MPI_Info_set(fd->info, "panfs_layout_type", temp_buffer);
             if (file_query_args.layout.layout_is_valid == 1)
             {
                 switch (file_query_args.layout.agg_type)
                 {
                     case PAN_FS_CLIENT_LAYOUT_TYPE__RAID0:
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid0.stripe_unit);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid0.stripe_unit);
                         MPI_Info_set(fd->info, "panfs_layout_stripe_unit", temp_buffer);
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid0.total_num_comps);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid0.total_num_comps);
                         MPI_Info_set(fd->info, "panfs_layout_total_num_comps", temp_buffer);
                         break;
                     case PAN_FS_CLIENT_LAYOUT_TYPE__RAID1_5_PARITY_STRIPE:
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.stripe_unit);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.stripe_unit);
                         MPI_Info_set(fd->info, "panfs_layout_stripe_unit", temp_buffer);
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.parity_stripe_width);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.parity_stripe_width);
                         MPI_Info_set(fd->info, "panfs_layout_parity_stripe_width", temp_buffer);
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.parity_stripe_depth);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.parity_stripe_depth);
                         MPI_Info_set(fd->info, "panfs_layout_parity_stripe_depth", temp_buffer);
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.total_num_comps);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.total_num_comps);
                         MPI_Info_set(fd->info, "panfs_layout_total_num_comps", temp_buffer);
-                        snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.layout_visit_policy);
+                        ADIOI_Snprintf(temp_buffer,TEMP_BUFFER_SIZE,"%u",file_query_args.layout.u.raid1_5_parity_stripe.layout_visit_policy);
                         MPI_Info_set(fd->info, "panfs_layout_visit_policy", temp_buffer);
                         break;
                 }

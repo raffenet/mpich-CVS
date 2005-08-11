@@ -116,14 +116,14 @@ void mpi_file_get_view_(MPI_Fint *fh,MPI_Offset *disp,MPI_Fint *etype,
 
     tmpreplen = strlen(tmprep);
     if (tmpreplen <= str_len) {
-        strncpy(datarep, tmprep, tmpreplen);
+        ADIOI_Strncpy(datarep, tmprep, tmpreplen);
 
         /* blank pad the remaining space */
         for (i=tmpreplen; i<str_len; i++) datarep[i] = ' ';
     }
     else {
         /* not enough space */
-        strncpy(datarep, tmprep, str_len);
+        ADIOI_Strncpy(datarep, tmprep, str_len);
         /* this should be flagged as an error. */
         *ierr = MPI_ERR_UNKNOWN;
     }
@@ -164,14 +164,14 @@ FORTRAN_API void FORT_CALL mpi_file_get_view_( MPI_Fint *fh, MPI_Offset *disp, M
 
     tmpreplen = strlen(tmprep);
     if (tmpreplen <= str_len) {
-        strncpy(datarep, tmprep, tmpreplen);
+        ADIOI_Strncpy(datarep, tmprep, tmpreplen);
 
         /* blank pad the remaining space */
         for (i=tmpreplen; i<str_len; i++) datarep[i] = ' ';
     }
     else {
         /* not enough space */
-        strncpy(datarep, tmprep, str_len);
+        ADIOI_Strncpy(datarep, tmprep, str_len);
         /* this should be flagged as an error. */
         *ierr = MPI_ERR_UNKNOWN;
     }

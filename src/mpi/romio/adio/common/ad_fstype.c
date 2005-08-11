@@ -147,7 +147,7 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 	/* no such file, or file is not a link; these are the "normal"
 	 * cases where we can just return the parent directory.
 	 */
-	dir = strdup(filename);
+	dir = ADIOI_Strdup(filename);
     }
     else {
 	/* filename is a symlink.  we've presumably already tried
@@ -165,18 +165,18 @@ static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep)
 	     * we determined that this was a link and the time that
 	     * we attempted to read it; punt and use the old name.
 	     */
-	    dir = strdup(filename);
+	    dir = ADIOI_Strdup(filename);
 	}
 	else {
 	    /* successfully read the link */
 	    linkbuf[namelen] = '\0'; /* readlink doesn't null terminate */
-	    dir = strdup(linkbuf);
+	    dir = ADIOI_Strdup(linkbuf);
 	    ADIOI_Free(linkbuf);
 	}
     }
 
     slash = strrchr(dir, '/');
-    if (!slash) strcpy(dir, ".");
+    if (!slash) ADIOI_Strncpy(dir, ".", 2);
     else {
 	if (slash == dir) *(dir + 1) = '\0';
 	else *slash = '\0';
@@ -239,8 +239,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
 	ADIO_FileSysType_parentdir(filename, &dir);
 	err = statvfs(dir, &vfsbuf);
 
- 	/* "dir" was allocated with strdup() in ADIO_FileSysType_parentdir */
-	free(dir);
+	ADIOI_Free(dir);
     }
 
     /* --BEGIN ERROR HANDLING-- */
@@ -283,7 +282,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     if (err && (errno == ENOENT)) {
 	ADIO_FileSysType_parentdir(filename, &dir);
 	err = statfs(dir, &fsbuf);
-	free(dir);
+	ADIOI_Free(dir);
     }
 
     /* --BEGIN ERROR HANDLING-- */
@@ -364,7 +363,7 @@ static void ADIO_FileSysType_fncall(char *filename, int *fstype, int *error_code
     if (err && (errno == ENOENT)) {
 	ADIO_FileSysType_parentdir(filename, &dir);
 	err = stat(dir, &sbuf);
-	free(dir);
+	ADIOI_Free(dir);
     }
     
     if (err) {

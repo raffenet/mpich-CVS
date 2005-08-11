@@ -16,7 +16,7 @@ static void writecontig_ctl_cb(void *myargs, globus_ftp_client_handle_t *handle,
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     globus_mutex_lock(&writecontig_ctl_lock);
     if ( writecontig_ctl_done!=GLOBUS_TRUE )
@@ -24,7 +24,7 @@ static void writecontig_ctl_cb(void *myargs, globus_ftp_client_handle_t *handle,
     globus_cond_signal(&writecontig_ctl_cond);
     globus_mutex_unlock(&writecontig_ctl_lock);
 #ifdef PRINT_ERR_MSG
-    fprintf(stderr,"finished with contig write transaction\n");
+    FPRINTF(stderr,"finished with contig write transaction\n");
 #endif /* PRINT_ERR_MSG */
     return;
 }
@@ -38,7 +38,7 @@ static void writecontig_data_cb(void *myargs, globus_ftp_client_handle_t *handle
     bytes_written=(globus_size_t *)myargs;
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     *bytes_written+=length;
     /* I don't understand why the data callback has to keep recalling register_write,
@@ -55,7 +55,7 @@ static void writecontig_data_cb(void *myargs, globus_ftp_client_handle_t *handle
 					     (void *)(bytes_written));
 	}
 #ifdef PRINT_ERR_MSG
-    fprintf(stderr,"wrote %Ld bytes...",(long long)length);
+    FPRINTF(stderr,"wrote %Ld bytes...",(long long)length);
 #endif /* PRINT_ERR_MSG */
     return;
 }
@@ -68,7 +68,7 @@ static void writediscontig_ctl_cb(void *myargs, globus_ftp_client_handle_t *hand
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     globus_mutex_lock(&writediscontig_ctl_lock);
     if ( writediscontig_ctl_done!=GLOBUS_TRUE )
@@ -87,7 +87,7 @@ static void writediscontig_data_cb(void *myargs, globus_ftp_client_handle_t *han
     bytes_written=(globus_size_t *)myargs;
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     *bytes_written+=length;
     /* I don't understand why the data callback has to keep recalling register_read,
@@ -101,7 +101,7 @@ static void writediscontig_data_cb(void *myargs, globus_ftp_client_handle_t *han
 					 eof,
 					 writediscontig_data_cb,
 					 (void *)(bytes_written));
-    fprintf(stderr,"wrote %Ld bytes...",(long long)length); 
+    FPRINTF(stderr,"wrote %Ld bytes...",(long long)length); 
     return;
 }
 
@@ -229,7 +229,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
     
     if ( ( btype_extent!=btype_size ) || ( ! buf_contig ) )
 	{
-	    fprintf(stderr,"[%d/%d] %s called with discontigous memory buffer\n",
+	    FPRINTF(stderr,"[%d/%d] %s called with discontigous memory buffer\n",
 		    myrank,nprocs,myname);
 	    fflush(stderr);
 	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
@@ -272,7 +272,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	}
     if ( extent < count*btype_size )
 	{
-	    fprintf(stderr,"[%d/%d] %s error in computing extent -- extent %d is smaller than total bytes requested %d!\n",
+	    FPRINTF(stderr,"[%d/%d] %s error in computing extent -- extent %d is smaller than total bytes requested %d!\n",
 		    myrank,nprocs,myname,extent,count*btype_size);
 	    fflush(stderr);
 	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
@@ -282,7 +282,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	    return;
 	}
     end=start+(globus_off_t)extent;
-    fprintf(stderr,"[%d/%d] %s writing %d bytes into extent of %d bytes starting at offset %Ld\n",
+    FPRINTF(stderr,"[%d/%d] %s writing %d bytes into extent of %d bytes starting at offset %Ld\n",
 	    myrank,nprocs,myname,count*btype_size,extent,(long long)start);
     fflush(stderr);
 
@@ -324,7 +324,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 			{
 			    goff=start+nblks*ftype_extent+((globus_off_t)flat_file->indices[i]);
 			    /*
-			    fprintf(stderr,"[%d/%d] %s writing %d bytes from boff=%d at goff=%Ld\n",myrank,nprocs,myname,blklen,boff,goff);
+			    FPRINTF(stderr,"[%d/%d] %s writing %d bytes from boff=%d at goff=%Ld\n",myrank,nprocs,myname,blklen,boff,goff);
 			    */
 			    if ( (result=globus_ftp_client_register_write(&(gridftp_fh[fd->fd_sys]),
 									  ((globus_byte_t *)buf)+boff,
@@ -417,7 +417,7 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
     if ( buf_contig && !file_contig )
 	{
 	    /* Contiguous in memory, discontig in file */
-	    fprintf(stderr,"[%d/%d] %s called w/ contig mem, discontig file\n",
+	    FPRINTF(stderr,"[%d/%d] %s called w/ contig mem, discontig file\n",
 		    myrank,nprocs,myname);
 	    fflush(stderr);
 
@@ -429,7 +429,7 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
 	    /* Discontiguous in mem, contig in file -- comparatively easy */
 	    int posn=0;
 
-	    fprintf(stderr,"[%d/%d] %s called w/ discontig mem, contig file\n",
+	    FPRINTF(stderr,"[%d/%d] %s called w/ discontig mem, contig file\n",
 		    myrank,nprocs,myname);
 	    fflush(stderr);
 
@@ -449,7 +449,7 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
 	    /* Discontig in both mem and file -- the hardest case */
 	    int posn=0;
 
-	    fprintf(stderr,"[%d/%d] %s called w/ discontig mem, discontig file\n",
+	    FPRINTF(stderr,"[%d/%d] %s called w/ discontig mem, discontig file\n",
 		    myrank,nprocs,myname);
 	    fflush(stderr);
 
@@ -466,7 +466,7 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
     else 
 	{
 	    /* Why did you bother calling WriteStrided?!?!?! */
-	    fprintf(stderr,"[%d/%d] Why the heck did you call %s with contiguous buffer *and* file types?\n",
+	    FPRINTF(stderr,"[%d/%d] Why the heck did you call %s with contiguous buffer *and* file types?\n",
 		    myrank,nprocs,myname);
 	    ADIOI_GRIDFTP_WriteContig(fd, buf, count, datatype,
 				      file_ptr_type, offset, status, error_code);

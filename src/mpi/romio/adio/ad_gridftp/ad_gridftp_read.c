@@ -16,7 +16,7 @@ static void readcontig_ctl_cb(void *myargs, globus_ftp_client_handle_t *handle, 
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     globus_mutex_lock(&readcontig_ctl_lock);
     if ( readcontig_ctl_done!=GLOBUS_TRUE )
@@ -35,7 +35,7 @@ static void readcontig_data_cb(void *myargs, globus_ftp_client_handle_t *handle,
     bytes_read=(globus_size_t *)myargs;
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     *bytes_read+=length;
     /* I don't understand why the data callback has to keep recalling register_read,
@@ -51,7 +51,7 @@ static void readcontig_data_cb(void *myargs, globus_ftp_client_handle_t *handle,
 	readcontig_data_cb: buffer 0x404d0008 length 65536 offset 32178176 eof 0
      */
 #if 0
-    fprintf(stderr, "%s: buffer %p length %d offset %Ld eof %d\n",
+    FPRINTF(stderr, "%s: buffer %p length %d offset %Ld eof %d\n",
       __func__, buffer, length, offset, eof);
 #endif
     if ( !eof )
@@ -70,7 +70,7 @@ static void readdiscontig_ctl_cb(void *myargs, globus_ftp_client_handle_t *handl
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     globus_mutex_lock(&readdiscontig_ctl_lock);
     if ( readdiscontig_ctl_done!=GLOBUS_TRUE )
@@ -89,7 +89,7 @@ static void readdiscontig_data_cb(void *myargs, globus_ftp_client_handle_t *hand
     bytes_read=(globus_size_t *)myargs;
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     *bytes_read+=length;
     /* I don't understand why the data callback has to keep recalling register_read,
@@ -279,7 +279,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 	}
     if ( extent < count*btype_size )
 	{
-	    fprintf(stderr,"[%d/%d] %s error in computing extent -- extent %d is smaller than total bytes requested %d!\n",
+	    FPRINTF(stderr,"[%d/%d] %s error in computing extent -- extent %d is smaller than total bytes requested %d!\n",
 		    myrank,nprocs,myname,extent,count*btype_size);
 	    fflush(stderr);
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 

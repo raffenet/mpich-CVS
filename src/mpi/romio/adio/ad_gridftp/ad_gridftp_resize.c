@@ -18,7 +18,7 @@ void resize_cb(void *myargs, globus_ftp_client_handle_t *handle,
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	    globus_mutex_lock(&resize_lock);
 	    resize_success=GLOBUS_FALSE;
 	    globus_mutex_unlock(&resize_lock);
@@ -41,7 +41,7 @@ static void resize_wrdata_cb(void *myargs, globus_ftp_client_handle_t *handle, g
 			     globus_bool_t eof)
 {
     if (error)
-	fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
     if (!eof)
 	globus_ftp_client_register_read(handle,
 					buffer,
@@ -67,7 +67,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     /* Sanity check */
     if ( fd->access_mode&MPI_MODE_RDONLY )
 	{
-	    fprintf(stderr,"%s:  attempt to resize read-only file %s!\n",
+	    FPRINTF(stderr,"%s:  attempt to resize read-only file %s!\n",
 		    myname,fd->filename);
 	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
@@ -150,7 +150,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 
 	    urllen=strlen(fd->filename);
 	    urlold=(char *)ADIOI_Malloc(urllen+5);
-	    sprintf(urlold,"%s.old",fd->filename);
+	    ADIOI_Snprintf(urlold,urllen+5,"%s.old",fd->filename);
 	    resize_done=GLOBUS_FALSE;
 	    resize_success=GLOBUS_FALSE;
 	    if ( (result=globus_ftp_client_move(&(gridftp_fh[fd->fd_sys]),

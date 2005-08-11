@@ -55,8 +55,8 @@ int MPI_Info_dup(MPI_Info info, MPI_Info *newinfo)
 	curr_new->next = (MPI_Info) ADIOI_Malloc(sizeof(struct MPIR_Info));
 	curr_new = curr_new->next;
 	curr_new->cookie = 0;  /* cookie not set on purpose */
-	curr_new->key = strdup(curr_old->key);
-	curr_new->value = strdup(curr_old->value);
+	curr_new->key = ADIOI_Strdup(curr_old->key);
+	curr_new->value = ADIOI_Strdup(curr_old->value);
 	curr_new->next = 0;
 	
 	curr_old = curr_old->next;

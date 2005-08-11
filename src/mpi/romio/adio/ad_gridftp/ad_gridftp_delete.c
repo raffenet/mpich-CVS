@@ -16,7 +16,7 @@ static void delete_cb(void *myarg, globus_ftp_client_handle_t *handle, globus_ob
     
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     else
 	{

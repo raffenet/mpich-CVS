@@ -68,12 +68,13 @@
    the GCC attribute to improve error checking by the compiler, particularly 
    for printf/sprintf strings 
 */
+#ifndef ATTRIBUTE
 #ifdef HAVE_GCC_ATTRIBUTE
 #define ATTRIBUTE(a) __attribute__(a)
 #else
 #define ATTRIBUTE(a)
 #endif
-
+#endif
 
 /*
  * Basic utility macros

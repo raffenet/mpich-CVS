@@ -103,14 +103,14 @@ void mpi_info_get_nthkey_(MPI_Fint *info, int *n, char *key, int *ierr,
     tmpkeylen = strlen(tmpkey);
 
     if (tmpkeylen <= keylen) {
-	strncpy(key, tmpkey, tmpkeylen);
+	ADIOI_Strncpy(key, tmpkey, tmpkeylen);
 
 	/* blank pad the remaining space */
 	for (i=tmpkeylen; i<keylen; i++) key[i] = ' ';
     }
     else {
 	/* not enough space */
-	strncpy(key, tmpkey, keylen);
+	ADIOI_Strncpy(key, tmpkey, keylen);
 	/* this should be flagged as an error. */
 	*ierr = MPI_ERR_UNKNOWN;
     }

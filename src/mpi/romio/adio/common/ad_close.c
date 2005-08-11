@@ -73,8 +73,7 @@ void ADIO_Close(ADIO_File fd, int *error_code)
     if (fd->agg_comm != MPI_COMM_NULL) {
 	    MPI_Comm_free(&(fd->agg_comm));
     }
-    free(fd->filename);  /* should not use ADIOI_Free here, because
-                            it was strdup'ed */
+    ADIOI_Free(fd->filename); 
 
     MPI_Type_get_envelope(fd->etype, &i, &j, &k, &combiner);
     if (combiner != MPI_COMBINER_NAMED) MPI_Type_free(&(fd->etype));

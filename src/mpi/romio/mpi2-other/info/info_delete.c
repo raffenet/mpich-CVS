@@ -63,8 +63,8 @@ int MPI_Info_delete(MPI_Info info, char *key)
 
     while (curr) {
 	if (!strcmp(curr->key, key)) {
-	    free(curr->key);   /* not ADIOI_Free, because it was strdup'ed */
-	    free(curr->value);
+	    ADIOI_Free(curr->key); 
+	    ADIOI_Free(curr->value);
 	    prev->next = curr->next;
 	    ADIOI_Free(curr);
 	    done = 1;

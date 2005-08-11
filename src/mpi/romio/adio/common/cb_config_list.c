@@ -82,7 +82,7 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
     /* TEMPORARY -- REMOVE WHEN NO LONGER UPDATING INFO FOR
      * FS-INDEP. */
     value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
-    sprintf(value, "%d", fd->hints->cb_nodes);
+    ADIOI_Snprintf(value, MPI_MAX_INFO_VAL+1, "%d", fd->hints->cb_nodes);
     MPI_Info_set(fd->info, "cb_nodes", value);
     ADIOI_Free(value);
 
@@ -329,7 +329,7 @@ int ADIOI_cb_config_list_parse(char *config_list,
 	else {
 	    /* AGG_STRING is the only remaining case */
 	    /* save procname (for now) */
-	    strcpy(cur_procname, yylval);
+	    ADIOI_Strncpy(cur_procname, yylval, MPI_MAX_INFO_VAL+1);
 	    cur_procname_p = cur_procname;
 	}
 
@@ -707,7 +707,7 @@ static int cb_config_list_lex(void)
      * should ensure that no one tries to use wildcards with strings 
      * (e.g. "ccn*").
      */
-    strncpy(yylval, token_ptr, slen);
+    ADIOI_Strncpy(yylval, token_ptr, slen);
     yylval[slen] = '\0';
     token_ptr += slen;
     return AGG_STRING;

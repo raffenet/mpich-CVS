@@ -876,4 +876,113 @@ undefine([PAC_FUNC_NAME])
 fi
 ])dnl
 dnl
+dnl/*D
+dnl PAC_C_RESTRICT - Check if C supports restrict
+dnl
+dnl Synopsis:
+dnl PAC_C_RESTRICT
+dnl
+dnl Output Effect:
+dnl Defines 'restrict' if some version of restrict is supported; otherwise
+dnl defines 'restrict' as empty.  This allows you to include 'restrict' in 
+dnl declarations in the same way that 'AC_C_CONST' allows you to use 'const'
+dnl in declarations even when the C compiler does not support 'const'
+dnl
+dnl Note that some compilers accept restrict only with additional options.
+dnl DEC/Compaq/HP Alpha Unix (Tru64 etc.) -accept restrict_keyword
+dnl
+dnl D*/
+AC_DEFUN(PAC_C_RESTRICT,[
+AC_CACHE_CHECK([for restrict],
+pac_cv_c_restrict,[
+AC_TRY_COMPILE(,[int * restrict a;],pac_cv_c_restrict="restrict",
+pac_cv_c_restrict="no")
+if test "$pac_cv_c_restrict" = "no" ; then
+   AC_TRY_COMPILE(,[int * _Restrict a;],pac_cv_c_restrict="_Restrict",
+   pac_cv_c_restrict="no")
+fi
+if test "$pac_cv_c_restrict" = "no" ; then
+   AC_TRY_COMPILE(,[int * __restrict a;],pac_cv_c_restrict="__restrict",
+   pac_cv_c_restrict="no")
+fi
+])
+if test "$pac_cv_c_restrict" = "no" ; then
+  restrict_val=""
+elif test "$pac_cv_c_restrict" != "restrict" ; then
+  restrict_val=$pac_cv_c_restrict
+fi
+if test "$restrict_val" != "restrict" ; then 
+  AC_DEFINE_UNQUOTED(restrict,$restrict_val,[if C does not support restrict])
+fi
+])dnl
+dnl
+dnl
+dnl
+dnl This is a replacement for AC_PROG_CC that does not prefer gcc and
+dnl that does not mess with CFLAGS.  See acspecific.m4 for the original defn.
+dnl
+dnl/*D
+dnl PAC_PROG_CC - Find a working C compiler
+dnl
+dnl Synopsis:
+dnl PAC_PROG_CC
+dnl
+dnl Output Effect:
+dnl   Sets the variable CC if it is not already set
+dnl
+dnl Notes:
+dnl   Unlike AC_PROG_CC, this does not prefer gcc and does not set CFLAGS.
+dnl   It does check that the compiler can compile a simple C program.
+dnl   It also sets the variable GCC to yes if the compiler is gcc.  It does
+dnl   not yet check for some special options needed in particular for 
+dnl   parallel computers, such as -Tcray-t3e, or special options to get
+dnl   full ANSI/ISO C, such as -Aa for HP.
+dnl
+dnl D*/
+dnl 2.52 doesn't have AC_PROG_CC_GNU
+ifdef([AC_PROG_CC_GNU],,[AC_DEFUN([AC_PROG_CC_GNU],)])
+AC_DEFUN(PAC_PROG_CC,[
+AC_PROVIDE([AC_PROG_CC])
+AC_CHECK_PROGS(CC, cc xlC xlc pgcc icc gcc )
+test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
+PAC_PROG_CC_WORKS
+AC_PROG_CC_GNU
+if test "$ac_cv_prog_gcc" = yes; then
+  GCC=yes
+else
+  GCC=
+fi
+])
+dnl
+dnl
+dnl PAC_C_GNU_ATTRIBUTE - See if the GCC __attribute__ specifier is allow.
+dnl Use the following
+dnl #ifndef HAVE_GCC_ATTRIBUTE
+dnl #define __attribute__(a)
+dnl #endif
+dnl If *not*, define __attribute__(a) as null
+dnl
+dnl We start by requiring Gcc.  Some other compilers accept __attribute__
+dnl but generate warning messages, or have different interpretations 
+dnl (which seems to make __attribute__ just as bad as #pragma) 
+dnl For example, the Intel icc compiler accepts __attribute__ and
+dnl __attribute__((pure)) but generates warnings for __attribute__((format...))
+dnl
+AC_DEFUN([PAC_C_GNU_ATTRIBUTE],[
+AC_REQUIRE([AC_PROG_CC_GNU])
+if test "$ac_cv_prog_gcc" = "yes" ; then
+    AC_CACHE_CHECK([whether __attribute__ allowed],
+pac_cv_gnu_attr_pure,[
+AC_TRY_COMPILE([int foo(int) __attribute__ ((pure));],[int a;],
+pac_cv_gnu_attr_pure=yes,pac_cv_gnu_attr_pure=no)])
+AC_CACHE_CHECK([whether __attribute__((format)) allowed],
+pac_cv_gnu_attr_format,[
+AC_TRY_COMPILE([int foo(char *,...) __attribute__ ((format(printf,1,2)));],[int a;],
+pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
+    if test "$pac_cv_gnu_attr_pure" = "yes" -a "$pac_cv_gnu_attr_format" = "yes" ; then
+        AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
+    fi
+fi
+])
+dnl
 

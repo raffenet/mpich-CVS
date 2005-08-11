@@ -10,6 +10,8 @@
 #include <malloc.h>
 #endif
 
+/* style: allow:free:2 sig:0 */
+
 static void ADIOI_XFS_Aligned_Mem_File_Read(ADIO_File fd, void *buf, int len, 
 					     ADIO_Offset offset, int *err);
 

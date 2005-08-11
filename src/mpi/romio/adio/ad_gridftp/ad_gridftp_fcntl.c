@@ -18,7 +18,7 @@ void fcntl_size_cb(void *myargs, globus_ftp_client_handle_t *handle,
 {
     if (error)
 	{
-	    fprintf(stderr, "%s\n", globus_object_printable_to_string(error));
+	    FPRINTF(stderr, "%s\n", globus_object_printable_to_string(error));
 	}
     globus_mutex_lock(&fcntl_size_lock);
     fcntl_size_done=GLOBUS_TRUE;
