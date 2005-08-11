@@ -250,6 +250,9 @@ AU_DEFUN([ac_cv_prog_g90],
 # ifort is another name for the Inten f90 compiler
 # efc - An older Intel compiler (?)
 # ifc - An older Intel compiler
+# fc  - A compiler on some unknown system.  This has been removed because
+#       it may also be the name of a command for something other than
+#       the Fortran compiler (e.g., fc=file system check!)
 AC_DEFUN([AC_PROG_F90],
 [# This is the fortran90 version of f90 language support
 AC_LANG_PUSH(Fortran 90)dnl
@@ -258,7 +261,7 @@ AC_ARG_VAR([F90FLAGS], [Fortran 90 compiler flags])dnl
 _AC_ARG_VAR_LDFLAGS()dnl
 AC_CHECK_TOOLS(F90,
       [m4_default([$1],
-                  [f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 fc ifc efc])])
+                  [f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 gfortran ifc efc])])
 
 # once we find the compiler, confirm the extension 
 AC_MSG_CHECKING([that $ac_ext works as the extension for Fortran 90 program])
