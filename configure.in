@@ -1207,7 +1207,10 @@ EOF
     if test ! -d bin  ; then mkdir bin ; fi 
     sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif77 > bin/mpif77 ;
-    chmod a+x bin/mpif77 ; fi],
+    chmod a+x bin/mpif77
+    else
+        rm -f src/env/mpif77 src/env/mpif77.conf
+    fi],
         enable_f77=$enable_f77
         has_exclaim=$has_exclaim
         includebuild_dir=$includebuild_dir
@@ -1345,7 +1348,10 @@ EOF
     sed -e 's%includedir=.*%includedir='$includebuild_dir% \
         -e 's%modincdir=.*%modincdir='$modincbuild_dir% \
         -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif90 > bin/mpif90 ;
-    chmod a+x bin/mpif90 ; fi],
+    chmod a+x bin/mpif90 
+    else
+        rm -f src/env/mpif90 src/env/mpif90.conf
+    fi],
         enable_f90=$enable_f90
         modincbuild_dir=$modincbuild_dir
         includebuild_dir=$includebuild_dir
@@ -1442,7 +1448,10 @@ if test "$enable_cxx" = "yes" ; then
     if test ! -d bin  ; then mkdir bin ; fi 
     sed -e 's%includedir=.*%includedir='$includebuild_dir% \
         -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpicxx > bin/mpicxx ;
-    chmod a+x bin/mpicxx ; fi],
+    chmod a+x bin/mpicxx
+    else
+        rm -f src/env/mpicxx src/env/mpicxx.conf
+    fi],
     enable_cxx=$enable_cxx
     includebuild_dir=$includebuild_dir
     libbuild_dir=$libbuild_dir)
