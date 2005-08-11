@@ -557,7 +557,7 @@ static int already_used_or_add(char *host, socki_host_name_t **list)
 	/* if out of memory then treat it as not found */
 	return 0;
     }
-    strcpy(iter->host, host);
+    MPIU_Strncpy(iter->host, host, 256);
 
     /* insert new hosts at the end of the list */
     if (trailer != NULL)

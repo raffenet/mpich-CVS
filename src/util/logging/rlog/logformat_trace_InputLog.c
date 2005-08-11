@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include "mpimem.h"
 
+/* style: allow:fprintf:20 sig:0 */
+
 #define ACHAR_LENGTH   256
 #define AINT_LENGTH    100
 #define ADOUBLE_LENGTH 100

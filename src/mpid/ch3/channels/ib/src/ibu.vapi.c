@@ -1079,7 +1079,7 @@ int ibu_init()
 	MPIDI_FUNC_EXIT(MPID_STATE_IBU_INIT);
 	return status;
     }
-    strncpy(id, hca_id_buf[0], sizeof(VAPI_hca_id_t));
+    MPIU_Strncpy(id, hca_id_buf[0], sizeof(VAPI_hca_id_t));
     if ( hca_id_buf ) MPIU_Free(hca_id_buf);
 
     status = EVAPI_get_hca_hndl(id, &IBU_Process.hca_handle);

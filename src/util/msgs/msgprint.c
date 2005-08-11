@@ -9,7 +9,9 @@
 #include <libintl.h>
 #endif
 
-/* style: allow:vprintf:2 sig:0 */
+/* style: allow:vprintf:1 sig:0 */
+/* style: allow:vfprintf:4 sig:0 */
+/* style: allow:fprintf:2 sig:0 */
 
 int MPIU_Usage_printf(const char *str, ...)
 {

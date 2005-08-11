@@ -43,6 +43,7 @@ MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 /* User-defined abort hook function.  Exiting here will prevent the system from
  * bringing up an error dialog box.
  */
+/* style: allow:fprintf:1 sig:0 */
 static int assert_hook( int reportType, char *message, int *returnValue )
 {
     MPIU_UNREFERENCED_ARG(reportType);

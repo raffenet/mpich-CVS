@@ -44,7 +44,7 @@ void checklist(void *p)
     {
 	if (node->p == p)
 	{
-	    printf("pointer %p already in global list.\n", p);fflush(stdout);
+	    MPIU_Msg_printf("pointer %p already in global list.\n", p);fflush(stdout);
 	}
 	node = node->next;
     }
@@ -77,7 +77,7 @@ void removefromlist(void *p)
 	}
 	iter = iter->next;
     }
-    printf("remove error: pointer %p not in global list.\n", p);fflush(stdout);
+    MPIU_Error_printf("remove error: pointer %p not in global list.\n", p);fflush(stdout);
 }
 
 void *s_base = NULL;
@@ -92,15 +92,15 @@ void sanity_check_recv(VAPI_rr_desc_t *work_req)
 	data = &work_req->sg_lst_p[i];
 	if (data->len < 1 || data->len > IBU_PACKET_SIZE)
 	{
-	    printf("ERROR: data[%d].len = %d\n", i, data->len);fflush(stdout);
+	    MPIU_Error_printf("ERROR: data[%d].len = %d\n", i, data->len);fflush(stdout);
 	}
 	if ((void*)data->addr < s_base)
 	{
-	    printf("ERROR: ptr %p < %p base\n", data->addr, s_base);fflush(stdout);
+	    MPIU_Error_printf("ERROR: ptr %p < %p base\n", data->addr, s_base);fflush(stdout);
 	}
 	if (((char*)data->addr + data->len) > ((char*)s_base + s_offset))
 	{
-	    printf("ERROR: ptr %p + len %d > %p base + %d offset\n",
+	    MPIU_Error_printf("ERROR: ptr %p + len %d > %p base + %d offset\n",
 		   data->addr, data->len, s_base, s_offset);
 	    fflush(stdout);
 	} 
@@ -116,15 +116,15 @@ void sanity_check_send(VAPI_sr_desc_t *work_req)
 	data = &work_req->sg_lst_p[i];
 	if (data->len < 1 || data->len > IBU_PACKET_SIZE)
 	{
-	    printf("ERROR: data[%d].len = %d\n", i, data->len);fflush(stdout);
+	    MPIU_Error_printf("ERROR: data[%d].len = %d\n", i, data->len);fflush(stdout);
 	}
 	if ((void*)data->addr < s_base)
 	{
-	    printf("ERROR: ptr %p < %p base\n", data->addr, s_base);fflush(stdout);
+	    MPIU_Error_printf("ERROR: ptr %p < %p base\n", data->addr, s_base);fflush(stdout);
 	}
 	if (((char*)data->addr + data->len) > ((char*)s_base + s_offset))
 	{
-	    printf("ERROR: ptr %p + len %d > %p base + %d offset\n",
+	    MPIU_Error_printf("ERROR: ptr %p + len %d > %p base + %d offset\n",
 		   data->addr, data->len, s_base, s_offset);
 	    fflush(stdout);
 	} 

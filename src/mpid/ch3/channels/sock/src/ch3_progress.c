@@ -1438,7 +1438,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
         }
 	/* --END ERROR HANDLING-- */
 
-        rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
+        rc = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
 	/* --BEGIN ERROR HANDLING-- */
         if (rc < 0 || rc > key_max_sz)
         {
