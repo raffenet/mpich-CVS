@@ -82,7 +82,7 @@ $n_with    = $#with_array + 1;
 $n_env     = $#env_array + 1;
 $show      = 0;
 $debug     = 0;
-$echoSteps = 1;         # Set to one to echo each run program to stdout
+$echoSteps = 0;         # Set to one to echo each run program to stdout
 $report_signals = 1;    # Set to one to generate a message about signals
                         # received by a program
 $max_count = 5;
