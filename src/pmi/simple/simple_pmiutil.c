@@ -5,6 +5,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* Allow fprintf to logfile */
+/* style: allow:fprintf:1 sig:0 */
+
 /* Utility functions associated with PMI implementation, but not part of
    the PMI interface itself.  Reading and writing on pipes, signals, and parsing
    key=value messages
