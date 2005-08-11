@@ -21,9 +21,9 @@
 
 #define MPIDI_CH3_Request_release_ref(req, req_ref_count)	\
 {								\
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
     MPIU_Object_release_ref(req, req_ref_count);		\
-    assert(req->ref_count >= 0);				\
+    MPIU_Assert(req->ref_count >= 0);				\
 }
 
 /*
