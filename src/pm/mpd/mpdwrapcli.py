@@ -19,5 +19,7 @@ except:  max_fds = 1024
 for fd in range(3,max_fds):
     try:     os.close(fd)
     except:  pass
+# can NOT use syslog (including inside an mpd_print) below here without
+# doing a new openlog because any syslog fd would have been closed
 
 os.execvpe(sys.argv[2],sys.argv[3:],os.environ)    # client
