@@ -77,7 +77,7 @@ int MPIU_dbg_init(int rank)
 	/* Only open the file only once in case MPIU_dbg_init is called more than once */
 	if (MPIUI_dbg_fp == NULL)
 	{
-	    sprintf(fn, "mpich2-dbg-%d.log", dbg_rank);
+	    MPIU_Snprintf(fn, 128, "mpich2-dbg-%d.log", dbg_rank);
 	    MPIUI_dbg_fp = fopen(fn, "w");
 	    setvbuf(MPIUI_dbg_fp, NULL, _IONBF, 0);
 	}

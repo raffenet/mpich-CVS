@@ -187,7 +187,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	return mpi_errno;
     }
 
-    rc = snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
+    rc = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
     if (rc < 0 || rc > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);

@@ -15,7 +15,7 @@
  */
 #define MPIDI_CH3_Request_add_ref(req)				\
 {								\
-    assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);	\
     MPIU_Object_add_ref(req);					\
 }
 

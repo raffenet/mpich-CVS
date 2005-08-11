@@ -589,8 +589,8 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
 #endif
 
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
-	strcpy(cached_singinit_key,key);
-	strcpy(cached_singinit_val,value);
+	MPIU_Strncpy(cached_singinit_key,key,PMI_keylen_max);
+	MPIU_Strncpy(cached_singinit_val,value,PMI_vallen_max);
 	return 0;
     }
     
@@ -963,10 +963,10 @@ int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
     /* free stuff */
     for (i=0; i<size; i++)
     {
-	free(keyvalp[i].key);
-	free(keyvalp[i].val);
+	MPIU_Free(keyvalp[i].key);
+	MPIU_Free(keyvalp[i].val);
     }
-    free(keyvalp);
+    MPIU_Free(keyvalp);
     return PMI_SUCCESS;
 }
 

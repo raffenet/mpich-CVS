@@ -10,6 +10,7 @@
 #include <windows.h>
 #include "mpichconf.h"
 #include "mpichtimer.h"
+#include "mpimem.h"
 #include <stdio.h>
 #include <stdarg.h>
 #define MPIU_UNREFERENCED_ARG(a) a
@@ -1684,7 +1685,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 		    /* ignore the sock channel since it is the default and is not named mpich2sock.dll */
 		    if (strncmp(channel, "sock", 5))
 		    {
-			snprintf(name, MAX_DLL_NAME, DLL_FORMAT_STRING, channel);
+			MPIU_Snprintf(name, MAX_DLL_NAME, DLL_FORMAT_STRING, channel);
 			dll_name = name;
 		    }
 		}

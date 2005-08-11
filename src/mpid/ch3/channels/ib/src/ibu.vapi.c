@@ -1425,7 +1425,7 @@ int ibu_post_readv(ibu_t ibu, MPID_IOV *iov, int n)
     s = &str[16];
     for (i=0; i<n; i++)
     {
-	s += sprintf(s, "%d,", iov[i].MPID_IOV_LEN);
+	s += MPIU_Snprintf(s, 1008, "%d,", iov[i].MPID_IOV_LEN);
     }
     MPIDI_DBG_PRINTF((60, FCNAME, "%s\n", str));
 #endif

@@ -128,12 +128,12 @@ void add_mem(void *p)
     regmem_t *r = (regmem_t*)MPIU_Malloc(sizeof(regmem_t));
     if (find_mem(p))
     {
-	printf("registering mem pointer twice: %p\n", p);
+	MPIU_Msg_printf("registering mem pointer twice: %p\n", p);
 	fflush(stdout);
     }
     else
     {
-	printf("registered: %p\n", p);fflush(stdout);
+	MPIU_Msg_printf("registered: %p\n", p);fflush(stdout);
     }
     r->ptr = p;
     r->next = g_list;
@@ -156,14 +156,14 @@ void remove_mem(void *p)
 		trailer->next = iter->next;
 	    }
 	    MPIU_Free(iter);
-	    printf("deregistered: %p\n", p);fflush(stdout);
+	    MPIU_Msg_printf("deregistered: %p\n", p);fflush(stdout);
 	    return;
 	}
 	if (trailer != iter)
 	    trailer = trailer->next;
 	iter = iter->next;
     }
-    printf("removing pointer that was not registered: %p\n", p);fflush(stdout);
+    MPIU_Msg_printf("removing pointer that was not registered: %p\n", p);fflush(stdout);
 }
 /*
 * End test code

@@ -75,7 +75,7 @@ static int InitSharedProcesses(MPIDI_PG_t *pg, int nRank)
 		return mpi_errno;
             }
 #else
-            sprintf(filename, "/proc/%d/mem", pSharedProcess[i].nPid);
+            MPIU_Snprintf(filename, 256, "/proc/%d/mem", pSharedProcess[i].nPid);
             pg->ch.pSharedProcessIDs[i] = pSharedProcess[i].nPid;
             pg->ch.pSharedProcessFileDescriptors[i] = open(filename, O_RDWR/*O_RDONLY*/);
             if (pg->ch.pSharedProcessFileDescriptors[i] == -1)

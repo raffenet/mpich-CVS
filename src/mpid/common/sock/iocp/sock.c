@@ -96,7 +96,7 @@ static void translate_error(int error, char *msg, char *prepend)
     if (num_bytes == 0)
     {
 	if (prepend != NULL)
-	    strcpy(msg, prepend);
+	    MPIU_Strncpy(msg, prepend, 1024);
 	else
 	    *msg = '\0';
     }
@@ -105,7 +105,7 @@ static void translate_error(int error, char *msg, char *prepend)
 	if (prepend == NULL)
 	    memcpy(msg, str, num_bytes+1);
 	else
-	    sprintf(msg, "%s%s", prepend, (const char*)str);
+	    MPIU_Snprintf(msg, 1024, "%s%s", prepend, (const char*)str);
 	LocalFree(str);
 	strtok(msg, "\r\n");
     }

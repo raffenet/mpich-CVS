@@ -580,7 +580,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 			if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, rbuf2, &((int*)sbuf)[n]) != 0)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace pokedata failed", errno);
-			    printf("EPERM = %d, ESRCH = %d, EIO = %d, EFAULT = %d\n", EPERM, ESRCH, EIO, EFAULT);fflush(stdout);
+			    /* printf("EPERM = %d, ESRCH = %d, EIO = %d, EFAULT = %d\n", EPERM, ESRCH, EIO, EFAULT);fflush(stdout); */
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			    return mpi_errno;
 			}
@@ -608,7 +608,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 				return mpi_errno;
 			    }
                             /* mask in the new bits */
-			    printf("FIXME!");fflush(stdout);
+			    /* printf("FIXME!");fflush(stdout); */
 			    if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, rbuf + len - n, &data) != 0)
 			    {
 				mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace pokedata failed", errno);

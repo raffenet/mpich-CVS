@@ -49,33 +49,33 @@ char * op2str(int opcode)
     case VAPI_CQE_INVAL_OPCODE:
 	return "VAPI_CQE_INVAL_OPCODE";
     }
-    sprintf(str, "%d", opcode);
+    MPIU_Snprintf(str, 20, "%d", opcode);
     return str;
 }
 
 void PrintWC(VAPI_wc_desc_t *p)
 {
-    printf("Work Completion Descriptor:\n");
-    printf(" id: %d\n", (int)p->id);
-    printf(" opcode: %u = %s\n",
+    MPIU_Msg_printf("Work Completion Descriptor:\n");
+    MPIU_Msg_printf(" id: %d\n", (int)p->id);
+    MPIU_Msg_printf(" opcode: %u = %s\n",
 	   p->opcode, VAPI_cqe_opcode_sym(p->opcode));
-    printf(" byte_len: %d\n", p->byte_len);
-    printf(" imm_data_valid: %d\n", (int)p->imm_data_valid);
-    printf(" imm_data: %u\n", (unsigned int)p->imm_data);
-    printf(" remote_node_addr:\n");
-    printf("  type: %u = %s\n",
+    MPIU_Msg_printf(" byte_len: %d\n", p->byte_len);
+    MPIU_Msg_printf(" imm_data_valid: %d\n", (int)p->imm_data_valid);
+    MPIU_Msg_printf(" imm_data: %u\n", (unsigned int)p->imm_data);
+    MPIU_Msg_printf(" remote_node_addr:\n");
+    MPIU_Msg_printf("  type: %u = %s\n",
 	   p->remote_node_addr.type,
 	    VAPI_remote_node_addr_sym(p->remote_node_addr.type));
-    printf("  slid: %d\n", (int)p->remote_node_addr.slid);
-    printf("  sl: %d\n", (int)p->remote_node_addr.sl);
-    printf("  qp: %d\n", (int)p->remote_node_addr.qp_ety.qp);
-    printf("  loc_eecn: %d\n", (int)p->remote_node_addr.ee_dlid.loc_eecn);
-    printf(" grh_flag: %d\n", (int)p->grh_flag);
-    printf(" pkey_ix: %d\n", p->pkey_ix);
-    printf(" status: %u = %s\n",
+    MPIU_Msg_printf("  slid: %d\n", (int)p->remote_node_addr.slid);
+    MPIU_Msg_printf("  sl: %d\n", (int)p->remote_node_addr.sl);
+    MPIU_Msg_printf("  qp: %d\n", (int)p->remote_node_addr.qp_ety.qp);
+    MPIU_Msg_printf("  loc_eecn: %d\n", (int)p->remote_node_addr.ee_dlid.loc_eecn);
+    MPIU_Msg_printf(" grh_flag: %d\n", (int)p->grh_flag);
+    MPIU_Msg_printf(" pkey_ix: %d\n", p->pkey_ix);
+    MPIU_Msg_printf(" status: %u = %s\n",
 	   (int)p->status, VAPI_wc_status_sym(p->status));
-    printf(" vendor_err_syndrome: %d\n", p->vendor_err_syndrome);
-    printf(" free_res_count: %d\n", p->free_res_count);
+    MPIU_Msg_printf(" vendor_err_syndrome: %d\n", p->vendor_err_syndrome);
+    MPIU_Msg_printf(" free_res_count: %d\n", p->free_res_count);
     fflush(stdout);
 }
 

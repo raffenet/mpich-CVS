@@ -224,12 +224,14 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 	{
 	    h = gethostbyaddr((const char *)&local_ip[i], sizeof(int), AF_INET);
 	    if (h && h->h_name != NULL)
-		value += sprintf(value, "%s:%u.%u.%u.%u:%d:", 
+		value += MPIU_Snprintf(value, MPI_MAX_PORT_NAME, 
+				 "%s:%u.%u.%u.%u:%d:", 
 				 h->h_name, 
 				 a, b, c, d,
 				 port);
 	    else
-		value += sprintf(value, "%u.%u.%u.%u:%u.%u.%u.%u:%d:", 
+		value += MPIU_Snprintf(value, MPI_MAX_PORT_NAME, 
+                                 "%u.%u.%u.%u:%u.%u.%u.%u:%d:", 
 				 a, b, c, d, 
 				 a, b, c, d,
 				 port);

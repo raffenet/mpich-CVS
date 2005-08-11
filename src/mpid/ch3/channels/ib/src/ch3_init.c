@@ -237,7 +237,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
 	return mpi_errno;
     }
-    mpi_errno = snprintf(val, val_max_sz, "%d", port);
+    mpi_errno = MPIU_Snprintf(val, val_max_sz, "%d", port);
     if (mpi_errno < 0 || mpi_errno > val_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
@@ -270,7 +270,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     {
 	for (p = 0; p < pg_size; p++)
 	{
-	    mpi_errno = snprintf(key, key_max_sz, "P%d-lid", p);
+	    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-lid", p);
 	    MPIU_Assert(mpi_errno > -1 && mpi_errno < key_max_sz);
 	    pmi_errno = PMI_KVS_Get((*pg_p)->ch.kvs_name, key, val, val_max_sz);
 	    MPIU_Assert(pmi_errno == 0);

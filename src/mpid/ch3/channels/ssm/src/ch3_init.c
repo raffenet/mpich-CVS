@@ -511,7 +511,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     }
     /* add the shmem business card pieces */
 #if 0
-    mpi_errno = snprintf(key, key_max_sz, "P%d-shm_businesscard", pg_rank);
+    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-shm_businesscard", pg_rank);
     if (mpi_errno < 0 || mpi_errno > key_max_sz)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", mpi_errno);
@@ -587,7 +587,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 #if 0
 /* test */
     mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
-    printf("got <%s> = <%s>\n", key, val);fflush(stdout);
+    /* printf("got <%s> = <%s>\n", key, val);fflush(stdout);*/
 /* end test */
 #endif
 
@@ -595,7 +595,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     {
 	for (p = 0; p < pg_size; p++)
 	{
-	    mpi_errno = snprintf(key, key_max_sz, "P%d-businesscard", p);
+	    mpi_errno = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", p);
 	    MPIU_Assert(mpi_errno > -1 && mpi_errno < key_max_sz);
 	    mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
 	    MPIU_Assert(mpi_errno == 0);

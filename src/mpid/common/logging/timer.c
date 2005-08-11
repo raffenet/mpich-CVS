@@ -530,7 +530,7 @@ static char *get_random_color_str()
 {
     unsigned char r,g,b;
     random_color(&r, &g, &b);
-    sprintf(random_color_str, "%3d %3d %3d", (int)r, (int)g, (int)b);
+    MPIU_Snprintf(random_color_str, 40, "%3d %3d %3d", (int)r, (int)g, (int)b);
     return random_color_str;
 }
 

@@ -71,7 +71,7 @@ RLOG_Struct* RLOG_InitLog(int rank, int size)
     pRLOG->nRecursion = 0;
     pRLOG->nCurEventId = RLOG_FIRST_EVENT_ID;
     pRLOG->dFirstTimestamp = 0.0;
-    sprintf(pRLOG->pszFileName, "log%d.irlog", rank);
+    MPIU_Snprintf(pRLOG->pszFileName, 256, "log%d.irlog", rank);
 
     pRLOG->pOutput = NULL;
     pRLOG->pOutput = IRLOG_CreateOutputStruct(pRLOG->pszFileName);

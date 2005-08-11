@@ -48,7 +48,7 @@ static int encode_buffer(char *dest, int dest_length, const char *src, int src_l
     while (src_length && dest_length)
     {
 	ch = *src;
-	num_used = snprintf(dest, dest_length, "%02X", (int)*src);
+	num_used = MPIU_Snprintf(dest, dest_length, "%02X", (int)*src);
 	if (num_used < 0)
 	{
 	    *num_encoded = n;
@@ -671,11 +671,11 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
     {
 	if (*val == '\0')
 	{
-	    num_chars = snprintf(str, maxlen, MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
+	    num_chars = MPIU_Snprintf(str, maxlen, MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
 	}
 	else
 	{
-	    num_chars = snprintf(str, maxlen, "%s%c", val, MPIU_STR_SEPAR_CHAR);
+	    num_chars = MPIU_Snprintf(str, maxlen, "%s%c", val, MPIU_STR_SEPAR_CHAR);
 	}
 	if (num_chars == maxlen)
 	{
@@ -797,7 +797,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     }
     else
     {
-	num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s", flag);
+	num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, "%s", flag);
     }
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
@@ -824,11 +824,11 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     {
 	if (*val == '\0')
 	{
-	    num_chars = snprintf(*str_ptr, *maxlen_ptr, MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
+	    num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
 	}
 	else
 	{
-	    num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s", val);
+	    num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, "%s", val);
 	}
     }
     *str_ptr = *str_ptr + num_chars;
@@ -926,7 +926,7 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     }
     else
     {
-	num_chars = snprintf(*str_ptr, *maxlen_ptr, "%s", flag);
+	num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, "%s", flag);
     }
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)

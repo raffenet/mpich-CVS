@@ -41,15 +41,16 @@ static void generate_shm_string(char *str)
 #ifdef USE_WINDOWS_SHM
     UUID guid;
     UuidCreate(&guid);
-    sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, 
+	"%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
 #elif defined (USE_POSIX_SHM)
-    sprintf(str, "/mpich_shm_%d", getpid());
+    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "/mpich_shm_%d", getpid());
 #elif defined (USE_SYSV_SHM)
-    sprintf(str, "%d", getpid());
+    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "%d", getpid());
 #else
 #error No shared memory subsystem defined
 #endif

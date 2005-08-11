@@ -47,32 +47,32 @@ char * op2str(int wc_type)
     case IB_WC_RECV_RDMA_WRITE:
 	return "IB_WC_RECV_RDMA_WRITE";
     }
-    sprintf(str, "%d", wc_type);
+    MPIU_Snprintf(str, 20, "%d", wc_type);
     return str;
 }
 
 void PrintWC(ib_wc_t *p)
 {
-    printf("Work Completion Descriptor:\n");
-    printf(" id: %d\n", (int)p->wr_id);
-    printf(" opcode: %u = %s\n",	   p->wc_type, op2str(p->wc_type));
-    printf(" opcode: %u \n",  p->wc_type);
-    printf(" length: %d\n", p->length);
-    printf(" imm_data_valid: %d\n", (IB_RECV_OPT_IMMEDIATE & (int)p->recv.conn.recv_opt)); 
-    printf(" imm_data: %u\n", (unsigned int)p->recv.conn.immediate_data);
-    printf(" remote_node_addr:\n");
-    // TODO where in ibal remote_node_addr?    printf("  type: %u = %s\n",
+    MPIU_Msg_printf("Work Completion Descriptor:\n");
+    MPIU_Msg_printf(" id: %d\n", (int)p->wr_id);
+    MPIU_Msg_printf(" opcode: %u = %s\n",	   p->wc_type, op2str(p->wc_type));
+    MPIU_Msg_printf(" opcode: %u \n",  p->wc_type);
+    MPIU_Msg_printf(" length: %d\n", p->length);
+    MPIU_Msg_printf(" imm_data_valid: %d\n", (IB_RECV_OPT_IMMEDIATE & (int)p->recv.conn.recv_opt)); 
+    MPIU_Msg_printf(" imm_data: %u\n", (unsigned int)p->recv.conn.immediate_data);
+    MPIU_Msg_printf(" remote_node_addr:\n");
+    // TODO where in ibal remote_node_addr?    MPIU_Msg_printf("  type: %u = %s\n",
     //	   p->remote_node_addr.type,
     //	   remote_node_addr_sym(p->remote_node_addr.type));
-    printf("  slid: %d\n", (int)p->recv.ud.remote_lid);
-    printf("  sl: %d\n", (int)p->recv.ud.remote_sl);
-    printf("  qp: %d\n", (int)p->recv.ud.remote_qp);
-    printf("  loc_eecn: %d\n", 0 /*TODO: loc_eecn*/);
-    printf(" grh_flag: %d\n", (IB_RECV_OPT_GRH_VALID & (int)p->recv.ud.recv_opt));
-    printf(" pkey_ix: %d\n", p->recv.ud.pkey_index);
-    printf(" status: %u = %s\n",
+    MPIU_Msg_printf("  slid: %d\n", (int)p->recv.ud.remote_lid);
+    MPIU_Msg_printf("  sl: %d\n", (int)p->recv.ud.remote_sl);
+    MPIU_Msg_printf("  qp: %d\n", (int)p->recv.ud.remote_qp);
+    MPIU_Msg_printf("  loc_eecn: %d\n", 0 /*TODO: loc_eecn*/);
+    MPIU_Msg_printf(" grh_flag: %d\n", (IB_RECV_OPT_GRH_VALID & (int)p->recv.ud.recv_opt));
+    MPIU_Msg_printf(" pkey_ix: %d\n", p->recv.ud.pkey_index);
+    MPIU_Msg_printf(" status: %u = %s\n",
 	(int)p->status, ib_get_wc_status_str(p->status));
-    printf(" vendor_err_syndrome: %d\n", (IB_RECV_OPT_VEND_MASK & (int)p->recv.ud.recv_opt));
+    MPIU_Msg_printf(" vendor_err_syndrome: %d\n", (IB_RECV_OPT_VEND_MASK & (int)p->recv.ud.recv_opt));
     fflush(stdout);
 }
 

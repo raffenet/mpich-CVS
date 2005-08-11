@@ -59,6 +59,8 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
     return 0;
 }
 
+/* style: allow:vprintf:1 sig:0 */
+
 int rlog_err_printf(char *str, ...)
 {
     int n;
@@ -1077,6 +1079,8 @@ int RLOG_GetCurrentGlobalEvent(RLOG_IOStruct *pInput, RLOG_EVENT *pEvent)
 
     return 0;
 }
+
+/* style: allow:printf:2 sig:0 */
 
 int RLOG_PrintGlobalState(RLOG_IOStruct *pInput)
 {
