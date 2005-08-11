@@ -16,6 +16,9 @@
  * output.
  */
 
+/* Allow printf in label output */
+/* style: allow:printf:1 sig:0 */
+
 #include "pmutilconf.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +36,7 @@
 #ifdef HAVE_SNPRINTF
 #define MPIU_Snprintf snprintf
 #ifdef NEEDS_SNPRINTF_DECL
+/* style: allow:sprintf:1 sig:0 */
 int snprintf(char *, size_t, const char *, ...);
 #endif
 #endif

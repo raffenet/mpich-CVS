@@ -5,6 +5,10 @@
  */
 
 /* OWNER=gropp */
+
+/* Allow fprintf in informational routines */
+/* style: allow:fprintf:8 sig:0 */
+
 #include "pmutilconf.h"
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H

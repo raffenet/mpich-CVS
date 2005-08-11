@@ -6,6 +6,9 @@
 #ifndef PMUTIL_H_INCLUDED
 #define PMUTIL_H_INCLUDED
 
+/* Allow the printf commands in the debugging statements */
+/* style: allow:printf:4 sig:0 */
+/* style: allow:fprintf:1 sig:0 */
 /* 
    ---------------------------------------------------------------------------
    Function prototypes 

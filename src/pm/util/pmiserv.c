@@ -384,7 +384,7 @@ static int fPMI_Handle_finalize( PMIProcess *pentry )
     pentry->pState->status = PROCESS_FINALIZED;
 
     /* send back an acknowledgement to release the process */
-    snprintf(outbuf, PMIU_MAXLINE, "cmd=finalize_ack\n");
+    MPIU_Snprintf(outbuf, PMIU_MAXLINE, "cmd=finalize_ack\n");
     PMIWriteLine(pentry->fd, outbuf);
 
     return 0;
@@ -739,7 +739,7 @@ static int fPMI_Handle_get_universe_size( PMIProcess *pentry )
     char outbuf[PMIU_MAXLINE];
     /* Import the universe size from the process structures */
     MPIU_Snprintf( outbuf, PMIU_MAXLINE, "cmd=universe_size size=%d\n",
-	      pUniv.size );
+		   pUniv.size );
     PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
@@ -775,9 +775,9 @@ static int fPMI_Handle_init( PMIProcess *pentry )
 
     pentry->pState->status = PROCESS_COMMUNICATING;
 
-    snprintf( outbuf, PMIU_MAXLINE,
-	      "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
-	      PMI_VERSION, PMI_SUBVERSION, rc);
+    MPIU_Snprintf( outbuf, PMIU_MAXLINE,
+	   "cmd=response_to_init pmi_version=%d pmi_subversion=%d rc=%d\n",
+		   PMI_VERSION, PMI_SUBVERSION, rc);
     PMIWriteLine( pentry->fd, outbuf );
     DBG_PRINTFCOND(pmidebug,( "%s", outbuf ));
     return 0;
@@ -1265,13 +1265,10 @@ int PMIWriteLine( int fd, const char *buf )
 {
     int rc;
 
-    if (pmidebug) {
-	printf( "Writing to fd %d the line :%s:\n", fd, buf );
-    }
+    DBG_PRINTFCOND(pmidebug,( "Writing to fd %d the line :%s:\n", fd, buf ));
     rc = PMIU_writeline( fd, (char*)buf );
-    if (pmidebug && rc < 0) {
-	DBG_PRINTFCOND(1,( "Write on fd %d returned rc %d\n", fd, rc ));
-    }
+    DBG_PRINTFCOND(pmidebug&&rc<0,( "Write on fd %d returned rc %d\n", fd, rc ));
+
 
     return rc;
 }
