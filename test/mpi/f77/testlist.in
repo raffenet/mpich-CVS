@@ -8,6 +8,4 @@ spawn
 rma
 init
 comm
-# ext is not included because the only test so far is a test of the 
-# Fortran "pointer" extension, which is not implemented by some compilers,
-# particularly not by g77
+ext
