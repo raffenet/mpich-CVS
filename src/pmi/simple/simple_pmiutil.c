@@ -50,6 +50,8 @@ void PMIU_Set_rank( int PMI_rank )
     MPIU_Snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
 }
 
+/* style: allow:fprintf:1 sig:0 */
+/* style: allow:vfprintf:1 sig:0 */
 /* This should be combined with the message routines */
 void PMIU_printf( int print_flag, char *fmt, ... )
 {
