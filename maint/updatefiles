@@ -704,8 +704,16 @@ fi
 if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
 fi
-echo Creating smpd_version.h
-echo \#define SMPD_VERSION \"`cat maint/Version`\" > src/pm/smpd/smpd_version.h
+echo "Creating src/pm/smpd/smpd_version.h"
+smpdVersion=`cat maint/Version`
+cat >src/pm/smpd/smpd_version.h <<EOF
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  
+ *  (C) 2005 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+#define SMPD_VERSION $smpdVersion
+EOF
 #
 # The following must be the last statements executed
 if [ -n "$error_summary" ] ; then
