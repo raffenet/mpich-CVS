@@ -91,7 +91,7 @@ To build MPICH2 you will need:
 \item cygwin - full installation
 \item Intel Fortran compiler IA32
 \item Intel Fortran compiler EMT64
-\item Mellanox 32bit and 64bit Infiniband libraries for VAPI and IBAL
+%\item Mellanox 32bit and 64bit Infiniband libraries for VAPI and IBAL
 \end{enumerate}
 
 Microsoft Developer Studio can be found on the CDs from an MSDN subscription.  The
@@ -108,15 +108,15 @@ installed and the EMT64 compiler needs to be installed.  They are two separate p
 they require a license file to use.  The license file is for a single user on a single 
 machine.
 
-The Mellanox Infiniband libraries are simply a package that needs to be unzipped.  They don't
-need to be installed because the build machine won't have Infiniband hardware on it.  I put
-the 32bit vapi package in \texttt{C:$\backslash$Mellanox} and the 64bit package in
-\texttt{C:$\backslash$Mellanox64}.  The ibal package should go in 
-\texttt{c:$\backslash$ibal} with both the 32bit and 64bit libraries in 
-\texttt{c:$\backslash$ibal$\backslash$Install$\backslash$x86} and 
-\texttt{c:$\backslash$ibal$\backslash$Install$\backslash$AMD64}.  If different pathes are 
-chosen then the scripts and Visual Studio project files will need to be updated to reflect 
-this change.
+%The Mellanox Infiniband libraries are simply a package that needs to be unzipped.  They don't
+%need to be installed because the build machine won't have Infiniband hardware on it.  I put
+%the 32bit vapi package in \texttt{C:$\backslash$Mellanox} and the 64bit package in
+%\texttt{C:$\backslash$Mellanox64}.  The ibal package should go in 
+%\texttt{c:$\backslash$ibal} with both the 32bit and 64bit libraries in 
+%\texttt{c:$\backslash$ibal$\backslash$Install$\backslash$x86} and 
+%\texttt{c:$\backslash$ibal$\backslash$Install$\backslash$AMD64}.  If different pathes are 
+%chosen then the scripts and Visual Studio project files will need to be updated to reflect 
+%this change.
 
 cygwin needs to be installed to get cvs, perl and ssh.  MPICH2 can also be built completely
 under cygwin just like a Unix build so I install all of cygwin.  The latest cygwin packages
@@ -149,6 +149,15 @@ and the makewindist.bat script from the top level of the mpich2 source tree.  Yo
 out mpich2 from CVS or you can simply copy this batch file from the distribution.  The batch
 file knows how to check out mpich2 so it the only file required to make a distribution.
 
+The product GUIDs need to be changed when a new release is created.  To do this open DevStudio
+and go to the installation project.  Change the version from 1.0.x to 1.0.y.  DevStudio will
+prompt you to change the GUIDs and click yes.
+
+Then you can build a distribution.  The GUIDs only need to be changed when a new version is 
+released to the public.  Release candidates can have the same GUIDs.  So maybe the best policy
+would be to change the GUIDs immediately after a release so they would stay the same all the
+way up to and including the next release.
+
 Bring up a build command prompt by selecting Start$\to$Progams$\to$Microsoft Visual Studio 
 .NET 2003$\to$Visual Studio .NET Tools$\to$Visual Studio .NET 2003 Command Prompt.
 
@@ -169,7 +178,7 @@ machine.
 \item run ``\texttt{winconfigure.wsf --cleancode}'' to configure mpich2 for Windows and output
 all the generated files like mpi.h and the fortran interface files, etc.
 \item run the Developer Studio command line tool to build all the pieces of MPICH2.  This
-includes each of the channels - sock, ssm, shm, sshm, ib, and the multi-threaded sock
+includes each of the channels - sock, ssm, shm, sshm, and the multi-threaded sock
 channel.  Two versions of each channel are built, the regular release build and the rlog
 profiled version.  The mpi wrapper channel selector dll is built and three Fortran interfaces
 are built, one for each set of common symbol types and calling conventions.  mpiexec and
@@ -253,8 +262,10 @@ Run the \texttt{testmpich2.wsf} script to checkout mpich2, build it, install it,
 the test suites, build them, run the test suites, and collect the results in a web page.
 
 \subsection{Testing from scratch}
+words, words, words
 
 \subsection{Testing an existing installation}
+words, words, words
 
 \section{Runtime environment}
 
@@ -279,7 +290,7 @@ The default channel uses sockets for communication.  There are two channels that
 shared memory.  There is a channel that uses both sockets and shared memory.  There is a
 channel that uses Infiniband.  And there is a thread-safe version of the sockets channel.
 
-The short names for the channels are: sock, shm, sshm, ssm, ib, mt.
+The short names for the channels are: sock, shm, sshm, ssm, mt.
 
 These channels can be selected at runtime with an environment variable - MPICH2\_CHANNEL.
 The following is an example that uses the Infiniband channel instead of the default sockets
