@@ -5,9 +5,8 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#include "mpio.h"
 #include "adio.h"
-
+#include "mpio.h"
 
 #if defined(MPIO_BUILD_PROFILING) || defined(HAVE_WEAK_SYMBOLS)
 
