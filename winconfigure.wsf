@@ -1445,94 +1445,117 @@ fout.Close()
 ' Generate romioconf.h
 '
 
-cEcho "Creating src\mpi\romio\adio\include\romioconf.h"
-set fout = f.CreateTextFile("src\mpi\romio\adio\include\romioconf.h")
+If f.FileExists("src\mpi\romio\adio\include\romioconf.h.in") Then
 
-fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
-fout.WriteLine("/*")
-fout.WriteLine(" *  (C) 2001 by Argonne National Laboratory.")
-fout.WriteLine(" *      See COPYRIGHT in top-level directory.")
-fout.WriteLine(" */")
-fout.WriteLine("#ifndef ROMIOCONF_H")
-fout.WriteLine("#define ROMIOCONF_H")
-fout.WriteLine("")
-fout.WriteLine("/* Define if `sys_siglist' is declared by <signal.h>.  */")
-fout.WriteLine("#undef SYS_SIGLIST_DECLARED")
-fout.WriteLine("")
-fout.WriteLine("#undef AIO_HANDLE_IN_AIOCB")
-fout.WriteLine("#undef AIO_PRIORITY_DEFAULT")
-fout.WriteLine("#undef AIO_SIGNOTIFY_NONE")
-fout.WriteLine("#undef AIO_SUN")
-fout.WriteLine("#undef FREEBSD")
-fout.WriteLine("#undef HAVE_LONG_LONG_64")
-fout.WriteLine("#undef HAVE_MOUNT_NFS")
-fout.WriteLine("#undef HAVE_MPI_COMBINERS")
-fout.WriteLine("#undef HAVE_MPI_DARRAY_SUBARRAY")
-fout.WriteLine("#ifndef HAVE_MPI_INFO")
-fout.WriteLine("#define HAVE_MPI_INFO")
-fout.WriteLine("#endif")
-fout.WriteLine("#undef HAVE_MPI_LONG_LONG_INT")
-fout.WriteLine("#undef HAVE_PRAGMA_CRI_DUP")
-fout.WriteLine("#undef HAVE_PRAGMA_HP_SEC_DEF")
-fout.WriteLine("#undef HAVE_PRAGMA_WEAK")
-fout.WriteLine("#undef HAVE_PREAD64")
-fout.WriteLine("#ifndef HAVE_STATUS_SET_BYTES")
-fout.WriteLine("#define HAVE_STATUS_SET_BYTES")
-fout.WriteLine("#endif")
-fout.WriteLine("#ifndef HAVE_STRERROR")
-fout.WriteLine("#define HAVE_STRERROR")
-fout.WriteLine("#endif")
-fout.WriteLine("#undef HAVE_SYSERRLIST")
-fout.WriteLine("#undef HAVE_WEAK_SYMBOLS")
-fout.WriteLine("#undef HFS")
-fout.WriteLine("#undef HPUX")
-fout.WriteLine("#undef INT_LT_POINTER")
-fout.WriteLine("#undef IRIX")
-fout.WriteLine("#undef LINUX")
-fout.WriteLine("#ifndef MPICH")
-fout.WriteLine("#define MPICH")
-fout.WriteLine("#endif")
-fout.WriteLine("#undef MPIHP")
-fout.WriteLine("#undef MPILAM")
-fout.WriteLine("#undef MPISGI")
-fout.WriteLine("#undef MPI_OFFSET_IS_INT")
-fout.WriteLine("#undef NEEDS_MPI_TEST")
-fout.WriteLine("#undef NFS")
-fout.WriteLine("#undef NO_AIO")
-fout.WriteLine("#undef NO_FD_IN_AIOCB")
-fout.WriteLine("#undef NO_MPI_SGI_type_is_contig")
-fout.WriteLine("#undef PARAGON")
-fout.WriteLine("#undef PFS")
-fout.WriteLine("#undef PIOFS")
-fout.WriteLine("#undef PRINT_ERR_MSG")
-fout.WriteLine("#undef ROMIO_PVFS")
-fout.WriteLine("#undef ROMIO_TESTFS")
-fout.WriteLine("#undef SFS")
-fout.WriteLine("#undef SOLARIS")
-fout.WriteLine("#undef SPPUX")
-fout.WriteLine("#undef SX4")
-fout.WriteLine("#undef UFS")
-fout.WriteLine("#undef XFS")
-fout.WriteLine("")
-fout.WriteLine("#ifndef ROMIO_NTFS")
-fout.WriteLine("#define ROMIO_NTFS")
-fout.WriteLine("#endif")
-fout.WriteLine("#ifndef HAVE_INT64")
-fout.WriteLine("#define HAVE_INT64 1")
-fout.WriteLine("#endif")
-fout.WriteLine("")
-fout.WriteLine("#ifndef HAS_MPIR_ERR_SETMSG")
-fout.WriteLine("#define HAS_MPIR_ERR_SETMSG")
-fout.WriteLine("#endif")
-fout.WriteLine("")
-fout.WriteLine("#ifndef FORTRANDOUBLEUNDERSCORE")
-fout.WriteLine("#define FORTRANCAPS")
-fout.WriteLine("#endif")
-fout.WriteLine("")
-fout.WriteLine("#endif")
+	cEcho "Creating src\mpi\romio\adio\include\romioconf.h"
+	set fout = f.CreateTextFile("src\mpi\romio\adio\include\romioconf.h")
+	Call WriteHeader(fout, "romio")
+	Call AddDefinitions(fout, "src\mpi\romio\adio\include\romioconf.h.in", false)
+	fout.WriteLine("#ifndef ROMIO_NTFS")
+	fout.WriteLine("#define ROMIO_NTFS 1")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#ifndef HAVE_INT64")
+	fout.WriteLine("#define HAVE_INT64 1")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#ifndef FORTRANDOUBLEUNDERSCORE")
+	fout.WriteLine("#define FORTRANCAPS")
+	fout.WriteLine("#endif")
+	Call WriteFooter(fout)
+	fout.Close()
 
-fout.Close()
+Else
 
+	cEcho "Creating src\mpi\romio\adio\include\romioconf.h"
+	set fout = f.CreateTextFile("src\mpi\romio\adio\include\romioconf.h")
+
+	fout.WriteLine("/* -*- Mode: C; c-basic-offset:4 ; -*- */")
+	fout.WriteLine("/*")
+	fout.WriteLine(" *  (C) 2001 by Argonne National Laboratory.")
+	fout.WriteLine(" *      See COPYRIGHT in top-level directory.")
+	fout.WriteLine(" */")
+	fout.WriteLine("#ifndef ROMIOCONF_H")
+	fout.WriteLine("#define ROMIOCONF_H")
+	fout.WriteLine("")
+	fout.WriteLine("/* Define if `sys_siglist' is declared by <signal.h>.  */")
+	fout.WriteLine("#undef SYS_SIGLIST_DECLARED")
+	fout.WriteLine("")
+	fout.WriteLine("#undef AIO_HANDLE_IN_AIOCB")
+	fout.WriteLine("#undef AIO_PRIORITY_DEFAULT")
+	fout.WriteLine("#undef AIO_SIGNOTIFY_NONE")
+	fout.WriteLine("#undef AIO_SUN")
+	fout.WriteLine("#undef FREEBSD")
+	fout.WriteLine("#undef HAVE_LONG_LONG_64")
+	fout.WriteLine("#undef HAVE_MOUNT_NFS")
+	fout.WriteLine("#undef HAVE_MPI_COMBINERS")
+	fout.WriteLine("#undef HAVE_MPI_DARRAY_SUBARRAY")
+	fout.WriteLine("#ifndef HAVE_MPI_INFO")
+	fout.WriteLine("#define HAVE_MPI_INFO")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#undef HAVE_MPI_LONG_LONG_INT")
+	fout.WriteLine("#undef HAVE_PRAGMA_CRI_DUP")
+	fout.WriteLine("#undef HAVE_PRAGMA_HP_SEC_DEF")
+	fout.WriteLine("#undef HAVE_PRAGMA_WEAK")
+	fout.WriteLine("#undef HAVE_PREAD64")
+	fout.WriteLine("#ifndef HAVE_STATUS_SET_BYTES")
+	fout.WriteLine("#define HAVE_STATUS_SET_BYTES")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#ifndef HAVE_STRERROR")
+	fout.WriteLine("#define HAVE_STRERROR")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#undef HAVE_SYSERRLIST")
+	fout.WriteLine("#undef HAVE_WEAK_SYMBOLS")
+	fout.WriteLine("#undef HFS")
+	fout.WriteLine("#undef HPUX")
+	fout.WriteLine("#undef INT_LT_POINTER")
+	fout.WriteLine("#undef IRIX")
+	fout.WriteLine("#undef LINUX")
+	fout.WriteLine("#ifndef MPICH")
+	fout.WriteLine("#define MPICH")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#undef MPIHP")
+	fout.WriteLine("#undef MPILAM")
+	fout.WriteLine("#undef MPISGI")
+	fout.WriteLine("#undef MPI_OFFSET_IS_INT")
+	fout.WriteLine("#undef NEEDS_MPI_TEST")
+	fout.WriteLine("#undef NFS")
+	fout.WriteLine("#undef NO_AIO")
+	fout.WriteLine("#undef NO_FD_IN_AIOCB")
+	fout.WriteLine("#undef NO_MPI_SGI_type_is_contig")
+	fout.WriteLine("#undef PARAGON")
+	fout.WriteLine("#undef PFS")
+	fout.WriteLine("#undef PIOFS")
+	fout.WriteLine("#undef PRINT_ERR_MSG")
+	fout.WriteLine("#undef ROMIO_PVFS")
+	fout.WriteLine("#undef ROMIO_TESTFS")
+	fout.WriteLine("#undef SFS")
+	fout.WriteLine("#undef SOLARIS")
+	fout.WriteLine("#undef SPPUX")
+	fout.WriteLine("#undef SX4")
+	fout.WriteLine("#undef UFS")
+	fout.WriteLine("#undef XFS")
+	fout.WriteLine("")
+	fout.WriteLine("#ifndef ROMIO_NTFS")
+	fout.WriteLine("#define ROMIO_NTFS")
+	fout.WriteLine("#endif")
+	fout.WriteLine("#ifndef HAVE_INT64")
+	fout.WriteLine("#define HAVE_INT64 1")
+	fout.WriteLine("#endif")
+	fout.WriteLine("")
+	fout.WriteLine("#ifndef HAS_MPIR_ERR_SETMSG")
+	fout.WriteLine("#define HAS_MPIR_ERR_SETMSG")
+	fout.WriteLine("#endif")
+	fout.WriteLine("")
+	fout.WriteLine("#ifndef FORTRANDOUBLEUNDERSCORE")
+	fout.WriteLine("#define FORTRANCAPS")
+	fout.WriteLine("#endif")
+	fout.WriteLine("")
+	fout.WriteLine("#define restrict")
+	fout.WriteLine("")
+	fout.WriteLine("#endif")
+
+	fout.Close()
+
+End If
 
 Function BuildIFaces()
 
@@ -2899,6 +2922,148 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#define HAVE_MPI_F_STATUS_IGNORE 1")
 				Case "HAVE_MPI_F_STATUSES_IGNORE"
 					fout.WriteLine("#define HAVE_MPI_F_STATUSES_IGNORE 1")
+				Case "AIO_SIGNOTIFY_NONE"
+					fout.WriteLine("/* #undef AIO_SIGNOTIFY_NONE */")
+				Case "AIX"
+					fout.WriteLine("/* #undef AIX */")
+				Case "CRAY"
+					fout.WriteLine("/* #undef CRAY */")
+				Case "HAVE_AIO_H"
+					fout.WriteLine("/* #undef HAVE_AIO_H */")
+				Case "HAVE_FSYNC"
+					fout.WriteLine("/* #undef HAVE_FSYNC */")
+				Case "HAVE_FTRUNCATE"
+					fout.WriteLine("/* #undef HAVE_FTRUNCATE */")
+				Case "HAVE_LONG_LONG_64"
+					fout.WriteLine("/* #undef HAVE_LONG_LONG_64 */")
+				Case "HAVE_LSTAT"
+					fout.WriteLine("/* #undef HAVE_LSTAT */")
+				Case "HAVE_MEMALIGN"
+					fout.WriteLine("/* #undef HAVE_MEMALIGN */")
+				Case "HAVE_MPI_COMBINERS"
+					fout.WriteLine("/* #undef HAVE_MPI_COMBINERS */")
+				Case "HAVE_MPI_DARRAY_SUBARRAY"
+					fout.WriteLine("#define HAVE_MPI_DARRAY_SUBARRAY 1")
+				Case "HAVE_MPI_GREQUEST"
+					fout.WriteLine("/* #undef HAVE_MPI_GREQUEST */")
+				Case "HAVE_MPI_INFO"
+					fout.WriteLine("#define HAVE_MPI_INFO 1")
+				Case "HAVE_MPI_LONG_LONG_INT"
+					fout.WriteLine("/* #undef HAVE_MPI_LONG_LONG_INT */")
+				Case "HAVE_PREAD64"
+					fout.WriteLine("/* #undef HAVE_PREAD64 */")
+				Case "HAVE_PVFS2_H"
+					fout.WriteLine("/* #undef HAVE_PVFS2_H */")
+				Case "HAVE_PVFS2_SUPER_MAGIC"
+					fout.WriteLine("/* #undef HAVE_PVFS2_SUPER_MAGIC */")
+				Case "HAVE_PVFS_H"
+					fout.WriteLine("/* #undef HAVE_PVFS_H */")
+				Case "HAVE_PVFS_SUPER_MAGIC"
+					fout.WriteLine("/* #undef HAVE_PVFS_SUPER_MAGIC */")
+				Case "HAVE_READLINK"
+					fout.WriteLine("/* #undef HAVE_READLINK */")
+				Case "HAVE_SIGNAL_H"
+					fout.WriteLine("/* #undef HAVE_SIGNAL_H */")
+				Case "HAVE_STAT"
+					fout.WriteLine("/* #undef HAVE_STAT */")
+				Case "HAVE_STATUS_SET_BYTES"
+					fout.WriteLine("#define HAVE_STATUS_SET_BYTES 1")
+				Case "HAVE_STATVFS"
+					fout.WriteLine("/* #undef HAVE_STATVFS */")
+				Case "HAVE_STRUCT_STATFS"
+					fout.WriteLine("/* #undef HAVE_STRUCT_STATFS */")
+				Case "HAVE_SYS_AIO_H"
+					fout.WriteLine("/* #undef HAVE_SYS_AIO_H */")
+				Case "HAVE_SYS_MOUNT_H"
+					fout.WriteLine("/* #undef HAVE_SYS_MOUNT_H */")
+				Case "HAVE_SYS_STATVFS_H"
+					fout.WriteLine("/* #undef HAVE_SYS_STATVFS_H */")
+				Case "HAVE_SYS_VFS_H"
+					fout.WriteLine("/* #undef HAVE_SYS_VFS_H */")
+				Case "HPUX"
+					fout.WriteLine("/* #undef HPUX */")
+				Case "INT_LT_POINTER"
+					fout.WriteLine("/* #undef INT_LT_POINTER */")
+				Case "IRIX"
+					fout.WriteLine("/* #undef IRIX */")
+				Case "MPICH"
+					fout.WriteLine("/* #undef MPICH */")
+				Case "MPIHP"
+					fout.WriteLine("/* #undef MPIHP */")
+				Case "MPILAM"
+					fout.WriteLine("/* #undef MPILAM */")
+				Case "MPISGI"
+					fout.WriteLine("/* #undef MPISGI */")
+				Case "MPI_OFFSET_IS_INT"
+					fout.WriteLine("/* #undef MPI_OFFSET_IS_INT */")
+				Case "NEEDS_FSYNC_DECL"
+					fout.WriteLine("/* #undef NEEDS_FSYNC_DECL */")
+				Case "NEEDS_FTRUNCATE_DECL"
+					fout.WriteLine("/* #undef NEEDS_FTRUNCATE_DECL */")
+				Case "NEEDS_INT_CAST_WITH_FLOCK"
+					fout.WriteLine("/* #undef NEEDS_INT_CAST_WITH_FLOCK */")
+				Case "NEEDS_LSTAT_DECL"
+					fout.WriteLine("/* #undef NEEDS_LSTAT_DECL */")
+				Case "NEEDS_MPI_TEST"
+					fout.WriteLine("/* #undef NEEDS_MPI_TEST */")
+				Case "NEEDS_READLINK_DECL"
+					fout.WriteLine("/* #undef NEEDS_READLINK_DECL */")
+				Case "NO_MPI_SGI_type_is_contig"
+					fout.WriteLine("/* #undef NO_MPI_SGI_type_is_contig */")
+				Case "PRINT_ERR_MSG"
+					fout.WriteLine("/* #undef PRINT_ERR_MSG */")
+				Case "ROMIO_GRIDFTP"
+					fout.WriteLine("/* #undef ROMIO_GRIDFTP */")
+				Case "ROMIO_HAVE_AIO_CALLS_NEED_FILEDES"
+					fout.WriteLine("/* #undef ROMIO_HAVE_AIO_CALLS_NEED_FILEDES */")
+				Case "ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS"
+					fout.WriteLine("/* #undef ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS */")
+				Case "ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES */")
+				Case "ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE */")
+				Case "ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_REQPRIO"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_REQPRIO */")
+				Case "ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_SIGEVENT"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_SIGEVENT */")
+				Case "ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_WHENCE"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_WHENCE */")
+				Case "ROMIO_HAVE_STRUCT_STATFS_WITH_F_FSTYPENAME"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_STATFS_WITH_F_FSTYPENAME */")
+				Case "ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE */")
+				Case "ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE"
+					fout.WriteLine("/* #undef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE */")
+				Case "ROMIO_HAVE_WORKING_AIO"
+					fout.WriteLine("/* #undef ROMIO_HAVE_WORKING_AIO */")
+				Case "ROMIO_HFS"
+					fout.WriteLine("/* #undef ROMIO_HFS */")
+				Case "ROMIO_INSIDE_MPICH2"
+					fout.WriteLine("#define ROMIO_INSIDE_MPICH2 1")
+				Case "ROMIO_NFS"
+					fout.WriteLine("/* #undef ROMIO_NFS */")
+				Case "ROMIO_PANFS"
+					fout.WriteLine("/* #undef ROMIO_PANFS */")
+				Case "ROMIO_PFS"
+					fout.WriteLine("/* #undef ROMIO_PFS */")
+				Case "ROMIO_PVFS"
+					fout.WriteLine("/* #undef ROMIO_PVFS */")
+				Case "ROMIO_PVFS2"
+					fout.WriteLine("/* #undef ROMIO_PVFS2 */")
+				Case "ROMIO_PVFS_NEEDS_INT64_DEFINITION"
+					fout.WriteLine("/* #undef ROMIO_PVFS_NEEDS_INT64_DEFINITION */")
+				Case "ROMIO_SFS"
+					fout.WriteLine("/* #undef ROMIO_SFS */")
+				Case "ROMIO_TESTFS"
+					fout.WriteLine("/* #undef ROMIO_TESTFS */")
+				Case "ROMIO_UFS"
+					fout.WriteLine("/* #undef ROMIO_UFS */")
+				Case "ROMIO_XFS"
+					fout.WriteLine("/* #undef ROMIO_XFS */")
+				Case "SPPUX"
+					fout.WriteLine("/* #undef SPPUX */")
+				Case "SX4"
+					fout.WriteLine("/* #undef SX4 */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
