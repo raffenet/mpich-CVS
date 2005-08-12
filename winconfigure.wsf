@@ -1460,6 +1460,7 @@ If f.FileExists("src\mpi\romio\adio\include\romioconf.h.in") Then
 	fout.WriteLine("#ifndef FORTRANDOUBLEUNDERSCORE")
 	fout.WriteLine("#define FORTRANCAPS")
 	fout.WriteLine("#endif")
+	fout.WriteLine("#define snprintf _snprintf")
 	Call WriteFooter(fout)
 	fout.Close()
 
