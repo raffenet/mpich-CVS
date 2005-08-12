@@ -2063,6 +2063,9 @@
 				RelativePath="src\mpi\romio\adio\common\status_setb.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\strfns.c">
+			</File>
+			<File
 				RelativePath=".\src\mpi\romio\mpi2-other\array\subarray.c">
 				<FileConfiguration
 					Name="Debug|Win32"

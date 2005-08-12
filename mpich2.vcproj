@@ -4194,6 +4194,9 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 				RelativePath=".\src\mpi\romio\adio\common\status_setb.c">
 			</File>
 			<File
+				RelativePath=".\src\mpi\romio\adio\common\strfns.c">
+			</File>
+			<File
 				RelativePath=".\src\mpi\pt2pt\test.c">
 			</File>
 			<File
