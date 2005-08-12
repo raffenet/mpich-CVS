@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h> /* isdigit */
-#include "mpimem.h"
+#include "mpichconf.h" /* HAVE_SNPRINTF */
+#include "mpimem.h" /* MPIU_Snprintf */
 
 #ifndef BOOL
 #define BOOL int
