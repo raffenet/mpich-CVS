@@ -578,6 +578,8 @@ char *ADIOI_Strdup( const char * );
 #endif
 #endif
 
+/* style: allow:snprintf:1 sig:0 */
+
 #ifdef HAVE_SNPRINTF
 #define ADIOI_Snprintf snprintf
 /* Sometimes systems don't provide prototypes for snprintf */

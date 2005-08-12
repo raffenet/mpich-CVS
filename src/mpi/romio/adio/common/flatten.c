@@ -58,7 +58,7 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
 
     flat->count = ADIOI_Count_contiguous_blocks(datatype, &curr_index);
 #if 0
-    printf("cur_idx = %d\n", curr_index);
+    FPRINTF(stderr, "cur_idx = %d\n", curr_index);
 #endif
 /*    FPRINTF(stderr, "%d\n", flat->count);*/
 

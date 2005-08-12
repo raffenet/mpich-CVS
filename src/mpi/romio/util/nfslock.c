@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 /*
- * This routine tests to see if fcntl returns success when asked to 
+ * This program tests to see if fcntl returns success when asked to 
  * establish a file lock.  This test is intended for use on file systems
  * such as NFS that may not implement file locks.  ROMIO makes use
  * of file locks to implement certain operations, and may not work
@@ -26,11 +26,14 @@
  * Under normal conditions, this program should only take a few seconds to 
  * run.
  *
- * This program prints a message showing the success or failure of
+ * The program prints a message showing the success or failure of
  * setting the file lock and sets the return status to 0 on success and
  * non-zero on failure.  If there is a failure, the system routine
  * perror is also called to explain the reason.
  */
+
+/* style: allow:printf:2 sig:0 */
+
 int main( int argc, char *argv[] )
 {
     struct flock lock;

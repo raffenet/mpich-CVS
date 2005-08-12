@@ -172,6 +172,8 @@ MPI_Info PMPI_Info_f2c(MPI_Fint info);
 
 #endif
 
+/* style: allow:strdup:1 sig:0 */
+
 #if defined(HAVE_STRDUP) && defined(NEEDS_STRDUP_DECL) && !defined(strdup)
 char *strdup(const char *s);
 # endif
