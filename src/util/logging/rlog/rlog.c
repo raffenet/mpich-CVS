@@ -10,7 +10,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "mpimem.h"
+#include "mpichconf.h" /* HAVE_SNPRINTF */
+#include "mpimem.h" /* MPIU_Snprintf */
 
 #include "mpi.h"
 /*#define RLOG_timestamp PMPI_Wtime*/
