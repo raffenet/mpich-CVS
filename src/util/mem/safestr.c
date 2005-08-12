@@ -150,15 +150,18 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
   @*/
 char *MPIU_Strdup( const char *str )
 {
-    char *p = MPIU_Malloc( strlen(str) + 1 );
-    char *in_p = (char *)str;
+    char * restrict p = (char *)MPIU_Malloc( strlen(str) + 1 );
+    const char * restrict in_p = str;
+    char *save_p;
 
-    if (!p) {
+    save_p = p;
+    if (p) {
 	while (*in_p) {
 	    *p++ = *in_p++;
 	}
+	*p = 0;
     }
-    return p;
+    return save_p;
 }
 #endif
 
