@@ -237,7 +237,7 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_PG_t *pg, int nTotalSize, int nRank, int nNproc
 	pg->ch.addr = NULL;
 	MPIU_DBG_PRINTF(("[%d] mapping shared memory\n", nRank));
 #ifdef USE_POSIX_SHM
-	/* style: allow:mmap:1 sig: 0 */
+	/* style: allow:mmap:1 sig:0 */
 	pg->ch.addr = mmap(NULL, nTotalSize, PROT_READ | PROT_WRITE, MAP_SHARED /* | MAP_NORESERVE*/, pg->ch.id, 0);
 	if (pg->ch.addr == MAP_FAILED)
 	{
