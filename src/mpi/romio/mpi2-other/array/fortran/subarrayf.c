@@ -14,24 +14,16 @@
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
 #if defined(FORTRANCAPS)
-extern FORTRAN_API void FORT_CALL MPI_TYPE_CREATE_SUBARRAY(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL MPI_TYPE_CREATE_SUBARRAY(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak MPI_TYPE_CREATE_SUBARRAY = PMPI_TYPE_CREATE_SUBARRAY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-extern FORTRAN_API void FORT_CALL mpi_type_create_subarray__(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL mpi_type_create_subarray__(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak mpi_type_create_subarray__ = pmpi_type_create_subarray__
 #elif !defined(FORTRANUNDERSCORE)
-extern FORTRAN_API void FORT_CALL mpi_type_create_subarray(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL mpi_type_create_subarray(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak mpi_type_create_subarray = pmpi_type_create_subarray
 #else
-extern FORTRAN_API void FORT_CALL mpi_type_create_subarray_(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL mpi_type_create_subarray_(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *,  MPI_Fint *, MPI_Fint *);
 #pragma weak mpi_type_create_subarray_ = pmpi_type_create_subarray_
 #endif
 

@@ -13,28 +13,16 @@
 #if defined(HAVE_WEAK_SYMBOLS)
 #if defined(HAVE_PRAGMA_WEAK)
 #if defined(FORTRANCAPS)
-extern FORTRAN_API void FORT_CALL MPI_TYPE_CREATE_DARRAY(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL MPI_TYPE_CREATE_DARRAY(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak MPI_TYPE_CREATE_DARRAY = PMPI_TYPE_CREATE_DARRAY
 #elif defined(FORTRANDOUBLEUNDERSCORE)
-extern FORTRAN_API void FORT_CALL mpi_type_create_darray__(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL mpi_type_create_darray__(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak mpi_type_create_darray__ = pmpi_type_create_darray__
 #elif !defined(FORTRANUNDERSCORE)
-extern FORTRAN_API void FORT_CALL mpi_type_create_darray(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL mpi_type_create_darray(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak mpi_type_create_darray = pmpi_type_create_darray
 #else
-extern FORTRAN_API void FORT_CALL mpi_type_create_darray_(MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *, 
-							 MPI_Fint *, MPI_Fint *, MPI_Fint *,
-							 MPI_Fint *, MPI_Fint *);
+extern FORTRAN_API void FORT_CALL mpi_type_create_darray_(MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
 #pragma weak mpi_type_create_darray_ = pmpi_type_create_darray_
 #endif
 
