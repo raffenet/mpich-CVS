@@ -1006,10 +1006,13 @@ def handle_cli_stderr_input(sock,streamHandler):
 # We do not wait to read here until the recvrs read because there may be several
 # recvrs and they may read at different speeds/times.
 def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
+    line  = ''
     try:
         line = stdin_stream.readline()
-    except IOError:
+    except IOError, errinfo:
         sys.stdin.flush()  # probably does nothing
+        # print "I/O err on stdin:", errinfo
+        mpd_print(1,'stdin problem; if pgm is run in background, redirect from /dev/null')
     else:
         gdbFlag = parmdb['MPIEXEC_GDB']
         if line:    # not EOF
