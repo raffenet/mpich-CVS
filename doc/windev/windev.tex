@@ -153,6 +153,11 @@ The product GUIDs need to be changed when a new release is created.  To do this 
 and go to the installation project.  Change the version from 1.0.x to 1.0.y.  DevStudio will
 prompt you to change the GUIDs and click yes.
 
+Or you can modify the project files by hand.  Edit mpich2/maint/mpich2i.vdproj.  The ProductCode
+and PackageCode entries need to be changed to use new GUIDs.  Under Unix or Windows, uuidgen can 
+be used to generate a new GUID.  The ProductVersion entry needs to be changed to match the 
+version of MPICH2.
+
 Then you can build a distribution.  The GUIDs only need to be changed when a new version is 
 released to the public.  Release candidates can have the same GUIDs.  So maybe the best policy
 would be to change the GUIDs immediately after a release so they would stay the same all the
@@ -262,10 +267,11 @@ Run the \texttt{testmpich2.wsf} script to checkout mpich2, build it, install it,
 the test suites, build them, run the test suites, and collect the results in a web page.
 
 \subsection{Testing from scratch}
-words, words, words
+Explain the use of testmpich2.wsf.
 
 \subsection{Testing an existing installation}
-words, words, words
+Explain the use of testmpich2.wsf to test an existing installation, one that was installed
+with the .msi distribution.
 
 \section{Runtime environment}
 
