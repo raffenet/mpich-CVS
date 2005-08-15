@@ -5621,6 +5621,8 @@ int PMPI_Pcontrol(const int level, ...)
     int ret_val;
     va_list list;
 
+    MPICH_CHECK_INIT(FCNAME);
+
     va_start(list, level);
     ret_val = fn.PMPI_Pcontrol(level, list);
     va_end(list);
