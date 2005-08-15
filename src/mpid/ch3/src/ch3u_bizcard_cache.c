@@ -242,7 +242,9 @@ int MPIDI_CH3I_Bizcard_Search(char *pg_id, int pid)
                 return i;
         }
     }
-
+#else
+    MPIU_UNREFERENCED_ARG(pg_id);
+    MPIU_UNREFERENCED_ARG(pid);
 #endif
     /* not found */
     return -1;

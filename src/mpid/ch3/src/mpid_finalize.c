@@ -161,7 +161,8 @@ int MPID_Finalize()
     mpi_errno = MPIDI_CH3I_PMI_Finalize();
     if(mpi_errno != MPI_SUCCESS)
     {
-        return mpi_errno;  /* brad : what more should i do?  print something? create_code? */
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        return mpi_errno;
     }
 #endif
     mpi_errno = MPIDI_CH3_Finalize();
