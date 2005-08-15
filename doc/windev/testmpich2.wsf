@@ -2252,47 +2252,47 @@ if not bTestOnly then
 		else
 			WshShell.CurrentDirectory = "mpich2"
 		end if
-		error = RunEchoCommandError("devenv.com mpich2.sln /build ch3sockDebug")
-		if error <> 0 then
-			WScript.Echo("Error building the sock channel")
-			WScript.Quit
-		end if
-		error = RunEchoCommandError("devenv.com mpich2.sln /project mpich2s /build ch3sockDebug")
-		if error <> 0 then
-			WScript.Echo("Error building the sock channel static library")
-			WScript.Quit
-		end if
-		'error = RunEchoCommandError("devenv.com mpich2.sln /build ch3sockRelease")
+		'error = RunEchoCommandError("devenv.com mpich2.sln /build ch3sockDebug")
 		'if error <> 0 then
-		'	WScript.Echo("Error building the sock channel release target")
+		'	WScript.Echo("Error building the sock channel")
 		'	WScript.Quit
 		'end if
-		'error = RunEchoCommandError("devenv.com mpich2.sln /project mpich2s /build ch3sockRelease")
+		'error = RunEchoCommandError("devenv.com mpich2.sln /project mpich2s /build ch3sockDebug")
 		'if error <> 0 then
-		'	WScript.Echo("Error building the sock channel release target static library")
+		'	WScript.Echo("Error building the sock channel static library")
 		'	WScript.Quit
 		'end if
-		error = RunEchoCommandError("devenv.com mpich2.sln /build Debug")
+		error = RunEchoCommandError("devenv.com mpich2.sln /build ch3sockRelease")
 		if error <> 0 then
-			WScript.Echo("Error building the utilities and process manager")
+			WScript.Echo("Error building the sock channel release target")
 			WScript.Quit
 		end if
-		'error = RunEchoCommandError("devenv.com mpich2.sln /build Release")
+		error = RunEchoCommandError("devenv.com mpich2.sln /project mpich2s /build ch3sockRelease")
+		if error <> 0 then
+			WScript.Echo("Error building the sock channel release target static library")
+			WScript.Quit
+		end if
+		'error = RunEchoCommandError("devenv.com mpich2.sln /build Debug")
 		'if error <> 0 then
-		'	WScript.Echo("Error building the release target utilities and process manager")
+		'	WScript.Echo("Error building the utilities and process manager")
 		'	WScript.Quit
 		'end if
+		error = RunEchoCommandError("devenv.com mpich2.sln /build Release")
+		if error <> 0 then
+			WScript.Echo("Error building the release target utilities and process manager")
+			WScript.Quit
+		end if
 		if bFortran then
-			error = RunEchoCommandError("devenv.com mpich2.sln /build fortDebug")
-			if error <> 0 then
-				WScript.Echo("Error building the fortran interface")
-				WScript.Quit
-			end if
-			'error = RunEchoCommandError("devenv.com mpich2.sln /build fortRelease")
+			'error = RunEchoCommandError("devenv.com mpich2.sln /build fortDebug")
 			'if error <> 0 then
-			'	WScript.Echo("Error building the release target fortran interface")
+			'	WScript.Echo("Error building the fortran interface")
 			'	WScript.Quit
 			'end if
+			error = RunEchoCommandError("devenv.com mpich2.sln /build fortRelease")
+			if error <> 0 then
+				WScript.Echo("Error building the release target fortran interface")
+				WScript.Quit
+			end if
 			'error = RunEchoCommandError("devenv.com mpich2.sln /build gfortDebug")
 			'if error <> 0 then
 			'	WScript.Echo("Error building the cdecl fortran interface")
