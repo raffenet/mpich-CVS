@@ -67,8 +67,8 @@
 #endif
 #define MAX_DLL_NAME              100
 
-MPI_EXPORT MPI_Fint *MPI_F_STATUS_IGNORE = 0;
-MPI_EXPORT MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
+MPI_Fint *MPI_F_STATUS_IGNORE = 0;
+MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
 static struct fn_table
 {
