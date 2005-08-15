@@ -2197,7 +2197,8 @@ Function ReplaceAts( str, use_f77, b64 )
 			Case "@HAVE_MPI_DARRAY_SUBARRAY@"
 				str = Replace(str, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
 			Case "@DEFINE_HAVE_MPI_GREQUEST@"
-				str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "#define HAVE_MPI_GREQUEST")
+				'str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "#define HAVE_MPI_GREQUEST")
+				str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "")
 			Case "@ADDRESS_KIND@"
 				If b64 then
 					str = Replace(str, "@ADDRESS_KIND@", "8")
