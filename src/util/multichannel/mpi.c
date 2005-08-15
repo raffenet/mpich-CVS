@@ -67,8 +67,8 @@
 #endif
 #define MAX_DLL_NAME              100
 
-MPI_Fint *MPI_F_STATUS_IGNORE;
-MPI_Fint *MPI_F_STATUSES_IGNORE;
+MPI_EXPORT MPI_Fint *MPI_F_STATUS_IGNORE = 0;
+MPI_EXPORT MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
 static struct fn_table
 {
@@ -704,10 +704,14 @@ static HMODULE hMPIModule = NULL;
 static HMODULE hPMPIModule = NULL;
 static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
 {
+    int error;
+
     /* Load the PMPI module */
     hPMPIModule = LoadLibrary(dll_name);
     if (hPMPIModule == NULL)
     {
+	error = GetLastError();
+	printf("Unable to load '%s', error %d\n", dll_name, error);fflush(stdout);
 	return FALSE;
     }
 
@@ -717,6 +721,8 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
 	hMPIModule = LoadLibrary(wrapper_dll_name);
 	if (hMPIModule == NULL)
 	{
+	    error = GetLastError();
+	    printf("Unable to load '%s', error %d\n", wrapper_dll_name, error);fflush(stdout);
 	    return FALSE;
 	}
     }
@@ -1660,11 +1666,54 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     return TRUE;
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+BOOL LoadMPILibrary()
 {
+    BOOL result = TRUE;
     char *dll_name, *channel;
     char *wrapper_dll_name = NULL;
     char name[MAX_DLL_NAME];
+
+    /* Get the mpi dll name */
+    /* precedence goes to the dll name so check for it first */
+    dll_name = getenv(MPI_ENV_DLL_NAME);
+    if (!dll_name)
+    {
+	/* no dll name specified so check for a channel */
+	channel = getenv(MPI_ENV_CHANNEL_NAME);
+	if (channel != NULL)
+	{
+	    /* ignore the sock channel since it is the default and is not named mpich2sock.dll */
+	    if (strncmp(channel, "sock", 5))
+	    {
+		MPIU_Snprintf(name, MAX_DLL_NAME, DLL_FORMAT_STRING, channel);
+		dll_name = name;
+	    }
+	}
+	/* no dll or channel specified so use the default */
+	if (!dll_name)
+	{
+	    dll_name = MPI_DEFAULT_DLL_NAME;
+	}
+    }
+
+    /* Get the mpi wrapper dll name */
+    wrapper_dll_name = getenv(MPI_ENV_MPIWRAP_DLL_NAME);
+    if (wrapper_dll_name)
+    {
+	/* FIXME: Should we allow for short wrapper names like 'mpe'? */
+	if (strncmp(wrapper_dll_name, "mpe", 4) == 0)
+	{
+	    wrapper_dll_name = MPI_DEFAULT_WRAP_DLL_NAME;
+	}
+    }
+
+    /* Load the functions */
+    result = LoadFunctions(dll_name, wrapper_dll_name);
+    return result;
+}
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
     BOOL result = TRUE;
 
     MPIU_UNREFERENCED_ARG(hinstDLL);
@@ -1673,42 +1722,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
-	    /* Get the mpi dll name */
-	    /* precedence goes to the dll name so check for it first */
-	    dll_name = getenv(MPI_ENV_DLL_NAME);
-	    if (!dll_name)
-	    {
-		/* no dll name specified so check for a channel */
-		channel = getenv(MPI_ENV_CHANNEL_NAME);
-		if (channel != NULL)
-		{
-		    /* ignore the sock channel since it is the default and is not named mpich2sock.dll */
-		    if (strncmp(channel, "sock", 5))
-		    {
-			MPIU_Snprintf(name, MAX_DLL_NAME, DLL_FORMAT_STRING, channel);
-			dll_name = name;
-		    }
-		}
-		/* no dll or channel specified so use the default */
-		if (!dll_name)
-		{
-		    dll_name = MPI_DEFAULT_DLL_NAME;
-		}
-	    }
-
-	    /* Get the mpi wrapper dll name */
-	    wrapper_dll_name = getenv(MPI_ENV_MPIWRAP_DLL_NAME);
-	    if (wrapper_dll_name)
-	    {
-		/* FIXME: Should we allow for short wrapper names like 'mpe'? */
-		if (strncmp(wrapper_dll_name, "mpe", 4) == 0)
-		{
-		    wrapper_dll_name = MPI_DEFAULT_WRAP_DLL_NAME;
-		}
-	    }
-
-	    /* Load the functions */
-	    result = LoadFunctions(dll_name, wrapper_dll_name);
             break;
 
         case DLL_THREAD_ATTACH:
@@ -1723,417 +1736,638 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     return result;
 }
 
+#define MPICH_CHECK_INIT(a) if ((fn. a) == NULL && LoadMPILibrary() == FALSE) return MPI_ERR_INTERN;
+#define MPICH_CHECK_INIT_VOID(a) if ((fn. a) == NULL && LoadMPILibrary() == FALSE) ExitProcess(MPI_ERR_INTERN);
+
 /* Extra exported internal functions to mpich2 */
+#undef FCNAME
+#define FCNAME MPIR_Err_create_code
 int MPIR_Err_create_code(int lastcode, int fatal, const char fcname[], int line, int error_class, const char generic_msg[], const char specific_msg[], ...)
 {
     int result;
     va_list args;
+    MPICH_CHECK_INIT(FCNAME);
     va_start(args, specific_msg);
     result = fn.MPIR_Err_create_code(lastcode, fatal, fcname, line, error_class, generic_msg, specific_msg, args);
     va_end(args);
     return result;
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Err_return_comm
 int MPIR_Err_return_comm(struct MPID_Comm *comm_ptr, const char fcname[], int errcode)
 {
+    MPICH_CHECK_INIT(MPIR_Err_return_comm);
     return fn.MPIR_Err_return_comm(comm_ptr, fcname, errcode);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Dup_fn
 int MPIR_Dup_fn(MPI_Comm comm, int keyval, void *extra_state, void *attr_in, void *attr_out, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPIR_Dup_fn(comm, keyval, extra_state, attr_in, attr_out, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Keyval_set_fortran
 void MPIR_Keyval_set_fortran(int keyval)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     fn.MPIR_Keyval_set_fortran(keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Keyval_set_fortran90
 void MPIR_Keyval_set_fortran90(int keyval)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     fn.MPIR_Keyval_set_fortran90(keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Grequest_set_lang_f77
 void MPIR_Grequest_set_lang_f77(MPI_Request greq)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     fn.MPIR_Grequest_set_lang_f77(greq);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Keyval_set_cxx
 void MPIR_Keyval_set_cxx(int keyval, void (*delfn)(void), void (*copyfn)(void))
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     fn.MPIR_Keyval_set_cxx(keyval, delfn, copyfn);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Errhandler_set_cxx
 void MPIR_Errhandler_set_cxx(MPI_Errhandler errhand, void (*errcall)(void))
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     fn.MPIR_Errhandler_set_cxx(errhand, errcall);
 }
 
+#undef FCNAME
+#define FCNAME MPIR_Op_set_cxx
 void MPIR_Op_set_cxx(MPI_Op op, void (*opcall)(void))
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     fn.MPIR_Op_set_cxx(op, opcall);
 }
 
+#undef FCNAME
+#define FCNAME MPID_Wtick
 double MPID_Wtick(void)
 {
+    /*MPICH_CHECK_INIT_VOID(FCNAME);*/ /* No checking for performance */
     return fn.MPID_Wtick();
 }
 
+#undef FCNAME
+#define FCNAME MPID_Wtime_todouble
 void MPID_Wtime_todouble(MPID_Time_t *t, double *val)
 {
+    /*MPICH_CHECK_INIT_VOID(FCNAME);*/ /* No checking for performance */
     fn.MPID_Wtime_todouble(t, val);
 }
 
 /* MPI versions */
+#undef FCNAME
+#define FCNAME MPI_Init
 int MPI_Init( int *argc, char ***argv )
 {
     int result;
+    MPICH_CHECK_INIT(FCNAME);
     result = fn.MPI_Init(argc, argv);
-    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
-    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    *fn.MPI_F_STATUS_IGNORE = MPI_F_STATUS_IGNORE;
+    *fn.MPI_F_STATUSES_IGNORE = MPI_F_STATUSES_IGNORE;
     return result;
 }
 
+#undef FCNAME
+#define FCNAME MPI_Init_thread
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     int result;
+    MPICH_CHECK_INIT(FCNAME);
     result = fn.MPI_Init_thread(argc, argv, required, provided);
-    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
-    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    *fn.MPI_F_STATUS_IGNORE = MPI_F_STATUS_IGNORE;
+    *fn.MPI_F_STATUSES_IGNORE = MPI_F_STATUSES_IGNORE;
     return result;
 }
 
+#undef FCNAME
+#define FCNAME MPI_Status_c2f
 int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Status_c2f(c_status, f_status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Status_f2c
 int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Status_f2c(f_status, c_status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Attr_delete
 int MPI_Attr_delete(MPI_Comm comm, int keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Attr_delete(comm, keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Attr_get
 int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Attr_get(comm, keyval, attr_value, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Attr_put
 int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Attr_put(comm, keyval, attr_value);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_create_keyval
 int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, 
 			   MPI_Comm_delete_attr_function *comm_delete_attr_fn, 
 			   int *comm_keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_create_keyval(comm_copy_attr_fn, comm_delete_attr_fn, comm_keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_delete_attr
 int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_delete_attr(comm, comm_keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_free_keyval
 int MPI_Comm_free_keyval(int *comm_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_free_keyval(comm_keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_get_attr
 int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_get_attr(comm, comm_keyval, attribute_val, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_set_attr
 int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_set_attr(comm, comm_keyval, attribute_val);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Keyval_create
 int MPI_Keyval_create(MPI_Copy_function *copy_fn, 
 		      MPI_Delete_function *delete_fn, 
 		      int *keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Keyval_create(copy_fn, delete_fn, keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Keyval_free
 int MPI_Keyval_free(int *keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Keyval_free(keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_keyval
 int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, 
 			   MPI_Type_delete_attr_function *type_delete_attr_fn,
 			   int *type_keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_keyval(type_copy_attr_fn, type_delete_attr_fn, type_keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_delete_attr
 int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_delete_attr(type, type_keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_free_keyval
 int MPI_Type_free_keyval(int *type_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_free_keyval(type_keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_get_attr
 int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_get_attr(type, type_keyval, attribute_val, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_set_attr
 int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_set_attr(type, type_keyval, attribute_val);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_create_keyval
 int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, 
 			  MPI_Win_delete_attr_function *win_delete_attr_fn, 
 			  int *win_keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_create_keyval(win_copy_attr_fn, win_delete_attr_fn, win_keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_delete_attr
 int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_delete_attr(win, win_keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_free_keyval
 int MPI_Win_free_keyval(int *win_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_free_keyval(win_keyval);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_get_attr
 int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, 
 		     int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_get_attr(win, win_keyval, attribute_val, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_set_attr
 int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_set_attr(win, win_keyval, attribute_val);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Allgather
 int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                   MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Allgatherv
 int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                    void *recvbuf, int *recvcounts, int *displs, 
                    MPI_Datatype recvtype, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Allgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Allreduce 
 int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count, 
 		    MPI_Datatype datatype, MPI_Op op, MPI_Comm comm )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Alltoall
 int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                  MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Alltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Alltoallv
 int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, 
                   MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
                   int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Alltoallv(sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Alltoallw
 int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, 
                   MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
                   int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Alltoallw(sendbuf, sendcnts, sdispls, sendtypes, recvbuf, recvcnts, rdispls, recvtypes, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Barrier
 int MPI_Barrier( MPI_Comm comm )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Barrier(comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Bcast
 int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, 
                MPI_Comm comm )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Bcast(buffer, count, datatype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Exscan
 int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
                MPI_Op op, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Exscan(sendbuf, recvbuf, count, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Gather
 int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
                int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Gatherv
 int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                 void *recvbuf, int *recvcnts, int *displs, 
                 MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Gatherv(sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Op_create
 int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Op_create(function, commute, op);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Op_free
 int MPI_Op_free(MPI_Op *op)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Op_free(op);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Reduce
 int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
 	       MPI_Op op, int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Reduce_scatter
 int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, 
 		       MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Reduce_scatter(sendbuf, recvbuf, recvcnts, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Scan
 int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
 	     MPI_Op op, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Scan(sendbuf, recvbuf, count, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Scatter
 int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
 		void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
 		MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Scatterv
 int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, 
 		  MPI_Datatype sendtype, void *recvbuf, int recvcnt,
 		  MPI_Datatype recvtype,
 		  int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Scatterv(sendbuf, sendcnts, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_compare
 int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_compare(comm1, comm2, result);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_create
 int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_create(comm, group, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_dup
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_dup(comm, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_free
 int MPI_Comm_free(MPI_Comm *comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_free(comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_get_name
 int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_get_name(comm, comm_name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_group
 int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_group(comm, group);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_rank
 int MPI_Comm_rank( MPI_Comm comm, int *rank )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_rank(comm, rank);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_remote_group
 int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_remote_group(comm, group);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_remote_size
 int MPI_Comm_remote_size(MPI_Comm comm, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_remote_size(comm, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_set_name
 int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_set_name(comm, comm_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_size
 int MPI_Comm_size( MPI_Comm comm, int *size )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_size(comm, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_split
 int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_split(comm, color, key, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_test_inter
 int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_test_inter(comm, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Intercomm_create
 int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, 
 			 MPI_Comm peer_comm, int remote_leader, int tag, 
 			 MPI_Comm *newintercomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Intercomm_create(local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Intercomm_merge
 int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Intercomm_merge(intercomm, high, newintracomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Address
 int MPI_Address( void *location, MPI_Aint *address )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Address(location, address);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Get_address
 int MPI_Get_address(void *location, MPI_Aint *address)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Get_address(location, address);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Get_count
 int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Get_count(status, datatype, count);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Get_elements
 int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Get_elements(status, datatype, elements);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Pack
 int MPI_Pack(void *inbuf,
 	     int incount,
 	     MPI_Datatype datatype,
@@ -2142,9 +2376,12 @@ int MPI_Pack(void *inbuf,
 	     int *position,
 	     MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Pack(inbuf, incount, datatype, outbuf, outcount, position, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Pack_external
 int MPI_Pack_external(char *datarep,
 		      void *inbuf,
 		      int incount,
@@ -2153,52 +2390,73 @@ int MPI_Pack_external(char *datarep,
 		      MPI_Aint outcount,
 		      MPI_Aint *position)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outcount, position);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Pack_external_size
 int MPI_Pack_external_size(char *datarep,
 			   int incount,
 			   MPI_Datatype datatype,
 			   MPI_Aint *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Pack_external_size(datarep, incount, datatype, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Pack_size
 int MPI_Pack_size(int incount,
 		  MPI_Datatype datatype,
 		  MPI_Comm comm,
 		  int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Pack_size(incount, datatype, comm, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Register_datarep
 int MPI_Register_datarep(char *datarep, 
 			 MPI_Datarep_conversion_function *read_conversion_fn, 
 			 MPI_Datarep_conversion_function *write_conversion_fn, 
 			 MPI_Datarep_extent_function *dtype_file_extent_fn, 
 			 void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Status_set_elements
 int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype, 
 			    int count)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Status_set_elements(status, datatype, count);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_commit
 int MPI_Type_commit(MPI_Datatype *datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_commit(datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_contiguous
 int MPI_Type_contiguous(int count,
 			MPI_Datatype old_type,
 			MPI_Datatype *new_type_p)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_contiguous(count, old_type, new_type_p);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_darray
 int MPI_Type_create_darray(int size,
 			   int rank,
 			   int ndims,
@@ -2210,53 +2468,71 @@ int MPI_Type_create_darray(int size,
 			   MPI_Datatype oldtype,
 			   MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_darray(size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_hindexed
 int MPI_Type_create_hindexed(int count,
 			     int blocklengths[],
 			     MPI_Aint displacements[],
 			     MPI_Datatype oldtype,
 			     MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_hindexed(count, blocklengths, displacements, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_hvector
 int MPI_Type_create_hvector(int count,
 			    int blocklength,
 			    MPI_Aint stride,
 			    MPI_Datatype oldtype,
 			    MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_hvector(count, blocklength, stride, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_indexed_block
 int MPI_Type_create_indexed_block(int count,
 				  int blocklength,
 				  int array_of_displacements[],
 				  MPI_Datatype oldtype,
 				  MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_indexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_resized
 int MPI_Type_create_resized(MPI_Datatype oldtype,
 			    MPI_Aint lb,
 			    MPI_Aint extent,
 			    MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_resized(oldtype, lb, extent, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_struct
 int MPI_Type_create_struct(int count,
 			   int array_of_blocklengths[],
 			   MPI_Aint array_of_displacements[],
 			   MPI_Datatype array_of_types[],
 			   MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_create_subarray
 int MPI_Type_create_subarray(int ndims,
 			     int array_of_sizes[],
 			     int array_of_subsizes[],
@@ -2265,24 +2541,36 @@ int MPI_Type_create_subarray(int ndims,
 			     MPI_Datatype oldtype,
 			     MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_subarray(ndims, array_of_sizes, array_of_subsizes, array_of_starts, order, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_dup
 int MPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_dup(datatype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_extent
 int MPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_extent(datatype, extent);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_free
 int MPI_Type_free(MPI_Datatype *datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_free(datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_get_contents
 int MPI_Type_get_contents(MPI_Datatype datatype,
 			  int max_integers,
 			  int max_addresses,
@@ -2291,104 +2579,149 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
 			  MPI_Aint array_of_addresses[],
 			  MPI_Datatype array_of_datatypes[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_get_contents(datatype, max_integers, max_addresses, max_datatypes, array_of_integers, array_of_addresses, array_of_datatypes);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_get_envelope
 int MPI_Type_get_envelope(MPI_Datatype datatype,
 			  int *num_integers,
 			  int *num_addresses,
 			  int *num_datatypes,
 			  int *combiner)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_get_envelope(datatype, num_integers, num_addresses, num_datatypes, combiner);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_get_extent
 int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_get_extent(datatype, lb, extent);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_get_name
 int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_get_name(datatype, type_name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_get_true_extent
 int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, 
 			     MPI_Aint *true_extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_get_true_extent(datatype, true_lb, true_extent);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_hindexed
 int MPI_Type_hindexed(int count,
 		      int blocklens[],
 		      MPI_Aint indices[],
 		      MPI_Datatype old_type,
 		      MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_hindexed(count, blocklens, indices, old_type, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_hvector
 int MPI_Type_hvector(int count,
 		     int blocklen,
 		     MPI_Aint stride,
 		     MPI_Datatype old_type,
 		     MPI_Datatype *newtype_p)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_hvector(count, blocklen, stride, old_type, newtype_p);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_indexed
 int MPI_Type_indexed(int count,
 		     int blocklens[],
 		     int indices[],
 		     MPI_Datatype old_type,
 		     MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_indexed(count, blocklens, indices, old_type, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_lb
 int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_lb(datatype, displacement);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_match_size
 int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_match_size(typeclass, size, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_set_name
 int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_set_name(type, type_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_size
 int MPI_Type_size(MPI_Datatype datatype, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_size(datatype, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_struct
 int MPI_Type_struct(int count,
 		    int blocklens[],
 		    MPI_Aint indices[],
 		    MPI_Datatype old_types[],
 		    MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_struct(count, blocklens, indices, old_types, newtype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_ub
 int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_ub(datatype, displacement);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Type_vector
 int MPI_Type_vector(int count,
 		    int blocklength,
 		    int stride, 
 		    MPI_Datatype old_type,
 		    MPI_Datatype *newtype_p)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_vector(count, blocklength, stride, old_type, newtype_p);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Unpack
 int MPI_Unpack(void *inbuf,
 	       int insize,
 	       int *position,
@@ -2397,9 +2730,12 @@ int MPI_Unpack(void *inbuf,
 	       MPI_Datatype datatype,
 	       MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Unpack(inbuf, insize, position, outbuf, outcount, datatype, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Unpack_external
 int MPI_Unpack_external(char *datarep,
 			void *inbuf,
 			MPI_Aint insize,
@@ -2408,219 +2744,344 @@ int MPI_Unpack_external(char *datarep,
 			int outcount,
 			MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Add_error_class
 int MPI_Add_error_class(int *errorclass)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Add_error_class(errorclass);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Add_error_code
 int MPI_Add_error_code(int errorclass, int *errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Add_error_code(errorclass, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Add_error_string
 int MPI_Add_error_string(int errorcode, char *string)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Add_error_string(errorcode, string);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_call_errhandler
 int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_call_errhandler(comm, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_create_errhandler
 int MPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, 
                                MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_create_errhandler(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_get_errhandler
 int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_get_errhandler(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_set_errhandler
 int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_set_errhandler(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Errhandler_create
 int MPI_Errhandler_create(MPI_Handler_function *function, 
                           MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Errhandler_create(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Errhandler_free
 int MPI_Errhandler_free(MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Errhandler_free(errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Errhandler_get
 int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Errhandler_get(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Errhandler_set
 int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Errhandler_set(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Error_class
 int MPI_Error_class(int errorcode, int *errorclass)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Error_class(errorcode, errorclass);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Error_string
 int MPI_Error_string(int errorcode, char *string, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Error_string(errorcode, string, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_call_errhandler
 int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_call_errhandler(fh, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_create_errhandler
 int MPI_File_create_errhandler(MPI_File_errhandler_fn *function, 
                                MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_create_errhandler(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_errhandler
 int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_errhandler(file, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_set_errhandler
 int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_set_errhandler(file, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_call_errhandler
 int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_call_errhandler(win, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_create_errhandler
 int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, 
 			      MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_create_errhandler(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_get_errhandler
 int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_get_errhandler(win, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_set_errhandler
 int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_set_errhandler(win, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_compare
 int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_compare(group1, group2, result);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_difference
 int MPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_difference(group1, group2, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_excl
 int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_excl(group, n, ranks, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_free
 int MPI_Group_free(MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_free(group);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_incl
 int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_incl(group, n, ranks, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_intersection
 int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_intersection(group1, group2, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_range_excl
 int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], 
                          MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_range_excl(group, n, ranges, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_range_incl
 int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], 
                          MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_range_incl(group, n, ranges, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_rank
 int MPI_Group_rank(MPI_Group group, int *rank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_rank(group, rank);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_size
 int MPI_Group_size(MPI_Group group, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_size(group, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_translate_ranks
 int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group group2, int *ranks2)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_translate_ranks(group1, n, ranks1, group2, ranks2);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Group_union
 int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Group_union(group1, group2, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Abort
 int MPI_Abort(MPI_Comm comm, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Abort(comm, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Finalize
 int MPI_Finalize( void )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Finalize();
 }
 
+#undef FCNAME
+#define FCNAME MPI_Finalized
 int MPI_Finalized( int *flag )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Finalized(flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Initialized
 int MPI_Initialized( int *flag )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Initialized(flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Is_thread_main
 int MPI_Is_thread_main( int *flag )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Is_thread_main(flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Query_thread
 int MPI_Query_thread( int *provided )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Query_thread(provided);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Get_processor_name
 int MPI_Get_processor_name( char *name, int *resultlen )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Get_processor_name(name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Pcontrol
 int MPI_Pcontrol(const int level, ...)
 {
     int ret_val;
     va_list list;
+
+    MPICH_CHECK_INIT(FCNAME);
 
     va_start(list, level);
     ret_val = fn.MPI_Pcontrol(level, list);
@@ -2628,1193 +3089,1825 @@ int MPI_Pcontrol(const int level, ...)
     return ret_val;
 }
 
+#undef FCNAME
+#define FCNAME MPI_Get_version
 int MPI_Get_version( int *version, int *subversion )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Get_version(version, subversion);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Bsend
 int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
 	      MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Bsend(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Bsend_init
 int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, 
                    int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Bsend_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Buffer_attach
 int MPI_Buffer_attach(void *buffer, int size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Buffer_attach(buffer, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Buffer_detach
 int MPI_Buffer_detach(void *buffer, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Buffer_detach(buffer, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cancel
 int MPI_Cancel(MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cancel(request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Grequest_complete
 int MPI_Grequest_complete( MPI_Request request )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Grequest_complete(request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Grequest_start
 int MPI_Grequest_start( MPI_Grequest_query_function *query_fn, 
 			MPI_Grequest_free_function *free_fn, 
 			MPI_Grequest_cancel_function *cancel_fn, 
 			void *extra_state, MPI_Request *request )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Grequest_start(query_fn, free_fn, cancel_fn, extra_state, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Ibsend
 int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
 	       MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Ibsend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Iprobe
 int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, 
 	       MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Iprobe(source, tag, comm, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Irecv
 int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 	      int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Irecv(buf, count, datatype, source, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Irsend
 int MPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	       MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Irsend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Isend
 int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Isend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Issend
 int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	       MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Issend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Probe
 int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Probe(source, tag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Recv
 int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	     MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Recv(buf, count, datatype, source, tag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Recv_init
 int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, 
 		  int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Recv_init(buf, count, datatype, source, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Request_free
 int MPI_Request_free(MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Request_free(request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Request_get_status
 int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Request_get_status(request, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Rsend
 int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Rsend(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Rsend_init
 int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		   int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Rsend_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Send
 int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	     MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Send(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Sendrecv
 int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
 		 int dest, int sendtag,
 		 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
 		 int source, int recvtag,
 		 MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Sendrecv_replace
 int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, 
 			 int dest, int sendtag, int source, int recvtag,
 			 MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Send_init
 int MPI_Send_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		  int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Send_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Ssend
 int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Ssend(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Ssend_init
 int MPI_Ssend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		   int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Ssend_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Start
 int MPI_Start(MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Start(request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Startall
 int MPI_Startall(int count, MPI_Request array_of_requests[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Startall(count, array_of_requests);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Status_set_cancelled
 int MPI_Status_set_cancelled(MPI_Status *status, int flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Status_set_cancelled(status, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Test
 int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Test(request, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Testall
 int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, 
 		MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Testall(count, array_of_requests, flag, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Testany
 int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, 
 		int *flag, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Testany(count, array_of_requests, index, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Testsome
 int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, 
 		 int array_of_indices[], MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Testsome(incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Test_cancelled
 int MPI_Test_cancelled(MPI_Status *status, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Test_cancelled(status, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Wait
 int MPI_Wait(MPI_Request *request, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Wait(request, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Waitall
 int MPI_Waitall(int count, MPI_Request array_of_requests[], 
 		MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Waitall(count, array_of_requests, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Waitany
 int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
 		MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Waitany(count, array_of_requests, index, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Waitsome
 int MPI_Waitsome(int incount, MPI_Request array_of_requests[], 
 		 int *outcount, int array_of_indices[],
 		 MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Waitsome(incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Accumulate
 int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint
                    target_disp, int target_count, MPI_Datatype
                    target_datatype, MPI_Op op, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Accumulate(origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, op, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Alloc_mem
 int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Alloc_mem(size, info, baseptr);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Free_mem
 int MPI_Free_mem(void *base)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Free_mem(base);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Get
 int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
             int target_count, MPI_Datatype target_datatype, MPI_Win
             win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Get(origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Put
 int MPI_Put(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
             int target_count, MPI_Datatype target_datatype, MPI_Win
             win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Put(origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_complete
 int MPI_Win_complete(MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_complete(win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_create
 int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
 		   MPI_Comm comm, MPI_Win *win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_create(base, size, disp_unit, info, comm, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_fence
 int MPI_Win_fence(int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_fence(assert, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_free
 int MPI_Win_free(MPI_Win *win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_free(win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_get_group
 int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_get_group(win, group);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_get_name
 int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_get_name(win, win_name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_lock
 int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_lock(lock_type, rank, assert, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_post
 int MPI_Win_post(MPI_Group group, int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_post(group, assert, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_set_name
 int MPI_Win_set_name(MPI_Win win, char *win_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_set_name(win, win_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_start
 int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_start(group, assert, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_test
 int MPI_Win_test(MPI_Win win, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_test(win, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_unlock
 int MPI_Win_unlock(int rank, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_unlock(rank, win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Win_wait
 int MPI_Win_wait(MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Win_wait(win);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_close
 int MPI_File_close(MPI_File *mpi_fh)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_close(mpi_fh);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_delete
 int MPI_File_delete(char *filename, MPI_Info info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_delete(filename, info);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_c2f
 MPI_Fint MPI_File_c2f(MPI_File mpi_fh)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     return fn.MPI_File_c2f(mpi_fh);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_f2c
 MPI_File MPI_File_f2c(MPI_Fint i)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     return fn.MPI_File_f2c(i);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_sync
 int MPI_File_sync(MPI_File mpi_fh)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_sync(mpi_fh);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_amode
 int MPI_File_get_amode(MPI_File mpi_fh, int *amode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_amode(mpi_fh, amode);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_atomicity
 int MPI_File_get_atomicity(MPI_File mpi_fh, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_atomicity(mpi_fh, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_byte_offset
 int MPI_File_get_byte_offset(MPI_File mpi_fh,
 			     MPI_Offset offset,
 			     MPI_Offset *disp)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_byte_offset(mpi_fh, offset, disp);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_type_extent
 int MPI_File_get_type_extent(MPI_File mpi_fh, MPI_Datatype datatype, 
                              MPI_Aint *extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_type_extent(mpi_fh, datatype, extent);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_group
 int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_group(mpi_fh, group);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_info
 int MPI_File_get_info(MPI_File mpi_fh, MPI_Info *info_used)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_info(mpi_fh, info_used);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_position
 int MPI_File_get_position(MPI_File mpi_fh, MPI_Offset *offset)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_position(mpi_fh, offset);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_position_shared
 int MPI_File_get_position_shared(MPI_File mpi_fh, MPI_Offset *offset)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_position_shared(mpi_fh, offset);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_size
 int MPI_File_get_size(MPI_File mpi_fh, MPI_Offset *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_size(mpi_fh, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_get_view
 int MPI_File_get_view(MPI_File mpi_fh,
 		      MPI_Offset *disp,
 		      MPI_Datatype *etype,
 		      MPI_Datatype *filetype,
 		      char *datarep)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_get_view(mpi_fh, disp, etype, filetype, datarep);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_iread
 int MPI_File_iread(MPI_File mpi_fh, void *buf, int count, 
 		   MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_iread(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_iread_at
 int MPI_File_iread_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                       int count, MPI_Datatype datatype, 
                       MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_iread_at(mpi_fh, offset, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_iread_shared
 int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count, 
 			  MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_iread_shared(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_iwrite
 int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count, 
 		    MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_iwrite(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_iwrite_at
 int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_iwrite_at(mpi_fh, offset, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_iwrite_shared
 int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count, 
 			   MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_iwrite_shared(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_open
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
                   MPI_Info info, MPI_File *fh)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_open(comm, filename, amode, info, fh);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_preallocate
 int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_preallocate(mpi_fh, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_at_all_begin
 int MPI_File_read_at_all_begin(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 			       int count, MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_at_all_begin(mpi_fh, offset, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_at_all_end
 int MPI_File_read_at_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_at_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read
 int MPI_File_read(MPI_File mpi_fh, void *buf, int count, 
                   MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_all
 int MPI_File_read_all(MPI_File mpi_fh, void *buf, int count, 
                       MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_all(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_all_begin
 int MPI_File_read_all_begin(MPI_File mpi_fh, void *buf, int count, 
                             MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_all_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_all_end
 int MPI_File_read_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_at
 int MPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 		     int count, MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_at(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_at_all
 int MPI_File_read_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                          int count, MPI_Datatype datatype, 
                          MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_at_all(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_ordered
 int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count, 
                           MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_ordered(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_ordered_begin
 int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count, 
 				MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_ordered_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_ordered_end
 int MPI_File_read_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_ordered_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_read_shared
 int MPI_File_read_shared(MPI_File mpi_fh, void *buf, int count, 
 			 MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_read_shared(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_seek
 int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_seek(mpi_fh, offset, whence);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_seek_shared
 int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_seek_shared(mpi_fh, offset, whence);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_set_atomicity
 int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_set_atomicity(mpi_fh, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_set_info
 int MPI_File_set_info(MPI_File mpi_fh, MPI_Info info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_set_info(mpi_fh, info);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_set_size
 int MPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_set_size(mpi_fh, size);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_set_view
 int MPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
 		      MPI_Datatype filetype, char *datarep, MPI_Info info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_set_view(mpi_fh, disp, etype, filetype, datarep, info);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write
 int MPI_File_write(MPI_File mpi_fh, void *buf, int count, 
                    MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_all
 int MPI_File_write_all(MPI_File mpi_fh, void *buf, int count, 
                        MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_all(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_all_begin
 int MPI_File_write_all_begin(MPI_File mpi_fh, void *buf, int count, 
 			     MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_all_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_all_end
 int MPI_File_write_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_at
 int MPI_File_write_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                       int count, MPI_Datatype datatype, 
                       MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_at(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_at_all
 int MPI_File_write_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                           int count, MPI_Datatype datatype, 
                           MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_at_all(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_ordered
 int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count, 
 			   MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_ordered(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_ordered_begin
 int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count, 
 				 MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_ordered_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_ordered_end
 int MPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_ordered_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_shared
 int MPI_File_write_shared(MPI_File mpi_fh, void *buf, int count, 
                           MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_shared(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_at_all_begin
 int MPI_File_write_at_all_begin(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 				int count, MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_at_all_begin(mpi_fh, offset, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME MPI_File_write_at_all_end
 int MPI_File_write_at_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_File_write_at_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_create
 int MPI_Info_create(MPI_Info *info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_create(info);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_delete
 int MPI_Info_delete(MPI_Info info, char *key)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_delete(info, key);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_dup
 int MPI_Info_dup(MPI_Info info, MPI_Info *newinfo)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_dup(info, newinfo);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_free
 int MPI_Info_free(MPI_Info *info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_free(info);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_get
 int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_get(info, key, valuelen, value, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_get_nkeys
 int MPI_Info_get_nkeys(MPI_Info info, int *nkeys)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_get_nkeys(info, nkeys);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_get_nthkey
 int MPI_Info_get_nthkey(MPI_Info info, int n, char *key)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_get_nthkey(info, n, key);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_get_valuelen
 int MPI_Info_get_valuelen(MPI_Info info, char *key, int *valuelen, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_get_valuelen(info, key, valuelen, flag);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Info_set
 int MPI_Info_set(MPI_Info info, char *key, char *value)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Info_set(info, key, value);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Close_port
 int MPI_Close_port(char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Close_port(port_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_accept
 int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
                     MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_accept(port_name, info, root, comm, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_connect
 int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
                      MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_connect(port_name, info, root, comm, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_disconnect
 int MPI_Comm_disconnect(MPI_Comm * comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_disconnect(comm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_get_parent
 int MPI_Comm_get_parent(MPI_Comm *parent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_get_parent(parent);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_join
 int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_join(fd, intercomm);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_spawn
 int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, 
 		   int root, MPI_Comm comm, MPI_Comm *intercomm,
 		   int array_of_errcodes[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Comm_spawn_multiple
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_of_argv[], int array_of_maxprocs[], MPI_Info array_of_info[], int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Lookup_name
 int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Lookup_name(service_name, info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Open_port
 int MPI_Open_port(MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Open_port(info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Publish_name
 int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Publish_name(service_name, info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Unpublish_name
 int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Unpublish_name(service_name, info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cartdim_get
 int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cartdim_get(comm, ndims);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_coords
 int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_coords(comm, rank, maxdims, coords);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_create
 int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
 		    int reorder, MPI_Comm *comm_cart)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_create(comm_old, ndims, dims, periods, reorder, comm_cart);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_get
 int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, 
                  int *coords)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_get(comm, maxdims, dims, periods, coords);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_map
 int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
 		 int *newrank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_map(comm_old, ndims, dims, periods, newrank);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_rank
 int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_rank(comm, coords, rank);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_shift
 int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, 
 		   int *dest)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_shift(comm, direction, displ, source, dest);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Cart_sub
 int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Cart_sub(comm, remain_dims, comm_new);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Dims_create
 int MPI_Dims_create(int nnodes, int ndims, int *dims)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Dims_create(nnodes, ndims, dims);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Graph_create
 int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges, 
 		     int reorder, MPI_Comm *comm_graph)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Graph_create(comm_old, nnodes, index, edges, reorder, comm_graph);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Graphdims_get
 int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Graphdims_get(comm, nnodes, nedges);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Graph_neighbors_count
 int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Graph_neighbors_count(comm, rank, nneighbors);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Graph_get
 int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, 
                   int *index, int *edges)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Graph_get(comm, maxindex, maxedges, index, edges);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Graph_map
 int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
                   int *newrank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Graph_map(comm_old, nnodes, index, edges, newrank);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Graph_neighbors
 int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, 
 			int *neighbors)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Graph_neighbors(comm, rank, maxneighbors, neighbors);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Topo_test
 int MPI_Topo_test(MPI_Comm comm, int *topo_type)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Topo_test(comm, topo_type);
 }
 
+#undef FCNAME
+#define FCNAME MPI_Wtime
 double MPI_Wtime()
 {
+    /*MPICH_CHECK_INIT_VOID(FCNAME);*/ /* No checking for performance */
     return fn.MPI_Wtime();
 }
 
+#undef FCNAME
+#define FCNAME MPI_Wtick
 double MPI_Wtick()
 {
+    /*MPICH_CHECK_INIT_VOID(FCNAME);*/ /* No checking for performance */
     return fn.MPI_Wtick();
 }
 
 /* PMPI versions */
+#undef FCNAME
+#define FCNAME PMPI_Init
 int PMPI_Init( int *argc, char ***argv )
 {
     int result;
+    MPICH_CHECK_INIT(FCNAME);
     result = fn.PMPI_Init(argc, argv);
-    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
-    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    *fn.MPI_F_STATUS_IGNORE = MPI_F_STATUS_IGNORE;
+    *fn.MPI_F_STATUSES_IGNORE = MPI_F_STATUSES_IGNORE;
     return result;
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Init_thread
 int PMPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     int result;
+    MPICH_CHECK_INIT(FCNAME);
     result = fn.PMPI_Init_thread(argc, argv, required, provided);
-    MPI_F_STATUS_IGNORE = *fn.MPI_F_STATUS_IGNORE;
-    MPI_F_STATUSES_IGNORE = *fn.MPI_F_STATUSES_IGNORE;
+    *fn.MPI_F_STATUS_IGNORE = MPI_F_STATUS_IGNORE;
+    *fn.MPI_F_STATUSES_IGNORE = MPI_F_STATUSES_IGNORE;
     return result;
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Status_c2f
 int PMPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Status_c2f(c_status, f_status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Status_f2c
 int PMPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Status_f2c(f_status, c_status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Attr_delete
 int PMPI_Attr_delete(MPI_Comm comm, int keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Attr_delete(comm, keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Attr_get
 int PMPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Attr_get(comm, keyval, attr_value, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Attr_put
 int PMPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Attr_put(comm, keyval, attr_value);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_create_keyval
 int PMPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, 
 			   MPI_Comm_delete_attr_function *comm_delete_attr_fn, 
 			   int *comm_keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_create_keyval(comm_copy_attr_fn, comm_delete_attr_fn, comm_keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_delete_attr
 int PMPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_delete_attr(comm, comm_keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_free_keyval
 int PMPI_Comm_free_keyval(int *comm_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_free_keyval(comm_keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_get_attr
 int PMPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_get_attr(comm, comm_keyval, attribute_val, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_set_attr
 int PMPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_set_attr(comm, comm_keyval, attribute_val);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Keyval_create
 int PMPI_Keyval_create(MPI_Copy_function *copy_fn, 
 		      MPI_Delete_function *delete_fn, 
 		      int *keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Keyval_create(copy_fn, delete_fn, keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Keyval_free
 int PMPI_Keyval_free(int *keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Keyval_free(keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_keyval
 int PMPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, 
 			   MPI_Type_delete_attr_function *type_delete_attr_fn,
 			   int *type_keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_keyval(type_copy_attr_fn, type_delete_attr_fn, type_keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_delete_attr
 int PMPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_delete_attr(type, type_keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_free_keyval
 int PMPI_Type_free_keyval(int *type_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_free_keyval(type_keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_get_attr
 int PMPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_get_attr(type, type_keyval, attribute_val, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_set_attr
 int PMPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_set_attr(type, type_keyval, attribute_val);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_create_keyval
 int PMPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn, 
 			  MPI_Win_delete_attr_function *win_delete_attr_fn, 
 			  int *win_keyval, void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_create_keyval(win_copy_attr_fn, win_delete_attr_fn, win_keyval, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_delete_attr
 int PMPI_Win_delete_attr(MPI_Win win, int win_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_delete_attr(win, win_keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_free_keyval
 int PMPI_Win_free_keyval(int *win_keyval)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_free_keyval(win_keyval);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_get_attr
 int PMPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, 
 		     int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_get_attr(win, win_keyval, attribute_val, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_set_attr
 int PMPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_set_attr(win, win_keyval, attribute_val);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Allgather
 int PMPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                   MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Allgatherv
 int PMPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                    void *recvbuf, int *recvcounts, int *displs, 
                    MPI_Datatype recvtype, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Allgatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Allreduce 
 int PMPI_Allreduce ( void *sendbuf, void *recvbuf, int count, 
 		    MPI_Datatype datatype, MPI_Op op, MPI_Comm comm )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Alltoall
 int PMPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                  MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Alltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Alltoallv
 int PMPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, 
                   MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
                   int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Alltoallv(sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Alltoallw
 int PMPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, 
                   MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
                   int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Alltoallw(sendbuf, sendcnts, sdispls, sendtypes, recvbuf, recvcnts, rdispls, recvtypes, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Barrier
 int PMPI_Barrier( MPI_Comm comm )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Barrier(comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Bcast
 int PMPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, 
                MPI_Comm comm )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Bcast(buffer, count, datatype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Exscan
 int PMPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
                MPI_Op op, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Exscan(sendbuf, recvbuf, count, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Gather
 int PMPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
                int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Gatherv
 int PMPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                 void *recvbuf, int *recvcnts, int *displs, 
                 MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Gatherv(sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Op_create
 int PMPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Op_create(function, commute, op);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Op_free
 int PMPI_Op_free(MPI_Op *op)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Op_free(op);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Reduce
 int PMPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
 	       MPI_Op op, int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Reduce_scatter
 int PMPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, 
 		       MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Reduce_scatter(sendbuf, recvbuf, recvcnts, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Scan
 int PMPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
 	     MPI_Op op, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Scan(sendbuf, recvbuf, count, datatype, op, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Scatter
 int PMPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
 		void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
 		MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Scatterv
 int PMPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, 
 		  MPI_Datatype sendtype, void *recvbuf, int recvcnt,
 		  MPI_Datatype recvtype,
 		  int root, MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Scatterv(sendbuf, sendcnts, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_compare
 int PMPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_compare(comm1, comm2, result);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_create
 int PMPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_create(comm, group, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_dup
 int PMPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_dup(comm, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_free
 int PMPI_Comm_free(MPI_Comm *comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_free(comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_get_name
 int PMPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_get_name(comm, comm_name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_group
 int PMPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_group(comm, group);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_rank
 int PMPI_Comm_rank( MPI_Comm comm, int *rank )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_rank(comm, rank);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_remote_group
 int PMPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_remote_group(comm, group);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_remote_size
 int PMPI_Comm_remote_size(MPI_Comm comm, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_remote_size(comm, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_set_name
 int PMPI_Comm_set_name(MPI_Comm comm, char *comm_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_set_name(comm, comm_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_size
 int PMPI_Comm_size( MPI_Comm comm, int *size )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_size(comm, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_split
 int PMPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_split(comm, color, key, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_test_inter
 int PMPI_Comm_test_inter(MPI_Comm comm, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_test_inter(comm, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Intercomm_create
 int PMPI_Intercomm_create(MPI_Comm local_comm, int local_leader, 
 			 MPI_Comm peer_comm, int remote_leader, int tag, 
 			 MPI_Comm *newintercomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Intercomm_create(local_comm, local_leader, peer_comm, remote_leader, tag, newintercomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Intercomm_merge
 int PMPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Intercomm_merge(intercomm, high, newintracomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Address
 int PMPI_Address( void *location, MPI_Aint *address )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Address(location, address);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Get_address
 int PMPI_Get_address(void *location, MPI_Aint *address)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Get_address(location, address);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Get_count
 int PMPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Get_count(status, datatype, count);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Get_elements
 int PMPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Get_elements(status, datatype, elements);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Pack
 int PMPI_Pack(void *inbuf,
 	     int incount,
 	     MPI_Datatype datatype,
@@ -3823,9 +4916,12 @@ int PMPI_Pack(void *inbuf,
 	     int *position,
 	     MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Pack(inbuf, incount, datatype, outbuf, outcount, position, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Pack_external
 int PMPI_Pack_external(char *datarep,
 		      void *inbuf,
 		      int incount,
@@ -3834,52 +4930,73 @@ int PMPI_Pack_external(char *datarep,
 		      MPI_Aint outcount,
 		      MPI_Aint *position)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Pack_external(datarep, inbuf, incount, datatype, outbuf, outcount, position);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Pack_external_size
 int PMPI_Pack_external_size(char *datarep,
 			   int incount,
 			   MPI_Datatype datatype,
 			   MPI_Aint *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Pack_external_size(datarep, incount, datatype, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Pack_size
 int PMPI_Pack_size(int incount,
 		  MPI_Datatype datatype,
 		  MPI_Comm comm,
 		  int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Pack_size(incount, datatype, comm, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Register_datarep
 int PMPI_Register_datarep(char *datarep, 
 			 MPI_Datarep_conversion_function *read_conversion_fn, 
 			 MPI_Datarep_conversion_function *write_conversion_fn, 
 			 MPI_Datarep_extent_function *dtype_file_extent_fn, 
 			 void *extra_state)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Register_datarep(datarep, read_conversion_fn, write_conversion_fn, dtype_file_extent_fn, extra_state);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Status_set_elements
 int PMPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype, 
 			    int count)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Status_set_elements(status, datatype, count);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_commit
 int PMPI_Type_commit(MPI_Datatype *datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_commit(datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_contiguous
 int PMPI_Type_contiguous(int count,
 			MPI_Datatype old_type,
 			MPI_Datatype *new_type_p)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_contiguous(count, old_type, new_type_p);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_darray
 int PMPI_Type_create_darray(int size,
 			   int rank,
 			   int ndims,
@@ -3891,53 +5008,71 @@ int PMPI_Type_create_darray(int size,
 			   MPI_Datatype oldtype,
 			   MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_darray(size, rank, ndims, array_of_gsizes, array_of_distribs, array_of_dargs, array_of_psizes, order, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_hindexed
 int PMPI_Type_create_hindexed(int count,
 			     int blocklengths[],
 			     MPI_Aint displacements[],
 			     MPI_Datatype oldtype,
 			     MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_hindexed(count, blocklengths, displacements, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_hvector
 int PMPI_Type_create_hvector(int count,
 			    int blocklength,
 			    MPI_Aint stride,
 			    MPI_Datatype oldtype,
 			    MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_hvector(count, blocklength, stride, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_indexed_block
 int PMPI_Type_create_indexed_block(int count,
 				  int blocklength,
 				  int array_of_displacements[],
 				  MPI_Datatype oldtype,
 				  MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_indexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_resized
 int PMPI_Type_create_resized(MPI_Datatype oldtype,
 			    MPI_Aint lb,
 			    MPI_Aint extent,
 			    MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_resized(oldtype, lb, extent, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_struct
 int PMPI_Type_create_struct(int count,
 			   int array_of_blocklengths[],
 			   MPI_Aint array_of_displacements[],
 			   MPI_Datatype array_of_types[],
 			   MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_struct(count, array_of_blocklengths, array_of_displacements, array_of_types, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_create_subarray
 int PMPI_Type_create_subarray(int ndims,
 			     int array_of_sizes[],
 			     int array_of_subsizes[],
@@ -3946,24 +5081,36 @@ int PMPI_Type_create_subarray(int ndims,
 			     MPI_Datatype oldtype,
 			     MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_subarray(ndims, array_of_sizes, array_of_subsizes, array_of_starts, order, oldtype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_dup
 int PMPI_Type_dup(MPI_Datatype datatype, MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_dup(datatype, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_extent
 int PMPI_Type_extent(MPI_Datatype datatype, MPI_Aint *extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_extent(datatype, extent);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_free
 int PMPI_Type_free(MPI_Datatype *datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_free(datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_get_contents
 int PMPI_Type_get_contents(MPI_Datatype datatype,
 			  int max_integers,
 			  int max_addresses,
@@ -3972,104 +5119,149 @@ int PMPI_Type_get_contents(MPI_Datatype datatype,
 			  MPI_Aint array_of_addresses[],
 			  MPI_Datatype array_of_datatypes[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_get_contents(datatype, max_integers, max_addresses, max_datatypes, array_of_integers, array_of_addresses, array_of_datatypes);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_get_envelope
 int PMPI_Type_get_envelope(MPI_Datatype datatype,
 			  int *num_integers,
 			  int *num_addresses,
 			  int *num_datatypes,
 			  int *combiner)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_get_envelope(datatype, num_integers, num_addresses, num_datatypes, combiner);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_get_extent
 int PMPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_get_extent(datatype, lb, extent);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_get_name
 int PMPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_get_name(datatype, type_name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_get_true_extent
 int PMPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, 
 			     MPI_Aint *true_extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_get_true_extent(datatype, true_lb, true_extent);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_hindexed
 int PMPI_Type_hindexed(int count,
 		      int blocklens[],
 		      MPI_Aint indices[],
 		      MPI_Datatype old_type,
 		      MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_hindexed(count, blocklens, indices, old_type, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_hvector
 int PMPI_Type_hvector(int count,
 		     int blocklen,
 		     MPI_Aint stride,
 		     MPI_Datatype old_type,
 		     MPI_Datatype *newtype_p)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_hvector(count, blocklen, stride, old_type, newtype_p);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_indexed
 int PMPI_Type_indexed(int count,
 		     int blocklens[],
 		     int indices[],
 		     MPI_Datatype old_type,
 		     MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_indexed(count, blocklens, indices, old_type, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_lb
 int PMPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_lb(datatype, displacement);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_match_size
 int PMPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_match_size(typeclass, size, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_set_name
 int PMPI_Type_set_name(MPI_Datatype type, char *type_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_set_name(type, type_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_size
 int PMPI_Type_size(MPI_Datatype datatype, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_size(datatype, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_struct
 int PMPI_Type_struct(int count,
 		    int blocklens[],
 		    MPI_Aint indices[],
 		    MPI_Datatype old_types[],
 		    MPI_Datatype *newtype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_struct(count, blocklens, indices, old_types, newtype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_ub
 int PMPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_ub(datatype, displacement);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Type_vector
 int PMPI_Type_vector(int count,
 		    int blocklength,
 		    int stride, 
 		    MPI_Datatype old_type,
 		    MPI_Datatype *newtype_p)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_vector(count, blocklength, stride, old_type, newtype_p);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Unpack
 int PMPI_Unpack(void *inbuf,
 	       int insize,
 	       int *position,
@@ -4078,9 +5270,12 @@ int PMPI_Unpack(void *inbuf,
 	       MPI_Datatype datatype,
 	       MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Unpack(inbuf, insize, position, outbuf, outcount, datatype, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Unpack_external
 int PMPI_Unpack_external(char *datarep,
 			void *inbuf,
 			MPI_Aint insize,
@@ -4089,215 +5284,338 @@ int PMPI_Unpack_external(char *datarep,
 			int outcount,
 			MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Unpack_external(datarep, inbuf, insize, position, outbuf, outcount, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Add_error_class
 int PMPI_Add_error_class(int *errorclass)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Add_error_class(errorclass);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Add_error_code
 int PMPI_Add_error_code(int errorclass, int *errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Add_error_code(errorclass, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Add_error_string
 int PMPI_Add_error_string(int errorcode, char *string)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Add_error_string(errorcode, string);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_call_errhandler
 int PMPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_call_errhandler(comm, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_create_errhandler
 int PMPI_Comm_create_errhandler(MPI_Comm_errhandler_fn *function, 
                                MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_create_errhandler(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_get_errhandler
 int PMPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_get_errhandler(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_set_errhandler
 int PMPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_set_errhandler(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Errhandler_create
 int PMPI_Errhandler_create(MPI_Handler_function *function, 
                           MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Errhandler_create(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Errhandler_free
 int PMPI_Errhandler_free(MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Errhandler_free(errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Errhandler_get
 int PMPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Errhandler_get(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Errhandler_set
 int PMPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Errhandler_set(comm, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Error_class
 int PMPI_Error_class(int errorcode, int *errorclass)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Error_class(errorcode, errorclass);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Error_string
 int PMPI_Error_string(int errorcode, char *string, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Error_string(errorcode, string, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_call_errhandler
 int PMPI_File_call_errhandler(MPI_File fh, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_call_errhandler(fh, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_create_errhandler
 int PMPI_File_create_errhandler(MPI_File_errhandler_fn *function, 
                                MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_create_errhandler(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_errhandler
 int PMPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_errhandler(file, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_set_errhandler
 int PMPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_set_errhandler(file, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_call_errhandler
 int PMPI_Win_call_errhandler(MPI_Win win, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_call_errhandler(win, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_create_errhandler
 int PMPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, 
 			      MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_create_errhandler(function, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_get_errhandler
 int PMPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_get_errhandler(win, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_set_errhandler
 int PMPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_set_errhandler(win, errhandler);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_compare
 int PMPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_compare(group1, group2, result);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_difference
 int PMPI_Group_difference(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_difference(group1, group2, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_excl
 int PMPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_excl(group, n, ranks, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_free
 int PMPI_Group_free(MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_free(group);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_incl
 int PMPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_incl(group, n, ranks, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_intersection
 int PMPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_intersection(group1, group2, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_range_excl
 int PMPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], 
                          MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_range_excl(group, n, ranges, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_range_incl
 int PMPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], 
                          MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_range_incl(group, n, ranges, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_rank
 int PMPI_Group_rank(MPI_Group group, int *rank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_rank(group, rank);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_size
 int PMPI_Group_size(MPI_Group group, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_size(group, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_translate_ranks
 int PMPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group group2, int *ranks2)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_translate_ranks(group1, n, ranks1, group2, ranks2);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Group_union
 int PMPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Group_union(group1, group2, newgroup);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Abort
 int PMPI_Abort(MPI_Comm comm, int errorcode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Abort(comm, errorcode);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Finalize
 int PMPI_Finalize( void )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Finalize();
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Finalized
 int PMPI_Finalized( int *flag )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Finalized(flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Initialized
 int PMPI_Initialized( int *flag )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Initialized(flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Is_thread_main
 int PMPI_Is_thread_main( int *flag )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Is_thread_main(flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Query_thread
 int PMPI_Query_thread( int *provided )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Query_thread(provided);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Get_processor_name
 int PMPI_Get_processor_name( char *name, int *resultlen )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Get_processor_name(name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Pcontrol
 int PMPI_Pcontrol(const int level, ...)
 {
     int ret_val;
@@ -4309,839 +5627,1286 @@ int PMPI_Pcontrol(const int level, ...)
     return ret_val;
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Get_version
 int PMPI_Get_version( int *version, int *subversion )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Get_version(version, subversion);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Bsend
 int PMPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
 	      MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Bsend(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Bsend_init
 int PMPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, 
                    int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Bsend_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Buffer_attach
 int PMPI_Buffer_attach(void *buffer, int size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Buffer_attach(buffer, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Buffer_detach
 int PMPI_Buffer_detach(void *buffer, int *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Buffer_detach(buffer, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cancel
 int PMPI_Cancel(MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cancel(request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Grequest_complete
 int PMPI_Grequest_complete( MPI_Request request )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Grequest_complete(request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Grequest_start
 int PMPI_Grequest_start( MPI_Grequest_query_function *query_fn, 
 			MPI_Grequest_free_function *free_fn, 
 			MPI_Grequest_cancel_function *cancel_fn, 
 			void *extra_state, MPI_Request *request )
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Grequest_start(query_fn, free_fn, cancel_fn, extra_state, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Ibsend
 int PMPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
 	       MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Ibsend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Iprobe
 int PMPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, 
 	       MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Iprobe(source, tag, comm, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Irecv
 int PMPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 	      int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Irecv(buf, count, datatype, source, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Irsend
 int PMPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	       MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Irsend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Isend
 int PMPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Isend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Issend
 int PMPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	       MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Issend(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Probe
 int PMPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Probe(source, tag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Recv
 int PMPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 	     MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Recv(buf, count, datatype, source, tag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Recv_init
 int PMPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, 
 		  int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Recv_init(buf, count, datatype, source, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Request_free
 int PMPI_Request_free(MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Request_free(request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Request_get_status
 int PMPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Request_get_status(request, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Rsend
 int PMPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Rsend(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Rsend_init
 int PMPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		   int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Rsend_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Send
 int PMPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	     MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Send(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Sendrecv
 int PMPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
 		 int dest, int sendtag,
 		 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
 		 int source, int recvtag,
 		 MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Sendrecv(sendbuf, sendcount, sendtype, dest, sendtag, recvbuf, recvcount, recvtype, source, recvtag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Sendrecv_replace
 int PMPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, 
 			 int dest, int sendtag, int source, int recvtag,
 			 MPI_Comm comm, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Sendrecv_replace(buf, count, datatype, dest, sendtag, source, recvtag, comm, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Send_init
 int PMPI_Send_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		  int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Send_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Ssend
 int PMPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Ssend(buf, count, datatype, dest, tag, comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Ssend_init
 int PMPI_Ssend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 		   int tag, MPI_Comm comm, MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Ssend_init(buf, count, datatype, dest, tag, comm, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Start
 int PMPI_Start(MPI_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Start(request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Startall
 int PMPI_Startall(int count, MPI_Request array_of_requests[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Startall(count, array_of_requests);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Status_set_cancelled
 int PMPI_Status_set_cancelled(MPI_Status *status, int flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Status_set_cancelled(status, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Test
 int PMPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Test(request, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Testall
 int PMPI_Testall(int count, MPI_Request array_of_requests[], int *flag, 
 		MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Testall(count, array_of_requests, flag, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Testany
 int PMPI_Testany(int count, MPI_Request array_of_requests[], int *index, 
 		int *flag, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Testany(count, array_of_requests, index, flag, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Testsome
 int PMPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, 
 		 int array_of_indices[], MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Testsome(incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Test_cancelled
 int PMPI_Test_cancelled(MPI_Status *status, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Test_cancelled(status, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Wait
 int PMPI_Wait(MPI_Request *request, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Wait(request, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Waitall
 int PMPI_Waitall(int count, MPI_Request array_of_requests[], 
 		MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Waitall(count, array_of_requests, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Waitany
 int PMPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
 		MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Waitany(count, array_of_requests, index, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Waitsome
 int PMPI_Waitsome(int incount, MPI_Request array_of_requests[], 
 		 int *outcount, int array_of_indices[],
 		 MPI_Status array_of_statuses[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Waitsome(incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Accumulate
 int PMPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint
                    target_disp, int target_count, MPI_Datatype
                    target_datatype, MPI_Op op, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Accumulate(origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, op, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Alloc_mem
 int PMPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Alloc_mem(size, info, baseptr);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Free_mem
 int PMPI_Free_mem(void *base)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Free_mem(base);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Get
 int PMPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
             int target_count, MPI_Datatype target_datatype, MPI_Win
             win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Get(origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Put
 int PMPI_Put(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
             int target_count, MPI_Datatype target_datatype, MPI_Win
             win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Put(origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_complete
 int PMPI_Win_complete(MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_complete(win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_create
 int PMPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
 		   MPI_Comm comm, MPI_Win *win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_create(base, size, disp_unit, info, comm, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_fence
 int PMPI_Win_fence(int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_fence(assert, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_free
 int PMPI_Win_free(MPI_Win *win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_free(win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_get_group
 int PMPI_Win_get_group(MPI_Win win, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_get_group(win, group);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_get_name
 int PMPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_get_name(win, win_name, resultlen);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_lock
 int PMPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_lock(lock_type, rank, assert, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_post
 int PMPI_Win_post(MPI_Group group, int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_post(group, assert, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_set_name
 int PMPI_Win_set_name(MPI_Win win, char *win_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_set_name(win, win_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_start
 int PMPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_start(group, assert, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_test
 int PMPI_Win_test(MPI_Win win, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_test(win, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_unlock
 int PMPI_Win_unlock(int rank, MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_unlock(rank, win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Win_wait
 int PMPI_Win_wait(MPI_Win win)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Win_wait(win);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_close
 int PMPI_File_close(MPI_File *mpi_fh)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_close(mpi_fh);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_delete
 int PMPI_File_delete(char *filename, MPI_Info info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_delete(filename, info);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_c2f
 MPI_Fint PMPI_File_c2f(MPI_File mpi_fh)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     return fn.PMPI_File_c2f(mpi_fh);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_f2c
 MPI_File PMPI_File_f2c(MPI_Fint i)
 {
+    MPICH_CHECK_INIT_VOID(FCNAME);
     return fn.PMPI_File_f2c(i);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_sync
 int PMPI_File_sync(MPI_File mpi_fh)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_sync(mpi_fh);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_amode
 int PMPI_File_get_amode(MPI_File mpi_fh, int *amode)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_amode(mpi_fh, amode);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_atomicity
 int PMPI_File_get_atomicity(MPI_File mpi_fh, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_atomicity(mpi_fh, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_byte_offset
 int PMPI_File_get_byte_offset(MPI_File mpi_fh,
 			     MPI_Offset offset,
 			     MPI_Offset *disp)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_byte_offset(mpi_fh, offset, disp);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_type_extent
 int PMPI_File_get_type_extent(MPI_File mpi_fh, MPI_Datatype datatype, 
                              MPI_Aint *extent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_type_extent(mpi_fh, datatype, extent);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_group
 int PMPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_group(mpi_fh, group);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_info
 int PMPI_File_get_info(MPI_File mpi_fh, MPI_Info *info_used)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_info(mpi_fh, info_used);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_position
 int PMPI_File_get_position(MPI_File mpi_fh, MPI_Offset *offset)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_position(mpi_fh, offset);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_position_shared
 int PMPI_File_get_position_shared(MPI_File mpi_fh, MPI_Offset *offset)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_position_shared(mpi_fh, offset);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_size
 int PMPI_File_get_size(MPI_File mpi_fh, MPI_Offset *size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_size(mpi_fh, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_get_view
 int PMPI_File_get_view(MPI_File mpi_fh,
 		      MPI_Offset *disp,
 		      MPI_Datatype *etype,
 		      MPI_Datatype *filetype,
 		      char *datarep)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_get_view(mpi_fh, disp, etype, filetype, datarep);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_iread
 int PMPI_File_iread(MPI_File mpi_fh, void *buf, int count, 
 		   MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_iread(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_iread_at
 int PMPI_File_iread_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                       int count, MPI_Datatype datatype, 
                       MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_iread_at(mpi_fh, offset, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_iread_shared
 int PMPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count, 
 			  MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_iread_shared(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_iwrite
 int PMPI_File_iwrite(MPI_File mpi_fh, void *buf, int count, 
 		    MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_iwrite(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_iwrite_at
 int PMPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_iwrite_at(mpi_fh, offset, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_iwrite_shared
 int PMPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count, 
 			   MPI_Datatype datatype, MPIO_Request *request)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_iwrite_shared(mpi_fh, buf, count, datatype, request);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_open
 int PMPI_File_open(MPI_Comm comm, char *filename, int amode, 
                   MPI_Info info, MPI_File *fh)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_open(comm, filename, amode, info, fh);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_preallocate
 int PMPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_preallocate(mpi_fh, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_at_all_begin
 int PMPI_File_read_at_all_begin(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 			       int count, MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_at_all_begin(mpi_fh, offset, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_at_all_end
 int PMPI_File_read_at_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_at_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read
 int PMPI_File_read(MPI_File mpi_fh, void *buf, int count, 
                   MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_all
 int PMPI_File_read_all(MPI_File mpi_fh, void *buf, int count, 
                       MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_all(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_all_begin
 int PMPI_File_read_all_begin(MPI_File mpi_fh, void *buf, int count, 
                             MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_all_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_all_end
 int PMPI_File_read_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_at
 int PMPI_File_read_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 		     int count, MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_at(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_at_all
 int PMPI_File_read_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                          int count, MPI_Datatype datatype, 
                          MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_at_all(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_ordered
 int PMPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count, 
                           MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_ordered(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_ordered_begin
 int PMPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count, 
 				MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_ordered_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_ordered_end
 int PMPI_File_read_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_ordered_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_read_shared
 int PMPI_File_read_shared(MPI_File mpi_fh, void *buf, int count, 
 			 MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_read_shared(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_seek
 int PMPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_seek(mpi_fh, offset, whence);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_seek_shared
 int PMPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_seek_shared(mpi_fh, offset, whence);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_set_atomicity
 int PMPI_File_set_atomicity(MPI_File mpi_fh, int flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_set_atomicity(mpi_fh, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_set_info
 int PMPI_File_set_info(MPI_File mpi_fh, MPI_Info info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_set_info(mpi_fh, info);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_set_size
 int PMPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_set_size(mpi_fh, size);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_set_view
 int PMPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
 		      MPI_Datatype filetype, char *datarep, MPI_Info info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_set_view(mpi_fh, disp, etype, filetype, datarep, info);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write
 int PMPI_File_write(MPI_File mpi_fh, void *buf, int count, 
                    MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_all
 int PMPI_File_write_all(MPI_File mpi_fh, void *buf, int count, 
                        MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_all(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_all_begin
 int PMPI_File_write_all_begin(MPI_File mpi_fh, void *buf, int count, 
 			     MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_all_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_all_end
 int PMPI_File_write_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_at
 int PMPI_File_write_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                       int count, MPI_Datatype datatype, 
                       MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_at(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_at_all
 int PMPI_File_write_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
                           int count, MPI_Datatype datatype, 
                           MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_at_all(mpi_fh, offset, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_ordered
 int PMPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count, 
 			   MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_ordered(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_ordered_begin
 int PMPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count, 
 				 MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_ordered_begin(mpi_fh, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_ordered_end
 int PMPI_File_write_ordered_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_ordered_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_shared
 int PMPI_File_write_shared(MPI_File mpi_fh, void *buf, int count, 
                           MPI_Datatype datatype, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_shared(mpi_fh, buf, count, datatype, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_at_all_begin
 int PMPI_File_write_at_all_begin(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 				int count, MPI_Datatype datatype)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_at_all_begin(mpi_fh, offset, buf, count, datatype);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_File_write_at_all_end
 int PMPI_File_write_at_all_end(MPI_File mpi_fh, void *buf, MPI_Status *status)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_File_write_at_all_end(mpi_fh, buf, status);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_create
 int PMPI_Info_create(MPI_Info *info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_create(info);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_delete
 int PMPI_Info_delete(MPI_Info info, char *key)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_delete(info, key);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_dup
 int PMPI_Info_dup(MPI_Info info, MPI_Info *newinfo)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_dup(info, newinfo);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_free
 int PMPI_Info_free(MPI_Info *info)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_free(info);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_get
 int PMPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_get(info, key, valuelen, value, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_get_nkeys
 int PMPI_Info_get_nkeys(MPI_Info info, int *nkeys)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_get_nkeys(info, nkeys);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_get_nthkey
 int PMPI_Info_get_nthkey(MPI_Info info, int n, char *key)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_get_nthkey(info, n, key);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_get_valuelen
 int PMPI_Info_get_valuelen(MPI_Info info, char *key, int *valuelen, int *flag)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_get_valuelen(info, key, valuelen, flag);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Info_set
 int PMPI_Info_set(MPI_Info info, char *key, char *value)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Info_set(info, key, value);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Close_port
 int PMPI_Close_port(char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Close_port(port_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_accept
 int PMPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
                     MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_accept(port_name, info, root, comm, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_connect
 int PMPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
                      MPI_Comm *newcomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_connect(port_name, info, root, comm, newcomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_disconnect
 int PMPI_Comm_disconnect(MPI_Comm * comm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_disconnect(comm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_get_parent
 int PMPI_Comm_get_parent(MPI_Comm *parent)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_get_parent(parent);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_join
 int PMPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_join(fd, intercomm);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_spawn
 int PMPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, 
 		   int root, MPI_Comm comm, MPI_Comm *intercomm,
 		   int array_of_errcodes[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_spawn(command, argv, maxprocs, info, root, comm, intercomm, array_of_errcodes);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Comm_spawn_multiple
 int PMPI_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_of_argv[], int array_of_maxprocs[], MPI_Info array_of_info[], int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[])
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info, root, comm, intercomm, array_of_errcodes);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Lookup_name
 int PMPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Lookup_name(service_name, info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Open_port
 int PMPI_Open_port(MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Open_port(info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Publish_name
 int PMPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Publish_name(service_name, info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Unpublish_name
 int PMPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Unpublish_name(service_name, info, port_name);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cartdim_get
 int PMPI_Cartdim_get(MPI_Comm comm, int *ndims)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cartdim_get(comm, ndims);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_coords
 int PMPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_coords(comm, rank, maxdims, coords);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_create
 int PMPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
 		    int reorder, MPI_Comm *comm_cart)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_create(comm_old, ndims, dims, periods, reorder, comm_cart);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_get
 int PMPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, 
                  int *coords)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_get(comm, maxdims, dims, periods, coords);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_map
 int PMPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
 		 int *newrank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_map(comm_old, ndims, dims, periods, newrank);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_rank
 int PMPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_rank(comm, coords, rank);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_shift
 int PMPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, 
 		   int *dest)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_shift(comm, direction, displ, source, dest);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Cart_sub
 int PMPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Cart_sub(comm, remain_dims, comm_new);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Dims_create
 int PMPI_Dims_create(int nnodes, int ndims, int *dims)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Dims_create(nnodes, ndims, dims);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Graph_create
 int PMPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges, 
 		     int reorder, MPI_Comm *comm_graph)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Graph_create(comm_old, nnodes, index, edges, reorder, comm_graph);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Graphdims_get
 int PMPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Graphdims_get(comm, nnodes, nedges);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Graph_neighbors_count
 int PMPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Graph_neighbors_count(comm, rank, nneighbors);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Graph_get
 int PMPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, 
                   int *index, int *edges)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Graph_get(comm, maxindex, maxedges, index, edges);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Graph_map
 int PMPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
                   int *newrank)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Graph_map(comm_old, nnodes, index, edges, newrank);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Graph_neighbors
 int PMPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, 
 			int *neighbors)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Graph_neighbors(comm, rank, maxneighbors, neighbors);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Topo_test
 int PMPI_Topo_test(MPI_Comm comm, int *topo_type)
 {
+    MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Topo_test(comm, topo_type);
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Wtime
 double PMPI_Wtime()
 {
+    /*MPICH_CHECK_INIT_VOID(PMPI_Wtime);*/ /* No checking for performance */
     return fn.PMPI_Wtime();
 }
 
+#undef FCNAME
+#define FCNAME PMPI_Wtick
 double PMPI_Wtick()
 {
+    /*MPICH_CHECK_INIT_VOID(PMPI_Wtick);*/ /* No checking for performance */
     return fn.PMPI_Wtick();
 }
