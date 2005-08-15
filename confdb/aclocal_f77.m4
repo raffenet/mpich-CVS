@@ -723,6 +723,13 @@ $flag"
 		continue
 	   fi
 	   ;;
+	7) # gfortran won't find getarg if it is marked as external 
+	   FXX_MODULE=""
+	   F77_GETARGDECL="intrinsic GETARG"
+	   F77_GETARG="call GETARG(i,s)"
+	   F77_IARGC="IARGC()"
+	   MSG="intrinsic GETARG and IARGC"
+	   ;;
         *) # exit from while loop
 	   FXX_MODULE=""
 	   F77_GETARGDECL=""
