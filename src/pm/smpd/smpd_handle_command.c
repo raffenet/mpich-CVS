@@ -1445,7 +1445,7 @@ int smpd_handle_result(smpd_context_t *context)
 		}
 		else
 		{
-		    smpd_err_printf("result returned for unhandled command:\n command: '%s'\n result: '%s'\n", iter->cmd, str);
+		    smpd_err_printf("result returned for unhandled '%s' command:\n command: '%s'\n result: '%s'\n", iter->cmd_str, iter->cmd, str);
 		}
 	    }
 	    else
