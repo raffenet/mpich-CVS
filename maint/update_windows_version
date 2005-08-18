@@ -42,11 +42,14 @@ if ($version eq "")
 	{
 		die "Error: Cannot open Version file: $!";
 	}
-	chomp($version = <VERSION_FILE>);
+	$_ = <VERSION_FILE>;
+	s/\r//;
+	chomp;
+	$version = $_;
 	close VERSION_FILE;
 }
 
-#print "version = $version\n";
+#print "version = '$version'\n";
 #print "ProductCode = $product_uuid\n";
 #print "PackageCode = $package_uuid\n";
 
