@@ -156,7 +156,7 @@ out mpich2 from CVS or you can simply copy this batch file from the distribution
 file knows how to check out mpich2 so it the only file required to make a distribution.
 
 The product GUIDs need to be changed when a new release is created.  To do this run 
-``perl update\_windows\_version $<$new\_version$>$''.  Run this script with mpich2/maint 
+``\texttt{perl update\_windows\_version $<$new\_version$>$}''.  Run this script with mpich2/maint 
 as the current directory so the project files can be found.  Example:
 \begin{verbatim}
 perl update_windows_version 1.0.3
@@ -363,7 +363,7 @@ authentication.  On each node, a domain administrator needs to execute the follo
 ``\texttt{smpd -register\_spn}''.
 
 Then a user can add the \texttt{-delegate} flag to their mpiexec commands and the job startup 
-will be done without any passwords.
+will be done without any passwords.  Example:
 \begin{verbatim}
 mpiexec -delegate -n 3 cpi.exe
 \end{verbatim}
