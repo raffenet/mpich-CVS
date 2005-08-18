@@ -74,8 +74,8 @@ But it makes life a lot easier if you do.
 Build a Windows XP or Windows Server 2003 machine on a 32bit CPU.
 Also build a Windows Server 2003 X64 machine to test the Win64 distribution.
 
-Note: peta07 and peta08.mcs.anl.gov have Mellanox Infiniband cards in them for testing
-the Infiniband channel under Windows.
+%Note: peta07 and peta08.mcs.anl.gov have Mellanox Infiniband cards in them for testing
+%the Infiniband channel under Windows.
 
 \section{Software}
 
@@ -136,6 +136,12 @@ Assuming you installed cygwin to the default \texttt{c:$\backslash$cygwin} direc
 required so the automated scripts can run tools like ssh and perl without specifying the 
 full path.
 
+Run the following command from a command prompt to change the Windows script engine from
+GUI mode to console mode:
+\begin{verbatim}
+cscript //H:cscript
+\end{verbatim}
+
 \section{Building MPICH2}
 \label{sec:building}
 
@@ -149,19 +155,21 @@ and the makewindist.bat script from the top level of the mpich2 source tree.  Yo
 out mpich2 from CVS or you can simply copy this batch file from the distribution.  The batch
 file knows how to check out mpich2 so it the only file required to make a distribution.
 
-The product GUIDs need to be changed when a new release is created.  To do this open DevStudio
-and go to the installation project.  Change the version from 1.0.x to 1.0.y.  DevStudio will
-prompt you to change the GUIDs and click yes.
+The product GUIDs need to be changed when a new release is created.  To do this run 
+``perl update\_windows\_version $<$new\_version$>$''.  Run this script with mpich2/maint 
+as the current directory so the project files can be found.  Example:
+\begin{verbatim}
+perl update_windows_version 1.0.3
+\end{verbatim}
 
 Or you can modify the project files by hand.  Edit mpich2/maint/mpich2i.vdproj.  The ProductCode
 and PackageCode entries need to be changed to use new GUIDs.  Under Unix or Windows, uuidgen can 
 be used to generate a new GUID.  The ProductVersion entry needs to be changed to match the 
 version of MPICH2.
 
-Then you can build a distribution.  The GUIDs only need to be changed when a new version is 
-released to the public.  Release candidates can have the same GUIDs.  So maybe the best policy
-would be to change the GUIDs immediately after a release so they would stay the same all the
-way up to and including the next release.
+Once the version and GUIDs have been updated, commit the changes to mpich2i.vdproj to cvs.
+
+Then you can build a distribution.
 
 Bring up a build command prompt by selecting Start$\to$Progams$\to$Microsoft Visual Studio 
 .NET 2003$\to$Visual Studio .NET Tools$\to$Visual Studio .NET 2003 Command Prompt.
@@ -298,7 +306,7 @@ channel that uses Infiniband.  And there is a thread-safe version of the sockets
 
 The short names for the channels are: sock, shm, sshm, ssm, mt.
 
-These channels can be selected at runtime with an environment variable - MPICH2\_CHANNEL.
+These channels can be selected at runtime with an environment variable: MPICH2\_CHANNEL.
 The following is an example that uses the Infiniband channel instead of the default sockets
 channel:
 
@@ -356,5 +364,8 @@ authentication.  On each node, a domain administrator needs to execute the follo
 
 Then a user can add the \texttt{-delegate} flag to their mpiexec commands and the job startup 
 will be done without any passwords.
+\begin{verbatim}
+mpiexec -delegate -n 3 cpi.exe
+\end{verbatim}
 
 \end{document}
