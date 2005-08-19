@@ -124,11 +124,15 @@ case $pac_namecheck in
     *) AC_MSG_WARN([Unknown Fortran naming scheme]) ;;
 esac
 AC_SUBST(F77_NAME_MANGLE)
+# Get the standard call definition
+# FIXME: This should use F77_STDCALL, not STDCALL (non-conforming name)
 if test "X$pac_cv_test_stdcall" = "X" ; then
-        AC_DEFINE(STDCALL,,[Define calling convention as default])
+    F77_STDCALL=""
 else
-        AC_DEFINE(STDCALL,__stdcall,[Define calling convention as __stdcall])
+    F77_STDCALL="__stdcall"
 fi
+# 
+AC_DEFINE_UNQUOTED(STDCALL,$F77_STDCALL,[Define calling convention])
 ],[$1])
 ])
 dnl
