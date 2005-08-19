@@ -187,10 +187,10 @@ Java_logformat_trace_InputLog_getNextCategory( JNIEnv *env, jobject this )
     int                     legend_sz, legend_pos, legend_max;
     char                   *legend_base; 
     jstring                 jlegend;
-    int                     label_sz, label_pos, label_max;
+    int                     label_sz, label_pos, label_max = 0;
     char                   *label_base;
     jstring                 jlabel;
-    int                     methods_sz, methods_pos, methods_max;
+    int                     methods_sz, methods_pos, methods_max = 0;
     int                    *methods_base; 
     jintArray               jmethods;
     jclass                  cid_local;
