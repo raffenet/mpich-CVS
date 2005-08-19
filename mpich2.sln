@@ -96,10 +96,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiconfig", "src\pm\smpd\w
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MPICH2InstallerSimple", "maint\mpich2is.vdproj", "{40E6F394-DA8B-4F93-AC39-79F262764538}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3essmDebug = ch3essmDebug
@@ -1285,44 +1281,6 @@ Global
 		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Release.Build.0 = Release|.NET
 		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.sfortDebug.ActiveCfg = Debug|.NET
 		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.sfortRelease.ActiveCfg = Release|.NET
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3essmDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3essmPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3essmRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ibIbalDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ibIbalPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ibIbalRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ibVapiDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ibVapiPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ibVapiRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3shmDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3shmPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3shmRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockmtDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockmtPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockmtRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockPliteRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sockRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sshmDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sshmPDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sshmPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3sshmRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ssmDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ssmPDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ssmPRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.ch3ssmRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.Debug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.DebugStatic.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.fortDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.fortRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.gfortDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.gfortRelease.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.Installer.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.Installer.Build.0 = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.Release.ActiveCfg = Release
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.sfortDebug.ActiveCfg = Debug
-		{40E6F394-DA8B-4F93-AC39-79F262764538}.sfortRelease.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
