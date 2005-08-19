@@ -52,8 +52,11 @@ int MPIDU_Sock_finalize(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_FINALIZE);
 
     MPIDU_Socki_initialized--;
-    
-    MPIDU_Socki_free_eventq_mem();
+
+    if (MPIDU_Socki_initialized == 0)
+    {
+	MPIDU_Socki_free_eventq_mem();
+    }
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
