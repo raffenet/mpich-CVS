@@ -242,6 +242,7 @@ MPI_OFFSET             = "__int64"
 MPI_OFFSET_TYPEDEF     = "#if defined(USE_GCC) || defined(__GNUC__)" + vbCrLf + "typedef long long MPI_Offset;" + vbCrLf + "#else" + vbCrLf + "typedef __int64 MPI_Offset;" + vbCrLf + "#endif"
 EXTRA_STATUS_DECL      = ""
 HAVE_ROMIO             = "#include ""mpio.h"""
+mpi_dll_spec_definition = "#ifdef USE_MPI_STATIC_LIBRARY" + vbCrLf + "# define MPIU_DLL_SPEC" + vbCrLf + "#else" + vbCrLf + "# ifdef MPI_EXPORTS" + vbCrLf + "#  define MPIU_DLL_SPEC __declspec(dllexport)" + vbCrLf + "# else" + vbCrLf + "#  define MPIU_DLL_SPEC __declspec(dllimport)" + vbCrLf + "# endif" + vbCrLf + "#endif" + vbCrLf + "#define MPI_CALL __cdecl" + vbCrLf
 
 set f = WScript.CreateObject("Scripting.FileSystemObject")
 
@@ -2267,6 +2268,8 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@MPID_THREAD_TYPEDEFS@", mpid_thread_typedefs)
 			Case "@MPID_THREAD_FUNCS@"
 				str = Replace(str, "@MPID_THREAD_FUNCS@", mpid_thread_funcs)
+			Case "@MPIU_DLL_SPEC_DEF@"
+				str = Replace(str, "@MPIU_DLL_SPEC_DEF@", mpi_dll_spec_definition)
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
