@@ -123,7 +123,7 @@ PMPI_LOCAL int MPID_LPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size,
 /* FIXME: for MPI1, all process ids are relative to MPI_COMM_WORLD.
    For MPI2, we'll need to do something more complex */
 PMPI_LOCAL int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
-				       int size, int lpids[] )
+				       int size, const int lpids[] )
 {
     MPID_Comm *commworld_ptr;
     int i;
