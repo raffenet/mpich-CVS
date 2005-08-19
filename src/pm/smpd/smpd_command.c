@@ -368,7 +368,8 @@ int smpd_free_command(smpd_command_t *cmd_ptr)
 	}
 	/* erase the contents to help track down use of freed structures */
 	smpd_init_command(cmd_ptr);
-	free(cmd_ptr);
+	cmd_ptr->freed = SMPD_FREE_COOKIE;
+	free(cmd_ptr); /* unfortunately, free probably erases the data making the cookie check ineffective */
     }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
