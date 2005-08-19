@@ -360,8 +360,13 @@ typedef struct MPI_Status {
 #define MPI_ERRCODES_IGNORE (int *)0
 
 /* See 4.12.5 for MPI_F_STATUS(ES)_IGNORE */
-extern MPI_Fint * MPI_F_STATUS_IGNORE;
-extern MPI_Fint * MPI_F_STATUSES_IGNORE;
+@MPIU_DLL_SPEC_DEF@
+extern MPIU_DLL_SPEC MPI_Fint * MPI_F_STATUS_IGNORE;
+extern MPIU_DLL_SPEC MPI_Fint * MPI_F_STATUSES_IGNORE;
+/* The annotation MPIU_DLL_SPEC to the extern statements is used 
+   as a hook for systems that require C extensions to correctly construct
+   DLLs, and is defined as an empty string otherwise
+ */
 
 /* The MPI standard requires that the ARGV_NULL values be the same as
    NULL (see 5.3.2) */

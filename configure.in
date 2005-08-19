@@ -3990,8 +3990,12 @@ AC_SUBST(MPI_FFLAGS)
 AC_SUBST(MPI_CXXFLAGS)
 AC_SUBST(MPI_F90FLAGS)
 AC_SUBST(MPI_LDFLAGS)
+#
+# Add a definition that is used to help support Windows DLLs (used in mpi.h.in)
+MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
+AC_SUBST(MPIU_DLL_SPEC_DEF)
 
-# Get the locatin of the CVS repository, if present
+# Get the location of the CVS repository, if present
     # We can use this test (for CVS/Root) for creating maintainer targets
     # as well, and tests for maintainer-required software, such as 
     # doctext
