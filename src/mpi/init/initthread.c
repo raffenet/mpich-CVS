@@ -36,8 +36,8 @@ MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevan
    If the Fortran binding is supported, these can be initialized to 
    their Fortran values (MPI only requires that they be valid between
    MPI_Init and MPI_Finalize) */
-MPI_Fint *MPI_F_STATUS_IGNORE = 0;
-MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
+MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE = 0;
+MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
 #ifdef HAVE_WINDOWS_H
 /* User-defined abort hook function.  Exiting here will prevent the system from
