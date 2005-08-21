@@ -100,7 +100,8 @@ def mpiexec():
     parmsToOverride = {
                         'MPD_USE_ROOT_MPD'            :  0,
                         'MPD_SECRETWORD'              :  '',
-                        'MPIEXEC_LINE_LABELS'         :  0,
+                        'MPIEXEC_SHOW_LINE_LABELS'    :  0,
+                        'MPIEXEC_LINE_LABEL_FMT'      :  '%r',
                         'MPIEXEC_JOB_ALIAS'           :  '',
                         'MPIEXEC_USIZE'               :  0,
                         'MPIEXEC_GDB'                 :  0,
@@ -267,8 +268,8 @@ def mpiexec():
         for k in localArgSets.keys():
 	    handle_local_argset(localArgSets[k],machineFileInfo,msgToMPD)
 
-    if parmdb['MPIEXEC_MERGE_OUTPUT']  and  not parmdb['MPIEXEC_LINE_LABELS']:
-        parmdb[('thispgm','MPIEXEC_LINE_LABELS')] = 1   # causes line labels also
+    if parmdb['MPIEXEC_MERGE_OUTPUT']  and  not parmdb['MPIEXEC_SHOW_LINE_LABELS']:
+        parmdb[('thispgm','MPIEXEC_SHOW_LINE_LABELS')] = 1   # causes line labels also
 
     if parmdb['print_parmdb_all']:
         parmdb.printall()
@@ -326,8 +327,6 @@ def mpiexec():
         msgToMPD['jobalias'] = ''
     if parmdb['MPIEXEC_TRY_1ST_LOCALLY']:
         msgToMPD['try_1st_locally'] = 1
-    if parmdb['MPIEXEC_LINE_LABELS']:
-        msgToMPD['line_labels'] = 1
     if parmdb['rship']:
         msgToMPD['rship'] = parmdb['rship']
         msgToMPD['mship_host'] = socket.gethostname()
@@ -338,6 +337,10 @@ def mpiexec():
         stdinDest = '0-%d' % (parmdb['nprocs']-1)
     else:
         stdinDest = parmdb['MPIEXEC_STDIN_DEST']
+    if parmdb['MPIEXEC_SHOW_LINE_LABELS']:
+        msgToMPD['line_labels'] = parmdb['MPIEXEC_LINE_LABEL_FMT']
+    else:
+        msgToMPD['line_labels'] = ''
     msgToMPD['stdin_dest'] = stdinDest
     msgToMPD['gdb'] = parmdb['MPIEXEC_GDB']
     msgToMPD['totalview'] = parmdb['MPIEXEC_TOTALVIEW']
@@ -573,7 +576,7 @@ def collect_args(args,localArgSets):
             parmdb[('cmdline','-genvnone')] = args[argidx+1]
             argidx += 1
         elif garg == '-l':
-            parmdb[('cmdline','MPIEXEC_LINE_LABELS')] = 1
+            parmdb[('cmdline','MPIEXEC_SHOW_LINE_LABELS')] = 1
             argidx += 1
         elif garg == '-a':
             parmdb[('cmdline','MPIEXEC_JOB_ALIAS')] = args[argidx+1]
@@ -1167,7 +1170,7 @@ def get_parms_from_xml_file(msgToMPD):
     if cpg.hasAttribute('try_1st_locally'):
         parmdb[('xml','MPIEXEC_TRY_1ST_LOCALLY')] = int(cpg.getAttribute('try_1st_locally'))
     if cpg.hasAttribute('output')  and  cpg.getAttribute('output') == 'label':
-        parmdb[('xml','MPIEXEC_LINE_LABELS')] = 1
+        parmdb[('xml','MPIEXEC_SHOW_LINE_LABELS')] = 1
     if cpg.hasAttribute('pgid'):    # our jobalias
         parmdb[('xml','MPIEXEC_JOB_ALIAS')] = cpg.getAttribute('pgid')
     if cpg.hasAttribute('stdin_dest'):
@@ -1183,8 +1186,8 @@ def get_parms_from_xml_file(msgToMPD):
         gdbFlag = int(cpg.getAttribute('gdb'))
         if gdbFlag:
             parmdb[('xml','MPIEXEC_GDB')]     = 1
-            parmdb[('xml','MPIEXEC_MERGE_OUTPUT')] = 1   # implied
-            parmdb[('xml','MPIEXEC_LINE_LABELS')]  = 1   # implied
+            parmdb[('xml','MPIEXEC_MERGE_OUTPUT')] = 1       # implied
+            parmdb[('xml','MPIEXEC_SHOW_LINE_LABELS')] = 1   # implied
             parmdb[('xml','MPIEXEC_STDIN_DEST')]   = 'all'
     if cpg.hasAttribute('use_root_pm'):
         parmdb[('xml','MPD_USE_ROOT_MPD')] = int(cpg.getAttribute('use_root_pm'))

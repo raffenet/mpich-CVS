@@ -1069,18 +1069,26 @@ class MPD(object):
                             msg['hosts'][(lorank+1,hirank)] = '_any_from_pool_'
                     break
         elif '_any_' in hosts.values():
-            hostsKeys = hosts.keys()
-            hostsKeys.sort()
-            for ranks in hostsKeys:
-                if hosts[ranks] == '_any_':
-                    (lorank,hirank) = ranks
-                    self.run_one_cli(lorank,msg)
-                    msg['nstarted'] += 1
-                    msg['nstarted_on_this_loop'] += 1
-                    del msg['hosts'][ranks]
-                    if lorank < hirank:
-                        msg['hosts'][(lorank+1,hirank)] = '_any_'
-                    break
+            done = 0
+            while not done:
+                hostsKeys = hosts.keys()
+                hostsKeys.sort()
+                for ranks in hostsKeys:
+                    if hosts[ranks] == '_any_':
+                        (lorank,hirank) = ranks
+                        self.run_one_cli(lorank,msg)
+                        msg['nstarted'] += 1
+                        msg['nstarted_on_this_loop'] += 1
+                        del msg['hosts'][ranks]
+                        if lorank < hirank:
+                            msg['hosts'][(lorank+1,hirank)] = '_any_'
+                        procsHereForJob = len(self.activeJobs[jobid].keys())
+                        if procsHereForJob >= self.parmdb['MPD_NCPUS']:
+                            break  # out of for loop
+                # if no more to start via any or enough started here
+                if '_any_' not in hosts.values() \
+                or procsHereForJob >= self.parmdb['MPD_NCPUS']:
+                    done = 1
         if msg['first_loop']:
             msg['ringsize'] += 1
             msg['ring_ncpus'] += self.parmdb['MPD_NCPUS']
@@ -1162,10 +1170,7 @@ class MPD(object):
         man_env['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
         man_env['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])
         man_env['MPDMAN_SINGINIT_PORT'] = str(msg['singinitport'])
-        if msg.has_key('line_labels'):
-            man_env['MPDMAN_LINE_LABELS'] = '1'
-        else:
-            man_env['MPDMAN_LINE_LABELS'] = '0'
+        man_env['MPDMAN_LINE_LABELS_FMT'] = msg['line_labels']
         if msg.has_key('rship'):
             man_env['MPDMAN_RSHIP'] = msg['rship']
             man_env['MPDMAN_MSHIP_HOST'] = msg['mship_host']

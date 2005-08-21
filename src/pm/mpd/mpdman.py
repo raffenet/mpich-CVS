@@ -125,13 +125,9 @@ class MPDMan(object):
         self.stdinDest = os.environ['MPDMAN_STDIN_DEST']
         self.totalview = int(os.environ['MPDMAN_TOTALVIEW'])
         self.gdb = int(os.environ['MPDMAN_GDB'])
-        self.lineLabels = int(os.environ['MPDMAN_LINE_LABELS'])
+        self.lineLabelFmt = os.environ['MPDMAN_LINE_LABELS_FMT']
         self.startStdoutLineLabel = 1
         self.startStderrLineLabel = 1
-        if self.spawned:
-            self.myLineLabel = str(self.myRank) + ',' + str(self.spawned) + ': '
-        else:
-            self.myLineLabel = str(self.myRank) + ': '
         self.singinitPID  = int(os.environ['MPDMAN_SINGINIT_PID'])
         self.singinitPORT = int(os.environ['MPDMAN_SINGINIT_PORT'])
         self.doingBNR = int(os.environ['MPDMAN_DOING_BNR'])
@@ -736,10 +732,11 @@ class MPDMan(object):
                     self.parentStderrSock = 0
         else:
             if self.parentStdoutSock:
-                if self.lineLabels:
+                if self.lineLabelFmt:
+                    lineLabel = self.create_line_label(self.lineLabelFmt,self.spawned)
                     splitLine = line.split('\n',1024)
                     if self.startStdoutLineLabel:
-                        line = self.myLineLabel
+                        line = lineLabel
                     else:
                         line = ''
                     if splitLine[-1] == '':
@@ -748,7 +745,7 @@ class MPDMan(object):
                     else:
                         self.startStdoutLineLabel = 0
                     for s in splitLine[0:-1]:
-                        line = line + s + '\n' + self.myLineLabel
+                        line = line + s + '\n' + lineLabel
                     line = line + splitLine[-1]
                     if self.startStdoutLineLabel:
                         line = line + '\n'
@@ -772,10 +769,11 @@ class MPDMan(object):
                     self.parentStderrSock = 0
         else:
             if self.parentStderrSock:
-                if self.lineLabels:
+                if self.lineLabelFmt:
+                    lineLabel = self.create_line_label(self.lineLabelFmt,self.spawned)
                     splitLine = line.split('\n',1024)
                     if self.startStderrLineLabel:
-                        line = self.myLineLabel
+                        line = lineLabel
                     else:
                         line = ''
                     if splitLine[-1] == '':
@@ -784,14 +782,14 @@ class MPDMan(object):
                     else:
                         self.startStderrLineLabel = 0
                     for s in splitLine[0:-1]:
-                        line = line + s + '\n' + self.myLineLabel
+                        line = line + s + '\n' + lineLabel
                     line = line + splitLine[-1]
                     if self.startStderrLineLabel:
                         line = line + '\n'
                 self.parentStderrSock.send_char_msg(line,errprint=0)
         return line
     def handle_child_stdout_tree_input(self,sock):
-        if self.lineLabels:
+        if self.lineLabelFmt:
             line = sock.recv_one_line()
         else:
             line = sock.recv(1024)
@@ -811,7 +809,7 @@ class MPDMan(object):
                 self.parentStdoutSock.send_char_msg(line,errprint=0)
                 # parentStdoutSock.sendall('FWD by %d: |%s|' % (self.myRank,line) )
     def handle_child_stderr_tree_input(self,sock):
-        if self.lineLabels:
+        if self.lineLabelFmt:
             line = sock.recv_one_line()
         else:
             line = sock.recv(1024)
@@ -867,8 +865,9 @@ class MPDMan(object):
             self.streamHandler.del_handler(self.pmiSock)
             self.pmiSock.close()
             self.pmiSock = 0
-            # mpd_print(1,"invalid attempt by client to have 2 simultaneous pmi connections")
-            print "invalid attempt by client to have 2 simultaneous pmi connections"
+            errmsg = "mpdman: invalid attempt by client (%s) " % (self.clientPgm)  + \
+                     "to open 2 simultaneous pmi connections"
+            print errmsg ; sys.stdout.flush()
             clientExitStatus = 137  # assume kill -9 below
             msgToSend = { 'cmd' : 'collective_abort',
                           'src' : self.myId, 'rank' : self.myRank,
@@ -1130,8 +1129,7 @@ class MPDMan(object):
                               'singinitpid'  : 0,
                               'singinitport' : 0,
                             }
-                if self.lineLabels:
-                    msgToSend['line_labels'] = str(self.lineLabels),
+                msgToSend['line_labels'] = str(self.lineLabelFmt),
                 self.mpdSock.send_dict_msg(msgToSend)
                 # I could send the preput_info along but will keep it here
                 # and let the spawnee call me up and ask for it; he will
@@ -1432,6 +1430,26 @@ class MPDMan(object):
         # mpd_print(0000,"CLIPID=%d" % cliPid)  
         # print "CLIPID=%d" % cliPid  ;  sys.stdout.flush()
         return cliPid
+    def create_line_label(self,line_label_fmt,spawned):
+        lineLabel = ''  # default is no label
+        if line_label_fmt:
+            i = 0
+            while i < len(line_label_fmt):
+                if line_label_fmt[i] == '%':
+                    fmtchar = line_label_fmt[i+1]
+                    i += 2
+                    if fmtchar == 'r':
+                        lineLabel += str(self.myRank)
+                    elif fmtchar == 'h':
+                        lineLabel += self.myHost
+                else:
+                    lineLabel += line_label_fmt[i]
+                    i += 1
+            if spawned:
+                lineLabel += ',' + str(spawned) + ': '    # spawned is actually a count
+            else:
+                lineLabel += ': '
+        return lineLabel
 
 def in_stdinRcvrs(myRank,stdinDest):
     s1 = stdinDest.split(',')
