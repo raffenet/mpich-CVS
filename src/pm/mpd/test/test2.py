@@ -17,6 +17,27 @@ clusterHosts = [ 'bp4%02d' % (i)  for i in range(0,8) ]
 print "clusterHosts=", clusterHosts
 
 # test:
+print "TEST -machinefile"
+PYEXT = '.py'
+NMPDS = 4
+HFILE = 'temph'
+import os,socket
+from mpdlib import MPDTest
+temph = open(HFILE,'w')
+for host in clusterHosts: print >>temph, host
+temph.close()
+tempm = open('tempm','w')
+for host in clusterHosts: print >>tempm, '%s:2 ifhn=%s' % (host,host)
+tempm.close()
+mpdtest = MPDTest()
+os.environ['MPD_CON_EXT'] = 'testing'
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
+expout = '0: bp400\n1: bp400\n2: bp401\n3: bp401'   # 2 per host because of :2's in tempm
+mpdtest.run(cmd="mpiexec%s -l -machinefile %s -n 3 hostname" % (PYEXT,'tempm'), chkOut=1, expOut=expout)
+os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
+
+# test:
 print "TEST -file"
 PYEXT = '.py'
 NMPDS = 1
@@ -115,27 +136,6 @@ if linesAsStr.find('exit-codes') < 0:
     print "ecfn: Failed to create correct contents of xml file:"
     print linesAsStr
     sys.exit(-1)
-
-# test:
-print "TEST -machinefile"
-PYEXT = '.py'
-NMPDS = 4
-HFILE = 'temph'
-import os,socket
-from mpdlib import MPDTest
-temph = open(HFILE,'w')
-for host in clusterHosts: print >>temph, host
-temph.close()
-tempm = open('tempm','w')
-for host in clusterHosts: print >>tempm, '%s:2 ifhn=%s' % (host,host)
-tempm.close()
-mpdtest = MPDTest()
-os.environ['MPD_CON_EXT'] = 'testing'
-os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
-os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-expout = '0: bp400\n1: bp400\n2: bp401\n3: bp401'   # 2 per host because of :2's in tempm
-mpdtest.run(cmd="mpiexec%s -l -machinefile %s -n 3 hostname" % (PYEXT,'tempm'), chkOut=1, expOut=expout)
-os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
 print "TEST -s"
