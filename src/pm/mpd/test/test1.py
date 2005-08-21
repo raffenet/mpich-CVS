@@ -96,13 +96,14 @@ import os,socket
 from mpdlib import MPDTest
 mpdtest = MPDTest()
 temph = open(HFILE,'w')
-for host in clusterHosts: print >>temph, host
+for host in clusterHosts: print >>temph, "%s:2" % (host)
 temph.close()
 os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -f %s -n %d --ncpus=2" % (PYEXT,HFILE,NMPDS) )
-expout = '0: m1\n1: m1\n2: m2\n3: m2\n'
-mpdtest.run(cmd="mpiexec%s -l -n 2 /bin/echo m1 : -n 2 /bin/echo m2" % (PYEXT), chkOut=1, expOut=expout )
+myHost = socket.gethostname()
+expout = '0: %s\n1: %s\n2: %s\n3: %s\n' % (myHost,myHost,clusterHosts[0],clusterHosts[0])
+mpdtest.run(cmd="mpiexec%s -l -n 4 /bin/hostname" % (PYEXT), chkOut=1, expOut=expout )
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test: simple with 2 mpds on 2 machines  (--ifhn option)
@@ -131,7 +132,7 @@ os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 ## redo the above test with a local ifhn that should cause failure
 lines = commands.getoutput("mpdboot%s -f %s -n %d --ifhn=127.0.0.1" % (PYEXT,HFILE,NMPDS) )
 if len(lines) > 0:
-    if lines.find('error trying to start mpd(boot)') < 0:
+    if lines.find('failed to ping') < 0:
         print "probable error in ifhn test using 127.0.0.1; printing lines of output next:"
         print lines
         sys.exit(-1)
