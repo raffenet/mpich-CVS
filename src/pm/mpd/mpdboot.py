@@ -52,28 +52,23 @@ from signal import SIGKILL
 from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_same_ips, mpd_get_ranks_in_binary_tree, \
                    mpd_print, MPDSock
 
-global myHost, fullDirName, topMPDBoot, user
+global myHost, fullDirName, rshCmd, user, mpdCmd, debug, verbose
 
 def mpdboot():
-    global myHost, fullDirName, topMPDBoot, user
-    mpd_set_my_id('mpdboot_rank_notset')
-    fullDirName  = path.abspath(path.split(argv[0])[0])
-    rshCmd     = 'ssh'
-    user       = mpd_get_my_username()
-    mpdCmd     = path.join(fullDirName,'mpd.py')
-    mpdbootCmd = path.join(fullDirName,'mpdboot.py')
-    hostsFilename  = 'mpd.hosts'
-    totalNum   = 1    # may get chgd below
-    debug      = 0
-    verbosity  = 0
-    localConsoleArg  = ''
-    remoteConsoleArg = ''
-    myConsoleVal = ''
-    oneMPDPerHost = 1
-    entryHost = ''
-    entryPort = ''
-    topMPDBoot = 1
+    global myHost, fullDirName, rshCmd, user, mpdCmd, debug, verbose
     myHost = gethostname()
+    mpd_set_my_id('mpdboot_%s' % (myHost) )
+    fullDirName  = path.abspath(path.split(argv[0])[0])
+    rshCmd = 'ssh'
+    user = mpd_get_my_username()
+    mpdCmd = path.join(fullDirName,'mpd.py')
+    hostsFilename = 'mpd.hosts'
+    totalnumToStart = 1    # may get chgd below
+    debug = 0
+    verbose = 0
+    localConArg  = ''
+    remoteConArg = ''
+    oneMPDPerHost = 1
     myNcpus = 1
     myIfhn = ''
     try:
@@ -85,34 +80,6 @@ def mpdboot():
     while argidx < len(argv):
         if   argv[argidx] == '-h' or argv[argidx] == '--help':
             usage()
-        elif argv[argidx] == '-zentry':    # entry host and port
-            if ':' not in argv[argidx+1]:
-                print 'invalid pair of entry host and entry port for -zentry option'
-                usage()
-            (entryHost,entryPort) = argv[argidx+1].split(':')
-            try:
-                ip = gethostbyname_ex(entryHost)[2]    # may fail if invalid host
-            except:
-                print 'invalid entry host ', entryHost ; stdout.flush()
-                usage()
-            if not entryPort.isdigit():
-                print 'invalid (nonumeric) entry port ', entryPort ; stdout.flush()
-                usage()
-            entryHost = entryHost
-            entryPort = entryPort
-            argidx += 2
-        elif argv[argidx] == '-zrank':
-            topMPDBoot = 0
-            myBootRank = int(argv[argidx+1])
-            argidx += 2
-        elif argv[argidx] == '-zhosts':
-	    zhosts = argv[argidx+1]
-	    zhosts = zhosts.split(',')
-            hostsAndInfo = []
-            for zhost in zhosts:
-                (host,ncpus,ifhn) = zhost.split(':')
-                hostsAndInfo.append({'host':host,'ncpus':ncpus,'ifhn':ifhn})
-            argidx += 2
         elif argv[argidx] == '-r':    # or --rsh=
             rshCmd = argv[argidx+1]
             argidx += 2
@@ -160,7 +127,7 @@ def mpdboot():
         elif argv[argidx].startswith('--ncpus'):
             splitArg = argv[argidx].split('=')
             try:
-                myNcpus = splitArg[1]
+                myNcpus = int(splitArg[1])
             except:
                 print 'mpdboot: invalid argument:', argv[argidx]
                 usage()
@@ -171,12 +138,12 @@ def mpdboot():
             myHost = splitArg[1]
             argidx += 1
         elif argv[argidx] == '-n':    # or --totalnum=
-            totalNum = int(argv[argidx+1])
+            totalnumToStart = int(argv[argidx+1])
             argidx += 2
         elif argv[argidx].startswith('--totalnum'):
             splitArg = argv[argidx].split('=')
             try:
-                totalNum = int(splitArg[1])
+                totalnumToStart = int(splitArg[1])
             except:
                 print 'mpdboot: invalid argument:', argv[argidx]
                 usage()
@@ -188,255 +155,206 @@ def mpdboot():
             shell = 'bourne'
             argidx += 1
         elif argv[argidx] == '-v' or argv[argidx] == '--verbose':
-            verbosity = 1
+            verbose = 1
             argidx += 1
         elif argv[argidx] == '-1':
             oneMPDPerHost = 0
             argidx += 1
         elif argv[argidx] == '--loccons':
-            localConsoleArg  = '--loccons'
+            localConArg  = '-n'
             argidx += 1
         elif argv[argidx] == '--remcons':
-            remoteConsoleArg = '--remcons'
+            remoteConArg = '-n'
             argidx += 1
         else:
             print 'mpdboot: unrecognized argument:', argv[argidx]
             usage()
+    if debug:
+        print 'debug: starting'
 
-    if topMPDBoot:
-        lines = []
-        if totalNum > 1:
-            try:
-                f = open(hostsFilename,'r')
-                for line in f:
-                    lines.append(line)
-            except:
-                print 'unable to open (or read) hostsfile %s' % (hostsFilename)
-                exit(-1)
-        hostsAndInfo = [ {'host' : myHost, 'ncpus' : myNcpus, 'ifhn' : myIfhn} ]
-        for line in lines:
-            line = line.strip()
-            if not line  or  line[0] == '#':
-                continue
-            splitLine = re.split(r'\s+',line)
-            host = splitLine[0]
-            ncpus = 1  # default
-            if ':' in host:
-                (host,ncpus) = host.split(':',1)
-                ncpus = int(ncpus)
-            ifhn = ''  # default
-            for kv in splitLine[1:]:
-                (k,v) = kv.split('=',1)
-                if k == 'ifhn':
-                    ifhn = v
-            hostsAndInfo.append( {'host' : host, 'ncpus' : ncpus, 'ifhn' : ifhn} )
-        if oneMPDPerHost  and  totalNum > 1:
-	    oldHosts = hostsAndInfo[:]
-	    hostsAndInfo = []
-	    for x in oldHosts:
-	       keep = 1
-	       for y in hostsAndInfo:
-	           if mpd_same_ips(x['host'],y['host']):
-		       keep = 0
-		       break
-	       if keep:
-	           hostsAndInfo.append(x)
-        if len(hostsAndInfo) < totalNum:    # one is local
-            print 'totalNum=%d  num hosts=%d' % (totalNum,len(hostsAndInfo))
-            print 'there are not enough hosts on which to start all processes'
-            exit(-1)
-        myBootRank = 0
-        if localConsoleArg:
-            myConsoleVal = '-n'
-    else:
-        if remoteConsoleArg:
-            myConsoleVal = '-n'
-    anMPDalreadyHere = 0
-    for i in range(myBootRank):
-        if mpd_same_ips(hostsAndInfo[i]['host'],myHost):    # if one before me on this host
-            myConsoleVal = '-n'
-	    anMPDalreadyHere = 1
-	    break
-    if not anMPDalreadyHere:
+    lines = []
+    if totalnumToStart > 1:
         try:
-            system('%s/mpdallexit.py > /dev/null' % (fullDirName))  # stop any current mpds
+            f = open(hostsFilename,'r')
+            for line in f:
+                lines.append(line)
         except:
-            pass
+            print 'unable to open (or read) hostsfile %s' % (hostsFilename)
+            exit(-1)
+    hostsAndInfo = [ {'host' : myHost, 'ncpus' : myNcpus, 'ifhn' : myIfhn} ]
+    for line in lines:
+        line = line.strip()
+        if not line  or  line[0] == '#':
+            continue
+        splitLine = re.split(r'\s+',line)
+        host = splitLine[0]
+        ncpus = 1  # default
+        if ':' in host:
+            (host,ncpus) = host.split(':',1)
+            ncpus = int(ncpus)
+        ifhn = ''  # default
+        for kv in splitLine[1:]:
+            (k,v) = kv.split('=',1)
+            if k == 'ifhn':
+                ifhn = v
+        hostsAndInfo.append( {'host' : host, 'ncpus' : ncpus, 'ifhn' : ifhn} )
+    if oneMPDPerHost  and  totalnumToStart > 1:
+        oldHosts = hostsAndInfo[:]
+        hostsAndInfo = []
+        for x in oldHosts:
+           keep = 1
+           for y in hostsAndInfo:
+               if mpd_same_ips(x['host'],y['host']):
+                   keep = 0
+                   break
+           if keep:
+               hostsAndInfo.append(x)
+    if len(hostsAndInfo) < totalnumToStart:    # one is local
+        print 'totalnum=%d  numhosts=%d' % (totalnumToStart,len(hostsAndInfo))
+        print 'there are not enough hosts on which to start all processes'
+        exit(-1)
 
-    mpd_set_my_id('mpdboot_%s_%d' % (myHost,myBootRank) )
-    if debug:
-        mpd_print(1, 'starting')
-    (parent,lchild,rchild) = mpd_get_ranks_in_binary_tree(myBootRank,totalNum)
-    if debug:
-        mpd_print(1, 'p=%d l=%d r=%d' % (parent,lchild,rchild) )
+    try:
+        system('%s/mpdallexit.py > /dev/null' % (fullDirName)) # stop current mpds
+        if verbose or debug:
+            print 'running mpdallexit on %s' % (myHost)
+    except:
+        pass
 
     if myIfhn:
-        ifhnVal = '--ifhn=%s' % (myIfhn)
-    elif hostsAndInfo[myBootRank]['ifhn']:
-        ifhnVal = '--ifhn=%s' % (hostsAndInfo[myBootRank]['ifhn'])
+        ifhn = '--ifhn=%s' % (myIfhn)
     else:
-        ifhnVal = ''
-    if entryHost:
-        cmd = '%s %s -h %s -p %s -d -e --ncpus=%s %s' % \
-	      (mpdCmd,myConsoleVal,entryHost,entryPort,myNcpus,ifhnVal)
-    else:
-        cmd = '%s %s -d -e --ncpus=%s %s' % \
-	      (mpdCmd,myConsoleVal,myNcpus,ifhnVal)
-    if verbosity:
-        mpd_print(1,'starting local mpd on %s' % (myHost) )
-    if debug:
-        mpd_print(1, 'cmd to run local mpd = :%s:' % (cmd) )
+        ifhn = ''
+    hostsAndInfo[0]['entry_host'] = ''
+    hostsAndInfo[0]['entry_port'] = ''
+    mpdArgs = '%s %s --ncpus=%d' % (localConArg,ifhn,myNcpus)
+    (mpdPID,mpdFD) = launch_one_mpd(0,0,mpdArgs,hostsAndInfo)
+    fd2idx = {mpdFD : 0}
+    handle_mpd_output(mpdFD,fd2idx,hostsAndInfo)
 
-    if not access(mpdCmd,X_OK):
-        err_exit('cannot access mpd cmd :%s:' % (mpdCmd) )
-    locMPD = Popen4(cmd, 0)
-    locMPDFD = locMPD.fromchild
-    locMPDPort = locMPDFD.readline().strip()
-    if locMPDPort.isdigit():
-	# can't do this until he's already in his ring
-        locMPDSock = MPDSock(name='to_local_mpd')
-        locMPDSock.connect((myHost,int(locMPDPort)))
-        if locMPDSock:
-            msgToSend = { 'cmd' : 'ping', 'ifhn' : 'ping', 'port' : 0} # dummy values
-            locMPDSock.send_dict_msg( msgToSend)
-            msg = locMPDSock.recv_dict_msg()    # RMB: WITH TIMEOUT ??
-            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'challenge':
-                locMPDOut = locMPDFD.read()
-                errMsg  = '%d: unable to ping local mpd;\n' % (myBootRank)
-                errMsg += 'invalid msg from mpd :%s:\n' % (msg)
-                errMsg += '** mpd may have disappeared, perhaps due to mismatched secretwords\n'
-                errMsg += '** see msgs logged in syslog and /tmp/mpd2.logfile* on %s\n' % (myHost)
-                errMsg += 'last printed output from mpd before becoming a daemon:\n'
-                errMsg += locMPDOut
-                err_exit(errMsg)
-            locMPDSock.close()
-        else:
-            err_exit('failed to connect to mpd' )
-    else:
-        err_exit('%d: invalid port from mpd %s' % (myBootRank,str(locMPDPort)) )
+    try:
+        from os import sysconf
+        maxfds = sysconf('SC_OPEN_MAX')
+    except:
+        maxfds = 1024
+    maxAtOnce = min(128,maxfds-8)  # -8  for stdeout, etc. + a few more for padding
+    maxUnderOneRoot = 4
 
-    if not entryHost:
-        entryHost = myHost
-        entryPort = locMPDPort
-
-    if rshCmd == 'ssh':
-        xOpt = '-x'
-    else:
-        xOpt = ''
-
-    lfd = 0
-    rfd = 0
+    hostsSeen = { myHost : 1 }
     fdsToSelect = []
-    if debug:
-        debugArg = '-d'
-    else:
-        debugArg = ''
-    if verbosity:
-        verboseArg = '-v'
-    else:
-        verboseArg = ''
-    if lchild >= 0:
-        zhosts = [ "%s:%s:%s" % (h['host'],h['ncpus'],h['ifhn']) for h in hostsAndInfo ]
-	if hostsAndInfo[lchild]['ifhn']:
-	    ifhnVal = '--ifhn=%s' % (hostsAndInfo[lchild]['ifhn'])
+    numStarted = 1  # local already going
+    numStarting = 0
+    numUnderCurrRoot = 0
+    possRoots = []
+    currRoot = 0
+    idxToStart = 1  # local mpd already going
+    while numStarted < totalnumToStart:
+        if  numStarting < maxAtOnce  and  idxToStart < totalnumToStart:
+            if numUnderCurrRoot < maxUnderOneRoot:
+                entryHost = hostsAndInfo[currRoot]['host']
+                entryPort = hostsAndInfo[currRoot]['list_port']
+                hostsAndInfo[idxToStart]['entry_host'] = entryHost
+                hostsAndInfo[idxToStart]['entry_port'] = entryPort
+                if hostsSeen.has_key(hostsAndInfo[idxToStart]['host']):
+                    remoteConArg = '-n'
+                mpdArgs = '%s -h %s -p %s %s --ncpus=%d' % (remoteConArg,entryHost,entryPort,ifhn,myNcpus)
+                (mpdPID,mpdFD) = launch_one_mpd(idxToStart,currRoot,mpdArgs,hostsAndInfo)
+                numStarting += 1
+                numUnderCurrRoot += 1
+                hostsAndInfo[idxToStart]['pid'] = mpdPID
+                hostsSeen[hostsAndInfo[idxToStart]['host']] = 1
+                fd2idx[mpdFD] = idxToStart
+                fdsToSelect.append(mpdFD)
+                idxToStart += 1
+            else:
+                if possRoots:
+                    currRoot = possRoots.pop()
+                    numUnderCurrRoot = 0
+            selectTime = 0.01
         else:
-	    ifhnVal = ''
-        cmd = "%s %s %s -n '%s --ncpus=%s %s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
-              (rshCmd, xOpt, hostsAndInfo[lchild]['host'], mpdbootCmd,
-               hostsAndInfo[lchild]['ncpus'],ifhnVal,
-	       rshCmd, mpdCmd, totalNum, debugArg, verboseArg, remoteConsoleArg, entryHost,
-	       entryPort, lchild,
-	       ','.join(zhosts) )
-        if verbosity:
-            mpd_print(1, 'starting remote mpd on %s' % (hostsAndInfo[lchild]) )
-        if debug:
-            mpd_print(1, 'cmd to run lchild boot = :%s:' % (cmd) )
-        lchildMPDBoot = Popen4(cmd, 0)
-        lfd = lchildMPDBoot.fromchild
-        fdsToSelect.append(lfd)
-    if rchild >= 0:
-        zhosts = [ "%s:%s:%s" % (h['host'],h['ncpus'],h['ifhn']) for h in hostsAndInfo ]
-	if hostsAndInfo[rchild]['ifhn']:
-	    ifhnVal = '--ifhn=%s' % (hostsAndInfo[rchild]['ifhn'])
-        else:
-	    ifhnVal = ''
-        cmd = "%s %s %s -n '%s --ncpus=%s %s -r %s -m %s -n %d %s %s %s -zentry %s:%s -zrank %s -zhosts %s </dev/null ' " % \
-              (rshCmd, xOpt, hostsAndInfo[rchild]['host'], mpdbootCmd,
-               hostsAndInfo[rchild]['ncpus'],ifhnVal,
-	       rshCmd, mpdCmd, totalNum, debugArg, verboseArg, remoteConsoleArg, entryHost,
-	       entryPort, rchild,
-	       ','.join(zhosts) )
-        if verbosity:
-            mpd_print(1, 'starting remote mpd on %s' % (hostsAndInfo[rchild]) )
-        if debug:
-            mpd_print(1, 'cmd to run rchild boot = :%s:' % (cmd) )
-        rchildMPDBoot = Popen4(cmd, 0)
-        rfd = rchildMPDBoot.fromchild
-        fdsToSelect.append(rfd)
-
-    lfd_first_line = 1
-    rfd_first_line = 1
-    while fdsToSelect:
+            selectTime = 0.1
         try:
-            (readyFDs,unused1,unused2) = select(fdsToSelect,[],[],0.1)
+            (readyFDs,unused1,unused2) = select(fdsToSelect,[],[],selectTime)
         except error, errmsg:
             mpd_print(1,'mpdboot: select failed: errmsg=:%s:' % (errmsg) )
             exit(-1)
-        if lfd  and  lfd in readyFDs:
-            line = lfd.readline()
-            if line:
-                if line.find('RC=MPDBOOT_ERREXIT') >= 0:
-                    err_exit('RC=MPDBOOT_ERREXIT')
-                else:
-		    if not verbosity  and  lfd_first_line:
-		        lfd_first_line = 0
-			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (lchild,hostsAndInfo[lchild]))
-                    print '  ', line, ; stdout.flush()
-            else:
-                lfd.close()
-                fdsToSelect.remove(lfd)
-        if rfd  and  rfd in readyFDs:
-            line = rfd.readline()
-            if line:
-                if line.find('RC=MPDBOOT_ERREXIT') >= 0:
-                    err_exit('RC=MPDBOOT_ERREXIT')
-                else:
-		    if not verbosity  and  rfd_first_line:
-		        rfd_first_line = 0
-			mpd_print(1,"error trying to start mpd(boot) at %d %s; output:" % (rchild,hostsAndInfo[rchild]))
-                    print '  ', line, ; stdout.flush()
-            else:
-                rfd.close()
-                fdsToSelect.remove(rfd)
+        for fd in readyFDs:
+            handle_mpd_output(fd,fd2idx,hostsAndInfo)
+            numStarted += 1
+            numStarting -= 1
+            possRoots.append(fd2idx[fd])
+            fdsToSelect.remove(fd)
+            fd.close()
 
+def launch_one_mpd(idxToStart,currRoot,mpdArgs,hostsAndInfo):
+    global myHost, fullDirName, rshCmd, user, mpdCmd, debug, verbose
+    mpdHost = hostsAndInfo[idxToStart]['host']
+    if idxToStart == 0:
+        cmd = '%s %s -e -d' % (mpdCmd,mpdArgs)
+    else:
+        if rshCmd == 'ssh':
+            rshArgs = '-x -n'
+        else:
+            rshArgs = '-n'
+        mpdHost = hostsAndInfo[idxToStart]['host']
+        cmd = "%s %s %s '%s %s -e -d' " % \
+              (rshCmd,rshArgs,mpdHost,mpdCmd,mpdArgs)
+    if verbose:
+        entryHost = hostsAndInfo[idxToStart]['entry_host']
+        entryPort = hostsAndInfo[idxToStart]['entry_port']
+        # print "LAUNCHED mpd on %s  via  %s  %s" % (mpdHost,entryHost,str(entryPort))
+        print "LAUNCHED mpd on %s  via  %s" % (mpdHost,entryHost)
+    if debug:
+        print "debug: launch cmd=", cmd
+    mpd = Popen4(cmd,0)
+    mpdFD = mpd.fromchild
+    mpdPID = mpd.pid
+    return (mpdPID,mpdFD)
 
-def err_exit(msg):
-    global myHost, fullDirName, topMPDBoot, user
-    mpd_print(1, 'mpd failed to start correctly on %s' % (myHost) )
-    mpdPid = 0
-    if msg != 'RC=MPDBOOT_ERREXIT':
-        print '  reason: %s' % (msg) ; stdout.flush()
+def handle_mpd_output(fd,fd2idx,hostsAndInfo):
+    global myHost, fullDirName, rshCmd, user, mpdCmd, debug, verbose
+    idx = fd2idx[fd]
+    host = hostsAndInfo[idx]['host']
+    port = fd.readline().strip()
+    if debug:
+        print "debug: mpd on %s  on port %s" % (host,port)
+    if port.isdigit():
+        hostsAndInfo[idx]['list_port'] = int(port)
+        tempSock = MPDSock(name='temp_to_mpd')
         try:
-            logfile = open('/tmp/mpd2.logfile_%s' % (user),'r')
-            mpd_print(1, '  contents of mpd logfile in /tmp:')
-            for line in logfile:
-                print '    ', line, ; stdout.flush()
-	        if line.startswith('logfile for mpd with pid'):
-	            mpdPid = re.findall(r'logfile for mpd with pid (\d+)',line)
+            tempSock.connect((host,int(port)))
         except:
-            pass
-        try:
-            system('%s/mpdallexit.py > /dev/null' % (fullDirName))  # stop any current mpds
-        except:
-             pass
-        try:
-            kill(mpdPid,SIGKILL)
-        except:
-             pass
-        if not topMPDBoot:
-            mpd_print(1, 'RC=MPDBOOT_ERREXIT')    # printable rc
-    exit(-1)
-
+            tempSock.close()
+            tempSock = 0
+        if tempSock:
+            msgToSend = { 'cmd' : 'ping', 'ifhn' : 'dummy', 'port' : 0}
+            tempSock.send_dict_msg(msgToSend)
+            msg = tempSock.recv_dict_msg()    # RMB: WITH TIMEOUT ??
+            if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'challenge':
+                mpd_print(1,'failed to ping mpd on %s; recvd output=%s' % \
+                          (host,msg) )
+                tempOut = tempSock.recv(1000)
+                print tempOut
+                try: system('%s/mpdallexit.py > /dev/null &' % (fullDirName))
+                except: pass
+                exit(-1)
+            tempSock.close()
+        else:
+            mpd_print(1,'failed to connect to mpd on %s' % (host) )
+            try: system('%s/mpdallexit.py > /dev/null &' % (fullDirName))
+            except: pass
+            exit(-1)
+    else:
+        mpd_print(1,'from mpd on %s, invalid port info:' % (host) )
+        print port
+        print fd.read()
+        try: system('%s/mpdallexit.py > /dev/null &' % (fullDirName))
+        except: pass
+        exit(-1)
+    if verbose:
+        print "RUNNING: mpd on", hostsAndInfo[fd2idx[fd]]['host']
+    if debug:
+        print "debug: info for running mpd:", hostsAndInfo[fd2idx[fd]]
 
 def usage():
     print __doc__
