@@ -40,6 +40,8 @@ except:
 
 # some global vars for some utilities
 global mpd_my_id, mpd_signum, mpd_my_hostname, mpd_procedures_to_trace
+global mpd_cli_app  # for debug during mpich nightly tests
+mpd_cli_app = ''
 mpd_my_id = ''
 mpd_procedures_to_trace = []
 mpd_my_hostname = ''
@@ -55,6 +57,10 @@ def mpd_set_my_id(myid=''):
 def mpd_get_my_id():
     global mpd_my_id
     return(mpd_my_id)
+
+def mpd_set_cli_app(app):    # for debug during mpich nightly tests
+    global mpd_cli_app
+    mpd_cli_app = app
 
 def mpd_handle_signal(signum,frame):
     global mpd_signum
@@ -103,6 +109,7 @@ def mpd_print_tb(*args):
 
 def mpd_uncaught_except_tb(arg1,arg2,arg3):
     global mpd_my_id
+    global mpd_cli_id
     if mpd_my_id:
         errstr = '%s: ' % (mpd_my_id)
     else:
@@ -114,7 +121,9 @@ def mpd_uncaught_except_tb(arg1,arg2,arg3):
     for tup in tb:
         # errstr += '    file %s  line# %i  procedure %s\n        %s\n' % (tup)
         errstr += '    %s  %i  %s\n        %s\n' % (tup)
-    print errstr
+    if mpd_cli_app:    # debug mpich apps in nightly tests
+        errstr += '    mpd_cli_app=%s' % (mpd_cli_app)
+    print errstr,
     if syslog_module_available:
         syslog.syslog(syslog.LOG_ERR, errstr)
 

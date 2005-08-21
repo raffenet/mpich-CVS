@@ -22,9 +22,9 @@ from re       import findall, sub
 from cPickle  import loads
 from time     import sleep
 from urllib   import quote
-from mpdlib   import mpd_set_my_id, mpd_print, mpd_read_nbytes, \
+from mpdlib   import mpd_set_my_id, mpd_print, mpd_read_nbytes,  \
                      mpd_sockpair, mpd_get_ranks_in_binary_tree, \
-                     mpd_get_my_username,                         \
+                     mpd_get_my_username, mpd_set_cli_app,       \
                      MPDSock, MPDListenSock, MPDStreamHandler, MPDRing
 
 try:
@@ -59,6 +59,8 @@ class MPDMan(object):
         if self.spawned:
             self.myId = self.myId + '_s'
         mpd_set_my_id(myid=self.myId)
+        self.clientPgm = os.environ['MPDMAN_CLI_PGM']
+        mpd_set_cli_app(self.clientPgm)
         try:
             os.chdir(os.environ['MPDMAN_CWD'])
         except Exception, errmsg:
@@ -108,7 +110,6 @@ class MPDMan(object):
         else:
             self.umask = int(self.umask)
         self.oldumask = os.umask(self.umask)
-        self.clientPgm = os.environ['MPDMAN_CLI_PGM']
         self.clientPgmArgs = loads(os.environ['MPDMAN_PGM_ARGS'])
         self.clientPgmEnv = loads(os.environ['MPDMAN_PGM_ENVVARS'])
         self.clientPgmLimits = loads(os.environ['MPDMAN_PGM_LIMITS'])
