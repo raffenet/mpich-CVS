@@ -6,12 +6,12 @@
 
 """
 usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ 
-                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>] \ 
-                [--loccons] [--remcons] [--shell] [--verbose] [-1]
-                [--ncpus=<ncpus>] [--ifhn=<ifhn>]
+                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>]      \ 
+                [--loccons] [--remcons] [--shell] [--verbose] [-1]     \
+                [--ncpus=<ncpus>] [--ifhn=<ifhn>] [--chkup] [--chkuponly]
  or, in short form, 
         mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ 
-                [-m <mpdcmd>]  -s -v [-1]
+                [-m <mpdcmd>]  -s -v [-1] [-c]
 
 --totalnum specifies the total number of mpds to start; at least
   one mpd will be started locally, and others on the machines specified
@@ -34,6 +34,11 @@ usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \
   others are listed in the hosts file
 --ifhn indicates the interface hostname to use for the local mpd; others
   may be specified in the hostsfile
+--chkup requests that mpdboot try to verify that the hosts in the host file
+  are up before attempting start mpds on any of them; it just checks the number
+  of hosts specified by -n
+--chkuponly requests that mpdboot try to verify that the hosts in the host file
+  are up; it then terminates; it just checks the number of hosts specified by -n
 """
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
@@ -45,7 +50,7 @@ import re
 
 from os     import environ, system, path, kill, access, X_OK
 from sys    import argv, exit, stdout
-from popen2 import Popen4, popen2
+from popen2 import Popen4, Popen3, popen2
 from socket import gethostname, gethostbyname_ex
 from select import select, error
 from signal import SIGKILL
@@ -71,6 +76,7 @@ def mpdboot():
     oneMPDPerHost = 1
     myNcpus = 1
     myIfhn = ''
+    chkupIndicator = 0  # 1 -> chk and start ; 2 -> just chk
     try:
         shell = path.split(environ['SHELL'])[-1]
     except:
@@ -157,6 +163,12 @@ def mpdboot():
         elif argv[argidx] == '-v' or argv[argidx] == '--verbose':
             verbose = 1
             argidx += 1
+        elif argv[argidx] == '-c' or argv[argidx] == '--chkup':
+            chkupIndicator = 1
+            argidx += 1
+        elif argv[argidx] == '--chkuponly':
+            chkupIndicator = 2
+            argidx += 1
         elif argv[argidx] == '-1':
             oneMPDPerHost = 0
             argidx += 1
@@ -213,6 +225,16 @@ def mpdboot():
         print 'totalnum=%d  numhosts=%d' % (totalnumToStart,len(hostsAndInfo))
         print 'there are not enough hosts on which to start all processes'
         exit(-1)
+    if chkupIndicator:
+        hostsToCheck = [ hai['host'] for hai in hostsAndInfo[1:totalnumToStart] ]
+        (upList,dnList) = chkupdn(hostsToCheck)
+        if dnList:
+            print "these hosts are down; exiting"
+            print dnList
+            exit(-1)
+        print "there are %d hosts up (counting local)" % (len(upList)+1)
+        if chkupIndicator == 2:  # do the chkup and quit
+            exit(0)
 
     try:
         system('%s/mpdallexit.py > /dev/null' % (fullDirName)) # stop current mpds
@@ -355,6 +377,40 @@ def handle_mpd_output(fd,fd2idx,hostsAndInfo):
         print "RUNNING: mpd on", hostsAndInfo[fd2idx[fd]]['host']
     if debug:
         print "debug: info for running mpd:", hostsAndInfo[fd2idx[fd]]
+
+def chkupdn(hostList):
+    upList = []
+    dnList = []
+    for hostname in hostList:
+        print 'checking', hostname
+        cmd = "ssh %s -x -n /bin/echo hello" % (hostname)
+        runner = Popen3(cmd,1,0)
+        runout = runner.fromchild
+        runerr = runner.childerr
+        runin  = runner.tochild
+        runpid = runner.pid
+        up = 0
+        try:
+            # (readyFDs,unused1,unused2) = select([runout,runerr],[],[],9)
+            (readyFDs,unused1,unused2) = select([runout],[],[],9)
+        except:
+            print 'select failed'
+            readyFDs = []
+        for fd in readyFDs:  # may have runout and runerr sometimes
+            line = fd.readline()
+            if line and line.startswith('hello'):
+                up = 1
+            else:
+                pass
+        if up:
+            upList.append(hostname)
+        else:
+            dnList.append(hostname)
+        try:
+            kill(runpid,SIGKILL)
+        except:
+            pass
+    return(upList,dnList)
 
 def usage():
     print __doc__
