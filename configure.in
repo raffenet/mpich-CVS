@@ -3994,7 +3994,6 @@ AC_SUBST(MPI_LDFLAGS)
 # Add a definition that is used to help support Windows DLLs (used in mpi.h.in)
 MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
 AC_SUBST(MPIU_DLL_SPEC_DEF)
-AC_DEFINE(MPIU_DLL_SPEC,,[Define as empty for Unix (allows Windows extensions)])
 
 # Get the location of the CVS repository, if present
     # We can use this test (for CVS/Root) for creating maintainer targets
