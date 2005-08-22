@@ -17,6 +17,11 @@
   channels will experience failures for tests exercising dynamic process
   functionality.
 
+- The ssm channel uses special interprocess locks (often assembly) that may not 
+  work with some compilers or machine architectures. It works on Linux with gcc, 
+  Intel, and Pathscale compilers on various Intel architectures. It also works in
+  Windows and Solaris environments.
+
 - Support for the "external32" data representation is incomplete.  This affects
   the MPI_PACK_EXTERNAL and MPI_UNPACK_EXTERNAL routines, as well the external
   data representation capabilities of ROMIO.
