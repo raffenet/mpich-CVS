@@ -7,4 +7,6 @@ libmpiexec_a_SOURCES = cmnargs.c process.c ioloop.c pmiserv.c labelout.c \
 OTHER_DIRS = test
 
 distclean-local:
+clean-local:
+	-rm -f libmpiexec.a
 
