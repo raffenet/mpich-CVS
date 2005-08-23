@@ -224,6 +224,29 @@ if test "$ac_cv_func_strdup" = "yes" ; then
     # Do we need to declare strdup?
     PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
 fi
+#
+# Check for select and working FD_ZERO 
+AC_CHECK_FUNCS(select)
+AC_CHECK_HEADERS(sys/select.h)
+if test "$ac_cv_func_select" != yes ; then
+    AC_MSG_ERROR([select is required for the process manager utilities])
+else
+    # Check that FD_ZERO works.  Under the Darwin xlc (version 6) compiler,
+    # FD_ZERO gets turned into a referece to __builtin_bzero, which is not
+    # in the xlc libraries.  This is apparently due to xlc pretending that it
+    # is GCC within the system header files (the same test that must 
+    # succeed within the system header files to cause the declaration to
+    # be __builtin_bzero fails outside of the header file).
+    # (sys/select.h is POSIX)
+    if test "$ac_cv_header_sys_select_h" = yes ; then
+        AC_CACHE_CHECK([whether FD_ZERO works],pac_cv_fdzero_works,[
+        AC_TRY_LINK([#include <sys/select.h>],[fd_set v; FD_ZERO(&v)],
+        pac_cv_fdzero_works=yes,pac_cv_fdzero_works=no)])
+        if test "$pac_cv_fdzero_works" != yes ; then
+            AC_MSG_ERROR([Programs with FD_ZERO cannot be linked (check your system includes)])
+	fi
+    fi
+fi
 
 dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
