@@ -6,6 +6,9 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple \
 	-I${master_top_srcdir}/src/pm/util 
 install_BIN = mpiexec
+
+clean-local:
+	@-(cd ../util && $(MAKE) clean)
 distclean-local:
 	@-rm -f forkerconf.h
 
