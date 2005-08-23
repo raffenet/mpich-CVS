@@ -1172,6 +1172,7 @@ AC_CACHE_CHECK([whether global variables handled properly],
 ac_cv_prog_cc_globals_work,[
 AC_REQUIRE([AC_PROG_RANLIB])
 ac_cv_prog_cc_globals_work=no
+rm -f libconftest.a
 echo 'extern int a; int a;' > conftest1.c
 echo 'extern int a; int main( ){ return a; }' > conftest2.c
 if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
@@ -1181,6 +1182,17 @@ if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
 		# Success!  C works
 		ac_cv_prog_cc_globals_work=yes
 	    else
+		echo "Error linking program with uninitialized global" >&AC_FD_CC
+	        echo "Programs were:" >&AC_FD_CC
+		echo "conftest1.c:" >&AC_FD_CC
+                cat conftest1.c >&AC_FD_CC
+		echo "conftest2.c:" >&AC_FD_CC
+		cat conftest2.c >&AC_FD_CC
+		echo "and link line was:" >&AC_FD_CC
+		echo "${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a" >&AC_FD_CC
+		echo "with output:" >&AC_FD_CC
+		cat conftest.out >&AC_FD_CC
+
 	        # Failure!  Do we need -fno-common?
 	        ${CC-cc} $CFLAGS -fno-common -c conftest1.c >> conftest.out 2>&1
 		rm -f libconftest.a
@@ -1191,7 +1203,9 @@ if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
 		    CFLAGS="$CFLAGS -fno-common"
                 elif test -n "$RANLIB" ; then 
 		    # Try again, with ranlib changed to ranlib -c
-		    ${RANLIB} -c libconftest.a
+                    # (send output to /dev/null incase this ranlib
+                    # doesn't know -c)
+		    ${RANLIB} -c libconftest.a >/dev/null 2>&1
 		    if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
 			RANLIB="$RANLIB -c"
 	 	    #else
