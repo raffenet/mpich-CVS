@@ -308,10 +308,13 @@ if (!(pointer_)) { \
 #else
 #define MPIU_CHKLMEM_DECL(n_) \
  void *(mpiu_chklmem_stk_[n_]);\
- int mpiu_chklmem_stk_sp_=0
+ int mpiu_chklmem_stk_sp_=0;\
+ const int mpiu_chklmem_stk_sz_=n_
+
 #define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)MPIU_Malloc(nbytes_); \
 if (pointer_) { \
+    MPIU_Assert(mpiu_chklmem_stk_sp_<mpiu_chklmem_stk_sz_);\
     mpiu_chklmem_stk_[mpiu_chklmem_stk_sp_++] = pointer_;\
 } else {\
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
@@ -330,10 +333,12 @@ if (pointer_) { \
 /* Persistent memory that we may want to recover if something goes wrong */
 #define MPIU_CHKPMEM_DECL(n_) \
  void *(mpiu_chkpmem_stk_[n_]);\
- int mpiu_chkpmem_stk_sp_=0
+ int mpiu_chkpmem_stk_sp_=0;\
+ const int mpiu_chkpmem_stk_sz_=n_;
 #define MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)MPIU_Malloc(nbytes_); \
 if (pointer_) { \
+    MPIU_Assert(mpiu_chkpmem_stk_sp_<mpiu_chkpmem_stk_sz_);\
     mpiu_chkpmem_stk_[mpiu_chkpmem_stk_sp_++] = pointer_;\
 } else {\
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
