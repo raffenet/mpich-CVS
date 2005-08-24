@@ -42,6 +42,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     } pg_info;  /* used to communicate pg info of each process in the
                    communictor */
     pg_info *local_procs_pg_info=NULL, *remote_procs_pg_info;
+    MPIU_CHKLMEM_DECL(NUMPGS*3+10); 
+    MPIU_CHKPMEM_DECL(NUMPGS);
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
 
@@ -69,13 +71,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     /* Create the new intercommunicator here. We need to send the
        context id to the other side. */
     mpi_errno = MPIR_Comm_create(comm_ptr, newcomm);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     rank = comm_ptr->rank;
     local_comm_size = comm_ptr->local_size;
@@ -86,14 +82,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
 	/* extract the tag from the port_name */
 	mpi_errno = MPIU_Str_get_int_arg(port_name, MPIDI_CH3I_PORT_NAME_TAG_KEY, &port_name_tag);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPIU_STR_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
-
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	
         /* dequeue the accept queue to see if a connection with the
            root on the connect side has been formed in the progress
@@ -115,11 +104,9 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 	    
 	    mpi_errno = MPID_Progress_wait(&progress_state);
 	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno)
-	    {
+	    if (mpi_errno) { 
 		MPID_Progress_end(&progress_state);
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
+		MPIU_ERR_POP(mpi_errno); 
 	    }
 	    /* --END ERROR HANDLING-- */
         }
@@ -129,13 +116,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
            the two roots */ 
         MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
         mpi_errno = MPIR_Comm_create(commself_ptr, &tmp_comm);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
        
         /* fill in all the fields of tmp_comm. */
 
@@ -168,21 +149,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         
         /* Set up VC reference table */
         mpi_errno = MPID_VCRT_Create(tmp_comm->remote_size, &tmp_comm->vcrt);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrt", 0);
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) {
+	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**init_vcrt");
+	}
         mpi_errno = MPID_VCRT_Get_ptr(tmp_comm->vcrt, &tmp_comm->vcr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
+        if (mpi_errno) {
+	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**init_getptr");
+	}
 
         MPID_VCR_Dup(new_vc, tmp_comm->vcr);
 
@@ -197,45 +170,20 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
            remote root. */
     
         /* Allocate memory to store process-group info of local processes */
-        local_pg_ids = (char **) MPIU_Malloc(NUMPGS * sizeof(char *));
-        /* --BEGIN ERROR HANDLING-- */
-        if (local_pg_ids == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC(local_pg_ids,char**,NUMPGS*sizeof(char*),
+			    mpi_errno,"local_pg_ids");
         
         for (i=0; i<NUMPGS; i++)
         {
-            local_pg_ids[i] = (char *) MPIU_Malloc(pgid_len);
-            /* --BEGIN ERROR HANDLING-- */
-            if (local_pg_ids[i] == NULL)
-            {
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-                goto fn_exit;
-            }
-            /* --END ERROR HANDLING-- */
+	    MPIU_CHKLMEM_MALLOC(local_pg_ids[i],char*,pgid_len,
+				mpi_errno,"local_pg_ids[i]");
         }
         
-        local_pg_sizes = (int *) MPIU_Malloc(NUMPGS * sizeof(int));
-        /* --BEGIN ERROR HANDLING-- */
-        if (local_pg_sizes == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
-    
-        local_procs_pg_info = (pg_info *) MPIU_Malloc(local_comm_size *
-                                                      sizeof(pg_info));  
-        /* --BEGIN ERROR HANDLING-- */
-        if (local_procs_pg_info == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC(local_pg_sizes,int*,NUMPGS*sizeof(int),
+			    mpi_errno,"local_pg_sizes");
+	MPIU_CHKLMEM_MALLOC(local_procs_pg_info,pg_info*,
+			    local_comm_size*sizeof(pg_info),
+			    mpi_errno,"local_procs_pg_info");
         
         n_local_pgs = 1;
         MPIU_Strncpy(local_pg_ids[0], comm_ptr->vcr[0]->pg->id, pgid_len);
@@ -254,17 +202,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                 MPIU_Strncpy(local_pg_ids[j], comm_ptr->vcr[i]->pg->id, pgid_len);  
                 local_pg_sizes[j] = comm_ptr->vcr[i]->pg->size;
                 n_local_pgs++;
-                /* --BEGIN ERROR HANDLING-- */
                 if (n_local_pgs == NUMPGS)
                 {
                     /* FIXME - Reached the limit. Either return error
                        code or realloc memory for data structures that
                        are of size NUMPGS. Abort for now. */
-                    /*MPID_Abort(NULL, mpi_errno, 13, NULL);*/
-                    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|sock|pg_limit", 0);
-                    return mpi_errno;
+		    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_INTERN,"**ch3|sock|pg_limit");
                 }
-                /* --END ERROR HANDLING-- */
             }
             local_procs_pg_info[i].pg_no = j;
             local_procs_pg_info[i].rank_in_pg = comm_ptr->vcr[i]->pg_rank;
@@ -282,70 +226,38 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                                   sendtag, recv_ints, 2, MPI_INT,
                                   0, recvtag, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         sendtag++;
         recvtag++;
     }
 
     /* broadcast the received info to local processes */
     mpi_errno = MPIR_Bcast(recv_ints, 2, MPI_INT, root, comm_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     n_remote_pgs = recv_ints[0];
     remote_comm_size = recv_ints[1];
 
     /* All processes allocate memory to store remote process group info */
-
-    remote_pg_ids = (char **) MPIU_Malloc(n_remote_pgs * sizeof(char *));
-    /* --BEGIN ERROR HANDLING-- */
-    if (remote_pg_ids == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKLMEM_MALLOC(remote_pg_ids,char**,n_remote_pgs*sizeof(char*),
+			mpi_errno,"remote_pg_ids");
     
     for (i=0; i<n_remote_pgs; i++) {
-        remote_pg_ids[i] = (char *) MPIU_Malloc(pgid_len);
-	/* --BEGIN ERROR HANDLING-- */
-        if (remote_pg_ids[i] == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
+	/*
+	MPIU_CHKLMEM_MALLOC(remote_pg_ids[i],char*,pgid_len,
+			    mpi_errno,"remote_pg_ids[i]");
+	*/
+	remote_pg_ids[i] = (char*)MPIU_Malloc(pgid_len);
+	if (!remote_pg_ids[i]) {
+	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	}
     }
-    
-    remote_pg_sizes = (int *) MPIU_Malloc(n_remote_pgs * sizeof(int));
-    /* --BEGIN ERROR HANDLING-- */
-    if (remote_pg_sizes == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
-    
-    remote_procs_pg_info = (pg_info *)
-        MPIU_Malloc(remote_comm_size * sizeof(pg_info)); 
-    /* --BEGIN ERROR HANDLING-- */
-    if (remote_procs_pg_info == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+
+    MPIU_CHKLMEM_MALLOC(remote_pg_sizes,int*,n_remote_pgs*sizeof(int),
+			mpi_errno,"remote_pg_sizes");
+    MPIU_CHKLMEM_MALLOC(remote_procs_pg_info,pg_info*,
+			remote_comm_size*sizeof(pg_info),
+			mpi_errno,"remote_procs_pg_info");
     
     if (rank == root) {
         /* Exchange with the remote root the following:
@@ -356,13 +268,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                                   n_remote_pgs, MPI_INT, 
                                   0, recvtag, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         sendtag++;
         recvtag++;
 
@@ -372,13 +278,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                                   2*remote_comm_size, MPI_INT, 
                                   0, recvtag, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         sendtag++;
         recvtag++;
 
@@ -386,13 +286,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             mpi_errno = MPIC_Recv(remote_pg_ids[i], pgid_len, MPI_CHAR,
                                   0, recvtag, tmp_comm->handle,
                                   MPI_STATUS_IGNORE); 
-	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
             recvtag++;
         }
 
@@ -400,55 +294,24 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             mpi_errno = MPIC_Send(local_pg_ids[i],
                                   (int)strlen(local_pg_ids[i])+1, MPI_CHAR,
                                   0, sendtag, tmp_comm->handle);
-	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
             sendtag++;
         }
-
-        for (i=0; i<NUMPGS; i++)
-            MPIU_Free(local_pg_ids[i]);
-        MPIU_Free(local_pg_ids);
-        MPIU_Free(local_pg_sizes);
-        MPIU_Free(local_procs_pg_info);
     }
 
     /* broadcast the received info to local processes */
-
     mpi_errno = MPIR_Bcast(remote_pg_sizes, n_remote_pgs, MPI_INT,
                            root, comm_ptr); 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     mpi_errno = MPIR_Bcast(remote_procs_pg_info, 2*remote_comm_size,
                            MPI_INT, root, comm_ptr); 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     for (i=0; i<n_remote_pgs; i++) {
         mpi_errno = MPIR_Bcast(remote_pg_ids[i], pgid_len, MPI_CHAR,
                                root, comm_ptr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     }
 
     /* Allocate process groups corresponding to the remote_pgs and
@@ -456,14 +319,9 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
     /* Allocate remote_pgs and keep track of them in a
        remote_pgs_array */
-    remote_pgs_array = MPIU_Malloc(n_remote_pgs * sizeof(MPIDI_PG_t *)); 
-    /* --BEGIN ERROR HANDLING-- */
-    if (remote_pgs_array == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKLMEM_MALLOC(remote_pgs_array,MPIDI_PG_t**,
+			n_remote_pgs*sizeof(MPIDI_PG_t*),
+			mpi_errno, "remote_pgs_array");
 
     mpi_errno = PMI_KVS_Get_name_length_max(&kvs_namelen);
     /* --BEGIN ERROR HANDLING-- */
@@ -479,25 +337,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 	/* If the remote_pg already exists, don't create a new one */
 
 	mpi_errno = MPIDI_PG_Find(remote_pg_ids[i], &new_pg);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
 	if (new_pg == NULL)
 	{ 
             /* Allocate process group data structure and populate */
             mpi_errno = MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], &new_pg);
-            /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-            {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                goto fn_exit;
-            }
-            /* --END ERROR HANDLING-- */
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 #ifdef MPIDI_CH3_USES_SSHM
             /* brad : extra pg ref needed for shared memory modules because the shm_XXXXing_list's
              *         need to be walked though in the later stages of finalize to free queue_info's.
@@ -506,14 +352,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 #endif
             new_pg->size = remote_pg_sizes[i];
 
-            new_pg->ch.kvs_name = MPIU_Malloc(kvs_namelen + 1);
-            /* --BEGIN ERROR HANDLING-- */
-            if (new_pg->ch.kvs_name == NULL)
-            {
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-                goto fn_exit;
-            }
-            /* --END ERROR HANDLING-- */
+	    MPIU_CHKPMEM_MALLOC(new_pg->ch.kvs_name,char *,kvs_namelen+1,
+				mpi_errno,"new_pg->ch.kvs_name");
 
             /* Set the kvsname to blank since it will not be used */
 /*             new_pg->ch.kvs_name[0] = '\0'; */
@@ -543,7 +383,6 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         else { 
             /* free the memory allocated for remote_pg_ids[i] */
             MPIU_Free(remote_pg_ids[i]);
-
             /* do a sanity check on the process group that was found */
 
             /* --BEGIN ERROR HANDLING-- */
@@ -568,27 +407,16 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
     }
     /* --END ERROR HANDLING-- */
 
-    bizcards = (char *) MPIU_Malloc(MPIDU_MAX(local_comm_size,remote_comm_size) * val_max_sz);
-    /* --BEGIN ERROR HANDLING-- */
-    if (bizcards == NULL)
-    {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    MPIU_CHKLMEM_MALLOC(bizcards,char*,
+		MPIDU_MAX(local_comm_size,remote_comm_size) * val_max_sz,
+			mpi_errno, "bizcards");
 
     if (rank == root)
     {
        /* Recv the business cards of the processes on the remote side from the remote root */
         mpi_errno = MPIC_Recv(bizcards, remote_comm_size*val_max_sz, MPI_CHAR,
                               0, recvtag, tmp_comm->handle, &status);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         recvtag++;
 
         bizcards_len = status.count;
@@ -598,22 +426,10 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
        because the non-root nodes need to know it to call bcast. */
     
     mpi_errno = MPIR_Bcast(&bizcards_len, 1, MPI_INT, root, comm_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     
     mpi_errno = MPIR_Bcast(bizcards, bizcards_len, MPI_CHAR, root, comm_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         
     /* Extract the business cards and store them in the cache */
 
@@ -625,13 +441,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                                                     remote_pgs_array[pg_no]->size,
                                                     remote_procs_pg_info[i].rank_in_pg, 
                                                     bizcard_ptr);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
         bizcard_ptr += strlen(bizcard_ptr) + 1;
     }
@@ -651,23 +461,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             goto fn_exit;
         }
         /* --END ERROR HANDLING-- */
-        key = (char *) MPIU_Malloc(key_max_sz);
-        /* --BEGIN ERROR HANDLING-- */
-        if (key == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
-    
-        val = (char *) MPIU_Malloc(val_max_sz);
-        /* --BEGIN ERROR HANDLING-- */
-        if (val == NULL)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
+	MPIU_CHKLMEM_MALLOC(key,char*,key_max_sz,mpi_errno,"key");
+        MPIU_CHKLMEM_MALLOC(val,char*,val_max_sz,mpi_errno,"val");
 
         /* get the business cards into val and store them compactly in
            bizcards for communication */
@@ -679,13 +474,7 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             mpi_errno = MPIDI_CH3I_Lookup_bizcard_cache(comm_ptr->vcr[i]->pg->id, 
                                                         comm_ptr->vcr[i]->pg_rank, val, 
                                                         val_max_sz, &found);
-            /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-            {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                goto fn_exit;
-            }
-            /* --END ERROR HANDLING-- */
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
             if (!found) {
                 /* get it from the KVS space */
@@ -723,17 +512,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
         /* send the business cards to the remote root */
         mpi_errno = MPIC_Send(bizcards, bizcards_len, MPI_CHAR,
                               0, sendtag, tmp_comm->handle); 
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         sendtag++;
-
-        MPIU_Free(key);
-        MPIU_Free(val);
     }
 
 
@@ -758,21 +538,13 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
     /* Set up VC reference table */
     mpi_errno = MPID_VCRT_Create(intercomm->remote_size, &intercomm->vcrt);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrt", 0);
-        goto fn_exit;
+    if (mpi_errno) {
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**init_vcrt");
     }
-    /* --END ERROR HANDLING-- */
     mpi_errno = MPID_VCRT_Get_ptr(intercomm->vcrt, &intercomm->vcr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
-        goto fn_exit;
+    if (mpi_errno) {
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**init_getptr");
     }
-    /* --END ERROR HANDLING-- */
 
     for (i=0; i < intercomm->remote_size; i++)
     {
@@ -781,22 +553,8 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
 
     }
 
-    MPIU_Free(remote_pg_ids);
-    MPIU_Free(remote_pg_sizes);
-    MPIU_Free(remote_procs_pg_info);
-
-    MPIU_Free(remote_pgs_array);
-
-    MPIU_Free(bizcards);
-
     mpi_errno = MPIR_Barrier(comm_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     /* synchronize with remote root */
     if (rank == root) {
@@ -804,26 +562,14 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
                                   sendtag, &j, 0, MPI_INT,
                                   0, recvtag, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
-        /* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno != MPI_SUCCESS)
-        {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-            goto fn_exit;
-        }
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
         /* All communication with remote root done. Release the communicator. */
         MPIR_Comm_release(tmp_comm);
     }
 
     mpi_errno = MPIR_Barrier(comm_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     /* Free new_vc. It was explicitly allocated in ch3_progress.c and returned by 
        MPIDI_CH3I_Acceptq_dequeue. */
@@ -845,12 +591,20 @@ int MPIDI_CH3_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_C
             }
             MPID_Progress_end(&progress_state);
         }
-
+	
+	/* new_vc was allocated in a separate code */
         MPIU_Free(new_vc);
     }
+    MPIU_CHKPMEM_COMMIT();
 
 fn_exit:
+    MPIU_CHKLMEM_FREEALL();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_ACCEPT);
-#endif    
     return mpi_errno;
+fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
+#else
+    return mpi_errno;
+#endif    
 }
