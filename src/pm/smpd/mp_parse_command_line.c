@@ -1046,6 +1046,14 @@ configfile_loop:
 		strncpy(env_node->value, (*argvp)[3], SMPD_MAX_VALUE_LENGTH);
 		env_node->next = env_list;
 		env_list = env_node;
+		if (strcmp(env_node->name, "MPI_DLL_NAME") == 0)
+		{
+		    MPIU_Strncpy(smpd_process.env_dll, env_node->value, SMPD_MAX_FILENAME);
+		}
+		if (strcmp(env_node->name, "MPI_WRAP_DLL_NAME") == 0)
+		{
+		    MPIU_Strncpy(smpd_process.env_wrap_dll, env_node->value, SMPD_MAX_FILENAME);
+		}
 #ifdef HAVE_WINDOWS_H
 		if ((strcmp(env_node->name, "MPICH_CHOP_ERROR_STACK") == 0) && ((env_node->value[0] == '\0') || (env_node->value[0] == '-')))
 		{
@@ -2156,6 +2164,8 @@ configfile_loop:
 		}
 		iter = iter->next;
 	    }
+	    /* Save the channel to be used by spawn commands */
+	    MPIU_Strncpy(smpd_process.env_channel, channel, 10);
 	}
     }
 

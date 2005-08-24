@@ -694,6 +694,9 @@ typedef struct smpd_global_t
     char key[SMPD_MAX_NAME_LENGTH];
     char val[SMPD_MAX_VALUE_LENGTH];
     SMPD_BOOL do_console_returns;
+    char env_channel[10];
+    char env_dll[SMPD_MAX_FILENAME];
+    char env_wrap_dll[SMPD_MAX_FILENAME];
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

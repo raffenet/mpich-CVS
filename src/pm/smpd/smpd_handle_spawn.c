@@ -26,6 +26,9 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     int nproc;
     char *cur_env_loc;
     int env_maxlen;
+    SMPD_BOOL env_channel_specified = SMPD_FALSE;
+    SMPD_BOOL env_dll_specified = SMPD_FALSE;
+    SMPD_BOOL env_wrap_dll_specified = SMPD_FALSE;
 
     smpd_enter_fn(FCNAME);
 
@@ -350,6 +353,19 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 			*env_val = '\0';
 			env_val++;
 			MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, env_key, env_val);
+			/* Check for special environment variables */
+			if (strcmp(env_val, "MPICH2_CHANNEL") == 0)
+			{
+			    env_channel_specified = SMPD_TRUE;
+			}
+			else if (strcmp(env_val, "MPI_DLL_NAME") == 0)
+			{
+			    env_dll_specified = SMPD_TRUE;
+			}
+			else if (strcmp(env_val, "MPI_WRAP_DLL_NAME") == 0)
+			{
+			    env_wrap_dll_specified = SMPD_TRUE;
+			}
 		    }
 		    free(env_key);
 		    token = strtok(NULL, " ");
@@ -359,6 +375,26 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /* wdir */
 	    /* map */
 	    /* etc */
+	}
+
+	/* Add special environment variables */
+	if (env_channel_specified == SMPD_FALSE && env_dll_specified == SMPD_FALSE)
+	{
+	    if (smpd_process.env_dll[0] != '\0')
+	    {
+		MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPI_DLL_NAME", smpd_process.env_dll);
+	    }
+	    else if (smpd_process.env_channel[0] != '\0')
+	    {
+		MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPICH2_CHANNEL", smpd_process.env_channel);
+	    }
+	}
+	if (env_wrap_dll_specified == SMPD_FALSE)
+	{
+	    if (smpd_process.env_wrap_dll[0] != '\0')
+	    {
+		MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPI_WRAP_DLL_NAME", smpd_process.env_wrap_dll);
+	    }
 	}
 
 	/* create launch nodes for the current command */

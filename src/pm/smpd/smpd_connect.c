@@ -177,7 +177,10 @@ smpd_global_t smpd_process =
       "",               /* job_key_password        */
       "",               /* key                     */
       "",               /* val                     */
-      SMPD_FALSE        /* do_console_returns      */
+      SMPD_FALSE,       /* do_console_returns      */
+      "",               /* env_channel             */
+      "",               /* env_dll                 */
+      ""                /* env_wrap_dll            */
     };
 
 #undef FCNAME
