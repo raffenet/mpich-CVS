@@ -7,3 +7,4 @@ icgroup 8
 icm 8
 ctxalloc 2
 cmfree 4
+cmsplit 4

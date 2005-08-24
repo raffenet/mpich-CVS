@@ -12,6 +12,7 @@ ctxalloc_SOURCES = ctxalloc.c
 icgroup_SOURCES  = icgroup.c
 cmfree_SOURCES   = cmfree.c
 icm_SOURCES      = icm.c
+cmsplit_SOURCES  = cmsplit.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
