@@ -360,6 +360,9 @@
  *
  */
 /* --BEGIN ERROR MACROS-- */
+#define MPIU_ERR_POP(err_) \
+    MPIU_ERR_SETANDSTMT(err_,MPI_ERR_OTHER,goto fn_fail,"**fail")
+
 #ifdef HAVE_ERROR_CHECKING
 #define MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
@@ -408,6 +411,8 @@
    HAVE_ERROR_CHECKING */
 #define MPIU_ERR_SETANDJUMP(err_,class_,msg_) \
      MPIU_ERR_SETANDSTMT(err_,class_,goto fn_fail,msg_)
+#define MPIU_ERR_SETFATALANDJUMP(err_,class_,msg_) \
+     MPIU_ERR_SETFATALANDSTMT(err_,class_,goto fn_fail,msg_)
 #define MPIU_ERR_CHKANDSTMT(cond_,err_,class_,stmt_,msg_) \
     {if (cond_) { MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_); }}
 #define MPIU_ERR_CHKANDJUMP(cond_,err_,class_,msg_) \
