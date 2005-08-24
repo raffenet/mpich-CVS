@@ -3276,6 +3276,8 @@ sub PrintRoutineDefNoStatus {
     my $routine = $_[2];
     my $arginfo = $_[3];
     my $defonly = $_[4];
+
+    my $fnchash = "$class-$routine";
     
     my $cArgs;      # The argument string of the C binding
     my $Croutine;   # Name of the MPI C binding routine to all;
@@ -3300,6 +3302,11 @@ sub PrintRoutineDefNoStatus {
 
     &PrintMethodDef( $OUTFD, $class, $routine, $arginfo, $cArgs );    
     
+    # This inserts a modifier, such as const or =0 (for pure virtual)
+    if (defined($funcAttributes{$fnchash})) {
+	print $OUTFD " $funcAttributes{$fnchash}";
+    }
+
     # Some methods cannot be defined yet.  In that case, we're done.
     if ($defonly || defined($defer_definition{$routine})) { 
 	print $OUTFD ";\n";

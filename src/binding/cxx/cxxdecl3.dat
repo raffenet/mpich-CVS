@@ -61,20 +61,20 @@ win-Start void (in:constref:Group ,, ) const
 win-Test bool (,return) const
 win-Unlock void (, ) const
 win-Wait void () const
-comm-Allgather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype, )
-comm-Allgatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype, )
-comm-Allreduce void (in:const , , ,in:constref:Datatype ,in:constref:Op, )
-comm-Alltoall void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype, )
-comm-Alltoallv void (in:const ,in:const ,in:const ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype, )
-comm-Alltoallw void (in:const ,in:const ,in:const ,in:dtypearray:SIZE , ,in:const ,in:const ,in:dtypearray:SIZE, )
-comm-Barrier void ()
-comm-Bcast void (, ,in:constref:Datatype , , )
-comm-Gather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , )
-comm-Gatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype , )
-comm-Reduce void (in:const , , ,in:constref:Datatype ,in:constref:Op , )
-comm-Reduce_scatter void (in:const , , ,in:constref:Datatype ,in:constref:Op, )
-comm-Scatter void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , )
-comm-Scatterv void (in:const ,in:const ,in:const ,in:constref:Datatype , , ,in:constref:Datatype , )
+comm-Allgather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype, ) const
+comm-Allgatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype, ) const
+comm-Allreduce void (in:const , , ,in:constref:Datatype ,in:constref:Op, ) const
+comm-Alltoall void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype, ) const
+comm-Alltoallv void (in:const ,in:const ,in:const ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype, ) const
+comm-Alltoallw void (in:const ,in:const ,in:const ,in:dtypearray:SIZE , ,in:const ,in:const ,in:dtypearray:SIZE, ) const
+comm-Barrier void () const
+comm-Bcast void (, ,in:constref:Datatype , , ) const
+comm-Gather void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , ) const
+comm-Gatherv void (in:const , ,in:constref:Datatype , ,in:const ,in:const ,in:constref:Datatype , ) const
+comm-Reduce void (in:const , , ,in:constref:Datatype ,in:constref:Op , ) const
+comm-Reduce_scatter void (in:const , , ,in:constref:Datatype ,in:constref:Op, ) const
+comm-Scatter void (in:const , ,in:constref:Datatype , , ,in:constref:Datatype , ) const
+comm-Scatterv void (in:const ,in:const ,in:const ,in:constref:Datatype , , ,in:constref:Datatype , ) const
 # FIXME: this entry confuses buildiface, which groups it with
 # inter-Create_intercomm (because of the class-Create -> Create_class rule
 # This needs a fix in GetCArgs, which finds the routine that matches
@@ -91,7 +91,7 @@ comm-Delete_attr void (, )
 comm-Free_keyval static void (in:refint )
 comm-Get_attr bool (, , ,return ) const
 comm-Get_name void (, ,in:refint ) const
-comm-Set_attr void (, ,in:const ) const
+comm-Set_attr void (, ,in:const ) 
 comm-Set_name void (,in:const )
 #dtype-Create_keyval static int (Datatype::Copy_attr_function* type_copy_attr_fn ,Datatype::Delete_attr_function* type_delete_attr_fn , ,return)
 dtype-Delete_attr void (, )
@@ -305,7 +305,7 @@ errh-Free void ()
 #-Wtick double ()
 -Finalize void ()
 -Is_initialized bool (return)
-comm-Abort void ( )
+comm-Abort void ( ) const
 -Pcontrol void (in:const ,... )
 # Status methods don't require routines and are handled specially
 #st-Get_source int (,return) const
