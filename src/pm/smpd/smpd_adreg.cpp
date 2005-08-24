@@ -186,7 +186,7 @@ static DWORD ScpCreate(
 	{TEXT("serviceBindingInformation"), ADS_ATTR_UPDATE, ADSTYPE_CASE_IGNORE_STRING, &binding, 1},
     };
 
-    if(!szClass /*|| !szAccount*/ || !pszDN || !(ccDN > 0))
+    if (!szClass /*|| !szAccount*/ || !pszDN || !(ccDN > 0))
     {
 	hr = ERROR_INVALID_PARAMETER;
 	ReportError(TEXT("Invalid parameter."), hr);
@@ -411,10 +411,10 @@ static DWORD SpnRegister(TCHAR *pszServiceAcctDN,
 
     /* Bind to a domain controller. */
     /* Get the domain for the current user. */
-    if(GetUserNameEx(NameSamCompatible, szSamName, &dwSize))
+    if (GetUserNameEx(NameSamCompatible, szSamName, &dwSize))
     {
 	TCHAR *pWhack = _tcschr(szSamName, '\\');
-	if(pWhack)
+	if (pWhack)
 	{
 	    *pWhack = '\0';
 	}
@@ -434,7 +434,7 @@ static DWORD SpnRegister(TCHAR *pszServiceAcctDN,
 	DS_RETURN_DNS_NAME |
 	DS_DIRECTORY_SERVICE_REQUIRED,
 	&pDcInfo);
-    if(dwStatus != 0)
+    if (dwStatus != 0)
     {
 	return dwStatus;
     }
@@ -443,7 +443,7 @@ static DWORD SpnRegister(TCHAR *pszServiceAcctDN,
     dwStatus = DsBind(pDcInfo->DomainControllerName, NULL, &hDs);
     /* Free the DOMAIN_CONTROLLER_INFO buffer. */
     NetApiBufferFree(pDcInfo);
-    if(dwStatus != ERROR_SUCCESS)
+    if (dwStatus != ERROR_SUCCESS)
     {
 	return dwStatus;
     }
@@ -501,14 +501,14 @@ SMPD_BOOL smpd_setup_scp()
     GetComputerObjectNameW(NameFullyQualifiedDN, NULL, &dwLen);
 
     pwszComputerName = new WCHAR[dwLen + 1];
-    if(NULL == pwszComputerName)
+    if (NULL == pwszComputerName)
     {
 	result = SMPD_FALSE;
 	goto fn_exit;
     }
 
     /* Get the DN account name of the computer object for the server. */
-    if(!GetComputerObjectNameW(NameFullyQualifiedDN, pwszComputerName, &dwLen))
+    if (!GetComputerObjectNameW(NameFullyQualifiedDN, pwszComputerName, &dwLen))
     {
 	delete pwszComputerName;
 	result = SMPD_FALSE;
@@ -566,14 +566,14 @@ SMPD_BOOL smpd_remove_scp()
     GetComputerObjectNameW(NameFullyQualifiedDN, NULL, &dwLen);
 
     pwszComputerName = new WCHAR[dwLen + 1];
-    if(NULL == pwszComputerName)
+    if (NULL == pwszComputerName)
     {
 	result = SMPD_FALSE;
 	goto fn_exit;
     }
 
     /* Get the DN account name of the computer object for the server. */
-    if(!GetComputerObjectNameW(NameFullyQualifiedDN, pwszComputerName, &dwLen))
+    if (!GetComputerObjectNameW(NameFullyQualifiedDN, pwszComputerName, &dwLen))
     {
 	result = SMPD_FALSE;
 	goto fn_exit;
@@ -696,7 +696,7 @@ DWORD smpd_scp_update(USHORT usPort)
 	    "ADsGetObject failed to bind to GUID (bind string: %S): ",
 	    szAdsPath);
 	ReportServiceError(szMsg1, hr);
-	if(pObj)
+	if (pObj)
 	{
 	    pObj->Release();
 	}

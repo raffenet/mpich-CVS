@@ -442,7 +442,7 @@ SMPD_BOOL smpd_remove_service(SMPD_BOOL bErrorOnNotInstalled)
 	    RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\MPICH\\SMPD");
 
 	    /* now remove the service */
-            if( DeleteService(schService) )
+            if (DeleteService(schService))
 	    {
                 _tprintf(TEXT("%s removed.\n"), TEXT(SMPD_SERVICE_DISPLAY_NAME) );
 		fflush(stdout);

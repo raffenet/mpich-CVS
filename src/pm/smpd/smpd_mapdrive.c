@@ -152,7 +152,7 @@ static BOOL EnumerateDisksFunc(LPNETRESOURCE lpnr, DWORD dwScope, DWORD dwType, 
 
 		/* If the NETRESOURCE structure represents a container resource,  */
 		/*  call the EnumerateDisksFunc function recursively. */
-		if(RESOURCEUSAGE_CONTAINER == (lpnrLocal[i].dwUsage & RESOURCEUSAGE_CONTAINER))
+		if (RESOURCEUSAGE_CONTAINER == (lpnrLocal[i].dwUsage & RESOURCEUSAGE_CONTAINER))
 		    EnumerateDisksFunc(&lpnrLocal[i], dwScope, dwType, pszDrive, pszShare, pbFound, pbMatched);
 	    }
 	}
@@ -166,7 +166,7 @@ static BOOL EnumerateDisksFunc(LPNETRESOURCE lpnr, DWORD dwScope, DWORD dwType, 
 
     dwResult = WNetCloseEnum(hEnum);
 
-    if(dwResult != NO_ERROR)
+    if (dwResult != NO_ERROR)
 	return FALSE;
 
     return TRUE;
