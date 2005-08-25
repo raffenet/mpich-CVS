@@ -2198,8 +2198,8 @@ Function ReplaceAts( str, use_f77, b64 )
 			Case "@HAVE_MPI_DARRAY_SUBARRAY@"
 				str = Replace(str, "@HAVE_MPI_DARRAY_SUBARRAY@", "")
 			Case "@DEFINE_HAVE_MPI_GREQUEST@"
-				'str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "#define HAVE_MPI_GREQUEST")
-				str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "")
+				str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "#define HAVE_MPI_GREQUEST 1")
+				'str = Replace(str, "@DEFINE_HAVE_MPI_GREQUEST@", "")
 			Case "@ADDRESS_KIND@"
 				If b64 then
 					str = Replace(str, "@ADDRESS_KIND@", "8")
@@ -2950,7 +2950,8 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "HAVE_MPI_DARRAY_SUBARRAY"
 					fout.WriteLine("#define HAVE_MPI_DARRAY_SUBARRAY 1")
 				Case "HAVE_MPI_GREQUEST"
-					fout.WriteLine("/* #undef HAVE_MPI_GREQUEST */")
+					'fout.WriteLine("/* #undef HAVE_MPI_GREQUEST */")
+					fout.WriteLine("#define HAVE_MPI_GREQUEST 1")
 				Case "HAVE_MPI_INFO"
 					fout.WriteLine("#define HAVE_MPI_INFO 1")
 				Case "HAVE_MPI_LONG_LONG_INT"
