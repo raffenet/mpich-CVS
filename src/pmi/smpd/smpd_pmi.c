@@ -27,7 +27,7 @@
     NSObjectFileImage fileImage; \
     NSObjectFileImageReturnCode returnCode = \
 	NSCreateObjectFileImageFromFile(b, &fileImage); \
-    if(returnCode == NSObjectFileImageSuccess) \
+    if (returnCode == NSObjectFileImageSuccess) \
     { \
 	a = NSLinkModule(fileImage, b, \
 			 NSLINKMODULE_OPTION_RETURN_ON_ERROR \
