@@ -241,9 +241,6 @@
 				RelativePath="..\..\src\ch3u_acceptq.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_bizcard_cache.c">
-			</File>
-			<File
 				RelativePath="..\..\src\ch3u_buffer.c">
 			</File>
 			<File
