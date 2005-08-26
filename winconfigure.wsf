@@ -3070,6 +3070,8 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef SPPUX */")
 				Case "SX4"
 					fout.WriteLine("/* #undef SX4 */")
+				Case "USE_DBG_LOGGING"
+					fout.WriteLine("/* #undef USE_DBG_LOGGING */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
