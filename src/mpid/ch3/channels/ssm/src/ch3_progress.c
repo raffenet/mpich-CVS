@@ -45,7 +45,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 #ifdef MPICH_DBG_OUTPUT
     if (is_blocking)
     {
-	MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));  /* brad : "false" never printed */
+	MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     }
 #endif
     do
@@ -125,6 +125,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    MPIDU_Yield();
 	}
 
+	/* The following check is commented out because it leads to long delays in establishing connections */
 	/*if ((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0)*/
 	{
 	    /* check for new shmem queue connection requests */
@@ -157,6 +158,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		}
 		MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
 		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+		vc_ptr->ch.shm_read_connected = 1;
 		vc_ptr->ch.bShm = TRUE;
 		vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;/*info.info.addr;*/
 		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
@@ -342,7 +344,6 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    }
 	}
 
-        /* brad : condition commented out in naive version */
 	if (((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0) || !is_blocking)
 	{
 	    /* check for new shmem queue connection requests */
@@ -365,20 +366,12 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		MPIDI_PG_t *pg;
 
 		MPIDI_PG_Find(info.pg_id, &pg);
-                /* brad : must deduce rank in the case of INTERcomms, so that we get
-                 *          the correct vc.  pg_rank is filled based on MPI_COMM_WORLD so it
-                 *          doesn't work in the case of different MPI_COMM_WORLDs.
-                 */                
-                   if (info.is_intercomm)
-                   {
-                       info.pg_rank = MPIDI_CH3I_Bizcard_Search(pg->id, info.pid);
-                       if(info.pg_rank == -1)
-                       {
-                           mpi_errno = -1;
-                           goto fn_exit;
-                       }
-                   }
 		MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+		/*
+		printf("attaching to shared memory queue:\nVC.rank %d\nVC.pg_id <%s>\nPG.id <%s>\n",
+		    vc_ptr->pg_rank, vc_ptr->pg->id, pg->id);
+		fflush(stdout);
+		*/
 		/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
 		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);
 		if (rc != MPI_SUCCESS)
@@ -388,6 +381,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		}
 		MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
 		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+		vc_ptr->ch.shm_read_connected = 1;
 		vc_ptr->ch.bShm = TRUE;
 		vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;/*info.info.addr;*/
 		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
@@ -477,6 +471,7 @@ int MPIDI_CH3I_Message_queue_progress()
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
 	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
 	vc_ptr->ch.bShm = TRUE;
 	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
 	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
@@ -955,6 +950,7 @@ int MPIDI_CH3I_Message_queue_progress()
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
 	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
 	vc_ptr->ch.bShm = TRUE;
 	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
 	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));

@@ -37,16 +37,16 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     int pg_size;
     int pg_rank = *pg_rank_p;
     int p;
-    char * parent_bizcard = NULL;    
-    char queue_name[100];
-    /* brad : this key and val are different than old ones.  they are strictly local; variables
-     *         who are required to be seen outside of this function are passed in
-     */
+    char * parent_bizcard = NULL;
+#ifdef USE_MQSHM
+    char queue_name[MPIDI_MAX_SHM_NAME_LENGTH];
+    int initialize_queue = 0;
+#endif
     int key_max_sz;
     int val_max_sz;
     char * key = NULL;
     char * val = NULL;
-    
+
     srand(getpid()); /* brad : needed by generate_shm_string */
 
     MPIDI_CH3I_Process.shm_reading_list = NULL;
@@ -92,11 +92,10 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	/* --END ERROR HANDLING-- */
     }
 
-#ifdef MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
-    /* brad : added so eventually bootstrapQ_name can be incorporated into the bizcard */
-    (*pg_p)->ch.bootstrapQ_name = NULL;
-    (*pg_p)->ch.bootstrapQ_name = MPIU_Malloc(sizeof(char) * 100); /* brad : matches queue_name length */
-    if((*pg_p)->ch.bootstrapQ_name == NULL)
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    (*pg_p)->ch.shm_name = NULL;
+    (*pg_p)->ch.shm_name = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
+    if ((*pg_p)->ch.shm_name == NULL)
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
@@ -104,7 +103,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	/* --END ERROR HANDLING-- */        
     }
 #endif
-    
+
     /* set the global variable defaults */
     (*pg_p)->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
 #ifdef HAVE_SHARED_PROCESS_READ
@@ -168,13 +167,13 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	(*pg_p)->vct[p].ch.send_active = NULL;
 	(*pg_p)->vct[p].ch.req = NULL;
 	(*pg_p)->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	(*pg_p)->vct[p].ch.shm_read_connected = 0;
 	(*pg_p)->vct[p].ch.read_shmq = NULL;
 	(*pg_p)->vct[p].ch.write_shmq = NULL;
 	(*pg_p)->vct[p].ch.shm = NULL;
 	(*pg_p)->vct[p].ch.shm_state = 0;
 	(*pg_p)->vct[p].ch.shm_next_reader = NULL;
 	(*pg_p)->vct[p].ch.shm_next_writer = NULL;
-        /* brad : sshm does not have a ch.bShm */
     }
 
     /* brad : do the shared memory specific setup items so we can later do the
@@ -189,16 +188,11 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     }
 #else
     gethostname((*pg_p)->ch.shm_hostname, sizeof((*pg_p)->ch.shm_hostname));
-/*     printf("*pg_p = %d, my_pg = %d\n",  (int) (*pg_p),  (int) MPIDI_Process.my_pg);  2nd one is NULL... */
 #endif
 
-#ifdef MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
-    /* brad : prepare the bootstrapQ_name field in the case where it has a parent. this is so
-     *         in a SMP environment that processes on the same system but different communicators
-     *         can communicate via shared memory.
-     */
+#ifdef MPIDI_CH3_USES_SHM_NAME
     MPIDI_Process.my_pg = *pg_p;  /* was later prior but internally Get_parent_port needs this */    
-    if (*has_parent) /* brad : set in PMI_Init */
+    if (*has_parent) /* set in PMI_Init */
     {
         mpi_errno = MPIDI_CH3_Get_parent_port(&parent_bizcard);
         if (mpi_errno != MPI_SUCCESS)
@@ -207,60 +201,80 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
                                              "**ch3|get_parent_port", NULL);
             return mpi_errno;
         }
-        
-        /* bootstrapQ_name already malloc'd above */
-        mpi_errno = MPIU_Str_get_string_arg(parent_bizcard, MPIDI_CH3I_SHM_BOOTSTRAPQ_NAME_KEY, (*pg_p)->ch.bootstrapQ_name, 100);
-        if (mpi_errno != MPIU_STR_SUCCESS)
-        {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_hostd", 0);  /* brad : TODO create new error code (used old one to compile) */
-            return mpi_errno;
-        }        
-        
+
+	/* Parse the shared memory queue name from the bizcard */
+	{
+	    char *orig_str, *tmp_str = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
+	    if (tmp_str == NULL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    mpi_errno = MPIU_Str_get_string_arg(parent_bizcard, MPIDI_CH3I_SHM_QUEUE_KEY, tmp_str, MPIDI_MAX_SHM_NAME_LENGTH);
+	    if (mpi_errno != MPIU_STR_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+		return mpi_errno;
+	    }
+	    orig_str = tmp_str;
+	    while (*tmp_str != ':' && *tmp_str != '\0')
+		tmp_str++;
+	    if (*tmp_str == ':')
+	    {
+		tmp_str++;
+		mpi_errno = MPIU_Strncpy((*pg_p)->ch.shm_name, tmp_str, MPIDI_MAX_SHM_NAME_LENGTH);
+		MPIU_Free(orig_str);
+		if (mpi_errno != 0)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+		    return mpi_errno;
+		}
+	    }
+	    else
+	    {
+		MPIU_Free(orig_str);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+		return mpi_errno;
+	    }
+	}
     }
 #endif            
-     
 
 #ifdef USE_MQSHM
 
-    MPIU_Strncpy(key, "bootstrapQ_name", key_max_sz );
-    /* brad : distinguish pg_rank between having a parent and not (want to
-     *         ensure bootstrapQ_name is identical on different processes in
-     *         different process groups)
-     */
+    MPIU_Strncpy(key, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, key_max_sz );
     if (pg_rank == 0)
     {
-          if (*has_parent == 0 )  /* brad : this guy will generate the shm string */
-          {              
-              mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, 100);
-              if (mpi_errno != MPI_SUCCESS)
-              {
-                  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
-                  return mpi_errno;
-              }
-        
-              MPIU_Strncpy(val, queue_name, val_max_sz);
-              
-#ifdef MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
-              MPIU_Strncpy((*pg_p)->ch.bootstrapQ_name, val, val_max_sz);
-          }
-          else      /* brad : has a parent, yet is the root of its process group so it must
-                     *         publish the inherited bootstrapQ_name in THIS kvs_name. it
-                     *         publishes it just for consistency (technically this information
-                     *         would be available simply within the bizcard/parent_port_name).
-                     */
-          {
-              MPIU_Strncpy(queue_name, (*pg_p)->ch.bootstrapQ_name, 100);
-              MPIU_Strncpy(val, queue_name, val_max_sz);
-#endif              
-          }
-                
-          mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, 1);
-          if (mpi_errno != MPI_SUCCESS)
-          {
-              mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
-              return mpi_errno;
-          }
-          /*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
+	if (*has_parent == 0)
+	{
+	    /* Only the first process of the first group needs to create the bootstrap queue. */
+	    /* Everyone else including spawned processes will attach to this queue. */
+	    mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, MPIDI_MAX_SHM_NAME_LENGTH);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+		return mpi_errno;
+	    }
+	    initialize_queue = 1;
+	    MPIU_Strncpy(val, queue_name, val_max_sz);
+
+/*#ifdef MPIDI_CH3_USES_SHM_NAME*/ /* It's not possible for USE_MQSHM to be defined and MPIDI_CH3_USES_SHM_NAME not defined. */
+	    MPIU_Strncpy((*pg_p)->ch.shm_name, val, val_max_sz);
+	}
+	else
+	{
+	    MPIU_Strncpy(queue_name, (*pg_p)->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
+	    MPIU_Strncpy(val, queue_name, val_max_sz);
+/*#endif*/
+	}
+
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, initialize_queue);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
+	    return mpi_errno;
+	}
+	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 
 	mpi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, key, val);          
 	if (mpi_errno != 0)
@@ -295,12 +309,12 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
 	    return mpi_errno;
 	}
-	MPIU_Strncpy(queue_name, val, val_max_sz);
-#ifdef MPIDID_CH3_IMPLEMENTS_COMM_CONNECT
-          MPIU_Strncpy((*pg_p)->ch.bootstrapQ_name, val, val_max_sz);
+	MPIU_Strncpy(queue_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
+#ifdef MPIDI_CH3_USES_SHM_NAME
+	MPIU_Strncpy((*pg_p)->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, 1);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, 0);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
@@ -313,12 +327,16 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	return mpi_errno;
     }
-/*     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink((*pg_p)->ch.bootstrapQ); */
-/*     if (mpi_errno != MPI_SUCCESS) */
-/*     { */
-/* 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_unlink", 0); */
-/* 	return mpi_errno; */
-/*     } */
+    /* The bootstrap queue cannot be unlinked because it can be used outside of this process group. */
+    /* Spawned groups will use it and other MPI jobs may use it by calling MPI_Comm_connect/accept */
+    /*
+    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink((*pg_p)->ch.bootstrapQ);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_unlink", 0);
+	return mpi_errno;
+    }
+    */
 
 #else
 
@@ -333,7 +351,6 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 
     /* brad : the pg needs to be set for sshm channels.  for all channels this is done in mpid_init.c */
     MPIDI_Process.my_pg = *pg_p;
-        MPIDI_Process.my_pg = *pg_p;
 
     /* brad : get the sshm part of the business card  */
     mpi_errno = MPIDI_CH3U_Get_business_card_sshm(bc_val_p, val_max_sz_p);
@@ -346,35 +363,40 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     }
 
     /* see if we're meant to publish */
-    if(publish_bc_p != NULL) {
-        pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, *bc_key_p, *publish_bc_p);
-        if (pmi_errno != PMI_SUCCESS)
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put",
-                                                 "**pmi_kvs_put %d", pmi_errno);
-                goto fn_fail;
-                /* --END ERROR HANDLING-- */
-            }
-        pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
-        if (pmi_errno != PMI_SUCCESS)
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
-                                                 "**pmi_kvs_commit %d", pmi_errno);
-                goto fn_fail;
-                /* --END ERROR HANDLING-- */
-            }
+    if (publish_bc_p != NULL)
+    {
+	/*
+	printf("business card:\n<%s>\npg_id:\n<%s>\n\n", *publish_bc_p, (*pg_p)->id);
+	fflush(stdout);
+	*/
+	pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, *bc_key_p, *publish_bc_p);
+	if (pmi_errno != PMI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put",
+		"**pmi_kvs_put %d", pmi_errno);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
+	pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
+	if (pmi_errno != PMI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
+		"**pmi_kvs_commit %d", pmi_errno);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
 
-        pmi_errno = PMI_Barrier();
-        if (pmi_errno != PMI_SUCCESS)
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier",
-                                                 "**pmi_barrier %d", pmi_errno);
-                goto fn_fail;
-                /* --END ERROR HANDLING-- */
-            }
+	pmi_errno = PMI_Barrier();
+	if (pmi_errno != PMI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier",
+		"**pmi_barrier %d", pmi_errno);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
     }    
 
  fn_exit:

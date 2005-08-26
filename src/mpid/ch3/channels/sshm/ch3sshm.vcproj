@@ -196,15 +196,6 @@
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
-				RelativePath=".\src\ch3_comm_accept.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_comm_connect.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_comm_spawn_multiple.c">
-			</File>
-			<File
 				RelativePath=".\src\ch3_end_epoch.c">
 			</File>
 			<File
@@ -274,13 +265,34 @@
 				RelativePath="src\ch3i_bootstrapq.c">
 			</File>
 			<File
+				RelativePath=".\src\ch3i_get_business_card.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_acceptq.c">
+			</File>
+			<File
 				RelativePath="..\..\src\ch3u_buffer.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_comm_accept.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_comm_connect.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_comm_spawn_multiple.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_connect_to_root.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_finalize_sshm.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_get_business_card_sshm.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_get_parent_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_handle_connection.c">
@@ -296,6 +308,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_init_sshm.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_open_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_recvq.c">
@@ -440,6 +455,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_isend_self.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpidi_kvs.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_pg.c">

@@ -13,11 +13,6 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
-
-#ifdef MPIDI_CH3_USES_SOCK
-int MPIDI_CH3I_Port_name_tag=0;
-#endif
-
 /*  MPIDI_CH3U_Init_sock - does socket specific channel initialization
  *     publish_bc_p - if non-NULL, will be a pointer to the original position of the bc_val and should
  *                    do KVS Put/Commit/Barrier on business card before returning
@@ -65,14 +60,7 @@ int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_
 	(*pg_p)->vct[p].ch.conn = NULL;
     }    
 
-
-    
-    /*  brad : in the case of ssm, shm_hostname and bootstrapQ aren't set, so we
-     *        must call upcalls specific to sock here (in ch3/src/ch3u_get_business_card_sock.c) */
-/*     printf("before MPIDI_CH3U_Get_business_card_sock\n"); */
-/*     mpi_errno = MPIDI_CH3I_Get_business_card(*bc_val_p, *val_max_sz_p); */
     mpi_errno = MPIDI_CH3U_Get_business_card_sock(bc_val_p, val_max_sz_p);
-/*     printf("after MPIDI_CH3U_Get_business_card_sock (%d)\n", mpi_errno); */
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -82,35 +70,36 @@ int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_
     }
 
     /* might still have something to add (e.g. ssm channel) so don't publish */
-    if(publish_bc_p != NULL) {
-        pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, *bc_key_p, *publish_bc_p);
-        if (pmi_errno != PMI_SUCCESS)
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put",
-                                                 "**pmi_kvs_put %d", pmi_errno);
-                goto fn_fail;
-                /* --END ERROR HANDLING-- */
-            }
-        pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
-        if (pmi_errno != PMI_SUCCESS)
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
-                                                 "**pmi_kvs_commit %d", pmi_errno);
-                goto fn_fail;
-                /* --END ERROR HANDLING-- */
-            }
+    if (publish_bc_p != NULL)
+    {
+	pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, *bc_key_p, *publish_bc_p);
+	if (pmi_errno != PMI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put",
+		"**pmi_kvs_put %d", pmi_errno);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
+	pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
+	if (pmi_errno != PMI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
+		"**pmi_kvs_commit %d", pmi_errno);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
 
-        pmi_errno = PMI_Barrier();
-        if (pmi_errno != PMI_SUCCESS)
-            {
-                /* --BEGIN ERROR HANDLING-- */
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier",
-                                                 "**pmi_barrier %d", pmi_errno);
-                goto fn_fail;
-                /* --END ERROR HANDLING-- */
-            }
+	pmi_errno = PMI_Barrier();
+	if (pmi_errno != PMI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier",
+		"**pmi_barrier %d", pmi_errno);
+	    goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
     }
 #endif  /* MPIDI_CH3_USES_SOCK */
  fn_exit:

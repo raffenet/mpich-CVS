@@ -24,6 +24,9 @@ typedef struct bootstrap_msg
 typedef struct MPIDI_CH3I_BootstrapQ_struct
 {
     char name[MPIDI_BOOTSTRAP_NAME_LEN];
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    char shm_name[MPIDI_BOOTSTRAP_NAME_LEN];
+#endif
 #ifdef USE_SINGLE_MSG_QUEUE
     int pid;
     int id;
@@ -286,7 +289,7 @@ int MPIDI_CH3I_BootstrapQ_create_named(MPIDI_CH3I_BootstrapQ *queue_ptr, const c
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_NAMED);
 	return mpi_errno;
     }
-    queue->next = NULL;
+    queue->next = g_queue_list;
     g_queue_list = queue;
 
     /*printf("[%d] calling mqshm_create(%s) from BootstrapQ_create_named\n",
@@ -303,6 +306,9 @@ int MPIDI_CH3I_BootstrapQ_create_named(MPIDI_CH3I_BootstrapQ *queue_ptr, const c
     queue->pid = getpid();
     /*strcpy(queue->name, name);*/
     MPIU_Snprintf(queue->name, MPIDI_BOOTSTRAP_NAME_LEN, "%d", queue->pid);
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    MPIU_Strncpy(queue->shm_name, name, MPIDI_BOOTSTRAP_NAME_LEN);
+#endif
 
     *queue_ptr = queue;
 
@@ -529,6 +535,15 @@ int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
     /*printf("[%d] queue->name = %s\n", MPIR_Process.comm_world->rank, queue->name);fflush(stdout);*/
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    mpi_errno = MPIU_Snprintf(name, length, "%s:%s", queue->name, queue->shm_name);
+    if (mpi_errno >= length)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
+	return mpi_errno;
+    }
+#else
     mpi_errno = MPIU_Strncpy(name, queue->name, length);
     if (mpi_errno)
     {
@@ -536,6 +551,7 @@ int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
 	return mpi_errno;
     }
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
     return MPI_SUCCESS;
 }
@@ -618,43 +634,76 @@ int MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_BootstrapQ queue)
 #define FUNCNAME MPIDI_CH3I_BootstrapQ_attach
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
+int MPIDI_CH3I_BootstrapQ_attach(char *name_full, MPIDI_CH3I_BootstrapQ * queue_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     int id, key;
     MPIDI_CH3I_BootstrapQ_struct *iter;
+    char name[100];
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    char shm_name[MPIDI_MAX_SHM_NAME_LENGTH] = "";
+    char *token;
+    MPIDI_CH3I_BootstrapQ_struct *matched_queue = NULL;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
 
-    if (g_queue_list == NULL)
+    MPIU_Strncpy(name, name_full, MPIDI_MAX_SHM_NAME_LENGTH);
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    token = strtok(name, ":");
+    if (token != NULL)
     {
-	MPIDI_CH3I_BootstrapQ temp_queue;
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create(&temp_queue);
+	token = strtok(NULL, "");
+	MPIU_Strncpy(shm_name, token, MPIDI_MAX_SHM_NAME_LENGTH);
     }
-    if (g_queue_list == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**boot_attach", "**boot_attach %s",
-					 "queue list is empty");
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
-	return mpi_errno;
-    }
+#endif
 
+    /* check if this queue has already been attached to and return it if found */
     iter = g_queue_list;
-    while (iter->next)
+    while (iter != NULL)
     {
-	iter = iter->next;
 	if (strcmp(iter->name, name) == 0)
 	{
 	    *queue_ptr = iter;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
 	    return MPI_SUCCESS;
 	}
+	iter = iter->next;
     }
-    iter->next = (MPIDI_CH3I_BootstrapQ_struct*)
-	MPIU_Malloc(sizeof(MPIDI_CH3I_BootstrapQ_struct));
-    iter = iter->next;
+
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    /* search for another node with the same shm_name */
+    iter = g_queue_list;
+    while (iter != NULL)
+    {
+	if (strcmp(iter->shm_name, shm_name) == 0)
+	{
+	    matched_queue = iter;
+	    break;
+	}
+	iter = iter->next;
+    }
+    if (matched_queue == NULL)
+    {
+	/* This is a queue this process hasn't seen before, so "create" it (attach to existing) */
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&matched_queue, shm_name, 0);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+				       __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+	    return mpi_errno;
+	}
+	/* change the pid field to match the remote process */
+	MPIU_Strncpy(matched_queue->name, name, MPIDI_BOOTSTRAP_NAME_LEN);
+	matched_queue->pid = atoi(name);
+	*queue_ptr = matched_queue;
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
+	return mpi_errno;
+    }
+#endif
+
+    iter = (MPIDI_CH3I_BootstrapQ_struct*)MPIU_Malloc(sizeof(MPIDI_CH3I_BootstrapQ_struct));
     if (iter == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
@@ -662,10 +711,17 @@ int MPIDI_CH3I_BootstrapQ_attach(char *name, MPIDI_CH3I_BootstrapQ * queue_ptr)
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_ATTACH);
 	return mpi_errno;
     }
-    iter->next = NULL;
     MPIU_Strncpy(iter->name, name, MPIDI_BOOTSTRAP_NAME_LEN);
     iter->pid = atoi(name);
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    MPIU_Strncpy(iter->shm_name, shm_name, MPIDI_BOOTSTRAP_NAME_LEN);
+    iter->id = matched_queue->id;
+#else
     iter->id = g_queue_list->id;
+#endif
+
+    iter->next = g_queue_list;
+    g_queue_list = iter;
 
     *queue_ptr = iter;
     /*printf("[%d] attached to message queue: %s\n", MPIR_Process.comm_world->rank, name);fflush(stdout);*/

@@ -36,7 +36,7 @@ void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr)
     }
     /* --END ERROR HANDLING-- */
 
-    mpi_errno = MPIDI_CH3I_SHM_Get_mem(size, shm_struct);
+    mpi_errno = MPIDI_CH3I_SHM_Get_mem((int)size, shm_struct);
 
     if (mpi_errno == MPI_SUCCESS) {
         /* got shared memory. keep track of it by adding it to the list. */

@@ -13,11 +13,38 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Get_parent_port(char ** parent_port)
 {
-    int val_max_sz;
-    int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
 #ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
-    
+
+#ifdef MPIDI_DEV_IMPLEMENTS_KVS
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
+
+    if (MPIDI_CH3I_Process.parent_port_name == NULL)
+    {
+	mpi_errno = MPIDI_KVS_Get(MPIDI_Process.my_pg->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					     "**fail", NULL);
+	    goto fn_exit;
+	    /* --END ERROR HANDLING-- */
+	}
+
+	MPIDI_CH3I_Process.parent_port_name = MPIU_Strdup(val);
+	if (MPIDI_CH3I_Process.parent_port_name == NULL)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+					     "**fail", NULL);
+	    goto fn_exit;
+	    /* --END ERROR HANDLING-- */
+	}
+    }
+#else
+    int val_max_sz;
+    int pmi_errno;
+
     if (MPIDI_CH3I_Process.parent_port_name == NULL)
     { 
 	pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
@@ -53,7 +80,8 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
 	}
 
     }
-    
+#endif
+
     *parent_port = MPIDI_CH3I_Process.parent_port_name;
 
   fn_exit:

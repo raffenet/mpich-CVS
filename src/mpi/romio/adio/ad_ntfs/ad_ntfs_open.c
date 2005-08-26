@@ -16,8 +16,8 @@ void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 
     amode = 0;
     cmode = OPEN_EXISTING;
-    /*attrib = FILE_ATTRIBUTE_NORMAL;*/
-    attrib = FILE_FLAG_OVERLAPPED;
+    attrib = FILE_ATTRIBUTE_NORMAL;
+    /*attrib = FILE_FLAG_OVERLAPPED;*/
 
     if (fd->access_mode & ADIO_CREATE)
     {
@@ -61,7 +61,7 @@ void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 	cmode, 
 	attrib, 
 	NULL);
-        fd->fd_direct = -1;
+    fd->fd_direct = -1;
 
     if ((fd->fd_sys != INVALID_HANDLE_VALUE) && (fd->access_mode & ADIO_APPEND))
     {

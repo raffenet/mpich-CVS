@@ -1,7 +1,6 @@
 INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 lib${MPILIBNAME}_a_SOURCES =	\
     ch3u_acceptq.c		\
-    ch3u_bizcard_cache.c	\
     ch3u_buffer.c		\
     ch3u_comm_accept.c		\
     ch3u_comm_connect.c		\
@@ -68,6 +67,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpidi_isend_self.c		\
     mpidi_pg.c			\
     mpidi_printf.c		\
+    mpidi_kvs.c			\
     @MPID_THREAD_SOURCES@
     
 

@@ -41,23 +41,9 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
     /* --END ERROR HANDLING-- */
 
     q_item->vc = vc;
-/*     q_item->next = NULL;  brad : old pre-branched code */
 
     MPIDI_Acceptq_lock();
 
-    /* brad : acceptq_tail was in acceptq's in code originally branched from but seemingly since
-     *         it has been understood that they are useless.
-     */
-    
-    /* brad : pre-branch code */
-/*     if  (MPIDI_CH3I_Process.acceptq_tail != NULL) */
-/*         MPIDI_CH3I_Process.acceptq_tail->next = q_item; */
-/*     else */
-/*         MPIDI_CH3I_Process.acceptq_head = q_item; */
-    
-/*     MPIDI_CH3I_Process.acceptq_tail = q_item; */
-
-    /* brad : post-merge code, always put on front, don't rely on tail */
     q_item->next = MPIDI_CH3I_Process.acceptq_head;
     MPIDI_CH3I_Process.acceptq_head = q_item;
     
@@ -74,7 +60,6 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
    empty or the port_name_tag doesn't match, return a NULL vc. */
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 {
-
     int mpi_errno=MPI_SUCCESS;
 #ifdef MPIDI_CH3_USES_ACCEPTQ
     MPIDI_CH3I_Acceptq_t *q_item, *prev;
@@ -85,12 +70,13 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 
     MPIDI_Acceptq_lock();
 
-    /* brad : post-merge code */
     *vc = NULL;
     q_item = MPIDI_CH3I_Process.acceptq_head;
     prev = q_item;
-    while (q_item != NULL) {
-	if (q_item->vc->ch.port_name_tag == port_name_tag) {
+    while (q_item != NULL)
+    {
+	if (q_item->vc->ch.port_name_tag == port_name_tag)
+	{
 	    *vc = q_item->vc;
 
 	    if ( q_item == MPIDI_CH3I_Process.acceptq_head )
@@ -101,25 +87,12 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 	    MPIU_Free(q_item);
 	    break;;
 	}
-	else {
+	else
+	{
 	    prev = q_item;
 	    q_item = q_item->next;
 	}
     }
-    
-    /* brad : pre-branch code */
-/*     if (MPIDI_CH3I_Process.acceptq_head != NULL) { */
-/*         q_item = MPIDI_CH3I_Process.acceptq_head; */
-/*         MPIDI_CH3I_Process.acceptq_head = q_item->next; */
-
-/*         if (MPIDI_CH3I_Process.acceptq_head == NULL)  */
-/*             MPIDI_CH3I_Process.acceptq_tail = NULL; */
-
-/*         *vc = q_item->vc; */
-/*         MPIU_Free(q_item); */
-/*     } */
-/*     else */
-/*         *vc = NULL; */
 
     MPIDI_Acceptq_unlock();
 

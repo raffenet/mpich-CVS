@@ -11,16 +11,25 @@
 #include "mpidi_ch3i_ssm_conf.h"
 #include "mpidi_ch3_conf.h"
 
-/* brad : these are for having the appropriate upcalls compiled */
+/* These macros unlock shared code */
 #define MPIDI_CH3_USES_SOCK
 #define MPIDI_CH3_USES_SSHM
 #define MPIDI_CH3_USES_ACCEPTQ
+#ifdef USE_MQSHM
+#define MPIDI_CH3_USES_SHM_NAME
+#endif
 
-/* brad : features added to ssm to do MPI-2 dynamic process functionality (via socks first) */
+/*
+ * Features needed or implemented by the channel
+ */
 #define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
-#define MPIDI_CH3_IMPLEMENTS_COMM_SPAWN_MULTIPLE
-#define MPIDI_CH3_IMPLEMENTS_COMM_ACCEPT
-#define MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
+#define MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+#define MPIDI_DEV_IMPLEMENTS_COMM_ACCEPT
+#define MPIDI_DEV_IMPLEMENTS_COMM_CONNECT
+#define MPIDI_DEV_IMPLEMENTS_OPEN_PORT
+#define MPIDI_DEV_IMPLEMENTS_KVS
+#define MPIDI_DEV_IMPLEMENTS_ABORT
+#define MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
 
 #if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
 #define USE_POSIX_SHM
@@ -63,10 +72,9 @@ typedef struct MPIDI_Process_group_s
     int nShmWaitYieldCount;
     MPIDI_CH3I_BootstrapQ bootstrapQ;
     char shm_hostname[MAXHOSTNAMELEN];
-    char * bootstrapQ_name; /* brad : added for easy access when creating shared memory business card.
-                             *         this field was added to the bizcard because prior bootstrapQ_name's
-                             *         were (incorrectly) generated on rank 0 of all process groups.
-                             */
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    char * shm_name;
+#endif
     /*struct MPIDI_Process_group_s *next;*/
 }
 MPIDI_CH3I_Process_group_t;
@@ -181,9 +189,10 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * recv_active;
     struct MPID_Request * req;
     MPIDI_CH3I_VC_state_t state;
+    int shm_read_connected;
     MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
-    int port_name_tag; /* brad : added post-merge */
+    int port_name_tag;
     BOOL bShm;
     MPIDI_CH3I_Shmem_block_request_result shm_write_queue_info, shm_read_queue_info;
     int shm_reading_pkt;

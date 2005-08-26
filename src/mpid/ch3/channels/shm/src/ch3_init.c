@@ -10,8 +10,6 @@
 #include <unistd.h>
 #endif
 
-/* MPIDI_CH3I_Process_t MPIDI_CH3I_Process;*/
-
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 
@@ -67,19 +65,16 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     int pmi_errno = PMI_SUCCESS;
     MPIDI_PG_t * pg = NULL;
     MPIDI_VC_t * vc;
-    
     int pg_rank;
     int pg_size;
     int p;
     char * pg_id;
     int pg_id_sz;
-	
     char * key;
     char * val;
     int key_max_sz;
     int val_max_sz;
     int kvs_name_sz;
-
     char shmemkey[MPIDI_MAX_SHM_NAME_LENGTH];
     int i, j, k;
     int shm_block;
@@ -87,6 +82,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 #ifdef HAVE_WINDOWS_H
     DWORD host_len;
 #endif
+
+    MPIU_UNREFERENCED_ARG(publish_bc_p);
+    MPIU_UNREFERENCED_ARG(bc_key_p);
+    MPIU_UNREFERENCED_ARG(bc_val_p);
+    MPIU_UNREFERENCED_ARG(val_max_sz_p);
 
     /*
      * Extract process group related information from PMI and initialize
@@ -544,39 +544,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     *pg_pptr = pg;
     *pg_rank_ptr = pg_rank;
-
-#if 0
-    if (*has_parent)
-    {
-        /* This process was spawned. Create intercommunicator with parents. */
-
-        if (pg_rank == 0)
-	{
-            /* get the port name of the root of the parents */
-            mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val, val_max_sz);
-            if (mpi_errno != 0)
-            {
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get_parent %d", mpi_errno);
-                return mpi_errno;
-            }
-        }
-
-        /* do a connect with the root */
-        MPID_Comm_get_ptr(MPI_COMM_WORLD, commworld);
-        mpi_errno = MPIDI_CH3_Comm_connect(val, 0, commworld, &intercomm);
-        if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "spawned group unable to connect back to the parent");
-	    return mpi_errno;
-	}
-
-	MPIU_Strncpy(intercomm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
-        MPIR_Process.comm_parent = intercomm;
-
-        /* TODO: Check that this intercommunicator gets freed in
-           MPI_Finalize if not already freed.  */
-    }
-#endif
 
 fn_exit:
     if (val != NULL)

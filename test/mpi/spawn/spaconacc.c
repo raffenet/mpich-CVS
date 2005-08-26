@@ -12,7 +12,7 @@
 
 void check_error(int error, char *fcname)
 {
-    char err_string[MPI_MAX_ERROR_STRING];
+    char err_string[MPI_MAX_ERROR_STRING] = "";
     int length;
     if (error != MPI_SUCCESS)
     {

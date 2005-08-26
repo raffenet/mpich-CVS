@@ -5,7 +5,9 @@
  */
 
 #include "mpidimpl.h"
+#ifdef MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
 #include "pmi.h"
+#endif
 
 /*
  * MPID_Get_universe_size()
@@ -17,12 +19,17 @@
 int MPID_Get_universe_size(int  * universe_size)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pmi_errno = PMI_SUCCESS;  /* brad : added */
+#ifdef MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
+    int pmi_errno = PMI_SUCCESS;
+#endif
 
-/* #   if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE) */
-/*     { */
-/* 	mpi_errno = MPIDI_CH3_Get_universe_size(universe_size); brad : original */
-        /* brad : cut and pasted old sock/src/ch3_get_universe_size.c */
+#   if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE)
+    {
+	mpi_errno = MPIDI_CH3_Get_universe_size(universe_size);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail", 0, 0);
+    }
+#   elif defined(MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE)
+    {
         pmi_errno = PMI_Get_universe_size(universe_size);
         MPIU_ERR_CHKANDJUMP1((pmi_errno != PMI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**pmi_get_universe_size",
                              "**pmi_get_universe_size %d", pmi_errno);
@@ -30,26 +37,21 @@ int MPID_Get_universe_size(int  * universe_size)
         {
             *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
         }
-        /* brad : end of cut and paste */
         if (mpi_errno) goto fn_fail;
-/*     } */
-/* #   else */
-#if 0
-    {  /* brad : eventually, this case will not exist, MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE
-        *         will be unneccessary, and ch3_get_universe_size.c can be removed from
-        *         <channel>/src/Makefile.sm
-        */
+    }
+#   else
+    {
 	*universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
     }
-#endif
-    
-  fn_exit:
+#   endif
+
+fn_exit:
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
-/* #if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE) */
+#if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE) || defined (MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE)
   fn_fail:
-/* #endif */
+#endif
     *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
     goto fn_exit;
     /* --END ERROR HANDLING-- */

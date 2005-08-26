@@ -12,14 +12,14 @@
 #include <unistd.h>
 #endif
 
-/* added by brad */
+#ifndef MPIDI_CH3_UNFACTORED_INIT
 #include "pmi.h"
-/* static int MPIDI_CH3I_PMI_Init(); */
 static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
                                char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
-#include "mpidi_ch3_impl.h"  /* for extern'd MPIDI_CH3I_Process  */
+#endif
+#include "mpidi_ch3_impl.h"  /* for extern'd MPIDI_CH3I_Process */
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
@@ -29,9 +29,9 @@ MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 #   define MPIDI_PROCESSOR_NAME_SIZE 128
 #endif
 
-int MPIDI_Use_optimized_rma=0;
+int MPIDI_Use_optimized_rma = 0;
 
-MPIDI_Process_t MPIDI_Process = {NULL};
+MPIDI_Process_t MPIDI_Process = { NULL };
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Init
@@ -39,6 +39,7 @@ MPIDI_Process_t MPIDI_Process = {NULL};
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * has_args, int * has_env)
 {
+    int mpi_errno = MPI_SUCCESS;
     int has_parent;
     MPIDI_PG_t * pg;
     int pg_rank;
@@ -46,15 +47,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPID_Comm * comm;
     int p;
     char * env;
-    int mpi_errno = MPI_SUCCESS;
-
-    /* added by brad */
     char *publish_bc_orig = NULL;
     char *bc_key = NULL;
     char *bc_val = NULL;
     int val_max_remaining;
-    
-    
     MPIDI_STATE_DECL(MPID_STATE_MPID_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
@@ -105,7 +101,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
             /* --END ERROR HANDLING-- */
         }
 
-	if(gethostname(MPIDI_Process.processor_name, MPIDI_PROCESSOR_NAME_SIZE) != 0)
+	if (gethostname(MPIDI_Process.processor_name, MPIDI_PROCESSOR_NAME_SIZE) != 0)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPIU_Free(MPIDI_Process.processor_name);
@@ -150,7 +146,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     if (mpi_errno != MPI_SUCCESS)
     {
 	/* --BEGIN ERROR HANDLING-- */
-        /* brad : acceptable to use the returned mpi_errno? */
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }    
@@ -169,7 +165,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	/* --END ERROR HANDLING-- */
     }
 
-    
+
     pg_size = MPIDI_PG_Get_size(pg);
     MPIDI_Process.my_pg = pg;  /* brad : this is rework for shared memories because they need this set earlier
                                 *         for getting the business card
@@ -249,7 +245,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     
     if (has_parent)
     {
-#	if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)   /* brad : nobody defines this */
+#	if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
 	{
 	    mpi_errno = MPIDI_CH3_Comm_get_parent(&comm);
 	    if (mpi_errno != MPI_SUCCESS)
@@ -357,11 +353,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 
   fn_exit:
     /* brad : free PMI business card bufs here */
-    if(bc_key != NULL)
+    if (bc_key != NULL)
     {
         MPIU_Free(bc_key);
     }
-    if(publish_bc_orig != NULL)
+    if (publish_bc_orig != NULL)
     {
         MPIU_Free(publish_bc_orig);
     }           
@@ -383,9 +379,9 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 
 
 
-/*  MPIDI_CH3I_PMI_Init -  does channel independent initializations
- *      TODO - brad :  needs to additionally accept all arguments that the MPIDI_CH3U_Init_* upcalls do
- *                      
+#ifndef MPIDI_CH3_UNFACTORED_INIT
+/*
+ *  MPIDI_CH3I_PMI_Init -  does channel independent initializations
  *
  */
 
@@ -401,29 +397,23 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
     int pg_id_sz;
     int kvs_name_sz;
     int key_max_sz;
-/*     int val_max_sz;   brad : replaced by val_max_sz_p */
     int appnum;
-/*     char * key = NULL;  brad : replaced by publish_bc_p (and bc_key_p) */
-/*     char * val = NULL;  brad : replaced by bc_val_p   */
     int i=0;
-/*     printf("debug(%d)\n", i++);//0 */
 
 #ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT    
-    MPIDI_CH3I_Process.parent_port_name = NULL;    /* brad : not originally present in sshm? */
+    MPIDI_CH3I_Process.parent_port_name = NULL;
 #endif
     
 #ifdef MPIDI_CH3_USES_ACCEPTQ
-    MPIDI_CH3I_Process.acceptq_head = NULL;   /* brad : not originally present in sshm? */
-/*     MPIDI_CH3I_Process.acceptq_tail = NULL;  brad : tail seems obsolete in post-merge */
+    MPIDI_CH3I_Process.acceptq_head = NULL;
 #endif
 
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     {
 	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
     }
-#   endif    
+#   endif
 
-    
     /*
      * Intial the process manangement interface (PMI), and get rank and size information about our process group
      */
@@ -436,7 +426,12 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//1 */
+
+#ifdef MPIDI_DEV_IMPLEMENTS_KVS
+    /* Initialize the CH3 device KVS cache interface */
+    /* Do this after PMI_Init because MPIDI_KVS uses PMI (The init funcion may or may not use PMI)*/
+    MPIDI_KVS_Init();
+#endif
 
     pmi_errno = PMI_Get_rank(&pg_rank);
     if (pmi_errno != PMI_SUCCESS)
@@ -447,7 +442,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//2 */
 
     pmi_errno = PMI_Get_size(&pg_size);
     if (pmi_errno != 0)
@@ -458,7 +452,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//3 */
 
     pmi_errno = PMI_Get_appnum(&appnum);
     if (pmi_errno != PMI_SUCCESS)
@@ -469,7 +462,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//4 */
 
     if (appnum != -1)
     {
@@ -488,7 +480,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//5 */
 
     pg_id = MPIU_Malloc(pg_id_sz + 1);
     if (pg_id == NULL)
@@ -498,7 +489,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//6 */
     
     pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
     if (pmi_errno != PMI_SUCCESS)
@@ -509,7 +499,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//7 */
 
 
     /*
@@ -524,7 +513,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//8 */
 
     /*
      * Create a new structure to track the process group
@@ -539,7 +527,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	/* --END ERROR HANDLING-- */
     }
     pg->ch.kvs_name = NULL;
-/*     printf("debug(%d)\n", i++);//9 */
 
     /*
      * Get the name of the key-value space (KVS)
@@ -553,7 +540,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//10 */
 
     pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
     if (pg->ch.kvs_name == NULL)
@@ -563,7 +549,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//11 */
     
     pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
     if (pmi_errno != PMI_SUCCESS)
@@ -574,17 +559,17 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//12 */
 
     /*
-     *  brad : VC initialization is now in MPIDI_CH3_Init (and some in MPIDI_CH3U_Init_* upcalls)
+     *  VC initialization is now in MPIDI_CH3_Init (and some in MPIDI_CH3U_Init_* upcalls)
      */
-    
+
     /*
      * Initialize Progress Engine.  This must occur before the business card is requested because part of progress engine
      * initialization is setting up the listener socket.  The port of the listener socket needs to be included in the business
      * card.
      */
+    /* FIXME: This is an internal function not part of the CH3 channel interface */
     mpi_errno = MPIDI_CH3I_Progress_init();
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -594,7 +579,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }    
-/*     printf("debug(%d)\n", i++);//13 */
 
     /*
      * Publish the contact information (a.k.a. business card) for this process into the PMI keyval space associated with this
@@ -609,7 +593,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//14 */
     
     *bc_key_p = MPIU_Malloc(key_max_sz);
     if (*bc_key_p == NULL)
@@ -619,7 +602,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//15 */
 
     pmi_errno = PMI_KVS_Get_value_length_max(val_max_sz_p);
     if (pmi_errno != PMI_SUCCESS)
@@ -630,7 +612,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
-/*     printf("debug(%d)\n", i++);//16 */
     
     *bc_val_p = MPIU_Malloc(*val_max_sz_p);
     if (*bc_val_p == NULL)
@@ -641,7 +622,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	/* --END ERROR HANDLING-- */
     }
     *publish_bc_p = *bc_val_p;  /* need to keep a pointer to the front of the front of this buffer to publish */
-/*     printf("debug(%d)\n", i++);//17 */
 
     /* could put MPIU_Snprintf("P%d-businesscard") call here...  then take boolean publish_bc to
      *   the MPIDI_CH3U_Init_* upcalls (for sshm, it will make 2 upcalls but we don't want to publish after the
@@ -659,7 +639,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	/* --END ERROR HANDLING-- */
     }
     mpi_errno = MPI_SUCCESS;
-/*     printf("debug(%d)\n", i++);//18 */
     
     
     /* FIXME: has_args and has_env need to come from PMI eventually... */
@@ -670,18 +649,7 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
     *pg_rank_p = pg_rank;
     
   fn2_exit:
-    /* brad : only free in the case of error in the upper level function MPID_Init since these are used other places */
-    
-/*     if (*bc_val_p != NULL) */
-/*     {  */
-/* 	MPIU_Free(*bc_val_p); */
-/*     } */
-/*     if (*bc_key_p != NULL) */
-/*     {  */
-/* 	MPIU_Free(*bc_key_p); */
-/*     } */
 
-    
     return mpi_errno;
 
   fn2_fail:
@@ -716,4 +684,4 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
-
+#endif

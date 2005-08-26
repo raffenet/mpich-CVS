@@ -53,6 +53,17 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char ** array
 	    /* --END ERROR HANDLING-- */
 	}
     }
+#   elif defined(MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE)
+    {
+	mpi_errno = MPIDI_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info_ptrs,
+						  root, comm_ptr, intercomm, array_of_errcodes);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+	    /* --END ERROR HANDLING-- */
+	}
+    }
 #   else
     {
 	/* --BEGIN ERROR HANDLING-- */

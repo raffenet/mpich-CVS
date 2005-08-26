@@ -127,10 +127,12 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		     */
 		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		    { 
+			/*printf("vc%d.state = MPIDI_VC_STATE_LOCAL_CLOSE\n",vc->pg_rank);fflush(stdout);*/
 			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		    }
 		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		    {
+			/*printf("vc%d.state = MPIDI_VC_STATE_CLOSE_ACKED\n",vc->pg_rank);fflush(stdout);*/
 			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		    }
 		    
@@ -166,7 +168,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	MPIU_Free(vcrt);
     }
     
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
 }

@@ -10,7 +10,7 @@
 #include "mpidi_ch3i_shm_conf.h"
 #include "mpid_locksconf.h"
 
-/* brad : added so that factored init functionality isn't called twice */
+/* Prevent PMI, sock and sshm initialization functions from being called by the CH3 device code */
 #define MPIDI_CH3_UNFACTORED_INIT
 #define MPIDI_CH3_UNFACTORED_FINALIZE
 

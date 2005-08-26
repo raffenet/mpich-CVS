@@ -111,8 +111,50 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    {
 		MPIDI_PG_t *pg;
 
-		MPIDI_PG_Find(info.pg_id, &pg);
-		MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+		mpi_errno = MPIDI_PG_Find(info.pg_id, &pg);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    goto fn_exit;
+		}
+		if (pg == NULL)
+		{
+		    /* FIXME: Check for connect/accept case. */
+		    /* For now assume unmatched VC's are for MPI_Comm_connect */
+
+		    vc_ptr = (MPIDI_VC_t *) MPIU_Malloc(sizeof(MPIDI_VC_t));
+		    /* --BEGIN ERROR HANDLING-- */
+		    if (vc_ptr == NULL)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+			goto fn_exit;
+		    }
+		    /* --END ERROR HANDLING-- */
+
+		    MPIDI_VC_Init(vc_ptr, NULL, 0);
+		    vc_ptr->ch.sendq_head = NULL;
+		    vc_ptr->ch.sendq_tail = NULL;
+		    vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+		    vc_ptr->ch.recv_active = NULL;
+		    vc_ptr->ch.send_active = NULL;
+		    vc_ptr->ch.req = NULL;
+		    vc_ptr->ch.read_shmq = NULL;
+		    vc_ptr->ch.write_shmq = NULL;
+		    vc_ptr->ch.shm = NULL;
+		    vc_ptr->ch.shm_state = 0;
+		    vc_ptr->ch.shm_next_reader = NULL;
+		    vc_ptr->ch.shm_next_writer = NULL;
+		    vc_ptr->ch.shm_read_connected = 0;
+
+		    /*
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    goto fn_exit;
+		    */
+		}
+		else
+		{
+		    MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+		}
 		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);
 		if (rc != MPI_SUCCESS)
 		{
@@ -121,12 +163,12 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		}
 		MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
 		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+		vc_ptr->ch.shm_read_connected = 1;
 		vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;/*info.info.addr;*/
 		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
 		vc_ptr->ch.shm_reading_pkt = TRUE;
 		/* add this VC to the global list to be shm_waited on */
-		vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
-		MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
+		MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
 	    }
 	}
     }

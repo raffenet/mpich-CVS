@@ -6,9 +6,10 @@
 
 #include "mpidimpl.h"
 
-/* added by brad */
+#ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
 #include "pmi.h"
 static int MPIDI_CH3I_PMI_Finalize();
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
@@ -70,7 +71,14 @@ int MPID_Finalize()
 		continue;
 	    }
 
-	    if (vc->state == MPIDI_VC_STATE_ACTIVE || vc->state == MPIDI_VC_STATE_REMOTE_CLOSE)
+	    if (vc->state == MPIDI_VC_STATE_ACTIVE || vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
+#ifdef MPIDI_CH3_USES_SSHM
+		/* sshm queues are uni-directional.  A VC that is connected in the read direction is marked MPIDI_VC_STATE_INACTIVE
+		 * so that a connection will be formed on the first write.  Since the other side is marked MPIDI_VC_STATE_ACTIVE for writing 
+		 * we need to initiate the close protocol on the read side even if the write state is MPIDI_VC_STATE_INACTIVE. */
+		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected)
+#endif
+		)
 	    {
 		MPIDI_CH3_Pkt_t upkt;
 		MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
@@ -91,10 +99,12 @@ int MPID_Finalize()
 		 */
 		if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		{ 
+		    /*printf("vc%d.state = MPIDI_VC_STATE_LOCAL_CLOSE\n",vc->pg_rank);fflush(stdout);*/
 		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		}
 		else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		{
+		    /*printf("vc%d.state = MPIDI_VC_STATE_CLOSE_ACKED\n",vc->pg_rank);fflush(stdout);*/
 		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 		
@@ -159,7 +169,7 @@ int MPID_Finalize()
 
 #ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
     mpi_errno = MPIDI_CH3I_PMI_Finalize();
-    if(mpi_errno != MPI_SUCCESS)
+    if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
         return mpi_errno;
@@ -173,13 +183,18 @@ int MPID_Finalize()
         MPIDI_PG_Destroy(MPIDI_Process.my_pg);
     }
     MPIDI_Process.my_pg = NULL;
-    
-    MPIU_Free(MPIDI_Process.processor_name);
+
+    if (MPIDI_Process.processor_name != NULL)
+    {
+	MPIU_Free(MPIDI_Process.processor_name);
+    }
 
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
 }
+
+#ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Finalize
@@ -193,6 +208,7 @@ static int MPIDI_CH3I_PMI_Finalize()
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
     /* Shutdown the progress engine */
+    /* FIXME: internal function not in the CH3 channel interface */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -202,6 +218,11 @@ static int MPIDI_CH3I_PMI_Finalize()
           return mpi_errno;
 	/* --END ERROR HANDLING-- */
     }
+
+#ifdef MPIDI_DEV_IMPLEMENTS_KVS
+    /* Finalize the CH3 device KVS cache interface */
+    rc = MPIDI_KVS_Finalize();
+#endif
 
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();
@@ -215,3 +236,4 @@ static int MPIDI_CH3I_PMI_Finalize()
     }
     return mpi_errno;
 }
+#endif

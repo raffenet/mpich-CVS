@@ -53,7 +53,7 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
 #endif
 
 
-#if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)  /* brad : nobody has this defines */
+#if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
 /*E
   MPIDI_CH3_Comm_get_parent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
 
@@ -590,7 +590,7 @@ void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr);
 int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info, 
                     MPID_Comm *comm_ptr, MPID_Win **win_ptr);
 int MPIDI_CH3_Free_mem(void *ptr);
-void MPIDI_CH3_Cleanup_mem(void);  /* brad : called during finalize replacing what sshm does/did  */
+void MPIDI_CH3_Cleanup_mem(void);
 int MPIDI_CH3_Start_PT_epoch(int lock_type, int dest, int assert, MPID_Win *win_ptr);
 int MPIDI_CH3_End_PT_epoch(int dest, MPID_Win *win_ptr);
 int MPIDI_CH3_Win_free(MPID_Win **win_ptr);

@@ -29,7 +29,6 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
 {
 #ifdef MPIDI_CH3_USES_SSHM
     char queue_name[100];
-    char key[] = "bootstrapQ_name";
     int mpi_errno;
     MPIDI_PG_t * pg = MPIDI_Process.my_pg;
     
@@ -80,11 +79,9 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     }
     /* --END ERROR HANDLING-- */
 
-#ifdef MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
-    /* brad : bootstrapQ_name already set in ch3u_init_sshm.c . added for dynamic process to work on SMP.  */
-    
-    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_SHM_BOOTSTRAPQ_NAME_KEY,
-                                        pg->ch.bootstrapQ_name );
+#if 0
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, pg->ch.shm_name);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -100,6 +97,7 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     }
     /* --END ERROR HANDLING-- */
 #endif    
+#endif
 
 #endif /* uses MPIDI_CH3_USES_SSHM */
     return MPI_SUCCESS;

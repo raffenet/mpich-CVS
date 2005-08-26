@@ -371,21 +371,26 @@ typedef struct MPIDI_PG
 }
 MPIDI_PG_t;
 
-
-#define MPIDI_VC_STATE_INACTIVE 1
-#define MPIDI_VC_STATE_ACTIVE 2
-#define MPIDI_VC_STATE_LOCAL_CLOSE 3
-#define MPIDI_VC_STATE_REMOTE_CLOSE 4
-#define MPIDI_VC_STATE_CLOSE_ACKED 5
+typedef enum MPIDI_VC_State
+{
+    MPIDI_VC_STATE_INACTIVE=1,
+    MPIDI_VC_STATE_ACTIVE,
+    MPIDI_VC_STATE_LOCAL_CLOSE,
+    MPIDI_VC_STATE_REMOTE_CLOSE,
+    MPIDI_VC_STATE_CLOSE_ACKED,
+} MPIDI_VC_State_t;
 
 typedef struct MPIDI_VC
 {
     /* XXX - need better comment */
     /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the MPIU_Object system, but we do use the associated
        reference counting routines.  The first field is normal a handle, but since we are not using MPIU_Object for allocation,
-       we instead replace the handle with a state field. */
-    int state;
+       we instead replace the handle with a dummy field. */
+    int dummy;
     volatile int ref_count;
+
+    /* state of the VC */
+    MPIDI_VC_State_t state;
 
     /* Process group to which this VC belongs */
     MPIDI_PG_t * pg;

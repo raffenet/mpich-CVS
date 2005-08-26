@@ -6,11 +6,11 @@
 
 #include "mpidimpl.h"
 
-/* added by brad */
+#ifdef MPIDI_DEV_IMPLEMENTS_ABORT
 #include "pmi.h"
 static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg);
+#endif
 
-                            
 #undef FUNCNAME
 #define FUNCNAME MPID_Abort
 #undef FCNAME
@@ -43,7 +43,27 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 
     if (error_msg != NULL)
     {
-	MPIDI_CH3I_PMI_Abort(exit_code, error_msg);
+#       ifdef MPIDI_CH3_IMPLEMENTS_ABORT
+	{
+	    MPIDI_CH3_Abort(exit_code, error_msg);
+	}
+#       elif defined(MPIDI_DEV_IMPLEMENTS_ABORT)
+	{
+	    MPIDI_CH3I_PMI_Abort(exit_code, error_msg);
+	}
+#       else
+	{
+	    MPIU_Error_printf("%s", error_msg);
+	    fflush(stderr);
+
+#ifdef HAVE_WINDOWS_H
+	    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
+	    ExitProcess(exit_code);
+#else
+	    exit(exit_code);
+#endif
+	}
+#       endif
     }
     else
     {
@@ -58,7 +78,27 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 	    MPIU_Snprintf(error_str, MPI_MAX_ERROR_STRING + 100, "internal ABORT - process %d", rank);
 	}
 
-	MPIDI_CH3I_PMI_Abort(exit_code, error_str);
+#       ifdef MPIDI_CH3_IMPLEMENTS_ABORT
+	{
+	    MPIDI_CH3_Abort(exit_code, error_str);
+	}
+#       elif defined(MPIDI_DEV_IMPLEMENTS_ABORT)
+	{
+	    MPIDI_CH3I_PMI_Abort(exit_code, error_str);
+	}
+#       else
+	{
+	    MPIU_Error_printf("%s", error_str);
+	    fflush(stderr);
+
+#ifdef HAVE_WINDOWS_H
+	    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
+	    ExitProcess(exit_code);
+#else
+	    exit(exit_code);
+#endif
+	}
+#       endif
     }
 
     /* ch3_abort should not return but if it does, exit here */
@@ -77,9 +117,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 }
 
 
-/* brad : these were extracted from ch3/channel/<dir>/src/ch3_abort.c since
- *         they were all identical.
- */
+#ifdef MPIDI_DEV_IMPLEMENTS_ABORT
 static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ABORT);
@@ -103,3 +141,4 @@ static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ABORT);
     return MPI_ERR_INTERN;    
 }
+#endif

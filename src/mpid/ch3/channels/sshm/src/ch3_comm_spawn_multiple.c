@@ -6,7 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
- 
+
 /*
  * MPIDI_CH3_Comm_spawn_multiple()
  */

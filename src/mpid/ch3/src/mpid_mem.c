@@ -20,12 +20,6 @@ void *MPID_Alloc_mem( size_t size, MPID_Info *info_ptr )
 
 #   if defined(MPIDI_CH3_IMPLEMENTS_ALLOC_MEM)
     {
-        /* brad : sshm calls this and in addition to malloc'ing memory,
-         *         a list of what has been allocated is maintained. this
-         *         same list is traversed and allocated memory free
-         *         during finalize in case the application programmer
-         *         forgot to.  this is only used (currently) in sshm.
-         */
 	ap = MPIDI_CH3_Alloc_mem(size, info_ptr);
     }
 #   else

@@ -9,21 +9,23 @@
 
 #include "mpidu_sock.h"
 
-/* brad : these are for having the appropriate upcalls compiled */
+/* These macros unlock shared code */
 #define MPIDI_CH3_USES_SOCK
 #define MPIDI_CH3_USES_ACCEPTQ
-
 
 /*
  * Features needed or implemented by the channel
  */
 #undef MPID_USE_SEQUENCE_NUMBERS
 #undef MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT
-/* #define MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE brad : factored up to mpid/ch3/src dir */
 #define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
-#define MPIDI_CH3_IMPLEMENTS_COMM_SPAWN_MULTIPLE
-#define MPIDI_CH3_IMPLEMENTS_COMM_ACCEPT
-#define MPIDI_CH3_IMPLEMENTS_COMM_CONNECT
+#define MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+#define MPIDI_DEV_IMPLEMENTS_COMM_ACCEPT
+#define MPIDI_DEV_IMPLEMENTS_COMM_CONNECT
+#define MPIDI_DEV_IMPLEMENTS_OPEN_PORT
+#define MPIDI_DEV_IMPLEMENTS_KVS
+#define MPIDI_DEV_IMPLEMENTS_ABORT
+#define MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
 
 typedef struct MPIDI_CH3I_Acceptq_s
 {

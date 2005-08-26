@@ -5,8 +5,11 @@
  */
 
 #include "mpidi_ch3_impl.h"
+
+#ifdef MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+
 #include "pmi.h"
- 
+
 static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
 {
     int i,j;
@@ -33,10 +36,10 @@ static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
  * MPIDI_CH3_Comm_spawn_multiple()
  */
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Comm_spawn_multiple
+#define FUNCNAME MPIDI_Comm_spawn_multiple
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands, 
+int MPIDI_Comm_spawn_multiple(int count, char **commands, 
                                   char ***argvs, int *maxprocs, 
                                   MPID_Info **info_ptrs, int root,
                                   MPID_Comm *comm_ptr, MPID_Comm
@@ -157,7 +160,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 	/* --END ERROR HANDLING-- */
 
 	/* Open a port for the spawned processes to connect to */
-        mpi_errno = MPIDI_CH3_Open_port(port_name);
+        mpi_errno = MPID_Open_port(NULL, port_name);
 	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
 	{
@@ -205,7 +208,7 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
 	MPIU_Free(pmi_errcodes);
     }
 
-    mpi_errno = MPIDI_CH3_Comm_accept(port_name, root, comm_ptr, intercomm); 
+    mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm); 
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -219,3 +222,5 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
 }
+
+#endif

@@ -266,85 +266,26 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
     int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
 
     mpi_errno = MPIDI_CH3U_Get_business_card_sock(&value, &length);
     if (mpi_errno != MPI_SUCCESS)
     {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
         return mpi_errno;
     }
 
-    return MPIDI_CH3U_Get_business_card_sshm(&value, &length);
-            
-    /* brad : now this is accomplished through upcalls.  prior, this wasn't used anyway but
-     *           accomplished within ch3_init.c itself.  now that code is common and uses
-     *           the business card methods
-     */
-    /* brad : eventually, we want to add bizcard functionality to ssm (full cache only in
-     *         sock initially)
-     */
-#if 0    
-    int port;
-    char host_description[256];
-    char host[100];
-
-    mpi_errno = MPIDU_Sock_get_host_description(host_description, 256);
+    mpi_errno = MPIDI_CH3U_Get_business_card_sshm(&value, &length);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
-	return mpi_errno;
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
+        return mpi_errno;
     }
 
-    port = MPIDI_CH3I_Listener_get_port();
-
-#ifdef HAVE_WINDOWS_H
-    {
-	DWORD len = 100;
-	/*GetComputerName(host, &len);*/
-	GetComputerNameEx(ComputerNameDnsFullyQualified, host, &len);
-    }
-#else
-    gethostname(host, 100);
-#endif
-
-    mpi_errno = MPIU_Str_add_string_arg(&value, &length, MPIDI_CH3I_HOST_KEY, host);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
-	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
-	}
-	return mpi_errno;
-    }
-    mpi_errno = MPIU_Str_add_int_arg(&value, &length, MPIDI_CH3I_PORT_KEY, port);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
-	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
-	}
-	return mpi_errno;
-    }
-    mpi_errno = MPIU_Str_add_string_arg(&value, &length, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
-	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
-	}
-	return mpi_errno;
-    }
-    return MPI_SUCCESS;
-#endif
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
+    return mpi_errno;
 }

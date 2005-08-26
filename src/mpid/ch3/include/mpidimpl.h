@@ -54,6 +54,7 @@ typedef struct MPIDI_Process
     int lpid_counter;
     char * processor_name;
     int warnings_enabled;
+    int port_name_tag; /* this tag is incremented and added to the business card, which is then returned as the port name */
 }
 MPIDI_Process_t;
 
@@ -354,6 +355,7 @@ extern volatile int MPIDI_Outstanding_close_ops;
     *(vcp_) = (comm_)->vcr[(rank_)];			\
     if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)	\
     {							\
+    /*printf("vc%d.state = MPIDI_VC_STATE_ACTIVE\n",(*(vcp_))->pg_rank);fflush(stdout);*/ \
 	(*(vcp_))->state = MPIDI_VC_STATE_ACTIVE;	\
     }							\
 }
@@ -404,6 +406,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg);
 void MPIDI_PG_Add_ref(MPIDI_PG_t * pg);
 void MPIDI_PG_Release_ref(MPIDI_PG_t * pg, int * inuse);
 int MPIDI_PG_Find(void * id, MPIDI_PG_t ** pgp);
+int MPIDI_PG_Id_compare(void *id1, void *id2);
 int MPIDI_PG_Get_next(MPIDI_PG_t ** pgp);
 int MPIDI_PG_Iterate_reset(void);
 int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc);
@@ -422,6 +425,7 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
     *(vcp_) = &(pg_)->vct[rank_];			\
     if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)	\
     {							\
+    /*printf("vc%d.state = MPIDI_VC_STATE_ACTIVE\n",(*(vcp_))->pg_rank);fflush(stdout);*/ \
 	(*(vcp_))->state = MPIDI_VC_STATE_ACTIVE;	\
     }							\
 }
@@ -430,6 +434,11 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
     *(vcp_) = &(pg_)->vct[rank_];			\
 }
 #define MPIDI_PG_Get_size(pg_) ((pg_)->size)
+
+#ifdef MPIDI_DEV_IMPLEMENTS_KVS
+int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr);
+int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
+#endif
 /*-------------------------
   END PROCESS GROUP SECTION
   -------------------------*/
@@ -468,6 +477,7 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 
 #define MPIDI_VC_Init(vc_, pg_, rank_)		\
 {						\
+    /*printf("vc%d.state = MPIDI_VC_STATE_INACTIVE\n", rank_);fflush(stdout);*/\
     (vc_)->state = MPIDI_VC_STATE_INACTIVE;	\
     MPIU_Object_set_ref((vc_), 0);		\
     (vc_)->pg = (pg_);				\
@@ -593,6 +603,43 @@ const char * MPIDI_VC_Get_state_description(int state);
 /* Prototypes for internal device routines */
 int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int, int, MPID_Request **);
 
+/* Only prototype functions that will be used */
+#ifdef MPIDI_DEV_IMPLEMENTS_OPEN_PORT
+int MPIDI_Open_port(char *);
+#endif
+#ifdef MPIDI_DEV_IMPLEMENTS_CLOSE_PORT
+int MPIDI_Close_port(char *);
+#endif
+#ifdef MPIDI_DEV_IMPLEMENTS_COMM_CONNECT
+int MPIDI_Comm_connect(char *, int, MPID_Comm *, MPID_Comm **);
+#endif
+#ifdef MPIDI_DEV_IMPLEMENTS_COMM_ACCEPT
+int MPIDI_Comm_accept(char *, int, MPID_Comm *, MPID_Comm **);
+#endif
+#ifdef MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, int, MPID_Comm *, MPID_Comm **, int *);
+#endif
+
+#ifdef MPIDI_DEV_IMPLEMENTS_KVS
+
+#define MPIDI_MAX_KVS_NAME_LEN     256
+#define MPIDI_MAX_KVS_KEY_LEN      256
+#define MPIDI_MAX_KVS_VALUE_LEN    4096
+
+int MPIDI_KVS_Init();
+int MPIDI_KVS_Finalize();
+int MPIDI_KVS_Create(char *name);
+int MPIDI_KVS_Create_name_in(char *name);
+int MPIDI_KVS_Destroy(const char *name);
+int MPIDI_KVS_Get(const char *name, const char *key, char *value);
+int MPIDI_KVS_Put(const char *name, const char *key, const char *value);
+int MPIDI_KVS_Delete(const char *name, const char *key);
+int MPIDI_KVS_First(const char *name, char *key, char *value);
+int MPIDI_KVS_Next(const char *name, char *key, char *value);
+int MPIDI_KVS_Firstkvs(char *name);
+int MPIDI_KVS_Nextkvs(char *name);
+
+#endif /* MPIDI_DEV_IMPLEMENTS_KVS */
 
 /* ------------------------------------------------------------------------- */
 /* mpirma.h (in src/mpi/rma?) */

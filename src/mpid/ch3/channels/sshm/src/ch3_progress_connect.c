@@ -27,6 +27,100 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 }
 
 #undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Remove_vc_read_references
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static void MPIDI_CH3I_SHM_Remove_vc_read_references(MPIDI_VC_t *vc)
+{
+    MPIDI_VC_t *iter, *trailer;
+
+    /* remove vc from the reading list */
+    iter = trailer = MPIDI_CH3I_Process.shm_reading_list;
+    while (iter != NULL)
+    {
+	if (iter == vc)
+	{
+	    if (trailer != iter)
+	    {
+		/* remove the vc from the list */
+		trailer->ch.shm_next_reader = iter->ch.shm_next_reader;
+	    }
+	    else
+	    {
+		/* remove the vc from the head of the list */
+		MPIDI_CH3I_Process.shm_reading_list = MPIDI_CH3I_Process.shm_reading_list->ch.shm_next_reader;
+	    }
+	}
+	if (trailer != iter)
+	    trailer = trailer->ch.shm_next_reader;
+	iter = iter->ch.shm_next_reader;
+    }
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Remove_vc_write_references
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static void MPIDI_CH3I_SHM_Remove_vc_write_references(MPIDI_VC_t *vc)
+{
+    MPIDI_VC_t *iter, *trailer;
+
+    /* remove the vc from the writing list */
+    iter = trailer = MPIDI_CH3I_Process.shm_writing_list;
+    while (iter != NULL)
+    {
+	if (iter == vc)
+	{
+	    if (trailer != iter)
+	    {
+		/* remove the vc from the list */
+		trailer->ch.shm_next_writer = iter->ch.shm_next_writer;
+	    }
+	    else
+	    {
+		/* remove the vc from the head of the list */
+		MPIDI_CH3I_Process.shm_writing_list = MPIDI_CH3I_Process.shm_writing_list->ch.shm_next_writer;
+	    }
+	}
+	if (trailer != iter)
+	    trailer = trailer->ch.shm_next_writer;
+	iter = iter->ch.shm_next_writer;
+    }
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Remove_vc_references
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_SHM_Remove_vc_references(MPIDI_VC_t *vc)
+{
+    MPIDI_CH3I_SHM_Remove_vc_read_references(vc);
+    MPIDI_CH3I_SHM_Remove_vc_write_references(vc);
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Add_to_reader_list
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc)
+{
+    MPIDI_CH3I_SHM_Remove_vc_read_references(vc);
+    vc->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
+    MPIDI_CH3I_Process.shm_reading_list = vc;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Add_to_writer_list
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc)
+{
+    MPIDI_CH3I_SHM_Remove_vc_write_references(vc);
+    vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
+    MPIDI_CH3I_Process.shm_writing_list = vc;
+}
+
+#undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Shm_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -35,6 +129,11 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
     int mpi_errno;
     char hostname[256];
     char queue_name[100];
+    /*
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    char shm_name[MPIDI_MAX_SHM_NAME_LENGTH];
+#endif
+    */
     MPIDI_CH3I_BootstrapQ queue;
     MPIDI_CH3I_Shmem_queue_info shm_info;
     int i;
@@ -48,6 +147,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmhost", 0);
 	return mpi_errno;
     }
+
     mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_QUEUE_KEY, queue_name, 100);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -55,6 +155,21 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmq", 0);
 	return mpi_errno;
     }
+
+    /*
+#ifdef MPIDI_CH3_USES_SHM_NAME
+    mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	*flag = FALSE;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmq", 0);
+	return mpi_errno;
+    }
+
+    MPIU_Strnapp(queue_name, ":", 100);
+    MPIU_Strnapp(queue_name, shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
+#endif
+    */
 
     /* compare this host's name with the business card host name */
     if (strcmp(MPIDI_Process.my_pg->ch.shm_hostname, hostname) != 0)
@@ -104,8 +219,12 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
     /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
     shm_info.info = vc->ch.shm_write_queue_info;
     /*shm_info.pg_id = 0;*/
+    /*
     MPIU_Strncpy(shm_info.pg_id, vc->pg->id, 100);
     shm_info.pg_rank = MPIR_Process.comm_world->rank;
+    */
+    MPIU_Strncpy(shm_info.pg_id, MPIDI_Process.my_pg->id, 100);
+    shm_info.pg_rank = MPIDI_Process.my_pg_rank;
     shm_info.pid = getpid();
     MPIU_DBG_PRINTF(("MPIDI_CH3I_Shm_connect: sending bootstrap queue info from rank %d to msg queue %s\n", MPIR_Process.comm_world->rank, queue_name));
     mpi_errno = MPIDI_CH3I_BootstrapQ_send_msg(queue, &shm_info, sizeof(shm_info));
@@ -139,10 +258,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
-    char * key;
-    char * val;
-    int key_max_sz;
-    int val_max_sz;
+    char key[MPIDI_MAX_KVS_KEY_LEN];
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
     int rc;
     int mpi_errno = MPI_SUCCESS;
     int connected;
@@ -164,40 +281,17 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     /* get the business card */
-    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-    }
-    key = MPIU_Malloc(key_max_sz);
-    if (key == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
-    }
-    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-    }
-    val = MPIU_Malloc(val_max_sz);
-    if (val == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
-    }
-
-    rc = MPIU_Snprintf(key, key_max_sz, "P%d-businesscard", vc->pg_rank);
-    if (rc < 0 || rc > key_max_sz)
+    rc = MPIU_Snprintf(key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", vc->pg_rank);
+    if (rc < 0 || rc > MPIDI_MAX_KVS_NAME_LEN)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
 	return mpi_errno;
     }
-    rc = PMI_KVS_Get(vc->pg->ch.kvs_name, key, val, val_max_sz);
-    if (rc != PMI_SUCCESS)
+    mpi_errno = MPIDI_KVS_Get(vc->pg->ch.kvs_name, key, val);
+    if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	return mpi_errno;
     }
 
@@ -220,11 +314,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	return mpi_errno;
     }
 
-    MPIU_Free(val);
-    MPIU_Free(key);
-
-    vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
-    MPIDI_CH3I_Process.shm_writing_list = vc;
+    MPIDI_CH3I_SHM_Add_to_writer_list(vc);
 
     /* If there are more shm connections than cpus, reduce the spin count to one. */
     /* This does not take into account connections between other processes on the same machine. */

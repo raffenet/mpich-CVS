@@ -509,13 +509,26 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    }
 		    /* FIXME - where does this vc get freed? */
 
+		    /* Initialize the device fields */
 		    MPIDI_VC_Init(vc, NULL, 0);
+		    /* Initialize the sock fields */
 		    vc->ch.sendq_head = NULL;
 		    vc->ch.sendq_tail = NULL;
 		    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 		    vc->ch.sock = conn->sock;
 		    vc->ch.conn = conn;
 		    conn->vc = vc;
+		    /* Initialize the shm fields */
+		    vc->ch.recv_active = NULL;
+		    vc->ch.send_active = NULL;
+		    vc->ch.req = NULL;
+		    vc->ch.read_shmq = NULL;
+		    vc->ch.write_shmq = NULL;
+		    vc->ch.shm = NULL;
+		    vc->ch.shm_state = 0;
+		    vc->ch.shm_next_reader = NULL;
+		    vc->ch.shm_next_writer = NULL;
+		    vc->ch.bShm = FALSE;
 
 		    vc->ch.port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
                     

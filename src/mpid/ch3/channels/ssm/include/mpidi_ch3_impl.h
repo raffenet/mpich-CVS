@@ -148,7 +148,6 @@ typedef struct MPIDI_CH3I_Process_s
     MPIDI_VC_t *shm_reading_list, *shm_writing_list;
     int num_cpus;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
-    MPIDI_CH3I_Acceptq_t * acceptq_tail;  /* brad : doesn't seem to be used in post-branch code */
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     MPID_Thread_lock_t acceptq_mutex;
 #endif
@@ -156,9 +155,6 @@ typedef struct MPIDI_CH3I_Process_s
 MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
-
-extern int MPIDI_CH3I_Port_name_tag;
-/* this tag is incremented and added to the business card, which is then returned as the port name */
 
 /*#define USE_FIXED_ACTIVE_PROGRESS*/
 /*#define USE_FIXED_SPIN_WAITS*/
@@ -294,7 +290,7 @@ typedef struct MPIDI_CH3I_Shmem_queue_info
     int /*pg_id, */pg_rank, pid;
     char pg_id[100];
     int type;
-    int is_intercomm;
+    /*int is_intercomm;*/
     MPIDI_CH3I_Shmem_block_request_result info;
 } MPIDI_CH3I_Shmem_queue_info;
 
@@ -305,6 +301,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
+int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
+int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"
@@ -312,7 +310,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length);
 #define MPIDI_CH3I_PORT_NAME_TAG_KEY     "tag"
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
-#define MPIDI_CH3I_SHM_BOOTSTRAPQ_NAME_KEY "bootstrapQ_name"
+#define MPIDI_CH3I_SHM_QUEUE_NAME_KEY    "shm_name"
 
 #define MPIDI_BOOTSTRAP_NAME_LEN 100
 #define BOOTSTRAP_MAX_NUM_MSGS 2048
@@ -342,10 +340,6 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*read_prog
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
 int MPIDI_CH3I_SHM_write(MPIDI_VC_t *vc, void *buf, int len, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
-int MPIDI_CH3I_SHM_read(MPIDI_VC_t *vc, void *buf, int len);
-int MPIDI_CH3I_SHM_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n);
-
-/*int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);*/
 
 #define MPID_CH3I_SHM_BIT             0x01
 #define MPID_CH3I_SOCK_BIT            0x02

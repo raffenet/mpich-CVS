@@ -352,9 +352,6 @@
 				RelativePath="..\..\src\ch3u_acceptq.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_bizcard_cache.c">
-			</File>
-			<File
 				RelativePath="..\..\src\ch3u_buffer.c">
 			</File>
 			<File
@@ -565,6 +562,9 @@
 				RelativePath="..\..\src\mpidi_isend_self.c">
 			</File>
 			<File
+				RelativePath="..\..\src\mpidi_kvs.c">
+			</File>
+			<File
 				RelativePath="..\..\src\mpidi_pg.c">
 			</File>
 			<File
@@ -585,6 +585,9 @@
 			</File>
 			<File
 				RelativePath="include\mpidi_ch3_pre.h">
+			</File>
+			<File
+				RelativePath="..\..\src\mpidi_kvs.h">
 			</File>
 			<File
 				RelativePath="..\..\include\mpidimpl.h">
