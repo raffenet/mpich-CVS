@@ -178,7 +178,7 @@ for arg in "$@" ; do
     -D*)
     cppflags="$cppflags $arg"
     ;;
-    *.F|*.F90)
+    *.F|*.F90|.fpp|.FPP)
 # If F90CPP is not empty, then we need to do the following:
 #    If any input files have the .F or .F90 extension, then    
 #        If F90CPP = false, then
@@ -194,14 +194,9 @@ for arg in "$@" ; do
 	    exit 1
         fi
         addarg=no
-	# Remove and directory names
-        bfile=`basename $arg`
-	# Now remove the .F or .F90
-	bfile1=`basename $bfile .F90`
-	if [ "$bfile1" = "$bfile" ] ; then
-	    bfile1=`basename $bfile .F`
-        fi
-	$bfile=$bfile1
+	# Remove and directory names and extension
+	$ext=`expr "$arg" : '.*\(\..*\)'`
+        bfile=`basename $arg $ext`
 	# 
 	TMPDIR=${TMPDIR:-/tmp}
 	# Make sure that we use a valid extension for the temp file.
