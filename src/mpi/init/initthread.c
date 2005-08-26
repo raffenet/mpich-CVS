@@ -247,6 +247,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        leaks in the "active" code */
     MPIU_trid( 1 );
 #endif
+#ifdef USE_DBG_LOGGING
+    MPIU_DBG_Init( argc, argv );
+#endif
 
     /* FIXME: There is no code for this comment */
     /* We now initialize the Fortran symbols from within the Fortran 

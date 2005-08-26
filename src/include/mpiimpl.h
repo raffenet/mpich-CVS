@@ -113,7 +113,15 @@
    (MPIU_msg_printf will go through gettext).  
 
    FIXME: Document all of these macros
+
+   NOTE: These macros and values are deprecated.  See 
+   www.mcs.anl.gov/mpi/mpich2/developer/design/debugmsg.htm for 
+   the new design (only partially implemented at this time).
+   
+   The implementation is in mpidbg.h
 */
+#include "mpidbg.h"
+
 typedef enum MPIU_dbg_state_t
 {
     MPIU_DBG_STATE_NONE = 0,
@@ -1981,15 +1989,78 @@ extern MPICH_PerProcess_t MPIR_Process;
 #define MPID_Allocation_unlock() MPID_Thread_mutex_unlock( &MPIR_Procss.allocation_lock )
 #endif
 /* ------------------------------------------------------------------------- */
-
+/* In MPICH2, each function has an "enter" and "exit" macro.  These can be 
+ * used to add various features to each function at compile time, or they
+ * can be set to empty to provide the fastest possible production version.
+ *
+ * There are at this time three choices of features (beyond the empty choice)
+ * 1. timing (controlled by macros in mpitimerimpl.h)
+ *    These collect data on when each function began and finished; the
+ *    resulting data can be displayed using special programs
+ * 2. nesting (selected with --enable-g=nesting)
+ *    Checks that the "NMPI" functions and the Nest_incr/decr calls
+ *    are properly nested at runtime.  
+ * 3. Debug logging (selected with --enable-g=log)
+ *    Invokes MPIU_DBG_MSG at the entry and exit for each routine            */
+/* ------------------------------------------------------------------------- */
 /* if fine-grain nest testing is enabled then define the function enter/exit
    macros to track the nesting level; otherwise, allow the timing module the
    opportunity to define the macros */
 #if defined(MPICH_DEBUG_FINE_GRAIN_NESTING)
 #   include "mpidu_func_nesting.h"
+#elif defined(USE_DBG_LOGGING)
+#   include "mpifunclog.h"
 #else
+    /* If no timing choice is selected, this sets the entry/exit macros 
+       to empty */
 #   include "mpitimerimpl.h"
 #endif
+
+#ifdef NEEDS_FUNC_ENTER_EXIT_DEFS
+/* mpich layer definitions */
+#define MPID_MPI_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
+#define MPID_MPI_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)	MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_FRONT(a)	MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)	MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)	MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)	MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)	MPIR_FUNC_EXIT(a)
+#define MPID_MPI_COLL_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_COLL_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_RMA_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_RMA_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_INIT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_INIT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+
+/* device layer definitions */
+#define MPIDI_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
+#define MPIDI_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT_FRONT(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER_BACK(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BACK(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_COLL_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_COLL_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_RMA_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
+#define MPIDI_RMA_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_INIT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_INIT_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+
+/* evaporate the timing macros since timing is not selected */
+#define MPIU_Timer_init(rank, size)
+#define MPIU_Timer_finalize()
+#endif /* NEEDS_FUNC_ENTER_EXIT_DEFS */
 
 /* Definitions for error handling and reporting */
 #include "mpierror.h"

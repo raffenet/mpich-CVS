@@ -21,12 +21,14 @@
 #define MPIR_FUNC_ENTER(a)			\
 {						\
     a##_nest_level_in = MPIR_Nest_value();	\
+    MPIU_DBG_MSG(ROUTINE_ENTER,TYPICAL,"Entering " ## #a );\
 }
 
 #define MPIR_FUNC_EXIT(a)										\
 {													\
     int nest_level_out = MPIR_Nest_value();								\
 													\
+    MPIU_DBG_MSG(ROUTINE_EXIT,TYPICAL,"Leaving " ## #a );\
     if (a##_nest_level_in != nest_level_out)								\
     {													\
 	MPIU_Error_printf("Error in nesting level: file=%s, line=%d, nest_in=%d, nest_out=%d\n",	\
@@ -35,48 +37,8 @@
     }													\
 }
 
-/* mpich layer definitions */
-#define MPID_MPI_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
-#define MPID_MPI_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
-#define MPID_MPI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPID_MPI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-#define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)	MPIR_FUNC_ENTER(a)
-#define MPID_MPI_PT2PT_FUNC_EXIT_FRONT(a)	MPIR_FUNC_EXIT(a)
-#define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)	MPIR_FUNC_ENTER(a)
-#define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)	MPIR_FUNC_ENTER(a)
-#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)	MPIR_FUNC_EXIT(a)
-#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)	MPIR_FUNC_EXIT(a)
-#define MPID_MPI_COLL_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPID_MPI_COLL_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-#define MPID_MPI_RMA_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPID_MPI_RMA_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-#define MPID_MPI_INIT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPID_MPI_INIT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-#define MPID_MPI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPID_MPI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-
-/* device layer definitions */
-#define MPIDI_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
-#define MPIDI_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
-#define MPIDI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-#define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_PT2PT_FUNC_EXIT_FRONT(a)		MPIR_FUNC_EXIT(a)
-#define MPIDI_PT2PT_FUNC_ENTER_BACK(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_PT2PT_FUNC_EXIT_BACK(a)		MPIR_FUNC_EXIT(a)
-#define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)		MPIR_FUNC_EXIT(a)
-#define MPIDI_COLL_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_COLL_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
-#define MPIDI_RMA_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
-#define MPIDI_RMA_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
-#define MPIDI_INIT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_INIT_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
-#define MPIDI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
-#define MPIDI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
-
-/* evaporate the timing macros since timing is not selected */
-#define MPIU_Timer_init(rank, size)
-#define MPIU_Timer_finalize()
+/* Tell the package to define the rest of the enter/exit macros in 
+   terms of these */
+#define NEEDS_FUNC_ENTER_EXIT_DEFS 1
 
 #endif /* defined(MPIDU_FUNC_NESTING_H_INCLUDED) */

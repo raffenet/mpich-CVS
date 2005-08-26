@@ -313,3 +313,292 @@ void MPIU_dump_dbg_memlog(FILE * fp)
     }
 }
 
+/* 
+ * NEW ROUTINES FOR DEBUGGING
+ */
+int MPIU_DBG_ActiveClasses = 0;
+int MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
+static int mpiu_dbg_initialized = 0;
+static FILE *MPIU_DBG_fp = 0;
+static char *filePattern = "-stdout-"; /* "log%d.log"; */
+static int worldNum  = 0;
+static int worldRank = -1;
+static int threadID  = 0;
+static double timeOrigin = 0.0;
+
+static int MPIU_DBG_Usage( const char *, const char * );
+static int MPIU_DBG_OpenFile( void );
+
+int MPIU_DBG_Outevent( const char *file, int line, int class, int kind, 
+		       const char *fmat, ... )
+{
+    va_list list;
+    char *str, stmp[MPIU_DBG_MAXLINE];
+    int  i;
+    MPID_Time_t t;
+    double  curtime;
+
+    if (!mpiu_dbg_initialized) return 0;
+
+#if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+    MPE_Thread_self(&threadID);
+#endif
+    if (!MPIU_DBG_fp) {
+	MPIU_DBG_OpenFile();
+    }
+
+    MPID_Wtime( &t );
+    MPID_Wtime_todouble( &t, &curtime );
+    curtime = curtime - timeOrigin;
+
+    /* The kind values are used with the macros to simplify these cases */
+    switch (kind) {
+	case 0:
+	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, class, curtime, 
+		     file, line, fmat );
+	    break;
+	case 1:
+	    va_start(list,fmat);
+	    str = va_arg(list,char *);
+	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, str );
+	    va_end(list);
+	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, class, curtime, 
+		     file, line, stmp );
+	    break;
+	case 2: 
+	    va_start(list,fmat);
+	    i = va_arg(list,int);
+	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, i);
+	    va_end(list);
+	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, class, curtime, 
+		     file, line, stmp );
+	    break;
+        default:
+	    break;
+    }
+    fflush(MPIU_DBG_fp);
+    return 0;
+}
+
+/* These are used to simplify the handling of options */
+static int MPIU_Classbits[] = { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x30, -1, 0 };
+static char *MPIU_Classname[] = { "PT2PT", "RMA", "THREAD", "PM", 
+				  "ROUTINE_ENTER", "ROUTINE_EXIT", 
+				  "ROUTINE", "ALL", 0 };
+static char *MPIU_LCClassname[] = { "pt2pt", "rma", "thread", "pm", 
+				    "routine_enter", "routine_exit", 
+				    "routine", "all", 0 };
+
+int MPIU_DBG_Init( int *argc_p, char ***argv_p )
+{
+    char *s = 0;
+    int  i;
+    MPID_Time_t t;
+    /* Check to see if any debugging was selected */
+    /* First, the environment variables */
+
+    s = getenv( "MPICH_DBG" );
+    if (s) {
+	/* Set te defaults */
+	MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+	MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+    }
+    s = getenv( "MPICH_DBG_LEVEL" );
+    if (s) {
+	if (strcmp(s,"TERSE") == 0) {
+	    MPIU_DBG_MaxLevel = MPIU_DBG_TERSE;
+	}
+	else if (strcmp(s,"TYPICAL") == 0) {
+	    MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+	}
+	else if (strcmp(s,"VERBOSE") == 0) {
+	    MPIU_DBG_MaxLevel = MPIU_DBG_VERBOSE;
+	}
+	else {
+	    MPIU_DBG_Usage( "MPICH_DBG_LEVEL", "TERSE, TYPICAL, VERBOSE" );
+	}
+    }
+    s = getenv( "MPICH_DBG_CLASS" );
+    while (s && *s) {
+	for (i=0; MPIU_Classname[i]; i++) {
+	    int len = strlen(MPIU_Classname[i]);
+	    if (strlen(s) >= len && 
+		strncmp(s,MPIU_Classname[i],len) == 0 && 
+		(s[len] == ',' || s[len] == 0)) {
+		MPIU_DBG_ActiveClasses |= MPIU_Classbits[i];
+		s += len;
+		if (*s == ',') s++;
+		break;
+	    }
+	}
+	if (!MPIU_Classname[i]) {
+	    MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
+	    break;
+	}
+    }
+    s = getenv( "MPICH_DBG_FILENAME" );
+    if (s) {
+	filePattern = MPIU_Strdup( s );
+    }
+    /* Here's where we do the same thing with the command-line options */
+    for (i=1; i<*argc_p; i++) {
+	if (strncmp((*argv_p)[i],"-mpich-dbg", 10) == 0) {
+	    char *s = (*argv_p)[i] + 10;
+	    /* Found a command */
+	    if (*s == 0) {
+		/* Just -mpich-dbg */
+		MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+		MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+	    }
+	    else if (strncmp(s,"-level",6) == 0) {
+		char *p = s + 6;
+		if (*p == '=') {
+		    p++;
+		    if (strcmp(p,"terse") == 0) {
+			MPIU_DBG_MaxLevel = MPIU_DBG_TERSE;
+		    }
+		    else if (strcmp(p,"typical") == 0) {
+			MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+		    }
+		    else if (strcmp(p,"verbose") == 0) {
+			MPIU_DBG_MaxLevel = MPIU_DBG_VERBOSE;
+		    }
+		    else {
+			MPIU_DBG_Usage( "-mpich-dbg-level", "terse, typical, verbose" );
+		    }
+		}
+	    }
+	    else if (strncmp(s,"-class",6) == 0) {
+		char *p = s + 6;
+		if (*p == '=') {
+		    p++;
+		    while (p && *p) {
+			for (i=0; MPIU_LCClassname[i]; i++) {
+			    int len = strlen(MPIU_LCClassname[i]);
+			    if (strlen(p) >= len && 
+				strncmp(p,MPIU_LCClassname[i],len) == 0 && 
+				(p[len] == ',' || p[len] == 0)) {
+				MPIU_DBG_ActiveClasses |= MPIU_Classbits[i];
+				p += len;
+				if (*p == ',') p++;
+				break;
+			    }
+			}
+			if (!MPIU_LCClassname[i]) {
+			    MPIU_DBG_Usage( "-mpich-dbg-class", 0 );
+			    break;
+			}
+		    }
+		}
+	    }
+	    else if (strncmp( s, "-filename", 9 ) == 0) {
+		char *p = s + 9;
+		if (*p == '=') {
+		    p++;
+		    filePattern = MPIU_Strdup( p );
+		}
+	    }
+	    else {
+		MPIU_DBG_Usage( (*argv_p)[i], 0 );
+	    }
+	    
+	    /* Eventually, should null it out and reduce argc value */
+	}
+    }
+    PMPI_Comm_rank( MPI_COMM_WORLD, &worldRank );
+
+    MPID_Wtime( &t );
+    MPID_Wtime_todouble( &t, &timeOrigin );
+
+    mpiu_dbg_initialized = 1;
+    return 0;
+}
+
+static int MPIU_DBG_Usage( const char *cmd, const char *vals )
+{
+    if (vals) {
+	fprintf( stderr, "Incorrect value for %s, should be one of %s\n",
+		 cmd, vals );
+    }
+    else {
+	fprintf( stderr, "Incorrect value for %s\n", cmd );
+    }
+    fprintf( stderr, 
+"Command line for debug switches\n\
+    -mpich-dbg-class=name[,name,...]\n\
+    -mpich-dbg-level=name   (one of terse, typical, verbose)\n\
+    -mpich-dbg-filename=pattern (includes %d for world rank, %t for thread id\n\
+    -mpich-dbg   (shorthand for -mpich-dbg-class=all -mpich-dbg-level=typical)\n\
+Environment variables\n\
+    MPICH_DBG_CLASS=NAME[,NAME...]\n\
+    MPICH_DBG_LEVEL=NAME\n\
+    MPICH_DBG_FILENAME=pattern\n\
+    MPICH_DBG=YES\n" );
+
+    fflush(stderr);
+
+    return 0;
+}
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
+static int MPIU_DBG_OpenFile( void )
+{
+    if (!filePattern || *filePattern == 0 ||
+	strcmp(filePattern, "-stdout-" ) == 0) {
+	MPIU_DBG_fp = stdout;
+    }
+    else {
+	char filename[MAXPATHLEN], *pDest, *p;
+	p     = filePattern;
+	pDest = filename;
+	*filename = 0;
+	while (*p && (pDest-filename) < MAXPATHLEN) {
+	    if (*p == '%') {
+		p++;
+		if (*p == 'd') {
+		    char rankAsChar[20];
+		    MPIU_Snprintf( rankAsChar, sizeof(rankAsChar), "%d", 
+				   worldRank );
+		    *pDest = 0;
+		    MPIU_Strnapp( filename, rankAsChar, MAXPATHLEN );
+		    printf( "Adding %s to %s\n", rankAsChar, filename );
+		    pDest += strlen(rankAsChar);
+		}
+		else if (*p == 't') {
+#if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+		    int threadID;
+		    char threadIDAsChar[20];
+		    MPE_Thread_self(&threadID);
+		    MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
+				   "%d", threadID );
+		    *pDest = 0;
+		    MPIU_Strnapp( filename, threadIDAsChar, MAXPATHLEN );
+		    pDest += strlen(threadIDAsChar);
+#else
+		    *pDest++ = '0';
+#endif
+		}
+		else if (*p == 'w') {
+		    /* FIXME: Get world number */
+		    *pDest++ = '0';
+		}
+		else {
+		    *pDest++ = '%';
+		    *pDest++ = *p;
+		}
+		p++;
+	    }
+	    else {
+		*pDest++ = *p++;
+	    }
+	}
+	*pDest = 0;
+	MPIU_DBG_fp = fopen( filename, "w" );
+    }
+    return 0;
+}
