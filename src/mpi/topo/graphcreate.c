@@ -217,15 +217,16 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    int j;
+	    int comm_size = comm_ptr->remote_size;
 
 	    /* Check that the communicator is large enough */
-	    if (nnodes > comm_ptr->remote_size) {
+	    if (nnodes > comm_size) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
 						  MPIR_ERR_RECOVERABLE, 
 						  FCNAME, __LINE__, 
 						  MPI_ERR_ARG,
 				  "**topotoolarge", "**topotoolarge %d %d",
-					  nnodes, comm_ptr->remote_size );
+					  nnodes, comm_size );
 	    }
 	    
 	    /* Perform the remaining tests only if nnodes is valid.  
@@ -234,7 +235,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
             if (mpi_errno) goto fn_fail;
 	    
 	    /* Check that index is monotone nondecreasing */
-	    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is not
+	    /* Use ERR_ARG instead of ERR_TOPOLOGY because there is no
 	       topology yet */
 	    for (i=0; i<nnodes; i++) {
 		if (index[i] < 0) {
@@ -254,16 +255,18 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 		}
 	    }
 
-	    /* Check that edge number is in range */
+	    /* Check that edge number is in range. Note that the 
+	       edges refer to a rank in the communicator, and can 
+	       be greater than nnodes */
 	    if (nnodes > 0) { 
 		for (i=0; i<index[nnodes-1]; i++) {
-		    if (edges[i] > nnodes || edges[i] < 0) {
+		    if (edges[i] > comm_size || edges[i] < 0) {
 			mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
 							  MPIR_ERR_RECOVERABLE,
 							  FCNAME, __LINE__, 
 							  MPI_ERR_ARG,
 				  "**edgeoutrange", "**edgeoutrange %d %d %d", 
-						  i, edges[i], nnodes );
+						  i, edges[i], comm_size );
 		    }
 		}
 	    }
