@@ -124,12 +124,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     
     mpi_errno = MPID_Send(buf, count, datatype, dest, tag, comm_ptr, 
 			  MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     if (request_ptr == NULL)
     {
