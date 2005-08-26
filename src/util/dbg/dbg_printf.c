@@ -313,6 +313,7 @@ void MPIU_dump_dbg_memlog(FILE * fp)
     }
 }
 
+#ifdef USE_DBG_LOGGING
 /* 
  * NEW ROUTINES FOR DEBUGGING
  */
@@ -602,3 +603,4 @@ static int MPIU_DBG_OpenFile( void )
     }
     return 0;
 }
+#endif /* USE_DBG_LOGGING */
