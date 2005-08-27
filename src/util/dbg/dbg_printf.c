@@ -445,6 +445,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p )
 	filePattern = MPIU_Strdup( s );
     }
     /* Here's where we do the same thing with the command-line options */
+    if (argc_p) {
     for (i=1; i<*argc_p; i++) {
 	if (strncmp((*argv_p)[i],"-mpich-dbg", 10) == 0) {
 	    char *s = (*argv_p)[i] + 10;
@@ -509,6 +510,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p )
 	    /* Eventually, should null it out and reduce argc value */
 	}
     }
+    }
     PMPI_Comm_rank( MPI_COMM_WORLD, &worldRank );
 
     MPID_Wtime( &t );
@@ -531,7 +533,7 @@ static int MPIU_DBG_Usage( const char *cmd, const char *vals )
 "Command line for debug switches\n\
     -mpich-dbg-class=name[,name,...]\n\
     -mpich-dbg-level=name   (one of terse, typical, verbose)\n\
-    -mpich-dbg-filename=pattern (includes %d for world rank, %t for thread id\n\
+    -mpich-dbg-filename=pattern (includes %%d for world rank, %%t for thread id\n\
     -mpich-dbg   (shorthand for -mpich-dbg-class=all -mpich-dbg-level=typical)\n\
 Environment variables\n\
     MPICH_DBG_CLASS=NAME[,NAME...]\n\
