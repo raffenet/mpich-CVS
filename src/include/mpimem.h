@@ -334,7 +334,7 @@ if (pointer_) { \
 #define MPIU_CHKPMEM_DECL(n_) \
  void *(mpiu_chkpmem_stk_[n_]);\
  int mpiu_chkpmem_stk_sp_=0;\
- const int mpiu_chkpmem_stk_sz_=n_;
+ const int mpiu_chkpmem_stk_sz_=n_
 #define MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)MPIU_Malloc(nbytes_); \
 if (pointer_) { \
