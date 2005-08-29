@@ -12,3 +12,4 @@ join 2
 disconnect_reconnect 3
 disconnect_reconnect2 3
 multiple_ports 3
+multiple_ports2 4

@@ -15,6 +15,7 @@ join_SOURCES = join.c
 disconnect_reconnect_SOURCES = disconnect_reconnect.c
 disconnect_reconnect2_SOURCES = disconnect_reconnect2.c
 multiple_ports_SOURCES = multiple_ports.c
+multiple_ports_SOURCES2 = multiple_ports2.c
 spaiccreate_SOURCES = spaiccreate.c
 
 ../util/mtest.o:
