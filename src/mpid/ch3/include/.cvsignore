@@ -3,3 +3,4 @@ mpidi_ch3_conf.h
 *Debug*
 *Release*
 .deps
+mpid_thread.h

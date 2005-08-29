@@ -11,3 +11,4 @@ Release
 .deps
 .libs
 .libstamp*
+mpid_thread.c
