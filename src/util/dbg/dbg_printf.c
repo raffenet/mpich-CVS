@@ -329,6 +329,8 @@ static double timeOrigin = 0.0;
 
 static int MPIU_DBG_Usage( const char *, const char * );
 static int MPIU_DBG_OpenFile( void );
+static int setDBGClass( const char *, const char *([]) );
+static int SetDBGLevel( const char *, const char *([]) );
 
 int MPIU_DBG_Outevent( const char *file, int line, int class, int kind, 
 		       const char *fmat, ... )
@@ -385,18 +387,24 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 }
 
 /* These are used to simplify the handling of options */
-static int MPIU_Classbits[] = { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x30, -1, 0 };
-static char *MPIU_Classname[] = { "PT2PT", "RMA", "THREAD", "PM", 
-				  "ROUTINE_ENTER", "ROUTINE_EXIT", 
-				  "ROUTINE", "ALL", 0 };
-static char *MPIU_LCClassname[] = { "pt2pt", "rma", "thread", "pm", 
-				    "routine_enter", "routine_exit", 
-				    "routine", "all", 0 };
+static const int MPIU_Classbits[] = { 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x30, -1, 0 };
+static const char *MPIU_Classname[] = { "PT2PT", "RMA", "THREAD", "PM", 
+					"ROUTINE_ENTER", "ROUTINE_EXIT", 
+					"ROUTINE", "ALL", 0 };
+static const char *MPIU_LCClassname[] = { "pt2pt", "rma", "thread", "pm", 
+					  "routine_enter", "routine_exit", 
+					  "routine", "all", 0 };
 
-int MPIU_DBG_Init( int *argc_p, char ***argv_p )
+static const int  MPIU_Levelvalues[] = { MPIU_DBG_TERSE,
+					 MPIU_DBG_TYPICAL,
+					 MPIU_DBG_VERBOSE, 100 };
+static const char *MPIU_Levelname[] = { "TERSE", "TYPICAL", "VERBOSE", 0 };
+static const char *MPIU_LCLevelname[] = { "terse", "typical", "verbose", 0 };
+
+int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 {
     char *s = 0;
-    int  i;
+    int  i, rc;
     MPID_Time_t t;
     /* Check to see if any debugging was selected */
     /* First, the environment variables */
@@ -409,109 +417,64 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p )
     }
     s = getenv( "MPICH_DBG_LEVEL" );
     if (s) {
-	if (strcmp(s,"TERSE") == 0) {
-	    MPIU_DBG_MaxLevel = MPIU_DBG_TERSE;
-	}
-	else if (strcmp(s,"TYPICAL") == 0) {
-	    MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
-	}
-	else if (strcmp(s,"VERBOSE") == 0) {
-	    MPIU_DBG_MaxLevel = MPIU_DBG_VERBOSE;
-	}
-	else {
+	rc = SetDBGLevel( s, MPIU_Levelname );
+	if (rc) 
 	    MPIU_DBG_Usage( "MPICH_DBG_LEVEL", "TERSE, TYPICAL, VERBOSE" );
-	}
     }
     s = getenv( "MPICH_DBG_CLASS" );
-    while (s && *s) {
-	for (i=0; MPIU_Classname[i]; i++) {
-	    int len = strlen(MPIU_Classname[i]);
-	    if (strlen(s) >= len && 
-		strncmp(s,MPIU_Classname[i],len) == 0 && 
-		(s[len] == ',' || s[len] == 0)) {
-		MPIU_DBG_ActiveClasses |= MPIU_Classbits[i];
-		s += len;
-		if (*s == ',') s++;
-		break;
-	    }
-	}
-	if (!MPIU_Classname[i]) {
-	    MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
-	    break;
-	}
-    }
+    rc = setDBGClass( s, MPIU_Classname );
+    if (rc) 
+	MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
     s = getenv( "MPICH_DBG_FILENAME" );
     if (s) {
 	filePattern = MPIU_Strdup( s );
     }
+
     /* Here's where we do the same thing with the command-line options */
     if (argc_p) {
-    for (i=1; i<*argc_p; i++) {
-	if (strncmp((*argv_p)[i],"-mpich-dbg", 10) == 0) {
-	    char *s = (*argv_p)[i] + 10;
-	    /* Found a command */
-	    if (*s == 0) {
-		/* Just -mpich-dbg */
-		MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
-		MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
-	    }
-	    else if (strncmp(s,"-level",6) == 0) {
-		char *p = s + 6;
-		if (*p == '=') {
-		    p++;
-		    if (strcmp(p,"terse") == 0) {
-			MPIU_DBG_MaxLevel = MPIU_DBG_TERSE;
-		    }
-		    else if (strcmp(p,"typical") == 0) {
-			MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
-		    }
-		    else if (strcmp(p,"verbose") == 0) {
-			MPIU_DBG_MaxLevel = MPIU_DBG_VERBOSE;
-		    }
-		    else {
-			MPIU_DBG_Usage( "-mpich-dbg-level", "terse, typical, verbose" );
+	for (i=1; i<*argc_p; i++) {
+	    if (strncmp((*argv_p)[i],"-mpich-dbg", 10) == 0) {
+		char *s = (*argv_p)[i] + 10;
+		/* Found a command */
+		if (*s == 0) {
+		    /* Just -mpich-dbg */
+		    MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+		    MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+		}
+		else if (strncmp(s,"-level",6) == 0) {
+		    char *p = s + 6;
+		    if (*p == '=') {
+			p++;
+			rc = SetDBGLevel( p, MPIU_LCLevelname );
+			if (rc) 
+			    MPIU_DBG_Usage( "-mpich-dbg-level", "terse, typical, verbose" );
 		    }
 		}
-	    }
-	    else if (strncmp(s,"-class",6) == 0) {
-		char *p = s + 6;
-		if (*p == '=') {
-		    p++;
-		    while (p && *p) {
-			for (i=0; MPIU_LCClassname[i]; i++) {
-			    int len = strlen(MPIU_LCClassname[i]);
-			    if (strlen(p) >= len && 
-				strncmp(p,MPIU_LCClassname[i],len) == 0 && 
-				(p[len] == ',' || p[len] == 0)) {
-				MPIU_DBG_ActiveClasses |= MPIU_Classbits[i];
-				p += len;
-				if (*p == ',') p++;
-				break;
-			    }
-			}
-			if (!MPIU_LCClassname[i]) {
+		else if (strncmp(s,"-class",6) == 0) {
+		    char *p = s + 6;
+		    if (*p == '=') {
+			p++;
+			rc = setDBGClass( p, MPIU_LCClassname );
+			if (rc)
 			    MPIU_DBG_Usage( "-mpich-dbg-class", 0 );
-			    break;
-			}
 		    }
 		}
-	    }
-	    else if (strncmp( s, "-filename", 9 ) == 0) {
-		char *p = s + 9;
-		if (*p == '=') {
-		    p++;
-		    filePattern = MPIU_Strdup( p );
+		else if (strncmp( s, "-filename", 9 ) == 0) {
+		    char *p = s + 9;
+		    if (*p == '=') {
+			p++;
+			filePattern = MPIU_Strdup( p );
+		    }
 		}
+		else {
+		    MPIU_DBG_Usage( (*argv_p)[i], 0 );
+		}
+		
+		/* Eventually, should null it out and reduce argc value */
 	    }
-	    else {
-		MPIU_DBG_Usage( (*argv_p)[i], 0 );
-	    }
-	    
-	    /* Eventually, should null it out and reduce argc value */
 	}
     }
-    }
-    PMPI_Comm_rank( MPI_COMM_WORLD, &worldRank );
+    worldRank = wrank;
 
     MPID_Wtime( &t );
     MPID_Wtime_todouble( &t, &timeOrigin );
@@ -604,5 +567,41 @@ static int MPIU_DBG_OpenFile( void )
 	MPIU_DBG_fp = fopen( filename, "w" );
     }
     return 0;
+}
+
+/* Support routines for processing mpich-dbg values */
+static int setDBGClass( const char *s, const char *(classnames[]) )
+{
+    int i;
+
+    while (s && *s) {
+	for (i=0; classnames[i]; i++) {
+	    int len = strlen(classnames[i]);
+	    if (strlen(s) >= len && 
+		strncmp(s,classnames[i],len) == 0 && 
+		(s[len] == ',' || s[len] == 0)) {
+		MPIU_DBG_ActiveClasses |= MPIU_Classbits[i];
+		s += len;
+		if (*s == ',') s++;
+		break;
+	    }
+	}
+	if (!classnames[i]) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+static int SetDBGLevel( const char *s, const char *(names[]) )
+{
+    int i;
+
+    for (i=0; names[i]; i++) {
+	if (strcmp( names[i], s ) == 0) {
+	    MPIU_DBG_MaxLevel = MPIU_Levelvalues[i];
+	    return 0;
+	}
+    }
+    return 1;
 }
 #endif /* USE_DBG_LOGGING */

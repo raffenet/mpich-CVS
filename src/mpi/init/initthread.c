@@ -248,7 +248,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIU_trid( 1 );
 #endif
 #ifdef USE_DBG_LOGGING
-    MPIU_DBG_Init( argc, argv );
+    MPIU_DBG_Init( argc, argv, MPIR_Process.comm_world->rank );
 #endif
 
     /* FIXME: There is no code for this comment */
