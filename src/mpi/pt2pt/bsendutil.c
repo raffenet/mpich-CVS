@@ -272,7 +272,9 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
      * ones.  If the message can be initiated in the first pass,
      * do not perform the second pass.
      */
-    MPIU_IFTHREADED(MPID_Thread_mutex_lock( &BsendBuffer.bsend_lock ));
+    MPIU_IFTHREADED(
+       MPIU_DBG_MSG(THREAD,TYPICAL,"Enter bsend critical section");
+       MPID_Thread_mutex_lock( &BsendBuffer.bsend_lock ));
     for (pass = 0; pass < 2; pass++) {
 	
 	p = MPIR_Bsend_find_buffer( packsize );
@@ -321,7 +323,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	/* Give priority to any pending operations */
 	MPIR_Bsend_retry_pending( );
     }
-    MPIU_IFTHREADED(MPID_Thread_mutex_unlock( &BsendBuffer.bsend_lock ));
+    MPIU_IFTHREADED(MPIU_DBG_MSG(THREAD,TYPICAL,"Exit bsend critical section");
+                    MPID_Thread_mutex_unlock( &BsendBuffer.bsend_lock ));
     MPIR_Nest_decr();
     
     if (!p) {

@@ -1832,11 +1832,19 @@ M*/
 /* #define MPID_Thread_lock( ptr ) */
 /* #define MPID_Thread_unlock( ptr ) */
 #else
-#define MPID_Common_thread_lock() MPID_Thread_mutex_lock( &MPIR_Process.common_lock )
-#define MPID_Common_thread_unlock() MPID_Thread_mutex_unlock( &MPIR_Process.common_lock )
+#define MPID_Common_thread_lock() \
+     { MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");\
+     MPID_Thread_mutex_lock( &MPIR_Process.common_lock ); }
+#define MPID_Common_thread_unlock() \
+     { MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");\
+     MPID_Thread_mutex_unlock( &MPIR_Process.common_lock ); }
 
-#define MPID_Comm_thread_lock(comm_ptr_) MPID_Thread_mutex_lock(&(comm_ptr_)->mutex)
-#define MPID_Comm_thread_unlock(comm_ptr_) MPID_Thread_mutex_unlock(&(comm_ptr_)->mutex)
+#define MPID_Comm_thread_lock(comm_ptr_) \
+   { MPIU_DBG_MSG(THREAD,TYPICAL,"Enter comm critical section");\
+     MPID_Thread_mutex_lock(&(comm_ptr_)->mutex); }
+#define MPID_Comm_thread_unlock(comm_ptr_) \
+   { MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");\
+     MPID_Thread_mutex_unlock(&(comm_ptr_)->mutex); }
 
 #define MPID_Request_construct(request_ptr_)			\
 {								\
@@ -1848,12 +1856,20 @@ M*/
     MPID_Thread_lock_destroy(&(request_ptr_)->mutex);		\
     MPID_Thread_lock_destroy(&(request_ptr_)->initialized);	\
 }
-#define MPID_Request_thread_lock(request_ptr_) MPID_Thread_mutex_lock(&(request_ptr_)->mutex)
-#define MPID_Request_thread_unlock(request_ptr_) MPID_Thread_mutex_unlock(&(request_ptr_)->mutex)
+#define MPID_Request_thread_lock(request_ptr_) \
+        { MPIU_DBG_MSG(THREAD,TYPICAL,"Enter request critical section");\
+        MPID_Thread_mutex_lock(&(request_ptr_)->mutex); }
+#define MPID_Request_thread_unlock(request_ptr_) \
+        { MPIU_DBG_MSG(THREAD,TYPICAL,"Exit request critical section");\
+        MPID_Thread_mutex_unlock(&(request_ptr_)->mutex); }
 /* TODO: MT: these should be rewritten to use busy waiting and appropriate processor memory fences.  They and an necessary
    variables should probably be defined by the device rather than in the top level include file.  */
-#define MPID_Request_initialized_clear(request_ptr_) MPID_Thread_mutex_lock(&(request_ptr_)->initialized)
-#define MPID_Request_initialized_set(request_ptr_)  MPID_Thread_mutex_unlock(&(request_ptr_)->initialized)
+#define MPID_Request_initialized_clear(request_ptr_) \
+   { MPIU_DBG_MSG(THREAD,TYPICAL,"Enter request critical section");\
+     MPID_Thread_mutex_lock(&(request_ptr_)->initialized); }
+#define MPID_Request_initialized_set(request_ptr_)  \
+   { MPIU_DBG_MSG(THREAD,TYPICAL,"Exit request critical section");\
+     MPID_Thread_mutex_unlock(&(request_ptr_)->initialized); }
 #define MPID_Request_initialized_wait(request_ptr_)		\
 {								\
     MPID_Thread_mutex_lock(&(request_ptr_)->initialized);	\
@@ -1985,8 +2001,12 @@ extern MPICH_PerProcess_t MPIR_Process;
 /* A more sophisticated version of these would handle the case where 
    the library supports MPI_THREAD_MULTIPLE but the user only asked for
    MPI_THREAD_FUNNELLED */
-#define MPID_Allocation_lock() MPID_Thread_mutex_lock( &MPIR_Process.allocation_lock )
-#define MPID_Allocation_unlock() MPID_Thread_mutex_unlock( &MPIR_Procss.allocation_lock )
+#define MPID_Allocation_lock() \
+    { MPIU_DBG_MSG(THREAD,TYPICAL,"Enter allocation critical section");\
+      MPID_Thread_mutex_lock( &MPIR_Process.allocation_lock ); }
+#define MPID_Allocation_unlock() \
+    { MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");\
+    MPID_Thread_mutex_unlock( &MPIR_Procss.allocation_lock ); }
 #endif
 /* ------------------------------------------------------------------------- */
 /* In MPICH2, each function has an "enter" and "exit" macro.  These can be 

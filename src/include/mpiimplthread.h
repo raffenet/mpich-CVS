@@ -65,6 +65,7 @@
 {								\
     if (MPIR_Nest_value() == 0)					\
     { 								\
+        MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");\
 	MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);	\
     }								\
 }
@@ -72,6 +73,7 @@
 {								\
     if (MPIR_Nest_value() == 0)					\
     { 								\
+        MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");\
 	MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);	\
     }								\
 }
