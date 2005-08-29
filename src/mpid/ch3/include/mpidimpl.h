@@ -626,8 +626,8 @@ int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, int, 
 #define MPIDI_MAX_KVS_KEY_LEN      256
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
-int MPIDI_KVS_Init();
-int MPIDI_KVS_Finalize();
+int MPIDI_KVS_Init(void);
+int MPIDI_KVS_Finalize(void);
 int MPIDI_KVS_Create(char *name);
 int MPIDI_KVS_Create_name_in(char *name);
 int MPIDI_KVS_Destroy(const char *name);
