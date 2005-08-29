@@ -8,7 +8,7 @@
 
 #ifdef MPIDI_DEV_IMPLEMENTS_COMM_ACCEPT
 
-/*
+/* Override these macros here if you want to debug this file only.
 #define MPIU_DBG_PRINTF(a) printf a ; fflush(stdout)
 #define MPICH_DBG_OUTPUT
 */
@@ -135,7 +135,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
     MPID_Comm *tmp_comm = NULL, *intercomm;
     MPIDI_VC_t * vc, *new_vc = NULL;
     int n_local_pgs=1, *local_pg_sizes=NULL, n_remote_pgs;
-    int sendtag=0, recvtag=0, local_comm_size;
+    int sendtag=100, recvtag=100, local_comm_size;
     typedef struct pg_translation
     {
 	int pg_index;
@@ -292,9 +292,10 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
         send_ints[1] = local_comm_size;
         send_ints[2] = (*newcomm)->context_id;
 
+	/*printf("accept:sending 3 ints, %d, %d, %d, and receiving 2 ints\n", send_ints[0], send_ints[1], send_ints[2]);fflush(stdout);*/
         mpi_errno = MPIC_Sendrecv(send_ints, 3, MPI_INT, 0,
-                                  sendtag, recv_ints, 2, MPI_INT,
-                                  0, recvtag, tmp_comm->handle,
+                                  sendtag++, recv_ints, 2, MPI_INT,
+                                  0, recvtag++, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
 	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
@@ -303,11 +304,10 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
-        sendtag++;
-        recvtag++;
     }
 
     /* broadcast the received info to local processes */
+    /*printf("accept:broadcasting 2 ints - %d and %d\n", recv_ints[0], recv_ints[1]);fflush(stdout);*/
     mpi_errno = MPIR_Bcast(recv_ints, 2, MPI_INT, root, comm_ptr);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno)
@@ -345,7 +345,8 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 	for (i=0; i<n_remote_pgs; i++)
 	{
 	    /* Receive the size and then the data */
-	    mpi_errno = MPIC_Recv(&j, 1, MPI_INT, 0, 0, tmp_comm->handle, MPI_STATUS_IGNORE);
+	    /*printf("accept:receiving 1 int\n");fflush(stdout);*/
+	    mpi_errno = MPIC_Recv(&j, 1, MPI_INT, 0, recvtag++, tmp_comm->handle, MPI_STATUS_IGNORE);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -361,7 +362,8 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 		goto fn_exit;
 		/* --END ERROR HANDLING-- */
 	    }
-	    mpi_errno = MPIC_Recv(pg_str, j, MPI_CHAR, 0, 0, tmp_comm->handle, MPI_STATUS_IGNORE);
+	    /*printf("accept:receiving string of length %d\n", j);*/
+	    mpi_errno = MPIC_Recv(pg_str, j, MPI_CHAR, 0, recvtag++, tmp_comm->handle, MPI_STATUS_IGNORE);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -370,6 +372,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 	    }
 	    /* --END ERROR HANDLING-- */
 	    /* Then broadcast the size and data to the local communicator */
+	    /*printf("accept:broadcasting 1 int: %d\n", j);fflush(stdout);*/
 	    mpi_errno = MPIR_Bcast(&j, 1, MPI_INT, root, comm_ptr);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
@@ -378,6 +381,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
+	    /*printf("accept:broadcasting string of length %d\n", j);fflush(stdout);*/
 	    mpi_errno = MPIR_Bcast(pg_str, j, MPI_CHAR, root, comm_ptr);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
@@ -439,7 +443,8 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 	while (pg_iter != NULL)
 	{
 	    i = (int)(strlen(pg_iter->str) + 1);
-	    mpi_errno = MPIC_Send(&i, 1, MPI_INT, 0, 0, tmp_comm->handle);
+	    /*printf("accept:sending 1 int: %d\n", i);fflush(stdout);*/
+	    mpi_errno = MPIC_Send(&i, 1, MPI_INT, 0, sendtag++, tmp_comm->handle);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -447,7 +452,8 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
-	    mpi_errno = MPIC_Send(pg_iter->str, i, MPI_CHAR, 0, 0, tmp_comm->handle);
+	    /*printf("accept:sending string of length %d\n", i);fflush(stdout);*/
+	    mpi_errno = MPIC_Send(pg_iter->str, i, MPI_CHAR, 0, sendtag++, tmp_comm->handle);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -460,8 +466,9 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 
 	/* Receive the translations from remote process rank to process group index */
 	/* FIXME: Can we assume that a struct of 2 ints is equal to 2 ints in length? */
-	mpi_errno = MPIC_Sendrecv(local_translation, local_comm_size * 2, MPI_INT, 0, 0,
-				  remote_translation, remote_comm_size * 2, MPI_INT, 0, 0, tmp_comm->handle, MPI_STATUS_IGNORE);
+	/*printf("accept:sending %d ints and receiving %d ints\n", local_comm_size * 2, remote_comm_size * 2);fflush(stdout);*/
+	mpi_errno = MPIC_Sendrecv(local_translation, local_comm_size * 2, MPI_INT, 0, sendtag++,
+				  remote_translation, remote_comm_size * 2, MPI_INT, 0, recvtag++, tmp_comm->handle, MPI_STATUS_IGNORE);
 #ifdef MPICH_DBG_OUTPUT
 	MPIU_DBG_PRINTF(("[%d]accept:Received remote_translation:\n", rank));
 	for (i=0; i<remote_comm_size; i++)
@@ -477,6 +484,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 	for (i=0; i<n_remote_pgs; i++)
 	{
 	    /* Broadcast the size and data to the local communicator */
+	    /*printf("accept:broadcasting 1 int\n");fflush(stdout);*/
 	    mpi_errno = MPIR_Bcast(&j, 1, MPI_INT, root, comm_ptr);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
@@ -493,6 +501,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 		goto fn_exit;
 		/* --END ERROR HANDLING-- */
 	    }
+	    /*printf("accept:broadcasting string of length %d\n", j);fflush(stdout);*/
 	    mpi_errno = MPIR_Bcast(pg_str, j, MPI_CHAR, root, comm_ptr);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno != MPI_SUCCESS)
@@ -552,6 +561,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
     }
 
     /* Broadcast out the remote rank translation array */
+    /*printf("accept:broadcasting %d ints\n", remote_comm_size * 2);fflush(stdout);*/
     mpi_errno = MPIR_Bcast(remote_translation, remote_comm_size * 2, MPI_INT, root, comm_ptr);
 #ifdef MPICH_DBG_OUTPUT
     MPIU_DBG_PRINTF(("[%d]accept:Received remote_translation after broadcast:\n", rank));
@@ -607,6 +617,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
 
     }
 
+    /*printf("accept:barrier\n");fflush(stdout);*/
     mpi_errno = MPIR_Barrier(comm_ptr);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -619,9 +630,10 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
     /* synchronize with remote root */
     if (rank == root)
     {
+	/*printf("accept:sending and receiving 0 ints (barrier?)\n");fflush(stdout);*/
         mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
-                                  sendtag, &j, 0, MPI_INT,
-                                  0, recvtag, tmp_comm->handle,
+                                  sendtag++, &j, 0, MPI_INT,
+                                  0, recvtag++, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
@@ -635,6 +647,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
         MPIR_Comm_release(tmp_comm);
     }
 
+    /*printf("accept:barrier\n");fflush(stdout);*/
     mpi_errno = MPIR_Barrier(comm_ptr);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
