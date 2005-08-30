@@ -85,13 +85,11 @@
 			helpstring = "Remove fortran code and interfaces"
 			required = "false"
 		/>
-<!--
 		<unnamed
 			name = "--use-ib-rdma"
 			helpstring = "Use the rdma interface in the infiniband channel"
 			required = "false"
 		/>
--->
 		<unnamed
 			name = "--cleancode"
 			helpstring = "Clean up the c++ header file"
@@ -158,12 +156,6 @@
 			helpstring = "use definitions for Win64 IA64 instead of X64"
 			require = "false"
 		/>
-<!--		<unnamed
-			name = "--mt"
-			helpstring = "build multithreaded libraries"
-			require = "false"
-		/>
--->
         <example>Example: winconfigure.wsf --cleancode</example>
     </runtime>
 <script language="VBScript">
@@ -190,13 +182,11 @@ Function cEcho(str)
 	End If
 End Function
 
-'bMultiThreaded = false
 x64 = True
 bVS2005 = False
-'bUseIbRDMA = False
+bUseIbRDMA = False
 bUsePinCache = False
 bRemoveFortran = False
-'bWin64 = False
 bUseCycleCounter = False
 bForce = True
 bCleanCode = False
@@ -227,13 +217,10 @@ buildfiles_channel = "sock"
 ' Miscellaneous settings
 '
 MPI_MAX_PROCESSOR_NAME = "128"
-'If bWin64 Then
-  MPI_AINT64               = "__int64"
-  BSEND_OVERHEAD64         = "95"
-'Else
-  MPI_AINT32               = "int"
-  BSEND_OVERHEAD32         = "59"
-'End If
+MPI_AINT64               = "__int64"
+BSEND_OVERHEAD64         = "95"
+MPI_AINT32               = "int"
+BSEND_OVERHEAD32         = "59"
 MPI_FINT               = "int"
 'MPI_OFFSET             = "long long"
 MPI_OFFSET             = "__int64"
@@ -246,14 +233,11 @@ mpi_dll_spec_definition = "#ifdef USE_MPI_STATIC_LIBRARY" + vbCrLf + "# define M
 
 set f = WScript.CreateObject("Scripting.FileSystemObject")
 
-'Set fin = f.OpenTextFile("src\util\thread\posix_types.i")
 Set fin = f.OpenTextFile("src\util\thread\win_types.i")
 mpe_thread_typedefs = fin.ReadAll()
 fin.Close()
-'Set fin = f.OpenTextFile("src\util\thread\posix_funcs.i")
 Set fin = f.OpenTextFile("src\util\thread\win_funcs.i")
 mpe_thread_funcs = fin.ReadAll()
-'mpe_thread_funcs = Replace(mpe_thread_funcs, "sched_yield()", "Sleep(0)")
 fin.Close()
 Set fin = f.OpenTextFile("src\mpid\common\thread\mpe_types.i")
 mpid_thread_typedefs = fin.ReadAll()
@@ -320,14 +304,14 @@ For arg = 0 To argCount - 1
 	WScript.Quit
   ElseIf argValue = "--remove-fortran" Then
     bRemoveFortran = True
-'  ElseIf argValue = "--use-ib-rdma" Then
-'	bUseIbRDMA = True
-'  ElseIf argValue = "--use_ib_rdma" Then
-'	bUseIbRDMA = True
-'  ElseIf argValue = "--use-pin-cache" Then
-'    bUsePinCache = True
-'  ElseIf argValue = "--use_pin_cache" Then
-'    bUsePinCache = True
+  ElseIf argValue = "--use-ib-rdma" Then
+	bUseIbRDMA = True
+  ElseIf argValue = "--use_ib_rdma" Then
+	bUseIbRDMA = True
+  ElseIf argValue = "--use-pin-cache" Then
+    bUsePinCache = True
+  ElseIf argValue = "--use_pin_cache" Then
+    bUsePinCache = True
   ElseIf argValue = "--testdir" Then
     ConfigureTestDir()
     WScript.Quit
@@ -354,8 +338,6 @@ For arg = 0 To argCount - 1
     WScript.Quit
   ElseIf argValue = "--ia64" Then
     x64 = False
-'  ElseIf argValue = "--mt" Then
-'    bMultiThreaded = true
   ElseIf argValue = "--help" Then
     WScript.Arguments.ShowUsage
     WScript.Quit
@@ -381,54 +363,10 @@ Next
   len_2_int           = "08"
   len_long_double_int = "10"
 ' Fortran datatype sizes
-'If bWin64 Then
   len_integer64         = "08"
-'else
   len_integer32         = "04"
-'end if
   len_doublecplx      = "10"
   len_2dc             = "20"
-'If bWin64 Then
-'  len_short           = "02"
-'  len_int             = "04"
-'  len_long            = "04"
-'  len_long_long       = "08"
-'  len_float           = "04"
-'  len_double          = "08"
-'  len_long_double     = "08"
-'  len_wchar           = "02"
-'  len_wchar_t         = "02"
-'  len_float_int       = "08"
-'  len_double_int      = "10"
-'  len_long_int        = "08"
-'  len_short_int       = "08"
-'  len_2_int           = "08"
-'  len_long_double_int = "10"
-'' Fortran datatype sizes
-'  len_integer         = "08"
-'  len_doublecplx      = "10"
-'  len_2dc             = "20"
-'Else
-'  len_short           = "02"
-'  len_int             = "04"
-'  len_long            = "04"
-'  len_long_long       = "08"
-'  len_float           = "04"
-'  len_double          = "08"
-'  len_long_double     = "08"
-'  len_wchar           = "02"
-'  len_wchar_t         = "02"
-'  len_float_int       = "08"
-'  len_double_int      = "10"
-'  len_long_int        = "08"
-'  len_short_int       = "08"
-'  len_2_int           = "08"
-'  len_long_double_int = "10"
-'' Fortran datatype sizes
-'  len_integer         = "04"
-'  len_doublecplx      = "10"
-'  len_2dc             = "20"
-'End If
 
 
 Function CreateDtypeDictionary(byref types, str, b64)
@@ -1086,19 +1024,16 @@ End Function
 '
 ' Generate mpi.h
 '
-'if bWin64 then
-	if not f.FolderExists("src\include\win64") then
-		f.CreateFolder("src\include\win64")
-	end if
-	cEcho "Creating src\include\win64\mpi.h"
-	set fout64 = f.CreateTextFile("src\include\win64\mpi.h")
-'else
-	if not f.FolderExists("src\include\win32") then
-		f.CreateFolder("src\include\win32")
-	end if
-	cEcho "Creating src\include\win32\mpi.h"
-	set fout32 = f.CreateTextFile("src\include\win32\mpi.h")
-'end if
+if not f.FolderExists("src\include\win64") then
+	f.CreateFolder("src\include\win64")
+end if
+cEcho "Creating src\include\win64\mpi.h"
+set fout64 = f.CreateTextFile("src\include\win64\mpi.h")
+if not f.FolderExists("src\include\win32") then
+	f.CreateFolder("src\include\win32")
+end if
+cEcho "Creating src\include\win32\mpi.h"
+set fout32 = f.CreateTextFile("src\include\win32\mpi.h")
 set fin = f.OpenTextFile("src\include\mpi.h.in")
 
 contents32 = fin.ReadAll()
@@ -2395,7 +2330,6 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "HAVE_SYS_STAT_H"
 					fout.WriteLine("/* #undef HAVE_SYS_STAT_H */")
 				Case "HAVE_SYS_TYPES_H"
-					'fout.WriteLine("/* #undef HAVE_SYS_TYPES_H */")
 					fout.WriteLine("#define HAVE_SYS_TYPES_H 1")
 				Case "HAVE_THR_CREATE"
 					fout.WriteLine("/* #undef HAVE_THR_CREATE */")
@@ -2494,10 +2428,8 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "HAVE_LIBINTL_H"
 					fout.WriteLine("/* #undef HAVE_LIBINTL_H */")
 				Case "HAVE_LONG_DOUBLE"
-					'fout.WriteLine("/* #undef HAVE_LONG_DOUBLE */")
 					fout.WriteLine("#define HAVE_LONG_DOUBLE 1")
 				Case "HAVE_LONG_LONG_INT"
-					'fout.WriteLine("/* #undef HAVE_LONG_LONG_INT */")
 					fout.WriteLine("#define HAVE_LONG_LONG_INT 1")
 				Case "HAVE_MAX_STRUCT_ALIGNMENT"
 					'fout.WriteLine("/* #undef HAVE_MAX_STRUCT_ALIGNMENT */")
@@ -2795,33 +2727,18 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#else")
 					fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
 					fout.WriteLine("#endif")
-'					If bMultiThreaded Then
-'						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_MULTIPLE")
-'					Else
-'						fout.WriteLine("#define MPICH_THREAD_LEVEL MPI_THREAD_SINGLE")
-'					End If
 				Case "USE_THREAD_IMPL"
 					fout.WriteLine("#ifdef MPICH_MULTITHREADED")
 					fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_GLOBAL_MUTEX")
 					fout.WriteLine("#else")
 					fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
 					fout.WriteLine("#endif")
-'					If bMultiThreaded Then
-'						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_GLOBAL_MUTEX")
-'					Else
-'						fout.WriteLine("#define USE_THREAD_IMPL MPICH_THREAD_IMPL_NONE")
-'					End If
 				Case "USE_THREAD_PKG"
 					fout.WriteLine("#ifdef MPICH_MULTITHREADED")
 					fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_POSIX /* MPICH_THREAD_PKG_WINTHREADS */")
 					fout.WriteLine("#else")
 					fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE")
 					fout.WriteLine("#endif")
-'					If bMultiThreaded Then
-'						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_POSIX /* MPICH_THREAD_PKG_WINTHREADS */")
-'					Else
-'						fout.WriteLine("#define USE_THREAD_PKG MPICH_THREAD_PKG_NONE")
-'					End If
 				Case "_REENTRANT"
 					fout.WriteLine("/* #undef _REENTRANT */")
 				Case "_THREAD_SAFE"
@@ -2844,7 +2761,6 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "C_ALLOCA"
 					fout.WriteLine("/* #undef C_ALLOCA */")
 				Case "HAVE_ALLOCA"
-					'fout.WriteLine("/* #undef HAVE_ALLOCA */")
 					fout.WriteLine("#define HAVE_ALLOCA 1")
 					fout.WriteLine("#define alloca _alloca")
 				Case "HAVE_ALLOCA_H"
@@ -2950,7 +2866,6 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "HAVE_MPI_DARRAY_SUBARRAY"
 					fout.WriteLine("#define HAVE_MPI_DARRAY_SUBARRAY 1")
 				Case "HAVE_MPI_GREQUEST"
-					'fout.WriteLine("/* #undef HAVE_MPI_GREQUEST */")
 					fout.WriteLine("#define HAVE_MPI_GREQUEST 1")
 				Case "HAVE_MPI_INFO"
 					fout.WriteLine("#define HAVE_MPI_INFO 1")
@@ -3101,49 +3016,6 @@ Sub WriteFooter( fout )
 	fout.WriteLine("#endif")
 End Sub
 
-' mpi_fortconf.h was removed and mpichconf.h is now included instead
-'If Not bRemoveFortran Then
-'	'
-'	' mpi_fortconf.h
-'	'
-'	cEcho "Creating src\include\win32\mpi_fortconf.h"
-'	Set fout = f.CreateTextFile("src\include\win32\mpi_fortconf.h")
-'	Call WriteHeader(fout, "mpi_fort")
-'	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", false)
-'	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
-'	fout.WriteLine("#define HAVE_WINDOWS_H")
-'	fout.WriteLine("#endif")
-'	fout.WriteLine("")
-'	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
-'	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
-'	Call WriteFooter(fout)
-'	fout.Close()
-'	cEcho "Creating src\include\win64\mpi_fortconf.h"
-'	Set fout = f.CreateTextFile("src\include\win64\mpi_fortconf.h")
-'	Call WriteHeader(fout, "mpi_fort")
-'	Call AddDefinitions(fout, "src\binding\f77\mpi_fortconf.h.in", true)
-'	fout.WriteLine("#ifndef HAVE_WINDOWS_H")
-'	fout.WriteLine("#define HAVE_WINDOWS_H")
-'	fout.WriteLine("#endif")
-'	fout.WriteLine("")
-'	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
-'	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
-'	Call WriteFooter(fout)
-'	fout.Close()
-'	
-'	'
-'	' mpi_fortimpl.h
-'	'
-'	'Set fin = f.OpenTextFile("src\binding\f77\mpi_fortimpl.h")
-'	'contents = fin.ReadAll()
-'	'fin.Close()
-'	'contents = Replace(contents, "#define MPIR_FROM_FLOG(a) ( (a) == MPIR_F_TRUE ? 1 : 0 )", "#define MPIR_FROM_FLOG(a) ( (a) != 0 ? 1 : 0 )")
-'	'cEcho "Creating src\binding\f77\mpi_fortimpl.h"
-'	'Set fout = f.CreateTextFile("src\binding\f77\mpi_fortimpl.h")
-'	'fout.Write(contents)
-'	'fout.Close()
-'
-'End If
 
 '
 ' mpichconf.h
@@ -3472,56 +3344,56 @@ End If
 '
 ' mpidi_ch3i_ib_conf.h
 '
-'If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
-'	cEcho "Creating src\include\win32\mpidi_ch3i_ib_conf.h"
-'	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_ib_conf.h")
-'	Call WriteHeader(fout, "mpidi_ch3i_ib_")
-'	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", false)
-'	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
-'	fout.WriteLine("#define __WIN__")
-'	fout.WriteLine("#define __i386__")
-'	If bUseIbRDMA Then
-'		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
-'	Else
-'		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
-'	End If
-'	If bUsePinCache Then
-'		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
-'	else
-'		fout.WriteLine("#define USE_NO_PIN_CACHE")
-'	End If
-'	fout.WriteLine("/*#define USE_RDMA_GET*/")
-'	fout.WriteLine("#define USE_RDMA_PUT")
-'	Call WriteFooter(fout)
-'	fout.Close()
-'	cEcho "Creating src\include\win64\mpidi_ch3i_ib_conf.h"
-'	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_ib_conf.h")
-'	Call WriteHeader(fout, "mpidi_ch3i_ib_")
-'	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", true)
-'	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
-'	fout.WriteLine("#define __WIN__")
-'	If x64 then
-'		fout.WriteLine("#define __x86_64__")
-'	else
-'		fout.WriteLine("#define __ia64__")
-'	End If
-'	If bUseIbRDMA Then
-'		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
-'	Else
-'		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
-'	End If
-'	If bUsePinCache Then
-'		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
-'	else
-'		fout.WriteLine("#define USE_NO_PIN_CACHE")
-'	End If
-'	fout.WriteLine("/*#define USE_RDMA_GET*/")
-'	fout.WriteLine("#define USE_RDMA_PUT")
-'	Call WriteFooter(fout)
-'	fout.Close()
-'Else
-'	cEcho "Skipping file: mpidi_ch3i_ib_conf.h"
-'End If
+If f.FileExists("src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in") Then
+	cEcho "Creating src\include\win32\mpidi_ch3i_ib_conf.h"
+	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_ib_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_ib_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", false)
+	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
+	fout.WriteLine("#define __WIN__")
+	fout.WriteLine("#define __i386__")
+	If bUseIbRDMA Then
+		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	Else
+		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
+	End If
+	If bUsePinCache Then
+		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
+	else
+		fout.WriteLine("#define USE_NO_PIN_CACHE")
+	End If
+	fout.WriteLine("/*#define USE_RDMA_GET*/")
+	fout.WriteLine("#define USE_RDMA_PUT")
+	Call WriteFooter(fout)
+	fout.Close()
+	cEcho "Creating src\include\win64\mpidi_ch3i_ib_conf.h"
+	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_ib_conf.h")
+	Call WriteHeader(fout, "mpidi_ch3i_ib_")
+	Call AddDefinitions(fout, "src\mpid\ch3\channels\ib\include\mpidi_ch3i_ib_conf.h.in", true)
+	fout.WriteLine("#define MPID_IBU_TYPE_WINDOWS")
+	fout.WriteLine("#define __WIN__")
+	If x64 then
+		fout.WriteLine("#define __x86_64__")
+	else
+		fout.WriteLine("#define __ia64__")
+	End If
+	If bUseIbRDMA Then
+		fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	Else
+		fout.WriteLine("/*#define MPIDI_CH3_CHANNEL_RNDV*/")
+	End If
+	If bUsePinCache Then
+		fout.WriteLine("/*#define USE_NO_PIN_CACHE*/")
+	else
+		fout.WriteLine("#define USE_NO_PIN_CACHE")
+	End If
+	fout.WriteLine("/*#define USE_RDMA_GET*/")
+	fout.WriteLine("#define USE_RDMA_PUT")
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpidi_ch3i_ib_conf.h"
+End If
 
 If f.FolderExists("src\mpe2") Then
 
@@ -3726,7 +3598,6 @@ If f.FileExists("src\util\events\mpiu_events_conf.h.in") Then
 	Call WriteFooter(fout)
 	fout.Close()
 Else
-	'cEcho "Skipping file: mpiu_events_conf.h"
 	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
 	Call WriteHeader(fout, "mpiu_events_")
 	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
@@ -3762,7 +3633,6 @@ Function ConfigureTestDir
 	' mpitestconf.h
 	'
 	If f.FileExists("test\mpi\include\mpitestconf.h.in") Then
-		'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
 		cEcho "Creating src\include\win32\mpitestconf.h"
 		Set fout = f.CreateTextFile("src\include\win32\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
 		Call WriteHeader(fout, "mpitest")
@@ -3772,7 +3642,6 @@ Function ConfigureTestDir
 		fout.WriteLine("#endif")
 		Call WriteFooter(fout)
 		fout.Close()
-		'Set fout = f.CreateTextFile("test\mpi\include\mpitestconf.h")
 		cEcho "Creating src\include\win64\mpitestconf.h"
 		Set fout = f.CreateTextFile("src\include\win64\mpitestconf.h") ' Let's avoid adding a new include path to the test projects
 		Call WriteHeader(fout, "mpitest")
@@ -4301,10 +4170,10 @@ Function GenBuild()
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=shm RLOG=1")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm RLOG=1")
-'	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install")
-'	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install RLOG=1")
-'	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI")
-'	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install RLOG=1")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI")
+	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI RLOG=1")
 '	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=essm")
 '	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=essm RLOG=1")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO cxx")
@@ -4481,24 +4350,24 @@ Function GenBuild()
 	mfile.WriteLine("gfortflags = /iface:cref /assume:underscore /c /names:lowercase")
 	mfile.WriteLine("sfortflags = /iface:stdcall /c /names:uppercase")
 	mfile.WriteLine("impl_cxxflags = $(cflags)")
-'	mfile.WriteLine
-'	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
-'	mfile.WriteLine("!IFNDEF IB")
-'	mfile.WriteLine("IB = IBAL")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!IFNDEF IB_PATH")
-'	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
-'	mfile.WriteLine("IB_PATH = c:\mellanox64")
-'	mfile.WriteLine("!ELSE")
-'	mfile.WriteLine("IB_PATH = c:\mellanox")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!IF ""$(IB)"" == ""IBAL""")
-'	mfile.WriteLine("cflags = $(cflags) /DUSE_IB_$(IB) /I$(IB_PATH)\shared\include /I$(IB_PATH)\shared\include\iba /I$(IB_PATH)\winuser\include")
-'	mfile.WriteLine("!ELSE")
-'	mfile.WriteLine("cflags = $(cflags) /DUSE_IB_$(IB) /I$(IB_PATH)\include")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
+	mfile.WriteLine("!IFNDEF IB")
+	mfile.WriteLine("IB = IBAL")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!IFNDEF IB_PATH")
+	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
+	mfile.WriteLine("IB_PATH = c:\mellanox64")
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("IB_PATH = c:\mellanox")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!IF ""$(IB)"" == ""IBAL""")
+	mfile.WriteLine("cflags = $(cflags) /DUSE_IB_$(IB) /I$(IB_PATH)\shared\include /I$(IB_PATH)\shared\include\iba /I$(IB_PATH)\winuser\include")
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("cflags = $(cflags) /DUSE_IB_$(IB) /I$(IB_PATH)\include")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ENDIF")
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""mt""")
 	mfile.WriteLine("cflags = $(cflags) \")
@@ -4515,38 +4384,38 @@ Function GenBuild()
 	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
 	mfile.WriteLine("common_libs = bufferoverflowU.lib")
 	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine
-'	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
-'	mfile.WriteLine("!IF ""$(IB)"" == ""IBAL""")
-'	mfile.WriteLine("!IF ""$(IB_PATH_LIB)"" == """"")
-'	mfile.WriteLine("mpich2_libs = $(mpich2_libs) ibal.lib complib.lib /LIBPATH:$(IB_PATH)\lib")
-'	mfile.WriteLine("!ELSE")
-'	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
-'	mfile.WriteLine("mpich2_libs = $(mpich2_libs) ibal.lib complib.lib /LIBPATH:$(IB_PATH_LIB)\AMD64")
-'	mfile.WriteLine("!ELSE")
-'	mfile.WriteLine("mpich2_libs = $(mpich2_libs) ibal.lib complib.lib /LIBPATH:$(IB_PATH_LIB)\x86")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!ELSE")
-'	mfile.WriteLine("!IF ""$(IB_PATH_LIB)"" == """"")
-'	mfile.WriteLine("mpich2_libs = $(mpich2_libs) vapi.lib vapi_common.lib /LIBPATH:$(IB_PATH)\lib\release")
-'	mfile.WriteLine("!ELSE")
-'	mfile.WriteLine("mpich2_libs = $(mpich2_libs) vapi.lib vapi_common.lib /LIBPATH:$(IB_PATH_LIB)")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
+	mfile.WriteLine("!IF ""$(IB)"" == ""IBAL""")
+	mfile.WriteLine("!IF ""$(IB_PATH_LIB)"" == """"")
+	mfile.WriteLine("mpich2_libs = $(mpich2_libs) ibal.lib complib.lib /LIBPATH:$(IB_PATH)\lib")
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("!IF ""$(CPU)"" != ""x86""")
+	mfile.WriteLine("mpich2_libs = $(mpich2_libs) ibal.lib complib.lib /LIBPATH:$(IB_PATH_LIB)\AMD64")
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("mpich2_libs = $(mpich2_libs) ibal.lib complib.lib /LIBPATH:$(IB_PATH_LIB)\x86")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("!IF ""$(IB_PATH_LIB)"" == """"")
+	mfile.WriteLine("mpich2_libs = $(mpich2_libs) vapi.lib vapi_common.lib /LIBPATH:$(IB_PATH)\lib\release")
+	mfile.WriteLine("!ELSE")
+	mfile.WriteLine("mpich2_libs = $(mpich2_libs) vapi.lib vapi_common.lib /LIBPATH:$(IB_PATH_LIB)")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ENDIF")
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(NODEBUG)"" == """"")
 	mfile.WriteLine("CFG = Debug")
 	mfile.WriteLine("!ELSE")
 	mfile.WriteLine("CFG = Release")
 	mfile.WriteLine("!ENDIF")
-'	mfile.WriteLine
-'	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
-'	mfile.WriteLine("OUTDIR = $(CPU)\$(CFG)\$(CHANNEL)_$(IB)$(P)")
-'	mfile.WriteLine("!ELSE")
+	mfile.WriteLine
+	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
+	mfile.WriteLine("OUTDIR = $(CPU)\$(CFG)\$(CHANNEL)_$(IB)$(P)")
+	mfile.WriteLine("!ELSE")
 	mfile.WriteLine("OUTDIR = $(CPU)\$(CFG)\$(CHANNEL)$(P)")
-'	mfile.WriteLine("!ENDIF")
+	mfile.WriteLine("!ENDIF")
 	mfile.WriteLine("BIN_OUTDIR = $(CPU)\$(CFG)\bin")
 	mfile.WriteLine("SOCK_OUTDIR = $(CPU)\$(CFG)\sock$(P)")
 	mfile.WriteLine("MT_OUTDIR = $(CPU)\$(CFG)\mt$(P)")
@@ -4554,7 +4423,7 @@ Function GenBuild()
 	mfile.WriteLine("SHM_OUTDIR = $(CPU)\$(CFG)\shm$(P)")
 	mfile.WriteLine("SSHM_OUTDIR = $(CPU)\$(CFG)\sshm$(P)")
 '	mfile.WriteLine("ESSM_OUTDIR = $(CPU)\$(CFG)\essm$(P)")
-'	mfile.WriteLine("IB_OUTDIR = $(CPU)\$(CFG)\ib_$(IB)$(P)")
+	mfile.WriteLine("IB_OUTDIR = $(CPU)\$(CFG)\ib_$(IB)$(P)")
 	mfile.WriteLine("FORT_OUTDIR = $(CPU)\$(CFG)\fortran")
 	mfile.WriteLine("GFORT_OUTDIR = $(CPU)\$(CFG)\gfortran")
 	mfile.WriteLine("SFORT_OUTDIR = $(CPU)\$(CFG)\sfortran")
@@ -4611,16 +4480,16 @@ Function GenBuild()
 	mfile.WriteLine("	if exist $(SHM_OUTDIR)\$(NULL) rd /s /q $(SHM_OUTDIR)")
 	mfile.WriteLine("	if exist $(SSHM_OUTDIR)\$(NULL) rd /s /q $(SSHM_OUTDIR)")
 '	mfile.WriteLine("	if exist $(ESSM_OUTDIR)\$(NULL) rd /s /q $(ESSM_OUTDIR)")
-'	mfile.WriteLine("	if exist $(IB_OUTDIR)IBAL\$(NULL) rd /s /q $(IB_OUTDIR)IBAL")
-'	mfile.WriteLine("	if exist $(IB_OUTDIR)VAPI\$(NULL) rd /s /q $(IB_OUTDIR)VAPI")
+	mfile.WriteLine("	if exist $(IB_OUTDIR)IBAL\$(NULL) rd /s /q $(IB_OUTDIR)IBAL")
+	mfile.WriteLine("	if exist $(IB_OUTDIR)VAPI\$(NULL) rd /s /q $(IB_OUTDIR)VAPI")
 	mfile.WriteLine("	if exist $(SOCK_OUTDIR)p\$(NULL) rd /s /q $(SOCK_OUTDIR)p")
 	mfile.WriteLine("	if exist $(MT_OUTDIR)p\$(NULL) rd /s /q $(MT_OUTDIR)p")
 	mfile.WriteLine("	if exist $(SSM_OUTDIR)p\$(NULL) rd /s /q $(SSM_OUTDIR)p")
 	mfile.WriteLine("	if exist $(SHM_OUTDIR)p\$(NULL) rd /s /q $(SHM_OUTDIR)p")
 	mfile.WriteLine("	if exist $(SSHM_OUTDIR)p\$(NULL) rd /s /q $(SSHM_OUTDIR)p")
 '	mfile.WriteLine("	if exist $(ESSM_OUTDIR)p\$(NULL) rd /s /q $(ESSM_OUTDIR)p")
-'	mfile.WriteLine("	if exist $(IB_OUTDIR)IBALp\$(NULL) rd /s /q $(IB_OUTDIR)IBALp")
-'	mfile.WriteLine("	if exist $(IB_OUTDIR)VAPIp\$(NULL) rd /s /q $(IB_OUTDIR)VAPIp")
+	mfile.WriteLine("	if exist $(IB_OUTDIR)IBALp\$(NULL) rd /s /q $(IB_OUTDIR)IBALp")
+	mfile.WriteLine("	if exist $(IB_OUTDIR)VAPIp\$(NULL) rd /s /q $(IB_OUTDIR)VAPIp")
 	mfile.WriteLine("	if exist $(FORT_OUTDIR)\$(NULL) rd /s /q $(FORT_OUTDIR)")
 	mfile.WriteLine("	if exist $(GFORT_OUTDIR)\$(NULL) rd /s /q $(GFORT_OUTDIR)")
 	mfile.WriteLine("	if exist $(SFORT_OUTDIR)\$(NULL) rd /s /q $(SFORT_OUTDIR)")
@@ -4856,12 +4725,12 @@ Function GenBuild()
 '	CreateObjs "ch3essm", f.GetFolder("src\util\events"), trimlength, false, false
 '	mfile.WriteLine(" \" & vbCrLf & "	$(ESSM_OUTDIR)\mpe_thread_win.obj")
 
-'	mfile.WriteLine
-'	mfile.WriteLine("# ch3ib")
-'	mfile.WriteLine
-'	outdir = "IB_OUTDIR"
-'	CreateRules f.GetFolder("src\mpid\ch3\channels\ib"), trimlength
-'	CreateObjs "ch3ib", f.GetFolder("src\mpid\ch3\channels\ib"), trimlength, true, true
+	mfile.WriteLine
+	mfile.WriteLine("# ch3ib")
+	mfile.WriteLine
+	outdir = "IB_OUTDIR"
+	CreateRules f.GetFolder("src\mpid\ch3\channels\ib"), trimlength
+	CreateObjs "ch3ib", f.GetFolder("src\mpid\ch3\channels\ib"), trimlength, true, true
 
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""sock""")
@@ -4881,8 +4750,8 @@ Function GenBuild()
 	mfile.WriteLine("channel_objs = $(ch3sshm_objs)")
 '	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""essm""")
 '	mfile.WriteLine("channel_objs = $(ch3essm_objs)")
-'	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ib""")
-'	mfile.WriteLine("channel_objs = $(ch3ib_objs)")
+	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ib""")
+	mfile.WriteLine("channel_objs = $(ch3ib_objs)")
 	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""mt""")
 	mfile.WriteLine("channel_objs = $(ch3mt_objs)")
 	mfile.WriteLine("!ELSE")
@@ -5627,16 +5496,6 @@ If bRemoveFortran Then
 	'  remove:
 	'   lots of stuff
 End If
-
-'
-' Move the mpi binding implementation from the smpd directory to the src\binding\mpi directory
-'
-'If Not f.FolderExists("src\binding\mpi") Then
-'	f.CreateFolder("src\binding\mpi")
-'End If
-'If Not f.FileExists("src\binding\mpi\mpi.c") Then
-'	f.CopyFile("src\pm\smpd\mpi.c", "src\binding\mpi\")
-'End If
 
 Sub UpdateSMPDVersion
 	Set fin = f.OpenTextFile("maint\Version")

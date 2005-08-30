@@ -96,6 +96,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wmpiconfig", "src\pm\smpd\w
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ch3ib", "src\mpid\ch3\channels\ib\ch3ib.vcproj", "{23808992-9569-4821-98C0-2CE0096D4F25}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ch3essmDebug = ch3essmDebug
@@ -1281,6 +1285,49 @@ Global
 		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.Release.Build.0 = Release|.NET
 		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.sfortDebug.ActiveCfg = Debug|.NET
 		{1C99A11B-39CF-454A-BA19-5CA9BE9A1A70}.sfortRelease.ActiveCfg = Release|.NET
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3essmDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3essmPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3essmRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibIbalDebug.ActiveCfg = ch3ibIbalDebug|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibIbalDebug.Build.0 = ch3ibIbalDebug|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibIbalPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibIbalPRelease.Build.0 = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibIbalRelease.ActiveCfg = ch3ibIbalRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibIbalRelease.Build.0 = ch3ibIbalRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibVapiDebug.ActiveCfg = ch3ibVapiDebug|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibVapiDebug.Build.0 = ch3ibVapiDebug|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibVapiPRelease.ActiveCfg = ch3ibVapiPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibVapiPRelease.Build.0 = ch3ibVapiPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibVapiRelease.ActiveCfg = ch3ibVapiRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ibVapiRelease.Build.0 = ch3ibVapiRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3shmDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3shmPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3shmRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockmtDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockmtPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockmtRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockPliteRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sockRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sshmDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sshmPDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sshmPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3sshmRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ssmDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ssmPDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ssmPRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.ch3ssmRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.Debug.ActiveCfg = ch3ibIbalDebug|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.DebugStatic.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.fortDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.fortRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.gfortDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.gfortRelease.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.Installer.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.Release.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.sfortDebug.ActiveCfg = ch3ibIbalPRelease|Win32
+		{23808992-9569-4821-98C0-2CE0096D4F25}.sfortRelease.ActiveCfg = ch3ibIbalPRelease|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
