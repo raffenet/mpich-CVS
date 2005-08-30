@@ -259,19 +259,7 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\src\ch3_abort.c">
-			</File>
-			<File
 				RelativePath=".\src\ch3_cancel_send.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_comm_accept.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_comm_connect.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_comm_spawn_multiple.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_finalize.c">
@@ -299,9 +287,6 @@
 			</File>
 			<File
 				RelativePath=".\src\ch3_mem.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_open_port.c">
 			</File>
 			<File
 				RelativePath=".\src\ch3_progress.c">
@@ -500,6 +485,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_isend_self.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpidi_kvs.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_pg.c">

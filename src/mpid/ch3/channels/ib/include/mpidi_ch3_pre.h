@@ -185,6 +185,19 @@ typedef struct MPIDI_CH3I_Alloc_mem_list_t
 /* in ib/src/ch3_mem.c for the moment (might be promoted if other channels need it) */
 /* extern MPIDI_CH3I_Alloc_mem_list_t *MPIDI_CH3I_Alloc_mem_list_head; */
 
+/*
+ * Features needed or implemented by the channel
+ */
+/*
+#define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
+#define MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+#define MPIDI_DEV_IMPLEMENTS_COMM_ACCEPT
+#define MPIDI_DEV_IMPLEMENTS_COMM_CONNECT
+#define MPIDI_DEV_IMPLEMENTS_OPEN_PORT
+*/
+#define MPIDI_DEV_IMPLEMENTS_KVS
+#define MPIDI_DEV_IMPLEMENTS_ABORT
+#define MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
 #define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
 #define MPIDI_CH3_IMPLEMENTS_FREE_MEM
 #define MPIDI_CH3_IMPLEMENTS_CLEANUP_MEM
