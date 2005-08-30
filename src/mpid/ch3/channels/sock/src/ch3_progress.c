@@ -1142,8 +1142,8 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    MPIDI_CH3I_listener_conn = NULL;
 		    MPIDI_CH3I_listener_port = 0;
 		    
-		    /* MPIDI_CH3_Progress_signal_completion(); */
-		    MPIDI_CH3I_progress_completion_count++;
+		    MPIDI_CH3_Progress_signal_completion();
+		    /* MPIDI_CH3I_progress_completion_count++; */
 		}
 		
 		conn->sock = MPIDU_SOCK_INVALID_SOCK;
@@ -1156,8 +1156,8 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 	case MPIDU_SOCK_OP_WAKEUP:
 	{
-	    /* MPIDI_CH3_Progress_signal_completion(); */
-	    MPIDI_CH3I_progress_completion_count++;
+	    MPIDI_CH3_Progress_signal_completion();
+	    /* MPIDI_CH3I_progress_completion_count++; */
 	    break;
 	}
     }
