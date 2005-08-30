@@ -453,6 +453,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    }
 	    launch_iter->map_list = NULL;
 	    launch_iter->path[0] = '\0';
+	    launch_iter->priority_class = node.priority_class;
+	    launch_iter->priority_thread = node.priority_thread;
 	    launch_iter->next = NULL;
 
 	    strcpy(launch_iter->exe, node.exe);
