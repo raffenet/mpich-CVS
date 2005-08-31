@@ -17,4 +17,4 @@ lib${MPILIBNAME}_a_SOURCES = \
  ibu_regmem.vapi.c ibu_regmem.ibal.c \
  ibu_memutil.vapi.c ibu_memutil.ibal.c \
  ibu_rdma.vapi.c ibu_rdma.ibal.c \
- ibu_wait.vapi.c ibu_wait.ibal.c \
+ ibu_wait.vapi.c ibu_wait.ibal.c 
