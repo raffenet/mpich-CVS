@@ -2157,6 +2157,9 @@ if ($write_mpif) {
 	&print_mpif_int( "MPI_$key" );
     } 
     # String sizes
+    # See MPI-2 2.6.2 and 4.12.9; the constants for string lenghts are
+    # defined as one less than the C/C++ version
+
     # Missing - max processor name!
     # Handle max processor name here.
     $mpidef{"MPI_MAX_PROCESSOR_NAME"} = "\@MPI_MAX_PROCESSOR_NAME\@";
@@ -2164,7 +2167,7 @@ if ($write_mpif) {
     foreach $key (MAX_ERROR_STRING, MAX_NAME_STRING, MAX_PORT_NAME, 
 		  MAX_OBJECT_NAME, MAX_INFO_KEY, MAX_INFO_VAL,
 		  MAX_PROCESSOR_NAME, MAX_DATAREP_STRING ) {
-	&print_mpif_int( "MPI_$key" );
+	&print_mpif_int( "MPI_$key", -1 );
     }
     
     # predefined constants
@@ -2878,6 +2881,7 @@ int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 sub print_mpif_int {
     my $key = $_[0];
     my $value = $mpidef{$key};
+    my $valueOffset = $_[1];
     
     if (!defined($value) || $value eq "") {
 	print STDERR "No value found for \"$key\"\n";
@@ -2898,6 +2902,14 @@ sub print_mpif_int {
     if ($value =~ /^0x[a-f\d]*/) {
 	$value = hex $value;
 	print "hex conversion: $value\n" if $debug;
+    }
+    if (defined($valueOffset)) { 
+	if ($value =~ /^\d+/) {
+	    $value += $valueOffset;
+	}
+	else {
+	    $value .= "$valueOffset";
+	}
     }
     print MPIFFD "       INTEGER $key\n";
     print MPIFFD "       PARAMETER ($key=$value)\n";
