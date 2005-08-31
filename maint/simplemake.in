@@ -528,6 +528,10 @@ sub ReadMfile {
 
         # Handle continuation lines
         while (s/\\$//) {  # Match and remove a trailing \
+	    if (eof(MFILE)) {
+		print STDERR "Unexpected EOF in $curdir$Mfile\n";
+		last;
+	    }
 	    $nextline = <MFILE>;
 	    $nextline =~ s/\r//g; # Remove \r for DOS
 	    $origline .= $nextline;
@@ -3483,7 +3487,9 @@ sub TargetDependenciesDynamic {
 		# for one)
 		if ($ext eq "c") {
 		    if (! -s $sourcefile) {
-			print STDERR "Sourcefile $curdir/$sourcefile does not exist.\
+			my $missingFile = "$curdir/$sourcefile";
+			$missingFile =~ s%//%/%g;
+			print STDERR "Sourcefile $missingFile does not exist.\
 simplemake is assuming that this file will be created by the configure step\
 in the build directory\n";
 			$srcdirloc = '';
