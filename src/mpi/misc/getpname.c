@@ -49,6 +49,8 @@
 
 .N Fortran
 
+.N FortranString
+
 .N Errors
 .N MPI_SUCCESS
 @*/
