@@ -314,7 +314,9 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	MPIU_Strncpy((*pg_p)->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, 0);
+	/* If you don't have a parent then you must initialize the queue */
+	/* If you do have a parent then you must not initialize the queue since the parent already did and you could destroy valid information */
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, (*has_parent) ? 0 : 1);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
