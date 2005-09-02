@@ -312,14 +312,13 @@ with the .msi distribution.
 This section describes development issues that are particular to the Windows build.
 
 Whenever a .h.in file is created on the Unix side, winconfigure.wsf needs to be updated to
-create the .h file from the .h.in file.  Simply copy an existing section in winconfigure.wsf
-and rename the file names.
+create the .h file from the .h.in file.  Use cut and paste to copy an existing section in 
+winconfigure.wsf that already does this and rename the file names.
 
-New .h.in files are not added frequently but what does happen more frequently is the macros
-defined in those files are changed.  These definitions, usually in the form HAVE\_FOO or USE\_FOO,
-need to be added to the AddDefinitions function in winconfigure.wsf.  Simply add new cases to the
-big case statement as needed.  winconfigure.wsf warns you of definitions that are not in the case
-statement.
+When new definitions are added to the .h.in files these definitions, usually in the form HAVE\_FOO 
+or USE\_FOO, need to be added to the AddDefinitions function in winconfigure.wsf.  Simply add 
+new cases to the big case statement as needed.  winconfigure.wsf warns you of definitions that 
+are not in the case statement.
 
 Whenever a @FOO@ substitution is added on the Unix side, winconfigure.wsf needs to be updated
 to handle the substitution.  Find the ReplaceAts function in winconfigure.wsf and add the 
