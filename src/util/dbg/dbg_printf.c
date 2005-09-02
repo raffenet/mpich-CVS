@@ -322,6 +322,7 @@ int MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
 static int mpiu_dbg_initialized = 0;
 static FILE *MPIU_DBG_fp = 0;
 static char *filePattern = "-stdout-"; /* "log%d.log"; */
+static char *defaultFilePattern = "dbg-%d.log";
 static int worldNum  = 0;
 static int worldRank = -1;
 static int threadID  = 0;
@@ -414,6 +415,9 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 	/* Set te defaults */
 	MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
 	MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+	if (strncmp(s,"FILE",4) == 0) {
+	    filePattern = defaultFilePattern;
+	}
     }
     s = getenv( "MPICH_DBG_LEVEL" );
     if (s) {
@@ -438,8 +442,17 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 		/* Found a command */
 		if (*s == 0) {
 		    /* Just -mpich-dbg */
-		    MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+		    MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
 		    MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+		}
+		else if (*s == '=') {
+		    /* look for file */
+		    MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
+		    MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+		    s++;
+		    if (strncmp( s, "file", 4 ) == 0) {
+			filePattern = defaultFilePattern;
+		    }
 		}
 		else if (strncmp(s,"-level",6) == 0) {
 		    char *p = s + 6;
@@ -498,11 +511,12 @@ static int MPIU_DBG_Usage( const char *cmd, const char *vals )
     -mpich-dbg-level=name   (one of terse, typical, verbose)\n\
     -mpich-dbg-filename=pattern (includes %%d for world rank, %%t for thread id\n\
     -mpich-dbg   (shorthand for -mpich-dbg-class=all -mpich-dbg-level=typical)\n\
+    -mpich-dbg=file (shorthand for -mpich-dbg -mpich-dbg-filename=%s)\n\
 Environment variables\n\
     MPICH_DBG_CLASS=NAME[,NAME...]\n\
     MPICH_DBG_LEVEL=NAME\n\
     MPICH_DBG_FILENAME=pattern\n\
-    MPICH_DBG=YES\n" );
+    MPICH_DBG=YES or FILE\n", defaultFilePattern );
 
     fflush(stderr);
 
@@ -532,7 +546,6 @@ static int MPIU_DBG_OpenFile( void )
 				   worldRank );
 		    *pDest = 0;
 		    MPIU_Strnapp( filename, rankAsChar, MAXPATHLEN );
-		    printf( "Adding %s to %s\n", rankAsChar, filename );
 		    pDest += strlen(rankAsChar);
 		}
 		else if (*p == 't') {
