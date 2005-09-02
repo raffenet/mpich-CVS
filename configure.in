@@ -859,11 +859,20 @@ if test "$with_pm" != "no" ; then
 else
     pm_names=""
 fi
+# smpd is no longer compatible with the other pms since it does not
+# use the simple pmpi.
+hasSMPD=no
+hasNonSMPD=no
 for pm_name in $pm_names ; do
     if test -z "$first_pm_name" ; then
        first_pm_name=$pm_name
     else 
        other_pm_names="$other_pm_names $pm_name"
+    fi
+    if "$pm_name" = smpd ; then
+         hasSMPD=yes
+    else
+         hasNonSMPD=yes
     fi
     if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
         AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
@@ -873,12 +882,18 @@ for pm_name in $pm_names ; do
     else
         subsystems="$subsystems src/pm/$pm_name"
 	other_install_dirs="${other_install_dirs} src/pm/$pm_name"
+	# FIXME: in the multiple pm case, we need to be careful that
+	# the PMs don't add conflicting definitions to the configure
+	# environment
         if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
 	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
 	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
 	fi
     fi
 done
+if test "$hasSMPD" = yes -a "$hasNonSMPD" != no ; then
+    AC_MSG_ERROR([The smpd process manager may not be used with other process managers.  Either configure with --with=pm=smpd (only) or remove smpd from $with_pm])
+fi
 # pm_name is the *primary* pm
 pm_name=$first_pm_name
 AC_SUBST(pm_name)
