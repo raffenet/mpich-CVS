@@ -145,50 +145,39 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 		     */
 		    if (sock_set->pollfds_updated)
 		    { 
-			if (sock_set->pollfds_active == sock_set->pollfds)
-			{
-			    for (elem = 0; elem < pollfds_active_elems; elem++)
-			    {
-				sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
-				sock_set->pollfds[elem].revents &= ~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events;
-				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) == 0)
-				{
-				    sock_set->pollfds[elem].fd = -1;
-				}
-			    }
-			}
-			else
-			{
-			    for (elem = 0; elem < pollfds_active_elems; elem++)
-			    {
-				sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
-				sock_set->pollfds[elem].revents = sock_set->pollfds_active[elem].revents &
-				    (~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events);
-				if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) != 0)
-				{
-				    sock_set->pollfds[elem].fd = sock_set->pollinfos[elem].fd;
-				}
-				else
-				{
-				    sock_set->pollfds[elem].fd = -1;
-				}
-			    }
-			    
-			    MPIU_Free(sock_set->pollfds_active);
-			}
-
-			for (elem = pollfds_active_elems; elem < sock_set->poll_array_elems; elem++)
+			for (elem = 0; elem < sock_set->poll_array_elems; elem++)
 			{
 			    sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
-			    sock_set->pollfds[elem].revents = 0;
 			    if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) != 0)
 			    {
 				sock_set->pollfds[elem].fd = sock_set->pollinfos[elem].fd;
 			    }
 			    else
+			    {
+				sock_set->pollfds[elem].fd = -1;
+			    }
+
+			    if (elem < pollfds_active_elems)
+			    {
+				if (sock_set->pollfds_active == sock_set->pollfds)
 				{
-				    sock_set->pollfds[elem].fd = -1;
+				    sock_set->pollfds[elem].revents &= ~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events;
 				}
+				else 
+				{
+				    sock_set->pollfds[elem].revents = sock_set->pollfds_active[elem].revents &
+					(~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events);				
+				}
+			    }
+			    else   
+			    {
+				sock_set->pollfds[elem].revents = 0;
+			    }
+			}
+
+			if (sock_set->pollfds_active != sock_set->pollfds)
+			{
+			    MPIU_Free(sock_set->pollfds_active);
 			}
 
 			sock_set->pollfds_updated = FALSE;
