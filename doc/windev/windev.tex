@@ -277,9 +277,54 @@ the test suites, build them, run the test suites, and collect the results in a w
 \subsection{Testing from scratch}
 Explain the use of testmpich2.wsf.
 
+Run ``\texttt{testmpich2.wsf}'' without any parameters and it will create a \texttt{testmpich2}
+subdirectory and check out into that directory mpich2 and the test suites - c++, mpich, intel
+and mpich2.  It will then build mpich2 and all the tests from the test suites.  Then it will run
+the tests and place a summary in \texttt{testmpich2$\backslash$summary$\backslash$index.html}.
+
+\subsection{Testing a built mpich2 directory}
+Explain how to run \texttt{testmpich2.wsf} if you have the mpich2 source tree on a machine and you 
+have already built all of mpich2.
+
+Here is a sample batch file to test mpich2 that has already been built in c:$\backslash$mpich2:
+\begin{verbatim}
+testmpich2.wsf /mpich2:c:\mpich2 /make- /configure- /buildbatch
+pushd testmpich2\buildMPICH
+call mpich_cmds.bat
+popd
+pushd testmpich2\buildCPP
+call cpp_cmds.bat
+popd
+pushd testmpich2\buildINTEL
+call intel_cmds.bat
+popd
+pushd testmpich2\buildMPICH2
+call mpich2_cmds.bat
+popd
+testmpich2.wsf /mpich2:c:\mpich2 /make- /configure- /summarize
+\end{verbatim}
+
 \subsection{Testing an existing installation}
 Explain the use of testmpich2.wsf to test an existing installation, one that was installed
 with the .msi distribution.
+
+\section{Development issues}
+This section describes development issues that are particular to the Windows build.
+
+Whenever a .h.in file is created on the Unix side, winconfigure.wsf needs to be updated to
+create the .h file from the .h.in file.  Simply copy an existing section in winconfigure.wsf
+and rename the file names.
+
+New .h.in files are not added frequently but what does happen more frequently is the macros
+defined in those files are changed.  These definitions, usually in the form HAVE\_FOO or USE\_FOO,
+need to be added to the AddDefinitions function in winconfigure.wsf.  Simply add new cases to the
+big case statement as needed.  winconfigure.wsf warns you of definitions that are not in the case
+statement.
+
+Whenever a @FOO@ substitution is added on the Unix side, winconfigure.wsf needs to be updated
+to handle the substitution.  Find the ReplaceAts function in winconfigure.wsf and add the 
+substitution to the big case statement.  winconfigure.wsf warns you of new substitutions that
+have not been added to the case statement.
 
 \section{Runtime environment}
 
