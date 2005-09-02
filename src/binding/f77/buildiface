@@ -3437,10 +3437,12 @@ sub AddFwrapBuild {
 	# we want
 	my $basename = $name;
 	$basename =~ s/\.c//;
+	# Some versions of make won't figure out the $< in this case,
+	# so we use the explicit version
 	print MAKEFD "_w$basename.o: $name\n";
-	print MAKEFD "\t\$(C_COMPILE) -o _w$basename.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES \$<\n";
+	print MAKEFD "\t\$(C_COMPILE) -o _w$basename.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES \$(srcdir)/$basename.c\n";
 	print MAKEFD "_w$basename.lo: $name\n";
-	print MAKEFD "\t\$(C_COMPILE_SHL) -o _sw$basename.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES \$<\n";
+	print MAKEFD "\t\$(C_COMPILE_SHL) -o _sw$basename.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES \$(srcdir)/$basename.c\n";
 	print MAKEFD "\t\@mv -f _sw$basename.o _w$basename.lo\n";
     }
 }
