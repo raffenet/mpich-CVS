@@ -20,6 +20,34 @@
 #include <direct.h>
 #endif
 
+void smpd_fix_up_host_tree(smpd_host_node_t *node)
+{
+    smpd_host_node_t *cur, *iter;
+    SMPD_BOOL left_found;
+
+    cur = node;
+    while (cur != NULL)
+    {
+	left_found = SMPD_FALSE;
+	iter = cur->next;
+	while (iter != NULL)
+	{
+	    if (iter->parent == cur->id)
+	    {
+		if (left_found)
+		{
+		    cur->right = iter;
+		    break;
+		}
+		cur->left = iter;
+		left_found = SMPD_TRUE;
+	    }
+	    iter = iter->next;
+	}
+	cur = cur->next;
+    }
+}
+
 int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val)
 {
     int len = (int)strlen(str);

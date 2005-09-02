@@ -560,6 +560,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     /* save the launch list to be used after the new hosts are connected */
     context->spawn_context->launch_list = launch_list;
     context->spawn_context->num_outstanding_launch_cmds = 0;/*nproc;*/ /* this assumes all launch commands will be successfully posted. */
+    smpd_fix_up_host_tree(smpd_process.host_list);
     host_iter = smpd_process.host_list;
     while (host_iter)
     {
@@ -578,6 +579,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		return result;
 		*/
 	    }
+	    host_iter->connect_cmd_tag = cmd->tag;
 	    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
 	    if (result != SMPD_SUCCESS)
 	    {

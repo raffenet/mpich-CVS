@@ -870,6 +870,7 @@ int smpd_associate_job_key(const char *key, const char *username, const char *do
 int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_handle, HANDLE *job_handle);
 #endif
 SMPD_BOOL smpd_verify_version(const char *challenge);
+void smpd_fix_up_host_tree(smpd_host_node_t *node);
 
 #if defined(__cplusplus)
 }

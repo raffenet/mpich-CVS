@@ -310,34 +310,6 @@ static int mpiexec_assert_hook( int reportType, char *message, int *returnValue 
 }
 #endif
 
-static void fix_up_host_tree(smpd_host_node_t *node)
-{
-    smpd_host_node_t *cur, *iter;
-    SMPD_BOOL left_found;
-
-    cur = node;
-    while (cur != NULL)
-    {
-	left_found = SMPD_FALSE;
-	iter = cur->next;
-	while (iter != NULL)
-	{
-	    if (iter->parent == cur->id)
-	    {
-		if (left_found)
-		{
-		    cur->right = iter;
-		    break;
-		}
-		cur->left = iter;
-		left_found = SMPD_TRUE;
-	    }
-	    iter = iter->next;
-	}
-	cur = cur->next;
-    }
-}
-
 #undef FCNAME
 #define FCNAME "mp_parse_command_args"
 int mp_parse_command_args(int *argcp, char **argvp[])
@@ -2169,7 +2141,7 @@ configfile_loop:
 	}
     }
 
-    fix_up_host_tree(smpd_process.host_list);
+    smpd_fix_up_host_tree(smpd_process.host_list);
 
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
