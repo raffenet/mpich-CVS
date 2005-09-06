@@ -137,6 +137,11 @@ fi
 if test "$ac_mpi_type" = "unknown" -a "$pac_lib_mpi_is_building" = "yes" ; then
     ac_mpi_type="mpich"
 fi
+# Set defaults
+MPIRUN_NP="-np "
+MPIEXEC_N="-n "
+AC_SUBST(MPIRUN_NP)
+AC_SUBST(MPIEXEC_N)
 case $ac_mpi_type in
 	mpich)
         dnl 
