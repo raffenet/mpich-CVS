@@ -165,6 +165,7 @@ case $ac_mpi_type in
             TESTCXX=${CXX-CC}
             CXX="$MPICXX"
 	    # We may want to restrict this to the path containing mpirun
+	    AC_PATH_PROG(MPIEXEC,mpiexec)
 	    AC_PATH_PROG(MPIRUN,mpirun)
 	    AC_PATH_PROG(MPIBOOT,mpichboot)
 	    AC_PATH_PROG(MPIUNBOOT,mpichstop)
