@@ -2489,12 +2489,14 @@ sub TargetProfileLibraries {
 	    }
 	    $obj =~ s/\.$ext/.o/;
 	    $obj = "_" . $obj;
+	    # Note that many makes won't replace $< in an implicit rule,
+	    # so we explicitly list the source file
 	    print FD "$obj: $sourcefile$newline";
-	    print FD "\t\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$< -o $obj$newline";
+	    print FD "\t\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj$newline";
 	    if ($do_sharedlibs) {
 		$obj =~ s/\.o/.lo/;
 	        print FD "$obj: $sourcefile$newline";
-	        print FD "\t\$(C_COMPILE_SHL) -c \@PROFILE_DEF_MPI\@ \$< -o $obj$newline";
+	        print FD "\t\$(C_COMPILE_SHL) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj$newline";
 	    }
         }
     } # foreach lib
