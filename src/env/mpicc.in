@@ -137,6 +137,7 @@ for arg in "$@" ; do
     # a special case, lib<name>.so or lib<name>.la may be used
     # if the library is in $libdir
     profConf=`echo A$arg | sed -e 's/A-profile=//g'`
+    addarg=no
     # Loading the profConf file is handled below
     ;;
 	# -help
