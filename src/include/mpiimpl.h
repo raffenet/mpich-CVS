@@ -697,6 +697,9 @@ int MPIU_Param_register( const char [], const char [], const char [] );
 int MPIU_Param_get_int( const char [], int, int * );
 int MPIU_Param_get_string( const char [], const char *, char ** );
 void MPIU_Param_finalize( void );
+
+int MPIU_GetEnvRange( const char *, int *, int * );
+
 /* ------------------------------------------------------------------------- */
 /* end of mpiparam.h*/
 /* ------------------------------------------------------------------------- */

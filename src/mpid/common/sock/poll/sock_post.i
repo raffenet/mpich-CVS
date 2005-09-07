@@ -337,11 +337,39 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
      * Bind the socket to all interfaces and the specified port.  The port specified by the calling routine may be 0, indicating
      * that the operating system can select an available port in the ephemeral port range.
      */
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htons((unsigned short) *port);
-    rc = bind(fd, (struct sockaddr *) &addr, sizeof(addr));
+    if (*port == 0) {
+	int portnum, low_port, high_port;
+	/* see if we actually want to find values within a range */
+	
+	low_port = high_port = 0;
+	/* Get range here.  These leave low_port, high_port unchanged
+	   if the env variable is not set */
+	MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
+
+	for (portnum=low_port; portnum<=high_port; portnum++) {
+	    memset( (void *)&addr, 0, sizeof(addr) );
+	    addr.sin_family = AF_INET;
+	    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	    addr.sin_port	   = htons( portnum );
+	    
+	    rc = bind(fd, (struct sockaddr *) &addr, sizeof(addr));
+	    if (rc < 0) {
+		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL) {
+		    close(fd);
+		    break;
+		}
+	    }
+	    else 
+		break;
+	}
+    }
+    else {
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	addr.sin_port = htons((unsigned short) *port);
+	rc = bind(fd, (struct sockaddr *) &addr, sizeof(addr));
+    }
     /* --BEGIN ERROR HANDLING-- */
     if (rc == -1)
     {
@@ -759,3 +787,5 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CLOSE);
     return mpi_errno;
 }
+
+

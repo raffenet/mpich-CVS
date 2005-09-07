@@ -235,3 +235,38 @@ void MPIU_Param_finalize( void )
 {
     return;
 }
+
+/* 
+ * FIXME:
+ * These are simple standins for the scalable parameter functions that we
+ * need.
+ */
+
+/* This is taken from src/pm/util/pmiport.c */
+int MPIU_GetEnvRange( const char *envName, int *lowPtr, int *highPtr )
+{
+    const char *range_ptr;
+    int low=0, high=0;
+
+    /* Get the low and high range.  */
+    range_ptr = getenv( envName );
+    if (range_ptr) {
+	const char *p;
+	/* Look for n:m format */
+	p = range_ptr;
+	while (*p && isspace(*p)) p++;
+	while (*p && isdigit(*p)) low = 10 * low + (*p++ - '0');
+	if (*p == ':') {
+	    p++;
+	    while (*p && isdigit(*p)) high = 10 * high + (*p++ - '0');
+	}
+	if (*p) {
+	    MPIU_Error_printf( "Invalid character %c in %s\n", 
+			       *p, envName );
+	    return -1;
+	}
+	*lowPtr  = low;
+	*highPtr = high;
+    }
+    return 0;
+}
