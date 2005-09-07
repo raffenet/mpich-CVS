@@ -141,6 +141,7 @@ sub CountUncoveredLines {
     my $linecount    = 0;    # Line in the coverage file
     my $fileline     = 0;    # Line in the original file
     my $lastLineOut  = -1;
+    my $lineincr, $filelineincr; # Used to update linecount,fileline
     my $oldLine;
     my $lastLine;
 
@@ -173,109 +174,67 @@ sub CountUncoveredLines {
 	# code 
 	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
 	    /^\s*-:\s*d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
-	    while (<FD>) {
-		$linecount++;
-		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\*\s+--BEGIN/ ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
-		    my $cleanline = $_;
-		    $cleanline =~ s/^\s*//;
-		    chop $cleanline;
-		    print STDERR "Possible missing END DEBUG in $filename at $linecount; saw $cleanline\n";
-		}
-		if (/^\s*\/\*\s+--END DEBUG--\s+\*\// ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--END DEBUG--\s+\*\//) {
-		    last; 
-		}
-	    }
+	    ($lineincr,$filelineincr) = &skipBlock( "DEBUG", 0 );
+	    $linecount += $lineincr;
+	    $fileline += $filelineincr;
 	    next;	       
 	}
-	# Skip any blocks marked as debugging or unavoidable error checking
-	# code 
 	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
-	    while (<FD>) {
-		$linecount++;
-		if (/^\s/) { $fileline++; }
-		if (/^\s*\/\*\s+--BEGIN/ ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
-		    my $cleanline = $_;
-		    $cleanline =~ s/^\s*//;
-		    chop $cleanline;
-		    print STDERR "Possible missing END ERROR HANDLING in $filename at $linecount; saw \"$cleanline\"\n";
-		}
-		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/ ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--END ERROR HANDLING--\s+\*\/\s*/) {
-		    last; 
-		}
-	    }
+	    ($lineincr,$filelineincr) = &skipBlock( "ERROR HANDLING", 0 );
+	    $linecount += $lineincr;
+	    $fileline += $filelineincr;
 	    next;	       
 	}
 	# Skip any blocks marked as experimental
 	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
-	    while (<FD>) {
-		$linecount++;
-		if (/^\s/) { $fileline++; }
-		# We allow "experimental" to contain other marked blocks.
-		# This allows us to leave such markers in the 
-		# experimental code, at the cost of possibly missing
-                # an 'end experimental'.  See the if at the bottom
-		# of the loop for a partial catch
-# 		if (/^\s*\/\*\s+--BEGIN/ ||
-#		    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
-# 		    my $cleanline = $_;
-# 		    $cleanline =~ s/^\s*//;
-# 		    chop $cleanline;
-# 		    print STDERR "Possible missing END EXPERIMENTAL in $filename at $linecount; saw \"$cleanline\"\n";
-# 		}
-		if (/^\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/ ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--END\sEXPERIMENTAL--\s+\*\/\s*/) {
-		    last; 
-		}
-		if (/^\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/ ||
-		    /^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+EXPERIMENTAL\s*--\s*\*\/\s*/) {
-		    print STDERR "Mangled line: $_";
-		    last; 
-		}
-	    }
+	    ($lineincr,$filelineincr) = &skipBlock( "EXPERIMENTAL", 1 );
+	    $linecount += $lineincr;
+	    $fileline += $filelineincr;
 	    next;	       
 	}
+
 	# If requested, skip obvious error checking lines
 	if ($skipErrExits && 
 	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
 	     /MPIR_Err_create_code/)) {
 	    next;
 	}
+
 	# Gcc 3.3 generates a different output form (!) with only
 	# 5 sharps instead of 6.  It does mark lines that are not 
 	# executable with a -, which is an improvement
 	if (/^\s*######?/) {
-	    if (! /^\s*######?\s*\}\s*/) {
-		$missed_lines++;
+	    # First, ignore a few odd markings by gcov
+	    if (/^\s*######?\s*\}\s*$/ || /^\s*######?\s*:\s*\d+:\s*\}\s*$/) {
+		# Ignore a closed brace
+		next;
+	    }
+
+	    $missed_lines++;
 		
-		# The char\s+.* allows char or const char (or other 
-		# things, but nothing else should use FCNAME).
-		if (/static\s+char\s+.*FCNAME\[\]\s*=\s*\"(.*)\"/) {
-		    # Add this to a list of functions never called.
-		    $UnCalled[$#UnCalled + 1] = $1;
+	    # The char\s+.* allows char or const char (or other 
+	    # things, but nothing else should use FCNAME).
+	    if (/static\s+char\s+.*FCNAME\[\]\s*=\s*\"(.*)\"/) {
+		# Add this to a list of functions never called.
+		$UnCalled[$#UnCalled + 1] = $1;
+	    }
+	    if ($outputUncovered) {
+		if (!$headerOutput) {
+		    print "\nUncovered lines in $filename\n";
+		    $headerOutput = 1;
 		}
-		if ($outputUncovered) {
-		    if (!$headerOutput) {
-			print "\nUncovered lines in $filename\n";
-			$headerOutput = 1;
-		    }
-		    if ($lastLineOut < $linecount - 2) {
-			my $ll = $linecount - 2;
-			print "$ll:\t$oldLine";
-		    }
-		    if ($lastLineOut < $linecount - 1) {
-			my $ll = $linecount - 1;
-			print "$ll:\t$lastLine";
-		    }
-		    print "$linecount:\t$_";
-		    $lastLineOut = $linecount;
+		if ($lastLineOut < $linecount - 2) {
+		    my $ll = $linecount - 2;
+		    print "$ll:\t$oldLine";
 		}
+		if ($lastLineOut < $linecount - 1) {
+		    my $ll = $linecount - 1;
+		    print "$ll:\t$lastLine";
+		}
+		print "$linecount:\t$_";
+		$lastLineOut = $linecount;
 	    }
 	}
 	if ($includeFileInOutput) {
@@ -359,12 +318,14 @@ sub AnnotateUncoveredLines {
 	# continuation line).
 	# Determine what state this line is in
 	# (gcc 3.3 only outputs 5 sharps, earlier versions use 6)
+	# The format of the line also changed
 	if (/^\s*\#\#\#\#\#\#?/) {
 	    $newstate = "unex";
 	}
 	elsif (/^\s*\d+\s/ ||
-	       /^\s*\d+:\s*\d+:/ ||
-	       /^\s*-:\s*\d+:/) {
+	       /^\s*\d+:\s*\d+:/) {
+	    # Also had /^\s*-:\s*\d+:/, but this should really be "same state"
+	    # to avoid flipping in and out of a state.
 	    $newstate = "exec";
 	}
 	else {
@@ -447,55 +408,18 @@ sub AnnotateUncoveredLines {
 	# code 
 	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
-	    my $sawend=0;
-	    print "Skipping BEGIN DEBUG\n" if $gDebug; 
-	    while (<FD>) {
-		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s+--END DEBUG--\s+\*\// ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--END DEBUG--\s+\*\//) {
-		    $sawend = 1;
-		    last; 
-		}
-	    }
-	    if (!$sawend) {
-		print STDERR "File $filename ended in --BEGIN DEBUG-- block\n";
-	    }
+	    &skipBlockAndAnnotate( $outfile, "DEBUG" );
 	    next;	       
 	}
-	# Skip any blocks marked as debugging or unavoidable error checking
-	# code 
 	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
-	    my $sawend = 0;
-	    print "Skipping ERROR HANDLING\n" if $gDebug;
-	    while (<FD>) {
-		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s+--END ERROR HANDLING--\s+\*\// ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--END ERROR HANDLING--\s+\*\//) {
-		    $sawend = 1;
-		    last; 
-		}
-	    }
-	    if (!$sawend) {
-		print STDERR "File $filename ended in --BEGIN ERROR HANDLING-- block\n";
-	    }
+	    &skipBlockAndAnnotate( $outfile, "ERROR HANDLING" );
 	    next;	       
 	}
 
 	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
-	    my $sawend = 0;
-	    while (<FD>) {
-		if (/^\s/) { print $outfile &HTMLify($_); }
-		if (/^\s*\/\*\s+--END EXPERIMENTAL--\s+\*\// ||
-		    /^\s*-:\s*\d+:\s*\/\*\s+--END EXPERIMENTAL--\s+\*\//) {
-		    $sawend = 1;
-		    last; 
-		}
-	    }
-	    if (!$sawend) {
-		print STDERR "File $filename ended in --BEGIN EXPERIMENTAL-- block\n";
-	    }
+	    &skipBlockAndAnnotate( $outfile, "EXPERIMENTAL" );
 	    next;	       
 	}
 
@@ -804,3 +728,68 @@ sub OutputFileTable {
 # maint/getcoverage src/mpi src/util/info >coveragebase.txt
 # maint/getcoverage src/mpid/ch3/src/*.gcov \
 #  src/mpid/ch3/channels/sock/src/*.gcov > coveragempid.txt
+
+#
+# Skip over a named block (while writing it to the annotation file)
+#   Usage:
+#     skipBlock( outfd, blockname );
+#   e.g.,
+#     skipBlock( $outfile, "DEBUG" );
+sub skipBlockandAnnotate {
+    my ($outfile,$blockName) = @_;
+
+    my $sawend=0;
+    print "Skipping BEGIN $blockName\n" if $gDebug; 
+    while (<FD>) {
+	if (/^\s/) { print $outfile &HTMLify($_); }
+	if (/^\s*\/\*\s+--END $blockName--\s+\*\// ||
+	    /^\s*-:\s*\d+:\s*\/\*\s+--END $blockName--\s+\*\//) {
+	    $sawend = 1;
+	    last; 
+	}
+    }
+    if (!$sawend) {
+	print STDERR "File $filename ended in --BEGIN $blockName-- block\n";
+    }
+}
+
+# Skip over a named block.  Return the number of lines skipped
+# Usage: 
+#     skipBlock( blockname, allowNested )
+# e.g.,
+#     skipBlock( "DEBUG", 0 );
+sub skipBlock {
+    my ($blockName,$allowNested) = @_;
+    my $linecount = 0;
+    my $fileline  = 0;
+
+    while (<FD>) {
+	$linecount++;
+	if (/^\s/) { $fileline++; }
+	if (! $allowNested) {
+	    if (/^\s*\/\*\s+--BEGIN/ ||
+		/^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
+		my $cleanline = $_;
+		$cleanline =~ s/^\s*//;
+		chop $cleanline;
+		print STDERR "Possible missing END $blockName in $filename at $linecount; saw $cleanline\n";
+	    }
+	}
+	else {
+	    if (/^\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/ ||
+		/^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/) {
+		print STDERR "Mangled line: $_";
+		last; 
+	    }
+	}
+	if (/^\s*\/\*\s+--END $blockName--\s+\*\// ||
+	    /^\s*-:\s*\d+:\s*\/\*\s+--END $blockName--\s+\*\//) {
+	    last; 
+	}
+    }
+    return ($linecount,$fileline);
+}
+
+#
+# skipIfdefBlock 
+# (ToDo)
