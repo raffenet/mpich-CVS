@@ -869,7 +869,7 @@ for pm_name in $pm_names ; do
     else 
        other_pm_names="$other_pm_names $pm_name"
     fi
-    if "$pm_name" = smpd ; then
+    if test "$pm_name" = smpd ; then
          hasSMPD=yes
     else
          hasNonSMPD=yes
@@ -952,8 +952,6 @@ AC_SUBST(other_install_dirs)
 #
 #
 # Find a C compiler (choose gcc first).
-# Autoconf 2.13 has the feature that you cannot override the test for
-# cross-compilation made in PROG_CC.  
 # We also need to do this before the F77 and F90 test to ensure that we
 # find the C preprocessor reliably.
 saveCFLAGS=$CFLAGS
