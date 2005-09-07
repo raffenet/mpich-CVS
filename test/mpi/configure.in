@@ -683,6 +683,8 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/init/Makefile \
 	  cxx/rma/Makefile \
 	  cxx/spawn/Makefile \
+	  threads/Makefile \
+	  threads/pt2pt/Makefile \
 	  testlist \
 	  cxx/testlist \
 	  f77/testlist \
