@@ -91,9 +91,10 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
 	while (*p && isspace(*p)) p++;
 	while (*p && isdigit(*p)) low_port = 10 * low_port + (*p++ - '0');
 	if (*p == ':') {
+	    p++;
 	    while (*p && isdigit(*p)) high_port = 10 * high_port + (*p++ - '0');
 	}
-	if (!*p) {
+	if (*p) {
 	    MPIU_Error_printf( "Invalid character %c in MPIEXEC_PORTRANGE\n", 
 			       *p );
 	    return -1;
