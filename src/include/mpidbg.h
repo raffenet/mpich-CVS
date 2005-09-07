@@ -47,6 +47,7 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_PM            = 0x8,
 		      MPIU_DBG_ROUTINE_ENTER = 0x10,
 		      MPIU_DBG_ROUTINE_EXIT  = 0x20,
+		      MPIU_DBG_SYSCALL       = 0x40,
 		      MPIU_DBG_ALL           = (~0) };
 
 extern int MPIU_DBG_ActiveClasses;
