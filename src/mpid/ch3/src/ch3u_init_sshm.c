@@ -331,6 +331,15 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     }
     /* The bootstrap queue cannot be unlinked because it can be used outside of this process group. */
     /* Spawned groups will use it and other MPI jobs may use it by calling MPI_Comm_connect/accept */
+
+    	/* FIXME:
+	 * By not unlinking here, if the program aborts, the 
+	 * shared memory segments can be left dangling.
+	 * We need to either unlink here (no dynamic process calls)
+	 * for in SIGINT/FPE/SEGV abort handlers.  That isn't 
+	 * fully reliable, since the handler may be replaced or the
+	 * process killed with an uncatchable signal.
+	 */
     /*
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink((*pg_p)->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
