@@ -23,7 +23,11 @@ define([AC_LANG], [CSHARP])dnl
 ac_ext=$pac_cv_csharp_ext
 ac_compile='${CSHARP-csc} -c $CSFLAGS conftest.$ac_ext 1>&AC_FD_CC'
 ac_link='${CSHARP-csc} -o conftest${ac_exeext} $CSFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&AC_FD_CC'
-cross_compiling=$pac_cv_prog_csharp_cross
+dnl cross_compiling no longer maintained by autoconf as part of the
+dnl AC_LANG changes.  If we set it here, a later AC_LANG may not 
+dnl restore it (in the case where one compiler claims to be a cross compiler
+dnl and another does not)
+dnl cross_compiling=$pac_cv_prog_csharp_cross
 ])
 AC_DEFUN(PAC_PROG_CSHARP,[
 if test -z "$CSHARP" ; then

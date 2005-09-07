@@ -1464,6 +1464,13 @@ main()
   fprintf(f, "%d\n", sizeof(a) + sizeof(b));
   exit(0);
 }],AC_CV_NAME=`cat conftestval`,AC_CV_NAME=0,ifelse([$4],,,AC_CV_NAME=$4))])
+if test "X$AC_CV_NAME" = "X" ; then
+    # We have a problem.  The test returned a zero status, but no output,
+    # or we're cross-compiling (or think we are) and have no value for 
+    # this object
+    :
+fi
+rm -f conftestval
 AC_MSG_RESULT($AC_CV_NAME)
 dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
 undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
