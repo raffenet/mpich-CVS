@@ -21,6 +21,8 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
 
     ADIOI_UNREFERENCED_ARG(whence);
 
+    if (len == 0) return MPI_SUCCESS;
+
     dwFlags = type;
 
     Overlapped.hEvent = /*0;*/CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -92,6 +94,9 @@ int ADIOI_Set_lock(FDTYPE fd, int cmd, int type, ADIO_Offset offset, int whence,
     int err, error_code;
     struct flock lock;
 
+    if (len == 0) return MPI_SUCCESS;
+
+
     /* Depending on the compiler flags and options, struct flock 
        may not be defined with types that are the same size as
        ADIO_Offsets.  */
@@ -136,6 +141,8 @@ int ADIOI_Set_lock64(FDTYPE fd, int cmd, int type, ADIO_Offset offset,
 {
     int err, error_code;
     struct flock64 lock;
+
+    if (len == 0) return MPI_SUCCESS;
 
     lock.l_type = type;
     lock.l_start = offset;
