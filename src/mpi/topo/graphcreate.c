@@ -166,7 +166,6 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Comm *comm_ptr = NULL;
-    MPIU_CHKPMEM_DECL(3);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -329,7 +328,6 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    MPIU_CHKPMEM_REAP();
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(

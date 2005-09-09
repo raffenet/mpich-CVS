@@ -8,7 +8,7 @@
 
 #ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
 #include "pmi.h"
-static int MPIDI_CH3I_PMI_Finalize();
+static int MPIDI_CH3I_PMI_Finalize(void);
 #endif
 
 #undef FUNCNAME

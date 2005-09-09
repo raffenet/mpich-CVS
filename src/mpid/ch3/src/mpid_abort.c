@@ -8,7 +8,7 @@
 
 #ifdef MPIDI_DEV_IMPLEMENTS_ABORT
 #include "pmi.h"
-static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg);
+static int MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg);
 #endif
 
 #undef FUNCNAME
@@ -118,7 +118,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 
 
 #ifdef MPIDI_DEV_IMPLEMENTS_ABORT
-static MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg)
+static int MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ABORT);
     

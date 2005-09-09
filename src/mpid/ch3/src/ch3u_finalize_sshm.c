@@ -23,10 +23,13 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Finalize_sshm()
 {
+    int mpi_errno = MPI_SUCCESS;
+
+#ifdef MPIDI_CH3_USES_SSHM
     MPIDI_PG_t * pg;
     MPIDI_PG_t * pg_next;
-    int mpi_errno = MPI_SUCCESS, inuse;
-#ifdef MPIDI_CH3_USES_SSHM
+    int inuse;
+
     /* Free resources allocated in CH3_Init() */
     while (MPIDI_CH3I_Process.shm_reading_list)
     {

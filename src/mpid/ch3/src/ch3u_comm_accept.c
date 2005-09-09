@@ -134,7 +134,7 @@ int MPIDI_Comm_accept(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm 
     int remote_comm_size=0;
     MPID_Comm *tmp_comm = NULL, *intercomm;
     MPIDI_VC_t * vc, *new_vc = NULL;
-    int n_local_pgs=1, *local_pg_sizes=NULL, n_remote_pgs;
+    int n_local_pgs=1, n_remote_pgs;
     int sendtag=100, recvtag=100, local_comm_size;
     typedef struct pg_translation
     {

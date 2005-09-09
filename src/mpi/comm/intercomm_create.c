@@ -213,7 +213,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int comm_info[3];
     int is_low_group = 0;
     int i;
-    MPID_Comm *newcomm_ptr, *commworld_ptr;
+    MPID_Comm *newcomm_ptr;
     MPIU_CHKLMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 

@@ -10,6 +10,8 @@
 #ifdef MPIDI_CH3_USES_SOCK
 #include "mpidu_sock.h"
 
+int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Connection_alloc
 #undef FCNAME

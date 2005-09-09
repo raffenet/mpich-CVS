@@ -152,7 +152,7 @@ int MPIDI_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm
     MPID_Comm *tmp_comm, *intercomm;
     MPIDI_VC_t * vc, *new_vc;
     int sendtag=100, recvtag=100, n_remote_pgs;
-    int n_local_pgs=1, *local_pg_sizes=NULL, local_comm_size;
+    int n_local_pgs=1, local_comm_size;
     typedef struct pg_translation
     {
 	int pg_index;

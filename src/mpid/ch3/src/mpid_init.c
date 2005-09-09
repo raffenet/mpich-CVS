@@ -398,7 +398,6 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
     int kvs_name_sz;
     int key_max_sz;
     int appnum;
-    int i=0;
 
 #ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT    
     MPIDI_CH3I_Process.parent_port_name = NULL;

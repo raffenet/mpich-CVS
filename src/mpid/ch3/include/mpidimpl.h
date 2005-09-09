@@ -668,6 +668,8 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 
 int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 
+int MPIDI_CH3I_Progress_finalize(void);
+
 extern int MPIDI_Use_optimized_rma;
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
