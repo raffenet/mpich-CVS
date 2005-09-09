@@ -1573,7 +1573,7 @@ AC_SUBST(C_LINKPATH_SHL)
 # 
 # Add the steps for debugger support
 BUILD_TVDLL=no
-if test "$enable_debugginfo" = "yes" ; then
+if test "$enable_debuginfo" = "yes" ; then
    # We can build the Totalview interface DLL only if we know how to build
    # shared libraries.  For now, require that enable_sharedlibs is not none
    # Also, we may want to put some of this into a configure in the debugger
