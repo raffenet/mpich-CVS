@@ -125,7 +125,7 @@ via mpd.
 
 1.  MPD provides support for the totalview debugger via the -tv option to
 mpiexec.  Of course you must have a licensed copy of totalview to use
-this option.  Also, you must have configured with enable-totalview.
+this option.  Also, you must have configured with --enable-totalview.
 
 2.  You can also start GUI debuggers such as ddd on each process that you
     execute, e.g.:
