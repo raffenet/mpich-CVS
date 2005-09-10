@@ -47,7 +47,7 @@ static void get_uuid(char *str)
     MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
     UuidCreate(&guid);
     UuidToString(&guid, &rpcstr);
-    strcpy(str, rpcstr);
+    MPIU_Strncpy(str, rpcstr, MPIDI_MAX_KVS_NAME_LEN);
     RpcStringFree(&rpcstr);
 #else
     UUID guid;
@@ -55,7 +55,8 @@ static void get_uuid(char *str)
 
     MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
     UuidCreate(&guid);
-    sprintf(str, "%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    MPIU_Snprintf(str, MPIDI_MAX_KVS_NAME_LEN,
+	"%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
@@ -69,7 +70,7 @@ static void get_uuid(char *str)
     MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
     myUUID = CFUUIDCreate(kCFAllocatorDefault);
     myUUIDString = CFUUIDCreateString(kCFAllocatorDefault, myUUID);/* This is the safest way to obtain a C string from a CFString.*/
-    CFStringGetCString(myUUIDString, str, MAX_KVS_NAME_LEN, kCFStringEncodingASCII);
+    CFStringGetCString(myUUIDString, str, MPIDI_MAX_KVS_NAME_LEN, kCFStringEncodingASCII);
     CFRelease(myUUIDString);
 #elif defined(HAVE_UUID_GENERATE)
     uuid_t guid;
@@ -78,11 +79,16 @@ static void get_uuid(char *str)
     MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
     uuid_generate(guid);
     uuid_unparse(guid, str);
+#elif defined(HAVE_TIME)
+    MPIDI_STATE_DECL(MPID_STATE_GET_UUID);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
+    MPIU_Snprintf(str, MPIDI_MAX_KVS_NAME_LEN, "%X%X%X%X", rand(), rand(), rand(), time(NULL));
 #else
     MPIDI_STATE_DECL(MPID_STATE_GET_UUID);
 
     MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
-    sprintf(str, "%X%X%X%X", rand(), rand(), rand(), rand());
+    MPIU_Snprintf(str, MPIDI_MAX_KVS_NAME_LEN, "%X%X%X%X", rand(), rand(), rand(), rand());
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_GET_UUID);
 }

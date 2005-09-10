@@ -622,6 +622,13 @@ int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, int, 
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
+#endif
+
 #define MPIDI_MAX_KVS_NAME_LEN     256
 #define MPIDI_MAX_KVS_KEY_LEN      256
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
