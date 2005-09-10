@@ -143,11 +143,6 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap);
 	MPIU_dbg_printf e;			\
     }						\
 }
-#ifndef USE_MPIU_DBG_PRINT_VC
-#define MPIU_DBG_PrintVC(vc)
-#define MPIU_DBG_PrintVCState2(vc, new_state)
-#define MPIU_DBG_PrintVCState(vc)
-#endif
 /* The first argument is a place holder to allow the selection of a subset
    of debugging events.  The second is a placeholder to allow a numeric
    level of debugging within that class.  The third is the debugging text */
@@ -155,6 +150,15 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap);
 #else
 #define MPIU_DBG_PRINTF(e)
 #define MPIU_DBG_PRINTF_CLASS(_c,_l,_e)
+#endif
+#ifdef USE_MPIU_DBG_PRINT_VC
+void MPIU_DBG_PrintVC(MPIDI_VC_t *vc);
+void MPIU_DBG_PrintVCState2(MPIDI_VC_t *vc, MPIDI_VC_State_t new_state);
+void MPIU_DBG_PrintVCState(MPIDI_VC_t *vc);
+#else
+#define MPIU_DBG_PrintVC(vc)
+#define MPIU_DBG_PrintVCState2(vc, new_state)
+#define MPIU_DBG_PrintVCState(vc)
 #endif
 extern MPIU_dbg_state_t MPIUI_dbg_state;
 extern FILE * MPIUI_dbg_fp;
