@@ -6,10 +6,15 @@ spawnintra 2
 spawnargv 1
 spawnmult2 2
 spaconacc 1
+spaconacc2 1
 selfconacc 2
 spaiccreate 2
 join 2
 disconnect_reconnect 3
 disconnect_reconnect2 3
+disconnect_reconnect3 3
 multiple_ports 3
 multiple_ports2 4
+disconnect 3
+disconnect2 3
+disconnect3 3

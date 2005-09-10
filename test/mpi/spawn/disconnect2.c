@@ -16,19 +16,21 @@
 #endif
 
 #define IF_VERBOSE(a) if (verbose) { printf a ; fflush(stdout); }
+#define DATA_VALUE 123
+#define DATA_TAG 100
+#define SENDER_RANK 0
+#define RECEIVER_RANK 1
 
-static char MTEST_Descrip[] = "A simple test of Comm_connect/accept/disconnect";
+static char MTEST_Descrip[] = "A simple test of Comm_disconnect";
 
 int main(int argc, char *argv[])
 {
     int errs = 0;
-    int rank, size, rsize, i, j, data, num_loops = 100;
+    int rank, size, rsize, i, data = -1;
     int np = 3;
     MPI_Comm      parentcomm, intercomm;
     MPI_Status    status;
-    char port[MPI_MAX_PORT_NAME];
     int verbose = 0;
-    int do_messages = 1;
     char *env;
 
     env = getenv("MPITEST_VERBOSE");
@@ -40,25 +42,13 @@ int main(int argc, char *argv[])
 
     MTest_Init( &argc, &argv );
 
-    if (argc > 1)
-    {
-	num_loops = atoi(argv[1]);
-	if (num_loops < 0)
-	    num_loops = 0;
-	if (num_loops > 100)
-	    num_loops = 100;
-    }
-    if (argc > 2)
-    {
-	do_messages = atoi(argv[2]);
-    }
     MPI_Comm_get_parent( &parentcomm );
 
     if (parentcomm == MPI_COMM_NULL)
     {
 	IF_VERBOSE(("spawning %d processes\n", np));
 	/* Create 3 more processes */
-	MPI_Comm_spawn("./disconnect_reconnect", /*MPI_ARGV_NULL*/&argv[1], np,
+	MPI_Comm_spawn("./disconnect2", MPI_ARGV_NULL, np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, MPI_ERRCODES_IGNORE);
     }
@@ -83,39 +73,19 @@ int main(int argc, char *argv[])
 	    printf("Did not create %d processes (got %d)\n", np, rsize);
 	    fflush(stdout);
 	}
-	if (rank == 0 && num_loops > 0)
+	if (rank == SENDER_RANK)
 	{
-	    MPI_Open_port(MPI_INFO_NULL, port);
-	    IF_VERBOSE(("port = %s\n", port));
-	    MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm);
+	    IF_VERBOSE(("sending int\n"));
+	    i = DATA_VALUE;
+	    MPI_Send(&i, 1, MPI_INT, RECEIVER_RANK, DATA_TAG, intercomm);
+	    MPI_Recv(&data, 1, MPI_INT, RECEIVER_RANK, DATA_TAG, intercomm, &status);
+	    if (data != i)
+	    {
+		errs++;
+	    }
 	}
 	IF_VERBOSE(("disconnecting child communicator\n"));
 	MPI_Comm_disconnect(&intercomm);
-	for (i=0; i<num_loops; i++)
-	{
-	    IF_VERBOSE(("accepting connection\n"));
-	    MPI_Comm_accept(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
-	    MPI_Comm_remote_size(intercomm, &rsize);
-	    if (do_messages && (rank == 0))
-	    {
-		j = 0;
-		for (j=0; j<rsize; j++)
-		{
-		    data = i;
-		    IF_VERBOSE(("sending int to child process %d\n", j));
-		    MPI_Send(&data, 1, MPI_INT, j, 100, intercomm);
-		    IF_VERBOSE(("receiving int from child process %d\n", j));
-		    data = i-1;
-		    MPI_Recv(&data, 1, MPI_INT, j, 100, intercomm, &status);
-		    if (data != i)
-		    {
-			errs++;
-		    }
-		}
-	    }
-	    IF_VERBOSE(("disconnecting communicator\n"));
-	    MPI_Comm_disconnect(&intercomm);
-	}
 
 	/* Errors cannot be sent back to the parent because there is no communicator connected to the children
 	for (i=0; i<rsize; i++)
@@ -136,34 +106,23 @@ int main(int argc, char *argv[])
 	    fflush(stdout);
 	}
 
-	if (rank == 0 && num_loops > 0)
+	if (rank == RECEIVER_RANK)
 	{
-	    IF_VERBOSE(("receiving port\n"));
-	    MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm, &status);
+	    IF_VERBOSE(("receiving int\n"));
+	    i = -1;
+	    MPI_Recv(&i, 1, MPI_INT, SENDER_RANK, DATA_TAG, intercomm, &status);
+	    if (i != DATA_VALUE)
+	    {
+		errs++;
+		printf("expected %d but received %d\n", DATA_VALUE, i);
+		fflush(stdout);
+		MPI_Abort(intercomm, 1);
+	    }
+	    MPI_Send(&i, 1, MPI_INT, SENDER_RANK, DATA_TAG, intercomm);
 	}
 
 	IF_VERBOSE(("disconnecting communicator\n"));
 	MPI_Comm_disconnect(&intercomm);
-	for (i=0; i<num_loops; i++)
-	{
-	    IF_VERBOSE(("connecting to port\n"));
-	    MPI_Comm_connect(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
-	    if (do_messages)
-	    {
-		IF_VERBOSE(("receiving int from parent process 0\n"));
-		MPI_Recv(&data, 1, MPI_INT, 0, 100, intercomm, &status);
-		if (data != i)
-		{
-		    printf("expected %d but received %d\n", i, data);
-		    fflush(stdout);
-		    MPI_Abort(MPI_COMM_WORLD, 1);
-		}
-		IF_VERBOSE(("sending int back to parent process 1\n"));
-		MPI_Send(&data, 1, MPI_INT, 0, 100, intercomm);
-	    }
-	    IF_VERBOSE(("disconnecting communicator\n"));
-	    MPI_Comm_disconnect(&intercomm);
-	}
 
 	/* Send the errs back to the master process */
 	/* Errors cannot be sent back to the parent because there is no communicator connected to the parent */

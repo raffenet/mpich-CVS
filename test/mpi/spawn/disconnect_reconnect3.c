@@ -15,6 +15,16 @@
 #include <string.h>
 #endif
 
+/*
+ * This test tests the disconnect code for processes that span process groups.
+ *
+ * This test spawns a group of processes and then merges them into a single communicator.
+ * Then the single communicator is split into two communicators, one containing the even ranks and the other the odd ranks.
+ * Then the two new communicators do MPI_Comm_accept/connect/disconnect calls in a loop.
+ * The even group does the accepting while the odd group does the connecting.
+ *
+ */
+
 #define IF_VERBOSE(a) if (verbose) { printf a ; fflush(stdout); }
 
 static char MTEST_Descrip[] = "A simple test of Comm_connect/accept/disconnect";
@@ -22,11 +32,12 @@ static char MTEST_Descrip[] = "A simple test of Comm_connect/accept/disconnect";
 int main(int argc, char *argv[])
 {
     int errs = 0;
-    int rank, size, rsize, i, j, data, num_loops = 100;
-    int np = 3;
-    MPI_Comm      parentcomm, intercomm;
-    MPI_Status    status;
+    int rank, rsize, i, j, data, num_loops = 100;
+    int np = 4;
+    MPI_Comm parentcomm, intercomm, intracomm, comm;
+    MPI_Status status;
     char port[MPI_MAX_PORT_NAME];
+    int even_odd;
     int verbose = 0;
     int do_messages = 1;
     char *env;
@@ -40,6 +51,7 @@ int main(int argc, char *argv[])
 
     MTest_Init( &argc, &argv );
 
+    /* command line arguments can change the number of loop iterations and whether or not messages are sent over the new communicators */
     if (argc > 1)
     {
 	num_loops = atoi(argv[1]);
@@ -52,49 +64,55 @@ int main(int argc, char *argv[])
     {
 	do_messages = atoi(argv[2]);
     }
-    MPI_Comm_get_parent( &parentcomm );
 
+    /* Spawn the child processes and merge them into a single communicator */
+    MPI_Comm_get_parent( &parentcomm );
     if (parentcomm == MPI_COMM_NULL)
     {
 	IF_VERBOSE(("spawning %d processes\n", np));
-	/* Create 3 more processes */
-	MPI_Comm_spawn("./disconnect_reconnect", /*MPI_ARGV_NULL*/&argv[1], np,
+	/* Create 4 more processes */
+	MPI_Comm_spawn("./disconnect_reconnect3", /*MPI_ARGV_NULL*/&argv[1], np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
 			&intercomm, MPI_ERRCODES_IGNORE);
+	MPI_Intercomm_merge(intercomm, 0, &intracomm);
     }
     else
     {
 	intercomm = parentcomm;
+	MPI_Intercomm_merge(intercomm, 1, &intracomm);
     }
 
-    /* We now have a valid intercomm */
+    /* We now have a valid intracomm containing all processes */
 
-    MPI_Comm_remote_size(intercomm, &rsize);
-    MPI_Comm_size(intercomm, &size);
-    MPI_Comm_rank(intercomm, &rank);
+    MPI_Comm_rank(intracomm, &rank);
 
-    if (parentcomm == MPI_COMM_NULL)
+    /* Split the communicator so that the even ranks are in one communicator and the odd ranks are in another */
+    even_odd = rank % 2;
+    MPI_Comm_split(intracomm, even_odd, rank, &comm);
+
+    /* Open a port on rank zero of the even communicator */
+    /* rank 0 on intracomm == rank 0 on even communicator */
+    if (rank == 0)
     {
-	IF_VERBOSE(("parent rank %d alive.\n", rank));
-	/* Parent */
-	if (rsize != np)
-	{
-	    errs++;
-	    printf("Did not create %d processes (got %d)\n", np, rsize);
-	    fflush(stdout);
-	}
-	if (rank == 0 && num_loops > 0)
-	{
-	    MPI_Open_port(MPI_INFO_NULL, port);
-	    IF_VERBOSE(("port = %s\n", port));
-	    MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm);
-	}
-	IF_VERBOSE(("disconnecting child communicator\n"));
-	MPI_Comm_disconnect(&intercomm);
+	MPI_Open_port(MPI_INFO_NULL, port);
+	IF_VERBOSE(("port = %s\n", port));
+    }
+    /* Broadcast the port to everyone.  This makes the logic easier than trying to figure out which process in the odd communicator to send it to */
+    MPI_Bcast(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, intracomm);
+
+    IF_VERBOSE(("disconnecting parent/child communicator\n"));
+    MPI_Comm_disconnect(&intercomm);
+    MPI_Comm_disconnect(&intracomm);
+
+    MPI_Comm_rank(comm, &rank);
+
+    if (!even_odd)
+    {
+	/* The even group does the accepting */
 	for (i=0; i<num_loops; i++)
 	{
 	    IF_VERBOSE(("accepting connection\n"));
-	    MPI_Comm_accept(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
+	    MPI_Comm_accept(port, MPI_INFO_NULL, 0, comm, &intercomm);
 	    MPI_Comm_remote_size(intercomm, &rsize);
 	    if (do_messages && (rank == 0))
 	    {
@@ -102,9 +120,9 @@ int main(int argc, char *argv[])
 		for (j=0; j<rsize; j++)
 		{
 		    data = i;
-		    IF_VERBOSE(("sending int to child process %d\n", j));
+		    IF_VERBOSE(("sending int to odd_communicator process %d\n", j));
 		    MPI_Send(&data, 1, MPI_INT, j, 100, intercomm);
-		    IF_VERBOSE(("receiving int from child process %d\n", j));
+		    IF_VERBOSE(("receiving int from odd_communicator process %d\n", j));
 		    data = i-1;
 		    MPI_Recv(&data, 1, MPI_INT, j, 100, intercomm, &status);
 		    if (data != i)
@@ -127,30 +145,14 @@ int main(int argc, char *argv[])
     }
     else
     {
-	IF_VERBOSE(("child rank %d alive.\n", rank));
-	/* Child */
-	if (size != np)
-	{
-	    errs++;
-	    printf("(Child) Did not create %d processes (got %d)\n", np, size);
-	    fflush(stdout);
-	}
-
-	if (rank == 0 && num_loops > 0)
-	{
-	    IF_VERBOSE(("receiving port\n"));
-	    MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm, &status);
-	}
-
-	IF_VERBOSE(("disconnecting communicator\n"));
-	MPI_Comm_disconnect(&intercomm);
+	/* The odd group does the connecting */
 	for (i=0; i<num_loops; i++)
 	{
 	    IF_VERBOSE(("connecting to port\n"));
-	    MPI_Comm_connect(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
+	    MPI_Comm_connect(port, MPI_INFO_NULL, 0, comm, &intercomm);
 	    if (do_messages)
 	    {
-		IF_VERBOSE(("receiving int from parent process 0\n"));
+		IF_VERBOSE(("receiving int from even_communicator process 0\n"));
 		MPI_Recv(&data, 1, MPI_INT, 0, 100, intercomm, &status);
 		if (data != i)
 		{
@@ -158,7 +160,7 @@ int main(int argc, char *argv[])
 		    fflush(stdout);
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
-		IF_VERBOSE(("sending int back to parent process 1\n"));
+		IF_VERBOSE(("sending int back to even_communicator process 0\n"));
 		MPI_Send(&data, 1, MPI_INT, 0, 100, intercomm);
 	    }
 	    IF_VERBOSE(("disconnecting communicator\n"));
