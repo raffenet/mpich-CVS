@@ -915,7 +915,6 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 
     int num_sent = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
-    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
     /*printf("[%d] calling mqshm_send from BootstrapQ_send_msg\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_mqshm_send(queue->id, buffer, length,
@@ -995,7 +994,7 @@ int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 #endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_SEND_MSG);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -1008,7 +1007,6 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
 #ifdef USE_MQSHM
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
-    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
     /*printf("[%d] calling mqshm_receive from BootstrapQ_recv_msg\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_mqshm_receive(queue->id, queue->pid, buffer, length,
@@ -1117,5 +1115,5 @@ int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, in
     }
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_RECV_MSG);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
