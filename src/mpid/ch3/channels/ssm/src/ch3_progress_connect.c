@@ -24,6 +24,7 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     if (vc->ch.bShm)
     {
 	/* There is no post_close for shm connections so handle them as closed immediately. */
+	MPIDI_CH3I_SHM_Remove_vc_references(vc);
 	MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
     }
     else
@@ -41,21 +42,110 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     return mpi_errno;
 }
 
-/* brad : function now in ch3u_get_business_card.c */
-#if 0
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Listener_get_port
+#define FUNCNAME MPIDI_CH3I_SHM_Remove_vc_read_references
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Listener_get_port()
+static void MPIDI_CH3I_SHM_Remove_vc_read_references(MPIDI_VC_t *vc)
 {
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT);
+    MPIDI_VC_t *iter, *trailer;
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_LISTENER_GET_PORT);
-    return MPIDI_CH3I_listener_port;
+    /* remove vc from the reading list */
+    iter = trailer = MPIDI_CH3I_Process.shm_reading_list;
+    while (iter != NULL)
+    {
+	if (iter == vc)
+	{
+	    /*printf("[%s%d]removing read vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
+	    /* Mark the connection as NOT read connected so it won't be mistaken for active */
+	    /* Since shm connections are uni-directional the following three states are considered active:
+	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 0 - active in the write direction
+	     * MPIDI_VC_STATE_INACTIVE + ch.shm_read_connected = 1 - active in the read direction
+	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 1 - active in both directions
+	     */
+	    vc->ch.shm_read_connected = 0;
+	    if (trailer != iter)
+	    {
+		/* remove the vc from the list */
+		trailer->ch.shm_next_reader = iter->ch.shm_next_reader;
+	    }
+	    else
+	    {
+		/* remove the vc from the head of the list */
+		MPIDI_CH3I_Process.shm_reading_list = MPIDI_CH3I_Process.shm_reading_list->ch.shm_next_reader;
+	    }
+	}
+	if (trailer != iter)
+	    trailer = trailer->ch.shm_next_reader;
+	iter = iter->ch.shm_next_reader;
+    }
 }
-#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Remove_vc_write_references
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static void MPIDI_CH3I_SHM_Remove_vc_write_references(MPIDI_VC_t *vc)
+{
+    MPIDI_VC_t *iter, *trailer;
+
+    /* remove the vc from the writing list */
+    iter = trailer = MPIDI_CH3I_Process.shm_writing_list;
+    while (iter != NULL)
+    {
+	if (iter == vc)
+	{
+	    /*printf("[%s%d]removing write vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
+	    if (trailer != iter)
+	    {
+		/* remove the vc from the list */
+		trailer->ch.shm_next_writer = iter->ch.shm_next_writer;
+	    }
+	    else
+	    {
+		/* remove the vc from the head of the list */
+		MPIDI_CH3I_Process.shm_writing_list = MPIDI_CH3I_Process.shm_writing_list->ch.shm_next_writer;
+	    }
+	}
+	if (trailer != iter)
+	    trailer = trailer->ch.shm_next_writer;
+	iter = iter->ch.shm_next_writer;
+    }
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Remove_vc_references
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_SHM_Remove_vc_references(MPIDI_VC_t *vc)
+{
+    MPIDI_CH3I_SHM_Remove_vc_read_references(vc);
+    MPIDI_CH3I_SHM_Remove_vc_write_references(vc);
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Add_to_reader_list
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc)
+{
+    MPIDI_CH3I_SHM_Remove_vc_read_references(vc);
+    /*printf("[%s%d]adding read vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
+    vc->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
+    MPIDI_CH3I_Process.shm_reading_list = vc;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Add_to_writer_list
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc)
+{
+    MPIDI_CH3I_SHM_Remove_vc_write_references(vc);
+    /*printf("[%s%d]adding write vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
+    vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
+    MPIDI_CH3I_Process.shm_writing_list = vc;
+}
 
 static unsigned int GetIP(char *pszIP)
 {
@@ -365,8 +455,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	int count = 0;
 
 	/*MPIU_DBG_PRINTF(("shmem connected\n"));*/
-	vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
-	MPIDI_CH3I_Process.shm_writing_list = vc;
+	MPIDI_CH3I_SHM_Add_to_writer_list(vc);
 
 	/* If there are more shm connections than cpus, reduce the spin count to one. */
 	/* This does not take into account connections between other processes on the same machine. */

@@ -295,9 +295,6 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
-void MPIDI_CH3I_SHM_Remove_vc_references(MPIDI_VC_t *vc);
-void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc);
-void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc);
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"
@@ -336,6 +333,9 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*read_p
 int MPIDI_CH3I_SHM_read(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_write(MPIDI_VC_t *vc, void *buf, int len, int *num_bytes_ptr);
 int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr);
+void MPIDI_CH3I_SHM_Remove_vc_references(MPIDI_VC_t *vc);
+void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc);
+void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc);
 
 MPIDI_CH3I_Alloc_mem_list_t * MPIDI_CH3I_Get_mem_list_head();
 

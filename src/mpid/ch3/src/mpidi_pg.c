@@ -130,6 +130,7 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 {
+    /*int i;*/
     MPIDI_PG_t * pg_prev;
     MPIDI_PG_t * pg_cur;
     int mpi_errno = MPI_SUCCESS;
@@ -150,6 +151,12 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
             else
                 pg_prev->next = pg->next;
 
+	    /*
+	    for (i=0; i<pg->size; i++)
+	    {
+		printf("[%s%d]freeing vc%d - %p (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, i, &pg->vct[i], pg->id);fflush(stdout);
+	    }
+	    */
 	    MPIDI_PG_Destroy_fn(pg, pg->id);
 	    MPIU_Free(pg->vct);
 	    MPIU_Free(pg);

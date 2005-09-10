@@ -143,6 +143,11 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap);
 	MPIU_dbg_printf e;			\
     }						\
 }
+#ifndef USE_MPIU_DBG_PRINT_VC
+#define MPIU_DBG_PrintVC(vc)
+#define MPIU_DBG_PrintVCState2(vc, new_state)
+#define MPIU_DBG_PrintVCState(vc)
+#endif
 /* The first argument is a place holder to allow the selection of a subset
    of debugging events.  The second is a placeholder to allow a numeric
    level of debugging within that class.  The third is the debugging text */
@@ -1895,6 +1900,10 @@ typedef struct PreDefined_attrs {
 } PreDefined_attrs;
 
 struct MPID_Datatype;
+
+#ifdef USE_MPIU_DBG_PRINT_VC
+extern char *MPIU_DBG_parent_str;
+#endif
 
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */

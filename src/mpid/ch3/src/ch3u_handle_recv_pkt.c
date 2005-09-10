@@ -1409,13 +1409,13 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
 		{
 		    MPIDI_DBG_PRINTF((30, FCNAME, "received close(FALSE) from %d, moving to CLOSE_ACKED.", vc->pg_rank));
-		    /*printf("vc%d.state = MPIDI_VC_STATE_CLOSE_ACKED\n",vc->pg_rank);fflush(stdout);*/
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
 		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 		else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
 		{
 		    MPIDI_DBG_PRINTF((30, FCNAME, "received close(FALSE) from %d, moving to REMOTE_CLOSE.", vc->pg_rank));
-		    /*printf("vc%d.state = MPIDI_VC_STATE_REMOTE_CLOSE\n",vc->pg_rank);fflush(stdout);*/
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_REMOTE_CLOSE);
 		    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
 		}
 	    }
@@ -1423,7 +1423,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	    {
 		MPIDI_DBG_PRINTF((30, FCNAME, "received close(TRUE) from %d, moving to CLOSE_ACKED.", vc->pg_rank));
 		MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
-		/*printf("vc%d.state = MPIDI_VC_STATE_CLOSE_ACKED\n",vc->pg_rank);fflush(stdout);*/
+		MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
 		vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		mpi_errno = MPIDI_CH3_Connection_terminate(vc);
 	    }

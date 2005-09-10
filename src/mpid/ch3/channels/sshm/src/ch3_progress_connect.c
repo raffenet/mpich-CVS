@@ -17,6 +17,7 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     int mpi_errno = MPI_SUCCESS;
 
     /* There is no post_close for shm connections so handle them as closed immediately. */
+    MPIDI_CH3I_SHM_Remove_vc_references(vc);
     mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -40,6 +41,13 @@ static void MPIDI_CH3I_SHM_Remove_vc_read_references(MPIDI_VC_t *vc)
     {
 	if (iter == vc)
 	{
+	    /* Mark the connection as NOT read connected so it won't be mistaken for active */
+	    /* Since shm connections are uni-directional the following three states are considered active:
+	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 0 - active in the write direction
+	     * MPIDI_VC_STATE_INACTIVE + ch.shm_read_connected = 1 - active in the read direction
+	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 1 - active in both directions
+	     */
+	    vc->ch.shm_read_connected = 0;
 	    if (trailer != iter)
 	    {
 		/* remove the vc from the list */

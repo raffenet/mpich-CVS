@@ -28,7 +28,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 	    {
 		case MPIDI_VC_STATE_CLOSE_ACKED:
 		{
-		    /*printf("vc%d.state = MPIDI_VC_STATE_INACTIVE\n",vc->pg_rank);fflush(stdout);*/
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_INACTIVE);
 		    vc->state = MPIDI_VC_STATE_INACTIVE;
 		    /* MPIU_Object_set_ref(vc, 0); ??? */
 

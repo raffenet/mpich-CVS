@@ -35,8 +35,18 @@ int MPID_Finalize()
     /* FIXME: insert while loop here to wait for outstanding posted receives to complete */
 
 
-    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
-    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
+    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        return mpi_errno;
+    }
+    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        return mpi_errno;
+    }
 		
     /*
      * Initiate close protocol for all active VCs
@@ -99,12 +109,12 @@ int MPID_Finalize()
 		 */
 		if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		{ 
-		    /*printf("vc%d.state = MPIDI_VC_STATE_LOCAL_CLOSE\n",vc->pg_rank);fflush(stdout);*/
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
 		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		}
 		else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		{
-		    /*printf("vc%d.state = MPIDI_VC_STATE_CLOSE_ACKED\n",vc->pg_rank);fflush(stdout);*/
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
 		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 		

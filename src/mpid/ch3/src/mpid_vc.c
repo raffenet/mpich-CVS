@@ -110,7 +110,17 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    MPIDI_CH3_Pkt_t upkt;
 		    MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
 		    MPID_Request * sreq;
-			
+
+		    /*
+		    if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED)
+		    {
+			printf("[%s%d]Assertion failed\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank);
+			MPIU_DBG_PrintVC(vc);
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
+			return mpi_errno;
+		    }
+		    */
 		    MPIU_Assert(vc->state != MPIDI_VC_STATE_LOCAL_CLOSE && vc->state != MPIDI_VC_STATE_CLOSE_ACKED);
 		    
 		    MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
@@ -126,13 +136,13 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		     * must be changed before the close packet is sent.
 		     */
 		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
-		    { 
-			/*printf("vc%d.state = MPIDI_VC_STATE_LOCAL_CLOSE\n",vc->pg_rank);fflush(stdout);*/
+		    {
+			MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
 			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		    }
 		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		    {
-			/*printf("vc%d.state = MPIDI_VC_STATE_CLOSE_ACKED\n",vc->pg_rank);fflush(stdout);*/
+			MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
 			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		    }
 		    

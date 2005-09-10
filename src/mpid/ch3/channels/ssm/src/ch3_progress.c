@@ -164,8 +164,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
 		vc_ptr->ch.shm_reading_pkt = TRUE;
 		/* add this VC to the global list to be shm_waited on */
-		vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
-		MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
+		MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
 	    }
 	}
     }
@@ -387,8 +386,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
 		vc_ptr->ch.shm_reading_pkt = TRUE;
 		/* add this VC to the global list to be shm_waited on */
-		vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
-		MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
+		MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
 	    }
 	}
     }
@@ -478,8 +476,7 @@ int MPIDI_CH3I_Message_queue_progress()
 	vc_ptr->ch.shm_reading_pkt = TRUE;
 	/* add this VC to the global list to be shm_waited on */
 	/*printf("vc added to reading list.\n");fflush(stdout);*/
-	vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
-	MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
+	MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
     }
     return MPI_SUCCESS;
 }
@@ -956,8 +953,7 @@ int MPIDI_CH3I_Message_queue_progress()
 	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
 	vc_ptr->ch.shm_reading_pkt = TRUE;
 	/* add this VC to the global list to be shm_waited on */
-	vc_ptr->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
-	MPIDI_CH3I_Process.shm_reading_list = vc_ptr;
+	MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
     }
     return MPI_SUCCESS;
 }

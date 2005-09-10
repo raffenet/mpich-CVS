@@ -425,6 +425,9 @@ static int MPIDI_CH3I_PMI_Init(int * has_args, int * has_env, int * has_parent, 
 	goto fn2_fail;
 	/* --END ERROR HANDLING-- */
     }
+#ifdef USE_MPIU_DBG_PRINT_VC
+    MPIU_DBG_parent_str = (*has_parent) ? "+" : "";
+#endif
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
     /* Initialize the CH3 device KVS cache interface */

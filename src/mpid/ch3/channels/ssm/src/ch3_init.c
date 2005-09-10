@@ -5,16 +5,68 @@
  */
 
 #include "mpidi_ch3_impl.h"
-#include "pmi.h"
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
+
+#ifdef USE_MPIU_DBG_PRINT_VC
+
+/* VC state printing debugging functions */
+
+static const char * VCState2(MPIDI_VC_State_t state)
+{
+    static char unknown_state[32];
+    switch (state)
+    {
+    case MPIDI_VC_STATE_INACTIVE:
+	return "INACTIVE";
+    case MPIDI_VC_STATE_ACTIVE:
+	return "ACTIVE";
+    case MPIDI_VC_STATE_LOCAL_CLOSE:
+	return "LOCAL_CLOSE";
+    case MPIDI_VC_STATE_REMOTE_CLOSE:
+	return "REMOTE_CLOSE";
+    case MPIDI_VC_STATE_CLOSE_ACKED:
+	return "CLOSE_ACKED";
+    }
+    MPIU_Snprintf(unknown_state, 32, "STATE_%d", state);
+    return unknown_state;
+}
+
+static const char * VCState(MPIDI_VC_t *vc)
+{
+    return VCState2(vc->state);
+}
+
+void MPIU_DBG_PrintVC(MPIDI_VC_t *vc)
+{
+    printf("vc.state : %s\n", VCState(vc));
+    printf("vc.pg_rank : %d\n", vc->pg_rank);
+    printf("vc.ref_count: %d\n", vc->ref_count);
+    printf("vc.lpid : %d\n", vc->lpid);
+    if (vc->pg == NULL)
+    {
+	printf("vc.pg : NULL\n");
+    }
+    else
+    {
+	printf("vc.pg->id : %s\n", vc->pg->id);
+	printf("vc.pg->size : %d\n", vc->pg->size);
+	printf("vc.pg->ref_count : %d\n", vc->pg->ref_count);
+    }
+    fflush(stdout);
+}
+
+void MPIU_DBG_PrintVCState2(MPIDI_VC_t *vc, MPIDI_VC_State_t new_state)
+{
+    printf("[%s%d]vc%d.state = %s->%s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), VCState2(new_state), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");
+    fflush(stdout);
+}
+
+void MPIU_DBG_PrintVCState(MPIDI_VC_t *vc)
+{
+    printf("[%s%d]vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");
+    fflush(stdout);
+}
+
+#endif /* USE_MPIU_DBG_PRINT_VC */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init

@@ -355,7 +355,7 @@ extern volatile int MPIDI_Outstanding_close_ops;
     *(vcp_) = (comm_)->vcr[(rank_)];			\
     if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)	\
     {							\
-    /*printf("vc%d.state = MPIDI_VC_STATE_ACTIVE\n",(*(vcp_))->pg_rank);fflush(stdout);*/ \
+	MPIU_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);  \
 	(*(vcp_))->state = MPIDI_VC_STATE_ACTIVE;	\
     }							\
 }
@@ -425,7 +425,7 @@ int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
     *(vcp_) = &(pg_)->vct[rank_];			\
     if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)	\
     {							\
-    /*printf("vc%d.state = MPIDI_VC_STATE_ACTIVE\n",(*(vcp_))->pg_rank);fflush(stdout);*/ \
+	MPIU_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);  \
 	(*(vcp_))->state = MPIDI_VC_STATE_ACTIVE;	\
     }							\
 }
@@ -477,7 +477,6 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 
 #define MPIDI_VC_Init(vc_, pg_, rank_)		\
 {						\
-    /*printf("vc%d.state = MPIDI_VC_STATE_INACTIVE\n", rank_);fflush(stdout);*/\
     (vc_)->state = MPIDI_VC_STATE_INACTIVE;	\
     MPIU_Object_set_ref((vc_), 0);		\
     (vc_)->pg = (pg_);				\
@@ -485,6 +484,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
     MPIDI_VC_Get_next_lpid(&(vc_)->lpid);	\
     MPIDI_VC_Init_seqnum_send(vc_);		\
     MPIDI_VC_Init_seqnum_recv(vc_);		\
+    MPIU_DBG_PrintVCState(vc_);                 \
 }
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
