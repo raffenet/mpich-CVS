@@ -16,8 +16,11 @@ void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
 
     amode = 0;
     cmode = OPEN_EXISTING;
+#ifdef USE_WIN_THREADED_IO
+    attrib = FILE_FLAG_OVERLAPPED;
+#else
     attrib = FILE_ATTRIBUTE_NORMAL;
-    /*attrib = FILE_FLAG_OVERLAPPED;*/
+#endif
 
     if (fd->access_mode & ADIO_CREATE)
     {
