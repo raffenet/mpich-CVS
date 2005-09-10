@@ -248,9 +248,9 @@ int MPIDI_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm
 		    local_translation[i].pg_rank = comm_ptr->vcr[i]->pg_rank;
 		    break;
 		}
-		pg_iter = pg_iter->next;
 		if (pg_trailer != pg_iter)
 		    pg_trailer = pg_trailer->next;
+		pg_iter = pg_iter->next;
 	    }
 	    if (pg_iter == NULL)
 	    {
@@ -264,6 +264,7 @@ int MPIDI_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm
 		/* --END ERROR HANDLING-- */
 		pg_iter->pg_id = MPIU_Strdup(comm_ptr->vcr[i]->pg->id);
 		pg_iter->index = cur_index++;
+		pg_iter->next = NULL;
 		mpi_errno = MPIDI_PG_To_string(comm_ptr->vcr[i]->pg, &pg_iter->str);
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
