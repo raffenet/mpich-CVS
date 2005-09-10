@@ -64,13 +64,13 @@ int main(int argc, char *argv[])
 	MPI_Info_set( spawn_path, "path", "." );
 
 	IF_VERBOSE(("spawn connector.\n"));
-	error = MPI_Comm_spawn("spaconacc", argv1, 1, spawn_path, 0, 
+	error = MPI_Comm_spawn("spaconacc2", argv1, 1, spawn_path, 0, 
 			       MPI_COMM_SELF, &comm_connector, 
 			       MPI_ERRCODES_IGNORE);
 	check_error(error, "MPI_Comm_spawn");
 
 	IF_VERBOSE(("spawn acceptor.\n"));
-	error = MPI_Comm_spawn("spaconacc", argv2, 1, spawn_path, 0, 
+	error = MPI_Comm_spawn("spaconacc2", argv2, 1, spawn_path, 0, 
 			       MPI_COMM_SELF, &comm_acceptor, 
 			       MPI_ERRCODES_IGNORE);
 	check_error(error, "MPI_Comm_spawn");
