@@ -555,6 +555,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 
 int MPIR_Comm_release(MPID_Comm * comm_ptr)
 {
+    static const char FCNAME[] = "MPIR_Comm_release";
     int mpi_errno = MPI_SUCCESS;
     int inuse;
     
@@ -576,9 +577,17 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	    MPID_Dev_comm_destroy_hook(comm_ptr);
 	    
 	    /* Free the VCRT */
-	    MPID_VCRT_Release(comm_ptr->vcrt);
+	    mpi_errno = MPID_VCRT_Release(comm_ptr->vcrt);
+	    if (mpi_errno != MPI_SUCCESS) {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
             if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-                MPID_VCRT_Release(comm_ptr->local_vcrt);
+                mpi_errno = MPID_VCRT_Release(comm_ptr->local_vcrt);
+		if (mpi_errno != MPI_SUCCESS) {
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
                 if (comm_ptr->local_comm) 
                     MPIR_Comm_release(comm_ptr->local_comm);
             }
