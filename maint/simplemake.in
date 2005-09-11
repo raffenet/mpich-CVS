@@ -227,12 +227,15 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	   );
 #
 # Rules to build programs (.o:)
-%progrules = ( 'c' => '$(C_LINK) $(LDFLAGS)',
-	       'cxx' => '$(CXX_LINK) $(LDFLAGS)',
-	       'cpp' => '$(CXX_LINK) $(LDFLAGS)',
+# 
+# We need to include the <lang>FLAGS, because configure links programs
+# that way when it tests programs.
+%progrules = ( 'c' => '$(C_LINK) $(CFLAGS) $(LDFLAGS)',
+	       'cxx' => '$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS)',
+	       'cpp' => '$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS)',
 	       'cs'  => '$(CSHARP_LINK) $(LDFLAGS)',
-	       'f'   => '$(F77_LINK) $(LDFLAGS)',
-	       'f90' => '$(F90_LINK) $(LDFLAGS)',
+	       'f'   => '$(F77_LINK) $(FFLAGS) $(LDFLAGS)',
+	       'f90' => '$(F90_LINK) $(F90FLAGS) $(LDFLAGS)',
 	      );
 %progdefs = ( 'c' =>   'C_LINK      = $(CC)',
 	      'cxx' => 'CXX_LINK    = $(CXX)',
