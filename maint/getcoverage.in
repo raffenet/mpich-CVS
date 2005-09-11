@@ -735,7 +735,7 @@ sub OutputFileTable {
 #     skipBlock( outfd, blockname );
 #   e.g.,
 #     skipBlock( $outfile, "DEBUG" );
-sub skipBlockandAnnotate {
+sub skipBlockAndAnnotate {
     my ($outfile,$blockName) = @_;
 
     my $sawend=0;
