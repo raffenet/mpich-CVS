@@ -1311,28 +1311,42 @@ int MPIDI_CH3I_Progress_init()
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
+    /* FIXME: copied from sock
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
+    {
+	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
+    }
+#   endif
+    */
+
     mpi_errno = MPIDU_Sock_init();
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_init", 0);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /* create sock set */
     mpi_errno = MPIDU_Sock_create_set(&MPIDI_CH3I_sock_set);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**progress_init", 0);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
 
     /* establish non-blocking listener */
     mpi_errno = MPIDI_CH3I_Connection_alloc(&MPIDI_CH3I_listener_conn);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
     MPIDI_CH3I_listener_conn->sock = NULL;
     MPIDI_CH3I_listener_conn->vc = NULL;
     MPIDI_CH3I_listener_conn->state = CONN_STATE_LISTENING;
@@ -1340,11 +1354,13 @@ int MPIDI_CH3I_Progress_init()
     MPIDI_CH3I_listener_conn->recv_active = NULL;
 
     mpi_errno = MPIDU_Sock_listen(MPIDI_CH3I_sock_set, MPIDI_CH3I_listener_conn, &MPIDI_CH3I_listener_port, &sock);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
  
     MPIDI_CH3I_listener_conn->sock = sock;
 
@@ -1367,24 +1383,16 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-#if 0
-    MPIR_Nest_incr();
-    {
-	NMPI_Barrier(MPI_COMM_WORLD); /* FIXME: this barrier may not be necessary */
-	shutting_down = TRUE;
-	NMPI_Barrier(MPI_COMM_WORLD);
-    }
-    MPIR_Nest_decr();
-#endif
-
     /* Shut down the listener */
     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
+    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
 	goto fn_exit;
     }
-    
+    /* --END ERROR HANDLING-- */
+
     MPID_Progress_start(&progress_state);
     while(MPIDI_CH3I_listener_conn != NULL)
     {
@@ -1397,6 +1405,14 @@ int MPIDI_CH3I_Progress_finalize()
 
     MPIDU_Sock_destroy_set(MPIDI_CH3I_sock_set);
     MPIDU_Sock_finalize();
+
+    /* FIXME: copied from sock
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
+    {
+	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
+    }
+#   endif
+    */
 
 fn_exit:
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
