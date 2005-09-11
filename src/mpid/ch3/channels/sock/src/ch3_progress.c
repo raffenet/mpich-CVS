@@ -65,7 +65,7 @@ static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 #define FUNCNAME MPIDI_CH3_Progress_test
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_test()
+int MPIDI_CH3_Progress_test(void)
 {
     MPIDU_Sock_event_t event;
     int mpi_errno = MPI_SUCCESS;
@@ -268,7 +268,7 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 #define FUNCNAME MPIDI_CH3I_Progress_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_init()
+int MPIDI_CH3I_Progress_init(void)
 {
     MPIDU_Sock_t sock;
     int mpi_errno = MPI_SUCCESS;
@@ -341,7 +341,7 @@ int MPIDI_CH3I_Progress_init()
 #define FUNCNAME MPIDI_CH3I_Progress_finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_finalize()
+int MPIDI_CH3I_Progress_finalize(void)
 {
     int mpi_errno;
     MPID_Progress_state progress_state;

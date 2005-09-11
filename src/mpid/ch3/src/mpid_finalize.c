@@ -15,7 +15,7 @@ static int MPIDI_CH3I_PMI_Finalize(void);
 #define FUNCNAME MPID_Finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Finalize()
+int MPID_Finalize(void)
 {
     MPID_Progress_state progress_state;
     int mpi_errno = MPI_SUCCESS, inuse;
@@ -210,7 +210,7 @@ int MPID_Finalize()
 #define FUNCNAME MPIDI_CH3I_Finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPIDI_CH3I_PMI_Finalize()
+static int MPIDI_CH3I_PMI_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc;
