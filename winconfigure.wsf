@@ -2987,6 +2987,14 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef SX4 */")
 				Case "USE_DBG_LOGGING"
 					fout.WriteLine("/* #undef USE_DBG_LOGGING */")
+				Case "HAVE_CFUUIDCREATE"
+					fout.WriteLine("/* #undef HAVE_CFUUIDCREATE */")
+				Case "HAVE_TIME"
+					fout.WriteLine("#define HAVE_TIME 1")
+				Case "HAVE_TIME_H"
+					fout.WriteLine("#define HAVE_TIME_H 1")
+				Case "HAVE_UUID_GENERATE"
+					fout.WriteLine("/* #undef HAVE_UUID_GENERATE */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
