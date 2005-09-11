@@ -220,7 +220,7 @@ int MPIDI_KVS_Create(char *name)
 	while (strcmp(pNodeTest->pszName, pNode->pszName) != 0)
 	    pNodeTest = pNodeTest->pNext;
     } while (pNodeTest != pNode);
-    strcpy(name, pNode->pszName);
+    MPIU_Strncpy(name, pNode->pszName, MPIDI_MAX_KVS_NAME_LEN);
 
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Unlock */
@@ -287,7 +287,7 @@ int MPIDI_KVS_Create_name_in(char *name)
     pNode->pNext = NULL;
     pNode->pData = NULL;
     pNode->pIter = NULL;
-    strcpy(pNode->pszName, name);
+    MPIU_Strncpy(pNode->pszName, name, MPIDI_MAX_KVS_NAME_LEN);
     
 #ifdef USE_WIN_MUTEX_PROTECT
     /* Unlock */
@@ -323,7 +323,7 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 	    {
 		if (strcmp(pElement->pszKey, key) == 0)
 		{
-		    strcpy(value, pElement->pszValue);
+		    MPIU_Strncpy(value, pElement->pszValue, MPIDI_MAX_KVS_VALUE_LEN);
 #ifdef USE_WIN_MUTEX_PROTECT
 		    ReleaseMutex(kvs.hKVSMutex);
 #endif
@@ -378,7 +378,7 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 	    {
 		if (strcmp(pElement->pszKey, key) == 0)
 		{
-		    strcpy(pElement->pszValue, value);
+		    MPIU_Strncpy(pElement->pszValue, value, MPIDI_MAX_KVS_VALUE_LEN);
 #ifdef USE_WIN_MUTEX_PROTECT
 		    ReleaseMutex(kvs.hKVSMutex);
 #endif
@@ -389,8 +389,8 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 	    }
 	    pElement = (MPIDI_KVS_database_element_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_element_t));
 	    pElement->pNext = pNode->pData;
-	    strcpy(pElement->pszKey, key);
-	    strcpy(pElement->pszValue, value);
+	    MPIU_Strncpy(pElement->pszKey, key, MPIDI_MAX_KVS_KEY_LEN);
+	    MPIU_Strncpy(pElement->pszValue, value, MPIDI_MAX_KVS_VALUE_LEN);
 	    pNode->pData = pElement;
 #ifdef USE_WIN_MUTEX_PROTECT
 	    ReleaseMutex(kvs.hKVSMutex);
@@ -571,8 +571,8 @@ int MPIDI_KVS_First(const char *name, char *key, char *value)
 	    {
 		if (pNode->pData)
 		{
-		    strcpy(key, pNode->pData->pszKey);
-		    strcpy(value, pNode->pData->pszValue);
+		    MPIU_Strncpy(key, pNode->pData->pszKey, MPIDI_MAX_KVS_KEY_LEN);
+		    MPIU_Strncpy(value, pNode->pData->pszValue, MPIDI_MAX_KVS_VALUE_LEN);
 		    pNode->pIter = pNode->pData->pNext;
 		}
 		else
@@ -666,8 +666,8 @@ int MPIDI_KVS_Next(const char *name, char *key, char *value)
 	{
 	    if (pNode->pIter)
 	    {
-		strcpy(key, pNode->pIter->pszKey);
-		strcpy(value, pNode->pIter->pszValue);
+		MPIU_Strncpy(key, pNode->pIter->pszKey, MPIDI_MAX_KVS_KEY_LEN);
+		MPIU_Strncpy(value, pNode->pIter->pszValue, MPIDI_MAX_KVS_VALUE_LEN);
 		pNode->pIter = pNode->pIter->pNext;
 	    }
 	    else
@@ -750,7 +750,7 @@ int MPIDI_KVS_Firstkvs(char *name)
     {
 	if (kvs.pDatabaseIter)
 	{
-	    strcpy(name, kvs.pDatabaseIter->pszName);
+	    MPIU_Strncpy(name, kvs.pDatabaseIter->pszName, MPIDI_MAX_KVS_NAME_LEN);
 	}
 	else
 	{
@@ -786,7 +786,7 @@ int MPIDI_KVS_Nextkvs(char *name)
 	kvs.pDatabaseIter = kvs.pDatabaseIter->pNext;
 	if (kvs.pDatabaseIter)
 	{
-	    strcpy(name, kvs.pDatabaseIter->pszName);
+	    MPIU_Strncpy(name, kvs.pDatabaseIter->pszName, MPIDI_MAX_KVS_NAME_LEN);
 	}
 	else
 	{
