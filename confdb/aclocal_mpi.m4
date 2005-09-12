@@ -91,6 +91,7 @@ dnl Adds the following command line options to configure
 dnl+ \-\-with\-mpich[=path] - MPICH.  'path' is the location of MPICH commands
 dnl. \-\-with\-ibmmpi - IBM MPI
 dnl. \-\-with\-lammpi[=path] - LAM/MPI
+dnl. \-\-with\-mpichnt - MPICH NT
 dnl- \-\-with\-sgimpi - SGI MPI
 dnl If no type is selected, and a default ("mpich", "ibmmpi", or "sgimpi")
 dnl is given, that type is used as if '--with-<default>' was given.
@@ -101,6 +102,13 @@ dnl Also sets 'MPIBOOT' and 'MPIUNBOOT'.  These are used to specify
 dnl programs that may need to be run before and after running MPI programs.
 dnl For example, 'MPIBOOT' may start demons necessary to run MPI programs and
 dnl 'MPIUNBOOT' will stop those demons.
+dnl 
+dnl The two forms of the compilers are to allow for tests of the compiler
+dnl when the MPI version of the compiler creates executables that cannot
+dnl be run on the local system (for example, the IBM SP, where executables
+dnl created with mpcc will not run locally, but executables created
+dnl with xlc may be used to discover properties of the compiler, such as
+dnl the size of data types).
 dnl
 dnl See also:
 dnl PAC_LANG_PUSH_COMPILERS, PAC_LIB_MPI
@@ -234,6 +242,11 @@ case $ac_mpi_type in
 	;;
 
 	ibmmpi)
+	AC_CHECK_PROGS(MPCC,mpcc)
+	AC_CHECK_PROGS(MPXLF,mpxlf)
+	if test -z "$MPCC" -o -z "$MPXLF" ; then
+	    AC_MSG_ERROR([Could not find IBM MPI compilation scripts.  Either mpcc or mpxlf is missing])
+	fi
 	TESTCC=${CC-xlC}; TESTF77=${F77-xlf}; CC=mpcc; F77=mpxlf
 	# There is no mpxlf90, but the options langlvl and free can
 	# select the F90 version of xlf
