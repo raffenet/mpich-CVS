@@ -1177,9 +1177,9 @@ if AC_TRY_EVAL(ac_compile); then
     # many users are used to using FFLAGS (and CFLAGS) to select
     # different instruction sets, such as 64-bit with -xarch=v9 for 
     # Solaris.
-    if ${F77} $(FFLAGS) -o conftest conftest.o conftest1.o $LDFLAGS 2>&AC_FD_CC ; then
+    if ${F77} ${FFLAGS} -o conftest conftest.o conftest1.o $LDFLAGS 2>&AC_FD_CC ; then
 	AC_MSG_RESULT([Use Fortran to link programs])
-    elif ${CC} $(CFLAGS) -o conftest conftest.o conftest1.o $LDFLAGS $FLIBS 2>&AC_FD_CC ; then
+    elif ${CC} ${CFLAGS} -o conftest conftest.o conftest1.o $LDFLAGS $FLIBS 2>&AC_FD_CC ; then
 	AC_MSG_RESULT([Use C with FLIBS to link programs])
 	F77LINKER="$CC"
         F77_LDFLAGS="$F77_LDFLAGS $FLIBS"
