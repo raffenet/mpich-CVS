@@ -561,6 +561,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     context->spawn_context->launch_list = launch_list;
     context->spawn_context->num_outstanding_launch_cmds = 0;/*nproc;*/ /* this assumes all launch commands will be successfully posted. */
     smpd_fix_up_host_tree(smpd_process.host_list);
+
+#if 0 /* old way */
     host_iter = smpd_process.host_list;
     while (host_iter)
     {
@@ -574,10 +576,6 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    {
 		smpd_err_printf("unable to create a connect command.\n");
 		goto spawn_failed;
-		/*
-		smpd_exit_fn(FCNAME);
-		return result;
-		*/
 	    }
 	    host_iter->connect_cmd_tag = cmd->tag;
 	    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
@@ -585,20 +583,12 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    {
 		smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
 		goto spawn_failed;
-		/*
-		smpd_exit_fn(FCNAME);
-		return result;
-		*/
 	    }
 	    result = smpd_add_command_int_arg(cmd, "id", context->connect_to->id);
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
 		goto spawn_failed;
-		/*
-		smpd_exit_fn(FCNAME);
-		return result;
-		*/
 	    }
 	    if (smpd_process.plaintext)
 	    {
@@ -619,10 +609,6 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    {
 		smpd_err_printf("unable to post a write of the connect command.\n");
 		goto spawn_failed;
-		/*
-		smpd_exit_fn(FCNAME);
-		return result;
-		*/
 	    }
 
 	    context->spawn_context->result_cmd = temp_cmd;
@@ -630,6 +616,128 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    return SMPD_SUCCESS;
 	}
 	host_iter = host_iter->next;
+    }
+#endif
+
+    {
+	SMPD_BOOL first = SMPD_TRUE;
+	host_iter = smpd_process.host_list;
+	while (host_iter)
+	{
+	    if (host_iter->connected)
+	    {
+		if (host_iter->left != NULL && !host_iter->left->connected)
+		{
+		    context->connect_to = host_iter->left;
+
+		    /* create a connect command to be sent to the parent */
+		    result = smpd_create_command("connect", 0, context->connect_to->parent, SMPD_TRUE, &cmd);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create a connect command.\n");
+			goto spawn_failed;
+		    }
+		    host_iter->connect_cmd_tag = cmd->tag;
+		    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
+			goto spawn_failed;
+		    }
+		    result = smpd_add_command_int_arg(cmd, "id", context->connect_to->id);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
+			goto spawn_failed;
+		    }
+		    if (smpd_process.plaintext)
+		    {
+			/* propagate the plaintext option to the manager doing the connect */
+			result = smpd_add_command_arg(cmd, "plaintext", "yes");
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+			    goto spawn_failed;
+			}
+		    }
+
+		    smpd_dbg_printf("sending connect command to add new hosts for the spawn command.\n");
+		    /*printf("sending first connect command to add new hosts for the spawn command.\n");fflush(stdout);*/
+		    /* post a write of the command */
+		    result = smpd_post_write_command(context, cmd);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the connect command.\n");
+			goto spawn_failed;
+		    }
+
+		    if (first)
+		    {
+			context->spawn_context->result_cmd = temp_cmd;
+			first = SMPD_FALSE;
+		    }
+		}
+		if (host_iter->right != NULL && !host_iter->right->connected)
+		{
+		    context->connect_to = host_iter->right;
+
+		    /* create a connect command to be sent to the parent */
+		    result = smpd_create_command("connect", 0, context->connect_to->parent, SMPD_TRUE, &cmd);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to create a connect command.\n");
+			goto spawn_failed;
+		    }
+		    host_iter->connect_cmd_tag = cmd->tag;
+		    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the host parameter to the connect command for host %s\n", context->connect_to->host);
+			goto spawn_failed;
+		    }
+		    result = smpd_add_command_int_arg(cmd, "id", context->connect_to->id);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to add the id parameter to the connect command for host %s\n", context->connect_to->host);
+			goto spawn_failed;
+		    }
+		    if (smpd_process.plaintext)
+		    {
+			/* propagate the plaintext option to the manager doing the connect */
+			result = smpd_add_command_arg(cmd, "plaintext", "yes");
+			if (result != SMPD_SUCCESS)
+			{
+			    smpd_err_printf("unable to add the plaintext parameter to the connect command for host %s\n", context->connect_to->host);
+			    goto spawn_failed;
+			}
+		    }
+
+		    smpd_dbg_printf("sending connect command to add new hosts for the spawn command.\n");
+		    /*printf("sending first connect command to add new hosts for the spawn command.\n");fflush(stdout);*/
+		    /* post a write of the command */
+		    result = smpd_post_write_command(context, cmd);
+		    if (result != SMPD_SUCCESS)
+		    {
+			smpd_err_printf("unable to post a write of the connect command.\n");
+			goto spawn_failed;
+		    }
+
+		    if (first)
+		    {
+			context->spawn_context->result_cmd = temp_cmd;
+			first = SMPD_FALSE;
+		    }
+		}
+	    }
+	    host_iter = host_iter->next;
+	}
+
+	if (!first)
+	{
+	    /* At least one connect command was issued so return here */
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_SUCCESS;
+	}
     }
 
     /* create the new kvs space */
