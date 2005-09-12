@@ -128,9 +128,10 @@ AC_ARG_ENABLE(romio,
 [--enable-romio - Enable ROMIO MPI I/O implementation],
 ,enable_romio=yes)
 dnl
-AC_ARG_ENABLE(debuginfo,
-[--enable-debuginfo - Enable support for debuggers],
-,enable_debuginfo=no)
+dnl Comment out until support for totalview is possible
+dnl AC_ARG_ENABLE(debuginfo,
+dnl [--enable-debuginfo - Enable support for debuggers],
+dnl ,enable_debuginfo=no)
 dnl
 AC_ARG_ENABLE(nmpi-as-mpi,
 [--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
