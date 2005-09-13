@@ -601,6 +601,9 @@ namespace wmpiconfig
 
 		private void scan_button_Click(object sender, System.EventArgs e)
 		{
+			// Get the versions
+			versions_button_Click(sender, e);
+			// Then get the rest of the details
 			scan_progressBar.Value = 0;
 			scan_progressBar.Maximum = hosts_list.Items.Count;
 			output_textBox.Text = "";
