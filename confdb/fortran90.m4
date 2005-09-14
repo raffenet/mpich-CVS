@@ -1141,11 +1141,11 @@ cat > conftest1.$ac_ext_f90 <<EOF
        program main
        integer a
        a = 1
-       call t1(a)
+       call t1_2(a)
        end
 EOF
 cat > conftest2.f <<EOF
-       subroutine t1(b)
+       subroutine t1_2(b)
        integer b
        b = b + 1
        end
