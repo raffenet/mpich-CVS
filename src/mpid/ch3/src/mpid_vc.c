@@ -226,4 +226,143 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
     return MPI_SUCCESS;
 }
 
+/* 
+ * The following routines convert to/from the global pids, which are 
+ * represented as pairs of ints (process group id, rank in that process group)
+ */
 
+int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
+			    int local_gpids[], int *singlePG )
+{
+    int i;
+    int *gpid = local_gpids;
+    int lastPGID = -1, pgid;
+    MPID_VCR vc;
+    
+    *singlePG = 1;
+    for (i=0; i<comm_ptr->local_size; i++) {
+	vc = comm_ptr->vcr[i];
+
+	/* Get the process group id as an int */
+	MPIDI_PG_IdToNum( vc->pg, &pgid );
+
+	*gpid++ = pgid;
+	if (lastPGID != pgid) { 
+	    if (lastPGID != -1)
+		*singlePG = 0;
+	    lastPGID = pgid;
+	}
+	*gpid++ = vc->pg_rank;
+	if (vc->pg_rank != vc->lpid) {
+	    return 1;
+/*	    printf( "Unexpected results %d != %d\n",
+	    vc->pg_rank, vc->lpid ); */
+	}
+    }
+    
+    return 0;
+}
+
+/* 
+ * The following is a very simple code for looping through 
+ * the GPIDs
+ */
+int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
+{
+    int i;
+    int pgid;
+    MPIDI_PG_t *pg = 0;
+
+    for (i=0; i<size; i++) {
+	MPIDI_PG_Iterate_reset();
+	do {
+	    MPIDI_PG_Get_next( &pg );
+	    if (!pg) {
+		/* Internal error.  This gpid is unknown on this process */
+		lpid[i] = -1;
+		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					     "MPID_GPID_ToLpidArray", __LINE__,
+					     MPI_ERR_INTERN, "**unknowngpid",
+					     "**unknowngpid %d %d", 
+					     gpid[0], gpid[1] );
+	    }
+	    MPIDI_PG_IdToNum( pg, &pgid );
+	    if (pgid == gpid[0]) {
+		/* found the process group.  gpid[1] is the rank in 
+		   this process group */
+		lpid[i] = pg->vct[gpid[1]].lpid;
+		/* printf( "lpid[%d] = %d for gpid = (%d)%d\n", i, lpid[i], 
+		   gpid[0], gpid[1] ); */
+		break;
+	    }
+	} while (1);
+	gpid += 2;
+    }
+    return 0;
+}
+
+#if 0
+int MPID_LPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
+			    int local_lpids[] )
+{
+    int i;
+    
+    for (i=0; i<comm_ptr->local_size; i++) {
+	(void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &local_lpids[i] );
+    }
+    return 0;
+}
+#endif
+
+int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
+			    int size, const int lpids[] )
+{
+    MPID_Comm *commworld_ptr;
+    int i;
+
+    commworld_ptr = MPIR_Process.comm_world;
+    /* Setup the communicator's vc table: remote group */
+    MPID_VCRT_Create( size, &newcomm_ptr->vcrt );
+    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
+    for (i=0; i<size; i++) {
+	MPIDI_VC_t *vc = 0;
+
+	/* For rank i in the new communicator, find the corresponding
+	   rank in the comm world (FIXME FOR MPI2) */
+	/* printf( "[%d] Remote rank %d has lpid %d\n", 
+	   MPIR_Process.comm_world->rank, i, lpids[i] ); */
+	if (lpids[i] < commworld_ptr->remote_size) {
+	    vc = commworld_ptr->vcr[lpids[i]];
+	}
+	else {
+	    /* We must find the corresponding vcr for a given lpid */	
+	    /* For now, this means iterating through the process groups */
+	    MPIDI_PG_t *pg = 0;
+	    int j;
+
+	    MPIDI_PG_Iterate_reset();
+	    do {
+		MPIDI_PG_Get_next( &pg );
+		if (!pg) {
+		    return MPIR_Err_create_code( MPI_SUCCESS, 
+				     MPIR_ERR_RECOVERABLE,
+				     "MPID_VCR_CommFromLpids", __LINE__,
+				     MPI_ERR_INTERN, "**intern", 0 );
+		}
+		for (j=0; j<pg->size; j++) {
+		    if (pg->vct[j].lpid == lpids[i]) {
+			vc = &pg->vct[j];
+			/* printf( "found vc %x for lpid = %d in another pg\n", 
+			   (int)vc, lpids[i] ); */
+			break;
+		    }
+		}
+	    } while (!vc);
+	}
+
+	/* printf( "about to dup vc %x for lpid = %d in another pg\n", 
+	   (int)vc, lpids[i] ); */
+	MPID_VCR_Dup( vc, &newcomm_ptr->vcr[i] );
+    }
+    return 0;
+}

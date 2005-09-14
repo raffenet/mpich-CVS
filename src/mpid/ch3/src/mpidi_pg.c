@@ -446,4 +446,23 @@ fn_exit:
     return mpi_errno;
 }
 
+void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
+{
+    const char *p = (const char *)pg->id;
+    int pgid = 0;
+    while (*p && !isdigit(*p)) p++;
+    if (!*p) {
+	p = (const char *)pg->id;
+	while (*p) {
+	    pgid += *p - ' ';
+	}
+	pgid = pgid ^ 0x100;
+    }
+    else {
+	while (*p && isdigit(*p)) {
+	    pgid = pgid * 10 + (*p++ - '0');
+	}
+    }
+    *id = pgid;
+}
 #endif

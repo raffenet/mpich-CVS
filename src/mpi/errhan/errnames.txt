@@ -273,6 +273,8 @@ Fortran integer (value is %ld)
 **internrc %d:Internal MPI error!  Unexpected return code from internal function (rc=%d).
 **instatus:See the MPI_ERROR field in MPI_Status for the error code
 **inpending:Pending request (no error)
+**unknowngpid:Internal MPI error: Unknown gpid
+**unknowngpid %d %d:Internal MPI error: Unknown gpid (%d)%d
 **request:Invalid MPI_Request
 **request_invalid_kind:The supplied request was invalid
 **request_invalid_kind %d:The supplied request was invalid (kind=%d)

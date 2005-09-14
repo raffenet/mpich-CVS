@@ -601,4 +601,8 @@ MPIDI_CH3_WIN_DECL
 MPIDI_DEV_WIN_DECL
 #endif
 
+/* Tell Intercomm create and friends that the GPID routines have been
+   implemented */
+#define HAVE_GPID_ROUTINES
+
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */
