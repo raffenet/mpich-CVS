@@ -1,0 +1,131 @@
+\documentclass{article}
+\usepackage{graphics}
+\usepackage[dvipdfm]{hyperref}
+%
+% This is the new (September 2005) MPICH2 design document.  The plan is
+% to make this available both as a PDF document and split on the web in
+% an easy to read fashion.  We can use latex2html to tohtml to provide a 
+% simple version of this, and that may be enough.  However, to retain the
+% option of generating web pages directly from this source, only simple 
+% Latex should be used, and only the new forms (e.g., \texttt{...} instead of 
+% {\tt ...}
+%
+
+
+\makeindex
+
+\begin{document}
+
+\markright{MPICH Design Document}
+
+\title{MPICH2 Design Document}
+\author{William D. Gropp and Rajeev Thakur}
+\maketitle
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+
+%\raggedright
+%% raggedright resets parindent
+%\parindent 1em
+%% no parskip when parindent used
+%\parskip 0pt
+
+\pagenumbering{arabic}
+\pagestyle{headings}
+
+\part{MPICH2 organization for users}
+
+\section{Overview}
+     <<up here, explain that MPICH2 is a framework for MPI implementation with many possible choices, including specialized communication devices and interfaces to process managers, not ch3+mpd.  Duplicate this discussion in the top-level entry for developers>>
+
+\section{Communication Devices}
+
+\section{Process Managers}
+
+    other options 
+    <<this section partially overlaps the installation manual, but that manual doesn't cover much of the motivation for the design>>
+
+\section{Help Resources}
+
+\subsection{Frequently Asked Questions (FAQ)}
+
+\subsection{Diagnostic Programs}
+
+\subsection{Buglist archives}
+
+
+\part{MPICH2 organization for developers and hackers}
+
+
+    <<each section (as appropriate) contains a rationale for the choices and a brief discussion of alternatives and why they were not chosen>>
+
+\section{Goals of MPICH2}
+
+
+\subsection{Principles}
+         No duplicated code (no cut and paste programming) 
+         Uniform appearance of code
+         Uniform user interface for controls (e.g., standardized parameter handling, output, naming)
+         Coverage and Testing
+
+\subsection{Major components}
+         devices
+              the ch3 device and channels
+         process managers and PM interface
+         logging
+         collectives
+         topology
+
+\subsection{Build System}
+         rationale
+              why not automake
+              why not libtool
+         using the build system
+         using your own configure/make/build scripts
+
+\subsection{Coding Style}
+         Code template for uniform error checking and reporting (e.g., common \texttt{fn\_fail} target)
+         Macros for common operations
+              error reporting
+              memory allocation
+              debugging
+         Safer or more efficient replacements for common routines
+              safe string routines
+              memcpy hooks
+         Error reporting
+              Rationale
+               Adding new error classes and codes
+         Tags for coverage analysis
+
+\subsection{Language Bindings}
+           rationale for buildiface
+           Outstanding issues
+
+\subsection{Scripts and Standards for user interfaces}
+           command line and environment variables
+
+\section{Adding your own implementation of a component}
+         General mechanism (--with-<<component-name>>=directory, e.g., --with-pm=/home/me/mypm)
+              configure and setup scripts
+              standardized variables (\texttt{MPI\_CFLAGS}, CFLAGS, etc.)
+         Specific components (describe, explain the API/ABI, and how to work with it):
+             collecitves
+             pm and pmi
+             name server
+             mpid
+             ch3-channel
+             logging
+             topology
+          Components still evolving (a placeholder for things that we want to do)
+
+\section{Working with MPICH2 itself}
+          <<for people that edit MPICH2 rather than use the component interface>>
+          Coding standards
+          Keeping configure clean
+          Keeping MPICH modular
+          
+
+\end{document}

@@ -1,5 +1,5 @@
-DOC_SUBDIRS = mansrc userguide installguide smpd logging windev
-NOTSIMPLEMAKE_SUBDIRS = userguide installguide smpd logging windev
+DOC_SUBDIRS = mansrc userguide installguide smpd logging windev design
+NOTSIMPLEMAKE_SUBDIRS = userguide installguide smpd logging windev design
 
 DEVELOPER_SUBDIRS = pmi namepub 
 
