@@ -613,6 +613,15 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
+
+dnl
+dnl Etags
+AC_CHECK_PROGS(ETAGS,etags,true)
+AC_SUBST(ETAGS)
+AC_SUBST(ETAGSADD)
+export ETAGS
+export ETAGSADD
+
 AC_OUTPUT_COMMANDS([chmod a+x maint/testmerge])
 AC_OUTPUT_COMMANDS([chmod a+x runtests])
 dnl Note that this format for AC_OUTPUT can cause problems for autoconf

@@ -1482,6 +1482,39 @@ fi
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
 
+# Check for etags.  Note that different versions of etags take
+# different arguments for specifying the language to use in parsing a 
+# file.  Older versions only accept -l c or --language c as a way to 
+# *change* the interpretation of the following files; newer versions 
+# allow --langmap=c:+.i to add a file extension to those that are C 
+# programs.
+AC_CHECK_PROGS(ETAGS,etags,true)
+if test -n "$ETAGS" -a "$ETAGS" != true ; then
+    # Check for the --langmap argument
+    AC_MSG_CHECKING([for etags argument to specify language])
+    cat >>conftest.c <<EOF
+int footest = 0;
+EOF
+    if $ETAGS --langmap=c:+.i conftest.c -o conftesttags >/dev/null 2>&1 ; then 
+        ETAGSADD="--langpam=c:+.i"
+    else
+        if $ETAGS --language=c conftest.c -o conftesttags >/dev/null 2>&1 ; then
+	    ETAGSADD="--language=c"
+        else
+	    ETAGS=true
+	    AC_MSG_WARN([Could not find working etags])
+        fi
+    fi
+    if test -n "$ETAGSADD" ; then
+        AC_MSG_RESULT($ETAGSADD)
+    fi
+    rm -f conftest*
+fi
+AC_SUBST(ETAGS)
+AC_SUBST(ETAGSADD)
+export ETAGS
+export ETAGSADD
+
 # Set CFLAGS for enable strict if necessary
 PAC_CC_STRICT
 # Check for broken handling of common symbols.  There are two fixes:
@@ -4208,6 +4241,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  doc/installguide/Makefile \
 	  doc/userguide/Makefile \
 	  doc/logging/Makefile \
+	  doc/design/Makefile \
 	  doc/smpd/Makefile \
 	  doc/windev/Makefile )
 

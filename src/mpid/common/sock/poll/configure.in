@@ -169,5 +169,13 @@ AC_SUBST(master_top_builddir)
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
+dnl
+dnl Etags
+AC_CHECK_PROGS(ETAGS,etags,true)
+AC_SUBST(ETAGS)
+AC_SUBST(ETAGSADD)
+export ETAGS
+export ETAGSADD
+
 
 AC_OUTPUT(Makefile localdefs)

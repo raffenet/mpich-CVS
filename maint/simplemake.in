@@ -2775,7 +2775,10 @@ sub TargetTags {
     if ($has_headers || $has_sources) {
 	# Make it eaiser to change the tags program options.
 	# For example, this adds .i as a known "C" language file
-	printMakeVariable( FD, "ETAGS", "etags --langmap=c:+.i" );
+	printMakeVariable( FD, "ETAGS", "\@ETAGS\@ \@ETAGSADD\@" );
+	# The value of ETAGS was "etags --langmap=c:+.i" but
+	# some Linux systems have a very old version of etags
+	# that does not support --langmap.
     }
 
     # Add a synonym for tags.
