@@ -5,6 +5,8 @@ smvar_do_sharedlibs = 0
 
 namepub_SOURCES = namepub.c
 spawn1_SOURCES = spawn1.c
+spawninfo1_SOURCES = spawninfo1.c
+spawnminfo1_SOURCES = spawnminfo1.c
 spawn2_SOURCES = spawn2.c
 spawnintra_SOURCES = spawnintra.c
 spawnargv_SOURCES = spawnargv.c
