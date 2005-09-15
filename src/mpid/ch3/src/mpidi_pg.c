@@ -465,4 +465,13 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
     }
     *id = pgid;
 }
+#else
+/* FIXME: This is a temporary hack for devices that do not define
+   MPIDI_DEV_IMPLEMENTS_KVS
+   FIXME: MPIDI_DEV_IMPLEMENTS_KVS should be removed
+ */
+void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
+{
+    *id = 0;
+}
 #endif
