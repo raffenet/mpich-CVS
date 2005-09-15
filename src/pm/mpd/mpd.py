@@ -1045,7 +1045,9 @@ class MPD(object):
             return
         hosts = msg['hosts']
         if self.myIfhn in hosts.values():
-            for ranks in hosts.keys():
+            hostsKeys = hosts.keys()
+            hostsKeys.sort()
+            for ranks in hostsKeys:
                 if hosts[ranks] == self.myIfhn:
                     (lorank,hirank) = ranks
                     for rank in range(lorank,hirank+1):
