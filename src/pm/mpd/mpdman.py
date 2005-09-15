@@ -1084,8 +1084,8 @@ class MPDMan(object):
                 self.spawnPaths[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['path']
             else:
                 self.spawnPaths[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = os.environ['MPDMAN_CLI_PATH']
-            if pmiInfo.has_key('cwd'):
-                self.spawnCwds[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['cwd']
+            if pmiInfo.has_key('wdir'):
+                self.spawnCwds[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = pmiInfo['wdir']
             else:
                 self.spawnCwds[(self.tpsf,self.tpsf+self.spawnNprocs-1)] = os.environ['MPDMAN_CWD']
             if pmiInfo.has_key('umask'):
