@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{report}
 \usepackage{graphics}
 \usepackage[dvipdfm]{hyperref}
 %
@@ -38,23 +38,23 @@
 
 \part{MPICH2 organization for users}
 
-\section{Overview}
+\chapter{Overview}
      <<up here, explain that MPICH2 is a framework for MPI implementation with many possible choices, including specialized communication devices and interfaces to process managers, not ch3+mpd.  Duplicate this discussion in the top-level entry for developers>>
 
-\section{Communication Devices}
+\chapter{Communication Devices}
 
-\section{Process Managers}
+\chapter{Process Managers}
 
     other options 
-    <<this section partially overlaps the installation manual, but that manual doesn't cover much of the motivation for the design>>
+    <<this chapter partially overlaps the installation manual, but that manual doesn't cover much of the motivation for the design>>
 
-\section{Help Resources}
+\chapter{Help Resources}
 
-\subsection{Frequently Asked Questions (FAQ)}
+\section{Frequently Asked Questions (FAQ)}
 
-\subsection{Diagnostic Programs}
+\section{Diagnostic Programs}
 
-\subsection{Buglist archives}
+\section{Buglist archives}
 
 
 \part{MPICH2 organization for developers and hackers}
@@ -62,16 +62,16 @@
 
     <<each section (as appropriate) contains a rationale for the choices and a brief discussion of alternatives and why they were not chosen>>
 
-\section{Goals of MPICH2}
+\chapter{Goals of MPICH2}
 
 
-\subsection{Principles}
+\section{Principles}
          No duplicated code (no cut and paste programming) 
          Uniform appearance of code
          Uniform user interface for controls (e.g., standardized parameter handling, output, naming)
          Coverage and Testing
 
-\subsection{Major components}
+\section{Major components}
          devices
               the ch3 device and channels
          process managers and PM interface
@@ -79,14 +79,14 @@
          collectives
          topology
 
-\subsection{Build System}
+\section{Build System}
          rationale
               why not automake
               why not libtool
          using the build system
          using your own configure/make/build scripts
 
-\subsection{Coding Style}
+\section{Coding Style}
          Code template for uniform error checking and reporting (e.g., common \texttt{fn\_fail} target)
          Macros for common operations
               error reporting
@@ -100,28 +100,56 @@
                Adding new error classes and codes
          Tags for coverage analysis
 
-\subsection{Language Bindings}
+\section{Major Structures}
+      request, comm, group, etc.
+
+\section{Selecting Features at Compile Time}
+     use of macros to control which code is used
+     list of all macros
+
+\section{Language Bindings}
            rationale for buildiface
            Outstanding issues
 
-\subsection{Scripts and Standards for user interfaces}
+\section{Scripts and Standards for user interfaces}
            command line and environment variables
 
-\section{Adding your own implementation of a component}
+\chapter{Adding your own implementation of a component}
          General mechanism (--with-<<component-name>>=directory, e.g., --with-pm=/home/me/mypm)
               configure and setup scripts
               standardized variables (\texttt{MPI\_CFLAGS}, CFLAGS, etc.)
          Specific components (describe, explain the API/ABI, and how to work with it):
-             collecitves
-             pm and pmi
-             name server
-             mpid
-             ch3-channel
-             logging
-             topology
+
+Two types 
+
+configure/compile-time
+
+link/runtime
+
+\section{Collectives}
+\section{Topology}
+\section{Logging}
+    --with-logging=/pathname
+    looks for setup_logging script.  Makefile will be invoked with (null),
+    clean, dist-clean, maintainer-clean, library target?
+
+    Must provide an mpilogging.h file (contents defined as...)
+
+    Example (give example directory on web)
+
+    Builtin versions...
+
+\section{PM and PMI}
+\section{Name Server}
+
+    --with-nameserver=...
+
+\section{mpid}
+\section{ch3-channel}
+
           Components still evolving (a placeholder for things that we want to do)
 
-\section{Working with MPICH2 itself}
+\chapter{Working with MPICH2 itself}
           <<for people that edit MPICH2 rather than use the component interface>>
           Coding standards
           Keeping configure clean
