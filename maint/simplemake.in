@@ -279,6 +279,8 @@ $mandir_name =               "mandir          = \@mandir\@";
 $htmldir_name =              "htmldir         = \@htmldir\@";
 $docdir_name =               "docdir          = \@docdir\@";
 $sysconfdir_name =           "sysconfdir      = \@sysconfdir\@";
+$builddir_name =             "builddir        = \@builddir\@";
+$abs_builddir_name =         "abs_builddir    = \@abs_builddir\@";
 # top_builddir is used by libtool.  We use master_top_builddir because
 # the various configure scripts need to use the root of the build (that
 # is the model that we use for simplemake projects)
@@ -295,6 +297,8 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 	     'includedir' => $includedir_name,
 	     'master_top_srcdir' => $master_topsrcdir_name,
 	     'top_builddir' => $top_builddir_name,
+	     'builddir'   => $builddir_name,
+	     'abs_builddir' => $abs_builddir_name,
 	     'mandir'     => $mandir_name,
 	     'htmldir'    => $htmldir_name,
 	     'docdir'     => $docdir_name,
@@ -1455,7 +1459,9 @@ sub ClearVars {
     # We include abs_srcdir because it is useful to know and some
     # steps may conditionally need it (so we may not know that we also
     # need abs_srcdir until it is too late to add it)
-    %dirs_seen = ( "srcdir" => 1, "abs_srcdir" => 1 );
+    # We include abs_builddir because it is useful to have the
+    # build directory around (particularly for the TAGS step)
+    %dirs_seen = ( "srcdir" => 1, "abs_srcdir" => 1, "abs_builddir" => 1 );
     $other_vars = "";
     $other_text = "";
     $regular_sources = "";
@@ -2747,17 +2753,48 @@ sub TargetPrograms {
 # ===========================================================================
 sub TargetTags {
     if (!$local_tags && !$root_tags) { return; }
-    
+
+    my $headerFiles = "";
+    my $foundDerivedHeader = 0;
+    my $sourceFiles = "";
+    my $foundDerivedSource = 0;
+    my $inputSources = "";
+
     # Generate a listing of header and source files
     $has_sources = 0;
     $has_headers = 0;
-    if ($regular_sources ne "") {
+    if ($regular_sources =~ /\S/) {
 	printMakeVariable( FD, "SOURCES", $regular_sources );
+	$inputSources = $regular_sources;
 	$has_sources = 1;
     }
     elsif (defined($makevars{'SOURCES'})) {
-	$has_sources = 1;
+	if ($makevars{'SOURCES'} =~ /\S/) {
+	    $has_sources = 1;
+	    $inputSources = $makevars{'SOURCES'};
+	}
     }
+    if ($has_sources) {
+	foreach my $file (split(/\s+/,$inputSources)) {
+	    if (! ($file =~ /\S/)) { next; }
+	    # Check that these files exist, either directly or 
+	    # as a '.in' version
+	    if (-s "$file.in") {
+		$sourceFiles .= "\$(abs_builddir)/$file ";
+		$foundDerivedSource = 1;
+	    }
+	    elsif (-s "$file") {
+		$sourceFiles .= "$file ";
+	    }
+	    else {
+		# Only complain about C files for now
+		if ($file =~ /.*\.c$/) {
+		    print STDERR "Warning: source file $file or $file.in not found in $curdir\n";
+		}
+	    }
+	}
+    }
+
     if ($regular_headers ne "") {
 	printMakeVariable( FD, "HEADERS", $regular_headers );
 	$has_headers = 1;
@@ -2768,7 +2805,20 @@ sub TargetTags {
 	# headers is used to check on files that aren't handled by
 	# simplemake
 	foreach my $file (split(/\s+/,$makevars{'HEADERS'})) {
+	    if (! ($file =~ /\S/)) { next; }
 	    $headers{$file} = 1;
+	    # Check that these files exist, either directly or 
+	    # as a '.in' version
+	    if (-s "$file.in") {
+		$headerFiles .= "\$(abs_builddir)/$file ";
+		$foundDerivedHeader = 1;
+	    }
+	    elsif (-s "$file") {
+		$headerFiles .= "$file ";
+	    }
+	    else {
+		print STDERR "Warning: header file $file or $file.in not found in $curdir\n";
+	    }
 	}
     }
 
@@ -2782,26 +2832,37 @@ sub TargetTags {
     }
 
     # Add a synonym for tags.
+    if ($foundDerivedHeader) {
+	printMakeVariable( FD, "HEADERFILES", $headerFiles );
+    }
+    else {
+	printMakeVariable( FD, "HEADERFILES", '$(HEADERS)' );
+    }
+    if ($foundDerivedSource) {
+	printMakeVariable( FD, "SOURCEFILES", $sourceFiles );
+    }
+    else {
+	printMakeVariable( FD, "SOURCEFILES", '$(SOURCES)' );
+    }
     print FD "tags: TAGS$newline"; 
     print FD "TAGS:";
     # Only generate a local etags call if there are local sources
     # This target is designed for VPATH builds to build a TAGS file in
-    # a vpath location.
     if ($has_headers || $has_sources) {
         if ($local_tags) {
-	    print FD '${HEADERS} ${SOURCES}
+	    print FD '${HEADERFILES} ${SOURCEFILES}
 	here=`pwd`;\
-	(cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERS} ${SOURCES};)
+	(cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES};)
 ';
         }
         elsif ($root_tags) {
-	    print FD "\${HEADERS} \${SOURCES}$newline";
+	    print FD "\${HEADERFILES} \${SOURCEFILES}$newline";
 	    $rpath = $rootdirpath;
 	    $rpath =~ s/\/$//;
 	    # For vpath builds, make the root path point to the
 	    # VPATH root.
 	    
-	    print FD "\there=\`cd $rpath && pwd\` ; cd \${srcdir} && \$(ETAGS) -o \$\$here/TAGS --append \${HEADERS} \${SOURCES}$newline";
+	    print FD "\there=\`cd $rpath && pwd\` ; cd \${srcdir} && \$(ETAGS) -o \$\$here/TAGS --append \${HEADERFILES} \${SOURCEFILES}$newline";
         }
         else {
 	    print FD "$newline";
