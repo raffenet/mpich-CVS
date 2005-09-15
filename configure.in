@@ -837,10 +837,6 @@ for pm_name in $pm_names ; do
         pm_name=""
     else
         subsystems="$subsystems src/pm/$pm_name"
-	other_install_dirs="${other_install_dirs} src/pm/$pm_name"
-	# FIXME: in the multiple pm case, we need to be careful that
-	# the PMs don't add conflicting definitions to the configure
-	# environment
         if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
 	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
 	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
@@ -854,6 +850,12 @@ fi
 pm_name=$first_pm_name
 AC_SUBST(pm_name)
 AC_SUBST(other_pm_names)
+
+other_install_dirs="${other_install_dirs} src/pm/$first_pm_name"
+# FIXME: in the multiple pm case, we need to be careful that
+# the PMs don't add conflicting definitions to the configure
+# environment.  To ensure that, we'll need an alternate install target
+# (e.g., cd src/pm/$other_pm_name && make install-alt)
 
 if test $with_mpe != no ; then
     if test ! -d $use_top_srcdir/src/mpe2 ; then
