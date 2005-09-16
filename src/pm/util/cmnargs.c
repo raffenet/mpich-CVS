@@ -49,6 +49,12 @@
    one per line, with # as a comment indicator, e.g., the usual
    mpiexec input, but with ":" replaced with a newline.  That is,
    the configfile contains lines with -soft, -n etc.
+
+ In addition, to enable singleton init, mpiexec should allow
+
+   -pmi_args host port executable
+
+ mpiexec starts, then connects to the host:port for PMI communication
 */
 
 /* Internal routines */
