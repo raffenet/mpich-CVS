@@ -60,7 +60,7 @@ $hasDemon   = 0;
 );
 %chosenEnable = ();
 @with_array = (
-	       'logging;none;rlog;dlog',
+	       'logging;none;rlog',
 	       'pmi;simple',    #; uni no longer supported
 	       'pm;gforker;mpd', #;remshell
 	       'namepublisher;no;file', #;ldap:ldapserver',
@@ -122,6 +122,14 @@ $SumInstEnd   = "\n";
 $SumTestRunStart = "Test status = ";
 $SumTestRunEnd   = "\n";
 
+# Defaults
+$config_args = "";
+$with_args   = "";
+$enable_args = "";
+$env_args    = "";
+$outfile     = "";
+$builddir    = "";
+$instdir     = "";
 # Read the arguments
 foreach $_ (@ARGV) {
     if (/-enable-n=(\d*)/) {
@@ -245,6 +253,21 @@ sub RunTest {
 	print STDERR "Cannot change to $builddir\n";
 	return;
     }
+    # Clean the installation and build directories
+    # Even better would be to remove the installation directory alltogether,
+    # but we should only do that if explicitly requested (we could
+    # *require* an empty directory for the tests instead)
+    if (-d "$instdir/lib") {
+	system "rm -f $instdir/lib/libmpich*.* $instdir/libfmpich*.*";
+	system "rm -f $instdir/lib/libmpe*.a";
+    }
+    if (-d "$instdir/bin") {
+	system "rm -f $instdir/bin/mpi* $instdir/bin/mpd*";
+    }
+    if (-d "$builddir/lib") {
+	system "rm -f $builddir/lib/libmpich*.* $builddir/libfmpich*.*";
+	system "rm -f $builddir/lib/libmpe*.a";
+    }
     # 
     # Create the with and enable options
     #$enable_args = "--enable-strict";  # Only if compiler is gcc
@@ -322,7 +345,9 @@ sub RunTest {
     $config_status    = "none";
     $make_status      = "none";
     $globcheck_status = "none";
-    $usedname_status  = "none";
+    # usedname is from the old test to check for which routines
+    # were loaded for the simplest MPI Hello World program.
+    #$usedname_status  = "none";
     $install_status   = "none";
     $test_status      = "none";
     if ($show) {
@@ -923,7 +948,7 @@ sub RunProgram {
 	$signal_num = $rc & 127;
 	if ($rc > 255) { $rc = $rc >> 8; }
 	if ($signal_num != 0 && $report_signals) {
-	    print OUTFD "Process exited with signal $signalnum\n";
+	    print OUTFD "Process exited with signal $signal_num\n";
 	}
     }
     if ($echoSteps) {
