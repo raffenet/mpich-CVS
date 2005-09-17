@@ -232,12 +232,12 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
     int mpi_errno = MPI_SUCCESS;
     mqshm_t *q_ptr;
     int index;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_MQSHM_SEND);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_MQSHM_SEND);
     if (length > BOOTSTRAP_MAX_MSG_SIZE)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_SEND);
 	return mpi_errno;
     }
     /*printf("[%d] send: looking up id %d\n", MPIR_Process.comm_world->rank, id);fflush(stdout);*/
@@ -246,7 +246,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
     if (q_ptr == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_SEND);
 	return mpi_errno;
     }
     do
@@ -300,7 +300,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	    q_ptr->inuse = 0;
 #endif
 	    MPIDU_Process_unlock(&q_ptr->lock);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_SEND);
 	    return MPI_SUCCESS;
 	}
 #ifdef DBG_TEST_LOCKING
@@ -310,7 +310,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	MPIDU_Yield();
     } while (blocking);
     *num_sent = 0;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_MPIDI_CH3I_MQSHM_SEND);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_SEND);
     return MPI_SUCCESS;
 }
 
