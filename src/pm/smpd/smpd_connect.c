@@ -855,14 +855,36 @@ void smpd_get_password(char *password)
 void smpd_get_account_and_password(char *account, char *password)
 {
     size_t len;
+#ifdef HAVE_WINDOWS_H
+    char default_username[100] = "";
+    ULONG default_len = 100;
+#endif
 
     smpd_enter_fn(FCNAME);
+
+#ifdef HAVE_WINDOWS_H
+    if (!GetUserNameEx(NameSamCompatible, default_username, &default_len))
+    {
+	default_username[0] = '\0';
+    }
+#endif
 
     do
     {
 	do
 	{
+#ifdef HAVE_WINDOWS_H
+	    if (default_username[0] != '\0')
+	    {
+		fprintf(stderr, "account (domain\\user) [%s]: ", default_username);
+	    }
+	    else
+	    {
+		fprintf(stderr, "account (domain\\user): ");
+	    }
+#else
 	    fprintf(stderr, "account (domain\\user): ");
+#endif
 	    fflush(stderr);
 	    *account = '\0';
 	    fgets(account, 100, stdin);
@@ -874,6 +896,12 @@ void smpd_get_account_and_password(char *account, char *password)
 		else
 		    break;
 	    }
+#ifdef HAVE_WINDOWS_H
+	    if ((strlen(account) == 0) && (default_username[0] != '\0'))
+	    {
+		strcpy(account, default_username);
+	    }
+#endif
 	} 
 	while (strlen(account) == 0);
 
