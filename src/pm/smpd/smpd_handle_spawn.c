@@ -29,6 +29,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     SMPD_BOOL env_channel_specified = SMPD_FALSE;
     SMPD_BOOL env_dll_specified = SMPD_FALSE;
     SMPD_BOOL env_wrap_dll_specified = SMPD_FALSE;
+    smpd_map_drive_node_t *map_node, *drive_map_list = NULL;
 
     smpd_enter_fn(FCNAME);
 
@@ -156,6 +157,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	node.priority_thread = -1;
 	cur_env_loc = node.env_data;
 	env_maxlen = SMPD_MAX_ENV_LENGTH;
+	drive_map_list = NULL;
 
 	if (info != NULL)
 	{
@@ -329,7 +331,29 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		free(env_str);
 	    }
 	    /* wdir */
+	    if ((strcmp(info[j].key, "wdir") == 0) || (strcmp(info[j].key, "dir") == 0))
+	    {
+		strcpy(node.dir, info[j].val);
+		smpd_dbg_printf("wdir = %s\n", info[j].val);
+	    }
 	    /* map */
+	    if (strcmp(info[j].key, "map") == 0)
+	    {
+		if ((strlen(info[j].val) > 2) && (info[j].val[1] == ':'))
+		{
+		    map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
+		    if (map_node == NULL)
+		    {
+			smpd_err_printf("Error: malloc failed to allocate map structure.\n");
+			goto spawn_failed;
+		    }
+		    map_node->ref_count = 0;
+		    map_node->drive = info[j].val[0];
+		    strncpy(map_node->share, &(info[j].val[2]), SMPD_MAX_EXE_LENGTH);
+		    map_node->next = drive_map_list;
+		    drive_map_list = map_node;
+		}
+	    }
 	    /* etc */
 	}
 
@@ -387,7 +411,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    launch_iter->iproc = cur_iproc++;
 	    launch_iter->args[0] = '\0';
 	    launch_iter->clique[0] = '\0';
-	    launch_iter->dir[0] = '\0';
+	    /*launch_iter->dir[0] = '\0';*/
+	    strcpy(launch_iter->dir, node.dir);
 	    strcpy(launch_iter->env_data, node.env_data);
 	    launch_iter->env = launch_iter->env_data;
 	    launch_iter->exe[0] = '\0';
@@ -403,7 +428,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		launch_iter->hostname[0] = '\0';
 		launch_iter->alt_hostname[0] = '\0';
 	    }
-	    launch_iter->map_list = NULL;
+	    launch_iter->map_list = drive_map_list;
 	    launch_iter->path[0] = '\0';
 	    launch_iter->priority_class = node.priority_class;
 	    launch_iter->priority_thread = node.priority_thread;
