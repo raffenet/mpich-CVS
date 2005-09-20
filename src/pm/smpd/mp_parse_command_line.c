@@ -429,6 +429,25 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    fflush(stdout);
 	    smpd_exit(0);
 	}
+	if (strcmp((*argvp)[1], "-whoami") == 0)
+	{
+	    char username[100] = "";
+	    ULONG len = 100;
+	    if (GetUserNameEx(NameSamCompatible, username, &len))
+	    {
+		printf("%s\n", username);
+	    }
+	    else if (GetUserName(username, &len))
+	    {
+		printf("%s\n", username);
+	    }
+	    else
+	    {
+		printf("ERROR: Unable to determine the current username.\n");
+	    }
+	    fflush(stdout);
+	    smpd_exit(0);
+	}
 
 	if (strcmp((*argvp)[1], "-add_job") == 0)
 	{
