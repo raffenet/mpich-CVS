@@ -755,12 +755,14 @@ class MPD(object):
             self.do_mpdrun(msg)
         elif msg['cmd'] == 'mpdtrace_info':
             if msg['dest'] == self.myId:
-                self.conSock.send_dict_msg(msg)
+                if self.conSock:
+                    self.conSock.send_dict_msg(msg)
             else:
                 self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'mpdtrace_trailer':
             if msg['dest'] == self.myId:
-                self.conSock.send_dict_msg(msg)
+                if self.conSock:
+                    self.conSock.send_dict_msg(msg)
             else:
                 msgToSend = { 'cmd'     : 'mpdtrace_info',
                               'dest'    : msg['dest'],
@@ -774,12 +776,14 @@ class MPD(object):
                 self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'mpdlistjobs_info':
             if msg['dest'] == self.myId:
-                self.conSock.send_dict_msg(msg)
+                if self.conSock:
+                    self.conSock.send_dict_msg(msg)
             else:
                 self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'mpdlistjobs_trailer':
             if msg['dest'] == self.myId:
-                self.conSock.send_dict_msg(msg)
+                if self.conSock:
+                    self.conSock.send_dict_msg(msg)
             else:
                 for jobid in self.activeJobs.keys():
                     for manPid in self.activeJobs[jobid]:
