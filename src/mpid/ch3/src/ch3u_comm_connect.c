@@ -349,9 +349,9 @@ int MPIDI_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm
     {
 	char *pg_str;
 
-	pg_iter = pg_list;
-	while (pg_iter != NULL)
+	while (pg_list != NULL)
 	{
+	    pg_iter = pg_list;
 	    i = (int)(strlen(pg_iter->str) + 1);
 	    /*printf("connect:sending 1 int: %d\n", i);fflush(stdout);*/
 	    mpi_errno = MPIC_Send(&i, 1, MPI_INT, 0, sendtag++, tmp_comm->handle);
@@ -371,7 +371,10 @@ int MPIDI_Comm_connect(char *port_name, int root, MPID_Comm *comm_ptr, MPID_Comm
 		goto fn_exit;
 	    }
 	    /* --END ERROR HANDLING-- */
-	    pg_iter = pg_iter->next;
+	    pg_list = pg_list->next;
+	    MPIU_Free(pg_iter->str);
+	    MPIU_Free(pg_iter->pg_id);
+	    MPIU_Free(pg_iter);
 	}
 
 	for (i=0; i<n_remote_pgs; i++)
