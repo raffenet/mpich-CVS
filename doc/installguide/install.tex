@@ -704,6 +704,9 @@ variable or they can set it in their own .mpd.conf file, e.g.:
 \begin{verbatim}
 MPD_USE_MPD_ROOT=1
 \end{verbatim}
+When root starts the mpds in the ring, the procedure is the same as for a regular
+user except that root's configuration file is in /etc/mpd.conf (note that
+there is no leading dot in the file name).
 
 \subsection{SMPD}
 \label{sec:smpd}
