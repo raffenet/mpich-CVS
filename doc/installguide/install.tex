@@ -346,6 +346,7 @@ machine even if the machine name appears in the hosts file multiple times.
 The -1 option can be used to override this behavior, but there is typically
 no reason for a user to need multiple mpds on a single host.
 The -1 option exists mostly to support internal testing.
+The \texttt{--help} option explains these as well as other useful options.
 
 Check to see if all the hosts you listed in mpd.hosts are in the output
 of 
@@ -1345,6 +1346,14 @@ Then, on n1 run:
 The mpdboot command should read the mpd.hosts file created above and
 run an mpd on each of the two machines.  The mpdtrace and mpiexec show
 the ring up and functional.
+Options that may be useful are:
+\begin{itemize}
+    \item \texttt{--help} use this one for extra details on all options
+    \item \texttt{-v} (verbose)
+    \item \texttt{--chkup} tries to verify that the hosts are up before starting mpds
+    \item \texttt{--chkuponly }only performs the verify step, then ends
+\end{itemize}
+
 To bring the ring down:
 \begin{verbatim}
     n1 $  mpdallexit
