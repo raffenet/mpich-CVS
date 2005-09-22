@@ -141,12 +141,15 @@ later, in the section "Alternative configurations".
     the README file in mpich2-1.0.2/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     use the mpigdb debugger.
-    If you have problems getting the mpd ring established, see the
+    If you have problems getting the MPD ring established, see the
     Installation Guide for instructions on how to diagnose problems
-    with your system configuration that may be preventing it.
+    with your system configuration that may be preventing it.  Also
+    see that guide if you plan to run MPD as root on behalf of users.
+    Please be aware that we do not recommend running MPD as root until
+    you have done testing to make sure that all is well.
 
-    Begin by placing in your home directory a file named .mpd.conf,
-    containing the line 
+    Begin by placing in your home directory a file named .mpd.conf
+    (/etc/mpd.conf if root), containing the line 
 
       secretword=<secretword>
 
@@ -297,9 +300,7 @@ later, in the section "Alternative configurations".
     See the User's Guide for much more detail on arguments to mpiexec.
 
     The mpirun command from the original MPICH is still available,
-    although it does not support as many options as mpiexec.  You might
-    want to use it in the case where you do not have the XML parser
-    required for the use of mpiexec.
+    although it does not support as many options as mpiexec.
 
 If you have completed all of the above steps, you have successfully
 installed MPICH2 and run an MPI example.  
