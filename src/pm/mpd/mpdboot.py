@@ -279,6 +279,7 @@ def mpdboot():
                 hostsAndInfo[idxToStart]['entry_port'] = entryPort
                 if hostsSeen.has_key(hostsAndInfo[idxToStart]['host']):
                     remoteConArg = '-n'
+                ifhn = hostsAndInfo[idxToStart]['ifhn']
                 mpdArgs = '%s -h %s -p %s %s --ncpus=%d' % (remoteConArg,entryHost,entryPort,ifhn,myNcpus)
                 (mpdPID,mpdFD) = launch_one_mpd(idxToStart,currRoot,mpdArgs,hostsAndInfo)
                 numStarting += 1
