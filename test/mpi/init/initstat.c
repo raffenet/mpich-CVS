@@ -20,7 +20,7 @@ int main( int argc, char *argv[] )
     MPI_Is_thread_main( &flag );
     if (!flag) {
 	errs++;
-	printf( "This thread call init_thread but Is_thread_main gave false\n" );
+	printf( "This thread called init_thread but Is_thread_main gave false\n" );
     }
     MPI_Query_thread( &claimed );
     if (claimed != provided) {
