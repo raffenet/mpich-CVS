@@ -49,9 +49,13 @@ int main( int argc, char *argv[] )
 	    /* Check for success */
 	    for (i=0; i<2; i++) {
 		if (s[i].MPI_TAG < 10 && s[i].MPI_ERROR != MPI_SUCCESS) {
+		    char msg[MPI_MAX_ERROR_STRING];
+		    int msglen = MPI_MAX_ERROR_STRING;
 		    errs++;
-		    printf( "correct msg had error class %d\n", 
+		    printf( "correct msg had error code %d\n", 
 			    s[i].MPI_ERROR );
+		    MPI_Error_string( s[i].MPI_ERROR, msg, &msglen );
+		    printf( "Error message was %s\n", msg );
 		}
 		else if (s[i].MPI_TAG >= 10 && s[i].MPI_ERROR == MPI_SUCCESS) {
 		    errs++;
