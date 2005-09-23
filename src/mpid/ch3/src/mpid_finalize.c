@@ -194,11 +194,6 @@ int MPID_Finalize(void)
     }
     MPIDI_Process.my_pg = NULL;
 
-    if (MPIDI_Process.processor_name != NULL)
-    {
-	MPIU_Free(MPIDI_Process.processor_name);
-    }
-
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;

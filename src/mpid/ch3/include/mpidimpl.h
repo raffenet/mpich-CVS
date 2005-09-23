@@ -52,7 +52,6 @@ typedef struct MPIDI_Process
     MPID_Request * recvq_unexpected_head;
     MPID_Request * recvq_unexpected_tail;
     int lpid_counter;
-    char * processor_name;
     int warnings_enabled;
     int port_name_tag; /* this tag is incremented and added to the business card, which is then returned as the port name */
 }

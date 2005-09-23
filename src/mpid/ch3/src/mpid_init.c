@@ -23,12 +23,6 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
-
-/* The value 128 is returned by the ch3/Makefile for the echomaxprocname target.  */
-#if !defined(MPIDI_PROCESSOR_NAME_SIZE)
-#   define MPIDI_PROCESSOR_NAME_SIZE 128
-#endif
-
 int MPIDI_Use_optimized_rma = 0;
 
 MPIDI_Process_t MPIDI_Process = { NULL };
@@ -68,54 +62,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPIDI_Process.recvq_unexpected_head = NULL;
     MPIDI_Process.recvq_unexpected_tail = NULL;
     MPIDI_Process.lpid_counter = 0;
-    MPIDI_Process.processor_name = NULL;
     MPIDI_Process.warnings_enabled = TRUE;
-    
-#   if defined(HAVE_WINDOWS_H)
-    {
-	DWORD size = MPIDI_PROCESSOR_NAME_SIZE;
 
-	MPIDI_Process.processor_name = MPIU_Malloc(MPIDI_PROCESSOR_NAME_SIZE);
-        if (MPIDI_Process.processor_name == NULL) {
-            /* --BEGIN ERROR HANDLING-- */
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_fail;
-            /* --END ERROR HANDLING-- */
-        }
-
-	/* Use the fully qualified name instead of the short name because the SSPI security functions require the full name */
-	/*if (!GetComputerName(MPIDI_Process.processor_name, &size))*/
-	if (!GetComputerNameEx(ComputerNameDnsFullyQualified, MPIDI_Process.processor_name, &size))
-	{
-	    MPIU_Free(MPIDI_Process.processor_name);
-	    MPIDI_Process.processor_name = NULL;
-	}
-    }
-#   elif defined(HAVE_GETHOSTNAME)
-    {
-	MPIDI_Process.processor_name = MPIU_Malloc(MPIDI_PROCESSOR_NAME_SIZE);
-        if (MPIDI_Process.processor_name == NULL) {
-            /* --BEGIN ERROR HANDLING-- */
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_fail;
-            /* --END ERROR HANDLING-- */
-        }
-
-	if (gethostname(MPIDI_Process.processor_name, MPIDI_PROCESSOR_NAME_SIZE) != 0)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    MPIU_Free(MPIDI_Process.processor_name);
-	    MPIDI_Process.processor_name = NULL;
-	    /* --END ERROR HANDLING-- */
-	}
-    }
-#   else
-    {
-	/* FIXME: What should the processor name be set to if there isn't a host name function available? */
-	MPIDI_Process.processor_name = NULL;
-    }
-#   endif
-
+    /* FIXME: This is a note that the code to find the processor name
+       has been moved into the file that implements the get_processor_name
+       call */
 
     env = getenv("MPICH_WARNINGS");
     if (env)
@@ -368,11 +319,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
-    if (MPIDI_Process.processor_name != NULL)
-    { 
-	MPIU_Free(MPIDI_Process.processor_name);
-    }
-
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
