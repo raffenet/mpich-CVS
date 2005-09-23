@@ -206,7 +206,7 @@ if [ $do_bindings = "yes" ] ; then
     if [ $do_f77 = "yes" ] ; then
         if [ ! -s src/binding/f77/abortf.c ] ; then 
 	    build_f77=yes
-        elif find . -name 'src/binding/f77/buildiface' -newer 'src/binding/f77/abortf.c' ; then
+        elif find src/binding/f77 -name 'buildiface' -newer 'src/binding/f77/abortf.c' ; then
 	    build_f77=yes
         else
 	    build_f77=no
@@ -222,7 +222,7 @@ if [ $do_bindings = "yes" ] ; then
 
     if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
 	build_cxx=yes
-    elif find . -name 'src/binding/cxx/buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
+    elif find src/binding/cxx -name 'buildiface' -newer 'src/binding/cxx/mpicxx.h' ; then
 	build_cxx=yes
     else
 	build_cxx=no
@@ -239,7 +239,7 @@ if [ $do_bindings = "yes" ] ; then
 
     if [ ! -s src/binding/f90/mpi.f90 ] ; then
 	build_f90=yes
-    elif find . -name 'src/binding/f90/buildiface' -newer 'src/binding/f90/mpi.f90' ; then
+    elif find src/binding/f90 -name 'buildiface' -newer 'src/binding/f90/mpi.f90' ; then
 	build_f90=yes
     else
 	build_f90=no
@@ -318,7 +318,7 @@ run_configure=no
 # autom4te*.cache file; since this cache is not accurate, we delete it.
 if [ ! -x maint/configure ] ; then
     (cd maint && $autoconf && rm -rf autom4te*.cache )
-elif find . -name 'maint/configure.in' -newer 'maint/configure' ; then
+elif find maint -name 'configure.in' -newer 'maint/configure' ; then
     # The above relies on the Unix find command
     (cd maint && $autoconf && rm -rf autom4te*.cache)
 fi
@@ -328,14 +328,14 @@ fi
 #
 # The following relies on the Unix find command
 if [ -s maint/simplemake ] ; then
-    if find . -name 'maint/simplemake.in' -newer 'maint/simplemake' ; then
+    if find maint -name 'simplemake.in' -newer 'maint/simplemake' ; then
         run_configure=yes
     fi
 else
     run_configure=yes
 fi
 if [ -s maint/getstates ] ; then 
-    if find . -name 'maint/getstates.in' -newer 'maint/getstates' ; then
+    if find maint -name 'getstates.in' -newer 'maint/getstates' ; then
         run_configure=yes
     fi
 else
