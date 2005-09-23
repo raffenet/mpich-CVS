@@ -1439,6 +1439,8 @@ if test "$enable_cxx" = "yes" ; then
     bindings="$bindings cxx"
     bindings_dirs="$bindings_dirs src/binding/cxx"
     AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
+    INCLUDE_MPICXX_H='#include "mpicxx.h"'
+    AC_SUBST(INCLUDE_MPICXX_H)
 fi
 
 AC_SUBST(bindings)
