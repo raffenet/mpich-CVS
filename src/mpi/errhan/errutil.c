@@ -237,9 +237,17 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
 		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
 
-		if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
-		{
-		    errcode = ErrorRing[ring_idx].user_error_code;
+		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
+		}
+		else {
+		    /* Can we get a more specific error message */
+		    if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
+			{
+			    errcode = ErrorRing[ring_idx].user_error_code;
+			}
 		}
 	    }
 	}
@@ -338,9 +346,16 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
 		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
 
-		if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
-		{
-		    errcode = ErrorRing[ring_idx].user_error_code;
+		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
+		}
+		else {
+		    if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
+			{
+			    errcode = ErrorRing[ring_idx].user_error_code;
+			}
 		}
 	    }
 	}
@@ -442,9 +457,16 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
 		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
 
-		if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
-		{
-		    errcode = ErrorRing[ring_idx].user_error_code;
+		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
+		}
+		else {
+		    if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
+			{
+			    errcode = ErrorRing[ring_idx].user_error_code;
+			}
 		}
 	    }
 	}
@@ -1377,6 +1399,12 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length, MPIR_Err_get_cl
 			{
 			    break;
 			}
+			if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+			    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errorcode, ring_idx );
+			    break;
+			}
 
 			if (ErrorRing[ring_idx].id == ring_id)
 			{
@@ -1569,6 +1597,12 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 
 		if (generic_idx < 0)
 		{
+		    break;
+		}
+		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
 		    break;
 		}
 		    
