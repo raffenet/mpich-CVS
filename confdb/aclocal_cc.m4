@@ -751,7 +751,34 @@ return PFoo(0);}
 EOF
     ac_link2='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest1.c conftest2.c $LIBS >conftest.out 2>&1'
     if eval $ac_link2 ; then
-        pac_cv_prog_c_weak_symbols="pragma weak"
+        # The gcc 3.4.x compiler accepts the pragma weak, but does not
+        # correctly implement it on systems where the loader doesn't 
+        # support weak symbols (e.g., cygwin).  This is a bug in gcc, but it
+        # it is one that *we* have to detect.
+        rm -f conftest*
+        cat >>conftest1.c <<EOF
+extern int PFoo(int);
+#pragma weak PFoo = Foo
+int Foo(int);
+int Foo(int a) { return a; }
+EOF
+    cat >>conftest2.c <<EOF
+extern int Foo(int);
+int PFoo(int a} { return a+1;}
+int main(int argc, char **argv) {
+return Foo(0);}
+EOF
+        if eval $ac_link2 ; then
+            pac_cv_prog_c_weak_symbols="pragma weak"
+        else 
+            echo "$ac_link2" >> config.log
+	    echo "Failed program was" >> config.log
+            cat conftest1.c >>config.log
+            cat conftest2.c >>config.log
+            if test -s conftest.out ; then cat conftest.out >> config.log ; fi
+            has_pragma_weak=0
+            pragma_extra_message="pragma weak accepted but does not work (probably creates two non-weak entries)"
+        fi
     else
       echo "$ac_link2" >>config.log
       echo "Failed program was" >>config.log
