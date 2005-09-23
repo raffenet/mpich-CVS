@@ -27,6 +27,8 @@
                 mpicc.
 .  -profile=name - Use the MPI profiling given by name.  See below for
                 details
+.  -mpe=name  - Use an MPE profiling library.  The behavior is similar
+                to using '-profile=mpe_name.conf'.
 .  -echo      - Show exactly what this program is doing.
                 This option should normally not be used.
 -  others     - are passed to the compiler or linker.  For example, '-c'
@@ -35,11 +37,16 @@
                 with the output executable given the name 'name'.
 
     Environment Variables:
-    The environment variables 'MPICH_CC' may be used
+    The environment variable 'MPICH_CC' may be used
     to select different C compiler and linker.  Note that since
     MPICH is built with a particular C and Fortran compiler, changing the
     compilers used can cause problems.  Use this only if you could intermix
     code compiled with the different compilers.
+
+    The environment variable 'MPICC_PROFILE' specifies a profile library
+    and has the same effect as if '-profile=$MPICC_PROFILE' were used as
+    an argument to 'mpicc'.  See the discussion of '-profile' below for more 
+    details.
 
     Compatible Compilers:
     The MPI library may be used with any compiler that uses the same 
@@ -91,7 +98,7 @@ is a convenient way to build simple programs.
 
 .vb
     PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
-    PRFILE_INCPATHS="-I/usr/local/myprof/include"
+    PROFILE_INCPATHS="-I/usr/local/myprof/include"
 .ve
  and place it in the sysconfdir directory (this directory is set at
  configure time when MPICH is built).  Then using the command-line 

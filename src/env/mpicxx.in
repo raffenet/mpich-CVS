@@ -68,6 +68,10 @@ if [ -n "$MPICH_CXX" ] ; then
         . $sysconfdir/mpicxx-$CXXname.conf
     fi
 fi
+# Allow a profiling option to be selected through an environment variable
+if [ -n "$MPICXX_PROFILE" ] ; then
+    profConf=$MPICXX_PROFILE
+fi
 #
 # ------------------------------------------------------------------------
 # Argument processing.

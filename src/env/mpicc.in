@@ -69,6 +69,10 @@ if [ -n "$MPICH_CC" ] ; then
         . $sysconfdir/mpicc-$CCname.conf
     fi
 fi
+# Allow a profiling option to be selected through an environment variable
+if [ -n "$MPICC_PROFILE" ] ; then
+    profConf=$MPICC_PROFILE
+fi
 #
 # ------------------------------------------------------------------------
 # Argument processing.

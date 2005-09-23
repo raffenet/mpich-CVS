@@ -84,6 +84,10 @@ if [ -n "$MPICH_F90" ] ; then
         . $sysconfdir/mpif90-$F90name.conf
     fi
 fi
+# Allow a profiling option to be selected through an environment variable
+if [ -n "$MPIF90_PROFILE" ] ; then
+    profConf=$MPIF90_PROFILE
+fi
 #
 # ------------------------------------------------------------------------
 # Argument processing.
@@ -146,6 +150,22 @@ for arg in "$@" ; do
     -v)
     # Pass this argument to the compiler as well.
     echo "mpif90 for $MPIVERSION"
+    ;;
+    -profile=*)
+    # Pass the name of a profiling configuration.  As
+    # a special case, lib<name>.so or lib<name>.la may be used
+    # if the library is in $libdir
+    profConf=`echo A$arg | sed -e 's/A-profile=//g'`
+    addarg=no
+    # Loading the profConf file is handled below
+    ;;
+    -mpe=*)
+    # Pass the name of a profiling configuration; this is a special
+    # case for the MPE libs.  See -profile
+    profConf=`echo A$arg | sed -e 's/A-mpe=//g'`
+    profConf="mpe_$profConf"
+    addarg=no
+    # Loading the profConf file is handled below
     ;;
 	# -help
     -help)
@@ -243,6 +263,26 @@ fi
 # Concatenate the user flags with the ones needed by MPI
 F90FLAGS="$F90FLAGS $MPI_F90FLAGS"
 LDFLAGS="$LDFLAGS $MPI_LDFLAGS"
+#
+# Handle the case of a profile switch
+if [ -n "$profConf" ] ; then
+    if [ -s "$libdir/lib$profConf.a" -o -s "$libdir/lib$profConf.so" ] ; then
+	mpilibs="-l$profConf $mpilibs"
+    elif [ -s "$sysconfdir/$profConf.conf" ] ; then
+	. $sysconfdir/$profConf.conf
+	if [ -n "$PROFILE_INCPATHS" ] ; then
+	    F90FLAGS="$PROFILE_INCPATHS $F90FLAGS"
+        fi
+        if [ -n "$PROFILE_PRELIB" ] ; then
+	    mpilibs="$PROFILE_PRELIB $mpilibs"
+        fi
+        if [ -n "$PROFILE_POSTLIB" ] ; then
+	    mpilibs="$mpilibs $PROFILE_POSTLIB"
+        fi
+    else
+        echo "Profiling configuration file $profConf.conf not found in $sysconfdir"
+    fi
+fi
 
 # Construct the line to add the include directory (not all compilers 
 # use -I, unfortunately)

@@ -25,6 +25,10 @@
 .  -link_info - Show the steps for linking a program.  This optoin 
                 can be used to see what options and libraries are used by
                 mpicxx.
+.  -profile=name - Use the MPI profiling given by name.  See below for
+                details
+.  -mpe=name  - Use an MPE profiling library.  The behavior is similar
+                to using '-profile=mpe_name.conf'.
 .  -echo      - Show exactly what this program is doing.
                 This option should normally not be used.
 -  others     - are passed to the compiler or linker.  For example, '-c'
@@ -38,6 +42,11 @@
     MPICH is built with a particular C and Fortran compiler, changing the
     compilers used can cause problems.  Use this only if you could intermix
     code compiled with the different compilers.
+
+    The environment variable 'MPICC_PROFILE' specifies a profile library
+    and has the same effect as if '-profile=$MPICC_PROFILE' were used as
+    an argument to 'mpicc'.  See the discussion of '-profile' below for more 
+    details.
 
     Compatible Compilers:
     The MPI library may be used with any compiler that uses the same 
@@ -66,5 +75,35 @@ Combining compilation and linking in a single command
 .ve
 is a convenient way to build simple programs.
 
-.seealso: mpif77, mpicxx, mpif90, mpiexec
+ Selecting a Profiling Library:
+ The '-profile=name' argument allows you to specify an MPI profiling
+ library to be used.  'name' can have two forms\:
+
+.n A library in the same directory as the MPI library 
+.n The name of a profile configuration file
+.n
+ If 'name' is a library, then this library is included before the MPI 
+ library.  This allows the simple use of libraries that make use of the
+ MPI profiling interface and that are installed in the same directory as 
+ the MPI library.
+
+ If 'name.conf' is the name of a file in the sysconfdir directory, then this
+ is read and may define the following variables\:
++ PROFILE_PRELIB - Libraries (and paths) to include before the MPI library
+. PROFILE_POSTLIB - Libraries to include after the MPI library
+- PROFILE_INCPATHS - C preprocessor arguments for any include files
+ For example, to add '/usr/local/myprof/include' to the include path and
+ the library 'libmyprof.a' in '/usr/local/myprof/lib' to the link step, 
+ you could create the file 'myprof.conf' with the lines
+
+.vb
+    PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
+    PROFILE_INCPATHS="-I/usr/local/myprof/include"
+.ve
+ and place it in the sysconfdir directory (this directory is set at
+ configure time when MPICH is built).  Then using the command-line 
+ argument '-profile=myprof' will cause these 
+ definitions to be added to the relevant compile commands.
+
+.seealso: mpif77, mpicc, mpif90, mpiexec
 D*/
