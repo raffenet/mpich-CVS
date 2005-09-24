@@ -871,6 +871,7 @@ int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_hand
 #endif
 SMPD_BOOL smpd_verify_version(const char *challenge);
 void smpd_fix_up_host_tree(smpd_host_node_t *node);
+SMPD_BOOL smpd_isnumbers_with_colon(const char *str);
 
 #if defined(__cplusplus)
 }

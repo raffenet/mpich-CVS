@@ -6,6 +6,29 @@
 
 #include "smpd.h"
 
+SMPD_BOOL smpd_isnumbers_with_colon(const char *str)
+{
+    size_t i, n = strlen(str);
+    SMPD_BOOL colon_found = SMPD_FALSE;
+    for (i=0; i<n; i++)
+    {
+	if (!isdigit(str[i]))
+	{
+	    if (str[i] == ':')
+	    {
+		if (colon_found == SMPD_TRUE)
+		    return SMPD_FALSE;
+		colon_found = SMPD_TRUE;
+	    }
+	    else
+	    {
+		return SMPD_FALSE;
+	    }
+	}
+    }
+    return SMPD_TRUE;
+}
+
 #undef FCNAME
 #define FCNAME "smpd_handle_spawn_command"
 int smpd_handle_spawn_command(smpd_context_t *context)
@@ -236,6 +259,11 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /* Instead of failing, simply fix the / character */
 	    if (node.exe[0] == '.' && node.exe[1] == '/')
 		node.exe[1] = '\\';
+
+	    /* If there are / characters but no \ characters should we change them all to \ ? */
+	    /* my/sub/dir/app                : yes change them      - check works */
+	    /* my\sub\dir\app /1 /2 /bugaloo : no don't change them - check works */
+	    /* app /arg:foo                  : no don't change them - check does not work */
 	}
 #endif
 	/*printf("%s = %s\n", key, node.exe);fflush(stdout);*/
@@ -285,6 +313,11 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    node.host_id = -1;
 		}
 	    }
+	    /* hosts */
+	    if (strcmp(info[j].key, "hosts") == 0)
+	    {
+		smpd_dbg_printf("hosts key sent with spawn command: <%s>\n", info[j].val);
+	    }
 	    /* env */
 	    if (strcmp(info[j].key, "env") == 0)
 	    {
@@ -330,6 +363,15 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		}
 		free(env_str);
 	    }
+	    /* log */
+	    if (strcmp(info[j].key, "log") == 0)
+	    {
+		if (smpd_is_affirmative(info[j].val) || (strcmp(info[j].val, "1") == 0))
+		{
+		    MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPI_WRAP_DLL_NAME", "mpe");
+		    env_wrap_dll_specified = SMPD_TRUE;
+		}
+	    }
 	    /* wdir */
 	    if ((strcmp(info[j].key, "wdir") == 0) || (strcmp(info[j].key, "dir") == 0))
 	    {
@@ -352,6 +394,74 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		    strncpy(map_node->share, &(info[j].val[2]), SMPD_MAX_EXE_LENGTH);
 		    map_node->next = drive_map_list;
 		    drive_map_list = map_node;
+		}
+	    }
+	    /* localonly */
+	    if (strcmp(info[j].key, "localonly") == 0)
+	    {
+		smpd_get_hostname(node.hostname, SMPD_MAX_HOST_LENGTH);
+		if (smpd_get_host_id(node.hostname, &node.host_id) != SMPD_SUCCESS)
+		{
+		    node.hostname[0] = '\0';
+		    node.host_id = -1;
+		}
+	    }
+	    /* machinefile */
+	    if (strcmp(info[j].key, "machinefile") == 0)
+	    {
+		if (smpd_parse_machine_file(info[j].val))
+		{
+		    /*use_machine_file = SMPD_TRUE;*/
+		}
+	    }
+	    /* configfile */
+	    if (strcmp(info[j].key, "configfile") == 0)
+	    {
+	    }
+	    /* file */
+	    if (strcmp(info[j].key, "file") == 0)
+	    {
+	    }
+	    /* priority */
+	    if (strcmp(info[j].key, "priority") == 0)
+	    {
+		if (smpd_isnumbers_with_colon(info[j].val))
+		{
+		    char *str;
+		    node.priority_class = atoi(info[j].val); /* This assumes atoi will stop at the colon and return a number */
+		    str = strchr(info[j].val, ':');
+		    if (str)
+		    {
+			str++;
+			node.priority_thread = atoi(str);
+		    }
+		    if (node.priority_class < 0 || node.priority_class > 4 || node.priority_thread < 0 || node.priority_thread > 5)
+		    {
+			smpd_err_printf("Error: priorities must be between 0-4:0-5\n");
+			node.priority_class = SMPD_DEFAULT_PRIORITY_CLASS;
+			node.priority_thread = SMPD_DEFAULT_PRIORITY;
+		    }
+		}
+	    }
+	    /* timeout */
+	    if (strcmp(info[j].key, "timeout") == 0)
+	    {
+#if 0 /* FIXME: create a mechanism to timeout spawned processes and only those spawned processes */
+		smpd_process.timeout = atoi(info[j].val);
+		if (smpd_process.timeout < 1)
+		{
+		    smpd_dbg_printf("Warning: invalid timeout specified, ignoring timeout value of '%s'\n", info[j].val);
+		    smpd_process.timeout = -1;
+		}
+#endif
+	    }
+	    /* exitcodes */
+	    if (strcmp(info[j].key, "exitcodes") == 0)
+	    {
+		/* FIXME: This will turn on exit code printing for all processes.  Implement a new mechanism for only printing codes for an individual process group. */
+		if (smpd_is_affirmative(info[j].val) || (strcmp(info[j].val, "1") == 0))
+		{
+		    smpd_process.output_exit_codes = SMPD_TRUE;
 		}
 	    }
 	    /* etc */
@@ -429,7 +539,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		launch_iter->alt_hostname[0] = '\0';
 	    }
 	    launch_iter->map_list = drive_map_list;
-	    launch_iter->path[0] = '\0';
+	    if (drive_map_list)
+	    {
+		drive_map_list->ref_count++;
+	    }
 	    launch_iter->priority_class = node.priority_class;
 	    launch_iter->priority_thread = node.priority_thread;
 	    launch_iter->next = NULL;
@@ -705,6 +818,28 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	}
     }
 
+    context->spawn_context->result_cmd = temp_cmd;
+
+    if (launch_list == NULL)
+    {
+	/* spawn command received for zero processes, return a success result immediately */
+	result = smpd_add_command_arg(context->spawn_context->result_cmd, "result", SMPD_SUCCESS_STR);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the result string to the result command.\n");
+	    goto spawn_failed;
+	}
+	/* send the spawn result command */
+	result = smpd_post_write_command(context, context->spawn_context->result_cmd);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to post a write of the spawn result command.\n");
+	    goto spawn_failed;
+	}
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
+
     /* create the new kvs space */
     smpd_dbg_printf("all hosts needed for the spawn command are available, sending start_dbs command.\n");
     /*printf("all hosts needed for the spawn command are available, sending start_dbs command.\n");fflush(stdout);*/
@@ -738,7 +873,6 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	goto spawn_failed;
     }
 
-    context->spawn_context->result_cmd = temp_cmd;
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
     /* send the launch commands */

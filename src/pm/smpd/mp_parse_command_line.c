@@ -275,29 +275,6 @@ static SMPD_BOOL isnumber(char *str)
     return SMPD_TRUE;
 }
 
-static SMPD_BOOL isnumbers_with_colon(char *str)
-{
-    size_t i, n = strlen(str);
-    SMPD_BOOL colon_found = SMPD_FALSE;
-    for (i=0; i<n; i++)
-    {
-	if (!isdigit(str[i]))
-	{
-	    if (str[i] == ':')
-	    {
-		if (colon_found == SMPD_TRUE)
-		    return SMPD_FALSE;
-		colon_found = SMPD_TRUE;
-	    }
-	    else
-	    {
-		return SMPD_FALSE;
-	    }
-	}
-    }
-    return SMPD_TRUE;
-}
-
 #ifdef HAVE_WINDOWS_H
 static int mpiexec_assert_hook( int reportType, char *message, int *returnValue )
 {
@@ -600,7 +577,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     result = smpd_get_smpd_data("priority", smpd_setting_tmp_buffer, 20);
     if (result == SMPD_SUCCESS)
     {
-	if (isnumbers_with_colon(smpd_setting_tmp_buffer))
+	if (smpd_isnumbers_with_colon(smpd_setting_tmp_buffer))
 	{
 	    char *str;
 	    smpd_setting_priority_class = atoi(smpd_setting_tmp_buffer); /* This assumes atoi will stop at the colon and return a number */
@@ -1433,7 +1410,7 @@ configfile_loop:
 		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
-		if (isnumbers_with_colon((*argvp)[2]))
+		if (smpd_isnumbers_with_colon((*argvp)[2]))
 		{
 		    char *str;
 		    n_priority_class = atoi((*argvp)[2]); /* This assumes atoi will stop at the colon and return a number */
