@@ -115,7 +115,7 @@ def mpiexec():
                         'MPIEXEC_TRY_1ST_LOCALLY'     :  1,
                         'MPIEXEC_TIMEOUT'             :  0,
                         'MPIEXEC_HOST_LIST'           :  [],
-                        'MPIEXEC_HOST_CHECK'          :  [],
+                        'MPIEXEC_HOST_CHECK'          :  0,
                       }
     for (k,v) in parmsToOverride.items():
         parmdb[('thispgm',k)] = v
@@ -214,7 +214,7 @@ def mpiexec():
 
     if parmdb['MPIEXEC_HOST_CHECK']:    # if this was requested in the xml file
         msgToSend = { 'cmd' : 'verify_hosts_in_ring',
-                      'host_list' : parmdb['MPD_HOST_LIST'] }
+                      'host_list' : parmdb['MPIEXEC_HOST_LIST'] }
         conSock.send_dict_msg(msgToSend)
         msg = conSock.recv_dict_msg(timeout=recvTimeout)
         if not msg:
@@ -1211,7 +1211,7 @@ def get_parms_from_xml_file(msgToMPD):
     if hostSpec and hostSpec[0].hasAttribute('check'):
         hostSpecMode = hostSpec[0].getAttribute('check')
         if hostSpecMode == 'yes':
-            parmdb['MPIEXEC_HOST_CHECK'] = 1
+            parmdb[('xml','MPIEXEC_HOST_CHECK')] = 1
     covered = [0] * parmdb['nprocs'] 
     procSpec = cpg.getElementsByTagName('process-spec')
     if not procSpec:
