@@ -2027,7 +2027,10 @@ configfile_loop:
 	if (use_configfile)
 	{
 	    if (smpd_get_argcv_from_file(fin_config, argcp, argvp))
+	    {
+		/* FIXME: How do we tell the difference between an error parsing the file and parsing the last entry? */
 		goto configfile_loop;
+	    }
 	    fclose(fin_config);
 	    if (delete_configfile)
 	    {
