@@ -126,9 +126,54 @@ configure/compile-time
 
 link/runtime
 
-mpiexec 
-    -pmiargs host port executable
-special args used to allow singleton init.
+\section{Specifying Components during Configure}
+
+\section{Specifying Components at Runtime}
+
+It is possible to override the default routines for any component at
+runtime by calling one of the following routines.
+
+    MPIX_SetMethod( component, object, name, function, communicator,
+    version )
+
+where
+    component - identifier for the component (e.g., topology,
+    collectives)
+    object    - object to change; null if changing the defaults for
+    all objects
+    name      - name of the method (probably character string for function)
+    function  - function to use
+    communicator - communicator scope of this change (MPI_COMM_SELF
+    and MPI_COMM_WORLD are popular choices)
+    version   - version of the interface (see below)
+
+    This call is collective over the communicator.  The intent of the 
+    communicator option is to allow consistency checking for changes
+    that must be consistent across processes (e.g., changing the
+    collective algorithms).
+
+    The version number is used to ensure that the version of the
+    interface matches the one used in the library
+
+A related call is
+
+    MPIX_SetAllMethods( component, object, struct-of-functions*,
+    communicator, version )
+
+This is similar to SetMethod, except all functions are set from those
+defined in the struct-of-functions.  The version is very important
+here as it ensures that the struct is known.
+
+One additional call is
+
+    MPIX_DLLLoadMethods( component, object, dll-name, communicator,
+    version )
+
+This loads the methods from a dynamic loaded shared object.  It is
+collective over the communicator
+
+Implementation note: the ``component'' in these calls can be the name
+of a routine that 
 
 \section{Collectives}
 \section{Topology}
@@ -144,6 +189,11 @@ special args used to allow singleton init.
     Builtin versions...
 
 \section{PM and PMI}
+
+mpiexec 
+    -pmiargs host port executable
+special args used to allow singleton init.
+
 \section{Name Server}
 
     --with-nameserver=...
