@@ -78,6 +78,8 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_NAME_LENGTH              256
 #define SMPD_MAX_VALUE_LENGTH            8192
 #define SMPD_MAX_FILENAME                1024
+#define SMPD_MAX_LINE_LENGTH            32768
+#define SMPD_MAX_ARGC                    1024
 /*#define SMPD_MAX_STDOUT_LENGTH           1024*/
 #define SMPD_MAX_STDOUT_LENGTH           (SMPD_MAX_CMD_LENGTH - 100)
 #define SMPD_MAX_SESSION_HEADER_LENGTH   1024
