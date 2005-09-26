@@ -439,33 +439,64 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 #define FCNAME "smpd_get_argcv_from_file"
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 {
-    /* maximum of 8192 characters per line and 1023 args */
-    static char line[8192];
-    static char *argv[1024];
-    char *token;
+    static char line[SMPD_MAX_LINE_LENGTH];
+    static char line_out[SMPD_MAX_LINE_LENGTH];
+    static char *argv[SMPD_MAX_ARGC];
+    char *iter_line, *iter_out, *last_position;
     int index;
+    int num_remaining;
 
     smpd_enter_fn(FCNAME);
 
     argv[0] = "bogus.exe";
-    while (fgets(line, 8192, fin))
+    while (fgets(line, SMPD_MAX_LINE_LENGTH, fin))
     {
-	index = 1;
-	token = strtok(line, " \r\n");
-	while (token)
+	/* first strip off the \r\n at the end of the line */
+	if (line[0] != '\0')
 	{
-	    argv[index] = token;
-	    index++;
-	    if (index == 1024)
+	    iter_line = &line[strlen(line)-1];
+	    while ((*iter_line == '\r' || *iter_line == '\n') && (iter_line >= line))
 	    {
-		argv[1023] = NULL;
+		*iter_line = '\0';
+		iter_line--;
+	    }
+	}
+
+	iter_out = line_out;
+	line_out[0] = '\0';
+	iter_line = line;
+	index = 1;
+	num_remaining = SMPD_MAX_LINE_LENGTH;
+
+	while (iter_line != NULL && (strlen(iter_line) > 0))
+	{
+	    last_position = iter_line;
+	    if (MPIU_Str_get_string(&iter_line, iter_out, num_remaining) == MPIU_STR_SUCCESS)
+	    {
+		if (last_position == iter_line)
+		{
+		    /* no string parsed */
+		    break;
+		}
+		argv[index] = iter_out;
+		index++;
+		if (index == SMPD_MAX_ARGC)
+		{
+		    argv[SMPD_MAX_ARGC-1] = NULL;
+		    break;
+		}
+		num_remaining = num_remaining - (int)strlen(iter_out) - 1;
+		iter_out = &iter_out[strlen(iter_out)+1];
+	    }
+	    else
+	    {
 		break;
 	    }
-	    token = strtok(NULL, " \r\n");
 	}
+
 	if (index != 1)
 	{
-	    if (index < 1024)
+	    if (index < SMPD_MAX_ARGC)
 		argv[index] = NULL;
 	    *argcp = index;
 	    *argvp = argv;
@@ -476,6 +507,46 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
     smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
+#if 0 /* This way simply tokenizes by space characters without any escape capabilities */
+SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
+{
+    static char line[SMPD_MAX_LINE_LENGTH];
+    static char *argv[SMPD_MAX_ARGC];
+    char *token;
+    int index;
+
+    smpd_enter_fn(FCNAME);
+
+    argv[0] = "bogus.exe";
+    while (fgets(line, SMPD_MAX_LINE_LENGTH, fin))
+    {
+	index = 1;
+	token = strtok(line, " \r\n");
+	while (token)
+	{
+	    argv[index] = token;
+	    index++;
+	    if (index == SMPD_MAX_ARGC)
+	    {
+		argv[SMPD_MAX_ARGC-1] = NULL;
+		break;
+	    }
+	    token = strtok(NULL, " \r\n");
+	}
+	if (index != 1)
+	{
+	    if (index < SMPD_MAX_ARGC)
+		argv[index] = NULL;
+	    *argcp = index;
+	    *argvp = argv;
+	    return SMPD_TRUE;
+	}
+    }
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_FALSE;
+}
+#endif
 
 static smpd_launch_node_t *next_launch_node(smpd_launch_node_t *node, int id)
 {
