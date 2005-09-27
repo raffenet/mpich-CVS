@@ -25,8 +25,8 @@ PACKAGE = logformat.clog2TOdrawable
 SRC     = ColorNameMap.java ObjDef.java \
           Obj_Arrow.java Obj_State.java ObjMethod.java \
           NoMatchingEventException.java TwoEventsMatching.java \
-          Topo_Arrow.java Topo_State.java InputLog.java \
-          Print.java Print_1pass.java Print_2pass.java
+          Topo_Arrow.java Topo_State.java CommLineID.java CommLineIDMap.java \
+          InputLog.java Print.java Print_1pass.java Print_2pass.java
 
 OBJ    = $(SRC:.java=.class)
 

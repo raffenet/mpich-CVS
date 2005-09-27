@@ -70,23 +70,21 @@ public class Topo_Arrow extends Topology
         while ( itr.hasNext() ) {
             arrow = ( Obj_Arrow ) itr.next();
             if (    arrow.getMsgTag() == msg.tag
-                 && arrow.getStartVertex().lineID == header.taskID
-                 && arrow.getFinalVertex().lineID == msg.partner
+                 && arrow.getStartVertex().lineID == header.lineID
+                 && arrow.getFinalVertex().lineID == msg.lineID
                ) {
                 itr.remove();  // remove the partial arrow from recvs list
-                arrow.setStartVertex( new Coord( header.timestamp,
-                                                 header.taskID ) );
+                arrow.setStartVertex( new Coord( header.time, header.lineID ) );
                 arrow.setInfoBuffer();
                 return arrow;
             }
         }
 
-        // Set the StartVertex with header's timestamp and taskID.
-        // Initialize the FinalVertex with header.timestamp Temporarily
+        // Set the StartVertex with header's time and lineID.
+        // Initialize the FinalVertex with header.time Temporarily
         arrow = new Obj_Arrow( this.getCategory() );
-        arrow.setStartVertex( new Coord( header.timestamp,
-                                         header.taskID ) );
-        arrow.setFinalVertex( new Coord( header.timestamp, msg.partner ) );
+        arrow.setStartVertex( new Coord( header.time, header.lineID ) );
+        arrow.setFinalVertex( new Coord( header.time, msg.lineID ) );
         arrow.setMsgTag( msg.tag );
         // Arrow's msg size is determined by the send event NOT recv event
         arrow.setMsgSize( msg.size ); 
@@ -106,23 +104,21 @@ public class Topo_Arrow extends Topology
         while ( itr.hasNext() ) {
             arrow = ( Obj_Arrow ) itr.next();
             if (    arrow.getMsgTag() == msg.tag
-                 && arrow.getStartVertex().lineID == msg.partner
-                 && arrow.getFinalVertex().lineID == header.taskID
+                 && arrow.getStartVertex().lineID == msg.lineID
+                 && arrow.getFinalVertex().lineID == header.lineID
                ) {
                 itr.remove();  // remove the partial arrow from sends list
-                arrow.setFinalVertex( new Coord( header.timestamp,
-                                                 header.taskID ) );
+                arrow.setFinalVertex( new Coord( header.time, header.lineID ) );
                 arrow.setInfoBuffer();
                 return arrow;
             }
         }
 
-        // Set the FinalVertex with header's timestamp and taskID.
-        // Initialize the StartVertex with header.timestamp Temporarily
+        // Set the FinalVertex with header's time and lineID.
+        // Initialize the StartVertex with header.time Temporarily
         arrow = new Obj_Arrow( this.getCategory() );
-        arrow.setStartVertex( new Coord( header.timestamp, msg.partner ) );
-        arrow.setFinalVertex( new Coord( header.timestamp,
-                                         header.taskID ) );
+        arrow.setStartVertex( new Coord( header.time, msg.lineID ) );
+        arrow.setFinalVertex( new Coord( header.time, header.lineID ) );
         arrow.setMsgTag( msg.tag );
         recvs.add( arrow );
 
