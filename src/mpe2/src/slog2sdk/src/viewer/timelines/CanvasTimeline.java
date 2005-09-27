@@ -215,9 +215,9 @@ public class CanvasTimeline extends ScrollableObject
 
     protected void finalizeAllOffImages( final TimeBoundingBox imgs_times )
     {
-        drawn_boxes.finalize();
+        drawn_boxes.finish();
         map_line2row = null;
-        nesting_stacks.finalize();
+        nesting_stacks.finish();
         // Update the timeframe of all images
         timeframe4imgs.setEarliestTime( imgs_times.getEarliestTime() );
         timeframe4imgs.setLatestTime( imgs_times.getLatestTime() );
@@ -228,7 +228,8 @@ public class CanvasTimeline extends ScrollableObject
         if ( Profile.isActive() )
             final_time = new Date();
         if ( Profile.isActive() )
-            Profile.println( "CanvasTimeline.finalize(): init. time = "
+            Profile.println( "CanvasTimeline.finalizeAllOffImages(): "
+                           + "init. time = "
                            + (init_time.getTime() - zero_time.getTime())
                            + " msec.,   total time = "
                            + (final_time.getTime() - zero_time.getTime())

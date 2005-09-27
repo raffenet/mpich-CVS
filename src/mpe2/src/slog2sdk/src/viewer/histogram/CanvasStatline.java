@@ -169,7 +169,8 @@ public class CanvasStatline extends ScrollableObject
         if ( Profile.isActive() )
             final_time = new Date();
         if ( Profile.isActive() )
-            Profile.println( "CanvasStatline.finalize(): init. time = "
+            Profile.println( "CanvasStatline.finalizeAllOffImages(): "
+                           + "init. time = "
                            + (init_time.getTime() - zero_time.getTime())
                            + " msec.,   total time = "
                            + (final_time.getTime() - zero_time.getTime())
