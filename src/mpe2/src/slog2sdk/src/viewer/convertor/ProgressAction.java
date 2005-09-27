@@ -65,7 +65,9 @@ public class ProgressAction implements ActionListener
         }
     }
 
-    public void finalize()
+    // Cannot use finalize() as function name,
+    // finalize() overrides Object.finalize().
+    public void finish()
     {
         if ( progress_bar != null )
             progress_bar.setValue( MAX_PROGRESS_VALUE );

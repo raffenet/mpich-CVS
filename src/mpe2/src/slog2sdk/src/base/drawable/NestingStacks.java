@@ -83,7 +83,9 @@ public class NestingStacks
             hasNestingStacksBeenUsed = true;
     }
 
-    public void finalize()
+    // Cannot use finalize() as function name,
+    // finalize() overrides Object.finalize().
+    public void finish()
     {
         for ( int irow = 0 ; irow < num_rows ; irow++ ) {
             //  Select only non-expanded row

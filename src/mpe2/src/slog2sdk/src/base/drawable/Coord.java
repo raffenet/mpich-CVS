@@ -11,11 +11,14 @@ package base.drawable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.util.Comparator;
 
 import base.io.DataIO;
 
 public class Coord implements DataIO
 {
+    public static final Comparator   LINEID_ORDER = new LineIDOrder();
+
     public static final int  BYTESIZE = 8  /* time */
                                       + 4  /* lineID */ ;
 
@@ -62,5 +65,17 @@ public class Coord implements DataIO
     public String toString()
     {
         return ( "(" + (float) time + ", " + lineID + ")" );
+    }
+
+
+
+    private static class LineIDOrder implements Comparator
+    {
+        public int compare( Object o1, Object o2 )
+        {
+            Coord coord1  = (Coord) o1;
+            Coord coord2  = (Coord) o2;
+            return coord1.lineID - coord2.lineID;
+        }
     }
 }

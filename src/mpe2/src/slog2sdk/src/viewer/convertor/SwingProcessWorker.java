@@ -117,7 +117,7 @@ public class SwingProcessWorker extends SwingWorker
             process.destroy();
             process  = null;
         }
-        // progress_action.finalize();
+        // progress_action.finish();
         textarea.append( "\n> Ending with exit status "
                        + process_istatus + "\n" );
         container.finalizeWaiting();

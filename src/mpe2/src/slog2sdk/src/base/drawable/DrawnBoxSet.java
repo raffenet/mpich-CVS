@@ -83,7 +83,9 @@ public class DrawnBoxSet
         }
     }
 
-    public void finalize()
+    // Cannot use finalize() as function name,
+    // finalize() overrides Object.finalize().
+    public void finish()
     {
         int     ii, jj, idx;
         idx = -1;
