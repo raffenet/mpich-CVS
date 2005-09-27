@@ -22,11 +22,12 @@ TARGET  = $(libbuild_dir)/clog2print.jar
 PACKAGE = logformat.clog2
 SRC     = Const.java MixedDataInputStream.java \
           StrColor.java StrDesc.java StrFile.java StrFormat.java StrBytes.java \
-          Preamble.java RecHeader.java \
+          LineID.java Preamble.java RecHeader.java \
           RecDefState.java RecDefMsg.java \
           RecDefEvent.java RecDefConst.java \
-          RecBare.java RecCargo.java RecMsg.java RecColl.java RecComm.java \
-          RecSrc.java RecTshift.java \
+          RecBare.java RecCargo.java RecMsg.java \
+          UUID.java RecComm.java \
+          RecColl.java RecSrc.java RecTshift.java \
           InputLog.java Print.java
 
 OBJ     = $(SRC:.java=.class)

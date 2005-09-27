@@ -23,15 +23,18 @@ public class Preamble
     private final static int      VERSIONSIZE  = 12;
 
     private              String   version;
-    //  num_blocks correspond to CLOG_Premable_t.is_big_endian
+    //  this correspond to CLOG_Premable_t.is_big_endian
     private              String   is_big_endian_title;
     private              boolean  is_big_endian;
-    //  num_blocks correspond to CLOG_Premable_t.block_size
+    //  this correspond to CLOG_Premable_t.block_size
     private              String   block_size_title;
     private              int      block_size;
-    //  num_blocks correspond to CLOG_Premable_t.num_buffered_blocks
+    //  this correspond to CLOG_Premable_t.num_buffered_blocks
     private              String   num_blocks_title;
     private              int      num_blocks;
+    //  this correspond to CLOG_Premable_t.comm_world_size
+    private              String   world_size_title;
+    private              int      world_size;
 
     public boolean readFromDataStream( DataInputStream in )
     {
@@ -58,6 +61,8 @@ public class Preamble
             block_size          = Integer.parseInt( tokens.nextToken().trim() );
             num_blocks_title    = tokens.nextToken().trim();
             num_blocks          = Integer.parseInt( tokens.nextToken().trim() );
+            world_size_title    = tokens.nextToken().trim();
+            world_size          = Integer.parseInt( tokens.nextToken().trim() );
         } catch ( NoSuchElementException err ) {
             err.printStackTrace();
             return false;
@@ -65,6 +70,9 @@ public class Preamble
             err.printStackTrace();
             return false;
         }
+
+        /* Set the const in (comm,rank) -> lineID transformation */
+        LineID.setCommRank2LineIDxForm( world_size );
 
         return true;
     }
@@ -105,11 +113,17 @@ public class Preamble
         return block_size;
     }
 
+    public int getCommWorldSize()
+    {
+        return world_size;
+    }
+
     public String toString()
     {
          return ( version + "\n"
                 + is_big_endian_title + is_big_endian + "\n"
                 + block_size_title + block_size + "\n"
-                + num_blocks_title + num_blocks + "\n" );
+                + num_blocks_title + num_blocks + "\n"
+                + world_size_title + world_size );
     }
 }

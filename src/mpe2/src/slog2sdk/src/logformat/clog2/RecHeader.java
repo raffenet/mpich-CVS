@@ -14,16 +14,24 @@ import java.io.*;
 // Class corresponds to CLOG_Rec_Header
 public class RecHeader
 {
-    private static final int BYTESIZE = 8 + 2 * 4;
-    public         double timestamp;
+    private static final int BYTESIZE = 8 + 4 * 4;
+    public         double time;
+    private        int    icomm;    // unique communicator ID
+    private        int    rank;     // rank of communicator labelled by icomm
+    public         int    thread;
     public         int    rectype;
-    public         int    taskID;   // i.e. procid, = rank in MPI_COMM_WORLD
+
+    public         int    lineID;   // lineID used in drawable
 
     public RecHeader()
     {
-        timestamp  = Const.INVALID_double;
+        time       = Const.INVALID_double;
+        icomm      = Const.INVALID_int;
+        rank       = Const.INVALID_int;
+        thread     = Const.INVALID_int;
         rectype    = Const.INVALID_int;
-        taskID     = Const.INVALID_int;
+
+        lineID     = Const.INVALID_int;
     }
 
     public RecHeader( DataInputStream istm )
@@ -34,13 +42,17 @@ public class RecHeader
     public int readFromDataStream( DataInputStream istm )
     {
         try {
-            timestamp  = istm.readDouble();
+            time       = istm.readDouble();
+            icomm      = istm.readInt();
+            rank       = istm.readInt();
+            thread     = istm.readInt();
             rectype    = istm.readInt();
-            taskID     = istm.readInt();
         } catch ( IOException ioerr ) {
             ioerr.printStackTrace();
             return 0;
         }
+
+        lineID  = LineID.compute( icomm, rank );
 
         return BYTESIZE;
     }
@@ -62,9 +74,13 @@ public class RecHeader
     public RecHeader copy()
     {
         RecHeader cp  = new RecHeader();
-        cp.timestamp  = this.timestamp;
+        cp.time       = this.time; 
+        cp.icomm      = this.icomm;
+        cp.rank       = this.rank;
+        cp.thread     = this.thread;
         cp.rectype    = this.rectype;
-        cp.taskID     = this.taskID;
+
+        lineID  = LineID.compute( icomm, rank );
         return cp;
     }
 */
@@ -77,9 +93,11 @@ public class RecHeader
     public String toString()
     {
         return ( "RecHeader"
-               + "[ timestamp=" + timestamp
+               + "[ time=" + time
+               + ", icomm=" + icomm
+               + ", rank=" + rank
+               + ", thread=" + thread 
                + ", rectype=" + rectype
-               + ", taskID=" + taskID
                // + ", BYTESIZE=" + BYTESIZE
                + " ]" );
     } 
