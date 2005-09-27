@@ -119,7 +119,7 @@ if __name__ == '__main__':    # so I can be imported by pydoc
             if data[0] == EINTR:    # interrupted by timeout for example
                 continue
             else:
-                mpd_print(1, 'mpdgdb_drv: main loop: select error: %s' % strerror(data[0]))
+                mpd_print(1, 'mpdgdbdrv: main loop: select error: %s' % strerror(data[0]))
         # print "READY=", readyFDs ; stdout.flush()
         for readyFD in readyFDs:
             if readyFD == gdb_sout_serr_fileno:
