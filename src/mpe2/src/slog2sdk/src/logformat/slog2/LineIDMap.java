@@ -77,11 +77,12 @@ public class LineIDMap extends TreeMap
         int        num_entries;
         int        irow, icol;
         if ( column_labels.length != num_treenodes ) {
-            System.err.print( "Warning: The input column_labels[] is " );
+            System.err.print( "LineIDMap: Warning!\n"
+                            + "The input column_labels[] are " );
             for ( icol = 0; icol < column_labels.length; icol++ )
                 System.err.print( column_labels[ icol ] + " " );
             System.err.println();
-            System.err.println( "The number of column labels is expected "
+            System.err.println( "\tThe number of column labels is expected "
                               + "to be " + num_treenodes + "." );
         }
         num_entries = y_map.getNumOfRows();
