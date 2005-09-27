@@ -10,8 +10,9 @@
    Version 2.1: Clean up of CLOG record's data structure to minimize
                 wasted disk space.
    Version 2.2: Added CLOG internal profiling state: CLOG_Buffer_write2disk
+   Version 2.3: Added support of MPI_Comm.
 */
-#define CLOG_VERSION          "CLOG-02.20"
+#define CLOG_VERSION          "CLOG-02.30"
 
 #include "clog_buffer.h"
 #include "clog_sync.h"

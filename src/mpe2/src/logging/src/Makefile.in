@@ -52,9 +52,9 @@ EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@
 CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
 CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
-MPE_CSOURCES     = clog_util.c clog_timer.c \
-                   clog_preamble.c clog_block.c clog_buffer.c clog_record.c \
-                   clog_sync.c clog_merger.c clog.c mpe_log.c
+MPE_CSOURCES     = clog_util.c clog_timer.c clog_uuid.c clog_commset.c \
+                   clog_preamble.c clog_block.c clog_buffer.c \
+                   clog_record.c clog_sync.c clog_merger.c clog.c mpe_log.c
 MPE_COBJECTS     = $(MPE_CSOURCES:.c=.@OBJEXT@)
 
 MPE_WSOURCES     = mpe_logf.c
@@ -86,6 +86,7 @@ profile_all:
 #
 default: clean
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a
+	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME).a
 	$(MAKE) $(EXECS)
@@ -125,10 +126,21 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
 # -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_null.a
 ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a: clean
 	@$(MAKE) mpe_log_null.@OBJEXT@ \
-	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} "
+	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS} "
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
+	     "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
+	 fi
+	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
+	$(RANLIB) $@
+
+# -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_nompi_null.a
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: clean
+	@$(MAKE) mpe_log_null.@OBJEXT@ \
+	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
+	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	     $(MAKE) $(MPE_WOBJECTS) \
+	     "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI" ; \
 	 fi
 	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@

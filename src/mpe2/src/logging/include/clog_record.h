@@ -7,6 +7,7 @@
 
 #include "clog_block.h"
 #include "clog_timer.h"
+#include "clog_commset.h"
 
 /*
    We distinguish between record types and event types (kinds), and have a
@@ -18,14 +19,20 @@
    the header alone.
 */
 
+/*
+   Whenever fields are add/deleted or padding is added or made meaningful,
+   synchronize the changes with all CLOG_Rec_xxx_swap_bytes() routines.
+*/
 typedef struct {
-    CLOG_Time_t       timestamp; /* Crucial to be the 1st item */
+    CLOG_Time_t       time;    /* Crucial to be the 1st item */
+    CLOG_CommLID_t    icomm;   /* LOCAL intracomm's internal local/global ID */
+    int               rank;    /* rank within communicator labelled by icomm */
+    int               thread;  /* local thread ID */
     int               rectype;
-    int               procID;    /* currently rank in COMM_WORLD */
     CLOG_DataUnit_t   rest[1];
 } CLOG_Rec_Header_t;
-/*  2 CLOG_Time_t's */
-#define CLOG_RECLEN_HEADER     ( sizeof(CLOG_Time_t) + 2 * sizeof(int) )
+/*  3 CLOG_Time_t's */
+#define CLOG_RECLEN_HEADER     ( sizeof(CLOG_Time_t) + 4 * sizeof(int) )
 
 typedef char CLOG_Str_Color_t[ 3 * sizeof(CLOG_Time_t) ];
 typedef char CLOG_Str_Desc_t[ 4 * sizeof(CLOG_Time_t) ];
@@ -50,7 +57,7 @@ typedef struct {
                                + sizeof(CLOG_Str_Desc_t) \
                                + sizeof(CLOG_Str_Format_t) )
 
-/* Rec_EventDef defines the attritbutes of a event */
+/* Rec_EventDef defines the attributes of a event */
 typedef struct {
     int               etype;     /* event ID */
     int               pad;
@@ -98,38 +105,40 @@ typedef struct {
 
 /* Rec_MsgEvt defines a message event pairs */
 typedef struct {
-    int               etype;     /* kind of message event */
-    int               tag;       /* message tag */
-    int               partner;   /* source or destination in send/recv */
-    int               comm;      /* communicator */
-    int               size;      /* length in bytes */
-    int               pad;       /* keep length a multiple of sizeof(dbl) */
+    int               etype;   /* kind of message event */
+    CLOG_CommLID_t    icomm;   /* REMOTE intracomm's internal local/global ID */
+    int               rank;    /* src/dest rank in send/recv in REMOTE icomm */
+    int               tag;     /* message tag */
+    int               size;    /* length in bytes */
+    int               pad;
     CLOG_DataUnit_t   end[1];
 } CLOG_Rec_MsgEvt_t;
-/*  3 CLOG_Time_t's */
+/*  2 CLOG_Time_t's */
 #define CLOG_RECLEN_MSGEVT        ( 6 * sizeof(int) )
 
 /* Rec_CollEvt defines events for collective operation */
 typedef struct {
-    int               etype;     /* type of collective event */
-    int               root;      /* root of collective op */
-    int               comm;      /* communicator */
-    int               size;      /* length in bytes */
+    int               etype;   /* type of collective event */
+    int               root;    /* root of collective op */
+    int               size;    /* length in bytes */
+    int               pad;
     CLOG_DataUnit_t   end[1];
 } CLOG_Rec_CollEvt_t;
 /*  2 CLOG_Time_t's */
 #define CLOG_RECLEN_COLLEVT    ( 4 * sizeof(int) )
 
-/* Rec_CommEvt defines events for Communicator */
+/* Rec_CommEvt defines events for {Intra|Inter}Communicator */
+/* Assume CLOG_CommGID_t is of size of multiple of sizeof(double) */
 typedef struct {
-    int               etype;     /* type of communicator creation */
-    int               parent;    /* parent communicator */
-    int               newcomm;   /* new communicator */
-    int               pad;       /* keep length a multiple of sizeof(dbl) */
+    int               etype;      /* type of communicator creation */
+    CLOG_CommLID_t    icomm;      /* communicator's internal local/global ID */
+    int               rank;       /* rank in icomm */
+    int               wrank;      /* rank in MPI_COMM_WORLD */
+    CLOG_CommGID_t    gcomm;      /* globally unique ID */
     CLOG_DataUnit_t   end[1];
 } CLOG_Rec_CommEvt_t;
 /*  2 CLOG_Time_t's */
-#define CLOG_RECLEN_COMMEVT    ( 4 * sizeof(int) )
+#define CLOG_RECLEN_COMMEVT    ( 4 * sizeof(int) + CLOG_UUID_SIZE )
 
 typedef struct {
     int               srcloc;    /* id of source location */
@@ -169,6 +178,10 @@ typedef struct {
 #define CLOG_REC_SRCLOC      10     /* identifier of location in source */
 #define CLOG_REC_TIMESHIFT   11     /* time shift calculated for this process */
 
+/*
+   Be sure NO CLOG internal states overlapped with MPE's internal states
+   which are defined in log_mpi_core.c
+*/
 /* special event & state type for CLOG internal state, CLOG_Buffer_write2disk */
 #define CLOG_STATEID_BUFFERWRITE      -1
 #define CLOG_EVT_BUFFERWRITE_START -1001
@@ -180,14 +193,6 @@ typedef struct {
 
 /* special event type for defining constants */
 #define CLOG_EVT_CONST     -201
-
-/* predefined COMM event types */
-#define CLOG_COMM_INIT      101
-#define CLOG_COMM_DUP       102
-#define CLOG_COMM_SPLIT     103
-#define CLOG_COMM_CARTCR    104
-#define CLOG_COMM_COMMCR    105
-#define CLOG_COMM_CFREE     106
 
 void CLOG_Rec_print_rectype( int rectype, FILE *stream );
 void CLOG_Rec_print_msgtype( int etype, FILE *stream );

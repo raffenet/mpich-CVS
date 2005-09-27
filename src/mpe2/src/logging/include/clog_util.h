@@ -5,7 +5,7 @@
 #if !defined( _CLOG_UTIL )
 #define _CLOG_UTIL
 
-#include "clog_common.h"
+#include "clog_const.h"
 
 void CLOG_Util_abort( int errorcode );
 

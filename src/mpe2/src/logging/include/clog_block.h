@@ -6,6 +6,7 @@
 #define _CLOG_BLOCK
 
 #include "clog_timer.h"
+#include "clog_commset.h"
 
 #define CLOG_DataUnit_t          char
 #define CLOG_DATAUNIT_MPI_TYPE   MPI_CHAR
@@ -28,8 +29,9 @@ void  CLOG_BlockData_free( CLOG_BlockData_t **data_handle );
 
 void CLOG_BlockData_reset( CLOG_BlockData_t *data );
 
-void CLOG_BlockData_patch( CLOG_BlockData_t *data,
-                           CLOG_Time_t      *local_proc_timediff );
+void CLOG_BlockData_patch(       CLOG_BlockData_t *data,
+                                 CLOG_Time_t      *local_proc_timediff,
+                           const CLOG_CommIDs_t   *commtable );
 
 void CLOG_BlockData_swap_bytes_last( CLOG_BlockData_t *data );
 

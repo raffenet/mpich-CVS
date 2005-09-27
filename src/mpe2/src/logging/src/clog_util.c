@@ -27,7 +27,7 @@
 #include "mpi.h"
 #endif
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_util.h"
 
 #if defined( HAVE_MKSTEMP )

@@ -26,7 +26,7 @@
 #include <io.h>
 #endif
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_preamble.h"
 #include "clog_buffer.h"
 #include "clog_util.h"
@@ -66,6 +66,18 @@ CLOG_Buffer_t* CLOG_Buffer_create( void )
     buffer->num_blocks       = 0;
     buffer->num_used_blocks  = 0;
 
+#if !defined( CLOG_NOMPI )
+    buffer->commset          = CLOG_CommSet_create();
+    if ( buffer->commset == NULL ) {
+        fprintf( stderr, __FILE__":CLOG_Buffer_create() - \n"
+                         "\t""CLOG_CommSet_create() returns NULL.\n" );
+        fflush( stderr );
+        return NULL;
+    }
+#else
+    buffer->commset          = NULL;
+#endif
+
     buffer->local_fd         = CLOG_NULL_FILE;
     strcpy( buffer->local_filename, "" );
     buffer->timeshift_fptr   = 0;
@@ -82,6 +94,10 @@ void CLOG_Buffer_free( CLOG_Buffer_t **buffer_handle )
     CLOG_Block_t  *block;
 
     buffer = *buffer_handle;
+#if !defined( CLOG_NOMPI )
+    CLOG_CommSet_free( &(buffer->commset) );
+#endif
+
     block = buffer->head_block;
     while ( block != NULL ) {
         buffer->head_block = block->next;
@@ -177,11 +193,12 @@ void CLOG_Buffer_init( CLOG_Buffer_t *buffer, const char *local_tmpfile_name )
     buffer->num_used_blocks  = 1;
 
 #if !defined( CLOG_NOMPI )
-    PMPI_Comm_rank( MPI_COMM_WORLD, &(buffer->local_mpi_rank) );
-    PMPI_Comm_size( MPI_COMM_WORLD, &(buffer->num_mpi_procs) );
+    PMPI_Comm_size( MPI_COMM_WORLD, &(buffer->world_size) );
+    PMPI_Comm_rank( MPI_COMM_WORLD, &(buffer->world_rank) );
+    CLOG_CommSet_init( buffer->commset );
 #else
-    buffer->local_mpi_rank = 0;
-    buffer->num_mpi_procs  = 1;
+    buffer->world_size  = 1;
+    buffer->world_rank  = 0;
 #endif
 
     if ( local_tmpfile_name != NULL )
@@ -264,6 +281,8 @@ void CLOG_Buffer_localIO_write( CLOG_Buffer_t *buffer )
 
 void CLOG_Buffer_advance_block( CLOG_Buffer_t *buffer )
 {
+    const CLOG_CommIDs_t  *commIDs;
+
     if ( buffer->curr_block->next != NULL ) {
         CLOG_Buffer_save_endblock( buffer );
 
@@ -277,8 +296,12 @@ void CLOG_Buffer_advance_block( CLOG_Buffer_t *buffer )
            So save the state CLOG_Buffer_write2disk without checking.
            Can't check anyway, circular logic!
         */
-        if ( buffer->log_overhead == CLOG_BOOL_TRUE )
-            CLOG_Buffer_save_bareevt_0chk( buffer, CLOG_EVT_BUFFERWRITE_START );
+        commIDs  = NULL;
+        if ( buffer->log_overhead == CLOG_BOOL_TRUE ) {
+            commIDs  = CLOG_CommSet_get_IDs( buffer->commset, MPI_COMM_WORLD );
+            CLOG_Buffer_save_bareevt_0chk( buffer, commIDs, 0,
+                                           CLOG_EVT_BUFFERWRITE_START );
+        }
         CLOG_Buffer_save_endblock( buffer );
 
         if ( buffer->local_fd == CLOG_NULL_FILE )
@@ -286,8 +309,11 @@ void CLOG_Buffer_advance_block( CLOG_Buffer_t *buffer )
         CLOG_Buffer_localIO_write( buffer );
         CLOG_Block_reset( buffer->curr_block );
 
-        if ( buffer->log_overhead == CLOG_BOOL_TRUE )
-            CLOG_Buffer_save_bareevt( buffer, CLOG_EVT_BUFFERWRITE_FINAL );
+        /*  Assume commIDs is non-NULL and has been updated previously */
+        if ( buffer->log_overhead == CLOG_BOOL_TRUE ) {
+            CLOG_Buffer_save_bareevt( buffer, commIDs, 0,
+                                      CLOG_EVT_BUFFERWRITE_FINAL );
+        }
     }
 }
 
@@ -320,6 +346,7 @@ off_t CLOG_Buffer_localIO_ftell( CLOG_Buffer_t *buffer )
 /* Allocate a default CLOG_Rec_Timeshift record in the memory buffer.  */
 void CLOG_Buffer_init_timeshift( CLOG_Buffer_t *buffer )
 {
+    const CLOG_CommIDs_t  *commIDs;
     /*
        The default CLOG_Rec_Timeshift recird needs to be saved before
        CLOG_Buffer_t.timeshift_fptr is updated to account for the possibility
@@ -327,7 +354,8 @@ void CLOG_Buffer_init_timeshift( CLOG_Buffer_t *buffer )
        CLOG_Rec_Timeshift record.  After saving the record, the location
        of the CLOG_Rec_Timeshift is unchangable.
     */
-    CLOG_Buffer_save_timeshift( buffer, 0.0 );
+    commIDs  = CLOG_CommSet_get_IDs( buffer->commset, MPI_COMM_WORLD );
+    CLOG_Buffer_save_timeshift( buffer, commIDs, 0, 0.0 );
     buffer->timeshift_fptr = CLOG_Buffer_localIO_ftell( buffer )
                            - CLOG_Rec_size( CLOG_REC_TIMESHIFT );
 }
@@ -363,7 +391,7 @@ void CLOG_Buffer_set_timeshift( CLOG_Buffer_t *buffer,
             fflush( stderr );
             return;
         }
-        /* Locat the last CLOG_Rec_Timeshift_t in the file */
+        /* Locate the last CLOG_Rec_Timeshift_t in the file */
         lseek( buffer->local_fd, last_timeshift_fptr, SEEK_SET );
         reclen_hdr     = CLOG_RECLEN_HEADER;
         reclen_tshift  = CLOG_RECLEN_TIMESHIFT;
@@ -539,16 +567,10 @@ int CLOG_Buffer_reserved_block_size( unsigned int rectype )
 
 void CLOG_Buffer_save_endlog( CLOG_Buffer_t *buffer )
 {
-    CLOG_BlockData_t   *blkdata;
-    CLOG_Rec_Header_t  *hdr;
-
+    const CLOG_CommIDs_t  *commIDs;
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        blkdata          = buffer->curr_block->data;
-        hdr              = (CLOG_Rec_Header_t *) blkdata->ptr;
-        hdr->timestamp   = CLOG_Timer_get();
-        hdr->rectype     = CLOG_REC_ENDLOG;
-        hdr->procID      = buffer->local_mpi_rank;
-        blkdata->ptr     = hdr->rest;  /* points to next available header */
+        commIDs  = CLOG_CommSet_get_IDs( buffer->commset, MPI_COMM_WORLD );
+        CLOG_Buffer_save_header_0chk( buffer, commIDs, 0, CLOG_REC_ENDLOG );
     }
     else if ( buffer->status == CLOG_UNINIT ) {
         fprintf( stderr, __FILE__":CLOG_Buffer_save_endlog() - \n"
@@ -560,16 +582,10 @@ void CLOG_Buffer_save_endlog( CLOG_Buffer_t *buffer )
 
 void CLOG_Buffer_save_endblock( CLOG_Buffer_t *buffer )
 {
-    CLOG_BlockData_t   *blkdata;
-    CLOG_Rec_Header_t  *hdr;
-
+    const CLOG_CommIDs_t  *commIDs;
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        blkdata          = buffer->curr_block->data;
-        hdr              = (CLOG_Rec_Header_t *) blkdata->ptr;
-        hdr->timestamp   = CLOG_Timer_get();
-        hdr->rectype     = CLOG_REC_ENDBLOCK;
-        hdr->procID      = buffer->local_mpi_rank;
-        blkdata->ptr     = hdr->rest;  /* points to next available header */
+        commIDs  = CLOG_CommSet_get_IDs( buffer->commset, MPI_COMM_WORLD );
+        CLOG_Buffer_save_header_0chk( buffer, commIDs, 0, CLOG_REC_ENDBLOCK );
     }
     else if ( buffer->status == CLOG_UNINIT ) {
         fprintf( stderr, __FILE__":CLOG_Buffer_save_endblock() - \n"
@@ -579,20 +595,33 @@ void CLOG_Buffer_save_endblock( CLOG_Buffer_t *buffer )
     }
 }
 
-void CLOG_Buffer_save_header_0chk( CLOG_Buffer_t *buffer, int rectype )
+void CLOG_Buffer_save_header_0chk( CLOG_Buffer_t *buffer,
+                                   const CLOG_CommIDs_t *commIDs,
+                                   CLOG_ThreadLID_t thd,
+                                   int rectype )
 {
     CLOG_BlockData_t   *blkdata;
     CLOG_Rec_Header_t  *hdr;
 
     blkdata          = buffer->curr_block->data;
     hdr              = (CLOG_Rec_Header_t *) blkdata->ptr;
-    hdr->timestamp   = CLOG_Timer_get();
+    hdr->time        = CLOG_Timer_get();
+#if !defined( CLOG_NOMPI )
+    hdr->icomm       = commIDs->local_ID;
+    hdr->rank        = commIDs->comm_rank;
+#else
+    hdr->icomm       = 0;
+    hdr->rank        = 0;
+#endif
+    hdr->thread      = thd;
     hdr->rectype     = rectype;
-    hdr->procID      = buffer->local_mpi_rank;
     blkdata->ptr     = hdr->rest;  /* advance to next available space */
 }
 
-void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer, int rectype )
+void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer,
+                              const CLOG_CommIDs_t *commIDs,
+                              CLOG_ThreadLID_t thd,
+                              int rectype )
 {
     CLOG_BlockData_t   *blkdata;
     CLOG_Rec_Header_t  *hdr;
@@ -604,13 +633,22 @@ void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer, int rectype )
         blkdata      = buffer->curr_block->data;
     }
     hdr              = (CLOG_Rec_Header_t *) blkdata->ptr;
-    hdr->timestamp   = CLOG_Timer_get();
+    hdr->time        = CLOG_Timer_get();
+#if !defined( CLOG_NOMPI )
+    hdr->icomm       = commIDs->local_ID;
+    hdr->rank        = commIDs->comm_rank;
+#else
+    hdr->icomm       = 0;
+    hdr->rank        = 0;
+#endif
+    hdr->thread      = thd;
     hdr->rectype     = rectype;
-    hdr->procID      = buffer->local_mpi_rank;
     blkdata->ptr     = hdr->rest;  /* advance to next available space */
 }
 
 void CLOG_Buffer_save_statedef( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
                                 int stateID, int startetype, int finaletype,
                                 const char *color, const char *name,
                                 const char *format )
@@ -619,7 +657,7 @@ void CLOG_Buffer_save_statedef( CLOG_Buffer_t *buffer,
     CLOG_Rec_StateDef_t  *statedef;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_STATEDEF );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_STATEDEF );
         blkdata               = buffer->curr_block->data;
         statedef              = (CLOG_Rec_StateDef_t *) blkdata->ptr;
         statedef->stateID     = stateID;
@@ -657,15 +695,17 @@ void CLOG_Buffer_save_statedef( CLOG_Buffer_t *buffer,
     }
 }
 
-void CLOG_Buffer_save_eventdef( CLOG_Buffer_t *buffer, int etype,
-                                const char *color, const char *name,
-                                const char *format )
+void CLOG_Buffer_save_eventdef( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
+                                int etype, const char *color,
+                                const char *name, const char *format )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_EventDef_t  *eventdef;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_EVENTDEF );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_EVENTDEF );
         blkdata               = buffer->curr_block->data;
         eventdef              = (CLOG_Rec_EventDef_t *) blkdata->ptr;
         eventdef->etype       = etype;
@@ -702,13 +742,15 @@ void CLOG_Buffer_save_eventdef( CLOG_Buffer_t *buffer, int etype,
 }
 
 void CLOG_Buffer_save_constdef( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
                                 int etype, int value, const char *name )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_ConstDef_t  *constdef;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_CONSTDEF );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_CONSTDEF );
         blkdata               = buffer->curr_block->data;
         constdef              = (CLOG_Rec_ConstDef_t *) blkdata->ptr;
         constdef->etype       = etype;
@@ -731,13 +773,16 @@ void CLOG_Buffer_save_constdef( CLOG_Buffer_t *buffer,
     }
 }
 
-void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer, int etype )
+void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer,
+                                    const CLOG_CommIDs_t *commIDs,
+                                    CLOG_ThreadLID_t thd,
+                                    int etype )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_BareEvt_t   *bareevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header_0chk( buffer, CLOG_REC_BAREEVT );
+        CLOG_Buffer_save_header_0chk( buffer, commIDs, thd, CLOG_REC_BAREEVT );
         blkdata               = buffer->curr_block->data;
         bareevt               = (CLOG_Rec_BareEvt_t *) blkdata->ptr;
         bareevt->etype        = etype;
@@ -751,13 +796,16 @@ void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer, int etype )
     }
 }
 
-void CLOG_Buffer_save_bareevt( CLOG_Buffer_t *buffer, int etype )
+void CLOG_Buffer_save_bareevt( CLOG_Buffer_t *buffer,
+                               const CLOG_CommIDs_t *commIDs,
+                               CLOG_ThreadLID_t thd,
+                               int etype )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_BareEvt_t   *bareevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_BAREEVT );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_BAREEVT );
         blkdata               = buffer->curr_block->data;
         bareevt               = (CLOG_Rec_BareEvt_t *) blkdata->ptr;
         bareevt->etype        = etype;
@@ -772,13 +820,15 @@ void CLOG_Buffer_save_bareevt( CLOG_Buffer_t *buffer, int etype )
 }
 
 void CLOG_Buffer_save_cargoevt( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
                                 int etype, const char *bytes )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_CargoEvt_t  *cargoevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_CARGOEVT );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_CARGOEVT );
         blkdata               = buffer->curr_block->data;
         cargoevt              = (CLOG_Rec_CargoEvt_t *) blkdata->ptr;
         cargoevt->etype       = etype;
@@ -797,20 +847,21 @@ void CLOG_Buffer_save_cargoevt( CLOG_Buffer_t *buffer,
 }
 
 void CLOG_Buffer_save_msgevt( CLOG_Buffer_t *buffer,
-                              int etype, int tag, int partner,
-                              int comm, int size )
+                              const CLOG_CommIDs_t *commIDs,
+                              CLOG_ThreadLID_t thd,
+                              int etype, int tag, int remote_rank, int size )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_MsgEvt_t    *msgevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_MSGEVT );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_MSGEVT );
         blkdata               = buffer->curr_block->data;
         msgevt                = (CLOG_Rec_MsgEvt_t *) blkdata->ptr;
         msgevt->etype         = etype;
+        msgevt->icomm         = CLOG_COMM_LID_NULL; /* will be patched later */ 
+        msgevt->rank          = remote_rank;
         msgevt->tag           = tag;
-        msgevt->partner       = partner;
-        msgevt->comm          = comm;
         msgevt->size          = size;
         blkdata->ptr          = msgevt->end;
     }
@@ -823,18 +874,19 @@ void CLOG_Buffer_save_msgevt( CLOG_Buffer_t *buffer,
 }
 
 void CLOG_Buffer_save_collevt( CLOG_Buffer_t *buffer,
-                               int etype, int root, int size, int comm )
+                               const CLOG_CommIDs_t *commIDs,
+                               CLOG_ThreadLID_t thd,
+                               int etype, int root, int size )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_CollEvt_t   *collevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_COLLEVT );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_COLLEVT );
         blkdata               = buffer->curr_block->data;
         collevt               = (CLOG_Rec_CollEvt_t *) blkdata->ptr;
         collevt->etype        = etype;
         collevt->root         = root;
-        collevt->comm         = comm;
         collevt->size         = size;
         blkdata->ptr          = collevt->end;
     }
@@ -847,18 +899,24 @@ void CLOG_Buffer_save_collevt( CLOG_Buffer_t *buffer,
 }
 
 void CLOG_Buffer_save_commevt( CLOG_Buffer_t *buffer,
-                               int etype, int parent, int newcomm )
+                               const CLOG_CommIDs_t *commIDs,
+                               CLOG_ThreadLID_t thd,
+                               int etype, const CLOG_CommGID_t guid,
+                               CLOG_CommLID_t icomm, int comm_rank,
+                               int world_rank )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_CommEvt_t   *commevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_COMMEVT );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_COMMEVT );
         blkdata               = buffer->curr_block->data;
         commevt               = (CLOG_Rec_CommEvt_t *) blkdata->ptr;
         commevt->etype        = etype;
-        commevt->parent       = parent;
-        commevt->newcomm      = newcomm;
+        commevt->icomm        = icomm;
+        commevt->rank         = comm_rank;
+        commevt->wrank        = world_rank;
+        memcpy( commevt->gcomm, guid, CLOG_UUID_SIZE );
         blkdata->ptr          = commevt->end;
     }
     else if ( buffer->status == CLOG_UNINIT ) {
@@ -870,13 +928,15 @@ void CLOG_Buffer_save_commevt( CLOG_Buffer_t *buffer,
 }
 
 void CLOG_Buffer_save_srcloc( CLOG_Buffer_t *buffer,
+                              const CLOG_CommIDs_t *commIDs,
+                              CLOG_ThreadLID_t thd,
                               int srcloc, int lineno, const char *filename )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_Srcloc_t    *srcevt;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_SRCLOC );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_SRCLOC );
         blkdata               = buffer->curr_block->data;
         srcevt                = (CLOG_Rec_Srcloc_t *) blkdata->ptr;
         srcevt->srcloc        = srcloc;
@@ -896,13 +956,15 @@ void CLOG_Buffer_save_srcloc( CLOG_Buffer_t *buffer,
 }
 
 void CLOG_Buffer_save_timeshift( CLOG_Buffer_t *buffer,
+                                 const CLOG_CommIDs_t *commIDs,
+                                 CLOG_ThreadLID_t thd,
                                  CLOG_Time_t    timeshift )
 {
     CLOG_BlockData_t     *blkdata;
     CLOG_Rec_Timeshift_t *tshift;
 
     if ( buffer->status == CLOG_INIT_AND_ON ) {
-        CLOG_Buffer_save_header( buffer, CLOG_REC_TIMESHIFT );
+        CLOG_Buffer_save_header( buffer, commIDs, thd, CLOG_REC_TIMESHIFT );
         blkdata               = buffer->curr_block->data;
         tshift                = (CLOG_Rec_Timeshift_t *) blkdata->ptr;
         tshift->timeshift     = timeshift;

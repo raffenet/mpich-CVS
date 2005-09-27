@@ -20,7 +20,7 @@
 #include <io.h>
 #endif
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_record.h"
 #include "clog_preamble.h"
 #include "clog_block.h"

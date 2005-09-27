@@ -20,6 +20,7 @@
 #include "clog_timer.h"
 #include "clog_sync.h"
 #include "clog_merger.h"
+#include "clog_commset.h"
 
 CLOG_Stream_t *CLOG_Open( void )
 {
@@ -65,17 +66,20 @@ void CLOG_Close( CLOG_Stream_t **stream_handle )
 */
 void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
 {
+    const CLOG_CommIDs_t *commIDs;
+          CLOG_Buffer_t  *buffer;
+
     stream->known_eventID  = CLOG_KNOWN_EVENTID_START;
     stream->known_stateID  = CLOG_KNOWN_STATEID_START;
     stream->user_eventID   = CLOG_USER_EVENTID_START;
     stream->user_stateID   = CLOG_USER_STATEID_START;
 
     CLOG_Rec_sizes_init();
-    CLOG_Buffer_init( stream->buffer, local_tmpfile_name );
+    buffer  = stream->buffer;
+    CLOG_Buffer_init( buffer, local_tmpfile_name );
 
     /* Initialize the synchronizer */
-    stream->syncer = CLOG_Sync_create( stream->buffer->num_mpi_procs,
-                                       stream->buffer->local_mpi_rank );
+    stream->syncer = CLOG_Sync_create( buffer->world_size, buffer->world_rank );
     CLOG_Sync_init( stream->syncer );
 
     /* CLOG_Timer_start() HAS TO BE CALLED before any CLOG_Buffer_save_xxx() */
@@ -85,12 +89,13 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
        of the local clog file, so that its value can be used to
        adjust events happened afterward.
     */
-    CLOG_Buffer_init_timeshift( stream->buffer );
+    CLOG_Buffer_init_timeshift( buffer );
 
     /* Adding the CLOG_Buffer_write2disk's state definition */
-    if (    stream->buffer->local_mpi_rank  == 0 
-         && stream->buffer->log_overhead    == CLOG_BOOL_TRUE ) {
-        CLOG_Buffer_save_statedef( stream->buffer,
+    if (    buffer->world_rank    == 0 
+         && buffer->log_overhead  == CLOG_BOOL_TRUE ) {
+        commIDs  = CLOG_CommSet_get_IDs( buffer->commset, MPI_COMM_WORLD );
+        CLOG_Buffer_save_statedef( buffer, commIDs, 0,
                                    CLOG_STATEID_BUFFERWRITE,
                                    CLOG_EVT_BUFFERWRITE_START,
                                    CLOG_EVT_BUFFERWRITE_FINAL,
@@ -103,7 +108,7 @@ void CLOG_Local_finalize( CLOG_Stream_t *stream )
 {
     CLOG_Time_t  local_timediff;
 
-    if ( stream->syncer->local_mpi_rank == 0 ) {
+    if ( stream->syncer->world_rank == 0 ) {
         if ( stream->syncer->is_ok_to_sync == CLOG_BOOL_TRUE )
             printf( "Enabling the synchronization of the clocks...\n" );
         else

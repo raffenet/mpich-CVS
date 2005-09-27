@@ -201,6 +201,37 @@ if test "$ac_cv_func_mkstemp" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],mkstemp)
 fi
 
+dnl srand48 may have been missing in headerfile,
+dnl e.g. gcc -ansi remove srand48's prototype
+AC_CHECK_FUNCS(srand48)
+if test "$ac_cv_func_srand48" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],srand48)
+fi
+
+dnl lrand48 may have been missing in headerfile,
+dnl e.g. gcc -ansi remove lrand48's prototype
+AC_CHECK_FUNCS(lrand48)
+if test "$ac_cv_func_lrand48" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],lrand48)
+fi
+
+
+dnl check if uuid_generate exists
+dnl AC_CHECK_HEADERS( uuid/uuid.h,
+dnl     AC_MSG_CHECKING( [for uuid_generate] )
+dnl     AC_TRY_COMPILE( [
+dnl         #include <uuid/uuid.h>
+dnl         ], [
+dnl         uuid_t new_uuid;
+dnl         uuid_generate( new_uuid );
+dnl         ],
+dnl         AC_DEFINE( HAVE_UUID_GENERATE, 1,
+dnl                    [Define if uuid_generate() exists.] )
+dnl         AC_MSG_RESULT(yes),
+dnl         AC_MSG_RESULT(no)
+dnl     )
+dnl )
+
 dnl check if Large File support is available for 32-bit OS
 AC_CHECK_HEADERS( unistd.h,
     AC_MSG_CHECKING( [for large file support in 32-bit OS] )
@@ -213,9 +244,9 @@ AC_CHECK_HEADERS( unistd.h,
         #endif
         ],
         AC_DEFINE( _LARGEFILE64_SOURCE, 1,
-                   [Define if 64-bit file address support in 32-bit OS] )
+                   [Define if 64-bit file address support in 32-bit OS.] )
         AC_DEFINE( _FILE_OFFSET_BITS, 64,
-                   [Define if 64-bit file address support in 32-bit OS] )
+                   [Define if 64-bit file address support in 32-bit OS.] )
         AC_MSG_RESULT(yes),
         AC_MSG_RESULT(none)
     )

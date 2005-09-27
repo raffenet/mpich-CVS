@@ -12,8 +12,8 @@
 
 typedef struct {
    int                 is_ok_to_sync;
-   int                 num_mpi_procs;
-   int                 local_mpi_rank;
+   int                 world_size;
+   int                 world_rank;
    CLOG_Time_t        *timediffs;
 } CLOG_Sync_t;
 

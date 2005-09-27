@@ -17,6 +17,7 @@ typedef struct {
     int           is_big_endian; /* either CLOG_BOOL_TRUE or CLOG_BOOL_FALSE */
     unsigned int  block_size;
     unsigned int  num_buffered_blocks;
+    unsigned int  comm_world_size;
 } CLOG_Preamble_t;
 
 CLOG_Preamble_t *CLOG_Preamble_create( void );

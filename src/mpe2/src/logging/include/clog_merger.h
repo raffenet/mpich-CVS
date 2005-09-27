@@ -8,7 +8,7 @@
 #include "clog_block.h"
 #include "clog_buffer.h"
 #include "clog_record.h"
-#include "clog_common.h"
+#include "clog_const.h"
 
 #define CLOG_MERGE_LOGBUFTYPE  777
 
@@ -20,11 +20,13 @@ typedef struct {
    CLOG_BlockData_t   *sorted_blk;
    unsigned int        block_size;
    int                 num_active_blks;
-   int                 num_mpi_procs;
-   int                 local_mpi_rank;
-   int                 left_mpi_rank;
-   int                 right_mpi_rank;
-   int                 parent_mpi_rank;
+
+   int                 world_size;
+   int                 local_world_rank;
+   int                 left_world_rank;
+   int                 right_world_rank;
+   int                 parent_world_rank;
+
    int                 is_big_endian;
    char                out_filename[ CLOG_PATH_STRLEN ];
    int                 out_fd;
@@ -49,7 +51,7 @@ void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr );
 int CLOG_Merger_reserved_block_size( unsigned int rectype );
 
 void CLOG_Merger_refill_sideblock( CLOG_BlockData_t  *blockdata,
-                                   int block_mpi_rank, int block_size );
+                                   int block_world_rank, int block_size );
 
 void CLOG_Merger_refill_localblock( CLOG_BlockData_t *blockdata,
                                     CLOG_Buffer_t    *buffer,
@@ -59,7 +61,7 @@ CLOG_Rec_Header_t *
 CLOG_Merger_next_sideblock_hdr( CLOG_BlockData_t   *blockdata,
                                 CLOG_Rec_Header_t  *hdr,
                                 CLOG_Merger_t      *merger,
-                                int                 block_mpi_rank,
+                                int                 block_world_rank,
                                 int                 block_size );
 
 CLOG_Rec_Header_t *

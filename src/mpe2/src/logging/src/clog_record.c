@@ -10,6 +10,8 @@
 
 #include "clog_record.h"
 #include "clog_util.h"
+#include "clog_uuid.h"
+#include "clog_commset.h"
 
 
 /*@
@@ -22,20 +24,20 @@
 void CLOG_Rec_print_rectype( int rectype, FILE *stream )
 {
     switch (rectype) {
-        case CLOG_REC_UNDEF:       fprintf( stream, "udef" ); break;
-        case CLOG_REC_ENDLOG:      fprintf( stream, "elog" ); break;
-        case CLOG_REC_ENDBLOCK:    fprintf( stream, "eblk" ); break;
-        case CLOG_REC_STATEDEF:    fprintf( stream, "sdef" ); break;
-        case CLOG_REC_EVENTDEF:    fprintf( stream, "edef" ); break;
-        case CLOG_REC_CONSTDEF:    fprintf( stream, "cdef" ); break;
-        case CLOG_REC_BAREEVT:     fprintf( stream, "bare" ); break;
-        case CLOG_REC_CARGOEVT:    fprintf( stream, "cago" ); break;
-        case CLOG_REC_MSGEVT:      fprintf( stream, "msg " ); break;
-        case CLOG_REC_COLLEVT:     fprintf( stream, "coll" ); break;
-        case CLOG_REC_COMMEVT:     fprintf( stream, "comm" ); break;
-        case CLOG_REC_SRCLOC:      fprintf( stream, "loc " ); break;
-        case CLOG_REC_TIMESHIFT:   fprintf( stream, "shft" ); break;
-        default:                   fprintf( stream, "unknown(%d)", rectype);
+        case CLOG_REC_UNDEF:       fprintf( stream, "udef " ); break;
+        case CLOG_REC_ENDLOG:      fprintf( stream, "elog " ); break;
+        case CLOG_REC_ENDBLOCK:    fprintf( stream, "eblk " ); break;
+        case CLOG_REC_STATEDEF:    fprintf( stream, "sdef " ); break;
+        case CLOG_REC_EVENTDEF:    fprintf( stream, "edef " ); break;
+        case CLOG_REC_CONSTDEF:    fprintf( stream, "cdef " ); break;
+        case CLOG_REC_BAREEVT:     fprintf( stream, "bare " ); break;
+        case CLOG_REC_CARGOEVT:    fprintf( stream, "cago " ); break;
+        case CLOG_REC_MSGEVT:      fprintf( stream, "msg  " ); break;
+        case CLOG_REC_COLLEVT:     fprintf( stream, "coll " ); break;
+        case CLOG_REC_COMMEVT:     fprintf( stream, "comm " ); break;
+        case CLOG_REC_SRCLOC:      fprintf( stream, "loc  " ); break;
+        case CLOG_REC_TIMESHIFT:   fprintf( stream, "shft " ); break;
+        default:                   fprintf( stream, "unknown(%d) ", rectype);
     }
 }
 
@@ -49,10 +51,10 @@ void CLOG_Rec_print_rectype( int rectype, FILE *stream )
 void CLOG_Rec_print_msgtype( int etype, FILE *stream )
 {
     switch (etype) {
-        case CLOG_EVT_SENDMSG: fprintf( stream, "send" ); break;
-        case CLOG_EVT_RECVMSG: fprintf( stream, "recv" ); break;
+        case CLOG_EVT_SENDMSG: fprintf( stream, "send " ); break;
+        case CLOG_EVT_RECVMSG: fprintf( stream, "recv " ); break;
             /* none predefined */
-        default:               fprintf( stream, "unk(%d)", etype );
+        default:               fprintf( stream, "unk(%d) ", etype );
     }
 }
 
@@ -63,16 +65,32 @@ void CLOG_Rec_print_msgtype( int etype, FILE *stream )
 . etype - event type for communicator creation event
 
 @*/
-void CLOG_Rec_print_commtype( int etype, FILE *stream )
+void CLOG_Rec_print_commtype( int comm_etype, FILE *stream )
 {
-    switch (etype) {
-        case CLOG_COMM_INIT:   fprintf( stream, "init" ); break;
-        case CLOG_COMM_DUP:    fprintf( stream, "dup " ); break;
-        case CLOG_COMM_SPLIT:  fprintf( stream, "splt" ); break;
-        case CLOG_COMM_CARTCR: fprintf( stream, "crtc" ); break;
-        case CLOG_COMM_COMMCR: fprintf( stream, "cmmc" ); break;
-        case CLOG_COMM_CFREE:  fprintf( stream, "free" ); break;
-        default:               fprintf( stream, "unknown(%d)", etype );
+    switch (comm_etype) {
+        case CLOG_COMM_WORLD_CREATE:
+            fprintf( stream, "CommWorldCreate " );
+            break;
+        case CLOG_COMM_SELF_CREATE:
+            fprintf( stream, "CommSelfCreate  " );
+            break;
+        case CLOG_COMM_FREE:
+            fprintf( stream, "CommFree        " );
+            break;
+        case CLOG_COMM_INTRA_CREATE:
+            fprintf( stream, "IntraCommCreate " );
+            break;
+        case CLOG_COMM_INTER_CREATE:
+            fprintf( stream, "InterCommCreate " );
+            break;
+        case CLOG_COMM_INTRA_LOCAL:
+            fprintf( stream, "LocalIntraComm  " );
+            break;
+        case CLOG_COMM_INTRA_REMOTE:
+            fprintf( stream, "RemoteIntraComm " );
+            break;
+        default:
+            fprintf( stream, "unknown(%d) ", comm_etype );
     }
 }
 
@@ -96,16 +114,17 @@ void CLOG_Rec_print_colltype( int etype, FILE *stream )
 
 void CLOG_Rec_Header_swap_bytes( CLOG_Rec_Header_t *hdr )
 {
-    CLOG_Util_swap_bytes( &(hdr->timestamp), sizeof(CLOG_Time_t), 1 );
-    CLOG_Util_swap_bytes( &(hdr->rectype), sizeof(int), 2 );
+    CLOG_Util_swap_bytes( &(hdr->time), sizeof(CLOG_Time_t), 1 );
+    CLOG_Util_swap_bytes( &(hdr->icomm), sizeof(int), 4 );
 }
 
 void CLOG_Rec_Header_print( CLOG_Rec_Header_t *hdr, FILE *stream )
 {
-    /* fprintf( stream, "ts=%f,%Lx ", hdr->timestamp, hdr->timestamp ); */
-    fprintf( stream, "ts=%f ", hdr->timestamp );
+    fprintf( stream, "ts=%f ", hdr->time );
+    fprintf( stream, "icomm=%d ", hdr->icomm );
+    fprintf( stream, "rank=%d ", hdr->rank );
+    fprintf( stream, "thd=%d ", hdr->thread );
     fprintf( stream, "type=" ); CLOG_Rec_print_rectype( hdr->rectype, stream );
-    fprintf( stream, " proc=%d ", hdr->procID );
 }
 
 void CLOG_Rec_StateDef_swap_bytes( CLOG_Rec_StateDef_t *statedef )
@@ -183,36 +202,40 @@ void CLOG_Rec_MsgEvt_swap_bytes( CLOG_Rec_MsgEvt_t *msg )
 void CLOG_Rec_MsgEvt_print( CLOG_Rec_MsgEvt_t *msg, FILE *stream )
 {
     fprintf( stream,"et=" ); CLOG_Rec_print_msgtype( msg->etype, stream );
-    fprintf( stream, " tg=%d ", msg->tag );
-    fprintf( stream, "prt=%d ", msg->partner );
-    fprintf( stream, "cm=%d ",  msg->comm );
-    fprintf( stream, "sz=%d\n", msg->size );
+    fprintf( stream, "icomm=%d ", msg->icomm );
+    fprintf( stream, "rank=%d ", msg->rank );
+    fprintf( stream, "tag=%d ",  msg->tag );
+    fprintf( stream, "sz=%d\n",  msg->size );
 }
 
 void CLOG_Rec_CollEvt_swap_bytes( CLOG_Rec_CollEvt_t *coll )
 {
-    CLOG_Util_swap_bytes( &(coll->etype), sizeof(int), 4 );
+    CLOG_Util_swap_bytes( &(coll->etype), sizeof(int), 3 );
 }
 
 void CLOG_Rec_CollEvt_print( CLOG_Rec_CollEvt_t *coll, FILE *stream )
 {
     fprintf( stream, "et=" ); CLOG_Rec_print_colltype( coll->etype, stream );
-    fprintf( stream, " root=%d ", coll->root);
-    fprintf( stream, "cm=%d ",    coll->comm );
-    fprintf( stream, "sz=%d\n",   coll->size );
+    fprintf( stream, "root=%d ", coll->root);
+    fprintf( stream, "sz=%d\n",  coll->size );
 }
 
 void CLOG_Rec_CommEvt_swap_bytes( CLOG_Rec_CommEvt_t *comm )
 {
-    CLOG_Util_swap_bytes( &(comm->etype), sizeof(int), 3 );
+    CLOG_Util_swap_bytes( &(comm->etype), sizeof(int), 4 );
+    CLOG_Uuid_swap_bytes( comm->gcomm );
     /* We do not adjust the 'pad' field */
 }
 
 void CLOG_Rec_CommEvt_print( CLOG_Rec_CommEvt_t *comm, FILE *stream )
 {
+    char uuid_str[CLOG_UUID_STR_SIZE] = {0};
     fprintf( stream, "et=" ); CLOG_Rec_print_commtype( comm->etype, stream );
-    fprintf( stream, " pt=%d ",     comm->parent );
-    fprintf( stream, "ncomm=%d\n", comm->newcomm );
+    fprintf( stream, "icomm=%d ", comm->icomm );
+    fprintf( stream, "rank=%d ", comm->rank );
+    fprintf( stream, "wrank=%d ", comm->wrank );
+    CLOG_Uuid_sprint( comm->gcomm, uuid_str );
+    fprintf( stream, "gcomm=%s\n", uuid_str );
 }
 
 void CLOG_Rec_Srcloc_swap_bytes( CLOG_Rec_Srcloc_t *src )

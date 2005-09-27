@@ -5,9 +5,10 @@
 #if !defined( _CLOG_BUFFER )
 #define _CLOG_BUFFER
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_preamble.h"
 #include "clog_block.h"
+#include "clog_commset.h"
 
 /*
    CLOG_DEFAULT_BLOCK_SIZE * CLOG_DEFAULT_BUFFERED_BLOCKS = 16 MB,
@@ -41,8 +42,9 @@ typedef struct {
     unsigned int      num_blocks;
     unsigned int      num_used_blocks;
 
-    int               num_mpi_procs;
-    int               local_mpi_rank;
+    CLOG_CommSet_t   *commset;
+    int               world_size;
+    int               world_rank;
 
     int               local_fd;
     char              local_filename[ CLOG_PATH_STRLEN ];
@@ -91,43 +93,73 @@ void CLOG_Buffer_save_endlog( CLOG_Buffer_t *buffer );
 
 void CLOG_Buffer_save_endblock( CLOG_Buffer_t *buffer );
 
-void CLOG_Buffer_save_header_0chk( CLOG_Buffer_t *buffer, int rectype );
+void CLOG_Buffer_save_header_0chk( CLOG_Buffer_t *buffer,
+                                   const CLOG_CommIDs_t *commIDs,
+                                   CLOG_ThreadLID_t thd,
+                                   int rectype );
 
-void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer, int rectype );
+void CLOG_Buffer_save_header( CLOG_Buffer_t *buffer,
+                              const CLOG_CommIDs_t *commIDs,
+                              CLOG_ThreadLID_t thd,
+                              int rectype );
 
 void CLOG_Buffer_save_statedef( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
                                 int stateID, int startetype, int finaletype,
                                 const char *color, const char *name,
                                 const char *format );
 
-void CLOG_Buffer_save_eventdef( CLOG_Buffer_t *buffer, int etype,
-                                const char *color, const char *name,
-                                const char *format );
+void CLOG_Buffer_save_eventdef( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
+                                int etype, const char *color,
+                                const char *name, const char *format );
 
 void CLOG_Buffer_save_constdef( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
                                 int etype, int value, const char *name );
 
-void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer, int etype );
+void CLOG_Buffer_save_bareevt_0chk( CLOG_Buffer_t *buffer,
+                                    const CLOG_CommIDs_t *commIDs,
+                                    CLOG_ThreadLID_t thd,
+                                    int etype );
 
-void CLOG_Buffer_save_bareevt( CLOG_Buffer_t *buffer, int etype );
+void CLOG_Buffer_save_bareevt( CLOG_Buffer_t *buffer,
+                               const CLOG_CommIDs_t *commIDs,
+                               CLOG_ThreadLID_t thd,
+                               int etype );
 
 void CLOG_Buffer_save_cargoevt( CLOG_Buffer_t *buffer,
+                                const CLOG_CommIDs_t *commIDs,
+                                CLOG_ThreadLID_t thd,
                                 int etype, const char *bytes );
 
 void CLOG_Buffer_save_msgevt( CLOG_Buffer_t *buffer,
-                              int etype, int tag, int partner,
-                              int comm, int size );
+                              const CLOG_CommIDs_t *commIDs,
+                              CLOG_ThreadLID_t thd,
+                              int etype, int tag, int remote_rank, int size );
 
 void CLOG_Buffer_save_collevt( CLOG_Buffer_t *buffer,
-                               int etype, int root, int size, int comm );
+                               const CLOG_CommIDs_t *commIDs,
+                               CLOG_ThreadLID_t thd,
+                               int etype, int root, int size );
 
 void CLOG_Buffer_save_commevt( CLOG_Buffer_t *buffer,
-                               int etype, int parent, int newcomm );
+                               const CLOG_CommIDs_t *commIDs,
+                               CLOG_ThreadLID_t thd,
+                               int etype, const CLOG_CommGID_t guid,
+                               CLOG_CommLID_t icomm, int comm_rank,
+                               int world_rank );
 
 void CLOG_Buffer_save_srcloc( CLOG_Buffer_t *buffer,
+                              const CLOG_CommIDs_t *commIDs,
+                              CLOG_ThreadLID_t thd,
                               int srcloc, int lineno, const char *filename );
 
 void CLOG_Buffer_save_timeshift( CLOG_Buffer_t *buffer,
+                                 const CLOG_CommIDs_t *commIDs,
+                                 CLOG_ThreadLID_t thd,
                                  CLOG_Time_t    timeshift );
-
 #endif /* of _CLOG_BUFFER */

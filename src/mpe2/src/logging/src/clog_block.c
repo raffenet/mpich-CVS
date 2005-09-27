@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #endif
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_block.h"
 #include "clog_record.h"
 /*
@@ -76,33 +76,90 @@ void CLOG_BlockData_reset( CLOG_BlockData_t *data )
 
 /*
     local_proc_timediff is modifiable
+
+    This routine updates the CLOG_Rec_Header_t's time and icomm.
+    i.e., it updates the header's time based on the timeshift and
+    updates the icomm(internal comm ID) to globally(unique) comm ID
+    since the commtable[] is assumed to have been merged/sychronized.
 */
-void CLOG_BlockData_patch( CLOG_BlockData_t *data,
-                           CLOG_Time_t      *local_proc_timediff )
+void CLOG_BlockData_patch(       CLOG_BlockData_t *data,
+                                 CLOG_Time_t      *local_proc_timediff,
+                           const CLOG_CommIDs_t   *commtable )
 {
     CLOG_Rec_Header_t     *hdr;
     CLOG_Rec_Timeshift_t  *tshift;
+#if !defined( CLOG_NOMPI )
+    CLOG_Rec_CommEvt_t    *comm;
+    CLOG_Rec_MsgEvt_t     *msg;
+#endif
     int                    rectype;
 
     /* Assume at least 1 CLOG_Rec_Header_t like record in CLOG_BlockData_t.  */
     /*
-       Assume CLOG_REC_TIMESHIFT can be only in the start of the
-       CLOG_BlockData_t.  If the assumption needs to relaxed such that
-       CLOG_REC_TIMESHIFT can be anywhere in the block, then the detection
-       of CLOG_REC_TIMESHIFT (the if statement) can be moved inside
-       the do-while loop.
     */
     hdr      = (CLOG_Rec_Header_t *) data->head;
     do {
-        rectype        = hdr->rectype;
+        rectype  = hdr->rectype;
+#if !defined( CLOG_NOMPI )
+        /*
+           For intercomm,
+           commtable[ hdr->icomm   ] =        intercommIDs
+           commtable[ hdr->icomm+1 ] =  local_intracommIDs
+           commtable[ hdr->icomm+2 ] = remote_intracommIDs
+        */
+        switch (rectype) {
+            case CLOG_REC_BAREEVT:
+            case CLOG_REC_CARGOEVT:
+                /* For intercomm, replace intercommID by local_intracommID */
+                if ( commtable[ hdr->icomm ].kind == CLOG_COMM_KIND_INTER )
+                    hdr->icomm  = commtable[ hdr->icomm+1 ].local_ID;
+                else
+                    hdr->icomm  = commtable[ hdr->icomm ].local_ID;
+                break;
+            case CLOG_REC_MSGEVT:
+                msg         = (CLOG_Rec_MsgEvt_t *) hdr->rest;
+                /*
+                   Since hdr->icomm is the index that points to the
+                   correct CLOG_CommIDs_t in commtable[], so fix
+                   hdr->icomm last. Otherwise, the location of
+                   the correct CLOG_CommIDs_t will be lost.
+                */
+                if ( commtable[ hdr->icomm ].kind == CLOG_COMM_KIND_INTER ) {
+                    msg->icomm  = commtable[ hdr->icomm+2 ].local_ID;
+                    hdr->icomm  = commtable[ hdr->icomm+1 ].local_ID;
+                }
+                else {
+                    msg->icomm  = commtable[ hdr->icomm ].local_ID;
+                    hdr->icomm  = msg->icomm;
+                }
+                break;
+            case CLOG_REC_COMMEVT:
+                comm                  = (CLOG_Rec_CommEvt_t *) hdr->rest;
+                /* if icomm == CLOG_COMM_LID_NULL, don't change icomm */
+                if ( comm->icomm != CLOG_COMM_LID_NULL )
+                    comm->icomm       = commtable[ comm->icomm ].local_ID;
+                hdr->icomm   = commtable[ hdr->icomm ].local_ID;
+                break;
+            case CLOG_REC_TIMESHIFT:
+                tshift                = (CLOG_Rec_Timeshift_t *) hdr->rest;
+                *local_proc_timediff  = tshift->timeshift;
+                tshift->timeshift    *= -1;
+                hdr->icomm            = commtable[ hdr->icomm ].local_ID;
+                break;
+            default:
+                hdr->icomm            = commtable[ hdr->icomm ].local_ID;
+        }   /* Endof switch (rectype) */
+        hdr->time   += *local_proc_timediff;
+#else
         if ( rectype == CLOG_REC_TIMESHIFT ) {
             tshift                = (CLOG_Rec_Timeshift_t *) hdr->rest;
             *local_proc_timediff  = tshift->timeshift;
             tshift->timeshift    *= -1;
         }
-        hdr->timestamp += *local_proc_timediff;
-        hdr            = (CLOG_Rec_Header_t *)
-                         ( (CLOG_DataUnit_t *) hdr + CLOG_Rec_size( rectype ) );
+        hdr->time   += *local_proc_timediff;
+#endif
+        hdr          = (CLOG_Rec_Header_t *)
+                       ( (CLOG_DataUnit_t *) hdr + CLOG_Rec_size( rectype ) );
     } while ( rectype != CLOG_REC_ENDLOG && rectype != CLOG_REC_ENDBLOCK );
 }
 

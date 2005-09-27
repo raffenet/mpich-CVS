@@ -24,10 +24,11 @@
 #endif
 
 #include "clog.h"
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_util.h"
 #include "clog_timer.h"
 #include "clog_sync.h"
+#include "clog_commset.h"
 
 /* we want to use the PMPI routines instead of the MPI routines for all of 
    the logging calls internal to the mpe_log package */
@@ -36,11 +37,16 @@
 #include "mpiprof.h"
 #endif
 
+extern CLOG_Uuid_t    CLOG_UUID_NULL;
+
 /* Global variables for MPE logging */
-CLOG_Stream_t  *clog_stream            = NULL;
-CLOG_Buffer_t  *clog_buffer            = NULL;
-int             MPE_Log_hasBeenInit    = 0;
-int             MPE_Log_hasBeenClosed  = 0;
+      CLOG_Stream_t  *CLOG_Stream            = NULL;
+      CLOG_Buffer_t  *CLOG_Buffer            = NULL;
+      CLOG_CommSet_t *CLOG_CommSet           = NULL;
+const CLOG_CommIDs_t *CLOG_CommIDs4Self            ;
+const CLOG_CommIDs_t *CLOG_CommIDs4World           ;
+      int             MPE_Log_hasBeenInit    = 0;
+      int             MPE_Log_hasBeenClosed  = 0;
 
 
 /*@
@@ -64,20 +70,34 @@ int             MPE_Log_hasBeenClosed  = 0;
 int MPE_Init_log( void )
 {
     if (!MPE_Log_hasBeenInit || MPE_Log_hasBeenClosed) {
-        clog_stream  = CLOG_Open();
-        CLOG_Local_init( clog_stream, NULL );
-        clog_buffer  = clog_stream->buffer;
+        CLOG_Stream     = CLOG_Open();
+        CLOG_Local_init( CLOG_Stream, NULL );
+        CLOG_Buffer     = CLOG_Stream->buffer;
+        CLOG_CommSet    = CLOG_Buffer->commset;
 #if !defined( CLOG_NOMPI )
-        CLOG_Buffer_save_commevt( clog_buffer, CLOG_COMM_INIT,
-                                  CLOG_COMM_NULL, (int) MPI_COMM_WORLD );
-        if ( clog_buffer->local_mpi_rank == 0 ) {
-            CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
+        CLOG_CommIDs4World  = CLOG_CommSet_get_IDs( CLOG_CommSet,
+                                                    MPI_COMM_WORLD );
+        MPE_Log_commIDs_intracomm( CLOG_CommIDs4World, 0,
+                                   CLOG_COMM_WORLD_CREATE,
+                                   CLOG_CommIDs4World );
+        CLOG_CommIDs4Self   = CLOG_CommSet_get_IDs( CLOG_CommSet,
+                                                    MPI_COMM_SELF );
+        MPE_Log_commIDs_intracomm( CLOG_CommIDs4World, 0,
+                                   CLOG_COMM_SELF_CREATE,
+                                   CLOG_CommIDs4Self );
+        if ( CLOG_Buffer->world_rank == 0 ) {
+            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommIDs4World, 0,
+                                       CLOG_EVT_CONST,
                                        MPI_PROC_NULL, "MPI_PROC_NULL" );
-            CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
+            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommIDs4World, 0,
+                                       CLOG_EVT_CONST,
                                        MPI_ANY_SOURCE, "MPI_ANY_SOURCE" );
-            CLOG_Buffer_save_constdef( clog_buffer, CLOG_EVT_CONST,
+            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommIDs4World, 0,
+                                       CLOG_EVT_CONST,
                                        MPI_ANY_TAG, "MPI_ANY_TAG" );
         }
+#else
+        CLOG_CommIDs4World  = NULL;
 #endif
         MPE_Log_hasBeenInit = 1;        /* set MPE_Log as being initialized */
         MPE_Log_hasBeenClosed = 0;
@@ -93,7 +113,7 @@ int MPE_Start_log( void )
 {
     if (!MPE_Log_hasBeenInit)
         return MPE_LOG_NOT_INITIALIZED;
-    clog_buffer->status = CLOG_INIT_AND_ON;
+    CLOG_Buffer->status = CLOG_INIT_AND_ON;
     return MPE_LOG_OK;
 }
 
@@ -104,7 +124,7 @@ int MPE_Stop_log( void )
 {
     if (!MPE_Log_hasBeenInit)
         return MPE_LOG_NOT_INITIALIZED;
-    clog_buffer->status = CLOG_INIT_AND_OFF;
+    CLOG_Buffer->status = CLOG_INIT_AND_OFF;
     return MPE_LOG_OK;
 }
 
@@ -120,6 +140,72 @@ int MPE_Initialized_logging( void )
 {
     return MPE_Log_hasBeenInit + MPE_Log_hasBeenClosed;
 }
+
+/*
+   The is to log CLOG intracommunicator event.
+*/
+int MPE_Log_commIDs_intracomm( const CLOG_CommIDs_t *commIDs, int local_thread,
+                               int comm_etype,
+                               const CLOG_CommIDs_t *intracommIDs )
+{
+#if !defined( CLOG_NOMPI )
+    CLOG_Buffer_save_commevt( CLOG_Buffer, commIDs, local_thread, comm_etype,
+                              intracommIDs->global_ID,
+                              intracommIDs->local_ID,
+                              intracommIDs->comm_rank,
+                              intracommIDs->world_rank );
+#endif
+    return MPE_LOG_OK;
+}
+
+
+int MPE_Log_commIDs_nullcomm( const CLOG_CommIDs_t *commIDs, int local_thread,
+                              int comm_etype )
+{
+#if !defined( CLOG_NOMPI )
+    CLOG_Buffer_save_commevt( CLOG_Buffer, commIDs, local_thread, comm_etype,
+                              CLOG_UUID_NULL, CLOG_COMM_LID_NULL,
+                              CLOG_COMM_RANK_NULL, CLOG_COMM_WRANK_NULL );
+#endif
+    return MPE_LOG_OK;
+}
+
+int MPE_Log_commIDs_intercomm( const CLOG_CommIDs_t *commIDs, int local_thread,
+                               int comm_etype,
+                               const CLOG_CommIDs_t *intercommIDs )
+{
+#if !defined( CLOG_NOMPI )
+    CLOG_CommIDs_t *local_intracommIDs;
+    CLOG_CommIDs_t *remote_intracommIDs;
+
+    CLOG_Buffer_save_commevt( CLOG_Buffer, commIDs, local_thread, comm_etype,
+                              intercommIDs->global_ID,
+                              intercommIDs->local_ID,
+                              intercommIDs->comm_rank,
+                              intercommIDs->world_rank );
+    /*
+       Don't check for local_intracommIDs = NULL or remote_intracommIDs = NULL
+       prefer sigfault than fail silently.
+    */
+    local_intracommIDs  = intercommIDs->next;
+    CLOG_Buffer_save_commevt( CLOG_Buffer, commIDs, local_thread,
+                              CLOG_COMM_INTRA_LOCAL,
+                              local_intracommIDs->global_ID,
+                              local_intracommIDs->local_ID,
+                              local_intracommIDs->comm_rank,
+                              local_intracommIDs->world_rank );
+    remote_intracommIDs = local_intracommIDs->next;
+    CLOG_Buffer_save_commevt( CLOG_Buffer, commIDs, local_thread,
+                              CLOG_COMM_INTRA_REMOTE,
+                              remote_intracommIDs->global_ID,
+                              remote_intracommIDs->local_ID,
+                              remote_intracommIDs->comm_rank,
+                              remote_intracommIDs->world_rank );
+#endif
+    return MPE_LOG_OK;
+}
+
+
 
 /*N MPE_LOG_BYTE_FORMAT
   Notes on storage format control support:
@@ -146,30 +232,87 @@ int MPE_Initialized_logging( void )
 .n
 N*/
 
+
+
 /*@
-    MPE_Describe_info_state - Describe attributes of a state
-                              with byte informational data.
+    MPE_Describe_comm_state - Describe attributes of a state
+                              with byte informational data
+                              in a specified MPI_Comm.
 
     Input Parameters:
-+ start_etype  - event number for the beginning of the state
-. final_etype  - event number for the ending of the state
-. name         - name of the state.
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_DESC), 32.
-. color        - color of the state.
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_COLOR), 24.
-- format       - printf style %-token format control string for the state.
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
-                 equivalent to calling MPE_Describe_state().  The fortran
-                 interface of this routine considers the zero-length string,
-                 "", and single-blank string, " ", as NULL.
++ comm          - MPI_Comm where this process is part of.
+. local_thread  - local thread ID where the state is being defined.
+. start_etype   - event number for the beginning of the state.
+. final_etype   - event number for the ending of the state.
+. name          - name of the state.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_DESC), 32.
+. color         - color of the state.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_COLOR), 24.
+- format        - printf style %-token format control string for the state.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
+                  equivalent to calling MPE_Describe_state().  The fortran
+                  interface of this routine considers the zero-length string,
+                  "", and single-blank string, " ", as NULL.
+
+    Notes:
+    Adds a state definition to the logfile.
+    States are added to a logfile by calling 'MPE_Log_comm_event()'
+    for the start and end event numbers.
+
+.N MPE_LOG_BYTE_FORMAT
+
+.see also: MPE_Log_get_event_number
+@*/
+int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
+                             int start_etype, int final_etype,
+                             const char *name, const char *color,
+                             const char *format )
+{
+    const CLOG_CommIDs_t *commIDs;
+          int             stateID;
+
+    if (!MPE_Log_hasBeenInit)
+        return MPE_LOG_NOT_INITIALIZED;
+
+    commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
+    stateID  = CLOG_Get_user_stateID( CLOG_Stream );
+    CLOG_Buffer_save_statedef( CLOG_Buffer, commIDs, local_thread,
+                               stateID, start_etype, final_etype,
+                               color, name, format );
+
+    return MPE_LOG_OK;
+}
+
+/*@
+    MPE_Describe_info_state - Describe attributes of a state
+                              with byte informational data
+                              in MPI_COMM_WORLD.
+
+    Input Parameters:
++ start_etype   - event number for the beginning of the state
+. final_etype   - event number for the ending of the state
+. name          - name of the state.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_DESC), 32.
+. color         - color of the state.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_COLOR), 24.
+- format        - printf style %-token format control string for the state.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
+                  equivalent to calling MPE_Describe_state().  The fortran
+                  interface of this routine considers the zero-length string,
+                  "", and single-blank string, " ", as NULL.
 
     Notes:
     Adds a state definition to the logfile.
     States are added to a logfile by calling 'MPE_Log_event()'
-    for the start and end event numbers.
+    for the start and end event numbers.  The function is provided
+    for backward compatibility purpose.  Users are urged to use
+    'MPE_Describe_comm_state' and 'MPE_Log_comm_event()' instead.
 
 .N MPE_LOG_BYTE_FORMAT
 
@@ -179,17 +322,9 @@ int MPE_Describe_info_state( int start_etype, int final_etype,
                              const char *name, const char *color,
                              const char *format )
 {
-    int stateID;
-
-    if (!MPE_Log_hasBeenInit)
-        return MPE_LOG_NOT_INITIALIZED;
-
-    stateID = CLOG_Get_user_stateID( clog_stream );
-    CLOG_Buffer_save_statedef( clog_buffer, stateID,
-                               start_etype, final_etype,
-                               color, name, format );
-
-    return MPE_LOG_OK;
+    return MPE_Describe_comm_state( MPI_COMM_WORLD, 0,
+                                    start_etype, final_etype,
+                                    color, name, format );
 }
 
 /*
@@ -198,14 +333,15 @@ int MPE_Describe_info_state( int start_etype, int final_etype,
     stateID should be fetched from CLOG_Get_known_stateID()
     i.e, MPE_Log_get_known_stateID()
 */
-int MPE_Describe_known_state( int stateID, int start_etype, int final_etype,
+int MPE_Describe_known_state( const CLOG_CommIDs_t *commIDs, int local_thread,
+                              int stateID, int start_etype, int final_etype,
                               const char *name, const char *color,
                               const char *format )
 {
     if (!MPE_Log_hasBeenInit)
         return MPE_LOG_NOT_INITIALIZED;
 
-    if ( CLOG_Check_known_stateID( clog_stream, stateID ) != CLOG_BOOL_TRUE ) {
+    if ( CLOG_Check_known_stateID( CLOG_Stream, stateID ) != CLOG_BOOL_TRUE ) {
         fprintf( stderr, __FILE__":MPE_Describe_known_state() - \n"
                          "\t""The input stateID, %d, for state %s "
                          "is out of known range [%d..%d].\n"
@@ -213,54 +349,73 @@ int MPE_Describe_known_state( int stateID, int start_etype, int final_etype,
                          stateID, name, CLOG_KNOWN_STATEID_START,
                          CLOG_USER_STATEID_START-1 );
         fflush( stderr );
-        stateID = CLOG_Get_user_stateID( clog_stream );
+        stateID = CLOG_Get_user_stateID( CLOG_Stream );
     }
 
-    CLOG_Buffer_save_statedef( clog_buffer, stateID,
-                               start_etype, final_etype,
+    CLOG_Buffer_save_statedef( CLOG_Buffer, commIDs, local_thread,
+                               stateID, start_etype, final_etype,
                                color, name, format );
 
     return MPE_LOG_OK;
+}
 
+int MPE_Describe_uncheck_state( const CLOG_CommIDs_t *commIDs, int local_thread,
+                                int stateID, int start_etype, int final_etype,
+                                const char *name, const char *color,
+                                const char *format )
+{
+    if (!MPE_Log_hasBeenInit)
+        return MPE_LOG_NOT_INITIALIZED;
+
+    CLOG_Buffer_save_statedef( CLOG_Buffer, commIDs, local_thread,
+                               stateID, start_etype, final_etype,
+                               color, name, format );
+
+    return MPE_LOG_OK;
 }
 
 /*@
     MPE_Describe_state - Describe the attributes of a state
-                         without byte informational data.
+                         without byte informational data in
+                         MPI_COMM_WORLD.
 
     Input Parameters:
-+ start_etype  - event number for the beginning of the state
-. final_etype  - event number for the ending of the state
-. name         - name of the state
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_DESC), 32.
-- color        - color of the state
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_COLOR), 24.
++ start_etype   - event number for the beginning of the state
+. final_etype   - event number for the ending of the state
+. name          - name of the state
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_DESC), 32.
+- color         - color of the state
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_COLOR), 24.
 
     Notes:
     Adds a state definition to the logfile.
     States are added to a log file by calling 'MPE_Log_event'
     for the start and end event numbers.  The function is provided
     for backward compatibility purpose.  Users are urged to use
-    'MPE_Describe_info_state' instead.
+    'MPE_Describe_comm_state' and 'MPE_Log_comm_event()' instead.
 
-.seealso: MPE_Log_get_event_number, MPE_Describe_info_state
+.seealso: MPE_Log_get_event_number, MPE_Describe_comm_state
 @*/
 int MPE_Describe_state( int start_etype, int final_etype,
                         const char *name, const char *color )
 {
-    return MPE_Describe_info_state( start_etype, final_etype, name, color,
+    return MPE_Describe_comm_state( MPI_COMM_WORLD, 0,
+                                    start_etype, final_etype, name, color,
                                     NULL );
 }
 
 
 /*@
-    MPE_Describe_info_event - Describe the attributes of an event
-                              with byte informational data.
-    
+    MPE_Describe_comm_event - Describe the attributes of an event
+                              with byte informational data in
+                              a specified MPI_Comm.
+
     Input Parameters:
-+ event        - event number for the event.
++ comm         - MPI_Comm where this process is part of.
+. local_thread - local thread ID where the event is being defined.
+. event        - event number for the event.
 . name         - name of the event.
                  maximum length of the NULL-terminated string is,
                  sizeof(CLOG_DESC), 32.
@@ -279,42 +434,85 @@ int MPE_Describe_state( int start_etype, int final_etype,
 
 .N MPE_LOG_BYTE_FORMAT
 
-.seealso: MPE_Log_get_event_number 
+.seealso: MPE_Log_get_event_number
 @*/
-int MPE_Describe_info_event( int event, const char *name, const char *color,
+int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
+                             int event, const char *name, const char *color,
                              const char *format )
 {
+    const CLOG_CommIDs_t *commIDs;
+
     if (!MPE_Log_hasBeenInit)
         return MPE_LOG_NOT_INITIALIZED;
 
-    CLOG_Buffer_save_eventdef( clog_buffer, event, color, name, format );
+    commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
+    CLOG_Buffer_save_eventdef( CLOG_Buffer, commIDs, local_thread,
+                               event, color, name, format );
 
     return MPE_LOG_OK;
 }
 
 /*@
+    MPE_Describe_info_event - Describe the attributes of an event
+                              with byte informational data in
+                              MPI_COMM_WORLD.
+    
+    Input Parameters:
++ event         - event number for the event.
+. name          - name of the event.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_DESC), 32.
+. color         - color of the event.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_COLOR), 24.
+- format        - printf style %-token format control string for the event.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
+                  equivalent to calling MPE_Describe_event(). The fortran
+                  interface of this routine considers the zero-length string,
+                  "", and single-blank string, " ", as NULL.
+
+    Notes:
+    Adds a event definition to the logfile. The function is provided
+    for backward compatibility purpose.  Users are urged to use
+    'MPE_Describe_comm_event' instead.
+
+.N MPE_LOG_BYTE_FORMAT
+
+.seealso: MPE_Log_get_event_number, MPE_Describe_comm_event 
+@*/
+int MPE_Describe_info_event( int event, const char *name, const char *color,
+                             const char *format )
+{
+    return MPE_Describe_comm_event( MPI_COMM_WORLD, 0,
+                                    event, color, name, format );
+}
+
+/*@
    MPE_Describe_event - Describe the attributes of an event
-                        without byte informational data.
+                        without byte informational data in
+                        MPI_COMM_WORLD.
 
     Input Parameters:
-+ event        - event number for the event.
-. name         - name of the event.
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_DESC), 32.
-- color        - color of the event.
-                 maximum length of the NULL-terminated string is,
-                 sizeof(CLOG_COLOR), 24.
++ event         - event number for the event.
+. name          - name of the event.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_DESC), 32.
+- color         - color of the event.
+                  maximum length of the NULL-terminated string is,
+                  sizeof(CLOG_COLOR), 24.
 
     Notes:
     Adds a event definition to the logfile.  The function is provided
     for backward compatibility purpose.  Users are urged to use
-    'MPE_Describe_info_event' instead.
+    'MPE_Describe_comm_event' instead.
 
-.seealso: MPE_Log_get_event_number
+.seealso: MPE_Log_get_event_number, MPE_Describe_comm_event
 @*/
 int MPE_Describe_event( int event, const char *name, const char *color )
 {
-    return MPE_Describe_info_event( event, name, color, NULL );
+    return MPE_Describe_comm_event( MPI_COMM_WORLD, 0,
+                                    event, name, color, NULL );
 }
 
 /*@
@@ -331,7 +529,7 @@ int MPE_Describe_event( int event, const char *name, const char *color )
 @*/
 int MPE_Log_get_event_number( void )
 {
-    return CLOG_Get_user_eventID( clog_stream );
+    return CLOG_Get_user_eventID( CLOG_Stream );
 }
 
 /*
@@ -340,7 +538,7 @@ int MPE_Log_get_event_number( void )
 */
 int MPE_Log_get_known_eventID( void )
 {
-    return CLOG_Get_known_eventID( clog_stream );
+    return CLOG_Get_known_eventID( CLOG_Stream );
 }
 
 /*
@@ -349,30 +547,91 @@ int MPE_Log_get_known_eventID( void )
 */
 int MPE_Log_get_known_stateID( void )
 {
-    return CLOG_Get_known_stateID( clog_stream );
+    return CLOG_Get_known_stateID( CLOG_Stream );
 }
 
-/*@
-    MPE_Log_send - Logs the send event of a message
-
-    Input Parameters:
-+ other_party   -  the rank of the other party, i.e. receive event's rank.
-. tag           -  message tag ID.
-- size          -  message size in byte.
-
-@*/
-int MPE_Log_send( int other_party, int tag, int size )
+int MPE_Log_commIDs_send( const CLOG_CommIDs_t *commIDs, int local_thread,
+                          int other_party, int tag, int size )
 {
 #if !defined( CLOG_NOMPI )
     if (other_party != MPI_PROC_NULL)
 #endif
-        CLOG_Buffer_save_msgevt( clog_buffer, CLOG_EVT_SENDMSG,
-                                 tag, other_party, 0, size );
+        CLOG_Buffer_save_msgevt( CLOG_Buffer, commIDs, local_thread,
+                                 CLOG_EVT_SENDMSG, tag, other_party, size );
     return MPE_LOG_OK;
 }
 
 /*@
-    MPE_Log_receive - log the receive event of a message
+    MPE_Log_comm_send - Logs the send event of a message within
+                        a specified MPI_Comm.
+
+    Input Parameters:
++ comm          - MPI_Comm where this process is part of.
+. local_thread  - local thread ID where the send event takes place.
+. other_party   - the rank of the other party, i.e. receive event's rank.
+. tag           - message tag ID.
+- size          - message size in byte.
+
+@*/
+int MPE_Log_comm_send( MPI_Comm comm, int local_thread,
+                       int other_party, int tag, int size )
+{
+    const CLOG_CommIDs_t *commIDs;
+
+    commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
+    return MPE_Log_commIDs_send( commIDs, local_thread,
+                                 other_party, tag, size );
+}
+
+/*@
+    MPE_Log_send - Logs the send event of a message within MPI_COMM_WORLD.
+
+    Input Parameters:
++ other_party   - the rank of the other party, i.e. receive event's rank.
+. tag           - message tag ID.
+- size          - message size in byte.
+
+@*/
+int MPE_Log_send( int other_party, int tag, int size )
+{
+    return MPE_Log_commIDs_send( CLOG_CommIDs4World, 0,
+                                 other_party, tag, size );
+}
+
+int MPE_Log_commIDs_receive( const CLOG_CommIDs_t *commIDs, int local_thread,
+                             int other_party, int tag, int size )
+{
+#if !defined( CLOG_NOMPI )
+    if (other_party != MPI_PROC_NULL)
+#endif
+        CLOG_Buffer_save_msgevt( CLOG_Buffer, commIDs, local_thread,
+                                 CLOG_EVT_RECVMSG, tag, other_party, size );
+    return MPE_LOG_OK;
+}
+
+/*@
+    MPE_Log_comm_receive - log the receive event of a message within
+                           a specified MPI_Comm.
+
+    Input Parameters:
++ comm          - MPI_Comm where this process is part of.
+. local_thread  - local thread ID where the receive event takes place.
+. other_party   - the rank of the other party, i.e. send event's rank.
+. tag           - message tag ID.
+- size          - message size in byte.
+@*/
+int MPE_Log_comm_receive( MPI_Comm comm, int local_thread,
+                          int other_party, int tag, int size )
+{
+    const CLOG_CommIDs_t *commIDs;
+
+    commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
+    return MPE_Log_commIDs_receive( commIDs, local_thread,
+                                    other_party, tag, size );
+}
+
+/*@
+    MPE_Log_receive - log the receive event of a message within MPI_COMM_WORLD.
 
     Input Parameters:
 + other_party   -  the rank of the other party, i.e. send event's rank.
@@ -381,12 +640,8 @@ int MPE_Log_send( int other_party, int tag, int size )
 @*/
 int MPE_Log_receive( int other_party, int tag, int size )
 {
-#if !defined( CLOG_NOMPI )
-    if (other_party != MPI_PROC_NULL)
-#endif
-        CLOG_Buffer_save_msgevt( clog_buffer, CLOG_EVT_RECVMSG,
-                                 tag, other_party, 0, size );
-    return MPE_LOG_OK;
+    return MPE_Log_commIDs_receive( CLOG_CommIDs4World, 0,
+                                    other_party, tag, size );
 }
 
 /*@
@@ -482,8 +737,44 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
     return MPE_LOG_PACK_FAIL;
 }
 
+int MPE_Log_commIDs_event( const CLOG_CommIDs_t *commIDs, int local_thread,
+                           int event, const char *bytebuf )
+{
+    if ( bytebuf )
+        CLOG_Buffer_save_cargoevt( CLOG_Buffer, commIDs, local_thread,
+                                   event, bytebuf );
+    else
+        CLOG_Buffer_save_bareevt( CLOG_Buffer, commIDs, local_thread,
+                                  event );
+    return MPE_LOG_OK;
+}
+
 /*@
-    MPE_Log_event - Logs an event
+    MPE_Log_comm_event - Logs an event in a specified MPI_Comm.
+
+    Input Parameters:
++ comm          - MPI_Comm where this process is part of.
+. local_thread  - local thread ID where the receive event takes place.
+. event         - event number
+- bytebuf       - optional byte informational array.  In C, bytebuf should be
+                  set to NULL when no extra byte informational data.  In
+                  Fortran, an zero-length string "", or a single blank string
+                  " ", is equivalent to NULL in C.
+
+    Returns:
+    alway returns MPE_LOG_OK
+@*/
+int MPE_Log_comm_event( MPI_Comm comm, int local_thread,
+                        int event, const char *bytebuf )
+{
+    const CLOG_CommIDs_t *commIDs;
+
+    commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
+    return MPE_Log_commIDs_event( commIDs, local_thread, event, bytebuf );
+}
+
+/*@
+    MPE_Log_event - Logs an event in MPI_COMM_WORLD.
 
     Input Parameters:
 +   event   - event number
@@ -499,15 +790,11 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
 @*/
 int MPE_Log_event( int event, int data, const char *bytebuf )
 {
-    if ( bytebuf ) 
-        CLOG_Buffer_save_cargoevt( clog_buffer, event, bytebuf );
-    else
-        CLOG_Buffer_save_bareevt( clog_buffer, event );
-    return MPE_LOG_OK;
+    return MPE_Log_commIDs_event( CLOG_CommIDs4World, 0, event, bytebuf );
 }
 
 /*@
-    MPE_Log_bare_event - Logs a bare event
+    MPE_Log_bare_event - Logs a bare event in MPI_COMM_WORLD.
 
     Input Parameters:
 .   event   - event number
@@ -517,12 +804,13 @@ int MPE_Log_event( int event, int data, const char *bytebuf )
 @*/
 int MPE_Log_bare_event( int event )
 {
-    CLOG_Buffer_save_bareevt( clog_buffer, event );
+    CLOG_Buffer_save_bareevt( CLOG_Buffer, CLOG_CommIDs4World, 0,
+                              event );
     return MPE_LOG_OK;
 }
 
 /*@
-    MPE_Log_info_event - Logs an infomational event
+    MPE_Log_info_event - Logs an infomational event in MPI_COMM_WORLD.
 
     Input Parameters:
 +   event   - event number
@@ -534,7 +822,8 @@ int MPE_Log_bare_event( int event )
 @*/
 int MPE_Log_info_event( int event, const char *bytebuf )
 {
-    CLOG_Buffer_save_cargoevt( clog_buffer, event, bytebuf );
+    CLOG_Buffer_save_cargoevt( CLOG_Buffer, CLOG_CommIDs4World, 0,
+                               event, bytebuf );
     return MPE_LOG_OK;
 }
 
@@ -551,10 +840,10 @@ int MPE_Log_sync_clocks( void )
     CLOG_Sync_t  *clog_syncer;
     CLOG_Time_t   local_timediff;
 
-    clog_syncer = clog_stream->syncer;
+    clog_syncer = CLOG_Stream->syncer;
     if ( clog_syncer->is_ok_to_sync == CLOG_BOOL_TRUE ) {
         local_timediff = CLOG_Sync_update_timediffs( clog_syncer );
-        CLOG_Buffer_set_timeshift( clog_buffer, local_timediff,
+        CLOG_Buffer_set_timeshift( CLOG_Buffer, local_timediff,
                                    CLOG_BOOL_TRUE );
     }
     return MPE_LOG_OK;
@@ -585,33 +874,33 @@ int MPE_Finish_log( const char *filename )
     char         *env_logfile_prefix;
 
     if ( MPE_Log_hasBeenClosed == 0 ) {
-        CLOG_Local_finalize( clog_stream );
+        CLOG_Local_finalize( CLOG_Stream );
         /*
-           Call MPE_Stop_log() before CLOG_Close() which nullifies clog_stream
+           Call MPE_Stop_log() before CLOG_Close() which nullifies CLOG_Stream
         */
         MPE_Stop_log();
 
         env_logfile_prefix = (char *) getenv( "MPE_LOGFILE_PREFIX" );
         if ( env_logfile_prefix != NULL )
-            CLOG_Converge_init( clog_stream, env_logfile_prefix );
+            CLOG_Converge_init( CLOG_Stream, env_logfile_prefix );
         else
-            CLOG_Converge_init( clog_stream, filename );
+            CLOG_Converge_init( CLOG_Stream, filename );
 
         /*
            Save the merged filename in the local memory so
            CLOG_Stream_t can be freed to be destroyed
         */
-        strncpy( clog_merged_filename, clog_stream->merger->out_filename,
+        strncpy( clog_merged_filename, CLOG_Stream->merger->out_filename,
                  CLOG_PATH_STRLEN );
-        CLOG_Converge_sort( clog_stream );
-        CLOG_Converge_finalize( clog_stream );
+        CLOG_Converge_sort( CLOG_Stream );
+        CLOG_Converge_finalize( CLOG_Stream );
 
         /*
-           Finalize the CLOG_Stream_t and nullify clog_buffer so calling
+           Finalize the CLOG_Stream_t and nullify CLOG_Buffer so calling
            other MPE routines after MPE_Finish_log will cause seg. fault.
         */
-        CLOG_Close( &clog_stream );
-        clog_buffer = NULL;
+        CLOG_Close( &CLOG_Stream );
+        CLOG_Buffer = NULL;
 
         MPE_Log_hasBeenClosed = 1;
     }

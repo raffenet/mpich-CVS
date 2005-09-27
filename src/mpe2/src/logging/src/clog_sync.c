@@ -14,7 +14,7 @@
 #include <string.h>
 #endif
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_timer.h"
 #include "clog_util.h"
 #include "clog_sync.h"
@@ -23,7 +23,7 @@
 #include "mpi.h"
 #endif
 
-CLOG_Sync_t *CLOG_Sync_create( int num_mpi_procs, int local_mpi_rank )
+CLOG_Sync_t *CLOG_Sync_create( int world_size, int world_rank )
 {
     CLOG_Sync_t  *sync;
     int           idx;
@@ -36,13 +36,13 @@ CLOG_Sync_t *CLOG_Sync_create( int num_mpi_procs, int local_mpi_rank )
         return NULL;
     }
 
-    sync->is_ok_to_sync   = CLOG_BOOL_FALSE;
-    sync->num_mpi_procs   = num_mpi_procs;
-    sync->local_mpi_rank  = local_mpi_rank;
+    sync->is_ok_to_sync  = CLOG_BOOL_FALSE;
+    sync->world_size     = world_size;
+    sync->world_rank     = world_rank;
 
     /* Set the sync->timediffs[] */
     sync->timediffs = (CLOG_Time_t *)
-                      MALLOC( sync->num_mpi_procs * sizeof(CLOG_Time_t) );
+                      MALLOC( sync->world_size * sizeof(CLOG_Time_t) );
     if ( sync->timediffs == NULL ) {
         fprintf( stderr, __FILE__":CLOG_Sync_create() - \n"
                          "\t""MALLOC() fails for CLOG_Sync_t.timediffs[]!\n" );
@@ -51,7 +51,7 @@ CLOG_Sync_t *CLOG_Sync_create( int num_mpi_procs, int local_mpi_rank )
     }
 
     /* Initialize CLOG_Sync_t.timediffs[] with 0.0 */
-    for ( idx = 0; idx < sync->num_mpi_procs; idx++ )
+    for ( idx = 0; idx < sync->world_size; idx++ )
         sync->timediffs[ idx ] = 0.0;
 
     return sync;
@@ -132,10 +132,10 @@ void CLOG_Sync_set_timediffs( CLOG_Sync_t *sync, int root )
     PMPI_Barrier( MPI_COMM_WORLD );
     PMPI_Barrier( MPI_COMM_WORLD ); /* approximate common starting point */
 
-    if ( sync->local_mpi_rank == root ) {
+    if ( sync->world_rank == root ) {
         /* I am the master, but not nec. 0 */
-        for ( ii = 0; ii < sync->num_mpi_procs; ii++ ) {
-            if ( ii != sync->local_mpi_rank ) {
+        for ( ii = 0; ii < sync->world_size; ii++ ) {
+            if ( ii != sync->world_rank ) {
                 bestgap = 1000000.0; /* infinity, fastest turnaround so far */
                 for ( jj = 0; jj < num_tests; jj++ ) {
                     PMPI_Send( &dummy, 0, MPI_INT, ii,
@@ -172,7 +172,7 @@ void CLOG_Sync_set_timediffs( CLOG_Sync_t *sync, int root )
                        CLOG_TIME_ANSWER, MPI_COMM_WORLD );
         }
     }
-    PMPI_Bcast( sync->timediffs, sync->num_mpi_procs, CLOG_TIME_MPI_TYPE,
+    PMPI_Bcast( sync->timediffs, sync->world_size, CLOG_TIME_MPI_TYPE,
                 root, MPI_COMM_WORLD );
 #endif
 }
@@ -183,5 +183,5 @@ void CLOG_Sync_set_timediffs( CLOG_Sync_t *sync, int root )
 CLOG_Time_t CLOG_Sync_update_timediffs( CLOG_Sync_t *sync )
 {
     CLOG_Sync_set_timediffs( sync, 0 );
-    return sync->timediffs[ sync->local_mpi_rank ];
+    return sync->timediffs[ sync->world_rank ];
 }

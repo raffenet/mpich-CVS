@@ -24,7 +24,7 @@
 #endif
 
 #include "clog.h"
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_util.h"
 #include "clog_preamble.h"
 
@@ -55,6 +55,7 @@ CLOG_Preamble_t *CLOG_Preamble_create( void )
     preamble->block_size           = 0;
     preamble->num_buffered_blocks  = 0;
     preamble->is_big_endian        = CLOG_BOOL_NULL;
+    preamble->comm_world_size      = 0;
 
     return preamble;
 }
@@ -77,8 +78,8 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
 #if !defined( CLOG_NOMPI )
     int   ierr;
 #endif
-    
-                                                                                
+
+
 #if !defined( CLOG_NOMPI )
     PMPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
     PMPI_Comm_size( MPI_COMM_WORLD, &num_procs );
@@ -86,6 +87,7 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
     my_rank   = 0;
     num_procs = 1;
 #endif
+    preamble->comm_world_size  = num_procs;
 
     strcpy( preamble->version, CLOG_VERSION );
 
@@ -95,7 +97,7 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
 #else
     preamble->is_big_endian = CLOG_BOOL_FALSE;
 #endif
-                                                                                
+
     if ( my_rank == 0 ) {
         env_block_size = (char *) getenv( "CLOG_BLOCK_SIZE" );
         if ( env_block_size != NULL ) {
@@ -180,7 +182,7 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
 
     /* Write the CLOG Block Size */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, "block_size=",
-                                    "CLOG Block Size TiTle" );
+                                    "CLOG Block Size Title" );
     snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
               preamble->block_size );
     /* just in case, there isn't \0 in value_str  */
@@ -190,13 +192,23 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
 
     /* Write the CLOG Number of Buffered Blocks */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, "num_buffered_blocks=",
-                                    "CLOG Buffered Blocks TiTle" );
+                                    "CLOG Buffered Blocks Title" );
     snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
               preamble->num_buffered_blocks );
     /* just in case, there isn't \0 in value_str  */
     value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "CLOG Buffered Blocks Value" );
+
+    /* Write the MPI_COMM_WORLD's size */
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, "comm_world_size=",
+                                    "Size of MPI_COMM_WORLD Title" );
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
+              preamble->comm_world_size );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "Size of MPI_COMM_WORLD Value" );
 
     /* Initialize the rest of the buffer[] to zero to keep valgrind happy */
     while ( buf_ptr <= buf_tail ) {
@@ -260,7 +272,7 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
-                                    buf_ptr, "CLOG Block Size TiTle" );
+                                    buf_ptr, "CLOG Block Size Title" );
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG Block Size Value" );
@@ -268,11 +280,19 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
-                                    buf_ptr, "CLOG Buffered Blocks TiTle" );
+                                    buf_ptr, "CLOG Buffered Blocks Title" );
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG Buffered Blocks Value" );
     preamble->num_buffered_blocks = (unsigned int) atoi( value_str );
+
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr, "Size of MPI_COMM_WORLD Title" );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr, "Size of MPI_COMM_WORLD Value" );
+    preamble->comm_world_size     = (unsigned int) atoi( value_str );
 }
 
 void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
@@ -287,4 +307,5 @@ void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
     fprintf( stream, "num_buffered_blocks = %d\n",
                      preamble->num_buffered_blocks );
     fprintf( stream, "block_size = %d\n", preamble->block_size );
+    fprintf( stream, "comm_world_size = %d\n", preamble->comm_world_size );
 }

@@ -26,7 +26,7 @@
 #include <io.h>
 #endif
 
-#include "clog_common.h"
+#include "clog_const.h"
 #include "clog_merger.h"
 #include "clog_util.h"
 
@@ -81,13 +81,13 @@ CLOG_Merger_t* CLOG_Merger_create( unsigned int block_size )
         return NULL;
     }
 
-    merger->block_size       = block_size;
-    merger->num_active_blks  = 0;
-    merger->num_mpi_procs    = 1;
-    merger->local_mpi_rank   = 0;
-    merger->left_mpi_rank    = 0;
-    merger->right_mpi_rank   = 0;
-    merger->parent_mpi_rank  = 0;
+    merger->block_size        = block_size;
+    merger->num_active_blks   = 0;
+    merger->world_size        = 1;
+    merger->local_world_rank  = 0;
+    merger->left_world_rank   = 0;
+    merger->right_world_rank  = 0;
+    merger->parent_world_rank = 0;
 
     merger->is_big_endian    = CLOG_BOOL_NULL;
     strncpy( merger->out_filename, "mpe_trace."CLOG_FILE_TYPE,
@@ -116,33 +116,33 @@ void CLOG_Merger_free( CLOG_Merger_t **merger_handle )
 
 Input parameters
 
-+  merger->local_mpi_rank  - calling process''s id
--  merger->num_mpi_procs   - total number of processes in tree
++  merger->local_world_rank  - calling process''s id
+-  merger->world_size        - total number of processes in tree
 
 Output parameters
 
-+  merger->parent_mpi_rank - parent of local process
++  merger->parent_world_rank - parent of local process
                              (or CLOG_RANK_NULL if root)
-.  merger->left_mpi_rank   - left child of local process in binary tree
+.  merger->left_world_rank   - left child of local process in binary tree
                              (or CLOG_RANK_NULL if none)
--  merger->right_mpi_rank  - right child of local process in binary tree
+-  merger->right_world_rank  - right child of local process in binary tree
                              (or CLOG_RANK_NULL if none)
 
 @*/
 void CLOG_Merger_set_neighbor_ranks( CLOG_Merger_t *merger )
 {
-    if ( merger->local_mpi_rank == 0 )
-        merger->parent_mpi_rank = CLOG_RANK_NULL;
+    if ( merger->local_world_rank == 0 )
+        merger->parent_world_rank = CLOG_RANK_NULL;
     else
-        merger->parent_mpi_rank = (merger->local_mpi_rank - 1) / 2;
+        merger->parent_world_rank = (merger->local_world_rank - 1) / 2;
 
-    merger->left_mpi_rank = (2 * merger->local_mpi_rank) + 1;
-    if ( merger->left_mpi_rank > merger->num_mpi_procs - 1 )
-        merger->left_mpi_rank = CLOG_RANK_NULL;
+    merger->left_world_rank = (2 * merger->local_world_rank) + 1;
+    if ( merger->left_world_rank > merger->world_size - 1 )
+        merger->left_world_rank = CLOG_RANK_NULL;
 
-    merger->right_mpi_rank = (2 * merger->local_mpi_rank) + 2;
-    if ( merger->right_mpi_rank > merger->num_mpi_procs - 1 )
-        merger->right_mpi_rank = CLOG_RANK_NULL;
+    merger->right_world_rank = (2 * merger->local_world_rank) + 2;
+    if ( merger->right_world_rank > merger->world_size - 1 )
+        merger->right_world_rank = CLOG_RANK_NULL;
 }
 
 /* Initialize the CLOG_Merger_t */
@@ -152,17 +152,17 @@ void CLOG_Merger_init(       CLOG_Merger_t    *merger,
 {
     /* Set up the binary tree MPI ranks ID locally for merging */
 #if !defined( CLOG_NOMPI )
-    PMPI_Comm_rank( MPI_COMM_WORLD, &(merger->local_mpi_rank) );
-    PMPI_Comm_size( MPI_COMM_WORLD, &(merger->num_mpi_procs) );
+    PMPI_Comm_size( MPI_COMM_WORLD, &(merger->world_size) );
+    PMPI_Comm_rank( MPI_COMM_WORLD, &(merger->local_world_rank) );
 #else
-    merger->local_mpi_rank = 0;
-    merger->num_mpi_procs  = 1;
+    merger->world_size       = 1;
+    merger->local_world_rank = 0;
 #endif
     CLOG_Merger_set_neighbor_ranks( merger );
 
     merger->is_big_endian  = preamble->is_big_endian;
     /* Open the merged output file at root process */
-    if ( merger->parent_mpi_rank == CLOG_RANK_NULL ) {
+    if ( merger->parent_world_rank == CLOG_RANK_NULL ) {
         strncpy( merger->out_filename, merged_file_prefix, CLOG_PATH_STRLEN );
         strcat( merger->out_filename, "."CLOG_FILE_TYPE );
 
@@ -252,18 +252,20 @@ void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr )
     if (    sorted_blk->ptr + CLOG_Merger_reserved_block_size( hdr->rectype )
          >= sorted_blk->tail ) {
         sorted_hdr = (CLOG_Rec_Header_t *) sorted_blk->ptr;
-        sorted_hdr->timestamp  = hdr->timestamp;  /* use prev record's time */
+        sorted_hdr->time       = hdr->time;     /* use prev record's time */
+        sorted_hdr->icomm      = 0;
+        sorted_hdr->rank       = merger->local_world_rank;
+        sorted_hdr->thread     = 0;
         sorted_hdr->rectype    = CLOG_REC_ENDBLOCK;
-        sorted_hdr->procID     = merger->local_mpi_rank;
 
-        if ( merger->parent_mpi_rank != CLOG_RANK_NULL ) {
+        if ( merger->parent_world_rank != CLOG_RANK_NULL ) {
 #if !defined( CLOG_NOMPI )
             PMPI_Send( sorted_blk->head, merger->block_size, 
-                       CLOG_DATAUNIT_MPI_TYPE, merger->parent_mpi_rank,
+                       CLOG_DATAUNIT_MPI_TYPE, merger->parent_world_rank,
                        CLOG_MERGE_LOGBUFTYPE, MPI_COMM_WORLD );
 #endif
         }
-        else { /* if parent_mpi_rank does not exist, must be the root */
+        else { /* if parent_world_rank does not exist, must be the root */
             CLOG_Merger_flush( merger );
         }
         sorted_blk->ptr = sorted_blk->head;
@@ -282,13 +284,13 @@ void CLOG_Merger_save_rec( CLOG_Merger_t *merger, CLOG_Rec_Header_t *hdr )
    Here blockdata can be either left_blk or right_blk defined in CLOG_Merger_t
 */
 void CLOG_Merger_refill_sideblock( CLOG_BlockData_t  *blockdata,
-                                   int block_mpi_rank, int block_size )
+                                   int block_world_rank, int block_size )
 {
 #if !defined( CLOG_NOMPI )
     MPI_Status         status;
 
     PMPI_Recv( blockdata->head, block_size, CLOG_DATAUNIT_MPI_TYPE,
-               block_mpi_rank, CLOG_MERGE_LOGBUFTYPE, MPI_COMM_WORLD,
+               block_world_rank, CLOG_MERGE_LOGBUFTYPE, MPI_COMM_WORLD,
                &status );
     CLOG_BlockData_reset( blockdata );
 #endif
@@ -305,7 +307,12 @@ void CLOG_Merger_refill_localblock( CLOG_BlockData_t *blockdata,
 
     if ( buffer->num_used_blocks > 0 ) {
         blockdata->head = buffer->curr_block->data->head;
-        CLOG_BlockData_patch( blockdata, timediff_handle );
+#if !defined( CLOG_NOMPI )
+        CLOG_BlockData_patch( blockdata, timediff_handle,
+                              buffer->commset->table );
+#else
+        CLOG_BlockData_patch( blockdata, timediff_handle, NULL );
+#endif
         CLOG_BlockData_reset( blockdata );
         buffer->curr_block = buffer->curr_block->next;
         buffer->num_used_blocks--;
@@ -322,11 +329,11 @@ CLOG_Rec_Header_t *
 CLOG_Merger_next_sideblock_hdr( CLOG_BlockData_t   *blockdata,
                                 CLOG_Rec_Header_t  *hdr,
                                 CLOG_Merger_t      *merger,
-                                int                 block_mpi_rank,
+                                int                 block_world_rank,
                                 int                 block_size )
 {
     if ( hdr->rectype == CLOG_REC_ENDLOG ) {
-        hdr->timestamp = CLOG_MAXTIME;
+        hdr->time      = CLOG_MAXTIME;
         (merger->num_active_blks)--;
     }
     else {
@@ -334,7 +341,7 @@ CLOG_Merger_next_sideblock_hdr( CLOG_BlockData_t   *blockdata,
         blockdata->ptr += CLOG_Rec_size( hdr->rectype );
         hdr = ( CLOG_Rec_Header_t *) blockdata->ptr;
         if ( hdr->rectype == CLOG_REC_ENDBLOCK ) {
-            CLOG_Merger_refill_sideblock( blockdata, block_mpi_rank,
+            CLOG_Merger_refill_sideblock( blockdata, block_world_rank,
                                           block_size );
             hdr = (CLOG_Rec_Header_t *) blockdata->ptr;
         }
@@ -351,7 +358,7 @@ CLOG_Merger_next_localblock_hdr( CLOG_BlockData_t   *blockdata,
                                  CLOG_Time_t        *timediff_handle ) 
 {
     if ( hdr->rectype == CLOG_REC_ENDLOG ) {
-        hdr->timestamp = CLOG_MAXTIME;
+        hdr->time      = CLOG_MAXTIME;
         (merger->num_active_blks)--;
     }
     else {
@@ -376,9 +383,14 @@ void CLOG_Merger_sort( CLOG_Merger_t *merger, CLOG_Buffer_t *buffer )
     CLOG_BlockData_t   *left_blk, *right_blk, *local_blk;
     CLOG_BlockData_t    local_shadow_blockdata ;
     CLOG_Time_t         local_timediff;
-    int                 left_mpi_rank, right_mpi_rank;
+    int                 left_world_rank, right_world_rank;
     int                 block_size;
 
+    /* May want to move this to CLOG_Merger_init() or CLOG_Converge_init() */
+    /* Merge/Synchronize all the CLOG_CommSet_t at all the processes */
+#if !defined( CLOG_NOMPI )
+    CLOG_CommSet_merge( buffer->commset );
+#endif
     /*
         reinitialization of CLOG_Buffer_t so that
         buffer->curr_block == buffer->head->block
@@ -390,8 +402,8 @@ void CLOG_Merger_sort( CLOG_Merger_t *merger, CLOG_Buffer_t *buffer )
 
     /* local_timediff's init. value can be modified by CLOG_BlockData_patch() */
     local_timediff          = 0.0;
-    left_mpi_rank           = merger->left_mpi_rank;
-    right_mpi_rank          = merger->right_mpi_rank;
+    left_world_rank         = merger->left_world_rank;
+    right_world_rank        = merger->right_world_rank;
     left_blk                = merger->left_blk;
     right_blk               = merger->right_blk;
 
@@ -403,35 +415,35 @@ void CLOG_Merger_sort( CLOG_Merger_t *merger, CLOG_Buffer_t *buffer )
     }
 
     /* Initialize CLOG_Merger_t.left_blk from its left neighbor */
-    if ( left_mpi_rank != CLOG_RANK_NULL ) {
+    if ( left_world_rank != CLOG_RANK_NULL ) {
         merger->num_active_blks++;
-        CLOG_Merger_refill_sideblock( left_blk, left_mpi_rank, block_size );
+        CLOG_Merger_refill_sideblock( left_blk, left_world_rank, block_size );
     }
     else {
         left_hdr            = (CLOG_Rec_Header_t *) left_blk->head;
-        left_hdr->timestamp = CLOG_MAXTIME;
+        left_hdr->time      = CLOG_MAXTIME;
     }
 
     /* Initialize CLOG_Merger_t.right_blk its right neighbor */
-    if ( right_mpi_rank != CLOG_RANK_NULL ) {
+    if ( right_world_rank != CLOG_RANK_NULL ) {
         merger->num_active_blks++;
-        CLOG_Merger_refill_sideblock( right_blk, right_mpi_rank, block_size );
+        CLOG_Merger_refill_sideblock( right_blk, right_world_rank, block_size );
     }
     else {
         right_hdr            = (CLOG_Rec_Header_t *) right_blk->head;
-        right_hdr->timestamp = CLOG_MAXTIME;
+        right_hdr->time      = CLOG_MAXTIME;
     }
 
     left_hdr  = (CLOG_Rec_Header_t *) left_blk->ptr;
     right_hdr = (CLOG_Rec_Header_t *) right_blk->ptr;
     local_hdr = (CLOG_Rec_Header_t *) local_blk->ptr;
     while ( merger->num_active_blks > 0 ) {
-        if ( left_hdr->timestamp <= right_hdr->timestamp ) {
-            if ( left_hdr->timestamp <= local_hdr->timestamp )
+        if ( left_hdr->time <= right_hdr->time ) {
+            if ( left_hdr->time <= local_hdr->time )
                 left_hdr  = CLOG_Merger_next_sideblock_hdr( left_blk,
                                                             left_hdr,
                                                             merger,
-                                                            left_mpi_rank,
+                                                            left_world_rank,
                                                             block_size );
             else
                 local_hdr = CLOG_Merger_next_localblock_hdr( local_blk,
@@ -441,11 +453,11 @@ void CLOG_Merger_sort( CLOG_Merger_t *merger, CLOG_Buffer_t *buffer )
                                                              &local_timediff );
         }
         else {
-            if ( right_hdr->timestamp <= local_hdr->timestamp )
+            if ( right_hdr->time <= local_hdr->time )
                 right_hdr = CLOG_Merger_next_sideblock_hdr( right_blk,
                                                             right_hdr,
                                                             merger,
-                                                            right_mpi_rank,
+                                                            right_world_rank,
                                                             block_size );
             else
                 local_hdr = CLOG_Merger_next_localblock_hdr( local_blk,
@@ -466,18 +478,20 @@ void CLOG_Merger_last_flush( CLOG_Merger_t *merger )
 
     /* Write the CLOG_REC_ENDLOG as the very last record in the sorted buffer */
     sorted_hdr = (CLOG_Rec_Header_t *) sorted_blk->ptr;
-    sorted_hdr->timestamp  = CLOG_MAXTIME;    /* use prev record's time */
+    sorted_hdr->time       = CLOG_MAXTIME;    /* use prev record's time */
+    sorted_hdr->icomm      = 0;
+    sorted_hdr->rank       = merger->local_world_rank;
+    sorted_hdr->thread     = 0;
     sorted_hdr->rectype    = CLOG_REC_ENDLOG;
-    sorted_hdr->procID     = merger->local_mpi_rank;
 
-    if ( merger->parent_mpi_rank != CLOG_RANK_NULL ) {
+    if ( merger->parent_world_rank != CLOG_RANK_NULL ) {
 #if !defined( CLOG_NOMPI )
         PMPI_Send( sorted_blk->head, merger->block_size,
-                   CLOG_DATAUNIT_MPI_TYPE, merger->parent_mpi_rank,
+                   CLOG_DATAUNIT_MPI_TYPE, merger->parent_world_rank,
                    CLOG_MERGE_LOGBUFTYPE, MPI_COMM_WORLD );
 #endif
     }
-    else { /* if parent_mpi_rank does not exist, must be the root */
+    else { /* if parent_world_rank does not exist, must be the root */
         CLOG_Merger_flush( merger );
     }
 }
