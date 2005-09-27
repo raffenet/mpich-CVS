@@ -416,7 +416,7 @@ if [ -n "$includebuild_dir" ] ; then
             MkDir $includedir
         fi
         cd $includebuild_dir
-        for file in mpe*.h ; do
+        for file in clog*.h mpe*.h ; do
             if [ -f $includebuild_dir/$file ] ; then
                 CopyFileP $includebuild_dir/$file $includedir/$file $MODE
             fi
