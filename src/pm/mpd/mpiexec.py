@@ -591,6 +591,9 @@ def collect_args(args,localArgSets):
         elif garg == '-gdb':
             parmdb[('cmdline','MPIEXEC_GDB')] = 1
             argidx += 1
+            parmdb[('cmdline','MPIEXEC_MERGE_OUTPUT')] = 1       # implied
+            parmdb[('cmdline','MPIEXEC_SHOW_LINE_LABELS')] = 1   # implied
+            parmdb[('cmdline','MPIEXEC_STDIN_DEST')]   = 'all'   # implied
         elif garg == '-ifhn':
             parmdb[('cmdline','MPIEXEC_IFHN')] = args[argidx+1]
             argidx += 2
@@ -1188,7 +1191,7 @@ def get_parms_from_xml_file(msgToMPD):
             parmdb[('xml','MPIEXEC_GDB')]     = 1
             parmdb[('xml','MPIEXEC_MERGE_OUTPUT')] = 1       # implied
             parmdb[('xml','MPIEXEC_SHOW_LINE_LABELS')] = 1   # implied
-            parmdb[('xml','MPIEXEC_STDIN_DEST')]   = 'all'
+            parmdb[('xml','MPIEXEC_STDIN_DEST')]   = 'all'   # implied
     if cpg.hasAttribute('use_root_pm'):
         parmdb[('xml','MPD_USE_ROOT_MPD')] = int(cpg.getAttribute('use_root_pm'))
     if cpg.hasAttribute('tv'):
