@@ -28,10 +28,12 @@ public class Clog2ToSlog2
         logformat.clog2TOdrawable.InputLog  dobj_ins;
         logformat.slog2.output.OutputLog    slog_outs;
         Kind                                next_kind;
+        Topology                            topo;
         CategoryMap                         objdefs;   // Drawable def'n
         Map                                 shadefs;   // Shadow   def'n
         Category                            objdef;
-        Topology                            topo;
+        LineIDMapList                       lineIDmaps;
+        LineIDMap                           lineIDmap;
         Primitive                           prime_obj;
         Composite                           cmplx_obj;
         long                                Nobjs;
@@ -52,6 +54,7 @@ public class Clog2ToSlog2
 
         objdefs       = new CategoryMap();
         shadefs       = new HashMap();
+        lineIDmaps    = new LineIDMapList();
         Nobjs         = 0;
 
         /* */    Date time1 = new Date();
@@ -77,6 +80,11 @@ public class Clog2ToSlog2
                 objdefs.put( new Integer( objdef.getIndex() ), objdef );
                 shadefs.put( topo, objdef );
                 // System.out.println( "TOPOLOGY: " + topo );
+            }
+            else if ( next_kind == Kind.YCOORDMAP ) {
+                lineIDmap = new LineIDMap( dobj_ins.getNextYCoordMap() );
+                lineIDmaps.add( lineIDmap );
+                // System.out.println( "YCOORDMAP: = " + lineIDmap );
             }
             else if ( next_kind == Kind.CATEGORY ) {
                 objdef = dobj_ins.getNextCategory();
@@ -123,7 +131,6 @@ public class Clog2ToSlog2
         objdefs.removeUnusedCategories();
         slog_outs.writeCategoryMap( objdefs );
 
-        LineIDMapList lineIDmaps = new LineIDMapList();
         lineIDmaps.add( treetrunk.getIdentityLineIDMap() );
         slog_outs.writeLineIDMapList( lineIDmaps );
 
