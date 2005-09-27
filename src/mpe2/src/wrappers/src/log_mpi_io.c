@@ -341,13 +341,13 @@ int MPI_File_open( MPI_Comm  comm,char * filename,int  amode,MPI_Info  info,MPI_
     MPI_File_open - prototyping replacement for MPI_File_open
     Log the beginning and ending of the time spent in MPI_File_open calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_OPEN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_OPEN_ID)
   
   returnVal = PMPI_File_open( comm, filename, amode, info, fh );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -361,13 +361,13 @@ int MPI_File_close( MPI_File * fh  )
     MPI_File_close - prototyping replacement for MPI_File_close
     Log the beginning and ending of the time spent in MPI_File_close calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_CLOSE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_CLOSE_ID)
   
   returnVal = PMPI_File_close( fh );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -381,13 +381,13 @@ int MPI_File_delete( char * filename,MPI_Info  info  )
     MPI_File_delete - prototyping replacement for MPI_File_delete
     Log the beginning and ending of the time spent in MPI_File_delete calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_DELETE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_DELETE_ID)
   
   returnVal = PMPI_File_delete( filename, info );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -401,13 +401,13 @@ int MPI_File_set_size( MPI_File  fh,MPI_Offset  size  )
     MPI_File_set_size - prototyping replacement for MPI_File_set_size
     Log the beginning and ending of the time spent in MPI_File_set_size calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SET_SIZE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_SIZE_ID)
   
   returnVal = PMPI_File_set_size( fh, size );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -421,13 +421,13 @@ int MPI_File_preallocate( MPI_File  fh,MPI_Offset  size  )
     MPI_File_preallocate - prototyping replacement for MPI_File_preallocate
     Log the beginning and ending of the time spent in MPI_File_preallocate calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_PREALLOCATE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_PREALLOCATE_ID)
   
   returnVal = PMPI_File_preallocate( fh, size );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -441,13 +441,13 @@ int MPI_File_get_size( MPI_File  fh,MPI_Offset * size  )
     MPI_File_get_size - prototyping replacement for MPI_File_get_size
     Log the beginning and ending of the time spent in MPI_File_get_size calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_SIZE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_SIZE_ID)
   
   returnVal = PMPI_File_get_size( fh, size );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -461,13 +461,13 @@ int MPI_File_get_group( MPI_File  fh,MPI_Group * group  )
     MPI_File_get_group - prototyping replacement for MPI_File_get_group
     Log the beginning and ending of the time spent in MPI_File_get_group calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_GROUP_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_GROUP_ID)
   
   returnVal = PMPI_File_get_group( fh, group );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -481,13 +481,13 @@ int MPI_File_get_amode( MPI_File  fh,int * amode  )
     MPI_File_get_amode - prototyping replacement for MPI_File_get_amode
     Log the beginning and ending of the time spent in MPI_File_get_amode calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_AMODE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_AMODE_ID)
   
   returnVal = PMPI_File_get_amode( fh, amode );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -501,13 +501,13 @@ int MPI_File_set_info( MPI_File  fh,MPI_Info  info  )
     MPI_File_set_info - prototyping replacement for MPI_File_set_info
     Log the beginning and ending of the time spent in MPI_File_set_info calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SET_INFO_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_INFO_ID)
   
   returnVal = PMPI_File_set_info( fh, info );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -521,13 +521,13 @@ int MPI_File_get_info( MPI_File  fh,MPI_Info * info_used  )
     MPI_File_get_info - prototyping replacement for MPI_File_get_info
     Log the beginning and ending of the time spent in MPI_File_get_info calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_INFO_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_INFO_ID)
   
   returnVal = PMPI_File_get_info( fh, info_used );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -541,13 +541,13 @@ int MPI_File_set_view( MPI_File  fh,MPI_Offset  disp,MPI_Datatype  etype,MPI_Dat
     MPI_File_set_view - prototyping replacement for MPI_File_set_view
     Log the beginning and ending of the time spent in MPI_File_set_view calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SET_VIEW_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_VIEW_ID)
   
   returnVal = PMPI_File_set_view( fh, disp, etype, filetype, datarep, info );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -561,13 +561,13 @@ int MPI_File_get_view( MPI_File  fh,MPI_Offset * disp,MPI_Datatype * etype,MPI_D
     MPI_File_get_view - prototyping replacement for MPI_File_get_view
     Log the beginning and ending of the time spent in MPI_File_get_view calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_VIEW_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_VIEW_ID)
   
   returnVal = PMPI_File_get_view( fh, disp, etype, filetype, datarep );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -581,13 +581,13 @@ int MPI_File_read_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI_
     MPI_File_read_at - prototyping replacement for MPI_File_read_at
     Log the beginning and ending of the time spent in MPI_File_read_at calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_AT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ID)
   
   returnVal = PMPI_File_read_at( fh, offset, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -601,13 +601,13 @@ int MPI_File_read_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,
     MPI_File_read_at_all - prototyping replacement for MPI_File_read_at_all
     Log the beginning and ending of the time spent in MPI_File_read_at_all calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_AT_ALL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ALL_ID)
   
   returnVal = PMPI_File_read_at_all( fh, offset, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -621,13 +621,13 @@ int MPI_File_write_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
     MPI_File_write_at - prototyping replacement for MPI_File_write_at
     Log the beginning and ending of the time spent in MPI_File_write_at calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_AT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ID)
   
   returnVal = PMPI_File_write_at( fh, offset, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -641,13 +641,13 @@ int MPI_File_write_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count
     MPI_File_write_at_all - prototyping replacement for MPI_File_write_at_all
     Log the beginning and ending of the time spent in MPI_File_write_at_all calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_AT_ALL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ALL_ID)
   
   returnVal = PMPI_File_write_at_all( fh, offset, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -661,13 +661,13 @@ int MPI_File_iread_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
     MPI_File_iread_at - prototyping replacement for MPI_File_iread_at
     Log the beginning and ending of the time spent in MPI_File_iread_at calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_IREAD_AT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IREAD_AT_ID)
   
   returnVal = PMPI_File_iread_at( fh, offset, buf, count, datatype, request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -681,13 +681,13 @@ int MPI_File_iwrite_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MP
     MPI_File_iwrite_at - prototyping replacement for MPI_File_iwrite_at
     Log the beginning and ending of the time spent in MPI_File_iwrite_at calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_IWRITE_AT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IWRITE_AT_ID)
   
   returnVal = PMPI_File_iwrite_at( fh, offset, buf, count, datatype, request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -701,13 +701,13 @@ int MPI_File_read( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MPI
     MPI_File_read - prototyping replacement for MPI_File_read
     Log the beginning and ending of the time spent in MPI_File_read calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ID)
   
   returnVal = PMPI_File_read( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -721,13 +721,13 @@ int MPI_File_read_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype
     MPI_File_read_all - prototyping replacement for MPI_File_read_all
     Log the beginning and ending of the time spent in MPI_File_read_all calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ALL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ALL_ID)
   
   returnVal = PMPI_File_read_all( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -741,13 +741,13 @@ int MPI_File_write( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
     MPI_File_write - prototyping replacement for MPI_File_write
     Log the beginning and ending of the time spent in MPI_File_write calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ID)
   
   returnVal = PMPI_File_write( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -761,13 +761,13 @@ int MPI_File_write_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatyp
     MPI_File_write_all - prototyping replacement for MPI_File_write_all
     Log the beginning and ending of the time spent in MPI_File_write_all calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ALL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ALL_ID)
   
   returnVal = PMPI_File_write_all( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -781,13 +781,13 @@ int MPI_File_iread( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
     MPI_File_iread - prototyping replacement for MPI_File_iread
     Log the beginning and ending of the time spent in MPI_File_iread calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_IREAD_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IREAD_ID)
   
   returnVal = PMPI_File_iread( fh, buf, count, datatype, request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -801,13 +801,13 @@ int MPI_File_iwrite( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,M
     MPI_File_iwrite - prototyping replacement for MPI_File_iwrite
     Log the beginning and ending of the time spent in MPI_File_iwrite calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_IWRITE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IWRITE_ID)
   
   returnVal = PMPI_File_iwrite( fh, buf, count, datatype, request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -821,13 +821,13 @@ int MPI_File_seek( MPI_File  fh,MPI_Offset  offset,int  whence  )
     MPI_File_seek - prototyping replacement for MPI_File_seek
     Log the beginning and ending of the time spent in MPI_File_seek calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SEEK_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SEEK_ID)
   
   returnVal = PMPI_File_seek( fh, offset, whence );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -841,13 +841,13 @@ int MPI_File_get_position( MPI_File  fh,MPI_Offset * offset  )
     MPI_File_get_position - prototyping replacement for MPI_File_get_position
     Log the beginning and ending of the time spent in MPI_File_get_position calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_POSITION_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_POSITION_ID)
   
   returnVal = PMPI_File_get_position( fh, offset );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -861,13 +861,13 @@ int MPI_File_get_byte_offset( MPI_File  fh,MPI_Offset  offset,MPI_Offset * disp 
     MPI_File_get_byte_offset - prototyping replacement for MPI_File_get_byte_offset
     Log the beginning and ending of the time spent in MPI_File_get_byte_offset calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_BYTE_OFFSET_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_BYTE_OFFSET_ID)
   
   returnVal = PMPI_File_get_byte_offset( fh, offset, disp );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -881,13 +881,13 @@ int MPI_File_read_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  datat
     MPI_File_read_shared - prototyping replacement for MPI_File_read_shared
     Log the beginning and ending of the time spent in MPI_File_read_shared calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_SHARED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_SHARED_ID)
   
   returnVal = PMPI_File_read_shared( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -901,13 +901,13 @@ int MPI_File_write_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
     MPI_File_write_shared - prototyping replacement for MPI_File_write_shared
     Log the beginning and ending of the time spent in MPI_File_write_shared calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_SHARED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_SHARED_ID)
   
   returnVal = PMPI_File_write_shared( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -921,13 +921,13 @@ int MPI_File_iread_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
     MPI_File_iread_shared - prototyping replacement for MPI_File_iread_shared
     Log the beginning and ending of the time spent in MPI_File_iread_shared calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_IREAD_SHARED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IREAD_SHARED_ID)
   
   returnVal = PMPI_File_iread_shared( fh, buf, count, datatype, request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -941,13 +941,13 @@ int MPI_File_iwrite_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
     MPI_File_iwrite_shared - prototyping replacement for MPI_File_iwrite_shared
     Log the beginning and ending of the time spent in MPI_File_iwrite_shared calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_IWRITE_SHARED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IWRITE_SHARED_ID)
   
   returnVal = PMPI_File_iwrite_shared( fh, buf, count, datatype, request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -961,13 +961,13 @@ int MPI_File_read_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
     MPI_File_read_ordered - prototyping replacement for MPI_File_read_ordered
     Log the beginning and ending of the time spent in MPI_File_read_ordered calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ORDERED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ORDERED_ID)
   
   returnVal = PMPI_File_read_ordered( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -981,13 +981,13 @@ int MPI_File_write_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
     MPI_File_write_ordered - prototyping replacement for MPI_File_write_ordered
     Log the beginning and ending of the time spent in MPI_File_write_ordered calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ORDERED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ORDERED_ID)
   
   returnVal = PMPI_File_write_ordered( fh, buf, count, datatype, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1001,13 +1001,13 @@ int MPI_File_seek_shared( MPI_File  fh,MPI_Offset  offset,int  whence  )
     MPI_File_seek_shared - prototyping replacement for MPI_File_seek_shared
     Log the beginning and ending of the time spent in MPI_File_seek_shared calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SEEK_SHARED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SEEK_SHARED_ID)
   
   returnVal = PMPI_File_seek_shared( fh, offset, whence );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1021,13 +1021,13 @@ int MPI_File_get_position_shared( MPI_File  fh,MPI_Offset * offset  )
     MPI_File_get_position_shared - prototyping replacement for MPI_File_get_position_shared
     Log the beginning and ending of the time spent in MPI_File_get_position_shared calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_POSITION_SHARED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_POSITION_SHARED_ID)
   
   returnVal = PMPI_File_get_position_shared( fh, offset );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1041,13 +1041,13 @@ int MPI_File_read_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int  
     MPI_File_read_at_all_begin - prototyping replacement for MPI_File_read_at_all_begin
     Log the beginning and ending of the time spent in MPI_File_read_at_all_begin calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_AT_ALL_BEGIN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ALL_BEGIN_ID)
   
   returnVal = PMPI_File_read_at_all_begin( fh, offset, buf, count, datatype );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1061,13 +1061,13 @@ int MPI_File_read_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
     MPI_File_read_at_all_end - prototyping replacement for MPI_File_read_at_all_end
     Log the beginning and ending of the time spent in MPI_File_read_at_all_end calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_AT_ALL_END_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ALL_END_ID)
   
   returnVal = PMPI_File_read_at_all_end( fh, buf, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1081,13 +1081,13 @@ int MPI_File_write_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int 
     MPI_File_write_at_all_begin - prototyping replacement for MPI_File_write_at_all_begin
     Log the beginning and ending of the time spent in MPI_File_write_at_all_begin calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_AT_ALL_BEGIN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ALL_BEGIN_ID)
   
   returnVal = PMPI_File_write_at_all_begin( fh, offset, buf, count, datatype );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1101,13 +1101,13 @@ int MPI_File_write_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
     MPI_File_write_at_all_end - prototyping replacement for MPI_File_write_at_all_end
     Log the beginning and ending of the time spent in MPI_File_write_at_all_end calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_AT_ALL_END_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ALL_END_ID)
   
   returnVal = PMPI_File_write_at_all_end( fh, buf, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1121,13 +1121,13 @@ int MPI_File_read_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  da
     MPI_File_read_all_begin - prototyping replacement for MPI_File_read_all_begin
     Log the beginning and ending of the time spent in MPI_File_read_all_begin calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ALL_BEGIN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ALL_BEGIN_ID)
   
   returnVal = PMPI_File_read_all_begin( fh, buf, count, datatype );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1141,13 +1141,13 @@ int MPI_File_read_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
     MPI_File_read_all_end - prototyping replacement for MPI_File_read_all_end
     Log the beginning and ending of the time spent in MPI_File_read_all_end calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ALL_END_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ALL_END_ID)
   
   returnVal = PMPI_File_read_all_end( fh, buf, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1161,13 +1161,13 @@ int MPI_File_write_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  d
     MPI_File_write_all_begin - prototyping replacement for MPI_File_write_all_begin
     Log the beginning and ending of the time spent in MPI_File_write_all_begin calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ALL_BEGIN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ALL_BEGIN_ID)
   
   returnVal = PMPI_File_write_all_begin( fh, buf, count, datatype );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1181,13 +1181,13 @@ int MPI_File_write_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
     MPI_File_write_all_end - prototyping replacement for MPI_File_write_all_end
     Log the beginning and ending of the time spent in MPI_File_write_all_end calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ALL_END_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ALL_END_ID)
   
   returnVal = PMPI_File_write_all_end( fh, buf, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1201,13 +1201,13 @@ int MPI_File_read_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype
     MPI_File_read_ordered_begin - prototyping replacement for MPI_File_read_ordered_begin
     Log the beginning and ending of the time spent in MPI_File_read_ordered_begin calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ORDERED_BEGIN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ORDERED_BEGIN_ID)
   
   returnVal = PMPI_File_read_ordered_begin( fh, buf, count, datatype );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1221,13 +1221,13 @@ int MPI_File_read_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
     MPI_File_read_ordered_end - prototyping replacement for MPI_File_read_ordered_end
     Log the beginning and ending of the time spent in MPI_File_read_ordered_end calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_READ_ORDERED_END_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ORDERED_END_ID)
   
   returnVal = PMPI_File_read_ordered_end( fh, buf, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1241,13 +1241,13 @@ int MPI_File_write_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatyp
     MPI_File_write_ordered_begin - prototyping replacement for MPI_File_write_ordered_begin
     Log the beginning and ending of the time spent in MPI_File_write_ordered_begin calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ORDERED_BEGIN_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ORDERED_BEGIN_ID)
   
   returnVal = PMPI_File_write_ordered_begin( fh, buf, count, datatype );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1261,13 +1261,13 @@ int MPI_File_write_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
     MPI_File_write_ordered_end - prototyping replacement for MPI_File_write_ordered_end
     Log the beginning and ending of the time spent in MPI_File_write_ordered_end calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_WRITE_ORDERED_END_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ORDERED_END_ID)
   
   returnVal = PMPI_File_write_ordered_end( fh, buf, status );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1281,13 +1281,13 @@ int MPI_File_get_type_extent( MPI_File  fh,MPI_Datatype  datatype,MPI_Aint * ext
     MPI_File_get_type_extent - prototyping replacement for MPI_File_get_type_extent
     Log the beginning and ending of the time spent in MPI_File_get_type_extent calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_TYPE_EXTENT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_TYPE_EXTENT_ID)
   
   returnVal = PMPI_File_get_type_extent( fh, datatype, extent );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1301,13 +1301,13 @@ int MPI_File_set_atomicity( MPI_File  fh,int  flag  )
     MPI_File_set_atomicity - prototyping replacement for MPI_File_set_atomicity
     Log the beginning and ending of the time spent in MPI_File_set_atomicity calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SET_ATOMICITY_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_ATOMICITY_ID)
   
   returnVal = PMPI_File_set_atomicity( fh, flag );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1321,13 +1321,13 @@ int MPI_File_get_atomicity( MPI_File  fh,int * flag  )
     MPI_File_get_atomicity - prototyping replacement for MPI_File_get_atomicity
     Log the beginning and ending of the time spent in MPI_File_get_atomicity calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_GET_ATOMICITY_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_ATOMICITY_ID)
   
   returnVal = PMPI_File_get_atomicity( fh, flag );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;
@@ -1341,13 +1341,13 @@ int MPI_File_sync( MPI_File  fh  )
     MPI_File_sync - prototyping replacement for MPI_File_sync
     Log the beginning and ending of the time spent in MPI_File_sync calls.
 */
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
-  MPE_LOG_STATE_BEGIN( MPE_FILE_SYNC_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SYNC_ID)
   
   returnVal = PMPI_File_sync( fh );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 
   return returnVal;

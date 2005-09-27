@@ -19,6 +19,25 @@
 #include "mpe_wrappers_conf.h"
 #include "mpi.h"
 
+/* AIX requires this to be the first thing in the file.  */
+#ifndef __GNUC__
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+#  ifdef _AIX
+ #pragma alloca
+#  else
+#   ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca ();
+#   endif
+#  endif
+# endif
+#else
+# if defined( HAVE_ALLOCA_H )
+#  include <alloca.h>
+# endif
+#endif
+
 #include <stdio.h>
 #define MPE_ErrPrint(comm,errcode,str) (fprintf( stderr, "%s\n", str ),errcode)
 
@@ -159,8 +178,17 @@ int MPER_Err_setmsg();
 
 #ifdef F77_NAME_UPPER
 #define mpi_init_ MPI_INIT
-#define mpi_bsend_init_ MPI_BSEND_INIT
+#define mpi_comm_create_ MPI_COMM_CREATE
+#define mpi_comm_dup_ MPI_COMM_DUP
+#define mpe_comm_free_ MPI_COMM_FREE
+#define mpi_comm_split_ MPI_COMM_SPLIT
+#define mpi_intercomm_create_ MPI_INTERCOMM_CREATE
+#define mpi_intercomm_merge_ MPI_INTERCOMM_MERGE
+#define mpi_cart_create_ MPI_CART_CREATE
+#define mpi_cart_sub_ MPI_CART_SUB
+#define mpi_graph_create_ MPI_GRAPH_CREATE
 #define mpi_bsend_ MPI_BSEND
+#define mpi_bsend_init_ MPI_BSEND_INIT
 #define mpi_buffer_attach_ MPI_BUFFER_ATTACH
 #define mpi_buffer_detach_ MPI_BUFFER_DETACH
 #define mpi_cancel_ MPI_CANCEL
@@ -229,8 +257,17 @@ int MPER_Err_setmsg();
 #define mpi_finalize_ MPI_FINALIZE
 #elif defined(F77_NAME_LOWER_2USCORE)
 #define mpi_init_ mpi_init__
-#define mpi_bsend_init_ mpi_bsend_init__
+#define mpi_comm_create_ mpi_comm_create__
+#define mpi_comm_dup_ mpi_comm_dup__
+#define mpe_comm_free_ mpi_comm_free__
+#define mpi_comm_split_ mpi_comm_split__
+#define mpi_intercomm_create_ mpi_intercomm_create__
+#define mpi_intercomm_merge_ mpi_intercomm_merge__
+#define mpi_cart_create_ mpi_cart_create__
+#define mpi_cart_sub_ mpi_cart_sub__
+#define mpi_graph_create_ mpi_graph_create__
 #define mpi_bsend_ mpi_bsend__
+#define mpi_bsend_init_ mpi_bsend_init__
 #define mpi_buffer_attach_ mpi_buffer_attach__
 #define mpi_buffer_detach_ mpi_buffer_detach__
 #define mpi_cancel_ mpi_cancel__
@@ -299,6 +336,15 @@ int MPER_Err_setmsg();
 #define mpi_finalize_ mpi_finalize__
 #elif defined(F77_NAME_LOWER)
 #define mpi_init_ mpi_init
+#define mpi_comm_create_ mpi_comm_create
+#define mpi_comm_dup_ mpi_comm_dup
+#define mpe_comm_free_ mpi_comm_free
+#define mpi_comm_split_ mpi_comm_split
+#define mpi_intercomm_create_ mpi_intercomm_create
+#define mpi_intercomm_merge_ mpi_intercomm_merge
+#define mpi_cart_create_ mpi_cart_create
+#define mpi_cart_sub_ mpi_cart_sub
+#define mpi_graph_create_ mpi_graph_create
 #define mpi_bsend_ mpi_bsend
 #define mpi_bsend_init_ mpi_bsend_init
 #define mpi_buffer_attach_ mpi_buffer_attach
@@ -448,6 +494,259 @@ void mpi_init_( int *ierr )
     }
     FREE( ArgvSave );
 }
+
+
+
+void mpi_comm_create_( MPI_Fint *comm, MPI_Fint *group,
+                       MPI_Fint *comm_out, MPI_Fint *__ierr );
+void mpi_comm_create_( MPI_Fint *comm, MPI_Fint *group,
+                       MPI_Fint *comm_out, MPI_Fint *__ierr )
+{
+    MPI_Comm l_comm_out;
+
+    *__ierr = MPI_Comm_create( MPI_Comm_f2c(*comm), MPI_Group_f2c(*group),
+                               &l_comm_out);
+    if (*__ierr == MPI_SUCCESS)
+        *comm_out = MPI_Comm_c2f(l_comm_out);
+}
+
+
+
+void mpi_comm_dup_( MPI_Fint *comm, MPI_Fint *comm_out, MPI_Fint *__ierr );
+void mpi_comm_dup_( MPI_Fint *comm, MPI_Fint *comm_out, MPI_Fint *__ierr )
+{
+    MPI_Comm l_comm_out;
+
+    *__ierr = MPI_Comm_dup( MPI_Comm_f2c(*comm), &l_comm_out );
+    if (*__ierr == MPI_SUCCESS)
+        *comm_out = MPI_Comm_c2f(l_comm_out);
+}
+
+
+
+void mpi_comm_free_( MPI_Fint *comm, MPI_Fint *__ierr );
+void mpi_comm_free_( MPI_Fint *comm, MPI_Fint *__ierr )
+{
+    MPI_Comm l_comm = MPI_Comm_f2c(*comm);
+    *__ierr = MPI_Comm_free(&l_comm);
+    if (*__ierr == MPI_SUCCESS)
+        *comm = MPI_Comm_c2f(l_comm);
+}
+
+
+
+void mpi_comm_split_( MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key,
+                      MPI_Fint *comm_out, MPI_Fint *__ierr );
+void mpi_comm_split_( MPI_Fint *comm, MPI_Fint *color, MPI_Fint *key,
+                      MPI_Fint *comm_out, MPI_Fint *__ierr )
+{
+    MPI_Comm l_comm_out;
+
+    *__ierr = MPI_Comm_split( MPI_Comm_f2c(*comm), (int)*color, (int)*key,
+                              &l_comm_out);
+    if (*__ierr == MPI_SUCCESS)
+        *comm_out = MPI_Comm_c2f(l_comm_out);
+}
+
+
+
+void mpi_intercomm_create_( MPI_Fint *local_comm, MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm, MPI_Fint *remote_leader,
+                            MPI_Fint *tag, MPI_Fint *comm_out,
+                            MPI_Fint *__ierr );
+void mpi_intercomm_create_( MPI_Fint *local_comm, MPI_Fint *local_leader,
+                            MPI_Fint *peer_comm, MPI_Fint *remote_leader,
+                            MPI_Fint *tag, MPI_Fint *comm_out,
+                            MPI_Fint *__ierr )
+{
+    MPI_Comm l_comm_out;
+    *__ierr = MPI_Intercomm_create( MPI_Comm_f2c(*local_comm),
+                                    (int)*local_leader,
+                                    MPI_Comm_f2c(*peer_comm),
+                                    (int)*remote_leader, (int)*tag,
+                                    &l_comm_out);
+    if (*__ierr == MPI_SUCCESS)
+        *comm_out = MPI_Comm_c2f(l_comm_out);
+}
+
+
+
+void mpi_intercomm_merge_( MPI_Fint *comm, MPI_Fint *high, MPI_Fint *comm_out,
+                           MPI_Fint *__ierr );
+void mpi_intercomm_merge_( MPI_Fint *comm, MPI_Fint *high, MPI_Fint *comm_out,
+                           MPI_Fint *__ierr )
+{
+    MPI_Comm l_comm_out;
+
+    *__ierr = MPI_Intercomm_merge( MPI_Comm_f2c(*comm), (int)*high,
+                                   &l_comm_out);
+    if (*__ierr == MPI_SUCCESS)
+        *comm_out = MPI_Comm_c2f(l_comm_out);
+}
+
+
+
+void mpi_cart_create_( MPI_Fint *comm_old, MPI_Fint *ndims, MPI_Fint *dims,
+                       MPI_Fint *periods, MPI_Fint *reorder,
+                       MPI_Fint *comm_cart, MPI_Fint *ierr );
+void mpi_cart_create_( MPI_Fint *comm_old, MPI_Fint *ndims, MPI_Fint *dims,
+                       MPI_Fint *periods, MPI_Fint *reorder,
+                       MPI_Fint *comm_cart, MPI_Fint *ierr )
+{
+    MPI_Comm   l_comm_cart;
+    int       *lperiods, *ldims;
+    int        ls_ints[40];     /* local static int[] */
+    int       *la_ints;         /* local allocated int[] */
+    int        is_malloced;
+    int        i;
+
+    is_malloced = 0;
+    if ( *ndims > 20 ) {
+#if ! defined( HAVE_ALLOCA )
+        la_ints  = (int *) malloc( 2 * (*ndims) * sizeof(int) );
+        is_malloced = 1;
+#else
+        la_ints  = (int *) alloca( 2 * (*ndims) * sizeof(int) );
+#endif
+        lperiods = &(la_ints[0]);
+        ldims    = &(la_ints[*ndims]);
+    }
+    else  { /* if ( *ndims <= 20 ) */
+        lperiods = &(ls_ints[0]);
+        ldims    = &(ls_ints[20]);
+    }
+    for (i=0; i<(int)*ndims; i++) {
+        lperiods[i] = MPIR_FROM_FLOG(periods[i]);
+        ldims[i] = (int)dims[i];
+    }
+
+#if defined(_TWO_WORD_FCD)
+    int tmp = *reorder;
+    *ierr = MPI_Cart_create( MPI_Comm_f2c(*comm_old),
+                             (int)*ndims, ldims,
+                             lperiods, MPIR_FROM_FLOG(tmp),
+                             &l_comm_cart);
+#else
+    *ierr = MPI_Cart_create( MPI_Comm_f2c(*comm_old),
+                             (int)*ndims, ldims,
+                             lperiods, MPIR_FROM_FLOG(*reorder),
+                             &l_comm_cart);
+#endif
+
+#if ! defined( HAVE_ALLOCA )
+    if ( is_malloced == 1 )
+        free( la_ints );
+#endif 
+    if (*ierr == MPI_SUCCESS)
+        *comm_cart = MPI_Comm_c2f(l_comm_cart);
+}
+
+
+
+void mpi_cart_sub_( MPI_Fint *comm, MPI_Fint *remain_dims,
+                    MPI_Fint *comm_new, MPI_Fint *__ierr );
+void mpi_cart_sub_( MPI_Fint *comm, MPI_Fint *remain_dims,
+                    MPI_Fint *comm_new, MPI_Fint *__ierr )
+{
+    MPI_Comm   lcomm_new;
+    int        ls_ints[20];     /* local static int[] */
+    int       *la_ints;         /* local allocated int[] */
+    int        is_malloced;
+    int       *lremain_dims;
+    int        ndims, i;
+
+    MPI_Cartdim_get( MPI_Comm_f2c(*comm), &ndims );
+
+    is_malloced = 0;
+    if ( ndims > 20 ) {
+#if ! defined( HAVE_ALLOCA )
+        la_ints  = (int *) malloc( ndims * sizeof(int) );
+        is_malloced = 1;
+#else
+        la_ints  = (int *) alloca( ndims * sizeof(int) );
+#endif
+        lremain_dims = la_ints;
+    }
+    else  { /* if ( ndims <= 20 ) */
+        lremain_dims = ls_ints;
+    }
+    for (i=0; i<ndims; i++)
+        lremain_dims[i] = MPIR_FROM_FLOG(remain_dims[i]);
+
+    *__ierr = MPI_Cart_sub( MPI_Comm_f2c(*comm), lremain_dims,
+                            &lcomm_new);
+
+#if ! defined( HAVE_ALLOCA )
+    if ( is_malloced == 1 )
+        free( la_ints );
+#endif 
+    if (*__ierr == MPI_SUCCESS)
+        *comm_new = MPI_Comm_c2f(lcomm_new);
+}
+
+void mpi_graph_create_( MPI_Fint *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges, MPI_Fint *reorder,
+                        MPI_Fint *comm_graph, MPI_Fint *__ierr );
+void mpi_graph_create_( MPI_Fint *comm_old, MPI_Fint *nnodes,
+                        MPI_Fint *index, MPI_Fint *edges, MPI_Fint *reorder,
+                        MPI_Fint *comm_graph, MPI_Fint *__ierr )
+{
+    MPI_Comm lcomm_graph;
+
+    if (sizeof(MPI_Fint) == sizeof(int))
+#if defined(_TWO_WORD_FCD)
+        int tmp = *reorder;
+        *__ierr = MPI_Graph_create( MPI_Comm_f2c(*comm_old), *nnodes,
+                                    index, edges,
+                                    MPIR_FROM_FLOG(tmp),
+                                    &lcomm_graph);
+#else
+        *__ierr = MPI_Graph_create( MPI_Comm_f2c(*comm_old), *nnodes,
+                                    index, edges,
+                                    MPIR_FROM_FLOG(*reorder),
+                                    &lcomm_graph);
+#endif
+    else {
+        int i;
+        int nedges;
+        int *lindex;
+        int *ledges;
+
+
+        MPI_Graphdims_get(MPI_Comm_f2c(*comm_old), nnodes, &nedges);
+        MPIR_FALLOC(lindex,(int*)MALLOC(sizeof(int)* (int)*nnodes),
+                    MPIR_COMM_WORLD, MPI_ERR_EXHAUSTED,
+                    "MPI_Graph_create");
+        MPIR_FALLOC(ledges,(int*)MALLOC(sizeof(int)* (int)nedges),
+                    MPIR_COMM_WORLD, MPI_ERR_EXHAUSTED,
+                    "MPI_Graph_create");
+
+        for (i=0; i<(int)*nnodes; i++)
+            lindex[i] = (int)index[i];
+
+        for (i=0; i<nedges; i++)
+            ledges[i] = (int)edges[i];
+
+#if defined(_TWO_WORD_FCD)
+        int tmp = *reorder;
+        *__ierr = MPI_Graph_create( MPI_Comm_f2c(*comm_old), (int)*nnodes,
+                                    lindex, ledges,
+                                    MPIR_FROM_FLOG(tmp),
+                                    &lcomm_graph);
+#else
+        *__ierr = MPI_Graph_create( MPI_Comm_f2c(*comm_old), (int)*nnodes,
+                                    lindex, ledges,
+                                    MPIR_FROM_FLOG(*reorder),
+                                    &lcomm_graph);
+#endif
+        FREE( lindex );
+        FREE( ledges );
+    }
+    if (*__ierr == MPI_SUCCESS)
+        *comm_graph = MPI_Comm_c2f(lcomm_graph);
+}
+
+
 
 void mpi_bsend_init_ ( void *, MPI_Fint *, MPI_Fint *, MPI_Fint *,
                        MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -1754,11 +2053,11 @@ void mpi_gatherv_ ( void *sendbuf, MPI_Fint *sendcnt, MPI_Fint *sendtype,
     MPI_Comm_size(MPI_Comm_f2c(*comm), &size);
 
     MPIR_FALLOC(l_recvcnts,(int*)MALLOC(sizeof(int)* size),
-            MPIR_COMM_WORLD, MPI_ERR_EXHAUSTED,
-            "MPI_Gatherv");
+                MPIR_COMM_WORLD, MPI_ERR_EXHAUSTED,
+                "MPI_Gatherv");
     MPIR_FALLOC(l_displs,(int*)MALLOC(sizeof(int)* size),
-            MPIR_COMM_WORLD, MPI_ERR_EXHAUSTED,
-            "MPI_Gatherv");
+                MPIR_COMM_WORLD, MPI_ERR_EXHAUSTED,
+                "MPI_Gatherv");
     for (i=0; i<size; i++) {
         l_recvcnts[i] = (int)recvcnts[i];
         l_displs[i] = (int)displs[i];

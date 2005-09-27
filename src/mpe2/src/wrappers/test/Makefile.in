@@ -108,6 +108,15 @@ srtest@EXEEXT@: srtest.@OBJEXT@
 iotest@EXEEXT@: iotest.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
+comm1_isr@EXEEXT@: comm1_isr.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+
+comm1_isr_loop@EXEEXT@: comm1_isr_loop.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+
+fcomm1_isr@EXEEXT@: fcomm1_isr.@OBJEXT@
+	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
+
 linktest: linktest_C
 
 linktest_C: 

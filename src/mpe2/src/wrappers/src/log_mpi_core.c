@@ -275,7 +275,18 @@ static int trace_on = 0;
 #define MPE_CART_RANK_ID 124
 #define MPE_CART_SUB_ID 125
 
-#include "requests.h"
+/*
+   Be sure NO MPE internal states overlapped with CLOG's internal states
+   which are defined in clog_record.h.
+*/
+#define MPE_STATEID_ISEND         -10
+#define MPE_EVT_ISEND_START    -10001
+#define MPE_EVT_ISEND_FINAL    -10002
+#define MPE_STATEID_IRECV         -11
+#define MPE_EVT_IRECV_START    -10003
+#define MPE_EVT_IRECV_FINAL    -10004
+
+#include "mpe_requests.h"
 
 /*  LOGFILENAME_LEN == CLOG_PATH_STRLEN  */
 #define LOGFILENAME_STRLEN  256
@@ -288,97 +299,177 @@ static char logFileName_0[LOGFILENAME_STRLEN];
 static MPI_Request req[MPE_MAX_REQUESTS];
 
 /* Function prototypes */
-void MPE_Add_send_req ( int, MPI_Datatype, int, int, MPI_Request, int );
-void MPE_Add_recv_req ( int, MPI_Datatype, int, int, MPI_Request, int );
-void MPE_Cancel_req ( MPI_Request );
-void MPE_Remove_req ( MPI_Request );
-void MPE_Start_req ( MPI_Request, MPE_State * );
-void MPE_ProcessWaitTest ( MPI_Request, MPI_Status *, char *, MPE_State * );
+void MPE_Req_add_send( MPI_Request, MPI_Datatype, int,
+                       int, int, const CLOG_CommIDs_t*, int );
+void MPE_Req_add_recv( MPI_Request, MPI_Datatype, int,
+                       int, int, const CLOG_CommIDs_t*, int );
+void MPE_Req_cancel( MPI_Request );
+void MPE_Req_remove( MPI_Request );
+void MPE_Req_start( MPI_Request, MPE_State * );
+void MPE_Req_wait_test( MPI_Request, MPI_Status *, char *, MPE_State * );
 
 /*
    Temporary MPE log definitions (eventually will replace with more
    permanent changes)
    Note that these include a communicator as well as the state (pointer
-   to predefined state structure).  Use MPI_COMM_NULL for no communicator
- */
-#define MPE_Log_state_begin( comm, state ) \
-    MPE_Log_event( state->start_evtID, state->n_calls, NULL )
-#define MPE_Log_state_end( comm, state ) \
-    MPE_Log_event( state->final_evtID, state->n_calls, NULL )
+   to predefined state structure).  Use MPE_COMM_NULL for no communicator
+*/
+#define MPE_COMM_NULL  MPI_COMM_WORLD
 
-/* To use these, declare
+/*
+   To use these, declare
      register MPE_State *state;
-   and call around routine */
-/* For GNU CC with warnings turned on, we should use a macro that 
+   and call around routine
+*/
+/*
+   For GNU CC with warnings turned on, we should use a macro that 
    declares this as register MPE_State *state = 0; when error checking 
-   is on, just to suppress unnecessary warnings */
+   is on, just to suppress unnecessary warnings
+*/
 #ifdef GCC_WALL
-#define MPE_LOG_STATE_DECL register MPE_State *state = 0
+#define MPE_LOG_STATE_DECL \
+    register       MPE_State       *state   = 0; \
+    register const CLOG_CommIDs_t  *commIDs = 0;
+#define MPE_LOG_COMM_DECL \
+    register const CLOG_CommIDs_t  *new_commIDs = 0;
 #else
-#define MPE_LOG_STATE_DECL register MPE_State *state
+#define MPE_LOG_STATE_DECL \
+    register       MPE_State       *state; \
+    register const CLOG_CommIDs_t  *commIDs;
+#define MPE_LOG_COMM_DECL \
+    register const CLOG_CommIDs_t  *new_commIDs;
 #endif
-#define MPE_LOG_STATE_BEGIN(name,comm) \
-  if (trace_on) {\
-      state = &states[name];\
-      if (state->is_active) {\
-          state->n_calls++;\
-          MPE_Log_state_begin( comm, state );\
-      }\
-  }
+
+extern       CLOG_CommSet_t  *CLOG_CommSet;
+extern const CLOG_CommIDs_t  *CLOG_CommIDs4Self;
+extern const CLOG_CommIDs_t  *CLOG_CommIDs4World;
+
+/*
+   All following macros have "comm" as argument, but none of them except
+   MPE_LOG_STATE_BEGIN needs comm argument.  Instead all of them need
+   commIDs as an argument.  "comm" are used in all macros to indicates
+   the macro body needs reference of comm, i.e commIDs.  The goal is that
+   the functions that invoke these macros will look clearer and more consistent.
+*/
+#define MPE_LOG_STATE_BEGIN(comm,name) \
+    if (trace_on) { \
+        state = &states[name]; \
+        if (state->is_active) { \
+            state->n_calls++; \
+            commIDs = CLOG_CommSet_get_IDs( CLOG_CommSet, comm ); \
+            MPE_Log_commIDs_event( commIDs, 0, state->start_evtID, NULL ); \
+        } \
+    }
 #define MPE_LOG_STATE_END(comm) \
-  if (trace_on && state->is_active) {\
-          state->n_calls++;\
-          MPE_Log_state_end( comm, state );\
-      }
-#define MPE_LOG_DO(call) \
-    if (trace_on && state->is_active) { call ; }
+    if (trace_on && state->is_active) { \
+        state->n_calls++; \
+        MPE_Log_commIDs_event( commIDs, 0, state->final_evtID, NULL ); \
+    }
+
+#define MPE_LOG_COMM_SEND(comm,receiver,tag,size) \
+    if (trace_on && state->is_active) { \
+        MPE_Log_commIDs_send( commIDs, 0, receiver, tag, size ); \
+    }
+#define MPE_LOG_COMM_RECV(comm,sender,tag,size) \
+    if (trace_on && state->is_active) { \
+        MPE_Log_commIDs_receive( commIDs, 0, sender, tag, size ); \
+    }
+
+#define MPE_REQ_ADD_SEND(request,datatype,count,dest,tag,comm,is_persistent) \
+    if (dest != MPI_PROC_NULL) { \
+        MPE_Req_add_send( request, datatype, count, \
+                          dest, tag, commIDs, is_persistent ); \
+    }
+#define MPE_REQ_ADD_RECV(request,datatype,count,source,tag,comm,is_persistent) \
+    if (source != MPI_PROC_NULL) { \
+       MPE_Req_add_recv( request, datatype, count, \
+                         source, tag, commIDs, is_persistent ); \
+    }
+
+#define MPE_REQ_START(request) \
+    MPE_Req_start( request, state );
+#define MPE_REQ_WAIT_TEST(request,status,note) \
+    MPE_Req_wait_test( request, status, note, state );
+
+#define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
+    if (trace_on && state->is_active) { \
+        if ( new_comm != MPI_COMM_NULL ) { \
+            new_commIDs = CLOG_CommSet_add_intracomm( CLOG_CommSet, \
+                                                      new_comm ); \
+            MPE_Log_commIDs_intracomm( commIDs, 0, comm_etype, new_commIDs ); \
+        } \
+        else { \
+            MPE_Log_commIDs_nullcomm( commIDs, 0, comm_etype ); \
+        } \
+    }
+
+#define MPE_LOG_INTERCOMM(comm,new_comm,comm_etype) \
+    if (trace_on && state->is_active) { \
+        if ( new_comm != MPI_COMM_NULL ) { \
+            new_commIDs = CLOG_CommSet_add_intercomm( CLOG_CommSet, \
+                                                      new_comm, commIDs ); \
+            MPE_Log_commIDs_intercomm( commIDs, 0, comm_etype, new_commIDs ); \
+        } \
+        else { \
+            MPE_Log_commIDs_nullcomm( commIDs, 0, comm_etype ); \
+        } \
+    }
 
 /* Service routines for managing requests .... */
-/* If there are large numbers of requests, we should probably use a better
+/*
+   If there are large numbers of requests, we should probably use a better
    search structure, such as a hash table or tree
- */
-void MPE_Add_send_req( count, datatype, dest, tag, request, is_persistent )
-int count, dest, tag, is_persistent;
-MPI_Datatype datatype;
-MPI_Request request;
+*/
+void MPE_Req_add_send( request, datatype, count,
+                       dest, tag, commIDs, is_persistent )
+      MPI_Request     request;
+      MPI_Datatype    datatype;
+const CLOG_CommIDs_t *commIDs;
+      int             count, dest, tag, is_persistent;
 {
-  request_list *newrq;
-  int typesize;
+    request_list *newrq;
+    int typesize;
 
-  rq_alloc(requests_avail_0,newrq);
-  if (newrq) {
-      PMPI_Type_size( datatype, &typesize );
-      newrq->request       = request;
-      newrq->status        = RQ_SEND;
-      newrq->size          = count * typesize;
-      newrq->tag           = tag;
-      newrq->otherParty    = dest;
-      newrq->next          = 0;
-      newrq->is_persistent = is_persistent;
-      rq_add( requests_head_0, requests_tail_0, newrq );
+    rq_alloc(requests_avail_0,newrq);
+    if (newrq) {
+        PMPI_Type_size( datatype, &typesize );
+        newrq->request       = request;
+        newrq->commIDs       = commIDs;
+        newrq->status        = RQ_SEND;
+        newrq->size          = count * typesize;
+        newrq->tag           = tag;
+        newrq->otherParty    = dest;
+        newrq->next          = 0;
+        newrq->is_persistent = is_persistent;
+        rq_add( requests_head_0, requests_tail_0, newrq );
     }
 }
 
-void MPE_Add_recv_req( count, datatype, source, tag, request, is_persistent )
-int count, source, tag, is_persistent;
-MPI_Datatype datatype;
-MPI_Request request;
+void MPE_Req_add_recv( request, datatype, count,
+                       source, tag, commIDs, is_persistent )
+      MPI_Request     request;
+      MPI_Datatype    datatype;
+const CLOG_CommIDs_t *commIDs;
+      int             count, source, tag, is_persistent;
 {
-  request_list *newrq;
+    request_list *newrq;
 
-  /* We could pre-allocate request_list members, or allocate in
-     blocks.  Do this is we see this is a bottleneck */
-  rq_alloc( requests_avail_0, newrq );
-  if (newrq) {
-      newrq->request       = request;
-      newrq->status        = RQ_RECV;
-      newrq->next          = 0;
-      newrq->is_persistent = is_persistent;
-      rq_add( requests_head_0, requests_tail_0, newrq );
+    /*
+       We could pre-allocate request_list members, or allocate in
+       blocks.  Do this is we see this is a bottleneck
+    */
+    rq_alloc( requests_avail_0, newrq );
+    if (newrq) {
+        newrq->request       = request;
+        newrq->commIDs       = commIDs;
+        newrq->status        = RQ_RECV;
+        newrq->next          = 0;
+        newrq->is_persistent = is_persistent;
+        rq_add( requests_head_0, requests_tail_0, newrq );
     }
 }
 
-void  MPE_Cancel_req( request )
+void  MPE_Req_cancel( request )
 MPI_Request request;
 {
     request_list *rq;
@@ -386,96 +477,108 @@ MPI_Request request;
     if (rq) rq->status |= RQ_CANCEL;
 }
 
-void  MPE_Remove_req( request )
+void  MPE_Req_remove( request )
 MPI_Request request;
 {
-  rq_remove( requests_head_0, requests_tail_0, requests_avail_0, request );
+    rq_remove( requests_head_0, requests_tail_0, requests_avail_0, request );
 }
 
 /* Persistent sends and receives are handled with this routine (called by
    start or startall) */
-void MPE_Start_req( request, state )
+void MPE_Req_start( request, state )
 MPI_Request request;
 MPE_State   *state;
 {
-  request_list *rq;
+    request_list *rq;
 
-  /* look for request */
-  rq = requests_head_0;
-  while (rq && (rq->request != request)) {
-    rq   = rq->next;
-  }
+    /* look for request */
+    rq = requests_head_0;
+    while (rq && (rq->request != request)) {
+        rq   = rq->next;
+    }
 
-  if (!rq) {
+    if (!rq) {
 #ifdef PRINT_PROBLEMS
-    fprintf( stderr, "Request not found in '%s'.\n", note );
+        fprintf( stderr, "Request not found in '%s'.\n", note );
 #endif
-    return;                /* request not found */
-  }
+       return;                /* request not found */
+    }
 
-  if ((rq->status & RQ_SEND) && rq->otherParty != MPI_PROC_NULL) {
-      MPE_LOG_DO(MPE_Log_send( rq->otherParty, rq->tag, rq->size ));
-  }
-
+    if ((rq->status & RQ_SEND) && rq->otherParty != MPI_PROC_NULL) {
+        if (trace_on && state->is_active) {
+            MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_ISEND_START, NULL );
+            MPE_Log_commIDs_send( rq->commIDs, 0, rq->otherParty,
+                                  rq->tag, rq->size );
+            MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_ISEND_FINAL, NULL );
+        }
+    }
 }
    
-void MPE_ProcessWaitTest( request, status, note, state )
+void MPE_Req_wait_test( request, status, note, state )
 MPI_Request request;
 MPI_Status  *status;
 char        *note;
 MPE_State   *state;
 {
-  request_list *rq, *last;
-  int flag, size;
+    request_list  *rq, *last;
+    int           flag, size;
 
-  /* look for request */
-  rq = requests_head_0;
-  last = 0;
-  while (rq && (rq->request != request)) {
-    last = rq;
-    rq   = rq->next;
-  }
+    /* look for request */
+    rq = requests_head_0;
+    last = 0;
+    while (rq && (rq->request != request)) {
+        last = rq;
+        rq   = rq->next;
+    }
 
-  if (!rq) {
+    if (!rq) {
 #ifdef PRINT_PROBLEMS
-    fprintf( stderr, __FILE__":MPE_ProcessWaitTest(), "
-                     "Request not found in '%s'.\n", note );
-    fflush( stderr );
+        fprintf( stderr, __FILE__":MPE_Req_wait_test(), "
+                         "Request not found in '%s'.\n", note );
+        fflush( stderr );
 #endif
-    return;                /* request not found */
-  }
+        return;                /* request not found */
+    }
 
 #ifdef HAVE_MPI_STATUS_IGNORE
-  if (status == MPI_STATUS_IGNORE) {
-      fprintf( stderr, __FILE__":MPE_ProcessWaitTest() cannot proess "
-                       "incoming MPI_Status, MPI_STATUS_IGNORE" );
-      fflush( stderr );
-      return;
-  }
+    if (status == MPI_STATUS_IGNORE) {
+        fprintf( stderr, __FILE__":MPE_Req_wait_test() cannot proess "
+                         "incoming MPI_Status, MPI_STATUS_IGNORE" );
+        fflush( stderr );
+        return;
+    }
 #endif
 
-  if (status->MPI_TAG != MPI_ANY_TAG || (rq->status & RQ_SEND) ) {
-    /* if the request was not invalid */
+    if (status->MPI_TAG != MPI_ANY_TAG || (rq->status & RQ_SEND) ) {
+        /* if the request was not invalid */
 
-    if (rq->status & RQ_CANCEL) {
-      PMPI_Test_cancelled( status, &flag );
-      if (flag) return;    /* the request has been cancelled */
+        if (rq->status & RQ_CANCEL) {
+            PMPI_Test_cancelled( status, &flag );
+            if (flag) return;    /* the request has been cancelled */
+        }
+
+        /*
+           Receives conclude at the END of Wait/Test.
+           Sends start at the beginning.
+        */    
+        if ((rq->status & RQ_RECV) && (status->MPI_SOURCE != MPI_PROC_NULL)) {
+            PMPI_Get_count( status, MPI_BYTE, &size );
+            if (trace_on && state->is_active) {
+                MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_IRECV_START,
+                                       NULL );
+                MPE_Log_commIDs_receive( rq->commIDs, 0, status->MPI_SOURCE,
+                                         status->MPI_TAG, size );
+                MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_IRECV_FINAL,
+                                       NULL );
+            }
+        }
     }
 
-    /* Receives conclude at the END (wait/test); sends start at the
-       beginning */    
-    if ((rq->status & RQ_RECV) && (status->MPI_SOURCE != MPI_PROC_NULL)) {
-      PMPI_Get_count( status, MPI_BYTE, &size );
-      MPE_LOG_DO(MPE_Log_receive( status->MPI_SOURCE, status->MPI_TAG, size ));
+    /* Since the request has already been found, removing it */
+    if (!rq->is_persistent) {
+        rq_remove_at( requests_head_0, requests_tail_0, requests_avail_0, 
+                      rq, last );
     }
-  }
-
-  /* Since we already have found the request, removing it is relatively
-     easy */
-  if (!rq->is_persistent) {
-      rq_remove_at( requests_head_0, requests_tail_0, requests_avail_0, 
-                    rq, last );
-  }
 }
 
 
@@ -496,17 +599,17 @@ MPI_Datatype recvtype;
 MPI_Comm comm;
 {
   int       returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Allgather - prototyping replacement for MPI_Allgather
     Log the beginning and ending of the time spent in MPI_Allgather calls.
 */
-  MPE_LOG_STATE_BEGIN(MPE_ALLGATHER_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHER_ID)
   
   returnVal = PMPI_Allgather( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -522,17 +625,17 @@ MPI_Datatype recvtype;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Allgatherv - prototyping replacement for MPI_Allgatherv
     Log the beginning and ending of the time spent in MPI_Allgatherv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ALLGATHERV_ID, comm );
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHERV_ID)
   
   returnVal = PMPI_Allgatherv( sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -546,18 +649,18 @@ MPI_Op op;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Allreduce - prototyping replacement for MPI_Allreduce
     Log the beginning and ending of the time spent in MPI_Allreduce calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ALLREDUCE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLREDUCE_ID)
   
   returnVal = PMPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -572,18 +675,18 @@ MPI_Datatype recvtype;
 MPI_Comm comm;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Alltoall - prototyping replacement for MPI_Alltoall
     Log the beginning and ending of the time spent in MPI_Alltoall calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ALLTOALL_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALL_ID)
   
   returnVal = PMPI_Alltoall( sendbuf, sendcount, sendtype, recvbuf, recvcnt, recvtype, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -600,17 +703,17 @@ MPI_Datatype recvtype;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Alltoallv - prototyping replacement for MPI_Alltoallv
     Log the beginning and ending of the time spent in MPI_Alltoallv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ALLTOALLV_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALLV_ID)
   
   returnVal = PMPI_Alltoallv( sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -619,17 +722,17 @@ int   MPI_Barrier( comm )
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Barrier - prototyping replacement for MPI_Barrier
     Log the beginning and ending of the time spent in MPI_Barrier calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_BARRIER_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_BARRIER_ID)
   
   returnVal = PMPI_Barrier( comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -642,17 +745,17 @@ int root;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Bcast - prototyping replacement for MPI_Bcast
     Log the beginning and ending of the time spent in MPI_Bcast calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_BCAST_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_BCAST_ID)
   
   returnVal = PMPI_Bcast( buffer, count, datatype, root, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -668,17 +771,17 @@ int root;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Gather - prototyping replacement for MPI_Gather
     Log the beginning and ending of the time spent in MPI_Gather calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GATHER_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_GATHER_ID)
   
   returnVal = PMPI_Gather( sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -695,17 +798,17 @@ int root;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Gatherv - prototyping replacement for MPI_Gatherv
     Log the beginning and ending of the time spent in MPI_Gatherv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GATHERV_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_GATHERV_ID)
   
   returnVal = PMPI_Gatherv( sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -716,17 +819,17 @@ int commute;
 MPI_Op * op;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Op_create - prototyping replacement for MPI_Op_create
     Log the beginning and ending of the time spent in MPI_Op_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_OP_CREATE_ID,(MPI_Comm *)0);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_CREATE_ID)
   
   returnVal = PMPI_Op_create( function, commute, op );
 
-  MPE_LOG_STATE_END((MPI_Comm*)0);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -735,18 +838,18 @@ int  MPI_Op_free( op )
 MPI_Op * op;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Op_free - prototyping replacement for MPI_Op_free
     Log the beginning and ending of the time spent in MPI_Op_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_OP_FREE_ID,(MPI_Comm*)0);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_FREE_ID)
   
   returnVal = PMPI_Op_free( op );
 
-  MPE_LOG_STATE_END((MPI_Comm*)0);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -760,17 +863,17 @@ MPI_Op op;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Reduce_scatter - prototyping replacement for MPI_Reduce_scatter
     Log the beginning and ending of the time spent in MPI_Reduce_scatter calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_REDUCE_SCATTER_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_SCATTER_ID)
   
   returnVal = PMPI_Reduce_scatter( sendbuf, recvbuf, recvcnts, datatype, op, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -785,17 +888,17 @@ int root;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Reduce - prototyping replacement for MPI_Reduce
     Log the beginning and ending of the time spent in MPI_Reduce calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_REDUCE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_ID)
   
   returnVal = PMPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -809,18 +912,18 @@ MPI_Op op;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Scan - prototyping replacement for MPI_Scan
     Log the beginning and ending of the time spent in MPI_Scan calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SCAN_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SCAN_ID)
   
   returnVal = PMPI_Scan( sendbuf, recvbuf, count, datatype, op, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -836,18 +939,18 @@ int root;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Scatter - prototyping replacement for MPI_Scatter
     Log the beginning and ending of the time spent in MPI_Scatter calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SCATTER_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SCATTER_ID)
   
   returnVal = PMPI_Scatter( sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -865,18 +968,18 @@ int root;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Scatterv - prototyping replacement for MPI_Scatterv
     Log the beginning and ending of the time spent in MPI_Scatterv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SCATTERV_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SCATTERV_ID)
   
   returnVal = PMPI_Scatterv( sendbuf, sendcnts, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -886,18 +989,18 @@ MPI_Comm comm;
 int keyval;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Attr_delete - prototyping replacement for MPI_Attr_delete
     Log the beginning and ending of the time spent in MPI_Attr_delete calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ATTR_DELETE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_DELETE_ID)
   
   returnVal = PMPI_Attr_delete( comm, keyval );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -909,18 +1012,18 @@ void * attr_value;
 int * flag;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
   
 /*
     MPI_Attr_get - prototyping replacement for MPI_Attr_get
     Log the beginning and ending of the time spent in MPI_Attr_get calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ATTR_GET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_GET_ID)
   
   returnVal = PMPI_Attr_get( comm, keyval, attr_value, flag );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -931,17 +1034,17 @@ int keyval;
 void * attr_value;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Attr_put - prototyping replacement for MPI_Attr_put
     Log the beginning and ending of the time spent in MPI_Attr_put calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ATTR_PUT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_PUT_ID)
   
   returnVal = PMPI_Attr_put( comm, keyval, attr_value );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -952,17 +1055,17 @@ MPI_Comm comm2;
 int * result;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Comm_compare - prototyping replacement for MPI_Comm_compare
     Log the beginning and ending of the time spent in MPI_Comm_compare calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_COMPARE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_COMM_COMPARE_ID)
   
   returnVal = PMPI_Comm_compare( comm1, comm2, result );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -973,18 +1076,21 @@ MPI_Group group;
 MPI_Comm * comm_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Comm_create - prototyping replacement for MPI_Comm_create
     Log the beginning and ending of the time spent in MPI_Comm_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_CREATE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_CREATE_ID)
   
   returnVal = PMPI_Comm_create( comm, group, comm_out );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -994,18 +1100,21 @@ MPI_Comm comm;
 MPI_Comm * comm_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Comm_dup - prototyping replacement for MPI_Comm_dup
     Log the beginning and ending of the time spent in MPI_Comm_dup calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_DUP_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_DUP_ID)
   
   returnVal = PMPI_Comm_dup( comm, comm_out );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1014,18 +1123,22 @@ int   MPI_Comm_free( comm )
 MPI_Comm * comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Comm_free - prototyping replacement for MPI_Comm_free
     Log the beginning and ending of the time spent in MPI_Comm_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_FREE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(*comm,MPE_COMM_FREE_ID)
   
   returnVal = PMPI_Comm_free( comm );
+  if ( *comm == MPI_COMM_NULL ) {
+      MPE_LOG_INTRACOMM(*comm,MPI_COMM_NULL,CLOG_COMM_FREE)
+  }
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(*comm)
 
   return returnVal;
 }
@@ -1035,18 +1148,18 @@ MPI_Comm comm;
 MPI_Group * group;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Comm_group - prototyping replacement for MPI_Comm_group
     Log the beginning and ending of the time spent in MPI_Comm_group calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_GROUP_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_GROUP_ID)
   
   returnVal = PMPI_Comm_group( comm, group );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1056,18 +1169,18 @@ MPI_Comm comm;
 int * rank;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Comm_rank - prototyping replacement for MPI_Comm_rank
     Log the beginning and ending of the time spent in MPI_Comm_rank calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_RANK_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_RANK_ID)
 
   returnVal = PMPI_Comm_rank( comm, rank );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1077,18 +1190,18 @@ MPI_Comm comm;
 MPI_Group * group;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Comm_remote_group - prototyping replacement for MPI_Comm_remote_group
     Log the beginning and ending of the time spent in MPI_Comm_remote_group calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_REMOTE_GROUP_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_GROUP_ID)
   
   returnVal = PMPI_Comm_remote_group( comm, group );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1098,18 +1211,18 @@ MPI_Comm comm;
 int * size;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Comm_remote_size - prototyping replacement for MPI_Comm_remote_size
     Log the beginning and ending of the time spent in MPI_Comm_remote_size calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_REMOTE_SIZE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_SIZE_ID)
   
   returnVal = PMPI_Comm_remote_size( comm, size );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1119,18 +1232,18 @@ MPI_Comm comm;
 int * size;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Comm_size - prototyping replacement for MPI_Comm_size
     Log the beginning and ending of the time spent in MPI_Comm_size calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_SIZE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SIZE_ID)
   
   returnVal = PMPI_Comm_size( comm, size );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1142,18 +1255,21 @@ int key;
 MPI_Comm * comm_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Comm_split - prototyping replacement for MPI_Comm_split
     Log the beginning and ending of the time spent in MPI_Comm_split calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_SPLIT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SPLIT_ID)
   
   returnVal = PMPI_Comm_split( comm, color, key, comm_out );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1163,18 +1279,18 @@ MPI_Comm comm;
 int * flag;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Comm_test_inter - prototyping replacement for MPI_Comm_test_inter
     Log the beginning and ending of the time spent in MPI_Comm_test_inter calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_COMM_TEST_INTER_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_TEST_INTER_ID)
   
   returnVal = PMPI_Comm_test_inter( comm, flag );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1185,18 +1301,18 @@ MPI_Group group2;
 int * result;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_compare - prototyping replacement for MPI_Group_compare
     Log the beginning and ending of the time spent in MPI_Group_compare calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_COMPARE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_COMPARE_ID)
   
   returnVal = PMPI_Group_compare( group1, group2, result );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1207,18 +1323,18 @@ MPI_Group group2;
 MPI_Group * group_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_difference - prototyping replacement for MPI_Group_difference
     Log the beginning and ending of the time spent in MPI_Group_difference calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_DIFFERENCE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_DIFFERENCE_ID)
   
   returnVal = PMPI_Group_difference( group1, group2, group_out );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1230,18 +1346,18 @@ int * ranks;
 MPI_Group * newgroup;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_excl - prototyping replacement for MPI_Group_excl
     Log the beginning and ending of the time spent in MPI_Group_excl calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_EXCL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_EXCL_ID)
   
   returnVal = PMPI_Group_excl( group, n, ranks, newgroup );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1250,18 +1366,18 @@ int   MPI_Group_free( group )
 MPI_Group * group;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_free - prototyping replacement for MPI_Group_free
     Log the beginning and ending of the time spent in MPI_Group_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_FREE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_FREE_ID)
   
   returnVal = PMPI_Group_free( group );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1273,18 +1389,18 @@ int * ranks;
 MPI_Group * group_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_incl - prototyping replacement for MPI_Group_incl
     Log the beginning and ending of the time spent in MPI_Group_incl calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_INCL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INCL_ID)
   
   returnVal = PMPI_Group_incl( group, n, ranks, group_out );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1295,18 +1411,18 @@ MPI_Group group2;
 MPI_Group * group_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_intersection - prototyping replacement for MPI_Group_intersection
     Log the beginning and ending of the time spent in MPI_Group_intersection calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_INTERSECTION_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INTERSECTION_ID)
   
   returnVal = PMPI_Group_intersection( group1, group2, group_out );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1316,18 +1432,18 @@ MPI_Group group;
 int * rank;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_rank - prototyping replacement for MPI_Group_rank
     Log the beginning and ending of the time spent in MPI_Group_rank calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_RANK_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANK_ID)
   
   returnVal = PMPI_Group_rank( group, rank );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1339,18 +1455,18 @@ int ranges[][3];
 MPI_Group * newgroup;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_range_excl - prototyping replacement for MPI_Group_range_excl
     Log the beginning and ending of the time spent in MPI_Group_range_excl calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_RANGE_EXCL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_EXCL_ID)
   
   returnVal = PMPI_Group_range_excl( group, n, ranges, newgroup );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1362,18 +1478,18 @@ int ranges[][3];
 MPI_Group * newgroup;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_range_incl - prototyping replacement for MPI_Group_range_incl
     Log the beginning and ending of the time spent in MPI_Group_range_incl calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_RANGE_INCL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_INCL_ID)
   
   returnVal = PMPI_Group_range_incl( group, n, ranges, newgroup );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1383,18 +1499,18 @@ MPI_Group group;
 int * size;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_size - prototyping replacement for MPI_Group_size
     Log the beginning and ending of the time spent in MPI_Group_size calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_SIZE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_SIZE_ID)
   
   returnVal = PMPI_Group_size( group, size );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1407,18 +1523,18 @@ MPI_Group group_b;
 int * ranks_b;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_translate_ranks - prototyping replacement for MPI_Group_translate_ranks
     Log the beginning and ending of the time spent in MPI_Group_translate_ranks calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_TRANSLATE_RANKS_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_TRANSLATE_RANKS_ID)
   
   returnVal = PMPI_Group_translate_ranks( group_a, n, ranks_a, group_b, ranks_b );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1429,18 +1545,18 @@ MPI_Group group2;
 MPI_Group * group_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Group_union - prototyping replacement for MPI_Group_union
     Log the beginning and ending of the time spent in MPI_Group_union calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GROUP_UNION_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_UNION_ID)
   
   returnVal = PMPI_Group_union( group1, group2, group_out );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1454,18 +1570,23 @@ int tag;
 MPI_Comm * comm_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Intercomm_create - prototyping replacement for MPI_Intercomm_create
     Log the beginning and ending of the time spent in MPI_Intercomm_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_INTERCOMM_CREATE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(local_comm,MPE_INTERCOMM_CREATE_ID)
   
-  returnVal = PMPI_Intercomm_create( local_comm, local_leader, peer_comm, remote_leader, tag, comm_out );
+  returnVal = PMPI_Intercomm_create( local_comm, local_leader,
+                                     peer_comm, remote_leader,
+                                     tag, comm_out );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_INTERCOMM(local_comm,*comm_out,CLOG_COMM_INTER_CREATE)
+
+  MPE_LOG_STATE_END(local_comm)
 
   return returnVal;
 }
@@ -1476,18 +1597,21 @@ int high;
 MPI_Comm * comm_out;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Intercomm_merge - prototyping replacement for MPI_Intercomm_merge
     Log the beginning and ending of the time spent in MPI_Intercomm_merge calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_INTERCOMM_MERGE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_INTERCOMM_MERGE_ID)
   
   returnVal = PMPI_Intercomm_merge( comm, high, comm_out );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1499,18 +1623,18 @@ int * keyval;
 void * extra_state;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Keyval_create - prototyping replacement for MPI_Keyval_create
     Log the beginning and ending of the time spent in MPI_Keyval_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_KEYVAL_CREATE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_CREATE_ID)
   
   returnVal = PMPI_Keyval_create( copy_fn, delete_fn, keyval, extra_state );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1519,18 +1643,18 @@ int   MPI_Keyval_free( keyval )
 int * keyval;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Keyval_free - prototyping replacement for MPI_Keyval_free
     Log the beginning and ending of the time spent in MPI_Keyval_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_KEYVAL_FREE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_FREE_ID)
   
   returnVal = PMPI_Keyval_free( keyval );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1540,19 +1664,19 @@ MPI_Comm comm;
 int errorcode;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Abort - prototyping replacement for MPI_Abort
     Log the beginning and ending of the time spent in MPI_Abort calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ABORT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ABORT_ID)
   
   returnVal = PMPI_Abort( comm, errorcode );
 
   /* Pretty implausible... */
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1562,18 +1686,18 @@ int errorcode;
 int * errorclass;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Error_class - prototyping replacement for MPI_Error_class
     Log the beginning and ending of the time spent in MPI_Error_class calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ERROR_CLASS_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_CLASS_ID)
   
   returnVal = PMPI_Error_class( errorcode, errorclass );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1583,18 +1707,18 @@ MPI_Handler_function * function;
 MPI_Errhandler * errhandler;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Errhandler_create - prototyping replacement for MPI_Errhandler_create
     Log the beginning and ending of the time spent in MPI_Errhandler_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ERRHANDLER_CREATE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_CREATE_ID)
   
   returnVal = PMPI_Errhandler_create( function, errhandler );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1603,18 +1727,18 @@ int  MPI_Errhandler_free( errhandler )
 MPI_Errhandler * errhandler;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Errhandler_free - prototyping replacement for MPI_Errhandler_free
     Log the beginning and ending of the time spent in MPI_Errhandler_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ERRHANDLER_FREE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_FREE_ID)
   
   returnVal = PMPI_Errhandler_free( errhandler );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1624,18 +1748,18 @@ MPI_Comm comm;
 MPI_Errhandler * errhandler;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Errhandler_get - prototyping replacement for MPI_Errhandler_get
     Log the beginning and ending of the time spent in MPI_Errhandler_get calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ERRHANDLER_GET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_GET_ID)
   
   returnVal = PMPI_Errhandler_get( comm, errhandler );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -1646,18 +1770,18 @@ char * string;
 int * resultlen;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Error_string - prototyping replacement for MPI_Error_string
     Log the beginning and ending of the time spent in MPI_Error_string calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ERROR_STRING_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_STRING_ID)
   
   returnVal = PMPI_Error_string( errorcode, string, resultlen );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1667,27 +1791,28 @@ MPI_Comm comm;
 MPI_Errhandler errhandler;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Errhandler_set - prototyping replacement for MPI_Errhandler_set
     Log the beginning and ending of the time spent in MPI_Errhandler_set calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ERRHANDLER_SET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_SET_ID)
   
   returnVal = PMPI_Errhandler_set( comm, errhandler );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
 
 int  MPI_Finalize( )
 {
-    MPE_State  *state;
-    int         cnt[MPE_MAX_KNOWN_STATES], totcnt[MPE_MAX_KNOWN_STATES];
-    int         returnVal, idx;
+    MPE_State       *state;
+    int              cnt[MPE_MAX_KNOWN_STATES];
+    int              totcnt[MPE_MAX_KNOWN_STATES];
+    int              returnVal, idx;
     
 /*
     MPI_Finalize - prototyping replacement for MPI_Finalize
@@ -1700,11 +1825,12 @@ int  MPI_Finalize( )
                  0, MPI_COMM_WORLD );
 
     if (procid_0 == 0) {
-        fprintf( stderr, "Writing logfile....\n");
+        fprintf( stderr, "Writing logfile....\n" );
         for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
             if (totcnt[idx] > 0) {
                 state  = &states[idx];
-                MPE_Describe_known_state( state->stateID,
+                MPE_Describe_known_state( CLOG_CommIDs4World, 0,
+                                          state->stateID,
                                           state->start_evtID,
                                           state->final_evtID, 
                                           state->name, state->color,
@@ -1738,18 +1864,18 @@ char * name;
 int * resultlen;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Get_processor_name - prototyping replacement for MPI_Get_processor_name
     Log the beginning and ending of the time spent in MPI_Get_processor_name calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GET_PROCESSOR_NAME_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_PROCESSOR_NAME_ID)
   
   returnVal = PMPI_Get_processor_name( name, resultlen );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -1771,6 +1897,18 @@ char *** argv;
 
   MPE_Init_log();
   PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
+  if ( procid_0 == 0 ) {
+        MPE_Describe_uncheck_state( CLOG_CommIDs4World, 0,
+                                    MPE_STATEID_ISEND,
+                                    MPE_EVT_ISEND_START,
+                                    MPE_EVT_ISEND_FINAL,
+                                    "MPE_Isend_waited", "magenta", NULL );
+        MPE_Describe_uncheck_state( CLOG_CommIDs4World, 0,
+                                    MPE_STATEID_IRECV,
+                                    MPE_EVT_IRECV_START,
+                                    MPE_EVT_IRECV_FINAL,
+                                    "MPE_Irecv_waited", "DarkOrange", NULL );
+ }
 
   /* Initialize all states */
   for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
@@ -1786,7 +1924,9 @@ char *** argv;
   }
 
   /* By default, log only message-passing (pt-to-pt and collective) */
-  allow_mask = MPE_KIND_MSG | MPE_KIND_COLL;
+  allow_mask  = MPE_KIND_MSG | MPE_KIND_COLL;
+  allow_mask |= MPE_KIND_COMM | MPE_KIND_COMM_INFO;
+  allow_mask |= MPE_KIND_TOPO;
   /* And file operations, if included */
 #ifdef HAVE_MPI_IO
   allow_mask |= MPE_KIND_FILE;
@@ -1891,46 +2031,57 @@ char *** argv;
   state = &states[MPE_COMM_COMPARE_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_compare";
+  state->color = "white";
 
   state = &states[MPE_COMM_CREATE_ID];
   state->kind_mask = MPE_KIND_COMM;
   state->name = "MPI_Comm_create";
+  state->color = "DarkOliveGreen1";
 
   state = &states[MPE_COMM_DUP_ID];
   state->kind_mask = MPE_KIND_COMM;
   state->name = "MPI_Comm_dup";
+  state->color = "OliveDrab1";
 
   state = &states[MPE_COMM_FREE_ID];
   state->kind_mask = MPE_KIND_COMM;
   state->name = "MPI_Comm_free";
+  state->color = "LightSeeGreen1";
 
   state = &states[MPE_COMM_GROUP_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_group";
+  state->color = "white";
 
   state = &states[MPE_COMM_RANK_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_rank";
+  state->color = "white";
 
   state = &states[MPE_COMM_REMOTE_GROUP_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_remote_group";
+  state->color = "white";
 
   state = &states[MPE_COMM_REMOTE_SIZE_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_remote_size";
+  state->color = "white";
 
   state = &states[MPE_COMM_SIZE_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_size";
+  state->color = "white";
 
   state = &states[MPE_COMM_SPLIT_ID];
   state->kind_mask = MPE_KIND_COMM;
   state->name = "MPI_Comm_split";
+  state->color = "DarkOliveGreen2";
 
   state = &states[MPE_COMM_TEST_INTER_ID];
   state->kind_mask = MPE_KIND_COMM_INFO;
   state->name = "MPI_Comm_test_inter";
+  state->color = "white";
 
   state = &states[MPE_GROUP_COMPARE_ID];
   state->kind_mask = MPE_KIND_GROUP;
@@ -1983,10 +2134,12 @@ char *** argv;
   state = &states[MPE_INTERCOMM_CREATE_ID];
   state->kind_mask = MPE_KIND_COMM;
   state->name = "MPI_Intercomm_create";
+  state->color = "DarkOliveGreen4";
 
   state = &states[MPE_INTERCOMM_MERGE_ID];
   state->kind_mask = MPE_KIND_COMM;
   state->name = "MPI_Intercomm_merge";
+  state->color = "DarkOliveGreen3";
 
   state = &states[MPE_KEYVAL_CREATE_ID];
   state->kind_mask = MPE_KIND_ATTR;
@@ -2272,70 +2425,87 @@ char *** argv;
   state = &states[MPE_CART_COORDS_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_coords";
+  state->color = "white";
 
   state = &states[MPE_CART_CREATE_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_create";
+  state->color="DarkOliveGreen1";
 
   state = &states[MPE_CART_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_get";
+  state->color = "white";
 
   state = &states[MPE_CART_MAP_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_map";
+  state->color = "white";
 
   state = &states[MPE_CART_RANK_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_rank";
+  state->color = "white";
 
   state = &states[MPE_CART_SHIFT_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_shift";
+  state->color = "white";
 
   state = &states[MPE_CART_SUB_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_sub";
+  state->color="DarkOliveGreen2";
 
   state = &states[MPE_CARTDIM_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cartdim_get";
+  state->color = "white";
 
   state = &states[MPE_DIMS_CREATE_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Dims_create";
+  state->color = "white";
 
   state = &states[MPE_GRAPH_CREATE_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Graph_create";
+  state->color="DarkOliveGreen3";
 
   state = &states[MPE_GRAPH_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Graph_get";
+  state->color = "white";
 
   state = &states[MPE_GRAPH_MAP_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Graph_map";
+  state->color = "white";
 
   state = &states[MPE_GRAPH_NEIGHBORS_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Graph_neighbors";
+  state->color = "white";
 
   state = &states[MPE_GRAPH_NEIGHBORS_COUNT_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Graph_neighbors_count";
+  state->color = "white";
 
   state = &states[MPE_GRAPHDIMS_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Graphdims_get";
+  state->color = "white";
 
   state = &states[MPE_TOPO_TEST_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Topo_test";
+  state->color = "white";
 
   state = &states[MPE_RECV_IDLE_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Recv_idle";
+  state->color="SeaGreen1";
 
 #ifdef HAVE_MPI_IO
   MPE_Init_MPIIO();
@@ -2373,18 +2543,18 @@ int  MPI_Initialized( flag )
 int * flag;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Initialized - prototyping replacement for MPI_Initialized
     Log the beginning and ending of the time spent in MPI_Initialized calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_INITIALIZED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_INITIALIZED_ID)
   
   returnVal = PMPI_Initialized( flag );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2396,18 +2566,18 @@ int * flag;
 double  MPI_Wtick(  )
 {
   double  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Wtick - prototyping replacement for MPI_Wtick
     Log the beginning and ending of the time spent in MPI_Wtick calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_WTICK_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTICK_ID)
   
   returnVal = PMPI_Wtick(  );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2415,18 +2585,18 @@ double  MPI_Wtick(  )
 double  MPI_Wtime(  )
 {
   double  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Wtime - prototyping replacement for MPI_Wtime
     Log the beginning and ending of the time spent in MPI_Wtime calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_WTIME_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTIME_ID)
   
   returnVal = PMPI_Wtime(  );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2437,18 +2607,18 @@ void * location;
 MPI_Aint * address;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Address - prototyping replacement for MPI_Address
     Log the beginning and ending of the time spent in MPI_Address calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ADDRESS_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ADDRESS_ID)
   
   returnVal = PMPI_Address( location, address );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2463,21 +2633,21 @@ MPI_Comm comm;
 {
   int  returnVal;
   int  size;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Bsend - prototyping replacement for MPI_Bsend
     Log the beginning and ending of the time spent in MPI_Bsend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_BSEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_BSEND_ID)
 
   PMPI_Type_size( datatype, &size );
-  MPE_LOG_DO(MPE_Log_send( dest, tag, count * size ));
+  MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
   
   returnVal = PMPI_Bsend( buf, count, datatype, dest, tag, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2492,23 +2662,21 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Bsend_init - prototyping replacement for MPI_Bsend_init
     Log the beginning and ending of the time spent in MPI_Bsend_init calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_BSEND_INIT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_BSEND_INIT_ID)
   
   returnVal = PMPI_Bsend_init( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 1 );
-      /* Note not started yet ... */
-      }
+  /* Note not started yet ... */
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2518,18 +2686,18 @@ void * buffer;
 int size;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Buffer_attach - prototyping replacement for MPI_Buffer_attach
     Log the beginning and ending of the time spent in MPI_Buffer_attach calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_BUFFER_ATTACH_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_ATTACH_ID)
   
   returnVal = PMPI_Buffer_attach( buffer, size );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2539,18 +2707,18 @@ void * buffer;
 int * size;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Buffer_detach - prototyping replacement for MPI_Buffer_detach
     Log the beginning and ending of the time spent in MPI_Buffer_detach calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_BUFFER_DETACH_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_DETACH_ID)
   
   returnVal = PMPI_Buffer_detach( buffer, size );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2559,20 +2727,20 @@ int  MPI_Cancel( request )
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cancel - prototyping replacement for MPI_Cancel
     Log the beginning and ending of the time spent in MPI_Cancel calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CANCEL_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_CANCEL_ID)
   
-  MPE_Cancel_req( *request );
+  MPE_Req_cancel( *request );
 
   returnVal = PMPI_Cancel( request );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2581,20 +2749,20 @@ int  MPI_Request_free( request )
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Request_free - prototyping replacement for MPI_Request_free
     Log the beginning and ending of the time spent in MPI_Request_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_REQUEST_FREE_ID,MPI_COMM_NULL);
-  
-  MPE_Remove_req( *request );
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_REQUEST_FREE_ID)
+
+  MPE_Req_remove( *request );
 
   returnVal = PMPI_Request_free( request );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2609,23 +2777,23 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Recv_init - prototyping replacement for MPI_Recv_init
     Log the beginning and ending of the time spent in MPI_Recv_init calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_RECV_INIT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_RECV_INIT_ID)
   
   returnVal = PMPI_Recv_init( buf, count, datatype, source, tag, comm, request );
 
-  if (returnVal == MPI_SUCCESS && source != MPI_PROC_NULL) {
-      MPE_Add_recv_req( count, datatype, source, tag, *request, 1 );
+  if (returnVal == MPI_SUCCESS) {
       /* Not started yet ... */
-      }
+      MPE_REQ_ADD_RECV( *request, datatype, count, source, tag, comm, 1 );
+  }
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2640,23 +2808,21 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Send_init - prototyping replacement for MPI_Send_init
     Log the beginning and ending of the time spent in MPI_Send_init calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SEND_INIT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SEND_INIT_ID)
   
   returnVal = PMPI_Send_init( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 1 );
-      /* Note not started yet ... */
-      }
+  /* Note not started yet ... */
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2667,18 +2833,18 @@ MPI_Datatype datatype;
 int * elements;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Get_elements - prototyping replacement for MPI_Get_elements
     Log the beginning and ending of the time spent in MPI_Get_elements calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GET_ELEMENTS_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ELEMENTS_ID)
   
   returnVal = PMPI_Get_elements( status, datatype, elements );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2689,18 +2855,18 @@ MPI_Datatype datatype;
 int * count;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Get_count - prototyping replacement for MPI_Get_count
     Log the beginning and ending of the time spent in MPI_Get_count calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GET_COUNT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_COUNT_ID)
   
   returnVal = PMPI_Get_count( status, datatype, count );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -2715,22 +2881,20 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Ibsend - prototyping replacement for MPI_Ibsend
     Log the beginning and ending of the time spent in MPI_Ibsend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_IBSEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_IBSEND_ID)
   
   returnVal = PMPI_Ibsend( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 0 );
-      }
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2743,7 +2907,7 @@ int * flag;
 MPI_Status * status;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 #ifdef HAVE_MPI_STATUS_IGNORE
   MPI_Status    tmp_status;
@@ -2756,11 +2920,11 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Iprobe calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_IPROBE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_IPROBE_ID)
   
   returnVal = PMPI_Iprobe( source, tag, comm, flag, status );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -2785,22 +2949,22 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Irecv - prototyping replacement for MPI_Irecv
     Log the beginning and ending of the time spent in MPI_Irecv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_IRECV_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_IRECV_ID)
   
   returnVal = PMPI_Irecv( buf, count, datatype, source, tag, comm, request );
 
-  if (returnVal == MPI_SUCCESS && source != MPI_PROC_NULL) {
-      MPE_Add_recv_req( count, datatype, source, tag, *request, 0 );
-      }
+  if (returnVal == MPI_SUCCESS) {
+      MPE_REQ_ADD_RECV( *request, datatype, count, source, tag, comm, 0 )
+  }
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2815,22 +2979,20 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Irsend - prototyping replacement for MPI_Irsend
     Log the beginning and ending of the time spent in MPI_Irsend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_IRSEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_IRSEND_ID)
 
   returnVal = PMPI_Irsend( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 0 );
-      }
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2846,22 +3008,22 @@ MPI_Request * request;
 {
   int  returnVal;
   int  size;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Isend - prototyping replacement for MPI_Isend
     Log the beginning and ending of the time spent in MPI_Isend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ISEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ISEND_ID)
+
   PMPI_Type_size( datatype, &size );
-  MPE_LOG_DO(MPE_Log_send( dest, tag, size * count ));
+  MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
+
   returnVal = PMPI_Isend( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 0 );
-  }
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2877,24 +3039,23 @@ MPI_Request * request;
 {
   int  returnVal;
   int  size;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Issend - prototyping replacement for MPI_Issend
     Log the beginning and ending of the time spent in MPI_Issend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_ISSEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_ISSEND_ID)
+
   PMPI_Type_size( datatype, &size );
-  MPE_LOG_DO(MPE_Log_send( dest, tag, size * count ));
+  MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
   
   returnVal = PMPI_Issend( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 0 );
-      }
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2909,18 +3070,18 @@ int * position;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Pack - prototyping replacement for MPI_Pack
     Log the beginning and ending of the time spent in MPI_Pack calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_PACK_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_PACK_ID)
   
   returnVal = PMPI_Pack( inbuf, incount, type, outbuf, outcount, position, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2932,18 +3093,18 @@ MPI_Comm comm;
 int * size;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Pack_size - prototyping replacement for MPI_Pack_size
     Log the beginning and ending of the time spent in MPI_Pack_size calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_PACK_SIZE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_PACK_SIZE_ID)
   
   returnVal = PMPI_Pack_size( incount, datatype, comm, size );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -2955,7 +3116,7 @@ MPI_Comm comm;
 MPI_Status * status;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 #ifdef HAVE_MPI_STATUS_IGNORE
   MPI_Status    tmp_status;
@@ -2968,11 +3129,11 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Probe calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_PROBE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_PROBE_ID)
   
   returnVal = PMPI_Probe( source, tag, comm, status );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -2997,7 +3158,7 @@ MPI_Comm comm;
 MPI_Status * status;
 {
   int  returnVal, acount;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 #ifdef HAVE_MPI_STATUS_IGNORE
   MPI_Status    tmp_status;
@@ -3010,7 +3171,7 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Recv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_RECV_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_RECV_ID)
   
   returnVal = PMPI_Recv( buf, count, datatype, source, tag, comm, status );
 
@@ -3025,10 +3186,10 @@ MPI_Status * status;
 #endif
   if (returnVal == MPI_SUCCESS) {
       PMPI_Get_count( status, MPI_BYTE, &acount );
-      MPE_LOG_DO(MPE_Log_receive(  status->MPI_SOURCE, status->MPI_TAG, acount ));
-      }
+      MPE_LOG_COMM_RECV( comm, status->MPI_SOURCE, status->MPI_TAG, acount )
+  }
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3043,21 +3204,21 @@ MPI_Comm comm;
 {
   int  returnVal;
   int  size;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Rsend - prototyping replacement for MPI_Rsend
     Log the beginning and ending of the time spent in MPI_Rsend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_RSEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_RSEND_ID)
 
   PMPI_Type_size( datatype, &size );
-  MPE_LOG_DO(MPE_Log_send( dest, tag, count * size ));
+  MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
 
   returnVal = PMPI_Rsend( buf, count, datatype, dest, tag, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3072,23 +3233,21 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Rsend_init - prototyping replacement for MPI_Rsend_init
     Log the beginning and ending of the time spent in MPI_Rsend_init calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_RSEND_INIT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_RSEND_INIT_ID)
   
   returnVal = PMPI_Rsend_init( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 1 );
-      /* Note not started yet ... */
-      }
+  /* Note not started yet ... */
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3103,20 +3262,20 @@ MPI_Comm comm;
 {
   int  returnVal;
   int  size;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Send - prototyping replacement for MPI_Send
     Log the beginning and ending of the time spent in MPI_Send calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SEND_ID)
 
   PMPI_Type_size( datatype, &size );
-  MPE_LOG_DO(MPE_Log_send( dest, tag, size * count ));
+  MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
 
   returnVal = PMPI_Send( buf, count, datatype, dest, tag, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3139,7 +3298,7 @@ MPI_Status * status;
 {
   int  returnVal;
   int  acount, sendsize;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 #ifdef HAVE_MPI_STATUS_IGNORE
   MPI_Status    tmp_status;
@@ -3152,10 +3311,10 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Sendrecv calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SENDRECV_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SENDRECV_ID)
 
       PMPI_Type_size( sendtype, &sendsize );
-      MPE_LOG_DO(MPE_Log_send( dest, sendtag, sendcount * sendsize ));
+      MPE_LOG_COMM_SEND( comm, dest, sendtag, sendcount * sendsize )
 
   returnVal = PMPI_Sendrecv( sendbuf, sendcount, sendtype, dest, sendtag, 
                              recvbuf, recvcount, recvtype, source, recvtag, 
@@ -3171,9 +3330,9 @@ MPI_Status * status;
   }
 #endif
       PMPI_Get_count( status, MPI_BYTE, &acount );
-      MPE_LOG_DO(MPE_Log_receive( status->MPI_SOURCE, status->MPI_TAG, acount ));
+      MPE_LOG_COMM_RECV( comm, status->MPI_SOURCE, status->MPI_TAG, acount )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3192,7 +3351,7 @@ MPI_Status * status;
 {
   int  returnVal;
   int  acount, sendsize;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 #ifdef HAVE_MPI_STATUS_IGNORE
   MPI_Status    tmp_status;
@@ -3205,10 +3364,10 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Sendrecv_replace calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SENDRECV_REPLACE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SENDRECV_REPLACE_ID)
 
       PMPI_Type_size( datatype, &sendsize );
-      MPE_LOG_DO(MPE_Log_send( dest, sendtag, count * sendsize ));
+      MPE_LOG_COMM_SEND( comm, dest, sendtag, count * sendsize )
   
   returnVal = PMPI_Sendrecv_replace( buf, count, datatype, dest, 
                                      sendtag, source, recvtag, comm, status );
@@ -3223,9 +3382,9 @@ MPI_Status * status;
   }
 #endif
       PMPI_Get_count( status, MPI_BYTE, &acount );
-      MPE_LOG_DO(MPE_Log_receive( status->MPI_SOURCE, status->MPI_TAG, acount ));
+      MPE_LOG_COMM_RECV( comm, status->MPI_SOURCE, status->MPI_TAG, acount )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3239,21 +3398,21 @@ int tag;
 MPI_Comm comm;
 {
   int  returnVal, size;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Ssend - prototyping replacement for MPI_Ssend
     Log the beginning and ending of the time spent in MPI_Ssend calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SSEND_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SSEND_ID)
 
   PMPI_Type_size( datatype, &size );
-  MPE_LOG_DO(MPE_Log_send(  dest, tag, count * size ));
+  MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
   
   returnVal = PMPI_Ssend( buf, count, datatype, dest, tag, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3268,23 +3427,20 @@ MPI_Comm comm;
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Ssend_init - prototyping replacement for MPI_Ssend_init
     Log the beginning and ending of the time spent in MPI_Ssend_init calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_SSEND_INIT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_SSEND_INIT_ID)
   
   returnVal = PMPI_Ssend_init( buf, count, datatype, dest, tag, comm, request );
 
-  if (dest != MPI_PROC_NULL) {
-      MPE_Add_send_req( count, datatype, dest, tag, *request, 1 );
-      /* Note not started yet ... */
-      }
+  MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3293,19 +3449,20 @@ int  MPI_Start( request )
 MPI_Request * request;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Start - prototyping replacement for MPI_Start
     Log the beginning and ending of the time spent in MPI_Start calls.
 */
 
-  MPE_LOG_STATE_BEGIN( MPE_START_ID, MPI_COMM_NULL );
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_START_ID)
   
   returnVal = PMPI_Start( request );
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
-  MPE_Start_req( *request, state );
+  MPE_REQ_START( *request )
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3316,20 +3473,20 @@ MPI_Request * array_of_requests;
 {
   int  returnVal;
   int  i;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 /*
     MPI_Startall - prototyping replacement for MPI_Startall
     Log the beginning and ending of the time spent in MPI_Startall calls.
 */
 
-  MPE_LOG_STATE_BEGIN( MPE_STARTALL_ID, MPI_COMM_NULL );
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_STARTALL_ID)
   
   returnVal = PMPI_Startall( count, array_of_requests );
 
   for (i=0; i<count; i++)
-      MPE_Start_req( array_of_requests[i], state );
+      MPE_REQ_START( array_of_requests[i] )
 
-  MPE_LOG_STATE_END( MPI_COMM_NULL );
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3341,7 +3498,7 @@ MPI_Status * status;
 {
     int   returnVal;
     MPI_Request lreq = *request;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
 
 /*
     MPI_Test - prototyping replacement for MPI_Test
@@ -3354,14 +3511,14 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_TEST_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_ID)
   
     returnVal = PMPI_Test( request, flag, status );
 
     if (*flag) 
-        MPE_ProcessWaitTest( lreq, status, "MPI_Test", state );
+        MPE_REQ_WAIT_TEST( lreq, status, "MPI_Test" )
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
     return returnVal;
 }
@@ -3374,7 +3531,7 @@ MPI_Status * array_of_statuses;
 {
     int  returnVal;
     int  i;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
 
 /*
     MPI_Testall - prototyping replacement for MPI_Testall
@@ -3393,7 +3550,7 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_TESTALL_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TESTALL_ID)
 
     if (count > MPE_MAX_REQUESTS) {
         fprintf( stderr, __FILE__":MPI_Testall() - "
@@ -3413,12 +3570,11 @@ MPI_Status * array_of_statuses;
 
     if (*flag && count <= MPE_MAX_REQUESTS) {
         for (i=0; i < count; i++) {
-            MPE_ProcessWaitTest( req[i], &array_of_statuses[i],
-                                 "MPI_Testall", state );
+            MPE_REQ_WAIT_TEST( req[i], &array_of_statuses[i], "MPI_Testall" )
         }
     }
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
@@ -3436,7 +3592,7 @@ int * flag;
 MPI_Status * status;
 {
     int  returnVal;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
     int i;
 
 /*
@@ -3450,7 +3606,7 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_TESTANY_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TESTANY_ID)
 
     if (count > MPE_MAX_REQUESTS) {
         fprintf( stderr, __FILE__":MPI_Testany() - "
@@ -3468,9 +3624,9 @@ MPI_Status * status;
     returnVal = PMPI_Testany( count, array_of_requests, index, flag, status );
 
     if (*flag && count <= MPE_MAX_REQUESTS) 
-        MPE_ProcessWaitTest( req[*index], status, "MPI_Testany", state );
+        MPE_REQ_WAIT_TEST( req[*index], status, "MPI_Testany" )
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
     return returnVal;
 }
@@ -3480,18 +3636,18 @@ MPI_Status * status;
 int * flag;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Test_cancelled - prototyping replacement for MPI_Test_cancelled
     Log the beginning and ending of the time spent in MPI_Test_cancelled calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TEST_CANCELLED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_CANCELLED_ID)
   
   returnVal = PMPI_Test_cancelled( status, flag );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3506,7 +3662,7 @@ MPI_Status * array_of_statuses;
 {
     int  returnVal;
     int  i;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
 
 /*
     MPI_Testsome - prototyping replacement for MPI_Testsome
@@ -3528,7 +3684,7 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_TESTSOME_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TESTSOME_ID)
 
     if (incount > MPE_MAX_REQUESTS) {
         fprintf( stderr, __FILE__":MPI_Testsome() - "
@@ -3548,13 +3704,11 @@ MPI_Status * array_of_statuses;
 
     if (incount <= MPE_MAX_REQUESTS) {
         for (i=0; i < *outcount; i++) {
-             MPE_ProcessWaitTest( req[array_of_indices[i]], 
-                                  &array_of_statuses[i], 
-                                  "MPI_Testsome", state );
+             MPE_REQ_WAIT_TEST( req[array_of_indices[i]], &array_of_statuses[i], "MPI_Testsome" )
         }
     }
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
@@ -3568,18 +3722,18 @@ int   MPI_Type_commit( datatype )
 MPI_Datatype * datatype;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_commit - prototyping replacement for MPI_Type_commit
     Log the beginning and ending of the time spent in MPI_Type_commit calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_COMMIT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_COMMIT_ID)
   
   returnVal = PMPI_Type_commit( datatype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3590,18 +3744,18 @@ MPI_Datatype old_type;
 MPI_Datatype * newtype;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_contiguous - prototyping replacement for MPI_Type_contiguous
     Log the beginning and ending of the time spent in MPI_Type_contiguous calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_CONTIGUOUS_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_CONTIGUOUS_ID)
   
   returnVal = PMPI_Type_contiguous( count, old_type, newtype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3611,18 +3765,18 @@ MPI_Datatype datatype;
 MPI_Aint * extent;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_extent - prototyping replacement for MPI_Type_extent
     Log the beginning and ending of the time spent in MPI_Type_extent calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_EXTENT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_EXTENT_ID)
   
   returnVal = PMPI_Type_extent( datatype, extent );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3631,18 +3785,18 @@ int   MPI_Type_free( datatype )
 MPI_Datatype * datatype;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_free - prototyping replacement for MPI_Type_free
     Log the beginning and ending of the time spent in MPI_Type_free calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_FREE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_FREE_ID)
   
   returnVal = PMPI_Type_free( datatype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3655,18 +3809,18 @@ MPI_Datatype old_type;
 MPI_Datatype * newtype;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_hindexed - prototyping replacement for MPI_Type_hindexed
     Log the beginning and ending of the time spent in MPI_Type_hindexed calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_HINDEXED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HINDEXED_ID)
   
   returnVal = PMPI_Type_hindexed( count, blocklens, indices, old_type, newtype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3679,18 +3833,18 @@ MPI_Datatype old_type;
 MPI_Datatype * newtype;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_hvector - prototyping replacement for MPI_Type_hvector
     Log the beginning and ending of the time spent in MPI_Type_hvector calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_HVECTOR_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HVECTOR_ID)
   
   returnVal = PMPI_Type_hvector( count, blocklen, stride, old_type, newtype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3703,18 +3857,18 @@ MPI_Datatype old_type;
 MPI_Datatype * newtype;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_indexed - prototyping replacement for MPI_Type_indexed
     Log the beginning and ending of the time spent in MPI_Type_indexed calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_INDEXED_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_INDEXED_ID)
   
   returnVal = PMPI_Type_indexed( count, blocklens, indices, old_type, newtype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3724,18 +3878,18 @@ MPI_Datatype datatype;
 MPI_Aint * displacement;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_lb - prototyping replacement for MPI_Type_lb
     Log the beginning and ending of the time spent in MPI_Type_lb calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_LB_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_LB_ID)
   
   returnVal = PMPI_Type_lb( datatype, displacement );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3745,18 +3899,18 @@ MPI_Datatype datatype;
 int          * size;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_size - prototyping replacement for MPI_Type_size
     Log the beginning and ending of the time spent in MPI_Type_size calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_SIZE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_SIZE_ID)
   
   returnVal = PMPI_Type_size( datatype, size );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3769,18 +3923,18 @@ MPI_Datatype * old_types;
 MPI_Datatype * newtype;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_struct - prototyping replacement for MPI_Type_struct
     Log the beginning and ending of the time spent in MPI_Type_struct calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_STRUCT_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_STRUCT_ID)
   
   returnVal = PMPI_Type_struct( count, blocklens, indices, old_types, newtype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3790,18 +3944,18 @@ MPI_Datatype datatype;
 MPI_Aint * displacement;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_ub - prototyping replacement for MPI_Type_ub
     Log the beginning and ending of the time spent in MPI_Type_ub calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_UB_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_UB_ID)
   
   returnVal = PMPI_Type_ub( datatype, displacement );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3814,18 +3968,18 @@ MPI_Datatype old_type;
 MPI_Datatype * newtype;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Type_vector - prototyping replacement for MPI_Type_vector
     Log the beginning and ending of the time spent in MPI_Type_vector calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TYPE_VECTOR_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_VECTOR_ID)
   
   returnVal = PMPI_Type_vector( count, blocklen, stride, old_type, newtype );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -3840,18 +3994,18 @@ MPI_Datatype type;
 MPI_Comm comm;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Unpack - prototyping replacement for MPI_Unpack
     Log the beginning and ending of the time spent in MPI_Unpack calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_UNPACK_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_UNPACK_ID)
   
   returnVal = PMPI_Unpack( inbuf, insize, position, outbuf, outcount, type, comm );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -3861,7 +4015,7 @@ MPI_Request * request;
 MPI_Status * status;
 {
     int   returnVal;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
     MPI_Request lreq = *request;
 
 /*
@@ -3875,13 +4029,13 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_WAIT_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAIT_ID)
   
     returnVal = PMPI_Wait( request, status );
 
-    MPE_ProcessWaitTest( lreq, status, "MPI_Wait", state );
+    MPE_REQ_WAIT_TEST( lreq, status, "MPI_Wait" )
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
     return returnVal;
 }
@@ -3893,7 +4047,7 @@ MPI_Status * array_of_statuses;
 {
     int  returnVal;
     int  i;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
 
 /*
     MPI_Waitall - prototyping replacement for MPI_Waitall
@@ -3913,7 +4067,7 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_WAITALL_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAITALL_ID)
 
     if (count > MPE_MAX_REQUESTS) {
         fprintf( stderr, __FILE__":MPI_Waitall() - "
@@ -3932,12 +4086,11 @@ MPI_Status * array_of_statuses;
 
     if (count <= MPE_MAX_REQUESTS) {
         for (i=0; i < count; i++) {
-            MPE_ProcessWaitTest( req[i], &array_of_statuses[i],
-                                 "MPI_Waitall", state );
+            MPE_REQ_WAIT_TEST( req[i], &array_of_statuses[i], "MPI_Waitall" )
         }
     }
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
@@ -3954,7 +4107,7 @@ int * index;
 MPI_Status * status;
 {
     int  returnVal;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
     int i;
 
 /*
@@ -3968,7 +4121,7 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_WAITANY_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAITANY_ID)
   
     if (count > MPE_MAX_REQUESTS) {
         fprintf( stderr, __FILE__":MPI_Waitany() - "
@@ -3986,7 +4139,7 @@ MPI_Status * status;
     returnVal = PMPI_Waitany( count, array_of_requests, index, status );
 
     if (*index <= MPE_MAX_REQUESTS) {
-        MPE_ProcessWaitTest( req[*index], status, "MPI_Waitany", state );
+        MPE_REQ_WAIT_TEST( req[*index], status, "MPI_Waitany" )
     }
     else {
         fprintf( stderr, __FILE__":MPI_Waitany() - "
@@ -3996,7 +4149,7 @@ MPI_Status * status;
         fflush( stderr );
     }
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
     return returnVal;
 }
@@ -4011,7 +4164,7 @@ MPI_Status * array_of_statuses;
 {
     int  returnVal;
     int  i;
-    MPE_LOG_STATE_DECL;
+    MPE_LOG_STATE_DECL
 
 /*
     MPI_Waitsome - prototyping replacement for MPI_Waitsome
@@ -4033,7 +4186,7 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_STATE_BEGIN(MPE_WAITSOME_ID,MPI_COMM_NULL);
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAITSOME_ID)
 
     if (incount > MPE_MAX_REQUESTS) {
         fprintf( stderr, __FILE__":MPI_Waitsome() - "
@@ -4053,13 +4206,11 @@ MPI_Status * array_of_statuses;
 
     if (incount <= MPE_MAX_REQUESTS) {
         for (i=0; i < *outcount; i++) {
-            MPE_ProcessWaitTest( req[array_of_indices[i]],
-                                 &array_of_statuses[i],
-                                 "MPI_Waitsome", state );
+            MPE_REQ_WAIT_TEST( req[array_of_indices[i]], &array_of_statuses[i], "MPI_Waitsome" )
         }
     }
 
-    MPE_LOG_STATE_END(MPI_COMM_NULL);
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
 
 #if defined( HAVE_MPI_STATUSES_IGNORE ) && ! defined( HAVE_ALLOCA )
     if ( is_malloced == 1 )
@@ -4076,18 +4227,18 @@ int maxdims;
 int * coords;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cart_coords - prototyping replacement for MPI_Cart_coords
     Log the beginning and ending of the time spent in MPI_Cart_coords calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_COORDS_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_CART_COORDS_ID)
   
   returnVal = PMPI_Cart_coords( comm, rank, maxdims, coords );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4101,18 +4252,21 @@ int reorder;
 MPI_Comm * comm_cart;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Cart_create - prototyping replacement for MPI_Cart_create
     Log the beginning and ending of the time spent in MPI_Cart_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_CREATE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_CREATE_ID)
   
-  returnVal = PMPI_Cart_create( comm_old, ndims, dims, periods, reorder, comm_cart );
+  returnVal = PMPI_Cart_create( comm_old, ndims, dims, periods, reorder,
+                                comm_cart );
+  MPE_LOG_INTRACOMM(comm_old,*comm_cart,CLOG_COMM_INTRA_CREATE)
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm_old)
 
   return returnVal;
 }
@@ -4125,18 +4279,18 @@ int * periods;
 int * coords;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cart_get - prototyping replacement for MPI_Cart_get
     Log the beginning and ending of the time spent in MPI_Cart_get calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_GET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_CART_GET_ID)
   
   returnVal = PMPI_Cart_get( comm, maxdims, dims, periods, coords );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4149,18 +4303,18 @@ int * periods;
 int * newrank;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cart_map - prototyping replacement for MPI_Cart_map
     Log the beginning and ending of the time spent in MPI_Cart_map calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_MAP_ID,comm_old);
+  MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_MAP_ID)
   
   returnVal = PMPI_Cart_map( comm_old, ndims, dims, periods, newrank );
 
-  MPE_LOG_STATE_END(comm_old);
+  MPE_LOG_STATE_END(comm_old)
 
   return returnVal;
 }
@@ -4171,18 +4325,18 @@ int * coords;
 int * rank;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cart_rank - prototyping replacement for MPI_Cart_rank
     Log the beginning and ending of the time spent in MPI_Cart_rank calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_RANK_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_CART_RANK_ID)
   
   returnVal = PMPI_Cart_rank( comm, coords, rank );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4195,18 +4349,18 @@ int * source;
 int * dest;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cart_shift - prototyping replacement for MPI_Cart_shift
     Log the beginning and ending of the time spent in MPI_Cart_shift calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_SHIFT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_CART_SHIFT_ID)
   
   returnVal = PMPI_Cart_shift( comm, direction, displ, source, dest );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4217,18 +4371,21 @@ int * remain_dims;
 MPI_Comm * comm_new;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Cart_sub - prototyping replacement for MPI_Cart_sub
     Log the beginning and ending of the time spent in MPI_Cart_sub calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CART_SUB_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_CART_SUB_ID)
   
   returnVal = PMPI_Cart_sub( comm, remain_dims, comm_new );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_INTRACOMM(comm,*comm_new,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4238,18 +4395,18 @@ MPI_Comm comm;
 int * ndims;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Cartdim_get - prototyping replacement for MPI_Cartdim_get
     Log the beginning and ending of the time spent in MPI_Cartdim_get calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_CARTDIM_GET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_CARTDIM_GET_ID)
   
   returnVal = PMPI_Cartdim_get( comm, ndims );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4260,18 +4417,18 @@ int ndims;
 int * dims;
 {
   int  returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Dims_create - prototyping replacement for MPI_Dims_create
     Log the beginning and ending of the time spent in MPI_Dims_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_DIMS_CREATE_ID,MPI_COMM_NULL);
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_DIMS_CREATE_ID)
   
   returnVal = PMPI_Dims_create( nnodes, ndims, dims );
 
-  MPE_LOG_STATE_END(MPI_COMM_NULL);
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
 
   return returnVal;
 }
@@ -4285,18 +4442,21 @@ int reorder;
 MPI_Comm * comm_graph;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
 
 /*
     MPI_Graph_create - prototyping replacement for MPI_Graph_create
     Log the beginning and ending of the time spent in MPI_Graph_create calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GRAPH_CREATE_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_CREATE_ID)
   
-  returnVal = PMPI_Graph_create( comm_old, nnodes, index, edges, reorder, comm_graph );
+  returnVal = PMPI_Graph_create( comm_old, nnodes, index, edges, reorder,
+                                 comm_graph );
+  MPE_LOG_INTRACOMM(comm_old,*comm_graph,CLOG_COMM_INTRA_CREATE)
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm_old)
 
   return returnVal;
 }
@@ -4309,18 +4469,18 @@ int * index;
 int * edges;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Graph_get - prototyping replacement for MPI_Graph_get
     Log the beginning and ending of the time spent in MPI_Graph_get calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GRAPH_GET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_GET_ID)
   
   returnVal = PMPI_Graph_get( comm, maxindex, maxedges, index, edges );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4333,18 +4493,18 @@ int * edges;
 int * newrank;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Graph_map - prototyping replacement for MPI_Graph_map
     Log the beginning and ending of the time spent in MPI_Graph_map calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GRAPH_MAP_ID,comm_old);
+  MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_MAP_ID)
   
   returnVal = PMPI_Graph_map( comm_old, nnodes, index, edges, newrank );
 
-  MPE_LOG_STATE_END(comm_old);
+  MPE_LOG_STATE_END(comm_old)
 
   return returnVal;
 }
@@ -4356,18 +4516,18 @@ int maxneighbors;
 int * neighbors;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Graph_neighbors - prototyping replacement for MPI_Graph_neighbors
     Log the beginning and ending of the time spent in MPI_Graph_neighbors calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GRAPH_NEIGHBORS_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_ID)
   
   returnVal = PMPI_Graph_neighbors( comm, rank, maxneighbors, neighbors );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4378,18 +4538,18 @@ int rank;
 int * nneighbors;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Graph_neighbors_count - prototyping replacement for MPI_Graph_neighbors_count
     Log the beginning and ending of the time spent in MPI_Graph_neighbors_count calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GRAPH_NEIGHBORS_COUNT_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_COUNT_ID)
   
   returnVal = PMPI_Graph_neighbors_count( comm, rank, nneighbors );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4400,18 +4560,18 @@ int * nnodes;
 int * nedges;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Graphdims_get - prototyping replacement for MPI_Graphdims_get
     Log the beginning and ending of the time spent in MPI_Graphdims_get calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_GRAPHDIMS_GET_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_GRAPHDIMS_GET_ID)
   
   returnVal = PMPI_Graphdims_get( comm, nnodes, nedges );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
@@ -4421,18 +4581,18 @@ MPI_Comm comm;
 int * top_type;
 {
   int   returnVal;
-  MPE_LOG_STATE_DECL;
+  MPE_LOG_STATE_DECL
 
 /*
     MPI_Topo_test - prototyping replacement for MPI_Topo_test
     Log the beginning and ending of the time spent in MPI_Topo_test calls.
 */
 
-  MPE_LOG_STATE_BEGIN(MPE_TOPO_TEST_ID,comm);
+  MPE_LOG_STATE_BEGIN(comm,MPE_TOPO_TEST_ID)
   
   returnVal = PMPI_Topo_test( comm, top_type );
 
-  MPE_LOG_STATE_END(comm);
+  MPE_LOG_STATE_END(comm)
 
   return returnVal;
 }
