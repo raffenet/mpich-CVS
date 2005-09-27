@@ -67,19 +67,20 @@ public class PipedInputLog extends InputLog
                 if ( itr_lineIDmap.hasNext() )
                     return Kind.YCOORDMAP;
                 itr_dobj  = new DrawableIterator( Kind.COMPOSITE_ID );
-            case Kind.COMPOSITE_ID : case Kind.PRIMITIVE_ID :
-               if ( itr_dobj.hasNext() ) {
-                   if ( itr_dobj.isNextComposite() )
-                       return Kind.COMPOSITE;
-                   else
-                       return Kind.PRIMITIVE;
-               }
+            case Kind.COMPOSITE_ID :
+            case Kind.PRIMITIVE_ID :
+                if ( itr_dobj.hasNext() ) {
+                    if ( itr_dobj.isNextComposite() )
+                        return Kind.COMPOSITE;
+                    else
+                        return Kind.PRIMITIVE;
+                }
             case Kind.EOF_ID:
-               return Kind.EOF;
+                return Kind.EOF;
             default:
-               System.err.println( "PipedInputLog.peekNextKind(): Error!\n"
-                                 + "\tUnknown Kind index: " + next_kind_idx );
-               break;
+                System.err.println( "PipedInputLog.peekNextKind(): Error!\n"
+                                  + "\tUnknown Kind index: " + next_kind_idx );
+                break;
         }
         return null;
     }
