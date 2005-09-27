@@ -1130,7 +1130,7 @@ class MPDMan(object):
                               'singinitpid'  : 0,
                               'singinitport' : 0,
                             }
-                msgToSend['line_labels'] = str(self.lineLabelFmt),
+                msgToSend['line_labels'] = self.lineLabelFmt
                 self.mpdSock.send_dict_msg(msgToSend)
                 # I could send the preput_info along but will keep it here
                 # and let the spawnee call me up and ask for it; he will
