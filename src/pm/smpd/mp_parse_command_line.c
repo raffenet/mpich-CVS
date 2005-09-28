@@ -1234,6 +1234,7 @@ configfile_loop:
 		host_list->alt_host[0] = '\0';
 		strncpy(host_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
+		smpd_add_host_to_default_list((*argvp)[2]);
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "ghost") == 0)
 	    {
@@ -1267,6 +1268,7 @@ configfile_loop:
 		ghost_list->alt_host[0] = '\0';
 		strncpy(ghost_list->host, (*argvp)[2], SMPD_MAX_HOST_LENGTH);
 		num_args_to_strip = 2;
+		smpd_add_host_to_default_list((*argvp)[2]);
 	    }
 	    else if (strcmp(&(*argvp)[1][1], "hosts") == 0)
 	    {
@@ -1320,6 +1322,7 @@ configfile_loop:
 			    host_node_ptr->nproc = 1;
 			    host_node_ptr->alt_host[0] = '\0';
 			    strncpy(host_node_ptr->host, (*argvp)[index], SMPD_MAX_HOST_LENGTH);
+			    smpd_add_host_to_default_list((*argvp)[index]);
 			    index++;
 			    if (argc > index)
 			    {

@@ -874,6 +874,8 @@ int smpd_lookup_job_key(const char *key, const char *username, HANDLE *user_hand
 SMPD_BOOL smpd_verify_version(const char *challenge);
 void smpd_fix_up_host_tree(smpd_host_node_t *node);
 SMPD_BOOL smpd_isnumbers_with_colon(const char *str);
+int smpd_add_host_to_default_list(const char *hostname);
+int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt_hostname, const int num_cpus);
 
 #if defined(__cplusplus)
 }

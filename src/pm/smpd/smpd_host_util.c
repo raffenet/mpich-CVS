@@ -283,6 +283,7 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	    node->left = NULL;
 	    node->right = NULL;
 	    smpd_parse_extra_machinefile_options(iter, node);
+	    smpd_add_extended_host_to_default_list(node->host, node->alt_host, node->nproc);
 	    if (smpd_process.s_host_list == NULL)
 		smpd_process.s_host_list = node;
 	    else

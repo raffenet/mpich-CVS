@@ -1143,6 +1143,88 @@ int smpd_get_default_hosts()
 }
 
 #undef FCNAME
+#define FCNAME "smpd_add_host_to_default_list"
+int smpd_add_host_to_default_list(const char *hostname)
+{
+    int result;
+    smpd_enter_fn(FCNAME);
+    result = smpd_add_extended_host_to_default_list(hostname, NULL, 1);
+    smpd_exit_fn(FCNAME);
+    return result;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_add_extended_host_to_default_list"
+int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt_hostname, const int num_cpus)
+{
+    smpd_host_node_t *iter;
+
+    iter = smpd_process.default_host_list;
+    if (iter == NULL)
+    {
+	smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	if (smpd_process.default_host_list == NULL)
+	{
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	strcpy(smpd_process.default_host_list->host, hostname);
+	smpd_process.default_host_list->alt_host[0] = '\0';
+	if (alt_hostname != NULL)
+	{
+	    strcpy(smpd_process.default_host_list->alt_host, alt_hostname);
+	}
+	smpd_process.default_host_list->nproc = num_cpus;
+	smpd_process.default_host_list->connected = SMPD_FALSE;
+	smpd_process.default_host_list->connect_cmd_tag = -1;
+	smpd_process.default_host_list->next = smpd_process.default_host_list;
+	smpd_process.default_host_list->left = NULL;
+	smpd_process.default_host_list->right = NULL;
+	smpd_process.cur_default_host = smpd_process.default_host_list;
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
+
+    if (strcmp(iter->host, hostname) == 0)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
+    while (iter->next != NULL && iter->next != smpd_process.default_host_list)
+    {
+	iter = iter->next;
+	if (strcmp(iter->host, hostname) == 0)
+	{
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_SUCCESS;
+	}
+    }
+
+    iter->next = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+    if (iter->next == NULL)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    iter = iter->next;
+    strcpy(iter->host, hostname);
+    iter->alt_host[0] = '\0';
+    if (alt_hostname != NULL)
+    {
+	strcpy(iter->alt_host, alt_hostname);
+    }
+    iter->nproc = num_cpus;
+    iter->connected = SMPD_FALSE;
+    iter->connect_cmd_tag = -1;
+    iter->next = smpd_process.default_host_list;
+    iter->left = NULL;
+    iter->right = NULL;
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_insert_into_dynamic_hosts"
 int smpd_insert_into_dynamic_hosts(void)
 {
