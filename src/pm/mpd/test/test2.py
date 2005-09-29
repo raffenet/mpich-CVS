@@ -33,8 +33,8 @@ mpdtest = MPDTest()
 os.environ['MPD_CON_EXT'] = 'testing'
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 os.system("mpdboot%s -1 -f %s -n %d" % (PYEXT,HFILE,NMPDS) )
-expout = '0: bp400\n1: bp400\n2: bp401\n3: bp401'   # 2 per host because of :2's in tempm
-mpdtest.run(cmd="mpiexec%s -l -machinefile %s -n 3 hostname" % (PYEXT,'tempm'), chkOut=1, expOut=expout)
+expout = '0: bp400\n1: bp400\n2: bp401\n3: bp401\n'   # 2 per host because of :2's in tempm
+mpdtest.run(cmd="mpiexec%s -l -machinefile %s -n 4 hostname" % (PYEXT,'tempm'), chkOut=1, expOut=expout)
 os.system("mpdallexit%s 1> /dev/null 2> /dev/null" % (PYEXT) )
 
 # test:
