@@ -20,7 +20,10 @@
 
 /* Define the name service handle */
 #define MPID_MAX_NAMEPUB 64
-struct MPID_NS_Handle { };    /* unused for now */
+struct MPID_NS_Handle {
+    int foo;			/* unused for now; some compilers object
+				   to empty structs */
+};    
 
 /* Create a structure that we will use to remember files created for
    publishing.  */
