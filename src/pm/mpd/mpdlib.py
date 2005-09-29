@@ -1034,7 +1034,7 @@ class MPDParmDB(dict):
         for k in parmsToOverride.keys():
             if os.environ.has_key(k):
                 self[('env',k)] = os.environ[k]
-    def get_parms_from_rcfile(self,parmsToOverride):
+    def get_parms_from_rcfile(self,parmsToOverride,errIfMissingFile=0):
         if os.environ.has_key('MPD_CONF_FILE'):
             parmsRCFilename = os.environ['MPD_CONF_FILE']
         elif hasattr(os,'getuid')  and  os.getuid() == 0:    # if ROOT
@@ -1053,6 +1053,9 @@ class MPDParmDB(dict):
                 mode = os.stat(parmsRCFilename)[0]
             except:
                 mode = ''
+	# sometimes a missing file is OK, e.g. when user running with root's mpd
+        if not mode  and  not errIfMissingFile:
+            return
         if not mode:
             print 'configuration file %s not found' % (parmsRCFilename)
             print 'A file named .mpd.conf file must be present in the user\'s home'

@@ -129,7 +129,7 @@ class MPD(object):
         for (k,v) in self.parmsToOverride.items():
             self.parmdb[('thispgm',k)] = v
         self.get_parms_from_cmdline()
-        self.parmdb.get_parms_from_rcfile(self.parmsToOverride)
+        self.parmdb.get_parms_from_rcfile(self.parmsToOverride,errIfMissingFile=1)
         self.parmdb.get_parms_from_env(self.parmsToOverride)
         self.myIfhn = self.parmdb['MPD_MY_IFHN']    # variable for convenience
         self.myPid = os.getpid()
