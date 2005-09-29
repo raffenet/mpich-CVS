@@ -764,7 +764,7 @@ int Foo(int a) { return a; }
 EOF
     cat >>conftest2.c <<EOF
 extern int Foo(int);
-int PFoo(int a} { return a+1;}
+int PFoo(int a) { return a+1;}
 int main(int argc, char **argv) {
 return Foo(0);}
 EOF
