@@ -865,8 +865,11 @@ dnl Build library
     ac_fcompileforlib='${F77-f77} -c $FFLAGS conftest1.f 1>&AC_FD_CC'
     if AC_TRY_EVAL(ac_fcompileforlib) && test -s conftest1.o ; then
         if test ! -d conftest ; then mkdir conftest2 ; fi
-	dnl Use arcmd incase AR is defined as "ar cr"
-        AC_TRY_COMMAND(${ARCMD-"ar"} cr conftest2/libconftest.a conftest1.o)
+	# We have had some problems with "AR" set to "ar cr"; this is
+	# a user-error; AR should be set to just the program (plus
+	# any flags that affect the object file format, such as -X64 
+	# required for 64-bit objects in some versions of AIX).
+        AC_TRY_COMMAND(${AR-"ar"} cr conftest2/libconftest.a conftest1.o)
         AC_TRY_COMMAND(${RANLIB-ranlib} conftest2/libconftest.a)
         ac_fcompileldtest='${F77-f77} -o conftest $FFLAGS ${ldir}conftest2 conftest.f -lconftest $LDFLAGS 1>&AC_FD_CC'
         for ldir in "-L" "-Wl,-L," ; do
