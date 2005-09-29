@@ -136,6 +136,9 @@
 				RelativePath=".\src\logging\src\clog_buffer.c">
 			</File>
 			<File
+				RelativePath=".\src\logging\src\clog_commset.c">
+			</File>
+			<File
 				RelativePath=".\src\logging\src\clog_merger.c">
 			</File>
 			<File
@@ -155,6 +158,9 @@
 			</File>
 			<File
 				RelativePath=".\src\logging\src\clog_util.c">
+			</File>
+			<File
+				RelativePath=".\src\logging\src\clog_uuid.c">
 			</File>
 			<File
 				RelativePath=".\mpe.def">

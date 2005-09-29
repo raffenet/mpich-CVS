@@ -40,13 +40,13 @@
 extern CLOG_Uuid_t    CLOG_UUID_NULL;
 
 /* Global variables for MPE logging */
-      CLOG_Stream_t  *CLOG_Stream            = NULL;
-      CLOG_Buffer_t  *CLOG_Buffer            = NULL;
-      CLOG_CommSet_t *CLOG_CommSet           = NULL;
-const CLOG_CommIDs_t *CLOG_CommIDs4Self            ;
-const CLOG_CommIDs_t *CLOG_CommIDs4World           ;
-      int             MPE_Log_hasBeenInit    = 0;
-      int             MPE_Log_hasBeenClosed  = 0;
+                    CLOG_Stream_t  *CLOG_Stream            = NULL;
+                    CLOG_Buffer_t  *CLOG_Buffer            = NULL;
+MPEU_DLL_SPEC       CLOG_CommSet_t *CLOG_CommSet           = NULL;
+              const CLOG_CommIDs_t *CLOG_CommIDs4Self            ;
+MPEU_DLL_SPEC const CLOG_CommIDs_t *CLOG_CommIDs4World           ;
+                    int             MPE_Log_hasBeenInit    = 0;
+                    int             MPE_Log_hasBeenClosed  = 0;
 
 
 /*@

@@ -340,9 +340,9 @@ void MPE_Req_wait_test( MPI_Request, MPI_Status *, char *, MPE_State * );
     register const CLOG_CommIDs_t  *new_commIDs;
 #endif
 
-extern       CLOG_CommSet_t  *CLOG_CommSet;
-extern const CLOG_CommIDs_t  *CLOG_CommIDs4Self;
-extern const CLOG_CommIDs_t  *CLOG_CommIDs4World;
+extern MPEU_DLL_SPEC       CLOG_CommSet_t  *CLOG_CommSet;
+extern               const CLOG_CommIDs_t  *CLOG_CommIDs4Self;
+extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 
 /*
    All following macros have "comm" as argument, but none of them except

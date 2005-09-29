@@ -5,6 +5,20 @@
 #ifndef _MPE_LOG_H_
 #define _MPE_LOG_H_
 
+#ifdef HAVE_WINDOWS_H
+#ifdef USE_MPE_STATIC_LIBRARY
+# define MPEU_DLL_SPEC
+#else
+# ifdef MPE_EXPORTS
+#  define MPEU_DLL_SPEC __declspec(dllexport)
+# else
+#  define MPEU_DLL_SPEC __declspec(dllimport)
+# endif
+#endif
+#else
+# define MPEU_DLL_SPEC
+#endif
+
 /*
   Constants, MPE_Log_XXX, are for backward compatibility reasons.
   MPE is currently returning MPE_LOG_XXX status.

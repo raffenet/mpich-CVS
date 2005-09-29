@@ -44,10 +44,14 @@ const  CLOG_Uuid_t CLOG_UUID_NULL                       = {0};
 void CLOG_Uuid_init( void )
 {
 #if !defined( CLOG_NOMPI )
+#ifdef HAVE_WINDOWS_H
+    srand(getpid());
+#else
     pid_t  proc_pid;
 
     proc_pid = getpid();
     srand48( (long) proc_pid );
+#endif
 #endif
 }
 
@@ -57,14 +61,17 @@ void CLOG_Uuid_finalize( void )
 void CLOG_Uuid_generate( CLOG_Uuid_t uuid )
 {
 #if !defined( CLOG_NOMPI )
-    int     rand;
+    int     random_number;
     double  time;
     int     namelen;
     char   *ptr;
     char    processor_name[ MPI_MAX_PROCESSOR_NAME ] = {0};
 
-
-    rand  = (int) lrand48();
+#ifdef HAVE_WINDOWS_H
+    random_number  = rand();
+#else
+    random_number  = (int) lrand48();
+#endif
 
     /* Can't use CLOG_Timer_get() as CLOG_Timer_start() has been called yet */
     time  = MPI_Wtime();
@@ -72,7 +79,7 @@ void CLOG_Uuid_generate( CLOG_Uuid_t uuid )
     MPI_Get_processor_name( processor_name, &namelen );
 
     ptr  = &uuid[0];
-    memcpy( ptr, &rand, sizeof(int) );
+    memcpy( ptr, &random_number, sizeof(int) );
     ptr += sizeof(int);
     memcpy( ptr, &time, sizeof(double) );
     ptr += sizeof(double);
@@ -95,18 +102,18 @@ void CLOG_Uuid_generate( CLOG_Uuid_t uuid )
 */
 void CLOG_Uuid_sprint( CLOG_Uuid_t uuid, char *str )
 {
-    int     rand;
+    int     random_number;
     double  time;
     char    name[ CLOG_UUID_NAME_SIZE+1 ] = {0};
     char   *ptr;
 
     ptr  = &uuid[0];
-    memcpy( &rand, ptr, sizeof(int) );
+    memcpy( &random_number, ptr, sizeof(int) );
     ptr += sizeof(int);
     memcpy( &time, ptr, sizeof(double) );
     ptr += sizeof(double);
     memcpy( &name, ptr, CLOG_UUID_NAME_SIZE );
-    sprintf( str, "%d-%f-%s", rand, time, name );
+    sprintf( str, "%d-%f-%s", random_number, time, name );
 }
 
 int  CLOG_Uuid_is_equal( const CLOG_Uuid_t uuid1, const CLOG_Uuid_t uuid2 )
