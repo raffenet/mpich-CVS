@@ -193,7 +193,7 @@ AC_ARG_WITH(namepublisher,
                                no (no service available)
 			       file:directory
 			       ],,
-with_namepublisher=file)
+with_namepublisher=default)
 dnl
 AC_ARG_WITH(cxxlibname,
 [--with-cxxlibname=name  - Specify name of library containing C++ interface
@@ -1615,6 +1615,9 @@ AC_PATH_PROG(PERL5,perl)
 
 nameserv_name=""
 AC_SUBST(nameserv_name)
+if test "$with_namepublisher" = "default" -a "$with_pm" = "mpd" ; then
+    with_namepublisher="mpd"
+fi
 if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     case "$with_namepublisher" in 
     none|no) ;;
@@ -1646,10 +1649,6 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     ;;
 
     mpd)
-    # When the mpd nameserver is fixed, also update the A C WITH 
-    # command for the nameserver above.  This has been left in to 
-    # simplify testing of the mpd nameserver.
-    AC_MSG_WARN([The mpd nameserver has bugs.])
     nameserv_name="mpd"
     ;;
 
