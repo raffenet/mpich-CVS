@@ -543,6 +543,7 @@ sub ProcessFile
 	#  specific msg arg required (0 for no, > 0 for yes)
 	%KnownErrRoutines = ( 'MPIR_Err_create_code'      => '5:3:1:1', 
 			      'MPIO_Err_create_code'      => '5:3:1:0', 
+			      'MPIU_ERR_SET'              => '2:-1:0:1',
 			      'MPIU_ERR_SETANDSTMT'       => '3:-1:0:1',
 			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0:1',
 			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1:1', 
