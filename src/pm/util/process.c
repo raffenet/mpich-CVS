@@ -318,7 +318,14 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 	/* Set up the search path */
 	MPIU_Snprintf( pathstring, sizeof(pathstring)-1, "PATH=%s", 
 		       app->path );
+	/* Some systems require that the path include the path to
+	   certain files or libraries, for example cygwin1.dll for
+	   Cygwin */
+#ifdef NEEDS_BIN_IN_PATH
+	MPIU_Strnapp( pathstring, ":/bin", sizeof(pathstring)-1 );
+#endif
 	putenv( pathstring );
+
     }
     DBG_PRINTF( ( "Exec the application %s\n", app->exename ) );
     rc = execvp( app->exename, client_arg );
