@@ -778,7 +778,9 @@ sub skipBlock {
 	else {
 	    if (/^\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/ ||
 		/^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/) {
-		print STDERR "Mangled line: $_";
+		# FIXME: Why is this a mangled line?  Should some of the \s* be
+		# \s+? (e.g., --\s+END)
+		print STDERR "Mangled line in $filename: $_";
 		last; 
 	    }
 	}
