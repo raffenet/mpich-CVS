@@ -81,7 +81,7 @@ static int MPIDI_Create_inter_root_communicator(char *port_name, MPID_Comm **com
     /* --END ERROR HANDLING-- */
 
     /* extract the tag from the port_name */
-    mpi_errno = MPIU_Str_get_int_arg(connector_port, MPIDI_CH3I_PORT_NAME_TAG_KEY, &port_name_tag);
+    mpi_errno = MPIDI_GetTagFromPort( connector_port, &port_name_tag);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {

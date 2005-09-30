@@ -187,7 +187,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     }
     /* --END ERROR HANDLING-- */
 
-    mpi_errno = MPIU_Str_get_int_arg(port_name, MPIDI_CH3I_PORT_NAME_TAG_KEY, &port_name_tag);
+    mpi_errno = MPIDI_GetTagFromPort(port_name, &port_name_tag);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -291,7 +291,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
 
-    mpi_errno = MPIU_Str_get_int_arg(port_name, MPIDI_CH3I_PORT_NAME_TAG_KEY, &port_name_tag);
+    mpi_errno = MPIDI_GetTagFromPort(port_name, &port_name_tag);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {

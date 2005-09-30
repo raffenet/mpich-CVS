@@ -53,7 +53,6 @@ typedef struct MPIDI_Process
     MPID_Request * recvq_unexpected_tail;
     int lpid_counter;
     int warnings_enabled;
-    int port_name_tag; /* this tag is incremented and added to the business card, which is then returned as the port name */
 }
 MPIDI_Process_t;
 
@@ -603,12 +602,6 @@ const char * MPIDI_VC_Get_state_description(int state);
 int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int, int, MPID_Request **);
 
 /* Only prototype functions that will be used */
-#ifdef MPIDI_DEV_IMPLEMENTS_OPEN_PORT
-int MPIDI_Open_port(char *);
-#endif
-#ifdef MPIDI_DEV_IMPLEMENTS_CLOSE_PORT
-int MPIDI_Close_port(char *);
-#endif
 #ifdef MPIDI_DEV_IMPLEMENTS_COMM_CONNECT
 int MPIDI_Comm_connect(char *, int, MPID_Comm *, MPID_Comm **);
 #endif
