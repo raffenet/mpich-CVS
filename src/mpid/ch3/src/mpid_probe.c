@@ -20,6 +20,12 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_St
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_PROBE);
 
+    if (source == MPI_PROC_NULL)
+    {
+	MPIR_Status_set_procnull(status);
+	goto fn_exit;
+    }
+
     MPIDI_CH3_Progress_start(&progress_state);
     do
     {
@@ -36,6 +42,7 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_St
     while(mpi_errno == MPI_SUCCESS);
     MPIDI_CH3_Progress_end(&progress_state);
 
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_PROBE);
     return mpi_errno;
 }

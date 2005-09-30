@@ -18,6 +18,15 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
     MPIDI_STATE_DECL(MPID_STATE_MPID_IPROBE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_IPROBE);
+
+    if (source == MPI_PROC_NULL)
+    {
+	MPIR_Status_set_procnull(status);
+	/* We set the flag to true because an MPI_Recv with this rank will
+	   return immediately */
+	*flag = TRUE;
+	goto fn_exit;
+    }
     
     rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
     if (rreq != NULL)
@@ -33,7 +42,8 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
 	mpi_errno = MPID_Progress_poke();
 	*flag = FALSE;
     }
-    
+
+ fn_exit:    
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_IPROBE);
     return mpi_errno;
 }
