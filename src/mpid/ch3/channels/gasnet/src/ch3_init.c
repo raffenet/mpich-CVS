@@ -62,8 +62,7 @@ gasnet_handlerentry_t MPIDI_CH3_gasnet_handler_table[] =
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
-		   MPIDI_PG_t ** pg_p, int * pg_rank_p)
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
 {
     MPIDI_PG_t * pg = NULL;
     int gn_errno;
@@ -162,12 +161,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 	return mpi_errno;
     }    
     
-    /* XXX - has_args and has_env need to come from PMI eventually... */
-    *has_args = TRUE;
-    *has_env = TRUE;
-
-    *has_parent = 0;
-
     /*
      * Initialize the process group tracking subsystem
      */
@@ -213,7 +206,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent,
 	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
     }
 
-    if (*has_parent) 
+    if (has_parent) 
     {
 	/* gasnet can't spawn --Darius */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,

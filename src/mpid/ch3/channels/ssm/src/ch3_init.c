@@ -72,7 +72,7 @@ void MPIU_DBG_PrintVCState(MPIDI_VC_t *vc)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
                     char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -83,7 +83,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
 
     /* initialize aspects specific to sockets.  do NOT publish business card yet  */
-    mpi_errno = MPIDI_CH3U_Init_sock(has_args, has_env, has_parent, pg_p, pg_rank_p,
+    mpi_errno = MPIDI_CH3U_Init_sock(has_parent, pg_p, pg_rank,
                                NULL, bc_key_p, bc_val_p, val_max_sz_p);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -94,7 +94,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
     /* --END ERROR HANDLING-- */
 
     /* initialize aspects specific to sshm.  now publish business card   */
-    mpi_errno = MPIDI_CH3U_Init_sshm(has_args, has_env, has_parent, pg_p, pg_rank_p,
+    mpi_errno = MPIDI_CH3U_Init_sshm(has_parent, pg_p, pg_rank,
                                publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)

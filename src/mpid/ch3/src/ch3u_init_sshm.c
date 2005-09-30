@@ -4,12 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
+
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
@@ -24,18 +19,19 @@
  *                               
  */
 
+/* This routine is used only by channels/{sshm,ssm}/src/ch3_init.c */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Init_sshm
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifdef MPIDI_CH3_USES_SSHM
     int pmi_errno;
     int pg_size;
-    int pg_rank = *pg_rank_p;
     int p;
     char * parent_bizcard = NULL;
 #ifdef USE_MQSHM
@@ -57,11 +53,9 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
     if (pmi_errno != PMI_SUCCESS)
     {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**pmi_kvs_get_key_length_max", "**pmi_kvs_get_key_length_max %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+			     "**pmi_kvs_get_key_length_max", 
+			     "**pmi_kvs_get_key_length_max %d", pmi_errno);
     }
     
     key = MPIU_Malloc(key_max_sz);
@@ -76,11 +70,9 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (pmi_errno != PMI_SUCCESS)
     {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**pmi_kvs_get_value_length_max", "**pmi_kvs_get_value_length_max %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+			     "**pmi_kvs_get_value_length_max", 
+			     "**pmi_kvs_get_value_length_max %d", pmi_errno);
     }
     
     val = MPIU_Malloc(val_max_sz);
@@ -93,9 +85,9 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     }
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
-    (*pg_p)->ch.shm_name = NULL;
-    (*pg_p)->ch.shm_name = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
-    if ((*pg_p)->ch.shm_name == NULL)
+    pg_p->ch.shm_name = NULL;
+    pg_p->ch.shm_name = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
+    if (pg_p->ch.shm_name == NULL)
     {
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
@@ -105,12 +97,12 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 #endif
 
     /* set the global variable defaults */
-    (*pg_p)->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
+    pg_p->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
 #ifdef HAVE_SHARED_PROCESS_READ
-    (*pg_p)->ch.nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
+    pg_p->ch.nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
 #endif
-    (*pg_p)->ch.nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
-    (*pg_p)->ch.nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
+    pg_p->ch.nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
+    pg_p->ch.nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
     /* Figure out how many processors are available and set the spin count accordingly */
     /* If there were topology information available we could calculate a multi-cpu number */
 #ifdef HAVE_WINDOWS_H
@@ -119,7 +111,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
         SYSTEM_INFO info;
         GetSystemInfo(&info);
         if (info.dwNumberOfProcessors == 1)
-            (*pg_p)->ch.nShmWaitSpinCount = 1;
+            pg_p->ch.nShmWaitSpinCount = 1;
 	/*
         else if (info.dwNumberOfProcessors < (DWORD) num_procs_per_node)
             pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / num_procs_per_node;
@@ -133,10 +125,10 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	int num_cpus;
 	num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 	if (num_cpus == 1)
-	    (*pg_p)->ch.nShmWaitSpinCount = 1;
+	    pg_p->ch.nShmWaitSpinCount = 1;
 	/*
 	else if (num_cpus > 0 && num_cpus < num_procs_per_node)
-	    (*pg_p)->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / num_procs_per_node;
+	    pg_p->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / num_procs_per_node;
 	*/
 	if (num_cpus > 0)
 	    MPIDI_CH3I_Process.num_cpus = num_cpus;
@@ -144,36 +136,33 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 #endif
 #endif
 #ifndef HAVE_WINDOWS_H    /* brad - nShmWaitSpinCount is uninitialized in sshm but probably shouldn't be */
-    (*pg_p)->ch.nShmWaitSpinCount = 1;
+    pg_p->ch.nShmWaitSpinCount = 1;
     g_nLockSpinCount = 1;
 #endif
 
     pmi_errno = PMI_Get_size(&pg_size);
     if (pmi_errno != 0)
     {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size",
-					 "**pmi_get_size %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_size",
+			     "**pmi_get_size %d", pmi_errno);
     }
     
     /* Initialize the VC table associated with this process group (and thus COMM_WORLD) */
     for (p = 0; p < pg_size; p++)
     {
-	(*pg_p)->vct[p].ch.sendq_head = NULL;
-	(*pg_p)->vct[p].ch.sendq_tail = NULL;
-	(*pg_p)->vct[p].ch.recv_active = NULL;
-	(*pg_p)->vct[p].ch.send_active = NULL;
-	(*pg_p)->vct[p].ch.req = NULL;
-	(*pg_p)->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	(*pg_p)->vct[p].ch.shm_read_connected = 0;
-	(*pg_p)->vct[p].ch.read_shmq = NULL;
-	(*pg_p)->vct[p].ch.write_shmq = NULL;
-	(*pg_p)->vct[p].ch.shm = NULL;
-	(*pg_p)->vct[p].ch.shm_state = 0;
-	(*pg_p)->vct[p].ch.shm_next_reader = NULL;
-	(*pg_p)->vct[p].ch.shm_next_writer = NULL;
+	pg_p->vct[p].ch.sendq_head = NULL;
+	pg_p->vct[p].ch.sendq_tail = NULL;
+	pg_p->vct[p].ch.recv_active = NULL;
+	pg_p->vct[p].ch.send_active = NULL;
+	pg_p->vct[p].ch.req = NULL;
+	pg_p->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	pg_p->vct[p].ch.shm_read_connected = 0;
+	pg_p->vct[p].ch.read_shmq = NULL;
+	pg_p->vct[p].ch.write_shmq = NULL;
+	pg_p->vct[p].ch.shm = NULL;
+	pg_p->vct[p].ch.shm_state = 0;
+	pg_p->vct[p].ch.shm_next_reader = NULL;
+	pg_p->vct[p].ch.shm_next_writer = NULL;
     }
 
     /* brad : do the shared memory specific setup items so we can later do the
@@ -182,12 +171,12 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     
 #ifdef HAVE_WINDOWS_H
     {
-	DWORD len = sizeof((*pg_p)->ch.shm_hostname);
-	/*GetComputerName((*pg_p)->ch.shm_hostname, &len);*/
-	GetComputerNameEx(ComputerNameDnsFullyQualified, (*pg_p)->ch.shm_hostname, &len);
+	DWORD len = sizeof(pg_p->ch.shm_hostname);
+	/*GetComputerName(pg_p->ch.shm_hostname, &len);*/
+	GetComputerNameEx(ComputerNameDnsFullyQualified, pg_p->ch.shm_hostname, &len);
     }
 #else
-    gethostname((*pg_p)->ch.shm_hostname, sizeof((*pg_p)->ch.shm_hostname));
+    gethostname(pg_p->ch.shm_hostname, sizeof(pg_p->ch.shm_hostname));
 #endif
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
@@ -222,7 +211,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	    if (*tmp_str == ':')
 	    {
 		tmp_str++;
-		mpi_errno = MPIU_Strncpy((*pg_p)->ch.shm_name, tmp_str, MPIDI_MAX_SHM_NAME_LENGTH);
+		mpi_errno = MPIU_Strncpy(pg_p->ch.shm_name, tmp_str, MPIDI_MAX_SHM_NAME_LENGTH);
 		MPIU_Free(orig_str);
 		if (mpi_errno != 0)
 		{
@@ -259,16 +248,16 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	    MPIU_Strncpy(val, queue_name, val_max_sz);
 
 /*#ifdef MPIDI_CH3_USES_SHM_NAME*/ /* It's not possible for USE_MQSHM to be defined and MPIDI_CH3_USES_SHM_NAME not defined. */
-	    MPIU_Strncpy((*pg_p)->ch.shm_name, val, val_max_sz);
+	    MPIU_Strncpy(pg_p->ch.shm_name, val, val_max_sz);
 	}
 	else
 	{
-	    MPIU_Strncpy(queue_name, (*pg_p)->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
+	    MPIU_Strncpy(queue_name, pg_p->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
 	    MPIU_Strncpy(val, queue_name, val_max_sz);
 /*#endif*/
 	}
 
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, initialize_queue);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
@@ -276,13 +265,13 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	}
 	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 
-	mpi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, key, val);          
+	mpi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, key, val);          
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
+	mpi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
@@ -303,7 +292,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 	    return mpi_errno;
 	}
-	mpi_errno = PMI_KVS_Get((*pg_p)->ch.kvs_name, key, val, val_max_sz);
+	mpi_errno = PMI_KVS_Get(pg_p->ch.kvs_name, key, val, val_max_sz);
 	if (mpi_errno != 0)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
@@ -311,13 +300,13 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	}
 	MPIU_Strncpy(queue_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #ifdef MPIDI_CH3_USES_SHM_NAME
-	MPIU_Strncpy((*pg_p)->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
+	MPIU_Strncpy(pg_p->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
 	/* If you don't have a parent then you must initialize the queue */
 	/* If you do have a parent then you must not initialize the queue since the parent already did and you could destroy valid information */
 	initialize_queue = (*has_parent) ? 0 : 1;
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&(*pg_p)->ch.bootstrapQ, queue_name, initialize_queue);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
@@ -342,7 +331,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 	 * process killed with an uncatchable signal.
 	 */
     /*
-    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink((*pg_p)->ch.bootstrapQ);
+    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg_p->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_unlink", 0);
@@ -352,7 +341,7 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 
 #else
 
-    mpi_errno = MPIDI_CH3I_BootstrapQ_create(&(*pg_p)->ch.bootstrapQ);
+    mpi_errno = MPIDI_CH3I_BootstrapQ_create(&pg_p->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_create", 0);
@@ -378,36 +367,27 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
     if (publish_bc_p != NULL)
     {
 	/*
-	printf("business card:\n<%s>\npg_id:\n<%s>\n\n", *publish_bc_p, (*pg_p)->id);
+	printf("business card:\n<%s>\npg_id:\n<%s>\n\n", *publish_bc_p, pg_p->id);
 	fflush(stdout);
 	*/
-	pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, *bc_key_p, *publish_bc_p);
+	pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, *bc_key_p, *publish_bc_p);
 	if (pmi_errno != PMI_SUCCESS)
 	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put",
-		"**pmi_kvs_put %d", pmi_errno);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_put",
+				 "**pmi_kvs_put %d", pmi_errno);
 	}
-	pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
+	pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
 	if (pmi_errno != PMI_SUCCESS)
 	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
-		"**pmi_kvs_commit %d", pmi_errno);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_commit",
+				 "**pmi_kvs_commit %d", pmi_errno);
 	}
 
 	pmi_errno = PMI_Barrier();
 	if (pmi_errno != PMI_SUCCESS)
 	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier",
-		"**pmi_barrier %d", pmi_errno);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_barrier",
+				 "**pmi_barrier %d", pmi_errno);
 	}
     }    
 
@@ -425,10 +405,10 @@ int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_
 #ifdef MPIDI_CH3_USES_SSHM
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    if ((*pg_p) != NULL)
+    if (pg_p != NULL)
     {
 	/* MPIDI_CH3I_PG_Destroy(), which is called by MPIDI_PG_Destroy(), frees pg->ch.kvs_name */
-	MPIDI_PG_Destroy(*pg_p);
+	MPIDI_PG_Destroy( pg_p );
     }
 
     goto fn_exit;

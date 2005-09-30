@@ -10,6 +10,7 @@
 #include <unistd.h>
 #endif
 
+#if 0
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 
@@ -33,6 +34,7 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
+#endif
 
 static void generate_shm_string(char *str)
 {
@@ -58,7 +60,7 @@ static void generate_shm_string(char *str)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_pptr, int * pg_rank_ptr,
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                     char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -93,6 +95,11 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
      * structures that track the process group connections, MPI_COMM_WORLD, and
      * MPI_COMM_SELF
      */
+    /* Init is done before this routine is called */
+    /* MPID_Init in mpid_init.c handles the process group initialization.
+#if 0
+    /* ch3/src/mpid_init.c guarantees that PMI_Init has been called and
+       the rank, size, and appnum have been set */
     mpi_errno = PMI_Init(has_parent);
     if (mpi_errno != 0)
     {
@@ -112,7 +119,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
     
-    /*MPIU_Timer_init(pg_rank, pg_size);*/
     MPIU_dbg_init(pg_rank);
 
     /*
@@ -206,6 +212,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	goto fn_fail;
 	/* --END ERROR HANDLING-- */
     }
+#endif
 
 
     /* set the global variable defaults */
@@ -237,6 +244,8 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     /* Initialize the VC table associated with this process
        group (and thus COMM_WORLD) */
+    pg_size = pg->size;
+
     for (p = 0; p < pg_size; p++)
     {
 	pg->vct[p].ch.sendq_head = NULL;
@@ -537,13 +546,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	}
     }
 #endif
-
-    /* XXX - has_args and has_env need to come from PMI eventually... */
-    *has_args = TRUE;
-    *has_env = TRUE;
-
-    *pg_pptr = pg;
-    *pg_rank_ptr = pg_rank;
 
 fn_exit:
     if (val != NULL)

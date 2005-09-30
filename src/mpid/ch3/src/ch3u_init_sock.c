@@ -27,7 +27,7 @@
 #define FUNCNAME MPIDI_CH3U_Init_sock
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
 
@@ -53,11 +53,11 @@ int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_
     
     for (p = 0; p < pg_size; p++)
     {
-	(*pg_p)->vct[p].ch.sendq_head = NULL;
-	(*pg_p)->vct[p].ch.sendq_tail = NULL;
-	(*pg_p)->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	(*pg_p)->vct[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
-	(*pg_p)->vct[p].ch.conn = NULL;
+	pg_p->vct[p].ch.sendq_head = NULL;
+	pg_p->vct[p].ch.sendq_tail = NULL;
+	pg_p->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+	pg_p->vct[p].ch.sock = MPIDU_SOCK_INVALID_SOCK;
+	pg_p->vct[p].ch.conn = NULL;
     }    
 
     mpi_errno = MPIDI_CH3U_Get_business_card_sock(bc_val_p, val_max_sz_p);
@@ -72,7 +72,7 @@ int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_
     /* might still have something to add (e.g. ssm channel) so don't publish */
     if (publish_bc_p != NULL)
     {
-	pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, *bc_key_p, *publish_bc_p);
+	pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, *bc_key_p, *publish_bc_p);
 	if (pmi_errno != PMI_SUCCESS)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
@@ -81,7 +81,7 @@ int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_
 	    goto fn_fail;
 	    /* --END ERROR HANDLING-- */
 	}
-	pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
+	pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
 	if (pmi_errno != PMI_SUCCESS)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
@@ -108,10 +108,10 @@ int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_
     
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    if ((*pg_p) != NULL)
+    if (pg_p != NULL)
     {
 	/* MPIDI_CH3I_PG_Destroy(), which is called by MPIDI_PG_Destroy(), frees pg->ch.kvs_name */
-	MPIDI_PG_Destroy(*pg_p);
+	MPIDI_PG_Destroy(pg_p);
     }
 
     goto fn_exit;

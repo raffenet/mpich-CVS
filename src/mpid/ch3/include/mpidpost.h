@@ -14,17 +14,18 @@
 /*E
   MPIDI_CH3_Init - Initialize the channel implementation.
 
-  Output Parameters:
-+ has_args - boolean value that is true if the command line arguments are available on every node
-. has_env - boolean value that is true if the environment variable settings are available on every node
-. has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
+  Input Parameters:
++ has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
 . pg_ptr - the new process group representing MPI_COMM_WORLD
 - pg_rank - my rank in the process group
 
   Return value:
-  A MPI error class.
+  A MPI error code.
+
+  Notes:
+  MPID_Init has called 'PMI_Init' and created the process group structure
 E*/
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_ptr, int * pg_rank,
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank,
                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
 
 /*E
@@ -349,10 +350,12 @@ void MPIDI_CH3_Progress_signal_completion(void);
   Return value:
   A MPI error code.
 @*/
-int MPIDI_CH3_Get_universe_size(int  * universe_size);
+int MPIDI_CH3_Get_universe_size(int *universe_size);
 
 
 int MPIDI_CH3_Open_port(char *port_name);
+
+int MPIDI_GetTagFromPort( const char *, int * );
 
 int MPIDI_CH3_Comm_spawn_multiple(int count, char ** commands, char *** argvs, int * maxprocs, MPID_Info ** info_ptrs, int root,
                                   MPID_Comm * comm_ptr, MPID_Comm ** intercomm, int * errcodes);
@@ -565,9 +568,9 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 
 
 /* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be executed by two or more channels */
-int MPIDI_CH3U_Init_sock(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);                         
-int MPIDI_CH3U_Init_sshm(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
 
 /* added by brad. required for (socket version) upcall to Connect_to_root */

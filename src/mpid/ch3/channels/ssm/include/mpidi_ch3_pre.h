@@ -33,7 +33,9 @@
 
 #if defined (HAVE_SHM_OPEN) && defined (HAVE_MMAP)
 #define USE_POSIX_SHM
-#elif defined (HAVE_SHMGET) && defined (HAVE_SHMAT) && defined (HAVE_SHMCTL) && defined (HAVE_SHMDT)
+#elif defined (HAVE_SHMGET) && defined (HAVE_SHMAT) && \
+      defined (HAVE_SHMCTL) && defined (HAVE_SHMDT) && \
+      defined (HAVE_WORKING_SHMGET)
 #define USE_SYSV_SHM
 #elif defined (HAVE_WINDOWS_H)
 #define USE_WINDOWS_SHM
