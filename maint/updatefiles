@@ -56,8 +56,18 @@ for arg in "$@" ; do
 	stepsCleared=yes
     fi
     opt=`echo A$arg | sed -e 's/A-do=//'`
+    # Handle some synonym
+    case $opt in 
+	build-configure|configure) opt=build_configure ;;
+	makefile|Makefile|Makefiles) opt=makefiles;;
+    esac
     var=do_$opt
-    eval $var=yes
+    eval oldval=$"$var"
+    if [ -z "$oldval" ] ; then
+	echo "-do=$opt is unrecognized"
+    else 
+        eval $var=yes
+    fi
     ;;
 
     -with-genstates|--with-genstates)
