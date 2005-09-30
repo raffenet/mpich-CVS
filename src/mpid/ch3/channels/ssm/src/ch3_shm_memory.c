@@ -126,8 +126,12 @@ int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOut
     srand(getpid());
     for (i=0; i<10; i++)
     {
+	int shmflag = IPC_EXCL | IPC_CREAT;
+#ifdef HAVE_SHM_RW
+	shmflag |= SHM_R | SHM_W;
+#endif	
 	pOutput->key = rand();
-	pOutput->id = shmget(pOutput->key, size, IPC_EXCL | IPC_CREAT | SHM_R | SHM_W);
+	pOutput->id = shmget(pOutput->key, size, shmflag );
 	if (pOutput->id != -1)
 	    break;
     }
@@ -225,6 +229,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 #elif defined (USE_SYSV_SHM)
     int i;
     FILE *fout;
+    int shmflag;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 
@@ -267,7 +272,11 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
-    pOutput->id = shmget(pOutput->key, size, IPC_CREAT | SHM_R | SHM_W);
+    shmflag = IPC_CREAT;
+#ifdef HAVE_SHM_RW
+	shmflag |= SHM_R | SHM_W;
+#endif	
+    pOutput->id = shmget(pOutput->key, size, shmflag );
     if (pOutput->id == -1)
     {
 	pOutput->error = errno;
@@ -375,7 +384,13 @@ int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, 
     }
     /*ftruncate(pOutput->id, size);*/ /* The sender/creator set the size */
 #elif defined (USE_SYSV_SHM)
-    pOutput->id = shmget(pInput->key, pInput->size, SHM_R | SHM_W);
+    {
+	int shmflag = 0;
+#ifdef HAVE_SHM_RW
+	shmflag |= SHM_R | SHM_W;
+#endif	
+	pOutput->id = shmget(pInput->key, pInput->size, shmflag );
+    }
     if (pOutput->id == -1)
     {
 	pOutput->error = errno;

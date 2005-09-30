@@ -95,6 +95,26 @@ int main(int argc, char ** argv)
 else
     LIBS=$save_libs2
 fi
+AC_CACHE_CHECK([whether SHM_R and SHM_W are defined],pac_cv_has_shm_rw,[
+AC_TRY_COMPILE([
+#include <sys/shm.h>
+],[ int flags = SHM_R | SHM_W; ],pac_cv_has_shm_rw=yes,pac_cv_has_shm_rw=no)])
+if test "$pac_cv_has_shm_rw" = yes ; then
+    AC_DEFINE(HAVE_SHM_RW,1,[Define if SHM_R and SHM_W are available])
+fi
+
+# Add a test that shmget works (under cygwin, it causes the 
+# program to immediately abort with "Bad system call".
+AC_CACHE_CHECK([whether shmget works],pac_cv_func_shmget_works,[
+AC_TRY_RUN([#include <sys/shm.h>
+key_t key = rand();
+int id = shmget(key,128,IPC_CREAT);
+if (id) shmctl(id,IPC_RMID,0);
+return (id > 0) ? 0 : 1;
+],pac_cv_func_shmget_works=yes,pac_cv_func_shmget_works=no)])
+if test "$pac_cv_func_shmget_works" = "yes" ; then
+    AC_DEFINE(HAVE_WORKING_SHMGET,1,[Define if shmget works])
+fi
 
 
 dnl gcc checking
