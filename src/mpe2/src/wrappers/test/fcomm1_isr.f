@@ -23,7 +23,8 @@
       call MPI_Comm_size( MPI_COMM_WORLD, world_size, ierr )
       call MPI_Comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call MPI_Get_processor_name( processor_name, namelen, ierr )
-      print *, "world_rank ", world_rank, " on ", processor_name
+!     print *, "world_rank ", world_rank, " on ",
+!    &      processor_name(1:namelen)
 
       if ( world_rank .eq. world_size - 1 ) then
           world_neighbor = 0
