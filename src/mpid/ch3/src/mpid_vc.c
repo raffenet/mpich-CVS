@@ -301,19 +301,6 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
     return 0;
 }
 
-#if 0
-int MPID_LPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
-			    int local_lpids[] )
-{
-    int i;
-    
-    for (i=0; i<comm_ptr->local_size; i++) {
-	(void)MPID_VCR_Get_lpid( comm_ptr->vcr[i], &local_lpids[i] );
-    }
-    return 0;
-}
-#endif
-
 int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
 			    int size, const int lpids[] )
 {
