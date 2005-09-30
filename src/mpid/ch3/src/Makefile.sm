@@ -16,14 +16,12 @@ lib${MPILIBNAME}_a_SOURCES =	\
     ch3u_handle_send_req.c	\
     ch3u_init_sock.c		\
     ch3u_init_sshm.c		\
-    ch3u_open_port.c		\
     ch3u_recvq.c		\
     ch3u_request.c		\
     mpid_abort.c		\
     mpid_bsend_init.c		\
     mpid_cancel_recv.c		\
     mpid_cancel_send.c		\
-    mpid_close_port.c		\
     mpid_comm_accept.c		\
     mpid_comm_connect.c		\
     mpid_comm_disconnect.c	\
@@ -37,7 +35,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_irsend.c		\
     mpid_isend.c		\
     mpid_issend.c		\
-    mpid_open_port.c		\
+    mpid_port.c			\
     mpid_parse_option.c		\
     mpid_probe.c		\
     mpid_recv.c			\
