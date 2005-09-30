@@ -56,12 +56,17 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     static const char FCNAME[] = "MPI_Abort";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    /* FIXME: 100 is arbitrary and may not be long enough */
     char abort_str[100], comm_name[MPI_MAX_NAME_STRING];
     int len = MPI_MAX_NAME_STRING;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ABORT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
+    /* FIXME: It isn't clear that Abort should wait for a critical section,
+       since that could result in the Abort hanging if another routine is
+       hung holding the critical section.  Also note the "not thread-safe"
+       comment in the description of MPI_Abort above. */
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ABORT);
     
@@ -102,12 +107,12 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 	comm_ptr = MPIR_Process.comm_world;
     }
 
-    /*mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**abort", 0);*/
     NMPI_Comm_get_name(comm, comm_name, &len);
     if (len == 0)
     {
 	MPIU_Snprintf(comm_name, MPI_MAX_NAME_STRING, "comm=0x%X", comm);
     }
+    /* FIXME: This is not internationalized */
     MPIU_Snprintf(abort_str, 100, "application called MPI_Abort(%s, %d) - process %d", comm_name, errorcode, comm_ptr->rank);
     mpi_errno = MPID_Abort( comm_ptr, mpi_errno, errorcode, abort_str );
     /* --BEGIN ERROR HANDLING-- */

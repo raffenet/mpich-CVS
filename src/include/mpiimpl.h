@@ -2525,10 +2525,12 @@ int MPID_Finalize(void);
   Module:
   MPID_CORE
   @*/
-int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code, char *error_msg );
+
+/* FIXME: the 4th argument isn't part of the original design and isn't documented */
+int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code, const char *error_msg );
 
 int MPID_Open_port(MPID_Info *, char *);
-int MPID_Close_port(char *);
+int MPID_Close_port(const char *);
 
 /*@
    MPID_Comm_accept - MPID entry point for MPI_Comm_accept

@@ -159,6 +159,8 @@ int MPI_Finalize( void )
 
     MPIR_Call_finalize_callbacks();
 
+    /* FIXME: Both the memory tracing and debug nesting code blocks should
+       be finalize callbacks */
     /* If memory debugging is enabled, check the memory here, after all
        finalize callbacks */
 #ifdef USE_MEMORY_TRACING
