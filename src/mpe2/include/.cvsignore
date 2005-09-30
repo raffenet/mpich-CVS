@@ -5,4 +5,6 @@ mpe_logf.h
 mpe_misc.h
 mpe_conf.h
 mpe_wrappers_conf.h
+clog_uuid.h
+clog_commset.h
 windows
