@@ -21,6 +21,22 @@
 
 #if !defined( CLOG_NOMPI )
 
+#if !defined( HAVE_PMPI_COMM_CREATE_KEYVAL )
+#define PMPI_Comm_create_keyval PMPI_Keyval_create
+#endif
+
+#if !defined( HAVE_PMPI_COMM_FREE_KEYVAL )
+#define PMPI_Comm_free_keyval PMPI_Keyval_free
+#endif
+
+#if !defined( HAVE_PMPI_COMM_SET_ATTR )
+#define PMPI_Comm_set_attr PMPI_Attr_put
+#endif
+
+#if !defined( HAVE_PMPI_COMM_GET_ATTR )
+#define PMPI_Comm_get_attr PMPI_Attr_get
+#endif
+
 CLOG_CommSet_t* CLOG_CommSet_create( void )
 {
     CLOG_CommSet_t  *commset;

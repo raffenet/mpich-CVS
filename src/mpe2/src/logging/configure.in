@@ -64,6 +64,7 @@ AC_ARG_ENABLE( softerror,
 , enable_softerror=${mpe_enable_softerror:-no} )
 
 MAKE=${MAKE:-make}
+MPI_IMPL=${MPI_IMPL:-UserSupplied}
 MPE_BUILD_FORTRAN2C=${MPE_BUILD_FORTRAN2C:-no}
 CC=${CC:-cc}
 CLINKER=${CLINKER:-$CC}
@@ -267,6 +268,102 @@ AC_CHECK_HEADERS( fcntl.h,
 )
 
 AC_CHECK_HEADERS( stdio.h stdlib.h string.h sys/time.h )
+
+dnl   Determine if PMPI_Comm_create_keyval exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for PMPI_Comm_create_keyval()] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                          [ int comm_keyval ], [
+#ifndef NULL
+#define NULL 0
+#endif
+                          PMPI_Comm_create_keyval( MPI_COMM_NULL_COPY_FN,
+                                                   MPI_COMM_NULL_DELETE_FN,
+                                                   &comm_keyval, NULL )
+                          ],
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+#   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
+    if "$MPI_IMPL" = "MPICH2" ; then
+        mpe_link_ok=yes
+    else
+        mpe_link_ok=no
+    fi
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_PMPI_COMM_CREATE_KEYVAL, 1,
+               [Define if PMPI_Comm_Create_keyval() available] )
+fi
+
+dnl   Determine if PMPI_Comm_free_keyval exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for PMPI_Comm_free_keyval()] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                          [ int comm_keyval ], [
+                          PMPI_Comm_free_keyval( &comm_keyval )
+                          ],
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+#   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
+    if "$MPI_IMPL" = "MPICH2" ; then
+        mpe_link_ok=yes
+    else
+        mpe_link_ok=no
+    fi
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_PMPI_COMM_FREE_KEYVAL, 1,
+               [Define if PMPI_Comm_free_keyval() available] )
+fi
+
+dnl   Determine if PMPI_Comm_set_attr exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for PMPI_Comm_set_attr()] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                          [ int comm_keyval ], [
+                          PMPI_Comm_set_attr( MPI_COMM_WORLD, comm_keyval,
+                                              (void *)5 )
+                          ],
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+#   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
+    if "$MPI_IMPL" = "MPICH2" ; then
+        mpe_link_ok=yes
+    else
+        mpe_link_ok=no
+    fi
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_PMPI_COMM_SET_ATTR, 1,
+               [Define if PMPI_Comm_set_attr() available] )
+fi
+
+dnl   Determine if PMPI_Comm_get_attr exists
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    AC_MSG_CHECKING( [for PMPI_Comm_get_attr()] )
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                          [ int comm_keyval, comm_val, istatus ], [
+                          PMPI_Comm_get_attr( MPI_COMM_WORLD, comm_keyval,
+                                              &comm_val, &istatus )
+                          ],
+              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    AC_MSG_RESULT($mpe_link_ok)
+else
+#   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
+    if "$MPI_IMPL" = "MPICH2" ; then
+        mpe_link_ok=yes
+    else
+        mpe_link_ok=no
+    fi
+fi
+if test "$mpe_link_ok" = "yes" ; then
+    AC_DEFINE( HAVE_PMPI_COMM_GET_ATTR, 1,
+               [Define if PMPI_Comm_get_attr() available] )
+fi
+
 
 AC_SUBST(MPE_BUILD_FORTRAN2C)
 AC_SUBST(CC)
