@@ -5,6 +5,43 @@
  */
 #include "mpidimpl.h"
 
+/*
+ * This file provides a KVS name cache.  This is needed to implement the 
+ * MPI-2 Dynamic Process functions because the KVS space is used by the 
+ * processes to exchange connection information, and the current PMI 
+ * design does not provide a way for processes in one PMI process group to 
+ * access the KVS space of processes in another PMI process group.  To 
+ * work around this limitation, accesses to the KVS space (at least after 
+ * MPID_Init, where the accesses for setting up COMM_WORLD are within
+ * the calling processes PMI process group) are made through these 
+ * routines, which provide for local caching of data.
+ *
+ * These routines are not needed by channels that cannot implement the 
+ * dynamic process functions.
+ *
+ * The routines are in two basic groups: routines to provide access to the
+ * cache (e.g., MPIDI_KVS_Get) and routines to manage the cache.  The routines
+ * to manage the cache are currently in mpidi_pg.c, which provides two routines
+ * (MPIDI_PG_To_string and MPIDI_PG_Create_from_string) to encode and 
+ * decode the KVS spaces associated with a (PMI) process group.
+ * 
+ */
+
+/*
+ * FIXME: These routines use an #ifdef USE_WIN_MUTEX_PROTECT in many places.
+ * It is not clear why a mutex is required only for Windows, and only in 
+ * some cases.  Who sets USE_WIN_MUTEX_PROTECT?  What are the assumptions 
+ * about the multi-threadedness of these routines?
+ */
+
+/*
+ * FIXME: The routines that have PMI_KVS counterparts should use the
+ * identical calling sequence, so that code can easily switch between 
+ * the two (e.g., with #define or with a switch to using function pointers).
+ * Using different calling sequences unnecessarily restricts the flexibility
+ * of the code.
+ */
+
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 #include "pmi.h"
 
@@ -323,6 +360,7 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 	    {
 		if (strcmp(pElement->pszKey, key) == 0)
 		{
+		    /* FIXME: This routine assume that value has length MPIDI_MAX_KVS_VALUE_LEN, but there is no easy way to check this.  This is poor coding prctice. */
 		    MPIU_Strncpy(value, pElement->pszValue, MPIDI_MAX_KVS_VALUE_LEN);
 #ifdef USE_WIN_MUTEX_PROTECT
 		    ReleaseMutex(kvs.hKVSMutex);
