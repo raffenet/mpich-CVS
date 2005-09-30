@@ -191,7 +191,8 @@ AC_ARG_WITH(namepublisher,
                              MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
                              include
                                no (no service available)
-			       file:directory
+                               mpd
+			       file[:directory] (optional directory)
 			       ],,
 with_namepublisher=default)
 dnl
@@ -1491,7 +1492,7 @@ AC_CHECK_PROGS(RANLIB,ranlib,true)
 # file.  Older versions only accept -l c or --language c as a way to 
 # *change* the interpretation of the following files; newer versions 
 # allow --langmap=c:+.i to add a file extension to those that are C 
-# programs.
+# programs.  New versions might want --language-force=c.
 AC_CHECK_PROGS(ETAGS,etags,true)
 if test -n "$ETAGS" -a "$ETAGS" != true ; then
     # Check for the --langmap argument
@@ -1499,14 +1500,18 @@ if test -n "$ETAGS" -a "$ETAGS" != true ; then
     cat >>conftest.c <<EOF
 int footest = 0;
 EOF
-    if $ETAGS --langmap=c:+.i conftest.c -o conftesttags >/dev/null 2>&1 ; then 
-        ETAGSADD="--langpam=c:+.i"
+    if $ETAGS --langmap=c:+.i -o conftesttags conftest.c >/dev/null 2>&1 ; then 
+        ETAGSADD="--langmap=c:+.i"
     else
-        if $ETAGS --language=c conftest.c -o conftesttags >/dev/null 2>&1 ; then
+        if $ETAGS --language=c -o conftesttags conftest.c >/dev/null 2>&1 ; then
 	    ETAGSADD="--language=c"
         else
-	    ETAGS=true
-	    AC_MSG_WARN([Could not find working etags])
+            if $ETAGS --language-force=c -o conftesttags conftest.c >/dev/null 2>&1 ; then
+	        ETAGSADD="--language-force=c"
+            else
+	        ETAGS=true
+	        AC_MSG_WARN([Could not find working etags])
+            fi
         fi
     fi
     if test -n "$ETAGSADD" ; then
@@ -1615,9 +1620,19 @@ AC_PATH_PROG(PERL5,perl)
 
 nameserv_name=""
 AC_SUBST(nameserv_name)
-if test "$with_namepublisher" = "default" -a "$with_pm" = "mpd" ; then
-    with_namepublisher="mpd"
+# FIXME: Eventually, we need to export a variable to indicate whether the
+# PM provides name publisher service
+if test "$with_namepublisher" = "default" ; then
+   # We use "with_pm" instead of "pm_name" to handle the case where
+   # mpd is just one of several supportted PMs
+   case "$with_pm" in
+   mpd)
+       with_namepublisher=mpd ;;
+   *)
+       with_namepublisher=file ;;
+   esac
 fi
+
 if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     case "$with_namepublisher" in 
     none|no) ;;
