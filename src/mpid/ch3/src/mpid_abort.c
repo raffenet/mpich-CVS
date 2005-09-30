@@ -11,6 +11,13 @@
 static int MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg);
 #endif
 
+#ifdef HAVE_WINDOWS_H
+/* exit can hang if libc fflushes output while in/out/err buffers are locked
+   (this must be a bug in exit?).  ExitProcess does not hang (what does this
+   mean about the state of the locked buffers?). */
+#define exit(_e) ExitProcess(_e)
+#endif
+
 #undef FUNCNAME
 #define FUNCNAME MPID_Abort
 #undef FCNAME
@@ -56,12 +63,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 	    MPIU_Error_printf("%s", error_msg);
 	    fflush(stderr);
 
-#ifdef HAVE_WINDOWS_H
-	    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
-	    ExitProcess(exit_code);
-#else
 	    exit(exit_code);
-#endif
 	}
 #       endif
     }
@@ -90,25 +92,13 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char *error_msg)
 	{
 	    MPIU_Error_printf("%s", error_str);
 	    fflush(stderr);
-
-#ifdef HAVE_WINDOWS_H
-	    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
-	    ExitProcess(exit_code);
-#else
 	    exit(exit_code);
-#endif
 	}
 #       endif
     }
 
     /* ch3_abort should not return but if it does, exit here */
-
-#ifdef HAVE_WINDOWS_H
-    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
-    ExitProcess(exit_code);
-#else
     exit(exit_code);
-#endif
     
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
 
@@ -130,13 +120,7 @@ static int MPIDI_CH3I_PMI_Abort(int exit_code, char *error_msg)
 
     MPIU_Error_printf("%s", error_msg);
     fflush(stderr);
-
-#ifdef HAVE_WINDOWS_H
-    /* exit can hang if libc fflushes output while in/out/err buffers are locked.  ExitProcess does not hang. */
-    ExitProcess(exit_code);
-#else
     exit(exit_code);
-#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ABORT);
     return MPI_ERR_INTERN;    
