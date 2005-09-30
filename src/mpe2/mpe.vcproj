@@ -183,9 +183,6 @@
 				RelativePath=".\src\logging\include\clog_buffer.h">
 			</File>
 			<File
-				RelativePath=".\src\logging\include\clog_common.h">
-			</File>
-			<File
 				RelativePath=".\src\logging\include\clog_merger.h">
 			</File>
 			<File
