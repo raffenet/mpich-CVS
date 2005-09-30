@@ -133,8 +133,10 @@ link/runtime
 It is possible to override the default routines for any component at
 runtime by calling one of the following routines.
 
+\begin{verbatim}
     MPIX_SetMethod( component, object, name, function, communicator,
     version )
+\end{verbatim}
 
 where
     component - identifier for the component (e.g., topology,
@@ -143,8 +145,8 @@ where
     all objects
     name      - name of the method (probably character string for function)
     function  - function to use
-    communicator - communicator scope of this change (MPI_COMM_SELF
-    and MPI_COMM_WORLD are popular choices)
+    communicator - communicator scope of this change (MPI\_COMM\_SELF
+    and MPI\_COMM\_WORLD are popular choices)
     version   - version of the interface (see below)
 
     This call is collective over the communicator.  The intent of the 
@@ -157,8 +159,10 @@ where
 
 A related call is
 
+\begin{verbatim}
     MPIX_SetAllMethods( component, object, struct-of-functions*,
     communicator, version )
+\end{verbatim}
 
 This is similar to SetMethod, except all functions are set from those
 defined in the struct-of-functions.  The version is very important
@@ -166,8 +170,10 @@ here as it ensures that the struct is known.
 
 One additional call is
 
+\begin{verbatim}
     MPIX_DLLLoadMethods( component, object, dll-name, communicator,
     version )
+\end{verbatim}
 
 This loads the methods from a dynamic loaded shared object.  It is
 collective over the communicator
@@ -179,7 +185,7 @@ of a routine that
 \section{Topology}
 \section{Logging}
     --with-logging=/pathname
-    looks for setup_logging script.  Makefile will be invoked with (null),
+    looks for setup\_logging script.  Makefile will be invoked with (null),
     clean, dist-clean, maintainer-clean, library target?
 
     Must provide an mpilogging.h file (contents defined as...)
