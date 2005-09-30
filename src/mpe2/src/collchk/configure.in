@@ -34,6 +34,7 @@ AC_ARG_ENABLE( softerror,
 , enable_softerror=${mpe_enable_softerror:-no} )
 
 MAKE=${MAKE:-make}
+MPI_IMPL=${MPI_IMPL:-UserSupplied}
 MPE_BUILD_FORTRAN2C=${MPE_BUILD_FORTRAN2C:-no}
 CC=${CC:-cc}
 CLINKER=${CLINKER:-$CC}
