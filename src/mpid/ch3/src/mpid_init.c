@@ -13,7 +13,7 @@
 #include <unistd.h>
 #endif
 
-/* WDG-FIXME:
+/* FIXME:
    the PMI init function should ONLY do the PMI operations, not the process 
    group or bc operations.  These should be in a separate routine */
 #include "pmi.h"
@@ -128,7 +128,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      * the basic information about the job has been extracted from PMI (e.g.,
      * the size and rank of this process, and the process group id)
      */
-    /* WDG-FIXME */
+    /* FIXME */
     /* Notes: bc_key, bc_val, publish_bc_orig, and val_max_remaining should
        not be passed to the channel init routine - instead, it should call
        the appropriate routine to create and install the contact information */
@@ -370,6 +370,7 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
 			     "**pmi_init %d", pmi_errno);
     }
 
+    /* FIXME: Who is this for and where does it belong? */
 #ifdef USE_MPIU_DBG_PRINT_VC
     MPIU_DBG_parent_str = (*has_parent) ? "+" : "";
 #endif
@@ -403,6 +404,8 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
     /* FIXME: Who does/does not use this? */
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
     /* Initialize the CH3 device KVS cache interface */
+    /* KVS is used for connection handling; thus, this should go into 
+       code for that purpose, not here */
     /* Do this after PMI_Init because MPIDI_KVS uses PMI (The init funcion may or may not use PMI)*/
     MPIDI_KVS_Init();
 #endif
