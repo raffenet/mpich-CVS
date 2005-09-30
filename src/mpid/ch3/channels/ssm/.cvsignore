@@ -1,6 +1,9 @@
 configure
 configure.lineno
 autom4te.cache
+config.log
+config.status
+config.system
 Makefile
 Makefile.in
 *.o
