@@ -307,7 +307,6 @@ int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, in
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"
 #define MPIDI_CH3I_PORT_KEY              "port"
-#define MPIDI_CH3I_PORT_NAME_TAG_KEY     "tag"
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
 #define MPIDI_CH3I_SHM_QUEUE_NAME_KEY    "shm_name"

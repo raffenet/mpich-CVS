@@ -299,7 +299,6 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"
 #define MPIDI_CH3I_PORT_KEY              "port"
-#define MPIDI_CH3I_PORT_NAME_TAG_KEY     "tag"
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
 #define MPIDI_CH3I_SHM_QUEUE_NAME_KEY    "shm_name"
