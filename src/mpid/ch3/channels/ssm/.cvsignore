@@ -4,6 +4,7 @@ autom4te.cache
 config.log
 config.status
 config.system
+localdefs
 Makefile
 Makefile.in
 *.o
