@@ -7,6 +7,7 @@
 #include "mpidimpl.h"
 
 static int MPIDI_Open_port(char *port_name);
+
 /*
  * FIXME: Rather than an ifdef chain these should either fix on a single 
  * approach (which may be appropriate for the ch3 device) or use function
@@ -76,21 +77,23 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 }
 
 /*@
-   MPID_Close_port - close port
+   MPID_Close_port - Close port
 
-   Arguments:
-.  char *port_name - port name
+   Input Parameter:
+.  port_name - Name of MPI port to close
 
    Notes:
 
 .N Errors
 .N MPI_SUCCESS
+.N MPI_ERR_OTHER
+
 @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_Close_port
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Close_port(char *port_name)
+int MPID_Close_port(const char *port_name)
 {
     int mpi_errno=MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CLOSE_PORT);
@@ -135,7 +138,7 @@ int MPID_Close_port(char *port_name)
 }
 
 /*
- * FIXME: The routines that use this form of port name should be in the 
+ * The routines that use this form of port name should be in the 
  * same place (i.e., the routines to encode and decode the port strings
  * should be in the same file so that their relationship to each other is
  * clear)
