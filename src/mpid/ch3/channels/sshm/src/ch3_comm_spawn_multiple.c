@@ -30,12 +30,12 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
     if (comm_ptr->rank == root)
     {
         info_keyval_sizes = (int *) MPIU_Malloc(count * sizeof(int));
-        /* TEMPORARILY set all user-provided info to NULL. PMI is not
+        /* FIXME: TEMPORARILY set all user-provided info to NULL. PMI is not
            using it anyway. */
         for (i=0; i<count; i++) info_keyval_sizes[i] = 0;
         info_keyval_vectors = NULL;
 
-        mpi_errno = MPIDI_CH3_Open_port(port_name);
+        mpi_errno = MPID_Open_port(port_name, 0);
         if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "Unable to open a port for the spawned processes to connect to");

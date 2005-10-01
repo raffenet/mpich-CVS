@@ -6,23 +6,14 @@
 
 #include "mpidi_ch3_impl.h"
 
-/*
- * MPIDI_CH3_Open_port()
- */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Open_port
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Open_port(char *port_name)
+/* This function initializes the table of routines used for 
+   implementing the MPI Port-related functions.  This channel does not
+   support those operations, so all functions are set to NULL */
+int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
 {
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_OPEN_PORT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_OPEN_PORT);
-
-    *port_name = '\0';
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_OPEN_PORT);
-    return mpi_errno;
+    portFns.OpenPort    = 0;
+    portFns.ClosePort   = 0;
+    portFns.CommAccept  = 0;
+    portFns.CommConnect = 0;
+    return MPI_SUCCESS;
 }
