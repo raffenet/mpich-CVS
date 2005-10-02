@@ -2564,7 +2564,7 @@ int MPID_Comm_accept(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
   Return Value:
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
-int MPID_Comm_connect(char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
+int MPID_Comm_connect(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 
 int MPID_Comm_disconnect(MPID_Comm *);
 
