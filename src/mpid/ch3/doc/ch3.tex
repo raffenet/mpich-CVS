@@ -1,0 +1,90 @@
+\documentclass{report}
+\usepackage[dvipdfm]{hyperref}
+
+\begin{document}
+
+\section{Interfaces Between the Channels and the CH3 Device}
+There are three types of interfaces between a channel and the CH3 device:
+\begin{enumerate}
+  \item Functions that the channel must implement.  These include
+  basic communication routines such as \texttt{MPIDI_CH3\_istartmsg}
+  and initialization routines such as \texttt{MPIDI_CH3_Init}.  
+
+  \item Functions that the channel may implement or that the CH3
+  device may implement.  For example, the routines for opening and
+  closing MPI ports (used to implement MPI_Open_port and
+  MPI_Close_port).  A structure containing pointers to the appropriate
+  functions are used for this case, with a standard block of code that
+  is used to check that the pointers have been initialized (allowing
+  for lazy initialization of features).
+
+  \item Macros that the channel may use to define simple operations.
+  Macros are used in two ways:
+  \begin{enumerate}
+    \item To define channel specific operations in performance
+    critical code.  This avoids the overhead of a function call.
+    \item To define optional ``hook'' functions that are called only
+    if the channel requires them.  
+  \end{enumerate}
+\end{enumerate}
+
+\subsection{Required Functions}
+--- here goes a description of the functions that must be implemented
+
+\subsection{Optional Functions}
+
+Optional functions are usually set by calling a channel-provided
+initialization routine the first time the optional functions may be
+needed.  A relatively simple example is in \file{src/mpid\_port.c}.  
+
+A typical file that makes use of optional function will have the
+following declarations near the top of the file:
+\begin{verbatim}
+static int setup<modulename> = 1;
+static MPIDI_CH3_<modulename> = { <default value > };
+...
+
+\end{verbatim}
+
+Within each function, there is a step to ensure that the
+initialization function has been called, typically something like this
+\begin{verbatim}
+    if (setupPortFunctions) {
+	MPIDI_CH3_PortFnsInit( &portFns );
+	setupPortFunctions = 0;
+    }
+\end{verbatim}
+
+At the point where the function is used, a comment is also provided to
+point to the default or to a typical implementation of the function:
+\begin{verbatim}
+    if (portFns.OpenPort) {
+         mpi_errno = (*portFns.OpenPort)( ... );
+    }
+\end{verbatim}
+
+\subsubsection{Advanced Features}
+-- this will discuss using an ifdef to suppress the definition of the
+   default functions when the smallest, cleanest code is required.
+
+\subsection{Macros}
+
+For functions that are optional and are provided to allow a channel to 
+modify the behavior of standard operations such as connect and accept.
+\begin{verbatim}
+#ifdef MPIDI_CH3_<featurename>
+   ... code to call standard routine
+#endif
+\end{verbatim}
+
+--- to do: Provide a complete list of the featurenames and the
+    functions that must be provided when those features are selected
+
+\begin{description}
+\item[\texttt{MPIDI\_CH3\_HAS\_CONN\_ACCEPT\_HOOK}]
+The channel provides three routines that are called when completing a
+connection.  See ch3u\_comm\_connect.c and ch3u\_comm\_accept.c for
+details.
+
+\end{description}
+\end{document}
