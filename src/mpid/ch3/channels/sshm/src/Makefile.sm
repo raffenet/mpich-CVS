@@ -9,4 +9,5 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_mem.c ch3_win_create.c ch3_start_pt_epoch.c \
  ch3_end_pt_epoch.c ch3_win_free.c ch3_put.c \
  ch3_get.c ch3_accumulate.c ch3_start_epoch.c \
- ch3_end_epoch.c ch3i_get_business_card.c
+ ch3_end_epoch.c ch3i_get_business_card.c \
+ ch3i_connaccept.c

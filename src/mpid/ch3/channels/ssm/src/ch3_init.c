@@ -112,9 +112,11 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     }
 
     /* Allocate and initialize the VC table associated with this process group (and thus COMM_WORLD) */
+    /* FIXME: This doesn't allocate and only inits one field.  Is this
+       now part of the channel-specific hook for channel-specific VC info? */
     for (p = 0; p < pg_size; p++)
     {
-	(*pg_p)->vct[p].ch.bShm = FALSE;
+	pg_p->vct[p].ch.bShm = FALSE;
     }
 
 fn_exit:
@@ -123,9 +125,10 @@ fn_exit:
     return mpi_errno;
 
 fn_fail:
-    if ((*pg_p) != NULL)
+    /* FIXME: Does this routine still allocated pg_p? */
+    if (pg_p != NULL)
     {
-	MPIDI_PG_Destroy(*pg_p);
+	MPIDI_PG_Destroy(pg_p);
     }
     goto fn_exit;
 }

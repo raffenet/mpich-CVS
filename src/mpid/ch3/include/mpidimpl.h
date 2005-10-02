@@ -5,11 +5,11 @@
  */
 
 /*
- * WARNING: Functions and macros in this file are for internal use only.  As such, they are only visible to the device and
- * channel.  Do not include then in the MPID macros.
+ * WARNING: Functions and macros in this file are for internal use only.  
+ * As such, they are only visible to the device and
+ * channel.  Do not include them in the MPID macros.
  */
 
-/* XXX - move these to mpiimpl.h??? */
 /* 
  * Note: Never define the feature set in a header file, since this changes
  * the language accepted by the C compiler and the contents of the headers
@@ -410,6 +410,8 @@ int MPIDI_PG_Iterate_reset(void);
 int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc);
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 
+/* FIXME: It would be simpler if we used MPIU_Object_add_ref etc. uniformly,
+   rather than defining separate routines */
 #define MPIDI_PG_Add_ref(pg_)			\
 {						\
     MPIU_Object_add_ref(pg_);			\
@@ -473,6 +475,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 #   define MPIDI_VC_Init_seqnum_recv(vc_);
 #endif
 
+/* FIXME: Should this fully initialize the vc_ entry? */
 #define MPIDI_VC_Init(vc_, pg_, rank_)		\
 {						\
     (vc_)->state = MPIDI_VC_STATE_INACTIVE;	\
@@ -554,6 +557,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 /*----------------------------
   BEGIN DEBUGGING TOOL SECTION
   ----------------------------*/
+/* FIXME: Switch this to use the common debug code */
 void MPIDI_dbg_printf(int, char *, char *, ...);
 void MPIDI_err_printf(char *, char *, ...);
 
@@ -601,16 +605,33 @@ const char * MPIDI_VC_Get_state_description(int state);
 /* Prototypes for internal device routines */
 int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int, int, MPID_Request **);
 
-/* Only prototype functions that will be used */
-#ifdef MPIDI_DEV_IMPLEMENTS_COMM_CONNECT
-int MPIDI_Comm_connect(char *, int, MPID_Comm *, MPID_Comm **);
-#endif
-#ifdef MPIDI_DEV_IMPLEMENTS_COMM_ACCEPT
-int MPIDI_Comm_accept(char *, int, MPID_Comm *, MPID_Comm **);
-#endif
+/*--------------------------
+  BEGIN MPI PORT SECTION 
+  --------------------------*/
+/* These are the default functions */
+int MPIDI_Comm_connect(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
+int MPIDI_Comm_accept(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
+
 #ifdef MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
 int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, int, MPID_Comm *, MPID_Comm **, int *);
 #endif
+
+/* This structure defines a module that handles the routines that 
+   work with MPI port names */
+typedef struct MPIDI_Port_Ops {
+    int (*OpenPort)( MPID_Info *, char * );
+    int (*ClosePort)( const char * );
+    int (*CommAccept)( const char *, MPID_Info *, int, MPID_Comm *, 
+		       MPID_Comm ** );
+    int (*CommConnect)( const char *, MPID_Info *, int, MPID_Comm *, 
+			MPID_Comm ** );
+} MPIDI_PortFns;
+#define MPIDI_PORTFNS_VERSION 1
+int MPIDI_CH3_PortFnsInit( MPIDI_PortFns * );
+
+/*--------------------------
+  END MPI PORT SECTION 
+  --------------------------*/
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 

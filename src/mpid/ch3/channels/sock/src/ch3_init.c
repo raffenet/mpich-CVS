@@ -32,3 +32,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
     return mpi_errno;
 }
+
+/* This function simply tells the CH3 device to use the defaults for the 
+   MPI Port functions */
+int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a ) 
+{ 
+    return 0;
+}

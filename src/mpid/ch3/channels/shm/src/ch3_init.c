@@ -67,7 +67,6 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
     int pmi_errno = PMI_SUCCESS;
     MPIDI_PG_t * pg = NULL;
     MPIDI_VC_t * vc;
-    int pg_rank;
     int pg_size;
     int p;
     char * pg_id;
@@ -96,7 +95,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
      * MPI_COMM_SELF
      */
     /* Init is done before this routine is called */
-    /* MPID_Init in mpid_init.c handles the process group initialization.
+    /* MPID_Init in mpid_init.c handles the process group initialization. */
 #if 0
     /* ch3/src/mpid_init.c guarantees that PMI_Init has been called and
        the rank, size, and appnum have been set */

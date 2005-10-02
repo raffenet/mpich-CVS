@@ -13,7 +13,10 @@
 /* These macros unlock shared code */
 #define MPIDI_CH3_USES_SSHM
 #define MPIDI_CH3_USES_ACCEPTQ
-#define MPIDI_CH3_USES_UNIDIRECTIONAL_SSHM_CONNECTIONS
+/* We instead specify optional "hook" functions for the ch3 code to 
+   call from the channel. */
+#define MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
+
 #ifdef USE_MQSHM
 #define MPIDI_CH3_USES_SHM_NAME
 #endif
