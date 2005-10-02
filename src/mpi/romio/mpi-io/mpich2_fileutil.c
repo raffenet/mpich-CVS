@@ -17,8 +17,6 @@ int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
 void MPIR_Get_file_error_routine( MPI_Errhandler, 
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
-struct MPID_Comm;
-int MPID_Abort( struct MPID_Comm *comm, int mpi_errno, int exit_code, char *error_msg );
 
 /* These next two routines are used to allow MPICH2 to access/set the
    error handers in the MPI_File structure until MPICH2 knows about the
