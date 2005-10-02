@@ -55,6 +55,43 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     return mpi_errno;
 }
 
+/* Initialize a newly created VC */
+/* FIXME: There is an MPIDI_VC_Init in include/mpidimpl.h .  These
+   should probably be combined (as a function, as the macro is not
+   on the critical performance path) */
+/* FIXME: The ifdefs here need to be replaced by macros or function
+   call provided by the channel */
+int MPIDI_VC_Init2( MPIDI_VC_t *vc )
+{
+    vc->ch.sendq_head         = NULL;
+    vc->ch.sendq_tail         = NULL;
+    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+#ifdef MPIDI_CH3_USES_SOCK
+    vc->ch.sock               = MPIDU_SOCK_INVALID_SOCK;
+    vc->ch.conn               = NULL;
+#endif
+#ifdef MPIDI_CH3_USES_SSHM
+    vc->ch.recv_active        = NULL;
+    vc->ch.send_active        = NULL;
+    vc->ch.req                = NULL;
+    vc->ch.read_shmq          = NULL;
+    vc->ch.write_shmq         = NULL;
+    vc->ch.shm                = NULL;
+    vc->ch.shm_state          = 0;
+    vc->ch.shm_next_reader    = NULL;
+    vc->ch.shm_next_writer    = NULL;
+    vc->ch.shm_read_connected = 0;
+#ifdef MPIDI_CH3_USES_SOCK
+    /* This variable is used when sock and sshm are combined */
+    vc->ch.bShm               = FALSE;
+#endif
+#endif
+    return 0;
+}
+
+
+/* FIXME: Use the Object/ref routines instead of defining new routines */
+
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Add_ref
 #undef FCNAME

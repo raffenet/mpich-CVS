@@ -22,8 +22,6 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_bsend_init.c		\
     mpid_cancel_recv.c		\
     mpid_cancel_send.c		\
-    mpid_comm_accept.c		\
-    mpid_comm_connect.c		\
     mpid_comm_disconnect.c	\
     mpid_comm_spawn_multiple.c	\
     mpid_finalize.c		\

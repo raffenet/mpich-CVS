@@ -66,24 +66,11 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     MPIDI_PG_t * pg = NULL;
     int p;
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL(2);
     
-    pg = MPIU_Malloc(sizeof(MPIDI_PG_t));
-    if (pg == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    
-    pg->vct = MPIU_Malloc(sizeof(MPIDI_VC_t) * vct_sz);
-    if (pg->vct == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
+    MPIU_CHKPMEM_MALLOC(pg,MPIDI_PG_t*,sizeof(MPIDI_PG_t),mpi_errno,"pg");
+    MPIU_CHKPMEM_MALLOC(pg->vct,MPIDI_VC_t *,sizeof(MPIDI_VC_t)*vct_sz,
+			mpi_errno,"pg->vct");
 
     pg->handle = 0;
     MPIU_Object_set_ref(pg, vct_sz);
@@ -109,19 +96,8 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     return mpi_errno;
     
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    if (pg->vct != NULL)
-    {
-	MPIU_Free(pg->vct);
-    }
-
-    if (pg != NULL)
-    {
-	MPIU_Free(pg);
-    }
-
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
-    /* --END ERROR HANDLING-- */
 }
 
 #undef FUNCNAME
@@ -457,6 +433,11 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
 fn_exit:
     return mpi_errno;
 }
+
+#ifdef HAVE_CTYPE_H
+/* Needed for isdigit */
+#include <ctype.h>
+#endif
 
 void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
 {
