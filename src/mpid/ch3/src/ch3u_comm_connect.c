@@ -92,7 +92,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     MPIDI_PG_t **remote_pg = NULL;
     int flag;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_CONNECT);
-    MPIU_CHKLMEM_DECL(1);
+    MPIU_CHKLMEM_DECL(3);
     MPIU_CHKPMEM_DECL(1);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_CONNECT);
@@ -216,23 +216,12 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     n_remote_pgs = recv_ints[0];
     remote_comm_size = recv_ints[1];
     context_id = recv_ints[2];
-    remote_pg = (MPIDI_PG_t**)MPIU_Malloc(n_remote_pgs * sizeof(MPIDI_PG_t*));
-    if (remote_pg == NULL)
-    {
-        /* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-        /* --END ERROR HANDLING-- */
-    }
-    remote_translation = (pg_translation*)MPIU_Malloc(remote_comm_size * sizeof(pg_translation));
-    if (remote_translation == NULL)
-    {
-        /* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-        /* --END ERROR HANDLING-- */
-    }
-
+    MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
+			n_remote_pgs * sizeof(MPIDI_PG_t*),
+			mpi_errno,"remote_pg");
+    MPIU_CHKLMEM_MALLOC(remote_translation,pg_translation*,
+			remote_comm_size * sizeof(pg_translation),
+			mpi_errno,"remote_translation");
     MPIU_DBG_PRINTF(("[%d]connect:remote process groups: %d\nremote comm size: %d\n", rank, n_remote_pgs, remote_comm_size));
 
     /* Exchange the process groups and their corresponding KVSes */
