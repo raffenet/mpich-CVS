@@ -27,12 +27,11 @@ do_f77=yes
 do_f77tof90=yes
 do_build_configure=yes
 do_genstates=yes
-do_getstates=yes
 do_makefiles=yes
 
 # List of steps that we will consider
 # (We do not include depend because the values for depend are not just yes/no)
-AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates getstates makefiles"
+AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles"
 stepsCleared=no
 
 # Options for some steps
@@ -332,7 +331,7 @@ elif find maint -name 'configure.in' -newer 'maint/configure' ; then
     # The above relies on the Unix find command
     (cd maint && $autoconf && rm -rf autom4te*.cache)
 fi
-if [ ! -x maint/simplemake -o ! -x maint/getstates ] ; then
+if [ ! -x maint/simplemake -o ! -x maint/genstates ] ; then
     run_configure=yes
 fi
 #
@@ -344,8 +343,8 @@ if [ -s maint/simplemake ] ; then
 else
     run_configure=yes
 fi
-if [ -s maint/getstates ] ; then 
-    if find maint -name 'getstates.in' -newer 'maint/getstates' ; then
+if [ -s maint/genstates ] ; then 
+    if find maint -name 'genstates.in' -newer 'maint/genstates' ; then
         run_configure=yes
     fi
 else
@@ -371,11 +370,6 @@ fi
 if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
     echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
     maint/genstates
-fi
-if [ -x maint/getstates -a $do_getstates = "yes" ] ; then
-    echo "Creating the list of routine state into src/util/logging/lwlog/lwstates.c"
-    maint/getstates -outfile=src/util/logging/lwlog/lwstates.c \
-	            -namefile=src/util/logging/lwlog/lwnames.h src
 fi
 # Create and/or update the f90 tests
 if [ -x maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
