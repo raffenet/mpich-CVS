@@ -308,6 +308,107 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
     return SMPD_FALSE;
 }
 
+int smpd_parse_hosts_string(const char *host_str)
+{
+    char *token, *str;
+    char temp_hostname[256];
+    smpd_host_node_t *node, *node_iter;
+    char *hostname, *iter;
+    int nproc;
+
+    /* FIXME: If these are not NULL should they be freed? */
+    smpd_process.s_host_list = NULL;
+    smpd_process.s_cur_host = NULL;
+    smpd_process.s_cur_count = 0;
+
+    str = MPIU_Strdup(host_str);
+    if (str == NULL)
+    {
+	return SMPD_FALSE;
+    }
+
+    token = strtok(str, " \r\n");
+    while (token != NULL)
+    {
+	strcpy(temp_hostname, token);
+	token = strtok(NULL, " \r\n");
+	hostname = temp_hostname;
+	/* move over any leading whitespace */
+	while (isspace(*hostname))
+	    hostname++;
+	if (strlen(hostname) != 0)
+	{
+	    iter = hostname;
+	    /* move over the hostname and see if there is a number after it */
+	    while ((*iter != '\0') && !isspace(*iter) && (*iter != ':'))
+		iter++;
+	    if (*iter != '\0')
+	    {
+		*iter = '\0';
+		iter++;
+		while (isspace(*iter))
+		    iter++;
+		nproc = 1;
+		if (isdigit(*iter))
+		{
+		    nproc = atoi(iter);
+		    /* move over the number */
+		    while (isdigit(*iter))
+			iter++;
+		    /* move over the space between the number and any other options */
+		    while (isspace(*iter))
+			iter++;
+		}
+		if (nproc < 1)
+		    nproc = 1;
+	    }
+	    else
+	    {
+		nproc = 1;
+	    }
+	    node = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	    if (node == NULL)
+	    {
+		smpd_err_printf("unable to allocate memory to parse the hosts string <%s>\n", host_str);
+		MPIU_Free(str);
+		return SMPD_FALSE;
+	    }
+	    strcpy(node->host, hostname);
+	    node->alt_host[0] = '\0';
+	    node->connected = SMPD_FALSE;
+	    node->connect_cmd_tag = -1;
+	    node->id = -1;
+	    node->parent = -1;
+	    node->nproc = nproc;
+	    node->next = NULL;
+	    node->left = NULL;
+	    node->right = NULL;
+	    smpd_add_extended_host_to_default_list(node->host, node->alt_host, node->nproc);
+	    if (smpd_process.s_host_list == NULL)
+		smpd_process.s_host_list = node;
+	    else
+	    {
+		node_iter = smpd_process.s_host_list;
+		while (node_iter->next != NULL)
+		    node_iter = node_iter->next;
+		node_iter->next = node;
+	    }
+	}
+    }
+    MPIU_Free(str);
+    if (smpd_process.s_host_list != NULL)
+    {
+	node = smpd_process.s_host_list;
+	while (node)
+	{
+	    smpd_dbg_printf("host = %s, nproc = %d\n", node->host, node->nproc);
+	    node = node->next;
+	}
+	return SMPD_TRUE;
+    }
+    return SMPD_FALSE;
+}
+
 int smpd_get_host_id(char *host, int *id_ptr)
 {
     smpd_host_node_t *node;

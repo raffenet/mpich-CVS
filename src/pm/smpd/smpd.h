@@ -834,6 +834,7 @@ int smpd_remove_from_dynamic_hosts(void);
 int smpd_get_pwd_from_file(char *file_name);
 int smpd_get_next_hostname(char *host, char *alt_host);
 SMPD_BOOL smpd_parse_machine_file(char *file_name);
+int smpd_parse_hosts_string(const char *host_str);
 int smpd_get_host_id(char *host, int *id_ptr);
 int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node);
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp);

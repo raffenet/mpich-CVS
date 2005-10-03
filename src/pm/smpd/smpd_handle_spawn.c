@@ -317,6 +317,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    if (strcmp(info[j].key, "hosts") == 0)
 	    {
 		smpd_dbg_printf("hosts key sent with spawn command: <%s>\n", info[j].val);
+		if (smpd_parse_hosts_string(info[j].val))
+		{
+		    /*use_machine_file = SMPD_TRUE;*/
+		}
 	    }
 	    /* env */
 	    if (strcmp(info[j].key, "env") == 0)
@@ -463,6 +467,11 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 		{
 		    smpd_process.output_exit_codes = SMPD_TRUE;
 		}
+	    }
+	    /* nompi */
+	    if (strcmp(info[j].key, "nompi") == 0)
+	    {
+		/* FIXME: Tell MPICH that the spawned processes will not make any MPI calls, including MPI_Init - so don't to a comm_accept or it will hang! */
 	    }
 	    /* etc */
 	}
@@ -715,7 +724,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 			smpd_err_printf("unable to create a connect command.\n");
 			goto spawn_failed;
 		    }
-		    host_iter->connect_cmd_tag = cmd->tag;
+		    context->connect_to->connect_cmd_tag = cmd->tag;
 		    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
 		    if (result != SMPD_SUCCESS)
 		    {
@@ -766,7 +775,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 			smpd_err_printf("unable to create a connect command.\n");
 			goto spawn_failed;
 		    }
-		    host_iter->connect_cmd_tag = cmd->tag;
+		    context->connect_to->connect_cmd_tag = cmd->tag;
 		    result = smpd_add_command_arg(cmd, "host", context->connect_to->host);
 		    if (result != SMPD_SUCCESS)
 		    {
