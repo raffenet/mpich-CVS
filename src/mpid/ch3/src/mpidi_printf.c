@@ -11,9 +11,17 @@
 /* style: allow:vprintf:1 sig:0 */
 /* style: allow:printf:2 sig:0 */
 
+/* FIXME: What are these routines for?  Who uses them?  Why are they different 
+   from the src/util/dbg routines? */
+
 #undef MPIDI_dbg_printf
 void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
 {
+    /* FIXME: This "unreferenced_arg" is an example of a problem with the 
+       API (unneeded level argument) or the code (failure to check the 
+       level argument).  Inserting these "unreference_arg" macros erroneously
+       suggests that the code is correct with this ununsed argument, and thus
+       commits the grave harm of obscuring a real problem */
     MPIU_UNREFERENCED_ARG(level);
     MPID_Common_thread_lock();
     {
@@ -59,6 +67,15 @@ void MPIDI_err_printf(char * func, char * fmt, ...)
     }
     MPID_Common_thread_unlock();
 }
+
+/* FIXME: It would be much better if the routine to print packets used
+   routines defined by packet type, making it easier to modify the handling
+   of packet types (and allowing channels to customize the printing
+   of packets). For example, an array of function pointers, indexed by
+   packet type, could be used.
+   Also, these routines should not use MPIU_DBG_PRINTF, instead they should
+   us a simple fprintf with a style allowance (so that the style checker
+   won't flag the use as a possible problem).  */
 
 #ifdef MPICH_DBG_OUTPUT
 void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
