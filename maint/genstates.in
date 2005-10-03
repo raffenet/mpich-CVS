@@ -34,6 +34,8 @@ find sub
   {
    chomp;
    /\s*(\S*)\s*(\S*)(\s?)(\S.*)*/;
+   # FIXME: This test fails to detect described states that are defined
+   # in a directory that does not use that particular state.
    if (!defined($states{$1}))
    {
        printf("Warning: described state $1 not used, consider removing it from describe_states.txt\n");
