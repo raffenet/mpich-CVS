@@ -71,6 +71,10 @@ typedef struct MPIDI_KVS_Global_t
 
 static MPIDI_KVS_Global_t kvs = { 0 };
 
+/* FIXME: Why is get_uuid used/needed?  Will this set of routines ever
+   need to create a *new* KVS name (assuming that the congecture is true 
+   that this is a KVS cache only? */
+
 #undef FCNAME
 #define FCNAME "get_uuid"
 static void get_uuid(char *str)

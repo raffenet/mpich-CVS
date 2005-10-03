@@ -6,6 +6,10 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: This should call a channel-provided routine to deliver the 
+   cancel message, once the code decides that the request can still
+   be cancelled */
+
 #undef FUNCNAME
 #define FUNCNAME MPID_Cancel_send
 #undef FCNAME
@@ -179,6 +183,8 @@ int MPID_Cancel_send(MPID_Request * sreq)
     /* FIXME: if send cancellation packets are allowed to arrive out-of-order with respect to send packets, then we need to
        timestamp send and cancel packets to insure that a cancellation request does not bypass the send packet to be cancelled
        and erroneously cancel a previously sent message with the same request handle. */
+    /* FIXME: A timestamp is more than is necessary; a message sequence number
+       should be adequate. */
 
   fn_exit:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));

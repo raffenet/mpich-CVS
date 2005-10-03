@@ -13,7 +13,6 @@
 int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_Status * status)
 {
     MPID_Progress_state progress_state;
-    MPID_Request * rreq;
     const int context = comm->context_id + context_offset;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_PROBE);
@@ -29,11 +28,7 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_St
     MPIDI_CH3_Progress_start(&progress_state);
     do
     {
-	rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
-	if (rreq != NULL)
-	{
-	    MPIR_Request_extract_status(rreq, status);
-	    MPID_Request_release(rreq);
+	if (MPIDI_CH3U_Recvq_FU( source, tag, context, status )) {
 	    break;
 	}
 

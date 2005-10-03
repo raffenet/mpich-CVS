@@ -547,7 +547,7 @@ int MPIDI_CH3_iStartRndvTransfer (MPIDI_VC_t * vc, MPID_Request * rreq);
 /*
  * Channel utility prototypes
  */
-MPID_Request * MPIDI_CH3U_Recvq_FU(int, int, int);
+int MPIDI_CH3U_Recvq_FU(int, int, int, MPI_Status * );
 MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request, MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int, int, int, int * found);
 int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
@@ -581,7 +581,6 @@ extern MPIDU_Sock_set_t MPIDI_CH3I_sock_set;
 /* added by brad.  business card related global and functions */
 #define MAX_HOST_DESCRIPTION_LEN 256
 extern int MPIDI_CH3I_listener_port;
-int MPIDI_CH3I_Listener_get_port(void);
 int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
 

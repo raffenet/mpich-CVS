@@ -39,3 +39,12 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a )
 { 
     return 0;
 }
+
+/* Perform the channel-specific vc initialization */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
+    vc->ch.sendq_head         = NULL;
+    vc->ch.sendq_tail         = NULL;
+    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    MPIDI_VC_InitSock( vc );
+    return 0;
+}

@@ -275,8 +275,8 @@ int *exposure_epoch_grp_ranks_in_win;
 #define MPIDI_DEV_IMPLEMENTS_OPEN_PORT
 #define MPIDI_DEV_IMPLEMENTS_KVS
 #define MPIDI_DEV_IMPLEMENTS_ABORT
-#define MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
 
+/* FIXME: There should be at most one #define for these (for the module) */
 #define MPIDI_CH3_IMPLEMENTS_START_EPOCH
 #define MPIDI_CH3_IMPLEMENTS_END_EPOCH
 #define MPIDI_CH3_IMPLEMENTS_PUT

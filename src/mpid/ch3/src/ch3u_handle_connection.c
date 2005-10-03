@@ -6,8 +6,16 @@
 
 #include "mpidimpl.h"
 
+/* FIXME:
+   This global appears to be shared with mpid_finalize.c and mpid_vc.c only.
+   It would be better to encapsulate this rather than using a global 
+   variable */
 volatile int MPIDI_Outstanding_close_ops = 0;
 
+/* FIXME: What is this routine for?
+   It appears to be used only in ch3_progress, ch3_progress_connect, or
+   ch3_progress_sock files.  Is this a general operation, or does it 
+   belong in util/sock ? */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_connection

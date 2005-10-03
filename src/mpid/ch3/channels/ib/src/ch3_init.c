@@ -12,12 +12,11 @@
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t ** pg_p, int * pg_rank_p,
+int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *pg, int pg_rank,
 		   char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMI_SUCCESS;
-    int pg_rank = *pg_rank_p;
     int pg_size;
     int port;
     char * key = NULL;
@@ -94,7 +93,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	return mpi_errno;
     }
     mpi_errno = MPI_SUCCESS; /* reset errno after successful snprintf calls */
-    pmi_errno = PMI_KVS_Put((*pg_p)->ch.kvs_name, key, val);
+    pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, key, val);
     if (pmi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
@@ -103,7 +102,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     MPIU_DBG_PRINTF(("Published lid=%d\n", port));
     
-    pmi_errno = PMI_KVS_Commit((*pg_p)->ch.kvs_name);
+    pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
     if (pmi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
@@ -122,7 +121,7 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     /* for now, connect all the processes at init time */
     MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);
-    mpi_errno = MPIDI_CH3I_Setup_connections(*pg_p, pg_rank);
+    mpi_errno = MPIDI_CH3I_Setup_connections(pg_p, pg_rank);
     MPIDI_DBG_PRINTF((65, "ch3_init", "connections formed, exiting\n"));fflush(stdout);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -142,9 +141,5 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 
     return mpi_errno;
  fn_fail:
-    if ((*pg_p) != NULL)
-    {
-	MPIDI_PG_Destroy(*pg_p);
-    }
     goto fn_exit;
 }

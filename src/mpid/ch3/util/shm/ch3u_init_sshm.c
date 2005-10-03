@@ -29,7 +29,6 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-#ifdef MPIDI_CH3_USES_SSHM
     int pmi_errno;
     int pg_size;
     int p;
@@ -42,6 +41,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int val_max_sz;
     char * key = NULL;
     char * val = NULL;
+    MPIU_CHKLMEM_DECL(2);
 
     srand(getpid()); /* brad : needed by generate_shm_string */
 
@@ -57,15 +57,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 			     "**pmi_kvs_get_key_length_max", 
 			     "**pmi_kvs_get_key_length_max %d", pmi_errno);
     }
-    
-    key = MPIU_Malloc(key_max_sz);
-    if (key == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
+
+    MPIU_CHKLMEM_MALLOC(key,char *,key_max_sz,mpi_errno,"key");
     
     pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     if (pmi_errno != PMI_SUCCESS)
@@ -74,15 +67,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 			     "**pmi_kvs_get_value_length_max", 
 			     "**pmi_kvs_get_value_length_max %d", pmi_errno);
     }
-    
-    val = MPIU_Malloc(val_max_sz);
-    if (val == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
+
+    MPIU_CHKLMEM_MALLOC(val,char *,val_max_sz,mpi_errno,"val");
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
     pg_p->ch.shm_name = NULL;
@@ -103,6 +89,11 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 #endif
     pg_p->ch.nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
     pg_p->ch.nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
+
+/* FIXME: Finding the number of processors should be handled in a separate 
+   routine, and should also consider the number of processors
+   in use */
+
     /* Figure out how many processors are available and set the spin count accordingly */
     /* If there were topology information available we could calculate a multi-cpu number */
 #ifdef HAVE_WINDOWS_H
@@ -150,19 +141,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     /* Initialize the VC table associated with this process group (and thus COMM_WORLD) */
     for (p = 0; p < pg_size; p++)
     {
-	pg_p->vct[p].ch.sendq_head = NULL;
-	pg_p->vct[p].ch.sendq_tail = NULL;
-	pg_p->vct[p].ch.recv_active = NULL;
-	pg_p->vct[p].ch.send_active = NULL;
-	pg_p->vct[p].ch.req = NULL;
-	pg_p->vct[p].ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	pg_p->vct[p].ch.shm_read_connected = 0;
-	pg_p->vct[p].ch.read_shmq = NULL;
-	pg_p->vct[p].ch.write_shmq = NULL;
-	pg_p->vct[p].ch.shm = NULL;
-	pg_p->vct[p].ch.shm_state = 0;
-	pg_p->vct[p].ch.shm_next_reader = NULL;
-	pg_p->vct[p].ch.shm_next_writer = NULL;
+	MPIDI_CH3_VC_Init( &pg_p->vct[p] );
     }
 
     /* brad : do the shared memory specific setup items so we can later do the
@@ -180,8 +159,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 #endif
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
-    MPIDI_Process.my_pg = *pg_p;  /* was later prior but internally Get_parent_port needs this */    
-    if (*has_parent) /* set in PMI_Init */
+    MPIDI_Process.my_pg = pg_p;  /* was later prior but internally Get_parent_port needs this */    
+    if (has_parent) /* set in PMI_Init */
     {
         mpi_errno = MPIDI_CH3_Get_parent_port(&parent_bizcard);
         if (mpi_errno != MPI_SUCCESS)
@@ -234,7 +213,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIU_Strncpy(key, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, key_max_sz );
     if (pg_rank == 0)
     {
-	if (*has_parent == 0)
+	if (has_parent == 0)
 	{
 	    /* Only the first process of the first group needs to create the bootstrap queue. */
 	    /* Everyone else including spawned processes will attach to this queue. */
@@ -305,7 +284,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
 	/* If you don't have a parent then you must initialize the queue */
 	/* If you do have a parent then you must not initialize the queue since the parent already did and you could destroy valid information */
-	initialize_queue = (*has_parent) ? 0 : 1;
+	initialize_queue = (has_parent) ? 0 : 1;
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -351,7 +330,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 #endif
 
     /* brad : the pg needs to be set for sshm channels.  for all channels this is done in mpid_init.c */
-    MPIDI_Process.my_pg = *pg_p;
+    MPIDI_Process.my_pg = pg_p;
 
     /* brad : get the sshm part of the business card  */
     mpi_errno = MPIDI_CH3U_Get_business_card_sshm(bc_val_p, val_max_sz_p);
@@ -400,9 +379,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     { 
 	MPIU_Free(key);
     }
-#endif /* MPIDI_CH3_USES_SSHM */    
     return mpi_errno;
-#ifdef MPIDI_CH3_USES_SSHM
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     if (pg_p != NULL)
@@ -413,5 +390,20 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
     goto fn_exit;
     /* --END ERROR HANDLING-- */
-#endif /* MPIDI_CH3_USES_SSHM #2 */    
+}
+
+/* This routine initializes shm-specific elements of the VC */
+int MPIDI_VC_InitShm( MPIDI_VC_t *vc ) 
+{
+    vc->ch.recv_active        = NULL;
+    vc->ch.send_active        = NULL;
+    vc->ch.req                = NULL;
+    vc->ch.read_shmq          = NULL;
+    vc->ch.write_shmq         = NULL;
+    vc->ch.shm                = NULL;
+    vc->ch.shm_state          = 0;
+    vc->ch.shm_next_reader    = NULL;
+    vc->ch.shm_next_writer    = NULL;
+    vc->ch.shm_read_connected = 0;
+    return 0;
 }

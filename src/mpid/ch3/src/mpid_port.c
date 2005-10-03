@@ -6,13 +6,17 @@
 
 #include "mpidimpl.h"
 
+static int setupPortFunctions = 1;
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 static int MPIDI_Open_port(MPID_Info *, char *);
 
 /* Define the functions that are used to implement the port operations */
-static int setupPortFunctions = 1;
 static MPIDI_PortFns portFns = { MPIDI_Open_port, 0, 
 				 MPIDI_Comm_accept, 
 				 MPIDI_Comm_connect };
+#else
+static MPIDI_PortFns portFns = { 0, 0, 0, 0 };
+#endif
 
 /*@
    MPID_Open_port - Open an MPI Port
@@ -199,6 +203,7 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 }
 
 /* ------------------------------------------------------------------------- */
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 /*
  * Here are the routines that provide some of the default implementations
  * for the Port routines.
@@ -271,3 +276,4 @@ int MPIDI_GetTagFromPort( const char *port_name, int *port_name_tag )
     return mpi_errno;
 }
 
+#endif

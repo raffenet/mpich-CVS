@@ -6,8 +6,9 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: Correct description of function */
 /*@
-   MPID_Comm_spawn_multiple - short description
+   MPID_Comm_spawn_multiple - 
 
    Input Arguments:
 +  int count - count
@@ -23,8 +24,6 @@
 -  int array_of_errcodes[] - error codes
 
    Notes:
-
-.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
@@ -42,6 +41,10 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char ** array
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
+/* FIXME: This is silly.  There should be one implementation of (most of)
+   comm_spawn_multiple */
+    /* FIXME: See ch3u_comm_spawn_multiple, where the DEV_IMPLEMENTS 
+       branch of this is placed */
 #   if defined(MPIDI_CH3_IMPLEMENTS_COMM_SPAWN_MULTIPLE)
     {
 	mpi_errno = MPIDI_CH3_Comm_spawn_multiple(count, array_of_commands, array_of_argv, array_of_maxprocs, array_of_info_ptrs,

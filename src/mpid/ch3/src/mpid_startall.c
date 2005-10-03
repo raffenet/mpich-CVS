@@ -5,7 +5,14 @@
  */
 
 #include "mpidimpl.h"
+/* FIXME: This bsend header shouldn't be needed (the function prototype
+   should be in mpiimpl.h) */
 #include "../../../mpi/pt2pt/bsendutil.h"
+
+/* FIXME: Consider using function pointers for invoking persistent requests;
+   if we made those part of the public request structure, the top-level routine
+   could implement startall unless the device wanted to study the requests
+   and reorder them */
 /*
  * MPID_Startall()
  */
@@ -26,6 +33,9 @@ int MPID_Startall(int count, MPID_Request * requests[])
     {
 	MPID_Request * const preq = requests[i];
 
+	/* FIXME: The odd 7th arg (match.context_id - comm->context_id) 
+	   is probably to get the context offset.  Do we really need the
+	   context offset? Is there any case where the offset isn't zero? */
 	switch (MPIDI_Request_get_type(preq))
 	{
 	    case MPIDI_REQUEST_TYPE_RECV:
@@ -74,6 +84,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		    sreq->kind = MPID_REQUEST_SEND;
 		    sreq->cc   = 0;
 		    sreq->comm = NULL;
+/* FIXME: why the #if 0? */		    
 #if 0		    
 		    sreq->comm = preq->comm;
 		    MPIR_Comm_add_ref(sreq->comm);
@@ -123,3 +134,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_STARTALL);
     return mpi_errno;
 }
+
+/* FIXME:
+   Move the routines that initialize the persistent requests into this file,
+   since startall must be used with all of them */

@@ -6,6 +6,12 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: Explain this function */
+
+/* FIXME: should there be a simpler version of this for short messages, 
+   particularly contiguous ones?  See also the FIXME about buffering
+   short messages */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Isend_self
 #undef FCNAME

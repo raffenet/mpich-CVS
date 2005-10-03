@@ -5,6 +5,9 @@
  */
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: This doesn't need to be in a separate file.  And is there a 
+   better way to specify which business card routines to use ? */
+
 #define MAX_NUM_NICS 16
 
 #ifdef HAVE_WINDOWS_H
@@ -15,21 +18,12 @@ static int GetLocalIPs(int32_t *pIP, int max)
     struct hostent *h = NULL;
     int n = 0;
 
-#ifdef HAVE_WINDOWS_H
-    {
-	DWORD len = 100;
-	/*if (!GetComputerName(hostname, &len))*/
-	if (!GetComputerNameEx(ComputerNameDnsFullyQualified, hostname, &len))
-	{
-	    return 0;
-	}
-    }
-#else
-    if (gethostname(hostname, 100) == SOCKET_ERROR)
+    DWORD len = sizeof(hostname);
+    /*if (!GetComputerName(hostname, &len))*/
+    if (!GetComputerNameEx(ComputerNameDnsFullyQualified, hostname, &len))
     {
 	return 0;
     }
-#endif
 
     h = gethostbyname(hostname);
     if (h == NULL)
@@ -59,6 +53,10 @@ static int GetLocalIPs(int32_t *pIP, int max)
 
 #else /* HAVE_WINDOWS_H */
 
+/* FIXME: We are no longer using this code to pick interfaces from
+   what is available, as the design and user-requriements typically require
+   that particular, selected interfaces are used, not whatever is available */
+#if 0
 #define NUM_IFREQS 10
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -207,57 +205,8 @@ static int GetLocalIPs(int32_t *pIP, int max)
     return n;
 }
 
+#endif /* 0 */
 #endif /* HAVE_WINDOWS_H */
-
-#if 0
-int MPIDI_CH3I_Get_business_card(char *value, int length)
-{
-    int32_t local_ip[MAX_NUM_NICS];
-    unsigned int a, b, c, d;
-    int num_nics, i;
-    char *value_orig;
-    struct hostent *h;
-    int port;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
-
-    port = MPIDI_CH3I_Listener_get_port();
-
-    /*snprintf(value, length, "%s:%d", host, port);*/
-
-    value_orig = value;
-    num_nics = GetLocalIPs(local_ip, MAX_NUM_NICS);
-    for (i=0; i<num_nics; i++)
-    {
-	a = (unsigned char)(((unsigned char *)(&local_ip[i]))[0]);
-	b = (unsigned char)(((unsigned char *)(&local_ip[i]))[1]);
-	c = (unsigned char)(((unsigned char *)(&local_ip[i]))[2]);
-	d = (unsigned char)(((unsigned char *)(&local_ip[i]))[3]);
-
-	if (a != 127)
-	{
-	    h = gethostbyaddr((const char *)&local_ip[i], sizeof(int), AF_INET);
-	    if (h && h->h_name != NULL)
-		value += MPIU_Snprintf(value, MPI_MAX_PORT_NAME, 
-				 "%s:%u.%u.%u.%u:%d:", 
-				 h->h_name, 
-				 a, b, c, d,
-				 port);
-	    else
-		value += MPIU_Snprintf(value, MPI_MAX_PORT_NAME, 
-				 "%u.%u.%u.%u:%u.%u.%u.%u:%d:", 
-				 a, b, c, d, 
-				 a, b, c, d,
-				 port);
-	}
-    }
-    /*MPIU_DBG_PRINTF(("Business card:\n<%s>\n", value_orig));*/
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
-    return MPI_SUCCESS;
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Get_business_card

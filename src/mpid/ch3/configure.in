@@ -15,15 +15,14 @@ AC_CONFIG_HEADER(include/mpidi_ch3_conf.h)
 
 echo "RUNNING CONFIGURE FOR CH3 DEVICE"
 
-dnl
-dnl First check that we have a clean build if we are doing a VPATH build
+# First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && \
    test -f $srcdir/config.status ; then
     AC_MSG_ERROR([You cannot do a VPATH build if the source directory has been
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
-dnl Extract the device and channel name
+# Extract the device and channel name
 file=${master_top_srcdir}/src/mpid/${device_name}/setup_device.args
 if test -f ${file} ; then 
     . ${file}
@@ -43,6 +42,20 @@ elif test ! -x $srcdir/channels/${channel_name}/configure ; then
 fi
 
 PAC_PROG_MAKE
+
+# Some channels will make use of common utility routines (in ch3/src/util)
+# For modularity, the channel can specify these here
+# FIXME: Some utility routines are specified at the top level (devsubsystem)
+# even though their scope is really ch3 in practice.  We haven't resolved
+# the best way to handle these systems
+if test -s $srcdir/channels/$channel_name/setup_$channel_name ; then
+    # Typically, this will set ch3subsystems.  For now,
+    # we use this configure to create the configuration file
+    # for those subsystems.  Eventually, they may have their	
+    # own configure
+    . $srcdir/channels/$channel_name/setup_$channel_name
+fi
+AC_SUBST(ch3subsystems)
 
 AC_CHECK_HEADERS(				\
     assert.h					\
@@ -77,9 +90,9 @@ if test $pac_cv_have_cpp_varargs = "yes" ; then
     AC_DEFINE(HAVE_CPP_VARARGS,,[Define if CPP supports macros with a variable number arguments])
 fi
 
-dnl
-dnl bring in the default implementation of the MPID_Thread package
-dnl
+#
+# bring in the default implementation of the MPID_Thread package
+#
 MPID_THREAD_SRCDIR="../common/thread"
 builtin(include,../common/thread/mpid_thread.m4)
 
@@ -95,10 +108,8 @@ AC_SUBST(master_top_srcdir)
 # Master_top_builddir is imported from the top; use it for the "top"
 AC_SUBST(master_top_builddir)
 export master_top_builddir
-dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
-dnl
 dnl Etags
 AC_CHECK_PROGS(ETAGS,etags,true)
 AC_SUBST(ETAGS)
@@ -111,6 +122,6 @@ AC_SUBST(EXTRA_LIBS)
 PAC_SUBDIR_CACHE
 AC_CONFIG_SUBDIRS(channels/${channel_name})
 
-AC_OUTPUT(Makefile src/Makefile channels/Makefile localdefs $MPID_THREAD_OUTPUT_FILES)
+AC_OUTPUT(Makefile src/Makefile util/Makefile util/sock/Makefile util/shm/Makefile channels/Makefile localdefs $MPID_THREAD_OUTPUT_FILES)
 
 PAC_SUBDIR_CACHE_CLEANUP

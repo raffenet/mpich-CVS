@@ -1,4 +1,4 @@
-SUBDIRS = channels src .
+SUBDIRS = channels src util . 
 
 distclean-local:
 	-rm -f include/mpidi_ch3_conf.h @MPID_THREAD_DISTCLEAN@

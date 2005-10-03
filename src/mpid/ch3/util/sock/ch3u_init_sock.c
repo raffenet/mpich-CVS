@@ -4,14 +4,15 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidi_ch3_impl.h"
+#include "pmi.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#include "mpidi_ch3_impl.h"
-#include "pmi.h"
 
 /*  MPIDI_CH3U_Init_sock - does socket specific channel initialization
  *     publish_bc_p - if non-NULL, will be a pointer to the original position of the bc_val and should
@@ -32,7 +33,6 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 {
 
     int mpi_errno = MPI_SUCCESS;
-#ifdef MPIDI_CH3_USES_SOCK
     int pmi_errno;
     int pg_size;
     int p;
@@ -42,13 +42,9 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
      */
 
     pmi_errno = PMI_Get_size(&pg_size);
-    if (pmi_errno != 0)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size",
-					 "**pmi_get_size %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+    if (pmi_errno != 0) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_size",
+			     "**pmi_get_size %d", pmi_errno);
     }
     
     for (p = 0; p < pg_size; p++)
@@ -61,47 +57,31 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     }    
 
     mpi_errno = MPIDI_CH3U_Get_business_card_sock(bc_val_p, val_max_sz_p);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_buscard", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
     }
 
     /* might still have something to add (e.g. ssm channel) so don't publish */
     if (publish_bc_p != NULL)
     {
 	pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, *bc_key_p, *publish_bc_p);
-	if (pmi_errno != PMI_SUCCESS)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put",
-		"**pmi_kvs_put %d", pmi_errno);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_put",
+				 "**pmi_kvs_put %d", pmi_errno);
 	}
 	pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
-	if (pmi_errno != PMI_SUCCESS)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit",
-		"**pmi_kvs_commit %d", pmi_errno);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_commit",
+				 "**pmi_kvs_commit %d", pmi_errno);
 	}
 
 	pmi_errno = PMI_Barrier();
-	if (pmi_errno != PMI_SUCCESS)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier",
-		"**pmi_barrier %d", pmi_errno);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_barrier",
+				 "**pmi_barrier %d", pmi_errno);
 	}
     }
-#endif  /* MPIDI_CH3_USES_SOCK */
+
  fn_exit:
     
     return mpi_errno;
@@ -116,4 +96,12 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+}
+
+/* This routine initializes Sock-specific elements of the VC */
+int MPIDI_VC_InitSock( MPIDI_VC_t *vc ) 
+{
+    vc->ch.sock               = MPIDU_SOCK_INVALID_SOCK;
+    vc->ch.conn               = NULL;
+    return 0;
 }

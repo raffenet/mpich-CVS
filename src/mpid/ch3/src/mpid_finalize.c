@@ -6,6 +6,11 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: This routine needs to be factored into finalize actions per module,
+   In addition, we should consider registering callbacks for those actions
+   rather than direct routine calls.
+ */
+
 #ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
 #include "pmi.h"
 static int MPIDI_CH3I_PMI_Finalize(void);
@@ -98,6 +103,8 @@ int MPID_Finalize(void)
 		close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
 		
 		/* MT: this is not thread safe */
+		/* FIXME: This global variable should be encapsulated
+		   in the appropriate module (connections?) */
 		MPIDI_Outstanding_close_ops += 1;
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
 				       i, MPIDI_Outstanding_close_ops));

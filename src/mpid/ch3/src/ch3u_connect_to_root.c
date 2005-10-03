@@ -12,6 +12,8 @@
 
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 
+/* FIXME: What does this routine do?  who is it for? */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Connection_alloc
 #undef FCNAME
@@ -25,25 +27,19 @@ int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_ALLOC);
     conn = MPIU_Malloc(sizeof(MPIDI_CH3I_Connection_t));
-    /* --BEGIN ERROR HANDLING-- */
-    if (conn == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|sock|connallocfailed", NULL);
-	goto fn_fail;
+    if (conn == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+			    "**ch3|sock|connallocfailed");
     }
-    /* --END ERROR HANDLING-- */
+
     conn->pg_id = NULL;
     
     mpi_errno = PMI_Get_id_length_max(&id_sz);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max",
-					 "**pmi_get_id_length_max %d", mpi_errno);
-	goto fn_fail;
+    if (mpi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+			     "**pmi_get_id_length_max",
+			     "**pmi_get_id_length_max %d", mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
     conn->pg_id = MPIU_Malloc(id_sz + 1);
     /* --BEGIN ERROR HANDLING-- */
     if (conn->pg_id == NULL)
@@ -89,20 +85,17 @@ int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, in
 
     MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
     mpi_errno = MPIR_Comm_create(commself_ptr, &tmp_comm);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
-
     /* fill in all the fields of tmp_comm. */
 
     tmp_comm->context_id = 4095;  /* FIXME - we probably need a unique context_id. */
     tmp_comm->remote_size = 1;
 
     /* Fill in new intercomm */
+    /* FIXME: This should share a routine with the communicator code to
+       ensure that the initialization is consistent */
     tmp_comm->attributes   = NULL;
     tmp_comm->local_size   = 1;
     tmp_comm->rank         = 0;
@@ -126,22 +119,14 @@ int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, in
 
     /* Set up VC reference table */
     mpi_errno = MPID_VCRT_Create(tmp_comm->remote_size, &tmp_comm->vcrt);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_vcrt", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_vcrt");
     }
-    /* --END ERROR HANDLING-- */
     mpi_errno = MPID_VCRT_Get_ptr(tmp_comm->vcrt, &tmp_comm->vcr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_getptr", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
     }
-    /* --END ERROR HANDLING-- */
-
+    
     MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
 
     *comm_pptr = tmp_comm;
@@ -149,13 +134,15 @@ int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, in
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
 #define FUNCNAME  MPIDI_CH3I_Connect_to_root
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
+int MPIDI_CH3I_Connect_to_root(const char * port_name, MPIDI_VC_t ** new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifdef MPIDI_CH3_USES_SOCK
@@ -170,7 +157,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 
     mpi_errno = MPIU_Str_get_string_arg(port_name, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, MAX_HOST_DESCRIPTION_LEN);
     /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPIU_STR_SUCCESS)
+    if (mpi_errno != MPIU_STR_SUCCESS) 
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_hostd", 0);
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
@@ -211,16 +198,12 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     *new_vc = vc;
 
     MPIDI_VC_Init(vc, NULL, 0);
-    MPIDI_VC_Init2( vc );
+    MPIDI_CH3_VC_Init( vc );
 
     mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
 
     /* conn->pg_id is not used for this conection */
 
@@ -263,6 +246,9 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
     }
     /* --END ERROR HANDLING-- */
 
+/* FIXME: Heres an example of a problem with the large number of "USES" 
+   codes - a channel might define several USES and then code with #elif 
+   will give you just one */
 #elif defined(MPIDI_CH3_USES_SSHM)
     int port_name_tag;
     MPIDI_VC_t * vc;
@@ -303,7 +289,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
 	*new_vc = vc;
 
 	MPIDI_VC_Init(vc, NULL, 0);
-	MPIDI_VC_Init2(vc);
+	MPIDI_CH3_VC_Init(vc);
     }
 
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
@@ -352,7 +338,7 @@ int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc)
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 /* MPIDI_CH3I_Connect_to_root() */
-
-

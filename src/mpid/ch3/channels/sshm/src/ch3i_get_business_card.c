@@ -5,6 +5,8 @@
  */
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: This doesn't need to be in a separate file.  And is there a 
+   better way to specify which business card routines to use ? */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Get_business_card
 #undef FCNAME

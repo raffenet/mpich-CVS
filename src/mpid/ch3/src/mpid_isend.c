@@ -150,6 +150,11 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	}
 	else
 	{
+	    /* FIXME: We do *not* want to use iovs for sending non-contiguous
+	       messages if (a) the total message is short (faster to pack)
+	       (b) the size of the individual blocks is small (faster to pack 
+	       than to create the iov).  This fixme applies to all send
+	       modes */
 	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);

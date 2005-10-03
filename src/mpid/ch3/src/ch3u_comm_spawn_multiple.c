@@ -6,10 +6,18 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: Why is this here?  Who else is going to implement spawn-multiple? */
 #ifdef MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+
+/* 
+ * We require support for the PMI calls.  If a channel cannot support
+ * a PMI call, it should provide a stub and return an error code.
+ */
+   
 
 #include "pmi.h"
 
+/* FIXME: We can avoid this is we define PMI as using MPI info values */
 static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
 {
     int i,j;
@@ -63,6 +71,11 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 
     if (comm_ptr->rank == root)
     {
+	/* FIXME: This is *really* awkward.  We should either
+	   Fix on MPI-style info data structures for PMI (avoid unnecessary
+	   duplication) or add an MPIU_Info_getall(...) that creates
+	   the necessary arrays of key/value pairs */
+
 	/* convert the infos into PMI keyvals */
         info_keyval_sizes = (int *) MPIU_Malloc(count * sizeof(int));
 	info_keyval_vectors = (PMI_keyval_t**) MPIU_Malloc(count * sizeof(PMI_keyval_t*));
@@ -75,13 +88,9 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 		if (info_ptrs[i] != NULL)
 		{
 		    mpi_errno = NMPI_Info_get_nkeys(info_ptrs[i]->handle, &icount);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    /* --END ERROR HANDLING-- */
 		}
 		info_keyval_sizes[i] = icount;
 		if (icount > 0)
@@ -96,41 +105,26 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 		for (j=0; j<icount; j++)
 		{
 		    mpi_errno = NMPI_Info_get_nthkey(info_ptrs[i]->handle, j, key);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    /* --END ERROR HANDLING-- */
 		    mpi_errno = NMPI_Info_get_valuelen(info_ptrs[i]->handle, key, &vallen, &flag);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    if (!flag)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			goto fn_exit;
+		    if (!flag) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    /* --END ERROR HANDLING-- */
+
 		    info_keyval_vectors[i][j].key = MPIU_Strdup(key);
 		    info_keyval_vectors[i][j].val = MPIU_Malloc((vallen + 1)* sizeof(char));
 		    mpi_errno = NMPI_Info_get(info_ptrs[i]->handle, key, vallen+1, info_keyval_vectors[i][j].val, &flag);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    if (!flag)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			goto fn_exit;
+		    if (!flag) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    /* --END ERROR HANDLING-- */
 		    MPIU_DBG_PRINTF(("key: <%s>, value: <%s>\n", info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val));
 		}
 	    }
@@ -153,7 +147,6 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	{
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
 	    MPIU_Free(info_keyval_sizes);
-	    MPIU_Free(pmi_errcodes);
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    goto fn_exit;
 	}
@@ -209,18 +202,16 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     }
 
     mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm); 
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
 
  fn_exit:
     MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #endif

@@ -303,7 +303,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 		for (p=0; p<remote_pg[i]->size; p++)
 		{
 		    MPIDI_PG_Get_vcr(remote_pg[i], p, &vc);
-		    MPIDI_VC_Init2( vc );
+		    MPIDI_CH3_VC_Init( vc );
 		}
 	    }
 	}
@@ -369,7 +369,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 		for (p=0; p<remote_pg[i]->size; p++)
 		{
 		    MPIDI_PG_Get_vcr(remote_pg[i], p, &vc);
-		    MPIDI_VC_Init2( vc );
+		    MPIDI_CH3_VC_Init( vc );
 		}
 	    }
 	}

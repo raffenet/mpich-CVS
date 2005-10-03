@@ -17,6 +17,9 @@
 /*  MPIDI_CH3U_Finalize_sshm - does scalable shared memory specific channel finalization
  */
 
+/* FIXME: Should this be registered as a finalize handler?  Should there be
+   a corresponding abort handler? */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Finalize_sshm
 #undef FCNAME
@@ -25,7 +28,6 @@ int MPIDI_CH3U_Finalize_sshm()
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPIDI_CH3_USES_SSHM
     MPIDI_PG_t * pg;
     MPIDI_PG_t * pg_next;
     int inuse;
@@ -46,16 +48,13 @@ int MPIDI_CH3U_Finalize_sshm()
      *        to attach to this bootstrapQ.
      */
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(MPIDI_Process.my_pg->ch.bootstrapQ);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_unlink", 0);
-	return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**boot_unlink");
     }
     
     mpi_errno = MPIDI_CH3I_BootstrapQ_destroy(MPIDI_Process.my_pg->ch.bootstrapQ);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_boot", 0);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_boot");
     }
     
     /* brad : added for dynamic processes in ssm.  needed because the vct's can't be freed
@@ -77,6 +76,5 @@ int MPIDI_CH3U_Finalize_sshm()
         MPIDI_PG_Get_next(&pg_next);        
     }
     
-#endif /* MPIDI_CH3_USES_SSHM  */
     return mpi_errno;
 }

@@ -12,8 +12,8 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int * flag, MPI_Status * status)
 {
-    MPID_Request * rreq;
     const int context = comm->context_id + context_offset;
+    int found = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_IPROBE);
 
@@ -33,8 +33,8 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
        a request.  Note that in some cases it will be possible to 
        atomically query the unexpected receive list (which is what the
        probe routines are for). */
-    rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
-    if (rreq == NULL) {
+    found = MPIDI_CH3U_Recvq_FU( source, tag, context, status );
+    if (!found) {
 	/* Always try to advance progress before returning failure
 	   from the iprobe test.  */
 	/* FIXME: It would be helpful to know if the Progress_poke
@@ -42,21 +42,10 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
 	   a second test of the receive queue if we knew that nothing
 	   had changed */
 	mpi_errno = MPID_Progress_poke();
-	rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
+	found = MPIDI_CH3U_Recvq_FU( source, tag, context, status );
     }
 	
-    if (rreq != NULL)
-    {
-	if (status != MPI_STATUS_IGNORE)
-	    *status = rreq->status;
-	
-	MPID_Request_release(rreq);
-	*flag = TRUE;
-    }
-    else
-    {
-	*flag = FALSE;
-    }
+    *flag = found;
 
  fn_exit:    
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_IPROBE);

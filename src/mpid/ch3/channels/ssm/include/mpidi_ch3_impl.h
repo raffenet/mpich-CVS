@@ -296,12 +296,11 @@ typedef struct MPIDI_CH3I_Shmem_queue_info
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
-/* int MPIDI_CH3I_Listener_get_port(void); brad : now in mpidpost.h */
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
-int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
+int MPIDI_CH3I_Connect_to_root(const char * port_name, MPIDI_VC_t ** new_vc);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"

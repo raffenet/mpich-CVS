@@ -10,32 +10,6 @@
 #include <unistd.h>
 #endif
 
-#if 0
-static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
-
-static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
-{
-    return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
-}
-
-
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
-{
-    if (pg->ch.kvs_name != NULL)
-    {
-	MPIU_Free(pg->ch.kvs_name);
-    }
-
-    if (id != NULL)
-    { 
-	MPIU_Free(id);
-    }
-    
-    return MPI_SUCCESS;
-}
-#endif
-
 static void generate_shm_string(char *str)
 {
 #ifdef USE_WINDOWS_SHM
@@ -60,12 +34,11 @@ static void generate_shm_string(char *str)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank,
                     char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMI_SUCCESS;
-    MPIDI_PG_t * pg = NULL;
     MPIDI_VC_t * vc;
     int pg_size;
     int p;
@@ -559,9 +532,21 @@ fn_exit:
     return mpi_errno;
 
 fn_fail:
-    if (pg != NULL)
-    {
-	MPIDI_PG_Destroy(pg);
-    }
     goto fn_exit;
+}
+
+/* Perform the channel-specific vc initialization */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
+    vc->ch.sendq_head         = NULL;
+    vc->ch.sendq_tail         = NULL;
+
+    /* Which of these do we need? */
+    vc->ch.recv_active        = NULL;
+    vc->ch.send_active        = NULL;
+    vc->ch.req                = NULL;
+    vc->ch.read_shmq          = NULL;
+    vc->ch.write_shmq         = NULL;
+    vc->ch.shm                = NULL;
+    vc->ch.shm_state          = 0;
+    return 0;
 }

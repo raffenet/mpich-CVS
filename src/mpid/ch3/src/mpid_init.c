@@ -632,6 +632,7 @@ static int MPIDI_CH3I_BCInit( int pg_rank,
   fn_fail:
     goto fn_exit;
 }
+#endif
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {
@@ -653,4 +654,3 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
-#endif

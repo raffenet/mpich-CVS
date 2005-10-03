@@ -6,6 +6,9 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: These VC debug print routines belong in mpid_vc.c, with 
+   channel-specific code in an appropriate file.  Much of that 
+   channel-specific code might belong in ch3/util/sock or ch3/util/shm */
 #ifdef USE_MPIU_DBG_PRINT_VC
 
 /* VC state printing debugging functions */
@@ -96,19 +99,14 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     /* initialize aspects specific to sshm.  now publish business card   */
     mpi_errno = MPIDI_CH3U_Init_sshm(has_parent, pg_p, pg_rank,
                                publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_fail;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
 
     mpi_errno = PMI_Get_size(&pg_size);
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
-	return mpi_errno;
+    if (mpi_errno != 0) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+			     "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
     }
 
     /* Allocate and initialize the VC table associated with this process group (and thus COMM_WORLD) */
@@ -125,10 +123,26 @@ fn_exit:
     return mpi_errno;
 
 fn_fail:
-    /* FIXME: Does this routine still allocated pg_p? */
-    if (pg_p != NULL)
-    {
-	MPIDI_PG_Destroy(pg_p);
-    }
     goto fn_exit;
+}
+
+/* This function simply tells the CH3 device to use the defaults for the 
+   MPI Port functions.  This should be ok here, since we want to 
+   use the socket routines to perform all connect/accept actions
+   after MPID_Init returns (see the shm_unlink discussion) */
+int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a ) 
+{ 
+    return 0;
+}
+
+/* Perform the channel-specific vc initialization */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
+    vc->ch.sendq_head         = NULL;
+    vc->ch.sendq_tail         = NULL;
+    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    MPIDI_VC_InitSock( vc );
+    MPIDI_VC_InitShm( vc );
+    /* This variable is used when sock and sshm are combined */
+    vc->ch.bShm               = FALSE;
+    return 0;
 }

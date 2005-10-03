@@ -6,6 +6,18 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: What is an Accept queue and who uses it?  
+   Is this part of the connect/accept support?  
+   These routines appear to be called by channel progress routines; 
+   perhaps this belongs in util/sock (note the use of a port_name_tag in the 
+   dequeue code, though this could be any string).
+
+   Are the locks required?  If this is only called within the progress
+   engine, then the progress engine locks should be sufficient.  If a
+   finer grain lock model is used, it needs to be very carefully 
+   designed and documented.
+*/
+
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #  ifdef MPIDI_CH3_USES_ACCEPTQ
 #   define MPIDI_Acceptq_lock() MPID_Thread_lock(&MPIDI_CH3I_Process.acceptq_mutex)

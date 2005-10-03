@@ -197,7 +197,8 @@ typedef struct MPIDI_CH3I_Alloc_mem_list_t
 */
 #define MPIDI_DEV_IMPLEMENTS_KVS
 #define MPIDI_DEV_IMPLEMENTS_ABORT
-#define MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
+
+/* FIXME: These should be at most a single definition for the module */
 #define MPIDI_CH3_IMPLEMENTS_ALLOC_MEM
 #define MPIDI_CH3_IMPLEMENTS_FREE_MEM
 #define MPIDI_CH3_IMPLEMENTS_CLEANUP_MEM

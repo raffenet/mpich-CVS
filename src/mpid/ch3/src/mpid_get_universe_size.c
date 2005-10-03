@@ -5,12 +5,15 @@
  */
 
 #include "mpidimpl.h"
-#ifdef MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
 #include "pmi.h"
-#endif
 
 /*
- * MPID_Get_universe_size()
+ * MPID_Get_universe_size - Get the universe size from the process manager
+ *
+ * Notes: The ch3 device requires that the PMI routines are used to 
+ * communicate with the process manager.  If a channel wishes to 
+ * bypass the standard PMI implementations, it is the responsibility of the
+ * channel to provide an implementation of the PMI routines.
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Get_universe_size
@@ -19,39 +22,24 @@
 int MPID_Get_universe_size(int  * universe_size)
 {
     int mpi_errno = MPI_SUCCESS;
-#ifdef MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE
     int pmi_errno = PMI_SUCCESS;
-#endif
 
-#   if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE)
-    {
-	mpi_errno = MPIDI_CH3_Get_universe_size(universe_size);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**fail", 0, 0);
+    pmi_errno = PMI_Get_universe_size(universe_size);
+    if (pmi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, 
+			     "**pmi_get_universe_size",
+			     "**pmi_get_universe_size %d", pmi_errno);
     }
-#   elif defined(MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE)
-    {
-        pmi_errno = PMI_Get_universe_size(universe_size);
-        MPIU_ERR_CHKANDJUMP1((pmi_errno != PMI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**pmi_get_universe_size",
-                             "**pmi_get_universe_size %d", pmi_errno);
-        if (*universe_size < 0)
-        {
-            *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
-        }
-        if (mpi_errno) goto fn_fail;
-    }
-#   else
+    if (*universe_size < 0)
     {
 	*universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
     }
-#   endif
-
+    
 fn_exit:
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
-#if defined(MPIDI_CH3_IMPLEMENTS_GET_UNIVERSE_SIZE) || defined (MPIDI_DEV_IMPLEMENTS_GET_UNIVERSE_SIZE)
-  fn_fail:
-#endif
+fn_fail:
     *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
     goto fn_exit;
     /* --END ERROR HANDLING-- */

@@ -6,6 +6,23 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: 
+ * Are locks required here?  Not when the current code uses the "one big lock"
+ * approach.  In addition, some routines can be implemented in a lock-free
+ * fashion (because the user is required to guarantee non-conflicting 
+ * accesses, such as doing a probe and a receive that matches in different 
+ * threads).  
+ *
+ * There are a lot of routines here.  Do we really need them all?
+ * 
+ * The search criteria can be implemented in a single 64 bit compare on
+ * systems with efficient 64-bit operations.  The rank and contextid can also
+ * in many cases be combined into a single 32-bit word for the comparison
+ * (in which case the message info should be stored in the queue in a 
+ * naturally aligned, 64-bit word.
+ * 
+ */
+
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPIDI_Recvq_lock() MPID_Thread_lock(&MPIDI_Process.recvq_mutex)
 #define MPIDI_Recvq_unlock() MPID_Thread_unlock(&MPIDI_Process.recvq_mutex)
@@ -17,36 +34,38 @@
 /*
  * MPIDI_CH3U_Recvq_FU()
  *
- * Find a request in the unexpected queue; or return NULL.
+ * Search for a matching request in the unexpected receive queue.  Return 
+ * true if one is found, false otherwise.  If the status arguement is
+ * not MPI_STATUS_IGNORE, return information about the request in that
+ * parameter.  This routine is used by mpid_probe and mpid_iprobe.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Recvq_FU
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id)
+int MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id, MPI_Status *s)
 {
     MPID_Request * rreq;
+    int found = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_RECVQ_FU);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_RECVQ_FU);
 
+    MPIDI_Recvq_lock();
+
     if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE)
     {
-	MPIDI_Recvq_lock();
+	rreq = MPIDI_Process.recvq_unexpected_head;
+	while(rreq != NULL)
 	{
-	    rreq = MPIDI_Process.recvq_unexpected_head;
-	    while(rreq != NULL)
+	    if (rreq->dev.match.context_id == context_id && 
+		rreq->dev.match.rank == source && rreq->dev.match.tag == tag)
 	    {
-		if (rreq->dev.match.context_id == context_id && rreq->dev.match.rank == source && rreq->dev.match.tag == tag)
-		{
-		    MPID_Request_add_ref(rreq);
-		    break;
-		}
-		
-		rreq = rreq->dev.next;
+		break;
 	    }
+	    
+	    rreq = rreq->dev.next;
 	}
-	MPIDI_Recvq_unlock();
     }
     else
     {
@@ -76,26 +95,35 @@ MPID_Request * MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id)
 	    mask.rank = ~0;
 	}
 	
-	MPIDI_Recvq_lock();
+	rreq = MPIDI_Process.recvq_unexpected_head;
+	while (rreq != NULL)
 	{
-	    rreq = MPIDI_Process.recvq_unexpected_head;
-	    while (rreq != NULL)
+	    if (rreq->dev.match.context_id == match.context_id && 
+		(rreq->dev.match.rank & mask.rank) == match.rank &&
+		(rreq->dev.match.tag & mask.tag) == match.tag)
 	    {
-		if (rreq->dev.match.context_id == match.context_id && (rreq->dev.match.rank & mask.rank) == match.rank &&
-		    (rreq->dev.match.tag & mask.tag) == match.tag)
-		{
-		    MPID_Request_add_ref(rreq);
-		    break;
-		}
-	    
-		rreq = rreq->dev.next;
+		break;
 	    }
+	    
+	    rreq = rreq->dev.next;
 	}
-	MPIDI_Recvq_unlock();
     }
 
+    /* Save the information about the request before releasing the 
+       queue */
+    if (rreq && s != MPI_STATUS_IGNORE) {
+	/* Avoid setting "extra" fields like MPI_ERROR */
+	s->MPI_SOURCE = rreq->status.MPI_SOURCE;
+	s->MPI_TAG    = rreq->status.MPI_TAG;
+	s->count      = rreq->status.count;
+	s->cancelled  = rreq->status.cancelled;
+	found = 1;
+    }
+
+    MPIDI_Recvq_unlock();
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECVQ_FU);
-    return rreq;
+    return found;
 }
 
 /*

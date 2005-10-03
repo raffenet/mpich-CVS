@@ -108,7 +108,7 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_Get_business_card(char * value, int length);
-int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
+int MPIDI_CH3I_Connect_to_root(const char * port_name, MPIDI_VC_t ** new_vc);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);

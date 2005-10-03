@@ -10,6 +10,9 @@
 #define MPIDI_COPY_BUFFER_SZ 16384
 #endif
 
+/* FIXME: Explain this routine .
+Used by mpid_irecv, mpid_recv, mpidi_isend_self */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Buffer_copy
 #undef FCNAME

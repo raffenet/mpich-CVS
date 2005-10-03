@@ -6,6 +6,7 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: What is the arrangement of VCRT and VCR and VC?  */
 
 /*
  * MPIDI_VCRT - virtual connection reference table
@@ -55,41 +56,6 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     return mpi_errno;
 }
 
-/* Initialize a newly created VC */
-/* FIXME: There is an MPIDI_VC_Init in include/mpidimpl.h .  These
-   should probably be combined (as a function, as the macro is not
-   on the critical performance path) */
-/* FIXME: The ifdefs here need to be replaced by macros or function
-   call provided by the channel */
-int MPIDI_VC_Init2( MPIDI_VC_t *vc )
-{
-    vc->ch.sendq_head         = NULL;
-    vc->ch.sendq_tail         = NULL;
-    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-#ifdef MPIDI_CH3_USES_SOCK
-    vc->ch.sock               = MPIDU_SOCK_INVALID_SOCK;
-    vc->ch.conn               = NULL;
-#endif
-#ifdef MPIDI_CH3_USES_SSHM
-    vc->ch.recv_active        = NULL;
-    vc->ch.send_active        = NULL;
-    vc->ch.req                = NULL;
-    vc->ch.read_shmq          = NULL;
-    vc->ch.write_shmq         = NULL;
-    vc->ch.shm                = NULL;
-    vc->ch.shm_state          = 0;
-    vc->ch.shm_next_reader    = NULL;
-    vc->ch.shm_next_writer    = NULL;
-    vc->ch.shm_read_connected = 0;
-#ifdef MPIDI_CH3_USES_SOCK
-    /* This variable is used when sock and sshm are combined */
-    vc->ch.bShm               = FALSE;
-#endif
-#endif
-    return 0;
-}
-
-
 /* FIXME: Use the Object/ref routines instead of defining new routines */
 
 #undef FUNCNAME
@@ -112,15 +78,15 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
-    int count;
+    int in_use;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_RELEASE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
-    MPIU_Object_release_ref(vcrt, &count);
-    if (count == 0)
+    MPIU_Object_release_ref(vcrt, &in_use);
+    if (!in_use)
     {
 	int i, inuse;
 
@@ -128,8 +94,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	{
 	    MPIDI_VC_t * const vc = vcrt->vcr_table[i];
 	    
-	    MPIU_Object_release_ref(vc, &count);
-	    if (count == 0)
+	    MPIU_Object_release_ref(vc, &in_use);
+	    if (!in_use)
 	    {
 		/* If the VC is myself then skip the close message */
 		if (vc->pg == MPIDI_Process.my_pg && vc->pg_rank == MPIDI_Process.my_pg_rank)
@@ -268,6 +234,7 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
  * represented as pairs of ints (process group id, rank in that process group)
  */
 
+/* FIXME: These routines probably belong in a different place */
 int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
 			    int local_gpids[], int *singlePG )
 {

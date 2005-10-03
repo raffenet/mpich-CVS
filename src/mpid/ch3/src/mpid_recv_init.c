@@ -6,6 +6,14 @@
 
 #include "mpidimpl.h"
 
+/* 
+ * FIXME: The ch3 implmentation of the persistent routines should
+ * be very simple and use common code as much as possible.  All
+ * persistent routine should be in the same file, along with 
+ * startall.  Consider using function pointers to specify the 
+ * start functions, as if these were generalized requests, 
+ * rather than having MPID_Startall look at the request type.
+ */
 /*
  * MPID_Recv_init()
  */
@@ -47,6 +55,9 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 	MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
 	MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
     }
+    /* FIXME: Where is the memory registration call, in case the 
+       channel wishes to take special action (such as pinning for DMA)
+       the memory? */
 	
     *request = rreq;
 

@@ -587,6 +587,7 @@ void MPIDI_err_printf(char *, char *, ...);
     }
 #endif
 
+/* FIXME: What are these for?  Why not just use #A? */
 #define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
 #define MPIDI_QUOTE2(A) #A
 

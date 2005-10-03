@@ -8,14 +8,12 @@
 #include "mpidimpl.h"
 
 /*@
-   MPID_Comm_disconnect - disconnect
+   MPID_Comm_disconnect - Disconnect a communicator 
 
    Arguments:
-.  MPID_Comm *comm_ptr - communicator
+.  comm_ptr - communicator
 
    Notes:
-
-.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
@@ -33,6 +31,7 @@ int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_DISCONNECT);
 
     /* it's more than a comm_release, but ok for now */
+    /* FIXME: Describe what more might be required */
     mpi_errno = MPIR_Comm_release(comm_ptr);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_DISCONNECT);

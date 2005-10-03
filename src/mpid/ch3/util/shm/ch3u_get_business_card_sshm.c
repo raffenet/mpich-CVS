@@ -4,14 +4,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidi_ch3_impl.h"
+#include "pmi.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
-#include "mpidi_ch3_impl.h"
-#include "pmi.h"
 
 
 /*  MPIDI_CH3U_Get_business_card_sshm - does sshm specific portion of getting a business card
@@ -27,7 +27,6 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
 {
-#ifdef MPIDI_CH3_USES_SSHM
     char queue_name[100];
     int mpi_errno;
     MPIDI_PG_t * pg = MPIDI_Process.my_pg;
@@ -39,13 +38,11 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
-	if (mpi_errno == MPIU_STR_NOMEM)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	if (mpi_errno == MPIU_STR_NOMEM) {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
 	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	else {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard");
 	}
 	return mpi_errno;
     }
@@ -56,8 +53,7 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     queue_name[0] = '\0';
     mpi_errno = MPIDI_CH3I_BootstrapQ_tostring(pg->ch.bootstrapQ, queue_name, 100);
     /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != 0)
-    {
+    if (mpi_errno != 0) {
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
         return mpi_errno;
     }
@@ -67,18 +63,17 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
-	if (mpi_errno == MPIU_STR_NOMEM)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
+	if (mpi_errno == MPIU_STR_NOMEM) {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
 	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
+	else {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard");
 	}
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
 
+/* FIXME: Why the #if 0? Should this code be fixed or deleted? */
 #if 0
 #ifdef MPIDI_CH3_USES_SHM_NAME
     mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, pg->ch.shm_name);
@@ -99,6 +94,5 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
 #endif    
 #endif
 
-#endif /* uses MPIDI_CH3_USES_SSHM */
     return MPI_SUCCESS;
 }

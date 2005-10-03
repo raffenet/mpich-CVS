@@ -6,16 +6,11 @@ lib${MPILIBNAME}_a_SOURCES =	\
     ch3u_comm_connect.c		\
     ch3u_comm_spawn_multiple.c	\
     ch3u_connect_to_root.c	\
-    ch3u_finalize_sshm.c	\
-    ch3u_get_business_card_sock.c	\
-    ch3u_get_business_card_sshm.c	\
     ch3u_get_parent_port.c	\
     ch3u_handle_connection.c	\
     ch3u_handle_recv_pkt.c	\
     ch3u_handle_recv_req.c	\
     ch3u_handle_send_req.c	\
-    ch3u_init_sock.c		\
-    ch3u_init_sshm.c		\
     ch3u_recvq.c		\
     ch3u_request.c		\
     mpid_abort.c		\
@@ -34,7 +29,6 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_isend.c		\
     mpid_issend.c		\
     mpid_port.c			\
-    mpid_parse_option.c		\
     mpid_probe.c		\
     mpid_recv.c			\
     mpid_recv_init.c		\
@@ -65,5 +59,3 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpidi_printf.c		\
     mpidi_kvs.c			\
     @MPID_THREAD_SOURCES@
-    
-
