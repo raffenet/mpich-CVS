@@ -7,6 +7,13 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: To start with, even if ifdefs are used, there should not be separate
+   ifdefs for alloc_mem, free_mem, and cleanup_mem. Better would be to 
+   use function pointers for these operations, included as part of the RMA
+   routines, and allow these routines to invoke the RMA initialization 
+   routine. 
+*/
+
 #undef FUNCNAME
 #define FUNCNAME MPID_Alloc_mem
 #undef FCNAME
@@ -58,6 +65,9 @@ int MPID_Free_mem( void *ptr )
     return mpi_errno;
 }
 
+/* FIXME: It would be better to install this as an abort and a finalize 
+   handler, ranter than expecting all routines to call this.  It
+   can be installed on first use of alloc_mem */
 #undef FUNCNAME
 #define FUNCNAME MPID_Cleanup_mem
 #undef FCNAME
