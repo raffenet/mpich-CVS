@@ -8,6 +8,18 @@
 
 /* FIXME: HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
+/* FIXME: The routines MPID_Isend, MPID_Issend, MPID_Irsend are nearly 
+   identical. It would be better if these did roughly:
+
+   MPID_Irsend -> always eager send (with ready mode for error detection)
+   MPID_Issend -> always rendezvous send
+   MPID_Isend  -> chose eager/rendezvous based on a threshold (and consider
+   making the threshold configurable at either compile time (for best 
+   low-latency performance) or run-time (for application tuning).
+
+   Then the 3 routines share little code, particularly if the eager/rendezvous 
+   implementations are in their own routine
+   */
 /*
  * MPID_Isend()
  */

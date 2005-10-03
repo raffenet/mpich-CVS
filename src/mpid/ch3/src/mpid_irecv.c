@@ -35,6 +35,15 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	    rreq->cc = 0;
 	    rreq->kind = MPID_REQUEST_RECV;
 	    MPIR_Status_set_procnull(&rreq->status);
+	    /* FIXME: What is this code for?  Why should the behavior of
+	       this routine depend on whether the "assert" routine is
+	       enabled? As a reminder, if NDEBUG is defined, assert 
+	       generates no code; thus, this block of code (which even 
+	       adds a reference to a comm!) is used only if asserts are
+	       enabled.  It is a bad idea to piggy back this kind of 
+	       code on NDEBUG.  In addition, a justification for this 
+	       code is needed, since NDEBUG should normally not change the 
+	       actions performed with correct code. */
 #	    if !defined(NDEBUG)
 	    {
 		rreq->comm = comm;
