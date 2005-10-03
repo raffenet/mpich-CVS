@@ -27,8 +27,24 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
 	*flag = TRUE;
 	goto fn_exit;
     }
-    
+
+    /* FIXME: The routine CH3U_Recvq_FU is used only by the probe functions;
+       it should atomically return the flag and status rather than create 
+       a request.  Note that in some cases it will be possible to 
+       atomically query the unexpected receive list (which is what the
+       probe routines are for). */
     rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
+    if (rreq == NULL) {
+	/* Always try to advance progress before returning failure
+	   from the iprobe test.  */
+	/* FIXME: It would be helpful to know if the Progress_poke
+	   operation causes any change in state; we could then avoid
+	   a second test of the receive queue if we knew that nothing
+	   had changed */
+	mpi_errno = MPID_Progress_poke();
+	rreq = MPIDI_CH3U_Recvq_FU(source, tag, context);
+    }
+	
     if (rreq != NULL)
     {
 	if (status != MPI_STATUS_IGNORE)
@@ -39,7 +55,6 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int context_offset, int *
     }
     else
     {
-	mpi_errno = MPID_Progress_poke();
 	*flag = FALSE;
     }
 
