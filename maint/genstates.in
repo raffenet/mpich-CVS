@@ -58,6 +58,10 @@ foreach (@states)
     }
 }
 
+# FIXME: It would be better to assemble this from just the relevant 
+# modules, rather than all files.  A directory-based approach, such as
+# that from extractstrings, could be used.
+#
 open HFILE, ">src/include/mpiallstates.h"
   or die "Unable to open src/include/mpiallstates.h";
 print HFILE "/* -*- Mode: C; c-basic-offset:4 ; -*- */\n";
@@ -83,6 +87,13 @@ print HFILE "};\n";
 print HFILE "\n";
 print HFILE "#endif\n";
 close HFILE;
+
+# FIXME: This is RLOG specific and should be placed in the appropriate 
+# RLOG directory, not common.  
+# FIXME: It would also make more sense for the RLOG_Describe_state routine
+# to perform the random color assignement when provided with an empty
+# or null color string, rather than including all of this code in what is
+# otherwise an RLOG-specific file.
 
 open F, ">src/util/logging/common/describe_states.c"
  or die "Unable to open src/util/logging/common/describe_states.c";
