@@ -66,7 +66,7 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
     /* If the VC creates non-duplex connections then the acceptor will
      * need to connect back to form the other half of the connection. */
-    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( vc );
+    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( connect_vc );
 #endif
 
     *comm_pptr = tmp_comm;
@@ -314,7 +314,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
         }
 
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-	mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc )
+	mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
 #endif
         MPIU_Free(new_vc);
     }
@@ -410,7 +410,7 @@ static int extractLocalPGInfo( MPID_Comm *comm_p,
     *pg_list_p           = pg_list;
 
  fn_exit:
-    return mpi_errno;
+v    return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
