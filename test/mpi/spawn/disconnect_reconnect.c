@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
     if (parentcomm == MPI_COMM_NULL)
     {
-	IF_VERBOSE(("spawning %d processes\n", np));
+	IF_VERBOSE(("[%d] spawning %d processes\n", rank, np));
 	/* Create 3 more processes */
 	MPI_Comm_spawn("./disconnect_reconnect", /*MPI_ARGV_NULL*/&argv[1], np,
 			MPI_INFO_NULL, 0, MPI_COMM_WORLD,
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
     if (parentcomm == MPI_COMM_NULL)
     {
-	IF_VERBOSE(("parent rank %d alive.\n", rank));
+	IF_VERBOSE(("[%d] parent rank %d alive.\n", rank, rank));
 	/* Parent */
 	if (rsize != np)
 	{
@@ -86,14 +86,14 @@ int main(int argc, char *argv[])
 	if (rank == 0 && num_loops > 0)
 	{
 	    MPI_Open_port(MPI_INFO_NULL, port);
-	    IF_VERBOSE(("port = %s\n", port));
+	    IF_VERBOSE(("[%d] port = %s\n", rank, port));
 	    MPI_Send(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm);
 	}
-	IF_VERBOSE(("disconnecting child communicator\n"));
+	IF_VERBOSE(("[%d] disconnecting child communicator\n",rank));
 	MPI_Comm_disconnect(&intercomm);
 	for (i=0; i<num_loops; i++)
 	{
-	    IF_VERBOSE(("accepting connection\n"));
+	    IF_VERBOSE(("[%d] accepting connection\n",rank));
 	    MPI_Comm_accept(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
 	    MPI_Comm_remote_size(intercomm, &rsize);
 	    if (do_messages && (rank == 0))
@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
 		for (j=0; j<rsize; j++)
 		{
 		    data = i;
-		    IF_VERBOSE(("sending int to child process %d\n", j));
+		    IF_VERBOSE(("[%d]sending int to child process %d\n", rank, j));
 		    MPI_Send(&data, 1, MPI_INT, j, 100, intercomm);
-		    IF_VERBOSE(("receiving int from child process %d\n", j));
+		    IF_VERBOSE(("[%d] receiving int from child process %d\n", rank, j));
 		    data = i-1;
 		    MPI_Recv(&data, 1, MPI_INT, j, 100, intercomm, &status);
 		    if (data != i)
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 		    }
 		}
 	    }
-	    IF_VERBOSE(("disconnecting communicator\n"));
+	    IF_VERBOSE(("[%d] disconnecting communicator\n", rank));
 	    MPI_Comm_disconnect(&intercomm);
 	}
 
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-	IF_VERBOSE(("child rank %d alive.\n", rank));
+	IF_VERBOSE(("[%d] child rank %d alive.\n", rank, rank));
 	/* Child */
 	if (size != np)
 	{
@@ -138,19 +138,19 @@ int main(int argc, char *argv[])
 
 	if (rank == 0 && num_loops > 0)
 	{
-	    IF_VERBOSE(("receiving port\n"));
+	    IF_VERBOSE(("[%d] receiving port\n", rank));
 	    MPI_Recv(port, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, intercomm, &status);
 	}
 
-	IF_VERBOSE(("disconnecting communicator\n"));
+	IF_VERBOSE(("[%d] disconnecting communicator\n", rank));
 	MPI_Comm_disconnect(&intercomm);
 	for (i=0; i<num_loops; i++)
 	{
-	    IF_VERBOSE(("connecting to port\n"));
+	    IF_VERBOSE(("[%d] connecting to port (loop %d)\n",rank,i));
 	    MPI_Comm_connect(port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm);
 	    if (do_messages)
 	    {
-		IF_VERBOSE(("receiving int from parent process 0\n"));
+		IF_VERBOSE(("[%d] receiving int from parent process 0\n",rank));
 		MPI_Recv(&data, 1, MPI_INT, 0, 100, intercomm, &status);
 		if (data != i)
 		{
@@ -158,10 +158,10 @@ int main(int argc, char *argv[])
 		    fflush(stdout);
 		    MPI_Abort(MPI_COMM_WORLD, 1);
 		}
-		IF_VERBOSE(("sending int back to parent process 1\n"));
+		IF_VERBOSE(("[%d] sending int back to parent process 1\n",rank));
 		MPI_Send(&data, 1, MPI_INT, 0, 100, intercomm);
 	    }
-	    IF_VERBOSE(("disconnecting communicator\n"));
+	    IF_VERBOSE(("[%d] disconnecting communicator\n",rank));
 	    MPI_Comm_disconnect(&intercomm);
 	}
 
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 	MTest_Finalize( errs );
     }
 
-    IF_VERBOSE(("calling finalize\n"));
+    IF_VERBOSE(("[%d] calling finalize\n",rank));
     MPI_Finalize();
     return 0;
 }
