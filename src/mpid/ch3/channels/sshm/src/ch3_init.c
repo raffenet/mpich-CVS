@@ -37,3 +37,28 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
     return mpi_errno;
 }
+
+/* This function simply tells the CH3 device to use the defaults for the 
+   MPI Port functions.  This should be ok here, since we want to 
+   use the socket routines to perform all connect/accept actions
+   after MPID_Init returns (see the shm_unlink discussion) */
+int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a ) 
+{ 
+    return 0;
+}
+
+/* Perform the channel-specific vc initialization */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
+    vc->ch.sendq_head         = NULL;
+    vc->ch.sendq_tail         = NULL;
+
+    /* Which of these do we need? */
+    vc->ch.recv_active        = NULL;
+    vc->ch.send_active        = NULL;
+    vc->ch.req                = NULL;
+    vc->ch.read_shmq          = NULL;
+    vc->ch.write_shmq         = NULL;
+    vc->ch.shm                = NULL;
+    vc->ch.shm_state          = 0;
+    return 0;
+}
