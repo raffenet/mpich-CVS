@@ -593,7 +593,7 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
     /* If the VC creates non-duplex connections then the acceptor will
      * need to connect back to form the other half of the connection. */
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection2( new_vc )
+    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection2( new_vc );
 #endif
 
     *comm_pptr = tmp_comm;
