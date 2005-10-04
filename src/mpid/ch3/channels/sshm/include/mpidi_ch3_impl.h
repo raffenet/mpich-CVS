@@ -291,7 +291,7 @@ int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag);
 int MPIDI_CH3I_Get_business_card(char * value, int length);
-int MPIDI_CH3I_Connect_to_root(char * port_name, MPIDI_VC_t ** new_vc);
+int MPIDI_CH3I_Connect_to_root(const char * port_name, MPIDI_VC_t ** new_vc);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
@@ -336,7 +336,7 @@ void MPIDI_CH3I_SHM_Remove_vc_references(MPIDI_VC_t *vc);
 void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc);
 void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc);
 
-MPIDI_CH3I_Alloc_mem_list_t * MPIDI_CH3I_Get_mem_list_head();
+MPIDI_CH3I_Alloc_mem_list_t * MPIDI_CH3I_Get_mem_list_head(void);
 
 
 /*int MPIDI_CH3I_sock_errno_to_mpi_errno(int sock_errno, const char *fcname);*/
