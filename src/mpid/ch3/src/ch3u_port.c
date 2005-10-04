@@ -410,7 +410,7 @@ static int extractLocalPGInfo( MPID_Comm *comm_p,
     *pg_list_p           = pg_list;
 
  fn_exit:
-v    return mpi_errno;
+    return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
