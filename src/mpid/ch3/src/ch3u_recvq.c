@@ -111,12 +111,14 @@ int MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id, MPI_Status *s)
 
     /* Save the information about the request before releasing the 
        queue */
-    if (rreq && s != MPI_STATUS_IGNORE) {
-	/* Avoid setting "extra" fields like MPI_ERROR */
-	s->MPI_SOURCE = rreq->status.MPI_SOURCE;
-	s->MPI_TAG    = rreq->status.MPI_TAG;
-	s->count      = rreq->status.count;
-	s->cancelled  = rreq->status.cancelled;
+    if (rreq) {
+	if (s != MPI_STATUS_IGNORE) {
+	    /* Avoid setting "extra" fields like MPI_ERROR */
+	    s->MPI_SOURCE = rreq->status.MPI_SOURCE;
+	    s->MPI_TAG    = rreq->status.MPI_TAG;
+	    s->count      = rreq->status.count;
+	    s->cancelled  = rreq->status.cancelled;
+	}
 	found = 1;
     }
 
