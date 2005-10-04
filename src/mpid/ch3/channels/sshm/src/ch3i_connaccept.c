@@ -9,6 +9,10 @@
    with the MPIDI_CH3_HAS_CONN_ACCEPT_HOOK ifdef */
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Complete_unidirectional_connection
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Complete_unidirectional_connection( MPIDI_VC_t *connect_vc )
 {
     int mpi_errno = MPI_SUCCESS;
@@ -74,10 +78,17 @@ int MPIDI_CH3_Complete_unidirectional_connection( MPIDI_VC_t *connect_vc )
     MPIDI_CH3I_SHM_Add_to_reader_list(connect_vc);
     MPIU_Free(accept_vc);
 
+ fn_exit:
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 /* This routine is the "other side" of 
    MPIDI_CH3_Complete_unidirectional_connection */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Complete_unidirectional_connection2
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
 {
     int mpi_errno = MPI_SUCCESS;
@@ -93,8 +104,7 @@ int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
 	}
     }
     /* --BEGIN ERROR HANDLING-- */
-    if (num_read != MPI_MAX_PORT_NAME)
-    {
+    if (num_read != MPI_MAX_PORT_NAME) {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", num_read);
 	goto fn_fail;
     }
@@ -114,6 +124,10 @@ int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
 
 /* This routine is used to free any channel-specific resources that were
    allocated when building a connection */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Cleanup_after_connection
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Cleanup_after_connection( MPIDI_VC_t *new_vc )
 {
     MPIDI_VC_t *iter, *trailer;
