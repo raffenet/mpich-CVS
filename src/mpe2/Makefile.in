@@ -14,6 +14,7 @@ includebuild_dir  = @includebuild_dir@
 libbuild_dir      = @libbuild_dir@
 binbuild_dir      = @binbuild_dir@
 sbinbuild_dir     = @sbinbuild_dir@
+etcbuild_dir      = @etcbuild_dir@
 
 # Building Fortran to C interface
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
@@ -27,7 +28,7 @@ MPE_HEADERS          = mpe.h mpe_misc.h mpe_log.h mpe_graphics.h
 PKGS = "" @subdirs@
 
 all-redirect: 
-all: build_include build_lib_bin
+all: clean_etc build_include build_lib_bin
 
 #######  Building from the source
 build_include:
@@ -96,7 +97,10 @@ clean_lib:
 	 -$(RM) -f $(libbuild_dir)/*.jar
 	 -$(RM) -f $(libbuild_dir)/*.o
 
-clean: clean_bin clean_lib
+clean_etc:
+	 @-$(RM) -f $(etcbuild_dir)/*.conf
+
+clean: clean_bin clean_lib clean_etc
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) clean ) ; \
@@ -104,7 +108,7 @@ clean: clean_bin clean_lib
 	  done
 	@-$(RM) -f work.pc work.pcl
 
-distclean-misc: clean_include
+distclean-misc: clean_include clean_etc
 	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
 	@-$(RM) -f Makefile
 	@-$(RM) -f mpe_conf.h

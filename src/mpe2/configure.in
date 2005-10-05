@@ -204,10 +204,11 @@ fi
 # [mpe_]includebuild_dir is for all user header files
 # [mpe_]libbuild_dir is for building the libraries in before they are installed.
 # [mpe_]binbuild_dir is for the scripts/programs
-# [mpe_]sbinbuild_dir is for all system admin stuffs
+# [mpe_]sbinbuild_dir is for all system admin tools
+# [mpe_]etcbuild_dir is for all system admin configuration settings
 #
 rootbuild_dir=`pwd`
-for dir in include lib bin sbin ; do
+for dir in include lib bin sbin etc ; do
     dirname=${dir}build_dir
     eval dirvalue=\$"$dirname"
     eval $dirname=$rootbuild_dir/$dir
@@ -217,7 +218,7 @@ for dir in include lib bin sbin ; do
 done
 
 srcbuild_dir=$rootbuild_dir/src
-for dir in include lib bin sbin src ; do
+for dir in include lib bin sbin src etc ; do
     dirname=${dir}build_dir
     eval dirvalue=\$"$dirname"
     if test -n "$dirvalue" ; then
@@ -236,6 +237,7 @@ AC_SUBST(includebuild_dir)
 AC_SUBST(libbuild_dir)
 AC_SUBST(binbuild_dir)
 AC_SUBST(sbinbuild_dir)
+AC_SUBST(etcbuild_dir)
 
 
 dnl
