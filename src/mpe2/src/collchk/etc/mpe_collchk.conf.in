@@ -1,0 +1,3 @@
+PROFILE_INCPATHS=
+PROFILE_PRELIB="-L$libdir -lmpe_collchk"
+PROFILE_POSTLIB=
