@@ -25,6 +25,7 @@ includebuild_dir=@includebuild_dir@
 libbuild_dir=@libbuild_dir@
 binbuild_dir=@binbuild_dir@
 sbinbuild_dir=@sbinbuild_dir@
+etcbuild_dir=@etcbuild_dir@
 
 # Installation directories: Default paths (set at configure time)
 prefix=@prefix@
@@ -400,6 +401,7 @@ if [ "$prefix_override" = 1 ] ; then
     bindir=$prefix/bin
     sbindir=$prefix/sbin
     datadir=$prefix/share
+    sysconfdir=$prefix/etc
     mandir=$prefix/man
     htmldir=$prefix/html
     docdir=$prefix/doc
@@ -440,6 +442,14 @@ if [ -n "$binbuild_dir" ] ; then
     fi
 fi
 
+# Copy MPE compiler configuration files
+if [ -n "$etcbuild_dir" ] ; then
+    if [ -d $etcbuild_dir ] ; then
+         echo "Copying MPE compiler configuration files to $DESTDIR$sysconfdir"
+         CopyDirRecurP $etcbuild_dir $sysconfdir $MODE
+    fi
+fi
+
 MkDir $sbindir
 MkDir $datadir
 
@@ -475,6 +485,7 @@ for pkg in logging graphics collchk ; do
 #        fi
     fi
 done
+
 
 # Copy documentation related files if they exist,
 # ie CP $top_srcdir/doc  $docdir
