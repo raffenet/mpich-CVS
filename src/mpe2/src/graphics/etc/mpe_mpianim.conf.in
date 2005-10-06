@@ -1,7 +1,7 @@
 MPE_INCDIR=@includebuild_dir@
 MPE_LIBDIR=@libbuild_dir@
-PROFILE_INCPATHS="-L$MPE_INCDIR"
-if [ -n "$FC" ] ; then
+PROFILE_INCPATHS="-I$MPE_INCDIR"
+if [ -n "$FC" -o -n "$F90" ] ; then
     PROFILE_PRELIB="-L$MPE_LIBDIR -lmpe_f2cmpi -lampe -lmpe"
 else
     PROFILE_PRELIB="-L$MPE_LIBDIR -llmpe -ampe"
