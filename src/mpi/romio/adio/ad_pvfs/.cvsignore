@@ -2,3 +2,4 @@ Makefile
 .deps
 *.bb
 *.bbg
+.*-cache

@@ -9,3 +9,4 @@ pfcoll_test.f
 *.out
 romiotests
 .deps
+.*-cache

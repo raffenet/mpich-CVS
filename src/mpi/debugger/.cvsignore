@@ -10,3 +10,4 @@ Makefile
 Makefile.in
 .deps
 .libstamp*
+.*-cache

@@ -19,3 +19,4 @@ mpichtimer.h
 .deps
 .libs
 .libstamp*
+.*-cache

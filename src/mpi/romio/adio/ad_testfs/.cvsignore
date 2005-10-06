@@ -4,3 +4,4 @@ Makefile
 *.bbg
 .libs
 .libstamp*
+.*-cache

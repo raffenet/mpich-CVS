@@ -11,3 +11,4 @@ defmsg.h
 .deps
 .libs
 .libstamp*
+.*-cache

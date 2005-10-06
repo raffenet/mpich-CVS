@@ -6,3 +6,4 @@ Release*
 *.bbg
 .libs
 .libstamp*
+.*-cache
