@@ -289,7 +289,10 @@ extern char *strdup( const char * );
 #define MPIU_CHKMEM_SETERR(rc_,nbytes_,name_) rc_=MPI_ERR_OTHER
 #endif
 
+    /* CHKPMEM_REGISTER is used for memory allocated within another routine */
+
 /* Memory used and freed within the current scopy (alloca if feasible) */
+/* FIXME: Where is USE_ALLOCA defined? */
 #if defined(HAVE_ALLOCA) && defined(USE_ALLOCA)
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
@@ -344,6 +347,9 @@ if (pointer_) { \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
+#define MPIU_CHKPMEM_REGISTER(pointer_) \
+    {MPIU_Assert(mpiu_chkpmem_stk_sp_<mpiu_chkpmem_stk_sz_);\
+    mpiu_chkpmem_stk_[mpiu_chkpmem_stk_sp_++] = pointer_;}
 #define MPIU_CHKPMEM_REAP() \
     { while (mpiu_chkpmem_stk_sp_ > 0) {\
        MPIU_Free( mpiu_chkpmem_stk_[--mpiu_chkpmem_stk_sp_] ); } }
