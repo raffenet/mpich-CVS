@@ -8,6 +8,10 @@
 #define MPIFUNCLOG_H_INCLUDED
 
 /* state declaration macros */
+/* FIXME: To make MPIR_STATE_DECL() and the other xxx_DECL macros
+   work with a mix of declarations, they need to have a dummy
+   declations, e.g., int _sdummy=0, with no trailing semi-colon (this
+   declaration then eats the semicolon after the xxx_DECL macro) */
 #define MPIR_STATE_DECL(a)		
 #define MPID_MPI_STATE_DECL(a)		MPIR_STATE_DECL(a)
 #define MPID_MPI_INIT_STATE_DECL(a)	MPIR_STATE_DECL(a)
