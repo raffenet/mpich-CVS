@@ -1,3 +1,9 @@
-PROFILE_INCPATHS=
-PROFILE_PRELIB="-L$libdir -ltmpe -lmpe"
+MPE_INCDIR=@includebuild_dir@
+MPE_LIBDIR=@libbuild_dir@
+PROFILE_INCPATHS="-L$MPE_INCDIR"
+if [ -n "$FC" ] ; then
+    PROFILE_PRELIB="-L$MPE_LIBDIR -lmpe_f2cmpi -ltmpe -lmpe"
+else
+    PROFILE_PRELIB="-L$MPE_LIBDIR -ltmpe -lmpe"
+fi
 PROFILE_POSTLIB=
