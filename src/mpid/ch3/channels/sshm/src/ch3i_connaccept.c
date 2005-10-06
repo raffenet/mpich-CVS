@@ -110,7 +110,7 @@ int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
     }
     /* --END ERROR HANDLING-- */
 
-    mpi_errno = MPIDI_CH3I_Connect_to_root(connector_port, &new_vc);
+    mpi_errno = MPIDI_CH3_Connect_to_root(connector_port, &new_vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }

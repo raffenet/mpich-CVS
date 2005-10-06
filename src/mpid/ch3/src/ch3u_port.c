@@ -4,6 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* FIXME: This could go into util/port as a general utility routine */
+
 #include "mpidi_ch3_impl.h"
 
 /*
@@ -45,15 +47,15 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *tmp_comm;
     MPIDI_VC_t *connect_vc = NULL;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_CONNECT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_CONNECT);
 
     /* Connect to the root on the other side. Create a
        temporary intercommunicator between the two roots so that
        we can use MPI functions to communicate data between them. */
 
-    mpi_errno = MPIDI_CH3I_Connect_to_root(port_name, &connect_vc);
+    mpi_errno = MPIDI_CH3_Connect_to_root(port_name, &connect_vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -291,7 +293,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    /* Free new_vc. It was explicitly allocated in MPIDI_CH3I_Connect_to_root. */
+    /* Free new_vc. It was explicitly allocated in MPIDI_CH3_Connect_to_root. */
     if (rank == root)
     {
         MPID_Progress_state progress_state;
@@ -550,18 +552,17 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
     MPIDI_VC_t *new_vc = NULL;
     MPID_Progress_state progress_state;
     int port_name_tag;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
 
-    /* FIXME: This code should parallel the MPIDI_CH3I_Connect_to_root
+    /* FIXME: This code should parallel the MPIDI_CH3_Connect_to_root
        code used in the MPIDI_Create_inter_root_communicator_connect */
     /* extract the tag from the port_name */
     mpi_errno = MPIDI_GetTagFromPort( port_name, &port_name_tag);
     if (mpi_errno != MPIU_STR_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-
 
     /* dequeue the accept queue to see if a connection with the
        root on the connect side has been formed in the progress
@@ -860,4 +861,194 @@ fn_exit:
 
 fn_fail:
     goto fn_exit;
+}
+
+/* This is a utility routine used to initialize temporary communicators
+   used in connect/accept operations */
+#undef FUNCNAME
+#define FUNCNAME  MPIDI_CH3I_Initialize_tmp_comm
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Comm *tmp_comm, *commself_ptr;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
+
+    MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
+    mpi_errno = MPIR_Comm_create(commself_ptr, &tmp_comm);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    /* fill in all the fields of tmp_comm. */
+
+    tmp_comm->context_id = 4095;  /* FIXME - we probably need a unique context_id. */
+    tmp_comm->remote_size = 1;
+
+    /* Fill in new intercomm */
+    /* FIXME: This should share a routine with the communicator code to
+       ensure that the initialization is consistent */
+    tmp_comm->attributes   = NULL;
+    tmp_comm->local_size   = 1;
+    tmp_comm->rank         = 0;
+    tmp_comm->local_group  = NULL;
+    tmp_comm->remote_group = NULL;
+    tmp_comm->comm_kind    = MPID_INTERCOMM;
+    tmp_comm->local_comm   = NULL;
+    tmp_comm->is_low_group = is_low_group;
+    tmp_comm->coll_fns     = NULL;
+
+    /* No pg structure needed since vc has already been set up (connection has been established). */
+
+    /* Point local vcr, vcrt at those of commself_ptr */
+    tmp_comm->local_vcrt = commself_ptr->vcrt;
+    MPID_VCRT_Add_ref(commself_ptr->vcrt);
+    tmp_comm->local_vcr  = commself_ptr->vcr;
+
+    /* No pg needed since connection has already been formed. 
+       FIXME - ensure that the comm_release code does not try to
+       free an unallocated pg */
+
+    /* Set up VC reference table */
+    mpi_errno = MPID_VCRT_Create(tmp_comm->remote_size, &tmp_comm->vcrt);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_vcrt");
+    }
+    mpi_errno = MPID_VCRT_Get_ptr(tmp_comm->vcrt, &tmp_comm->vcr);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
+    }
+    
+    MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
+
+    *comm_pptr = tmp_comm;
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
+}
+
+/* FIXME: What is an Accept queue and who uses it?  
+   Is this part of the connect/accept support?  
+   These routines appear to be called by channel progress routines; 
+   perhaps this belongs in util/sock (note the use of a port_name_tag in the 
+   dequeue code, though this could be any string).
+
+   Are the locks required?  If this is only called within the progress
+   engine, then the progress engine locks should be sufficient.  If a
+   finer grain lock model is used, it needs to be very carefully 
+   designed and documented.
+*/
+
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+#define MPIDI_Acceptq_lock() MPID_Thread_lock(&MPIDI_CH3I_Process.acceptq_mutex)
+#define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&MPIDI_CH3I_Process.acceptq_mutex)
+#else
+#define MPIDI_Acceptq_lock()
+#define MPIDI_Acceptq_unlock()
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Acceptq_enqueue
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
+{
+    int mpi_errno=MPI_SUCCESS;
+    MPIDI_CH3I_Acceptq_t *q_item;
+
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
+
+    q_item = (MPIDI_CH3I_Acceptq_t *)
+        MPIU_Malloc(sizeof(MPIDI_CH3I_Acceptq_t)); 
+    /* --BEGIN ERROR HANDLING-- */
+    if (q_item == NULL)
+    {
+        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+
+    q_item->vc = vc;
+
+    MPIDI_Acceptq_lock();
+
+    q_item->next = MPIDI_CH3I_Process.acceptq_head;
+    MPIDI_CH3I_Process.acceptq_head = q_item;
+    
+    MPIDI_Acceptq_unlock();
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
+    return mpi_errno;
+}
+
+
+/* Attempt to dequeue a vc from the accept queue. If the queue is
+   empty or the port_name_tag doesn't match, return a NULL vc. */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Acceptq_dequeue
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
+{
+    int mpi_errno=MPI_SUCCESS;
+    MPIDI_CH3I_Acceptq_t *q_item, *prev;
+    
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
+
+    MPIDI_Acceptq_lock();
+
+    *vc = NULL;
+    q_item = MPIDI_CH3I_Process.acceptq_head;
+    prev = q_item;
+    while (q_item != NULL)
+    {
+	if (q_item->vc->ch.port_name_tag == port_name_tag)
+	{
+	    *vc = q_item->vc;
+
+	    if ( q_item == MPIDI_CH3I_Process.acceptq_head )
+		MPIDI_CH3I_Process.acceptq_head = q_item->next;
+	    else
+		prev->next = q_item->next;
+
+	    MPIU_Free(q_item);
+	    break;;
+	}
+	else
+	{
+	    prev = q_item;
+	    q_item = q_item->next;
+	}
+    }
+
+    MPIDI_Acceptq_unlock();
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Acceptq_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Acceptq_init(void)
+{
+    MPIDI_CH3I_Process.acceptq_head = NULL;
+
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+    {
+	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
+    }
+#   endif
+    return MPI_SUCCESS;
 }

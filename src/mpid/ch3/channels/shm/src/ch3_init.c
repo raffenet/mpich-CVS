@@ -34,8 +34,7 @@ static void generate_shm_string(char *str)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank,
-                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMI_SUCCESS;
@@ -57,135 +56,12 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank,
     DWORD host_len;
 #endif
 
-    MPIU_UNREFERENCED_ARG(publish_bc_p);
-    MPIU_UNREFERENCED_ARG(bc_key_p);
-    MPIU_UNREFERENCED_ARG(bc_val_p);
-    MPIU_UNREFERENCED_ARG(val_max_sz_p);
-
     /*
      * Extract process group related information from PMI and initialize
      * structures that track the process group connections, MPI_COMM_WORLD, and
      * MPI_COMM_SELF
      */
-    /* Init is done before this routine is called */
     /* MPID_Init in mpid_init.c handles the process group initialization. */
-#if 0
-    /* ch3/src/mpid_init.c guarantees that PMI_Init has been called and
-       the rank, size, and appnum have been set */
-    mpi_errno = PMI_Init(has_parent);
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_init", "**pmi_init %d", mpi_errno);
-	return mpi_errno;
-    }
-    mpi_errno = PMI_Get_rank(&pg_rank);
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_rank", "**pmi_get_rank %d", mpi_errno);
-	return mpi_errno;
-    }
-    mpi_errno = PMI_Get_size(&pg_size);
-    if (mpi_errno != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
-	return mpi_errno;
-    }
-    
-    MPIU_dbg_init(pg_rank);
-
-    /*
-     * Get the process group id
-     */
-    pmi_errno = PMI_Get_id_length_max(&pg_id_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-
-    pg_id = MPIU_Malloc(pg_id_sz + 1);
-    if (pg_id == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    
-    pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id",
-					 "**pmi_get_id %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-
-
-    /*
-     * Initialize the process group tracking subsystem
-     */
-    mpi_errno = MPIDI_PG_Init(MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**dev|pg_init", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    
-    /*
-     * Create a new structure to track the process group
-     */
-    mpi_errno = MPIDI_PG_Create(pg_size, pg_id, &pg);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**dev|pg_create", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    pg->ch.kvs_name = NULL;
-    
-    /*
-     * Get the name of the key-value space (KVS)
-     */
-    pmi_errno = PMI_KVS_Get_name_length_max(&kvs_name_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**pmi_kvs_get_name_length_max", "**pmi_kvs_get_name_length_max %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    
-    pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
-    if (pg->ch.kvs_name == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-    
-    pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", pmi_errno);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
-    }
-#endif
-
 
     /* set the global variable defaults */
     pg->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
@@ -220,22 +96,19 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank,
 
     for (p = 0; p < pg_size; p++)
     {
-	pg->vct[p].ch.sendq_head = NULL;
-	pg->vct[p].ch.sendq_tail = NULL;
-	pg->vct[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
-	/* FIXME: the vc's must be set to active for the close protocol to work in the shm channel */
+	/* FIXME: the vc's must be set to active for the close protocol to 
+	   work in the shm channel */
 	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
+	MPIDI_CH3_VC_Init( &pg->vct[p] );
+	pg->vct[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
+	/* FIXME: Should these also be set in the VC_Init, or 
+	   is VC_Init moot (never called because this channel does not
+	   support dynamic processes?) */
 	pg->vct[p].ch.shm_reading_pkt = TRUE;
-	pg->vct[p].ch.shm_state = 0;
-	pg->vct[p].ch.recv_active = NULL;
-	pg->vct[p].ch.send_active = NULL;
 #ifdef USE_SHM_UNEX
 	pg->vct[p].ch.unex_finished_next = NULL;
 	pg->vct[p].ch.unex_list = NULL;
 #endif
-	pg->vct[p].ch.shm = NULL;
-	pg->vct[p].ch.read_shmq = NULL;
-	pg->vct[p].ch.write_shmq = NULL;
     }
     
     /* save my vc_ptr for easy access */
@@ -535,7 +408,8 @@ fn_fail:
     goto fn_exit;
 }
 
-/* Perform the channel-specific vc initialization */
+/* Perform the channel-specific vc initialization.  This routine is used
+   in MPIDI_CH3_Init and in routines that create and initialize connections */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.sendq_head         = NULL;
     vc->ch.sendq_tail         = NULL;

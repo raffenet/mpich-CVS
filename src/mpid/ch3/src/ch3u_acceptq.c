@@ -112,3 +112,17 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 #endif
     return mpi_errno;
 }
+
+int MPIDI_CH3I_Acceptq_init(void)
+{
+#ifdef MPIDI_CH3_USES_ACCEPTQ
+    MPIDI_CH3I_Process.acceptq_head = NULL;
+
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+    {
+	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
+    }
+#   endif
+#endif
+    return MPI_SUCCESS;
+}

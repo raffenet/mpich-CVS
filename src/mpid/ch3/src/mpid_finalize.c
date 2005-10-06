@@ -30,27 +30,60 @@ int MPID_Finalize(void)
     MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     /*
-     * Wait for all posted receives to complete.  For now we are not doing this since it will cause invalid programs to hang.
-     * The side effect of not waiting is that posted any source receives may erroneous blow up.
+     * Wait for all posted receives to complete.  For now we are not doing 
+     * this since it will cause invalid programs to hang.
+     * The side effect of not waiting is that posted any source receives 
+     * may erroneous blow up.
      *
-     * For now, we are placing a warning at the end of MPID_Finalize() to inform the user if any outstanding posted receives
-     * exist.
+     * For now, we are placing a warning at the end of MPID_Finalize() to 
+     * inform the user if any outstanding posted receives exist.
      */
+     /* FIXME: The correct action here is to begin a shutdown protocol
+      * that lets other processes know that this process is now
+      * in finalize.  
+      *
+      * Note that only requests that have been freed with MPI_Request_free
+      * are valid at this point; other pending receives can be ignored 
+      * since a valid program should wait or test for them before entering
+      * finalize.  
+      * 
+      * The easist fix is to allow an MPI_Barrier over comm_world (and 
+      * any connected processes in the MPI-2 case).  Once the barrier
+      * completes, all processes are in finalize and any remaining 
+      * unmatched receives will never be matched (by a correct program; 
+      * a program with a send in a separate thread that continues after
+      * some thread calls MPI_Finalize is erroneous).
+      * 
+      * Avoiding the barrier is hard.  Consider this sequence of steps:
+      * Send in-finalize message to all connected processes.  Include
+      * information on whether there are pending receives.
+      *   (Note that a posted receive with any source is a problem)
+      *   (If there are many connections, then this may take longer than
+      *   the barrier)
+      * Allow connection requests from anyone who has not previously
+      * connected only if there is an possible outstanding receive; 
+      * reject others with a failure (causing the source process to 
+      * fail).
+      * Respond to an in-finalize message with the number of posted receives
+      * remaining.  If both processes have no remaining receives, they 
+      * can both close the connection.
+      * 
+      * Processes with no pending receives and no connections can exit, 
+      * calling PMI_Finalize to let the process manager know that they
+      * are in a controlled exit.  
+      *
+      * Processes that still have open connections must then try to contact
+      * the remaining processes.
+      * 
+      */
     
-    /* FIXME: insert while loop here to wait for outstanding posted receives to complete */
-
-
     mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
     mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
 		
     /*
@@ -88,9 +121,13 @@ int MPID_Finalize(void)
 
 	    if (vc->state == MPIDI_VC_STATE_ACTIVE || vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
 #ifdef MPIDI_CH3_USES_SSHM
-		/* sshm queues are uni-directional.  A VC that is connected in the read direction is marked MPIDI_VC_STATE_INACTIVE
-		 * so that a connection will be formed on the first write.  Since the other side is marked MPIDI_VC_STATE_ACTIVE for writing 
-		 * we need to initiate the close protocol on the read side even if the write state is MPIDI_VC_STATE_INACTIVE. */
+		/* sshm queues are uni-directional.  A VC that is connected 
+		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
+		 * so that a connection will be formed on the first write.  
+		 * Since the other side is marked MPIDI_VC_STATE_ACTIVE for 
+		 * writing 
+		 * we need to initiate the close protocol on the read side 
+		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
 		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected)
 #endif
 		)
@@ -127,10 +164,9 @@ int MPID_Finalize(void)
 		
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, sizeof(*close_pkt), &sreq);
 		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|send_close_ack", 0);
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,
+				 "**ch3|send_close_ack");
 		    continue;
 		}
 		/* --END ERROR HANDLING-- */
@@ -164,16 +200,14 @@ int MPID_Finalize(void)
     {
 	mpi_errno = MPID_Progress_wait(&progress_state);
 	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**ch3|close_progress", 0);
-	    break;  /* brad : why is this only a break? */
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPID_Progress_end(&progress_state);
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				"**ch3|close_progress");
 	}
 	/* --END ERROR HANDLING-- */
     }
     MPID_Progress_end(&progress_state);
-
 
     if (MPIDI_Process.warnings_enabled)
     {
@@ -185,11 +219,15 @@ int MPID_Finalize(void)
     }
 
 #ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
+    /* FIXME:  ch3i_pmi_finalize performs these steps:
+       channel progress finalize (belongs in channel finalize)
+       kvs finalize (belongs here)
+       pmi_finalize (belongs here)
+       Question: Why not finalize the channel, then kvs, then pmi?
+    */
     mpi_errno = MPIDI_CH3I_PMI_Finalize();
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-        return mpi_errno;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
 #endif
     mpi_errno = MPIDI_CH3_Finalize();
@@ -201,9 +239,12 @@ int MPID_Finalize(void)
     }
     MPIDI_Process.my_pg = NULL;
 
+ fn_exit:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
@@ -221,6 +262,7 @@ static int MPIDI_CH3I_PMI_Finalize(void)
 
     /* Shutdown the progress engine */
     /* FIXME: internal function not in the CH3 channel interface */
+    /* FIXME: This does not belong here */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
     if (mpi_errno != MPI_SUCCESS)
     {

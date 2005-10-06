@@ -33,6 +33,15 @@
  * some cases.  Who sets USE_WIN_MUTEX_PROTECT?  What are the assumptions 
  * about the multi-threadedness of these routines?
  */
+/* FIXME: These are temps until the thread code is worked out */
+#ifdef USE_WIN_MUTEX_PROTECT
+#define MPIDI_KVS_MUTEX_LOCK WaitForSingleObject(kvs.hKVSMutex, INFINITE)
+#define MPIDI_KVS_MUTEX_UNLOCK ReleaseMutex(kvs.hKVSMutex)
+#else 
+/* FIXME: Define these as empty for now */
+#define MPIDI_KVS_MUTEX_LOCK 
+#define MPIDI_KVS_MUTEX_UNLOCK 
+#endif
 
 /*
  * FIXME: The routines that have PMI_KVS counterparts should use the
@@ -124,7 +133,7 @@ static void get_uuid(char *str)
     MPIDI_STATE_DECL(MPID_STATE_GET_UUID);
 
     MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
-    MPIU_Snprintf(str, MPIDI_MAX_KVS_NAME_LEN, "%X%X%X%X", rand(), rand(), rand(), time(NULL));
+    MPIU_Snprintf(str, MPIDI_MAX_KVS_NAME_LEN, "%X%X%X%X", rand(), rand(), rand(), (unsigned int)time(NULL));
 #else
     MPIDI_STATE_DECL(MPID_STATE_GET_UUID);
 
@@ -146,16 +155,14 @@ int MPIDI_KVS_Init()
     kvs.hKVSMutex = CreateMutex(NULL, FALSE, "MPIDI_KVS_MUTEX");
     if (kvs.hKVSMutex == NULL)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_INIT);
 	return mpi_errno;
     }
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
+    MPIDI_KVS_MUTEX_LOCK;
 #endif
     kvs.nInitKVSRefCount++;
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_INIT);
     return mpi_errno;
 }
@@ -170,9 +177,7 @@ int MPIDI_KVS_Finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FINALIZE);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
     kvs.nInitKVSRefCount--;
 
     if (kvs.nInitKVSRefCount == 0)
@@ -196,18 +201,16 @@ int MPIDI_KVS_Finalize()
 	kvs.pDatabase = NULL;
 	kvs.pDatabaseIter = NULL;
 
+	MPIDI_KVS_MUTEX_UNLOCK;
 #ifdef USE_WIN_MUTEX_PROTECT
-	ReleaseMutex(kvs.hKVSMutex);
 	CloseHandle(kvs.hKVSMutex);
 	kvs.hKVSMutex = NULL;
 #endif
     }
-#ifdef USE_WIN_MUTEX_PROTECT
     else
     {
-	ReleaseMutex(kvs.hKVSMutex);
+	MPIDI_KVS_MUTEX_UNLOCK;
     }
-#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FINALIZE);
     return MPI_SUCCESS;
@@ -223,10 +226,7 @@ int MPIDI_KVS_Create(char *name)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_CREATE);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    /* Lock */
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     pNode = kvs.pDatabase;
     if (pNode)
@@ -249,10 +249,7 @@ int MPIDI_KVS_Create(char *name)
 	get_uuid(pNode->pszName);
 	if (pNode->pszName[0] == '\0')
 	{
-#ifdef USE_WIN_MUTEX_PROTECT
-	    /* Unlock */
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE);
 	    return mpi_errno;
@@ -263,10 +260,7 @@ int MPIDI_KVS_Create(char *name)
     } while (pNodeTest != pNode);
     MPIU_Strncpy(name, pNode->pszName, MPIDI_MAX_KVS_NAME_LEN);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    /* Unlock */
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE);
     return MPI_SUCCESS;
@@ -289,10 +283,7 @@ int MPIDI_KVS_Create_name_in(char *name)
 	return mpi_errno;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    /* Lock */
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     /* Check if the name already exists */
     pNode = kvs.pDatabase;
@@ -300,10 +291,7 @@ int MPIDI_KVS_Create_name_in(char *name)
     {
 	if (strcmp(pNode->pszName, name) == 0)
 	{
-#ifdef USE_WIN_MUTEX_PROTECT
-	    /* Unlock */
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
 	    /*return MPIDI_KVS_FAIL;*/
 	    /* Empty database? */
@@ -330,10 +318,7 @@ int MPIDI_KVS_Create_name_in(char *name)
     pNode->pIter = NULL;
     MPIU_Strncpy(pNode->pszName, name, MPIDI_MAX_KVS_NAME_LEN);
     
-#ifdef USE_WIN_MUTEX_PROTECT
-    /* Unlock */
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
     return MPI_SUCCESS;
@@ -350,9 +335,7 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_GET);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     pNode = kvs.pDatabase;
     while (pNode)
@@ -366,9 +349,7 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 		{
 		    /* FIXME: This routine assume that value has length MPIDI_MAX_KVS_VALUE_LEN, but there is no easy way to check this.  This is poor coding prctice. */
 		    MPIU_Strncpy(value, pElement->pszValue, MPIDI_MAX_KVS_VALUE_LEN);
-#ifdef USE_WIN_MUTEX_PROTECT
-		    ReleaseMutex(kvs.hKVSMutex);
-#endif
+		    MPIDI_KVS_MUTEX_UNLOCK;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_GET);
 		    return MPI_SUCCESS;
 		}
@@ -378,9 +359,7 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 	pNode = pNode->pNext;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Get(name, key, value, MPIDI_MAX_KVS_VALUE_LEN);
     if (pmi_errno != PMI_SUCCESS)
@@ -406,9 +385,7 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_PUT);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     pNode = kvs.pDatabase;
     while (pNode)
@@ -421,9 +398,7 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 		if (strcmp(pElement->pszKey, key) == 0)
 		{
 		    MPIU_Strncpy(pElement->pszValue, value, MPIDI_MAX_KVS_VALUE_LEN);
-#ifdef USE_WIN_MUTEX_PROTECT
-		    ReleaseMutex(kvs.hKVSMutex);
-#endif
+		    MPIDI_KVS_MUTEX_LOCK;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_PUT);
 		    return MPI_SUCCESS;
 		}
@@ -434,18 +409,14 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 	    MPIU_Strncpy(pElement->pszKey, key, MPIDI_MAX_KVS_KEY_LEN);
 	    MPIU_Strncpy(pElement->pszValue, value, MPIDI_MAX_KVS_VALUE_LEN);
 	    pNode->pData = pElement;
-#ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_PUT);
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Put(name, key, value);
     if (pmi_errno != PMI_SUCCESS)
@@ -471,9 +442,7 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_DELETE);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     pNode = kvs.pDatabase;
     while (pNode)
@@ -494,18 +463,14 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
 			pNode->pData = pElement->pNext;
 		    }
 		    MPIU_Free(pElement);
-#ifdef USE_WIN_MUTEX_PROTECT
-		    ReleaseMutex(kvs.hKVSMutex);
-#endif
+		    MPIDI_KVS_MUTEX_UNLOCK;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
 		    return MPI_SUCCESS;
 		}
 		pElementTrailer = pElement;
 		pElement = pElement->pNext;
 	    }
-#ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
 	    return mpi_errno;
@@ -513,9 +478,7 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
 	pNode = pNode->pNext;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
@@ -533,9 +496,7 @@ int MPIDI_KVS_Destroy(const char *name)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_DESTROY);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     pNodeTrailer = pNode = kvs.pDatabase;
     while (pNode)
@@ -557,9 +518,7 @@ int MPIDI_KVS_Destroy(const char *name)
 		pNodeTrailer->pNext = pNode->pNext;
 	    }
 	    MPIU_Free(pNode);
-#ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DESTROY);
 	    return MPI_SUCCESS;
 	}
@@ -567,9 +526,7 @@ int MPIDI_KVS_Destroy(const char *name)
 	pNode = pNode->pNext;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Destroy(name);
     if (pmi_errno != PMI_SUCCESS)
@@ -596,9 +553,7 @@ int MPIDI_KVS_First(const char *name, char *key, char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FIRST);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     if (key != NULL)
     {
@@ -624,18 +579,14 @@ int MPIDI_KVS_First(const char *name, char *key, char *value)
 	    {
 		pNode->pIter = pNode->pData;
 	    }
-#ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FIRST);
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Get_key_length_max(&pmi_key_len_max);
     pmi_errno = PMI_KVS_Get_value_length_max(&pmi_value_len_max);
@@ -696,9 +647,7 @@ int MPIDI_KVS_Next(const char *name, char *key, char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_NEXT);
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     key[0] = '\0';
     pNode = kvs.pDatabase;
@@ -716,18 +665,14 @@ int MPIDI_KVS_Next(const char *name, char *key, char *value)
 	    {
 		key[0] = '\0';
 	    }
-#ifdef USE_WIN_MUTEX_PROTECT
-	    ReleaseMutex(kvs.hKVSMutex);
-#endif
+	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXT);
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Get_key_length_max(&pmi_key_len_max);
     pmi_errno = PMI_KVS_Get_value_length_max(&pmi_value_len_max);
@@ -783,9 +728,7 @@ int MPIDI_KVS_Firstkvs(char *name)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_FIRSTKVS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FIRSTKVS);
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     kvs.pDatabaseIter = kvs.pDatabase;
     if (name != NULL)
@@ -800,9 +743,7 @@ int MPIDI_KVS_Firstkvs(char *name)
 	}
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FIRSTKVS);
     return MPI_SUCCESS;
@@ -815,9 +756,7 @@ int MPIDI_KVS_Nextkvs(char *name)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_NEXTKVS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_NEXTKVS);
-#ifdef USE_WIN_MUTEX_PROTECT
-    WaitForSingleObject(kvs.hKVSMutex, INFINITE);
-#endif
+    MPIDI_KVS_MUTEX_LOCK;
 
     if (kvs.pDatabaseIter == NULL)
     {
@@ -836,9 +775,7 @@ int MPIDI_KVS_Nextkvs(char *name)
 	}
     }
 
-#ifdef USE_WIN_MUTEX_PROTECT
-    ReleaseMutex(kvs.hKVSMutex);
-#endif
+    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXTKVS);
     return MPI_SUCCESS;

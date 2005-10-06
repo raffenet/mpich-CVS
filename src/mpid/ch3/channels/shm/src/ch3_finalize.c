@@ -20,9 +20,8 @@ int MPIDI_CH3_Finalize()
 
     /* Shutdown the progress engine */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_progress_finalize", 0);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_progress_finalize");
     }
 
     /* Free resources allocated in CH3_Init() */
@@ -30,17 +29,15 @@ int MPIDI_CH3_Finalize()
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, TRUE);
     else
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, FALSE);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**finalize_release_mem", 0);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_release_mem");
     }
 
     /* Let PMI know the process is about to exit */
     rc = PMI_Finalize();
-    if (rc != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-	    MPI_ERR_OTHER, "**pmi_finalize", "**pmi_finalize %d", rc );
+    if (rc != PMI_SUCCESS) {
+	MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, 
+		      "**pmi_finalize", "**pmi_finalize %d", rc );
     }
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));

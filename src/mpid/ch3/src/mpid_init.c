@@ -22,12 +22,9 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 
-#ifndef MPIDI_CH3_UNFACTORED_INIT
-static int MPIDI_CH3I_Other_Init(int *has_args, int *has_env, int *has_parent);
-static int MPIDI_CH3I_BCInit(  int pg_rank, 
-			       char **publish_bc_p, char **bc_key_p, 
-			       char **bc_val_p, int *val_max_sz_p);
-#endif
+int MPIDI_CH3I_BCInit( int pg_rank, 
+		       char **publish_bc_p, char **bc_key_p, 
+		       char **bc_val_p, int *val_max_sz_p);
 
 #include "mpidi_ch3_impl.h"  /* for extern'd MPIDI_CH3I_Process */
 
@@ -53,10 +50,12 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     MPID_Comm * comm;
     int p;
     char * env;
+#if 0
     char *publish_bc_orig = NULL;
     char *bc_key = NULL;
     char *bc_val = NULL;
     int val_max_remaining;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPID_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
@@ -76,10 +75,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     MPIDI_Process.recvq_unexpected_tail = NULL;
     MPIDI_Process.lpid_counter = 0;
     MPIDI_Process.warnings_enabled = TRUE;
-
-    /* FIXME: This is a note that the code to find the processor name
-       has been moved into the file that implements the get_processor_name
-       call */
+    MPIDI_Process.parent_port_name = NULL;
 
     /* FIXME:
        We don't know that environment variables are sent to all processes.
@@ -104,48 +100,27 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      */
     MPIR_Process.attrs.tag_ub          = MPIDI_TAG_UB;
 
-
     /*
      * Perform channel-independent PMI initialization
      */
     mpi_errno = InitPGFromPMI( has_args, has_env, &has_parent, &pg_rank, &pg );
 
-    /* WDG - The only channel to assert this is the shm channel */
-#ifndef MPIDI_CH3_UNFACTORED_INIT
-    mpi_errno = MPIDI_CH3I_Other_Init(has_args, has_env, &has_parent );
-    if (mpi_errno == MPI_SUCCESS)
-	mpi_errno = MPIDI_CH3I_BCInit( pg_rank, &publish_bc_orig, &bc_key, 
-				       &bc_val, &val_max_remaining);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	MPIU_ERR_POP(mpi_errno);
-    }    
-#endif
-    
     /*
      * Let the channel perform any necessary initialization
      * The channel init should assume that PMI_Init has been called and that
      * the basic information about the job has been extracted from PMI (e.g.,
      * the size and rank of this process, and the process group id)
      */
-    /* FIXME */
-    /* Notes: bc_key, bc_val, publish_bc_orig, and val_max_remaining should
-       not be passed to the channel init routine - instead, it should call
-       the appropriate routine to create and install the contact information */
-    /* This routine should be passed *has_args, *has_env, has_parent and pg.
-       The remaining values should be taken from pg or handled internally */
     /* Unresolved: some channels may want to override the PMI values for 
        size and node (gasnet is one such channel).  The initPGFromPMI routine
        could take an optional routine to call before calling PMI routines, 
        as one way to solve this */
-    mpi_errno = MPIDI_CH3_Init(has_parent, pg, pg_rank,
-                              &publish_bc_orig, &bc_key, &bc_val, &val_max_remaining);
-    if (mpi_errno != MPI_SUCCESS)
-    {
+    mpi_errno = MPIDI_CH3_Init(has_parent, pg, pg_rank);
+    if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ch3_init");
     }
 
-
+    /* FIXME: Why are pg_size and pg_rank handled differently? */
     pg_size = MPIDI_PG_Get_size(pg);
     MPIDI_Process.my_pg = pg;  /* brad : this is rework for shared memories because they need this set earlier
                                 *         for getting the business card
@@ -220,77 +195,36 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      */
     if (has_parent)
     {
-#	if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
-	{
-	    mpi_errno = MPIDI_CH3_Comm_get_parent(&comm);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-				     "**ch3|conn_parent", 
-				     "**ch3|conn_parent %s", val);
-	    }
-	}
-#       elif (defined(MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT))
+#       if (defined(MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT))
 	{
 	    char * parent_port;
 
-#         if 0
-	    int p0_mpi_errno = MPI_SUCCESS;
-  	    /*
-	     * Ideally, only process zero would call MPIDI_CH3_Get_parent_port(), but MPI/R_Bcast() cannot be called until
-	     * initialization of MPI is complete.  Obviously that's not the case here... (we are in MPID_Init :-)
-	     */ 
-	    if (pg_rank == 0)
-	    { 
-		p0_mpi_errno = MPIDI_CH3_Get_parent_port(&parent_port);
-	    }
-	    else
-	    {
-		parent_port = NULL;
-	    }
-
-	    mpi_errno = MPIR_Bcast(&p0_mpi_errno, 1, MPI_INT, 0, MPIR_Process.comm_world);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
-				    "**ch3|get_parent_port_err_bcast");
-	    }
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (p0_mpi_errno != MPI_SUCCESS)
-	    {
-		if (pg_rank == 0)
-		{
-		    mpi_errno = p0_mpi_errno;
-		}
-		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-				    "**ch3|get_parent_port");
-	    }
-	    /* --END ERROR HANDLING-- */
-#	  else
+	    /* FIXME: To allow just the "root" process to 
+	       request the port and then use MPIR_Bcast to 
+	       distribute it to the rest of the processes,
+	       we need to perform the Bcast after MPI is
+	       otherwise initialized.  We could do this
+	       by adding another MPID call that the MPI_Init(_thread)
+	       routine would make after the rest of MPI is 
+	       initialized, but before MPI_Init returns.
+	       In fact, such a routine could be used to 
+	       perform various checks, including parameter
+	       consistency value (e.g., all processes have the
+	       same environment variable values). Alternately,
+	       we could allow a few routines to operate with 
+	       predefined parameter choices (e.g., bcast, allreduce)
+	       for the purposes of initialization. */
 	    mpi_errno = MPIDI_CH3_Get_parent_port(&parent_port);
-	    if (mpi_errno != MPI_SUCCESS)
-	    { 
+	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
 				    "**ch3|get_parent_port");
 	    }
-#         endif
 	    
 	    mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &comm);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		/* --BEGIN ERROR HANDLING-- */
-		if (pg_rank == 0)
-		{ 
-		    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-					 "**ch3|conn_parent", 
-					 "**ch3|conn_parent %s", parent_port);
-		}
-		else
-		{
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-					"**ch3|conn_parent");
-		}
-		/* --END ERROR HANDLING-- */
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+				     "**ch3|conn_parent", 
+				     "**ch3|conn_parent %s", parent_port);
 	    }
 	}
 #	else
@@ -322,18 +256,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     }
 
   fn_exit:
-    /* FIXME: All business card buffers should be within the individual 
-       channel initialization routines */
-    /* brad : free PMI business card bufs here */
-    if (bc_key != NULL)
-    {
-        MPIU_Free(bc_key);
-    }
-    if (publish_bc_orig != NULL)
-    {
-        MPIU_Free(publish_bc_orig);
-    }           
-    
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return mpi_errno;
@@ -502,59 +424,6 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
     goto fn_exit;
 }
 
-
-#ifndef MPIDI_CH3_UNFACTORED_INIT
-/*
- *  MPIDI_CH3I_Other_Init -  does channel independent initializations
- *
- * FIXME:
- * This routine now creates the kvs key with which to publish the
- * contact information (which is channel specific) and calls a channel-specific
- * progress-initialization function.  Both of these should be moved out of this
- * routine and into the code that handles the contact information.
- */
-static int MPIDI_CH3I_Other_Init(int * has_args, int * has_env, int * has_parent )
-{
-    int mpi_errno = MPI_SUCCESS;
-
-#ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT    
-    MPIDI_CH3I_Process.parent_port_name = NULL;
-#endif
-    
-#ifdef MPIDI_CH3_USES_ACCEPTQ
-    MPIDI_CH3I_Process.acceptq_head = NULL;
-#endif
-
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-    {
-	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
-    }
-#   endif
-
-    /*
-     *  VC initialization is now in MPIDI_CH3_Init (and some in MPIDI_CH3U_Init_* upcalls)
-     */
-
-    /*
-     * Initialize Progress Engine.  This must occur before the business card is requested because part of progress engine
-     * initialization is setting up the listener socket.  The port of the listener socket needs to be included in the business
-     * card.
-     */
-    /* FIXME: This is an internal function not part of the CH3 channel interface */
-    mpi_errno = MPIDI_CH3I_Progress_init();
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**init_progress");
-    }    
-
-  fn_exit:
-
-    return mpi_errno;
-
-  fn_fail:
-    goto fn_exit;
-}
-
 /*
  * Initialize the business card.  This creates only the key part of the
  * business card; the value is later set by the channel.
@@ -563,9 +432,9 @@ static int MPIDI_CH3I_Other_Init(int * has_args, int * has_env, int * has_parent
  * and not in this routine (and it should be performed within the channel 
  * init)
  */
-static int MPIDI_CH3I_BCInit( int pg_rank, 
-			      char **publish_bc_p, char **bc_key_p,
-			      char **bc_val_p, int *val_max_sz_p )
+int MPIDI_CH3I_BCInit( int pg_rank, 
+		       char **publish_bc_p, char **bc_key_p,
+		       char **bc_val_p, int *val_max_sz_p )
 {
     int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
@@ -632,7 +501,6 @@ static int MPIDI_CH3I_BCInit( int pg_rank,
   fn_fail:
     goto fn_exit;
 }
-#endif
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {

@@ -9,6 +9,9 @@
 #include "pmi.h"
 #endif
 
+/* FIXME: These routines need a description.  What is their purpose?  Who
+   calls them and why?  What does each one do?
+*/
 static MPIDI_PG_t * MPIDI_PG_list = NULL;
 static MPIDI_PG_t * MPIDI_PG_iterator_next = NULL;
 static MPIDI_PG_Compare_ids_fn_t MPIDI_PG_Compare_ids_fn;
@@ -37,6 +40,7 @@ int MPIDI_PG_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
 
+    /* FIXME - straighten out the use of PG_Finalize - no use after PG_Finalize */
 /* ifdefing out this check because the list will not be NULL in Ch3_finalize because
    one additional reference is retained in MPIDI_Process.my_pg. That reference is released
    only after ch3_finalize returns. If I release it before ch3_finalize, the ssm channel
@@ -57,6 +61,9 @@ int MPIDI_PG_Finalize(void)
     return mpi_errno;
 }
 
+/* FIXME: This routine needs to make it clear that the pg_id, for example
+   is saved; thus, if the pg_id is a string, then that string is not 
+   copied and must be freed by a PG_Destroy routine */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Create
 #undef FCNAME
@@ -215,6 +222,9 @@ int MPIDI_PG_Iterate_reset()
     return MPI_SUCCESS;
 }
 
+/* FIXME: What does DEV_IMPLEMENTS_KVS mean?  Why is it used?  Who uses 
+   PG_To_string and why?  */
+
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 
 #undef FUNCNAME
@@ -227,6 +237,7 @@ static int MPIDI_Allocate_more(char **str, char **cur_pos, int *cur_len)
     size_t orig_length, longer_length;
 
     orig_length = (*cur_pos - *str);
+    /* FIXME: Really try to add a MB here?! */
     longer_length = (*cur_pos - *str) + (1024*1024);
 
     longer = (char*)MPIU_Malloc(longer_length * sizeof(char));
@@ -263,72 +274,64 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr)
     if (str == NULL)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	goto fn_exit;
+	goto fn_fail;
     }
     cur_pos = str;
     /* Save the PG id */
     mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, pg_ptr->id);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
     /* Save the PG size */
     MPIU_Snprintf(len_str, 20, "%d", pg_ptr->size);
     mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, len_str);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
     /* Save all the KVS entries for this PG */
     mpi_errno = MPIDI_KVS_First(pg_ptr->ch.kvs_name, key, val);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
+
     while (mpi_errno == MPI_SUCCESS && key[0] != '\0')
     {
 	mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, key);
 	if (mpi_errno != MPIU_STR_SUCCESS)
 	{
 	    mpi_errno = MPIDI_Allocate_more(&str, &cur_pos, &cur_len);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_POP(mpi_errno);
 	    }
 	    mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, key);
-	    if (mpi_errno != MPIU_STR_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPIU_STR_SUCCESS) {
+		MPIU_ERR_POP(mpi_errno);
 	    }
 	}
 	mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, val);
 	if (mpi_errno != MPIU_STR_SUCCESS)
 	{
 	    mpi_errno = MPIDI_Allocate_more(&str, &cur_pos, &cur_len);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_POP(mpi_errno);
 	    }
 	    mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, val);
-	    if (mpi_errno != MPIU_STR_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPIU_STR_SUCCESS) {
+		MPIU_ERR_POP(mpi_errno);
 	    }
 	}
 	mpi_errno = MPIDI_KVS_Next(pg_ptr->ch.kvs_name, key, val);
     }
     *str_ptr = str;
+
 fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
+/* FIXME: This is a function that uses PMI to get a process group id string
+   and then uses that string to create a CH3 PG */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Create_with_kvs
 #undef FCNAME
@@ -338,11 +341,11 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     int mpi_errno = MPI_SUCCESS;
     char key[MPIDI_MAX_KVS_KEY_LEN];
     char val[MPIDI_MAX_KVS_VALUE_LEN];
-    char *pg_id;
+    char *pg_id = 0;
     int pgid_len;
     char sz_str[20];
     int vct_sz;
-    MPIDI_PG_t *existing_pg, *pg_ptr;
+    MPIDI_PG_t *existing_pg, *pg_ptr=0;
 
     mpi_errno = PMI_Get_id_length_max(&pgid_len);
     /* --BEGIN ERROR HANDLING-- */
@@ -354,6 +357,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     /* --END ERROR HANDLING-- */
     pgid_len = MPIDU_MAX(pgid_len, MPIDI_MAX_KVS_NAME_LEN);
 
+    /* FIXME: Where are we *sure* that this is deallocated? */
     pg_id = (char*)MPIU_Malloc(pgid_len * sizeof(char));
     /* --BEGIN ERROR HANDLING-- */
     if (pg_id == NULL)
@@ -364,16 +368,12 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     /* --END ERROR HANDLING-- */
 
     mpi_errno = MPIU_Str_get_string(&str, pg_id, pgid_len);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
     mpi_errno = MPIU_Str_get_string(&str, sz_str, 20);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
     vct_sz = atoi(sz_str);
 
@@ -395,26 +395,20 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     *flag = 1;
 
     mpi_errno = MPIDI_PG_Create(vct_sz, pg_id, pg_pptr);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
     pg_ptr = *pg_pptr;
     pg_ptr->ch.kvs_name = (char*)MPIU_Malloc(MPIDI_MAX_KVS_NAME_LEN * sizeof(char));
-    if (pg_ptr->ch.kvs_name == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (pg_ptr->ch.kvs_name == NULL) {
+	MPIU_ERR_POP(mpi_errno);
     }
     /* FIXME: This creates a new kvs name in the "cached" KVS space.
        What is the scope of this name (which processes know it)?  
        Is it a private (this process only) cache?  */
     mpi_errno = MPIDI_KVS_Create(pg_ptr->ch.kvs_name);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
 
     key[0] = '\0';
@@ -423,10 +417,8 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     while (key[0] != '\0')
     {
 	mpi_errno = MPIDI_KVS_Put(pg_ptr->ch.kvs_name, key, val);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    goto fn_exit;
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_POP(mpi_errno);
 	}
 	key[0] = '\0';
 	MPIU_Str_get_string(&str, key, MPIDI_MAX_KVS_KEY_LEN);
@@ -435,6 +427,8 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
 
 fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #ifdef HAVE_CTYPE_H

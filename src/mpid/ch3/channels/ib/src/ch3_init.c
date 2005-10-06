@@ -8,12 +8,13 @@
 #include "pmi.h"
 #include "ibu.h"
 
+/* FIXME: If we still use this, it needs to be modified to match the 
+   current spec for MPIDI_CH3_Init */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *pg, int pg_rank,
-		   char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg, int pg_rank )
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMI_SUCCESS;
@@ -114,10 +115,6 @@ int MPIDI_CH3_Init(int * has_args, int * has_env, int * has_parent, MPIDI_PG_t *
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 	return mpi_errno;
     }
-
-    /* XXX - has_args and has_env need to come from PMI eventually... */
-    *has_args = TRUE;
-    *has_env = TRUE;
 
     /* for now, connect all the processes at init time */
     MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);

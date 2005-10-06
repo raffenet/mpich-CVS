@@ -53,6 +53,10 @@ typedef struct MPIDI_Process
     MPID_Request * recvq_unexpected_tail;
     int lpid_counter;
     int warnings_enabled;
+    
+    char         *parent_port_name;   /* Name of parent port if this
+					 process was spawned (and is root
+					 of comm world) or null */
 }
 MPIDI_Process_t;
 

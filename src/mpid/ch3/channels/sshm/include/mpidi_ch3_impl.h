@@ -143,7 +143,6 @@ typedef struct MPIDI_CH3I_SHM_Queue_t
 
 typedef struct MPIDI_CH3I_Process_s
 {
-    char * parent_port_name;
     MPIDI_VC_t *shm_reading_list, *shm_writing_list;
     MPIDI_CH3I_Acceptq_t * acceptq_head;
     int num_cpus;
@@ -291,7 +290,6 @@ int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag);
 int MPIDI_CH3I_Get_business_card(char * value, int length);
-int MPIDI_CH3I_Connect_to_root(const char * port_name, MPIDI_VC_t ** new_vc);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);

@@ -75,33 +75,42 @@ void MPIU_DBG_PrintVCState(MPIDI_VC_t *vc)
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
-                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank )
 {
     int mpi_errno = MPI_SUCCESS;
     int pg_size;
     int p;
+    char *publish_bc_orig = NULL;
+    char *bc_key = NULL;
+    char *bc_val = NULL;
+    int val_max_remaining;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
 
-    /* initialize aspects specific to sockets.  do NOT publish business card yet  */
+    mpi_errno = MPIDI_CH3I_Acceptq_init();
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
+
+    mpi_errno = MPIDI_CH3I_Progress_init();
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
+
+    /* Initialize the business card */
+    mpi_errno = MPIDI_CH3I_BCInit( pg_rank, &publish_bc_orig, &bc_key, &bc_val,
+				   &val_max_remaining );
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    /* initialize aspects specific to sockets.  do NOT publish business 
+       card yet  */
     mpi_errno = MPIDI_CH3U_Init_sock(has_parent, pg_p, pg_rank,
-                               NULL, bc_key_p, bc_val_p, val_max_sz_p);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
+				     NULL, &bc_key, &bc_val, 
+				     &val_max_remaining);
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
 
     /* initialize aspects specific to sshm.  now publish business card   */
     mpi_errno = MPIDI_CH3U_Init_sshm(has_parent, pg_p, pg_rank,
-                               publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
+				     &publish_bc_orig, &bc_key, &bc_val, 
+				     &val_max_remaining);
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = PMI_Get_size(&pg_size);
     if (mpi_errno != 0) {
@@ -109,7 +118,8 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 			     "**pmi_get_size", "**pmi_get_size %d", mpi_errno);
     }
 
-    /* Allocate and initialize the VC table associated with this process group (and thus COMM_WORLD) */
+    /* Allocate and initialize the VC table associated with this process
+       group (and thus COMM_WORLD) */
     /* FIXME: This doesn't allocate and only inits one field.  Is this
        now part of the channel-specific hook for channel-specific VC info? */
     for (p = 0; p < pg_size; p++)
@@ -123,6 +133,12 @@ fn_exit:
     return mpi_errno;
 
 fn_fail:
+    if (bc_key != NULL) {
+        MPIU_Free(bc_key);
+    }
+    if (publish_bc_orig != NULL) {
+        MPIU_Free(publish_bc_orig);
+    }           
     goto fn_exit;
 }
 
@@ -145,4 +161,12 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     /* This variable is used when sock and sshm are combined */
     vc->ch.bShm               = FALSE;
     return 0;
+}
+
+/* Select the routine that uses sockets to connect two communicators
+   using a socket */
+int MPIDI_CH3_Connect_to_root(const char * port_name, 
+			      MPIDI_VC_t ** new_vc)
+{
+    return MPIDI_CH3I_Connect_to_root_sock( port_name, new_vc );
 }

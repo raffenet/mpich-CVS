@@ -27,20 +27,20 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
 #ifdef MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
     char val[MPIDI_MAX_KVS_VALUE_LEN];
 
-    if (MPIDI_CH3I_Process.parent_port_name == NULL)
+    if (MPIDI_Process.parent_port_name == NULL)
     {
 	mpi_errno = MPIDI_KVS_Get(MPIDI_Process.my_pg->ch.kvs_name, "PARENT_ROOT_PORT_NAME", val);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
 
-	MPIDI_CH3I_Process.parent_port_name = MPIU_Strdup(val);
-	if (MPIDI_CH3I_Process.parent_port_name == NULL) {
+	MPIDI_Process.parent_port_name = MPIU_Strdup(val);
+	if (MPIDI_Process.parent_port_name == NULL) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
     }
 
-    *parent_port = MPIDI_CH3I_Process.parent_port_name;
+    *parent_port = MPIDI_Process.parent_port_name;
 #endif
 
  fn_exit:

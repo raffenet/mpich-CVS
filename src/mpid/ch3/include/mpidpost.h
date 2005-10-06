@@ -11,6 +11,15 @@
  * Channel API prototypes
  */
 
+/* FIXME: *E is the "enum" doctext structure comment marker; these should be
+ *@ instead.  Also, these may be out of date; not all of these are referenced
+ * (They should all be used in the ch3/src directory; otherwise they're not
+ * part of the channel API). 
+ */
+
+/* Perform channel-specific initialization of a virtural connection */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
+
 /*E
   MPIDI_CH3_Init - Initialize the channel implementation.
 
@@ -23,10 +32,10 @@
   A MPI error code.
 
   Notes:
-  MPID_Init has called 'PMI_Init' and created the process group structure
+  MPID_Init has called 'PMI_Init' and created the process group structure 
+  before this routine is called.
 E*/
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank,
-                   char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
 
 /*E
   MPIDI_CH3_Finalize - Shutdown the channel implementation.
@@ -48,7 +57,10 @@ int MPIDI_CH3_Finalize(void);
   A MPI error code.
   
   NOTE:
-  MPIDI_CH3_Get_parent_port() should only be called if MPIDI_CH3_Init() returns with has_parent set to TRUE.
+  'MPIDI_CH3_Get_parent_port' should only be called if the initialization
+  (in the current implementation, done with the static function 
+  'InitPGFromPMI' in 'mpid_init.c') has determined that this process
+  in fact has a parent.
 E*/
 int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
 #endif
@@ -340,19 +352,6 @@ int MPIDI_CH3_Progress_poke(void);
 E*/
 void MPIDI_CH3_Progress_signal_completion(void);
 
-
-/*@
-  MPIDI_CH3_Get_universe_size - Return the number of processes that the current process management environment can handle
-
-  Output Parameters:
-. universe_size - the universe size; MPIR_UNIVERSE_SIZE_NOT_AVAILABLE if the size cannot be determined
-  
-  Return value:
-  A MPI error code.
-@*/
-int MPIDI_CH3_Get_universe_size(int *universe_size);
-
-
 int MPIDI_CH3_Open_port(char *port_name);
 
 int MPIDI_GetTagFromPort( const char *, int * );
@@ -375,6 +374,11 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr, MPI
   An MPI error code
 E*/
 int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc);
+
+/* MPIDI_CH3_Connect_to_root (really connect to peer) - channel routine
+   for connecting to a process through a port, used in implementing
+   MPID_Comm_connect and accept */
+int MPIDI_CH3_Connect_to_root(const char *, MPIDI_VC_t **);
 
 
 /*E
@@ -567,19 +571,18 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sd
 int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rreqp);
 
 
+/* FIXME: Move these prototypes into header files in the appropriate 
+   util directories  */
 /* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be executed by two or more channels */
 int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);                         
 int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
 
-/* added by brad. required for (socket version) upcall to Connect_to_root */
-#ifdef MPIDI_CH3_USES_SOCK
-extern MPIDU_Sock_set_t MPIDI_CH3I_sock_set;
-#endif
-
 /* added by brad.  business card related global and functions */
 #define MAX_HOST_DESCRIPTION_LEN 256
+/* FIXME: keep the listener port in one file and provide a method to
+   set/retrieve it as needed */
 extern int MPIDI_CH3I_listener_port;
 int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);

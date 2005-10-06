@@ -7,30 +7,55 @@
 #include "mpidi_ch3_impl.h"
 
 /*
- *  MPIDI_CH3_Init  - makes socket specific initializations.  Most of this functionality
- *                      is in the MPIDI_CH3U_Init_sock upcall because the same tasks need
- *                      to be done for the ssh (sock + shm) channel.  As a result, it
- *                      must except a lot more arguements.
+ *  MPIDI_CH3_Init  - makes socket specific initializations.  Most of this 
+ *                    functionality is in the MPIDI_CH3U_Init_sock upcall 
+ *                    because the same tasks need to be done for the ssh 
+ *                    (sock + shm) channel.  
  */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
-                    char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
 {
     int mpi_errno = MPI_SUCCESS;
+    char *publish_bc_orig = NULL;
+    char *bc_key = NULL;
+    char *bc_val = NULL;
+    int val_max_remaining;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
 
+    mpi_errno = MPIDI_CH3I_Acceptq_init();
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
+
+    mpi_errno = MPIDI_CH3I_Progress_init();
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
+
+    /* Initialize the business card */
+    mpi_errno = MPIDI_CH3I_BCInit( pg_rank, &publish_bc_orig, &bc_key, &bc_val,
+				   &val_max_remaining );
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
     /* initialize aspects specific to sockets  */
     mpi_errno = MPIDI_CH3U_Init_sock(has_parent, pg_p, pg_rank,
-                               publish_bc_p, bc_key_p, bc_val_p, val_max_sz_p);
+				     &publish_bc_orig, &bc_key, &bc_val, 
+				     &val_max_remaining);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
     return mpi_errno;
+ fn_fail:
+    if (bc_key != NULL) {
+        MPIU_Free(bc_key);
+    }
+    if (publish_bc_orig != NULL) {
+        MPIU_Free(publish_bc_orig);
+    }           
+    goto fn_exit;
 }
 
 /* This function simply tells the CH3 device to use the defaults for the 
@@ -47,4 +72,12 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     MPIDI_VC_InitSock( vc );
     return 0;
+}
+
+/* Select the routine that uses sockets to connect two communicators
+   using a socket */
+int MPIDI_CH3_Connect_to_root(const char * port_name, 
+			      MPIDI_VC_t ** new_vc)
+{
+    return MPIDI_CH3I_Connect_to_root_sock( port_name, new_vc );
 }
