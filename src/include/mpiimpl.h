@@ -2159,25 +2159,25 @@ extern MPICH_PerProcess_t MPIR_Process;
    src/mpi/pt2pt? */
 /* ------------------------------------------------------------------------- */
 
+/* Do not set MPI_ERROR (only set if ERR_IN_STATUS is returned */
 #define MPIR_Status_set_empty(status_)			\
 {							\
     if ((status_) != MPI_STATUS_IGNORE)			\
     {							\
 	(status_)->MPI_SOURCE = MPI_ANY_SOURCE;		\
 	(status_)->MPI_TAG = MPI_ANY_TAG;		\
-	/* (status_)->MPI_ERROR = MPI_SUCCESS; */	\
 	(status_)->count = 0;				\
 	(status_)->cancelled = FALSE;			\
     }							\
 }
 /* See MPI 1.1, section 3.11, Null Processes */
+/* Do not set MPI_ERROR (only set if ERR_IN_STATUS is returned */
 #define MPIR_Status_set_procnull(status_)		\
 {							\
     if ((status_) != MPI_STATUS_IGNORE)			\
     {							\
 	(status_)->MPI_SOURCE = MPI_PROC_NULL;		\
 	(status_)->MPI_TAG = MPI_ANY_TAG;		\
-	/* (status_)->MPI_ERROR = MPI_SUCCESS; */	\
 	(status_)->count = 0;				\
 	(status_)->cancelled = FALSE;			\
     }							\
