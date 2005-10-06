@@ -367,6 +367,9 @@
 #define MPIU_ERR_SET(err_,class_,msg_) \
     err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
            __LINE__, class_, msg_, 0 )
+#define MPIU_ERR_SET1(err_,class_,gmsg_,smsg_,arg1_) \
+    err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
+           __LINE__, class_, gmsg_, smsg_, arg1_ )
 #define MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
            __LINE__, class_, msg_, 0 ); stmt_ ;}
@@ -392,24 +395,28 @@
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
            __LINE__, class_, gmsg_, smsg_, arg1_, arg2_, arg3_ ); stmt_ ;}
 #else
+/* Simply set the class, being careful not to override a previously
+   set class */
 #define MPIU_ERR_SET(err_,class_,msg_) \
      {if (!err_){err_=class_;}}
+#define MPIU_ERR_SET1(err_,class_,gmsg_,smsg_,arg1_) \
+      MPIU_ERR_SET(err_,class_,msg_)
 #define MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_) \
      {if (!err_){err_=class_;} stmt_;}
 #define MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
-     {if(!err_){err_=class_;}stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
-     {if(!err_){err_=class_;}stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_) \
-     {if(!err_){err_=class_;}stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
-     {if(!err_){err_=class_;} stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_)
 #define MPIU_ERR_SETFATALANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
-     {if(!err_){err_=class_;}stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
-     {if(!err_){err_=class_;}stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_) \
-     {if(!err_){err_=class_;}stmt_;}
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #endif
 
 /* The following definitions are the same independent of the choice of 
