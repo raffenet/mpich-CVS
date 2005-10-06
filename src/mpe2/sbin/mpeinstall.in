@@ -447,6 +447,10 @@ if [ -n "$etcbuild_dir" ] ; then
     if [ -d $etcbuild_dir ] ; then
          echo "Copying MPE compiler configuration files to $DESTDIR$sysconfdir"
          CopyDirRecurP $etcbuild_dir $sysconfdir $MODE
+         cd $etcbuild_dir && \
+         for file in *.conf ; do \
+             FixInstallFile $file $DESTDIR$sysconfdir/$file ; \
+         done
     fi
 fi
 
