@@ -297,18 +297,18 @@ Error message files in src/mpi/errhan were not updated."
         if [ ! -s src/mpi/errhan/defmsg.h ] ; then
             echo "Creating a dummy defmsg.h file"
 	    cat > src/mpi/errhan/defmsg.h <<EOF
-typedef struct { const char *short_name, *long_name; } msgpair;
+typedef struct { const unsigned int sentinal1; const char *short_name, *long_name; const unsigned int sentinal2; } msgpair;
 static const int generic_msgs_len = 0;
-static msgpair generic_err_msgs[] { {0, "no error catalog"}, };
+static msgpair generic_err_msgs[] = { {0xacebad03, 0, "no error catalog", 0xcb0bfa11}, };
 static const int specific_msgs_len = 0;
-static msgpair specific_err_msgs[] {  {0,0}, };
+static msgpair specific_err_msgs[] = {  {0xacebad03,0,0,0xcb0bfa11}, };
 static int class_to_index[] = {
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0 }
+0, 0, 0, 0 };
 EOF
         fi
     fi
