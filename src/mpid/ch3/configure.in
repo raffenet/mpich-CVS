@@ -57,15 +57,8 @@ if test -s $srcdir/channels/$channel_name/setup_$channel_name ; then
 fi
 AC_SUBST(ch3subsystems)
 
-AC_CHECK_HEADERS(				\
-    assert.h					\
-    limits.h					\
-    string.h					\
-    sys/types.h					\
-    sys/uio.h					\
-    uuid/uuid.h					\
-    time.h						\
-    unistd.h)
+AC_CHECK_HEADERS(assert.h limits.h string.h sys/types.h sys/uio.h uuid/uuid.h \
+    time.h ctype.h unistd.h)
 
 AC_CHECK_FUNCS(gethostname)
 if test "$ac_cv_func_gethostname" = "yes" ; then
