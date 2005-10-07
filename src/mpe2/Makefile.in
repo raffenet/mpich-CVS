@@ -28,7 +28,7 @@ MPE_HEADERS          = mpe.h mpe_misc.h mpe_log.h mpe_graphics.h
 PKGS = "" @subdirs@
 
 all-redirect: 
-all: clean_etc build_include build_lib_bin
+all: build_include build_lib_bin
 
 #######  Building from the source
 build_include:
@@ -98,9 +98,9 @@ clean_lib:
 	 -$(RM) -f $(libbuild_dir)/*.o
 
 clean_etc:
-	 @-$(RM) -f $(etcbuild_dir)/*.conf
+	 -$(RM) -f $(etcbuild_dir)/*.conf
 
-clean: clean_bin clean_lib clean_etc
+clean: clean_bin clean_lib
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) clean ) ; \

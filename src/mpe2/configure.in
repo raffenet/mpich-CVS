@@ -641,7 +641,8 @@ if test ! -x ./sbin/mpeinstallcheck -a -s ./sbin/mpeinstallcheck; then
     chmod u+x ./sbin/mpeinstallcheck
 fi
 ] )
-AC_OUTPUT( Makefile sbin/mpeinstall sbin/mpeinstallcheck )
+AC_OUTPUT( Makefile sbin/mpeinstall sbin/mpeinstallcheck \
+           etc/mpe_help.conf etc/mpe_f77env.conf )
 
 configured_pkgs=""
 for pkg in $selected_pkgs ; do
