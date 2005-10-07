@@ -287,7 +287,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_RESULT($mpe_link_ok)
 else
 #   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
-    if "$MPI_IMPL" = "MPICH2" ; then
+    if test "$MPI_IMPL" = "MPICH2" ; then
         mpe_link_ok=yes
     else
         mpe_link_ok=no
@@ -309,7 +309,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_RESULT($mpe_link_ok)
 else
 #   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
-    if "$MPI_IMPL" = "MPICH2" ; then
+    if test "$MPI_IMPL" = "MPICH2" ; then
         mpe_link_ok=yes
     else
         mpe_link_ok=no
@@ -332,7 +332,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_RESULT($mpe_link_ok)
 else
 #   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
-    if "$MPI_IMPL" = "MPICH2" ; then
+    if test "$MPI_IMPL" = "MPICH2" ; then
         mpe_link_ok=yes
     else
         mpe_link_ok=no
@@ -355,7 +355,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_RESULT($mpe_link_ok)
 else
 #   only MPICH2 has PMPI_Comm_{create|free}_keyval, PMPI_Comm_{set|get}_attr
-    if "$MPI_IMPL" = "MPICH2" ; then
+    if test "$MPI_IMPL" = "MPICH2" ; then
         mpe_link_ok=yes
     else
         mpe_link_ok=no
