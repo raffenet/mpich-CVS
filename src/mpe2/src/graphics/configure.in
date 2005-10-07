@@ -261,4 +261,4 @@ AC_SUBST(ANIM_LIBS)
 AC_OUTPUT( Makefile src/Makefile \
            contrib/life/Makefile contrib/mandel/Makefile \
            contrib/mastermind/Makefile contrib/test/Makefile \
-           etc/mpe_mpianim.conf )
+           etc/mpe_mpianim.conf etc/mpe_graphics.conf )
