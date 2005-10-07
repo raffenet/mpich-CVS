@@ -1,9 +1,10 @@
+echo
 echo "Available option for -mpe= :"
 echo
-echo "  mpilog:    Automatic MPI logging and MPE user-defined states logging."
+echo "  mpilog:    Automatic MPI and MPE user-defined states logging."
 echo "             This links against -llmpe -lmpe."
 echo
-echo "  mpitrace:  Tracing MPI program."
+echo "  mpitrace:  Trace MPI with printf."
 echo "             This links against -ltmpe."
 echo
 echo "  mpianim:   Animate MPI program in real-time."
@@ -12,7 +13,10 @@ echo
 echo "  mpicheck:  Validate with Collective and Datatype checking library."
 echo "             This links against -lmpe_collchk."
 echo
-echo "  log:       MPE user-defined states logging, and MPE graphics library."
+echo "  graphics:  Use MPE graphics with X11 library."
+echo "             This links against -lmpe <X11 libraries>."
+echo
+echo "  log:       MPE user-defined states logging."
 echo "             This links against -lmpe."
 echo
 echo "  nolog :    Nullify MPE user-defined states logging."
