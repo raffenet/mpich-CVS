@@ -1,0 +1,22 @@
+echo "Available option for -mpe= :"
+echo
+echo "  mpilog:    Automatic MPI logging and MPE user-defined states logging."
+echo "             This links against -llmpe -lmpe."
+echo
+echo "  mpitrace:  Tracing MPI program."
+echo "             This links against -ltmpe."
+echo
+echo "  mpianim:   Animate MPI program in real-time."
+echo "             This links against -lampe -lmpe."
+echo
+echo "  mpicheck:  Validate with Collective and Datatype checking library."
+echo "             This links against -lmpe_collchk."
+echo
+echo "  log:       MPE user-defined states logging, and MPE graphics library."
+echo "             This links against -lmpe."
+echo
+echo "  nolog :    Nullify MPE user-defined states logging."
+echo "             This links against -lmpe_null."
+echo
+echo "  help :     Print this help page."
+exit 1
