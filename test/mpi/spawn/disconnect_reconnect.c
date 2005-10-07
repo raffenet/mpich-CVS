@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
 
     if (parentcomm == MPI_COMM_NULL)
     {
+	MPI_Comm_rank( MPI_COMM_WORLD, &rank ); /* Get rank for verbose msg */
 	IF_VERBOSE(("[%d] spawning %d processes\n", rank, np));
 	/* Create 3 more processes */
 	MPI_Comm_spawn("./disconnect_reconnect", /*MPI_ARGV_NULL*/&argv[1], np,
