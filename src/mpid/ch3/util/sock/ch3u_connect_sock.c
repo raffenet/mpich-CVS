@@ -82,6 +82,8 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port_name_tag");
     }
 
+    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"port tag %d",port_name_tag);
+
     MPIU_CHKPMEM_MALLOC(vc,MPIDI_VC_t *,sizeof(MPIDI_VC_t),mpi_errno,"vc");
     /* FIXME - where does this vc get freed? */
 
@@ -103,7 +105,10 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
        socket for a connection and return the connection.  That will
        keep the socket set out of the general ch3 code, even if this
        is the socket utility functions. */
-    mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, host_description, port, &conn->sock);
+    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+	  "posting connect to host %s, port %d", host_description, port ));
+    mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, 
+					host_description, port, &conn->sock);
     if (mpi_errno == MPI_SUCCESS)
     {
         vc->ch.sock = conn->sock;

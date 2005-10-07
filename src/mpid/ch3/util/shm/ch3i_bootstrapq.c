@@ -10,6 +10,11 @@
 #include <windows.h>
 #endif
 
+/* FIXME: These routines allocate memory but rarely free it.  They need
+   a finalize handler to remove the allocated memory.  A clear description
+   of the purpose of these routines and their scope of use would make that
+   easier. */
+
 #ifdef HAVE_WINDOWS_H
 
 typedef struct bootstrap_msg
@@ -49,7 +54,6 @@ typedef struct MPIDI_CH3I_BootstrapQ_struct
 static MPIDI_CH3I_BootstrapQ_struct * g_queue_list = NULL;
 
 #ifdef HAVE_WINDOWS_H
-
 int GetNextBootstrapMsg(MPIDI_CH3I_BootstrapQ queue, bootstrap_msg ** msg_ptr, BOOL blocking)
 {
     MPIDI_STATE_DECL(MPID_STATE_GET_NEXT_BOOTSTRAP_MSG);
@@ -633,6 +637,8 @@ int MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_BootstrapQ queue)
 }
 
 #ifdef USE_SINGLE_MSG_QUEUE
+
+/* FIXME: What does this routine do? */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_BootstrapQ_attach

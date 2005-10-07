@@ -268,8 +268,6 @@ int *exposure_epoch_grp_ranks_in_win;
 /*
  * Features needed or implemented by the channel
  */
-#define MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT
-#define MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
 #define MPIDI_DEV_IMPLEMENTS_KVS
 #define MPIDI_DEV_IMPLEMENTS_ABORT
 

@@ -46,7 +46,6 @@ E*/
 int MPIDI_CH3_Finalize(void);
 
 
-#if defined(MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT)
 /*E
   MPIDI_CH3_Get_parent_port - obtain the port name associated with the parent
 
@@ -63,27 +62,6 @@ int MPIDI_CH3_Finalize(void);
   in fact has a parent.
 E*/
 int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
-#endif
-
-
-#if defined(MPIDI_CH3_IMPLEMENTS_COMM_GET_PARENT)
-/*E
-  MPIDI_CH3_Comm_get_parent - Create the parent intercommunicator to be returned by MPI_Comm_get_parent().
-
-  Output Parameters:
-. comm_parent - new inter-communicator spanning the spawning processes and the spawned processes
-
-  Return value:
-  A MPI error code.
-  
-  NOTES:
-  MPIDI_CH3_Comm_get_parent() is intended for sophisticated channels.  Most channels should use MPIDI_CH3_Get_parent_port().
-
-  MPIDI_CH3_InitParent() should only be called if MPIDI_CH3_Init() returns with has_parent set to TRUE.
-E*/
-int MPIDI_CH3_InitParent(MPID_Comm ** comm_parent);
-#endif
-
 
 /*E
   MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A request object is allocated only if the send could not be

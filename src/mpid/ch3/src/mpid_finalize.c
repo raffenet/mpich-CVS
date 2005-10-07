@@ -211,6 +211,8 @@ int MPID_Finalize(void)
 
     if (MPIDI_Process.warnings_enabled)
     {
+	/* FIXME: Rather than making the receive queue head globally
+	   visible, */
 	if (MPIDI_Process.recvq_posted_head != NULL)
 	{
 	    /* XXX - insert code to print posted receive queue */

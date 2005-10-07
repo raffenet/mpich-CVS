@@ -7,6 +7,10 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
+/* FIXME: What does this routine do? */
+/* FIXME: It appears that this routine is used as part of the 
+   initial "get the peers connected" code in comm_connect/accept and
+   spawn */
 
 #undef FUNCNAME
 #define FUNCNAME  MPIDI_CH3I_Connect_to_root_sshm
@@ -23,17 +27,19 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     MPIDI_CH3_Pkt_t pkt;
     int num_written;
     char *cached_pg_id, *dummy_id = "";
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SSHM);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SSHM);
 
     mpi_errno = MPIDI_GetTagFromPort(port_name, &port_name_tag);
     if (mpi_errno != MPIU_STR_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port_name_tag");
     }
+    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"port tag %d",port_name_tag);
 
     if (*new_vc != NULL)
     {
+	MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"using old connection");
 	vc = *new_vc;
     }
     else
@@ -57,11 +63,13 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     MPIDI_Process.my_pg->id = cached_pg_id;
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
+	/* FIXME: Do we want to free the vc instead? */
 	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	goto fn_exit;
     }
-    if (!connected)
-    {
+    if (!connected) {
+	/* FIXME: Non conforming (not internationalizable) error message.
+	   why not just MPIU_ERR_POP? */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to establish a shared memory queue connection");
 	goto fn_exit;
     }

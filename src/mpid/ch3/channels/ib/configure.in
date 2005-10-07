@@ -49,11 +49,23 @@ if test "$ibu_name" = ibal ; then
     fi
     # This hard-coded path needs to be generated or specified by the user
     IB_LDFLAGS="$IB_LDFLAGS -L/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free"
-fi
-if test "$ibu_name" = vapi ; then
+elif test "$ibu_name" = vapi ; then
+    # FIXME: see /usr/mellanox/lib for one possible location for ibu_path_lib
+    libsFound=yes
+    saveLDFLAGS="$LDFLAGS"
+    LDFLAGS="$LDFLAGS -L$ibu_path_lib"
+    AC_SEARCH_LIBS(VAPI_bind_mw,vapi,,libFound=no)
+    AC_SEARCH_LIBS(mtl_strerror,mtl_common,,libFound=no)
+    AC_SEARCH_LIBS(MPGA_print_pkt,mpga,,libFound=no)
+    if test "$libFound" != "yes" ; then
+         AC_MSG_ERROR([Did not find the libraries required for the vapi version of the ib channel])
+    fi
+    LDFLAGS="$saveLDFLAGS"
     AC_DEFINE(USE_IB_VAPI,,[Define to use the Mellanox vapi interface])
     IB_LIBS="$IB_LIBS $LIBS -lmtl_common -lvapi -lmpga -lpthread"
     IB_LDFLAGS="$IB_LDFLAGS -L$ibu_path_lib"
+else
+    AC_MSG_ERROR([Unknown IB name $ibu_name])
 fi
 
 PAC_PROG_MAKE

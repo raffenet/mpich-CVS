@@ -6,9 +6,10 @@
 
 #include "mpidi_ch3_impl.h"
 
-/* FIXME: Why is this here?  Who else is going to implement spawn-multiple? */
-#ifdef MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
+/* FIXME:
+   Place all of this within the mpid_comm_spawn_multiple file */
 
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 /* 
  * We require support for the PMI calls.  If a channel cannot support
  * a PMI call, it should provide a stub and return an error code.
@@ -209,6 +210,47 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
  fn_exit:
     MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+/* FIXME: What does this function do?  Who calls it?  Can we assume that
+   it is called only dynamic process operations (specifically spawn) 
+   are supported?  Do we need the concept of a port? For example,
+   could a channel that supported only shared memory call this (it doesn't
+   look like it right now, so this could go into util/sock, perhaps?
+   
+   It might make more sense to have this function provided as a function 
+   pointer as part of the channel init setup, particularly since this
+   function appears to access channel-specific storage (MPIDI_CH3_Process) */
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Get_parent_port
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Get_parent_port(char ** parent_port)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
+
+    if (MPIDI_Process.parent_port_name == NULL)
+    {
+	mpi_errno = MPIDI_KVS_Get(MPIDI_Process.my_pg->ch.kvs_name, 
+				  "PARENT_ROOT_PORT_NAME", val);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_POP(mpi_errno);
+	}
+
+	MPIDI_Process.parent_port_name = MPIU_Strdup(val);
+	if (MPIDI_Process.parent_port_name == NULL) {
+	    MPIU_ERR_POP(mpi_errno);
+	}
+    }
+
+    *parent_port = MPIDI_Process.parent_port_name;
+
+ fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;

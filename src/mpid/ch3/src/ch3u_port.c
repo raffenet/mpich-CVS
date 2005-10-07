@@ -147,7 +147,9 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
         send_ints[0] = n_local_pgs;
         send_ints[1] = local_comm_size;
 
-	/*printf("connect:sending two ints, %d and %d, and receiving 3 ints\n", send_ints[0], send_ints[1]);fflush(stdout);*/
+	MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+		  "sending two ints, %d and %d, and receiving 3 ints", 
+                  send_ints[0], send_ints[1]));
         mpi_errno = MPIC_Sendrecv(send_ints, 2, MPI_INT, 0,
                                   sendtag++, recv_ints, 3, MPI_INT,
                                   0, recvtag++, tmp_comm->handle,
@@ -158,7 +160,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     }
 
     /* broadcast the received info to local processes */
-    /*printf("connect:broadcasting the received 3 ints - %d, %d, %d\n", recv_ints[0], recv_ints[1], recv_ints[2]);fflush(stdout);*/
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"broadcasting the received 3 ints");
     mpi_errno = MPIR_Bcast(recv_ints, 3, MPI_INT, root, comm_ptr);
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
@@ -173,7 +175,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     MPIU_CHKLMEM_MALLOC(remote_translation,pg_translation*,
 			remote_comm_size * sizeof(pg_translation),
 			mpi_errno,"remote_translation");
-    MPIU_DBG_PRINTF(("[%d]connect:remote process groups: %d\nremote comm size: %d\n", rank, n_remote_pgs, remote_comm_size));
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"allocated remote process groups");
 
     /* Exchange the process groups and their corresponding KVSes */
     if (rank == root)
@@ -181,8 +183,11 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	mpi_errno = SendPGtoPeerAndFree( tmp_comm, &sendtag, pg_list );
 	mpi_errno = ReceivePGAndDistribute( tmp_comm, comm_ptr, root, &recvtag,
 					n_remote_pgs, remote_pg );
-	/* Receive the translations from remote process rank to process group index */
-	/*printf("connect:sending %d ints, receiving %d ints\n", local_comm_size * 2, remote_comm_size * 2);fflush(stdout);*/
+	/* Receive the translations from remote process rank to process group 
+	   index */
+	MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+               "sending %d ints, receiving %d ints", 
+	      local_comm_size * 2, remote_comm_size * 2));
 	mpi_errno = MPIC_Sendrecv(local_translation, local_comm_size * 2, 
 				  MPI_INT, 0, sendtag++,
 				  remote_translation, remote_comm_size * 2, 
@@ -208,8 +213,9 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     }
 
     /* Broadcast out the remote rank translation array */
-    /*printf("connect:broadcasting %d ints\n", remote_comm_size * 2);fflush(stdout);*/
-    mpi_errno = MPIR_Bcast(remote_translation, remote_comm_size * 2, MPI_INT, root, comm_ptr);
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Broadcasting remote translation");
+    mpi_errno = MPIR_Bcast(remote_translation, remote_comm_size * 2, MPI_INT,
+			   root, comm_ptr);
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -264,7 +270,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
         MPID_VCR_Dup(vc, &intercomm->vcr[i]);
     }
 
-    /*printf("connect:barrier\n");fflush(stdout);*/
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
     mpi_errno = MPIR_Barrier(comm_ptr);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -274,7 +280,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 
     if (rank == root)
     {
-	/*printf("connect:sending and receiving 0 ints (I guess a two process barrier?)\n");fflush(stdout);*/
+	MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"sync with peer");
         mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
                                   sendtag++, &j, 0, MPI_INT,
                                   0, recvtag++, tmp_comm->handle,
@@ -746,8 +752,9 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     }
 
     /* Broadcast out the remote rank translation array */
-    /*printf("accept:broadcasting %d ints\n", remote_comm_size * 2);fflush(stdout);*/
-    mpi_errno = MPIR_Bcast(remote_translation, remote_comm_size * 2, MPI_INT, root, comm_ptr);
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Broadcast remote_translation");
+    mpi_errno = MPIR_Bcast(remote_translation, remote_comm_size * 2, MPI_INT, 
+			   root, comm_ptr);
 #ifdef MPICH_DBG_OUTPUT
     MPIU_DBG_PRINTF(("[%d]accept:Received remote_translation after broadcast:\n", rank));
     for (i=0; i<remote_comm_size; i++)
@@ -796,7 +803,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 
     }
 
-    /*printf("accept:barrier\n");fflush(stdout);*/
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
     mpi_errno = MPIR_Barrier(comm_ptr);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -805,7 +812,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     /* synchronize with remote root */
     if (rank == root)
     {
-	/*printf("accept:sending and receiving 0 ints (barrier?)\n");fflush(stdout);*/
+	MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"sync with peer");
         mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
                                   sendtag++, &j, 0, MPI_INT,
                                   0, recvtag++, tmp_comm->handle,
@@ -818,7 +825,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
         MPIR_Comm_release(tmp_comm);
     }
 
-    /*printf("accept:barrier\n");fflush(stdout);*/
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
     mpi_errno = MPIR_Barrier(comm_ptr);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);

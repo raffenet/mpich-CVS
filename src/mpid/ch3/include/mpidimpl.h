@@ -617,9 +617,8 @@ int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int
 int MPIDI_Comm_connect(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPIDI_Comm_accept(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 
-#ifdef MPIDI_DEV_IMPLEMENTS_COMM_SPAWN_MULTIPLE
-int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, int, MPID_Comm *, MPID_Comm **, int *);
-#endif
+int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, 
+			      int, MPID_Comm *, MPID_Comm **, int *);
 
 /* This structure defines a module that handles the routines that 
    work with MPI port names */

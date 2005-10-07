@@ -2,7 +2,6 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 lib${MPILIBNAME}_a_SOURCES =	\
     ch3u_buffer.c		\
     ch3u_comm_spawn_multiple.c	\
-    ch3u_get_parent_port.c	\
     ch3u_handle_connection.c	\
     ch3u_handle_recv_pkt.c	\
     ch3u_handle_recv_req.c	\

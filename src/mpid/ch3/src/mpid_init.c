@@ -50,16 +50,9 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     MPID_Comm * comm;
     int p;
     char * env;
-#if 0
-    char *publish_bc_orig = NULL;
-    char *bc_key = NULL;
-    char *bc_val = NULL;
-    int val_max_remaining;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_MPID_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     /* FIXME: These should not be unreferenced (they should be used!) */
     MPIU_UNREFERENCED_ARG(argc);
@@ -193,56 +186,47 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      * FIXME: The code to handle the parent case should be in a separate 
      * routine and should not rely on #ifdefs
      */
-    if (has_parent)
-    {
-#       if (defined(MPIDI_CH3_IMPLEMENTS_GET_PARENT_PORT))
-	{
-	    char * parent_port;
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+    if (has_parent) {
+	char * parent_port;
 
-	    /* FIXME: To allow just the "root" process to 
-	       request the port and then use MPIR_Bcast to 
-	       distribute it to the rest of the processes,
-	       we need to perform the Bcast after MPI is
-	       otherwise initialized.  We could do this
-	       by adding another MPID call that the MPI_Init(_thread)
-	       routine would make after the rest of MPI is 
-	       initialized, but before MPI_Init returns.
-	       In fact, such a routine could be used to 
-	       perform various checks, including parameter
-	       consistency value (e.g., all processes have the
-	       same environment variable values). Alternately,
-	       we could allow a few routines to operate with 
-	       predefined parameter choices (e.g., bcast, allreduce)
-	       for the purposes of initialization. */
-	    mpi_errno = MPIDI_CH3_Get_parent_port(&parent_port);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
-				    "**ch3|get_parent_port");
-	    }
+	/* FIXME: To allow just the "root" process to 
+	   request the port and then use MPIR_Bcast to 
+	   distribute it to the rest of the processes,
+	   we need to perform the Bcast after MPI is
+	   otherwise initialized.  We could do this
+	   by adding another MPID call that the MPI_Init(_thread)
+	   routine would make after the rest of MPI is 
+	   initialized, but before MPI_Init returns.
+	   In fact, such a routine could be used to 
+	   perform various checks, including parameter
+	   consistency value (e.g., all processes have the
+	   same environment variable values). Alternately,
+	   we could allow a few routines to operate with 
+	   predefined parameter choices (e.g., bcast, allreduce)
+	   for the purposes of initialization. */
+	mpi_errno = MPIDI_CH3_Get_parent_port(&parent_port);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
+				"**ch3|get_parent_port");
+	}
 	    
-	    mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &comm);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-				     "**ch3|conn_parent", 
-				     "**ch3|conn_parent %s", parent_port);
-	    }
+	mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, 
+				      MPIR_Process.comm_world, &comm);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+				 "**ch3|conn_parent", 
+				 "**ch3|conn_parent %s", parent_port);
 	}
-#	else
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl",
-					     "**notimpl %s", "MPIDI_CH3_Comm_get_parent");
-	    /* --END ERROR HANDLING-- */
-	}
-#	endif
 
 	MPIR_Process.comm_parent = comm;
 	MPIU_Assert(MPIR_Process.comm_parent != NULL);
 	MPIU_Strncpy(comm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
 	
-	/* TODO: Check that this intercommunicator gets freed in MPI_Finalize if not already freed.  */
+	/* FIXME: Check that this intercommunicator gets freed in MPI_Finalize
+	   if not already freed.  */
     }
-	
+#endif	
     
     /*
      * Set provided thread level
@@ -256,7 +240,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     }
 
   fn_exit:
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return mpi_errno;
 
