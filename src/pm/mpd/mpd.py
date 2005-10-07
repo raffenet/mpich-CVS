@@ -1185,7 +1185,7 @@ class MPD(object):
             man_env['MPDMAN_DOING_BNR'] = '1'
         else:
             man_env['MPDMAN_DOING_BNR'] = '0'
-        if currRank == 0:
+        if msg['nstarted'] == 0:
             manKVSTemplate = '%s_%s_%d' % \
                              (self.myHost,self.parmdb['MPD_LISTEN_PORT'],self.kvs_cntr)
             manKVSTemplate = sub('\.','_',manKVSTemplate)  # chg magpie.cs to magpie_cs
@@ -1213,12 +1213,14 @@ class MPD(object):
         currRank = int(man_env['MPDMAN_RANK'])
         manListenSock = MPDListenSock('',0,name='tempsock')
         manListenPort = manListenSock.getsockname()[1]
-        if currRank == 0:
+        if msg['nstarted'] == 0:
             manEntryIfhn = ''
             manEntryPort = 0
             msg['pos0_host'] = self.myHost
             msg['pos0_ifhn'] = self.myIfhn
             msg['pos0_port'] = str(manListenPort)
+            man_env['MPDMAN_POS0_IFHN'] = self.myIfhn
+            man_env['MPDMAN_POS0_PORT'] = str(manListenPort)
         else:
             manEntryIfhn = msg['entry_ifhn']
             manEntryPort = msg['entry_port']
@@ -1273,7 +1275,7 @@ class MPD(object):
     def launch_mpdman_via_subprocess(self,msg,man_env):
         man_env['MPDMAN_HOW_LAUNCHED'] = 'SUBPROCESS'
         currRank = int(man_env['MPDMAN_RANK'])
-        if currRank == 0:
+        if msg['nstarted'] == 0:
             manEntryIfhn = ''
             manEntryPort = 0
         else:

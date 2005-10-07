@@ -84,12 +84,8 @@ class MPDMan(object):
         else:
             mpd_print(1,'I cannot figure out how I was launched')
             sys.exit(-1)
-        if self.myRank == 0:
-            self.pos0Ifhn = self.myIfhn
-            self.pos0Port = self.listenRingPort
-        else:
-            self.pos0Ifhn = os.environ['MPDMAN_POS0_IFHN']
-            self.pos0Port = int(os.environ['MPDMAN_POS0_PORT'])
+        self.pos0Ifhn = os.environ['MPDMAN_POS0_IFHN']
+        self.pos0Port = int(os.environ['MPDMAN_POS0_PORT'])
         # close unused fds before I grab any more
         # NOTE: this will also close syslog's fd inherited from mpd; re-opened below
         try:     max_fds = os.sysconf('SC_OPEN_MAX')
