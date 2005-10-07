@@ -27,7 +27,7 @@
           MPIU_DBG_##_level <= MPIU_DBG_MaxLevel ) {\
           char _s[MPIU_DBG_MAXLINE]; \
           MPIU_Snprintf _fmatargs ; \
-     MPIU_DBG_Outevent( __FILE__, __LINE__, _class, 0, _s ); }}
+     MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 0, _s ); }}
 #else
 #define MPIU_DBG_MSG(_class,_level,_string) 
 #define MPIU_DBG_MSG_S(_class,_level,_fmat,_string)
@@ -40,7 +40,7 @@ enum MPIU_DBG_LEVEL { MPIU_DBG_TERSE   = 0,
 		      MPIU_DBG_TYPICAL = 50,
 		      MPIU_DBG_VERBOSE = 99 };
 /* Any change in MPIU_DBG_CLASS must be matched by changes in 
-   MPIU_Classname and MPIU_Classbits in src/util/dbg/dbgprintf.c */
+   MPIU_Classname and MPIU_Classbits in src/util/dbg/dbg_printf.c */
 enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_RMA           = 0x2,
 		      MPIU_DBG_THREAD        = 0x4,
@@ -48,6 +48,9 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_ROUTINE_ENTER = 0x10,
 		      MPIU_DBG_ROUTINE_EXIT  = 0x20,
 		      MPIU_DBG_SYSCALL       = 0x40,
+		      MPIU_DBG_CH3_CONNECT   = 0x80,
+		      MPIU_DBG_CH3_PROGRESS  = 0x100,
+		      MPIU_DBG_CH3           = 0x180,
 		      MPIU_DBG_ALL           = (~0) };
 
 extern int MPIU_DBG_ActiveClasses;
