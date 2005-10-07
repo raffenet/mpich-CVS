@@ -771,4 +771,4 @@ AC_SUBST(COLLCHK_LIBS)
 AC_SUBST(F2CMPI_LIBS)
 
 AC_OUTPUT( Makefile src/Makefile test/Makefile \
-           etc/mpe_collchk.conf )
+           etc/mpe_mpicheck.conf )
