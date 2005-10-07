@@ -863,4 +863,4 @@ AC_SUBST(TRACE_LIBS)
 AC_SUBST(F2CMPI_LIBS)
 
 AC_OUTPUT( Makefile src/Makefile test/Makefile \
-           etc/mpe_mpilog.conf etc/mpe_mpitrace.conf )
+           etc/mpe_f77env.conf etc/mpe_mpilog.conf etc/mpe_mpitrace.conf )
