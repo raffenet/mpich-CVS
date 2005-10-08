@@ -1,19 +1,20 @@
+mpe_pgm_name="`echo $0 | sed 's%.*/\([^/]*\)$%\1%g'`"
 echo
-echo "Available option for -mpe= :"
+echo "Available options for \"$mpe_pgm_name -mpe=\" :"
 echo
 echo "  mpilog:    Automatic MPI and MPE user-defined states logging."
 echo "             This links against -llmpe -lmpe."
 echo
-echo "  mpitrace:  Trace MPI with printf."
+echo "  mpitrace:  Trace MPI program with printf."
 echo "             This links against -ltmpe."
 echo
 echo "  mpianim:   Animate MPI program in real-time."
 echo "             This links against -lampe -lmpe."
 echo
-echo "  mpicheck:  Validate with Collective and Datatype checking library."
-echo "             This links against -lmpe_collchk."
+echo "  mpicheck:  Check MPI Program with the Collective & Datatype Checking"
+echo "             library.  This links against -lmpe_collchk."
 echo
-echo "  graphics:  Use MPE graphics with X11 library."
+echo "  graphics:  Use MPE graphics routines with X11 library."
 echo "             This links against -lmpe <X11 libraries>."
 echo
 echo "  log:       MPE user-defined states logging."
