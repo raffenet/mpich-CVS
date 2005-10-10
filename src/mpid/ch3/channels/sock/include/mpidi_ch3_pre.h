@@ -23,13 +23,6 @@
 #define MPIDI_DEV_IMPLEMENTS_KVS
 #define MPIDI_DEV_IMPLEMENTS_ABORT
 
-typedef struct MPIDI_CH3I_Acceptq_s
-{
-    struct MPIDI_VC *vc;
-    struct MPIDI_CH3I_Acceptq_s *next;
-}
-MPIDI_CH3I_Acceptq_t;
-
 #define MPIDI_CH3_PKT_ENUM			\
 MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
 MPIDI_CH3I_PKT_SC_CONN_ACCEPT,		        \
