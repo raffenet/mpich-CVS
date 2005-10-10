@@ -1,12 +1,46 @@
-#! /usr/bin/perl -w
+#! @PERL@
 #
 #
-my $linecount = 0;
+# Set defaults
 my $whichrank = 0;
+my $filenameTrim = "";
+my %elideCall = ();
+my $infile = "";
+
+for (@ARGV) {
+    if (/^--?rank=(\d+)/) {
+	$whichrank = $1;
+    }
+    elsif (/^--?srcdir=(.*)/) {
+	$filenameTrim = $1;
+    }
+    elsif (/^--?elide=(.*)/) {
+	# This must exactly match the function name recorded
+	$elideCall{$1} = 1;
+	$elideCall{"MPID_STATE_$1"} = 1;
+    }
+    elsif (/^-/) {
+	print STDERR 
+	    "getfuncstack [ -rank=n ] [-srcdir=path] [-elide=name] < logfile\n";
+	exit(1);
+    }
+    else {
+	$infile = $_;
+	break;
+    }
+}
+
+@ARGV = ();
+
+# Set initial values
+my $linecount = 0;
 my $nestlevel = 0;
 my $curstate  = "";
 my @routineStack = ();
 my @routineTime = ();
+my $inElide  = 0;
+
+
 while (<>) {
     my $spaces = "";
     my $tottime = "";
@@ -22,26 +56,40 @@ while (<>) {
     # Discard unwanted ranks
     if ($whichrank >= 0 && ($rank != $whichrank || $world > 0) ) { next; }
     
+    if ($filenameTrim ne "" && $file =~ /^$filenameTrim/) {
+	$file =~ s/^$filenameTrim//;
+    }
+
     # Update nesting level
     if ($msg =~ /^Entering (.*)/) { 
-	$spaces = &indent($nestlevel++) . ">"; 
 	$curstate = $1; 
-	$routineStack[$#routineStack+1] = $curstate;
-	$routineTime[$#routineTime+1]   = $time;
+	if (defined($elideCall{$curstate})) {
+	    $inElide = 1;
+        }
+	else {
+	    $spaces = &indent($nestlevel++) . ">"; 
+  	    $routineStack[$#routineStack+1] = $curstate;
+  	    $routineTime[$#routineTime+1]   = $time;
+	}
     }
     elsif ($msg =~ /^Leaving (.*)/) { 
 	$curstate = $1;
 	if ($nestlevel > 0) {
-	    $spaces = &indent(--$nestlevel) . "<"; 
-	    my $expected = $routineStack[$#routineStack];
-	    $#routineStack--;
-	    if ($expected ne $curstate) {
-		print STDERR "Expected state $expected but found $curstate\n";
+	    if (defined($elideCall{$curstate})) {
+		$inElide = 0;
 	    }
-	    # Get the total time in this routine
-	    $tottime = $time - $routineTime[$#routineTime];
-	    $#routineTime--;
-	    $tottime = "($tottime)";
+	    else {
+		$spaces = &indent(--$nestlevel) . "<"; 
+		my $expected = $routineStack[$#routineStack];
+		$#routineStack--;
+		if ($expected ne $curstate) {
+		    print STDERR "Expected state $expected but found $curstate\n";
+		}
+		# Get the total time in this routine
+		$tottime = $time - $routineTime[$#routineTime];
+		$#routineTime--;
+		$tottime = "($tottime)";
+	    }
 	}
     }
     else {
@@ -53,11 +101,13 @@ while (<>) {
     $curstate =~ s/^MPID_STATE_//;
     $curstate =~ s/\r?\n//g;
     
-    my $baseinfo = $spaces . $curstate . "$tottime";
-    my $location = "$file\[$line\]";
-    my $pad = 40 - length($baseinfo);
-    for (my $i=0; $i<$pad; $i++) { $baseinfo .= " "; }
-    print "$baseinfo $location\n";
+    if (! $inElide) {
+	my $baseinfo = $spaces . $curstate . "$tottime";
+	my $location = "$file\[$line\]";
+	my $pad = 40 - length($baseinfo);
+	for (my $i=0; $i<$pad; $i++) { $baseinfo .= " "; }
+	print "$baseinfo $location\n";
+    }
 }
 
 sub indent {
