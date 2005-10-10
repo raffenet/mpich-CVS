@@ -223,9 +223,10 @@ extern char *strdup( const char * );
 #define MPIU_Realloc(a,b)    MPIU_trrealloc((a),(b),__LINE__,__FILE__)
 
 /* Define these as invalid C to catch their use in the code */
-#define malloc(a)         'Error use MPIU_Malloc'
-#define calloc(a,b)       'Error use MPIU_Calloc'
-#define free(a)           'Error use MPIU_Free'
+#define malloc(a)         'Error use MPIU_Malloc' :::
+#define calloc(a,b)       'Error use MPIU_Calloc' :::
+#define free(a)           'Error use MPIU_Free'   :::
+#define realloc(a)        'Error use MPIU_Realloc' :::
 #if defined(strdup) || defined(__strdup)
 #undef strdup
 #endif
