@@ -135,6 +135,7 @@ int MPIU_dbg_init(int rank);
 int MPIU_dbg_printf(const char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_printf(const char *str, ...) ATTRIBUTE((format(printf,1,2)));
 int MPIU_dbglog_vprintf(const char *str, va_list ap);
+
 #if defined(MPICH_DBG_OUTPUT)
 #define MPIU_DBG_PRINTF(e)			\
 {						\
@@ -1904,10 +1905,6 @@ typedef struct PreDefined_attrs {
 } PreDefined_attrs;
 
 struct MPID_Datatype;
-
-#ifdef USE_MPIU_DBG_PRINT_VC
-extern char *MPIU_DBG_parent_str;
-#endif
 
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */

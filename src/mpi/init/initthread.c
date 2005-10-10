@@ -31,9 +31,6 @@
 
 /* Global variables can be initialized here */
 MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
-#ifdef USE_MPIU_DBG_PRINT_VC
-char *MPIU_DBG_parent_str = "?";
-#endif
 
 /* These are initialized as null (avoids making these into common symbols).
    If the Fortran binding is supported, these can be initialized to 
