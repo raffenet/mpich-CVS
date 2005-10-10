@@ -1,0 +1,73 @@
+#! /usr/bin/perl -w
+#
+#
+my $linecount = 0;
+my $whichrank = 0;
+my $nestlevel = 0;
+my $curstate  = "";
+my @routineStack = ();
+my @routineTime = ();
+while (<>) {
+    my $spaces = "";
+    my $tottime = "";
+    $linecount++;
+    ($world,$rank,$thread,$class,$time,$file,$line,$msg) = split( /\t/, $_ );
+
+    # Check for validity
+    if ($thread != 0 || $class < 0) {
+	# These should really be checks for is-int as well
+	next;
+    }
+
+    # Discard unwanted ranks
+    if ($whichrank >= 0 && ($rank != $whichrank || $world > 0) ) { next; }
+    
+    # Update nesting level
+    if ($msg =~ /^Entering (.*)/) { 
+	$spaces = &indent($nestlevel++) . ">"; 
+	$curstate = $1; 
+	$routineStack[$#routineStack+1] = $curstate;
+	$routineTime[$#routineTime+1]   = $time;
+    }
+    elsif ($msg =~ /^Leaving (.*)/) { 
+	$curstate = $1;
+	if ($nestlevel > 0) {
+	    $spaces = &indent(--$nestlevel) . "<"; 
+	    my $expected = $routineStack[$#routineStack];
+	    $#routineStack--;
+	    if ($expected ne $curstate) {
+		print STDERR "Expected state $expected but found $curstate\n";
+	    }
+	    # Get the total time in this routine
+	    $tottime = $time - $routineTime[$#routineTime];
+	    $#routineTime--;
+	    $tottime = "($tottime)";
+	}
+    }
+    else {
+	print STDERR "Malformed line $linecount: $_"; 
+	next;
+    }
+
+    # Strip common text off of state
+    $curstate =~ s/^MPID_STATE_//;
+    $curstate =~ s/\r?\n//g;
+    
+    my $baseinfo = $spaces . $curstate . "$tottime";
+    my $location = "$file\[$line\]";
+    my $pad = 40 - length($baseinfo);
+    for (my $i=0; $i<$pad; $i++) { $baseinfo .= " "; }
+    print "$baseinfo $location\n";
+}
+
+sub indent {
+    my $num = $_[0];
+    my $spaces = "";
+    for (my $i=0; $i<=$num; $i++) {
+	$spaces .= " ";
+    }
+    return $spaces;
+}
+	
+
+    

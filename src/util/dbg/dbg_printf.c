@@ -413,8 +413,10 @@ static const char *MPIU_LCLevelname[] = { "terse", "typical", "verbose", 0 };
 int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 {
     char *s = 0;
+    char *sOut = 0;
     int  i, rc;
     MPID_Time_t t;
+    long  whichRank = -1;  /* All ranks */
     /* Check to see if any debugging was selected */
     /* First, the environment variables */
 
@@ -433,13 +435,24 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 	if (rc) 
 	    MPIU_DBG_Usage( "MPICH_DBG_LEVEL", "TERSE, TYPICAL, VERBOSE" );
     }
+
     s = getenv( "MPICH_DBG_CLASS" );
     rc = setDBGClass( s, MPIU_Classname );
     if (rc) 
 	MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
+
     s = getenv( "MPICH_DBG_FILENAME" );
     if (s) {
 	filePattern = MPIU_Strdup( s );
+    }
+
+    s = getenv( "MPICH_DBG_RANK" );
+    if (s) {
+	whichRank = strtol( s, &sOut, 10 );
+	if (s == sOut) {
+	    MPIU_DBG_Usage( "MPICH_DBG_RANK", 0 );
+	    whichRank = -1;
+	}
     }
 
     /* Here's where we do the same thing with the command-line options */
@@ -487,6 +500,17 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 			filePattern = MPIU_Strdup( p );
 		    }
 		}
+		else if (strncmp( s, "-rank", 5 ) == 0) {
+		    char *p = s + 5;
+		    if (*p == '=' && p[1] != 0) {
+			p++;
+			whichRank = strtol( p, &sOut, 10 );
+			if (p == sOut) {
+			    MPIU_DBG_Usage( "-mpich-dbg-rank", 0 );
+			    whichRank = -1;
+			}
+		    }
+		}
 		else {
 		    MPIU_DBG_Usage( (*argv_p)[i], 0 );
 		}
@@ -496,6 +520,11 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 	}
     }
     worldRank = wrank;
+
+    if (whichRank >= 0 && whichRank != wrank) {
+	/* Turn off logging on this process */
+	MPIU_DBG_ActiveClasses = 0;
+    }
 
     MPID_Wtime( &t );
     MPID_Wtime_todouble( &t, &timeOrigin );
@@ -518,12 +547,14 @@ static int MPIU_DBG_Usage( const char *cmd, const char *vals )
     -mpich-dbg-class=name[,name,...]\n\
     -mpich-dbg-level=name   (one of terse, typical, verbose)\n\
     -mpich-dbg-filename=pattern (includes %%d for world rank, %%t for thread id\n\
+    -mpich-dbg-rank=val    (only this rank in COMM_WORLD will be logged)\n\
     -mpich-dbg   (shorthand for -mpich-dbg-class=all -mpich-dbg-level=typical)\n\
     -mpich-dbg=file (shorthand for -mpich-dbg -mpich-dbg-filename=%s)\n\
 Environment variables\n\
     MPICH_DBG_CLASS=NAME[,NAME...]\n\
     MPICH_DBG_LEVEL=NAME\n\
     MPICH_DBG_FILENAME=pattern\n\
+    MPICH_DBG_RANK=val\n\
     MPICH_DBG=YES or FILE\n", defaultFilePattern );
 
     fflush(stderr);
