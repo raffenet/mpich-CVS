@@ -1,4 +1,18 @@
 ===============================================================================
+			       Changes in 1.0.3
+===============================================================================
+
+- There are major changes to the ch3 device implementation.  Old and 
+  unsupported channels (essm, rdma, ib?) have been removed.   The
+  internal interface between ch3 and the channels has been improved to 
+  similify the process of adding a new channel (sharing existing code
+  where possible) and to improve performance.  Further changes in this
+  internal interface are expected.
+
+- Numerous bug fixes and code cleanup
+
+ 
+===============================================================================
 			       Changes in 1.0.2
 ===============================================================================
 
@@ -16,7 +30,8 @@
 
 - The following changes have been made to MPE2:
 
-  - MPE2 now builds the MPI collective and datatype checking library by default.
+  - MPE2 now builds the MPI collective and datatype checking library
+    by default. 
 
   - SLOG-2 format has been upgraded to 2.0.6 which supports event drawables
     and provides count of real drawables in preview drawables.
