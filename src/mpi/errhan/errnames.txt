@@ -552,8 +552,8 @@ with MPI_Alloc_mem.
 **ch3|sock|badbuscard:[ch3:sock] GetHostAndPort - Invalid business card
 **ch3|sock|badbuscard %s:[ch3:sock] GetHostAndPort - Invalid business card (%s)
 **ch3|sock|connallocfailed:[ch3:sock] unable to allocate a connection structure
-**ch3|sock|pmi_finalize:PMI_Finalize failed
-**ch3|sock|pmi_finalize %d:PMI_Finalize failed, error %d
+**ch3|pmi_finalize:PMI_Finalize failed
+**ch3|pmi_finalize %d:PMI_Finalize failed, error %d
 **ch3|sock|postread:attempt to post a read operation failed
 **ch3|sock|postread %p %p %p:attempt to post a read operation failed (rreq=%p,conn=%p,vc=%p)
 **ch3|sock|immedread:immediate read operation failed
