@@ -26,7 +26,7 @@ miscfilef_SOURCES     = miscfilef.f
 # These IO tests are build from a template and a set of definitions.
 iwriteatf.f writef.f writeatf.f writeatallf.f writeallf.f writeallbef.f \
 writeordf.f writeordbef.f writeshf.f writeatallbef.f \
-iwritef.f iwriteshf.f : ioharness.tlt ioharness.defn
+iwritef.f iwriteshf.f : ioharness.tlt ioharness.defn ../../maint/testmerge
 	../../maint/testmerge -defn=$(top_srcdir)/maint/common.defn \
 		$(srcdir)/ioharness.defn $(srcdir)/ioharness.tlt
 
