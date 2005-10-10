@@ -31,6 +31,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
     {
 	case MPIDI_CH3_CA_COMPLETE:
 	{
+	    MPIDI_FUNC_ENTER(MPID_STATE_CH3_CA_COMPLETE)
 	    /* FIXME: put ONC operations into their own completion action */
 	    
 	    if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV)
@@ -45,13 +46,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP) {
                     /* accumulate data from tmp_buf into user_buf */
                     mpi_errno = do_accumulate_op(rreq);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-                    {
-                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                        goto fn_exit;
+                    if (mpi_errno) {
+			MPIU_ERR_POP(mpi_errno);
                     }
-                    /* --END ERROR HANDLING-- */
                 }
 
                 MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
@@ -78,9 +75,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                             (rreq->dev.single_op_opt == 1)) {
                             mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
                                                   rreq->dev.source_win_handle);
-                            /* --BEGIN ERROR HANDLING-- */
-                            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                            /* --END ERROR HANDLING-- */
+			    if (mpi_errno) {
+				MPIU_ERR_POP(mpi_errno);
+			    }
                         }
                         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
                     }
@@ -117,14 +114,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
                 mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-                {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|loadrecviov", 0);
-                    goto fn_exit;
+                if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					"**ch3|loadrecviov");
                 }
-		/* --END ERROR HANDLING-- */
 
 		*complete = FALSE;
             }
@@ -146,13 +139,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 mpi_errno = NMPI_Type_get_true_extent(new_dtp->handle, 
                                                       &true_lb, &true_extent);
 		MPIR_Nest_decr();
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    goto fn_exit;
+                if (mpi_errno) {
+		    MPIU_ERR_POP(mpi_errno);
 		}
-		/* --END ERROR HANDLING-- */
 
                 MPID_Datatype_get_extent_macro(new_dtp->handle, extent); 
 
@@ -163,7 +152,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 		{
                     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 						      "**nomem", 0 );
-                    goto fn_exit;
+                    goto fn_fail;
                 }
 		/* --END ERROR HANDLING-- */
 
@@ -187,14 +176,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 rreq->dev.segment_size = rreq->dev.recv_data_sz;
 
                 mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-                {
-                    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|loadrecviov", 0);
-                    goto fn_exit;
+                if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					"**ch3|loadrecviov");
                 }
-		/* --END ERROR HANDLING-- */
 
 		*complete = FALSE;
             }
@@ -297,9 +282,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                         mpi_errno = do_simple_accumulate(lock_queue_entry->pt_single_op);
                     }
 
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                    /* --END ERROR HANDLING-- */
+		    if (mpi_errno) {
+			MPIU_ERR_POP(mpi_errno);
+		    }
 
                     /* increment counter */
                     win_ptr->my_pt_rma_puts_accs++;
@@ -307,9 +292,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                     /* send done packet */
                     mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
                                          lock_queue_entry->source_win_handle);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                    /* --END ERROR HANDLING-- */
+		    if (mpi_errno) {
+			MPIU_ERR_POP(mpi_errno);
+		    }
 
                     /* free lock_queue_entry including data buffer and remove 
                        it from the queue. */
@@ -347,6 +332,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 	    }
 	    /* --END ERROR HANDLING-- */
 	    
+	    MPIDI_FUNC_ENTER(MPID_STATE_CH3_CA_COMPLETE)
 	    break;
 	}
 	
@@ -386,13 +372,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP) {
                     /* accumulate data from tmp_buf into user_buf */
                     mpi_errno = do_accumulate_op(rreq);
-                    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-                    {
-                        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                        goto fn_exit;
-                    }
-                    /* --END ERROR HANDLING-- */
+		    if (mpi_errno) {
+			MPIU_ERR_POP(mpi_errno);
+		    }
                 }
 
                 MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
@@ -419,9 +401,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                             (rreq->dev.single_op_opt == 1)) {
                             mpi_errno = MPIDI_CH3I_Send_pt_rma_done_pkt(vc, 
                                                           rreq->dev.source_win_handle);
-                            /* --BEGIN ERROR HANDLING-- */
-                            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                            /* --END ERROR HANDLING-- */
+			    if (mpi_errno) {
+				MPIU_ERR_POP(mpi_errno);
+			    }
                         }
                         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
                     }
@@ -444,7 +426,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov",
 						 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV");
-		goto fn_exit;
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    *complete = FALSE;
@@ -459,7 +441,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadrecviov",
 						 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_RELOAD_IOV");
-		goto fn_exit;
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
 	    *complete = FALSE;
@@ -481,6 +463,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
     in_routine = FALSE;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 

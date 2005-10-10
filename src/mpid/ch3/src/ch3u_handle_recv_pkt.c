@@ -29,13 +29,9 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID
     MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
 
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, foundp);
-    /* --BEGIN ERROR HANDLING-- */
-    if (rreq == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-	goto fn_exit;
+    if (rreq == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
     }
-    /* --END ERROR HANDLING-- */
 
     set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 
@@ -45,10 +41,13 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID
 	MPID_Request_initialized_set(rreq);
 
 	/*
-	 * A MPID_Probe() may be waiting for the request we just inserted, so we need to tell the progress engine to exit.
+	 * An MPID_Probe() may be waiting for the request we just inserted, 
+	 * so we need to tell the progress engine to exit.
 	 *
-	 * FIXME: This will cause MPID_Progress_wait() to return to the MPI layer each time an unexpected RTS packet is
-	 * received.  MPID_Probe() should atomically increment a counter and MPIDI_CH3_Progress_signal_completion()
+	 * FIXME: This will cause MPID_Progress_wait() to return to the MPI 
+	 * layer each time an unexpected RTS packet is
+	 * received.  MPID_Probe() should atomically increment a counter and 
+	 * MPIDI_CH3_Progress_signal_completion()
 	 * should only be called if that counter is greater than zero.
 	 */
 	MPIDI_CH3_Progress_signal_completion();
@@ -57,7 +56,7 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID
     /* return the request */
     *rreqp = rreq;
 
- fn_exit:
+ fn_fail:
     return mpi_errno;
 }
 #endif
@@ -218,7 +217,8 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 #define FUNCNAME MPIDI_CH3U_Handle_ordered_recv_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp)
+int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, 
+				       MPID_Request ** rreqp)
 {
     int type_size;
     int mpi_errno = MPI_SUCCESS;
@@ -240,26 +240,17 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 			      eager_pkt->sender_req_id, eager_pkt->match.rank, eager_pkt->match.tag, eager_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&eager_pkt->match, &found);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rreq == NULL)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-		goto fn_exit;
+	    if (rreq == NULL) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    
 	    set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
 	    *rreqp = rreq;
-	    mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, rreqp);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv",
-						 "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
-		goto fn_exit;
+	    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+			      "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
 	    }
-	    /* --END ERROR HANDLING-- */
-	    
 	    break;
 	}
 	
@@ -273,27 +264,20 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 			      ready_pkt->sender_req_id, ready_pkt->match.rank, ready_pkt->match.tag, ready_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&ready_pkt->match, &found);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rreq == NULL)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-		goto fn_exit;
+	    if (rreq == NULL) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    
 	    set_request_info(rreq, ready_pkt, MPIDI_REQUEST_EAGER_MSG);
 	    *rreqp = rreq;
 	    if (found)
 	    {
-		mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv",
-						     "**ch3|postrecv %s", "MPIDI_CH3_PKT_READY_SEND");
-		    goto fn_exit;
+		mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+					 "**ch3|postrecv",
+			      "**ch3|postrecv %s", "MPIDI_CH3_PKT_READY_SEND");
 		}
-		/* --END ERROR HANDLING-- */
 	    }
 	    else
 	    {
@@ -314,14 +298,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		    rreq->dev.segment_first = 0;
 		    rreq->dev.segment_size = 0;
 		    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-							 "**ch3|loadrecviov", 0);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					    "**ch3|loadrecviov");
 		    }
-		    /* --END ERROR HANDLING-- */
 		}
 		else
 		{
@@ -343,25 +323,17 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 			      es_pkt->sender_req_id, es_pkt->match.rank, es_pkt->match.tag, es_pkt->match.context_id));
 	    
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&es_pkt->match, &found);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rreq == NULL)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-		goto fn_exit;
+	    if (rreq == NULL) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    
 	    set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
 	    *rreqp = rreq;
-	    mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, rreqp);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv",
-						 "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
-		goto fn_exit;
+	    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+			 "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    
 	    if (found)
 	    {
@@ -374,16 +346,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
 		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|syncack", 0);
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					"**ch3|syncack");
 		}
-		/* --END ERROR HANDLING-- */
-		if (esa_req != NULL)
-		{
+		if (esa_req != NULL) {
 		    MPID_Request_release(esa_req);
 		}
 	    }
@@ -421,13 +388,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 			      rts_pkt->data_sz));
 
 	    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rreq == NULL)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-		goto fn_exit;
+	    if (rreq == NULL) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
 	    }
-	    /* --END ERROR HANDLING-- */
 
 	    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 
@@ -446,16 +409,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		cts_pkt->sender_req_id = rts_pkt->sender_req_id;
 		cts_pkt->receiver_req_id = rreq->handle;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-			"**ch3|ctspkt", 0);
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					"**ch3|ctspkt");
 		}
-		/* --END ERROR HANDLING-- */
-		if (cts_req != NULL)
-		{
+		if (cts_req != NULL) {
 		    MPID_Request_release(cts_req);
 		}
 	    }
@@ -531,25 +489,17 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		sreq->dev.segment_first = 0;
 		sreq->dev.segment_size = data_sz;
 		mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|loadsendiov", 0);
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS)  {
+                    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
+                                        "**ch3|loadsendiov");
 		}
-		/* --END ERROR HANDLING-- */
 		iov_n += 1;
 	    }
 	    
 	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|senddata", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|senddata");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    
 	    *rreqp = NULL;
 	    break;
@@ -561,15 +511,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 		    
 	    MPIDI_DBG_PRINTF((30, FCNAME, "received rndv send (data) pkt"));
 	    MPID_Request_get_ptr(rs_pkt->receiver_req_id, *rreqp);
-	    mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|postrecv",
-						 "**ch3|postrecv %s", "MPIDI_CH3_PKT_RNDV_SEND");
-		goto fn_exit;
+	    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+			   "**ch3|postrecv %s", "MPIDI_CH3_PKT_RNDV_SEND");
 	    }
-	    /* --END ERROR HANDLING-- */
 		
 	    break;
 	}
@@ -607,13 +553,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	    resp_pkt->sender_req_id = req_pkt->sender_req_id;
 	    resp_pkt->ack = ack;
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|cancelresp", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				    "**ch3|cancelresp");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    if (resp_sreq != NULL)
 	    {
 		MPID_Request_release(resp_sreq);
@@ -702,7 +645,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                     req->dev.recv_data_sz = type_size * put_pkt->count;
 
 		    *rreqp = req;
-                    mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+                    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
                 }
                 else
 		{
@@ -712,24 +655,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 
                     req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                         MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
-		    /* --BEGIN ERROR HANDLING-- */
-                    if (! req->dev.dtype_info)
-		    {
-                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-							  "**nomem", 0 );
-                        goto fn_exit;
+                    if (! req->dev.dtype_info) {
+			MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
                     }
-		    /* --END ERROR HANDLING-- */
 
                     req->dev.dataloop = MPIU_Malloc(put_pkt->dataloop_size);
-		    /* --BEGIN ERROR HANDLING-- */
-                    if (! req->dev.dataloop)
-		    {
-                        mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-							  "**nomem", 0 );
-                        goto fn_exit;
+                    if (! req->dev.dataloop) {
+			MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
                     }
-		    /* --END ERROR HANDLING-- */
 
                     req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dtype_info;
                     req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
@@ -808,7 +741,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPID_Datatype_get_size_macro(accum_pkt->datatype, type_size);
                 req->dev.recv_data_sz = type_size * accum_pkt->count;
                 
-                mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+                mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
             }
             else
 	    {
@@ -817,24 +750,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 
                 req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                     MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
-		/* --BEGIN ERROR HANDLING-- */
-                if (! req->dev.dtype_info)
-		{
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (! req->dev.dtype_info) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-		/* --END ERROR HANDLING-- */
                 
                 req->dev.dataloop = MPIU_Malloc(accum_pkt->dataloop_size);
-		/* --BEGIN ERROR HANDLING-- */
-                if (! req->dev.dataloop)
-		{
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (! req->dev.dataloop) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-		/* --END ERROR HANDLING-- */
                 
                 req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dtype_info;
                 req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
@@ -844,13 +767,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 req->dev.ca = MPIDI_CH3_CA_COMPLETE;
             }
 
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_ACCUMULATE");
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**ch3|postrecv",
+			    "**ch3|postrecv %s", "MPIDI_CH3_PKT_ACCUMULATE");
 	    }
-	    /* --END ERROR HANDLING-- */
             break;
         }
 
@@ -913,24 +833,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 
                 req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
                     MPIU_Malloc(sizeof(MPIDI_RMA_dtype_info));
-		/* --BEGIN ERROR HANDLING-- */
-                if (! req->dev.dtype_info)
-		{
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (! req->dev.dtype_info) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-		/* --END ERROR HANDLING-- */
                 
                 req->dev.dataloop = MPIU_Malloc(get_pkt->dataloop_size);
-		/* --BEGIN ERROR HANDLING-- */
-                if (! req->dev.dataloop)
-		{
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (! req->dev.dataloop) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-		/* --END ERROR HANDLING-- */
 
                 req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dtype_info;
                 req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_RMA_dtype_info);
@@ -957,7 +867,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
             req->dev.recv_data_sz = type_size * req->dev.user_count;
 
 	    *rreqp = req;
-            mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+            mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
 	    {
@@ -1001,14 +911,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 }
 
                 new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
-                /* --BEGIN ERROR HANDLING-- */
-                if (!new_ptr)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (!new_ptr) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-                /* --END ERROR HANDLING-- */
                 if (prev_ptr != NULL)
                     prev_ptr->next = new_ptr;
                 else 
@@ -1093,24 +998,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
 
                 new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
-                /* --BEGIN ERROR HANDLING-- */
-                if (!new_ptr)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (!new_ptr) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-                /* --END ERROR HANDLING-- */
 
                 new_ptr->pt_single_op = (MPIDI_PT_single_op *) MPIU_Malloc(sizeof(MPIDI_PT_single_op));
-                /* --BEGIN ERROR HANDLING-- */
-                if (new_ptr->pt_single_op == NULL)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (new_ptr->pt_single_op == NULL) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-                /* --END ERROR HANDLING-- */
 
                 /* FIXME: MT: The queuing may need to be done atomically. */
 
@@ -1138,14 +1033,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 new_ptr->pt_single_op->datatype = lock_put_unlock_pkt->datatype;
                 /* allocate memory to receive the data */
                 new_ptr->pt_single_op->data = MPIU_Malloc(req->dev.recv_data_sz);
-                /* --BEGIN ERROR HANDLING-- */
-                if (new_ptr->pt_single_op->data == NULL)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (new_ptr->pt_single_op->data == NULL) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-                /* --END ERROR HANDLING-- */
 
                 new_ptr->pt_single_op->data_recd = 0;
 
@@ -1155,7 +1045,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
             }
 
             *rreqp = req;
-            mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+            mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
@@ -1191,24 +1081,14 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
             /* queue the information */
 
             new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
-            /* --BEGIN ERROR HANDLING-- */
-            if (!new_ptr)
-            {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						  "**nomem", 0 );
-                goto fn_exit;
+            if (!new_ptr) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
             }
-            /* --END ERROR HANDLING-- */
 
             new_ptr->pt_single_op = (MPIDI_PT_single_op *) MPIU_Malloc(sizeof(MPIDI_PT_single_op));
-            /* --BEGIN ERROR HANDLING-- */
-            if (new_ptr->pt_single_op == NULL)
-            {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						  "**nomem", 0 );
-                goto fn_exit;
+            if (new_ptr->pt_single_op == NULL) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
             }
-            /* --END ERROR HANDLING-- */
 
             MPID_Win_get_ptr(lock_accum_unlock_pkt->target_win_handle, win_ptr);
 
@@ -1239,14 +1119,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
             new_ptr->pt_single_op->op = lock_accum_unlock_pkt->op;
             /* allocate memory to receive the data */
             new_ptr->pt_single_op->data = MPIU_Malloc(req->dev.recv_data_sz);
-            /* --BEGIN ERROR HANDLING-- */
-            if (new_ptr->pt_single_op->data == NULL)
-            {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						  "**nomem", 0 );
-                goto fn_exit;
+            if (new_ptr->pt_single_op->data == NULL) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
             }
-            /* --END ERROR HANDLING-- */
             
             new_ptr->pt_single_op->data_recd = 0;
             
@@ -1255,7 +1130,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
             req->dev.lock_queue_entry = new_ptr;
 
             *rreqp = req;
-            mpi_errno = MPIDI_CH3U_Post_data_receive(vc, TRUE, rreqp);
+            mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS)
             {
@@ -1332,23 +1207,13 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
                 }
 
                 new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
-                /* --BEGIN ERROR HANDLING-- */
-                if (!new_ptr)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (!new_ptr) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-                /* --END ERROR HANDLING-- */
                 new_ptr->pt_single_op = (MPIDI_PT_single_op *) MPIU_Malloc(sizeof(MPIDI_PT_single_op));
-                /* --BEGIN ERROR HANDLING-- */
-                if (new_ptr->pt_single_op == NULL)
-                {
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**nomem", 0 );
-                    goto fn_exit;
+                if (new_ptr->pt_single_op == NULL) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
                 }
-                /* --END ERROR HANDLING-- */
 
                 if (prev_ptr != NULL)
                     prev_ptr->next = new_ptr;
@@ -1389,14 +1254,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 
 		MPIDI_DBG_PRINTF((30, FCNAME, "sending close(TRUE) to %d", vc->pg_rank));
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-						     "**ch3|send_close_ack", 0);
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					"**ch3|send_close_ack");
 		}
-		/* --END ERROR HANDLING-- */
 		    
 		if (resp_sreq != NULL)
 		{
@@ -1445,25 +1306,26 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, M
 	default:
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|unknownpkt",
-					     "**ch3|unknownpkt %d", pkt->type);
 	    *rreqp = NULL;
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_INTERN, "**ch3|unknownpkt",
+				 "**ch3|unknownpkt %d", pkt->type);
 	    break;
 	    /* --END ERROR HANDLING-- */
 	}
     }
 
-  fn_exit:
+  fn_fail:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
     return mpi_errno;
 }
 
+/* FIXME: What does this routine do */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Post_data_receive
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rreqp)
+int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 {
     int dt_contig;
     MPI_Aint dt_true_lb;
@@ -1475,8 +1337,6 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
-
-    MPIU_UNREFERENCED_ARG(vc);
 
     MPIDI_DBG_PRINTF((30, FCNAME, "entering"));
 
@@ -1515,6 +1375,7 @@ int MPIDI_CH3U_Post_data_receive(MPIDI_VC_t * vc, int found, MPID_Request ** rre
 	{
 	    /* user buffer is contiguous and large enough to store the
 	       entire message */
+	    /* FIXME: So why don't we move it *now* ? */
 	    MPIDI_DBG_PRINTF((35, FCNAME, "IOV loaded for contiguous read"));
 	    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*)(rreq->dev.user_buf) + dt_true_lb);
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;

@@ -225,6 +225,12 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
    pointer as part of the channel init setup, particularly since this
    function appears to access channel-specific storage (MPIDI_CH3_Process) */
 
+/* FIXME: We need a finalize handler to perform MPIU_Free(parent_port_name)
+   if it is allocated */
+static char *parent_port_name = 0;    /* Name of parent port if this
+					 process was spawned (and is root
+					 of comm world) or null */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Get_parent_port
 #undef FCNAME
@@ -234,7 +240,7 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
     int mpi_errno = MPI_SUCCESS;
     char val[MPIDI_MAX_KVS_VALUE_LEN];
 
-    if (MPIDI_Process.parent_port_name == NULL)
+    if (parent_port_name == NULL)
     {
 	mpi_errno = MPIDI_KVS_Get(MPIDI_Process.my_pg->ch.kvs_name, 
 				  "PARENT_ROOT_PORT_NAME", val);
@@ -242,13 +248,13 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
 	    MPIU_ERR_POP(mpi_errno);
 	}
 
-	MPIDI_Process.parent_port_name = MPIU_Strdup(val);
-	if (MPIDI_Process.parent_port_name == NULL) {
+	parent_port_name = MPIU_Strdup(val);
+	if (parent_port_name == NULL) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
     }
 
-    *parent_port = MPIDI_Process.parent_port_name;
+    *parent_port = parent_port_name;
 
  fn_exit:
     return mpi_errno;

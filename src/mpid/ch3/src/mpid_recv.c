@@ -32,13 +32,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
     }
 
     rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(rank, tag, comm->context_id + context_offset, &found);
-    /* --BEGIN ERROR HANDLING-- */
-    if (rreq == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_NO_MEM, "**nomem", 0);
-	goto fn_exit;
+    if (rreq == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_NO_MEM, "**nomem");
     }
-    /* --END ERROR HANDLING-- */
 
     /* FIXME: in the common case, we want to simply complete the message
        and make as few updates as possible.
@@ -95,13 +91,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
 		esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 		mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_POP(mpi_errno);
 		}
-		/* --END ERROR HANDLING-- */
 		if (esa_req != NULL)
 		{
 		    MPID_Request_release(esa_req);
@@ -152,29 +144,17 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		/* The channel will be performing the rendezvous */
 
 		mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, &rreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-						      FCNAME, __LINE__,
-						      MPI_ERR_OTHER,
-						      "**ch3|postrecv",
-						      "**ch3|postrecv %s",
-						      "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+					 "**ch3|postrecv",
+					 "**ch3|postrecv %s",
+					 "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
 		}
-		/* --END ERROR HANDLING-- */
 		mpi_errno = MPIDI_CH3_iStartRndvTransfer (vc, rreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-						      FCNAME, __LINE__,
-						      MPI_ERR_OTHER,
-						      "**ch3|ctspkt", 0);
-		    goto fn_exit;
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+					"**ch3|ctspkt");
 		}
-		/* --END ERROR HANDLING-- */
 
 #else
 	    MPID_Request * cts_req;
@@ -187,13 +167,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	    cts_pkt->sender_req_id = rreq->dev.sender_req_id;
 	    cts_pkt->receiver_req_id = rreq->handle;
 	    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|ctspkt", 0);
-		goto fn_exit;
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ctspkt");
 	    }
-	    /* --END ERROR HANDLING-- */
 	    if (cts_req != NULL)
 	    {
 		/* FIXME: Ideally we could specify that a req not be returned.  This would avoid our having to decrement the
@@ -241,9 +217,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPID_Request_release(rreq);
 	    rreq = NULL;
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|badmsgtype",
-					     "**ch3|badmsgtype %d", MPIDI_Request_get_msg_type(rreq));
-	    goto fn_exit;
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_INTERN, "**ch3|badmsgtype",
+		      "**ch3|badmsgtype %d", MPIDI_Request_get_msg_type(rreq));
 	    /* --END ERROR HANDLING-- */
 	}
     }
@@ -273,6 +248,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
     {
 	MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
     }
+ fn_fail:
     MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_RECV);
     return mpi_errno;

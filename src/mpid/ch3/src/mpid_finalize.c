@@ -11,10 +11,7 @@
    rather than direct routine calls.
  */
 
-#ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
 #include "pmi.h"
-static int MPIDI_CH3I_PMI_Finalize(void);
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
@@ -23,7 +20,7 @@ static int MPIDI_CH3I_PMI_Finalize(void);
 int MPID_Finalize(void)
 {
     MPID_Progress_state progress_state;
-    int mpi_errno = MPI_SUCCESS, inuse;
+    int mpi_errno = MPI_SUCCESS, inuse, rc;
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
@@ -209,34 +206,26 @@ int MPID_Finalize(void)
     }
     MPID_Progress_end(&progress_state);
 
-    if (MPIDI_Process.warnings_enabled)
-    {
-	/* FIXME: Rather than making the receive queue head globally
-	   visible, */
-	if (MPIDI_Process.recvq_posted_head != NULL)
-	{
-	    /* XXX - insert code to print posted receive queue */
-	    MPIU_Msg_printf("Warning: program exiting with outstanding receive requests\n");
-	}
-    }
-
-#ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
-    /* FIXME:  ch3i_pmi_finalize performs these steps:
-       channel progress finalize (belongs in channel finalize)
-       kvs finalize (belongs here)
-       pmi_finalize (belongs here)
-       Question: Why not finalize the channel, then kvs, then pmi?
-    */
-    mpi_errno = MPIDI_CH3I_PMI_Finalize();
+    /* FIXME: Progress finalize should be in CH3_Finalize */
+    mpi_errno = MPIDI_CH3I_Progress_finalize();
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-#endif
     mpi_errno = MPIDI_CH3_Finalize();
-    
+#ifdef MPIDI_DEV_IMPLEMENTS_KVS
+    /* Finalize the CH3 device KVS cache interface */
+    rc = MPIDI_KVS_Finalize();
+#endif
+    /* Let PMI know the process is about to exit */
+    rc = PMI_Finalize();
+    if (rc != 0) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+			     "**ch3|pmi_finalize", 
+			     "**ch3|pmi_finalize %d", rc);
+    }
+
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
-    if (inuse == 0)
-    {
+    if (inuse == 0) {
         MPIDI_PG_Destroy(MPIDI_Process.my_pg);
     }
     MPIDI_Process.my_pg = NULL;
@@ -248,48 +237,3 @@ int MPID_Finalize(void)
  fn_fail:
     goto fn_exit;
 }
-
-#ifndef MPIDI_CH3_UNFACTORED_FINALIZE    
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Finalize
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPIDI_CH3I_PMI_Finalize(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int rc;
-
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-
-    /* Shutdown the progress engine */
-    /* FIXME: internal function not in the CH3 channel interface */
-    /* FIXME: This does not belong here */
-    mpi_errno = MPIDI_CH3I_Progress_finalize();
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|sock|progress_finalize", 0);
-          return mpi_errno;
-	/* --END ERROR HANDLING-- */
-    }
-
-#ifdef MPIDI_DEV_IMPLEMENTS_KVS
-    /* Finalize the CH3 device KVS cache interface */
-    rc = MPIDI_KVS_Finalize();
-#endif
-
-    /* Let PMI know the process is about to exit */
-    rc = PMI_Finalize();
-    if (rc != 0)
-    {
-          /* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
-					 MPI_ERR_OTHER, "**ch3|sock|pmi_finalize", "**ch3|sock|pmi_finalize %d", rc);
-          return mpi_errno;
-          /* --END ERROR HANDLING-- */
-    }
-    return mpi_errno;
-}
-#endif

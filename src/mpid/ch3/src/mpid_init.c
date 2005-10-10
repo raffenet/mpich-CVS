@@ -13,6 +13,11 @@
 #include <unistd.h>
 #endif
 
+/* FIXME: This does not belong here */
+#ifdef USE_MPIU_DBG_PRINT_VC
+char *MPIU_DBG_parent_str = "?";
+#endif
+
 /* FIXME:
    the PMI init function should ONLY do the PMI operations, not the process 
    group or bc operations.  These should be in a separate routine */
@@ -21,14 +26,6 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
 			  int *pg_rank_p, MPIDI_PG_t **pg_p );
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
-
-int MPIDI_CH3I_BCInit( int pg_rank, 
-		       char **publish_bc_p, char **bc_key_p, 
-		       char **bc_val_p, int *val_max_sz_p);
-
-#include "mpidi_ch3_impl.h"  /* for extern'd MPIDI_CH3I_Process */
-
-MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
 /* FIXME: Use function pointers for the RMA operations instead of this flag */
 int MPIDI_Use_optimized_rma = 0;
@@ -62,30 +59,10 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /*
      * Initialize the device's process information structure
      */
-    MPIDI_Process.recvq_posted_head = NULL;
-    MPIDI_Process.recvq_posted_tail = NULL;
-    MPIDI_Process.recvq_unexpected_head = NULL;
-    MPIDI_Process.recvq_unexpected_tail = NULL;
     MPIDI_Process.lpid_counter = 0;
-    MPIDI_Process.warnings_enabled = TRUE;
-    MPIDI_Process.parent_port_name = NULL;
 
-    /* FIXME:
-       We don't know that environment variables are sent to all processes.
-       In addition, we should use a common set of routines to access
-       such parameters to ensure uniform handling */
-    env = getenv("MPICH_WARNINGS");
-    if (env)
-    {
-	if (strcmp(env, "1") == 0 || strcmp(env, "on") == 0 || strcmp(env, "yes") == 0)
-	{ 
-	    MPIDI_Process.warnings_enabled = TRUE;
-	}
-	if (strcmp(env, "0") == 0 || strcmp(env, "off") == 0 || strcmp(env, "no") == 0)
-	{ 
-	    MPIDI_Process.warnings_enabled = FALSE;
-	}
-    }
+    /* FIXME: This is a good place to check for environment variables
+       and command line options that may control the device */
 
     /*
      * Set global process attributes.  These can be overridden by the channel 
@@ -327,13 +304,10 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
 			     "**pmi_get_id_length_max %d", pmi_errno);
     }
 
+    /* This memory will be freed by the PG_Destroy if there is an error */
     pg_id = MPIU_Malloc(pg_id_sz + 1);
-    if (pg_id == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+    if (pg_id == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
     
     pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
@@ -374,12 +348,8 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
     }
 
     pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
-    if (pg->ch.kvs_name == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+    if (pg->ch.kvs_name == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
     
     pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
@@ -434,14 +404,11 @@ int MPIDI_CH3I_BCInit( int pg_rank,
 			     "**pmi_kvs_get_key_length_max", 
 			     "**pmi_kvs_get_key_length_max %d", pmi_errno);
     }
-    
+
+    /* This memroy is returned by this routine */
     *bc_key_p = MPIU_Malloc(key_max_sz);
-    if (*bc_key_p == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+    if (*bc_key_p == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
 
     pmi_errno = PMI_KVS_Get_value_length_max(val_max_sz_p);
@@ -452,15 +419,13 @@ int MPIDI_CH3I_BCInit( int pg_rank,
 			     "**pmi_kvs_get_value_length_max %d", pmi_errno);
     }
     
+    /* This memroy is returned by this routine */
     *bc_val_p = MPIU_Malloc(*val_max_sz_p);
-    if (*bc_val_p == NULL)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-	/* --END ERROR HANDLING-- */
+    if (*bc_val_p == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
-    *publish_bc_p = *bc_val_p;  /* need to keep a pointer to the front of the front of this buffer to publish */
+    *publish_bc_p = *bc_val_p;  /* need to keep a pointer to the front of the 
+				   front of this buffer to publish */
 
     /* could put MPIU_Snprintf("P%d-businesscard") call here...  then take boolean publish_bc to
      *   the MPIDI_CH3U_Init_* upcalls (for sshm, it will make 2 upcalls but we don't want to publish after the
@@ -478,7 +443,6 @@ int MPIDI_CH3I_BCInit( int pg_rank,
     
     
   fn_exit:
-
     return mpi_errno;
 
   fn_fail:
