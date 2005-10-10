@@ -573,20 +573,19 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	}
 
 	if (mpi_errno == MPI_SUCCESS) {
-	    /* Notify the device that the communicator is about to be destroyed */
+	    /* Notify the device that the communicator is about to be 
+	       destroyed */
 	    MPID_Dev_comm_destroy_hook(comm_ptr);
 	    
 	    /* Free the VCRT */
 	    mpi_errno = MPID_VCRT_Release(comm_ptr->vcrt);
 	    if (mpi_errno != MPI_SUCCESS) {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		return mpi_errno;
+		MPIU_ERR_POP(mpi_errno);
 	    }
             if (comm_ptr->comm_kind == MPID_INTERCOMM) {
                 mpi_errno = MPID_VCRT_Release(comm_ptr->local_vcrt);
 		if (mpi_errno != MPI_SUCCESS) {
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    return mpi_errno;
+		    MPIU_ERR_POP(mpi_errno);
 		}
                 if (comm_ptr->local_comm) 
                     MPIR_Comm_release(comm_ptr->local_comm);
@@ -601,8 +600,6 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
             if (comm_ptr->remote_group)
                 MPIR_Group_release(comm_ptr->remote_group);
 
-	    /* FIXME - when we recover comm objects, many tests 
-	       (such as c/grp_ctxt_comm/functional/MPI_Comm_create) fail */
   	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  
 	}
 	else {
@@ -612,5 +609,8 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	}
     }
 
+ fn_exit:
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
