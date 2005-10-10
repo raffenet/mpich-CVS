@@ -47,16 +47,7 @@ typedef struct MPIDI_Process
 {
     MPIDI_PG_t * my_pg;
     int my_pg_rank;
-    MPID_Request * recvq_posted_head;
-    MPID_Request * recvq_posted_tail;
-    MPID_Request * recvq_unexpected_head;
-    MPID_Request * recvq_unexpected_tail;
     int lpid_counter;
-    int warnings_enabled;
-    
-    char         *parent_port_name;   /* Name of parent port if this
-					 process was spawned (and is root
-					 of comm world) or null */
 }
 MPIDI_Process_t;
 
@@ -480,6 +471,10 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 #endif
 
 /* FIXME: Should this fully initialize the vc_ entry? */
+/* FIXME: Make this into a routine (initializing/creating 
+   connections are rare and expensive; no need to use a macro.
+   In addition, the lpid_counter can then be a static int in the
+   file that implements this routine */
 #define MPIDI_VC_Init(vc_, pg_, rank_)		\
 {						\
     (vc_)->state = MPIDI_VC_STATE_INACTIVE;	\
@@ -565,6 +560,11 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 void MPIDI_dbg_printf(int, char *, char *, ...);
 void MPIDI_err_printf(char *, char *, ...);
 
+/* FIXME: This does not belong here */
+#ifdef USE_MPIU_DBG_PRINT_VC
+extern char *MPIU_DBG_parent_str;
+#endif
+
 #if defined(MPICH_DBG_OUTPUT)
 #define MPIDI_DBG_PRINTF(e_)				\
 {                                               	\
@@ -633,6 +633,11 @@ typedef struct MPIDI_Port_Ops {
 #define MPIDI_PORTFNS_VERSION 1
 int MPIDI_CH3_PortFnsInit( MPIDI_PortFns * );
 
+/* Utility routines provided in src/ch3u_port.c for working with connection
+   queues */
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
+int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
+int MPIDI_CH3I_Acceptq_init(void);
 /*--------------------------
   END MPI PORT SECTION 
   --------------------------*/
@@ -695,6 +700,12 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 int MPIDI_CH3I_Progress_finalize(void);
 
 extern int MPIDI_Use_optimized_rma;
+
+/* Function that may be used to provide buisness card info */
+int MPIDI_CH3I_BCInit( int pg_rank, 
+		       char **publish_bc_p, char **bc_key_p, 
+		       char **bc_val_p, int *val_max_sz_p);
+
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 

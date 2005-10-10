@@ -52,12 +52,12 @@ MPIDI_Message_match;
 typedef enum MPIDI_CH3_Pkt_type
 {
     MPIDI_CH3_PKT_EAGER_SEND = 0,
-    MPIDI_CH3_PKT_EAGER_SYNC_SEND,
+    MPIDI_CH3_PKT_EAGER_SYNC_SEND,    /* FIXME: no sync eager */
     MPIDI_CH3_PKT_EAGER_SYNC_ACK,
     MPIDI_CH3_PKT_READY_SEND,
     MPIDI_CH3_PKT_RNDV_REQ_TO_SEND,
     MPIDI_CH3_PKT_RNDV_CLR_TO_SEND,
-    MPIDI_CH3_PKT_RNDV_SEND,
+    MPIDI_CH3_PKT_RNDV_SEND,          /* FIXME: should be stream put */
     MPIDI_CH3_PKT_CANCEL_SEND_REQ,
     MPIDI_CH3_PKT_CANCEL_SEND_RESP,
     MPIDI_CH3_PKT_PUT,
@@ -70,7 +70,7 @@ typedef enum MPIDI_CH3_Pkt_type
     MPIDI_CH3_PKT_LOCK_PUT_UNLOCK, /* optimization for single puts */
     MPIDI_CH3_PKT_LOCK_GET_UNLOCK, /* optimization for single gets */
     MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK, /* optimization for single accumulates */
-    MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,
+    MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,  /* FIXME: Unused */
     MPIDI_CH3_PKT_CLOSE,
     MPIDI_CH3_PKT_END_CH3
 # if defined(MPIDI_CH3_PKT_ENUM)

@@ -32,6 +32,7 @@ int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_ALLOC);
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_ALLOC);
+
     MPIU_CHKPMEM_MALLOC(conn,MPIDI_CH3I_Connection_t*,
 			sizeof(MPIDI_CH3I_Connection_t),mpi_errno,"conn");
 
@@ -68,6 +69,9 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SOCK);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SOCK);
+
+    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Connect to root with portstring %s",
+		   port_name );
 
     mpi_errno = MPIU_Str_get_string_arg(port_name, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, MAX_HOST_DESCRIPTION_LEN);
     if (mpi_errno != MPIU_STR_SUCCESS) {
@@ -148,6 +152,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
     /* --END ERROR HANDLING-- */
 
  fn_exit:
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Exiting connect_to_root_sock");
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SOCK);
     return mpi_errno;
  fn_fail:
