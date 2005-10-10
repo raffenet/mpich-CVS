@@ -24,6 +24,7 @@ int MPIDI_CH3_Finalize()
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_progress_finalize");
     }
 
+    /* FIXME: This should be used in abort as well */
     /* Free resources allocated in CH3_Init() */
     if (MPIDI_PG_Get_size(MPIDI_Process.my_pg) > 1)
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, TRUE);
@@ -31,13 +32,6 @@ int MPIDI_CH3_Finalize()
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, FALSE);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_release_mem");
-    }
-
-    /* Let PMI know the process is about to exit */
-    rc = PMI_Finalize();
-    if (rc != PMI_SUCCESS) {
-	MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, 
-		      "**pmi_finalize", "**pmi_finalize %d", rc );
     }
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
