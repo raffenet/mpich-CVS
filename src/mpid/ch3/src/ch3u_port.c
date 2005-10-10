@@ -970,6 +970,8 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
     return mpi_errno;
 }
 
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+
 /* FIXME: What is an Accept queue and who uses it?  
    Is this part of the connect/accept support?  
    These routines appear to be called by channel progress routines; 
@@ -1097,3 +1099,6 @@ int MPIDI_CH3I_Acceptq_init(void)
 #   endif
     return MPI_SUCCESS;
 }
+
+#endif /* MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS */
+
