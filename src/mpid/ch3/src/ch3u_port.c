@@ -5,6 +5,8 @@
  */
 
 /* FIXME: This could go into util/port as a general utility routine */
+/* FIXME: This is needed/used only if dynamic processes are supported 
+   (e.g., another reason to place it into util/port) */
 
 #include "mpidi_ch3_impl.h"
 
@@ -30,11 +32,17 @@ typedef struct pg_node {
     struct pg_node *next;
 } pg_node;
 
-static int extractLocalPGInfo( MPID_Comm *, pg_translation [], 
+/* These functions help implement the connect/accept algorithm */
+static int ExtractLocalPGInfo( MPID_Comm *, pg_translation [], 
 			       pg_node **, int * );
 static int ReceivePGAndDistribute( MPID_Comm *, MPID_Comm *, int, int *,
 				   int, MPIDI_PG_t *[] );
 static int SendPGtoPeerAndFree( MPID_Comm *, int *, pg_node * );
+static int FreeNewVC( MPIDI_VC_t *new_vc );
+static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size, 
+			      pg_translation remote_translation[],
+			      MPIDI_PG_t **remote_pg, 
+			      MPID_Comm *intercomm );
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Create_inter_root_communicator_connect
@@ -83,8 +91,17 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
 
 
 /*
- * MPIDI_Comm_connect()
- */
+   MPIDI_Comm_connect()
+
+   Algorithm: First create a connection (vc) between this root and the
+   root on the accept side. Using this vc, create a temporary
+   intercomm between the two roots. Use MPI functions to communicate
+   the other information needed to create the real intercommunicator
+   between the processes on the two sides. Then free the
+   intercommunicator between the roots. Most of the complexity is
+   because there can be multiple process groups on each side. 
+*/ 
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Comm_connect
 #undef FCNAME
@@ -96,7 +113,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     int j, i, rank, recv_ints[3], send_ints[2], context_id;
     int remote_comm_size=0;
     MPID_Comm *tmp_comm, *intercomm;
-    MPIDI_VC_t * vc, *new_vc;
+    MPIDI_VC_t *new_vc;
     int sendtag=100, recvtag=100, n_remote_pgs;
     int n_local_pgs=1, local_comm_size;
     pg_translation *local_translation = NULL, *remote_translation = NULL;
@@ -106,14 +123,6 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_CONNECT);
-
-/* Algorithm: First create a connection (vc) between this root and the
-   root on the accept side. Using this vc, create a temporary
-   intercomm between the two roots. Use MPI functions to communicate
-   the other information needed to create the real intercommunicator
-   between the processes on the two sides. Then free the
-   intercommunicator between the roots. Most of the complexity is
-   because there can be multiple process groups on each side. */ 
 
     rank = comm_ptr->rank;
     local_comm_size = comm_ptr->local_size;
@@ -136,7 +145,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	   them in strings to be sent to the other side.
 	   The encoded string for each process group contains the process 
 	   group id, size and all its KVS values */
-	mpi_errno = extractLocalPGInfo( comm_ptr, local_translation, 
+	mpi_errno = ExtractLocalPGInfo( comm_ptr, local_translation, 
 					&pg_list, &n_local_pgs );
 
 
@@ -239,45 +248,13 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     intercomm->context_id = context_id;
     intercomm->is_low_group = 1;
 
-    intercomm->attributes   = NULL;
-    intercomm->remote_size = remote_comm_size;
-    intercomm->local_size   = comm_ptr->local_size;
-    intercomm->rank         = comm_ptr->rank;
-    intercomm->local_group  = NULL;
-    intercomm->remote_group = NULL;
-    intercomm->comm_kind    = MPID_INTERCOMM;
-    intercomm->local_comm   = NULL;
-    intercomm->coll_fns     = NULL;
-
-    /* Point local vcr, vcrt at those of incoming intracommunicator */
-    intercomm->local_vcrt = comm_ptr->vcrt;
-    MPID_VCRT_Add_ref(comm_ptr->vcrt);
-    intercomm->local_vcr  = comm_ptr->vcr;
-
-    /* Set up VC reference table */
-    mpi_errno = MPID_VCRT_Create(intercomm->remote_size, &intercomm->vcrt);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_vcrt");
-    }
-    mpi_errno = MPID_VCRT_Get_ptr(intercomm->vcrt, &intercomm->vcr);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
-    }
-    for (i=0; i < intercomm->remote_size; i++)
-    {
-	MPIDI_PG_Get_vcr(remote_pg[remote_translation[i].pg_index], 
-			 remote_translation[i].pg_rank, &vc);
-        MPID_VCR_Dup(vc, &intercomm->vcr[i]);
-    }
-
-    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
-    mpi_errno = MPIR_Barrier(comm_ptr);
+    mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 
+				   remote_translation, remote_pg, intercomm );
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
 
     /* synchronize with remote root */
-
     if (rank == root)
     {
 	MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"sync with peer");
@@ -299,35 +276,13 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    /* Free new_vc. It was explicitly allocated in MPIDI_CH3_Connect_to_root. */
-    if (rank == root)
-    {
-        MPID_Progress_state progress_state;
-
-        if (new_vc->state != MPIDI_VC_STATE_INACTIVE)
-	{
-            MPID_Progress_start(&progress_state);
-            while (new_vc->state != MPIDI_VC_STATE_INACTIVE)
-	    {
-                mpi_errno = MPID_Progress_wait(&progress_state);
-                /* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-                {
-                    MPID_Progress_end(&progress_state);
-		    MPIU_ERR_POP(mpi_errno);
-                }
-                /* --END ERROR HANDLING-- */
-            }
-            MPID_Progress_end(&progress_state);
-        }
-
-#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-	mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
-#endif
-        MPIU_Free(new_vc);
+    /* Free new_vc. It was explicitly allocated in MPIDI_CH3_Connect_to_root.*/
+    if (rank == root) {
+	FreeNewVC( new_vc );
     }
 
  fn_exit: 
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Exiting ch3u_comm_connect");
     MPIU_CHKLMEM_FREEALL();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_COMM_CONNECT);
     return mpi_errno;
@@ -343,7 +298,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
  * must be allocated before this routine is called).  The number of 
  * distinct process groups is returned in n_local_pgs_p .
  */
-static int extractLocalPGInfo( MPID_Comm *comm_p, 
+static int ExtractLocalPGInfo( MPID_Comm *comm_p, 
 			       pg_translation local_translation[], 
 			       pg_node **pg_list_p,
 			       int *n_local_pgs_p )
@@ -429,6 +384,10 @@ static int extractLocalPGInfo( MPID_Comm *comm_p,
    process groups and then distributes them to the other processes
    in comm_ptr.
    See SendPGToPeer for the routine that sends the descriptions */
+#undef FUNCNAME
+#define FUNCNAME ReceivePGAndDistribute
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr, 
 				   int root, int *recvtag_p, 
 				   int n_remote_pgs, MPIDI_PG_t *remote_pg[] )
@@ -438,6 +397,9 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
     int  rank = comm_ptr->rank;
     int  mpi_errno = 0;
     int  recvtag = *recvtag_p;
+    MPIDI_STATE_DECL(MPID_STATE_RECEIVEPGANDDISTRIBUTE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_RECEIVEPGANDDISTRIBUTE);
 
     for (i=0; i<n_remote_pgs; i++) {
 
@@ -502,18 +464,27 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	}
     }
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_RECEIVEPGANDDISTRIBUTE)
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
+
 /* Sends the process group information to the peer and frees the 
    pg_list */
+#undef FUNCNAME
+#define FUNCNAME SendPGtoPeerAndFree
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p, 
 				pg_node *pg_list )
 {
     int mpi_errno = 0;
     int sendtag = *sendtag_p, i;
     pg_node *pg_iter;
+    MPIDI_STATE_DECL(MPID_STATE_SENDPGTOPEERANDFREE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SETPGTOPEERANDFREE);
 
     while (pg_list != NULL) {
 	pg_iter = pg_list;
@@ -540,6 +511,7 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
     }
 
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_SETPGTOPEERANDFREE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -615,6 +587,17 @@ fn_fail:
 }
 /*
  * MPIDI_Comm_accept()
+
+   Algorithm: First dequeue the vc from the accept queue (it was
+   enqueued by the progress engine in response to a connect request
+   from the root on the connect side). Use this vc to create an
+   intercommunicator between this root and the root on the connect
+   side. Use this intercomm. to communicate the other information
+   needed to create the real intercommunicator between the processes
+   on the two sides. Then free the intercommunicator between the
+   roots. Most of the complexity is because there can be multiple
+   process groups on each side.
+
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Comm_accept
@@ -627,7 +610,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     int i, j, rank, recv_ints[2], send_ints[3];
     int remote_comm_size=0;
     MPID_Comm *tmp_comm = NULL, *intercomm;
-    MPIDI_VC_t * vc, *new_vc = NULL;
+    MPIDI_VC_t *new_vc = NULL;
     int n_local_pgs=1, n_remote_pgs;
     int sendtag=100, recvtag=100, local_comm_size;
     pg_translation *local_translation = NULL, *remote_translation = NULL;
@@ -637,17 +620,6 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_ACCEPT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_ACCEPT);
-
-/* Algorithm: First dequeue the vc from the accept queue (it was
-   enqueued by the progress engine in response to a connect request
-   from the root on the connect side). Use this vc to create an
-   intercommunicator between this root and the root on the connect
-   side. Use this intercomm. to communicate the other information
-   needed to create the real intercommunicator between the processes
-   on the two sides. Then free the intercommunicator between the
-   roots. Most of the complexity is because there can be multiple
-   process groups on each side.*/ 
-
 
     /* Create the new intercommunicator here. We need to send the
        context id to the other side. */
@@ -675,14 +647,11 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 			    local_comm_size*sizeof(pg_translation),
 			    mpi_errno,"local_translation");
 
-	/*	mpi_errno = extractLocalPGInfo( comm_ptr, local_translation, 
-		&pg_list, &n_local_pgs ); */
-
 	/* Make a list of the local communicator's process groups and encode 
 	   them in strings to be sent to the other side.
 	   The encoded string for each process group contains the process 
 	   group id, size and all its KVS values */
-	mpi_errno = extractLocalPGInfo( comm_ptr, local_translation, 
+	mpi_errno = ExtractLocalPGInfo( comm_ptr, local_translation, 
 					&pg_list, &n_local_pgs );
         /* Send the remote root: n_local_pgs, local_comm_size, context_id for 
 	   newcomm.
@@ -769,42 +738,8 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     intercomm = *newcomm;
     intercomm->is_low_group = 0;
 
-    intercomm->attributes   = NULL;
-    intercomm->remote_size  = remote_comm_size;
-    intercomm->local_size   = comm_ptr->local_size;
-    intercomm->rank         = comm_ptr->rank;
-    intercomm->local_group  = NULL;
-    intercomm->remote_group = NULL;
-    intercomm->comm_kind    = MPID_INTERCOMM;
-    intercomm->local_comm   = NULL;
-    intercomm->coll_fns     = NULL;
-
-    /* Point local vcr, vcrt at those of incoming intracommunicator */
-    intercomm->local_vcrt = comm_ptr->vcrt;
-    MPID_VCRT_Add_ref(comm_ptr->vcrt);
-    intercomm->local_vcr  = comm_ptr->vcr;
-
-    /* Set up VC reference table */
-    mpi_errno = MPID_VCRT_Create(intercomm->remote_size, &intercomm->vcrt);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**init_vcrt");
-    }
-
-    mpi_errno = MPID_VCRT_Get_ptr(intercomm->vcrt, &intercomm->vcr);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
-    }
-
-    for (i=0; i < intercomm->remote_size; i++)
-    {
-	MPIDI_PG_Get_vcr(remote_pg[remote_translation[i].pg_index], 
-			 remote_translation[i].pg_rank, &vc);
-        MPID_VCR_Dup(vc, &intercomm->vcr[i]);
-
-    }
-
-    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
-    mpi_errno = MPIR_Barrier(comm_ptr);
+    mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 
+				   remote_translation, remote_pg, intercomm );
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -834,31 +769,8 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     /* Free new_vc once the connection is completed. It was explicitly 
        allocated in ch3_progress.c and returned by 
        MPIDI_CH3I_Acceptq_dequeue. */
-    if (rank == root)
-    {
-        MPID_Progress_state progress_state;
-
-        if (new_vc->state != MPIDI_VC_STATE_INACTIVE)
-	{
-            MPID_Progress_start(&progress_state);
-            while (new_vc->state != MPIDI_VC_STATE_INACTIVE)
-	    {
-                mpi_errno = MPID_Progress_wait(&progress_state);
-                /* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno != MPI_SUCCESS)
-                {
-                    MPID_Progress_end(&progress_state);
-		    MPIU_ERR_POP(mpi_errno);
-                }
-                /* --END ERROR HANDLING-- */
-            }
-            MPID_Progress_end(&progress_state);
-        }
-
-#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-	mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
-#endif
-        MPIU_Free(new_vc);
+    if (rank == root) {
+	FreeNewVC( new_vc );
     }
 
 fn_exit:
@@ -939,6 +851,125 @@ fn_fail:
     goto fn_exit;
 }
 
+/* This routine initializes the new intercomm, setting up the
+   VCRT and other common structures.  The is_low_group and context_id
+   fields are NOT set because they differ in the use of this 
+   routine in Comm_accept and Comm_connect */
+#undef FUNCNAME
+#define FUNCNAME SetupNewIntercomm
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size, 
+			      pg_translation remote_translation[],
+			      MPIDI_PG_t **remote_pg, 
+			      MPID_Comm *intercomm )
+{
+    int mpi_errno = MPI_SUCCESS, i;
+
+    intercomm->attributes   = NULL;
+    intercomm->remote_size  = remote_comm_size;
+    intercomm->local_size   = comm_ptr->local_size;
+    intercomm->rank         = comm_ptr->rank;
+    intercomm->local_group  = NULL;
+    intercomm->remote_group = NULL;
+    intercomm->comm_kind    = MPID_INTERCOMM;
+    intercomm->local_comm   = NULL;
+    intercomm->coll_fns     = NULL;
+
+    /* Point local vcr, vcrt at those of incoming intracommunicator */
+    intercomm->local_vcrt = comm_ptr->vcrt;
+    MPID_VCRT_Add_ref(comm_ptr->vcrt);
+    intercomm->local_vcr  = comm_ptr->vcr;
+
+    /* Set up VC reference table */
+    mpi_errno = MPID_VCRT_Create(intercomm->remote_size, &intercomm->vcrt);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_vcrt");
+    }
+    mpi_errno = MPID_VCRT_Get_ptr(intercomm->vcrt, &intercomm->vcr);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
+    }
+    for (i=0; i < intercomm->remote_size; i++)
+    {
+	MPIDI_VC_t *vc;
+	MPIDI_PG_Get_vcr(remote_pg[remote_translation[i].pg_index], 
+			 remote_translation[i].pg_rank, &vc);
+        MPID_VCR_Dup(vc, &intercomm->vcr[i]);
+    }
+
+    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
+    mpi_errno = MPIR_Barrier(comm_ptr);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+
+ fn_exit:
+    return mpi_errno;
+
+ fn_fail:
+    goto fn_exit;
+}
+
+#if 0
+    /* synchronize with remote root */
+    if (rank == root)
+    {
+	MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"sync with peer");
+        mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
+                                  sendtag++, &j, 0, MPI_INT,
+                                  0, recvtag++, tmp_comm->handle,
+                                  MPI_STATUS_IGNORE);
+        if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_POP(mpi_errno);
+        }
+
+        /* All communication with remote root done. Release the communicator. */
+        MPIR_Comm_release(tmp_comm);
+    }
+
+    /*printf("connect:barrier\n");fflush(stdout);*/
+    mpi_errno = MPIR_Barrier(comm_ptr);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+
+}
+#endif
+
+/* Free new_vc. It was explicitly allocated in MPIDI_CH3_Connect_to_root. */
+#undef FUNCNAME
+#define FUNCNAME FreeNewVC
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int FreeNewVC( MPIDI_VC_t *new_vc )
+{
+    MPID_Progress_state progress_state;
+    int mpi_errno = MPI_SUCCESS;
+    
+    if (new_vc->state != MPIDI_VC_STATE_INACTIVE) {
+	MPID_Progress_start(&progress_state);
+	while (new_vc->state != MPIDI_VC_STATE_INACTIVE) {
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno != MPI_SUCCESS)
+                {
+                    MPID_Progress_end(&progress_state);
+		    MPIU_ERR_POP(mpi_errno);
+                }
+	    /* --END ERROR HANDLING-- */
+	}
+	MPID_Progress_end(&progress_state);
+    }
+
+#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
+    mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
+#endif
+    MPIU_Free(new_vc);
+ fn_fail:
+    return mpi_errno;
+}
+
 /* FIXME: What is an Accept queue and who uses it?  
    Is this part of the connect/accept support?  
    These routines appear to be called by channel progress routines; 
@@ -951,9 +982,18 @@ fn_fail:
    designed and documented.
 */
 
+typedef struct MPIDI_CH3I_Acceptq_s
+{
+    struct MPIDI_VC *vc;
+    struct MPIDI_CH3I_Acceptq_s *next;
+}
+MPIDI_CH3I_Acceptq_t;
+
+static MPIDI_CH3I_Acceptq_t * acceptq_head=0;
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#define MPIDI_Acceptq_lock() MPID_Thread_lock(&MPIDI_CH3I_Process.acceptq_mutex)
-#define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&MPIDI_CH3I_Process.acceptq_mutex)
+static MPID_Thread_lock_t acceptq_mutex;
+#define MPIDI_Acceptq_lock() MPID_Thread_lock(&acceptq_mutex)
+#define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&acceptq_mutex)
 #else
 #define MPIDI_Acceptq_lock()
 #define MPIDI_Acceptq_unlock()
@@ -986,8 +1026,8 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 
     MPIDI_Acceptq_lock();
 
-    q_item->next = MPIDI_CH3I_Process.acceptq_head;
-    MPIDI_CH3I_Process.acceptq_head = q_item;
+    q_item->next = acceptq_head;
+    acceptq_head = q_item;
     
     MPIDI_Acceptq_unlock();
 
@@ -1015,7 +1055,7 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
     MPIDI_Acceptq_lock();
 
     *vc = NULL;
-    q_item = MPIDI_CH3I_Process.acceptq_head;
+    q_item = acceptq_head;
     prev = q_item;
     while (q_item != NULL)
     {
@@ -1023,8 +1063,8 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 	{
 	    *vc = q_item->vc;
 
-	    if ( q_item == MPIDI_CH3I_Process.acceptq_head )
-		MPIDI_CH3I_Process.acceptq_head = q_item->next;
+	    if ( q_item == acceptq_head )
+		acceptq_head = q_item->next;
 	    else
 		prev->next = q_item->next;
 
@@ -1050,11 +1090,9 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Acceptq_init(void)
 {
-    MPIDI_CH3I_Process.acceptq_head = NULL;
-
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     {
-	MPID_Thread_lock_init(&MPIDI_CH3I_Process.acceptq_mutex);
+	MPID_Thread_lock_init(&acceptq_mutex);
     }
 #   endif
     return MPI_SUCCESS;

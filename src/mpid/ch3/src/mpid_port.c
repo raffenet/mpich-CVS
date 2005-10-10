@@ -101,8 +101,6 @@ int MPID_Close_port(const char *port_name)
 
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
-    /* FIXME: if this routine is not called within a critical section,
-       this initialization should be made thread-safe */
     if (setupPortFunctions) {
 	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
@@ -113,8 +111,6 @@ int MPID_Close_port(const char *port_name)
        init check above; such a function may be named MPIDI_CH3_Close_port */
     if (portFns.ClosePort) {
 	mpi_errno = portFns.ClosePort( port_name );
-	/* FIXME: The only purpose of this call is to add this function
-	   to the stack of routines involved in this error */
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**fail");
 	}
@@ -138,8 +134,6 @@ int MPID_Comm_accept(char * port_name, MPID_Info * info, int root,
 
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
-    /* FIXME: if this routine is not called within a critical section,
-       this initialization should be made thread-safe */
     if (setupPortFunctions) {
 	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
@@ -177,8 +171,6 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
-    /* FIXME: if this routine is not called within a critical section,
-       this initialization should be made thread-safe */
     if (setupPortFunctions) {
 	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
@@ -245,7 +237,7 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
     /* FIXME: MPIU_xxx routines should return regular mpi error codes */
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
