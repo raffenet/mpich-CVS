@@ -147,9 +147,9 @@ sub ConvertToF90 {
 	}
 
 	# We could also detect continuations in column six and 
-	# convert to free-form input by holding one line back
+	# convert to free-form input by holding one line back.
 	if ($convertToFreeForm) {
-	    if (/^     [^ ](.*)/) {
+	    if (/^     \S(.*)/) {
 		$leftover = $1;
 		# This line contains a continuation marker
 		# Add a continuation marker to the previous line if
