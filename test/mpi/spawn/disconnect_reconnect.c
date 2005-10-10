@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
 
     MTest_Init( &argc, &argv );
 
-    if (argc > 1)
-    {
+    /* FIXME: Document arguments */
+    if (argc > 1) {
 	num_loops = atoi(argv[1]);
 	if (num_loops < 0)
 	    num_loops = 0;
