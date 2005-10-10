@@ -1434,7 +1434,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 
 			if (found)
 			{
-			    mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, found, &rreq);
+			    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, &rreq);
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
 			    {

@@ -8,6 +8,8 @@
 #include "pmi.h"
 #include "ibu.h"
 
+MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
+
 /* FIXME: If we still use this, it needs to be modified to match the 
    current spec for MPIDI_CH3_Init */
 #undef FUNCNAME

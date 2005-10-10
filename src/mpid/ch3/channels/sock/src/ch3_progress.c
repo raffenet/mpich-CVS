@@ -1351,6 +1351,7 @@ static inline void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * c
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
 }
 
+/* FIXME: What is this routine for? */
 #undef FUNCNAME
 #define FUNCNAME adjust_iov
 #undef FCNAME

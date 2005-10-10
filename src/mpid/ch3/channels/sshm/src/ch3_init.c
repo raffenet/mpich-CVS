@@ -16,6 +16,8 @@
 #include <unistd.h>
 #endif
 
+MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME

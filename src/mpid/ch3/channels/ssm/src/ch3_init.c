@@ -5,6 +5,7 @@
  */
 
 #include "mpidi_ch3_impl.h"
+MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
 /* FIXME: These VC debug print routines belong in mpid_vc.c, with 
    channel-specific code in an appropriate file.  Much of that 

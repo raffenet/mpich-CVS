@@ -754,7 +754,7 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 
 			if (found)
 			{
-			    mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, found, &rreq);
+			    mpi_errno = MPIDI_CH3U_Post_data_receive(found, &rreq);
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
@@ -1252,7 +1252,7 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 			MPIDI_Request_set_seqnum(rreq, rndv_eager_pkt->seqnum);
 			MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_EAGER_MSG);
 			recv_vc_ptr->ch.recv_active = rreq;
-			mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, TRUE, &recv_vc_ptr->ch.recv_active);
+			mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, &recv_vc_ptr->ch.recv_active);
 			if (mpi_errno != MPI_SUCCESS)
 			{
 			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
@@ -1421,7 +1421,7 @@ int ibu_wait(int millisecond_timeout, void **vc_pptr, int *num_bytes_ptr, ibu_op
 
 			if (found)
 			{
-			    mpi_errno = MPIDI_CH3U_Post_data_receive(recv_vc_ptr, found, &rreq);
+			    mpi_errno = MPIDI_CH3U_Post_data_receive(found, &rreq);
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
 			    {

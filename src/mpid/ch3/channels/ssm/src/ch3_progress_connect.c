@@ -147,6 +147,8 @@ void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc)
     MPIDI_CH3I_Process.shm_writing_list = vc;
 }
 
+#if 0
+
 static unsigned int GetIP(char *pszIP)
 {
     unsigned int nIP;
@@ -278,6 +280,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 
     return MPI_SUCCESS;
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Shm_connect

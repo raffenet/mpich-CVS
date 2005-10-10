@@ -10,6 +10,8 @@
 #include <unistd.h>
 #endif
 
+MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
+
 static void generate_shm_string(char *str)
 {
 #ifdef USE_WINDOWS_SHM
