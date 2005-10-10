@@ -123,6 +123,7 @@ static TRSPACE *TRhead = 0;
 static int     TRid = 0;
 static int     TRidSet = 0;
 static int     TRlevel = 0;
+static char    TRDefaultByte = 0xda;
 #define MAX_TR_STACK 20
 static int     TRdebugLevel = 0;
 #define TR_MALLOC 0x1
@@ -159,16 +160,31 @@ static void addrToHex( void *addr, char string[MAX_ADDRESS_CHARS] );
 +*/
 void MPIU_trinit( int rank )
 {
+    char *s;
+
     world_rank = rank;
+
+    /* FIXME: We should use generalized parameter handling here
+       to allow use of the command line as well as environment
+       variables */
+    s = getenv( "MPICH_TRMEM_VALIDATE" );
+    if (s && *s && (strcmp(s,"YES") == 0 || strcmp(s,"yes") == 0)) {
+	TRdebugLevel = 1;
+    }
+    s = getenv( "MPICH_TRMEM_INITZERO" );
+    if (s && *s && (strcmp(s,"YES") == 0 || strcmp(s,"yes") == 0)) {
+	TRDefaultByte = 0;
+    }
+    
 }
  
 /*+C
     MPIU_trmalloc - Malloc with tracing
 
     Input Parameters:
-.   a   - number of bytes to allocate
++   a   - number of bytes to allocate
 .   lineno - line number where used.  Use __LINE__ for this
-.   fname  - file name where used.  Use __FILE__ for this
+-   fname  - file name where used.  Use __FILE__ for this
 
     Returns:
     double aligned pointer to requested storage, or null if not
@@ -205,7 +221,8 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     new = malloc( (unsigned)( nsize + sizeof(TrSPACE) + sizeof(unsigned long) ) );
     if (!new) return 0;
 
-    memset( new, 0xfc, nsize + sizeof(TrSPACE) + sizeof(unsigned long) );
+    memset( new, TRDefaultByte, 
+	    nsize + sizeof(TrSPACE) + sizeof(unsigned long) );
     head = (TRSPACE *)new;
     new  += sizeof(TrSPACE);
 
@@ -244,9 +261,9 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
    MPIU_trfree - Free with tracing
 
    Input Parameters:
-.  a    - pointer to a block allocated with trmalloc
++  a    - pointer to a block allocated with trmalloc
 .  line - line in file where called
-.  file - Name of file where called
+-  file - Name of file where called
  +*/
 void MPIU_trfree( void *a_ptr, int line, const char file[] )
 {
@@ -356,7 +373,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
      */
     nset = head->size -  2 * sizeof(int);
     if (nset > 0) 
-	memset( ahead + 2 * sizeof(int), 0xda, nset );
+	memset( ahead + 2 * sizeof(int), TRDefaultByte, nset );
     free( a );
 }
 
