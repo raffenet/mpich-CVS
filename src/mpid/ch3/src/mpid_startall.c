@@ -6,7 +6,8 @@
 
 #include "mpidimpl.h"
 /* FIXME: This bsend header shouldn't be needed (the function prototype
-   should be in mpiimpl.h) */
+   should be in mpiimpl.h), to allow a devices MPID_Startall to use the
+   MPIR_Bsend_isend function */
 #include "../../../mpi/pt2pt/bsendutil.h"
 
 /* FIXME: Consider using function pointers for invoking persistent requests;
@@ -138,3 +139,183 @@ int MPID_Startall(int count, MPID_Request * requests[])
 /* FIXME:
    Move the routines that initialize the persistent requests into this file,
    since startall must be used with all of them */
+
+/*
+ * MPID_Send_init()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPID_Send_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Send_init(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+		   MPID_Request ** request)
+{
+    MPID_Request * sreq;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SEND_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEND_INIT);
+
+    MPIDI_Request_create_psreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_get_ptr(datatype, sreq->dev.datatype_ptr);
+	MPID_Datatype_add_ref(sreq->dev.datatype_ptr);
+    }
+    *request = sreq;
+
+  fn_exit:    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEND_INIT);
+    return mpi_errno;
+}
+
+/*
+ * MPID_Ssend_init()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPID_Ssend_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Ssend_init(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+		    MPID_Request ** request)
+{
+    MPID_Request * sreq;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_SSEND_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SSEND_INIT);
+
+    MPIDI_Request_create_psreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SSEND);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_get_ptr(datatype, sreq->dev.datatype_ptr);
+	MPID_Datatype_add_ref(sreq->dev.datatype_ptr);
+    }
+    *request = sreq;
+
+  fn_exit:    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SSEND_INIT);
+    return mpi_errno;
+}
+
+/*
+ * MPID_Rsend_init()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPID_Rsend_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Rsend_init(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+		    MPID_Request ** request)
+{
+    MPID_Request * sreq;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_RSEND_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_RSEND_INIT);
+
+    MPIDI_Request_create_psreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_get_ptr(datatype, sreq->dev.datatype_ptr);
+	MPID_Datatype_add_ref(sreq->dev.datatype_ptr);
+    }
+    *request = sreq;
+
+  fn_exit:    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_RSEND_INIT);
+    return mpi_errno;
+}
+
+/*
+ * MPID_Bsend_init()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPID_Bsend_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Bsend_init(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+		    MPID_Request ** request)
+{
+    MPID_Request * sreq;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_BSEND_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_BSEND_INIT);
+
+    MPIDI_Request_create_psreq(sreq, mpi_errno, goto fn_exit);
+    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_BSEND);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_get_ptr(datatype, sreq->dev.datatype_ptr);
+	MPID_Datatype_add_ref(sreq->dev.datatype_ptr);
+    }
+    *request = sreq;
+
+  fn_exit:    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_BSEND_INIT);
+    return mpi_errno;
+}
+
+/* 
+ * FIXME: The ch3 implmentation of the persistent routines should
+ * be very simple and use common code as much as possible.  All
+ * persistent routine should be in the same file, along with 
+ * startall.  Consider using function pointers to specify the 
+ * start functions, as if these were generalized requests, 
+ * rather than having MPID_Startall look at the request type.
+ */
+/*
+ * MPID_Recv_init()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPID_Recv_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+		   MPID_Request ** request)
+{
+    MPID_Request * rreq;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_RECV_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_RECV_INIT);
+    
+    rreq = MPIDI_CH3_Request_create();
+    /* --BEGIN ERROR HANDLING-- */
+    if (rreq == NULL)
+    {
+	goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+    
+    MPIU_Object_set_ref(rreq, 1);
+    rreq->kind = MPID_PREQUEST_RECV;
+    rreq->comm = comm;
+    MPIR_Comm_add_ref(comm);
+    rreq->dev.match.rank = rank;
+    rreq->dev.match.tag = tag;
+    rreq->dev.match.context_id = comm->context_id + context_offset;
+    rreq->dev.user_buf = (void *) buf;
+    rreq->dev.user_count = count;
+    rreq->dev.datatype = datatype;
+    rreq->partner_request = NULL;
+    MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_RECV);
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+    {
+	MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
+	MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
+    }
+    /* FIXME: Where is the memory registration call, in case the 
+       channel wishes to take special action (such as pinning for DMA)
+       the memory? */
+	
+    *request = rreq;
+
+  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_RECV_INIT);
+    return mpi_errno;
+}
