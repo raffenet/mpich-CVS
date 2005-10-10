@@ -50,6 +50,9 @@ $gDebug = 0;
 $GrandTotal       = 0;
 $GrandTotalMissed = 0;
 
+# gfilename is used to hold the current open file for READING, so
+# that error messages can be more specific
+$gFilename = "";
 for (@ARGV) {
     if (/-annote=(.*)/) {
 	# Create an annotation of the source data in the specified root
@@ -146,6 +149,7 @@ sub CountUncoveredLines {
     my $lastLine;
 
     open( FD, "<$filename" ) || die "Could not open $filename\n";
+    $gFilename = $filename;
 
     # Note that linecount is relative to the foo.c.gcov file, not the
     # original foo.c file.
@@ -174,14 +178,15 @@ sub CountUncoveredLines {
 	# code 
 	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
 	    /^\s*-:\s*d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
-	    ($lineincr,$filelineincr) = &skipBlock( "DEBUG", 0 );
+	    ($lineincr,$filelineincr) = &skipBlock( "DEBUG", 0, $linecount );
 	    $linecount += $lineincr;
 	    $fileline += $filelineincr;
 	    next;	       
 	}
 	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
-	    ($lineincr,$filelineincr) = &skipBlock( "ERROR HANDLING", 0 );
+	    ($lineincr,$filelineincr) = &skipBlock( "ERROR HANDLING", 0, 
+						    $linecount );
 	    $linecount += $lineincr;
 	    $fileline += $filelineincr;
 	    next;	       
@@ -189,7 +194,8 @@ sub CountUncoveredLines {
 	# Skip any blocks marked as experimental
 	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
-	    ($lineincr,$filelineincr) = &skipBlock( "EXPERIMENTAL", 1 );
+	    ($lineincr,$filelineincr) = &skipBlock( "EXPERIMENTAL", 1, 
+						    $linecount);
 	    $linecount += $lineincr;
 	    $fileline += $filelineincr;
 	    next;	       
@@ -302,6 +308,7 @@ sub AnnotateUncoveredLines {
     my $newline  = "\r\n";
 
     open( FD, "<$filename" ) || die "Could not open $filename\n";
+    $gFilename = $filename;
 
     print $outfile "<TABLE>$newline";
 
@@ -732,9 +739,9 @@ sub OutputFileTable {
 #
 # Skip over a named block (while writing it to the annotation file)
 #   Usage:
-#     skipBlock( outfd, blockname );
+#     skipBlockAndAnnotate( outfd, blockname );
 #   e.g.,
-#     skipBlock( $outfile, "DEBUG" );
+#     skipBlockAndAnnotate( $outfile, "DEBUG" );
 sub skipBlockAndAnnotate {
     my ($outfile,$blockName) = @_;
 
@@ -755,16 +762,16 @@ sub skipBlockAndAnnotate {
 
 # Skip over a named block.  Return the number of lines skipped
 # Usage: 
-#     skipBlock( blockname, allowNested )
+#     skipBlock( blockname, allowNested, linecount )
 # e.g.,
-#     skipBlock( "DEBUG", 0 );
+#     skipBlock( "DEBUG", 0, linecount );
 sub skipBlock {
-    my ($blockName,$allowNested) = @_;
-    my $linecount = 0;
+    my ($blockName,$allowNested,$linecount) = @_;
     my $fileline  = 0;
+    my $lineincr  = 0;
 
     while (<FD>) {
-	$linecount++;
+	$lineincr++;
 	if (/^\s/) { $fileline++; }
 	if (! $allowNested) {
 	    if (/^\s*\/\*\s+--BEGIN/ ||
@@ -772,7 +779,8 @@ sub skipBlock {
 		my $cleanline = $_;
 		$cleanline =~ s/^\s*//;
 		chop $cleanline;
-		print STDERR "Possible missing END $blockName in $filename at $linecount; saw $cleanline\n";
+		my $curlinecount = $linecount + $lineincr;
+		print STDERR "Possible missing END $blockName in $gFilename at $curlinecount; saw $cleanline\n";
 	    }
 	}
 	else {
@@ -780,7 +788,8 @@ sub skipBlock {
 		/^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/) {
 		# FIXME: Why is this a mangled line?  Should some of the \s* be
 		# \s+? (e.g., --\s+END)
-		print STDERR "Mangled line in $filename: $_";
+		my $curlinecount = $linecount + $lineincr;
+		print STDERR "Mangled line in $gFilename at $curlinecount: $_";
 		last; 
 	    }
 	}
@@ -789,7 +798,7 @@ sub skipBlock {
 	    last; 
 	}
     }
-    return ($linecount,$fileline);
+    return ($lineincr,$fileline);
 }
 
 #
