@@ -310,7 +310,7 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
 
     /* ... body of routine ...  */
 
-    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Gather != NULL)
+    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Gatherv != NULL)
     {
 	mpi_errno = comm_ptr->coll_fns->Gatherv(sendbuf, sendcnt,
                                                 sendtype, recvbuf, recvcnts,
