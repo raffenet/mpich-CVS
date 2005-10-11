@@ -632,6 +632,14 @@ if test -s $srcdir/$slog2_dirname/configure ; then
 fi
 
 
+dnl Determine if this is "UserSupplied" MPI implmentation.
+dnl If so, build mpecc and mpefc.
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    mpe_compilers=bin/mpecc
+    if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
+        mpe_compilers="$mpe_compilers bin/mpefc"
+    fi
+fi
 
 AC_OUTPUT_COMMANDS( [
 if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall; then
@@ -640,9 +648,15 @@ fi
 if test ! -x ./sbin/mpeinstallcheck -a -s ./sbin/mpeinstallcheck; then
     chmod u+x ./sbin/mpeinstallcheck
 fi
+if test ! -x ./bin/mpecc -a -s ./bin/mpecc; then
+    chmod a+x ./bin/mpecc
+fi
+if test ! -x ./bin/mpefc -a -s ./bin/mpefc; then
+    chmod a+x ./bin/mpefc
+fi
 ] )
 AC_OUTPUT( Makefile sbin/mpeinstall sbin/mpeinstallcheck \
-           etc/mpe_help.conf etc/mpe_f77env.conf )
+           etc/mpe_help.conf etc/mpe_f77env.conf $mpe_compilers )
 
 configured_pkgs=""
 for pkg in $selected_pkgs ; do
