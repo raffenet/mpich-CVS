@@ -1086,7 +1086,9 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_CREATE_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Comm_create( comm, group, comm_out );
+  trace_on  = 1;
 
   MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
 
@@ -1110,7 +1112,9 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_DUP_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Comm_dup( comm, comm_out );
+  trace_on  = 1;
 
   MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
 
@@ -1133,7 +1137,10 @@ MPI_Comm * comm;
 
   MPE_LOG_STATE_BEGIN(*comm,MPE_COMM_FREE_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Comm_free( comm );
+  trace_on  = 1;
+
   if ( *comm == MPI_COMM_NULL ) {
       MPE_LOG_INTRACOMM(*comm,MPI_COMM_NULL,CLOG_COMM_FREE)
   }
@@ -1265,7 +1272,9 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SPLIT_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Comm_split( comm, color, key, comm_out );
+  trace_on  = 1;
 
   MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
 
@@ -1580,9 +1589,11 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(local_comm,MPE_INTERCOMM_CREATE_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Intercomm_create( local_comm, local_leader,
                                      peer_comm, remote_leader,
                                      tag, comm_out );
+  trace_on  = 1;
 
   MPE_LOG_INTERCOMM(local_comm,*comm_out,CLOG_COMM_INTER_CREATE)
 
@@ -1607,7 +1618,9 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_INTERCOMM_MERGE_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Intercomm_merge( comm, high, comm_out );
+  trace_on  = 1;
 
   MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
 
@@ -4262,8 +4275,11 @@ MPI_Comm * comm_cart;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_CREATE_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Cart_create( comm_old, ndims, dims, periods, reorder,
                                 comm_cart );
+  trace_on  = 1;
+
   MPE_LOG_INTRACOMM(comm_old,*comm_cart,CLOG_COMM_INTRA_CREATE)
 
   MPE_LOG_STATE_END(comm_old)
@@ -4381,7 +4397,9 @@ MPI_Comm * comm_new;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SUB_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Cart_sub( comm, remain_dims, comm_new );
+  trace_on  = 1;
 
   MPE_LOG_INTRACOMM(comm,*comm_new,CLOG_COMM_INTRA_CREATE)
 
@@ -4452,8 +4470,11 @@ MPI_Comm * comm_graph;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_CREATE_ID)
   
+  trace_on  = 0;
   returnVal = PMPI_Graph_create( comm_old, nnodes, index, edges, reorder,
                                  comm_graph );
+  trace_on  = 1;
+
   MPE_LOG_INTRACOMM(comm_old,*comm_graph,CLOG_COMM_INTRA_CREATE)
 
   MPE_LOG_STATE_END(comm_old)
