@@ -25,7 +25,6 @@
 int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
 {
     int mpi_errno;
-
     MPIDI_STATE_DECL(MPID_STATE_MPID_COMM_DISCONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_DISCONNECT);
