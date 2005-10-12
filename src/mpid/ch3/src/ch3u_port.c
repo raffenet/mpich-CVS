@@ -25,6 +25,7 @@ typedef struct pg_translation {
     int pg_index;
     int pg_rank;
 } pg_translation;
+
 typedef struct pg_node {
     int index;
     char *pg_id;
@@ -83,7 +84,7 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
     *vc_pptr = connect_vc;
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_CONNECT);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -298,6 +299,10 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
  * must be allocated before this routine is called).  The number of 
  * distinct process groups is returned in n_local_pgs_p .
  */
+#undef FUNCNAME
+#define FUNCNAME extractLocalPGInfo
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int ExtractLocalPGInfo( MPID_Comm *comm_p, 
 			       pg_translation local_translation[], 
 			       pg_node **pg_list_p,
@@ -306,7 +311,9 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     pg_node        *pg_list = 0, *pg_iter, *pg_trailer;
     int            i, cur_index = 0, local_comm_size, mpi_errno = 0;
     MPIU_CHKPMEM_DECL(1);
-    
+    MPIDI_STATE_DECL(MPID_STATE_EXTRACTLOCALPGINFO);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_EXTRACTLOCALPGINFO);
     local_comm_size = comm_p->local_size;
 
     /* Make a list of the local communicator's process groups and encode 
@@ -365,7 +372,7 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
 #ifdef MPICH_DBG_OUTPUT
     pg_iter = pg_list;
     while (pg_iter != NULL) {
-	MPIU_DBG_PRINTF(("[%d]connect:PG: '%s'\n<%s>\n", rank, pg_iter->pg_id, pg_iter->str));
+	MPIU_DBG_PRINTF(("connect:PG: '%s'\n<%s>\n", pg_iter->pg_id, pg_iter->str));
 	pg_iter = pg_iter->next;
     }
 #endif
@@ -373,6 +380,7 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     *pg_list_p           = pg_list;
 
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_EXTRACTLOCALPGINFO);
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
@@ -464,7 +472,7 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	}
     }
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_RECEIVEPGANDDISTRIBUTE)
+    MPIDI_FUNC_EXIT(MPID_STATE_RECEIVEPGANDDISTRIBUTE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -484,7 +492,7 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
     pg_node *pg_iter;
     MPIDI_STATE_DECL(MPID_STATE_SENDPGTOPEERANDFREE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SETPGTOPEERANDFREE);
+    MPIDI_FUNC_ENTER(MPID_STATE_SENDPGTOPEERANDFREE);
 
     while (pg_list != NULL) {
 	pg_iter = pg_list;
@@ -511,11 +519,12 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_SETPGTOPEERANDFREE);
+    MPIDI_FUNC_EXIT(MPID_STATE_SENDPGTOPEERANDFREE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
+
 /* ---------------------------------------------------------------------- */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Create_inter_root_communicator_accept
@@ -579,12 +588,13 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
     *vc_pptr = new_vc;
 
 fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
     return mpi_errno;
 
 fn_fail:
     goto fn_exit;
 }
+
 /*
  * MPIDI_Comm_accept()
 
@@ -1009,7 +1019,6 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 {
     int mpi_errno=MPI_SUCCESS;
     MPIDI_CH3I_Acceptq_t *q_item;
-
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
@@ -1049,7 +1058,6 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 {
     int mpi_errno=MPI_SUCCESS;
     MPIDI_CH3I_Acceptq_t *q_item, *prev;
-    
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
@@ -1092,11 +1100,15 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Acceptq_init(void)
 {
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
     {
 	MPID_Thread_lock_init(&acceptq_mutex);
     }
 #   endif
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
     return MPI_SUCCESS;
 }
 
