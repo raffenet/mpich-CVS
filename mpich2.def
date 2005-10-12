@@ -19,7 +19,6 @@ EXPORTS
 	MPID_Wtime_todouble
 	MPIR_Dup_fn
 	MPI_DUP_FN=MPIR_Dup_fn
-	MPID_Parse_option
 	PMPIO_Wait
 	MPIO_Wait=PMPIO_Wait
 ; MPI
