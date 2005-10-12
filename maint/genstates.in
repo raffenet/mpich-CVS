@@ -54,7 +54,10 @@ foreach (@states)
 {
     if (!defined($descriptions{$_}))
     {
-	printf("ERROR: $_ not in a describe_states.txt file\n");
+      if ( !($_ eq "") )
+      {
+        printf("ERROR: $_ not in a describe_states.txt file\n");
+      }
     }
 }
 
@@ -80,7 +83,10 @@ print HFILE "\n";
 print HFILE "enum MPID_TIMER_STATE\n";
 print HFILE "{\n";
 foreach (@states) {
-  print HFILE "$_,\n";
+  if ( !($_ eq "") )
+  {
+    print HFILE "$_,\n";
+  }
 }
 print HFILE "MPID_NUM_TIMER_STATES\n";
 print HFILE "};\n";
