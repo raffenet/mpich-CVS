@@ -102,10 +102,6 @@ MPIDI_CH3I_VC_state_t;
 
 typedef struct MPIDI_CH3I_VC
 {
-    /*
-    MPIDI_PG_t * pg;
-    int pg_rank;
-    */
     struct MPID_Request * sendq_head;
     struct MPID_Request * sendq_tail;
     ibu_t ibu;
@@ -114,6 +110,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * req;
     int reading_pkt;
     MPIDI_CH3I_VC_state_t state;
+    int port_name_tag;
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
