@@ -8,10 +8,10 @@
 
       include 'mpif.h'
 
+      character*(MPI_MAX_PROCESSOR_NAME)  processor_name
       integer    comm_rank, comm_size, comm_neighbor
       integer    world_rank, world_size, world_neighbor
       integer    icolor, namelen, ibuffer
-      character  processor_name(MPI_MAX_PROCESSOR_NAME)
       integer    splited_comm, duped_comm, inter_comm, comm
       integer    world_request, comm_request
       integer    world_status(MPI_STATUS_SIZE)
@@ -23,8 +23,8 @@
       call MPI_Comm_size( MPI_COMM_WORLD, world_size, ierr )
       call MPI_Comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call MPI_Get_processor_name( processor_name, namelen, ierr )
-!     print *, "world_rank ", world_rank, " on ",
-!    &      processor_name(1:namelen)
+      print *, "world_rank ", world_rank, " on ",
+     &      processor_name(1:namelen)
 
       if ( world_rank .eq. world_size - 1 ) then
           world_neighbor = 0
