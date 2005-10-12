@@ -11,9 +11,9 @@
    support those operations, so all functions are set to NULL */
 int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
 {
-    portFns.OpenPort    = 0;
-    portFns.ClosePort   = 0;
-    portFns.CommAccept  = 0;
-    portFns.CommConnect = 0;
+    portFns->OpenPort    = 0;
+    portFns->ClosePort   = 0;
+    portFns->CommAccept  = 0;
+    portFns->CommConnect = 0;
     return MPI_SUCCESS;
 }
