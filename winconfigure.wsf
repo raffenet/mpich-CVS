@@ -2205,6 +2205,8 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@MPID_THREAD_FUNCS@", mpid_thread_funcs)
 			Case "@MPIU_DLL_SPEC_DEF@"
 				str = Replace(str, "@MPIU_DLL_SPEC_DEF@", mpi_dll_spec_definition)
+			Case "@INCLUDE_MPICXX_H@"
+				str = Replace(str, "@INCLUDE_MPICXX_H@", "#include ""mpicxx.h""")
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
@@ -2995,6 +2997,26 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#define HAVE_TIME_H 1")
 				Case "HAVE_UUID_GENERATE"
 					fout.WriteLine("/* #undef HAVE_UUID_GENERATE */")
+				Case "HAVE_LRAND48"
+					fout.WriteLine("/* #undef HAVE_LRAND48 */")
+				Case "HAVE_SRAND48"
+					fout.WriteLine("/* #undef HAVE_SRAND48 */")
+				Case "NEEDS_LRAND48_DECL"
+					fout.WriteLine("/* #undef NEEDS_LRAND48_DECL */")
+				Case "NEEDS_SRAND48_DECL"
+					fout.WriteLine("/* #undef NEEDS_SRAND48_DECL */")
+				Case "HAVE_SHM_RW"
+					fout.WriteLine("/* #undef HAVE_SHM_RW */")
+				Case "HAVE_WORKING_SHMGET"
+					fout.WriteLine("/* #undef HAVE_WORKING_SHMGET */")
+				Case "HAVE_PMPI_COMM_CREATE_KEYVAL"
+					fout.WriteLine("#define HAVE_PMPI_COMM_CREATE_KEYVAL 1")
+				Case "HAVE_PMPI_COMM_FREE_KEYVAL"
+					fout.WriteLine("#define HAVE_PMPI_COMM_FREE_KEYVAL 1")
+				Case "HAVE_PMPI_COMM_GET_ATTR"
+					fout.WriteLine("#define HAVE_PMPI_COMM_GET_ATTR 1")
+				Case "HAVE_PMPI_COMM_SET_ATTR"
+					fout.WriteLine("#define HAVE_PMPI_COMM_SET_ATTR 1")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
