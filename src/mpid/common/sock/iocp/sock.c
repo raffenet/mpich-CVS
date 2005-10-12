@@ -2632,7 +2632,7 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
     {
 	mpi_errno = WSAGetLastError();
 	*num_read = 0;
-	if (mpi_errno == WSAEWOULDBLOCK)
+	if ((mpi_errno == WSAEWOULDBLOCK) || (mpi_errno == 0))
 	{
 	    mpi_errno = MPI_SUCCESS;
 	}
@@ -2741,7 +2741,7 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 		}
 	    }
 	}
-	if (mpi_errno != WSAEWOULDBLOCK)
+	if (mpi_errno && (mpi_errno != WSAEWOULDBLOCK))
 	{
 	    MPIU_DBG_PRINTF(("WSASend failed: error %d\n", mpi_errno));
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
