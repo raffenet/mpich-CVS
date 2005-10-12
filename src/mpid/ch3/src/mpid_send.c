@@ -298,6 +298,15 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	/* --END ERROR HANDLING-- */
 	if (rts_sreq != NULL)
 	{
+	    if (rts_sreq->status.MPI_ERROR != MPI_SUCCESS)
+	    {
+		MPIU_Object_set_ref(sreq, 0);
+		MPIDI_CH3_Request_destroy(sreq);
+		sreq = NULL;
+		mpi_errno = MPIR_Err_create_code(rts_sreq->status.MPI_ERROR, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+		MPID_Request_release(rts_sreq);
+		goto fn_exit;
+	    }
 	    MPID_Request_release(rts_sreq);
 	}
 #endif
