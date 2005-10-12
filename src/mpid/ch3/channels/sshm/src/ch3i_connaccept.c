@@ -21,6 +21,9 @@ int MPIDI_CH3_Complete_unidirectional_connection( MPIDI_VC_t *connect_vc )
     int port_name_tag;
     char connector_port[MPI_MAX_PORT_NAME];
     int num_written = 0;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMPLETE_UNIDIRECTIONAL_CONNECTION);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMPLETE_UNIDIRECTIONAL_CONNECTION);
 
     /* If the VC creates non-duplex connections then the acceptor will
      * need to connect back to form the other half of the connection.
@@ -78,11 +81,13 @@ int MPIDI_CH3_Complete_unidirectional_connection( MPIDI_VC_t *connect_vc )
     MPIDI_CH3I_SHM_Add_to_reader_list(connect_vc);
     MPIU_Free(accept_vc);
 
- fn_exit:
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMPLETE_UNIDIRECTIONAL_CONNECTION);
     return mpi_errno;
- fn_fail:
+fn_fail:
     goto fn_exit;
 }
+
 /* This routine is the "other side" of 
    MPIDI_CH3_Complete_unidirectional_connection */
 #undef FUNCNAME
@@ -94,6 +99,9 @@ int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
     int mpi_errno = MPI_SUCCESS;
     char connector_port[MPI_MAX_PORT_NAME];
     int num_read = 0;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMPLETE_UNIDIRECTIONAL_CONNECTION2);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMPLETE_UNIDIRECTIONAL_CONNECTION2);
 
     num_read = 0;
     while (num_read == 0)
@@ -104,7 +112,8 @@ int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
 	}
     }
     /* --BEGIN ERROR HANDLING-- */
-    if (num_read != MPI_MAX_PORT_NAME) {
+    if (num_read != MPI_MAX_PORT_NAME)
+    {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", num_read);
 	goto fn_fail;
     }
@@ -118,8 +127,11 @@ int MPIDI_CH3_Complete_unidirectional_connection2( MPIDI_VC_t *new_vc )
     /* restore this vc to the readers list */
     MPIDI_CH3I_SHM_Add_to_reader_list(new_vc);
 
- fn_fail:
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMPLETE_UNIDIRECTIONAL_CONNECTION2);
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 /* This routine is used to free any channel-specific resources that were
@@ -132,6 +144,9 @@ int MPIDI_CH3_Cleanup_after_connection( MPIDI_VC_t *new_vc )
 {
     MPIDI_VC_t *iter, *trailer;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_CLEANUP_AFTER_CONNECTION);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CLEANUP_AFTER_CONNECTION);
 
     /* remove the new_vc from the reading list */
     iter = trailer = MPIDI_CH3I_Process.shm_reading_list;
@@ -173,5 +188,7 @@ int MPIDI_CH3_Cleanup_after_connection( MPIDI_VC_t *new_vc )
 	    trailer = trailer->ch.shm_next_writer;
 	iter = iter->ch.shm_next_writer;
     }
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CLEANUP_AFTER_CONNECTION);
     return mpi_errno;
 }
