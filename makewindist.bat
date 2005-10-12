@@ -81,7 +81,7 @@ del sshcmds.txt
 tar xvfz dotin.tar.gz
 del dotin.tar.gz
 cscript winconfigure.wsf --cleancode --enable-timer-type=queryperformancecounter
-GOTO BUILD
+GOTO BUILD_RELEASE
 :AFTERCONFIGURE
 IF "%1" == "--with-curdir" GOTO BUILD
 REM
@@ -89,10 +89,36 @@ REM Unknown option: %1
 REM
 GOTO HELP
 :BUILD
-REM devenv.com mpich2.sln /build ch3sockDebug
+:BUILD_DEBUG
+IF "%2" == "" GOTO BUILD_RELEASE
+REM Building the Debug targets
+devenv.com mpich2.sln /build ch3sockDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /project mpich2s /build ch3sockDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build Debug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build fortDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build gfortDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build sfortDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3shmDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3sshmDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3ssmDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+REM devenv.com mpich2.sln /build ch3ibIbalDebug
 REM if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /project mpich2s /build ch3sockDebug
+REM devenv.com mpich2.sln /build ch3essmDebug
 REM if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build ch3sockmtDebug
+if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com examples\examples.sln /project cpi /build Debug
+if %errorlevel% NEQ 0 goto BUILDERROR
+:BUILD_RELEASE
 devenv.com mpich2.sln /build ch3sockRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /project mpich2s /build ch3sockRelease
@@ -101,53 +127,33 @@ devenv.com mpich2.sln /build ch3sockPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /project mpich2s /build ch3sockPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build Debug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build Release
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build fortDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build fortRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build gfortDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build gfortRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build sfortDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build sfortRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build ch3shmDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3shmRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3shmPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build ch3sshmDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3sshmRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3sshmPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build ch3ssmDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3ssmRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3ssmPRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build ch3ibIbalDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 REM devenv.com mpich2.sln /build ch3ibIbalRelease
 REM if %errorlevel% NEQ 0 goto BUILDERROR
 REM devenv.com mpich2.sln /build ch3ibIbalPRelease
 REM if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build ch3essmDebug
-REM if %errorlevel% NEQ 0 goto BUILDERROR
 REM devenv.com mpich2.sln /build ch3essmRelease
 REM if %errorlevel% NEQ 0 goto BUILDERROR
 REM devenv.com mpich2.sln /build ch3essmPRelease
-REM if %errorlevel% NEQ 0 goto BUILDERROR
-REM devenv.com mpich2.sln /build ch3sockmtDebug
 REM if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com mpich2.sln /build ch3sockmtRelease
 if %errorlevel% NEQ 0 goto BUILDERROR
