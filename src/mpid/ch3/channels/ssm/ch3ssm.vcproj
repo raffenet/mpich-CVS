@@ -232,40 +232,28 @@
 				RelativePath="src\ch3_shm_memory.c">
 			</File>
 			<File
-				RelativePath="src\ch3i_bootstrapq.c">
+				RelativePath="..\..\util\shm\ch3i_bootstrapq.c">
 			</File>
 			<File
 				RelativePath="src\ch3i_get_business_card.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_acceptq.c">
-			</File>
-			<File
 				RelativePath="..\..\src\ch3u_buffer.c">
-			</File>
-			<File
-				RelativePath="..\..\src\ch3u_comm_accept.c">
-			</File>
-			<File
-				RelativePath="..\..\src\ch3u_comm_connect.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_comm_spawn_multiple.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_connect_to_root.c">
+				RelativePath="..\..\util\sock\ch3u_connect_sock.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_finalize_sshm.c">
+				RelativePath="..\..\util\shm\ch3u_finalize_sshm.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_get_business_card_sock.c">
+				RelativePath="..\..\util\sock\ch3u_get_business_card_sock.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_get_business_card_sshm.c">
-			</File>
-			<File
-				RelativePath="..\..\src\ch3u_get_parent_port.c">
+				RelativePath="..\..\util\shm\ch3u_get_business_card_sshm.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_handle_connection.c">
@@ -280,13 +268,13 @@
 				RelativePath="..\..\src\ch3u_handle_send_req.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_init_sock.c">
+				RelativePath="..\..\util\sock\ch3u_init_sock.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_init_sshm.c">
+				RelativePath="..\..\util\shm\ch3u_init_sshm.c">
 			</File>
 			<File
-				RelativePath="..\..\src\ch3u_open_port.c">
+				RelativePath="..\..\src\ch3u_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\ch3u_recvq.c">
@@ -301,22 +289,10 @@
 				RelativePath="..\..\src\mpid_accumulate.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_bsend_init.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_cancel_recv.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_cancel_send.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_close_port.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_comm_accept.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_comm_connect.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_comm_disconnect.c">
@@ -358,10 +334,7 @@
 				RelativePath="..\..\src\mpid_mem.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_open_port.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_parse_option.c">
+				RelativePath="..\..\src\mpid_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_probe.c">
@@ -373,25 +346,13 @@
 				RelativePath="..\..\src\mpid_recv.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_recv_init.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_rsend.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_rsend_init.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_send.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_send_init.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_ssend.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_ssend_init.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_startall.c">
