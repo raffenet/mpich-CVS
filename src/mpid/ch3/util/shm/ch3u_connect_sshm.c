@@ -88,7 +88,7 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SSHM);
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
