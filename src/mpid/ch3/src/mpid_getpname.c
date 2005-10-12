@@ -69,7 +69,7 @@ int MPID_Get_processor_name(char * name, int * resultlen)
 #if defined(HAVE_WINDOWS_H)
 static inline void setupProcessorName( void )
 {
-    DWORD size = MPIDI_PROCESSOR_NAME_SIZE;
+    DWORD size = MPI_MAX_PROCESSOR_NAME;
 
     /* Use the fully qualified name instead of the short name because the 
        SSPI security functions require the full name */
