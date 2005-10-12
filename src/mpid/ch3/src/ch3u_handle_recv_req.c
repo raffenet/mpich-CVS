@@ -21,6 +21,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
     MPID_Win *win_ptr;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
+    MPIDI_STATE_DECL(MPID_STATE_CH3_CA_COMPLETE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
 
@@ -332,7 +333,7 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 	    }
 	    /* --END ERROR HANDLING-- */
 	    
-	    MPIDI_FUNC_ENTER(MPID_STATE_CH3_CA_COMPLETE)
+	    MPIDI_FUNC_EXIT(MPID_STATE_CH3_CA_COMPLETE)
 	    break;
 	}
 	
