@@ -13,6 +13,7 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_cancel_send.c \
  ch3_istartrndvmsg.c \
  ch3_istartrndvtransfer.c \
+ ch3i_get_business_card.c \
  ibu.vapi.c ibu.ibal.c\
  ibu_regmem.vapi.c ibu_regmem.ibal.c \
  ibu_memutil.vapi.c ibu_memutil.ibal.c \
