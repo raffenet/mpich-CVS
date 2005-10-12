@@ -96,7 +96,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg, int pg_rank )
 	return mpi_errno;
     }
     mpi_errno = MPI_SUCCESS; /* reset errno after successful snprintf calls */
-    pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, key, val);
+    pmi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
     if (pmi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
@@ -105,7 +105,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg, int pg_rank )
 
     MPIU_DBG_PRINTF(("Published lid=%d\n", port));
     
-    pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
+    pmi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
     if (pmi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
@@ -120,7 +120,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg, int pg_rank )
 
     /* for now, connect all the processes at init time */
     MPIDI_DBG_PRINTF((65, "ch3_init", "calling setup_connections.\n"));fflush(stdout);
-    mpi_errno = MPIDI_CH3I_Setup_connections(pg_p, pg_rank);
+    mpi_errno = MPIDI_CH3I_Setup_connections(pg, pg_rank);
     MPIDI_DBG_PRINTF((65, "ch3_init", "connections formed, exiting\n"));fflush(stdout);
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -141,4 +141,41 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg, int pg_rank )
     return mpi_errno;
  fn_fail:
     goto fn_exit;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_PortFnsInit
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns ) 
+{ 
+    portFns->OpenPort    = 0;
+    portFns->ClosePort   = 0;
+    portFns->CommAccept  = 0;
+    portFns->CommConnect = 0;
+    return MPI_SUCCESS;
+}
+
+/* Perform the channel-specific vc initialization */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_VC_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
+{
+    vc->ch.sendq_head         = NULL;
+    vc->ch.sendq_tail         = NULL;
+    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    return 0;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connect_to_root
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Connect_to_root(const char * port_name, MPIDI_VC_t ** new_vc)
+{
+    int mpi_errno;
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    return mpi_errno;
 }
