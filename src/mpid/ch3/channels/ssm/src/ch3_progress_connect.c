@@ -11,7 +11,7 @@ MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 int shutting_down = FALSE;
 
 /* local prototypes */
-static int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag);
+/* static int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag); */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Connection_terminate
@@ -282,11 +282,12 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 }
 #endif
 
+/* This routine may be called from the common connect code */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Shm_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
+int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
 {
     int mpi_errno;
     char hostname[256];
