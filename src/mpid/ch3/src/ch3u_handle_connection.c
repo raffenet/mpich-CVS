@@ -19,6 +19,9 @@ volatile int MPIDI_Outstanding_close_ops = 0;
    but probably belongs in mpid_vc, along with the vc exit code that 
    is currently in MPID_Finalize */
 
+/* FIXME: The only event is event_terminated.  Should this have 
+   a different name/expected function? */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_connection
 #undef FCNAME
