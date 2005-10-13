@@ -112,7 +112,9 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
 	int attr_idx = win_keyval & 0x0000000f;
 	void **attr_val_p = (void **)attribute_val;
 #ifdef HAVE_FORTRAN_BINDING
-	MPI_Fint  *attr_int = (MPI_Fint *)attribute_val;
+	/* Note that this routine only has a Fortran 90 binding,
+	   so the attribute value is an address-sized int */
+	MPI_Aint  *attr_int = (MPI_Aint *)attribute_val;
 #endif
 	*flag = 1;
 
