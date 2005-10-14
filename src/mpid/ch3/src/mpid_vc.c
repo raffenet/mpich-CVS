@@ -114,16 +114,21 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
 		    MPID_Request * sreq;
 
-		    /*
+/* FIXME: For debugging */
+#if 1
 		    if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED)
 		    {
-			printf("[%s%d]Assertion failed\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank);
+/*	
+	 *		printf("[%s%d]Assertion failed\n", (MPIR_Process.comm_parent) ? "+" : "", MPIR_Process.comm_world->rank);
+			printf( "vc state = %d\n", vc->state );
+			fflush(stdout); 
+*/
 			MPIU_DBG_PrintVC(vc);
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 			MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
 			return mpi_errno;
 		    }
-		    */
+#endif
 		    MPIU_Assert(vc->state != MPIDI_VC_STATE_LOCAL_CLOSE && vc->state != MPIDI_VC_STATE_CLOSE_ACKED);
 		    
 		    MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
@@ -141,11 +146,13 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		    {
 			MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
+			MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE");
 			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		    }
 		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		    {
 			MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
+			MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED");
 			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		    }
 		    
@@ -356,4 +363,66 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 	MPID_VCR_Dup( vc, &newcomm_ptr->vcr[i] );
     }
     return 0;
+}
+
+/* The following is a temporary hook to ensure that all processes in 
+   a communicator have a set of process groups.
+ 
+   All arguments are input (all processes in comm must have gpids)
+
+   First: all processes check to see if they have information on all
+   of the process groups mentioned by id in the array of gpids.
+
+   The local result is LANDed with Allreduce.
+   If any process is missing process group information, then the
+   root process broadcasts the process group information as a string; 
+   each process then uses this information to update to local process group
+   information (in the KVS cache that contains information about 
+   contacting any process in the process groups).
+*/
+int MPID_PG_ForwardPGInfo( MPID_Comm *comm_ptr, int nPGids, int gpids[], 
+			   int root )
+{
+    int i, allfound = 1, pgid;
+    MPIDI_PG_t *pg = 0;
+    
+    /* Extract the unique process groups */
+    /* FIXME: get the PG of COMM_WORLD and use it in this test instead */
+    for (i=0; i<nPGids; i++) {
+	if (gpids[0] != 0) {
+	    /* Add this gpid to the list of values to check */
+	    /* FIXME: For testing, we just test in place */
+	    MPIDI_PG_Iterate_reset();
+	    do {
+		MPIDI_PG_Get_next( &pg );
+		if (!pg) {
+		    /* We don't know this pgid */
+		    allfound = 0;
+		    break;
+		}
+		MPIDI_PG_IdToNum( pg, &pgid );
+		if (pgid == gpids[0]) {
+		    /* Found the process group */
+		    break;
+		}
+	    } while (1);
+	}
+	gpids += 2;
+    }
+
+    /* See if everyone is happy */
+    NMPI_Allreduce( MPI_IN_PLACE, &allfound, 1, MPI_INT, MPI_LAND, 
+		    comm_ptr->handle );
+
+    if (allfound) return MPI_SUCCESS;
+
+    /* We need to share the process groups.  We use routines
+       from ch3u_port.c */
+#if 0
+    printf( "Detected a problem in the distribution of process groups\n" );
+    fflush(stdout); 
+#endif
+    MPID_PG_BCast( comm_ptr, root );
+
+    return MPI_SUCCESS;
 }

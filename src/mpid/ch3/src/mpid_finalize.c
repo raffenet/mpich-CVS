@@ -151,11 +151,13 @@ int MPID_Finalize(void)
 		if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		{ 
 		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
+		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE");
 		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		}
 		else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		{
 		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
+		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED");
 		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		}
 		

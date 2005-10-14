@@ -14,7 +14,6 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
 {
     MPID_Request * sreq;
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
-    /*MPIDI_STATE_DECL(MPID_STATE_MEMCPY);*/
 
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
 
@@ -26,11 +25,6 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
     /* --END ERROR HANDLING-- */
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
-    /*
-    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-    memcpy(&sreq->ch.pkt, hdr, hdr_sz);
-    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-    */
     MPIU_Assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
     sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
     sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb);
