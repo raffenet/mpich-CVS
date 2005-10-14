@@ -223,9 +223,6 @@
 				RelativePath="src\ch3_progress_sock.c">
 			</File>
 			<File
-				RelativePath="src\ch3_request.c">
-			</File>
-			<File
 				RelativePath="src\ch3_shm.c">
 			</File>
 			<File

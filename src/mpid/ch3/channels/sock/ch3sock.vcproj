@@ -346,9 +346,6 @@
 				RelativePath="src\ch3_progress.c">
 			</File>
 			<File
-				RelativePath="src\ch3_request.c">
-			</File>
-			<File
 				RelativePath="..\..\src\ch3u_buffer.c">
 			</File>
 			<File

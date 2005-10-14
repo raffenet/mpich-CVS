@@ -238,9 +238,6 @@
 				RelativePath=".\src\ch3_put.c">
 			</File>
 			<File
-				RelativePath="src\ch3_request.c">
-			</File>
-			<File
 				RelativePath="src\ch3_shm.c">
 			</File>
 			<File

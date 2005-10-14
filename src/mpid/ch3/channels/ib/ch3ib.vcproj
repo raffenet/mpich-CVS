@@ -292,9 +292,6 @@
 				RelativePath=".\src\ch3_progress.c">
 			</File>
 			<File
-				RelativePath=".\src\ch3_request.c">
-			</File>
-			<File
 				RelativePath=".\src\ch3_setup_connections.c">
 			</File>
 			<File
