@@ -10,6 +10,7 @@
 package logformat.slog2.output;
 
 import java.util.*;
+import java.io.File;
 
 import base.drawable.*;
 import logformat.trace.*;
@@ -171,16 +172,32 @@ public class TraceToSlog2
                                   + "from peekNextKind() = " + next_kind );
             }
         }   // Endof while ( dobj_ins.peekNextKind() )
-        treetrunk.flushToFile();
 
-        objdefs.removeUnusedCategories();
-        slog_outs.writeCategoryMap( objdefs );
+        // Check if flushToFile is successful,
+        // i.e. if treetrunk contains drawables.
+        if ( treetrunk.flushToFile() ) {
+            objdefs.removeUnusedCategories();
+            slog_outs.writeCategoryMap( objdefs );
 
-        lineIDmaps.add( treetrunk.getIdentityLineIDMap() );
-        slog_outs.writeLineIDMapList( lineIDmaps );
+            lineIDmaps.add( treetrunk.getIdentityLineIDMap() );
+            slog_outs.writeLineIDMapList( lineIDmaps );
 
-        slog_outs.close();
-        dobj_ins.close();
+            slog_outs.close();
+            dobj_ins.close();
+        }
+        else {
+            slog_outs.close();
+            dobj_ins.close();
+            System.err.println( "Error: No drawable is found in the trace "
+                              + trace_filespec );
+            File slog_file  = new File( slog_filename );
+            if ( slog_file.isFile() && slog_file.exists() ) {
+                System.err.println( "       Removing the remnants of the file "
+                                  + slog_filename + " ....." );
+                slog_file.delete();
+            }
+            System.exit( 1 );
+        }
 
         /* */    Date time3 = new Date();
         System.out.println( "\n" );

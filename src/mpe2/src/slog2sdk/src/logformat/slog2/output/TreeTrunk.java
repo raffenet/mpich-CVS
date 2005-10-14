@@ -140,10 +140,16 @@ public class TreeTrunk
         }   //  Endof while ( nodes_itr.hasNext() )
     }
 
-    public void flushToFile()
+    // "true" is returned if last_dobj_added is not null before flushing
+    // i.e. at least one drawable has been added the TreeTrunk.
+    public boolean flushToFile()
     {
         TreeNode    node;
         Iterator    nodes_itr;
+
+        if ( last_dobj_added == null ) {
+            return false;
+        }
 
         // System.err.println( "TreeTrunk.flushToFile(): START" );
         //  next()      goes from  leafs  to  root,
@@ -161,6 +167,7 @@ public class TreeTrunk
 
         last_dobj_added = null;
         // System.err.println( "TreeTrunk.flushToFile(): END" );
+        return true;
     }
 
     public LineIDMap getIdentityLineIDMap()
