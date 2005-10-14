@@ -6,7 +6,6 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_isendv.c \
  ch3_istartmsg.c \
  ch3_istartmsgv.c \
- ch3_request.c \
  ch3_mem.c \
  ch3_setup_connections.c \
  ch3_progress.c \
