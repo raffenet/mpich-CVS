@@ -576,6 +576,15 @@ if test "$enable_cxx" = yes ; then
         if test "$ac_cv_header_iostream_h" != yes ; then
             AC_MSG_ERROR([C++ compiler $CXX $CXXFLAGS has neither iostream nor iostream.h.])
         fi
+        # Warning: the autoconf macros will fall back onto /lib/cpp for
+        # C and C++ preprocessing *without* checking that /lib/cpp even
+        # exists.  
+        if test "$CXXCPP" = "/lib/cpp" ; then
+            if test ! -x "/lib/cpp" ; then
+                AC_MSG_WARN([Warning: Autoconf error, could not find a C++ Preprocessor.  Using false for the preprocessor so that tests will continue.])
+                CXXCPP=false
+            fi
+        fi
     fi
 
     AC_CXX_NAMESPACE_STD
