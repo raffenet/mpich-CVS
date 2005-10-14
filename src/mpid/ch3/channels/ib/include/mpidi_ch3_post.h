@@ -53,14 +53,14 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
         MPIDI_CH3I_progress_completion_count++;		\
     }
 #else
-#   define MPIDI_CH3_Progress_signal_completion()							\
-    {													\
-	MPIDI_CH3I_progress_completion_count++;								\
-	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)	\
-	{												\
-	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;						\
-	    MPIDI_CH3I_Progress_wakeup();								\
-	}												\
+#   define MPIDI_CH3_Progress_signal_completion()			\
+    {									\
+	MPIDI_CH3I_progress_completion_count++;				\
+	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)\
+	{								\
+	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;		\
+	    MPIDI_CH3I_Progress_wakeup();				\
+	}								\
     }
 #endif
 
@@ -68,9 +68,9 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 /*
  * CH3 Progress routines (implemented as macros for performanace)
  */
-#define MPIDI_CH3_Progress_start(progress_state_)					\
-{											\
-    (progress_state_)->ch.completion_count = MPIDI_CH3I_progress_completion_count;	\
+#define MPIDI_CH3_Progress_start(progress_state_)			\
+{									\
+    (progress_state_)->ch.completion_count = MPIDI_CH3I_progress_completion_count;\
 }
 #define MPIDI_CH3_Progress_end(progress_state_)
 #define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
@@ -85,10 +85,5 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 int MPIDI_CH3I_Progress(int blocking, MPID_Progress_state *state);
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE, NULL)
 #define MPIDI_CH3_Progress_wait(state) MPIDI_CH3I_Progress(TRUE, state)
-
-/*
- * Enable optional functionality
- */
-#define MPIDI_CH3_Comm_Spawn MPIDI_CH3_Comm_Spawn
 
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */

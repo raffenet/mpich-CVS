@@ -62,9 +62,4 @@ int MPIDI_CH3I_Progress(int blocking);
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE)
 #define MPIDI_CH3_Progress_wait(state) MPIDI_CH3I_Progress(TRUE)
 
-/*
- * Enable optional functionality
- */
-#define MPIDI_CH3_Comm_Spawn MPIDI_CH3_Comm_Spawn
-
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */
