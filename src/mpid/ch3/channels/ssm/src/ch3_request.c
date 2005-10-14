@@ -21,9 +21,6 @@ MPIU_Object_alloc_t MPID_Request_mem = {
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_Request * MPIDI_CH3_Request_create()
 {
-#ifdef MPICH_DBG_OUTPUT
-    int mpi_errno;
-#endif
     MPID_Request * req;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
 
@@ -32,12 +29,12 @@ MPID_Request * MPIDI_CH3_Request_create()
     req = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (req != NULL)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "allocated request, handle=0x%08x",
-			  req->handle));
+	MPIDI_DBG_PRINTF((60, FCNAME, "allocated request, handle=0x%08x",  req->handle));
 #ifdef MPICH_DBG_OUTPUT
 	/*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
 	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
 	{
+	    int mpi_errno;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
 	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
 	}
@@ -61,15 +58,13 @@ MPID_Request * MPIDI_CH3_Request_create()
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3_Request_add_ref(MPID_Request * req)
 {
-#ifdef MPICH_DBG_OUTPUT
-    int mpi_errno;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
 #ifdef MPICH_DBG_OUTPUT
     /*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
+	int mpi_errno;
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
 	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
