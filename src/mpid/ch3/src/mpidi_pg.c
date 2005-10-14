@@ -256,6 +256,8 @@ static int MPIDI_Allocate_more(char **str, char **cur_pos, int *cur_len)
     return MPI_SUCCESS;
 }
 
+/* Note: Allocated memory that is returned in str_ptr.  The user of
+   this routine must free that data */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_To_string
 #undef FCNAME
@@ -346,26 +348,17 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     char sz_str[20];
     int vct_sz;
     MPIDI_PG_t *existing_pg, *pg_ptr=0;
+    MPIU_CHKPMEM_DECL(1);
 
     mpi_errno = PMI_Get_id_length_max(&pgid_len);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
-	goto fn_exit;
+    if (mpi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+          "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
     pgid_len = MPIDU_MAX(pgid_len, MPIDI_MAX_KVS_NAME_LEN);
 
-    /* FIXME: Where are we *sure* that this is deallocated? */
-    pg_id = (char*)MPIU_Malloc(pgid_len * sizeof(char));
-    /* --BEGIN ERROR HANDLING-- */
-    if (pg_id == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    /* This memory will be attached to a process group */
+    MPIU_CHKPMEM_MALLOC(pg_id,char *,pgid_len,mpi_errno,"pg_id");
 
     mpi_errno = MPIU_Str_get_string(&str, pg_id, pgid_len);
     if (mpi_errno != MPIU_STR_SUCCESS) {
@@ -378,28 +371,28 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     vct_sz = atoi(sz_str);
 
     mpi_errno = MPIDI_PG_Find(pg_id, &existing_pg);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
-	goto fn_exit;
+    if (mpi_errno != PMI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
-    if (existing_pg != NULL)
-    {
+
+    if (existing_pg != NULL) {
 	/* return the existing PG */
 	*pg_pptr = existing_pg;
 	*flag = 0;
+	/* Note that the memory for the pg_id is freed in the exit */
 	goto fn_exit;
     }
     *flag = 1;
 
+    /* The pg_id, allocated above, is saved in the created process group */
     mpi_errno = MPIDI_PG_Create(vct_sz, pg_id, pg_pptr);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
+    /* The memory for pg_id that we allocated is now saved in *pg_pptr */
+    MPIU_CHKPMEM_COMMIT();
     pg_ptr = *pg_pptr;
-    pg_ptr->ch.kvs_name = (char*)MPIU_Malloc(MPIDI_MAX_KVS_NAME_LEN * sizeof(char));
+    pg_ptr->ch.kvs_name = (char*)MPIU_Malloc(MPIDI_MAX_KVS_NAME_LEN);
     if (pg_ptr->ch.kvs_name == NULL) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -426,6 +419,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     }
 
 fn_exit:
+    MPIU_CHKPMEM_REAP();
     return mpi_errno;
 fn_fail:
     goto fn_exit;

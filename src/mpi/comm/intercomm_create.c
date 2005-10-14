@@ -453,6 +453,16 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		    local_comm );
 	MPIU_DBG_PRINTF(( "end of bcast on local_comm of size %d\n", 
 		      comm_ptr->local_size ));
+	/* FIXME: Here we should:
+	   ensure that all processes have all of the process groups
+	   (allreduce to check, unless only group is group of comm world)
+	   if not all processes have all process groups, 
+	   call routine to bcast process group information
+	   to the other proceses.  Do this before the
+	   GPID_ToLpidArray call, since that call will 
+	   rely on having that information */
+	MPID_PG_ForwardPGInfo( comm_ptr, remote_size, remote_gpids, 
+			       local_leader );
     }
     else
     {
@@ -466,6 +476,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 			    mpi_errno,"remote_lpids");
 	NMPI_Bcast( remote_gpids, 2*remote_size, MPI_INT, local_leader, 
 		    local_comm );
+	/* Check on the remote process groups */
+	MPID_PG_ForwardPGInfo( comm_ptr, remote_size, remote_gpids, 
+			       local_leader );
 	/* Convert the remote gpids to the lpids */
 	mpi_errno = MPID_GPID_ToLpidArray( remote_size, remote_gpids, remote_lpids );
 	if (mpi_errno) { MPIR_Nest_decr(); goto fn_fail; }

@@ -367,7 +367,9 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
 	    pg_trailer->next = pg_iter;
 	}
     }
+
     *n_local_pgs_p = cur_index;
+    *pg_list_p     = pg_list;
     
 #ifdef MPICH_DBG_OUTPUT
     pg_iter = pg_list;
@@ -377,7 +379,6 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     }
 #endif
 
-    *pg_list_p           = pg_list;
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_EXTRACTLOCALPGINFO);
@@ -459,8 +460,10 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	MPIU_Free(pg_str);
 	if (flag) {
 #ifdef MPIDI_CH3_USES_SSHM
-	    /* extra pg ref needed for shared memory modules because the shm_XXXXing_list's
-	     * need to be walked though in the later stages of finalize to free queue_info's.
+	    /* extra pg ref needed for shared memory modules because the 
+	     * shm_XXXXing_list's
+	     * need to be walked though in the later stages of finalize to
+	     * free queue_info's.
 	     */
 	    MPIDI_PG_Add_ref(remote_pg[i]);
 #endif
@@ -478,6 +481,67 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
     goto fn_exit;
 }
 
+int MPID_PG_BCast( MPID_Comm *comm_p, int root )
+{
+    int n_local_pgs=0, mpi_errno = 0;
+    pg_translation *local_translation = 0;
+    pg_node *pg_list;
+    int local_comm_size, rank, i;
+    MPIU_CHKLMEM_DECL(1);
+
+    local_comm_size = comm_p->local_size;
+    rank            = comm_p->rank;
+
+    MPIU_CHKLMEM_MALLOC(local_translation,pg_translation*,
+			local_comm_size*sizeof(pg_translation),
+			mpi_errno,"local_translation");
+    
+    
+    if (rank == root) {
+	ExtractLocalPGInfo( comm_p, local_translation, &pg_list, 
+			    &n_local_pgs );
+    }
+    /* Now, broadcast the number of local pgs */
+    NMPI_Bcast( &n_local_pgs, 1, MPI_INT, root, comm_p->handle );
+
+/*     printf( "Number of pgs = %d\n", n_local_pgs ); fflush(stdout); */
+    for (i=0; i<n_local_pgs; i++) {
+	int len, flag;
+	char *pg_str;
+	MPIDI_PG_t *pgptr;
+
+	if (rank == root) {
+	    if (!pg_list) {
+		/* FIXME: Error, the pg_list is broken */
+		printf( "Unexpected end of pg_list\n" ); fflush(stdout);
+		break;
+	    }
+	    pg_str  = pg_list->str;
+	    pg_list = pg_list->next;
+	    len     = strlen(pg_str) + 1;
+	}
+	NMPI_Bcast( &len, 1, MPI_INT, root, comm_p->handle );
+	if (rank != root) {
+	    pg_str = (char *)MPIU_Malloc(len);
+	}
+	NMPI_Bcast( pg_str, len, MPI_CHAR, root, comm_p->handle );
+	if (rank != root) {
+	    /* flag is true if the pg was created, false if it
+	       already existed */
+	    MPIDI_PG_Create_from_string( pg_str, &pgptr, &flag );
+	    
+	}
+	MPIU_Free( pg_str );
+    }
+
+    /* FIXME: Free pg_list */
+
+ fn_exit:
+    MPIU_CHKLMEM_FREEALL();
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
 /* Sends the process group information to the peer and frees the 
    pg_list */
 #undef FUNCNAME
@@ -646,7 +710,8 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     if (rank == root)
     {
 	/* Establish a communicator to communicate with the root on the other side. */
-	mpi_errno = MPIDI_Create_inter_root_communicator_accept(port_name, &tmp_comm, &new_vc);
+	mpi_errno = MPIDI_Create_inter_root_communicator_accept(port_name, 
+						&tmp_comm, &new_vc);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
