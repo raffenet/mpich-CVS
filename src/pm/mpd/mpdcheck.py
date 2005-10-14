@@ -455,7 +455,7 @@ if __name__ == '__main__':    # so I can be imported by pydoc
     
     # see if we can run mpdcheck on remote hosts
     for host in hostsFromFile:
-        cmd1 = path.join(fullDirName,mpdcheck.py) + ' -s'
+        cmd1 = path.join(fullDirName,'mpdcheck.py') + ' -s'
         if verbose:
             print 'starting server: %s' % (cmd1)
         runner1 = Popen3(cmd1,1,0)
