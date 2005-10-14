@@ -49,6 +49,18 @@
 
 .N Fortran
 
+ In Fortran, the character argument should be declared as a character string
+ of 'MPI_MAX_PROCESSOR_NAME' rather than an array of dimension 
+ 'MPI_MAX_PROCESSOR_NAME'.  That is, 
+.vb
+   character*(MPI_MAX_PROCESSOR_NAME) name
+.ve
+ rather than
+.vb
+   character name(MPI_MAX_PROCESSOR_NAME)
+.ve
+ The two 
+
 .N FortranString
 
 .N Errors
