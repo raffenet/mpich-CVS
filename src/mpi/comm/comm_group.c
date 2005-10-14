@@ -116,8 +116,8 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 	    local_vcr = comm_ptr->vcr;
 	
 	for (i=0; i<n; i++) {
-	    group_ptr->lrank_to_lpid[i].lrank = i;
 	    (void) MPID_VCR_Get_lpid( local_vcr[i], &lpid );
+	    group_ptr->lrank_to_lpid[i].lrank = i;
 	    group_ptr->lrank_to_lpid[i].lpid  = lpid;
 	}
 	group_ptr->size		 = n;

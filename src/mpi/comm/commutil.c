@@ -506,20 +506,20 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     MPIU_Object_set_ref( newcomm_ptr, 1 );
     newcomm_ptr->context_id = new_context_id;
 
+    /* Save the kind of the communicator */
+    newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
+    newcomm_ptr->local_comm  = 0;
+    
     /* Duplicate the VCRT references */
     MPID_VCRT_Add_ref( comm_ptr->vcrt );
     newcomm_ptr->vcrt = comm_ptr->vcrt;
     newcomm_ptr->vcr  = comm_ptr->vcr;
 
-    /* Save the kind of the communicator */
-    newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
-    
     /* If it is an intercomm, duplicate the local vcrt references */
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 	MPID_VCRT_Add_ref( comm_ptr->local_vcrt );
 	newcomm_ptr->local_vcrt = comm_ptr->local_vcrt;
 	newcomm_ptr->local_vcr  = comm_ptr->local_vcr;
-	newcomm_ptr->local_comm = 0;
     }
 
     /* Set the sizes and ranks */
