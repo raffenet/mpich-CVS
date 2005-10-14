@@ -22,6 +22,7 @@
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
+/* FIXME: We should only include the ones of these that we use within this channel */
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -170,105 +171,105 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 /*#define USE_VALIDATING_QUEUE_MACROS*/
 #ifdef USE_VALIDATING_QUEUE_MACROS
 
-#define MPIDI_CH3I_SendQ_enqueue(vc, req)									\
-{														\
-    MPID_Request *iter;												\
-    iter = vc->ch.sendq_head;											\
-    while (iter) {												\
-	if (iter == req) {											\
-	    /*abort();*/ break; /*printf("Error: enqueueing request twice.\n");fflush(stdout);*/				\
-	}													\
-	iter = iter->dev.next;											\
-    }														\
-    if (!iter) {												\
-    /* MT - not thread safe! */											\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));				\
-    req->dev.next = NULL;											\
-    if (vc->ch.sendq_tail != NULL)										\
-    {														\
-	vc->ch.sendq_tail->dev.next = req;									\
-    }														\
-    else													\
-    {														\
-	/* increment number of active writes when posting to an empty queue */					\
-	MPIDI_INC_WRITE_ACTIVE();										\
-	vc->ch.sendq_head = req;										\
-    }														\
-    vc->ch.sendq_tail = req;											\
-    }														\
+#define MPIDI_CH3I_SendQ_enqueue(vc, req)				\
+{									\
+    MPID_Request *iter;							\
+    iter = vc->ch.sendq_head;						\
+    while (iter) {							\
+	if (iter == req) {						\
+	    /*abort();*/ break; /*printf("Error: enqueueing request twice.\n");fflush(stdout);*/\
+	}								\
+	iter = iter->dev.next;						\
+    }									\
+    if (!iter) {							\
+    /* MT - not thread safe! */						\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));\
+    req->dev.next = NULL;						\
+    if (vc->ch.sendq_tail != NULL)					\
+    {									\
+	vc->ch.sendq_tail->dev.next = req;				\
+    }									\
+    else								\
+    {									\
+	/* increment number of active writes when posting to an empty queue */\
+	MPIDI_INC_WRITE_ACTIVE();					\
+	vc->ch.sendq_head = req;					\
+    }									\
+    vc->ch.sendq_tail = req;						\
+    }									\
 }
 
-#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)									\
-{														\
-    MPID_Request *iter;												\
-    iter = vc->ch.sendq_head;											\
-    while (iter) {												\
-	if (iter == req) {											\
-	    /*abort();*/ break; /*printf("Error: head enqueueing request twice.\n");fflush(stdout);*/			\
-	}													\
-	iter = iter->dev.next;											\
-    }														\
-    /* MT - not thread safe! */											\
-    if (!iter) {												\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));			\
-    req->dev.next = vc->ch.sendq_head; /*sendq_tail;*/								\
-    if (vc->ch.sendq_tail == NULL)										\
-    {														\
-	/* increment number of active writes when posting to an empty queue */					\
-	MPIDI_INC_WRITE_ACTIVE();										\
-	vc->ch.sendq_tail = req;										\
-    }														\
-    vc->ch.sendq_head = req;											\
-    }														\
+#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)				\
+{									\
+    MPID_Request *iter;							\
+    iter = vc->ch.sendq_head;						\
+    while (iter) {							\
+	if (iter == req) {						\
+	    /*abort();*/ break; /*printf("Error: head enqueueing request twice.\n");fflush(stdout);*/\
+	}								\
+	iter = iter->dev.next;						\
+    }									\
+    /* MT - not thread safe! */						\
+    if (!iter) {							\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));\
+    req->dev.next = vc->ch.sendq_head; /*sendq_tail;*/			\
+    if (vc->ch.sendq_tail == NULL)					\
+    {									\
+	/* increment number of active writes when posting to an empty queue */\
+	MPIDI_INC_WRITE_ACTIVE();					\
+	vc->ch.sendq_tail = req;					\
+    }									\
+    vc->ch.sendq_head = req;						\
+    }									\
 }
 
 #else
 
-#define MPIDI_CH3I_SendQ_enqueue(vc, req)									\
-{														\
-    /* MT - not thread safe! */											\
+#define MPIDI_CH3I_SendQ_enqueue(vc, req)				\
+{									\
+    /* MT - not thread safe! */						\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));	\
-    req->dev.next = NULL;											\
-    if (vc->ch.sendq_tail != NULL)										\
-    {														\
-	vc->ch.sendq_tail->dev.next = req;									\
-    }														\
-    else													\
-    {														\
-	/* increment number of active writes when posting to an empty queue */					\
-	MPIDI_INC_WRITE_ACTIVE();										\
-	vc->ch.sendq_head = req;										\
-    }														\
-    vc->ch.sendq_tail = req;											\
+    req->dev.next = NULL;						\
+    if (vc->ch.sendq_tail != NULL)					\
+    {									\
+	vc->ch.sendq_tail->dev.next = req;				\
+    }									\
+    else								\
+    {									\
+	/* increment number of active writes when posting to an empty queue */\
+	MPIDI_INC_WRITE_ACTIVE();					\
+	vc->ch.sendq_head = req;					\
+    }									\
+    vc->ch.sendq_tail = req;						\
 }
 
-#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)									\
-{														\
-    /* MT - not thread safe! */											\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));	\
-    req->dev.next = vc->ch.sendq_head;										\
-    if (vc->ch.sendq_tail == NULL)										\
-    {														\
-	/* increment number of active writes when posting to an empty queue */					\
-	MPIDI_INC_WRITE_ACTIVE();										\
-	vc->ch.sendq_tail = req;										\
-    }														\
-    vc->ch.sendq_head = req;											\
+#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)				\
+{									\
+    /* MT - not thread safe! */						\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));\
+    req->dev.next = vc->ch.sendq_head;					\
+    if (vc->ch.sendq_tail == NULL)					\
+    {									\
+	/* increment number of active writes when posting to an empty queue */\
+	MPIDI_INC_WRITE_ACTIVE();					\
+	vc->ch.sendq_tail = req;					\
+    }									\
+    vc->ch.sendq_head = req;						\
 }
 
 #endif
 
-#define MPIDI_CH3I_SendQ_dequeue(vc)												\
-{																\
-    /* MT - not thread safe! */													\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->ch.sendq_head->handle));	\
-    vc->ch.sendq_head = vc->ch.sendq_head->dev.next;										\
-    if (vc->ch.sendq_head == NULL)												\
-    {																\
-	/* decrement number of active writes when a queue becomes empty */							\
-	MPIDI_DEC_WRITE_ACTIVE();												\
-	vc->ch.sendq_tail = NULL;												\
-    }																\
+#define MPIDI_CH3I_SendQ_dequeue(vc)					\
+{									\
+    /* MT - not thread safe! */						\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->ch.sendq_head->handle));\
+    vc->ch.sendq_head = vc->ch.sendq_head->dev.next;			\
+    if (vc->ch.sendq_head == NULL)					\
+    {									\
+	/* decrement number of active writes when a queue becomes empty */\
+	MPIDI_DEC_WRITE_ACTIVE();					\
+	vc->ch.sendq_tail = NULL;					\
+    }									\
 }
 
 #define MPIDI_CH3I_SendQ_head(vc) (vc->ch.sendq_head)

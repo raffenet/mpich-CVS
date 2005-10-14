@@ -59,26 +59,26 @@ extern volatile int MPIDI_Outstanding_close_ops;
 /*----------------------
   BEGIN DATATYPE SECTION
   ----------------------*/
-#define MPIDI_Datatype_get_info(count_, datatype_, dt_contig_out_, data_sz_out_, dt_ptr_, dt_true_lb_)			\
-{															\
-    if (HANDLE_GET_KIND(datatype_) == HANDLE_KIND_BUILTIN)								\
-    {															\
-	(dt_ptr_) = NULL;												\
-	(dt_contig_out_) = TRUE;											\
-        (dt_true_lb_)    = 0;                                                                                           \
-	(data_sz_out_) = (count_) * MPID_Datatype_get_basic_size(datatype_);						\
-	MPIDI_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,		\
-			  (dt_contig_out_), MPID_Datatype_get_basic_size(datatype_), (data_sz_out_)));			\
-    }															\
-    else														\
-    {															\
-	MPID_Datatype_get_ptr((datatype_), (dt_ptr_));									\
-	(dt_contig_out_) = (dt_ptr_)->is_contig;									\
-	(data_sz_out_) = (count_) * (dt_ptr_)->size;									\
-        (dt_true_lb_)    = (dt_ptr_)->true_lb;                                                                          \
-	MPIDI_DBG_PRINTF((15, FCNAME, "user defined datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,	\
-			  (dt_contig_out_), (dt_ptr_)->size, (data_sz_out_)));						\
-    }															\
+#define MPIDI_Datatype_get_info(count_, datatype_, dt_contig_out_, data_sz_out_, dt_ptr_, dt_true_lb_)\
+{									\
+    if (HANDLE_GET_KIND(datatype_) == HANDLE_KIND_BUILTIN)		\
+    {									\
+	(dt_ptr_) = NULL;						\
+	(dt_contig_out_) = TRUE;					\
+        (dt_true_lb_)    = 0;                                           \
+	(data_sz_out_) = (count_) * MPID_Datatype_get_basic_size(datatype_);\
+	MPIDI_DBG_PRINTF((15, FCNAME, "basic datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,\
+			  (dt_contig_out_), MPID_Datatype_get_basic_size(datatype_), (data_sz_out_)));\
+    }									\
+    else								\
+    {									\
+	MPID_Datatype_get_ptr((datatype_), (dt_ptr_));			\
+	(dt_contig_out_) = (dt_ptr_)->is_contig;			\
+	(data_sz_out_) = (count_) * (dt_ptr_)->size;			\
+        (dt_true_lb_)    = (dt_ptr_)->true_lb;                          \
+	MPIDI_DBG_PRINTF((15, FCNAME, "user defined datatype: dt_contig=%d, dt_sz=%d, data_sz=" MPIDI_MSG_SZ_FMT,\
+			  (dt_contig_out_), (dt_ptr_)->size, (data_sz_out_)));\
+    }									\
 }
 /*--------------------
   END DATATYPE SECTION
@@ -112,26 +112,6 @@ extern volatile int MPIDI_Outstanding_close_ops;
     (req_)->dev.dataloop = NULL;				\
     (req_)->dev.rdma_iov_count = 0;				\
     (req_)->dev.rdma_iov_offset = 0;				\
-}
-
-#define MPIDI_CH3U_Request_destroy(req_)			\
-{								\
-    if ((req_)->comm != NULL)					\
-    {								\
-	MPIR_Comm_release((req_)->comm);			\
-    }								\
-								\
-    if ((req_)->dev.datatype_ptr != NULL)			\
-    {								\
-	MPID_Datatype_release((req_)->dev.datatype_ptr);	\
-    }								\
-								\
-    if (MPIDI_Request_get_srbuf_flag(req_))			\
-    {								\
-	MPIDI_CH3U_SRBuf_free(req_);				\
-    }								\
-								\
-    MPID_Request_destruct(req_);				\
 }
 
 #define MPIDI_CH3U_Request_complete(req_)			\
@@ -204,13 +184,13 @@ extern volatile int MPIDI_Outstanding_close_ops;
 #define MPIDI_REQUEST_RNDV_MSG 2
 #define MPIDI_REQUEST_SELF_MSG 3
 
-#define MPIDI_Request_get_msg_type(req_)					\
+#define MPIDI_Request_get_msg_type(req_)				\
 (((req_)->dev.state & MPIDI_REQUEST_MSG_MASK) >> MPIDI_REQUEST_MSG_SHIFT)
 
-#define MPIDI_Request_set_msg_type(req_, msgtype_)						\
-{												\
-    (req_)->dev.state &= ~MPIDI_REQUEST_MSG_MASK;						\
-    (req_)->dev.state |= ((msgtype_) << MPIDI_REQUEST_MSG_SHIFT) & MPIDI_REQUEST_MSG_MASK;	\
+#define MPIDI_Request_set_msg_type(req_, msgtype_)			\
+{									\
+    (req_)->dev.state &= ~MPIDI_REQUEST_MSG_MASK;			\
+    (req_)->dev.state |= ((msgtype_) << MPIDI_REQUEST_MSG_SHIFT) & MPIDI_REQUEST_MSG_MASK;\
 }
 
 #define MPIDI_REQUEST_SRBUF_MASK (0x1 << MPIDI_REQUEST_SRBUF_SHIFT)
@@ -219,9 +199,9 @@ extern volatile int MPIDI_Outstanding_close_ops;
 #define MPIDI_Request_get_srbuf_flag(req_)					\
 (((req_)->dev.state & MPIDI_REQUEST_SRBUF_MASK) >> MPIDI_REQUEST_SRBUF_SHIFT)
 
-#define MPIDI_Request_set_srbuf_flag(req_, flag_)						\
-{												\
-    (req_)->dev.state &= ~MPIDI_REQUEST_SRBUF_MASK;						\
+#define MPIDI_Request_set_srbuf_flag(req_, flag_)			\
+{									\
+    (req_)->dev.state &= ~MPIDI_REQUEST_SRBUF_MASK;			\
     (req_)->dev.state |= ((flag_) << MPIDI_REQUEST_SRBUF_SHIFT) & MPIDI_REQUEST_SRBUF_MASK;	\
 }
 
@@ -231,10 +211,10 @@ extern volatile int MPIDI_Outstanding_close_ops;
 #define MPIDI_Request_get_sync_send_flag(req_)						\
 (((req_)->dev.state & MPIDI_REQUEST_SYNC_SEND_MASK) >> MPIDI_REQUEST_SYNC_SEND_SHIFT)
 
-#define MPIDI_Request_set_sync_send_flag(req_, flag_)							\
-{													\
-    (req_)->dev.state &= ~MPIDI_REQUEST_SYNC_SEND_MASK;							\
-    (req_)->dev.state |= ((flag_) << MPIDI_REQUEST_SYNC_SEND_SHIFT) & MPIDI_REQUEST_SYNC_SEND_MASK;	\
+#define MPIDI_Request_set_sync_send_flag(req_, flag_)			\
+{									\
+    (req_)->dev.state &= ~MPIDI_REQUEST_SYNC_SEND_MASK;			\
+    (req_)->dev.state |= ((flag_) << MPIDI_REQUEST_SYNC_SEND_SHIFT) & MPIDI_REQUEST_SYNC_SEND_MASK;\
 }
 
 #define MPIDI_REQUEST_TYPE_MASK (0xF << MPIDI_REQUEST_TYPE_SHIFT)
@@ -258,10 +238,10 @@ extern volatile int MPIDI_Outstanding_close_ops;
 #define MPIDI_Request_get_type(req_)						\
 (((req_)->dev.state & MPIDI_REQUEST_TYPE_MASK) >> MPIDI_REQUEST_TYPE_SHIFT)
 
-#define MPIDI_Request_set_type(req_, type_)							\
-{												\
-    (req_)->dev.state &= ~MPIDI_REQUEST_TYPE_MASK;						\
-    (req_)->dev.state |= ((type_) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;	\
+#define MPIDI_Request_set_type(req_, type_)				\
+{									\
+    (req_)->dev.state &= ~MPIDI_REQUEST_TYPE_MASK;			\
+    (req_)->dev.state |= ((type_) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;\
 }
 
 #if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
@@ -289,12 +269,12 @@ extern volatile int MPIDI_Outstanding_close_ops;
  	*(recv_pending_) = --(req_)->dev.recv_pending_count;	\
     }
 #elif defined(USE_ATOMIC_UPDATES)
-#   define MPIDI_Request_recv_pending(req_, recv_pending_)			\
-    {										\
-    	int recv_pending__;							\
-										\
-    	MPID_Atomic_decr_flag(&(req_)->dev.recv_pending_count, recv_pending__);	\
-    	*(recv_pending_) = recv_pending__;					\
+#   define MPIDI_Request_recv_pending(req_, recv_pending_)		\
+    {									\
+    	int recv_pending__;						\
+									\
+    	MPID_Atomic_decr_flag(&(req_)->dev.recv_pending_count, recv_pending__);\
+    	*(recv_pending_) = recv_pending__;				\
     }
 #else
 #   define MPIDI_Request_recv_pending(req_, recv_pending_)		\
@@ -307,7 +287,8 @@ extern volatile int MPIDI_Outstanding_close_ops;
     }
 #endif
 
-/* MPIDI_Request_fetch_and_clear_rts_sreq() - atomically fetch current partner RTS sreq and nullify partner request */
+/* MPIDI_Request_fetch_and_clear_rts_sreq() - atomically fetch current 
+   partner RTS sreq and nullify partner request */
 #if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #   define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
     {									\

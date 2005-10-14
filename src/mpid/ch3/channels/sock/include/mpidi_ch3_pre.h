@@ -17,47 +17,49 @@
  * Features needed or implemented by the channel
  */
 #undef MPID_USE_SEQUENCE_NUMBERS
+
 /* FIXME: These should be removed */
-
-
 #define MPIDI_DEV_IMPLEMENTS_KVS
 #define MPIDI_DEV_IMPLEMENTS_ABORT
 
+/* FIXME: Are the following packet extensions?  Can the socket connect/accept
+   packets be made part of the util/sock support? */
 #define MPIDI_CH3_PKT_ENUM			\
 MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
 MPIDI_CH3I_PKT_SC_CONN_ACCEPT,		        \
 MPIDI_CH3I_PKT_SC_OPEN_RESP,			\
 MPIDI_CH3I_PKT_SC_CLOSE
 
-#define MPIDI_CH3_PKT_DEFS													  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-    /* FIXME - We need a little security here to avoid having a random port scan crash the process.  Perhaps a "secret" value for \
-       each process could be published in the key-val space and subsequently sent in the open pkt. */				  \
-    int pg_id_len;											                          \
-    int pg_rank;														  \
-}																  \
-MPIDI_CH3I_Pkt_sc_open_req_t;													  \
-                                                                                                                                  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-    int ack;															  \
-}																  \
-MPIDI_CH3I_Pkt_sc_open_resp_t;													  \
-																  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-}																  \
-MPIDI_CH3I_Pkt_sc_close_t;                                                                                                        \
-                                                                                                                                  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-    int port_name_tag; 													          \
-}																  \
+/* FIXME - We need a little security here to avoid having a random port scan 
+   crash the process.  Perhaps a "secret" value for each process could be 
+   published in the key-val space and subsequently sent in the open pkt. */
+#define MPIDI_CH3_PKT_DEFS	\
+typedef struct			\
+{				\
+    MPIDI_CH3_Pkt_type_t type;	\
+    int pg_id_len;		\
+    int pg_rank;		\
+}				\
+MPIDI_CH3I_Pkt_sc_open_req_t;	\
+                                \
+typedef struct			\
+{				\
+    MPIDI_CH3_Pkt_type_t type;	\
+    int ack;			\
+}				\
+MPIDI_CH3I_Pkt_sc_open_resp_t;	\
+				\
+typedef struct			\
+{				\
+    MPIDI_CH3_Pkt_type_t type;	\
+}				\
+MPIDI_CH3I_Pkt_sc_close_t;      \
+                                \
+typedef struct			\
+{				\
+    MPIDI_CH3_Pkt_type_t type;	\
+    int port_name_tag; 		\
+}				\
 MPIDI_CH3I_Pkt_sc_conn_accept_t;
 
 #define MPIDI_CH3_PKT_DECL			\
@@ -108,15 +110,17 @@ MPIDI_CH3I_CA_END_SOCK_CHANNEL
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL									\
-struct MPIDI_CH3I_Request									\
-{												\
-    /*  pkt is used to temporarily store a packet header associated with this request */	\
-    MPIDI_CH3_Pkt_t pkt;									\
+/*  pkt is used to temporarily store a packet header associated with this request */	
+#define MPIDI_CH3_REQUEST_DECL	\
+struct MPIDI_CH3I_Request	\
+{				\
+    MPIDI_CH3_Pkt_t pkt;	\
 } ch;
 
 /*
- * MPID_Progress_state - device/channel dependent state to be passed between MPID_Progress_{start,wait,end}
+ * MPID_Progress_state - device/channel dependent state to be passed between 
+ * MPID_Progress_{start,wait,end}
+ *
  */
 typedef struct MPIDI_CH3I_Progress_state
 {

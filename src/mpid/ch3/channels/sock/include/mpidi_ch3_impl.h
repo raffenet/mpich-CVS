@@ -15,6 +15,8 @@
 #define MAXHOSTNAMELEN 256
 #endif
 
+/* This is all socket connection definitions */
+
 enum MPIDI_CH3I_Conn_state
 {
     CONN_STATE_UNCONNECTED,
@@ -44,43 +46,43 @@ typedef struct MPIDI_CH3I_Connection
     MPID_IOV iov[2];
 } MPIDI_CH3I_Connection_t;
 
-#define MPIDI_CH3I_SendQ_enqueue(vc, req)									\
-{														\
-    /* MT - not thread safe! */											\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));       	                \
-    req->dev.next = NULL;											\
-    if (vc->ch.sendq_tail != NULL)										\
-    {														\
-	vc->ch.sendq_tail->dev.next = req;									\
-    }														\
-    else													\
-    {														\
-	vc->ch.sendq_head = req;										\
-    }														\
-    vc->ch.sendq_tail = req;											\
+    /* MT - not thread safe! */
+#define MPIDI_CH3I_SendQ_enqueue(vc, req)				\
+{									\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));  \
+    req->dev.next = NULL;						\
+    if (vc->ch.sendq_tail != NULL)					\
+    {									\
+	vc->ch.sendq_tail->dev.next = req;				\
+    }									\
+    else								\
+    {									\
+	vc->ch.sendq_head = req;					\
+    }									\
+    vc->ch.sendq_tail = req;						\
 }
 
-#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)									\
-{														\
-    /* MT - not thread safe! */											\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));              	\
-    req->dev.next = vc->ch.sendq_head;										\
-    if (vc->ch.sendq_tail == NULL)										\
-    {														\
-	vc->ch.sendq_tail = req;										\
-    }														\
-    vc->ch.sendq_head = req;											\
+    /* MT - not thread safe! */
+#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)				\
+{									\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));\
+    req->dev.next = vc->ch.sendq_head;					\
+    if (vc->ch.sendq_tail == NULL)					\
+    {									\
+	vc->ch.sendq_tail = req;					\
+    }									\
+    vc->ch.sendq_head = req;						\
 }
 
-#define MPIDI_CH3I_SendQ_dequeue(vc)												\
-{																\
-    /* MT - not thread safe! */													\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->ch.sendq_head->handle));	                        \
-    vc->ch.sendq_head = vc->ch.sendq_head->dev.next;										\
-    if (vc->ch.sendq_head == NULL)												\
-    {																\
-	vc->ch.sendq_tail = NULL;												\
-    }																\
+    /* MT - not thread safe! */
+#define MPIDI_CH3I_SendQ_dequeue(vc)					\
+{									\
+    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, vc->ch.sendq_head->handle));\
+    vc->ch.sendq_head = vc->ch.sendq_head->dev.next;			\
+    if (vc->ch.sendq_head == NULL)					\
+    {									\
+	vc->ch.sendq_tail = NULL;					\
+    }									\
 }
 
 
@@ -88,14 +90,22 @@ typedef struct MPIDI_CH3I_Connection
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
+/* these are used to create a business card and to extract information from 
+   that business card. */
+/* FIXME: These should be defined and used in a single file */
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_PORT_KEY              "port"
 
+/* End of connection-related macros */
 
+/* FIXME: Any of these used in the ch3->channel interface should be
+   defined in a header file in ch3/include that defines the 
+   channel interface */
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_Get_business_card(char * value, int length);
-int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
+int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, 
+				   int is_low_group);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */
