@@ -3,8 +3,8 @@
        See COPYRIGHT in top-level directory.
 */
 /*
-    This file should be INCLUDED into log_wrap.c when adding the IO routines
-    to the profiling list
+    This file should be INCLUDED into log_mpi_core.c when adding
+    the IO routines to the profiling list
 
     Also set MPE_MAX_KNOWN_STATES to 180
 */

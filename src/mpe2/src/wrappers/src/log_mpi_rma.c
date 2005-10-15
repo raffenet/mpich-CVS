@@ -3,10 +3,10 @@
        See COPYRIGHT in top-level directory.
 */
 /*
-   This file should be INCLUDED into log_wrap.c when adding the RMA routines
-   to the profiling list
+   This file should be INCLUDED into log_mpi_core.c when adding the
+   RMA routines to the profiling list
 
-   Also set MPE_MAX_KNOWN_STATES to 200
+   Also set MPE_MAX_KNOWN_STATES >= 200
 */
 #define MPE_ACCUMULATE_ID 181
 #define MPE_ALLOC_MEM_ID 182
