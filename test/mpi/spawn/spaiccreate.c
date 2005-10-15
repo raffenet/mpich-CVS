@@ -59,9 +59,9 @@ int main( int argc, char *argv[] )
 	    int i, rsize, rrank;
 	    MPI_Status status;
 
-	    MPI_Comm_remote_size( intercomm, &rsize );
+	    MPI_Comm_remote_size( intercomm2, &rsize );
 	    for (i=0; i<rsize; i++) {
-		MPI_Recv( &rrank, 1, MPI_INT, 1, i, intercomm2, &status );
+		MPI_Recv( &rrank, 1, MPI_INT, i, i, intercomm2, &status );
 		if (rrank != i) {
 		    errs++;
 		    printf( "Received %d from %d; expected %d\n",
@@ -70,6 +70,10 @@ int main( int argc, char *argv[] )
 	    }
 	}
     }
+
+    /*    printf( "%sAbout to barrier on intercomm2\n", 
+	    (parentcomm == MPI_COMM_NULL) ? "<orig>" : "<spawned>" ); 
+	    fflush(stdout);*/
     MPI_Barrier( intercomm2 );
     
     /* It isn't necessary to free the intercomms, but it should not hurt */
