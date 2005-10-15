@@ -40,12 +40,14 @@ int MPIDI_PG_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    /* FIXME - straighten out the use of PG_Finalize - no use after PG_Finalize */
-/* ifdefing out this check because the list will not be NULL in Ch3_finalize because
-   one additional reference is retained in MPIDI_Process.my_pg. That reference is released
-   only after ch3_finalize returns. If I release it before ch3_finalize, the ssm channel
-   crashes.
-*/
+    /* FIXME - straighten out the use of PG_Finalize - no use after 
+       PG_Finalize */
+    /* ifdefing out this check because the list will not be NULL in 
+       Ch3_finalize because
+       one additional reference is retained in MPIDI_Process.my_pg. 
+       That reference is released
+       only after ch3_finalize returns. If I release it before ch3_finalize, 
+       the ssm channel crashes. */
     
 #ifdef FOO
 
@@ -64,13 +66,21 @@ int MPIDI_PG_Finalize(void)
 /* FIXME: This routine needs to make it clear that the pg_id, for example
    is saved; thus, if the pg_id is a string, then that string is not 
    copied and must be freed by a PG_Destroy routine */
+
+/* This routine creates a new process group description and appends it to 
+   the list of the known process groups.  The pg_id is saved, not copied.
+   The PG_Destroy routine that was set with MPIDI_PG_Init is responsible for
+   freeing any storage associated with the pg_id. 
+
+   The new process group is returned in pg_ptr 
+*/
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Create
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 {
-    MPIDI_PG_t * pg = NULL;
+    MPIDI_PG_t * pg = NULL, *pgnext;
     int p;
     int mpi_errno = MPI_SUCCESS;
     MPIU_CHKPMEM_DECL(2);
@@ -90,13 +100,26 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 	MPIDI_VC_Init(&pg->vct[p], pg, p);
     }
 
+    /* Add pg's at the tail so that comm world is always the first pg */
+#if 0
     pg->next = MPIDI_PG_list;
     if (MPIDI_PG_iterator_next == MPIDI_PG_list)
     {
 	MPIDI_PG_iterator_next = pg;
     }
     MPIDI_PG_list = pg;
-    
+#else
+    pg->next = 0;
+    if (!MPIDI_PG_list) 
+	MPIDI_PG_list = pg;
+    else {
+	pgnext = MPIDI_PG_list; 
+	while (pgnext->next) {
+	    pgnext = pgnext->next;
+	}
+	pgnext->next = pg;
+    }
+#endif    
     *pg_ptr = pg;
     
   fn_exit:
@@ -151,10 +174,9 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 	pg_cur = pg_cur->next;
     }
 
-    /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-				     "**dev|pg_not_found", "**dev|pg_not_found %p", pg);
-    /* --END ERROR HANDLING-- */
+    /* PG not found if we got here */
+    MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER,
+		  "**dev|pg_not_found", "**dev|pg_not_found %p", pg);
 
   fn_exit:
     return mpi_errno;
@@ -237,7 +259,7 @@ static int MPIDI_Allocate_more(char **str, char **cur_pos, int *cur_len)
     size_t orig_length, longer_length;
 
     orig_length = (*cur_pos - *str);
-    /* FIXME: Really try to add a MB here?! */
+    /* FIXME: Really try to add a MB here?!  Why not just double? */
     longer_length = (*cur_pos - *str) + (1024*1024);
 
     longer = (char*)MPIU_Malloc(longer_length * sizeof(char));
@@ -332,8 +354,14 @@ fn_fail:
     goto fn_exit;
 }
 
-/* FIXME: This is a function that uses PMI to get a process group id string
-   and then uses that string to create a CH3 PG */
+/* This routine takes a string description of a process group (created with 
+   MPIDI_PG_To_string, usually on a different process) and returns a pointer to
+   the matching process group.  If the group already exists, flag is set to 
+   false.  If the group does not exist, it is created with MPIDI_PG_Creat (and
+   hence is added to the list of active process groups) and flag is set to 
+   true.  In addition, the matching KVS space in the KVS cache is initialized
+   from the input string, using the routines in mpidi_kvs.c 
+*/
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Create_with_kvs
 #undef FCNAME

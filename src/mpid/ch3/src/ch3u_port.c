@@ -300,7 +300,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
  * distinct process groups is returned in n_local_pgs_p .
  */
 #undef FUNCNAME
-#define FUNCNAME extractLocalPGInfo
+#define FUNCNAME ExtractLocalPGInfo
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int ExtractLocalPGInfo( MPID_Comm *comm_p, 
@@ -481,33 +481,39 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
     goto fn_exit;
 }
 
-int MPID_PG_BCast( MPID_Comm *comm_p, int root )
+#undef FUNCNAME
+#define FUNCNAME MPID_PG_BCast
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 {
     int n_local_pgs=0, mpi_errno = 0;
     pg_translation *local_translation = 0;
-    pg_node *pg_list;
-    int local_comm_size, rank, i;
+    pg_node *pg_list, *pg_next, *pg_head = 0;
+    int rank, i, peer_comm_size;
     MPIU_CHKLMEM_DECL(1);
 
-    local_comm_size = comm_p->local_size;
+    peer_comm_size = comm_p->local_size;
     rank            = comm_p->rank;
 
     MPIU_CHKLMEM_MALLOC(local_translation,pg_translation*,
-			local_comm_size*sizeof(pg_translation),
+			peer_comm_size*sizeof(pg_translation),
 			mpi_errno,"local_translation");
     
-    
     if (rank == root) {
-	ExtractLocalPGInfo( comm_p, local_translation, &pg_list, 
+	/* Get the process groups known to the *peercomm* */
+	ExtractLocalPGInfo( peercomm_p, local_translation, &pg_head, 
 			    &n_local_pgs );
     }
+
     /* Now, broadcast the number of local pgs */
     NMPI_Bcast( &n_local_pgs, 1, MPI_INT, root, comm_p->handle );
 
-/*     printf( "Number of pgs = %d\n", n_local_pgs ); fflush(stdout); */
+    /* printf( "Number of pgs = %d\n", n_local_pgs ); fflush(stdout);  */
+    pg_list = pg_head;
     for (i=0; i<n_local_pgs; i++) {
 	int len, flag;
-	char *pg_str;
+	char *pg_str=0;
 	MPIDI_PG_t *pgptr;
 
 	if (rank == root) {
@@ -529,12 +535,31 @@ int MPID_PG_BCast( MPID_Comm *comm_p, int root )
 	    /* flag is true if the pg was created, false if it
 	       already existed */
 	    MPIDI_PG_Create_from_string( pg_str, &pgptr, &flag );
-	    
+	    if (flag) {
+		int p;
+		/*printf( "[%d]Added pg named %s to list\n", rank, 
+			(char *)pgptr->id );
+			fflush(stdout); */
+		/* FIXME: This initalization should be done
+		   when the pg is created ? */
+		for (p=0; p<pgptr->size; p++) {
+		    MPIDI_VC_t *vc;
+		    MPIDI_PG_Get_vcr(pgptr, p, &vc);
+		    MPIDI_CH3_VC_Init( vc );
+		}
+	    }
+	    MPIU_Free( pg_str );
 	}
-	MPIU_Free( pg_str );
     }
 
-    /* FIXME: Free pg_list */
+    /* Free pg_list */
+    pg_list = pg_head;
+    while (pg_list) {
+	pg_next = pg_list->next;
+	MPIU_Free( pg_list->str );
+	MPIU_Free( pg_list );
+	pg_list = pg_next;
+    }
 
  fn_exit:
     MPIU_CHKLMEM_FREEALL();

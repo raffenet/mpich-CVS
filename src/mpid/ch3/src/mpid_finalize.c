@@ -86,6 +86,7 @@ int MPID_Finalize(void)
     /*
      * Initiate close protocol for all active VCs
      */
+    MPIDI_PG_Iterate_reset();
     for (;;)
     {
 	int i;

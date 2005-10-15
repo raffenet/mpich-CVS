@@ -242,6 +242,10 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
  */
 
 /* FIXME: These routines probably belong in a different place */
+#undef FUNCNAME
+#define FUNCNAME MPID_GPID_GetAllInComm
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
 			    int local_gpids[], int *singlePG )
 {
@@ -278,9 +282,13 @@ int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size,
  * The following is a very simple code for looping through 
  * the GPIDs
  */
+#undef FUNCNAME
+#define FUNCNAME MPID_GPID_ToLpidArray
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 {
-    int i;
+    int i, mpi_errno = MPI_SUCCESS;
     int pgid;
     MPIDI_PG_t *pg = 0;
 
@@ -291,17 +299,25 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 	    if (!pg) {
 		/* Internal error.  This gpid is unknown on this process */
 		lpid[i] = -1;
-		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					     "MPID_GPID_ToLpidArray", __LINE__,
-					     MPI_ERR_INTERN, "**unknowngpid",
-					     "**unknowngpid %d %d", 
-					     gpid[0], gpid[1] );
+		MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
+			      "**unknowngpid %d %d", gpid[0], gpid[1] );
+		return mpi_errno;
 	    }
 	    MPIDI_PG_IdToNum( pg, &pgid );
+	    /*printf( "Pg id = %d in %s\n", pgid, (char *)pg->id );fflush(stdout);*/
 	    if (pgid == gpid[0]) {
 		/* found the process group.  gpid[1] is the rank in 
 		   this process group */
-		lpid[i] = pg->vct[gpid[1]].lpid;
+		/* Sanity check on size */
+		if (pg->size > gpid[1]) {
+		    lpid[i] = pg->vct[gpid[1]].lpid;
+		}
+		else {
+		    lpid[i] = -1;
+		    MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
+				  "**unknowngpid %d %d", gpid[0], gpid[1] );
+		    return mpi_errno;
+		}
 		/* printf( "lpid[%d] = %d for gpid = (%d)%d\n", i, lpid[i], 
 		   gpid[0], gpid[1] ); */
 		break;
@@ -309,9 +325,14 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 	} while (1);
 	gpid += 2;
     }
-    return 0;
+
+    return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_VCR_CommFromLpids
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
 			    int size, const int lpids[] )
 {
@@ -326,7 +347,10 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 	MPIDI_VC_t *vc = 0;
 
 	/* For rank i in the new communicator, find the corresponding
-	   rank in the comm world (FIXME FOR MPI2) */
+	   virtual connection.  For lpids less than the size of comm_world,
+	   we can just take the corresponding entry from comm_world.
+	   Otherwise, we need to search through the process groups.
+	*/
 	/* printf( "[%d] Remote rank %d has lpid %d\n", 
 	   MPIR_Process.comm_world->rank, i, lpids[i] ); */
 	if (lpids[i] < commworld_ptr->remote_size) {
@@ -339,6 +363,8 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 	    int j;
 
 	    MPIDI_PG_Iterate_reset();
+	    /* Skip comm_world */
+	    MPIDI_PG_Get_next( &pg );
 	    do {
 		MPIDI_PG_Get_next( &pg );
 		if (!pg) {
@@ -347,11 +373,16 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 				     "MPID_VCR_CommFromLpids", __LINE__,
 				     MPI_ERR_INTERN, "**intern", 0 );
 		}
+		/* FIXME: a quick check on the min/max values of the lpid
+		   for this process group could help speed this search */
 		for (j=0; j<pg->size; j++) {
+		    /*printf( "Checking lpid %d against %d in pg %s\n",
+			    lpids[i], pg->vct[j].lpid, (char *)pg->id );
+			    fflush(stdout); */
 		    if (pg->vct[j].lpid == lpids[i]) {
 			vc = &pg->vct[j];
-			/* printf( "found vc %x for lpid = %d in another pg\n", 
-			   (int)vc, lpids[i] ); */
+			/*printf( "found vc %x for lpid = %d in another pg\n", 
+			  (int)vc, lpids[i] );*/
 			break;
 		    }
 		}
@@ -380,16 +411,26 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
    information (in the KVS cache that contains information about 
    contacting any process in the process groups).
 */
-int MPID_PG_ForwardPGInfo( MPID_Comm *comm_ptr, int nPGids, int gpids[], 
+#undef FUNCNAME
+#define FUNCNAME MPID_PG_ForwardPGInfo
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr, 
+			   int nPGids, int gpids[], 
 			   int root )
 {
-    int i, allfound = 1, pgid;
+    int i, allfound = 1, pgid, pgidWorld;
     MPIDI_PG_t *pg = 0;
+
+    /* Get the pgid for CommWorld (always attached to the first process 
+       group) */
+    MPIDI_PG_Iterate_reset();
+    MPIDI_PG_Get_next( &pg );
+    MPIDI_PG_IdToNum( pg, &pgidWorld );
     
     /* Extract the unique process groups */
-    /* FIXME: get the PG of COMM_WORLD and use it in this test instead */
-    for (i=0; i<nPGids; i++) {
-	if (gpids[0] != 0) {
+    for (i=0; i<nPGids && allfound; i++) {
+	if (gpids[0] != pgidWorld) {
 	    /* Add this gpid to the list of values to check */
 	    /* FIXME: For testing, we just test in place */
 	    MPIDI_PG_Iterate_reset();
@@ -401,11 +442,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *comm_ptr, int nPGids, int gpids[],
 		    break;
 		}
 		MPIDI_PG_IdToNum( pg, &pgid );
-		if (pgid == gpids[0]) {
-		    /* Found the process group */
-		    break;
-		}
-	    } while (1);
+	    } while (pgid != gpids[0]);
 	}
 	gpids += 2;
     }
@@ -418,11 +455,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *comm_ptr, int nPGids, int gpids[],
 
     /* We need to share the process groups.  We use routines
        from ch3u_port.c */
-#if 0
-    printf( "Detected a problem in the distribution of process groups\n" );
-    fflush(stdout); 
-#endif
-    MPID_PG_BCast( comm_ptr, root );
+    MPID_PG_BCast( peer_ptr, comm_ptr, root );
 
     return MPI_SUCCESS;
 }
