@@ -179,13 +179,21 @@ typedef struct {
 #define CLOG_REC_TIMESHIFT   11     /* time shift calculated for this process */
 
 /*
-   Be sure NO CLOG internal states overlapped with MPE's internal states
-   which are defined in log_mpi_core.c
+   Be sure NO CLOG internal states are overlapped with ANY of MPI states
+   and MPE's internal states which are defined in log_mpi_core.c.
 */
-/* special event & state type for CLOG internal state, CLOG_Buffer_write2disk */
-#define CLOG_STATEID_BUFFERWRITE      -1
-#define CLOG_EVT_BUFFERWRITE_START -1001
-#define CLOG_EVT_BUFFERWRITE_FINAL -1002
+/*
+   280 <= CLOG's internal stateID < 300 = MPE_MAX_KNOWN_STATES
+   whose start_evtID = 2 * stateID,  final_evtID = 2 * stateID + 1
+
+   This is done so the CLOG internal stateID/evetIDs are included in
+   the clog2TOslog2's predefined MPI uninitialized states.
+
+   CLOG internal state, CLOG_Buffer_write2disk
+*/
+#define CLOG_STATEID_BUFFERWRITE     280
+#define CLOG_EVT_BUFFERWRITE_START   560
+#define CLOG_EVT_BUFFERWRITE_FINAL   561
 
 /* special event type for message type events */
 #define CLOG_EVT_SENDMSG   -101
