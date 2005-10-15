@@ -32,7 +32,7 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
 {
     static const char FCNAME[] = "MPIR_CheckDisjointLpids";
     int i, maxi, idx, bit, maxlpid = -1;
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     int32_t lpidmask[MAX_LPID32_ARRAY];
 
     /* Find the max lpid */
@@ -44,9 +44,10 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
     }
     /* --BEGIN ERROR HANDLING-- */
     if (maxlpid >= MAX_LPID32_ARRAY * 32) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**intern",
-				  "**intern %s", 
-				  "Too many processes in intercomm_create" );
+	/* FIXME: internationalize */
+	MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, "**intern",
+		      "**intern %s", 
+		      "Too many processes in intercomm_create" );
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
@@ -68,10 +69,8 @@ PMPI_LOCAL int MPIR_CheckDisjointLpids( int lpids1[], int n1,
 	bit = lpids2[i] % 32;
 	/* --BEGIN ERROR HANDLING-- */
 	if (lpidmask[idx] & (1 << bit)) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-		       MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**dupprocesses", 
-					      "**dupprocesses %d", lpids2[i] );
+	    MPIU_ERR_SET1(mpi_errno,MPI_ERR_COMM, 
+			  "**dupprocesses", "**dupprocesses %d", lpids2[i] );
 	    return mpi_errno;
 	}
 	/* --END ERROR HANDLING-- */
@@ -259,10 +258,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno );
 		if ((local_leader < 0 || 
 		     local_leader >= comm_ptr->local_size)) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK, 
-					  "**ranklocal", 
-					  "**ranklocal %d %d", 
-					  local_leader, comm_ptr->local_size );
+		    MPIU_ERR_SET2(mpi_errno,MPI_ERR_RANK, 
+				  "**ranklocal", "**ranklocal %d %d", 
+				  local_leader, comm_ptr->local_size );
 		}
 		if (comm_ptr->rank == local_leader) {
 		    MPIR_ERRTEST_COMM(peer_comm, mpi_errno);
@@ -306,15 +304,15 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		if (!mpi_errno && peer_comm_ptr && 
 		    (remote_leader < 0 || 
 		     remote_leader >= peer_comm_ptr->remote_size)) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK, 
-						      "**rankremote", 
-					  "**rankremote %d %d", 
-					  local_leader, comm_ptr->local_size );
+		    MPIU_ERR_SET2(mpi_errno,MPI_ERR_RANK, 
+				  "**rankremote", "**rankremote %d %d", 
+				  local_leader, comm_ptr->local_size );
 		}
 		/* Check that the local leader and the remote leader are 
 		   different processes.  This test requires looking at
 		   the lpid for the two ranks in their respective 
 		   communicators */
+		/* FIXME: Why is this test commented out ? */
 /*		if (local_leader == remote_leader) {
 		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
 						      "**ranksdistinct", 0 );
@@ -412,13 +410,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPIU_DBG_PRINTF(( "About to get contextid (commsize=%d) on %d\n",
 		  comm_ptr->local_size, comm_ptr->rank ));
     context_id = MPIR_Get_contextid( comm_ptr );
-    /* --BEGIN ERROR HANDLING-- */
-    if (context_id == 0)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
-	goto fn_fail;
+    if (context_id == 0) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**toomanycomm");
     }
-    /* --END ERROR HANDLING-- */
     MPIU_DBG_PRINTF(( "Got contextid\n" ));
 
     /* Increment the nest count for everyone because all processes
@@ -461,7 +455,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	   to the other proceses.  Do this before the
 	   GPID_ToLpidArray call, since that call will 
 	   rely on having that information */
-	MPID_PG_ForwardPGInfo( comm_ptr, remote_size, remote_gpids, 
+	MPID_PG_ForwardPGInfo( peer_comm_ptr, 
+			       comm_ptr, remote_size, remote_gpids, 
 			       local_leader );
     }
     else
@@ -477,7 +472,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	NMPI_Bcast( remote_gpids, 2*remote_size, MPI_INT, local_leader, 
 		    local_comm );
 	/* Check on the remote process groups */
-	MPID_PG_ForwardPGInfo( comm_ptr, remote_size, remote_gpids, 
+	MPID_PG_ForwardPGInfo( peer_comm_ptr, 
+			       comm_ptr, remote_size, remote_gpids, 
 			       local_leader );
 	/* Convert the remote gpids to the lpids */
 	mpi_errno = MPID_GPID_ToLpidArray( remote_size, remote_gpids, remote_lpids );
@@ -512,13 +508,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     /* All processes in the local_comm now build the communicator */
 
     newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!newcomm_ptr)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	goto fn_fail;
+    if (!newcomm_ptr) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
     }
-    /* --END ERROR HANDLING-- */
 
     MPIU_Object_set_ref( newcomm_ptr, 1 );
     newcomm_ptr->attributes   = 0;
