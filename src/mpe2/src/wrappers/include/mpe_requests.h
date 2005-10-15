@@ -11,7 +11,7 @@ typedef struct request_list_ {
           int                    status;
           int                    size;
           int                    tag;
-          int                    otherParty;
+          int                    mate;
           int                    is_persistent;
           struct request_list_  *next;
 } request_list;
