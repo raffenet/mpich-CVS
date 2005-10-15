@@ -121,10 +121,12 @@ typedef struct {
 #define MPE_KIND_MSG_INIT 0x200
 #define MPE_KIND_FILE 0x400
 #define MPE_KIND_RMA 0x800
+#define MPE_KIND_INTERNAL 0x1000
 
 /* More as needed */
 
 /* Number of MPI routines; increase to allow user extensions */
+/*
 #ifdef HAVE_MPI_RMA
 #define MPE_MAX_KNOWN_STATES 200
 #else
@@ -134,6 +136,13 @@ typedef struct {
 #define MPE_MAX_KNOWN_STATES 128
 #endif
 #endif
+*/
+
+/*
+   Because of existence of MPE internal states whose state ID is higher than
+   any of MPI states' ID.  MPE_MAX_KNOWN_STATES needs to be defined in full.
+*/
+#define MPE_MAX_KNOWN_STATES 300
 
 #ifdef HAVE_MPI_RMA
 void MPE_Init_MPIRMA( void );
@@ -276,15 +285,19 @@ static int trace_on = 0;
 #define MPE_CART_SUB_ID 125
 
 /*
-   Be sure NO MPE internal states overlapped with CLOG's internal states
-   which are defined in clog_record.h.
+   Be sure NO MPE internal states are overlapped with ANY of MPI states
+   Also, CLOG's internal states which are defined in clog_record.h
+   should be overlapping with MPE internal states as well.
+   
+       250 <= MPE's internal stateID < 280
+   and 280 <= CLOG's internal stateID < MPE_MAX_KNOWN_STATES
+
+   This is done so the MPE internal stateID/evetIDs are included in
+   the clog2TOslog2's predefined MPI uninitialized states.
 */
-#define MPE_STATEID_ISEND         -10
-#define MPE_EVT_ISEND_START    -10001
-#define MPE_EVT_ISEND_FINAL    -10002
-#define MPE_STATEID_IRECV         -11
-#define MPE_EVT_IRECV_START    -10003
-#define MPE_EVT_IRECV_FINAL    -10004
+
+#define MPE_ISEND_WAITED_ID 250
+#define MPE_IRECV_WAITED_ID 251
 
 #include "mpe_requests.h"
 
@@ -347,7 +360,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 /*
    All following macros have "comm" as argument, but none of them except
    MPE_LOG_STATE_BEGIN needs comm argument.  Instead all of them need
-   commIDs as an argument.  "comm" are used in all macros to indicates
+   commIDs as an argument.  "comm" are used in all macros to indicate
    the macro body needs reference of comm, i.e commIDs.  The goal is that
    the functions that invoke these macros will look clearer and more consistent.
 */
@@ -355,15 +368,14 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
     if (trace_on) { \
         state = &states[name]; \
         if (state->is_active) { \
-            state->n_calls++; \
             commIDs = CLOG_CommSet_get_IDs( CLOG_CommSet, comm ); \
             MPE_Log_commIDs_event( commIDs, 0, state->start_evtID, NULL ); \
         } \
     }
 #define MPE_LOG_STATE_END(comm) \
     if (trace_on && state->is_active) { \
-        state->n_calls++; \
         MPE_Log_commIDs_event( commIDs, 0, state->final_evtID, NULL ); \
+        state->n_calls += 2; \
     }
 
 #define MPE_LOG_COMM_SEND(comm,receiver,tag,size) \
@@ -438,7 +450,7 @@ const CLOG_CommIDs_t *commIDs;
         newrq->status        = RQ_SEND;
         newrq->size          = count * typesize;
         newrq->tag           = tag;
-        newrq->otherParty    = dest;
+        newrq->mate          = dest;
         newrq->next          = 0;
         newrq->is_persistent = is_persistent;
         rq_add( requests_head_0, requests_tail_0, newrq );
@@ -490,6 +502,7 @@ MPI_Request request;
 MPE_State   *state;
 {
     request_list *rq;
+    MPE_State    *istate;
 
     /* look for request */
     rq = requests_head_0;
@@ -504,12 +517,22 @@ MPE_State   *state;
        return;                /* request not found */
     }
 
-    if ((rq->status & RQ_SEND) && rq->otherParty != MPI_PROC_NULL) {
+    if ((rq->status & RQ_SEND) && rq->mate != MPI_PROC_NULL) {
         if (trace_on && state->is_active) {
-            MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_ISEND_START, NULL );
-            MPE_Log_commIDs_send( rq->commIDs, 0, rq->otherParty,
-                                  rq->tag, rq->size );
-            MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_ISEND_FINAL, NULL );
+            istate  = &states[MPE_ISEND_WAITED_ID];
+            if (istate->is_active) {
+                MPE_Log_commIDs_event( rq->commIDs, 0, istate->start_evtID,
+                                       NULL );
+                MPE_Log_commIDs_send( rq->commIDs, 0, rq->mate,
+                                      rq->tag, rq->size );
+                MPE_Log_commIDs_event( rq->commIDs, 0, istate->final_evtID,
+                                       NULL );
+                istate->n_calls += 2;
+            }
+            else {
+                MPE_Log_commIDs_send( rq->commIDs, 0, rq->mate,
+                                      rq->tag, rq->size );
+            }
         }
     }
 }
@@ -520,8 +543,9 @@ MPI_Status  *status;
 char        *note;
 MPE_State   *state;
 {
-    request_list  *rq, *last;
+    request_list *rq, *last;
     int           flag, size;
+    MPE_State    *istate;
 
     /* look for request */
     rq = requests_head_0;
@@ -564,12 +588,20 @@ MPE_State   *state;
         if ((rq->status & RQ_RECV) && (status->MPI_SOURCE != MPI_PROC_NULL)) {
             PMPI_Get_count( status, MPI_BYTE, &size );
             if (trace_on && state->is_active) {
-                MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_IRECV_START,
-                                       NULL );
-                MPE_Log_commIDs_receive( rq->commIDs, 0, status->MPI_SOURCE,
-                                         status->MPI_TAG, size );
-                MPE_Log_commIDs_event( rq->commIDs, 0, MPE_EVT_IRECV_FINAL,
-                                       NULL );
+                istate  = &states[MPE_IRECV_WAITED_ID];
+                if (istate->is_active) {
+                    MPE_Log_commIDs_event( rq->commIDs, 0, istate->start_evtID,
+                                           NULL );
+                    MPE_Log_commIDs_receive( rq->commIDs, 0, status->MPI_SOURCE,
+                                             status->MPI_TAG, size );
+                    MPE_Log_commIDs_event( rq->commIDs, 0, istate->final_evtID,
+                                           NULL );
+                    istate->n_calls += 2;
+                }
+                else {
+                    MPE_Log_commIDs_receive( rq->commIDs, 0, status->MPI_SOURCE,
+                                             status->MPI_TAG, size );
+                }
             }
         }
     }
@@ -1910,18 +1942,6 @@ char *** argv;
 
   MPE_Init_log();
   PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
-  if ( procid_0 == 0 ) {
-        MPE_Describe_uncheck_state( CLOG_CommIDs4World, 0,
-                                    MPE_STATEID_ISEND,
-                                    MPE_EVT_ISEND_START,
-                                    MPE_EVT_ISEND_FINAL,
-                                    "MPE_Isend_waited", "magenta", NULL );
-        MPE_Describe_uncheck_state( CLOG_CommIDs4World, 0,
-                                    MPE_STATEID_IRECV,
-                                    MPE_EVT_IRECV_START,
-                                    MPE_EVT_IRECV_FINAL,
-                                    "MPE_Irecv_waited", "DarkOrange", NULL );
- }
 
   /* Initialize all states */
   for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
@@ -1948,6 +1968,9 @@ char *** argv;
 #ifdef HAVE_MPI_RMA
    allow_mask |= MPE_KIND_RMA;
 #endif
+
+   /* The internal flag is always ON */
+   allow_mask |= MPE_KIND_INTERNAL;
 
   /* Should check environment and command-line for changes to allow_mask */
   
@@ -2468,7 +2491,7 @@ char *** argv;
   state = &states[MPE_CART_SUB_ID];
   state->kind_mask = MPE_KIND_TOPO;
   state->name = "MPI_Cart_sub";
-  state->color="DarkOliveGreen2";
+  state->color ="DarkOliveGreen2";
 
   state = &states[MPE_CARTDIM_GET_ID];
   state->kind_mask = MPE_KIND_TOPO;
@@ -2518,7 +2541,7 @@ char *** argv;
   state = &states[MPE_RECV_IDLE_ID];
   state->kind_mask = MPE_KIND_MSG;
   state->name = "MPI_Recv_idle";
-  state->color="SeaGreen1";
+  state->color ="SeaGreen1";
 
 #ifdef HAVE_MPI_IO
   MPE_Init_MPIIO();
@@ -2527,6 +2550,16 @@ char *** argv;
 #ifdef HAVE_MPI_RMA
   MPE_Init_MPIRMA();
 #endif
+
+  state = &states[MPE_ISEND_WAITED_ID];
+  state->kind_mask = MPE_KIND_INTERNAL;
+  state->name = "MPE_Isend_waited";
+  state->color="magenta";
+
+  state = &states[MPE_IRECV_WAITED_ID];
+  state->kind_mask = MPE_KIND_INTERNAL;
+  state->name = "MPE_Irecv_waited";
+  state->color="DarkOrange";
 
 #ifdef HAVE___ARGV
   if ( argv == NULL )
