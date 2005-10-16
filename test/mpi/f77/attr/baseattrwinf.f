@@ -5,7 +5,7 @@ C      See COPYRIGHT in top-level directory.
 C
       program main
       include 'mpif.h'
-      integer value
+      include 'attraints.h'
       logical flag
       integer ierr, errs
       integer base(1024)
@@ -25,7 +25,7 @@ C Create a window; then extract the values
 C
 C In order to check the base, we need an address-of function.
 C We use MPI_Get_address, even though that isn't strictly correct
-      call MPI_Win_get_attr( win, MPI_WIN_BASE, value, flag, ierr )
+      call MPI_Win_get_attr( win, MPI_WIN_BASE, valout, flag, ierr )
       if (.not. flag) then
          errs = errs + 1
          print *, "Could not get WIN_BASE"
@@ -38,33 +38,33 @@ C      else
 C
 CC For this Fortran 77 version, we use the older MPI_Address function
 C         call MPI_Address( base, baseadd, ierr )
-C         if (value .ne. baseadd) then
+C         if (valout .ne. baseadd) then
 C           errs = errs + 1
-C           print *, "Got incorrect value for WIN_BASE (", value, 
+C           print *, "Got incorrect value for WIN_BASE (", valout, 
 C     &             ", should be ", baseadd, ")"
 C         endif
       endif
 
-      call MPI_Win_get_attr( win, MPI_WIN_SIZE, value, flag, ierr )
+      call MPI_Win_get_attr( win, MPI_WIN_SIZE, valout, flag, ierr )
       if (.not. flag) then
          errs = errs + 1
          print *, "Could not get WIN_SIZE"
       else
-        if (value .ne. n) then
+        if (valout .ne. n) then
             errs = errs + 1
-            print *, "Got incorrect value for WIN_SIZE (", value, 
+            print *, "Got incorrect value for WIN_SIZE (", valout, 
      &        ", should be ", n, ")"
          endif
       endif
 
-      call MPI_Win_get_attr( win, MPI_WIN_DISP_UNIT, value, flag, ierr )
+      call MPI_Win_get_attr( win, MPI_WIN_DISP_UNIT, valout, flag, ierr )
       if (.not. flag) then
          errs = errs + 1
          print *, "Could not get WIN_DISP_UNIT"
       else
-         if (value .ne. disp) then
+         if (valout .ne. disp) then
             errs = errs + 1
-            print *, "Got wrong value for WIN_DISP_UNIT (", value, 
+            print *, "Got wrong value for WIN_DISP_UNIT (", valout, 
      &               ", should be ", disp, ")"
          endif
       endif
