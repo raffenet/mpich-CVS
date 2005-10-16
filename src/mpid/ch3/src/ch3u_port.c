@@ -21,6 +21,10 @@
  * consistent.
  */
 
+/* FIXME: If dynamic processes are not supported, this file will contain
+   no code and some compilers may warn about an "empty translation unit */
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+
 typedef struct pg_translation {
     int pg_index;
     int pg_rank;
@@ -1070,8 +1074,6 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
     return mpi_errno;
 }
 
-#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
-
 /* FIXME: What is an Accept queue and who uses it?  
    Is this part of the connect/accept support?  
    These routines appear to be called by channel progress routines; 
@@ -1201,6 +1203,8 @@ int MPIDI_CH3I_Acceptq_init(void)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
     return MPI_SUCCESS;
 }
+
+#else  /* MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS is defined */
 
 #endif /* MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS */
 

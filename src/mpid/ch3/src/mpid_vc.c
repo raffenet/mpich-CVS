@@ -453,9 +453,17 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 
     if (allfound) return MPI_SUCCESS;
 
+    /* FIXME: We need a cleaner way to handle this case than using an ifdef.
+       We could have an empty version of MPID_PG_BCast in ch3u_port.c, but
+       that's a rather crude way of addressing this problem.  Better is to
+       make the handling of local and remote PIDS for the dynamic process
+       case part of the dynamic process "module"; devices that don't support
+       dynamic processes (and hence have only COMM_WORLD) could optimize for 
+       that case */
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
     /* We need to share the process groups.  We use routines
        from ch3u_port.c */
     MPID_PG_BCast( peer_ptr, comm_ptr, root );
-
+#endif
     return MPI_SUCCESS;
 }
