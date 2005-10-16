@@ -66,8 +66,7 @@ void CLOG_Close( CLOG_Stream_t **stream_handle )
 */
 void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
 {
-    const CLOG_CommIDs_t *commIDs;
-          CLOG_Buffer_t  *buffer;
+    CLOG_Buffer_t  *buffer;
 
     stream->known_eventID  = CLOG_KNOWN_EVENTID_START;
     stream->known_stateID  = CLOG_KNOWN_STATEID_START;
@@ -90,6 +89,22 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
        adjust events happened afterward.
     */
     CLOG_Buffer_init_timeshift( buffer );
+}
+
+void CLOG_Local_finalize( CLOG_Stream_t *stream )
+{
+    const CLOG_CommIDs_t *commIDs;
+          CLOG_Buffer_t  *buffer;
+          CLOG_Time_t     local_timediff;
+
+    if ( stream->syncer->world_rank == 0 ) {
+        if ( stream->syncer->is_ok_to_sync == CLOG_BOOL_TRUE )
+            printf( "Enabling the synchronization of the clocks...\n" );
+        else
+            printf( "Disabling the synchronization of the clocks...\n" );
+    }
+
+    buffer  = stream->buffer;
 
     /* Adding the CLOG_Buffer_write2disk's state definition */
     if (    buffer->world_rank    == 0 
@@ -102,27 +117,15 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
                                    "maroon", "CLOG_Buffer_write2disk",
                                    NULL );
     }
-}
 
-void CLOG_Local_finalize( CLOG_Stream_t *stream )
-{
-    CLOG_Time_t  local_timediff;
-
-    if ( stream->syncer->world_rank == 0 ) {
-        if ( stream->syncer->is_ok_to_sync == CLOG_BOOL_TRUE )
-            printf( "Enabling the synchronization of the clocks...\n" );
-        else
-            printf( "Disabling the synchronization of the clocks...\n" );
-    }
     if ( stream->syncer->is_ok_to_sync == CLOG_BOOL_TRUE ) {
         local_timediff = CLOG_Sync_update_timediffs( stream->syncer );
-        CLOG_Buffer_set_timeshift( stream->buffer, local_timediff,
-                                   CLOG_BOOL_FALSE );
+        CLOG_Buffer_set_timeshift( buffer, local_timediff, CLOG_BOOL_FALSE );
     }
     CLOG_Sync_free( &(stream->syncer) );
 
-    CLOG_Buffer_save_endlog( stream->buffer );
-    CLOG_Buffer_localIO_flush( stream->buffer );
+    CLOG_Buffer_save_endlog( buffer );
+    CLOG_Buffer_localIO_flush( buffer );
 }
 
 int  CLOG_Get_user_eventID( CLOG_Stream_t *stream )
