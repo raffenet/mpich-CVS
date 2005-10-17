@@ -771,7 +771,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return IBU_FAIL;
     }
     id_ptr->ptr = (void*)ibu;
@@ -834,7 +834,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     if (id_ptr == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_POST_ACK_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return IBU_FAIL;
     }
     id_ptr->ptr = (void*)ibu;

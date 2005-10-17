@@ -115,7 +115,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     {
 	int mpi_errno;
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
-	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_POST);
+	MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);
 	return mpi_errno;
     }
 #   endif

@@ -315,7 +315,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
 #ifdef MPICH_SINGLE_THREADED
     mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**needthreads", 0 );
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_COMPLETE);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;
 #endif
 

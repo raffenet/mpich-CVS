@@ -718,7 +718,7 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
     p = (ibu_t)MPIU_Malloc(sizeof(ibu_state_t));
     if (p == NULL)
     {
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_START_QP);
 	return NULL;
     }
 
@@ -734,7 +734,7 @@ ibu_t ibu_start_qp(ibu_set_t set, int *qp_num_ptr)
     if (status != IBU_SUCCESS)
     {
 	MPIU_Internal_error_printf("ibu_create_qp: createQP failed, error %s\n", VAPI_strerror(status));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBU_CREATE_QP);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBU_START_QP);
 	return NULL;
     }
     *qp_num_ptr = p->qp_num;
@@ -996,7 +996,7 @@ static int ibui_post_ack_write(ibu_t ibu)
     if ((void*)work_req.id == NULL)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "ibuBlocAlloc returned NULL"));
-	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_POST_ACK_WRITE);
+	MPIDI_FUNC_EXIT(MPID_STATE_IBUI_POST_ACK_WRITE);
 	return IBU_FAIL;
     }
     ((ibu_work_id_handle_t*)work_req.id)->ptr = (void*)ibu;

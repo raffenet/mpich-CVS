@@ -297,7 +297,7 @@ int MPID_Recv_init(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID
     
   fn_return:    
     MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
-    MPIG_FUNC_EXIT(MPID_STATE_MPID_SEND_INIT);
+    MPIG_FUNC_EXIT(MPID_STATE_MPID_RECV_INIT);
     return mpi_errno;
 
   fn_fail:
