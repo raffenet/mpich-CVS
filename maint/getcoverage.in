@@ -783,18 +783,26 @@ sub skipBlock {
 		print STDERR "Possible missing END $blockName in $gFilename at $curlinecount; saw $cleanline\n";
 	    }
 	}
-	else {
-	    if (/^\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/ ||
-		/^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/) {
-		# FIXME: Why is this a mangled line?  Should some of the \s* be
-		# \s+? (e.g., --\s+END)
-		my $curlinecount = $linecount + $lineincr;
-		print STDERR "Mangled line in $gFilename at $curlinecount: $_";
-		last; 
-	    }
-	}
+# 	else {
+# 	    if (/^\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/ ||
+# 		/^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/) {
+# 		# FIXME: Why is this a mangled line?  Should some of the \s* be
+# 		# \s+? (e.g., --\s+END)
+# 		my $curlinecount = $linecount + $lineincr;
+# 		print STDERR "Mangled line in $gFilename at $curlinecount: $_";
+# 		last; 
+# 	    }
+# 	}
 	if (/^\s*\/\*\s+--END $blockName--\s+\*\// ||
 	    /^\s*-:\s*\d+:\s*\/\*\s+--END $blockName--\s+\*\//) {
+	    last; 
+	}
+	# If we match the following but not the preceeding, there are extra 
+	# spaces in the comment
+	if (/^\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/ ||
+	    /^\s*-:\s*\d+:\s*\/\*\s*--\s*END\s+$blockName\s*--\s*\*\/\s*/) {
+	    my $curlinecount = $linecount + $lineincr;
+	    print STDERR "Mangled line in $gFilename at $curlinecount: $_";
 	    last; 
 	}
     }
