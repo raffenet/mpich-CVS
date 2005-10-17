@@ -12,5 +12,5 @@ lib${MPILIBNAME}_a_SOURCES = \
  shm.c \
  ch3_open_port.c \
  ch3_istartrndvmsg.c \
- ch3_istartrndvtransfer.c \
- ch3i_get_business_card.c
+ ch3_istartrndvtransfer.c
+
