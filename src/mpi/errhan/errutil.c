@@ -2026,7 +2026,12 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 	
 	if (generic_idx >= 0)
 	{
-	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", generic_err_msgs[generic_idx].long_name);
+	    char *p;
+	    /* FIXME: (Here and elsewhere)  Make sure any string is
+	       non-null before you use it */
+	    p = generic_err_msgs[generic_idx].long_name;
+	    if (!p) { p = "<NULL>"; }
+	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", p );
 	    len = (int)strlen(str);
 	    maxlen -= len;
 	    str += len;
