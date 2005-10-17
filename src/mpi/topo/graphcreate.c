@@ -322,7 +322,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE );
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_CREATE);
     MPID_CS_EXIT();
     return mpi_errno;
 
