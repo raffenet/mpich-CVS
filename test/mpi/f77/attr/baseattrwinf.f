@@ -57,7 +57,7 @@ C         endif
          endif
       endif
 
-      call MPI_Win_get_attr( win, MPI_WIN_DISP_UNIT, valout, flag, ierr )
+      call MPI_Win_get_attr( win, MPI_WIN_DISP_UNIT, valout, flag, ierr)
       if (.not. flag) then
          errs = errs + 1
          print *, "Could not get WIN_DISP_UNIT"
