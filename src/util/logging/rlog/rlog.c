@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <math.h>
 
 #include "mpichconf.h" /* HAVE_SNPRINTF */
 #include "mpimem.h" /* MPIU_Snprintf */
@@ -269,6 +270,115 @@ void RLOG_LogCommID(RLOG_Struct* pRLOG, int comm_id)
     pRLOG->pOutput->pCurHeader += pHeader->length;
 }
 
+/* Random color utility funcions */
+#ifndef RGB
+#define RGB(r,g,b)      ((unsigned long)(((unsigned char)(r)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(b))<<16)))
+#endif
+
+static unsigned long getColorRGB(double fraction, double intensity, unsigned char *r, unsigned char *g, unsigned char *b)
+{
+    double red, green, blue;
+    double dtemp;
+
+    fraction = fabs(modf(fraction, &dtemp));
+    
+    if (intensity > 2.0)
+	intensity = 2.0;
+    if (intensity < 0.0)
+	intensity = 0.0;
+
+    dtemp = 1.0/6.0;
+
+    if (fraction < 1.0/6.0)
+    {
+	red = 1.0;
+	green = fraction / dtemp;
+	blue = 0.0;
+    }
+    else
+    {
+	if (fraction < 1.0/3.0)
+	{
+	    red = 1.0 - ((fraction - dtemp) / dtemp);
+	    green = 1.0;
+	    blue = 0.0;
+	}
+	else
+	{
+	    if (fraction < 0.5)
+	    {
+		red = 0.0;
+		green = 1.0;
+		blue = (fraction - (dtemp*2.0)) / dtemp;
+	    }
+	    else
+	    {
+		if (fraction < 2.0/3.0)
+		{
+		    red = 0.0;
+		    green = 1.0 - ((fraction - (dtemp*3.0)) / dtemp);
+		    blue = 1.0;
+		}
+		else
+		{
+		    if (fraction < 5.0/6.0)
+		    {
+			red = (fraction - (dtemp*4.0)) / dtemp;
+			green = 0.0;
+			blue = 1.0;
+		    }
+		    else
+		    {
+			red = 1.0;
+			green = 0.0;
+			blue = 1.0 - ((fraction - (dtemp*5.0)) / dtemp);
+		    }
+		}
+	    }
+	}
+    }
+
+    if (intensity > 1)
+    {
+	intensity = intensity - 1.0;
+	red = red + ((1.0 - red) * intensity);
+	green = green + ((1.0 - green) * intensity);
+	blue = blue + ((1.0 - blue) * intensity);
+    }
+    else
+    {
+	red = red * intensity;
+	green = green * intensity;
+	blue = blue * intensity;
+    }
+
+    *r = (unsigned char)(red * 255.0);
+    *g = (unsigned char)(green * 255.0);
+    *b = (unsigned char)(blue * 255.0);
+
+    return RGB(*r,*g,*b);
+}
+
+static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned char *b)
+{
+    double d1, d2;
+
+    d1 = (double)rand() / (double)RAND_MAX;
+    d2 = (double)rand() / (double)RAND_MAX;
+
+    return getColorRGB(d1, d2 + 0.5, r, g, b);
+}
+
+#define MAX_RANDOM_COLOR_STR 40
+static char random_color_str[MAX_RANDOM_COLOR_STR];
+static char *get_random_color_str()
+{
+    unsigned char r,g,b;
+    random_color(&r, &g, &b);
+    MPIU_Snprintf(random_color_str, MAX_RANDOM_COLOR_STR, "%3d %3d %3d", (int)r, (int)g, (int)b);
+    return random_color_str;
+}
+
 void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
 {
     RLOG_HEADER *pHeader;
@@ -292,15 +402,8 @@ void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
     pHeader->length = sizeof(RLOG_HEADER) + sizeof(RLOG_STATE);
 
     pState->event = state;
-    if (color)
-    {
-	MPIU_Strncpy(pState->color, color, RLOG_COLOR_LENGTH);
-	pState->color[RLOG_COLOR_LENGTH-1] = '\0';
-    }
-    else
-    {
-	pState->color[0] = '\0';
-    }
+    MPIU_Strncpy(pState->color, (color != NULL) ? color : get_random_color_str(), RLOG_COLOR_LENGTH);
+    pState->color[RLOG_COLOR_LENGTH-1] = '\0';
     if (name)
     {
 	MPIU_Strncpy(pState->description, name, RLOG_DESCRIPTION_LENGTH);
