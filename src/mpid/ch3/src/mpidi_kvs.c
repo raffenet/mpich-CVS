@@ -266,6 +266,8 @@ int MPIDI_KVS_Create(char *name)
     return MPI_SUCCESS;
 }
 
+/* FIXME: What is this routine for? */
+#if 0
 #undef FCNAME
 #define FCNAME "MPIDI_KVS_Create_name_in"
 int MPIDI_KVS_Create_name_in(char *name)
@@ -323,6 +325,7 @@ int MPIDI_KVS_Create_name_in(char *name)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
     return MPI_SUCCESS;
 }
+#endif 
 
 #undef FCNAME
 #define FCNAME "MPIDI_KVS_Get"
@@ -431,6 +434,8 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
     return mpi_errno;
 }
 
+/* FIXME: No one uses this routine */
+#if 0
 #undef FCNAME
 #define FCNAME "MPIDI_KVS_Delete"
 int MPIDI_KVS_Delete(const char *name, const char *key)
@@ -484,7 +489,9 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
     return mpi_errno;
 }
+#endif
 
+/* FIXME: This routine is unused (should be used during finalize) */
 #undef FCNAME
 #define FCNAME "MPIDI_KVS_Destroy"
 int MPIDI_KVS_Destroy(const char *name)
@@ -721,6 +728,8 @@ fn_exit:
     return mpi_errno;
 }
 
+/* FIXME: What is this routine for? */
+#if 0
 #undef FCNAME
 #define FCNAME "MPIDI_KVS_Firstkvs"
 int MPIDI_KVS_Firstkvs(char *name)
@@ -749,6 +758,7 @@ int MPIDI_KVS_Firstkvs(char *name)
     return MPI_SUCCESS;
 }
 
+/* FIXME: What is this routine for? */
 #undef FCNAME
 #define FCNAME "MPIDI_KVS_Nextkvs"
 int MPIDI_KVS_Nextkvs(char *name)
@@ -780,5 +790,6 @@ int MPIDI_KVS_Nextkvs(char *name)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXTKVS);
     return MPI_SUCCESS;
 }
+#endif  /* unused routines */
 
 #endif

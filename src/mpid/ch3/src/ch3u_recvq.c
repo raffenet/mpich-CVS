@@ -399,6 +399,8 @@ int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq)
     return found;
 }
 
+/* FIXME: No-one uses this routine.  */
+#if 0
 /*
  * MPIDI_CH3U_Recvq_FDP
  *
@@ -454,7 +456,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECVQ_FDP);
     return rreq;
 }
-
+#endif /* Unused routine */
 
 /*
  * MPIDI_CH3U_Recvq_FDP_or_AEU()
