@@ -485,6 +485,9 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
     goto fn_exit;
 }
 
+/* Used internally to broadcast process groups belonging to peercomm to
+ all processes in comm.  The process with rank root in comm is the 
+ process in peercomm from which the process groups are taken. */
 #undef FUNCNAME
 #define FUNCNAME MPID_PG_BCast
 #undef FCNAME
