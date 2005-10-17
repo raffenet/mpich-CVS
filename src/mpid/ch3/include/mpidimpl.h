@@ -691,4 +691,26 @@ int MPIDI_CH3I_BCInit( int pg_rank,
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
 
+/* Access the business card (used in mpid_port) */
+int MPIDI_CH3I_Get_business_card(char *value, int length);
+
+/* Perform channel-specific initialization of a virtural connection */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
+
+/* FIXME: These should be defined only when these particular utility
+   packages are used.  Best would be to keep these prototypes in the
+   related util/xxx directories, and either copy them into an include
+   directory used only for builds or add (yet another) include path */
+/* from util/sock */
+int MPIDI_VC_InitSock( MPIDI_VC_t *);
+int MPIDI_CH3I_Connect_to_root_sock(const char *, MPIDI_VC_t **);
+int MPIDI_CH3U_Get_business_card_sock(char **, int *);
+
+/* Used internally to broadcast process groups belonging to peercomm to
+ all processes in comm*/
+int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root );
+
+/* from util/shm */
+int MPIDI_CH3I_Connect_to_root_sshm(const char *, MPIDI_VC_t **);
+
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

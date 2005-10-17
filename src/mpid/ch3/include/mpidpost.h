@@ -7,6 +7,11 @@
 #if !defined(MPICH_MPIDPOST_H_INCLUDED)
 #define MPICH_MPIDPOST_H_INCLUDED
 
+/* FIXME: mpidpost.h is included by mpiimpl.h .  However, mpiimpl.h should 
+   refer only to the ADI3 prototypes and should never include prototypes 
+   specific to any particular device.  Factor the include files to maintain
+   better modularity by providing mpiimpl.h with only the definitions that it
+   needs */
 /*
  * Channel API prototypes
  */
@@ -16,9 +21,6 @@
  * (They should all be used in the ch3/src directory; otherwise they're not
  * part of the channel API). 
  */
-
-/* Perform channel-specific initialization of a virtural connection */
-int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
 
 /*E
   MPIDI_CH3_Init - Initialize the channel implementation.
@@ -710,5 +712,15 @@ int MPIDI_CH3_End_epoch(int access_or_exposure, MPID_Win *win_ptr);
 #define MPID_Progress_end(progress_state_)   MPIDI_CH3_Progress_end(progress_state_)
 #define MPID_Progress_test()                 MPIDI_CH3_Progress_test()
 #define MPID_Progress_poke()		     MPIDI_CH3_Progress_poke()
+
+/* Dynamic process support */
+int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
+			    int local_gpids[], int *singlePG );
+int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] );
+int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
+			    int size, const int lpids[] );
+int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr, 
+			   int nPGids, int gpids[], 
+			   int root );
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */
