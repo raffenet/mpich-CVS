@@ -1,4 +1,4 @@
-SUBDIRS = mpi mpid util .
+SUBDIRS = mpi mpid util basic .
 smvar_do_sharedlibs = 0
 distclean-local:
 	rm -f runtests

@@ -1,1 +1,1 @@
-srtest_SOURCES = srtest.c
+srbtest_SOURCES = srbtest.c
