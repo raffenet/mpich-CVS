@@ -332,6 +332,15 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr)
 		MPIU_ERR_POP(mpi_errno);
 	    }
 	}
+	/* FIXME: This is a hack to avoid including shared-memory 
+	   queue names in the buisness card that may be used
+	   by processes that were not part of the same COMM_WORLD. */
+/*	printf( "Adding key %s value %s\n", key, val ); */
+	if (strstr( key, "businesscard" )) {
+	    char *p = strstr( val, "$shm_host" );
+	    if (p) p[1] = 0;
+/*	    printf( "(fixed) Adding key %s value %s\n", key, val ); */
+	}
 	mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, val);
 	if (mpi_errno != MPIU_STR_SUCCESS)
 	{

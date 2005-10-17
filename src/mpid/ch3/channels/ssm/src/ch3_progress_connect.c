@@ -302,7 +302,11 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
     {
 	/*printf("getstringarg(%s, %s) failed.\n", MPIDI_CH3I_SHM_HOST_KEY, business_card);fflush(stdout);*/
 	*flag = FALSE;
+/* If there is no shm host key, assume that we can't use shared memory */
+/*
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmhost", 0);
+*/
+	mpi_errno = 0;
 	return mpi_errno;
     }
     mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_QUEUE_KEY, queue_name, 100);
@@ -444,9 +448,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 /*     MPIU_DBG_PRINTF(("%s: %s\n", key, val)); */
 
     /* attempt to connect through shared memory */
+/*    printf( "trying to connect through shared memory...\n"); fflush(stdout); */
     connected = FALSE;
 /*     MPIU_DBG_PRINTF(("business card: <%s> = <%s>\n", key, val)); */
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
+/*    printf( "After attempt to connect, flag = %d and rc = %d\n", connected, 
+      mpi_errno ); fflush(stdout); */
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**post_connect", "**post_connect %s", "MPIDI_CH3I_Shm_connect");
@@ -484,6 +491,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	return mpi_errno;
     }
 
+/*    printf( "Attempting to connect through socket\n" );fflush(stdout); */
+    MPIU_DBG_MSG_S(CH3_CONNECT,TYPICAL,
+		   "Attempting to connect with business card %s", val );
     /* attempt to connect through sockets */
     mpi_errno = MPIU_Str_get_string_arg(val, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, 256);
     if (mpi_errno != MPIU_STR_SUCCESS)
@@ -492,6 +502,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
 	return mpi_errno;
     }
+/*    printf( "Getting port\n" );fflush(stdout); */
     mpi_errno = MPIU_Str_get_int_arg(val, MPIDI_CH3I_PORT_KEY, &port);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -500,9 +511,11 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	return mpi_errno;
     }
 
+/*    printf ("Allocating connection\n" );fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
     if (mpi_errno == MPI_SUCCESS)
     {
+/*	printf( "Posting socket connection\n" );fflush(stdout);*/
 	mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, host_description, port, &conn->sock);
 	if (mpi_errno == MPI_SUCCESS)
 	{
@@ -527,6 +540,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|connalloc", NULL);
     }
 
+/*    printf("Exiting with %d\n", mpi_errno );fflush(stdout);*/
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
     return mpi_errno;

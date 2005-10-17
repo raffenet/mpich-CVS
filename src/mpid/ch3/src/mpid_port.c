@@ -246,6 +246,15 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
        input string, with some separator */
     mpi_errno = MPIDI_CH3I_Get_business_card(port_name, len);
 
+    /* printf( "port is %s\n", port_name ); */
+	/* HACK: Remove and shm_host */
+	{ char *p = strstr(port_name,"$shm_host" );
+	if (p) p[1] = 0;
+	p = strstr( port_name, "$shm_queue");
+	if (p) p[1] = 0;
+	}
+	/* printf( "port is now %s\n", port_name ); fflush(stdout); */
+
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_OPEN_PORT);
     return mpi_errno;

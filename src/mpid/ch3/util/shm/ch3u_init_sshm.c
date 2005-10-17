@@ -8,6 +8,7 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
+static int getNumProcessors( void );
 
 /*  MPIDI_CH3U_Init_sshm - does scalable shared memory specific channel 
  *  initialization
@@ -91,44 +92,27 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     pg_p->ch.nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
     pg_p->ch.nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
 
-/* FIXME: Finding the number of processors should be handled in a separate 
-   routine, and should also consider the number of processors
-   in use */
-
-    /* Figure out how many processors are available and set the spin count accordingly */
-    /* If there were topology information available we could calculate a multi-cpu number */
-    /* FIXME: Finding the number of processors belongs in a separate 
-       utility routine */
-#ifdef HAVE_WINDOWS_H
+    /* Figure out how many processors are available and set the spin count 
+       accordingly */
+    /* If there were topology information available we could calculate a 
+       multi-cpu number */
     {
-	/* if you know the number of processors, calculate the spin count relative to that number */
-        SYSTEM_INFO info;
-        GetSystemInfo(&info);
-        if (info.dwNumberOfProcessors == 1)
+	int ncpus = getNumProcessors();
+	/* if you know the number of processors, calculate the spin count 
+	   relative to that number */
+        if (ncpus == 1)
             pg_p->ch.nShmWaitSpinCount = 1;
+	/* FIXME: Why is this commented out? */
 	/*
-        else if (info.dwNumberOfProcessors < (DWORD) num_procs_per_node)
-            pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * info.dwNumberOfProcessors ) / num_procs_per_node;
+        else if (ncpus  < num_procs_per_node)
+            pg->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * ncpus) / num_procs_per_node;
 	*/
-	if (info.dwNumberOfProcessors > 0)
-	    MPIDI_CH3I_Process.num_cpus = info.dwNumberOfProcessors;
+	if (ncpus > 0)
+	    MPIDI_CH3I_Process.num_cpus = ncpus;
     }
-#else
-#ifdef HAVE_SYSCONF
-    {
-	int num_cpus;
-	num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-	if (num_cpus == 1)
-	    pg_p->ch.nShmWaitSpinCount = 1;
-	/*
-	else if (num_cpus > 0 && num_cpus < num_procs_per_node)
-	    pg_p->ch.nShmWaitSpinCount = ( MPIDI_CH3I_SPIN_COUNT_DEFAULT * num_cpus ) / num_procs_per_node;
-	*/
-	if (num_cpus > 0)
-	    MPIDI_CH3I_Process.num_cpus = num_cpus;
-    }
-#endif
-#endif
+
+/* FIXME: This code probably reflects a bug caused by commenting out the above
+   code */
 #ifndef HAVE_WINDOWS_H    /* brad - nShmWaitSpinCount is uninitialized in sshm but probably shouldn't be */
     pg_p->ch.nShmWaitSpinCount = 1;
     g_nLockSpinCount = 1;
@@ -170,6 +154,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 				"**ch3|get_parent_port");
         }
 
+/* NOTE: Do not use shared memory to communicate to parent */
+#if 0
 	/* Parse the shared memory queue name from the bizcard */
 	{
 	    char *orig_str, *tmp_str = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
@@ -201,7 +187,12 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 		MPIU_ERR_POP(mpi_errno);
 	    }
 	}
-    }
+#else
+	/* send the shm name to null since we did not set it */
+	pg_p->ch.shm_name[0] = 0;
+	
+#endif
+    } /* has_parent */
 #endif            
 
 #ifdef USE_MQSHM
@@ -209,7 +200,11 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIU_Strncpy(key, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, key_max_sz );
     if (pg_rank == 0)
     {
+#if 0
 	if (has_parent == 0)
+#else
+	    if (1) 
+#endif
 	{
 	    /* Only the first process of the first group needs to create the bootstrap queue. */
 	    /* Everyone else including spawned processes will attach to this queue. */
@@ -230,10 +225,16 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 /*#endif*/
 	}
 
+#if 0
+	if (!has_parent) {  
+#endif
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	}
+#if 0 
+	}
+#endif
 	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 
 	mpi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, key, val);          
@@ -272,10 +273,18 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	/* If you don't have a parent then you must initialize the queue */
 	/* If you do have a parent then you must not initialize the queue since the parent already did and you could destroy valid information */
 	initialize_queue = (has_parent) ? 0 : 1;
+#if 0
+	if (initialize_queue) {
+#else
+	    initialize_queue = 1; /* Always, don't try to reuse the same queue */
+#endif	
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	}
+#if 0
+	}
+#endif
     }
     mpi_errno = PMI_Barrier();
     if (mpi_errno != 0) {
@@ -293,12 +302,19 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	 * fully reliable, since the handler may be replaced or the
 	 * process killed with an uncatchable signal.
 	 */
-    /*
+#if 1
+#if 0
+    if (!has_parent) {  
+#endif
+	/* printf( "Unlinking bootstrapQ\n" ); */
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg_p->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS) {
-        MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_unlink", 0);
+        MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_unlink");
     }
-    */
+#endif
+#if 0
+    }
+#endif
 
 #else
 
@@ -313,10 +329,16 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIDI_Process.my_pg = pg_p;
 
     /* brad : get the sshm part of the business card  */
+#if 0
+    if (!has_parent) {
+#endif
     mpi_errno = MPIDI_CH3U_Get_business_card_sshm(bc_val_p, val_max_sz_p);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
     }
+#if 0
+    }
+#endif
 
     /* see if we're meant to publish */
     if (publish_bc_p != NULL) {
@@ -381,4 +403,21 @@ int MPIDI_VC_InitShm( MPIDI_VC_t *vc )
     vc->ch.shm_next_writer    = NULL;
     vc->ch.shm_read_connected = 0;
     return 0;
+}
+
+/* Return the number of processors, or one if the number cannot be 
+   determined */
+static int getNumProcessors( void )
+{
+#ifdef HAVE_WINDOWS_H
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwNumberOfProcessors;
+#elif defined(HAVE_SYSCONF)
+    int num_cpus;
+    num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    return num_cpus;
+#else
+    return 1;
+#endif
 }

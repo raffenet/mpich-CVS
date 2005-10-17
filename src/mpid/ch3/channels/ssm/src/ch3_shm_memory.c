@@ -4,7 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 /* We use the proper autoconf test for mmap, so we let the coding style
-   checker know */
+   checker know  (actually, not quite, since the autoconf test doesn't 
+   check that mmap works in the case in which we use it).  */
 /* style: allow:mmap:3 sig:0 */
 #include "mpidi_ch3_impl.h"
 
@@ -314,6 +315,7 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM_NAMED);
 	return mpi_errno;
     }
+    
 #elif defined (USE_SYSV_SHM)
     pOutput->addr = shmat(pOutput->id, NULL, SHM_RND);
     if (pOutput->addr == (void*)-1)

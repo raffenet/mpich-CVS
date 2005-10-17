@@ -154,6 +154,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	/* --END ERROR HANDLING-- */
 
 	/* Open a port for the spawned processes to connect to */
+	/* FIXME: info may be needed for port name */
         mpi_errno = MPID_Open_port(NULL, port_name);
 	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != MPI_SUCCESS)
@@ -161,7 +162,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
 	    MPIU_Free(info_keyval_sizes);
 	    MPIU_Free(pmi_errcodes);
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
