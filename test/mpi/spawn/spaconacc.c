@@ -9,6 +9,7 @@
 #include <string.h>
 
 #define IF_VERBOSE(a) if (verbose) { printf a ; fflush(stdout); }
+void check_error(int, char *);
 
 void check_error(int error, char *fcname)
 {
