@@ -91,6 +91,5 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_VC_post_read(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_VC_post_write(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_sock_errno_to_mpi_errno(char * fcname, int sock_errno);
-int MPIDI_CH3I_Get_business_card(char *value, int length);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

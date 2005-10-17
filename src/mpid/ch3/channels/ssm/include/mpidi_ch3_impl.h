@@ -292,7 +292,6 @@ int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC_t *, MPID_Request *);
-int MPIDI_CH3I_Get_business_card(char *value, int length);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
