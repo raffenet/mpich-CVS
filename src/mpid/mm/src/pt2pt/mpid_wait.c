@@ -27,6 +27,7 @@
 int MPID_Wait(MPID_Request *request, MPI_Status *status)
 {
     static const char FCNAME[] = "MPID_Wait";
+    MPID_MPI_STATE_DECL(MPID_STATE_MPID_WAIT);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_WAIT);
 

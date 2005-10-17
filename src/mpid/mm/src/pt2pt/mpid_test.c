@@ -28,6 +28,7 @@
 int MPID_Test(MPID_Request *request, int *flag, MPI_Status *status)
 {
     static const char FCNAME[] = "MPID_Test";
+    MPID_MPI_STATE_DECL(MPID_STATE_MPID_TEST);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_TEST);
 

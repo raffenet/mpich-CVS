@@ -26,6 +26,9 @@ int socket_handle_written(MPIDI_VC *vc_ptr)
     MM_Car *car_ptr;
     MM_Segment_buffer *buf_ptr;
     int ret_val;
+    MPIDI_STATE_DECL(MPID_STATE_SOCKET_HANDLE_WRITTEN);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SOCKET_HANDLE_WRITTEN);
 
     if (!vc_ptr->data.socket.connected)
     {

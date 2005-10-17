@@ -34,6 +34,7 @@ int ib_handle_connect(MPIDI_VC *vc_ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_IB_HANDLE_CONNECT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_HANDLE_CONNECT);
     MPID_Thread_lock(vc_ptr->lock);
 
     MPID_Thread_unlock(vc_ptr->lock);
