@@ -30,7 +30,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_WIN_CREATE);
 
     /* We first call the generic MPIDI_Win_create */
-    mpi_errno = MPIDI_Win_create(base, size, disp_unit, info, comm_ptr, win_ptr);
+    mpi_errno = MPIDI_Win_create(base, size, disp_unit, info, comm_ptr, win_ptr, RMAFns);
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     /* Now we do the channel-specific stuff */
@@ -95,7 +95,7 @@ int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *in
 	
 	/* again set the channel-specific version of the RMA functions because they may 
 	   have been reset to the default in an earlier call to win_create */
-	MPIDI_CH3_RMAFnsInit( &RMAFns );
+	MPIDI_CH3_RMAFnsInit( RMAFns );
 
         /* allocate memory for the shm_structs */
 	MPIU_CHKPMEM_MALLOC((*win_ptr)->shm_structs, MPIDI_CH3I_Shmem_block_request_result *, 

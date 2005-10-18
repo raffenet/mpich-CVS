@@ -772,5 +772,6 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root );
 
 /* from util/shm */
 int MPIDI_CH3I_Connect_to_root_sshm(const char *, MPIDI_VC_t **);
+int MPIDI_VC_InitShm( MPIDI_VC_t *vc );
 
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

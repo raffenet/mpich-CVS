@@ -350,8 +350,10 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_BootstrapQ_struct *queue;
+#ifndef USE_MQSHM
     int key;
     int id;
+#endif
     int nb;
     struct msgbuf {
 	long mtype;
@@ -658,7 +660,9 @@ int MPIDI_CH3I_BootstrapQ_destroy(MPIDI_CH3I_BootstrapQ queue)
 int MPIDI_CH3I_BootstrapQ_attach(char *name_full, MPIDI_CH3I_BootstrapQ * queue_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
+#ifdef USE_SYSV_MQ
     int id, key;
+#endif
     MPIDI_CH3I_BootstrapQ_struct *iter;
     char name[100];
 #ifdef MPIDI_CH3_USES_SHM_NAME

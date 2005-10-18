@@ -225,7 +225,6 @@ int MPIDI_CH3_Win_complete(MPID_Win *win_ptr)
     MPIU_Free(win_ptr->access_epoch_grp_ranks_in_win);
     MPIR_Group_release(win_ptr->access_epoch_grp_ptr);
 
- fn_exit:
     MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_WIN_COMPLETE);
     return mpi_errno;
@@ -271,7 +270,6 @@ int MPIDI_CH3_Win_wait(MPID_Win *win_ptr)
     MPIU_Free(win_ptr->exposure_epoch_grp_ranks_in_win);
     MPIR_Group_release(win_ptr->exposure_epoch_grp_ptr);
 
- fn_exit:
     MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_WIN_WAIT);
     return mpi_errno;
