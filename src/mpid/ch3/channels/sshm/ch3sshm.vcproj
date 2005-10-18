@@ -190,22 +190,10 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm">
 			<File
-				RelativePath=".\src\ch3_accumulate.c">
-			</File>
-			<File
 				RelativePath="src\ch3_cancel_send.c">
 			</File>
 			<File
-				RelativePath=".\src\ch3_end_epoch.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_end_pt_epoch.c">
-			</File>
-			<File
 				RelativePath="src\ch3_finalize.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_get.c">
 			</File>
 			<File
 				RelativePath="src\ch3_init.c">
@@ -235,25 +223,16 @@
 				RelativePath="src\ch3_progress_shm.c">
 			</File>
 			<File
-				RelativePath=".\src\ch3_put.c">
+				RelativePath=".\src\ch3_rma_ops.c">
+			</File>
+			<File
+				RelativePath=".\src\ch3_rma_sync.c">
 			</File>
 			<File
 				RelativePath="src\ch3_shm.c">
 			</File>
 			<File
 				RelativePath="src\ch3_shm_memory.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_start_epoch.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_start_pt_epoch.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_win_create.c">
-			</File>
-			<File
-				RelativePath=".\src\ch3_win_free.c">
 			</File>
 			<File
 				RelativePath="..\..\util\shm\ch3i_bootstrapq.c">
@@ -304,10 +283,13 @@
 				RelativePath="..\..\src\ch3u_request.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_abort.c">
+				RelativePath="..\..\src\ch3u_rma_ops.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_accumulate.c">
+				RelativePath="..\..\src\ch3u_rma_sync.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_abort.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_cancel_recv.c">
@@ -323,9 +305,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_finalize.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_get.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_get_universe_size.c">
@@ -352,19 +331,16 @@
 				RelativePath="..\..\src\mpid_issend.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_mem.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_probe.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_put.c">
+				RelativePath="..\..\src\mpid_recv.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_recv.c">
+				RelativePath="..\..\src\mpid_rma.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_rsend.c">
@@ -380,36 +356,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_vc.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_complete.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_create.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_fence.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_free.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_lock.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_post.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_start.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_test.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_unlock.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_wait.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_isend_self.c">

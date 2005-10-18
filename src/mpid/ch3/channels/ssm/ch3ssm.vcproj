@@ -280,10 +280,13 @@
 				RelativePath="..\..\src\ch3u_request.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_abort.c">
+				RelativePath="..\..\src\ch3u_rma_ops.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_accumulate.c">
+				RelativePath="..\..\src\ch3u_rma_sync.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_abort.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_cancel_recv.c">
@@ -299,9 +302,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_finalize.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_get.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_get_universe_size.c">
@@ -328,19 +328,16 @@
 				RelativePath="..\..\src\mpid_issend.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_mem.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpid_port.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_probe.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_put.c">
+				RelativePath="..\..\src\mpid_recv.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpid_recv.c">
+				RelativePath="..\..\src\mpid_rma.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_rsend.c">
@@ -356,36 +353,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_vc.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_complete.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_create.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_fence.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_free.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_lock.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_post.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_start.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_test.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_unlock.c">
-			</File>
-			<File
-				RelativePath="..\..\src\mpid_win_wait.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpidi_isend_self.c">
