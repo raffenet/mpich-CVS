@@ -8,7 +8,8 @@
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 /* To get the prototype for getsid in gcc environments, 
-   define _XOPEN_SOURCE and _XOPEN_SOURCE_EXTENDED */
+   define both _XOPEN_SOURCE and _XOPEN_SOURCE_EXTENDED  or
+   define _XOPEN_SOURCE n for n >= 500 */
 #include <unistd.h>
 #endif
 #include <errno.h>

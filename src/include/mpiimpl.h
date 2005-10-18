@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -63,18 +62,8 @@
 #define PMPI_LOCAL 
 #endif
 
-/* 
-   If we do not have the GCC attribute, then make this empty.  We use
-   the GCC attribute to improve error checking by the compiler, particularly 
-   for printf/sprintf strings 
-*/
-#ifndef ATTRIBUTE
-#ifdef HAVE_GCC_ATTRIBUTE
-#define ATTRIBUTE(a) __attribute__(a)
-#else
-#define ATTRIBUTE(a)
-#endif
-#endif
+/* Include some basic (and easily shared) definitions */
+#include "mpibase.h"
 
 /*
  * Basic utility macros
@@ -205,6 +194,7 @@ int MPIR_IDebug( const char * );
 /* Routines for memory management */
 #include "mpimem.h"
 
+#if 0
 /* ------------------------------------------------------------------------- */
 /* mpimsg.h */
 /* ------------------------------------------------------------------------- */
@@ -214,6 +204,7 @@ int MPIU_Msg_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Error_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Internal_error_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
 int MPIU_Internal_sys_error_printf( const char *, int, const char *str, ... ) ATTRIBUTE((format(printf,3,4)));
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* end of mpimsg.h */

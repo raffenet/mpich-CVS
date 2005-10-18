@@ -99,6 +99,7 @@ AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
+PAC_C_GNU_ATTRIBUTE
 dnl
 dnl check for library functions
 AC_CHECK_FUNCS(strtol time gettimeofday)
@@ -269,6 +270,13 @@ if test -z "$master_top_srcdir" ; then
 fi
 
 AC_CHECK_HEADERS(string.h sys/time.h stdlib.h sys/socket.h wait.h errno.h)
+# Check whether socklen_t is defined
+AC_CACHE_CHECK([whether socklen_t is defined in sys/socket.h],
+pac_cv_have_socklen_t,[AC_TRY_COMPILE([#include <sys/socket.h>],[socklen_t a;],
+pac_cv_have_socklen_t=yes,pac_cv_have_socklen_t=no)])
+if test "$pac_cv_have_socklen_t" = "yes" ; then
+    AC_DEFINE(HAVE_SOCKLEN_T,1,[Define if socklen_t is available])
+fi
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)

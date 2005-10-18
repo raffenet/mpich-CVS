@@ -59,4 +59,7 @@ extern int MPIE_Debug;
 /* Use the memory defintions from mpich2/src/include */
 #include "mpimem.h"
 
+/* mpibase includes definitions of the MPIU_xxx_printf routines */
+#include "mpibase.h"
+
 #endif

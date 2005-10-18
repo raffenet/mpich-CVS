@@ -59,6 +59,12 @@ static int listenfd = -1;
 #define TCP 0
 #endif
 
+/* Definitions for types that may be ints or may be something else */
+/* socklen_t - getsockname and accept */
+#ifndef HAVE_SOCKLEN_T
+typedef unsigned int socklen_t;
+#endif
+
 /*
  * Input Parameters:
  *   portLen - Number of characters in portString
@@ -145,7 +151,7 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
     
     *fdout = fd;
     if (portnum == 0) {
-	int sinlen = sizeof(sa);
+	socklen_t sinlen = sizeof(sa);
 	/* We asked for *any* port, so we need to find which
 	   port we actually got */
 	getsockname( fd, (struct sockaddr *)&sa, &sinlen );
@@ -190,13 +196,13 @@ int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1], int namelen )
  */
 int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 {
-    int    newfd;
+    int             newfd;
     struct sockaddr sock;
-    int    addrlen;
-    int    id;
+    socklen_t       addrlen;
+    int             id;
     ProcessUniverse *univ = (ProcessUniverse *)data;
-    ProcessWorld *pWorld = univ->worlds;
-    ProcessApp   *app;
+    ProcessWorld    *pWorld = univ->worlds;
+    ProcessApp      *app;
 
     /* Get the new socket */
     MPIE_SYSCALL(newfd,accept,( fd, &sock, &addrlen ));
