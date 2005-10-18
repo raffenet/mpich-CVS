@@ -1186,7 +1186,7 @@ int MPIDI_Win_wait(MPID_Win *win_ptr)
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		MPID_Progress_end(&progress_state);
-		MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
+		MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_WIN_WAIT);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
