@@ -4255,6 +4255,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/util/dbg/getfuncstack \
           src/include/mpi.h \
 	  test/Makefile test/util/Makefile \
+	  test/basic/Makefile \
 	  test/commands/cmdtests \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
