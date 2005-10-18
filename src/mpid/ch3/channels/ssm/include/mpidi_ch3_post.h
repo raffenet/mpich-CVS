@@ -7,6 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED)
 #define MPICH_MPIDI_CH3_POST_H_INCLUDED
 
+/* FIXME: These sizes need to be documented at least, and it should be 
+   easier to change them, at least at configure/build time */
 /* #define MPIDI_CH3_EAGER_MAX_MSG_SIZE (1500 - sizeof(MPIDI_CH3_Pkt_t)) */
 #define MPIDI_CH3_EAGER_MAX_MSG_SIZE 128000
 
@@ -73,6 +75,10 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 #define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
 #endif
 
+/* FIXME: Are these the same definitions used by all channels? If so, they
+ should be defined in the same place (and it would make sense for the 
+ progress routines in the ch3 device to have the same interface independent of 
+ channel) */
 #if defined(USE_FIXED_SPIN_WAITS) || !defined(MPID_CPU_TICK) || defined(USE_FIXED_ACTIVE_PROGRESS)
 int MPIDI_CH3I_Progress(int blocking, MPID_Progress_state *state);
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE, NULL)

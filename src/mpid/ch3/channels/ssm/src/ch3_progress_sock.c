@@ -5,6 +5,9 @@
  */
 
 #include "ch3i_progress.h"
+/* FIXME: This is nowhere set to true.  The name is non-conforming if it is
+   not static */
+static int shutting_down = FALSE;
 
 static inline void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);

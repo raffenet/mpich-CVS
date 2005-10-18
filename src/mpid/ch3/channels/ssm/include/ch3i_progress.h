@@ -13,6 +13,10 @@
 #define USE_GCC_X86_CYCLE_ASM 1
 #define USE_WIN_X86_CYCLE_ASM 2
 
+/* FIXME: These common definitions (accessing the timer) should be in a single
+   file */
+/* FIXME: What are these used for (possibly one of the spinwait variations?)
+   Document the use */
 #if MPICH_CPU_TICK_TYPE == USE_GCC_X86_CYCLE_ASM
 /* This cycle counter is the read time stamp (rdtsc) instruction with gcc asm */
 #define MPID_CPU_TICK(var_ptr) \
@@ -74,10 +78,7 @@ typedef struct MPIDI_CH3I_Connection
 } MPIDI_CH3I_Connection_t;
 
 extern MPIDU_Sock_set_t MPIDI_CH3I_sock_set;
-/* extern int MPIDI_CH3I_listener_port /\*= 0*\/; brad : now in mpidpost.h */
-extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn /*= NULL*/;
-
-extern int shutting_down;
+extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn;
 
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn);

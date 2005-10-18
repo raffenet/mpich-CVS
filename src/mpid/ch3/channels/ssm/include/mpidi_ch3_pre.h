@@ -7,6 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
+/* mpidu_sock.h includes its own header file, so it may come before the 
+   channel conf file */
 #include "mpidu_sock.h"
 #include "mpidi_ch3i_ssm_conf.h"
 #include "mpidi_ch3_conf.h"
@@ -83,38 +85,41 @@ MPIDI_CH3I_PKT_SC_CONN_ACCEPT,		        \
 MPIDI_CH3I_PKT_SC_OPEN_RESP,			\
 MPIDI_CH3I_PKT_SC_CLOSE
 
-#define MPIDI_CH3_PKT_DEFS													  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-    /* FIXME - We need a little security here to avoid having a random port scan crash the process.  Perhaps a "secret" value for \
-       each process could be published in the key-val space and subsequently sent in the open pkt. */				  \
-																  \
-    /* FIXME - We need some notion of a global process group ID so that we can tell the remote process which process is		  \
-       connecting to it */													  \
-    int pg_id_len;															  \
-    int pg_rank;														  \
-}																  \
-MPIDI_CH3I_Pkt_sc_open_req_t;													  \
-																  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-    int ack;															  \
-}																  \
-MPIDI_CH3I_Pkt_sc_open_resp_t;													  \
-																  \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-}																  \
-MPIDI_CH3I_Pkt_sc_close_t;                                                                                                                                    \
-                                                                                                                                                              \
-typedef struct															  \
-{																  \
-    MPIDI_CH3_Pkt_type_t type;													  \
-    int port_name_tag; 													          \
-}																  \
+#define MPIDI_CH3_PKT_DEFS						\
+typedef struct								\
+{									\
+    MPIDI_CH3_Pkt_type_t type;						\
+    /* FIXME - We need a little security here to avoid having a random \
+            port scan crash the process.  Perhaps a "secret" value for \
+       each process could be published in the key-val space and        \
+       subsequently sent in the open pkt. */		  	        \
+									\
+    /* FIXME - We need some notion of a global process group ID so that \
+         we can tell the remote process which process is		\
+       connecting to it */						\
+    int pg_id_len;							\
+    int pg_rank;							\
+}									\
+MPIDI_CH3I_Pkt_sc_open_req_t;						\
+									\
+typedef struct								\
+{									\
+    MPIDI_CH3_Pkt_type_t type;						\
+    int ack;								\
+}									\
+MPIDI_CH3I_Pkt_sc_open_resp_t;						\
+									\
+typedef struct								\
+{									\
+    MPIDI_CH3_Pkt_type_t type;						\
+}									\
+MPIDI_CH3I_Pkt_sc_close_t;                                              \
+                                                                        \
+typedef struct								\
+{									\
+    MPIDI_CH3_Pkt_type_t type;						\
+    int port_name_tag; 							\
+}									\
 MPIDI_CH3I_Pkt_sc_conn_accept_t;
 
 #define MPIDI_CH3_PKT_DECL			\
@@ -204,7 +209,8 @@ typedef struct MPIDI_CH3I_VC
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
  *
- * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or receive) needs to be handled.
+ * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or 
+ * receive) needs to be handled.
  */
 #define MPIDI_CH3_CA_ENUM			\
 MPIDI_CH3I_CA_HANDLE_PKT,			\
@@ -214,14 +220,14 @@ MPIDI_CH3I_CA_END_SSM_CHANNEL
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL									\
-struct MPIDI_CH3I_Request									\
-{												\
-    /* iov_offset points to the current head element in the IOV */				\
-    int iov_offset;										\
-												\
+#define MPIDI_CH3_REQUEST_DECL						\
+struct MPIDI_CH3I_Request						\
+{									\
+    /* iov_offset points to the current head element in the IOV */	\
+    int iov_offset;							\
+									\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
-    MPIDI_CH3_Pkt_t pkt;									\
+    MPIDI_CH3_Pkt_t pkt;						\
 } ch;
 
 typedef struct MPIDI_CH3I_Progress_state

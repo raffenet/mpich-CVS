@@ -6,6 +6,10 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: Integrate this with ch3_isendv.c so that there are fewer files, and 
+   so that common code is in one place and not duplicated (or almost 
+   duplicated) across files */
+  
 /*static void update_request(MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz, int nb)*/
 #undef update_request
 #define update_request(sreq, pkt, pkt_sz, nb) \
@@ -159,6 +163,8 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
     {
 	/* Connection failed.  Mark the request complete and return an error. */
 	/* TODO: Create an appropriate error message */
+	/* FIXME: For fault tolerance, retry the operation before marking the
+	   connection as failed */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	/* MT - CH3U_Request_complete() performs write barrier */
 	MPIDI_CH3U_Request_complete(sreq);

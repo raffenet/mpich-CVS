@@ -8,7 +8,6 @@
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
-int shutting_down = FALSE;
 
 /* local prototypes */
 /* static int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag); */

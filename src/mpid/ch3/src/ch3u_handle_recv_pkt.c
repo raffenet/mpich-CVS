@@ -230,6 +230,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 
     switch(pkt->type)
     {
+	/* FIXME: This is not optimized for short messages, which 
+	   should have the data in the same packet when the data is
+	   particularly short (e.g., one 8 byte long word) */
 	case MPIDI_CH3_PKT_EAGER_SEND:
 	{
 	    MPIDI_CH3_Pkt_eager_send_t * eager_pkt = &pkt->eager_send;
@@ -246,6 +249,9 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 	    
 	    set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
 	    *rreqp = rreq;
+	    /* FIXME: What is the logic here?  On an eager receive, the data
+	       should be available already, and we should be optimizing
+	       for short messages */
 	    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
@@ -1412,6 +1418,7 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 	MPIDI_DBG_PRINTF((30, FCNAME, "unexpected request allocated"));
 		
 	rreq->dev.tmpbuf = MPIU_Malloc(rreq->dev.recv_data_sz);
+	/* FIXME: No test for malloc failure ! */
 	rreq->dev.tmpbuf_sz = rreq->dev.recv_data_sz;
 		
 	rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.tmpbuf;

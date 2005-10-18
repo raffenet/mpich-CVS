@@ -15,6 +15,17 @@
    of the purpose of these routines and their scope of use would make that
    easier. */
 
+/* FIXME: These routines should *first* decide on the method of shared
+   memory and queue support, then implement the Bootstrap interface in
+   terms of those routines, if necessary using large (but single)
+   ifdef regions rather than the constant ifdef/endif code used here.
+   In addition, common service routines should be defined so that the
+   overall code can simply */
+
+/* FIXME: These routines need a description and explanation.  
+   For example, where is the bootstrap q pointer exported?  Is there
+   more than one bootstrap queue?  */
+
 #ifdef HAVE_WINDOWS_H
 
 typedef struct bootstrap_msg

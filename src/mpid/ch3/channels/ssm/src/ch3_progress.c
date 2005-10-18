@@ -140,6 +140,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    spin_count = 1;
 #endif
 	}
+	/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
+	   macros around them but this one does not? */
 	else MPIDU_Yield(); /* always yield for now */
 	spin_count++;
 
@@ -165,6 +167,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    goto fn_exit;
 		}
 		mpi_errno = MPI_SUCCESS;
+		/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
+		   macros around them but this one does not? */
 		MPIDU_Yield();
 	    }
 	}
@@ -543,6 +547,8 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state *state)
 		spin_count = 1;
 	    }
 */
+	    /* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
+	       macros around them but this one does not? */
 	    MPIDU_Yield();
 	}
 after_shm_loop:
@@ -583,6 +589,8 @@ skip_shm_loop:
 		}
 		/* comment out this line to test the error functions */
 		mpi_errno = MPI_SUCCESS;
+		/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
+		   macros around them but this one does not? */
 		MPIDU_Yield();
 	    }
 	    if (completions != MPIDI_CH3I_progress_completion_count)
@@ -918,6 +926,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		spin_count = 1;
 	    }
 	    */
+	    /* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
+	       macros around them but this one does not? */
 	    MPIDU_Yield();
 	}
 after_shm_loop:
@@ -957,6 +967,8 @@ skip_shm_loop:
 		    goto fn_exit;
 		}
 		mpi_errno = MPI_SUCCESS;
+		/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
+		   macros around them but this one does not? */
 		MPIDU_Yield();
 	    }
 	    if (completions != MPIDI_CH3I_progress_completion_count)

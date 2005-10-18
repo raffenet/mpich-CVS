@@ -13,14 +13,12 @@
     int i; \
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST); \
-    /* memcpy(sreq->dev.iov, iov, count * sizeof(MPID_IOV)); */ \
     for (i = 0; i < count; i++) \
     { \
 	sreq->dev.iov[i] = iov[i]; \
     } \
     if (offset == 0) \
     { \
-	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
 	/*MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));*/ \
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
 	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt; \
