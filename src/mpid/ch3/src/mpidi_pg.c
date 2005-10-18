@@ -480,8 +480,16 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
 	pgid = pgid ^ 0x100;
     }
     else {
-	while (*p && isdigit(*p)) {
-	    pgid = pgid * 10 + (*p++ - '0');
+	/* mpd uses (pid_num) as part of the kvs name, so
+	   we skip over - and _ */
+	while (*p) {
+	    if (isdigit(*p)) {
+		pgid = pgid * 10 + (*p - '0');
+	    }
+	    else if (*p != '-' && *p != '_') {
+		break;
+	    }
+	    p++;
 	}
     }
     *id = pgid;

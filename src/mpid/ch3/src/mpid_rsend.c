@@ -8,6 +8,10 @@
 
 /* FIXME: HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
+/* FIXME: How does this differ from eager send?  It should differ in 
+   only a few bits (e.g., indicate that the send is ready and should
+   fail if there is no matching receive) */
+
 /*
  * MPID_Rsend()
  */

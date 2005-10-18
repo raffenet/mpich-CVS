@@ -42,6 +42,13 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
        blocking routine; the intent of the interface (which returns 
        a request) was to simplify the handling of the case where the
        message was not found in the unexpected queue. */
+    /* FIXME: why do we add the ref count to comm?  The routine that
+       calls this is required to complete before returning, so
+       no valid user program can free the communicator while we
+       are within this routine, and no change to the ref count should 
+       be needed.  Ditto for remembering the datatype and user buffer
+       statistics (no request should need to be returned by
+       this routine if the message is already available) */
     rreq->comm = comm;
     MPIR_Comm_add_ref(comm);
     rreq->dev.user_buf = buf;

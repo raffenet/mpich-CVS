@@ -8,6 +8,11 @@
 
 /* FIXME - HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
+/* FIXME: This should share the rendezvous and eager code with 
+   the related operations in MPID_Rsend (always eager) and MPID_Ssend
+   (always rendezvous, though an eager sync mode is possible, it isn't
+   worth the effort). */
+
 /*
  * MPID_Send()
  */
@@ -234,6 +239,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPIDI_Pkt_set_seqnum(rts_pkt, seqnum);
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 
+/* FIXME: What is MPIDI_CH3_CHANNEL_RNDV, who defines it, and why? */
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
 	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using iStartRndvMsg"));

@@ -304,7 +304,7 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 		return mpi_errno;
 	    }
 	    MPIDI_PG_IdToNum( pg, &pgid );
-	    /*printf( "Pg id = %d in %s\n", pgid, (char *)pg->id );fflush(stdout);*/
+/*	    printf( "Pg id = %d in %s\n", pgid, (char *)pg->id );fflush(stdout); */
 	    if (pgid == gpid[0]) {
 		/* found the process group.  gpid[1] is the rank in 
 		   this process group */

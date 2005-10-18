@@ -14,6 +14,11 @@
    if we made those part of the public request structure, the top-level routine
    could implement startall unless the device wanted to study the requests
    and reorder them */
+
+/* FIXME: Where is the memory registration call in the init routines, 
+   in case the channel wishes to take special action (such as pinning for DMA)
+   the memory? This was part of the design. */
+	
 /*
  * MPID_Startall()
  */
@@ -309,10 +314,6 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 	MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
 	MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
     }
-    /* FIXME: Where is the memory registration call, in case the 
-       channel wishes to take special action (such as pinning for DMA)
-       the memory? */
-	
     *request = rreq;
 
   fn_exit:
