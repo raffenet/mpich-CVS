@@ -11,7 +11,7 @@
    MPIR_Err_create_code */
 #include <stdarg.h>
 /* Define USE_ERR_CODE_VALIST to get the prototype for the valist version
-   of MPIR_Err_create_code */
+   of MPIR_Err_create_code in mpiimpl.h */
 #define USE_ERR_CODE_VALIST
 
 #include "mpiimpl.h"
@@ -25,8 +25,13 @@
 /* stdio is needed for vsprintf and vsnprintf */
 #include <stdio.h>
 
+static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
+				    int *generic_idx );
 static const char *get_class_msg( int error_class );
 
+/* FIXME: The following comment was the original description and was never 
+   changed to match massive changes in the code and associated data structures
+*/
 /*
  * Instance-specific error messages are stored in a ring.
  * Messages are written into the error_ring; the corresponding entry in
@@ -100,7 +105,11 @@ void MPIR_Err_init( void )
 	int n;
 
 	error_ring_mutex_create();
-	
+
+	/* FIXME: Use a more general parameter mechanism */
+	/* FIXME: Don't cut and paste code like this; instead, use 
+	   a routine to ensure uniform handling (not just here but anywhere
+	   that any of these values is allowed for on/off) */
 	env = getenv("MPICH_ABORT_ON_ERROR");
 	if (env)
 	{
@@ -141,6 +150,7 @@ void MPIR_Err_init( void )
 		}
 	    }
 #endif
+	    /* FIXME: atoi will not signal an error */
 	    n = atoi(env);
 	    if (n > 0)
 	    {
@@ -178,7 +188,8 @@ void MPIR_Err_preinit( void )
  * This is the routine that is invoked by most MPI routines to 
  * report an error 
  */
-int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode )
+int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
+			  int errcode )
 {
     const int error_class = ERROR_GET_CLASS(errcode);
     char error_msg[4096];
@@ -214,7 +225,8 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
     }
 
     if (MPIR_Err_is_fatal(errcode) ||
-	comm_ptr == NULL || comm_ptr->errhandler == NULL || comm_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL)
+	comm_ptr == NULL || comm_ptr->errhandler == NULL || 
+	comm_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL)
     {
 	MPIU_Snprintf(error_msg, 4096, "Fatal error in %s: ", fcname);
 	len = (int)strlen(error_msg);
@@ -222,7 +234,8 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 	MPID_Abort(comm_ptr, MPI_SUCCESS, 13, error_msg);
     }
 
-    /* If the last error in the stack is a user function error, return that error instead of the corresponding mpi error code? */
+    /* If the last error in the stack is a user function error, return that 
+       error instead of the corresponding mpi error code? */
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	error_ring_mutex_lock();
@@ -232,12 +245,9 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], int errcode
 		int ring_idx;
 		int ring_id;
 		int generic_idx;
-		
-		ring_idx = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
 
-		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
 		    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  errcode, ring_idx );
@@ -342,17 +352,15 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 		int ring_id;
 		int generic_idx;
 		
-		ring_idx = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
-
-		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
 		    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  errcode, ring_idx );
 		}
 		else {
-		    if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
+		    if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id &&
+			ErrorRing[ring_idx].use_user_error_code)
 			{
 			    errcode = ErrorRing[ring_idx].user_error_code;
 			}
@@ -453,11 +461,8 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 		int ring_id;
 		int generic_idx;
 		
-		ring_idx = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
-
-		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
 		    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  errcode, ring_idx );
@@ -1230,16 +1235,21 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 		int last_ring_id;
 		int last_generic_idx;
 
-		last_ring_idx    = (lastcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		last_ring_id = lastcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		last_generic_idx = ((lastcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
-
-		if (last_generic_idx >= 0 && ErrorRing[last_ring_idx].id == last_ring_id)
-		{
-		    if (ErrorRing[last_ring_idx].use_user_error_code)
-		    {
-			ErrorRing[ring_idx].use_user_error_code = 1;
-			ErrorRing[ring_idx].user_error_code = ErrorRing[last_ring_idx].user_error_code;
+		if (convertErrcodeToIndexes( lastcode, &last_ring_idx, 
+					     &last_ring_id,
+					     &last_generic_idx ) != 0) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  lastcode, last_ring_idx );
+		}
+		else {
+		    if (last_generic_idx >= 0 && 
+			ErrorRing[last_ring_idx].id == last_ring_id) {
+			if (ErrorRing[last_ring_idx].use_user_error_code) {
+			    ErrorRing[ring_idx].use_user_error_code = 1;
+			    ErrorRing[ring_idx].user_error_code = 
+				ErrorRing[last_ring_idx].user_error_code;
+			}
 		    }
 		}
 	    }
@@ -1292,7 +1302,8 @@ static const char *get_class_msg( int error_class )
 #endif
 }
 
-void MPIR_Err_get_string( int errorcode, char * msg, int length, MPIR_Err_get_class_string_func_t fn )
+void MPIR_Err_get_string( int errorcode, char * msg, int length, 
+			  MPIR_Err_get_class_string_func_t fn )
 {
     int error_class;
     int len, num_remaining = length;
@@ -1311,7 +1322,8 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length, MPIR_Err_get_cl
      */
     if (errorcode & ERROR_DYN_MASK)
     {
-	/* This is a dynamically created error code (e.g., with MPI_Err_add_class) */
+	/* This is a dynamically created error code (e.g., with 
+	   MPI_Err_add_class) */
 	/* If a dynamic error code was created, the function to convert
 	   them into strings has been set.  Check to see that it was; this 
 	   is a safeguard against a bogus error code */
@@ -1391,24 +1403,24 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length, MPIR_Err_get_cl
 			int ring_id;
 			int generic_idx;
 
-			ring_idx    = (errorcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-			ring_id = errorcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-			generic_idx = ((errorcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
-
-			if (generic_idx < 0)
-			{
-			    break;
-			}
-			if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+			if (convertErrcodeToIndexes( errorcode, &ring_idx, 
+						     &ring_id,
+						     &generic_idx ) != 0) {
 			    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  errorcode, ring_idx );
 			    break;
 			}
+			
+			if (generic_idx < 0)
+			{
+			    break;
+			}
 
 			if (ErrorRing[ring_idx].id == ring_id)
 			{
-			    /* just keep clobbering old values until the end of the stack is reached */
+			    /* just keep clobbering old values until the 
+			       end of the stack is reached */
 			    MPIU_Snprintf(msg, num_remaining, ", %s", ErrorRing[ring_idx].msg);
 			    msg[num_remaining - 1] = '\0';
 			    errorcode = ErrorRing[ring_idx].prev_error;
@@ -1451,7 +1463,8 @@ fn_exit:
 
 
 #if 0
-void MPIR_Err_get_string_ext(int errorcode, char * msg, int maxlen, MPIR_Err_get_class_string_func_t fn)
+void MPIR_Err_get_string_ext(int errorcode, char * msg, int maxlen, 
+			     MPIR_Err_get_class_string_func_t fn)
 {
     int error_class;
     int ring_idx;
@@ -1591,24 +1604,23 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 		int ring_id;
 		int generic_idx;
 
-		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
-
-		if (generic_idx < 0)
-		{
-		    break;
-		}
-		if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING) {
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
 		    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  errcode, ring_idx );
 		    break;
 		}
+
+		if (generic_idx < 0)
+		{
+		    break;
+		}
 		    
 		if (ErrorRing[ring_idx].id == ring_id)
 		{
-		    fprintf(fp, "%s: %s\n", ErrorRing[ring_idx].fcname, ErrorRing[ring_idx].msg);
+		    fprintf(fp, "%s: %s\n", ErrorRing[ring_idx].fcname, 
+			    ErrorRing[ring_idx].msg);
 		    errcode = ErrorRing[ring_idx].prev_error;
 		}
 		else
@@ -1676,18 +1688,20 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
 		int ring_id;
 		int generic_idx;
 
-		ring_idx    = (tmp_errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = tmp_errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((tmp_errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+		if (convertErrcodeToIndexes( tmp_errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  tmp_errcode, ring_idx );
+		    break;
+		}
 
 		if (generic_idx < 0)
 		{
 		    break;
 		}
 		    
-		if (ErrorRing[ring_idx].id == ring_id)
-		{
-
+		if (ErrorRing[ring_idx].id == ring_id) {
 		    len = (int)strlen(ErrorRing[ring_idx].fcname);
 		    max_fcname_len = MPIR_MAX(max_fcname_len, len);
 		    tmp_errcode = ErrorRing[ring_idx].prev_error;
@@ -1708,9 +1722,13 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
 		int i;
 		char *cur_pos;
 
-		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
+		    break;
+		}
 
 		if (generic_idx < 0)
 		{
@@ -1862,7 +1880,8 @@ void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
     return;
 }
 
-void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Err_get_class_string_func_t fn)
+void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, 
+				     MPIR_Err_get_class_string_func_t fn)
 {
     char *str_orig = str;
     int len;
@@ -1879,18 +1898,20 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 		int ring_id;
 		int generic_idx;
 
-		ring_idx    = (tmp_errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = tmp_errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((tmp_errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
+		    break;
+		}
 
 		if (generic_idx < 0)
 		{
 		    break;
 		}
 		    
-		if (ErrorRing[ring_idx].id == ring_id)
-		{
-
+		if (ErrorRing[ring_idx].id == ring_id) {
 		    len = (int)strlen(ErrorRing[ring_idx].fcname);
 		    max_fcname_len = MPIR_MAX(max_fcname_len, len);
 		    tmp_errcode = ErrorRing[ring_idx].prev_error;
@@ -1911,9 +1932,12 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 		int i;
 		char *cur_pos;
 
-		ring_idx    = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> ERROR_SPECIFIC_INDEX_SHIFT;
-		ring_id = errcode & (ERROR_CLASS_MASK | ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
-		generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+					     &generic_idx ) != 0) {
+		    MPIU_Error_printf( 
+		  "Invalid error code (%d) (error ring index %d invalid)\n", 
+		  errcode, ring_idx );
+		}
 
 		if (generic_idx < 0)
 		{
@@ -2026,7 +2050,7 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 	
 	if (generic_idx >= 0)
 	{
-	    char *p;
+	    const char *p;
 	    /* FIXME: (Here and elsewhere)  Make sure any string is
 	       non-null before you use it */
 	    p = generic_err_msgs[generic_idx].long_name;
@@ -2075,6 +2099,23 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Er
 	*str = '\0';
     }
     return;
+}
+
+/* Convert an error code into ring_idx, ring_id, and generic_idx.
+   Return non-zero if there is a problem with the decode values
+   (e.g., out of range for the ring index) */
+static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
+				    int *generic_idx )
+{
+    *ring_idx = (errcode & ERROR_SPECIFIC_INDEX_MASK) >> 
+	ERROR_SPECIFIC_INDEX_SHIFT;
+    *ring_id = errcode & (ERROR_CLASS_MASK | 
+			  ERROR_GENERIC_MASK | ERROR_SPECIFIC_SEQ_MASK);
+    *generic_idx = ((errcode & ERROR_GENERIC_MASK) >> ERROR_GENERIC_SHIFT) - 1;
+    
+    if (*ring_idx < 0 || *ring_idx >= MAX_ERROR_RING) return 1;
+
+    return 0;
 }
 
 
