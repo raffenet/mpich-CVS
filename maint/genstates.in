@@ -3,70 +3,202 @@ use File::Find;
 
 %states = ();
 
+# Find all the source and header files and parse the states.
 find sub
 {
- if ($File::Find::name =~ /\.[ich]$/)
- {
-  open (F, "$_") or die "unable to open $_";
-  while (<F>)
-  {
-   chomp;
-   if (/STATE_DECL\((.*)\)/)
-   {
-       if (!/^#\s*define/)
-       {
-	   $states{$1}="yes";
-       }
-   }
-  }
-  close F;
- }
+	if ($File::Find::name =~ /\.[ich]$/)
+	{
+		%local_states = ();
+		$line_no = 1;
+		$previous_line_no = 1;
+		$filename = $File::Find::name;
+		#printf("opening $_\n");
+		open (F, "$_") or die "unable to open $_";
+		while (<F>)
+		{
+			chomp;
+			if (/STATE_DECL\((.+)\)/)
+			{
+				if (!/^#\s*define/)
+				{
+					if ($local_states{$1} eq "declared")
+					{
+						printf("$filename:$previous_line_no:$line_no\n");
+						printf("ERROR: no FUNC_ENTER/EXIT for declared state '$1'\n");
+					}
+#					if ($local_states{$1} eq "entered")
+#					{
+#						# This actually could be a nested state declaration of the same name.
+#						printf("$filename:$line_no\n");
+#						printf("ERROR: no FUNC_EXIT for state '$1'\n");
+#					}
+					#printf("state declared: $1\n");
+					if (/\s+\\\s*/)
+					{
+						# Assume that if the declared state is in a macro then it will be correctly entered and exited.
+						# Otherwise it is too hard to parse the file.
+						$local_states{$1} = "exited";
+					}
+					else
+					{
+						$local_states{$1} = "declared";
+					}
+					$previous_line_no = $line_no;
+				}
+			}
+			if (/FUNC_ENTER.*\((.+)\)/)
+			{
+				if ( (!/^#\s*define/) && (!/\s+\\\s*/) )
+				{
+					if ($local_states{$1} eq "declared")
+					{
+						#printf("state entered: '$1'\n");
+						$local_states{$1} = "entered";
+					}
+					else
+					{
+						if (!defined($local_states{$1}))
+						{
+							printf("$filename:$line_no\n");
+							printf("ERROR: FUNC_ENTER for undefined state '$1'\n");
+						}
+						if ($local_states{$1} eq "entered")
+						{
+							printf("$filename:$line_no\n");
+							printf("ERROR: FUNC_ENTER repeated for state '$1'\n");
+						}
+#						if ($local_states{$1} eq "exited")
+#						{
+#							printf("$filename:$line_no\n");
+#							printf("Warning: FUNC_ENTER after FUNC_EXIT for state '$1'\n");
+#						}
+					}
+				}
+			}
+			if (/FUNC_EXIT.*\((.+)\)/)
+			{
+				if ( (!/^#\s*define/) && (!/\s+\\\s*/) )
+				{
+					if (($local_states{$1} eq "entered") || ($local_states{$1} eq "exited"))
+					{
+						#printf("state exited: $1\n");
+						$local_states{$1} = "exited";
+					}
+					else
+					{
+						if (!defined($local_states{$1}))
+						{
+							printf("$filename:$line_no\n");
+							printf("ERROR: FUNC_EXIT for undefined state '$1'\n");
+						}
+						if ($local_states{$1} eq "declared")
+						{
+							printf("$filename:$line_no\n");
+							printf("ERROR: FUNC_EXIT without FUNC_ENTER for state '$1'\n");
+						}
+					}
+				}
+			}
+			$line_no = $line_no + 1;
+		}
+		close F;
+		foreach (keys(%local_states))
+		{
+			if ($local_states{$_} eq "declared")
+			{
+				printf("$filename:\n");
+				printf("ERROR: no FUNC_ENTER/EXIT for declared state $_\n");
+			}
+			else
+			{
+				if ($local_states{$_} eq "entered")
+				{
+					printf("$filename:\n");
+					printf("ERROR: FUNC_ENTER without FUNC_EXIT for state $_\n");
+				}
+				else
+				{
+					if (!($_ eq ""))
+					{
+						$states{$_} = "NULL";
+					}
+				}
+			}
+		}
+	}
 }, "src";
 
 @states = sort keys(%states);
 
-find sub
-{
- if ($_ eq "describe_states.txt")
- {
-  open F, $_;
-  while (<F>)
-  {
-   chomp;
-   /\s*(\S*)\s*(\S*)(\s?)(\S.*)*/;
-   # FIXME: This test fails to detect described states that are defined
-   # in a directory that does not use that particular state.
-   if (!defined($states{$1}))
-   {
-       printf("Warning: described state $1 not used, consider removing it from describe_states.txt\n");
-   }
-   $descriptions{$1} = $2;
-   if ( !($4 eq "") )
-   {
-       $color_descriptions{$1} = $4;
-   }
-  }
-  close F;
- }
-}, "src";
-
+# Remove the MPID_STATE_ prefix
 foreach (@states)
 {
-    if (!defined($descriptions{$_}))
-    {
-      if ( !($_ eq "") )
-      {
-        printf("ERROR: $_ not in a describe_states.txt file\n");
-      }
-    }
+	if ( !($_ eq "") )
+	{
+		/(MPID_STATE_)(.+)/;
+		$display_names{"$1$2"} = "$2";
+	}
 }
+
+# Find all the describe_states.txt files and parse them
+find sub
+{
+	if ($_ eq "describe_states.txt")
+	{
+		open F, $_;
+		$line_no = 1;
+		while (<F>)
+		{
+			chomp;
+			# Check for a line with a display name and a color
+			/\s*(\S+)(\s+)(\S+)(\s+)(\d+)(\s+)(\d+)(\s+)(\d+).*/;
+			if (defined($1) && defined($2) && defined($3) && defined($4) && defined($5) && defined($6) && defined($7) && defined($8) && defined($9))
+			{
+				if (!defined($states{$1}))
+				{
+					printf("Warning1: described state '$1' not used, consider removing it from $File::Find::name:$line_no\n");
+				}
+				$display_names{$1} = "$3";
+				$states{$1} = "\"$5 $7 $9\"";
+			}
+			else
+			{
+				# Check for a line with just a color
+				/\s*(\S+)(\s+)(\d+)(\s+)(\d+)(\s+)(\d+).*/;
+				if (defined($1) && defined($2) && defined($3) && defined($4) && defined($5) && defined($6) && defined($7))
+				{
+					if (!defined($states{$1}))
+					{
+						printf("Warning2: described state '$1' not used, consider removing it from $File::Find::name:$line_no\n");
+					}
+					$states{$1} = "\"$3 $5 $7\"";
+				}
+				else
+				{
+					# Check for a line with just a display name
+					/\s*(\S+)(\s+)(\S+).*/;
+					if (defined($1) && defined($2) && defined($3))
+					{
+						if (!defined($states{$1}))
+						{
+							printf("Warning3: described state '$1' not used, consider removing it from $File::Find::name:$line_no\n");
+						}
+						$display_names{$1} = "$3";
+					}
+				}
+			}
+			$line_no = $line_no + 1;
+		}
+		close F;
+	}
+}, "src";
 
 # FIXME: It would be better to assemble this from just the relevant 
 # modules, rather than all files.  A directory-based approach, such as
 # that from extractstrings, could be used.
 #
 open HFILE, ">src/include/mpiallstates.h"
-  or die "Unable to open src/include/mpiallstates.h";
+	or die "Unable to open src/include/mpiallstates.h";
 print HFILE "/* -*- Mode: C; c-basic-offset:4 ; -*- */\n";
 print HFILE "/*\n";
 print HFILE " *  (C) 2001 by Argonne National Laboratory.\n";
@@ -82,11 +214,12 @@ print HFILE "/* Insert all the states to be logged here */\n";
 print HFILE "\n";
 print HFILE "enum MPID_TIMER_STATE\n";
 print HFILE "{\n";
-foreach (@states) {
-  if ( !($_ eq "") )
-  {
-    print HFILE "$_,\n";
-  }
+foreach (@states)
+{
+	if ( !($_ eq "") )
+	{
+		print HFILE "$_,\n";
+	}
 }
 print HFILE "MPID_NUM_TIMER_STATES\n";
 print HFILE "};\n";
@@ -102,7 +235,7 @@ close HFILE;
 # otherwise an RLOG-specific file.
 
 open F, ">src/util/logging/common/describe_states.c"
- or die "Unable to open src/util/logging/common/describe_states.c";
+	or die "Unable to open src/util/logging/common/describe_states.c";
 print F "/* -*- Mode: C; c-basic-offset:4 ; -*- */\n";
 print F "/*\n";
 print F " *  (C) 2001 by Argonne National Laboratory.\n";
@@ -121,131 +254,15 @@ print F "#ifdef HAVE_TIMING\n";
 print F "\n";
 print F "#if (USE_LOGGING == MPID_LOGGING_RLOG)\n";
 print F "\n";
-print F "#include <math.h>\n";
-print F "\n";
-print F "/* utility funcions */\n";
-print F "#ifndef RGB\n";
-print F "#define RGB(r,g,b)      ((unsigned long)(((unsigned char)(r)|((unsigned short)((unsigned char)(g))<<8))|(((unsigned long)(unsigned char)(b))<<16)))\n";
-print F "#endif\n";
-print F "\n";
-print F "static unsigned long getColorRGB(double fraction, double intensity, unsigned char *r, unsigned char *g, unsigned char *b)\n";
-print F "{\n";
-print F "    double red, green, blue;\n";
-print F "    double dtemp;\n";
-print F "\n";
-print F "    fraction = fabs(modf(fraction, &dtemp));\n";
-print F "    \n";
-print F "    if (intensity > 2.0)\n";
-print F "	intensity = 2.0;\n";
-print F "    if (intensity < 0.0)\n";
-print F "	intensity = 0.0;\n";
-print F "\n";
-print F "    dtemp = 1.0/6.0;\n";
-print F "\n";
-print F "    if (fraction < 1.0/6.0)\n";
-print F "    {\n";
-print F "	red = 1.0;\n";
-print F "	green = fraction / dtemp;\n";
-print F "	blue = 0.0;\n";
-print F "    }\n";
-print F "    else\n";
-print F "    {\n";
-print F "	if (fraction < 1.0/3.0)\n";
-print F "	{\n";
-print F "	    red = 1.0 - ((fraction - dtemp) / dtemp);\n";
-print F "	    green = 1.0;\n";
-print F "	    blue = 0.0;\n";
-print F "	}\n";
-print F "	else\n";
-print F "	{\n";
-print F "	    if (fraction < 0.5)\n";
-print F "	    {\n";
-print F "		red = 0.0;\n";
-print F "		green = 1.0;\n";
-print F "		blue = (fraction - (dtemp*2.0)) / dtemp;\n";
-print F "	    }\n";
-print F "	    else\n";
-print F "	    {\n";
-print F "		if (fraction < 2.0/3.0)\n";
-print F "		{\n";
-print F "		    red = 0.0;\n";
-print F "		    green = 1.0 - ((fraction - (dtemp*3.0)) / dtemp);\n";
-print F "		    blue = 1.0;\n";
-print F "		}\n";
-print F "		else\n";
-print F "		{\n";
-print F "		    if (fraction < 5.0/6.0)\n";
-print F "		    {\n";
-print F "			red = (fraction - (dtemp*4.0)) / dtemp;\n";
-print F "			green = 0.0;\n";
-print F "			blue = 1.0;\n";
-print F "		    }\n";
-print F "		    else\n";
-print F "		    {\n";
-print F "			red = 1.0;\n";
-print F "			green = 0.0;\n";
-print F "			blue = 1.0 - ((fraction - (dtemp*5.0)) / dtemp);\n";
-print F "		    }\n";
-print F "		}\n";
-print F "	    }\n";
-print F "	}\n";
-print F "    }\n";
-print F "\n";
-print F "    if (intensity > 1)\n";
-print F "    {\n";
-print F "	intensity = intensity - 1.0;\n";
-print F "	red = red + ((1.0 - red) * intensity);\n";
-print F "	green = green + ((1.0 - green) * intensity);\n";
-print F "	blue = blue + ((1.0 - blue) * intensity);\n";
-print F "    }\n";
-print F "    else\n";
-print F "    {\n";
-print F "	red = red * intensity;\n";
-print F "	green = green * intensity;\n";
-print F "	blue = blue * intensity;\n";
-print F "    }\n";
-print F "\n";
-print F "    *r = (unsigned char)(red * 255.0);\n";
-print F "    *g = (unsigned char)(green * 255.0);\n";
-print F "    *b = (unsigned char)(blue * 255.0);\n";
-print F "\n";
-print F "    return RGB(*r,*g,*b);\n";
-print F "}\n";
-print F "\n";
-print F "static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned char *b)\n";
-print F "{\n";
-print F "    double d1, d2;\n";
-print F "\n";
-print F "    d1 = (double)rand() / (double)RAND_MAX;\n";
-print F "    d2 = (double)rand() / (double)RAND_MAX;\n";
-print F "\n";
-print F "    return getColorRGB(d1, d2 + 0.5, r, g, b);\n";
-print F "}\n";
-print F "\n";
-print F "#define MAX_RANDOM_COLOR_STR 40\n";
-print F "static char random_color_str[MAX_RANDOM_COLOR_STR];\n";
-print F "static char *get_random_color_str()\n";
-print F "{\n";
-print F "    unsigned char r,g,b;\n";
-print F "    random_color(&r, &g, &b);\n";
-print F "    MPIU_Snprintf(random_color_str, MAX_RANDOM_COLOR_STR, \n";
-print F "		  \"%3d %3d %3d\", (int)r, (int)g, (int)b);\n";
-print F "    return random_color_str;\n";
-print F "}\n";
-print F "\n";
 print F "int MPIR_Describe_timer_states()\n";
 print F "{\n";
 print F "\n";
-while ( ($state, $description) = each %descriptions )
+foreach (@states)
 {
-  if (defined($color_descriptions{$state}))
-  {
-    print F "    RLOG_DescribeState(g_pRLOG, $state, \"$description\", \"$color_descriptions{$state}\");\n";
-  }
-  else
-  {
-    print F "    RLOG_DescribeState(g_pRLOG, $state, \"$description\", get_random_color_str());\n";
-  }
+	if ( !($_ eq "") )
+	{
+		print F "    RLOG_DescribeState(g_pRLOG, $_, \"$display_names{$_}\", $states{$_});\n";
+	}
 }
 print F "    return 0;\n";
 print F "}\n";
