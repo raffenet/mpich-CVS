@@ -547,7 +547,7 @@ if [ $do_build_configure = yes ] ; then
 	        # First, check for a configure target in Makefile.in
 	        if grep 'configure:' $dir/Makefile.in >/dev/null 2>&1 ; then
  	            # The make -q checks whether the target is upto date first;
-	            # if it isn't, we remake it.	
+	            # if it isn't, we remake it.
 		    rm -f $dir/mf.out 
 		    rm -f $dir/mf.newer
 		    date > $dir/mf.newer
