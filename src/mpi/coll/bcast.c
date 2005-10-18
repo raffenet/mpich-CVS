@@ -119,12 +119,9 @@ int MPIR_Bcast (
   else
   {
       mpi_errno = NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
-      /* --BEGIN ERROR HANDLING-- */
-      if (mpi_errno != MPI_SUCCESS)
-      {
-	  return mpi_errno;
+      if (mpi_errno != MPI_SUCCESS) {
+	  MPIU_ERR_POP(mpi_errno);
       }
-      /* --END ERROR HANDLING-- */
       /* calculate the value of nbytes, the size in packed
          representation of the buffer to be broadcasted. We can't
          simply multiply tmp_buf_size by count because tmp_buf_size
@@ -191,13 +188,9 @@ int MPIR_Bcast (
               if (src < 0) src += comm_size;
               mpi_errno = MPIC_Recv(buffer,count,datatype,src,
                                    MPIR_BCAST_TAG,comm,MPI_STATUS_IGNORE);
-	      /* --BEGIN ERROR HANDLING-- */
-              if (mpi_errno != MPI_SUCCESS)
-	      {
-		  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		  return mpi_errno;
+              if (mpi_errno != MPI_SUCCESS) {
+		  MPIU_ERR_POP(mpi_errno);
 	      }
-	      /* --END ERROR HANDLING-- */
               break;
           }
           mask <<= 1;
@@ -223,13 +216,9 @@ int MPIR_Bcast (
               if (dst >= comm_size) dst -= comm_size;
               mpi_errno = MPIC_Send (buffer,count,datatype,dst,
                                      MPIR_BCAST_TAG,comm); 
-	      /* --BEGIN ERROR HANDLING-- */
-              if (mpi_errno != MPI_SUCCESS)
-	      {
-		  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		  return mpi_errno;
+              if (mpi_errno != MPI_SUCCESS) {
+		  MPIU_ERR_POP(mpi_errno);
 	      }
-	      /* --END ERROR HANDLING-- */
           }
           mask >>= 1;
       }
@@ -254,13 +243,9 @@ int MPIR_Bcast (
           /* contiguous and homogeneous. no need to pack. */
           mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
                                                 &true_extent);
-	  /* --BEGIN ERROR HANDLING-- */
-          if (mpi_errno)
-	  {
-	      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	      return mpi_errno;
+          if (mpi_errno) {
+	      MPIU_ERR_POP(mpi_errno);
 	  }
-	  /* --END ERROR HANDLING-- */
           tmp_buf = (char *) buffer + true_lb;
       }
       else
@@ -310,13 +295,9 @@ int MPIR_Bcast (
                                          relative_rank*scatter_size),
                                         recv_size, MPI_BYTE, src,
                                         MPIR_BCAST_TAG, comm, &status);
-		  /* --BEGIN ERROR HANDLING-- */
-                  if (mpi_errno != MPI_SUCCESS)
-		  {
-		      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		      return mpi_errno;
+                  if (mpi_errno != MPI_SUCCESS) {
+		      MPIU_ERR_POP(mpi_errno);
 		  }
-		  /* --END ERROR HANDLING-- */
 
                   /* query actual size of data received */
                   NMPI_Get_count(&status, MPI_BYTE, &curr_size);
@@ -347,13 +328,9 @@ int MPIR_Bcast (
                                          scatter_size*(relative_rank+mask)),
                                         send_size, MPI_BYTE, dst,
                                         MPIR_BCAST_TAG, comm);
-		  /* --BEGIN ERROR HANDLING-- */
-                  if (mpi_errno != MPI_SUCCESS)
-		  {
-		      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		      return mpi_errno;
+                  if (mpi_errno != MPI_SUCCESS) {
+		      MPIU_ERR_POP(mpi_errno);
 		  }
-		  /* --END ERROR HANDLING-- */
                   curr_size -= send_size;
               }
           }
@@ -405,13 +382,9 @@ int MPIR_Bcast (
                                             ((char *)tmp_buf + recv_offset),
                                             scatter_size*mask, MPI_BYTE, dst,
                                             MPIR_BCAST_TAG, comm, &status);
-		  /* --BEGIN ERROR HANDLING-- */
-                  if (mpi_errno != MPI_SUCCESS)
-		  {
-		      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		      return mpi_errno;
+                  if (mpi_errno != MPI_SUCCESS) {
+		      MPIU_ERR_POP(mpi_errno);
 		  }
-		  /* --END ERROR HANDLING-- */
                   NMPI_Get_count(&status, MPI_BYTE, &recv_size);
                   curr_size += recv_size;
               }
@@ -480,13 +453,9 @@ int MPIR_Bcast (
                           /* recv_size was set in the previous
                              receive. that's the amount of data to be
                              sent now. */
-			  /* --BEGIN ERROR HANDLING-- */
-                          if (mpi_errno != MPI_SUCCESS)
-			  {
-			      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			      return mpi_errno;
+                          if (mpi_errno != MPI_SUCCESS) {
+			      MPIU_ERR_POP(mpi_errno);
 			  }
-			  /* --END ERROR HANDLING-- */
                       }
                       /* recv only if this proc. doesn't have data and sender
                          has data */
@@ -502,13 +471,9 @@ int MPIR_Bcast (
                                                 comm, &status); 
                           /* nprocs_completed is also equal to the no. of processes
                              whose data we don't have */
-			  /* --BEGIN ERROR HANDLING-- */
-                          if (mpi_errno != MPI_SUCCESS)
-			  {
-			      mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			      return mpi_errno;
+                          if (mpi_errno != MPI_SUCCESS) {
+			      MPIU_ERR_POP(mpi_errno);
 			  }
-			  /* --END ERROR HANDLING-- */
                           NMPI_Get_count(&status, MPI_BYTE, &recv_size);
                           curr_size += recv_size;
                           /* printf("Rank %d, recv from %d, offset %d, size %d\n", rank, dst, offset, recv_size);
@@ -577,13 +542,9 @@ int MPIR_Bcast (
                                 recvcnts[(jnext-root+comm_size)%comm_size],  
                                 MPI_BYTE, left,   
                                 MPIR_BCAST_TAG, comm, MPI_STATUS_IGNORE);
-	      /* --BEGIN ERROR HANDLING-- */
-              if (mpi_errno != MPI_SUCCESS)
-	      {
-		  mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		  return mpi_errno;
+              if (mpi_errno != MPI_SUCCESS) {
+		  MPIU_ERR_POP(mpi_errno);
 	      }
-	      /* --END ERROR HANDLING-- */
               j	    = jnext;
               jnext = (comm_size + jnext - 1) % comm_size;
           }
@@ -604,10 +565,13 @@ int MPIR_Bcast (
       }
   }
 
+ fn_exit:
   /* check if multiple threads are calling this collective function */
   MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
   return mpi_errno;
+ fn_fail:
+  goto fn_exit;
 }
 /* end:nested */
 
