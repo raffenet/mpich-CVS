@@ -229,11 +229,15 @@ if test "$FROM_MPICH2" = yes ; then
         CXX=$mpibindir/mpicxx
         MPIEXEC=$mpibindir/mpiexec
         # For some of the tests below, we'll need a separate compiler
-        if test ! -x $CXX ; then
+	# One more complication.  If we are in the midst of building
+	# MPICH2, the installation directory does not yet contain
+	# the current compilation scripts (just to make things worse,
+	# it *may* contain old scripts!).
+#        if test ! -x $CXX ; then
             CXXTEST=$top_build_dir/bin/mpicxx
-        else 
-            CXXTEST=$CXX
-        fi
+#        else 
+#            CXXTEST=$CXX
+#        fi
 	BASEF90=$F90
         F90=$mpibindir/mpif90
     fi
