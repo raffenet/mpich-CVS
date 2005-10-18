@@ -3064,22 +3064,21 @@ sub TargetDocs {
 	# This assumes a particular layout for the directories that
 	# we'll eventually want to make adjustable.
 	if ($doc_attop) {
+	    my @dirs = ();
 	    if ($kind eq "html") {
-		print FD "\tif [ ! -d www ] ; then mkdir www ; fi$newline";
-		print FD "\tif [ ! -d www/www1 ] ; then mkdir www/www1 ; fi$newline";
-		print FD "\tif [ ! -d www/www3 ] ; then mkdir www/www3 ; fi$newline";
+		@dirs = ( "www", "www/www1", "www/www3" );
 	    }
 	    elsif ($kind eq "man") {
-		print FD "\tif [ ! -d man ] ; then mkdir man ; fi$newline";
-		print FD "\tif [ ! -d man/man1 ] ; then mkdir man/man1 ; fi$newline";
-		print FD "\tif [ ! -d man/man3 ] ; then mkdir man/man3 ; fi$newline";
+		@dirs = ( "man", "man/man1", "man/man3" );
 	    }
 	    elsif ($kind eq "latex") {
-		print FD "\tif [ ! -d doc ] ; then mkdir doc ; fi$newline";
-		print FD "\tif [ ! -d doc/refman ] ; then mkdir doc/refman ; fi$newline";
+		@dirs = ( "doc", "doc/refman" );
 	    }
 	    else {
 		print STDERR "Unrecognized document type $kind\n";
+	    }
+	    foreach my $dir (@dirs) { 
+		print FD "\tif [ ! -d \${DESTDIR}$dir ] ; then mkdir \${DESTDIR}$dir ; fi$newline";
 	    }
 	}
 	&RecursiveOp( $targetKind );
@@ -3170,10 +3169,10 @@ sub TargetInstall {
 	    foreach $checkdir (split(/\s+/,$required_dirs{$dir})) {
 		if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
 		    $dirschecked{$checkdir} = 1;
-		    print FD "\tif [ ! -d \${$checkdir} ] ; then \$(MKDIR_P) \${$checkdir} ; fi$newline";
+		    print FD "\tif [ ! -d \${DESTDIR}\${$checkdir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$checkdir} ; fi$newline";
 		}
 	    }
-	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
+	    print FD "\tif [ ! -d \${DESTDIR}\${$dir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
     }
@@ -3190,10 +3189,10 @@ sub TargetInstall {
 	    foreach $checkdir (split(/\s+/,$required_dirs{$dir})) {
 		if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
 		    $dirschecked{$checkdir} = 1;
-		    print FD "\tif [ ! -d \${$checkdir} ] ; then \$(MKDIR_P) \${$checkdir} ; fi$newline";
+		    print FD "\tif [ ! -d \${DESTDIR}\${$checkdir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$checkdir} ; fi$newline";
 		}
 	    }
-	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
+	    print FD "\tif [ ! -d \${DESTDIR}\${$dir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
 	#
@@ -3209,7 +3208,7 @@ sub TargetInstall {
 	    if ($this_install_method eq "") {
 		$this_install_method = '$(INSTALL)';
 		}
-	    print FD "\t$this_install_method $file \${$dir}/$destfile$newline";
+	    print FD "\t$this_install_method $file \${DESTDIR}\${$dir}/$destfile$newline";
 	}
     }
 
@@ -3236,17 +3235,17 @@ sub TargetInstall {
 
 	    print FD "\t\@-test -d $srcdir && cd $srcdir && for name in * ; do \\
 \t if [ -f \$\$name ] ; then \\
-\t    echo \"$this_install_choice \$\$name \${$dir}/\$\$name\" ; \\
-\t    $this_install_choice \$\$name \${$dir}/\$\$name ; \\
+\t    echo \"$this_install_choice \$\$name \${DESTDIR}\${$dir}/\$\$name\" ; \\
+\t    $this_install_choice \$\$name \${DESTDIR}\${$dir}/\$\$name ; \\
 \t elif [ -d \$\$name ] ; then \\
-\t    if [ ! -d \${$dir}/\$\$name ] ; then \$(MKDIR_P) \${$dir}/\$\$name ; fi ;\\
+\t    if [ ! -d \${DESTDIR}\${$dir}/\$\$name ] ; then \$(MKDIR_P) \${DESTDIR}\${$dir}/\$\$name ; fi ;\\
 \t    ( cd \$\$name && for name2 in * ; do \\
 \t        if [ -f \$\$name2 ] ; then \\
-\t            echo \"$this_install_choice \$\$name2 \${$dir}/\$\$name/\$\$name2\" ; \\
-\t            $this_install_choice \$\$name2 \${$dir}/\$\$name/\$\$name2 ; \\
+\t            echo \"$this_install_choice \$\$name2 \${DESTDIR}\${$dir}/\$\$name/\$\$name2\" ; \\
+\t            $this_install_choice \$\$name2 \${DESTDIR}\${$dir}/\$\$name/\$\$name2 ; \\
 \t        else \\
-\t            echo \"cp -rp \$\$name \${$dir}/\$\$name\" ; \\
-\t            cp -rp \$\$name \${$dir}/\$\$name ; \\
+\t            echo \"cp -rp \$\$name \${DESTDIR}\${$dir}/\$\$name\" ; \\
+\t            cp -rp \$\$name \${DESTDIR}\${$dir}/\$\$name ; \\
 \t        fi \\
 \t    done ) ; \\
 \t else \\
@@ -3259,7 +3258,7 @@ sub TargetInstall {
     foreach $kind (keys(%optinstall_files)) {
 	$dir = $InstallDirFromKind{$kind};
 	if (!defined($dirschecked{$dir})) {
-	    print FD "\tif [ ! -d \${$dir} ] ; then \$(MKDIR_P) \${$dir} ; fi$newline";
+	    print FD "\tif [ ! -d \${DESTDIR}\${$dir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$dir} ; fi$newline";
 	    $dirschecked{$dir} = 1;
 	}
 	foreach $filelist ($optinstall_files{$kind}) {
@@ -3273,7 +3272,7 @@ sub TargetInstall {
 		else {
 		    $this_install_choice = $install_methods{$kind};
 		}
-		print FD "\tif [ -s $file ] ; then $this_install_choice $file \${$dir}/$destfile ; fi$newline";
+		print FD "\tif [ -s $file ] ; then $this_install_choice $file \${DESTDIR}\${$dir}/$destfile ; fi$newline";
 	    }
 	}
     }
@@ -3312,7 +3311,7 @@ sub TargetInstall {
 	foreach $file (split(/\s+/,$install_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\t-rm -f \${$dir}/$destfile$newline";
+	    print FD "\t-rm -f \${DESTDIR}\${$dir}/$destfile$newline";
 	}
     }
     foreach $kind (keys(%optinstall_files)) {
@@ -3320,7 +3319,7 @@ sub TargetInstall {
 	foreach $file (split(/\s+/,$optinstall_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
-	    print FD "\t-rm -f \${$dir}/$destfile$newline";
+	    print FD "\t-rm -f \${DESTDIR}\${$dir}/$destfile$newline";
 	}
     }
     # Handle uninstalls controlled by subdirs

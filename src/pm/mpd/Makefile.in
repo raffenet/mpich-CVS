@@ -106,52 +106,52 @@ Makefile: ${srcdir}/Makefile.in config.status
 # if configured with wrong prefix, use:
 #     make prefix=new_install_dir install
 install: all
-	@if [ ! -d ${bindir} ] ; then \
-	    echo "mkdir -p ${bindir} " ;\
-	    mkdir -p ${bindir} ;\
+	@if [ ! -d $(DESTDIR)${bindir} ] ; then \
+	    echo "mkdir -p $(DESTDIR)${bindir} " ;\
+	    mkdir -p $(DESTDIR)${bindir} ;\
 	fi   
 	-@if [ -n "`id | grep uid=0`" ] ; then \
-	    ${INSTALL} -m 4755 mpdroot ${bindir}/mpdroot ;\
+	    ${INSTALL} -m 4755 mpdroot $(DESTDIR)${bindir}/mpdroot ;\
         else \
-	    ${INSTALL} -m  755 mpdroot ${bindir}/mpdroot ;\
+	    ${INSTALL} -m  755 mpdroot $(DESTDIR)${bindir}/mpdroot ;\
 	fi
-	@echo "copying python files/links into " ${bindir}
+	@echo "copying python files/links into " $(DESTDIR)${bindir}
 	-@for cmd in ${PYTHON_SOURCE} ; do \
-	    sed -e 's#/usr/bin/env python.*#/usr/bin/env ${PYTHON}#' ${srcdir}/$$cmd.py > ${bindir}/temp$$cmd.py ; \
-	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py ${bindir}/$$cmd.py; \
-	    ( rm -f ${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	    sed -e 's#/usr/bin/env python.*#/usr/bin/env ${PYTHON}#' ${srcdir}/$$cmd.py > $(DESTDIR)${bindir}/temp$$cmd.py ; \
+	    ${INSTALL} -m 755 ${bindir}/temp$$cmd.py $(DESTDIR)${bindir}/$$cmd.py; \
+	    ( rm -f $(DESTDIR)${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
 	done
-	-@cd ${bindir} && rm -f mpd
-	-@cd ${bindir} && @LN_S@ mpd.py mpd
-	-@cd ${bindir} && rm -f mpdboot
-	-@cd ${bindir} && @LN_S@ mpdboot.py mpdboot
+	-@cd $(DESTDIR)${bindir} && rm -f mpd
+	-@cd $(DESTDIR)${bindir} && @LN_S@ mpd.py mpd
+	-@cd $(DESTDIR)${bindir} && rm -f mpdboot
+	-@cd $(DESTDIR)${bindir} && @LN_S@ mpdboot.py mpdboot
 	-@for cmd in ${CMDS} ; do \
-	    ( cd ${bindir} && rm -f $$cmd ; ) ; \
-	    ( cd ${bindir} && @LN_S@ $$cmd.py $$cmd ; ) \
+	    ( cd $(DESTDIR)${bindir} && rm -f $$cmd ; ) ; \
+	    ( cd $(DESTDIR)${bindir} && @LN_S@ $$cmd.py $$cmd ; ) \
 	done
-	-@( rm -f ${bindir}/mpdrun >/dev/null 2>&1 || exit 0 )
-	-@( rm -f ${bindir}/mpdrun.py >/dev/null 2>&1 || exit 0 )
-	-@( rm -f ${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
-	-@( rm -f ${bindir}/mpirun.py >/dev/null 2>&1 || exit 0 )
-	-@cd ${bindir} && @LN_S@ mpiexec mpdrun
-	-@cd ${bindir} && @LN_S@ mpiexec.py mpdrun.py
-	-@cd ${bindir} && @LN_S@ mpiexec mpirun
-	-@cd ${bindir} && @LN_S@ mpiexec.py mpirun.py
+	-@( rm -f $(DESTDIR)${bindir}/mpdrun >/dev/null 2>&1 || exit 0 )
+	-@( rm -f $(DESTDIR)${bindir}/mpdrun.py >/dev/null 2>&1 || exit 0 )
+	-@( rm -f $(DESTDIR)${bindir}/mpirun >/dev/null 2>&1 || exit 0 )
+	-@( rm -f $(DESTDIR)${bindir}/mpirun.py >/dev/null 2>&1 || exit 0 )
+	-@cd $(DESTDIR)${bindir} && @LN_S@ mpiexec mpdrun
+	-@cd $(DESTDIR)${bindir} && @LN_S@ mpiexec.py mpdrun.py
+	-@cd $(DESTDIR)${bindir} && @LN_S@ mpiexec mpirun
+	-@cd $(DESTDIR)${bindir} && @LN_S@ mpiexec.py mpirun.py
 	-@if [ "${DO_MTV}" = "yes" ] ; then \
-	    ${INSTALL} -m 755 mtv.so ${bindir}/mtv.so ;\
+	    ${INSTALL} -m 755 mtv.so $(DESTDIR)${bindir}/mtv.so ;\
 	fi
 
 
 mpich2-build-install: mpich2-mpdroot install
 	-@if [ -n "`id | grep uid=0`" ] ; then \
-            ${INSTALL} -m 4755 mpich2-mpdroot ${bindir}/mpdroot ;\
+            ${INSTALL} -m 4755 mpich2-mpdroot $(DESTDIR)${bindir}/mpdroot ;\
 	else \
-            ${INSTALL} -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
+            ${INSTALL} -m  755 mpich2-mpdroot $(DESTDIR)${bindir}/mpdroot ;\
 	fi
 	/bin/rm -f mpich2-mpdroot
 
 mpich2-build-uninstall:
-	/bin/rm -f ${bindir}/mpdroot
+	/bin/rm -f $(DESTDIR)${bindir}/mpdroot
 
 mpich2-mpdroot: mpich2-mpdroot.o
 	$(C_LINK) -o mpich2-mpdroot mpich2-mpdroot.o $(LIBS)
@@ -184,5 +184,5 @@ man:
 
 install-man:
 	-@for cmd in ${PYTHON_SOURCE} ; do \
-		${INSTALL} -m 644 $$cmd.1 ${mandir}/$$cmd.1 ; \
+		${INSTALL} -m 644 $$cmd.1 $(DESTDIR)${mandir}/$$cmd.1 ; \
 	done
