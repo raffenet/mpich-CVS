@@ -150,7 +150,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 		/* The channel will be performing the rendezvous */
 
-		mpi_errno = MPIDI_CH3U_Post_data_receive(vc, found, &rreq);
+		mpi_errno = MPIDI_CH3U_Post_data_receive(found, &rreq);
 		if (mpi_errno != MPI_SUCCESS) {
 		    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
 					 "**ch3|postrecv",
