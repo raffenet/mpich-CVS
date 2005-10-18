@@ -1442,9 +1442,6 @@ extern MPID_Win MPID_Win_direct[];
 /* ------------------------------------------------------------------------- */
 /* also in mpirma.h ?*/
 /* ------------------------------------------------------------------------- */
-extern volatile int MPIDI_Passive_target_thread_exit_flag;
-#define MPIDI_PASSIVE_TARGET_DONE_TAG  348297
-#define MPIDI_PASSIVE_TARGET_RMA_TAG 563924
 
 /*
  * Good Memory (may be required for passive target operations on MPI_Win)
@@ -3001,7 +2998,7 @@ int MPID_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
 int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
             MPI_Datatype, MPID_Win *);
 int MPID_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int, 
-		   MPI_Datatype,  MPI_Op, MPID_Win *);
+		   MPI_Datatype, MPI_Op, MPID_Win *);
 int MPID_Win_free(MPID_Win **); 
 int MPID_Win_test(MPID_Win *win_ptr, int *flag);
 int MPID_Win_wait(MPID_Win *win_ptr);

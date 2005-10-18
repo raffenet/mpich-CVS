@@ -217,3 +217,12 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
 
     return MPI_SUCCESS;
 }
+
+
+/* This function simply tells the CH3 device to use the defaults for the 
+   MPI-2 RMA functions */
+int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a ) 
+{ 
+    return 0;
+}
+

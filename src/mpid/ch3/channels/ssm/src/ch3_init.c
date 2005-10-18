@@ -152,6 +152,13 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a )
     return 0;
 }
 
+/* This function simply tells the CH3 device to use the defaults for the 
+   MPI-2 RMA functions */
+int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a ) 
+{ 
+    return 0;
+}
+
 /* Perform the channel-specific vc initialization */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.sendq_head         = NULL;

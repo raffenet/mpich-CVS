@@ -27,9 +27,6 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
 
-/* FIXME: Use function pointers for the RMA operations instead of this flag */
-int MPIDI_Use_optimized_rma = 0;
-
 MPIDI_Process_t MPIDI_Process = { NULL };
 
 #undef FUNCNAME
@@ -469,3 +466,5 @@ static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
     
     return MPI_SUCCESS;
 }
+
+
