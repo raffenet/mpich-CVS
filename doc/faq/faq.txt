@@ -1,0 +1,28 @@
+%% Heading: Introduction
+%% Filename: intro
+%% End
+MPICH is a freely available, portable implementation of MPI, the Standard for
+message-passing libraries. 
+
+%% Heading: C++ and \texttt{SEEK\_SET}
+%% Filename: cxxseek
+%% End
+Some users may get error messages such as
+\begin{verbatim}
+    SEEK_SET is #defined but must not be for the C++ binding of MPI
+\end{verbatim}
+The problem is that both \texttt{stdio.h} and the MPI C++ interface use
+\texttt{SEEK\_SET}, \texttt{SEEK\_CUR}, and \texttt{SEEK\_END}.  This is really a
+bug in the MPI-2 standard.  You can try adding 
+\begin{verbatim}
+    #undef SEEK_SET
+    #undef SEEK_END
+    #undef SEEK_CUR
+\end{verbatim}
+before \texttt{mpi.h} is included, or add the definition
+\begin{verbatim}
+    -DMPICH_IGNORE_CXX_SEEK
+\end{verbatim}
+to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
+etc. to be skipped).
+
