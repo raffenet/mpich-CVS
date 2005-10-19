@@ -1898,7 +1898,7 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen,
 		int ring_id;
 		int generic_idx;
 
-		if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
+		if (convertErrcodeToIndexes( tmp_errcode, &ring_idx, &ring_id,
 					     &generic_idx ) != 0) {
 		    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
