@@ -117,7 +117,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     int mpi_errno=MPI_SUCCESS;
     int j, i, rank, recv_ints[3], send_ints[2], context_id;
     int remote_comm_size=0;
-    MPID_Comm *tmp_comm, *intercomm;
+    MPID_Comm *tmp_comm = NULL, *intercomm;
     MPIDI_VC_t *new_vc;
     int sendtag=100, recvtag=100, n_remote_pgs;
     int n_local_pgs=1, local_comm_size;
