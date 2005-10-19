@@ -17,4 +17,5 @@ topo
 @f77dir@
 @cxxdir@
 @f90dir@
+@errordir@
 @threadsdir@
