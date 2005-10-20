@@ -25,10 +25,13 @@ $gDebugOther = 0;
 	      "Make completed",
 	      "echo", "cat",
 	      "\\(?cd",
+	      "cd\s+\&\&\s+make",
 	      "sed -e",
+	      "PATH=\"\$PATH.*\sldconfig\s",
 	      "building profiling interface in directory",
 	      "/usr/bin/install",
 	      "Copying Upshot",
+	      "Making .*\.\.\.\.",        # mpe writes this
 	      "Making upshot", "\s*\$", );
 
 # OtherNoise is an array of patterns that describe blocks of
