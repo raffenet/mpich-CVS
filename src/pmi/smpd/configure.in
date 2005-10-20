@@ -28,7 +28,7 @@ PAC_PROG_MAKE
 save_libs=$LIBS
 LIBS=
 
-AC_CHECK_HEADERS(stdarg.h unistd.h string.h stdlib.h dlfcn.h uuid/uuid.h mach-o/dyld.h)
+AC_CHECK_HEADERS(stdarg.h unistd.h string.h stdlib.h dlfcn.h uuid/uuid.h mach-o/dyld.h ctype.h)
 AC_CHECK_FUNCS( dlopen NSLinkModule )
 AC_SEARCH_LIBS( dlopen, dl )
 
