@@ -338,3 +338,4 @@ statusf2c.c
 fprotos.h
 *.user
 .libstamp*
+.state-cache

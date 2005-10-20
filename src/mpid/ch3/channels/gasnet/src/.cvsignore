@@ -6,3 +6,4 @@ Makefile.in
 *.bbg
 *.da
 *.gcov
+.state-cache

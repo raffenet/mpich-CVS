@@ -8,3 +8,4 @@ mpidi_ch3i_gasnet_conf.h
 *.bbg
 *.da
 *.gcov
+.state-cache

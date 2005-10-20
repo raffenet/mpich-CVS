@@ -7,3 +7,4 @@ Makefile.in
 *.da
 *.gcov
 .deps
+.state-cache
