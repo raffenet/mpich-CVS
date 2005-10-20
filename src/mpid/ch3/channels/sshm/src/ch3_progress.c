@@ -7,7 +7,7 @@
 #include "ch3i_progress.h"
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress
+#define FUNCNAME MPIDI_CH3I_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
@@ -23,10 +23,10 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     int num_bytes;
     MPIDI_VC_t *vc_ptr;
     static int msg_queue_count = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
 #ifdef MPICH_DBG_OUTPUT
     if (is_blocking)
@@ -189,7 +189,7 @@ fn_exit:
 	}
     }
 #endif
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
     return mpi_errno;
 }
 
