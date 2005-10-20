@@ -151,13 +151,9 @@ in the mpich2 directory tree, searches for \texttt{\_STATE\_DECL} in each
 file and builds a list of all the MPID\_STATEs.
 
 \item \texttt{genstates} finds all the \texttt{describe\_states.txt} 
-files anywhere in the mpich2 tree.
-
-\item \texttt{genstates} matches the states in the \texttt{describe\_states.txt}
- files with the  states it found in the \texttt{.i}, \texttt{.h} and 
-\texttt{.c} files.  It warns if states are described without being declared 
-and discards these descriptions.  It produces errors if states are declared 
-without being described in a \texttt{describe\_states.txt} file.
+files anywhere in the mpich2 tree.  \texttt{describe\_states.txt} files are 
+optional and are used to set the output name of the state and its associated 
+color.
 
 \item The \texttt{describe\_states.txt} file format is this:
 \begin{verbatim}
@@ -167,7 +163,10 @@ MPID_STATE_XXX <user string for the state> <optional rgb color>
 \begin{verbatim}
  MPID_STATE_MPI_SEND MPI_Send 0 0 255
 \end{verbatim}
- 
+If you don't specify a state in a \texttt{describe\_states.txt} file then
+the state user name will be automatically created by stripping off the 
+MPID\_STATE\_ prefix and the color will be assigned a random value.
+
 \item \texttt{genstates} ouputs \texttt{mpich2/src/include/mpiallstates.h} 
 with this \texttt{enum} in it:
 \begin{verbatim}
