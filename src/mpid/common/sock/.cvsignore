@@ -17,3 +17,4 @@ localdefs
 *Release*
 .deps
 *.user
+.state-cache

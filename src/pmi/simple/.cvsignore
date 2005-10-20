@@ -18,3 +18,4 @@ pmiconf.h
 .deps
 .libs
 .libstamp*
+.state-cache

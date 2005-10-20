@@ -9,3 +9,4 @@ Makefile
 .deps
 .libs
 .libstamp*
+.state-cache

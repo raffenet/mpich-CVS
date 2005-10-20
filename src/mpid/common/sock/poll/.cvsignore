@@ -18,3 +18,4 @@ localdefs
 .deps
 .libs
 .libstamp*
+.state-cache
