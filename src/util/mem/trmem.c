@@ -123,7 +123,7 @@ static TRSPACE *TRhead = 0;
 static int     TRid = 0;
 static int     TRidSet = 0;
 static int     TRlevel = 0;
-static char    TRDefaultByte = 0xda;
+static unsigned char  TRDefaultByte = 0xda;
 #define MAX_TR_STACK 20
 static int     TRdebugLevel = 0;
 #define TR_MALLOC 0x1
