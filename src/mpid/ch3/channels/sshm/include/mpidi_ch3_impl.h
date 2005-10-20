@@ -45,6 +45,12 @@
 #ifdef HAVE_SYS_IPC_H
 #include <sys/ipc.h>
 #endif
+/* FIXME: Note the use of the USE_SYSV_MQ to only include this header includes
+   when needed.  The other headers should be similarly organized */
+#if defined(HAVE_SYS_MSG_H) && defined(USE_SYSV_MQ)
+/* Needed for msgsnd and msgrcv */
+#include <sys/msg.h>
+#endif
 #ifdef HAVE_SYS_SHM_H
 #include <sys/shm.h>
 #endif
@@ -287,8 +293,8 @@ typedef struct MPIDI_CH3I_Shmem_queue_info
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
-int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag);
-int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
+int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *, const char *, int *);
+int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **, MPIDI_VC_t *, int );
 
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
 #define MPIDI_CH3I_HOST_KEY              "host"

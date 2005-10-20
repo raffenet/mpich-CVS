@@ -30,9 +30,8 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     {
 	vc->ch.conn->state = CONN_STATE_CLOSING;
 	mpi_errno = MPIDU_Sock_post_close(vc->ch.sock);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	    goto fn_exit;
 	}
     }
@@ -286,7 +285,7 @@ static int GetHostAndPort(char *host, int *port, char *business_card)
 #define FUNCNAME MPIDI_CH3I_Shm_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
+int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 {
     int mpi_errno;
     char hostname[256];
@@ -544,63 +543,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
     return mpi_errno;
 }
-
-/*
-#undef FUNCNAME
-#define FUNCNAME connection_alloc
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int connection_alloc(MPIDI_CH3I_Connection_t ** connp)
-{
-    MPIDI_CH3I_Connection_t * conn = NULL;
-    int id_sz;
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_ALLOC);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_ALLOC);
-    conn = MPIU_Malloc(sizeof(MPIDI_CH3I_Connection_t));
-    if (conn == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|sock|connallocfailed", NULL);
-	goto fn_fail;
-    }
-    conn->pg_id = NULL;
-    
-    mpi_errno = PMI_Get_id_length_max(&id_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_get_id_length_max",
-					 "**pmi_get_id_length_max %d", mpi_errno);
-	goto fn_fail;
-    }
-    conn->pg_id = MPIU_Malloc(id_sz + 1);
-    if (conn->pg_id == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-    }
-
-    *connp = conn;
-
-  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_ALLOC);
-    return mpi_errno;
-
-  fn_fail:
-    if (conn != NULL)
-    {
-	if (conn->pg_id != NULL)
-	{
-	    MPIU_Free(conn->pg_id);
-	}
-	
-	MPIU_Free(conn);
-    }
-
-    goto fn_exit;
-}
-*/
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Connection_free

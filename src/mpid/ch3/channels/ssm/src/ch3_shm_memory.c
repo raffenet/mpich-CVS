@@ -226,7 +226,6 @@ int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result
 {
     int mpi_errno = MPI_SUCCESS;
 #if defined (USE_POSIX_SHM)
-    int i;
 #elif defined (USE_SYSV_SHM)
     int i;
     FILE *fout;

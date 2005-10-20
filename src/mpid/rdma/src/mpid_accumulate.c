@@ -19,9 +19,9 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     int dt_contig, rank, mpi_errno = MPI_SUCCESS;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
-    MPIDI_STATE_DECL(MPID_STATE_MPI_ACCUMULATE);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_ACCUMULATE);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPI_ACCUMULATE);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_ACCUMULATE);
 
     MPIDI_CH3U_Datatype_get_info(origin_count, origin_datatype,
                                  dt_contig, data_sz, dtp);  
@@ -143,7 +143,7 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
         new_ptr = (MPIDI_RMA_ops *) MPIU_Malloc(sizeof(MPIDI_RMA_ops));
         if (!new_ptr) {
             mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
+            MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);
             return mpi_errno;
         }
         if (prev_ptr != NULL)
@@ -175,6 +175,6 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     }
 
  fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);
     return mpi_errno;
 }

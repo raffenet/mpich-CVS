@@ -64,9 +64,9 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     int *pmi_errcodes;
     int total_num_processes;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
     
     MPIR_Nest_incr();
 
@@ -210,7 +210,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 
  fn_exit:
     MPIR_Nest_decr();
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_SPAWN_MULTIPLE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

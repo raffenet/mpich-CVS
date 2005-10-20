@@ -25,9 +25,9 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
     int mpi_errno = MPI_SUCCESS;
     int gn_errno;
     MPID_Request * sreq = NULL;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     printf_d ("Entering "FCNAME"\n");
@@ -75,7 +75,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 
     printf_d ("Exiting "FCNAME"\n");
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     return mpi_errno;
 }
 

@@ -85,7 +85,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 #endif
     int i;
     unsigned int total = 0;
-    unsigned int num_bytes;
+    unsigned int num_bytes= 0;
     unsigned int cur_avail, dest_avail;
     unsigned char *cur_pos, *dest_pos;
     int index;

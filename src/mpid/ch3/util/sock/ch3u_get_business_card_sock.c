@@ -84,19 +84,12 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
  * interfaces, and is left here for reference purposes only
  */
 #if 0
-int MPIDI_CH3I_Get_business_card(char *value, int length)
-{
     int32_t local_ip[MAX_NUM_NICS];
     unsigned int a, b, c, d;
     int num_nics, i;
     char *value_orig;
     struct hostent *h;
     int port;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
-
-    port = MPIDI_CH3I_listener_port;
 
     /*snprintf(value, length, "%s:%d", host, port);*/
 
@@ -126,9 +119,4 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 				 port);
 	}
     }
-    /*MPIU_DBG_PRINTF(("Business card:\n<%s>\n", value_orig));*/
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_GET_BUSINESS_CARD);
-    return MPI_SUCCESS;
-}
 #endif

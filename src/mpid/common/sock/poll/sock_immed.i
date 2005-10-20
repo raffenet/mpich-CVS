@@ -581,9 +581,9 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 int MPIDU_Sock_wakeup(struct MPIDU_Sock_set * sock_set)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_ACCEPT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WAKEUP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_ACCEPT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WAKEUP);
 
     MPIDU_SOCKI_VERIFY_INIT(mpi_errno, fn_exit);
     MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_set, mpi_errno, fn_exit);
@@ -599,7 +599,7 @@ int MPIDU_Sock_wakeup(struct MPIDU_Sock_set * sock_set)
 #   endif
     
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_ACCEPT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAKEUP);
     return mpi_errno;
 }
 /* end MPIDU_Sock_wakeup() */

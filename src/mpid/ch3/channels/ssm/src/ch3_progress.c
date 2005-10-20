@@ -40,14 +40,14 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     MPIDI_VC_t *vc_ptr;
     static int spin_count = 1;
     static int msg_queue_count = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 #ifdef USE_SLEEP_YIELD
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SLEEP_YIELD);
 #else
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
 #endif
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
 #ifdef MPICH_DBG_OUTPUT
     if (is_blocking)
@@ -237,7 +237,7 @@ fn_exit:
 	}
     }
 #endif
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
     return mpi_errno;
 }
 
@@ -448,10 +448,10 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state *state)
     static int sockReps = 1;
     static int sockTotalReps = 0;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
     /*MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);*/
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     do
@@ -718,7 +718,7 @@ skip_sock_loop:
 
 fn_exit:
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", MPIDI_CH3I_progress_completion_count - completions));
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
     return mpi_errno;
 }
 
@@ -794,7 +794,7 @@ int MPIDI_CH3I_Message_queue_progress()
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress
+#define FUNCNAME MPIDI_CH3I_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)

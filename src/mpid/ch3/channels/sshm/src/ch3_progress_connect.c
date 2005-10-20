@@ -19,9 +19,8 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     /* There is no post_close for shm connections so handle them as closed immediately. */
     MPIDI_CH3I_SHM_Remove_vc_references(vc);
     mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
     }
 
     return mpi_errno;
@@ -132,7 +131,7 @@ void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc)
 #define FUNCNAME MPIDI_CH3I_Shm_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag)
+int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 {
     int mpi_errno;
     char hostname[256];
@@ -297,9 +296,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	return mpi_errno;
     }
     mpi_errno = MPIDI_KVS_Get(vc->pg->ch.kvs_name, key, val);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	return mpi_errno;
     }
 

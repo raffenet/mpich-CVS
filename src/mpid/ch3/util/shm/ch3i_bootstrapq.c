@@ -273,11 +273,12 @@ int MPIDI_CH3I_BootstrapQ_create_unique_name(char *name, int length)
 #elif defined(HAVE_TIME)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
-    MPIU_Snprintf(name, 40, "%08lX%08lX%08lX%08lX", rand(), rand(), rand(), time(NULL));
+    /* rand is part of stdlib and returns an int, not an unsigned long */
+    MPIU_Snprintf(name, 40, "%08X%08X%08X%08lX", rand(), rand(), rand(), (unsigned long)time(NULL));
 #else
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
-    MPIU_Snprintf(name, 40, "%08lX%08lX%08lX%08lX", rand(), rand(), rand(), rand());
+    MPIU_Snprintf(name, 40, "%08X%08X%08X%08X", rand(), rand(), rand(), rand());
 #endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE_UNIQUE_NAME);
     return MPI_SUCCESS;
