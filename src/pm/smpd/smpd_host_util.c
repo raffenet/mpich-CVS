@@ -20,6 +20,59 @@
 #include <direct.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_parse_map_string"
+int smpd_parse_map_string(const char *str, smpd_map_drive_node_t **list)
+{
+    smpd_map_drive_node_t *map_node;
+    const char *cur_pos;
+    char *iter;
+
+    /* string format: drive:\\host\share;drive2:\\host2\share2... */
+
+    smpd_enter_fn(FCNAME);
+
+    if (str == NULL || list == NULL)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    cur_pos = str;
+    while (cur_pos[0] != '\0' && cur_pos[1] == ':')
+    {
+	map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
+	if (map_node == NULL)
+	{
+	    smpd_err_printf("Error: malloc failed to allocate map structure.\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	map_node->ref_count = 0;
+	map_node->drive = cur_pos[0];
+	cur_pos++;
+	cur_pos++;
+	iter = map_node->share;
+	while (*cur_pos != '\0' && *cur_pos != ';')
+	{
+	    /* buffer overrun check */
+	    if (iter == &map_node->share[SMPD_MAX_EXE_LENGTH])
+	    {
+		free(map_node);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FAIL;
+	    }
+	    *iter++ = *cur_pos++;
+	}
+	*iter = '\0';
+	if (*cur_pos == ';')
+	    cur_pos++;
+	map_node->next = *list;
+	*list = map_node;
+    }
+    return SMPD_SUCCESS;
+}
+
 void smpd_fix_up_host_tree(smpd_host_node_t *node)
 {
     smpd_host_node_t *cur, *iter;

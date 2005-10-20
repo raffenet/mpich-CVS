@@ -931,20 +931,11 @@ configfile_loop:
 		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
-		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
+		if (smpd_parse_map_string((*argvp)[2], &drive_map_list) != SMPD_SUCCESS)
 		{
-		    map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
-		    if (map_node == NULL)
-		    {
-			printf("Error: malloc failed to allocate map structure.\n");
-			smpd_exit_fn(FCNAME);
-			return SMPD_FAIL;
-		    }
-		    map_node->ref_count = 0;
-		    map_node->drive = (*argvp)[2][0];
-		    strncpy(map_node->share, &(*argvp)[2][2], SMPD_MAX_EXE_LENGTH);
-		    map_node->next = drive_map_list;
-		    drive_map_list = map_node;
+		    printf("Error: unable to parse the drive mapping option - '%s'\n", (*argvp)[2]);
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
 		}
 		num_args_to_strip = 2;
 	    }
@@ -956,20 +947,11 @@ configfile_loop:
 		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
-		if ((strlen((*argvp)[2]) > 2) && (*argvp)[2][1] == ':')
+		if (smpd_parse_map_string((*argvp)[2], &gdrive_map_list) != SMPD_SUCCESS)
 		{
-		    map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
-		    if (map_node == NULL)
-		    {
-			printf("Error: malloc failed to allocate map structure.\n");
-			smpd_exit_fn(FCNAME);
-			return SMPD_FAIL;
-		    }
-		    map_node->ref_count = 0;
-		    map_node->drive = (*argvp)[2][0];
-		    strncpy(map_node->share, &(*argvp)[2][2], SMPD_MAX_EXE_LENGTH);
-		    map_node->next = gdrive_map_list;
-		    gdrive_map_list = map_node;
+		    printf("Error: unable to parse the drive mapping option - '%s'\n", (*argvp)[2]);
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
 		}
 		num_args_to_strip = 2;
 	    }

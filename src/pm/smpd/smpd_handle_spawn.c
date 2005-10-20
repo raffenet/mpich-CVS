@@ -52,7 +52,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     SMPD_BOOL env_channel_specified = SMPD_FALSE;
     SMPD_BOOL env_dll_specified = SMPD_FALSE;
     SMPD_BOOL env_wrap_dll_specified = SMPD_FALSE;
-    smpd_map_drive_node_t *map_node, *drive_map_list = NULL;
+    smpd_map_drive_node_t *drive_map_list = NULL;
 
     smpd_enter_fn(FCNAME);
 
@@ -385,19 +385,9 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    /* map */
 	    if (strcmp(info[j].key, "map") == 0)
 	    {
-		if ((strlen(info[j].val) > 2) && (info[j].val[1] == ':'))
+		if (smpd_parse_map_string(info[j].val, &drive_map_list) != SMPD_SUCCESS)
 		{
-		    map_node = (smpd_map_drive_node_t*)malloc(sizeof(smpd_map_drive_node_t));
-		    if (map_node == NULL)
-		    {
-			smpd_err_printf("Error: malloc failed to allocate map structure.\n");
-			goto spawn_failed;
-		    }
-		    map_node->ref_count = 0;
-		    map_node->drive = info[j].val[0];
-		    strncpy(map_node->share, &(info[j].val[2]), SMPD_MAX_EXE_LENGTH);
-		    map_node->next = drive_map_list;
-		    drive_map_list = map_node;
+		    goto spawn_failed;
 		}
 	    }
 	    /* localonly */

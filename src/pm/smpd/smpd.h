@@ -877,6 +877,7 @@ void smpd_fix_up_host_tree(smpd_host_node_t *node);
 SMPD_BOOL smpd_isnumbers_with_colon(const char *str);
 int smpd_add_host_to_default_list(const char *hostname);
 int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt_hostname, const int num_cpus);
+int smpd_parse_map_string(const char *str, smpd_map_drive_node_t **list);
 
 #if defined(__cplusplus)
 }
