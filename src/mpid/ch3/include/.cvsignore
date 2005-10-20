@@ -4,3 +4,4 @@ mpidi_ch3_conf.h
 *Release*
 .deps
 mpid_thread.h
+.state-cache

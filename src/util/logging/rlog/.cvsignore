@@ -26,3 +26,4 @@ irlog2rlog
 .deps
 trace_impl.h
 *.user
+.state-cache

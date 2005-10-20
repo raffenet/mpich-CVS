@@ -3,3 +3,4 @@ mpidi_ch3i_shm_conf.h
 Debug*
 Release*
 .deps
+.state-cache

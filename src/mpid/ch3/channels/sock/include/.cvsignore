@@ -9,3 +9,4 @@ mpidi_ch3i_sock_conf.h
 *.da
 *.gcov
 .deps
+.state-cache

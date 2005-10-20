@@ -12,3 +12,4 @@ Release
 .libs
 .libstamp*
 mpid_thread.c
+.state-cache

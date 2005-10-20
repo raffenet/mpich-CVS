@@ -2,3 +2,4 @@ describe_states.c
 Makefile.in
 Makefile
 .deps
+.state-cache
