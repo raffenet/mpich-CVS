@@ -22,7 +22,7 @@ MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL;
 /****************************************/
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress
+#define FUNCNAME MPIDI_CH3I_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
