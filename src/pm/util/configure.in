@@ -269,7 +269,7 @@ if test -z "$master_top_srcdir" ; then
    master_top_srcdir='${srcdir}/../../..'
 fi
 
-AC_CHECK_HEADERS(string.h sys/time.h stdlib.h sys/socket.h wait.h errno.h)
+AC_CHECK_HEADERS(string.h sys/time.h time.h stdlib.h sys/socket.h wait.h errno.h)
 # Check whether socklen_t is defined
 AC_CACHE_CHECK([whether socklen_t is defined in sys/socket.h],
 pac_cv_have_socklen_t,[AC_TRY_COMPILE([#include <sys/socket.h>],[socklen_t a;],

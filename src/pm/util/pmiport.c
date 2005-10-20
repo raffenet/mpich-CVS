@@ -6,9 +6,13 @@
 
 #include "pmutilconf.h"
 #include <stdio.h>
+/* Note that we need _XOPEN_SOURCE or some BSD source to get a prototype
+   for gethostname from unistd.h */
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+/* Note that we need _XOPEN_SOURCE or _SVID_SOURCE to get a prototype
+   for putenv from stdlib.h */
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif

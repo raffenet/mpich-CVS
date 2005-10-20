@@ -30,6 +30,7 @@
 #include "cmnargs.h"
 #include "ioloop.h"
 #include "pmiserv.h"
+#include "env.h"        /* For MPIE_Putenv */
 
 /* We need socket to create a socket pair */
 #include <sys/socket.h>
@@ -426,7 +427,7 @@ static PMIKVSpace *fPMIKVSAllocate( void )
     /* Create the space */
     kvs = (PMIKVSpace *)MPIU_Malloc( sizeof(PMIKVSpace) );
     if (!kvs) {
-	MPIU_Internal_error_printf( stderr, "too many kvs's\n" );
+	MPIU_Internal_error_printf( "too many kvs's\n" );
 	return 0;
     }
     MPIU_Snprintf( (char *)(kvs->kvsname), MAXNAMELEN, "kvs_%d", kvsnum++ );

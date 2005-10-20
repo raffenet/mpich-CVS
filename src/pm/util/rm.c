@@ -64,7 +64,7 @@ int MPIE_ChooseHosts( ProcessWorld *pWorld,
 		      MachineTable* (*readDB)(const char *, int, void *), 
 		      void *readDBdata )
 {
-    int i, k, nNeeded=0, ntest;
+    int i, nNeeded=0;
     MachineTable *mt;
     ProcessApp   *app;
     ProcessState *pState;
