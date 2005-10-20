@@ -23,6 +23,31 @@ fi
 
 PAC_PROG_MAKE
 
+#
+# Note: if we plan to use the sys/ipc.h header, we need to assert that
+# we're using sysv or xopen varities of unix
+# To check for this, we compile sys/ipc.h (if present) and check for
+# a warning about _SVID_SOURCE or _XOPEN_SOURCE.  If either is found,
+# we set _XOPEN_SOURCE now, before we do much additional testing
+AC_MSG_CHECKING([whether we need to define _XOPEN_SOURCE for sys/ipc.h])
+pac_cv_ipc_h_needs_xopen_source=no
+rm -f conftest*
+echo "#include <sys/ipc.h>" > conftest.c
+if $CC -c $CFLAGS $CPPFLAGS conftest.c 2>conftest.er1 1>/dev/null ; then
+    if test -s conftest.er1 && \
+        grep _XOPEN_SOURCE conftest.er1 >/dev/null 2>&1 ; then
+        if $CC -c $CFLAGS $CPPFLAGS -D_XOPEN_SOURCE=500 conftest.c \
+	             2>conftest.er1 1>/dev/null ; then
+            pac_cv_ipc_h_needs_xopen_source=yes
+        fi
+    fi
+fi
+AC_MSG_RESULT($pac_cv_ipc_h_needs_xopen_source)
+if test "$pac_cv_ipc_h_needs_xopen_source" = yes ; then
+    AC_DEFINE(_XOPEN_SOURCE,500,[Define to access sys/ipc.h cleanly])
+fi
+rm -f conftest*
+
 dnl AC_DEFINE(USE_PROCESS_LOCKS,,[Define to use process locks])
 dnl AC_DEFINE(HAVE_SHARED_PROCESS_READ,,[Define to use /proc directory for shared process reads])
 dnl AC_DEFINE(MPIDI_CH3_CHANNEL_RNDV,,[Define to use rdma channel functions])

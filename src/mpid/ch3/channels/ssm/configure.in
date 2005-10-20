@@ -39,16 +39,43 @@ AC_CHECK_HEADERS(assert.h)
 
 dnl AC_CHECK_HEADERS(sys/types.h sys/socket.h net/if.h netinet/in.h sys/ioctl.h sys/sockio.h errno.h)
 
+#
+# Note: if we plan to use the sys/ipc.h header, we need to assert that
+# we're using sysv or xopen varities of unix
+# To check for this, we compile sys/ipc.h (if present) and check for
+# a warning about _SVID_SOURCE or _XOPEN_SOURCE.  If either is found,
+# we set _XOPEN_SOURCE now, before we do much additional testing
+AC_MSG_CHECKING([whether we need to define _XOPEN_SOURCE for sys/ipc.h])
+pac_cv_ipc_h_needs_xopen_source=no
+rm -f conftest*
+echo "#include <sys/ipc.h>" > conftest.c
+if $CC -c $CFLAGS $CPPFLAGS conftest.c 2>conftest.er1 1>/dev/null ; then
+    if test -s conftest.er1 && \
+        grep _XOPEN_SOURCE conftest.er1 >/dev/null 2>&1 ; then
+        if $CC -c $CFLAGS $CPPFLAGS -D_XOPEN_SOURCE=500 conftest.c \
+	             2>conftest.er1 1>/dev/null ; then
+            pac_cv_ipc_h_needs_xopen_source=yes
+        fi
+    fi
+fi
+AC_MSG_RESULT($pac_cv_ipc_h_needs_xopen_source)
+if test "$pac_cv_ipc_h_needs_xopen_source" = yes ; then
+    AC_DEFINE(_XOPEN_SOURCE,500,[Define to access sys/ipc.h cleanly])
+fi
+rm -f conftest*
+
+
 AC_SEARCH_LIBS(socket, socket)
 AC_CHECK_LIB(thread, mutex_init)
-AC_CHECK_HEADERS(pthread.h fcntl.h string.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h arpa/inet.h sys/sockio.h net/if.h)
+AC_CHECK_HEADERS(pthread.h fcntl.h string.h strings.h sys/time.h sys/sem.h sys/ipc.h sys/msg.h sys/shm.h unistd.h sys/param.h sys/ioctl.h netinet/in.h netinet/tcp.h netdb.h sys/uio.h sys/select.h sys/types.h stdlib.h sys/socket.h sys/filio.h netinet/in.h values.h sys/uio.h sched.h arpa/inet.h sys/sockio.h net/if.h)
 AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h ctype.h process.h sys/mman.h uuid/uuid.h mqueue.h)
 AC_CHECK_FUNCS(msgget yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(sysconf pthread_mutexattr_setpshared pthread_mutexattr_init)
 dnl AC_CHECK_FUNCS( mmap )
 # This autoconf code checks that mmap works, at least in 
 # a simple case (private, fixed mapping of an already mapped memory)
-# It is a slightly better test than just checking that the function exists
+# It is a slightly better test than just checking that the function exists,
+# but is isn't fully adequate (we need something more complete)
 AC_FUNC_MMAP
 
 AC_SEARCH_LIBS( uuid_generate, uuid )
