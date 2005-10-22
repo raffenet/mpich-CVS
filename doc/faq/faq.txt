@@ -26,3 +26,19 @@ before \texttt{mpi.h} is included, or add the definition
 to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
 
+%% Heading: Q:  How do I pass environment variables to the processes of
+my parallel program?
+%% Filename: envvars
+%% End
+A:  By default, all the environment variables in the shell where
+\texttt{mpiexec} is run are passed to all processes of the application
+program.  (The one exception is \texttt{LD\_LIBEARY\_PATH} when the
+mpd's are being run as root.)  This default can be overridden in many
+ways, and individual environment variables can be passed to specific
+processes using arguments to \texttt{mpiexec}.  A synopsis of the
+possible arguments can be listed by typing
+\begin{verbatim}
+    mpiexec -help
+\end{verbatim}
+and further details are available in the \emph{User's Guide}.
+
