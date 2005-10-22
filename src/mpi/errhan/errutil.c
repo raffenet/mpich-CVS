@@ -2101,6 +2101,7 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen,
     return;
 }
 
+#if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
 /* Convert an error code into ring_idx, ring_id, and generic_idx.
    Return non-zero if there is a problem with the decode values
    (e.g., out of range for the ring index) */
@@ -2117,7 +2118,7 @@ static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
 
     return 0;
 }
-
+#endif
 
 /* 
    Nesting level for routines.
