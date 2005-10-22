@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:5 ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -46,7 +46,9 @@ __attribute__ ((unused))
 
 #ifdef HAVE_GCC_AND_IA64_ASM
 #define HAVE__INTERLOCKEDEXCHANGE 1
-static inline unsigned long _InterlockedExchange(volatile void *ptr, unsigned long x)
+/* Make sure that the type here is compatible with the use and with 
+ * MPIDU_Process_lock_t */
+static inline unsigned long _InterlockedExchange(volatile long *ptr, unsigned long x)
 {
    unsigned long result;
    __asm__ __volatile ("xchg4 %0=[%1],%2" : "=r" (result) : "r" (ptr), "r" (x) : "memory");
@@ -57,7 +59,7 @@ static inline unsigned long _InterlockedExchange(volatile void *ptr, unsigned lo
 #ifdef HAVE_ICC_AND_IA64
 #define HAVE__INTERLOCKEDEXCHANGE 1
 #include <ia64intrin.h>
-#define _InterlockedExchange(ptr,x) _InterlockedExchange((volatile void *)ptr,x)
+#define _InterlockedExchange(ptr,x) _InterlockedExchange(ptr,x)
 #endif
 
 extern int g_nLockSpinCount;
@@ -219,7 +221,11 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
                     return;
                 }
 #elif defined(HAVE__INTERLOCKEDEXCHANGE)
-                if (_InterlockedExchange((volatile void *) lock, 1) == 0)
+		/* The Intel compiler complains if the lock is cast to
+		 * volatile void * (the type of lock is probably
+		 * volatile long *).  The void * works for the Intel 
+		 * compiler. */
+                if (_InterlockedExchange((void *)lock, 1) == 0)
                 {
                     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
                     return;
