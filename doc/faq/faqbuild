@@ -100,9 +100,11 @@ else {
 $FD = FD;
 open $FD, "<$faqfilename" || die "Could not open $faqfilename";
 
-@filelist      = ();     # List of files
-%fileToHeading = ();     # indexed by filename, the heading
-%fileToText    = ();     # indexed by filename, the text
+@filelist      = ();      # List of files
+%fileToHeading = ();      # indexed by filename, the heading
+%fileToText    = ();      # indexed by filename, the text
+%IndexToSectionHead = (); # maps an index into @filelist into a heading
+                          # (defined by %% Section:) used to group items
 
 $inItem = 0;
 $itemText = "";
@@ -168,7 +170,7 @@ sub ReadHeading {
     my $heading = "";
     my $shortfile = "";
     my $foundEnd = 0;
-    while ($line =~ /%%/) {
+    while ($line =~ /^%%/) {
 	if ($line =~ /%%\s*[Hh][Ee][Aa][Dd][Ii][Nn][Gg]:\s*(\S.*\S)\s*/) {
 	    $heading = $1;
 	    while ($heading =~ /\\$/) {
@@ -184,6 +186,10 @@ sub ReadHeading {
 	elsif ($line =~ /%%\s*[Ee][Nn][Dd]/) {
 	    $foundEnd = 1;
 	    last;
+	}
+	elsif ($line =~ /%%\s*[Ss][Ee][Cc][Tt][Ii][Oo][Nn]:\s*(\S.*\S)\s*/) {
+	    my $nextItem = $#filelist+1;
+	    $IndexToSectionHead{$nextItem} = $1;
 	}
 	elsif ($line =~ /%%\s*(\S.*)/) {
 	    print STDERR "Unrecognized heading $1\n";
@@ -211,7 +217,12 @@ sub processItem {
 	}
 	open TFD, ">$shortfile.txt" || die "Cannot open $shortfile.txt"; 
 	my $textheading = &textify( $heading );
-	print TFD "$textheading:\n";
+	# Add a : to the end of the heading if there is no punctuation
+	# there already
+	if (! ($textheading =~ /[:\?\!\;\.]$/) ) {
+	    $textheading .= ":";
+	}
+	print TFD "$textheading\n";
 	foreach $line (split(/\n/,$itemText)) {
 	    print TFD &textify( $line ). "\n";
 	}
@@ -351,13 +362,26 @@ sub CreateLatexHeader {
 
 sub CreateLatexMenu {
     # Create headings
-    print LATEXFD "\\begin{itemize}\n";
+    my $inItemize = 0;
     for (my $i=0; $i<=$#filelist; $i++) {
+	if (defined($IndexToSectionHead{$i})) {
+	    if ($inItemize) {
+		print LATEXFD "\\end{itemize}\n";
+		$inItemize = 0;
+	    }
+	    print LATEXFD "\\section{" . $IndexToSectionHead{$i} . "}\n";
+	}
 	my $file = $filelist[$i];
 	my $heading = $fileToHeading{$file};
+	if (! $inItemize) {
+	    print LATEXFD "\\begin{itemize}\n";
+	    $inItemize = 1;
+	}
 	print LATEXFD "\\item $heading\n";
     }
-    print LATEXFD "\\end{itemize}\n";
+    if ($inItemize) {
+	print LATEXFD "\\end{itemize}\n";
+    }
 }
 
 sub CreateLatexBody {
@@ -431,13 +455,26 @@ sub CreateHTMLMenu {
 	}
 	print HTMLFD "\">Press <b>Collapse</b> all answers</span><br>$nl";
     }
-    print HTMLFD "<menu>$nl";
+    my $inMenu = 0;
     for (my $i=0; $i<=$#filelist; $i++) {
 	my $file = $filelist[$i];
+	if (defined($IndexToSectionHead{$i})) {
+	    if ($inMenu) {
+		print HTMLFD "</menu>$nl";
+		$inMenu = 0;
+	    }
+	    print HTMLFD &htmlify2($IndexToSectionHead{$i}) . "<br>$nl";
+	}
 	my $heading = &htmlify2( $fileToHeading{$file} );
+	if (!$inMenu) {
+	    print HTMLFD "<menu>$nl";
+	    $inMenu = 1;
+	}
 	print HTMLFD "<li> <a href=\"\#$file\">$heading</a>$nl";
     }
-    print HTMLFD "</menu>$nl";
+    if ($inMenu) {
+	print HTMLFD "</menu>$nl";
+    }
 }
 
 sub CreateHTMLBody {

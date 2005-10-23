@@ -9,14 +9,25 @@
 % If the heading requires more than one line of text, use the backslash
 % character to continue it (and no %% on the continuation lines).
 % However, it is best if headings are short, as their purpose in an
-% FAQ is to provide a quick index of the topics 
+% FAQ is to provide a quick index of the topics.
+% In addition, the item
+%    %% Section: title
+% may be used to group the items into major categories.  This statement 
+% should immediately preceed the "Heading" statement for the first item
+% in that category.
 %
 % After that comes text.  It may use a subset of LaTeX commands, including
 % \texttt, \emph, \textbf, \url, \_, and the environments verbatim, itemize,
 % enumerate, and small (there are some others, but these should normally
 % be sufficient).  One difference from basic LaTeX is that paragraph
 % breaks must be made explicitly with \par.
+%
+% To rebuild the faq files in all three (HTML, PDF, Text) formats, do
+%    make
+% To install the HTML and PDF pages on the web site, do
+%    make install-web
 % ----------------------------------------------------------------------------
+%% Section: General Information
 %% Heading: Q: What is MPICH2?
 %% Filename: intro
 %% End
@@ -24,6 +35,7 @@ MPICH2 is a freely available, portable implementation of
 \href{http://www.mpi-forum.org}{MPI}, the Standard for 
 message-passing libraries.  It implements both MPI-1 and MPI-2.
 
+%% Section: Compiling MPI Programs
 %% Heading: C++ and \texttt{SEEK\_SET}
 %% Filename: cxxseek
 %% End
@@ -46,6 +58,7 @@ before \texttt{mpi.h} is included, or add the definition
 to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
 
+%% Section: Running MPI Programs
 %% Heading: Q: How do I pass environment variables to the processes of my parallel program
 %% Filename: envvars
 %% End
