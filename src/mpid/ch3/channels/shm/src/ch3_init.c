@@ -43,13 +43,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     MPIDI_VC_t * vc;
     int pg_size;
     int p;
-    char * pg_id;
-    int pg_id_sz;
     char * key;
     char * val;
     int key_max_sz;
     int val_max_sz;
-    int kvs_name_sz;
     char shmemkey[MPIDI_MAX_SHM_NAME_LENGTH];
     int i, j, k;
     int shm_block;
@@ -405,14 +402,12 @@ fn_exit:
     }
     
     return mpi_errno;
-
-fn_fail:
-    goto fn_exit;
 }
 
 /* Perform the channel-specific vc initialization.  This routine is used
    in MPIDI_CH3_Init and in routines that create and initialize connections */
-int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
+{
     vc->ch.sendq_head         = NULL;
     vc->ch.sendq_tail         = NULL;
 
