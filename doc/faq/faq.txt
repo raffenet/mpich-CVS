@@ -1,8 +1,28 @@
-%% Heading: Introduction
+%
+% Instructions on writing an FAQ entry:
+% All entries begin with a set of structured comments that begin
+% with two percent signs (%%) and have the form
+%    %% Heading: title
+%    %% Filename: shortname
+%    %% End
+% The '%%' must be at the beginning of the line.
+% If the heading requires more than one line of text, use the backslash
+% character to continue it (and no %% on the continuation lines).
+% However, it is best if headings are short, as their purpose in an
+% FAQ is to provide a quick index of the topics 
+%
+% After that comes text.  It may use a subset of LaTeX commands, including
+% \texttt, \emph, \textbf, \url, \_, and the environments verbatim, itemize,
+% enumerate, and small (there are some others, but these should normally
+% be sufficient).  One difference from basic LaTeX is that paragraph
+% breaks must be made explicitly with \par.
+% ----------------------------------------------------------------------------
+%% Heading: Q: What is MPICH2?
 %% Filename: intro
 %% End
-MPICH is a freely available, portable implementation of MPI, the Standard for
-message-passing libraries. 
+MPICH2 is a freely available, portable implementation of
+\href{http://www.mpi-forum.org}{MPI}, the Standard for 
+message-passing libraries.  It implements both MPI-1 and MPI-2.
 
 %% Heading: C++ and \texttt{SEEK\_SET}
 %% Filename: cxxseek
@@ -26,13 +46,19 @@ before \texttt{mpi.h} is included, or add the definition
 to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
 
-%% Heading: Q:  How do I pass environment variables to the processes of
-my parallel program?
+%% Heading: Q: How do I pass environment variables to the processes of my parallel program
 %% Filename: envvars
+%% End
+A: The specific method depends on the process manager and version of 
+\texttt{mpiexec} that you are using.  
+
+%% Heading: Q:  How do I pass environment variables to the processes of \
+my parallel program when using the mpd process manager?
+%% Filename: envvarsmpd
 %% End
 A:  By default, all the environment variables in the shell where
 \texttt{mpiexec} is run are passed to all processes of the application
-program.  (The one exception is \texttt{LD\_LIBEARY\_PATH} when the
+program.  (The one exception is \texttt{LD\_LIBRARY\_PATH} when the
 mpd's are being run as root.)  This default can be overridden in many
 ways, and individual environment variables can be passed to specific
 processes using arguments to \texttt{mpiexec}.  A synopsis of the

@@ -47,7 +47,7 @@ else {
 		    'emph'   => '1:<em>\1</em>',
 		    'texttt' => '1:<tt>\1</tt>',
 		    'url' => '1:<a href="\1">\1</a>',
-		    'urlname' => '2:<a href="\1">\2</a>',
+		    'href' => '2:<a href="\1">\2</a>',
 		    'item'   => '0:<li>',
 		    'par'    => '0:<p>',
 		    'begin'  => '1:',
@@ -75,7 +75,7 @@ else {
 		    'emph'   => '1:\1',
 		    'texttt' => '1:\1',
 		    'url' => '1:\1',
-		    'urlname' => '2:\2(\1)',
+		    'href' => '2:\2(\1)',
 		    'item'   => '0:* ',
 		    'par'    => '0:',
 		    'begin'  => '1:',
@@ -111,7 +111,7 @@ $shortfile = "";
 while (<$FD>) {
     # Get the next heading
     print "Read $_" if $gDebug;
-    if (/%%/) {
+    if (/^%%/) {
 	if ($inItem) {
 	    # Finish off this item
 	    &processItem( $heading, $shortfile, $itemText );
@@ -123,6 +123,10 @@ while (<$FD>) {
 	$filelist[$#filelist+1]    = $shortfile;
 	$fileToHeading{$shortfile} = $heading;
 	$inItem = 1;
+    }
+    elsif (/^\s*%/) {
+	# Skip a comment line
+	next;
     }
     else {
 	$itemText .= $_;
@@ -163,14 +167,22 @@ sub ReadHeading {
     my ($line,$FD) = @_;
     my $heading = "";
     my $shortfile = "";
+    my $foundEnd = 0;
     while ($line =~ /%%/) {
 	if ($line =~ /%%\s*[Hh][Ee][Aa][Dd][Ii][Nn][Gg]:\s*(\S.*\S)\s*/) {
 	    $heading = $1;
+	    while ($heading =~ /\\$/) {
+		$heading =~ s/\\$//;
+		$line = <$FD>;
+		$line =~ s/\r?\n//;
+		$heading .= $line;
+	    }
 	}
 	elsif ($line =~ /%%\s*[Ff][Ii][Ll][Ee]\s*[Nn][Aa][Mm][Ee]:\s*(\S.*\S)\s*/) {
 	    $shortfile = $1;
 	}
 	elsif ($line =~ /%%\s*[Ee][Nn][Dd]/) {
+	    $foundEnd = 1;
 	    last;
 	}
 	elsif ($line =~ /%%\s*(\S.*)/) {
@@ -178,6 +190,12 @@ sub ReadHeading {
 	}
 	$line = <$FD>;
 	print "(ReadHeading) Read $line" if $gDebug;
+    }
+    if (! $foundEnd) {
+	print STDERR "Malformed heading entry; no %% End found\n";
+    }
+    if ($shortfile eq "") {
+	print STDERR "Malformed heading entry; no %% Filename: found\n";
     }
     return ($heading,$shortfile);
 }

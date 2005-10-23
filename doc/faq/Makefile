@@ -4,7 +4,7 @@ ALL: faq.htm faq.pdf
 .SUFFIXES: .htm .tex .ps .pdf .dvi
 
 faq.htm faq.tex: faqbuild faq.txt Makefile
-	if [ ! -x /usr/bin/perl ] ; then \
+	@if [ ! -x /usr/bin/perl ] ; then \
 	    echo "faqbuild expects to find perl is /usr/bin/perl" ; \
 	    echo "edit faqbuild and Makefile with the path to perl" ; \
 	    echo "and rerun make" ; \
@@ -17,7 +17,7 @@ faq.htm faq.tex: faqbuild faq.txt Makefile
 .dvi.pdf:
 	(unset TEXMF ; dvipdfm $*)
 .tex.dvi:
-	latex $*
+	latex $* </dev/null >/dev/null 2>&1
 	latex $*
 
 WEBDIR = /mcs/www/mpi/mpich2
