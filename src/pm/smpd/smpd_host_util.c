@@ -19,6 +19,9 @@
 #if defined(HAVE_DIRECT_H) || defined(HAVE_WINDOWS_H)
 #include <direct.h>
 #endif
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
 
 #undef FCNAME
 #define FCNAME "smpd_parse_map_string"

@@ -10,6 +10,10 @@
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
+#ifdef HAVE_SYS_STAT_H
+/* This is needed for umask */
+#include <sys/stat.h>
+#endif
 #include <stdlib.h>
 #ifdef HAVE_ERRNO_H
 #include <errno.h>

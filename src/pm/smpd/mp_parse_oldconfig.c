@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include "mpiexec.h"
 #include "smpd.h"
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
 
 typedef struct HostNode
 {

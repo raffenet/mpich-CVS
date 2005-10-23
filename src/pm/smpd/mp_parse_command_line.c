@@ -26,6 +26,9 @@
 #ifdef HAVE_WINDOWS_H
 #include <crtdbg.h>
 #endif
+#ifdef HAVE_CTYPE_H
+#include <ctype.h>
+#endif
 
 void mp_print_options(void)
 {

@@ -148,7 +148,7 @@ int smpd_command_destination(int dest, smpd_context_t **dest_context)
 	    return SMPD_FAIL;
 	}
 	*dest_context = smpd_process.left_context;
-	smpd_dbg_printf("returning left_context\n", src, dest);
+	smpd_dbg_printf("%d -> %d : returning left_context\n", src, dest);
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
