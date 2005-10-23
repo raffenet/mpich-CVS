@@ -24,7 +24,7 @@ WEBDIR = /mcs/www/mpi/mpich2
 REQFAQDIR = /mcs/request/mpich2-maint/faq
 
 install-web: faq.htm faq.pdf
-	if [ -z "${WEBDIR}" ] ; then \
+	@if [ -z "${WEBDIR}" ] ; then \
 	    echo "Must set WEBDIR first" ; fi
 	cp -f faq.htm ${WEBDIR}/faq.htm
 	cp -f faq.pdf ${WEBDIR}/faq.pdf
