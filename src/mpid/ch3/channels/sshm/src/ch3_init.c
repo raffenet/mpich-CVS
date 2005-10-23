@@ -74,11 +74,10 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a )
 }
 
 /* Perform the channel-specific vc initialization */
-int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
+{
     vc->ch.sendq_head         = NULL;
     vc->ch.sendq_tail         = NULL;
-
-    /* Which of these do we need? */
     vc->ch.recv_active        = NULL;
     vc->ch.send_active        = NULL;
     vc->ch.req                = NULL;
@@ -86,6 +85,9 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.write_shmq         = NULL;
     vc->ch.shm                = NULL;
     vc->ch.shm_state          = 0;
+    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    vc->ch.shm_read_connected = 0;
+    vc->ch.shm_reading_pkt    = 0;
     return 0;
 }
 
