@@ -14,14 +14,14 @@
 int MPIDI_CH3_Finalize()
 {
     int mpi_errno = MPI_SUCCESS;
-    int rc;
 
     MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 
     /* Shutdown the progress engine */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_progress_finalize");
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**finalize_progress_finalize");
     }
 
     /* FIXME: This should be used in abort as well */
@@ -30,8 +30,9 @@ int MPIDI_CH3_Finalize()
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, TRUE);
     else
 	mpi_errno = MPIDI_CH3I_SHM_Release_mem(MPIDI_Process.my_pg, FALSE);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_release_mem");
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**finalize_release_mem");
     }
 
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
