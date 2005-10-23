@@ -443,17 +443,18 @@ sub CreateHTMLMenu {
 	print HTMLFD "If you do not see the descriptions, click on the item to get$nl";
 	print HTMLFD "a description of the topic.  Double-click to hide the description.$nl";
 	print HTMLFD "These two items may be used$nl";
-	print HTMLFD "to expand and collapse all entries$nl<p>$nl";
+	print HTMLFD "to expand and collapse all entries:<br>$nl";
 	print HTMLFD "<span onclick=\"$nl";
 	for (my $i=0; $i<=$#filelist ; $i++) {
 	    print HTMLFD "    answer$i.className='expanded';$nl";
 	}
-	print HTMLFD "\">Press <b>Expand</b> all answers</span><br>$nl";
+	print HTMLFD "\">Press to <b>Expand</b> all answers</span><br>$nl";
 	print HTMLFD "<span onclick=\"";
 	for (my $i=0; $i<=$#filelist ; $i++) {
 	    print HTMLFD "    answer$i.className='contracted';$nl";
 	}
-	print HTMLFD "\">Press <b>Collapse</b> all answers</span><br>$nl";
+	print HTMLFD "\">Press to <b>Collapse</b> all answers</span><br>$nl";
+	print HTMLFD "<hr>$nl";
     }
     my $inMenu = 0;
     for (my $i=0; $i<=$#filelist; $i++) {
@@ -463,14 +464,15 @@ sub CreateHTMLMenu {
 		print HTMLFD "</menu>$nl";
 		$inMenu = 0;
 	    }
-	    print HTMLFD &htmlify2($IndexToSectionHead{$i}) . "<br>$nl";
+	    print HTMLFD "<font size=+1>" . 
+		&htmlify2($IndexToSectionHead{$i}) . "</font><br>$nl";
 	}
 	my $heading = &htmlify2( $fileToHeading{$file} );
 	if (!$inMenu) {
 	    print HTMLFD "<menu>$nl";
 	    $inMenu = 1;
 	}
-	print HTMLFD "<li> <a href=\"\#$file\">$heading</a>$nl";
+	print HTMLFD "<li> <a href=\"\#$file\" onclick=\"answer$i.className='expanded'\">$heading</a>$nl";
     }
     if ($inMenu) {
 	print HTMLFD "</menu>$nl";
