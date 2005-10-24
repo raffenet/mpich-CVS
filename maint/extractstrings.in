@@ -58,8 +58,10 @@
 #   fileInCache{filename} = comparison info
 #   
 # -------------------------------------------------------------------------
-$gDebug = 0;
-$gVerbose = 1;
+$gDebug     = 0;
+# verbose of 1 gives the least amount of data, higher values give
+# increasing amount of detail.
+$gVerbose   = 1;
 $gUpdateAll = 0;
 # -------------------------------------------------------------------------
 # Return an array of regular files in the named directory
@@ -199,10 +201,29 @@ sub processFiles {
 	$#filesDeleted == -1 &&
 	$#filesToScan  == -1) {
 	# Nothing to do, we can leave the cache file as is
-	print "Cache in $dir unchanged\n" if $gDebug || $gVerbose;
+	print "Cache in $dir unchanged\n" if $gDebug || $gVerbose > 1;
     }
     else {
-	print "Changes in dir $dir: created = $#filesCreated, deleted = $#filesDeleted, changed = $#filesToScan\n" if $gDebug;
+	if ($gDebug || $gVerbose > 0) {
+	    # Give a detailed description
+	    my $sep = "";
+	    print "Changes in dir $dir: ";
+	    if ($#fileCreated >= 0) {
+		my $num = $#filesCreated + 1;
+		print "created = $num";
+		$sep = ", ";
+		}
+	    if ($#filesDeleted >= 0) {
+		my $num = $#filesDeleted + 1;
+		print "${sep}deleted = $num";
+		$sep = ", ";
+	    }
+	    if ($#filesToScan >= 0) {
+		my $num = $#filesToScan + 1;
+		print "${sep}changed = $num";
+	    }
+	    print "\n";
+	}
 	# We need to scan some files, adding their info to fileInfo
 	my %fileInfo = &ReadCacheContents( $dir, $cachefile );
 	for (my $i=0; $i<=$#filesDeleted; $i++) {
