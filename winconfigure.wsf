@@ -3017,6 +3017,10 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#define HAVE_PMPI_COMM_GET_ATTR 1")
 				Case "HAVE_PMPI_COMM_SET_ATTR"
 					fout.WriteLine("#define HAVE_PMPI_COMM_SET_ATTR 1")
+				Case "_XOPEN_SOURCE"
+					fout.WriteLine("/* #undef _XOPEN_SOURCE */")
+				Case "HAVE_SYS_MSG_H"
+					fout.WriteLine("/* #undef HAVE_SYS_MSG_H */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -3317,12 +3321,14 @@ If f.FileExists("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in") Th
 	Set fout = f.CreateTextFile("src\include\win32\mpidi_ch3i_ssm_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_ssm_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in", false)
+	fout.WriteLine("#define USE_PERSISTENT_SHARED_MEMORY")
 	Call WriteFooter(fout)
 	fout.Close()
 	cEcho "Creating src\include\win64\mpidi_ch3i_ssm_conf.h"
 	Set fout = f.CreateTextFile("src\include\win64\mpidi_ch3i_ssm_conf.h")
 	Call WriteHeader(fout, "mpidi_ch3i_ssm_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in", true)
+	fout.WriteLine("#define USE_PERSISTENT_SHARED_MEMORY")
 	Call WriteFooter(fout)
 	fout.Close()
 Else
@@ -3358,6 +3364,7 @@ If f.FileExists("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in") 
 	Call WriteHeader(fout, "mpidi_ch3i_sshm_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in", false)
 	fout.WriteLine("#define HAVE_MASM_AND_X86")
+	fout.WriteLine("#define USE_PERSISTENT_SHARED_MEMORY")
 	Call WriteFooter(fout)
 	fout.Close()
 	cEcho "Creating src\include\win64\mpidi_ch3i_sshm_conf.h"
@@ -3365,6 +3372,7 @@ If f.FileExists("src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in") 
 	Call WriteHeader(fout, "mpidi_ch3i_sshm_")
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\sshm\include\mpidi_ch3i_sshm_conf.h.in", true)
 	fout.WriteLine("#define HAVE_MASM_AND_X86")
+	fout.WriteLine("#define USE_PERSISTENT_SHARED_MEMORY")
 	Call WriteFooter(fout)
 	fout.Close()
 Else
