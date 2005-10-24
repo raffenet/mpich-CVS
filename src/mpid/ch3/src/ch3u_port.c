@@ -531,7 +531,7 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 	    }
 	    pg_str  = pg_list->str;
 	    pg_list = pg_list->next;
-	    len     = strlen(pg_str) + 1;
+	    len     = (int)strlen(pg_str) + 1;
 	}
 	NMPI_Bcast( &len, 1, MPI_INT, root, comm_p->handle );
 	if (rank != root) {
