@@ -267,6 +267,7 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     struct pollinfo * pollinfo;
     int fd = -1;
     long flags;
+    int optval;
     struct sockaddr_in addr;
     socklen_t addr_len;
     int rc;
@@ -301,8 +302,8 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * p
     /* set SO_REUSEADDR to a prevent a fixed service port from being bound to during subsequent invocations */
     if (*port != 0)
     {
-	flags = 1;
-	rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(long));
+	optval = 1;
+	rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int));
 	/* --BEGIN ERROR HANDLING-- */
 	if (rc == -1)
 	{
