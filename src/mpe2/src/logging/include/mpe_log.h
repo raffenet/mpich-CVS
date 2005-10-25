@@ -56,44 +56,42 @@ int MPE_Init_log( void );
 int MPE_Initialized_logging( void );
 
 int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
-                             int start_etype, int final_etype,
+                             int state_startID, int state_finalID,
                              const char *name, const char *color,
                              const char *format );
   /* create state with byte info data description lines in MPI_Comm */
 
-int MPE_Describe_info_state( int start_etype, int final_etype,
+int MPE_Describe_info_state( int state_startID, int state_finalID,
                              const char *name, const char *color,
                              const char *format );
   /* create state with byte info data description lines in MPI_COMM_WORLD */
 
 int MPE_Describe_known_state( const CLOG_CommIDs_t *commIDs, int local_thread,
-                              int stateID, int start_etype, int final_etype,
+                              int stateID, int state_startID, int state_finalID,
                               const char *name, const char *color,
                               const char *format );
-int MPE_Describe_uncheck_state( const CLOG_CommIDs_t *commIDs, int local_thread,
-                                int stateID, int start_etype, int final_etype,
-                                const char *name, const char *color,
-                                const char *format );
   /* Internal MPE routine for MPI logging in MPI_Comm*/
 
-int MPE_Describe_state( int start_etype, int final_etype,
+int MPE_Describe_state( int state_startID, int state_finalID,
                         const char *name, const char *color );
   /* create state description lines in MPI_COMM_WORLD */
 
 int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
-                             int event, const char *name, const char *color,
+                             int eventID, const char *name, const char *color,
                              const char *format );
   /* create event with byte info data description lines in MPI_comm */
 
-int MPE_Describe_info_event( int event, const char *name, const char *color,
+int MPE_Describe_info_event( int eventID, const char *name, const char *color,
                              const char *format );
   /* create event with byte info data description lines in MPI_COMM_WORLD */
 
-int MPE_Describe_event( int event, const char *name, const char *color );
+int MPE_Describe_event( int eventID, const char *name, const char *color );
   /* create event description lines in MPI_COMM_WORLD */
 
 int MPE_Log_get_event_number( void );
-  /* Get a new user-space event number */
+int MPE_Log_get_state_eventIDs( int *statedef_startID, int *statedef_finalID );
+int MPE_Log_get_solo_eventID( int *eventdef_eventID );
+  /* Get new user-space event number */
 
   /* Internal MPE routine for MPI logging */
 int MPE_Log_get_known_eventID( void );

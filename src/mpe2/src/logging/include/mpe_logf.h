@@ -30,6 +30,10 @@
       external MPE_Describe_event
       integer  MPE_Log_get_event_number
       external MPE_Log_get_event_number
+      integer  MPE_Log_get_state_eventIDs
+      external MPE_Log_get_state_eventIDs
+      integer  MPE_Log_get_solo_eventID
+      external MPE_Log_get_solo_eventID
       integer  MPE_Start_log
       external MPE_Start_log
       integer  MPE_Log_send
