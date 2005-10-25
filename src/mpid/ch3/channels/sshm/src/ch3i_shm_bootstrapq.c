@@ -21,7 +21,7 @@ typedef struct mqshm_t
 #ifdef DBG_TEST_LOCKING
     int inuse; /* use to test that the lock is working */
 #endif
-    int first;
+    int volatile first;
     int last;
     int next_free;
     int cur_num_messages;
