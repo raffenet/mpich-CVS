@@ -9,6 +9,8 @@
 
 package logformat.clog2;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.io.*;
 
 
@@ -52,6 +54,25 @@ public class RecDefEvent
         }
 
         return BYTESIZE;
+    }
+
+    public static List getUSERinitUndefinedEventDefs()
+    {
+        RecDefEvent def;
+
+        // evtID is equivalent to the variable "stateid" MPI_Init()
+        // in <MPE>/src/wrappers/src/log_mpi_core.c
+        int evtID = Const.MPE_1ST_USER_SOLO_EVENT;
+        List defs = new ArrayList( Const.MPE_MAX_USER_SOLO_EVENTS );
+        for ( int idx = 0; idx < Const.MPE_MAX_USER_SOLO_EVENTS; idx++ ) {
+            def              = new RecDefEvent();
+            def.etype        = new Integer( evtID++ );
+            def.color        = "pink";
+            def.name         = null;
+            def.format       = null;
+            defs.add( def );
+        }
+        return defs;
     }
 
     public String toString()

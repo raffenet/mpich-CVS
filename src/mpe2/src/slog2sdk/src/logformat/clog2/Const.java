@@ -12,7 +12,7 @@ package logformat.clog2;
 public class Const
 {
     // Current Version ID
-           static final String    VERSION         = "CLOG-02.30";
+           static final String    VERSION         = "CLOG-02.40";
 
     /*
        Older Version IDs, COMPAT_VERSIONS, that are compataible to VERSION.
@@ -21,9 +21,10 @@ public class Const
            static final String[]  COMPAT_VERSIONS = {};
        If VERSION is compatible with CLOG-02.10, define COMPAT_VERSIONS as
            static final String[]  COMPAT_VERSIONS = { "CLOG-02.10" };
-       VERSION 2.30 is the format that supports MPI_Comm.
+       VERSION 2.30 updates CLOG format that supports MPI_Comm.
+       VERSION 2.40 updates the clog2TOdrawable.InputLog.
     */
-           static final String[]  COMPAT_VERSIONS = {};
+           static final String[]  COMPAT_VERSIONS = { "CLOG-02.30" };
 
            static final byte      INVALID_byte    = Byte.MIN_VALUE;
            static final short     INVALID_short   = Short.MIN_VALUE;
@@ -39,33 +40,46 @@ public class Const
 
     //  Define constants listed in <MPE2>/src/logging/include/clog_record.h
 
-    //  MPE_MAX_KNOWN_STATES is the MPE's max. MPI system states.
-    //  Let's be generous, instead of defining MPE_MAX_KNOWN_STATES = 128,
-    //  define MPE_MAX_KNOWN_STATES = 180 to include MPI-IO routines
-    //  define MPE_MAX_KNOWN_STATES = 200 to include MPI-RMA routines
-
-    //  MPE_MAX_KNOWN_STATE defined to be number of stateID in the range of
-    //  [CLOG_KNOWN_STATEID_START .... CLOG_USER_STATEID_START - 1]
-    //  in logging/include/clog.h.  The MPE_MAX_KNOWN_STATES is larger than
-    //  the C version of MPE_MAX_KNOWN_STATES defined in
-    //  wrappers/src/log_mpi_core.c, so that the Java code does not need
-    //  to be updated too often.
-
-           static final int       MPE_MAX_KNOWN_STATES = 300;
-
-    // !arbitary! defined for max. user-defined states. Increase it if necessary
-
-           static final int       MPE_MAX_USER_STATES  = 100;
-
     // variable "eventID" is used in MPI_Init()
     // of <MPE>/src/logging/src/log_mpi_core.c
 
            static final int       MPE_1ST_KNOWN_EVENT  = 0;  // i.e. eventID
 
-    //  The initial event_number return by MPE_Log_get_event_number();
-    //  Ref: clog.h, mpe_log.c
+    // The eventIDs returned by event-numbers fetching routine, e.g.
+    // MPE_Log_get_event_number()[deprecated] and MPE_Log_get_state_eventIDs()
+    // Ref: clog.h, mpe_log.c
 
-           static final int       MPE_1ST_USER_EVENT  = 600;  // CLOG_MAXEVENT
+           static final int       MPE_1ST_USER_EVENT   = 600;  // CLOG_MAXEVENT
+
+    // The eventID for user-defined CLOG solo event,
+    // i.e. MPE_Log_get_solo_eventID().
+
+           static final int       MPE_1ST_USER_SOLO_EVENT = 5000;
+
+    // MPE_MAX_KNOWN_STATES is the MPE's max. MPI system states.
+    // Let's be generous, instead of defining MPE_MAX_KNOWN_STATES = 128,
+    // define MPE_MAX_KNOWN_STATES = 180 to include MPI-IO routines
+    // define MPE_MAX_KNOWN_STATES = 200 to include MPI-RMA routines
+
+    // MPE_MAX_KNOWN_STATES defined to be number of stateID in the range of
+    // [CLOG_KNOWN_STATEID_START .... CLOG_USER_STATEID_START - 1]
+    // in logging/include/clog.h.  The MPE_MAX_KNOWN_STATES defined here
+    // is the same as the C version of MPE_MAX_KNOWN_STATES defined in
+    // wrappers/src/log_mpi_core.c.
+    // MPE_MAX_KNOWN_STATES = MPE_1ST_USER_EVENT / 2;
+
+           static final int       MPE_MAX_KNOWN_STATES = 300;
+
+    // *arbitary* defined for max. user-defined states.
+    // Increase it if necessary
+    // MPE_MAX_USER_STATES <= (MPE_1ST_USER_SOLO_EVENT - MPE_1ST_USER_EVENT) / 2
+
+           static final int       MPE_MAX_USER_STATES  = 100;
+
+    // *arbitary* defined for max. user-defined solo event.
+    // Increase it if necessary
+
+           static final int       MPE_MAX_USER_SOLO_EVENTS  = 100;
 
     public class AllType
     {
