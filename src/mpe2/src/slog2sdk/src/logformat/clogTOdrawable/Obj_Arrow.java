@@ -14,27 +14,29 @@ import base.io.BufArrayOutputStream;
 import base.drawable.Coord;
 import base.drawable.Category;
 // import base.drawable.InfoType;
-import base.drawable.Primitive_TwoVtx;
+import base.drawable.Primitive;
 
-public class Obj_Arrow extends Primitive_TwoVtx // Which extends Primitive
+public class Obj_Arrow extends Primitive
 {
     private  int       msg_tag;
     private  int       msg_size; 
 
     public Obj_Arrow()
     {
-        super();
+        super( 2 );
     }
 
     public Obj_Arrow( final Category obj_type )
     {
-        super( obj_type );
+        super( obj_type, 2 );
     }
 
     public Obj_Arrow( final Category obj_type,
                       final Coord  start_vtx, final Coord  final_vtx )
     {
-        super( obj_type, start_vtx, final_vtx );
+        super( obj_type, 2 );
+        super.setStartVertex( start_vtx );
+        super.setFinalVertex( final_vtx );
     }
 
     public void setMsgTag( int in_msg_tag )
