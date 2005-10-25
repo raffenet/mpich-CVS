@@ -11,25 +11,26 @@ package logformat.clog2TOdrawable;
 
 import base.drawable.Coord;
 import base.drawable.Category;
-// import base.drawable.Primitive;
-import base.drawable.Primitive_TwoVtx;
+import base.drawable.Primitive;
 
-public class Obj_State extends Primitive_TwoVtx // which extends Primitive
+public class Obj_State extends Primitive
 {
     public Obj_State()
     {
-        super();
+        super( 2 );
     }
 
     public Obj_State( final Category obj_type )
     {
-        super( obj_type );
+        super( obj_type, 2 );
     }
 
     public Obj_State( final Category obj_type,
                       final Coord  start_vtx, final Coord  final_vtx )
     {
-        super( obj_type, start_vtx, final_vtx );
+        super( obj_type, 2 );
+        super.setStartVertex( start_vtx );
+        super.setFinalVertex( final_vtx );
     }
 
     public String toString()

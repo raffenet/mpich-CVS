@@ -217,6 +217,8 @@ private class ContentIterator implements Iterator
     private List                   topos;
     private ObjDef                 statedef;
     private ObjDef                 arrowdef;
+    private ObjDef                 eventdef;
+    private ObjDef                 dobjdef;
     private Primitive              drawobj;
 
     private RecHeader              header  ;
@@ -231,6 +233,7 @@ private class ContentIterator implements Iterator
     private RecSrc                 src     ;
     private RecTshift              tshift  ;
 
+    private Topo_Event             eventform;
     private Topo_Arrow             arrowform;
     private Topo_State             stateform;
     private ObjMethod              obj_fn;
@@ -269,11 +272,11 @@ private class ContentIterator implements Iterator
         evtdefs.put( arrowdef.final_evt,
                      arrowform.getFinalEventObjMethod() );
 
-        // Gather all the MPI and user defined undefined RecDefState's,
+        // Gather all the MPI and user defined undefined RecDefStates,
         // i.e. CLOG_STATE
         List defs = logformat.clog2.RecDefState.getMPIinitUndefinedStateDefs();
         defs.addAll(
-             logformat.clog2.RecDefState.getUSERinitUndefinedStateDefs() );
+            logformat.clog2.RecDefState.getUSERinitUndefinedStateDefs() );
 
         // Convert them to the appropriate categories + corresponding
         // stack event matching object functions.
@@ -290,6 +293,10 @@ private class ContentIterator implements Iterator
             evtdefs.put( statedef.final_evt,
                          stateform.getFinalEventObjMethod() );
         }
+
+        // Add all the user-defined undefined RecDefEvents
+        defs.addAll(
+            logformat.clog2.RecDefEvent.getUSERinitUndefinedEventDefs() );
 
         /*
         System.err.println( "\n\t evtdefs : " );
@@ -372,13 +379,34 @@ private class ContentIterator implements Iterator
                                                   + obj_meth2.obj );
                             }
                         }
+                        dobjdef  = statedef;
                         InputLog.this.next_avail_kindID = Kind.CATEGORY_ID;
                         return true;
                     case RecDefEvent.RECTYPE:
-                        bytes_read
-                        = eventrec.skipBytesFromDataStream( blk_ins );
+                        bytes_read = eventrec.readFromDataStream( blk_ins );
                         total_bytesize += bytes_read;
-                        break;
+
+                        obj_meth1 = ( ObjMethod ) evtdefs.get( eventrec.etype );
+                        if ( obj_meth1 == null ) {
+                            eventform = new Topo_Event();
+                            idx  = ObjDef.getNextCategoryIndex();
+                            eventdef = new ObjDef( idx, eventrec,
+                                                   eventform, 1 );
+                            eventform.setCategory( eventdef );
+                            evtdefs.put( eventdef.start_evt,
+                                         eventform.getEventObjMethod() );
+                        }
+                        else { // i.e. obj_meth1 != null
+                            eventform = ( Topo_Event ) obj_meth1.obj;
+                            eventdef = ( ObjDef ) eventform.getCategory();
+                            eventdef.setName( eventrec.name );
+                            eventdef.setColor(
+                              ColorNameMap.getColorAlpha( eventrec.color ) );
+                            eventdef.setInfoKeys( eventrec.format );
+                        }
+                        dobjdef  = eventdef;
+                        InputLog.this.next_avail_kindID = Kind.CATEGORY_ID;
+                        return true;
                     case RecDefConst.RECTYPE:
                         bytes_read
                         = constrec.skipBytesFromDataStream( blk_ins );
@@ -541,8 +569,8 @@ private class ContentIterator implements Iterator
     {
         switch (InputLog.this.next_avail_kindID) {
             case Kind.CATEGORY_ID:
-                topos.add( statedef.getTopology() );
-                return statedef;
+                topos.add( dobjdef.getTopology() );
+                return dobjdef;
             case Kind.PRIMITIVE_ID:
                 return drawobj;
             default:
@@ -571,11 +599,16 @@ private class ContentIterator implements Iterator
 
     public long getNumberOfUnMatchedEvents()
     {
+        Topology  topo;
         int num_matched = 0;
         Iterator topos_itr = topos.iterator();
-        while ( topos_itr.hasNext() )
-            num_matched += ( (TwoEventsMatching) topos_itr.next() )
-                           .getPartialObjects().size();
+        while ( topos_itr.hasNext() ) {
+            topo = ( Topology ) topos_itr.next();
+            if ( topo instanceof TwoEventsMatching ) {
+                num_matched += ( (TwoEventsMatching) topo )
+                               .getPartialObjects().size();
+            }
+        }
         return num_matched;
     }
 }

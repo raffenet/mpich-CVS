@@ -23,9 +23,10 @@ TARGET1 = $(libbuild_dir)/clog2TOdrawable_1pass.jar
 TARGET2 = $(libbuild_dir)/clog2TOdrawable_2pass.jar
 PACKAGE = logformat.clog2TOdrawable
 SRC     = ColorNameMap.java ObjDef.java \
-          Obj_Arrow.java Obj_State.java ObjMethod.java \
+          Obj_Event.java Obj_Arrow.java Obj_State.java ObjMethod.java \
           NoMatchingEventException.java TwoEventsMatching.java \
-          Topo_Arrow.java Topo_State.java CommLineID.java CommLineIDMap.java \
+          Topo_Event.java Topo_Arrow.java Topo_State.java \
+          CommLineID.java CommLineIDMap.java \
           InputLog.java Print.java Print_1pass.java Print_2pass.java
 
 OBJ    = $(SRC:.java=.class)

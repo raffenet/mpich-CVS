@@ -9,6 +9,7 @@
 
 package logformat.clog2TOdrawable;
 
+import logformat.clog2.RecDefEvent;
 import logformat.clog2.RecDefState;
 import base.drawable.Category;
 import base.drawable.Topology;
@@ -31,6 +32,16 @@ public class ObjDef extends Category
         super.setInfoKeys( in_def.format );
         this.start_evt   = in_def.startetype;
         this.final_evt   = in_def.finaletype;
+    }
+
+    public ObjDef( int in_idx, final RecDefEvent in_def,
+                   final Topology in_topo, int in_width )
+    {
+        super( in_idx, in_def.name, in_topo,
+               ColorNameMap.getColorAlpha( in_def.color ), in_width );
+        super.setInfoKeys( in_def.format );
+        this.start_evt   = in_def.etype;
+        this.final_evt   = in_def.etype;
     }
 
     public ObjDef( int in_idx,
