@@ -43,7 +43,10 @@ CC_FLAGS      = $(CFLAGS) $(C_INCS) $(MPE_COPTS)
 FC_FLAGS      = $(FFLAGS) $(F_INCS) $(MPE_FOPTS)
 CC_LDFLAGS    = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
-EXECS         = cpilog@EXEEXT@ cpilog_pack@EXEEXT@ srtest@EXEEXT@
+C_EXECS       = cpilog@EXEEXT@ cpilog_pack@EXEEXT@ srtest@EXEEXT@ comm1_isr@EXEEXT@
+EXTRA_C_EXECS = cpi_trace@EXEEXT@ cpi_log@EXEEXT@ ncpilog@EXEEXT@ ncpilog_pack@EXEEXT@ iotest@EXEEXT@ comm1_isr_loop@EXEEXT@ 
+F_EXECS       = fpilog@EXEEXT@ fpilog_pack@EXEEXT@ fcomm1_isr@EXEEXT@
+EXTRA_F_EXECS = nfpilog_pack@EXEEXT@
 
 .SUFFIXES: .c .f .n@OBJEXT@ .@OBJEXT@ @EXEEXT@
 
@@ -69,11 +72,19 @@ EXECS         = cpilog@EXEEXT@ cpilog_pack@EXEEXT@ srtest@EXEEXT@
 	$(MPI_F77) $(FC_FLAGS) -c mpe2tmp.f
 	mv -f mpe2tmp.@OBJEXT@ $*.n@OBJEXT@
 
-default: $(EXECS)
+default: $(C_EXECS)
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) fpilog@EXEEXT@ ; \
-	     $(MAKE) fpilog_pack@EXEEXT@ ; \
-	 fi
+	      for pgm in $(F_EXECS) ; do \
+	          $(MAKE) $$pgm ; \
+	      done ; \
+	  fi
+
+all: default $(EXTRA_C_EXECS)
+	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	      for pgm in $(EXTRA_F_EXECS) ; do \
+	          $(MAKE) $$pgm ; \
+	      done ; \
+	  fi
 
 cpi_trace@EXEEXT@: cpi.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(TRACE_LIBS) $(DEBUG_LIBS) -lm
@@ -171,8 +182,9 @@ linktest_F77:
 
 clean:
 	@-$(RM) -f work.pc work.pcl
-	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS)
-	@-$(RM) -f cpi_log@EXEEXT@ cpi_trace@EXEEXT@ cpilog@EXEEXT@ fpilog@EXEEXT@ fpilog_pack@EXEEXT@ srtest@EXEEXT@
+	@-$(RM) -f *.@OBJEXT@ *.n@OBJEXT@ *~ PI* mpe2tmp.f
+	@-$(RM) -f $(C_EXECS) $(F_EXECS)
+	@-$(RM) -f $(EXTRA_C_EXECS) $(EXTRA_F_EXECS)
 	@-$(RM) -f *.clog2 *.slog2
 
 distclean: clean
