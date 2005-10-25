@@ -39,6 +39,8 @@ extern void free();
 #define mpe_start_log_ MPE_START_LOG
 #define mpe_stop_log_ MPE_STOP_LOG
 #define mpe_log_get_event_number_ MPE_LOG_GET_EVENT_NUMBER
+#define mpe_log_get_state_eventids_ MPE_LOG_GET_STATE_EVENTIDS
+#define mpe_log_get_solo_eventid_ MPE_LOG_GET_SOLO_EVENTID
 #define mpe_describe_info_state_ MPE_DESCRIBE_INFO_STATE
 #define mpe_describe_state_ MPE_DESCRIBE_STATE
 #define mpe_describe_info_event_ MPE_DESCRIBE_INFO_EVENT
@@ -56,6 +58,8 @@ extern void free();
 #define mpe_start_log_ mpe_start_log__
 #define mpe_stop_log_ mpe_stop_log__
 #define mpe_log_get_event_number_ mpe_log_get_event_number__
+#define mpe_log_get_state_eventids_ mpe_log_get_state_eventids__
+#define mpe_log_get_solo_eventid_ mpe_log_get_solo_eventid__
 #define mpe_describe_info_state_ mpe_describe_info_state__
 #define mpe_describe_state_ mpe_describe_state__
 #define mpe_describe_info_event_ mpe_describe_info_event__
@@ -73,6 +77,8 @@ extern void free();
 #define mpe_start_log_ mpe_start_log
 #define mpe_stop_log_ mpe_stop_log
 #define mpe_log_get_event_number_ mpe_log_get_event_number
+#define mpe_log_get_state_eventids_ mpe_log_get_state_eventids
+#define mpe_log_get_solo_eventid_ mpe_log_get_solo_eventid
 #define mpe_describe_info_state_ mpe_describe_info_state
 #define mpe_describe_state_ mpe_describe_state
 #define mpe_describe_info_event_ mpe_describe_info_event
@@ -144,6 +150,18 @@ int mpe_log_get_event_number_( void );
 int mpe_log_get_event_number_( void )
 {
     return MPE_Log_get_event_number();
+}
+
+int mpe_log_get_state_eventids_( int*, int* );
+int mpe_log_get_state_eventids_( int *statedef_startID, int *statedef_finalID )
+{
+    return MPE_Log_get_state_eventIDs( statedef_startID, statedef_finalID );
+}
+
+int mpe_log_get_solo_eventid_( int* );
+int mpe_log_get_solo_eventid_( int *eventdef_eventID )
+{
+    return MPE_Log_get_solo_eventID( eventdef_eventID );
 }
 
 int mpe_log_send_( int*, int*, int* );

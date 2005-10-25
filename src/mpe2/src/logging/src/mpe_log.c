@@ -242,8 +242,8 @@ N*/
     Input Parameters:
 + comm          - MPI_Comm where this process is part of.
 . local_thread  - local thread ID where the state is being defined.
-. start_etype   - event number for the beginning of the state.
-. final_etype   - event number for the ending of the state.
+. state_startID - event number for the starting of the state.
+. state_finalID - event number for the ending of the state.
 . name          - name of the state.
                   maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
@@ -267,7 +267,7 @@ N*/
 .see also: MPE_Log_get_event_number
 @*/
 int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
-                             int start_etype, int final_etype,
+                             int state_startID, int state_finalID,
                              const char *name, const char *color,
                              const char *format )
 {
@@ -280,7 +280,7 @@ int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
     commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
     stateID  = CLOG_Get_user_stateID( CLOG_Stream );
     CLOG_Buffer_save_statedef( CLOG_Buffer, commIDs, local_thread,
-                               stateID, start_etype, final_etype,
+                               stateID, state_startID, state_finalID,
                                color, name, format );
 
     return MPE_LOG_OK;
@@ -292,8 +292,8 @@ int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
                               in MPI_COMM_WORLD.
 
     Input Parameters:
-+ start_etype   - event number for the beginning of the state
-. final_etype   - event number for the ending of the state
++ state_startID - event number for the beginning of the state
+. state_finalID - event number for the ending of the state
 . name          - name of the state.
                   maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
@@ -318,13 +318,13 @@ int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
 
 .see also: MPE_Log_get_event_number
 @*/
-int MPE_Describe_info_state( int start_etype, int final_etype,
+int MPE_Describe_info_state( int state_startID, int state_finalID,
                              const char *name, const char *color,
                              const char *format )
 {
     return MPE_Describe_comm_state( MPI_COMM_WORLD, 0,
-                                    start_etype, final_etype,
-                                    color, name, format );
+                                    state_startID, state_finalID,
+                                    name, color, format );
 }
 
 /*
@@ -334,7 +334,7 @@ int MPE_Describe_info_state( int start_etype, int final_etype,
     i.e, MPE_Log_get_known_stateID()
 */
 int MPE_Describe_known_state( const CLOG_CommIDs_t *commIDs, int local_thread,
-                              int stateID, int start_etype, int final_etype,
+                              int stateID, int state_startID, int state_finalID,
                               const char *name, const char *color,
                               const char *format )
 {
@@ -353,22 +353,7 @@ int MPE_Describe_known_state( const CLOG_CommIDs_t *commIDs, int local_thread,
     }
 
     CLOG_Buffer_save_statedef( CLOG_Buffer, commIDs, local_thread,
-                               stateID, start_etype, final_etype,
-                               color, name, format );
-
-    return MPE_LOG_OK;
-}
-
-int MPE_Describe_uncheck_state( const CLOG_CommIDs_t *commIDs, int local_thread,
-                                int stateID, int start_etype, int final_etype,
-                                const char *name, const char *color,
-                                const char *format )
-{
-    if (!MPE_Log_hasBeenInit)
-        return MPE_LOG_NOT_INITIALIZED;
-
-    CLOG_Buffer_save_statedef( CLOG_Buffer, commIDs, local_thread,
-                               stateID, start_etype, final_etype,
+                               stateID, state_startID, state_finalID,
                                color, name, format );
 
     return MPE_LOG_OK;
@@ -380,8 +365,8 @@ int MPE_Describe_uncheck_state( const CLOG_CommIDs_t *commIDs, int local_thread,
                          MPI_COMM_WORLD.
 
     Input Parameters:
-+ start_etype   - event number for the beginning of the state
-. final_etype   - event number for the ending of the state
++ state_startID - event number for the beginning of the state
+. state_finalID - event number for the ending of the state
 . name          - name of the state
                   maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
@@ -398,12 +383,12 @@ int MPE_Describe_uncheck_state( const CLOG_CommIDs_t *commIDs, int local_thread,
 
 .seealso: MPE_Log_get_event_number, MPE_Describe_comm_state
 @*/
-int MPE_Describe_state( int start_etype, int final_etype,
+int MPE_Describe_state( int state_startID, int state_finalID,
                         const char *name, const char *color )
 {
     return MPE_Describe_comm_state( MPI_COMM_WORLD, 0,
-                                    start_etype, final_etype, name, color,
-                                    NULL );
+                                    state_startID, state_finalID,
+                                    name, color, NULL );
 }
 
 
@@ -415,7 +400,7 @@ int MPE_Describe_state( int start_etype, int final_etype,
     Input Parameters:
 + comm         - MPI_Comm where this process is part of.
 . local_thread - local thread ID where the event is being defined.
-. event        - event number for the event.
+. eventID      - event number for the event.
 . name         - name of the event.
                  maximum length of the NULL-terminated string is,
                  sizeof(CLOG_DESC), 32.
@@ -437,7 +422,7 @@ int MPE_Describe_state( int start_etype, int final_etype,
 .seealso: MPE_Log_get_event_number
 @*/
 int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
-                             int event, const char *name, const char *color,
+                             int eventID, const char *name, const char *color,
                              const char *format )
 {
     const CLOG_CommIDs_t *commIDs;
@@ -447,7 +432,7 @@ int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
 
     commIDs  = CLOG_CommSet_get_IDs( CLOG_CommSet, comm );
     CLOG_Buffer_save_eventdef( CLOG_Buffer, commIDs, local_thread,
-                               event, color, name, format );
+                               eventID, color, name, format );
 
     return MPE_LOG_OK;
 }
@@ -458,7 +443,7 @@ int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
                               MPI_COMM_WORLD.
     
     Input Parameters:
-+ event         - event number for the event.
++ eventID       - event number for the event.
 . name          - name of the event.
                   maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
@@ -481,11 +466,11 @@ int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
 
 .seealso: MPE_Log_get_event_number, MPE_Describe_comm_event 
 @*/
-int MPE_Describe_info_event( int event, const char *name, const char *color,
+int MPE_Describe_info_event( int eventID, const char *name, const char *color,
                              const char *format )
 {
     return MPE_Describe_comm_event( MPI_COMM_WORLD, 0,
-                                    event, color, name, format );
+                                    eventID, name, color, format );
 }
 
 /*@
@@ -494,7 +479,7 @@ int MPE_Describe_info_event( int event, const char *name, const char *color,
                         MPI_COMM_WORLD.
 
     Input Parameters:
-+ event         - event number for the event.
++ eventID       - event number for the event.
 . name          - name of the event.
                   maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
@@ -509,27 +494,70 @@ int MPE_Describe_info_event( int event, const char *name, const char *color,
 
 .seealso: MPE_Log_get_event_number, MPE_Describe_comm_event
 @*/
-int MPE_Describe_event( int event, const char *name, const char *color )
+int MPE_Describe_event( int eventID, const char *name, const char *color )
 {
     return MPE_Describe_comm_event( MPI_COMM_WORLD, 0,
-                                    event, name, color, NULL );
+                                    eventID, name, color, NULL );
 }
 
 /*@
   MPE_Log_get_event_number - Gets an unused event number
+  (The function is deprecated, its use is stronly discouraged.
+   The function has been replaced by
+   MPE_Log_get_state_eventID() and MPE_Log_get_event_eventID().)
 
   Returns:
   A value that can be used in MPE_Describe_info_event() and
   MPE_Describe_info_state() which define an event or state not used before.  
 
   Notes: 
-  This routine is provided to allow packages to ensure that they are 
+  This routine is provided to ensure that users are 
   using unique event numbers.  It relies on all packages using this
   routine.
 @*/
 int MPE_Log_get_event_number( void )
 {
     return CLOG_Get_user_eventID( CLOG_Stream );
+}
+
+/*@
+    MPE_Log_get_state_eventIDs - Gets a pair of event numbers to be used to
+                                define STATE drawable through
+                                MPE_Describe_state().
+
+    Input/Output Parameters:
++ statedef_startID  - starting eventID for the definition of state drawable.
+- statedef_finalID  - ending eventID for the definition of state drawable.
+
+  Notes: 
+  This routine is provided to ensure that users are 
+  using unique event numbers.  It relies on all packages using this
+  routine.
+@*/
+int MPE_Log_get_state_eventIDs( int *statedef_startID, int *statedef_finalID )
+{
+    *statedef_startID = CLOG_Get_user_eventID( CLOG_Stream );
+    *statedef_finalID = CLOG_Get_user_eventID( CLOG_Stream );
+    return MPE_LOG_OK;
+}
+
+/*@
+    MPE_Log_get_solo_eventID - Gets a single event number to be used to
+                               define EVENT drawable through
+                               MPE_Describe_event().
+
+    Input/Output Parameters:
+. eventdef_eventID  - eventID for the definition of event drawable.
+
+  Notes:
+  This routine is provided to ensure that users are 
+  using unique event numbers.  It relies on all packages using this
+  routine.
+@*/
+int MPE_Log_get_solo_eventID( int *eventdef_eventID )
+{
+    *eventdef_eventID = CLOG_Get_user_solo_eventID( CLOG_Stream );
+    return MPE_LOG_OK;
 }
 
 /*
