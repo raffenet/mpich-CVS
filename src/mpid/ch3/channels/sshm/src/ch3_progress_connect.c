@@ -136,11 +136,6 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     int mpi_errno;
     char hostname[256];
     char queue_name[100];
-    /*
-#ifdef MPIDI_CH3_USES_SHM_NAME
-    char shm_name[MPIDI_MAX_SHM_NAME_LENGTH];
-#endif
-    */
     MPIDI_CH3I_BootstrapQ queue;
     MPIDI_CH3I_Shmem_queue_info shm_info;
     int i;
@@ -149,7 +144,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_HOST_KEY, hostname, 256);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
-	/*printf("getstringarg(%s, %s) failed.\n", MPIDI_CH3I_SHM_HOST_KEY, business_card);fflush(stdout);*/
+	/*MPIU_DBG_PRINTF(("getstringarg(%s, %s) failed.\n", MPIDI_CH3I_SHM_HOST_KEY, business_card));*/
 	*flag = FALSE;
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmhost", 0);
 	return mpi_errno;
@@ -162,21 +157,6 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmq", 0);
 	return mpi_errno;
     }
-
-    /*
-#ifdef MPIDI_CH3_USES_SHM_NAME
-    mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	*flag = FALSE;
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmq", 0);
-	return mpi_errno;
-    }
-
-    MPIU_Strnapp(queue_name, ":", 100);
-    MPIU_Strnapp(queue_name, shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
-#endif
-    */
 
     /* compare this host's name with the business card host name */
     if (strcmp(MPIDI_Process.my_pg->ch.shm_hostname, hostname) != 0)
@@ -205,8 +185,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmconnect_getmem", 0);
 	return mpi_errno;
     }
-    /* printf("rank %d sending queue(%s) to rank %d\n", MPIR_Process.comm_world->rank, vc->ch.shm_write_queue_info.name,
-       vc->ch.pg_rank); */
+    /* MPIU_DBG_PRINTF(("rank %d sending queue(%s) to rank %d\n", MPIR_Process.comm_world->rank, vc->ch.shm_write_queue_info.name,
+       vc->ch.pg_rank)); */
     
     vc->ch.write_shmq = vc->ch.shm_write_queue_info.addr;
     vc->ch.write_shmq->head_index = 0;
@@ -225,11 +205,6 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     /* send the queue connection information */
     /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
     shm_info.info = vc->ch.shm_write_queue_info;
-    /*shm_info.pg_id = 0;*/
-    /*
-    MPIU_Strncpy(shm_info.pg_id, vc->pg->id, 100);
-    shm_info.pg_rank = MPIR_Process.comm_world->rank;
-    */
     MPIU_Strncpy(shm_info.pg_id, MPIDI_Process.my_pg->id, 100);
     shm_info.pg_rank = MPIDI_Process.my_pg_rank;
     shm_info.pid = getpid();
