@@ -89,9 +89,9 @@ clean_include:
 	  fi
 
 clean_bin:
-	 -cd $(binbuild_dir) && \
-	  for file in * ; do \
-	      if [ ! -d "$$file" ] ; then \
+	@-for file in $(binbuild_dir)/* ; do \
+	      suffix="`echo $$file|sed -e 's%\.% %'|awk '{print $$NF}' -`" ; \
+	      if [ "X$$suffix" != "Xin" ] ; then \
 	          $(RM) -f $$file ; \
 	      fi ; \
 	  done;
@@ -104,7 +104,7 @@ clean_lib:
 clean_etc:
 	 -$(RM) -f $(etcbuild_dir)/*.conf
 
-clean: clean_bin clean_lib
+clean: clean_lib
 	@-for pkg in $(PKGS) ; do \
 	      if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	          ( cd $$pkg && $(MAKE) clean ) ; \
