@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "mpi.h"
 #include "mpe.h"
 
@@ -72,7 +74,6 @@ void set_tmpfilename( char *tmp_pathname, int my_rank )
     char    tmpdirname_ref[ PATH_STRLEN ] = "";
     char    tmpdirname[ PATH_STRLEN ] = "";
     char    tmpfilename[ PATH_STRLEN ] = "";
-    int     ierr;
 
     /* MPE_TMPDIR takes precedence over TMPDIR */
     env_tmpdir = (char *) getenv( "MPE_TMPDIR" );
