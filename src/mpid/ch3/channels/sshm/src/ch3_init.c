@@ -68,9 +68,18 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
    MPI Port functions.  This should be ok here, since we want to 
    use the socket routines to perform all connect/accept actions
    after MPID_Init returns (see the shm_unlink discussion) */
-int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a ) 
-{ 
-    return 0;
+int MPIDI_CH3_PortFnsInit(MPIDI_PortFns *portFns) 
+{
+#ifdef USE_PERSISTENT_SHARED_MEMORY
+    MPIU_UNREFERENCED_ARG(portFns);
+    return MPI_SUCCESS;
+#else
+    portFns->OpenPort    = 0;
+    portFns->ClosePort   = 0;
+    portFns->CommAccept  = 0;
+    portFns->CommConnect = 0;
+    return MPI_SUCCESS;
+#endif
 }
 
 /* Perform the channel-specific vc initialization */

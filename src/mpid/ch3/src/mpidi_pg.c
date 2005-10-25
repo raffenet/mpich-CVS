@@ -100,8 +100,8 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 	MPIDI_VC_Init(&pg->vct[p], pg, p);
     }
 
-    /* Add pg's at the tail so that comm world is always the first pg */
 #if 0
+    /* Add pg's to the head */
     pg->next = MPIDI_PG_list;
     if (MPIDI_PG_iterator_next == MPIDI_PG_list)
     {
@@ -109,12 +109,17 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     }
     MPIDI_PG_list = pg;
 #else
+    /* Add pg's at the tail so that comm world is always the first pg */
     pg->next = 0;
-    if (!MPIDI_PG_list) 
+    if (!MPIDI_PG_list)
+    {
 	MPIDI_PG_list = pg;
-    else {
+    }
+    else
+    {
 	pgnext = MPIDI_PG_list; 
-	while (pgnext->next) {
+	while (pgnext->next)
+	{
 	    pgnext = pgnext->next;
 	}
 	pgnext->next = pg;
@@ -332,6 +337,7 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr)
 		MPIU_ERR_POP(mpi_errno);
 	    }
 	}
+#ifndef USE_PERSISTENT_SHARED_MEMORY
 	/* FIXME: This is a hack to avoid including shared-memory 
 	   queue names in the buisness card that may be used
 	   by processes that were not part of the same COMM_WORLD. */
@@ -341,6 +347,7 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr)
 	    if (p) p[1] = 0;
 /*	    printf( "(fixed) Adding key %s value %s\n", key, val ); */
 	}
+#endif
 	mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, val);
 	if (mpi_errno != MPIU_STR_SUCCESS)
 	{

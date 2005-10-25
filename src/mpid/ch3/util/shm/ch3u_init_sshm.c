@@ -38,7 +38,9 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int pmi_errno;
     int pg_size;
     int p;
+#ifdef USE_PERSISTENT_SHARED_MEMORY
     char * parent_bizcard = NULL;
+#endif
 #ifdef USE_MQSHM
     char queue_name[MPIDI_MAX_SHM_NAME_LENGTH];
     int initialize_queue = 0;
@@ -146,6 +148,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
     MPIDI_Process.my_pg = pg_p;  /* was later prior but internally Get_parent_port needs this */    
+#ifdef USE_PERSISTENT_SHARED_MEMORY
     if (has_parent) /* set in PMI_Init */
     {
         mpi_errno = MPIDI_CH3_Get_parent_port(&parent_bizcard);
@@ -154,8 +157,6 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 				"**ch3|get_parent_port");
         }
 
-/* NOTE: Do not use shared memory to communicate to parent */
-#if 0
 	/* Parse the shared memory queue name from the bizcard */
 	{
 	    char *orig_str, *tmp_str = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
@@ -187,12 +188,11 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 		MPIU_ERR_POP(mpi_errno);
 	    }
 	}
-#else
-	/* send the shm name to null since we did not set it */
-	pg_p->ch.shm_name[0] = 0;
-	
-#endif
     } /* has_parent */
+#else
+    /* NOTE: Do not use shared memory to communicate to parent */
+    pg_p->ch.shm_name[0] = 0;
+#endif
 #endif            
 
 #ifdef USE_MQSHM
@@ -200,41 +200,36 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIU_Strncpy(key, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, key_max_sz );
     if (pg_rank == 0)
     {
-#if 0
-	if (has_parent == 0)
+#ifdef USE_PERSISTENT_SHARED_MEMORY
+	/* With persistent shared memory, only the first process of the first group needs to create the bootstrap queue. */
+	/* Everyone else including spawned processes will attach to this queue. */
+	if (has_parent)
+	{
+	    /* If you have a parent then you must not initialize the queue since the parent already did. */
+	    initialize_queue = 0;
+	    MPIU_Strncpy(queue_name, pg_p->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
+	    MPIU_Strncpy(val, queue_name, val_max_sz);
+	}
+	else
 #else
-	    if (1) 
+	/* Without persistent shared memory the root process of each process group creates a unique
+	 * bootstrap queue to be used only by processes within the same process group */
 #endif
 	{
-	    /* Only the first process of the first group needs to create the bootstrap queue. */
-	    /* Everyone else including spawned processes will attach to this queue. */
 	    mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, MPIDI_MAX_SHM_NAME_LENGTH);
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	    }
+	    /* If you don't have a parent then you must initialize the queue */
 	    initialize_queue = 1;
 	    MPIU_Strncpy(val, queue_name, val_max_sz);
-
-/*#ifdef MPIDI_CH3_USES_SHM_NAME*/ /* It's not possible for USE_MQSHM to be defined and MPIDI_CH3_USES_SHM_NAME not defined. */
 	    MPIU_Strncpy(pg_p->ch.shm_name, val, val_max_sz);
 	}
-	else
-	{
-	    MPIU_Strncpy(queue_name, pg_p->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
-	    MPIU_Strncpy(val, queue_name, val_max_sz);
-/*#endif*/
-	}
 
-#if 0
-	if (!has_parent) {  
-#endif
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	}
-#if 0 
-	}
-#endif
 	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 
 	mpi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, key, val);          
@@ -270,49 +265,33 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	MPIU_Strncpy(pg_p->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
-	/* If you don't have a parent then you must initialize the queue */
-	/* If you do have a parent then you must not initialize the queue since the parent already did and you could destroy valid information */
-	initialize_queue = (has_parent) ? 0 : 1;
-#if 0
-	if (initialize_queue) {
-#else
-	    initialize_queue = 1; /* Always, don't try to reuse the same queue */
-#endif	
+	/* The root process initialized the queue */
+	initialize_queue = 0;
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	}
-#if 0
-	}
-#endif
     }
     mpi_errno = PMI_Barrier();
     if (mpi_errno != 0) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", 
 			     "**pmi_barrier %d", mpi_errno);
     }
+
+#ifdef USE_PERSISTENT_SHARED_MEMORY
     /* The bootstrap queue cannot be unlinked because it can be used outside of this process group. */
     /* Spawned groups will use it and other MPI jobs may use it by calling MPI_Comm_connect/accept */
-
-    	/* FIXME:
-	 * By not unlinking here, if the program aborts, the 
-	 * shared memory segments can be left dangling.
-	 * We need to either unlink here (no dynamic process calls)
-	 * for in SIGINT/FPE/SEGV abort handlers.  That isn't 
-	 * fully reliable, since the handler may be replaced or the
-	 * process killed with an uncatchable signal.
-	 */
-#if 1
-#if 0
-    if (!has_parent) {  
-#endif
-	/* printf( "Unlinking bootstrapQ\n" ); */
+    /* By not unlinking here, if the program aborts, the 
+     * shared memory segments can be left dangling.
+     */
+#else
+    /* Unlinking here prevents leaking shared memory segments but also prevents any other processes
+     * from attaching to the segment later thus preventing the implementation of 
+     * MPI_Comm_connect/accept/spawn/spawn_multiple
+     */
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg_p->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS) {
         MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_unlink");
-    }
-#endif
-#if 0
     }
 #endif
 
@@ -329,16 +308,10 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIDI_Process.my_pg = pg_p;
 
     /* brad : get the sshm part of the business card  */
-#if 0
-    if (!has_parent) {
-#endif
     mpi_errno = MPIDI_CH3U_Get_business_card_sshm(bc_val_p, val_max_sz_p);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
     }
-#if 0
-    }
-#endif
 
     /* see if we're meant to publish */
     if (publish_bc_p != NULL) {
@@ -365,7 +338,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_barrier",
 				 "**pmi_barrier %d", pmi_errno);
 	}
-    }    
+    }
 
  fn_exit:
     if (val != NULL)
