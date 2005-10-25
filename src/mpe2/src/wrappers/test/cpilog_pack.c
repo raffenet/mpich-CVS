@@ -46,7 +46,7 @@ int main( int argc, char *argv[] )
     MPE_Init_log();
 #endif
 
-    /*  Get event ID from MPE, user should NOT assign event ID  */
+    /*  Get event ID from MPE, user should NOT assign event ID directly */
     event1a = MPE_Log_get_event_number(); 
     event1b = MPE_Log_get_event_number(); 
     event2a = MPE_Log_get_event_number(); 

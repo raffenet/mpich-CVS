@@ -56,22 +56,28 @@
       call MPI_Comm_size( MPI_COMM_WORLD, numprocs, ierr )
       print *, "Process ", myid, " of ", numprocs, " is alive"
 
-      event1a = MPE_Log_get_event_number()
-      event1b = MPE_Log_get_event_number()
-      event2a = MPE_Log_get_event_number()
-      event2b = MPE_Log_get_event_number()
-      event3a = MPE_Log_get_event_number()
-      event3b = MPE_Log_get_event_number()
-      event4a = MPE_Log_get_event_number()
-      event4b = MPE_Log_get_event_number()
+! Demonstrate the use of MPE_Log_state_eventIDs() and MPE_Log_solo_eventID()
+! which replace the deprecated function MPE_Log_get_event_number.    
+!
+      call MPE_Log_get_state_eventIDs( event1a, event1b )
+      call MPE_Log_get_state_eventIDs( event2a, event2b )
+      call MPE_Log_get_solo_eventID( event3a )
+      call MPE_Log_get_solo_eventID( event3b )
+      call MPE_Log_get_state_eventIDs( event4a, event4b )
 
+! Demonstrate the use MPE_Describe_event() to describe single-timestamped
+! drawable, i.e. event.  Caution: One can use MPE_Describe_state() instead
+! of 2 MPE_Dresribe_event() calls.  The difference is that one will see
+! one state instead of 2 events.
       if ( myid .eq. 0 ) then
           ierr = MPE_Describe_state( event1a, event1b,
      &                               "User_Broadcast", "red" )
           ierr = MPE_Describe_state( event2a, event2b,
      &                               "User_Barrier", "blue" )
-          ierr = MPE_Describe_state( event3a, event3b,
-     &                               "User_Compute", "orange" )
+          ierr = MPE_Describe_event( event3a, "User_Compute_Start",
+     &                               "orange" )
+          ierr = MPE_Describe_event( event3b, "User_Compute_Final",
+     &                               "orange" )
           ierr = MPE_Describe_state( event4a, event4b,
      &                               "User_Reduce", "green" )
           write(6,*) "event IDs are ", event1a, event1b, ", ",

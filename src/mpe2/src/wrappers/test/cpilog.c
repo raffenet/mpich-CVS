@@ -22,6 +22,7 @@ int main( int argc, char *argv[] )
     int namelen; 
     int event1a, event1b, event2a, event2b,
         event3a, event3b, event4a, event4b;
+    int event1, event2, event3;
     char processor_name[ MPI_MAX_PROCESSOR_NAME ];
 
     MPI_Init( &argc, &argv );
@@ -43,21 +44,33 @@ int main( int argc, char *argv[] )
     MPE_Init_log();
 #endif
 
-    /*  Get event ID from MPE, user should NOT assign event ID  */
-    event1a = MPE_Log_get_event_number(); 
-    event1b = MPE_Log_get_event_number(); 
-    event2a = MPE_Log_get_event_number(); 
-    event2b = MPE_Log_get_event_number(); 
-    event3a = MPE_Log_get_event_number(); 
-    event3b = MPE_Log_get_event_number(); 
-    event4a = MPE_Log_get_event_number(); 
-    event4b = MPE_Log_get_event_number(); 
+    /*
+        user should NOT assign eventIDs directly in MPE_Describe_state()
+        Get the eventIDs for user-defined STATES(rectangles) from
+        MPE_Log_get_state_eventIDs() instead of the deprecated function
+        MPE_Log_get_event_number().
+    */
+    MPE_Log_get_state_eventIDs( &event1a, &event1b );
+    MPE_Log_get_state_eventIDs( &event2a, &event2b );
+    MPE_Log_get_state_eventIDs( &event3a, &event3b );
+    MPE_Log_get_state_eventIDs( &event4a, &event4b );
 
     if ( myid == 0 ) {
         MPE_Describe_state( event1a, event1b, "Broadcast", "red" );
         MPE_Describe_state( event2a, event2b, "Sync", "orange" );
         MPE_Describe_state( event3a, event3b, "Compute", "blue" );
         MPE_Describe_state( event4a, event4b, "Reduce", "green" );
+    }
+
+    /* Get event ID for Solo-Event(single timestamp object) from MPE */
+    MPE_Log_get_solo_eventID( &event1 );
+    MPE_Log_get_solo_eventID( &event2 );
+    MPE_Log_get_solo_eventID( &event3 );
+
+    if ( myid == 0 ) {
+       MPE_Describe_event( event1, "Broadcast Post", "white" );
+       MPE_Describe_event( event2, "Compute Start", "purple" );
+       MPE_Describe_event( event3, "Compute End", "navy" );
     }
 
     if ( myid == 0 ) {
@@ -75,11 +88,14 @@ int main( int argc, char *argv[] )
         MPE_Log_event( event1a, 0, NULL );
         MPI_Bcast( &n, 1, MPI_INT, 0, MPI_COMM_WORLD );
         MPE_Log_event( event1b, 0, NULL );
+
+        MPE_Log_event( event1, 0, NULL );
     
         MPE_Log_event( event2a, 0, NULL );
         MPI_Barrier( MPI_COMM_WORLD );
         MPE_Log_event( event2b, 0, NULL );
 
+        MPE_Log_event( event2, 0, NULL );
         MPE_Log_event( event3a, 0, NULL );
         h   = 1.0 / (double) n;
         sum = 0.0;
@@ -89,6 +105,7 @@ int main( int argc, char *argv[] )
         }
         mypi = h * sum;
         MPE_Log_event( event3b, 0, NULL );
+        MPE_Log_event( event3, 0, NULL );
 
         pi = 0.0;
         MPE_Log_event( event4a, 0, NULL );

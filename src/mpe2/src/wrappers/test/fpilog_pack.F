@@ -1,35 +1,35 @@
-C
-C  (C) 2001 by Argonne National Laboratory.
-C      See COPYRIGHT in top-level directory.
-C
-c**********************************************************************
-c   pi.f - compute pi by integrating f(x) = 4/(1 + x**2)     
-c     
-c   Each node: 
-c    1) receives the number of rectangles used in the approximation.
-c    2) calculates the areas of it's rectangles.
-c    3) Synchronizes for a global summation.
-c   Node 0 prints the result.
-c
-c  Variables:
-c
-c    pi  the calculated result
-c    n   number of points of integration.  
-c    x           midpoint of each rectangle's interval
-c    f           function to integrate
-c    sum,pi      area of rectangles
-c    tmp         temporary scratch space for global summation
-c    i           do loop index
-c****************************************************************************
+!
+!  (C) 2001 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
+!
+!**********************************************************************
+!   pi.f - compute pi by integrating f(x) = 4/(1 + x**2)     
+!     
+!   Each node: 
+!    1) receives the number of rectangles used in the approximation.
+!    2) calculates the areas of it's rectangles.
+!    3) Synchronizes for a global summation.
+!   Node 0 prints the result.
+!
+!  Variables:
+!
+!    pi  the calculated result
+!    n   number of points of integration.  
+!    x           midpoint of each rectangle's interval
+!    f           function to integrate
+!    sum,pi      area of rectangles
+!    tmp         temporary scratch space for global summation
+!    i           do loop index
+!****************************************************************************
       double precision function f( a )
       implicit none
       double precision a
           f = 4.d0 / (1.d0 + a*a)
           return
       end
-c
-c
-c
+!
+!
+!
       program main
       implicit none
 
@@ -62,14 +62,12 @@ c
       call MPI_COMM_SIZE( MPI_COMM_WORLD, numprocs, ierr )
       print *, "Process ", myid, " of ", numprocs, " is alive"
 
-      event1a = MPE_Log_get_event_number()
-      event1b = MPE_Log_get_event_number()
-      event2a = MPE_Log_get_event_number()
-      event2b = MPE_Log_get_event_number()
-      event3a = MPE_Log_get_event_number()
-      event3b = MPE_Log_get_event_number()
-      event4a = MPE_Log_get_event_number()
-      event4b = MPE_Log_get_event_number()
+! Use of MPE_Log_get_state_eventIDs() instead of the
+! deprecated function MPE_Log_get_event_number().
+      call MPE_Log_get_state_eventIDs( event1a, event1b )
+      call MPE_Log_get_state_eventIDs( event2a, event2b )
+      call MPE_Log_get_state_eventIDs( event3a, event3b )
+      call MPE_Log_get_state_eventIDs( event4a, event4b )
 
       if ( myid .eq. 0 ) then
           ierr = MPE_Describe_state( event1a, event1b,
@@ -90,14 +88,14 @@ c
       endif
 
       if ( myid .eq. 0 ) then
-C         write(6,98)
-C 98      format('Enter the number of intervals: (0 quits)')
-C         read(5,99) n
-C 99      format(i10)
+!         write(6,98)
+! 98      format('Enter the number of intervals: (0 quits)')
+!         read(5,99) n
+! 99      format(i10)
           n = 1000000
           write(6,*) 'The number of intervals =', n
-c         check for quit signal
-C         if ( n .le. 0 ) goto 30
+!         check for quit signal
+!         if ( n .le. 0 ) goto 30
       endif
 
       call MPI_Barrier( MPI_COMM_WORLD, ierr )
