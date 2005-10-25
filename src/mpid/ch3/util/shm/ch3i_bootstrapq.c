@@ -556,6 +556,14 @@ int MPIDI_CH3I_BootstrapQ_tostring(MPIDI_CH3I_BootstrapQ queue, char *name, int 
     int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
+    
+    if (queue == NULL)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_TOSTRING);
+	return mpi_errno;
+    }
+
     /*printf("[%d] queue->name = %s\n", MPIR_Process.comm_world->rank, queue->name);fflush(stdout);*/
 #ifdef MPIDI_CH3_USES_SHM_NAME
     mpi_errno = MPIU_Snprintf(name, length, "%s:%s", queue->name, queue->shm_name);
