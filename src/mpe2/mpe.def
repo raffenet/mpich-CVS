@@ -6,7 +6,6 @@ EXPORTS
     MPE_Describe_comm_state
     MPE_Describe_info_state
     MPE_Describe_known_state
-    MPE_Describe_uncheck_state
     MPE_Describe_state
     MPE_Describe_comm_event
     MPE_Describe_info_event
