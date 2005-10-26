@@ -7,3 +7,4 @@ Release*
 *.suo
 .deps
 *.user
+.state-cache
