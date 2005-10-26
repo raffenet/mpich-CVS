@@ -17,7 +17,7 @@ faq.htm faq.tex: faqbuild faq.txt Makefile
 .dvi.pdf:
 	(unset TEXMF ; dvipdfm $*)
 .tex.dvi:
-	latex $* </dev/null >/dev/null 2>&1
+	-latex $* </dev/null >/dev/null 2>&1
 	latex $*
 
 WEBDIR = /mcs/www/mpi/mpich2
