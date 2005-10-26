@@ -527,6 +527,31 @@ if test "$enable_f90" = default -a "$enable_f77" = yes ; then
 	# a working Fortran 90 compiler
         PAC_F90_AND_F77_COMPATIBLE(enable_f90=yes,enable_f90=no)
     fi
+    if test -n "$F90" -a "$pac_cv_f90_ext" != "f90" ; then
+        # The tests assume that .f90 works as the extension.  
+        # The IBM xlf90 compiler needs a special option to accept f90
+	AC_MSG_CHECKING([whether -qsuffix=f=f90 allows f90 suffix])
+	saveF90FLAGS=$F90FLAGS
+	F90FLAGS="$F90FLAGS -qsuffix=f=f90"
+	rm -f conftest*
+	cat >conftest.f90 <<EOF
+       program main
+       end
+EOF
+        if $F90 $F90FLAGS -o conftest conftest.f90 ; then
+            pac_cv_f90_needs_qsuffix=yes
+        else
+            pac_cv_f90_needs_qsuffix=no
+        fi
+        rm -f conftest*
+        AC_MSG_RESULT($pac_cv_f90_needs_qsuffix)
+        if test "$pac_cv_f90_needs_qsuffix" != "yes" ; then
+            F90FLAGS=$saveF90FLAGS;
+            AC_MSG_WARN([Fortran 90 tests being disabled because the $F90 compiler does not accept a .f90 extension])
+            f90dir=#
+            enable_f90=no
+        fi
+    fi
     if test -n "$BASEF90" ; then
         F90=$saveF90
     fi
