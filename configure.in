@@ -4187,10 +4187,10 @@ export MPI_F90FLAGS
 # For the examples, we want to use the scripts to encourage users
 # to use them and to make them work more robustly with shared libraries
 # and, for Fortran 90, any special Fortran 90 module features.
-if test -z "$MPICC" ; then MPICC='$(MPICHDIR)/bin/mpicc' ; fi
-if test -z "$MPIF77" ; then MPICC='$(MPICHDIR)/bin/mpif77' ; fi
-if test -z "$MPIF90" ; then MPICC='$(MPICHDIR)/bin/mpif90' ; fi
-if test -z "$MPICXX" ; then MPICC='$(MPICHDIR)/bin/mpicxx' ; fi
+if test -z "$MPICC" ; then MPICC='$(bindir)/mpicc' ; fi
+if test -z "$MPIF77" ; then MPIF77='$(bindir)/mpif77' ; fi
+if test -z "$MPIF90" ; then MPIF90='$(bindir)/mpif90' ; fi
+if test -z "$MPICXX" ; then MPICXX='$(bindir)/mpicxx' ; fi
 AC_SUBST(MPICC)
 AC_SUBST(MPICXX)
 AC_SUBST(MPIF77)
