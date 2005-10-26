@@ -2008,10 +2008,41 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     return SMPD_SUCCESS;
 #else
     int status;
+    smpd_pwait_t result;
     smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("waiting for process %d\n", wait);
-    waitpid(wait, &status, WUNTRACED);
+    result = -1;
+    while (result == -1)
+    {
+	result = waitpid(wait, &status, WUNTRACED);
+	if (result == -1)
+	{
+	    switch (errno)
+	    {
+	    case EINTR:
+		break;
+	    case ECHILD:
+		smpd_err_printf("waitpid(%d) returned ECHILD\n", wait);
+		*exit_code_ptr = -10;
+		smpd_exit_fn(FCNAME);
+		return SMPD_SUCCESS;
+		break;
+	    case EINVAL:
+		smpd_err_printf("waitpid(%d) returned EINVAL\n", wait);
+		*exit_code_ptr = -11;
+		smpd_exit_fn(FCNAME);
+		return SMPD_SUCCESS;
+		break;
+	    default:
+		smpd_err_printf("waitpid(%d) returned %d\n", wait, errno);
+		*exit_code_ptr = -12;
+		smpd_exit_fn(FCNAME);
+		return SMPD_SUCCESS;
+		break;
+	    }
+	}
+    }
     if (WIFEXITED(status))
     {
 	*exit_code_ptr =  WEXITSTATUS(status);
@@ -2020,6 +2051,20 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
     {
 	smpd_err_printf("WIFEXITED(%d) failed, setting exit code to -1\n", wait);
 	*exit_code_ptr = -1;
+	if (WIFSIGNALED(status))
+	{
+	    *exit_code_ptr = -2;
+	}
+	if (WIFSTOPPED(status))
+	{
+	    *exit_code_ptr = -3;
+	}
+#ifdef WCOREDUMP
+	if (WCOREDUMP(status))
+	{
+	    *exit_code_ptr = -4;
+	}
+#endif
     }
 
     smpd_exit_fn(FCNAME);
