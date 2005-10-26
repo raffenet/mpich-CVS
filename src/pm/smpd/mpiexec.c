@@ -281,12 +281,18 @@ int main(int argc, char* argv[])
     /* set the state to create a console session or a job session */
     state = smpd_process.do_console ? SMPD_MPIEXEC_CONNECTING_SMPD : SMPD_MPIEXEC_CONNECTING_TREE;
 
+    result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("unable to create a context for the first host in the tree.\n");
+	goto quit_job;
+    }
 #ifdef HAVE_WINDOWS_H
     if (!smpd_process.local_root)
     {
 #endif
 	/* start connecting the tree by posting a connect to the first host */
-	result = MPIDU_Sock_post_connect(set, NULL, smpd_process.host_list->host, smpd_process.port, &sock);
+	result = MPIDU_Sock_post_connect(set, context, smpd_process.host_list->host, smpd_process.port, &sock);
 	if (result != MPI_SUCCESS)
 	{
 	    smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
@@ -296,12 +302,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_WINDOWS_H
     }
 #endif
-    result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("unable to create a context for the first host in the tree.\n");
-	goto quit_job;
-    }
+    context->sock = sock;
     context->state = state;
     context->connect_to = smpd_process.host_list;
 #ifdef HAVE_WINDOWS_H
