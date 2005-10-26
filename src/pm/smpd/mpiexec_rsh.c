@@ -152,7 +152,14 @@ static int ConnectToHost(char *host, int port, smpd_state_t state, MPIDU_Sock_se
     int len;
 
     /*printf("posting a connect to %s:%d\n", host, port);fflush(stdout);*/
-    result = MPIDU_Sock_post_connect(set, NULL, host, port, sockp);
+    result = smpd_create_context(SMPD_CONTEXT_PMI, set, MPIDU_SOCK_INVALID_SOCK/**sockp*/, -1, contextpp);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("ConnectToHost failed: unable to create a context to connect to %s:%d with.\n", host, port);
+	return SMPD_FAIL;
+    }
+
+    result = MPIDU_Sock_post_connect(set, *contextpp, host, port, sockp);
     if (result != MPI_SUCCESS)
     {
 	len = MPI_MAX_ERROR_STRING;
@@ -161,20 +168,8 @@ static int ConnectToHost(char *host, int port, smpd_state_t state, MPIDU_Sock_se
 	return SMPD_FAIL;
     }
 
-    result = smpd_create_context(SMPD_CONTEXT_PMI, set, *sockp, -1, contextpp);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("ConnectToHost failed: unable to create a context to connect to %s:%d with.\n", host, port);
-	return SMPD_FAIL;
-    }
+    (*contextpp)->sock = *sockp;
     (*contextpp)->state = state;
-
-    result = MPIDU_Sock_set_user_ptr(*sockp, *contextpp);
-    if (result != MPI_SUCCESS)
-    {
-	smpd_err_printf("ConnectToHost failed: unable to set the connect sock user pointer.\n");
-	return SMPD_FAIL;
-    }
 
     result = smpd_enter_at_state(set, state);
     if (result != MPI_SUCCESS)

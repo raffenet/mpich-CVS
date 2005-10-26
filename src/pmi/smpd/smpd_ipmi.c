@@ -352,7 +352,14 @@ static int uPMI_ConnectToHost(char *host, int port, smpd_state_t state)
     int len;
 
     /*printf("posting a connect to %s:%d\n", host, port);fflush(stdout);*/
-    result = MPIDU_Sock_post_connect(pmi_process.set, NULL, host, port, &pmi_process.sock);
+    result = smpd_create_context(SMPD_CONTEXT_PMI, pmi_process.set, MPIDU_SOCK_INVALID_SOCK/*pmi_process.sock*/, smpd_process.id, &pmi_process.context);
+    if (result != SMPD_SUCCESS)
+    {
+	pmi_err_printf("PMI_ConnectToHost failed: unable to create a context to connect to %s:%d with.\n", host, port);
+	return PMI_FAIL;
+    }
+
+    result = MPIDU_Sock_post_connect(pmi_process.set, pmi_process.context, host, port, &pmi_process.sock);
     if (result != MPI_SUCCESS)
     {
 	printf("MPIDU_Sock_post_connect failed.\n");fflush(stdout);
@@ -363,20 +370,8 @@ static int uPMI_ConnectToHost(char *host, int port, smpd_state_t state)
 	return PMI_FAIL;
     }
 
-    result = smpd_create_context(SMPD_CONTEXT_PMI, pmi_process.set, pmi_process.sock, smpd_process.id, &pmi_process.context);
-    if (result != SMPD_SUCCESS)
-    {
-	pmi_err_printf("PMI_ConnectToHost failed: unable to create a context to connect to %s:%d with.\n", host, port);
-	return PMI_FAIL;
-    }
+    pmi_process.context->sock = pmi_process.sock;
     pmi_process.context->state = state;
-
-    result = MPIDU_Sock_set_user_ptr(pmi_process.sock, pmi_process.context);
-    if (result != MPI_SUCCESS)
-    {
-	pmi_mpi_err_printf(result, "PMI_ConnectToHost failed: unable to set the connect sock user pointer.\n");
-	return PMI_FAIL;
-    }
 
     result = smpd_enter_at_state(pmi_process.set, state);
     if (result != MPI_SUCCESS)

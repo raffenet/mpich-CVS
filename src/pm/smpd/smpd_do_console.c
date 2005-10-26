@@ -55,7 +55,14 @@ int smpd_do_console()
     }
 
     /* start connecting the tree by posting a connect to the first host */
-    result = MPIDU_Sock_post_connect(set, NULL, smpd_process.console_host, smpd_process.port, &sock);
+    result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, MPIDU_SOCK_INVALID_SOCK/*sock*/, 1, &context);
+    if (result != SMPD_SUCCESS)
+    {
+	smpd_err_printf("Unable to create a context.\n");
+	goto quit_job;
+    }
+
+    result = MPIDU_Sock_post_connect(set, context, smpd_process.console_host, smpd_process.port, &sock);
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("Unable to connect to '%s:%d',\nsock error: %s\n",
@@ -63,25 +70,15 @@ int smpd_do_console()
 	no_smpd = SMPD_TRUE;
 	goto quit_job;
     }
+    context->sock = sock;
+
     /* turn output back on */
     if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
 	smpd_process.dbg_state = saved_state;
 
-    result = smpd_create_context(SMPD_CONTEXT_LEFT_CHILD, set, sock, 1, &context);
-    if (result != SMPD_SUCCESS)
-    {
-	smpd_err_printf("Unable to create a context.\n");
-	goto quit_job;
-    }
     context->state = SMPD_MPIEXEC_CONNECTING_SMPD;
     smpd_process.left_context = context;
-    result = MPIDU_Sock_set_user_ptr(sock, context);
-    if (result != MPI_SUCCESS)
-    {
-	smpd_err_printf("Unable to set the smpd sock user pointer,\nsock error: %s\n",
-	    get_sock_error_string(result));
-	goto quit_job;
-    }
+
     /* turn off output if do_status is selected to supress error messages */
     if (smpd_process.builtin_cmd == SMPD_CMD_DO_STATUS)
 	smpd_process.dbg_state = 0;
