@@ -976,9 +976,11 @@ class MPD(object):
                 mpd_print(1,'lost rhs; re-entering ring')
                 rc = self.ring.reenter_ring(lhsHandler=self.handle_lhs_input,
                                             rhsHandler=self.handle_rhs_input,
-                                            ntries=10)
-                if rc < 0:
-                    mpd_print(1,"failed to reenter ring")
+                                            ntries=16)
+                if rc == 0:
+                    mpd_print(1,'back in ring')
+		else:
+                    mpd_print(1,'failed to reenter ring')
                     sys.exit(-1)
             return
         if msg['cmd'] == 'pulse_ack':

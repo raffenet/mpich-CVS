@@ -535,10 +535,14 @@ class MPDRing(object):
         while rc < 0  and  numTries < ntries:
             numTries += 1
             rc = self.enter_ring(entryIfhn=entryIfhn,entryPort=entryPort,
-                                 lhsHandler=lhsHandler,rhsHandler=rhsHandler,ntries=1)
-            sleep(random())
+                                 lhsHandler=lhsHandler,rhsHandler=rhsHandler,
+				 ntries=1,newgeneration=self.generation+1)
+	    sleepTime = random() * 1.5  # a single random is between 0 and 1
+            sleep(sleepTime)
+        mpd_print(1,'reenter_ring rc=%d after numTries=%d' % (rc,numTries) )
         return rc
-    def enter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',ntries=1):
+    def enter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',
+                   ntries=1,newgeneration=0):
         if not lhsHandler  or  not rhsHandler:
             print 'missing handler for enter_ring'
             sys.exit(-1)
@@ -546,7 +550,10 @@ class MPDRing(object):
             entryIfhn = self.entryIfhn
         if not entryPort:
             entryPort = self.entryPort
-        self.generation += 1
+	if newgeneration:
+            self.generation = newgeneration
+	else:
+            self.generation += 1
         if not entryIfhn:
             self.create_single_mem_ring(ifhn=self.myIfhn,
                                         port=self.listenPort,
@@ -617,7 +624,7 @@ class MPDRing(object):
                       (self.lhsIfhn,self.lhsPort,msg) )
             return (-1,None)
         if msg['generation'] < self.generation:
-            mpd_print(1,'bad generation')
+            mpd_print(1,'bad generation from lhs; lhsgen=%d mygen=%d' % (msg['generation'],self.generation))
             return(-1,'bad_generation')  # RMB: try again here later
         response = md5new(''.join([self.secretword,msg['randnum']])).digest()
         msgToSend = { 'cmd' : 'challenge_response', 'response' : response,
@@ -677,7 +684,7 @@ class MPDRing(object):
             mpd_print(1,'invalid challenge from %s %d: %s' % (self.rhsIfhn,rhsPort,msg) )
             return (-1,None)
         if msg['generation'] < self.generation:
-            mpd_print(1,'bad generation')
+            mpd_print(1,'bad generation from rhs; lhsgen=%d mygen=%d' % (msg['generation'],self.generation))
             return(-1,'bad_generation')  # RMB: try again here later
         response = md5new(''.join([self.secretword,msg['randnum']])).digest()
         msgToSend = { 'cmd' : 'challenge_response', 'response' : response,
