@@ -67,7 +67,7 @@ static int PMI_rank = 0;
 */
 #define SINGLETON_INIT_BUT_NO_PM 1
 #define NORMAL_INIT_WITH_PM      2
-#define SINGLETON_INIT_MPD       3
+#define SINGLETON_INIT_WITH_PM   3
 static int PMI_initialized = 0;
 
 /* ALL GLOBAL VARIABLES MUST BE INITIALIZED TO AVOID POLLUTING THE 
@@ -86,7 +86,7 @@ static int PMII_Set_from_port( int, int );
 static int PMII_Connect_to_pm( char *, int );
 
 #ifdef USE_PMI_PORT
-static int mpd_singinit(void);
+static int PMII_singinit(void);
 static int PMI_totalview = 0;
 #endif
 static int accept_one_connection(int);
@@ -262,10 +262,10 @@ int PMI_Get_universe_size( int *size)
 #ifdef USE_PMI_PORT
     if (PMI_initialized < 2)
     {
-	rc = mpd_singinit();
+	rc = PMII_singinit();
 	if (rc < 0)
 	    return(-1);
-	PMI_initialized = SINGLETON_INIT_MPD;    /* do this right away */
+	PMI_initialized = SINGLETON_INIT_WITH_PM;    /* do this right away */
 	PMI_size = 1;
 	PMI_rank = 0;
 	PMI_debug = 0;
@@ -429,7 +429,7 @@ int PMI_KVS_Get_my_name( char kvsname[], int length )
 
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
 	/* Return a dummy name */
-	MPIU_Strncpy( kvsname, "singinit_kvs_0", PMIU_MAXLINE );  /* used by mpd if nec */
+	MPIU_Strncpy( kvsname, "singinit_kvs_0", PMIU_MAXLINE );
 	return 0;
     }
 #ifdef USE_HUMAN_READABLE_TOKENS
@@ -813,10 +813,10 @@ int PMI_Spawn_multiple(int count,
 #ifdef USE_PMI_PORT
     if (PMI_initialized < 2)
     {
-	rc = mpd_singinit();
+	rc = PMII_singinit();
 	if (rc < 0)
 	    return(-1);
-	PMI_initialized = SINGLETON_INIT_MPD;    /* do this right away */
+	PMI_initialized = SINGLETON_INIT_WITH_PM;    /* do this right away */
 	PMI_size = 1;
 	PMI_rank = 0;
 	PMI_debug = 0;
@@ -1295,8 +1295,7 @@ static int PMII_Set_from_port( int fd, int id )
 }
 
 
-static int mpd_singinit(void);
-static int mpd_singinit()
+static int PMII_singinit()
 {
     int pid, rc;
     int singinit_listen_sock, pmi_sock, stdin_sock, stdout_sock, stderr_sock;
@@ -1317,23 +1316,22 @@ static int mpd_singinit()
     pid = fork();
     if (pid < 0)
     {
-	perror("mpd_singinit: fork failed");
+	perror("PMII_singinit: fork failed");
 	exit(-1);
     }
     else if (pid == 0)
     {
-	newargv[0] = "mpdrun.py";
-	newargv[1] = "-p";
+	newargv[0] = "mpiexec.py";
+	newargv[1] = "-pmi_args";
+	newargv[2] = port_c;
 	MPIU_Snprintf(charpid, 8, "%d",getpid());
-	newargv[2] = charpid;
-	newargv[3] = port_c;
-	newargv[4] = "unknown_via_singinit";
-	newargv[5] = NULL;
+	newargv[3] = charpid;
+	newargv[4] = NULL;
 	rc = execvp(newargv[0],newargv);
-	perror("mpd_singinit: execv failed");
+	perror("PMII_singinit: execv failed");
 	PMIU_printf(1, "  This singleton init program attempted to access some feature\n");
-	PMIU_printf(1, "  for which mpd support was required, e.g. spawn or universe_size.\n");
-	PMIU_printf(1, "  But, the necessary mpd program (mpdrun) is not in your path.\n");
+	PMIU_printf(1, "  for which process manager support was required, e.g. spawn or universe_size.\n");
+	PMIU_printf(1, "  But, the necessary mpiexec is not in your path.\n");
 	return(-1);
     }
     else
