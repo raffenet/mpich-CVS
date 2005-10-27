@@ -35,6 +35,17 @@ MPICH2 is a freely available, portable implementation of
 \href{http://www.mpi-forum.org}{MPI}, the Standard for 
 message-passing libraries.  It implements both MPI-1 and MPI-2.
 
+%% Heading: Q: What is the difference between the MPD and SMPD process managers?
+%% Filename: mpd-smpd
+%% End
+MPD is the default process manager for MPICH2 on Unix platforms. It is written in
+Python. SMPD is the primary process manager for MPICH2 on Windows. It
+is also used for running on a combination of Windows and Linux
+machines. It is written in C.
+
+
+
+
 %% Section: Compiling MPI Programs
 %% Heading: C++ and \texttt{SEEK\_SET}
 %% Filename: cxxseek
