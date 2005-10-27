@@ -82,10 +82,16 @@ BOOL WINAPI mpiexec_ctrl_handler(DWORD dwCtrlType)
 
     switch (dwCtrlType)
     {
+    case CTRL_LOGOFF_EVENT:
+	/* The logoff event could be a problem if two users are logged on to the same machine remotely.
+	 * If user A runs mpiexec and user B logs out of his session, this event will cause user A's
+	 * mpiexec command to kill the job and make user A mad.  But if we ignore the logoff event then 
+	 * when user A logs out mpiexec will hang?
+	 */
+	break;
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
     case CTRL_CLOSE_EVENT:
-    case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
 	if (smpd_process.mpiexec_abort_sock != MPIDU_SOCK_INVALID_SOCK)
 	{
