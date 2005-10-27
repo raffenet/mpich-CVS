@@ -293,6 +293,7 @@ class MPDMan(object):
             self.cliListenPort = self.cliListenSock.getsockname()[1]         ## BNR
             self.pmiListenSock = MPDListenSock('',0,name='pmi_listen_sock')
             self.pmiListenPort = self.pmiListenSock.getsockname()[1]
+        self.subproc = 0    # default; use fork instead of subprocess
         if self.singinitPID:
             clientPid = self.singinitPID
         else:
@@ -316,14 +317,13 @@ class MPDMan(object):
                 (self.fd_read_cli_stdout,self.fd_write_cli_stdout) = os.pipe()
                 (self.fd_read_cli_stderr,self.fd_write_cli_stderr) = os.pipe()
                 (self.handshake_sock_man_end,self.handshake_sock_cli_end) = mpd_sockpair()
-                self.subproc = 0    # using fork instead of subprocess
                 clientPid = self.launch_client_via_fork_exec(cli_env)
                 if clientPid:
                     self.handshake_sock_cli_end.close()
                 else:
                     self.handshake_sock_man_end.close()
             elif subprocess_module_available:
-                clientPid = self.launch_client_via_subprocess(cli_env)
+                clientPid = self.launch_client_via_subprocess(cli_env)  # may chg self.subproc
             else:
                 mpd_print(1,'neither fork nor subprocess is available')
                 sys.exit(-1)

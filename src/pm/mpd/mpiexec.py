@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.4
 #
 #   (C) 2001 by Argonne National Laboratory.
 #       See COPYRIGHT in top-level directory.
@@ -146,14 +146,14 @@ def mpiexec():
             print '-file (-f) arg must appear alone'
 	    usage()
         parmdb[('cmdline','inXmlFilename')] = sys.argv[2]
-    elif sys.argv[1] == '-p':
-        parmdb[('cmdline','singinitpid')]  = sys.argv[2]
-        parmdb[('cmdline','singinitport')] = sys.argv[3]
-        parmdb[('cmdline','userpgm')] = sys.argv[4]
+    elif sys.argv[1] == '-pmi_args':
+        parmdb[('cmdline','singinitport')] = sys.argv[2]
+        parmdb[('cmdline','singinitpid')]  = sys.argv[3]
+        parmdb[('cmdline','userpgm')] = 'unknown_pgmname'
         parmdb[('cmdline','nprocs')] = 1
         parmdb[('cmdline','MPIEXEC_TRY_1ST_LOCALLY')] = 1
         machineFileInfo = {}
-        tempargv = [sys.argv[0],sys.argv[4]]
+        tempargv = [sys.argv[0],'unknown_pgmname']
         collect_args(tempargv,localArgSets)
     else:
         if sys.argv[1] == '-configfile':
