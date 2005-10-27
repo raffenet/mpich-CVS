@@ -63,7 +63,10 @@ def mpdtrace():
             if len(sys.argv) > 1 and sys.argv[1] == '-l':
                 print '%s (%s)' % (msg['id'],msg['ifhn'])
             else:
-                print sub(r'[\._].*', '', msg['id'])    # strip off domain and port
+                pos = msg['id'].find('.')
+                if pos < 0:
+                    pos = msg['id'].rfind('_')
+                print msg['id'][:pos]    # strip off domain and port
         elif msg['cmd'] == 'mpdtrace_trailer':
             done = 1
     conSock.close()
