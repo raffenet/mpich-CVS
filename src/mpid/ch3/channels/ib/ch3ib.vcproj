@@ -325,6 +325,12 @@
 				RelativePath="..\..\src\ch3u_request.c">
 			</File>
 			<File
+				RelativePath="..\..\src\ch3u_rma_ops.c">
+			</File>
+			<File
+				RelativePath="..\..\src\ch3u_rma_sync.c">
+			</File>
+			<File
 				RelativePath=".\src\ibu.ibal.c">
 			</File>
 			<File
@@ -404,6 +410,9 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_recv.c">
+			</File>
+			<File
+				RelativePath="..\..\src\mpid_rma.c">
 			</File>
 			<File
 				RelativePath="..\..\src\mpid_rsend.c">
