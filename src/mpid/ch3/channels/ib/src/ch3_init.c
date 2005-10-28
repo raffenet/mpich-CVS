@@ -156,6 +156,28 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
     return MPI_SUCCESS;
 }
 
+int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *RMAFns ) 
+{
+    /*
+    RMAFns->Win_create = MPIDI_CH3_Win_create;
+    RMAFns->Win_free = MPIDI_CH3_Win_free;
+    RMAFns->Put = MPIDI_CH3_Put;
+    RMAFns->Get = MPIDI_CH3_Get;
+    RMAFns->Accumulate = MPIDI_CH3_Accumulate;
+    RMAFns->Win_fence = MPIDI_CH3_Win_fence;
+    RMAFns->Win_post = MPIDI_CH3_Win_post;
+    RMAFns->Win_start = MPIDI_CH3_Win_start;
+    RMAFns->Win_complete = MPIDI_CH3_Win_complete;
+    RMAFns->Win_wait = MPIDI_CH3_Win_wait;
+    RMAFns->Win_lock = MPIDI_CH3_Win_lock;
+    RMAFns->Win_unlock = MPIDI_CH3_Win_unlock;
+    RMAFns->Alloc_mem = MPIDI_CH3_Alloc_mem;
+    RMAFns->Free_mem = MPIDI_CH3_Free_mem;
+    */
+
+    return MPI_SUCCESS;
+}
+
 /* Perform the channel-specific vc initialization */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_VC_Init
