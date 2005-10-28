@@ -292,6 +292,10 @@ int MPIDI_CH3I_SHM_Get_mem(MPIDI_PG_t *pg, int nTotalSize, int nRank, int nNproc
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_Release_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /*@
    MPIDI_CH3I_SHM_Release_mem - 
 
