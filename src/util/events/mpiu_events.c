@@ -11,6 +11,8 @@
 #include "mpi.h"
 #include <stdio.h>
 
+/* FIXME: What is this for?  Who uses it?  */
+
 /*
 #if defined(MPICH_DBG_OUTPUT)
 #ifndef MPIU_DBG_PRINTF
@@ -31,6 +33,10 @@
 
 #if (USE_MPIU_EVENT_TYPE == MPIU_EVENT_TYPE_WINDOWS)
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_create
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_create(MPIU_Event *event, char *name, int length)
 {
     HANDLE hEvent;
@@ -63,6 +69,10 @@ int MPIU_Event_create(MPIU_Event *event, char *name, int length)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_open
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_open(MPIU_Event *event, char *name)
 {
     HANDLE hEvent;
@@ -89,6 +99,10 @@ int MPIU_Event_open(MPIU_Event *event, char *name)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_close
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_close(MPIU_Event event)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIU_EVENT_CLOSE);
@@ -111,6 +125,10 @@ int MPIU_Event_close(MPIU_Event event)
     return MPI_ERR_OTHER;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Event_set
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_set(MPIU_Event event)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIU_EVENT_SET);
@@ -133,6 +151,10 @@ int MPIU_Event_set(MPIU_Event event)
     return MPI_ERR_OTHER;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_reset
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_reset(MPIU_Event event)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIU_EVENT_RESET);
@@ -155,6 +177,10 @@ int MPIU_Event_reset(MPIU_Event event)
     return MPI_ERR_OTHER;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_wait
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_wait(MPIU_Event event)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIU_EVENT_WAIT);
@@ -173,6 +199,10 @@ int MPIU_Event_wait(MPIU_Event event)
     return MPI_ERR_OTHER;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_wait_multiple
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_wait_multiple(MPIU_Event *events, int num_events, int wait_all)
 {
     DWORD result;
@@ -198,6 +228,10 @@ int MPIU_Event_wait_multiple(MPIU_Event *events, int num_events, int wait_all)
     return MPI_ERR_OTHER;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_test
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_test(MPIU_Event event, int *flag)
 {
     DWORD result;
@@ -232,6 +266,10 @@ int MPIU_Event_test(MPIU_Event event, int *flag)
     return MPI_ERR_OTHER;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIU_Event_test_multiple
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIU_Event_test_multiple(MPIU_Event *events, int num_events, int *any_set_flag)
 {
     DWORD result;
