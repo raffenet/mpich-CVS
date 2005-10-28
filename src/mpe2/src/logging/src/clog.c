@@ -195,6 +195,14 @@ void CLOG_Converge_init(       CLOG_Stream_t *stream,
 {
     /* stream->buffer->block_size == stream->buffer->preamble->block_size */
     stream->merger = CLOG_Merger_create( stream->buffer->block_size );
+    /*
+       Update CLOG_Preamble_t with current values before its being passed to
+       CLOG_Merger_init() where it will be copied to the disk at root process.
+    */
+    stream->buffer->preamble->user_stateID_count
+    = stream->user_stateID - CLOG_USER_STATEID_START; 
+    stream->buffer->preamble->user_solo_eventID_count
+    = stream->user_solo_eventID  - CLOG_USER_SOLO_EVENTID_START;
     CLOG_Merger_init( stream->merger, stream->buffer->preamble,
                       merged_file_prefix );
 }
