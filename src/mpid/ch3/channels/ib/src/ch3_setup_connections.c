@@ -14,7 +14,7 @@
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Setup_connections
+#define FUNCNAME MPIDI_CH3I_Setup_connections
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Setup_connections(MPIDI_PG_t *pg, int pg_rank)
