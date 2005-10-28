@@ -12,7 +12,7 @@
    Version 2.2: Added CLOG internal profiling state: CLOG_Buffer_write2disk
    Version 2.3: Added support of MPI_Comm.
    Version 2.4: Added support of user-defined event drawable/category.
-                backward compatible with version 2.3.
+                Updated CLOG_Preamble with MPE eventID and stateID info.
 */
 #define CLOG_VERSION          "CLOG-02.40"
 
