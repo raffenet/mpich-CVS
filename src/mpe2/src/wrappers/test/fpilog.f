@@ -40,7 +40,7 @@
       parameter        (PI25DT = 3.141592653589793238462643d0)
 
       double precision  mypi, pi, h, sum, x
-      integer n, myid, numprocs, ii, rc, idx
+      integer n, myid, numprocs, ii, idx
       double precision f
       external f
 
@@ -59,11 +59,11 @@
 ! Demonstrate the use of MPE_Log_state_eventIDs() and MPE_Log_solo_eventID()
 ! which replace the deprecated function MPE_Log_get_event_number.    
 !
-      call MPE_Log_get_state_eventIDs( event1a, event1b )
-      call MPE_Log_get_state_eventIDs( event2a, event2b )
-      call MPE_Log_get_solo_eventID( event3a )
-      call MPE_Log_get_solo_eventID( event3b )
-      call MPE_Log_get_state_eventIDs( event4a, event4b )
+      ierr = MPE_Log_get_state_eventIDs( event1a, event1b )
+      ierr = MPE_Log_get_state_eventIDs( event2a, event2b )
+      ierr = MPE_Log_get_solo_eventID( event3a )
+      ierr = MPE_Log_get_solo_eventID( event3b )
+      ierr = MPE_Log_get_state_eventIDs( event4a, event4b )
 
 ! Demonstrate the use MPE_Describe_event() to describe single-timestamped
 ! drawable, i.e. event.  Caution: One can use MPE_Describe_state() instead

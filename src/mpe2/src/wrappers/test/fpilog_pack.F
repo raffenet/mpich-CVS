@@ -40,7 +40,7 @@
       parameter        (PI25DT = 3.141592653589793238462643d0)
 
       double precision  mypi, pi, h, sum, x
-      integer n, myid, numprocs, ii, rc, idx
+      integer n, myid, numprocs, ii, idx
       double precision f
       external f
 
@@ -64,10 +64,10 @@
 
 ! Use of MPE_Log_get_state_eventIDs() instead of the
 ! deprecated function MPE_Log_get_event_number().
-      call MPE_Log_get_state_eventIDs( event1a, event1b )
-      call MPE_Log_get_state_eventIDs( event2a, event2b )
-      call MPE_Log_get_state_eventIDs( event3a, event3b )
-      call MPE_Log_get_state_eventIDs( event4a, event4b )
+      ierr = MPE_Log_get_state_eventIDs( event1a, event1b )
+      ierr = MPE_Log_get_state_eventIDs( event2a, event2b )
+      ierr = MPE_Log_get_state_eventIDs( event3a, event3b )
+      ierr = MPE_Log_get_state_eventIDs( event4a, event4b )
 
       if ( myid .eq. 0 ) then
           ierr = MPE_Describe_state( event1a, event1b,
@@ -147,6 +147,6 @@
 #if defined( NO_MPI_LOGGING )
       ierr = MPE_FINISH_LOG( "nfpilog_pack" )
 #endif
-      call MPI_Finalize( rc )
+      call MPI_Finalize( ierr )
 
       end
