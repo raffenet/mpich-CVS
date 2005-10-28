@@ -103,10 +103,11 @@ BOOL WINAPI mpiexec_rsh_handler(DWORD type)
 
     switch (type)
     {
+    case CTRL_LOGOFF_EVENT:
+	break;
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
     case CTRL_CLOSE_EVENT:
-    case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
 	if (smpd_process.timeout_sock != MPIDU_SOCK_INVALID_SOCK)
 	{
