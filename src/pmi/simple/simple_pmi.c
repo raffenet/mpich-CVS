@@ -1321,12 +1321,14 @@ static int PMII_singinit()
     }
     else if (pid == 0)
     {
-	newargv[0] = "mpiexec.py";
+	newargv[0] = "mpiexec";
 	newargv[1] = "-pmi_args";
 	newargv[2] = port_c;
+	newargv[3] = "default_host";  /* default interface name, for now */
+	newargv[4] = "default_key";   /* default authentication key, for now */
 	MPIU_Snprintf(charpid, 8, "%d",getpid());
-	newargv[3] = charpid;
-	newargv[4] = NULL;
+	newargv[5] = charpid;
+	newargv[6] = NULL;
 	rc = execvp(newargv[0],newargv);
 	perror("PMII_singinit: execv failed");
 	PMIU_printf(1, "  This singleton init program attempted to access some feature\n");
