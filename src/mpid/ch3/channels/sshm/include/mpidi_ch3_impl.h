@@ -296,9 +296,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *, const char *, int *);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **, MPIDI_VC_t *, int );
 
-#define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
-#define MPIDI_CH3I_HOST_KEY              "host"
-#define MPIDI_CH3I_PORT_KEY              "port"
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
 #define MPIDI_CH3I_SHM_QUEUE_NAME_KEY    "shm_name"

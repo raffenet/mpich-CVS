@@ -90,12 +90,6 @@ typedef struct MPIDI_CH3I_Connection
 
 #define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
 
-/* these are used to create a business card and to extract information from 
-   that business card. */
-/* FIXME: These should be defined and used in a single file */
-#define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
-#define MPIDI_CH3I_PORT_KEY              "port"
-
 /* End of connection-related macros */
 
 /* FIXME: Any of these used in the ch3->channel interface should be

@@ -301,9 +301,8 @@ int MPIDI_CH3I_SSM_VC_post_read(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_SSM_VC_post_write(MPIDI_VC_t *, MPID_Request *);
 int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group);
 
-#define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
-#define MPIDI_CH3I_HOST_KEY              "host"
-#define MPIDI_CH3I_PORT_KEY              "port"
+/* FIXME: These should be known only by the code that is managing
+   the business cards */
 #define MPIDI_CH3I_SHM_HOST_KEY          "shm_host"
 #define MPIDI_CH3I_SHM_QUEUE_KEY         "shm_queue"
 #define MPIDI_CH3I_SHM_QUEUE_NAME_KEY    "shm_name"
