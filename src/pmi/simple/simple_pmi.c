@@ -1324,7 +1324,7 @@ static int PMII_singinit()
 	newargv[0] = "mpiexec";
 	newargv[1] = "-pmi_args";
 	newargv[2] = port_c;
-	newargv[3] = "default_host";  /* default interface name, for now */
+	newargv[3] = "default_interface";  /* default interface name, for now */
 	newargv[4] = "default_key";   /* default authentication key, for now */
 	MPIU_Snprintf(charpid, 8, "%d",getpid());
 	newargv[5] = charpid;
