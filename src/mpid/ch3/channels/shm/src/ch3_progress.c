@@ -63,10 +63,12 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     return TRUE;
 }
 
+/* Note the space in MPIDI_S TATE_DECL to keep the state finder from reading
+   this commented-out definition */
 /*
 #define post_pkt_recv(vc) \
 { \
-    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV); \
+    MPIDI_S TATE_DECL(MPID_STATE_POST_PKT_RECV); \
     MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_RECV); \
     vc->ch.req->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)&vc->ch.req->ch.pkt; \
     vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t); \
