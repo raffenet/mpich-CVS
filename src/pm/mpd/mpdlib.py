@@ -102,6 +102,8 @@ def mpd_print_tb(*args):
         splitLine[1] = sub(' line ','',splitLine[1])
         splitLine[2] = sub(' in ','',splitLine[2])
         printLine = printLine + '    %s,  %s,  %s\n' % tuple(splitLine)
+    if mpd_cli_app:    # debug mpich apps in nightly tests
+        printLine += '    mpd_cli_app=%s' % (mpd_cli_app)
     print printLine
     sys.stdout.flush()
     if syslog_module_available:
