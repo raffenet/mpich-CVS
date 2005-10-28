@@ -565,7 +565,7 @@ sub ProcessFile
 			      'MPIU_ERR_CHKANDJUMP2'      => '3:-1:1:1',
 			      'MPIU_ERR_CHKANDJUMP3'      => '3:-1:1:1',
 			      );
-	while (/(MPI[OUR]_[A-Za-z0-9_]+)\s*(\(.*)$/) {
+	while (/(MPI[OUR]_E[A-Za-z0-9_]+)\s*(\(.*)$/) {
 	    my $routineName = $1;
 	    my $arglist     = $2;
 	    if (!defined($KnownErrRoutines{$routineName})) {
