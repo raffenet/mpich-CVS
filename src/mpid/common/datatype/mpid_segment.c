@@ -200,6 +200,10 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
 
 /********** EXTERNALLY VISIBLE FUNCTIONS FOR TYPE MANIPULATION **********/
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_pack
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* Segment_pack - we need to implement this if for no other reason
  * than for performance testing
  *
@@ -249,6 +253,10 @@ void MPID_Segment_pack(struct DLOOP_Segment *segp,
 
 /* Segment_unpack
  */
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_unpack
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPID_Segment_unpack(struct DLOOP_Segment *segp,
 			 DLOOP_Offset first,
 			 DLOOP_Offset *lastp,
@@ -274,6 +282,10 @@ void MPID_Segment_unpack(struct DLOOP_Segment *segp,
     return;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_pack_vector
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_pack_vector
  *
  * Parameters:
@@ -323,6 +335,10 @@ void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
  *
  * Q: Should this be any different from pack vector?
  */
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_unpack_vector
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
 				DLOOP_Offset first,
 				DLOOP_Offset *lastp,
@@ -336,6 +352,10 @@ void MPID_Segment_unpack_vector(struct DLOOP_Segment *segp,
     return;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_flatten
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_flatten
  *
  * offp    - pointer to array to fill in with offsets
@@ -382,6 +402,10 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_count_contig_blocks
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_count_contig_blocks()
  *
  * Count number of contiguous regions in segment between first and last.
@@ -419,6 +443,10 @@ void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
 
 /********** FUNCTIONS FOR CREATING AN IOV DESCRIBING BUFFER **********/
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_pack_to_iov
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_contig_pack_to_iov
  */
 static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
@@ -478,6 +506,10 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_vector_pack_to_iov
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_vector_pack_to_iov
  *
  * Input Parameters:
@@ -592,6 +624,10 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 
 /********** FUNCTIONS FOR FLATTENING A TYPE **********/
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_flatten
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_contig_flatten
  */
 static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
@@ -645,6 +681,10 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_vector_flatten
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_vector_flatten
  *
  * Notes: 
@@ -717,6 +757,10 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
 
 /********** FUNCTIONS FOR COUNTING THE # OF CONTIGUOUS REGIONS IN A TYPE **********/
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_count_block
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_contig_count_block
  */
 static int MPID_Segment_contig_count_block(DLOOP_Offset *blocks_p,
@@ -761,6 +805,10 @@ static int MPID_Segment_contig_count_block(DLOOP_Offset *blocks_p,
 
 /********** FUNCTIONS FOR UNPACKING INTO A BUFFER **********/
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_unpack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_contig_unpack_to_buf
  */
 static int MPID_Segment_contig_unpack_to_buf(DLOOP_Offset *blocks_p,
@@ -794,6 +842,10 @@ static int MPID_Segment_contig_unpack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_vector_unpack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_vector_unpack_to_buf
  *
  * Note: this is only called when the starting position is at the beginning
@@ -877,6 +929,10 @@ static int MPID_Segment_vector_unpack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_blkidx_unpack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_blkidx_unpack_to_buf
  */
 static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
@@ -930,6 +986,10 @@ static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_index_unpack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_index_unpack_to_buf
  */
 static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
@@ -983,6 +1043,10 @@ static int MPID_Segment_index_unpack_to_buf(DLOOP_Offset *blocks_p,
 
 /********** FUNCTIONS FOR PACKING INTO A BUFFER **********/
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_pack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_contig_pack_to_buf
  */
 static int MPID_Segment_contig_pack_to_buf(DLOOP_Offset *blocks_p,
@@ -1027,6 +1091,10 @@ static int MPID_Segment_contig_pack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_vector_pack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_vector_pack_to_buf
  *
  * Note: this is only called when the starting position is at the beginning
@@ -1110,6 +1178,10 @@ static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_index_pack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_index_pack_to_buf
  */
 static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
@@ -1183,6 +1255,10 @@ static int MPID_Segment_index_pack_to_buf(DLOOP_Offset *blocks_p,
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_blkidx_pack_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPID_Segment_blkidx_pack_to_buf
  */
 static int MPID_Segment_blkidx_pack_to_buf(DLOOP_Offset *blocks_p,

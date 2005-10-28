@@ -158,6 +158,10 @@ static int external32_float_convert(char *dest_buf,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_pack_external32_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPID_Segment_contig_pack_external32_to_buf(DLOOP_Offset *blocks_p,
                                                       DLOOP_Type el_type,
                                                       DLOOP_Offset rel_off,
@@ -217,6 +221,10 @@ static int MPID_Segment_contig_pack_external32_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_contig_unpack_external32_to_buf
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPID_Segment_contig_unpack_external32_to_buf(DLOOP_Offset *blocks_p,
                                                         DLOOP_Type el_type,
                                                         DLOOP_Offset rel_off,
@@ -276,6 +284,10 @@ static int MPID_Segment_contig_unpack_external32_to_buf(DLOOP_Offset *blocks_p,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_pack_external32
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPID_Segment_pack_external32(struct DLOOP_Segment *segp,
 				  DLOOP_Offset first,
 				  DLOOP_Offset *lastp, 
@@ -301,6 +313,10 @@ void MPID_Segment_pack_external32(struct DLOOP_Segment *segp,
     return;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_Segment_unpack_external32
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPID_Segment_unpack_external32(struct DLOOP_Segment *segp,
 				    DLOOP_Offset first,
 				    DLOOP_Offset *lastp,

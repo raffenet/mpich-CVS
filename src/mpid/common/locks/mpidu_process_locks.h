@@ -12,6 +12,15 @@
 
 #include <stdio.h>
 
+/* FIXME: First use the configure ifdefs to decide on an approach for 
+   locks.  Then put all lock code in one place, or at least guarded by
+   the same "USE_xxx" ifdef.  It is nearly impossible with the current code
+   to determine, for example, what is the definition of MPIDU_Process_lock_t.
+   (Specifically, for the Intel compiler on an x86, it appears to be
+   missing a volatile, needed when using the _InterlockedExchange inline 
+   function
+*/
+
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define HAVE_COMPARE_AND_SWAP
 static inline char
@@ -142,6 +151,11 @@ typedef mutex_t                 MPIDU_Process_lock_t;
 #define MPIDU_Process_lock(lock)        mutex_lock(lock)
 #define MPIDU_Process_unlock(lock)      mutex_unlock(lock)
 #define MPIDU_Process_lock_free(lock)   mutex_destroy(lock)
+
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Process_lock_busy_wait
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
 {
     int i;
@@ -179,6 +193,12 @@ typedef pthread_mutex_t MPIDU_Process_lock_t;
 
 #ifdef USE_BUSY_LOCKS
 
+/* FIXME: only the lock/unlock/wait routines should be considered for 
+   static inline functions */
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Process_lock_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_MUTEX_INIT
@@ -197,6 +217,10 @@ static inline void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_INIT);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Process_lock
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_MUTEX_INIT
@@ -247,6 +271,10 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
 #endif
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Process_unlock
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_MUTEX_INIT
@@ -264,6 +292,10 @@ static inline void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_UNLOCK);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Process_lock_busy_wait
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
 {
     int i;
@@ -294,6 +326,10 @@ static inline void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_BUSY_WAIT);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Process_lock_free
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
 {
 #ifdef HAVE_MUTEX_INIT
@@ -322,6 +358,10 @@ void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock );
 #endif /* defined(HAVE_SPARC_INLINE_PROCESS_LOCKS) */
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Compare_swap
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /*@
    MPIDU_Compare_swap - 
 
