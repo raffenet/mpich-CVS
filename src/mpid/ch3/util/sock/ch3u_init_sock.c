@@ -15,12 +15,16 @@
 #endif
 
 /*  MPIDI_CH3U_Init_sock - does socket specific channel initialization
- *     publish_bc_p - if non-NULL, will be a pointer to the original position of the bc_val and should
- *                    do KVS Put/Commit/Barrier on business card before returning
- *     bc_key_p     - business card key buffer pointer.  freed if successfully published
- *     bc_val_p     - business card value buffer pointer, updated to the next available location or
- *                    freed if published.
- *     val_max_sz_p - ptr to maximum value buffer size reduced by the number of characters written
+ *     publish_bc_p - if non-NULL, will be a pointer to the original position 
+ *                    of the bc_val and should
+ *                    do KVS Put/Commit/Barrier on business card before 
+ *                    returning
+ *     bc_key_p     - business card key buffer pointer.  freed if successfully
+ *                    published
+ *     bc_val_p     - business card value buffer pointer, updated to the next
+ *                    available location or freed if published.
+ *     val_max_sz_p - ptr to maximum value buffer size reduced by the number 
+ *                    of characters written
  *                               
  */
 
@@ -29,9 +33,9 @@
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p)
+                         char **publish_bc_p, char **bc_key_p, 
+			 char **bc_val_p, int *val_max_sz_p)
 {
-
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     int pg_size;
@@ -46,7 +50,9 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_size",
 			     "**pmi_get_size %d", pmi_errno);
     }
-    
+
+    /* FIXME: This should probably be the same as MPIDI_VC_InitSock.  If
+       not, why not? */
     for (p = 0; p < pg_size; p++)
     {
 	pg_p->vct[p].ch.sendq_head = NULL;
