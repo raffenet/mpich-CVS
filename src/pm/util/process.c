@@ -180,6 +180,12 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
   return status of all processes in the process universe; returns the
   maximum value seen.
 
+  Output Parameter:
+. signaled - 0 if the process was `not` signaled, otherwise the signal 
+  that terminated the process.
+
+  Return Value:
+  Maximum of the return status of all processes.
   
   @*/
 int MPIE_ProcessGetExitStatus( int *signaled )
