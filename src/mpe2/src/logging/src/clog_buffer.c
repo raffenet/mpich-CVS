@@ -246,7 +246,11 @@ void CLOG_Buffer_localIO_init4write( CLOG_Buffer_t *buffer )
         fflush( stderr );
         CLOG_Util_abort( 1 );
     }
-    /* Save the CLOG_Preamble_t at the beginning of the file */
+    /*
+       Save the CLOG_Preamble_t at the beginning of the file, where
+       CLOG's user_stateID_count & user_solo_eventID_count are set with
+       some typical values and they are set in CLOG_Preamble_env_init().
+    */
     CLOG_Preamble_write( buffer->preamble, CLOG_BOOL_FALSE, buffer->local_fd );
 }
 
