@@ -6,6 +6,8 @@
  */
 
 
+/* FIXME: Why is this the _immed file (what does immed stand for?) */
+
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_accept
 #undef FCNAME
@@ -135,6 +137,9 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 
 	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
+	/* FIXME: There's normally no need to check that the socket buffer
+	   size was set to the requested size.  This should only be part of
+	   some more verbose diagnostic output, not a general action */
 	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
@@ -148,6 +153,9 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
 
     	bufsz_len = sizeof(bufsz);
 	rc = getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, &bufsz_len);
+	/* FIXME: There's normally no need to check that the socket buffer
+	   size was set to the requested size.  This should only be part of
+	   some more verbose diagnostic output, not a general action */
 	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{

@@ -18,11 +18,15 @@ int MPIDU_Sock_init(void)
 
     if (MPIDU_Socki_initialized == 0)
     { 
+	/* FIXME: where is this documented?  Also, this should use
+	   the general parameter interface (environment variables
+	   might not be available) */
 	env = getenv("MPICH_SOCKET_BUFFER_SIZE");
 	if (env)
 	{
 	    int tmp;
 	    
+	    /* FIXME: atoi doesn't detect errors (e.g., non-digits) */
 	    tmp = atoi(env);
 	    if (tmp > 0)
 	    {

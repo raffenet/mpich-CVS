@@ -23,6 +23,8 @@
 #include <netdb.h>
 #include <errno.h>
 
+/* FIXME: Why are these commented out?  Should this instead be a big
+   test on if-not-all-defined, error missing features? */
 /*
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -56,10 +58,16 @@
 #endif
 */
 
+
+/* FIXME: Who sets USE_SELECT_FOR_POLL?  I don't see any place in mpich2 
+   where this might be defined */
 #ifdef USE_SELECT_FOR_POLL
 #include "mpidu_sock_poll.h"
 #endif
 
+/* FIXME: What do these mean?  Why is 32 a good size (e.g., is it because
+   32*32 = 1024 if these are bits in a 4-byte int?  In that case, should
+   these be related to a maximum processor count or an OS-defined fd limit? */
 #if !defined(MPIDU_SOCK_SET_DEFAULT_SIZE)
 #define MPIDU_SOCK_SET_DEFAULT_SIZE 32
 #endif
@@ -92,19 +100,24 @@ enum MPIDU_Socki_type
 /*
  * struct pollinfo
  * 
- * sock_id - an integer id comprised of the sock_set id and the element number in the pollfd/info arrays
+ * sock_id - an integer id comprised of the sock_set id and the element number
+ *           in the pollfd/info arrays
  * 
  * sock_set - a pointer to the sock set to which this connection belongs
  * 
  * elem - the element number of this connection in the pollfd/info arrays
  * 
- * sock - at present this is only used to free the sock structure when the close is completed by MPIDIU_Sock_wait()
+ * sock - at present this is only used to free the sock structure when the 
+ *        close is completed by MPIDIU_Sock_wait()
  * 
- * fd - this file descriptor is used whenever the file descriptor is needed.  this descriptor remains open until the sock, and
- * thus the socket, are actually closed.  the fd in the pollfd structure should only be used for telling poll() if it should
- * check for events on that descriptor.
+ * fd - this file descriptor is used whenever the file descriptor is needed. 
+ *      this descriptor remains open until the sock, and
+ *      thus the socket, are actually closed.  the fd in the pollfd structure
+ *      should only be used for telling poll() if it should
+ *      check for events on that descriptor.
  * 
- * user_ptr - a user supplied pointer that is included with event associated with this connection
+ * user_ptr - a user supplied pointer that is included with event associated 
+ *            with this connection
  * 
  * state - state of the connection
  *
@@ -172,11 +185,13 @@ struct MPIDU_Sock_set
 {
     int id;
 
-    /* when the pollfds array is scanned for activity, start with this element.  this is used to prevent favoring a particular
+    /* when the pollfds array is scanned for activity, start with this element.
+       this is used to prevent favoring a particular
        element, such as the first. */
     int starting_elem;
 
-    /* pointers to the pollfd and pollinfo that make up the logical poll array, along with the current size of the array and last
+    /* pointers to the pollfd and pollinfo that make up the logical poll array,
+       along with the current size of the array and last
        allocated element */
     int poll_array_sz;
     int poll_array_elems;
@@ -188,13 +203,16 @@ struct MPIDU_Sock_set
     struct MPIDU_Socki_eventq_elem * eventq_tail;
     
 # if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
-    /* pointer to the pollfds array being actively used by a blocking poll(); NULL if not blocking in poll() */
+    /* pointer to the pollfds array being actively used by a blocking poll();
+       NULL if not blocking in poll() */
     struct pollfd * pollfds_active;
     
-    /* flag indicating if updates were made to any pollfd entries while a thread was blocking in poll() */
+    /* flag indicating if updates were made to any pollfd entries while a 
+       thread was blocking in poll() */
     int pollfds_updated;
     
-    /* flag indicating that a wakeup has already been posted on the interrupter socket */
+    /* flag indicating that a wakeup has already been posted on the 
+       interrupter socket */
     int wakeup_posted;
     
     /* sock and fds for the interrpter pipe */
@@ -219,6 +237,8 @@ static struct MPIDU_Socki_eventq_elem * MPIDU_Socki_eventq_pool = NULL;
 static int MPIDU_Socki_set_next_id = 0;
 
 
+/* FIXME: Why are these files included in this way?  Why not make them either
+   separate files or simply part of (one admittedly large) source file? */
 #include "socki_util.i"
 
 #include "sock_init.i"

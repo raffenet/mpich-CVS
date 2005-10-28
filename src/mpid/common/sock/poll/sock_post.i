@@ -100,7 +100,8 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     /*
      * Convert hostname to IP address
      *
-     * FIXME: this should handle failures caused by a backed up listener queue at the remote process.  It should also use a
+     * FIXME: this should handle failures caused by a backed up listener queue
+     * at the remote process.  It should also use a
      * specific interface if one is specified by the user.
      */
     strtok(host_description, " ");
@@ -108,6 +109,10 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     /* --BEGIN ERROR HANDLING-- */
     if (hostent == NULL || hostent->h_addrtype != AF_INET)
     {
+	/* FIXME: No, we should *not* try different interfaces. The user
+	   is likely to expect a certain interface for performance reasons;
+	   if that interface is not available, the application should
+	   fail, rather than struggle with poor performance */
 	/* FIXME: we should make multiple attempts and try different interfaces */
 	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, user_ptr, MPIR_Err_create_code(
 	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|hostres",

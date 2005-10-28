@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* FIXME: Who uses this and why? */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_hostname_to_host_description
 #undef FCNAME
@@ -30,6 +31,11 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
     return mpi_errno;
 }
 
+/* This routine is called in mpid/ch3/util/sock/ch3u_connect_sock.c */
+/* FIXME: This routine is misnamed; it is really get_interface_name (in the 
+   case where there are several networks available to the calling process,
+   this picks one but even in the current code can pick a different
+   interface if a particular environment variable is set) */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_host_description
 #undef FCNAME
@@ -53,6 +59,9 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     }
     /* --END ERROR HANDLING-- */
 
+    /* FIXME: Is this documented?  How does it work if the process manager
+       cannot give each process a different value for an environment
+       name?  What if a different interface is needed? */
     /* Use hostname supplied in environment variable, if it exists */
     env_hostname = getenv("MPICH_INTERFACE_HOSTNAME");
     if (env_hostname != NULL)
@@ -265,6 +274,12 @@ int MPIDU_Sock_get_sock_set_id(struct MPIDU_Sock_set * sock_set)
     return id;
 }
 
+/* FIXME: This function violates the internationalization design by
+   using English language strings rather than the error translation mechanism.
+   This unnecessarily breaks the goal of allowing internationalization.  
+   Read the design documentation and if there is a problem, raise it rather 
+   than ignoring it.  
+*/
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_error_class_string
 #undef FCNAME
