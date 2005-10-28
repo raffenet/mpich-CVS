@@ -4,3 +4,4 @@ Makefile.in
 Makefile
 .deps
 .state-cache
+.libstamp0

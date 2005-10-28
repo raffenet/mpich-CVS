@@ -27,3 +27,4 @@ irlog2rlog
 trace_impl.h
 *.user
 .state-cache
+.libstamp0
