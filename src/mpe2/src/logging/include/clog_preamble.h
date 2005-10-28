@@ -18,6 +18,12 @@ typedef struct {
     unsigned int  block_size;
     unsigned int  num_buffered_blocks;
     unsigned int  comm_world_size;
+    unsigned int  known_eventID_start;
+    unsigned int  user_eventID_start;
+    unsigned int  user_solo_eventID_start;
+    unsigned int  known_stateID_count;
+    unsigned int  user_stateID_count;
+    unsigned int  user_solo_eventID_count;
 } CLOG_Preamble_t;
 
 CLOG_Preamble_t *CLOG_Preamble_create( void );
@@ -27,7 +33,8 @@ void CLOG_Preamble_free( CLOG_Preamble_t **preamble );
 void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble );
 
 void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
-                          int is_always_big_endian, int fd );
+                                int              is_always_big_endian,
+                                int              fd );
 
 void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd );
 
