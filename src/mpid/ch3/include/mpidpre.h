@@ -383,8 +383,10 @@ typedef enum MPIDI_VC_State
 typedef struct MPIDI_VC
 {
     /* XXX - need better comment */
-    /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the MPIU_Object system, but we do use the associated
-       reference counting routines.  The first field is normal a handle, but since we are not using MPIU_Object for allocation,
+    /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the 
+       MPIU_Object system, but we do use the associated
+       reference counting routines.  The first field is normal a handle, but 
+       since we are not using MPIU_Object for allocation,
        we instead replace the handle with a dummy field. */
     int dummy;
     volatile int ref_count;
