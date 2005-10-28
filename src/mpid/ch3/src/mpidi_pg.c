@@ -22,12 +22,13 @@ static MPIDI_PG_Destroy_fn_t MPIDI_PG_Destroy_fn;
 #define FUNCNAME MPIDI_PG_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn, MPIDI_PG_Destroy_fn_t destroy_fn)
+int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn, 
+		  MPIDI_PG_Destroy_fn_t destroy_fn)
 {
     int mpi_errno = MPI_SUCCESS;
     
     MPIDI_PG_Compare_ids_fn = compare_ids_fn;
-    MPIDI_PG_Destroy_fn = destroy_fn;
+    MPIDI_PG_Destroy_fn     = destroy_fn;
 
     return mpi_errno;
 }
@@ -168,7 +169,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		printf("[%s%d]freeing vc%d - %p (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, i, &pg->vct[i], pg->id);fflush(stdout);
 	    }
 	    */
-	    MPIDI_PG_Destroy_fn(pg, pg->id);
+	    MPIDI_PG_Destroy_fn(pg);
 	    MPIU_Free(pg->vct);
 	    MPIU_Free(pg);
 

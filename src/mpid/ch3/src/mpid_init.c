@@ -18,14 +18,13 @@
 char *MPIU_DBG_parent_str = "?";
 #endif
 
-/* FIXME:
-   the PMI init function should ONLY do the PMI operations, not the process 
-   group or bc operations.  These should be in a separate routine */
+/* FIXME: the PMI init function should ONLY do the PMI operations, not the 
+   process group or bc operations.  These should be in a separate routine */
 #include "pmi.h"
 static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent, 
 			  int *pg_rank_p, MPIDI_PG_t **pg_p );
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id);
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg );
 
 MPIDI_Process_t MPIDI_Process = { NULL };
 
@@ -391,8 +390,8 @@ int MPIDI_CH3I_BCInit( int pg_rank,
     int key_max_sz;
 
     /*
-     * Publish the contact information (a.k.a. business card) for this process into the PMI keyval space associated with this
-     * process group.
+     * Publish the contact information (a.k.a. business card) for this 
+     * process into the PMI keyval space associated with this process group.
      */
     pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
     if (pmi_errno != PMI_SUCCESS)
@@ -424,13 +423,9 @@ int MPIDI_CH3I_BCInit( int pg_rank,
     *publish_bc_p = *bc_val_p;  /* need to keep a pointer to the front of the 
 				   front of this buffer to publish */
 
-    /* could put MPIU_Snprintf("P%d-businesscard") call here...  then take boolean publish_bc to
-     *   the MPIDI_CH3U_Init_* upcalls (for sshm, it will make 2 upcalls but we don't want to publish after the
-     *   first call) which will be called from within the respective MPIDI_CH3_Init channels.
-     *
-     * val and business_card variables are used differently from channel to channel... */
-
-    mpi_errno = MPIU_Snprintf(*bc_key_p, key_max_sz, "P%d-businesscard", pg_rank);
+    /* Create the bc key but not the value */ 
+    mpi_errno = MPIU_Snprintf(*bc_key_p, key_max_sz, "P%d-businesscard", 
+			      pg_rank);
     if (mpi_errno < 0 || mpi_errno > key_max_sz)
     {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**snprintf",
@@ -452,19 +447,17 @@ static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 }
 
 
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg)
 {
     if (pg->ch.kvs_name != NULL)
     {
 	MPIU_Free(pg->ch.kvs_name);
     }
 
-    if (id != NULL)
+    if (pg->id != NULL)
     { 
-	MPIU_Free(id);
+	MPIU_Free(pg->id);
     }
     
     return MPI_SUCCESS;
 }
-
-

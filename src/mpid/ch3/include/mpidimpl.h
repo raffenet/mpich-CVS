@@ -371,9 +371,9 @@ extern volatile int MPIDI_Outstanding_close_ops;
   BEGIN PROCESS GROUP SECTION
   ---------------------------*/
 typedef int (*MPIDI_PG_Compare_ids_fn_t)(void * id1, void * id2);
-typedef int (*MPIDI_PG_Destroy_fn_t)(MPIDI_PG_t * pg, void * id);
+typedef int (*MPIDI_PG_Destroy_fn_t)(MPIDI_PG_t * pg);
 
-int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn, MPIDI_PG_Destroy_fn_t destroy_fn);
+int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t, MPIDI_PG_Destroy_fn_t);
 int MPIDI_PG_Finalize(void);
 int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** ppg);
 int MPIDI_PG_Destroy(MPIDI_PG_t * pg);
@@ -765,6 +765,8 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
 int MPIDI_VC_InitSock( MPIDI_VC_t *);
 int MPIDI_CH3I_Connect_to_root_sock(const char *, MPIDI_VC_t **);
 int MPIDI_CH3U_Get_business_card_sock(char **, int *);
+/* FIXME: Where should this go? */
+/*int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **); */
 
 /* Used internally to broadcast process groups belonging to peercomm to
  all processes in comm*/
