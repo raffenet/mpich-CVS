@@ -164,12 +164,12 @@ int c2finfo_ ( int *info )
     char value[100];
     int errs = 0;
 
-    MPI_Info_get( cInfo, "host", 100, value, &flag );
+    MPI_Info_get( cInfo, "host", sizeof(value), value, &flag );
     if (!flag || strcmp(value,"myname") != 0) {
 	fprintf( stderr, "Info: Wrong value or no value for host\n" );
 	errs++;
     }
-    MPI_Info_get( cInfo, "wdir", 100, value, &flag );
+    MPI_Info_get( cInfo, "wdir", sizeof(value), value, &flag );
     if (!flag || strcmp( value, "/rdir/foo" ) != 0) {
 	fprintf( stderr, "Info: Wrong value of no value for wdir\n" );
 	errs++;

@@ -10,7 +10,7 @@ C
       integer wrank, wsize
       integer wgroup, info, req, win
       integer fsize, frank
-      integer comm, file, group, type, op, errh
+      integer comm, file, group, type, op, errh, result
       integer c2fcomm, c2fgroup, c2ftype, c2finfo, c2frequest,
      $     c2ferrhandler, c2fwin, c2fop, c2ffile
 C The integer winsize must be of ADDRESS_KIND size
@@ -92,15 +92,51 @@ C Test using a C routine to provide the Fortran handle
       
       call f2cinfo( info )
       call mpi_info_get( info, "host", 100, value, flag, ierr )
+      if (.not. flag) then
+         errs = errs + 1
+         print *, "Info test for host returned false"
+      else if (value .ne. "myname") then
+         errs = errs + 1
+         print *, "Info test for host returned ", value
+      endif
       call mpi_info_get( info, "wdir", 100, value, flag, ierr )
+      if (.not. flag) then
+         errs = errs + 1
+         print *, "Info test for wdir returned false"
+      else if (value .ne. "/rdir/foo") then
+         errs = errs + 1
+         print *, "Info test for wdir returned ", value
+      endif
+      call mpi_info_free( info, ierr )
 
       call f2cop( op )
+      if (op .ne. MPI_SUM) then
+          errs = errs + 1
+          print *, "Fortran MPI_SUM not MPI_SUM in C"
+      endif
 
       call f2cerrhandler( errh )
+      if (errh .ne. MPI_ERRORS_RETURN) then
+          errs = errs + 1
+          print *, "Fortran MPI_ERRORS_RETURN no MPI_ERRORS_RETURN in C"
+      endif
 
       call f2cwin( win )
+C     no info, in comm world, created with no memory (base address 0,
+C     displacement unit 1
+      call mpi_win_free( win, ierr )
       
       call f2cfile( file )
+C     name is temp, in comm world, no info provided
+      call mpi_file_get_group( file, group, ierr )
+      call mpi_group_compare( group, wgroup, result, ierr )
+      if (result .ne. MPI_IDENT) then
+          errs = errs + 1
+          print *, "Group of file not the group of comm_world"
+      endif
+      call mpi_group_free( group, ierr )
+      call mpi_group_free( wgroup, ierr )
+      call mpi_file_close( file, ierr )
 
 C
 C Summarize the errors
