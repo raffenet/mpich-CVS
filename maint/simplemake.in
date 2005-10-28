@@ -1369,7 +1369,7 @@ sub DefaultRules {
     print FD "\t\$(ACTION) \$(ACTION_INPUT)$newline";
     # ToDo: we could control the subdirectories over which the recursion
     # is applied.
-    &RecusiveOp( "apply" );
+    &RecursiveOp( "apply" );
     
     # Clean targets
     &TargetClean;
