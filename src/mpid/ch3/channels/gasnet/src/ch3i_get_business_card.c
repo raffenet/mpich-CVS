@@ -195,6 +195,12 @@ static int GetLocalIPs(int32_t *pIP, int max)
 
 #endif /* HAVE_WINDOWS_H */
 
+/* FIXME: This routine should not be needed by the gasnet channel; if needed,
+   the gasnet channel should use the routines in ch3/util/sock */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Get_business_card(char *value, int length)
 {
     int32_t local_ip[MAX_NUM_NICS];
