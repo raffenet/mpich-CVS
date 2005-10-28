@@ -65,6 +65,10 @@ typedef struct MPIDI_CH3I_BootstrapQ_struct
 static MPIDI_CH3I_BootstrapQ_struct * g_queue_list = NULL;
 
 #ifdef HAVE_WINDOWS_H
+#undef FUNCNAME
+#define FUNCNAME GetNextBootstrapMsg
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int GetNextBootstrapMsg(MPIDI_CH3I_BootstrapQ queue, bootstrap_msg ** msg_ptr, BOOL blocking)
 {
     MPIDI_STATE_DECL(MPID_STATE_GET_NEXT_BOOTSTRAP_MSG);
@@ -91,6 +95,10 @@ int GetNextBootstrapMsg(MPIDI_CH3I_BootstrapQ queue, bootstrap_msg ** msg_ptr, B
 
 static MPIDI_CH3I_BootstrapQ s_queue = NULL;
 
+#undef FUNCNAME
+#define FUNCNAME BootstrapQWndProc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 LRESULT CALLBACK BootstrapQWndProc(
     HWND hwnd,        /* handle to window */
     UINT uMsg,        /* message identifier */
