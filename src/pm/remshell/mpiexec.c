@@ -77,6 +77,10 @@ int mypostfork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
 
+/* Set printFailure to 1 to get an explanation of the failure reason
+   for each process when a process fails */
+static int printFailure = 0;
+
 #ifndef MAX_PORT_STRING
 #define MAX_PORT_STRING 1024
 #endif
@@ -84,7 +88,7 @@ int myspawn( ProcessWorld *, void * );
 /* Note that envp is common but not standard */
 int main( int argc, char *argv[], char *envp[] )
 {
-    int          rc;
+    int          rc, erc, signaled;
     int          reason;
     SetupInfo    s;
     int          fdPMI;
@@ -136,6 +140,7 @@ int main( int argc, char *argv[], char *envp[] )
 	   terminate the children */
 	MPIU_Error_printf( "Timeout of %d minutes expired; job aborted\n",
 			 pUniv.timeout / 60 );
+	erc = 1;
 	MPIE_KillUniverse( &pUniv );
     }
 
@@ -146,11 +151,15 @@ int main( int argc, char *argv[], char *envp[] )
     MPIE_WaitForProcesses( &pUniv, 2 );
 
     /* Compute the return code (max for now) */
-    rc = MPIE_ProcessGetExitStatus();
+    rc = MPIE_ProcessGetExitStatus( &signaled );
 
     /* Optionally provide detailed information about failed processes */
-    if (rc) 
+    if ( (rc && printFailure) || signaled) 
 	MPIE_PrintFailureReasons( stderr );
+
+    /* If the processes exited normally (or were already gone) but we
+       had an exceptional exit, such as a timeout, use the erc value */
+    if (!rc && erc) rc = erc;
 
     return( rc );
 }
@@ -212,8 +221,13 @@ int myspawn( ProcessWorld *pWorld, void *data )
     }
     *pPtr = pWorld;
 
+    /* Fork Processes may call a routine that is passed s but not pWorld;
+       this makes sure that all routines can access the current world */
+    s->pmiinfo.pWorld = pWorld;
+
     /* FIXME: This should be part of the PMI initialization in the clients */
     putenv( "PMI_SPAWNED=1" );
+
     MPIE_ForkProcesses( pWorld, 0, mypreamble, &s,
 			mypostfork, 0, mypostamble, 0 );
     return 0;
