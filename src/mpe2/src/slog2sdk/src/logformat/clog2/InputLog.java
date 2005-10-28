@@ -9,6 +9,7 @@
 
 package logformat.clog2;
 
+import java.util.List;
 import java.io.*;
 
 public class InputLog
@@ -93,6 +94,27 @@ public class InputLog
         }
 
         return new MixedDataInputStream( new ByteArrayInputStream( buffer ) );
+    }
+
+    public List getKnownUndefinedInitedStateDefs()
+    {
+        return RecDefState.getUndefinedInitedStateDefs(
+                           preamble.getKnownEventIDStart(),
+                           preamble.getKnownStateIDCount() );
+    }
+
+    public List getUserUndefinedInitedStateDefs()
+    {
+        return RecDefState.getUndefinedInitedStateDefs(
+                           preamble.getUserEventIDStart(),
+                           preamble.getUserStateIDCount() );
+    }
+
+    public List getUserUndefinedInitedEventDefs()
+    {
+        return RecDefEvent.getUndefinedInitedEventDefs(
+                           preamble.getUserSoloEventIDStart(),
+                           preamble.getUserSoloEventIDCount() );
     }
 
     public void close()

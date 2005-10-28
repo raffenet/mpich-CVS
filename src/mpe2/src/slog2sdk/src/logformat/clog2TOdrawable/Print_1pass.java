@@ -90,9 +90,8 @@ public class Print_1pass
         evtdefs.put( objdef.final_evt, obj_fn );
 
         typelist = new Class[] { RecHeader.class, RecBare.class };
-        List defs = logformat.clog2.RecDefState.getMPIinitUndefinedStateDefs();
-        defs.addAll(
-             logformat.clog2.RecDefState.getUSERinitUndefinedStateDefs() );
+        List defs = clog_ins.getKnownUndefinedInitedStateDefs();
+        defs.addAll( clog_ins.getUserUndefinedInitedStateDefs() );
         Iterator itr = defs.iterator();
         while ( itr.hasNext() ) {
             staterec = ( RecDefState ) itr.next();
@@ -155,7 +154,6 @@ public class Print_1pass
         arglist   = new Object[ 2 ];
 
         System.out.println( "\n\t Completed Objects : " );
-        clog_ins  = new logformat.clog2.InputLog( filename );
 
         total_bytesize = 0;
         blk_ins = clog_ins.getBlockStream();
@@ -369,8 +367,6 @@ public class Print_1pass
             }   //  endof while ( rectype != (ENDBLOCK/ENDLOG) )
         }   //  endof while ( blk_ins != null )
 
-        clog_ins.close();
-
         System.err.println( "\n\t " + arrowform.getPartialObjects().size()
                           + " Unmatched arrow events" );
         System.err.println( "\n\t " + stateform.getPartialObjects().size()
@@ -403,13 +399,16 @@ public class Print_1pass
             System.exit( 0 );
         }
 
-        filename = args[ 0 ];
+        filename  = args[ 0 ];
+        clog_ins  = new logformat.clog2.InputLog( filename );
 
         Date time1 = new Date();
         createDefs();
         Date time2 = new Date();
         createPrimitives();
         Date time3 = new Date();
+
+        clog_ins.close();
 
         System.err.println( "Total ByteSize of the logfile = "
                           + total_bytesize );

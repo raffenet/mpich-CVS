@@ -56,15 +56,16 @@ public class RecDefEvent
         return BYTESIZE;
     }
 
-    public static List getUSERinitUndefinedEventDefs()
+    public static List getUndefinedInitedEventDefs( int eventID_start,
+                                                    int eventID_count )
     {
         RecDefEvent def;
 
         // evtID is equivalent to the variable "stateid" MPI_Init()
         // in <MPE>/src/wrappers/src/log_mpi_core.c
-        int evtID = Const.MPE_1ST_USER_SOLO_EVENT;
-        List defs = new ArrayList( Const.MPE_MAX_USER_SOLO_EVENTS );
-        for ( int idx = 0; idx < Const.MPE_MAX_USER_SOLO_EVENTS; idx++ ) {
+        int evtID = eventID_start;
+        List defs = new ArrayList( eventID_count );
+        for ( int idx = 0; idx < eventID_count; idx++ ) {
             def              = new RecDefEvent();
             def.etype        = new Integer( evtID++ );
             def.color        = "pink";

@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-// Class corresponds to CLOG_Premable
+// Class corresponds to CLOG_Premable_t
 public class Preamble
 {
     // BYTESIZE corresponds to CLOG_PREAMBLE_SIZE
@@ -35,6 +35,24 @@ public class Preamble
     //  this correspond to CLOG_Premable_t.comm_world_size
     private              String   world_size_title;
     private              int      world_size;
+    //  this correspond to CLOG_Premable_t.known_eventID_start
+    private              String   known_eventID_start_title;
+    private              int      known_eventID_start;
+    //  this correspond to CLOG_Premable_t.user_eventID_start
+    private              String   user_eventID_start_title;
+    private              int      user_eventID_start;
+    //  this correspond to CLOG_Premable_t.user_solo_eventID_start
+    private              String   user_solo_eventID_start_title;
+    private              int      user_solo_eventID_start;
+    //  this correspond to CLOG_Premable_t.known_stateID_count
+    private              String   known_stateID_count_title;
+    private              int      known_stateID_count;
+    //  this correspond to CLOG_Premable_t.user_stateID_count
+    private              String   user_stateID_count_title;
+    private              int      user_stateID_count;
+    //  this correspond to CLOG_Premable_t.user_solo_eventID_count
+    private              String   user_solo_eventID_count_title;
+    private              int      user_solo_eventID_count;
 
     public boolean readFromDataStream( DataInputStream in )
     {
@@ -63,6 +81,24 @@ public class Preamble
             num_blocks          = Integer.parseInt( tokens.nextToken().trim() );
             world_size_title    = tokens.nextToken().trim();
             world_size          = Integer.parseInt( tokens.nextToken().trim() );
+            known_eventID_start_title      = tokens.nextToken().trim();
+            known_eventID_start            = Integer.parseInt(
+                                             tokens.nextToken().trim() );
+            user_eventID_start_title       = tokens.nextToken().trim();
+            user_eventID_start             = Integer.parseInt(
+                                             tokens.nextToken().trim() );
+            user_solo_eventID_start_title  = tokens.nextToken().trim();
+            user_solo_eventID_start        = Integer.parseInt(
+                                             tokens.nextToken().trim() );
+            known_stateID_count_title      = tokens.nextToken().trim();
+            known_stateID_count            = Integer.parseInt(
+                                             tokens.nextToken().trim() );
+            user_stateID_count_title       = tokens.nextToken().trim();
+            user_stateID_count             = Integer.parseInt(
+                                             tokens.nextToken().trim() );
+            user_solo_eventID_count_title  = tokens.nextToken().trim();
+            user_solo_eventID_count        = Integer.parseInt(
+                                             tokens.nextToken().trim() );
         } catch ( NoSuchElementException err ) {
             err.printStackTrace();
             return false;
@@ -78,14 +114,10 @@ public class Preamble
     }
 
     public String  getVersionString()
-    {
-        return version;
-    }
+    { return version; }
 
     public boolean isVersionMatched()
-    {
-        return version.equalsIgnoreCase( Const.VERSION );
-    }
+    { return version.equalsIgnoreCase( Const.VERSION ); }
 
     public boolean isVersionCompatible()
     {
@@ -104,19 +136,31 @@ public class Preamble
     }
 
     public boolean isBigEndian()
-    {
-        return is_big_endian;
-    }
+    { return is_big_endian; }
 
     public int getBlockSize()
-    {
-        return block_size;
-    }
+    { return block_size; }
 
     public int getCommWorldSize()
-    {
-        return world_size;
-    }
+    { return world_size; }
+
+    public int getKnownEventIDStart()
+    { return known_eventID_start; }
+
+    public int getUserEventIDStart()
+    { return user_eventID_start; }
+
+    public int getUserSoloEventIDStart()
+    { return user_solo_eventID_start; }
+
+    public int getKnownStateIDCount()
+    { return known_stateID_count; }
+
+    public int getUserStateIDCount()
+    { return user_stateID_count; }
+
+    public int getUserSoloEventIDCount()
+    { return user_solo_eventID_count; }
 
     public String toString()
     {
@@ -124,6 +168,13 @@ public class Preamble
                 + is_big_endian_title + is_big_endian + "\n"
                 + block_size_title + block_size + "\n"
                 + num_blocks_title + num_blocks + "\n"
-                + world_size_title + world_size );
+                + world_size_title + world_size + "\n"
+                + known_eventID_start_title + known_eventID_start + "\n"
+                + user_eventID_start_title + user_eventID_start + "\n"
+                + user_solo_eventID_start_title + user_solo_eventID_start + "\n"
+                + known_stateID_count_title + known_stateID_count + "\n"
+                + user_stateID_count_title + user_stateID_count + "\n"
+                + user_solo_eventID_count_title + user_solo_eventID_count + "\n"
+                );
     }
 }

@@ -272,11 +272,10 @@ private class ContentIterator implements Iterator
         evtdefs.put( arrowdef.final_evt,
                      arrowform.getFinalEventObjMethod() );
 
-        // Gather all the MPI and user defined undefined RecDefStates,
-        // i.e. CLOG_STATE
-        List defs = logformat.clog2.RecDefState.getMPIinitUndefinedStateDefs();
-        defs.addAll(
-            logformat.clog2.RecDefState.getUSERinitUndefinedStateDefs() );
+        // Gather all the known (i.e. MPI's, internal MPE/CLOG's) and
+        // user-defined undefined RecDefStates, i.e. CLOG_Rec_StateDef_t.
+        List defs = InputLog.super.getKnownUndefinedInitedStateDefs();
+        defs.addAll( InputLog.super.getUserUndefinedInitedStateDefs() );
 
         // Convert them to the appropriate categories + corresponding
         // stack event matching object functions.
@@ -294,9 +293,8 @@ private class ContentIterator implements Iterator
                          stateform.getFinalEventObjMethod() );
         }
 
-        // Add all the user-defined undefined RecDefEvents
-        defs.addAll(
-            logformat.clog2.RecDefEvent.getUSERinitUndefinedEventDefs() );
+        // Add all the user-defined undefined RecDefEvents, CLOG_Rec_EventDef_t.
+        defs.addAll( InputLog.super.getUserUndefinedInitedEventDefs() );
 
         /*
         System.err.println( "\n\t evtdefs : " );

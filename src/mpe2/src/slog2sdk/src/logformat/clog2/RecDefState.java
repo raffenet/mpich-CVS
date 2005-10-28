@@ -65,36 +65,17 @@ public class RecDefState
     // Mimic <MPE>/src/wrappers/src/log_mpe_core.c's definition of MPI_Init()
     // in initialization of states[] and the way MPI_xxx routines's 
     // CLOG_Rec_statedef is defined in MPI_Finalize();
-    public static List getMPIinitUndefinedStateDefs()
+    public static List getUndefinedInitedStateDefs( int  eventID_1st,
+                                                    int  stateID_count )
     {
         RecDefState def;
 
         // evtIDs are used in a way similar to how the start_evt & final_evt
         // of the MPE_State[] are set by MPE_Log_get_known_eventID() as
         // in <MPE>/src/wrappers/src/log_mpi_core.c
-        int evtID = Const.MPE_1ST_KNOWN_EVENT;  
-        List defs = new ArrayList( Const.MPE_MAX_KNOWN_STATES );
-        for ( int idx = 0; idx < Const.MPE_MAX_KNOWN_STATES; idx++ ) {
-            def              = new RecDefState();
-            def.startetype   = new Integer( evtID++ );
-            def.finaletype   = new Integer( evtID++ );
-            def.color        = "pink";
-            def.name         = null;
-            def.format       = null;
-            defs.add( def );
-        }
-        return defs;
-    }
- 
-    public static List getUSERinitUndefinedStateDefs()
-    {
-        RecDefState def;
-
-        // evtID is equivalent to the variable "stateid" MPI_Init() 
-        // in <MPE>/src/wrappers/src/log_mpi_core.c
-        int evtID = Const.MPE_1ST_USER_EVENT;  
-        List defs = new ArrayList( Const.MPE_MAX_USER_STATES );
-        for ( int idx = 0; idx < Const.MPE_MAX_USER_STATES; idx++ ) {
+        int evtID = eventID_1st;  
+        List defs = new ArrayList( stateID_count );
+        for ( int idx = 0; idx < stateID_count; idx++ ) {
             def              = new RecDefState();
             def.startetype   = new Integer( evtID++ );
             def.finaletype   = new Integer( evtID++ );
@@ -122,7 +103,7 @@ public class RecDefState
 
     public static final void main( String[] args )
     {
-        List defs = RecDefState.getMPIinitUndefinedStateDefs();
+        List defs = RecDefState.getUndefinedInitedStateDefs( 0, 10 );
         Iterator itr = defs.iterator();
         while ( itr.hasNext() )
             System.out.println( (RecDefState) itr.next() );
