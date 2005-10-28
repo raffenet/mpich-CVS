@@ -50,7 +50,9 @@ static MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
+/* FIXME: move this prototype */
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
+
 static inline void connection_free(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
@@ -95,7 +97,6 @@ int MPIDI_CH3_Progress_test(void)
     if (mpi_errno == MPI_SUCCESS)
     {
 	mpi_errno = MPIDI_CH3I_Progress_handle_sock_event(&event);
-	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 				"**ch3|sock|handle_sock_event");
@@ -1208,13 +1209,11 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    mpi_errno = MPIU_Str_get_string_arg(val, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description, MAX_HOST_DESCRIPTION_LEN);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
-    }
-    mpi_errno = MPIU_Str_get_int_arg(val, MPIDI_CH3I_PORT_KEY, &port);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port");
+    mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
+						 sizeof(host_description),
+						 &port );
+    if (mpi_errno) {
+	MPIU_ERR_POP(mpi_errno);
     }
 
     mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
