@@ -213,6 +213,19 @@ optinstall_SHLIB = lib/libf${MPILIBNAME}.@SHLIB_EXT@
 # invoke their install targets as part of the installation process
 INSTALL_SUBDIRS = src/util/thread src/env @bindings_dirs@ @other_install_dirs@
 
+# Install preamble checks for possible problems
+install-preamble:
+	@if [ "@ENABLE_SHLIB@" != yes ] ; then\
+             found=no ; \
+	     for file in ${libdir}/lib*${MPILIBNAME}.so ; do \
+                 if [ -f $$file ] ; then \
+		     echo "Remove $$file and rerun ${MAKE} install" ; \
+		     found=yes ; \
+		 fi ; \
+	     done ; \
+	     if [ $$found != no ] ; then exit 1 ; fi ;\
+	fi
+
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.@SHLIB_EXT@ \

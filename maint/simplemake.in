@@ -3164,7 +3164,9 @@ sub TargetInstall {
     %dirschecked = ();
     if (!scalar(%install_files) && !scalar($install_dirs)) { return ; }
     print FD "# Install target$newline";
-    print FD "install: FORCE_TARGET $newline";
+    print FD "install: ";
+    &TargetPreamble( "install" );   # allow an install-preamble for testing
+    print FD " FORCE_TARGET $newline";
     # Create the directories for the install directories
     foreach $kind (keys(%install_dirs)) {
 	$dir = $InstallDirFromKind{$kind};
