@@ -561,9 +561,14 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 
     /* Free pg_list */
     pg_list = pg_head;
+    /* FIXME: We should use the PG destroy function for this, and ensure that
+       the PG fields are valid for that function */
     while (pg_list) {
 	pg_next = pg_list->next;
 	MPIU_Free( pg_list->str );
+	if (pg_list->pg_id ) {
+	    MPIU_Free( pg_list->pg_id );
+	}
 	MPIU_Free( pg_list );
 	pg_list = pg_next;
     }
