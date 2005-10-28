@@ -29,7 +29,7 @@ typedef struct { int n, b; } fileparm;
 
 int main( int argc, char *argv[] )
 {
-    int errs = 0, toterrs, err;
+    int errs = 0;
     MPI::Intracomm comm;
     MPI::File fh;
     int ftype;
