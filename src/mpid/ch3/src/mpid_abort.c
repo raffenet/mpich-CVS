@@ -92,11 +92,15 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code,
 }
 
 #ifdef MPIDI_DEV_IMPLEMENTS_ABORT
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_PMI_Abort
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_PMI_Abort(int exit_code, const char *error_msg)
 {
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ABORT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PMI_ABORT);
     
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ABORT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PMI_ABORT);
 
     /* FIXME: What is the scope for PMI_Abort?  Shouldn't it be one or more
        process groups?  Shouldn't abort of a communicator abort either the
@@ -116,7 +120,7 @@ static int MPIDI_CH3I_PMI_Abort(int exit_code, const char *error_msg)
     fflush(stderr);
     exit(exit_code);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ABORT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PMI_ABORT);
     return MPI_ERR_INTERN;    
 }
 #endif
