@@ -5,12 +5,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIDU_Sock_post_connect
+#undef FUNCNAME 
+#define FUNCNAME MPIDU_Sock_post_connect_ifaddr
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, char * host_description, int port,
-			    struct MPIDU_Sock ** sockp)
+int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set, 
+				    void * user_ptr, 
+				    unsigned char ifaddr[], int port,
+				    struct MPIDU_Sock ** sockp)
 {
     struct MPIDU_Sock * sock = NULL;
     struct pollfd * pollfd;
@@ -51,25 +53,21 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     }
     /* --END ERROR HANDLING-- */
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    /* --BEGIN ERROR HANDLING-- */
-    if (rc == -1)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
-	goto fn_fail;
+    if (rc == -1) {
+	MPIU_ERR_SETANDJUMP2( mpi_errno, MPIDU_SOCK_ERR_FAIL,
+			      "**sock|poll|nonblock", 
+			      "**sock|poll|nonblock %d %s",
+			      errno, MPIU_Strerror(errno));
     }
-    /* --END ERROR HANDLING-- */
 
     nodelay = 1;
     rc = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
-    /* --BEGIN ERROR HANDLING-- */
-    if (rc != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nodelay", "**sock|poll|nodelay %d %s", errno, MPIU_Strerror(errno));
-	goto fn_fail;
+    if (rc != 0) {
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPIDU_SOCK_ERR_FAIL,
+			     "**sock|poll|nodelay", 
+			     "**sock|poll|nodelay %d %s", 
+			     errno, MPIU_Strerror(errno));
     }
-    /* --END ERROR HANDLING-- */
 
     /*
      * Allocate and initialize sock and poll structures
@@ -79,14 +77,10 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
      * the remote process.
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM,
-					 "**sock|sockalloc", NULL);
-	goto fn_fail;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPIDU_SOCK_ERR_NOMEM,
+			    "**sock|sockalloc");
     }
-    /* --END ERROR HANDLING-- */
 
     pollfd = MPIDU_Socki_sock_get_pollfd(sock);
     pollinfo = MPIDU_Socki_sock_get_pollinfo(sock);
@@ -97,6 +91,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
     pollinfo->os_errno = 0;
 
+#if 0
     /*
      * Convert hostname to IP address
      *
@@ -124,9 +119,14 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
     }
     MPIU_Assert(hostent->h_length == sizeof(addr.sin_addr.s_addr));
     /* --END ERROR HANDLING-- */
+#endif
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
+#if 0
     memcpy(&addr.sin_addr.s_addr, hostent->h_addr_list[0], sizeof(addr.sin_addr.s_addr));
+#else
+    memcpy(&addr.sin_addr.s_addr, ifaddr, sizeof(addr.sin_addr.s_addr));
+#endif
     addr.sin_port = htons(port);
 
     /*
@@ -222,7 +222,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 	    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, user_ptr, MPIR_Err_create_code(
 		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED,
 		"**sock|connrefused", "**sock|poll|connrefused %d %d %s",
-		pollinfo->sock_set->id, pollinfo->sock_id, host_description), mpi_errno, fn_fail);
+		pollinfo->sock_set->id, pollinfo->sock_id, ""), mpi_errno, fn_fail);
 	}
 	else
 	{
@@ -254,6 +254,38 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, c
 
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sock_post_connect
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr, 
+			    char * host_description, int port,
+			    struct MPIDU_Sock ** sockp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    struct hostent * hostent;
+
+    /*
+     * Convert hostname to IP address
+     *
+     * FIXME: this should handle failures caused by a backed up listener queue
+     * at the remote process.  It should also use a
+     * specific interface if one is specified by the user.
+     */
+    strtok(host_description, " ");
+    hostent = gethostbyname(host_description);
+    /* --BEGIN ERROR HANDLING-- */
+    if (hostent == NULL || hostent->h_addrtype != AF_INET) {
+	/* FIXME: Set error */
+	goto fn_exit;
+    }
+    mpi_errno = MPIDU_Sock_post_connect_ifaddr( sock_set, user_ptr, 
+						hostent->h_addr_list[0], port, 
+						sockp );
+ fn_exit:
+    return mpi_errno;
 }
 /* end MPIDU_Sock_post_connect() */
 

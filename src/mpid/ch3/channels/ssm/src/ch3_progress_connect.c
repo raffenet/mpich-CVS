@@ -407,6 +407,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     char val[MPIDI_MAX_KVS_VALUE_LEN];
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
+    unsigned char ifaddr[4];
+    int hasIfaddr = 0;
     int rc;
     MPIDI_CH3I_Connection_t * conn;
     int connected;
@@ -487,7 +489,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     /* attempt to connect through sockets */
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
-						 &port );
+						 &port, ifaddr, &hasIfaddr );
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -497,7 +499,16 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     if (mpi_errno == MPI_SUCCESS)
     {
 /*	printf( "Posting socket connection\n" );fflush(stdout);*/
-	mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, host_description, port, &conn->sock);
+	if (hasIfaddr) {
+	    mpi_errno = MPIDU_Sock_post_connect_ifaddr(MPIDI_CH3I_sock_set, 
+						       conn, ifaddr, port, 
+						       &conn->sock);
+	}
+	else {
+	    mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, 
+						host_description, port, 
+						&conn->sock);
+	}
 	if (mpi_errno == MPI_SUCCESS)
 	{
 	    vc->ch.sock = conn->sock;

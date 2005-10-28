@@ -776,4 +776,9 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root );
 int MPIDI_CH3I_Connect_to_root_sshm(const char *, MPIDI_VC_t **);
 int MPIDI_VC_InitShm( MPIDI_VC_t *vc );
 
+
+int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 
+				     char *host_description, int maxlen,
+				     int *port, void *ifaddr, int *hasIfaddr );
+
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

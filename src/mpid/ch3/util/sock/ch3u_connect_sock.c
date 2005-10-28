@@ -9,6 +9,10 @@
 
 #include "mpidu_sock.h"
 
+#ifdef HAVE_NETDB_H
+#include <netdb.h>
+#endif
+
 /* FIXME: Describe what these routines do */
 
 /* Partial description: 
@@ -27,8 +31,8 @@
  * 
  */
 #define MPIDI_CH3I_HOST_DESCRIPTION_KEY  "description"
-#define MPIDI_CH3I_HOST_KEY              "host"
 #define MPIDI_CH3I_PORT_KEY              "port"
+#define MPIDI_CH3I_IFNAME_KEY            "ifname"
 
 /* FIXME: All of the listener port routines should be in one place.
    It looks like this should be a socket utility function called by
@@ -92,6 +96,8 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
     MPIU_CHKPMEM_DECL(1);
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port, port_name_tag;
+    unsigned char ifaddr[4];
+    int hasIfaddr = 0;
     MPIDI_CH3I_Connection_t * conn;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SOCK);
 
@@ -102,7 +108,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
 
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( port_name, host_description,
 						 sizeof(host_description),
-						 &port );
+						 &port, ifaddr, &hasIfaddr );
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -205,9 +211,10 @@ int MPIDI_CH3I_Connection_with_sock( const char *bc,
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 
 				     char *host_description, int maxlen,
-				     int *port )
+				     int *port, void *ifaddr, int *hasIfaddr )
 {
     int mpi_errno = MPI_SUCCESS;
+    unsigned char ifname[256];
 
     mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_HOST_DESCRIPTION_KEY, 
 				 host_description, maxlen);
@@ -218,6 +225,24 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
     if (mpi_errno != MPIU_STR_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port");
     }
+    /* ifname is optional */
+    mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_IFNAME_KEY, 
+					ifname, sizeof(ifname) );
+    if (mpi_errno == MPIU_STR_SUCCESS) {
+	/* Convert ifname into 4-byte ip address */
+	int rc = inet_pton( AF_INET, (const char *)ifname, ifaddr );
+	if (rc == 0) {
+	    ;/* ifname was not valid */
+	}
+	else if (rc < 0) {
+	    ;/* af_inet not supported */
+	}
+	else {
+	    /* Success */
+	    *hasIfaddr = 1;
+	}
+    }
+    
  fn_exit:
     return mpi_errno;
  fn_fail:
@@ -226,7 +251,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 
 
 /*  MPIDI_CH3U_Get_business_card_sock - does socket specific portion of 
- *  getting a business card
+ *  setting up a business card
  *  
  *  Parameters:
  *     bc_val_p     - business card value buffer pointer, updated to the next 
@@ -282,6 +307,35 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
+
+    /* Look up the interface address cooresponding to this host description */
+    /* FIXME: We should start switching to getaddrinfo instead of 
+       gethostbyname */
+    {
+	struct hostent *info;
+	char ifname[256];
+	unsigned char *p;
+	info = gethostbyname( host_description );
+	if (info && info->h_addr_list) {
+	    p = info->h_addr_list[0];
+	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
+			   p[0], p[1], p[2], p[3] );
+	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
+	    mpi_errno = MPIU_Str_add_string_arg( bc_val_p, 
+						 val_max_sz_p, 
+						 MPIDI_CH3I_IFNAME_KEY,
+						 ifname );
+	    if (mpi_errno != MPIU_STR_SUCCESS) {
+		if (mpi_errno == MPIU_STR_NOMEM) {
+		    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
+		}
+		else {
+		    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard");
+		}
+		return mpi_errno;
+	    }
+	}
+    }
     return MPI_SUCCESS;
 }
 
