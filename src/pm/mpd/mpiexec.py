@@ -148,7 +148,8 @@ def mpiexec():
         parmdb[('cmdline','inXmlFilename')] = sys.argv[2]
     elif sys.argv[1] == '-pmi_args':
         parmdb[('cmdline','singinitport')] = sys.argv[2]
-        parmdb[('cmdline','singinitpid')]  = sys.argv[3]
+        # ignoring interface name (where app is listening) and authentication key, for now
+        parmdb[('cmdline','singinitpid')]  = sys.argv[5]
         parmdb[('cmdline','userpgm')] = 'unknown_pgmname'
         parmdb[('cmdline','nprocs')] = 1
         parmdb[('cmdline','MPIEXEC_TRY_1ST_LOCALLY')] = 1
