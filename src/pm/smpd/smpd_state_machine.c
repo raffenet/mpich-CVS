@@ -407,6 +407,32 @@ void smpd_stdin_thread(SOCKET hWrite)
     }
 }
 #endif
+#else
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+void *smpd_pthread_stdin_thread(void *pwrite_fd)
+{
+    int read_fd, write_fd;
+    char ch;
+    size_t num_read;
+
+    write_fd = *(int*)pwrite_fd;
+    free(pwrite_fd);
+    read_fd = fileno(stdin);
+
+    num_read = read(read_fd, &ch, 1);
+    while (num_read > 0)
+    {
+	if (write(write_fd, &ch, 1) != 1)
+	{
+	    smpd_dbg_printf("stdin redirection write failed, error %d\n", errno);
+	    return NULL;
+	}
+	num_read = read(read_fd, &ch, 1);
+    }
+    close(write_fd);
+    return NULL;
+}
+#endif
 #endif
 
 char * smpd_get_state_string(smpd_state_t state)
@@ -5972,6 +5998,8 @@ int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *even
 	smpd_process.hCloseStdinThreadEvent = NULL;
     }
     */
+#elif defined(USE_PTHREAD_STDIN_REDIRECTION)
+    pthread_cancel(smpd_process.stdin_thread);
 #endif
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;

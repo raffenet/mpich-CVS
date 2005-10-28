@@ -46,6 +46,9 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+#include <pthread.h>
+#endif
 #include "mpi.h"
 #include "mpidu_sock.h"
 #include "mpimem.h"
@@ -611,6 +614,9 @@ typedef struct smpd_global_t
     HANDLE hCloseStdinThreadEvent;
     HANDLE hStdinThread;
 #endif
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+    pthread_t stdin_thread;
+#endif
     int do_console;
     int port;
     char console_host[SMPD_MAX_HOST_LENGTH];
@@ -790,6 +796,9 @@ int smpd_start_unx_mgr(smpd_context_t *context);
 #endif
 #ifdef HAVE_WINDOWS_H
 void smpd_stdin_thread(SOCKET hWrite);
+#endif
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+void *smpd_pthread_stdin_thread(void *pwrite_fd);
 #endif
 int smpd_handle_command(smpd_context_t *context);
 int smpd_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);

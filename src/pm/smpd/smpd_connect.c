@@ -74,6 +74,9 @@ smpd_global_t smpd_process =
       NULL,             /* hCloseStdinThreadEvent */
       NULL,             /* hStdinThread           */
 #endif
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+      0,                /* stdin_thread           */
+#endif
       SMPD_FALSE,       /* do_console             */
       SMPD_LISTENER_PORT, /* smpd port            */
       "",               /* console_host           */

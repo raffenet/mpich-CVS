@@ -672,6 +672,10 @@ int smpd_handle_result(smpd_context_t *context)
     DWORD dwThreadID;
     SOCKET hWrite;
 #endif
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+    int fd[2];
+    int *pfd;
+#endif
     char pg_id[SMPD_MAX_DBS_NAME_LEN+1] = "";
     char pg_ctx[100] = "";
     int pg_rank = -1;
@@ -830,6 +834,17 @@ int smpd_handle_result(smpd_context_t *context)
 					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
+#elif defined(USE_PTHREAD_STDIN_REDIRECTION)
+				    socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
+				    pfd = (int*)malloc(sizeof(int));
+				    if (pfd == NULL)
+				    {
+					smpd_err_printf("Unable to allocate memory for a socket to redirect stdin.\n");
+					smpd_exit_fn(FCNAME);
+					return SMPD_FAIL;
+				    }
+				    *pfd = fd[0];
+				    stdin_fd = fd[1];
 #else
 				    stdin_fd = fileno(stdin);
 #endif
@@ -869,6 +884,14 @@ int smpd_handle_result(smpd_context_t *context)
 					smpd_exit_fn(FCNAME);
 					return SMPD_FAIL;
 				    }
+#elif defined(USE_PTHREAD_STDIN_REDIRECTION)
+				    if (pthread_create(&smpd_process.stdin_thread, NULL, smpd_pthread_stdin_thread, pfd) != 0)
+				    {
+					smpd_err_printf("Unable to create a thread to read stdin, error %d\n", errno);
+					smpd_exit_fn(FCNAME);
+					return SMPD_FAIL;
+				    }
+				    pthread_detach(smpd_process.stdin_thread);
 #endif
 				    /* set this variable first before posting the first read to avoid a race condition? */
 				    smpd_process.stdin_redirecting = SMPD_TRUE;

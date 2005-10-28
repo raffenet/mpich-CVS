@@ -460,6 +460,8 @@ quit_job:
 	CloseHandle(smpd_process.hCloseStdinThreadEvent);
 	smpd_process.hCloseStdinThreadEvent = NULL;
     }
+#elif defined(USE_PTHREAD_STDIN_REDIRECTION)
+    pthread_cancel(smpd_process.stdin_thread);
 #endif
     smpd_exit_fn("main");
     return smpd_exit(smpd_process.mpiexec_exit_code);
