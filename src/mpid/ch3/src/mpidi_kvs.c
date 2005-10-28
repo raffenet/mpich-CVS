@@ -84,8 +84,10 @@ static MPIDI_KVS_Global_t kvs = { 0 };
    need to create a *new* KVS name (assuming that the congecture is true 
    that this is a KVS cache only? */
 
+#undef FUNCNAME 
+#define FUNCNAME get_uuid
 #undef FCNAME
-#define FCNAME "get_uuid"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static void get_uuid(char *str)
 {
 #ifdef HAVE_WINDOWS_H
@@ -143,8 +145,10 @@ static void get_uuid(char *str)
     MPIDI_FUNC_EXIT(MPID_STATE_GET_UUID);
 }
 
+#undef FUNCNAME
+#define FUNCNAME  MPIDI_KVS_Init
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Init"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Init()
 {
     int mpi_errno = MPI_SUCCESS;
@@ -167,8 +171,10 @@ int MPIDI_KVS_Init()
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Finalize
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Finalize"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Finalize()
 {
     MPIDI_KVS_database_node_t *pNode, *pNext;
@@ -216,8 +222,10 @@ int MPIDI_KVS_Finalize()
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Create
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Create"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Create(char *name)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -268,8 +276,10 @@ int MPIDI_KVS_Create(char *name)
 
 /* FIXME: What is this routine for? */
 #if 0
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Create_name_in
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Create_name_in"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Create_name_in(char *name)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -327,8 +337,10 @@ int MPIDI_KVS_Create_name_in(char *name)
 }
 #endif 
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Get
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Get"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 {
     int mpi_errno = MPI_SUCCESS, pmi_errno;
@@ -377,8 +389,10 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Put
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Put"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 {
     int mpi_errno = MPI_SUCCESS, pmi_errno;
@@ -436,8 +450,10 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 
 /* FIXME: No one uses this routine */
 #if 0
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Delete
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Delete"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Delete(const char *name, const char *key)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -492,8 +508,10 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
 #endif
 
 /* FIXME: This routine is unused (should be used during finalize) */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Destroy
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Destroy"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Destroy(const char *name)
 {
     int mpi_errno = MPI_SUCCESS, pmi_errno;
@@ -548,8 +566,10 @@ int MPIDI_KVS_Destroy(const char *name)
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_First
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_First"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_First(const char *name, char *key, char *value)
 {
     int mpi_errno = MPI_SUCCESS, pmi_errno;
@@ -642,8 +662,10 @@ fn_exit:
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Next
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Next"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Next(const char *name, char *key, char *value)
 {
     int mpi_errno = MPI_SUCCESS, pmi_errno;
@@ -730,8 +752,10 @@ fn_exit:
 
 /* FIXME: What is this routine for? */
 #if 0
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Firstkvs
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Firstkvs"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Firstkvs(char *name)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_FIRSTKVS);
@@ -759,8 +783,10 @@ int MPIDI_KVS_Firstkvs(char *name)
 }
 
 /* FIXME: What is this routine for? */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_KVS_Nextkvs
 #undef FCNAME
-#define FCNAME "MPIDI_KVS_Nextkvs"
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_KVS_Nextkvs(char *name)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_NEXTKVS);
