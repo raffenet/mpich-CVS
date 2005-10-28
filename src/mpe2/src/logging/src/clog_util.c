@@ -180,7 +180,7 @@ void CLOG_Util_swap_bytes( void  *bytes,
 }
 
 /*
-    CLOG_Preamble_strbuf_put: internal function to CLOG_Preamble_write
+    CLOG_Util_strbuf_put: internal function to CLOG_Preamble_write
     It copies string val_str to buf_ptr.
     It returns the next available buffer pointer that has already
     been accounted for the number of characters copied including
@@ -205,7 +205,7 @@ char *CLOG_Util_strbuf_put(       char *buf_ptr, const char *buf_tail,
 }
 
 /*
-    CLOG_Preamble_strbuf_get: internal function to CLOG_Preamble_read
+    CLOG_Util_strbuf_get: internal function to CLOG_Preamble_read
     It copies string buf_str to val_ptr.
     It returns the next available buffer pointer that has already
     been accounted for the number of characters copied including
