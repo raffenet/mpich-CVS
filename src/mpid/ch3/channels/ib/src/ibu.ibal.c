@@ -147,6 +147,10 @@ ib_api_status_t modifyQP( ibu_t ibu, ib_qp_state_t qp_state )
     return IBU_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME createQP
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 ib_api_status_t createQP(ibu_t ibu, ibu_set_t set)
 {
     ib_api_status_t status;
@@ -1602,13 +1606,13 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
     void *mem_ptr;
     ibu_t ibu;
     ibu_unex_read_t *temp;
-    MPIDI_STATE_DECL(MPID_STATE_POST_PKT_RECV);
-    MPIDI_FUNC_ENTER(MPID_STATE_POST_PKT_RECV);
+    MPIDI_STATE_DECL(MPID_STATE_IB_POST_PKT_RECV);
+    MPIDI_FUNC_ENTER(MPID_STATE_IB_POST_PKT_RECV);
 
     if (recv_vc_ptr->ch.ibu->unex_list == NULL)
     {
 	recv_vc_ptr->ch.reading_pkt = TRUE;
-	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_POST_PKT_RECV);
 	return MPI_SUCCESS;
     }
     ibu = recv_vc_ptr->ch.ibu;
@@ -1618,7 +1622,7 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
     if (ibu->unex_list->length < sizeof(MPIDI_CH3_Pkt_t))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_POST_PKT_RECV);
 	return mpi_errno;
     }
 
@@ -1628,7 +1632,7 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
     if (mpi_errno != MPI_SUCCESS)
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "infiniband read progress unable to handle incoming packet");
-	MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+	MPIDI_FUNC_EXIT(MPID_STATE_IB_POST_PKT_RECV);
 	return mpi_errno;
     }
 
@@ -1659,7 +1663,7 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
 	/*mpi_errno =*/ ibu_post_readv(ibu, recv_vc_ptr->ch.recv_active->dev.iov, recv_vc_ptr->ch.recv_active->dev.iov_count);
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV);
+    MPIDI_FUNC_EXIT(MPID_STATE_IB_POST_PKT_RECV);
     return mpi_errno;
 }
 
