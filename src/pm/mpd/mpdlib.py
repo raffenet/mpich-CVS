@@ -534,17 +534,17 @@ class MPDRing(object):
     def reenter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',ntries=5):
         rc = -1
         numTries = 0
+	self.generation += 1
         while rc < 0  and  numTries < ntries:
             numTries += 1
             rc = self.enter_ring(entryIfhn=entryIfhn,entryPort=entryPort,
                                  lhsHandler=lhsHandler,rhsHandler=rhsHandler,
-				 ntries=1,newgeneration=self.generation+1)
+				 ntries=1)
 	    sleepTime = random() * 1.5  # a single random is between 0 and 1
             sleep(sleepTime)
         mpd_print(1,'reenter_ring rc=%d after numTries=%d' % (rc,numTries) )
         return rc
-    def enter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',
-                   ntries=1,newgeneration=0):
+    def enter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',ntries=1):
         if not lhsHandler  or  not rhsHandler:
             print 'missing handler for enter_ring'
             sys.exit(-1)
@@ -552,10 +552,6 @@ class MPDRing(object):
             entryIfhn = self.entryIfhn
         if not entryPort:
             entryPort = self.entryPort
-	if newgeneration:
-            self.generation = newgeneration
-	else:
-            self.generation += 1
         if not entryIfhn:
             self.create_single_mem_ring(ifhn=self.myIfhn,
                                         port=self.listenPort,
