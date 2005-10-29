@@ -159,66 +159,6 @@ int PMIU_writeline( int fd, char *buf )
  * Given an input string st, parse it into internal storage that can be
  * queried by routines such as PMIU_getval.
  */
-#ifdef USE_HUMAN_READABLE_TOKENS
-int PMIU_parse_keyvals( char *st )
-{
-    char delim[2];
-    char *iter;
-
-    /*printf("parsing <%s>\n", st);*/
-    iter = st;
-    PMIU_keyval_tab_idx = 0;
-    while (PMIU_keyval_tab_idx < 64)
-    {
-	PMIU_keyval_tab[PMIU_keyval_tab_idx].key[0] = '\0';
-	if (MPIU_Str_get_string(&iter, PMIU_keyval_tab[PMIU_keyval_tab_idx].key, MAXKEYLEN) != 0)
-	{
-	    /* no more keyval pairs */
-	    break;
-	}
-	if (PMIU_keyval_tab[PMIU_keyval_tab_idx].key[0] == '\n')
-	{
-	    /* reached the end of the string */
-	    /* \n is treated as a key because there can only be one string separator character
-	       due to the old code required to mangle strings.  If this new code works, then we
-	       can go back to using any white-space as string separators.
-	    */
-	    break;
-	}
-	if (PMIU_keyval_tab[PMIU_keyval_tab_idx].key[0] == '\0')
-	{
-            /* no more keyval pairs */
-	    break;
-	}
-	/*printf("parsed key <%s>\n", PMIU_keyval_tab[PMIU_keyval_tab_idx].key);*/
-	if (MPIU_Str_get_string(&iter, delim, 2) != 0)
-	{
-	    /* no deliminator after a key */
-	    return -1;
-	}
-	/*printf("parsed delim <%s>\n", delim);*/
-	if (delim[0] != MPIU_STR_DELIM_CHAR)
-	{
-	    /* incorrect deliminator string */
-	    return -1;
-	}
-	if (MPIU_Str_get_string(&iter, PMIU_keyval_tab[PMIU_keyval_tab_idx].value, MAXVALLEN) != 0)
-	{
-	    /* no value after the deliminator */
-	    return -1;
-	}
-	if (PMIU_keyval_tab[PMIU_keyval_tab_idx].value[strlen(PMIU_keyval_tab[PMIU_keyval_tab_idx].value)-1] == '\n')
-	{
-	    PMIU_keyval_tab[PMIU_keyval_tab_idx].value[strlen(PMIU_keyval_tab[PMIU_keyval_tab_idx].value)-1] = '\0';
-	}
-	/*printf("parsed val <%s>\n", PMIU_keyval_tab[PMIU_keyval_tab_idx].value);*/
-	PMIU_keyval_tab_idx ++;
-    }
-    return 0;
-}
-
-#else
-
 int PMIU_parse_keyvals( char *st )
 {
     char *p, *keystart, *valstart;
@@ -264,7 +204,6 @@ int PMIU_parse_keyvals( char *st )
 	    return( 0 );	/* value has been set to empty */
     }
 }
-#endif
 
 void PMIU_dump_keyvals( void )
 {
