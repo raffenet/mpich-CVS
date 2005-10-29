@@ -81,24 +81,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_3C2344CB5FDC4209B4648BF0C0AE76E0"
-        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3C2344CB5FDC4209B4648BF0C0AE76E0"
-        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3C2344CB5FDC4209B4648BF0C0AE76E0"
-        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_3FF8808E32A24356B33DA343AAF3C745"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -177,6 +159,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_7F0593B2490B44D29458C3E07333637C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_80E5976A4DC34AEEA58BA4F4678F9261"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -190,6 +178,12 @@
         "Entry"
         {
         "MsmKey" = "8:_8C453279CC0E47F68FE45AC8EF1BC8F2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_91466C22C4C94CA2A11217C0AABE404B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -321,6 +315,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_CC8296CA3DF74A09A1CE924C5DB56B92"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_D11A51D35A3442938C608920FA632E9E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -329,6 +329,24 @@
         {
         "MsmKey" = "8:_D252FCCAF18446E4AD9F15AE3E54AAB4"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D4AE5FB21D93449AAAD07D638DF50095"
+        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D4AE5FB21D93449AAAD07D638DF50095"
+        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D4AE5FB21D93449AAAD07D638DF50095"
+        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -357,6 +375,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_E5B91D98224741AD9893DE73A605DA23"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_E98DA1DA9B4C4FD981D8F3E5AE1BB951"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -370,6 +394,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F0431D529C134836864C7D4970516497"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F1BCCBB90CE04DB181DF2BC26B7F85B9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -400,6 +430,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F9BAC701E02B49D4BB9F730401637641"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FD7F219280EB4E04BDD2A8663B0261B6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -840,7 +876,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.2047.32319, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.2127.28781, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_55B5CAEEC65B41548EFC545A48218F87"
@@ -987,6 +1023,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_7F0593B2490B44D29458C3E07333637C"
+            {
+            "SourcePath" = "8:..\\examples\\windows\\installed_examples\\cxxpi.cxx"
+            "TargetName" = "8:cxxpi.cxx"
+            "Tag" = "8:"
+            "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_80E5976A4DC34AEEA58BA4F4678F9261"
             {
             "SourcePath" = "8:..\\src\\mpe2\\src\\slog2sdk\\doc\\jumpshot-4\\usersguide.pdf"
@@ -1047,6 +1103,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_91466C22C4C94CA2A11217C0AABE404B"
+            {
+            "SourcePath" = "8:..\\examples\\f77\\fpi.f"
+            "TargetName" = "8:fpi.f"
+            "Tag" = "8:"
+            "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_92981A5D404B4E4A822F7E7D98B5665C"
             {
             "SourcePath" = "8:..\\src\\include\\win32\\mpif.h"
@@ -1091,7 +1167,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.2047.32319, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.2127.28780, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_9456918885EA443184468C81D254F3F3"
@@ -1282,7 +1358,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.2047.32320, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.2127.28782, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_AD63A10BAE3B42AE9BA9DDBE274523EE"
@@ -1489,6 +1565,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CC8296CA3DF74A09A1CE924C5DB56B92"
+            {
+            "SourcePath" = "8:..\\examples\\windows\\installed_examples\\fpi.vfproj"
+            "TargetName" = "8:fpi.vfproj"
+            "Tag" = "8:"
+            "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_D11A51D35A3442938C608920FA632E9E"
             {
             "SourcePath" = "8:..\\lib\\mpich2p.dll"
@@ -1609,6 +1705,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E5B91D98224741AD9893DE73A605DA23"
+            {
+            "SourcePath" = "8:..\\examples\\windows\\installed_examples\\cxxpi.vcproj"
+            "TargetName" = "8:cxxpi.vcproj"
+            "Tag" = "8:"
+            "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E98DA1DA9B4C4FD981D8F3E5AE1BB951"
             {
             "SourcePath" = "8:..\\lib\\mpich2mpe.dll"
@@ -1655,6 +1771,26 @@
             "TargetName" = "8:mpich2mpe.lib"
             "Tag" = "8:"
             "Folder" = "8:_B167421D29EE4EAFA108A852DB65BD75"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F1BCCBB90CE04DB181DF2BC26B7F85B9"
+            {
+            "SourcePath" = "8:..\\examples\\windows\\installed_examples\\examples.sln"
+            "TargetName" = "8:examples.sln"
+            "Tag" = "8:"
+            "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1755,6 +1891,26 @@
             "TargetName" = "8:mpe.dll"
             "Tag" = "8:"
             "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_FD7F219280EB4E04BDD2A8663B0261B6"
+            {
+            "SourcePath" = "8:..\\examples\\windows\\installed_examples\\cpi.vcproj"
+            "TargetName" = "8:cpi.vcproj"
+            "Tag" = "8:"
+            "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2977,7 +3133,7 @@
         }
         "MergeModule"
         {
-            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_3C2344CB5FDC4209B4648BF0C0AE76E0"
+            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_D4AE5FB21D93449AAAD07D638DF50095"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
