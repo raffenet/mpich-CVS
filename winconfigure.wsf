@@ -4713,7 +4713,9 @@ Function GenBuild()
 	outdir = "SOCK_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\sock"), trimlength
 	'CreateRules f.GetFolder("src\mpid\common\sock\iocp"), trimlength
-	CreateObjs "ch3sock", f.GetFolder("src\mpid\ch3\channels\sock"), trimlength, true, true
+	CreateRules f.GetFolder("src\mpid\ch3\util\sock"), trimlength
+	CreateObjs "ch3sock", f.GetFolder("src\mpid\ch3\channels\sock"), trimlength, true, false
+	CreateObjs "ch3sock", f.GetFolder("src\mpid\ch3\util\sock"), trimlength, false, true
 	'CreateObjs "ch3sock", f.GetFolder("src\mpid\common\sock\iocp"), trimlength, false, true
 
 	mfile.WriteLine
@@ -4721,11 +4723,13 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "MT_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\sock"), trimlength
+	CreateRules f.GetFolder("src\mpid\ch3\util\sock"), trimlength
 	CreateRules f.GetFolder("src\util\events"), trimlength
 	mfile.WriteLine("{..\src\util\thread}.c{$(MT_OUTDIR)}.obj:")
 	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(MT_OUTDIR)\\"" /Fd""$(MT_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	CreateObjs "ch3mt", f.GetFolder("src\mpid\ch3\channels\sock"), trimlength, true, false
+	CreateObjs "ch3mt", f.GetFolder("src\mpid\ch3\util\sock"), trimlength, false, false
 	CreateObjs "ch3mt", f.GetFolder("src\util\events"), trimlength, false, false
 	mfile.WriteLine(" \" & vbCrLf & "	$(MT_OUTDIR)\mpe_thread_win.obj")
 
@@ -4734,7 +4738,11 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "SSM_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength
-	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength, true, true
+	CreateRules f.GetFolder("src\mpid\ch3\util\sock"), trimlength
+	CreateRules f.GetFolder("src\mpid\ch3\util\shm"), trimlength
+	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength, true, false
+	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\shm"), trimlength, false, false
+	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\sock"), trimlength, false, true
 
 	mfile.WriteLine
 	mfile.WriteLine("# ch3shm")
@@ -4748,7 +4756,9 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "SSHM_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength
-	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength, true, true
+	CreateRules f.GetFolder("src\mpid\ch3\util\shm"), trimlength
+	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength, true, false
+	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\util\shm"), trimlength, false, true
 
 '	mfile.WriteLine
 '	mfile.WriteLine("# ch3essm")
