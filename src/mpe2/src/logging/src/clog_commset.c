@@ -269,33 +269,33 @@ CLOG_CommSet_add_intercomm(       CLOG_CommSet_t *commset,
 */
 CLOG_CommLID_t CLOG_CommSet_get_LID( CLOG_CommSet_t *commset, MPI_Comm comm )
 {
-    CLOG_CommLID_t  LID_val;
-    int             istatus;
+    MPI_Aint  ptrlen_value;
+    int       istatus;
 
-    PMPI_Comm_get_attr( comm, commset->LID_key, &LID_val, &istatus );
+    PMPI_Comm_get_attr( comm, commset->LID_key, &ptrlen_value, &istatus );
     if ( !istatus ) {
         fprintf( stderr, __FILE__":CLOG_CommSet_get_LID() - \n"
                          "\t""PMPI_Comm_get_attr() fails!\n" );
         fflush( stderr );
         CLOG_Util_abort( 1 );
     }
-    return LID_val;
+    return (CLOG_CommLID_t) ptrlen_value;
 }
 
 const CLOG_CommIDs_t* CLOG_CommSet_get_IDs( CLOG_CommSet_t *commset,
                                             MPI_Comm comm )
 {
-    CLOG_CommLID_t  LID_val;
-    int             istatus;
+    MPI_Aint  ptrlen_value;
+    int       istatus;
 
-    PMPI_Comm_get_attr( comm, commset->LID_key, &LID_val, &istatus );
+    PMPI_Comm_get_attr( comm, commset->LID_key, &ptrlen_value, &istatus );
     if ( !istatus ) {
         fprintf( stderr, __FILE__":CLOG_CommSet_get_IDs() - \n"
                          "\t""PMPI_Comm_get_attr() fails!\n" );
         fflush( stderr );
         CLOG_Util_abort( 1 );
     }
-    return &(commset->table[ LID_val ]);
+    return &(commset->table[ (CLOG_CommLID_t) ptrlen_value ]);
 }
 
 const CLOG_CommIDs_t* CLOG_CommTable_get( const CLOG_CommIDs_t *table,
