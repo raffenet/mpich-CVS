@@ -9,6 +9,24 @@
 #define FUNCNAME MPIDU_Sock_post_connect_ifaddr
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
+/* 
+ This routine connects to a particular address (in byte form; for ipv4, 
+ the address is four bytes, typically the value of h_addr_list[0] in 
+ struct hostent.  By avoiding a character name for an interface (we *never*
+ connect to a host; we are *always* connecting to a particular interface 
+ on a host), we avoid problems with DNS services, including lack of properly
+ configured services and scalability problems.  As this routine uses 
+ a four-byte field, it is currently restricted to ipv4.  This routine should
+ evolve to support ipv4 and ipv6 addresses.
+
+ This routine was constructed from MPIDU_Sock_post_connect by removing the 
+ poorly placed use of gethostname within the middle of that routine and
+ simply using the ifaddr field that is passed to this routine.  
+ MPIDU_Sock_post_connect simply uses the hostname field to get the canonical
+ IP address.  The original routine and its API was retained to allow backwards
+ compatibility until it is determined that we can always use explicit addrs 
+ needed in setting up the socket instead of character strings.
+ */
 int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set, 
 				    void * user_ptr, 
 				    unsigned char ifaddr[], int port,
@@ -34,24 +52,18 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
      * Create a non-blocking socket with Nagle's algorithm disabled
      */
     fd = socket(PF_INET, SOCK_STREAM, 0);
-    /* --BEGIN ERROR HANDLING-- */
-    if (fd == -1)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|socket", "**sock|poll|socket %d %s", errno, MPIU_Strerror(errno));
-	goto fn_fail;
+    if (fd == -1) {
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPIDU_SOCK_ERR_FAIL,
+			     "**sock|poll|socket", 
+		    "**sock|poll|socket %d %s", errno, MPIU_Strerror(errno));
     }
-    /* --END ERROR HANDLING-- */
 
     flags = fcntl(fd, F_GETFL, 0);
-    /* --BEGIN ERROR HANDLING-- */
-    if (flags == -1)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					 "**sock|poll|nonblock", "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
-	goto fn_fail;
+    if (flags == -1) {
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPIDU_SOCK_ERR_FAIL,
+			     "**sock|poll|nonblock", 
+                    "**sock|poll|nonblock %d %s", errno, MPIU_Strerror(errno));
     }
-    /* --END ERROR HANDLING-- */
     rc = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (rc == -1) {
 	MPIU_ERR_SETANDJUMP2( mpi_errno, MPIDU_SOCK_ERR_FAIL,
@@ -72,8 +84,10 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
     /*
      * Allocate and initialize sock and poll structures
      *
-     * NOTE: pollfd->fd is initialized to -1.  It is only set to the true fd value when an operation is posted on the sock.  This
-     * (hopefully) eliminates a little overhead in the OS and avoids repetitive POLLHUP events when the connection is closed by
+     * NOTE: pollfd->fd is initialized to -1.  It is only set to the true fd 
+     * value when an operation is posted on the sock.  This
+     * (hopefully) eliminates a little overhead in the OS and avoids 
+     * repetitive POLLHUP events when the connection is closed by
      * the remote process.
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);
@@ -91,42 +105,9 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
     pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
     pollinfo->os_errno = 0;
 
-#if 0
-    /*
-     * Convert hostname to IP address
-     *
-     * FIXME: this should handle failures caused by a backed up listener queue
-     * at the remote process.  It should also use a
-     * specific interface if one is specified by the user.
-     */
-    strtok(host_description, " ");
-    hostent = gethostbyname(host_description);
-    /* --BEGIN ERROR HANDLING-- */
-    if (hostent == NULL || hostent->h_addrtype != AF_INET)
-    {
-	/* FIXME: No, we should *not* try different interfaces. The user
-	   is likely to expect a certain interface for performance reasons;
-	   if that interface is not available, the application should
-	   fail, rather than struggle with poor performance */
-	/* FIXME: we should make multiple attempts and try different interfaces */
-	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, user_ptr, MPIR_Err_create_code(
-	    MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|hostres",
-	    "**sock|poll|hostres %d %d %s", pollinfo->sock_set->id, pollinfo->sock_id, host_description), mpi_errno, fn_fail);
-	pollinfo->os_errno = errno;
-	pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
-	
-	goto fn_exit;
-    }
-    MPIU_Assert(hostent->h_length == sizeof(addr.sin_addr.s_addr));
-    /* --END ERROR HANDLING-- */
-#endif
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-#if 0
-    memcpy(&addr.sin_addr.s_addr, hostent->h_addr_list[0], sizeof(addr.sin_addr.s_addr));
-#else
     memcpy(&addr.sin_addr.s_addr, ifaddr, sizeof(addr.sin_addr.s_addr));
-#endif
     addr.sin_port = htons(port);
 
     /*
@@ -140,35 +121,30 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
 	bufsz = MPIDU_Socki_socket_bufsz;
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, bufsz_len);
-	/* --BEGIN ERROR HANDLING-- */
-	if (rc == -1)
-	{
-	    mpi_errno = MPIR_Err_create_code(
-		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setsndbufsz",
-		"**sock|poll|setsndbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
-	    goto fn_fail;
-	    
+	if (rc == -1) {
+	    MPIU_ERR_SETANDJUMP3(mpi_errno,MPIDU_SOCK_ERR_FAIL, 
+				 "**sock|poll|setsndbufsz",
+				 "**sock|poll|setsndbufsz %d %d %s", 
+				 bufsz, errno, MPIU_Strerror(errno));
 	}
-	/* --END ERROR HANDLING-- */
 	bufsz = MPIDU_Socki_socket_bufsz;
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, bufsz_len);
-	/* --BEGIN ERROR HANDLING-- */
-	if (rc == -1)
-	{
-	    mpi_errno = MPIR_Err_create_code(
-		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|poll|setrcvbufsz",
-		"**sock|poll|setrcvbufsz %d %d %s", bufsz, errno, MPIU_Strerror(errno));
-	    goto fn_fail;
-	    
+	if (rc == -1) {
+	    MPIU_ERR_SETANDJUMP3(mpi_errno,MPIDU_SOCK_ERR_FAIL, 
+				 "**sock|poll|setrcvbufsz",
+				 "**sock|poll|setrcvbufsz %d %d %s", 
+				 bufsz, errno, MPIU_Strerror(errno));
 	}
-	/* --END ERROR HANDLING-- */
 	bufsz_len = sizeof(bufsz);
+	/* FIXME: This should not be an error or even a warning if
+	 we don't get the requested socket size */
 	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
 	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
-	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || 
+		bufsz < MPIDU_Socki_socket_bufsz * 1.0)
 	    {
 		MPIU_Msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
 				MPIDU_Socki_socket_bufsz, bufsz);
@@ -181,7 +157,8 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
 	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
 	{
-	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || bufsz < MPIDU_Socki_socket_bufsz * 1.0)
+	    if (bufsz < MPIDU_Socki_socket_bufsz * 0.9 || 
+		bufsz < MPIDU_Socki_socket_bufsz * 1.0)
 	    {
 		MPIU_Msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
 				MPIDU_Socki_socket_bufsz, bufsz);
@@ -256,6 +233,8 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
     /* --END ERROR HANDLING-- */
 }
 
+/* FIXME: What does this routine do?  Why does it take a host description
+   instead of an interface name or address? */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_connect
 #undef FCNAME
@@ -274,13 +253,18 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr,
      * at the remote process.  It should also use a
      * specific interface if one is specified by the user.
      */
+    /* FIXME: strtok may change the contents of host_description.  Shouldn't
+       the host description be a const char [] and not modified by this 
+       routine? */
     strtok(host_description, " ");
+    /* FIXME: For ipv6, we should use getaddrinfo */
     hostent = gethostbyname(host_description);
     /* --BEGIN ERROR HANDLING-- */
     if (hostent == NULL || hostent->h_addrtype != AF_INET) {
 	/* FIXME: Set error */
 	goto fn_exit;
     }
+    /* --END ERROR HANDLING-- */
     mpi_errno = MPIDU_Sock_post_connect_ifaddr( sock_set, user_ptr, 
 						hostent->h_addr_list[0], port, 
 						sockp );
@@ -297,7 +281,8 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr,
 #ifndef USHRT_MAX
 #define USHRT_MAX 65535   /* 2^16-1 */
 #endif
-int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, int * port, struct MPIDU_Sock ** sockp)
+int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr, 
+		      int * port, struct MPIDU_Sock ** sockp)
 {
     struct MPIDU_Sock * sock;
     struct pollfd * pollfd;
