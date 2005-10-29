@@ -247,9 +247,6 @@
 				RelativePath="..\..\util\shm\ch3u_finalize_sshm.c">
 			</File>
 			<File
-				RelativePath="..\..\util\sock\ch3u_get_business_card_sock.c">
-			</File>
-			<File
 				RelativePath="..\..\util\shm\ch3u_get_business_card_sshm.c">
 			</File>
 			<File

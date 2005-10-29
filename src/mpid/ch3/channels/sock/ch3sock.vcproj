@@ -355,9 +355,6 @@
 				RelativePath="..\..\util\sock\ch3u_connect_sock.c">
 			</File>
 			<File
-				RelativePath="..\..\util\sock\ch3u_get_business_card_sock.c">
-			</File>
-			<File
 				RelativePath="..\..\src\ch3u_handle_connection.c">
 			</File>
 			<File
