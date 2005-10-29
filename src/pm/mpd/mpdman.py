@@ -406,18 +406,14 @@ class MPDMan(object):
             if self.numDone >= self.numWithIO  and  (self.singinitPID or self.subproc):
                 clientExited = 1
                 clientExitStatus = 0
-            if self.holdingJobgoLoop1 or clientExited:
-                selectTime = 0.05
-            else:
-                selectTime = 1
-            rv = self.streamHandler.handle_active_streams(timeout=selectTime)
-            if rv[0] < 0:
-                if type(rv[1]) == ClassType  and  rv[1] == KeyboardInterrupt: # ^C
-                    sys.exit(-1)
             if self.holdingJobgoLoop1 and self.numConndWithIO >= self.numWithIO:
                 msgToSend = self.holdingJobgoLoop1
                 self.ring.rhsSock.send_dict_msg(msgToSend)
                 self.holdingJobgoLoop1 = 0
+            rv = self.streamHandler.handle_active_streams(timeout=5.0)
+            if rv[0] < 0:
+                if type(rv[1]) == ClassType  and  rv[1] == KeyboardInterrupt: # ^C
+                    sys.exit(-1)
             if clientExited:
                 if self.jobStarted  and  not clientExitStatusSent:
                     msgToSend = { 'cmd' : 'client_exit_status', 'man_id' : self.myId,
