@@ -1476,7 +1476,8 @@ int post_pkt_recv(MPIDI_VC_t *recv_vc_ptr)
     void *mem_ptr;
     ibu_t ibu;
     ibu_unex_read_t *temp;
-    MPIDI_STATE_DECL(MPID_STATE_IB_POST_PKT_recv);
+    MPIDI_STATE_DECL(MPID_STATE_IB_POST_PKT_RECV);
+
     MPIDI_FUNC_ENTER(MPID_STATE_IB_POST_PKT_RECV);
 
     if (recv_vc_ptr->ch.ibu->unex_list == NULL)
