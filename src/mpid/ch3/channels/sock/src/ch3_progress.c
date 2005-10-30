@@ -1221,12 +1221,20 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
     if (mpi_errno == MPI_SUCCESS)
     {
+	/* FIXME: This is a hack to allow Windows to continue to use
+	   the host description string instead of the interface address
+	   bytes when posting a socket connection.  This should be fixed 
+	   by changing the Sock_post_connect to only accept interface
+	   address.  See also channels/ssm/ch3_progress_connect.c */
+#ifndef HAVE_WINDOWS_H
 	if (hasIfaddr) {
 	    mpi_errno = MPIDU_Sock_post_connect_ifaddr(MPIDI_CH3I_sock_set, 
 						       conn, ifaddr, port, 
 						       &conn->sock);
 	}
-	else {
+	else 
+#endif
+	{
 	    mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, 
 						host_description, port, 
 						&conn->sock);

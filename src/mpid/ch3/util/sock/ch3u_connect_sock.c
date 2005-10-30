@@ -226,6 +226,15 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port");
     }
     /* ifname is optional */
+    /* FIXME: This is a hack to allow Windows to continue to use
+       the host description string instead of the interface address
+       bytes when posting a socket connection.  This should be fixed 
+       by changing the Sock_post_connect to only accept interface
+       address.  Note also that Windows does not have the inet_pton 
+       routine; the Windows version of this routine will need to 
+       be identified or written.  See also channels/sock/ch3_progress.c and
+       channels/ssm/ch3_progress_connect.c */
+#ifndef HAVE_WINDOWS_H
     mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_IFNAME_KEY, 
 					ifname, sizeof(ifname) );
     if (mpi_errno == MPIU_STR_SUCCESS) {
@@ -242,6 +251,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 	    *hasIfaddr = 1;
 	}
     }
+#endif
     
  fn_exit:
     return mpi_errno;
@@ -311,6 +321,13 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
     /* Look up the interface address cooresponding to this host description */
     /* FIXME: We should start switching to getaddrinfo instead of 
        gethostbyname */
+    /* FIXME: We don't make use of the ifname in Windows in order to 
+       provide backward compatibility with the (undocumented) host
+       description string used by the socket connection routine 
+       MPIDU_Sock_post_connect.  We need to change to an interface-address
+       (already resolved) based description for better scalability and
+       to eliminate reliance on fragile DNS services */
+#ifndef HAVE_WINDOWS_H
     {
 	struct hostent *info;
 	char ifname[256];
@@ -336,6 +353,7 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
 	    }
 	}
     }
+#endif
     return MPI_SUCCESS;
 }
 
