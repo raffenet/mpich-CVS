@@ -52,8 +52,12 @@ typedef struct PMIGroup {
    the client of the maximum key and value size that is supported.  For 
    simplicity, we define each KV pair with fixed-length entries of
    the maximum size */
+/* FIXME: We need to specify a minimum length for both key and value.
+ * The "business cards" used by the ch3 channel implementations for 
+ * sockets and for sockets+shared memory can exceed 128 characters.
+ */
 #define MAXKEYLEN    64		/* max length of key in keyval space */
-#define MAXVALLEN   128		/* max length of value in keyval space */
+#define MAXVALLEN   256		/* max length of value in keyval space */
 #define MAXNAMELEN  256         /* max length of various names */
 #define MAXKVSNAME  MAXNAMELEN  /* max length of a kvsname */
 typedef struct PMIKVPair {
