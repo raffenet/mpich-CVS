@@ -215,7 +215,7 @@ INSTALL_SUBDIRS = src/util/thread src/env @bindings_dirs@ @other_install_dirs@
 
 # Install preamble checks for possible problems
 install-preamble:
-	@if [ "@ENABLE_SHLIB@" != yes ] ; then\
+	@if [ "@ENABLE_SHLIB@" = none ] ; then\
              found=no ; \
 	     for file in ${libdir}/lib*${MPILIBNAME}.so ; do \
                  if [ -f $$file ] ; then \
