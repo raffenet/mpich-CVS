@@ -106,3 +106,67 @@ possible arguments can be listed by typing
 \end{verbatim}
 and further details are available in the 
 \href{http://www-unix.mcs.anl.gov/mpi/mpich2/downloads/mpich2-doc-user.pdf}{Users Guide}.
+
+%% Heading: Q:  What determines the hosts on which my MPI processes run?
+%% Filename: whererun
+%% End
+A:  Where processes run, whether by default or by specifying them
+yourself, depends on the process manager being used.
+
+If you are using the \texttt{gforker} process manager, then all MPI
+processes run on the same host where you are running \texttt{mpiexec}.
+
+If you are using the \texttt{mpd} process manager, which is the default,
+then many options are available.  If you are using \texttt{mpd}, then
+before you run \texttt{mpiexec}, you will have started, or will have had
+started for you, a ring of processes called \texttt{mpd}'s
+(multi-purpose daemons), each running on its own host.  It is likely,
+but not necessary, that each \texttt{mpd} will be running on a separate
+host.  You can find out what this ring of hosts consists of by running
+the program \texttt{mpdtrace}.  One of the \texttt{mpd}'s will be
+running on the ``local'' machine, the one where you will run
+\texttt{mpiexec}.  The default placement of MPI processes, if one runs
+\begin{verbatim}
+    mpiexec -n 10 a.out
+\end{verbatim}
+is to start the first MPI process (rank 0) on the local machine and then
+to distribute the rest around the \texttt{mpd} ring one at a time.  If
+there are more processes than \texttt{mpd}'s, then wraparound occurs.
+If there are more \texttt{mpd}'s than MPI processes, then some
+\texttt{mpd}'s will not run MPI processes.  Thus any number of processes
+can be run on a ring of any size.  While one is doing development, it is
+handy to run only one \texttt{mpd}, on the local machine.  Then all the
+MPI processes will run locally as well.
+
+The first modification to this default behavior is the \texttt{-1}
+option to \texttt{mpiexec} (not a great argument name).  If \texttt{-1}
+is specified, as in 
+\begin{verbatim}
+    mpiexec -1 -n 10 a.out
+\end{verbatim}
+then the first application process will be started by the first
+\texttt{mpd} in the ring \emph{after} the local host.  (If there is only
+one \texttt{mpd} in the ring, then this will be on the local host.)
+This option is for use when a cluster of compute nodes has a ``head
+node'' where commands like \texttt{mpiexec} are run but not application
+processes. 
+
+If an \texttt{mpd} is started with the \texttt{--ncpus} option, then
+when it is its turn to start a process, it will start several
+application processes rather than just one before handing off the task
+of starting more processes to the next \texttt{mpd} in the ring.  For
+example, if the \texttt{mpd} is started with
+\begin{verbatim}
+    mpd --ncpus=4
+\end{verbatim}
+then it will start as many as four application processes, with
+consecutive ranks, when it is its turn to start processes.  This option
+is for use in clusters of SMP's, when the user would like consecutive
+ranks to appear on the same machine.  (In the default case, the same
+number of processes might well run on the machine, but their ranks would
+be different.)
+
+Other ways to control the placement of processes are by direct use of
+arguments to \texttt{mpiexec}.  See the 
+\href{http://www-unix.mcs.anl.gov/mpi/mpich2/downloads/mpich2-doc-user.pdf}{Users Guide}.
+
