@@ -92,7 +92,6 @@ int MPIDI_CH3I_SHM_Get_mem(int size,
 		 "**ftruncate %s %d %d", pOutput->key, size, pOutput->error);
     }
 
-    pOutput->addr = NULL;
     pOutput->addr = mmap(NULL, size, PROT_READ | PROT_WRITE, 
 			 MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
     if (pOutput->addr == MAP_FAILED) {

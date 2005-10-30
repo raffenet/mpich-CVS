@@ -414,7 +414,7 @@ int MPIDI_CH3I_BCInit( int pg_rank,
 			     "**pmi_kvs_get_value_length_max",
 			     "**pmi_kvs_get_value_length_max %d", pmi_errno);
     }
-    
+
     /* This memroy is returned by this routine */
     *bc_val_p = MPIU_Malloc(*val_max_sz_p);
     if (*bc_val_p == NULL) {
