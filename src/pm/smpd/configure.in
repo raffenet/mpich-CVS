@@ -95,7 +95,7 @@ dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
 
-AC_CHECK_HEADERS( sys/types.h sys/wait.h signal.h unistd.h stdlib.h errno.h stdarg.h pthread.h sys/socket.h sys/stat.h )
+AC_CHECK_HEADERS( sys/types.h sys/wait.h signal.h unistd.h stdlib.h errno.h stdarg.h pthread.h sys/socket.h sys/stat.h ctype.h )
 AC_CHECK_HEADERS( math.h stdio.h termios.h string.h sys/stat.h malloc.h uuid/uuid.h )
 AC_CHECK_FUNCS( sigaction usleep CFUUIDCreate uuid_generate setenv md5_calc )
 AC_SEARCH_LIBS( uuid_generate, uuid )
