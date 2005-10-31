@@ -58,6 +58,7 @@ void MTest_Init( void )
 	if (s == envval) {
 	    /* This is the error case for strtol */
 	    cerr << "Warning: "<< envval << " not valid for MPITEST_VERBOSE\n";
+	    cerr.flush();
 	}
 	else {
 	    if (val >= 0) {
@@ -66,6 +67,7 @@ void MTest_Init( void )
 	    else {
 		cerr << "Warning: " << envval << 
 		    " not valid for MPITEST_VERBOSE\n";
+		cerr.flush();
 	    }
 	}
     }
@@ -91,6 +93,7 @@ void MTest_Finalize( int errs )
 	else {
 	    cout << " No Errors\n";
 	}
+	cout.flush();
     }
 }
 
@@ -191,6 +194,7 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 		    cout << "Data expected = " << hex << expected << 
 			" but got " << p[i] << " for the " <<
 			 dec << i << "th entry\n";
+		    cout.flush();
 		}
 	    }
 	}
@@ -368,6 +372,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	     << "\n";
 	typesize = recvtype->datatype.Get_size();
 	cout << wrank << ": recvtype size = " << typesize << "\n";
+	cout.flush();
     }
     return datatype_index;
 }
@@ -739,6 +744,7 @@ void MTestPrintError( int errcode )
     errclass = MPI::Get_error_class( errcode );
     MPI::Get_error_string( errcode, string, slen );
     cout << "Error class " << errclass << "(" << string << ")\n";
+    cout.flush();
 }
 void MTestPrintErrorMsg( const char msg[], int errcode )
 {
@@ -748,6 +754,7 @@ void MTestPrintErrorMsg( const char msg[], int errcode )
     errclass = MPI::Get_error_class( errcode );
     MPI::Get_error_string( errcode, string, slen );
     cout << msg << ": Error class " << errclass << " (" << string << ")\n";
+    cout.flush();
 }
 /* ------------------------------------------------------------------------ */
 #if 0
@@ -768,6 +775,7 @@ void MTestPrintfMsg( int level, const char format[], ... )
 void MTestError( const char *msg )
 {
     cerr << msg << "\n";
+    cerr.flush();
     MPI::COMM_WORLD.Abort(1);
 }
 
