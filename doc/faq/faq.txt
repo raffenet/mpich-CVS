@@ -35,6 +35,13 @@ MPICH2 is a freely available, portable implementation of
 \href{http://www.mpi-forum.org}{MPI}, the Standard for 
 message-passing libraries.  It implements both MPI-1 and MPI-2.
 
+%% Heading: Q: What does MPICH stand for?
+%% Filename: mpichname
+%% End
+A: MPI stands for Message Passing Interface.
+The CH comes from Chameleon, the portability layer used in the original 
+MPICH to provide portability to the existing message-passing systems.
+
 %% Heading: Q: What is the difference between the MPD and SMPD process managers?
 %% Filename: mpd-smpd
 %% End
