@@ -12,6 +12,14 @@
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
+#ifdef HAVE_SYS_SOCKET_H
+/* Include this for AF_INET */
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+/* Include this for inet_pton prototype */
+#include <arpa/inet.h>
+#endif
 
 /* FIXME: Describe what these routines do */
 
@@ -214,7 +222,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 				     int *port, void *ifaddr, int *hasIfaddr )
 {
     int mpi_errno = MPI_SUCCESS;
-    unsigned char ifname[256];
+    char ifname[256];
 
     mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_HOST_DESCRIPTION_KEY, 
 				 host_description, maxlen);
@@ -234,7 +242,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
        routine; the Windows version of this routine will need to 
        be identified or written.  See also channels/sock/ch3_progress.c and
        channels/ssm/ch3_progress_connect.c */
-#ifndef HAVE_WINDOWS_H
+#if !defined(HAVE_WINDOWS_H) && defined(HAVE_INET_PTON)
     mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_IFNAME_KEY, 
 					ifname, sizeof(ifname) );
     if (mpi_errno == MPIU_STR_SUCCESS) {
@@ -334,7 +342,7 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
 	unsigned char *p;
 	info = gethostbyname( host_description );
 	if (info && info->h_addr_list) {
-	    p = info->h_addr_list[0];
+	    p = (unsigned char *)(info->h_addr_list[0]);
 	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
 			   p[0], p[1], p[2], p[3] );
 	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
