@@ -16,8 +16,7 @@
       integer    world_request, comm_request
       integer    world_status(MPI_STATUS_SIZE)
       integer    comm_status(MPI_STATUS_SIZE)
-
-      integer    ierr;
+      integer    ierr
 
       call MPI_Init( ierr )
       call MPI_Comm_size( MPI_COMM_WORLD, world_size, ierr )
