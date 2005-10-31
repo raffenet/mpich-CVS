@@ -20,13 +20,13 @@ void set_tmpfilename( char*, int );
 
 int main( int argc, char *argv[] )
 {
-    char processor_name[ MPI_MAX_PROCESSOR_NAME ];
-    char tmpfilename[ PATH_STRLEN ];
-    char data[ MBYTES ]; 
-    double startwtime = 0.0, endwtime;
-    int event1a, event1b;
-    int  myid, numprocs;
-    int namelen, ii, ierr; 
+    char    processor_name[ MPI_MAX_PROCESSOR_NAME ];
+    char    tmpfilename[ PATH_STRLEN ];
+    char    data[ MBYTES ]; 
+    double  startwtime, endwtime;
+    int     event1a, event1b;
+    int     myid, numprocs;
+    int     fd, namelen, ii, ierr; 
 
     MPI_Init( &argc, &argv );
     MPI_Comm_size( MPI_COMM_WORLD, &numprocs );
@@ -38,13 +38,14 @@ int main( int argc, char *argv[] )
     event1a = MPE_Log_get_event_number(); 
     event1b = MPE_Log_get_event_number(); 
 
+    startwtime  = 0.0;
     if ( myid == 0 ) {
         MPE_Describe_state( event1a, event1b, "DiskIO", "purple" );
         startwtime = MPI_Wtime();
     }
 
     set_tmpfilename( tmpfilename, myid );
-    int fd = open( tmpfilename, O_RDWR|O_CREAT|O_TRUNC, 0600 );
+    fd = open( tmpfilename, O_RDWR|O_CREAT|O_TRUNC, 0600 );
     if ( fd == -1 ) {
         fprintf( stderr, "open() fails!\n" );
         fflush( stderr );
