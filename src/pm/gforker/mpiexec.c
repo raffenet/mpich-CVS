@@ -49,6 +49,23 @@
    (using one of several approaches, such as taking the maximum of the
    exit statuses).
 
+  Special Case to support Singleton Init:
+  To support a singleton init of a process that then wants to 
+  create processes with MPI_Comm_spawn(_multiple), a special form of
+  mpiexec is supported:
+  
+     mpiexec -pmi_args <port> <interfacename> <securitykey> <pid>
+
+  The singleton process (in a routine in simple_pmi.c) forks a process and
+  execs mpiexe with these arguments, where port is the port to which 
+  mpiexec should connect, interfacename is the name of the network interface
+  (BUG: may not be correctly set as mpd currently ignores it), securitykey
+  is a place-holder for a key used by the singleton init process to verify
+  that the process connecting on the port is the one that was intended, and
+  pid is the pid of the singleton init process.
+
+  FIXME: The above has not been implemented yet.
+
 */
 
 #include "forkerconf.h"
@@ -112,10 +129,18 @@ int main( int argc, char *argv[], char *envp[] )
     /* If there were any soft arguments, we need to handle them now */
     rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
 
+    if (pUniv.fromSingleton) {
+	/* The MPI process is already running.  We create a simple entry
+	   for a single process rather than creating the process */
+	MPIE_SetupSingleton( &pUniv );
+    }
+
     if (MPIE_Debug) MPIE_PrintProcessUniverse( stdout, &pUniv );
 
     DBG_PRINTF( ("timeout_seconds = %d\n", pUniv.timeout) );
 
+    /* Note that a port is required if the singleton init approach
+       is supported */
 #ifdef MPIEXEC_ALLOW_PORT
     /* Establish a host:port for use with the created processes.
        In this code, the major use is to illustrate the use of a port for 
@@ -144,8 +169,14 @@ int main( int argc, char *argv[], char *envp[] )
     s.pmiinfo.pWorld = &pUniv.worlds[0];
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals();
-    MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
-			mypostfork, 0, mypostamble, 0 );
+    if (!pUniv.fromSingleton) {
+	MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
+			    mypostfork, 0, mypostamble, 0 );
+    }
+    else {
+	/* We need to setup the connection to the provided process port */
+	printf( "In singleton init\n" );
+    }
     reason = MPIE_IOLoop( pUniv.timeout );
 
     if (reason == IOLOOP_TIMEOUT) {

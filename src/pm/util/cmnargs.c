@@ -52,9 +52,9 @@
 
  In addition, to enable singleton init, mpiexec should allow
 
-   -pmi_args host port executable
+   -pmi_args port interface-name key pid
 
- mpiexec starts, then connects to the host:port for PMI communication
+ mpiexec starts, then connects to the interface-name:port for PMI communication
 */
 
 /* Internal routines */
@@ -183,6 +183,20 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *pUniv,
 		mpiexec_usage( "Missing argument to -configfile" );
 	    optionCmdline = 1;
 	} 
+/* Here begins the MPICH2 mpiexec extension for singleton init */	
+ 	else if ( strncmp( argv[i], "-pmi_args", 8 ) == 0) {
+	    if (i+4 < argc ) {
+		pUniv->fromSingleton   = 1;
+		pUniv->portKey         = MPIU_Strdup( argv[i+3] );
+		pUniv->singletonIfname = MPIU_Strdup( argv[i+2] );
+		pUniv->singletonPID    = atoi(argv[i+4] );
+		pUniv->singletonPort   = atoi(argv[i+1] );
+		i += 4;
+	    }
+	    else 
+		mpiexec_usage( "Missing argument to -path" );
+	    optionArgs = 1;
+	}
 /* Here begin the MPICH2 mpiexec common extensions for 
     -usize n   - Universe size
     -l         - label stdout/err

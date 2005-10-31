@@ -134,9 +134,19 @@ typedef struct ProcessUniverse {
     int          giveExitInfo;       /* True if info on error exit 
 					should be printed to stderr */
     char         *portName;          /* Contact name for a port for PMI,
-				        if used (null otherwise) */
+				        if used (null otherwise) 
+				        (valid port number, as a string) */
     char         *portRange;         /* Character string defining a range
 				        of valid ports */
+    int          fromSingleton;      /* Set to true if this 
+					universe was created from a singleton
+					init */
+    int          singletonPort;      /* Port number for singleton */
+    char         *singletonIfname;   /* Network interface name of the 
+					singleton's port (usually hostname) */
+    char         *portKey;           /* Option key for confirming the
+					singleton init port */
+    pid_t        singletonPID;       /* PID of singleton inti process */
 } ProcessUniverse;
 
 /* There is only one universe */
@@ -157,6 +167,8 @@ int MPIE_InitWorldWithSoft( ProcessWorld *, int );
 void MPIE_PrintFailureReasons( FILE * );
 int MPIE_WaitForProcesses( ProcessUniverse *, int );
 int MPIE_OnAbend( ProcessUniverse * );
+
+int MPIE_SetupSingleton( ProcessUniverse * );
 
 int MPIE_SignalWorld( ProcessWorld *, int );
 int MPIE_KillWorld( ProcessWorld * );

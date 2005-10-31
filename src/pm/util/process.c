@@ -43,6 +43,11 @@ ProcessUniverse pUniv;
 /* This is the home of the common debug flag */
 int MPIE_Debug = 0;
 
+/* A unique ID for each forked process, up to 2 billion.  This is 
+   global to this file so that MPIE_SetupSingleton and MPIE_ForkProcess
+   can both access it */
+static       int UniqId = 0; 
+
 /* Local, forward references */
 static void MPIE_InstallSigHandler( int sig, void (*handler)(int) );
 
@@ -98,8 +103,6 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
     int          wRank = 0;    /* Rank in this comm world of the process */
     int          i, rc;
     int          nProcess = 0;
-    static       int UniqId = 0; /* A unique ID for each forked process, 
-				    up to 2 billion */
 
     app = pWorld->apps;
     while (app) {
@@ -542,9 +545,10 @@ static void handle_sigchild( int sig )
 void MPIE_ProcessInit( void )
 {
     MPIE_InstallSigHandler( SIGCHLD, handle_sigchild );
-    pUniv.worlds = 0;
-    pUniv.nLive  = 0;
-    pUniv.OnNone = 0;
+    pUniv.worlds        = 0;
+    pUniv.nLive         = 0;
+    pUniv.OnNone        = 0;
+    pUniv.fromSingleton = 0;
 }
 
 /*
@@ -906,4 +910,44 @@ static void MPIE_InstallSigHandler( int sig, void (*handler)(int) )
     /* No way to set up sigchld */
 #error "Unknown signal handling!"
 #endif
+}
+
+/* 
+ * Setup pUniv for a singleton init.  That is a single pWorld with a 
+ * single app containing a single process.
+ * 
+ * Note that MPIE_Args already allocated a pWorld.
+ */
+int MPIE_SetupSingleton( ProcessUniverse *pUniv )
+{
+    ProcessApp   *pApp;
+    ProcessWorld *pWorld;
+    ProcessState *pState;
+
+    pWorld		  = &pUniv->worlds[0];
+    pWorld->nProcess      = 1;
+    pApp		  = (ProcessApp *) MPIU_Malloc( sizeof(ProcessApp) );
+    pApp->nextApp	  = 0;
+    pWorld->nApps	  = 1;
+    pApp->env		  = 0;
+    pApp->exename	  = 0;
+    pApp->arch		  = 0;
+    pApp->path		  = 0;
+    pApp->wdir		  = 0;
+    pApp->hostname	  = 0;
+    pApp->args		  = 0;
+    pApp->nArgs		  = 0;
+    pApp->myAppNum	  = 0;
+    pState		  = (ProcessState *) MPIU_Malloc( sizeof(ProcessState) );
+    pApp->pState	  = pState;
+
+    pState[0].app	  = pApp;
+    pState[0].wRank	  = 0;
+    pState[0].id	  = UniqId++;
+    pState[0].initWithEnv = 0;
+    pState[0].status	  = PROCESS_ALIVE;  /* The process is already running */
+    pState[0].pid	  = pUniv->singletonPID;
+    pState[0].exitStatus.exitReason = EXIT_NOTYET;
+
+    return 0;
 }
