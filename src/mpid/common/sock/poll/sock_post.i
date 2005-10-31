@@ -266,8 +266,8 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr,
     }
     /* --END ERROR HANDLING-- */
     mpi_errno = MPIDU_Sock_post_connect_ifaddr( sock_set, user_ptr, 
-						hostent->h_addr_list[0], port, 
-						sockp );
+			(unsigned char *)hostent->h_addr_list[0], port, 
+			sockp );
  fn_exit:
     return mpi_errno;
 }
