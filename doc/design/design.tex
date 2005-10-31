@@ -393,14 +393,18 @@ MPIR_PARM_GET_INT( "MPICH:SCATTER_THRESHOLD", MPIR_Scatter_threshold,2048 )
 
 This expands into either:
 \begin{verbatim}
-2048 (compile-time only)
-
-MPIR_Scatter_threshold (run-time)
-
+    2048 (compile-time only)
+\end{verbatim}
+or
+\begin{verbatim}
+    MPIR_Scatter_threshold (run-time)
+\end{verbatim}
 or even (runtime, lazy evaluation):
-
-(MPIR_Scatter_threshhold_not_set ? \
-    (MPIR_Scatter_threshhold_not_set=0,MPIR_Scatter_threshold=MPIR_ScatterMPIRParmGetInt("MPICH:SCATTER_THRESHOLD", 2048 )) : MPIR_Scatter_threshhold )
+\begin{verbatim}
+    (MPIR_Scatter_threshhold_not_set ? \
+        (MPIR_Scatter_threshhold_not_set=1,\
+        MPIR_Scatter_threshold=MPIR_ScatterMPIRParmGetInt(\
+          "MPICH:SCATTER_THRESHOLD", 2048 )) : MPIR_Scatter_threshhold )
 \end{verbatim}
 
 The name (the first argument) is provided to allow for consistency
@@ -423,7 +427,12 @@ with) the error message extraction to synthesize the
 \texttt{MPIR\_Parm\_register\_collective()} routine.  This would be requried to
 address goal 7 above.  An alternative would be to simply detect an
 inconsistency by having a program read the source code and check that
-the registration and use calls match.
+the registration and use calls match.  
+
+The script
+\texttt{maint/extractstrings}, combined with code similar to that for 
+error messages in \texttt{maint/extracterrmsgs}, can be used to
+automate the collection of registration information from the source code.
 % ---
 % Old text from December 2004
 %% 1) Control of parameterization 
