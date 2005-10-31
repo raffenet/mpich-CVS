@@ -267,6 +267,10 @@ Fortran integer (value is %ld)
 **startup %s:Error on startup: reason is %s
 **attrcopy:User defined attribute copy routine returned a non-zero return code
 **attrcopy %d:User defined attribute copy routine returned a non-zero return code %d
+**attrnotptr:The attribute value is not the address of a pointer or \
+ pointer-sized integer.  A common error is to pass the address of an integer \
+ to any of the MPI_Xxx_get_attr routines on systems where the size of a \
+ pointer is larger than the size of an integer.
 **intern:Internal MPI error!
 **intern %s:Internal MPI error!  %s
 **internrc:Internal MPI error!  Unexpected return code from internal function.
