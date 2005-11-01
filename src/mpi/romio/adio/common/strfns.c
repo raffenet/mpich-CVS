@@ -163,6 +163,8 @@ char *ADIOI_Strdup( const char *str )
  * We need an snprintf replacement for systems without one
  */
 #ifndef HAVE_SNPRINTF
+/* FIXME: Really need a check for varargs.h vs stdarg.h */
+#include <stdarg.h>
 /* 
  * This is an approximate form which is suitable for most uses within
  * the MPICH code
