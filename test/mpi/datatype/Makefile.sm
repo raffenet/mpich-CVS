@@ -8,6 +8,8 @@ contents_SOURCES = contents.c
 
 struct-pack_SOURCES = struct-pack.c
 
+struct-empty-el_SOURCES = struct-empty-el.c
+
 simple-resized_SOURCES = simple-resized.c
 
 triangular-pack_SOURCES = triangular-pack.c
