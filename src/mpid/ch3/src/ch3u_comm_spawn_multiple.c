@@ -153,6 +153,10 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	}
 	/* --END ERROR HANDLING-- */
 
+	/* initialize them to 0 */
+	for (i=0; i<total_num_processes; i++)
+	    pmi_errcodes[i] = 0;
+
 	/* Open a port for the spawned processes to connect to */
 	/* FIXME: info may be needed for port name */
         mpi_errno = MPID_Open_port(NULL, port_name);
@@ -179,6 +183,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
                                        info_keyval_vectors, 1, 
                                        &preput_keyval_vector,
                                        pmi_errcodes);
+
 	/* --BEGIN ERROR HANDLING-- */
         if (mpi_errno != PMI_SUCCESS)
         {
