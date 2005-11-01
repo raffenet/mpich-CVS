@@ -38,7 +38,7 @@ int MPID_Type_vector(int count,
 {
     int err, mpi_errno = MPI_SUCCESS;
     int is_builtin, old_is_contig;
-    MPI_Aint el_sz;
+    MPI_Aint el_sz, old_sz;
     MPI_Datatype el_type;
     MPI_Aint old_lb, old_ub, old_extent, old_true_lb, old_true_ub, eff_stride;
 
@@ -139,6 +139,7 @@ int MPID_Type_vector(int count,
 	old_true_lb   = 0;
 	old_ub        = el_sz;
 	old_true_ub   = el_sz;
+	old_sz        = el_sz;
 	old_extent    = el_sz;
 	old_is_contig = 1;
 
@@ -164,6 +165,7 @@ int MPID_Type_vector(int count,
 	old_true_lb   = old_dtp->true_lb;
 	old_ub        = old_dtp->ub;
 	old_true_ub   = old_dtp->true_ub;
+	old_sz        = old_dtp->size;
 	old_extent    = old_dtp->extent;
 	old_is_contig = old_dtp->is_contig;
 
@@ -192,13 +194,19 @@ int MPID_Type_vector(int count,
     new_dtp->true_ub = new_dtp->ub + (old_true_ub - old_ub);
     new_dtp->extent  = new_dtp->ub - new_dtp->lb;
 
-    /* new type is only contig for N types if old one was and
-     * size and extent of new type are equivalent.
-     *
-     * Q: is this really stringent enough?  is there an overlap case
-     *    for which this would fail?
+    /* new type is only contig for N types if old one was, and
+     * size and extent of new type are equivalent, and stride is
+     * equal to blocklength * size of old type.
      */
-    new_dtp->is_contig = (new_dtp->size == new_dtp->extent) ? old_is_contig : 0;
+    if (new_dtp->size == new_dtp->extent &&
+	eff_stride == blocklength * old_sz &&
+	old_is_contig)
+    {
+	new_dtp->is_contig = 1;
+    }
+    else {
+	new_dtp->is_contig = 0;
+    }
 
     /* fill in dataloop(s) */
     err = MPID_Dataloop_create_vector(count,

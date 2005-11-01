@@ -74,7 +74,7 @@ int MPID_Type_struct(int count,
 		     MPI_Datatype *newtype)
 {
     int err, mpi_errno = MPI_SUCCESS;
-    int i, old_are_contig = 1;
+    int i, old_are_contig = 1, definitely_not_contig = 0;
     int found_sticky_lb = 0, found_sticky_ub = 0, found_true_lb = 0,
 	found_true_ub = 0, found_el_type = 0;
     int el_sz = 0, size = 0;
@@ -289,7 +289,11 @@ int MPID_Type_struct(int count,
 	    }
 	}
 
-	/* keep lowest true lb and highest true ub */
+	/* keep lowest true lb and highest true ub
+	 * 
+	 * note: checking for contiguity at the same time, to avoid
+	 *       yet another pass over the arrays
+	 */
 	if (oldtype_array[i] != MPI_UB && oldtype_array[i] != MPI_LB)
 	{
 	    if (!found_true_lb)
@@ -299,8 +303,11 @@ int MPID_Type_struct(int count,
 	    }
 	    else if (true_lb_disp > tmp_true_lb)
 	    {
+		/* element starts before previous */
 		true_lb_disp = tmp_true_lb;
+		definitely_not_contig = 1;
 	    }
+
 	    if (!found_true_ub)
 	    {
 		found_true_ub = 1;
@@ -309,6 +316,10 @@ int MPID_Type_struct(int count,
 	    else if (true_ub_disp < tmp_true_ub)
 	    {
 		true_ub_disp = tmp_true_ub;
+	    }
+	    else {
+		/* element ends before previous ended */
+		definitely_not_contig = 1;
 	    }
 	}
 
@@ -348,9 +359,11 @@ int MPID_Type_struct(int count,
     new_dtp->size = size;
 
     /* new type is contig for N types if its size and extent are the
-     * same, and the old type was also contiguous
+     * same, and the old type was also contiguous, and we didn't see
+     * something noncontiguous based on true ub/ub.
      */
-    if ((new_dtp->size == new_dtp->extent) && old_are_contig)
+    if ((new_dtp->size == new_dtp->extent) && old_are_contig &&
+	(! definitely_not_contig))
     {
 	new_dtp->is_contig = 1;
     }
