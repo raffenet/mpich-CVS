@@ -351,6 +351,16 @@ int PMIServInit( int (*spawner)(ProcessWorld *, void*), void * spawnerData )
     return 0;
 }
 
+/*
+ * Set the debug flag for the pmiserver routines.  Returns the old
+ * value of the flag.  0 turns off debugging, non-zero turns it on.
+ */
+int PMISetDebug( int flag )
+{
+    int oldflag = pmidebug;
+    pmidebug = flag;
+    return oldflag;
+}
 /* ------------------------------------------------------------------------ */
 /* Additional service routines                                              */
 /* ------------------------------------------------------------------------ */
@@ -1202,6 +1212,8 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
  *    How do we handle soft (no specific return size required).
  *    Also, is part fo the group associated with these processes or
  *    another group (the spawner?) of processes?
+ *
+ * This should be called after receiving the cmd=initack from the client.
  */
 void PMI_Init_remote_proc( int fd, PMIProcess *pentry )
 {
@@ -1258,7 +1270,6 @@ static int fPMIInfoKey( ProcessApp *app, const char key[], const char val[] )
     }
     return 0;
 }
-
 
 /* ------------------------------------------------------------------------- */
 #ifndef PMIWriteLine

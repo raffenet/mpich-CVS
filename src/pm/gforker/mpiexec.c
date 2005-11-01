@@ -174,8 +174,30 @@ int main( int argc, char *argv[], char *envp[] )
 			    mypostfork, 0, mypostamble, 0 );
     }
     else {
+	int newfd;
+	PMIProcess *pmiprocess = 0;
+	ProcessState *pState = 0;
 	/* We need to setup the connection to the provided process port */
-	printf( "In singleton init\n" );
+	/* In the ForkProcesses version, the routine "mypreamble"
+	   manages the creation of the PMI listener socket for 
+	   a connection back from the created process.  In this
+	   version, we complete that connection by connecting directly
+	   to the already-running process */
+	newfd = MPIE_ConnectToPort( pUniv.singletonIfname, 
+				    pUniv.singletonPort );
+	if (newfd < 0) {
+	    /* Unable to connect */
+	    MPIU_Error_printf( "Unable to connect to singleton process" );
+	    exit(1);
+	}
+	pState = pUniv.worlds[0].apps->pState;
+	/* FIXME: The following should be a single routine in pmiport */
+	pmiprocess = PMISetupNewProcess( newfd, pState );
+	PMI_Init_port_connection( newfd );
+	PMI_Init_remote_proc( newfd, pmiprocess );
+	printf( "Done with init_remote_proc\n" );
+	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, 
+			 pmiprocess );
     }
     reason = MPIE_IOLoop( pUniv.timeout );
 

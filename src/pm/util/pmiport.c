@@ -55,7 +55,9 @@ static int listenfd = -1;
 /* Return -1 on error                                                      */
 /* ----------------------------------------------------------------------- */
 #include <errno.h>
+/* sockaddr_in (Internet) */
 #include <netinet/in.h>
+/* TCP_NODELAY */
 #include <netinet/tcp.h>
 #include <fcntl.h>
 /* This is really IP!? */
@@ -173,6 +175,7 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
     return 0;
 }
 
+/* defs of gethostbyname */
 #include <netdb.h>
 int MPIE_GetMyHostName( char myname[MAX_HOST_NAME+1], int namelen )
 {
@@ -314,4 +317,83 @@ int PMIServEndPort( )
 {
     MPIE_IODeregister( listenfd );
     return 0;
+}
+/* ------------------------------------------------------------------------- */
+/*
+ * This code allows mpiexec to connect back to a program in the
+ * singleton init case.  This routine essentially identical to 
+ * PMII_Connect_to_pm( char *hostname, int portnum ) in simple_pmi.c 
+ */
+#include <sys/param.h>
+
+/* sockaddr_un (Unix) */
+#include <sys/un.h>
+
+/* This routine blocks until connected to the indicated host (by
+   interface name) and port.  It returns the fd, or -1 on failure */
+int MPIE_ConnectToPort( char *hostname, int portnum )
+{
+    struct hostent     *hp;
+    struct sockaddr_in sa;
+    int                fd;
+    int                optval = 1;
+    int                q_wait = 1;
+    char defaultHostname[MAX_HOST_NAME+1];
+    
+    
+    DBG_PRINTF( ("Connecting to %s:%d\n", hostname, portnum ) );
+    /* FIXME: simple_pmi should *never* start mpiexec with a bogus
+       interface name */
+    if (strcmp(hostname,"default_interface") == 0) {
+	defaultHostname[0] = 0;
+	MPIE_GetMyHostName( defaultHostname, sizeof(defaultHostname) );
+	hostname = defaultHostname;
+	DBG_PRINTF( ( "Connecting to %s:%d\n", hostname, portnum ) );
+    }
+    hp = gethostbyname( hostname );
+    if (!hp) {
+	return -1;
+    }
+    
+    bzero( (void *)&sa, sizeof(sa) );
+    bcopy( (void *)hp->h_addr_list[0], (void *)&sa.sin_addr, hp->h_length);
+    sa.sin_family = hp->h_addrtype;
+    sa.sin_port   = htons( (unsigned short) portnum );
+    
+    fd = socket( AF_INET, SOCK_STREAM, TCP );
+    if (fd < 0) {
+	return -1;
+    }
+    
+    if (setsockopt( fd, IPPROTO_TCP, TCP_NODELAY, 
+		    (char *)&optval, sizeof(optval) )) {
+	perror( "Error calling setsockopt:" );
+    }
+
+    /* We wait here for the connection to succeed */
+    if (connect( fd, (struct sockaddr *)&sa, sizeof(sa) ) < 0) {
+	switch (errno) {
+	case ECONNREFUSED:
+	    /* (close socket, get new socket, try again) */
+	    if (q_wait)
+		close(fd);
+	    return -1;
+	    
+	case EINPROGRESS: /*  (nonblocking) - select for writing. */
+	    break;
+	    
+	case EISCONN: /*  (already connected) */
+	    break;
+	    
+	case ETIMEDOUT: /* timed out */
+	    return -1;
+
+	default:
+	    return -1;
+	}
+    }
+
+    /* The first message must also be received: cmd=initack */
+    
+    return fd;
 }

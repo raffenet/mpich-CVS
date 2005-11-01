@@ -359,7 +359,9 @@ int MPIE_CheckEnv( ProcessUniverse *pUniv,
     pUniv->timeout = GetIntValue( "MPIEXEC_TIMEOUT", -1 );
 
     if (getenv( "MPIEXEC_DEBUG" )) {
+	/* Any value of MPIEXEC_DEBUG turns on debugging */
 	MPIE_Debug = 1;
+	PMISetDebug( 1 );
     }
 
     if (processEnv) {

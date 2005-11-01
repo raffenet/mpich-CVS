@@ -118,8 +118,13 @@ int PMIServAcceptFromPort( int, int, void * );
 int PMIServSetupPort( ProcessUniverse *, char *, int );
 int MPIE_GetMyHostName( char myname[], int );
 
+int PMISetDebug( int );
+
 /* Should the following be an internal-only routine? */
 int PMIGetCommand( char *cmd, int cmdlen );
+
+/* define PMIWriteLine to use replace the routines that read and write to
+   the PMI socket */
 #ifndef PMIWriteLine
 int PMIWriteLine( int, const char * );
 int PMIReadLine( int, char *, int );

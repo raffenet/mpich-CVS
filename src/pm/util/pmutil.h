@@ -25,7 +25,10 @@ void MPIE_CreateNewSession( void );
 /* Debug value */
 extern int MPIE_Debug;
 
-/* #define HAVE_DEBUGGING */
+/* For mpiexec, we should normally enable debugging.  Comment out this
+   definition of HAVE_DEBUGGING if you want to leave these out of the code */
+#define HAVE_DEBUGGING
+
 #ifdef HAVE_DEBUGGING
 #define DBG_COND(cond,stmt) {if (cond) { stmt;}}
 #else

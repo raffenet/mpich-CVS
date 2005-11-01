@@ -929,6 +929,8 @@ int MPIE_SetupSingleton( ProcessUniverse *pUniv )
     pApp		  = (ProcessApp *) MPIU_Malloc( sizeof(ProcessApp) );
     pApp->nextApp	  = 0;
     pWorld->nApps	  = 1;
+    pWorld->apps          = pApp;
+    pApp->nProcess        = 1;
     pApp->env		  = 0;
     pApp->exename	  = 0;
     pApp->arch		  = 0;
