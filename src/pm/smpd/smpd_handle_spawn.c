@@ -6,7 +6,7 @@
 
 #include "smpd.h"
 #ifdef HAVE_CTYPE_H
-#incluee <ctype.h>
+#include <ctype.h>
 #endif
 
 SMPD_BOOL smpd_isnumbers_with_colon(const char *str)
