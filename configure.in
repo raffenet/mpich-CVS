@@ -1184,29 +1184,30 @@ EOF
     bindings_dirs="$bindings_dirs src/binding/f77"
     AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
 
-    dnl By modifying mpif.h to use ! for comments, it can work with many f90 
-    dnl compilers without creating a separate version.  
-    dnl Note that this is run AFTER the AC_OUTPUT actions
-    AC_OUTPUT_COMMANDS([if test $enable_f77 = yes ; then 
-    chmod a+x src/env/mpif77
-    if test "$has_exclaim" = "yes" ; then
-        sed -e 's/^C/\!/g' src/binding/f77/mpif.h > src/include/mpif.h
-	cp src/include/mpif.h src/binding/f77/mpif.h
-    else
-        cp src/binding/f77/mpif.h src/include
-    fi
-    if test ! -d bin  ; then mkdir bin ; fi 
-    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
-       -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif77 > bin/mpif77 ;
-    chmod a+x bin/mpif77
-    else
-        rm -f src/env/mpif77 src/env/mpif77.conf
-    fi],
-        enable_f77=$enable_f77
-        has_exclaim=$has_exclaim
-        includebuild_dir=$includebuild_dir
-        libbuild_dir=$libbuild_dir)
 fi
+
+dnl By modifying mpif.h to use ! for comments, it can work with many f90 
+dnl compilers without creating a separate version.  
+dnl Note that this is run AFTER the AC_OUTPUT actions
+AC_OUTPUT_COMMANDS([if test $enable_f77 = yes ; then 
+chmod a+x src/env/mpif77
+if test "$has_exclaim" = "yes" ; then
+    sed -e 's/^C/\!/g' src/binding/f77/mpif.h > src/include/mpif.h
+	cp src/include/mpif.h src/binding/f77/mpif.h
+else
+    cp src/binding/f77/mpif.h src/include
+fi
+if test ! -d bin  ; then mkdir bin ; fi 
+sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+   -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif77 > bin/mpif77 ;
+chmod a+x bin/mpif77
+else
+    rm -f src/env/mpif77 src/env/mpif77.conf
+fi],
+enable_f77=$enable_f77
+has_exclaim=$has_exclaim
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir)
 
 if test "$enable_f90" = "yes" ; then
     if test "$enable_f77" != "yes" ; then
@@ -1329,26 +1330,27 @@ EOF
     fi
     # ------------------------------------------------
 
-    # Note that we don't install mpif.h into src/include, since this
-    # is done by the Fortran 77 step (if you replace it, make sure that
-    # you include the replacement of C with ! as the comment marker
-    # where possible.
-    AC_OUTPUT_COMMANDS([if test $enable_f90 = yes ; then 
-    chmod a+x src/env/mpif90
-    if test ! -d bin  ; then mkdir bin ; fi 
-    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
-        -e 's%modincdir=.*%modincdir='$modincbuild_dir% \
-        -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif90 > bin/mpif90 ;
-    chmod a+x bin/mpif90 
-    else
-        rm -f src/env/mpif90 src/env/mpif90.conf
-    fi],
-        enable_f90=$enable_f90
-        modincbuild_dir=$modincbuild_dir
-        includebuild_dir=$includebuild_dir
-        libbuild_dir=$libbuild_dir)
 
 fi
+
+# Note that we don't install mpif.h into src/include, since this
+# is done by the Fortran 77 step (if you replace it, make sure that
+# you include the replacement of C with ! as the comment marker
+# where possible.
+AC_OUTPUT_COMMANDS([if test $enable_f90 = yes ; then 
+chmod a+x src/env/mpif90
+if test ! -d bin  ; then mkdir bin ; fi 
+sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+    -e 's%modincdir=.*%modincdir='$modincbuild_dir% \
+    -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif90 > bin/mpif90 ;
+chmod a+x bin/mpif90 
+else
+    rm -f src/env/mpif90 src/env/mpif90.conf
+fi],
+enable_f90=$enable_f90
+modincbuild_dir=$modincbuild_dir
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir)
 
 # By default, only build C++ if there is a C++ compiler (if we don't 
 # test here, the configure can fail if there is no C++ compiler available)
@@ -1432,20 +1434,6 @@ if test "$enable_cxx" = "yes" ; then
 	;;
     esac
 
-    # Copy the mpicxx.h file to the main include directory
-    AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
-    chmod a+x src/env/mpicxx 
-    cp src/binding/cxx/mpicxx.h src/include 
-    if test ! -d bin  ; then mkdir bin ; fi 
-    sed -e 's%includedir=.*%includedir='$includebuild_dir% \
-        -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpicxx > bin/mpicxx ;
-    chmod a+x bin/mpicxx
-    else
-        rm -f src/env/mpicxx src/env/mpicxx.conf
-    fi],
-    enable_cxx=$enable_cxx
-    includebuild_dir=$includebuild_dir
-    libbuild_dir=$libbuild_dir)
 
     bindings="$bindings cxx"
     bindings_dirs="$bindings_dirs src/binding/cxx"
@@ -1453,6 +1441,20 @@ if test "$enable_cxx" = "yes" ; then
     INCLUDE_MPICXX_H='#include "mpicxx.h"'
     AC_SUBST(INCLUDE_MPICXX_H)
 fi
+# Copy the mpicxx.h file to the main include directory
+AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
+chmod a+x src/env/mpicxx 
+cp src/binding/cxx/mpicxx.h src/include 
+if test ! -d bin  ; then mkdir bin ; fi 
+sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+    -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpicxx > bin/mpicxx ;
+chmod a+x bin/mpicxx
+else
+    rm -f src/env/mpicxx src/env/mpicxx.conf
+fi],
+enable_cxx=$enable_cxx
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir)
 
 AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
