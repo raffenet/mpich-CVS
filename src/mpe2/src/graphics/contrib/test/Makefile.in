@@ -24,6 +24,7 @@ F_INCS               = @FINC_PATH_LEADER@$(MPE_INCDIR) $(MPI_INC)
 LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 RM                   = @RM@ 
+MPE_OUTFILE          = mpe2_graphics_test.txt
 
 ### End User configurable options ###
 
@@ -62,46 +63,55 @@ linktest: linktest_C
 
 linktest_C: 
 	@-echo ; \
-	echo "** Testing if C program can be linked with animation library..." ; \
+	echo -n "*** Link C program with the MPI animation library ........................ " ; \
 	$(RM) -f cpi_anim@EXEEXT@ ; \
-	$(MAKE) cpi_anim@EXEEXT@ ; \
+	$(MAKE) cpi_anim@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpi_anim@EXEEXT@ ; then \
-	    echo "** C program can be linked with animation library." ; \
+	    echo "Yes." ; \
 	    $(RM) -f cpi_anim@EXEEXT@ ; \
 	else \
-	    echo "** C program CANNOT be linked with animation library." ; \
-	fi
+	    echo "No." ; \
+	    echo "    The failed command: " ; \
+	    cat $(MPE_OUTFILE) ; \
+	fi ; \
+	$(RM) -f $(MPE_OUTFILE)
 	@-echo ; \
-	echo "** Testing if C program can be linked with graphics library..." ; \
+	echo -n "*** Link C program with the X11 graphics library ......................... " ; \
 	$(RM) -f cxgraphics@EXEEXT@ ; \
-	$(MAKE) cxgraphics@EXEEXT@ ; \
+	$(MAKE) cxgraphics@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cxgraphics@EXEEXT@ ; then \
-	    echo "** C program can be linked with graphics library." ; \
+	    echo "Yes." ; \
 	    $(RM) -f cxgraphics@EXEEXT@ ; \
 	else \
-	    echo "** C program CANNOT be linked with graphics library." ; \
+	    echo "No." ; \
+	    echo "    The failed command: " ; \
+	    cat $(MPE_OUTFILE) ; \
 	fi ; \
-	echo
-	@-$(MAKE) clean
+	$(RM) -f $(MPE_OUTFILE)
+	@-echo ; $(MAKE) clean
 
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	      echo ; \
-	      echo "** Testing if Fortran77 program can be linked with graphics library..." ; \
+	      echo -n "** Link F77 program with the X11 graphics library ........................ " ; \
 	      $(RM) -f fxgraphics@EXEEXT@ ; \
-	      $(MAKE) fxgraphics@EXEEXT@ ; \
+	      $(MAKE) fxgraphics@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	      if test -x fxgraphics@EXEEXT@ ; then \
-	          echo "** Fortran77 program can be linked with graphics library." ; \
+	          echo "Yes." ; \
 	          $(RM) -f fxgraphics@EXEEXT@ ; \
 	      else \
-	          echo "** Fortran77 program CANNOT be linked with graphics library." ; \
+	          echo "No." ; \
+	          echo "    The failed command: " ; \
+	          cat $(MPE_OUTFILE) ; \
 	      fi ; \
-	      echo ; \
+	      $(RM) -f $(MPE_OUTFILE) ; \
 	      $(MAKE) clean ; \
+	      echo ; \
 	  fi
 
 clean:
 	@-$(RM) -f work.pc work.pcl
+	@-$(RM) -f $(MPE_OUTFILE)
 	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS)
 	@-$(RM) -f cpi_anim@EXEEXT@ cxgraphics@EXEEXT@ fxgraphics@EXEEXT@
 

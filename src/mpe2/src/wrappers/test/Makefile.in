@@ -32,6 +32,7 @@ F_INCS               = @FINC_PATH_LEADER@$(MPE_INCDIR) $(MPI_INC)
 LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 RM                   = @RM@
+MPE_OUTFILE          = mpe2_wrappers_test.txt
 
 ### End User configurable options ###
 
@@ -132,57 +133,69 @@ linktest: linktest_C
 
 linktest_C: 
 	@-echo ; \
-	echo "** Testing if C program can be linked with MPI tracing library..." ; \
+	echo -n "*** Link C program with the MPI tracing library .......................... " ; \
 	$(RM) -f cpi_trace@EXEEXT@ ; \
-	$(MAKE) cpi_trace@EXEEXT@ ; \
+	$(MAKE) cpi_trace@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpi_trace@EXEEXT@ ; then \
-	    echo "** C program can be linked with MPI tracing library." ; \
+	    echo "Yes." ; \
 	    $(RM) -f cpi_trace@EXEEXT@ ; \
 	else \
-	    echo "** C program CANNOT be linked with MPI tracing library." ; \
-	fi 
+	    echo "No." ; \
+	    echo "    The failed command: " ; \
+	    cat $(MPE_OUTFILE) ; \
+	fi ; \
+	$(RM) -f $(MPE_OUTFILE )
 	@-echo ; \
-	echo "** Testing if C program can be linked with MPI logging library..." ; \
+	echo -n "*** Link C program with the MPI logging library .......................... " ; \
 	$(RM) -f cpi_log@EXEEXT@ ; \
-	$(MAKE) cpi_log@EXEEXT@ ; \
+	$(MAKE) cpi_log@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpi_log@EXEEXT@ ; then \
-	    echo "** C program can be linked with MPI logging library." ; \
+	    echo "Yes." ; \
 	    $(RM) -f cpi_log@EXEEXT@ ; \
 	else \
-	    echo "** C program CANNOT be linked with MPI logging library." ; \
-	fi 
+	    echo "No." ; \
+	    echo "    The failed command: " ; \
+	    cat $(MPE_OUTFILE) ; \
+	fi ; \
+	$(RM) -f $(MPE_OUTFILE )
 	@-echo ; \
-	echo "** Testing if C program can do both MPI and manual logging together..." ; \
+	echo -n "*** Link C program with the MPI and manual logging libraries ............. " ; \
 	$(RM) -f cpilog@EXEEXT@ ; \
-	$(MAKE) cpilog@EXEEXT@ ; \
+	$(MAKE) cpilog@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpilog@EXEEXT@ ; then \
-	    echo "** C program can do both MPI and manual logging together." ; \
+	    echo "Yes." ; \
 	    $(RM) -f cpilog@EXEEXT@ ; \
 	else \
-	    echo "** C program CANNOT do both MPI and manual logging together." ; \
+	    echo "No." ; \
+	    echo "    The failed command: " ; \
+	    cat $(MPE_OUTFILE) ; \
 	fi ; \
-	echo
-	@-$(MAKE) clean
+	$(RM) -f $(MPE_OUTFILE )
+	@-echo ; $(MAKE) clean
 
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	    echo ; \
-	    echo "** Testing if Fortran77 program can do both MPI and manual logging together..." ; \
+	    echo -n "*** Link F77 program with the MPI and manual logging libraries ........... " ; \
 	    $(RM) -f fpilog@EXEEXT@ ; \
-	    $(MAKE) fpilog@EXEEXT@ ; \
+	    $(MAKE) fpilog@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	    if test -x fpilog@EXEEXT@ ; then \
-	        echo "** Fortran77 program can do both MPI and manual logging together." ; \
+	        echo "Yes." ; \
 	        $(RM) -f fpilog@EXEEXT@ ; \
 	    else \
-	        echo "** Fortran77 program CANNOT do both MPI and manual logging together." ; \
+	        echo "No." ; \
+	        echo "    The failed command: " ; \
+	        cat $(MPE_OUTFILE) ; \
 	    fi ; \
-	    echo ; \
+	    $(RM) -f $(MPE_OUTFILE ) ; \
 	    $(MAKE) clean ; \
+	    echo ; \
 	  fi
 
 clean:
 	@-$(RM) -f work.pc work.pcl
-	@-$(RM) -f *.@OBJEXT@ *.n@OBJEXT@ *~ PI* mpe2tmp.f
+	@-$(RM) -f *.@OBJEXT@ *.n@OBJEXT@ *~ PI*
+	@-$(RM) -f mpe2tmp.f $(MPE_OUTFILE)
 	@-$(RM) -f $(C_EXECS) $(F_EXECS)
 	@-$(RM) -f $(EXTRA_C_EXECS) $(EXTRA_F_EXECS)
 	@-$(RM) -f *.clog2 *.slog2
