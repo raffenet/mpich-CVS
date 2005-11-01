@@ -91,6 +91,9 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
     /* browse the old types and characterize */
     for (i=0; i < count; i++)
     {
+	/* ignore type elements with a zero blklen */
+	if (blklens[i] == 0) continue;
+
 	if (oldtypes[i] != MPI_LB && oldtypes[i] != MPI_UB)
 	{
 	    int is_builtin;
@@ -243,6 +246,9 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
     /* scan through types and gather derived type info */
     for (i=0; i < count; i++)
     {
+	/* ignore type elements with a zero blklen */
+	if (blklens[i] == 0) continue;
+
 	if (HANDLE_GET_KIND(oldtypes[i]) != HANDLE_KIND_BUILTIN)
 	{
 	    int tmp_loop_depth, tmp_loop_sz;
@@ -303,6 +309,9 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
     for (i=0, loop_idx = 0; i < count; i++)
     {
 	int is_builtin;
+
+	/* ignore type elements with a zero blklen */
+	if (blklens[i] == 0) continue;
 
 	is_builtin = (DLOOP_Handle_hasloop_macro(oldtypes[i])) ? 0 : 1;
 
@@ -425,7 +434,7 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
 
     for (i=type_pos; i < count; i++)
     {
-	if (oldtypes[i] == oldtypes[type_pos])
+	if (oldtypes[i] == oldtypes[type_pos] && blklens != 0)
 	{
 	    tmp_blklens[cur_pos] = blklens[i];
 	    tmp_disps[cur_pos]   = disps[i];
@@ -483,7 +492,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 
     for (i=0; i < count; i++)
     {
-	if (oldtypes[i] != MPI_LB && oldtypes[i] != MPI_UB)
+	if (oldtypes[i] != MPI_LB && oldtypes[i] != MPI_UB && blklens[i] != 0)
 	{
 	    int sz = MPID_Datatype_get_basic_size(oldtypes[i]);
 
@@ -536,7 +545,10 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     for (i=0; i < count; i++)
     {
 	int is_basic;
-	    
+
+	/* ignore type elements with a zero blklen */
+	if (blklens[i] == 0) continue;
+
 	is_basic = (DLOOP_Handle_hasloop_macro(oldtypes[i])) ? 0 : 1;
 
 	if (is_basic && (oldtypes[i] != MPI_LB &&
@@ -604,7 +616,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	 * Note that we're going to get back values in bytes, so that will
 	 * be our new element type.
 	 */
-	if (oldtypes[i] != MPI_UB && oldtypes[i] != MPI_LB)
+	if (oldtypes[i] != MPI_UB && oldtypes[i] != MPI_LB && blklens[i] != 0)
 	{
 	    PREPEND_PREFIX(Segment_init)((char *) disps[i],
 					 blklens[i],

@@ -76,7 +76,7 @@ int MPID_Type_struct(int count,
     int err, mpi_errno = MPI_SUCCESS;
     int i, old_are_contig = 1;
     int found_sticky_lb = 0, found_sticky_ub = 0, found_true_lb = 0,
-	found_true_ub = 0;
+	found_true_ub = 0, found_el_type = 0;
     int el_sz = 0, size = 0;
     MPI_Datatype el_type = MPI_DATATYPE_NULL;
     MPI_Aint true_lb_disp = 0, true_ub_disp = 0, sticky_lb_disp = 0,
@@ -116,14 +116,19 @@ int MPID_Type_struct(int count,
     new_dtp->name[0]      = 0;
     new_dtp->contents     = NULL;
 
-    new_dtp->dataloop_size       = -1;
+    new_dtp->dataloop_size  = -1;
     new_dtp->dataloop       = NULL;
     new_dtp->dataloop_depth = -1;
 
-    if (count == 0)
+    /* check for junk struct with all zero blocks */
+    for (i=0; i < count; i++) if (blocklength_array[i] != 0) break;
+
+    if (count == 0 || i == count)
     {
 	/* we are interpreting the standard here based on the fact that
 	 * with a zero count there is nothing in the typemap.
+	 *
+	 * we do the same thing for a type with all zero blocks.
 	 *
 	 * we handle this case explicitly to get it out of the way.
 	 */
@@ -190,6 +195,11 @@ int MPID_Type_struct(int count,
 	MPI_Datatype tmp_el_type;
 	MPID_Datatype *old_dtp = NULL;
 
+	/* Interpreting typemap to not include 0 blklen things, including
+	 * MPI_LB and MPI_UB. -- Rob Ross, 10/31/2005
+	 */
+	if (blocklength_array[i] == 0) continue;
+
 	if (is_builtin)
 	{
 	    /* Q: DO LB or UBs count in element counts? */
@@ -229,21 +239,24 @@ int MPID_Type_struct(int count,
 	}
 
 	/* element size and type */
-	if (i == 0)
+	if (oldtype_array[i] != MPI_LB && oldtype_array[i] != MPI_UB)
 	{
-	    el_sz = tmp_el_sz;
-	    el_type = tmp_el_type;
-	}
-	else if (el_sz != tmp_el_sz)
-	{
-	    /* Q: should LB and UB have any effect here? */
-	    el_sz = -1;
-	    el_type = MPI_DATATYPE_NULL;
-	}
-	else if (el_type != tmp_el_type)
-	{
-	    /* Q: should we set el_sz = -1 even though the same? */
-	    el_type = MPI_DATATYPE_NULL;
+	    if (found_el_type == 0)
+	    {
+		el_sz         = tmp_el_sz;
+		el_type       = tmp_el_type;
+		found_el_type = 1;
+	    }
+	    else if (el_sz != tmp_el_sz)
+	    {
+		el_sz = -1;
+		el_type = MPI_DATATYPE_NULL;
+	    }
+	    else if (el_type != tmp_el_type)
+	    {
+		/* Q: should we set el_sz = -1 even though the same? */
+		el_type = MPI_DATATYPE_NULL;
+	    }
 	}
 
 	/* keep lowest sticky lb */

@@ -421,7 +421,7 @@ void MPIDU_Datatype_debug(MPI_Datatype type,
 
     MPID_Datatype_get_ptr(type, dtp);
 
-    MPIU_dbg_printf("# Size = %d, Extent = %d, LB = %d%s, UB = %d%s, Extent = %d, %s\n",
+    MPIU_dbg_printf("# Size = %d, Extent = %d, LB = %d%s, UB = %d%s, Extent = %d, Element Size = %d (%s), %s\n",
 		    (int) dtp->size,
 		    (int) dtp->extent,
 		    (int) dtp->lb,
@@ -429,6 +429,9 @@ void MPIDU_Datatype_debug(MPI_Datatype type,
 		    (int) dtp->ub,
 		    (dtp->has_sticky_ub) ? "(sticky)" : "",
 		    (int) dtp->extent,
+		    (int) dtp->element_size,
+		    dtp->element_size == -1 ? "multiple types" :
+		    MPIDU_Datatype_builtin_to_string(dtp->eltype),
 		    dtp->is_contig ? "is N contig" : "is not N contig");
 
     MPIU_dbg_printf("# Contents:\n");
