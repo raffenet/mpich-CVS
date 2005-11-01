@@ -177,3 +177,9 @@ Other ways to control the placement of processes are by direct use of
 arguments to \texttt{mpiexec}.  See the 
 \href{http://www-unix.mcs.anl.gov/mpi/mpich2/downloads/mpich2-doc-user.pdf}{Users Guide}.
 
+%% Heading: Q: On Windows, I get an error when I attempt to call \texttt{MPI\_Comm\_spawn}.
+%% Filename: windows-spawn
+%% End
+A: On Windows, you need to start the program with \texttt{mpiexec} for
+any of the MPI-2 dynamic process functions to work.
+
