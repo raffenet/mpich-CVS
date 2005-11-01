@@ -92,7 +92,7 @@ def mpiexec():
     try:
         hostinfo = socket.gethostbyname_ex(myHost)
     except:
-        print 'mpd failed: gethostbyname_ex failed for %s' % (myHost)
+        print 'mpiexec failed: gethostbyname_ex failed for %s' % (myHost)
         sys.exit(-1)
     myIP = hostinfo[2][0]
 
@@ -598,6 +598,11 @@ def collect_args(args,localArgSets):
         elif garg == '-ifhn':
             parmdb[('cmdline','MPIEXEC_IFHN')] = args[argidx+1]
             argidx += 2
+            try:
+                hostinfo = socket.gethostbyname_ex(parmdb['MPIEXEC_IFHN'])
+            except:
+                print 'mpiexec: gethostbyname_ex failed for ifhn %s' % (parmdb['MPIEXEC_IFHN'])
+                sys.exit(-1)
         elif garg == '-m':
             parmdb[('cmdline','MPIEXEC_MERGE_OUTPUT')] = 1
             argidx += 1
@@ -810,6 +815,8 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         envToSend['MPI_APPNUM'] = '%s' % '%s' % str(appnum)
         if ifhn:
             envToSend['MPICH_INTERFACE_HOSTNAME'] = '%s' % (ifhn)
+        elif parmdb['MPIEXEC_IFHN']:
+            envToSend['MPICH_INTERFACE_HOSTNAME'] = '%s' % (parmdb['MPIEXEC_IFHN'])
         msgToMPD['envvars'][(loRange,hiRange)] = envToSend
 
         loRange = hiRange + 1
