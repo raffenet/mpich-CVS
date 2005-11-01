@@ -963,7 +963,7 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 #ifdef USE_PMI_PORT
 /*
  * This code allows a program to contact a host/port for the PMI socket.
-a */
+ */
 #include <errno.h>
 #if defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
@@ -1183,6 +1183,7 @@ static int PMII_singinit()
 	newargv[0] = "mpiexec";
 	newargv[1] = "-pmi_args";
 	newargv[2] = port_c;
+	/* FIXME: Use a valid hostname */
 	newargv[3] = "default_interface";  /* default interface name, for now */
 	newargv[4] = "default_key";   /* default authentication key, for now */
 	MPIU_Snprintf(charpid, 8, "%d",getpid());
