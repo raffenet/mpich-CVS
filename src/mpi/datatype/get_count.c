@@ -94,7 +94,16 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
     }
     else {
 	if (status->count > 0)
+	{
+	    /* --BEGIN ERROR HANDLING-- */
+
+	    /* case where datatype size is 0 and count is > 0 should
+	     * never occur.
+	     */
+
 	    (*count) = MPI_UNDEFINED;
+	    /* --END ERROR HANDLING-- */
+	}
 	else {
 	    /* This is ambiguous.  However, discussions on MPI Forum
 	       reached a consensus that this is the correct return 

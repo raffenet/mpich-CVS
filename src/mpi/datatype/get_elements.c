@@ -375,7 +375,12 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
     }
     else if (datatype_ptr->size == 0) {
 	if (status->count > 0) {
+	    /* --BEGIN ERROR HANDLING-- */
+
+	    /* datatype size of zero and count > 0 should never happen. */
+
 	    (*elements) = MPI_UNDEFINED;
+	    /* --END ERROR HANDLING-- */
 	}
 	else {
 	    /* This is ambiguous.  However, discussions on MPI Forum

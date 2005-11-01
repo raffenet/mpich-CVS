@@ -37,6 +37,7 @@ void ADIOI_UFS_Open(ADIO_File fd, int *error_code)
     if ((fd->fd_sys != -1) && (fd->access_mode & ADIO_APPEND))
 	fd->fp_ind = fd->fp_sys_posn = lseek(fd->fd_sys, 0, SEEK_END);
 
+    /* --BEGIN ERROR HANDLING-- */
     if (fd->fd_sys == -1) {
 	if (errno == ENAMETOOLONG)
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -83,5 +84,6 @@ void ADIOI_UFS_Open(ADIO_File fd, int *error_code)
 					       "**io %s", strerror(errno));
 	}
     }
+    /* --END ERROR HANDLING */
     else *error_code = MPI_SUCCESS;
 }
