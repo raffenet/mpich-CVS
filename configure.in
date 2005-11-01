@@ -999,6 +999,9 @@ if test "$enable_f77" = "default" ; then
 fi
 # F90 requires F77 as well.  If the user disabled f77, do not run the
 # next test; instead, drop into the warning message
+# Set a default value for f90 works with f77.  This value is
+# set to no *only* if f90 was selected but was not compatible with f77
+f90_with_f77=yes
 if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
     enable_f90=no
     # Check for a Fortran compiler
@@ -1009,7 +1012,11 @@ if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
 	    AC_PROG_F77
 	    FFLAGS=$saveFFLAGS
 	fi
-        PAC_F90_AND_F77_COMPATIBLE(enable_f90=yes,enable_f90=no)
+        PAC_F90_AND_F77_COMPATIBLE(f90_with_f77=yes,f90_with_f77=no)
+        if test "$f90_with_f77" != yes ; then
+	    enable_f90=no
+	    AC_MSG_WARN([The selected Fortran 90 compiler $F90 does not work with the selected Fortran 77 compiler $F77.  Use the environment variables F90 and F77 respectively to select compatible Fortran compilers.  The check here tests to see if a main program compiled with the Fortran 90 compiler can link with a subroutine compiled with the Fortran 77 compiler.])
+        fi
     elif test "$pac_cv_prog_f90_works" = no; then
         AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
     fi
