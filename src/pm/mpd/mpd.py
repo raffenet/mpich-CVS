@@ -224,8 +224,8 @@ class MPD(object):
         self.nextJobInt    = 1
         self.activeJobs    = {}
         self.conSock       = 0
-        self.allExiting    = 0
-        self.exiting       = 0    # for mpdexit
+        self.allExiting    = 0    # for mpdallexit (for first loop for graceful exit)
+        self.exiting       = 0    # for mpdexit or mpdallexit
         self.kvs_cntr      = 0    # for mpdman
         rc = self.ring.enter_ring(lhsHandler=self.handle_lhs_input,
                                   rhsHandler=self.handle_rhs_input)
@@ -252,7 +252,7 @@ class MPD(object):
                 # signals must be handled in main thread; thus we permit timeout of join
                 while mpdtid.isAlive():
                     mpdtid.join(2)   # come out sometimes and handle signals
-                if self.allExiting:
+                if self.exiting:
                     break
                 if self.conSock:
                     msgToSend = { 'cmd' : 'restarting_mpd' }
@@ -267,7 +267,7 @@ class MPD(object):
             if rv[0] < 0:
                 if type(rv[1]) == ClassType  and  rv[1] == KeyboardInterrupt: # ^C
                     sys.exit(-1)
-            if self.exiting  or  self.allExiting:
+            if self.exiting:
                 break
     def usage(self):
         print __doc__
@@ -578,7 +578,7 @@ class MPD(object):
                 self.conSock.close()
                 self.conSock = 0
                 return
-            self.allExiting = 1
+            # self.allExiting = 1  # doesn't really help here
             self.ring.rhsSock.send_dict_msg( {'cmd' : 'mpdallexit', 'src' : self.myId} )
             self.conSock.send_dict_msg( {'cmd' : 'mpdallexit_ack'} )
         elif msg['cmd'] == 'mpdexit':
@@ -799,9 +799,10 @@ class MPD(object):
                         self.ring.rhsSock.send_dict_msg(msgToSend)
                 self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'mpdallexit':
+            if self.allExiting:   # already seen this once
+                self.exiting = 1  # set flag to exit main loop
             self.allExiting = 1
-            if msg['src'] != self.myId:
-                self.ring.rhsSock.send_dict_msg(msg)
+            self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'mpdexit':
             if msg['dest'] == self.myId:
                 msg['done'] = 1    # do this first
