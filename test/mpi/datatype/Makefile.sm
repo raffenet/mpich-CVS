@@ -28,6 +28,8 @@ simple-pack_SOURCES = simple-pack.c
 
 contig-zero-count_SOURCES = contig-zero-count.c
 
+lots-of-types_SOURCES = lots-of-types.c
+
 simple-pack-external_SOURCES = simple-pack-external.c
 
 darray-pack_SOURCES = darray-pack.c
