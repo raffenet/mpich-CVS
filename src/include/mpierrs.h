@@ -210,9 +210,12 @@
         int ferr = 0;							\
         if (HANDLE_GET_KIND(dtype) == HANDLE_KIND_BUILTIN) { ferr=1; }	\
         else {								\
+            int errsize;                                                \
             MPID_Datatype *errdtypeptr;					\
             MPID_Datatype_get_ptr(dtype,errdtypeptr);			\
-            if (errdtypeptr && errdtypeptr->true_lb == 0) { ferr=1; }	\
+            MPID_Datatype_get_size_macro(dtype,errsize);                \
+            if (errdtypeptr && errdtypeptr->true_lb == 0 &&             \
+                errsize > 0) { ferr=1; }                        	\
         }								\
         if (ferr) {							\
             err = MPIR_Err_create_code(MPI_SUCCESS,			\
