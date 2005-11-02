@@ -11,6 +11,8 @@ EXPORTS
     MPE_Describe_info_event
     MPE_Describe_event
     MPE_Log_get_event_number
+    MPE_Log_get_state_eventIDs
+    MPE_Log_get_solo_eventID
     MPE_Log_get_known_eventID
     MPE_Log_get_known_stateID
     MPE_Start_log
