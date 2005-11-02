@@ -25,9 +25,9 @@ pairtypes[] =
 
 int parse_args(int argc, char **argv);
 
-MPI_Aint pairtype_displacement(MPI_Datatype type);
+MPI_Aint pairtype_displacement(MPI_Datatype type, int *out_size_p);
 
-MPI_Aint pairtype_displacement(MPI_Datatype type)
+MPI_Aint pairtype_displacement(MPI_Datatype type, int *out_size_p)
 {
     MPI_Aint disp;
 
@@ -36,30 +36,35 @@ MPI_Aint pairtype_displacement(MPI_Datatype type)
 	    {
 		struct { float a; int b; } foo;
 		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+		*out_size_p = sizeof(foo);
 	    }
 	    break;
 	case MPI_DOUBLE_INT:
 	    {
 		struct { double a; int b; } foo;
 		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+		*out_size_p = sizeof(foo);
 	    }
 	    break;
 	case MPI_LONG_INT:
 	    {
 		struct { long a; int b; } foo;
 		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+		*out_size_p = sizeof(foo);
 	    }
 	    break;
 	case MPI_SHORT_INT:
 	    {
 		struct { short a; int b; } foo;
 		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+		*out_size_p = sizeof(foo);
 	    }
 	    break;
 	case MPI_LONG_DOUBLE_INT:
 	    {
 		struct { long double a; int b; } foo;
 		disp = (MPI_Aint) ((char *) &foo.b - (char *) &foo.a);
+		*out_size_p = sizeof(foo);
 	    }
 	    break;
 	default:
@@ -82,13 +87,14 @@ int main(int argc, char *argv[])
     parse_args(argc, argv);
 
     for (i=0; pairtypes[i].atype != (MPI_Datatype) -1; i++) {
-	int atype_size, ptype_size, stype_size;
+	int atype_size, ptype_size, stype_size, handbuilt_extent;
 	MPI_Aint ptype_extent, stype_extent, dummy_lb;
 
 	types[0] = pairtypes[i].atype;
 
 	MPI_Type_size(types[0], &atype_size);
-	disps[1] = pairtype_displacement(pairtypes[i].ptype);
+	disps[1] = pairtype_displacement(pairtypes[i].ptype,
+					 &handbuilt_extent);
 
 	MPI_Type_create_struct(2, blks, disps, types, &stype);
 
@@ -98,7 +104,7 @@ int main(int argc, char *argv[])
 	    errs++;
 
 	    if (verbose) fprintf(stderr,
-				 "size of %s (%d) does not match size of hand-built equivalent structure (%d)\n",
+				 "size of %s (%d) does not match size of hand-built MPI struct (%d)\n",
 				 pairtypes[i].name, ptype_size, stype_size);
 	}
 
@@ -108,9 +114,10 @@ int main(int argc, char *argv[])
 	    errs++;
 
 	    if (verbose) fprintf(stderr,
-				 "extent of %s (%d) does not match extent of hand-built equivalent structure (%d)\n",
+				 "extent of %s (%d) does not match extent of hand-built MPI struct (%d)\n   NOTE: equivalent C struct has size of %d\n",
 				 pairtypes[i].name, (int) ptype_extent,
-				 (int) stype_extent);
+				 (int) stype_extent,
+				 handbuilt_extent);
 	}
 	MPI_Type_free( &stype );
     }
