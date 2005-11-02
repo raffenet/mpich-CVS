@@ -536,8 +536,8 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 		MPIU_dbg_printf("# %s  indexed [%d]: blk = %d, disp = %d\n",
 				MPIDI_Datatype_depth_spacing(depth),
 				i,
-				ints[2*i+1],
-				ints[2*i+2]);
+				ints[i+1],
+				ints[i+(cp->nr_ints/2)+1]);
 		MPIDI_Datatype_contents_printf(*types,
 					       depth + 1,
 					       acount);
