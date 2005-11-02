@@ -15,6 +15,13 @@ void ADIOI_NTFS_IreadContig(ADIO_File fd, void *buf, int count,
     static char myname[] = "ADIOI_NTFS_IreadContig";
 
     (*request) = ADIOI_Malloc_request();
+    if ((*request) == NULL)
+    {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	    myname, __LINE__, MPI_ERR_IO,
+	    "**nomem", "**nomem %s", "ADIOI_Request");
+	return;
+    }
     (*request)->optype = ADIOI_READ;
     (*request)->fd = fd;
     (*request)->datatype = datatype;

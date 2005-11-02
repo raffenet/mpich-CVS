@@ -69,6 +69,17 @@ void ADIOI_NTFS_Open(ADIO_File fd, int *error_code)
     if ((fd->fd_sys != INVALID_HANDLE_VALUE) && (fd->access_mode & ADIO_APPEND))
     {
 	fd->fp_ind = fd->fp_sys_posn = SetFilePointer(fd->fd_sys, 0, NULL, FILE_END);
+	if (fd->fp_ind == INVALID_SET_FILE_POINTER)
+	{
+	    err = GetLastError();
+	    if (err != NO_ERROR)
+	    {
+		*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+		    myname, __LINE__, MPI_ERR_IO,
+		    "**io", "**io %s", ADIOI_NTFS_Strerror(err));
+		return;
+	    }
+	}
     }
 
     /* --BEGIN ERROR HANDLING-- */

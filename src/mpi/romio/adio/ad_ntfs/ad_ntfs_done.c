@@ -66,7 +66,13 @@ int ADIOI_NTFS_ReadDone(ADIO_Request *request, ADIO_Status *status,
 	(*request)->fd->async_count--;
 	if ((*request)->handle) 
 	{
-	    CloseHandle(((OVERLAPPED*)((*request)->handle))->hEvent);
+	    if (!CloseHandle(((OVERLAPPED*)((*request)->handle))->hEvent))
+	    {
+		ret_val = GetLastError();
+		*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+		    myname, __LINE__, MPI_ERR_IO,
+		    "**io", "**io %s", ADIOI_NTFS_Strerror(ret_val));
+	    }
 	    ADIOI_Free((*request)->handle);
 	}
 	ADIOI_Free_request((ADIOI_Req_node *) (*request));

@@ -16,6 +16,13 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
     static char myname[] = "ADIOI_NTFS_IwriteContig";
 
     *request = ADIOI_Malloc_request();
+    if ((*request) == NULL)
+    {
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	    myname, __LINE__, MPI_ERR_IO,
+	    "**nomem", "**nomem %s", "ADIOI_Request");
+	return;
+    }
     (*request)->optype = ADIOI_WRITE;
     (*request)->fd = fd;
     (*request)->datatype = datatype;
@@ -66,11 +73,28 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     FDTYPE fd_sys;
     int mpi_errno = MPI_SUCCESS;
     OVERLAPPED *pOvl;
+    DWORD err;
 
     fd_sys = fd->fd_sys;
 
     pOvl = (OVERLAPPED *) ADIOI_Calloc(sizeof(OVERLAPPED), 1);
+    if (pOvl == NULL)
+    {
+	mpi_errno = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	    myname, __LINE__, MPI_ERR_IO,
+	    "**nomem", "**nomem %s", "OVERLAPPED");
+	return mpi_errno;
+    }
     pOvl->hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+    if (pOvl->hEvent == NULL)
+    {
+	err = GetLastError();
+	mpi_errno = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+	    myname, __LINE__, MPI_ERR_IO,
+	    "**io", "**io %s", ADIOI_NTFS_Strerror(err));
+	ADIOI_Free(pOvl);
+	return mpi_errno;
+    }
     pOvl->Offset = DWORDLOW(offset);
     pOvl->OffsetHigh = DWORDHIGH(offset);
 

@@ -9,6 +9,7 @@
 
 void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *error_code)
 {
+    DWORD err;
     LONG dwTemp;
     static char myname[] = "ADIOI_NTFS_FCNTL";
 
@@ -19,7 +20,17 @@ void ADIOI_NTFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int *e
 	if (fd->fp_sys_posn != -1) 
 	{
 	    dwTemp = DWORDHIGH(fd->fp_sys_posn);
-	    SetFilePointer(fd->fd_sys, DWORDLOW(fd->fp_sys_posn), &dwTemp, FILE_BEGIN);
+	    if (SetFilePointer(fd->fd_sys, DWORDLOW(fd->fp_sys_posn), &dwTemp, FILE_BEGIN) == INVALID_SET_FILE_POINTER)
+	    {
+		err = GetLastError();
+		if (err != NO_ERROR)
+		{
+		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+			myname, __LINE__, MPI_ERR_IO,
+			"**io", "**io %s", ADIOI_NTFS_Strerror(err));
+		    return;
+		}
+	    }
 	}
 	/* --BEGIN ERROR HANDLING-- */
 	if (fcntl_struct->fsize == INVALID_SET_FILE_POINTER)
