@@ -28,3 +28,4 @@ struct-empty-el 1
 contig-zero-count 1
 simple-resized 1
 unusual-noncontigs 1
+hindexed-zeros 1

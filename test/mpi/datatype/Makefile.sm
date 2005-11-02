@@ -38,6 +38,8 @@ blockindexed-misc_SOURCES = blockindexed-misc.c
 
 indexed-misc_SOURCES = indexed-misc.c
 
+hindexed-zeros_SOURCES = hindexed-zeros.c
+
 blockindexed-zero-count_SOURCES = blockindexed-zero-count.c
 
 struct-zero-count_SOURCES = struct-zero-count.c
