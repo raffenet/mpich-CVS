@@ -22,6 +22,8 @@ MPIU_Object_alloc_t MPID_Datatype_mem = { 0, 0, 0, 0, MPID_DATATYPE,
 			      sizeof(MPID_Datatype), MPID_Datatype_direct,
 					  MPID_DATATYPE_PREALLOC};
 
+static int MPIR_Datatype_finalize(void *dummy);
+
 /* Call this routine to associate a MPID_Datatype with each predefined 
    datatype.  We do this with lazy initialization because many MPI 
    programs do not require anything except the predefined datatypes, and
@@ -154,7 +156,24 @@ int MPIR_Datatype_init(void)
 
     MPIU_Handle_obj_alloc_complete(&MPID_Datatype_mem, 1);
 
+    MPIR_Add_finalize(MPIR_Datatype_finalize, 0, 8);
+
     return MPI_SUCCESS;
+}
+
+static int MPIR_Datatype_finalize(void *dummy)
+{
+    int i;
+    MPID_Datatype *dptr;
+
+    for (i=0; mpi_pairtypes[i] != (MPI_Datatype) -1; i++) {
+	if (mpi_pairtypes[i] != MPI_DATATYPE_NULL) {
+	    MPID_Datatype_get_ptr(mpi_pairtypes[i], dptr);
+	    MPID_Datatype_release(dptr);
+	    mpi_pairtypes[i] = MPI_DATATYPE_NULL;
+	}
+    }
+    return 0;
 }
 
 int MPIR_Datatype_builtin_fillin(void)
