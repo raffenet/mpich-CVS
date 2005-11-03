@@ -21,8 +21,8 @@ char *MPIU_DBG_parent_str = "?";
 /* FIXME: the PMI init function should ONLY do the PMI operations, not the 
    process group or bc operations.  These should be in a separate routine */
 #include "pmi.h"
-static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent, 
-			  int *pg_rank_p, MPIDI_PG_t **pg_p );
+static int InitPG( int *has_args, int *has_env, int *has_parent, 
+		   int *pg_rank_p, MPIDI_PG_t **pg_p );
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg );
 
@@ -68,7 +68,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /*
      * Perform channel-independent PMI initialization
      */
-    mpi_errno = InitPGFromPMI( has_args, has_env, &has_parent, &pg_rank, &pg );
+    mpi_errno = InitPG( has_args, has_env, &has_parent, &pg_rank, &pg );
 
     /*
      * Let the channel perform any necessary initialization
@@ -76,10 +76,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      * the basic information about the job has been extracted from PMI (e.g.,
      * the size and rank of this process, and the process group id)
      */
-    /* Unresolved: some channels may want to override the PMI values for 
-       size and node (gasnet is one such channel).  The initPGFromPMI routine
-       could take an optional routine to call before calling PMI routines, 
-       as one way to solve this */
     mpi_errno = MPIDI_CH3_Init(has_parent, pg, pg_rank);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ch3_init");
@@ -228,97 +224,121 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
  * process group structures.
  * 
  */
-static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent, 
-			  int *pg_rank_p, MPIDI_PG_t **pg_p )
+static int InitPG( int *has_args, int *has_env, int *has_parent, 
+		   int *pg_rank_p, MPIDI_PG_t **pg_p )
 {
     int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
     int pg_rank, pg_size, appnum, pg_id_sz, kvs_name_sz;
+    int usePMI=1;
     char *pg_id;
     MPIDI_PG_t *pg = 0;
-    
-    /*
-     * Initialize the process manangement interface (PMI), 
-     * and get rank and size information about our process group
-     */
-    pmi_errno = PMI_Init(has_parent);
-    if (pmi_errno != PMI_SUCCESS)
+
+    /* See if the channel will provide the PMI values.  The channel
+     is responsible for defining HAVE_CH3_PRE_INIT and providing 
+    the MPIDI_CH3_Pre_init function.  */
+#ifdef HAVE_CH3_PRE_INIT
     {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_init",
+	int setvals;
+	mpi_errno = MPIDI_CH3_Pre_init( &setvals, has_parent, pg_rank_p, 
+					&pg_size );
+	if (mpi_errno) {
+	    goto fn_fail;
+	}
+	if (setvals) usePMI = 0;
+    }
+#endif 
+
+    /* If we use PMI here, make the PMI calls to get the
+       basic values.  Note that systems that return setvals == true
+       do not make use of PMI for the KVS routines either (it is
+       assumed that the discover connection information through some
+       other mechanism */
+    /* FIXME: We may want to allow the channel to ifdef out the use
+       of PMI calls, or ask the channel to provide stubs that 
+       return errors if the routines are in fact used */
+    if (usePMI) {
+	/*
+	 * Initialize the process manangement interface (PMI), 
+	 * and get rank and size information about our process group
+	 */
+	pmi_errno = PMI_Init(has_parent);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_init",
 			     "**pmi_init %d", pmi_errno);
-    }
+	}
 
-    /* FIXME: Who is this for and where does it belong? */
-#ifdef USE_MPIU_DBG_PRINT_VC
-    MPIU_DBG_parent_str = (*has_parent) ? "+" : "";
-#endif
-
-    pmi_errno = PMI_Get_rank(&pg_rank);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_rank",
+	pmi_errno = PMI_Get_rank(&pg_rank);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_rank",
 			     "**pmi_get_rank %d", pmi_errno);
-    }
+	}
 
-    pmi_errno = PMI_Get_size(&pg_size);
-    if (pmi_errno != 0)
-    {
+	pmi_errno = PMI_Get_size(&pg_size);
+	if (pmi_errno != 0) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_size",
 			     "**pmi_get_size %d", pmi_errno);
-    }
+	}
+	
+	pmi_errno = PMI_Get_appnum(&appnum);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_appnum",
+				 "**pmi_get_appnum %d", pmi_errno);
+	}
 
-    pmi_errno = PMI_Get_appnum(&appnum);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_appnum",
-			     "**pmi_get_appnum %d", pmi_errno);
-    }
-
-    if (appnum != -1)
-    {
-	MPIR_Process.attrs.appnum = appnum;
-    }
-
-    /* FIXME: Who does/does not use this? */
+	/* Note that if pmi is not availble, the value of MPI_APPNUM is 
+	   not set */
+	if (appnum != -1) {
+	    MPIR_Process.attrs.appnum = appnum;
+	}
+	
+	/* FIXME: Who does/does not use this? */
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
-    /* Initialize the CH3 device KVS cache interface */
-    /* KVS is used for connection handling; thus, this should go into 
-       code for that purpose, not here */
-    /* Do this after PMI_Init because MPIDI_KVS uses PMI (The init funcion may or may not use PMI)*/
-    MPIDI_KVS_Init();
+	/* Initialize the CH3 device KVS cache interface */
+	/* KVS is used for connection handling; thus, this should go into 
+	   code for that purpose, not here */
+	/* Do this after PMI_Init because MPIDI_KVS uses PMI (The init 
+	   funcion may or may not use PMI)*/
+	MPIDI_KVS_Init();
 #endif
 
-    /* Now, initialize the process group information with PMI calls */
-    /*
-     * Get the process group id
-     */
-    pmi_errno = PMI_Get_id_length_max(&pg_id_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-			     "**pmi_get_id_length_max", 
-			     "**pmi_get_id_length_max %d", pmi_errno);
-    }
+	/* Now, initialize the process group information with PMI calls */
+	/*
+	 * Get the process group id
+	 */
+	pmi_errno = PMI_Get_id_length_max(&pg_id_sz);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+				 "**pmi_get_id_length_max", 
+				 "**pmi_get_id_length_max %d", pmi_errno);
+	}
 
-    /* This memory will be freed by the PG_Destroy if there is an error */
-    pg_id = MPIU_Malloc(pg_id_sz + 1);
-    if (pg_id == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
-    }
+	/* This memory will be freed by the PG_Destroy if there is an error */
+	pg_id = MPIU_Malloc(pg_id_sz + 1);
+	if (pg_id == NULL) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
+	}
     
-    pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_id",
-			     "**pmi_get_id %d", pmi_errno);
+	pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_id",
+				 "**pmi_get_id %d", pmi_errno);
+	}
+    }
+    else {
+	/* Create a default pg id */
+	pg_id = MPIU_Malloc(2);
+	if (pg_id == NULL) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
+	}
+	MPIU_Strncpy( pg_id, 2, "0" );
     }
 
     /*
      * Initialize the process group tracking subsystem
      */
     mpi_errno = MPIDI_PG_Init(MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
-    if (mpi_errno != MPI_SUCCESS)
-    {
+    if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**dev|pg_init");
     }
 
@@ -326,34 +346,39 @@ static int InitPGFromPMI( int *has_args, int *has_env, int *has_parent,
      * Create a new structure to track the process group
      */
     mpi_errno = MPIDI_PG_Create(pg_size, pg_id, &pg);
-    if (mpi_errno != MPI_SUCCESS)
-    {
+    if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**dev|pg_create");
     }
     pg->ch.kvs_name = NULL;
 
-    /*
-     * Get the name of the key-value space (KVS)
-     */
-    pmi_errno = PMI_KVS_Get_name_length_max(&kvs_name_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-			     "**pmi_kvs_get_name_length_max", 
-			     "**pmi_kvs_get_name_length_max %d", pmi_errno);
+    if (usePMI) {
+	/*
+	 * Get the name of the key-value space (KVS)
+	 */
+	pmi_errno = PMI_KVS_Get_name_length_max(&kvs_name_sz);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+				 "**pmi_kvs_get_name_length_max", 
+			 "**pmi_kvs_get_name_length_max %d", pmi_errno);
+	}
+	
+	pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
+	if (pg->ch.kvs_name == NULL) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
+	}
+	
+	pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
+	if (pmi_errno != PMI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+				 "**pmi_kvs_get_my_name", 
+				 "**pmi_kvs_get_my_name %d", pmi_errno);
+	}
     }
 
-    pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
-    if (pg->ch.kvs_name == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
-    }
-    
-    pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_get_my_name", 
-			     "**pmi_kvs_get_my_name %d", pmi_errno);
-    }
+    /* FIXME: Who is this for and where does it belong? */
+#ifdef USE_MPIU_DBG_PRINT_VC
+    MPIU_DBG_parent_str = (*has_parent) ? "+" : "";
+#endif
 
     /* FIXME: has_args and has_env need to come from PMI eventually... */
     *has_args = TRUE;
