@@ -339,10 +339,9 @@ AC_CACHE_CHECK([whether Fortran accepts ! for comments],
 pac_cv_prog_f77_exclaim_comments,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
-AC_TRY_COMPILE(,[
-!      This is a comment
-],pac_cv_prog_f77_exclaim_comments="yes",
-pac_cv_prog_f77_exclaim_comments="no")
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[!        This is a comment])],
+     pac_cv_prog_f77_exclaim_comments="yes",
+     pac_cv_prog_f77_exclaim_comments="no")
 AC_LANG_RESTORE
 ])
 if test "$pac_cv_prog_f77_exclaim_comments" = "yes" ; then
@@ -991,11 +990,13 @@ AC_CACHE_CHECK([whether Fortran has pointer declaration],
 pac_cv_prog_f77_has_pointer,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
-AC_TRY_COMPILE(,[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[
         integer M
         pointer (MPTR,M)
         data MPTR/0/
-],pac_cv_prog_f77_has_pointer="yes",pac_cv_prog_f77_has_pointer="no")
+])],
+    pac_cv_prog_f77_has_pointer="yes",
+    pac_cv_prog_f77_has_pointer="no")
 AC_LANG_RESTORE
 ])
 if test "$pac_cv_prog_f77_has_pointer" = "yes" ; then
@@ -1234,10 +1235,9 @@ AC_CACHE_CHECK([whether Fortran supports new-style character declarations],
 pac_cv_prog_f77_new_char_decl,[
 AC_LANG_SAVE
 AC_LANG_FORTRAN77
-AC_TRY_COMPILE(,[
-        character (len=10) s
-],pac_cv_prog_f77_new_char_decl="yes",
-pac_cv_prog_f77_new_char_decl="no")
+AC_COMPILE_IFLESE([AC_LANG_PROGRAM(,[        character (len=10) s])],
+    pac_cv_prog_f77_new_char_decl="yes",
+    pac_cv_prog_f77_new_char_decl="no")
 AC_LANG_RESTORE
 ])
 if test "$pac_cv_prog_f77_new_char_decl" = "yes" ; then

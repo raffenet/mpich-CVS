@@ -1114,7 +1114,9 @@ pac_cv_f90_ext_f90,[
 save_ac_f90ext=$ac_f90ext
 ac_f90ext="f90"
 AC_LANG_PUSH(Fortran 90)
-AC_TRY_COMPILE(,,pac_cv_f90_ext_f90="yes",pac_cv_f90_ext_f90="no")
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,)],
+    pac_cv_f90_ext_f90="yes",
+    pac_cv_f90_ext_f90="no")
 AC_LANG_POP
 ])
 if test "$pac_cv_f90_ext_f90" = "yes" ; then
