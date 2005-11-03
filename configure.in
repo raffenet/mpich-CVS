@@ -1336,8 +1336,6 @@ EOF
         F90_LINKPATH_SHL=$C_LINKPATH_SHL
     fi
     # ------------------------------------------------
-
-
 fi
 
 # Note that we don't install mpif.h into src/include, since this
@@ -1352,7 +1350,7 @@ sed -e 's%includedir=.*%includedir='$includebuild_dir% \
     -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif90 > bin/mpif90 ;
 chmod a+x bin/mpif90 
 else
-    rm -f src/env/mpif90 src/env/mpif90.conf
+    rm -f src/env/mpif90 src/env/mpif90.conf bin/mpif90
 fi],
 enable_f90=$enable_f90
 modincbuild_dir=$modincbuild_dir
@@ -2348,56 +2346,72 @@ if test "$enable_f77" = yes ; then
     # mpir_get_fsize at run time.
     #
     AC_MSG_CHECKING([whether integer*1 is supported])
-    AC_TRY_COMPILE(,[      integer*1 i],has_integer_1=1,has_integer_1=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*1 i])],
+         has_integer_1=1,
+         has_integer_1=0)
     if test "$has_integer_1" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether integer*2 is supported])
-    AC_TRY_COMPILE(,[      integer*2 i],has_integer_2=2,has_integer_2=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*2 i])],
+        has_integer_2=2,
+        has_integer_2=0)
     if test "$has_integer_2" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether integer*4 is supported])
-    AC_TRY_COMPILE(,[      integer*4 i],has_integer_4=4,has_integer_4=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*4 i])],
+        has_integer_4=4,
+        has_integer_4=0)
     if test "$has_integer_4" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether integer*8 is supported])
-    AC_TRY_COMPILE(,[      integer*8 i],has_integer_8=8,has_integer_8=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*8 i])],
+        has_integer_8=8,
+        has_integer_8=0)
     if test "$has_integer_8" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether integer*16 is supported])
-    AC_TRY_COMPILE(,[      integer*16 i],has_integer_16=16,has_integer_16=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*16 i])],
+        has_integer_16=16,
+        has_integer_16=0)
     if test "$has_integer_16" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether real*4 is supported])
-    AC_TRY_COMPILE(,[      real*4 a],has_real_4=4,has_real_4=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*4 a])],
+        has_real_4=4,
+        has_real_4=0)
     if test "$has_real_4" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether real*8 is supported])
-    AC_TRY_COMPILE(,[      real*8 a],has_real_8=8,has_real_8=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*8 a])],
+        has_real_8=8,
+        has_real_8=0)
     if test "$has_real_8" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether real*16 is supported])
-    AC_TRY_COMPILE(,[      real*16 a],has_real_16=16,has_real_16=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*16 a])],
+        has_real_16=16,
+        has_real_16=0)
     if test "$has_real_16" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
