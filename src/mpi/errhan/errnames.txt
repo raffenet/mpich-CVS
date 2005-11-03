@@ -454,6 +454,7 @@ with MPI_Alloc_mem.
 **flag %d:invalid flag parameter (flag = %d)
 **badcase:INTERNAL ERROR: unexpected value in case statement
 **badcase %d:INTERNAL ERROR: unexpected value in case statement (value=%d)
+**node_root_rank:Unable to get the node root rank
 
 # Duplicates?
 #**argnull:Invalid null parameter
@@ -1090,6 +1091,12 @@ with MPI_Alloc_mem.
 **pmi_kvs_iter_next %d:PMI_KVS_iter_next returned %d
 **pmi_spawn_multiple:PMI_Spawn_multiple failed
 **pmi_spawn_multiple %d:PMI_Spawn_multiple returned %d
+**pmi_get_clique_size:PMI_Get_clique_size failed
+**pmi_get_clique_size %d:PMI_Get_clique_size returned %d
+**pmi_get_clique_ranks:PMI_Get_clique_ranks failed
+**pmi_get_clique_ranks %d:PMI_Get_clique_ranks returned %d
+**pmi_invalid_clique_size:PMI_Get_clique_ranks returned an invalid size
+**pmi_invalid_clique_size %d:PMI_Get_clique_ranks returned an invalid size %d
 
 #
 # mpi functions
