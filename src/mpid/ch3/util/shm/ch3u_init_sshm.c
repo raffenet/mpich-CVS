@@ -9,6 +9,7 @@
 #include "pmi.h"
 
 static int getNumProcessors( void );
+static int getNodeRootRank( int, int * );
 
 /*  MPIDI_CH3U_Init_sshm - does scalable shared memory specific channel 
  *  initialization
@@ -265,8 +266,27 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	MPIU_Strncpy(pg_p->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
-	/* The root process initialized the queue */
-	initialize_queue = 1;
+	mpi_errno = getNodeRootRank(pg_rank, &root_rank);
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**node_root_rank");
+	}
+	if (pg_rank == root_rank)
+	{
+#ifdef USE_PERSISTENT_SHARED_MEMORY
+	    /* With persistent shared memory, only the first process of the first group needs to create the bootstrap queue. */
+	    /* Everyone else including spawned processes will attach to this queue. */
+	    initialize_queue = has_parent;
+#else
+	    /* Without persistent shared memory the root of each node initializes the queue */
+	    initialize_queue = 1;
+#endif
+	}
+	else
+	{
+	    /* The root process initialized the queue */
+	    initialize_queue = 0;
+	}
 	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
@@ -393,4 +413,61 @@ static int getNumProcessors( void )
 #else
     return 1;
 #endif
+}
+
+/* Return the lowest rank on the same node as this process */
+#undef FUNCNAME
+#define FUNCNAME getNodeRootRank
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int getNodeRootRank(int pg_rank, int *root_rank)
+{
+    int *ranks, num_ranks, min_rank;
+    int pmi_errno, i;
+    int mpi_errno = MPI_SUCCESS;
+
+    pmi_errno = PMI_Get_clique_size(&num_ranks);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+			     "**pmi_get_clique_size", 
+			     "**pmi_get_clique_size %d", pmi_errno);
+    }
+
+    if (num_ranks < 1)
+    {
+	/* PMI_Get_clique_size returned an invalid size */
+	MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER,
+	    "**pmi_invalid_clique_size",
+	    "**pmi_invalid_clique_size %d", num_ranks);
+    }
+
+    ranks = MPIU_Malloc(sizeof(int) * num_ranks);
+    if (ranks == NULL)
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+			     "**nomem", 
+			     "**nomem %s", "clique rank array");
+    }
+
+    pmi_errno = PMI_Get_clique_ranks(ranks, num_ranks);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+			     "**pmi_get_clique_ranks", 
+			     "**pmi_get_clique_ranks %d", pmi_errno);
+    }
+
+    min_rank = ranks[0];
+    /* If the list is not sorted then find the lowest rank */
+    for (i=1; i<num_ranks; i++)
+    {
+	min_rank = MPIDU_MIN(min_rank, ranks[i]);
+    }
+
+    *root_rank = min_rank;
+fn_exit:
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
