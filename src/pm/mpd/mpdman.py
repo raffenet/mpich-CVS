@@ -456,7 +456,7 @@ class MPDMan(object):
                 msgToSend = { 'cmd' : 'ringsize', 'ring_ncpus' : self.universeSize }
                 tempSock.send_dict_msg(msgToSend)
                 if self.pmiSock:  # may have disappeared in early shutdown
-                    pmiMsgToSend = 'cmd=spawn_result status=spawn_done\n'
+                    pmiMsgToSend = 'cmd=spawn_result status=spawn_done rc=0\n'
                     self.pmiSock.send_char_msg(pmiMsgToSend)
             else:
                 mpd_print(1, 'unknown msg recvd on listenNonRingSock :%s:' % (msg) )
