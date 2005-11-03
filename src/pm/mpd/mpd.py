@@ -1131,6 +1131,10 @@ class MPD(object):
         for ranks in envvars.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
+                if msg.has_key('MPICH_ifhn'):
+                    envvars[ranks]['MPICH_INTERFACE_HOSTNAME'] = msg['MPICH_ifhn']
+                else:
+                    envvars[ranks]['MPICH_INTERFACE_HOSTNAME'] = self.myIfhn
                 pgmEnvVars = dumps(envvars[ranks])
                 break
         limits = msg['limits']

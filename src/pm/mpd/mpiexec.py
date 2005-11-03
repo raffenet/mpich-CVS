@@ -814,9 +814,7 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
             envToSend['MPI_UNIVERSE_SIZE'] = '%s' % (usize)
         envToSend['MPI_APPNUM'] = '%s' % '%s' % str(appnum)
         if ifhn:
-            envToSend['MPICH_INTERFACE_HOSTNAME'] = '%s' % (ifhn)
-        elif parmdb['MPIEXEC_IFHN']:
-            envToSend['MPICH_INTERFACE_HOSTNAME'] = '%s' % (parmdb['MPIEXEC_IFHN'])
+            msgToMPD['MPICH_ifhn'] = '%s' % (ifhn)
         msgToMPD['envvars'][(loRange,hiRange)] = envToSend
 
         loRange = hiRange + 1
