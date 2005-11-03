@@ -28,22 +28,6 @@
  */
 
 /*
- * FIXME: These routines use an #ifdef USE_WIN_MUTEX_PROTECT in many places.
- * It is not clear why a mutex is required only for Windows, and only in 
- * some cases.  Who sets USE_WIN_MUTEX_PROTECT?  What are the assumptions 
- * about the multi-threadedness of these routines?
- */
-/* FIXME: These are temps until the thread code is worked out */
-#ifdef USE_WIN_MUTEX_PROTECT
-#define MPIDI_KVS_MUTEX_LOCK WaitForSingleObject(kvs.hKVSMutex, INFINITE)
-#define MPIDI_KVS_MUTEX_UNLOCK ReleaseMutex(kvs.hKVSMutex)
-#else 
-/* FIXME: Define these as empty for now */
-#define MPIDI_KVS_MUTEX_LOCK 
-#define MPIDI_KVS_MUTEX_UNLOCK 
-#endif
-
-/*
  * FIXME: The routines that have PMI_KVS counterparts should use the
  * identical calling sequence, so that code can easily switch between 
  * the two (e.g., with #define or with a switch to using function pointers).
@@ -70,9 +54,6 @@ typedef struct MPIDI_KVS_database_node_t
 
 typedef struct MPIDI_KVS_Global_t
 {
-#ifdef USE_WIN_MUTEX_PROTECT
-    HANDLE kvs.hKVSMutex;
-#endif
     int nInitKVSRefCount;
     MPIDI_KVS_database_node_t *pDatabase;
     MPIDI_KVS_database_node_t *pDatabaseIter;
@@ -91,17 +72,6 @@ static MPIDI_KVS_Global_t kvs = { 0 };
 static void get_uuid(char *str)
 {
 #ifdef HAVE_WINDOWS_H
-#if 0
-    UUID guid;
-    char *rpcstr;
-    MPIDI_STATE_DECL(MPID_STATE_GET_UUID);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_GET_UUID);
-    UuidCreate(&guid);
-    UuidToString(&guid, &rpcstr);
-    MPIU_Strncpy(str, rpcstr, MPIDI_MAX_KVS_NAME_LEN);
-    RpcStringFree(&rpcstr);
-#else
     UUID guid;
     MPIDI_STATE_DECL(MPID_STATE_GET_UUID);
 
@@ -112,7 +82,6 @@ static void get_uuid(char *str)
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-#endif
 #elif defined(HAVE_CFUUIDCREATE)
     CFUUIDRef       myUUID;
     CFStringRef     myUUIDString;
@@ -155,18 +124,7 @@ int MPIDI_KVS_Init()
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_INIT);
-#ifdef USE_WIN_MUTEX_PROTECT
-    kvs.hKVSMutex = CreateMutex(NULL, FALSE, "MPIDI_KVS_MUTEX");
-    if (kvs.hKVSMutex == NULL)
-    {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_INIT);
-	return mpi_errno;
-    }
-    MPIDI_KVS_MUTEX_LOCK;
-#endif
     kvs.nInitKVSRefCount++;
-    MPIDI_KVS_MUTEX_UNLOCK;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_INIT);
     return mpi_errno;
 }
@@ -183,7 +141,6 @@ int MPIDI_KVS_Finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FINALIZE);
 
-    MPIDI_KVS_MUTEX_LOCK;
     kvs.nInitKVSRefCount--;
 
     if (kvs.nInitKVSRefCount == 0)
@@ -206,16 +163,6 @@ int MPIDI_KVS_Finalize()
 
 	kvs.pDatabase = NULL;
 	kvs.pDatabaseIter = NULL;
-
-	MPIDI_KVS_MUTEX_UNLOCK;
-#ifdef USE_WIN_MUTEX_PROTECT
-	CloseHandle(kvs.hKVSMutex);
-	kvs.hKVSMutex = NULL;
-#endif
-    }
-    else
-    {
-	MPIDI_KVS_MUTEX_UNLOCK;
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FINALIZE);
@@ -234,19 +181,31 @@ int MPIDI_KVS_Create(char *name)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_CREATE);
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     pNode = kvs.pDatabase;
     if (pNode)
     {
 	while (pNode->pNext)
+	{
 	    pNode = pNode->pNext;
+	}
 	pNode->pNext = (MPIDI_KVS_database_node_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_node_t));
+	if (pNode->pNext == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_node_t");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE);
+	    return mpi_errno;
+	}
 	pNode = pNode->pNext;
     }
     else
     {
 	kvs.pDatabase = (MPIDI_KVS_database_node_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_node_t));
+	if (kvs.pDatabase == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_node_t");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE);
+	    return mpi_errno;
+	}
 	pNode = kvs.pDatabase;
     }
     pNode->pNext = NULL;
@@ -257,7 +216,6 @@ int MPIDI_KVS_Create(char *name)
 	get_uuid(pNode->pszName);
 	if (pNode->pszName[0] == '\0')
 	{
-	    MPIDI_KVS_MUTEX_UNLOCK;
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE);
 	    return mpi_errno;
@@ -267,8 +225,6 @@ int MPIDI_KVS_Create(char *name)
 	    pNodeTest = pNodeTest->pNext;
     } while (pNodeTest != pNode);
     MPIU_Strncpy(name, pNode->pszName, MPIDI_MAX_KVS_NAME_LEN);
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE);
     return MPI_SUCCESS;
@@ -295,18 +251,13 @@ int MPIDI_KVS_Create_name_in(char *name)
 	return mpi_errno;
     }
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     /* Check if the name already exists */
     pNode = kvs.pDatabase;
     while (pNode)
     {
 	if (strcmp(pNode->pszName, name) == 0)
 	{
-	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-	    /*return MPIDI_KVS_FAIL;*/
-	    /* Empty database? */
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
@@ -316,13 +267,29 @@ int MPIDI_KVS_Create_name_in(char *name)
     if (pNode)
     {
 	while (pNode->pNext)
+	{
 	    pNode = pNode->pNext;
+	}
 	pNode->pNext = (MPIDI_KVS_database_node_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_node_t));
+	if (pNode->pNext == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_node_t");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
+	    return mpi_errno;
+	}
 	pNode = pNode->pNext;
     }
     else
     {
 	kvs.pDatabase = (MPIDI_KVS_database_node_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_node_t));
+	/* --BEGIN ERROR HANDLING-- */
+	if (kvs.pDatabase == NULL)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_node_t");
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
+	    return mpi_errno;
+	}
+	/* --END ERROR HANDLING-- */
 	pNode = kvs.pDatabase;
     }
     pNode->pNext = NULL;
@@ -330,8 +297,6 @@ int MPIDI_KVS_Create_name_in(char *name)
     pNode->pIter = NULL;
     MPIU_Strncpy(pNode->pszName, name, MPIDI_MAX_KVS_NAME_LEN);
     
-    MPIDI_KVS_MUTEX_UNLOCK;
-
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
     return MPI_SUCCESS;
 }
@@ -350,8 +315,6 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_GET);
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     pNode = kvs.pDatabase;
     while (pNode)
     {
@@ -364,7 +327,6 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 		{
 		    /* FIXME: This routine assume that value has length MPIDI_MAX_KVS_VALUE_LEN, but there is no easy way to check this.  This is poor coding prctice. */
 		    MPIU_Strncpy(value, pElement->pszValue, MPIDI_MAX_KVS_VALUE_LEN);
-		    MPIDI_KVS_MUTEX_UNLOCK;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_GET);
 		    return MPI_SUCCESS;
 		}
@@ -373,8 +335,6 @@ int MPIDI_KVS_Get(const char *name, const char *key, char *value)
 	}
 	pNode = pNode->pNext;
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Get(name, key, value, MPIDI_MAX_KVS_VALUE_LEN);
     if (pmi_errno != PMI_SUCCESS)
@@ -402,8 +362,6 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_PUT);
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     pNode = kvs.pDatabase;
     while (pNode)
     {
@@ -415,25 +373,29 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 		if (strcmp(pElement->pszKey, key) == 0)
 		{
 		    MPIU_Strncpy(pElement->pszValue, value, MPIDI_MAX_KVS_VALUE_LEN);
-		    MPIDI_KVS_MUTEX_LOCK;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_PUT);
 		    return MPI_SUCCESS;
 		}
 		pElement = pElement->pNext;
 	    }
 	    pElement = (MPIDI_KVS_database_element_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_element_t));
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (pElement == NULL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_element_t");
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
 	    pElement->pNext = pNode->pData;
 	    MPIU_Strncpy(pElement->pszKey, key, MPIDI_MAX_KVS_KEY_LEN);
 	    MPIU_Strncpy(pElement->pszValue, value, MPIDI_MAX_KVS_VALUE_LEN);
 	    pNode->pData = pElement;
-	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_PUT);
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Put(name, key, value);
     if (pmi_errno != PMI_SUCCESS)
@@ -463,8 +425,6 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_DELETE);
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     pNode = kvs.pDatabase;
     while (pNode)
     {
@@ -484,26 +444,26 @@ int MPIDI_KVS_Delete(const char *name, const char *key)
 			pNode->pData = pElement->pNext;
 		    }
 		    MPIU_Free(pElement);
-		    MPIDI_KVS_MUTEX_UNLOCK;
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
 		    return MPI_SUCCESS;
 		}
 		pElementTrailer = pElement;
 		pElement = pElement->pNext;
 	    }
-	    MPIDI_KVS_MUTEX_UNLOCK;
+	    /* --BEGIN ERROR HANDLING-- */
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
 	    return mpi_errno;
+	    /* --END ERROR HANDLING-- */
 	}
 	pNode = pNode->pNext;
     }
 
-    MPIDI_KVS_MUTEX_UNLOCK;
-
+    /* --BEGIN ERROR HANDLING-- */
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
     return mpi_errno;
+    /* --END ERROR HANDLING-- */
 }
 #endif
 
@@ -520,8 +480,6 @@ int MPIDI_KVS_Destroy(const char *name)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_DESTROY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_DESTROY);
-
-    MPIDI_KVS_MUTEX_LOCK;
 
     pNodeTrailer = pNode = kvs.pDatabase;
     while (pNode)
@@ -543,15 +501,12 @@ int MPIDI_KVS_Destroy(const char *name)
 		pNodeTrailer->pNext = pNode->pNext;
 	    }
 	    MPIU_Free(pNode);
-	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DESTROY);
 	    return MPI_SUCCESS;
 	}
 	pNodeTrailer = pNode;
 	pNode = pNode->pNext;
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Destroy(name);
     if (pmi_errno != PMI_SUCCESS)
@@ -580,8 +535,6 @@ int MPIDI_KVS_First(const char *name, char *key, char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FIRST);
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     if (key != NULL)
     {
 	key[0] = '\0';
@@ -606,14 +559,11 @@ int MPIDI_KVS_First(const char *name, char *key, char *value)
 	    {
 		pNode->pIter = pNode->pData;
 	    }
-	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FIRST);
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Get_key_length_max(&pmi_key_len_max);
     pmi_errno = PMI_KVS_Get_value_length_max(&pmi_value_len_max);
@@ -676,8 +626,6 @@ int MPIDI_KVS_Next(const char *name, char *key, char *value)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_NEXT);
 
-    MPIDI_KVS_MUTEX_LOCK;
-
     key[0] = '\0';
     pNode = kvs.pDatabase;
     while (pNode)
@@ -694,14 +642,11 @@ int MPIDI_KVS_Next(const char *name, char *key, char *value)
 	    {
 		key[0] = '\0';
 	    }
-	    MPIDI_KVS_MUTEX_UNLOCK;
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXT);
 	    return MPI_SUCCESS;
 	}
 	pNode = pNode->pNext;
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     pmi_errno = PMI_KVS_Get_key_length_max(&pmi_key_len_max);
     pmi_errno = PMI_KVS_Get_value_length_max(&pmi_value_len_max);
@@ -761,7 +706,6 @@ int MPIDI_KVS_Firstkvs(char *name)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_FIRSTKVS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FIRSTKVS);
-    MPIDI_KVS_MUTEX_LOCK;
 
     kvs.pDatabaseIter = kvs.pDatabase;
     if (name != NULL)
@@ -775,8 +719,6 @@ int MPIDI_KVS_Firstkvs(char *name)
 	    name[0] = '\0';
 	}
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FIRSTKVS);
     return MPI_SUCCESS;
@@ -792,7 +734,6 @@ int MPIDI_KVS_Nextkvs(char *name)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_NEXTKVS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_NEXTKVS);
-    MPIDI_KVS_MUTEX_LOCK;
 
     if (kvs.pDatabaseIter == NULL)
     {
@@ -810,8 +751,6 @@ int MPIDI_KVS_Nextkvs(char *name)
 	    name[0] = '\0';
 	}
     }
-
-    MPIDI_KVS_MUTEX_UNLOCK;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXTKVS);
     return MPI_SUCCESS;
