@@ -331,7 +331,7 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 	if (pg_id == NULL) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
 	}
-	MPIU_Strncpy( pg_id, 2, "0" );
+	MPIU_Strncpy( pg_id, "0", 2 );
     }
 
     /*
