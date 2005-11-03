@@ -383,7 +383,7 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
 	    if (pElement == NULL)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_element_t");
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_PUT);
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
