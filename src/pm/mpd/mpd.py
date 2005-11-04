@@ -1267,7 +1267,14 @@ class MPD(object):
                 gid = pwent[3]
                 os.setgroups(mpd_get_groups_for_username(username))
                 os.setregid(gid,gid)
-                os.setreuid(uid,uid)
+                try:
+                    os.setreuid(uid,uid)
+                except OSError, errmsg1:
+                    try:
+                        os.setuid(uid)
+                    except OSError, errmsg2:
+                        mpd_print(1,"unable to perform setreuid or setuid")
+                        sys.exit(-1)
             import atexit    # need to use full name of _exithandlers
             atexit._exithandlers = []    # un-register handlers in atexit module
             # import profile
