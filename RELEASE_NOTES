@@ -12,10 +12,10 @@
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
-- The sock channel is the only channel that implements dynamic process support
-  (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, etc.).  All other
-  channels will experience failures for tests exercising dynamic process
-  functionality.
+- The sock and ssm channels are the only channels that implements dynamic 
+  process support (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, 
+  etc.) under Unix.  All other channels will experience failures for tests 
+  exercising dynamic process functionality.
 
 - The ssm channel uses special interprocess locks (often assembly) that may 
   not work with some compilers or machine architectures. It works on
@@ -30,7 +30,8 @@
   is to say that the processes involved in a job must use the same basic type
   sizes and format.  The sizes and format are typically determined by the
   processor architecture, although it may also be influenced by compiler
-  options.
+  options.  This device does support the use of different executables (e.g.,
+  multiple-program-multiple-data, or MPMD, programming).
 
 - The support for MPI_THREAD_SERIALIZED and MPI_THREAD_MULTIPLE is preliminary,
   and only available with the sock channel.  Rudimentary testing has been
@@ -44,15 +45,6 @@
   complete.  Furthermore, any matching send operations may erroneously fail.
   By explicitly completed, we mean that the request associated with the
   operation is completed by one of the MPI_TEST or MPI_WAIT routines.
-
-- MPI_INTERCOMM_CREATE does not work correctly when the union of the local and
-  remote communicators are not already part of an existing (intra or inter)
-  communicator.  For example, if communicator A spawns a set of processes whose
-  MPI_COMM_WORLD we will refer to as communicator B.  Likewise, communicator B
-  spawns a set of processes whose MPI_COMM_WORLD we will refer to as
-  communicator C.  Despite being a legal request, MPI_INTERCOMM_CREATE will
-  fail to create a new intercommunicator between A and C using a commom process
-  in B.
 
 - C++ Binding:
   
