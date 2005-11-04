@@ -39,7 +39,7 @@
     SciDAC Program, Office of Science, U.S. Department of Energy, under
     Contract
     W-31-109-ENG-38.}\\
-  Version 1.0.2\\
+  Version 1.0.3\\
   Mathematics and Computer Science Division\\
   Argonne National Laboratory}
 
@@ -315,7 +315,7 @@ This should print the name of the machine you are running on.  If not,
 you should check the troubleshooting section in Appendix~\ref{app:mpd}.
 
 \item
-Now we will bring up a ring of mpd's on a set of machines.  Create
+Now we will bring up a ring of \texttt{mpd}'s on a set of machines.  Create
 a file consisting of a list of machine names, one per line.  Name this
 file \texttt{mpd.hosts}.  These hostnames will be used as targets for
 \texttt{ssh} or \texttt{rsh}, so include full domain names if necessary.  Check that you
@@ -341,19 +341,21 @@ The number to start can be less than 1 + number of hosts in the
 file, but cannot be greater than 1 + the number of hosts in the
 file.  One mpd is always started on the machine where \texttt{mpdboot} is
 run, and is counted in the number to start, whether or not it occurs
-in the file.  By default, \texttt{mpdboot} will only start one mpd per
+in the file.  By default, \texttt{mpdboot} will only start one \texttt{mpd} per
 machine even if the machine name appears in the hosts file multiple times.
-The -1 option can be used to override this behavior, but there is typically
+The \texttt{-1} option can be used to override this behavior, but there is typically
 no reason for a user to need multiple mpds on a single host.
-The -1 option exists mostly to support internal testing.
-The \texttt{--help} option explains these as well as other useful options.
+The \texttt{-1} option exists mostly to support internal testing.
+The \texttt{--help} option explains these as well as other useful
+options.  In particular, if your cluster has multiprocessor nodes, you
+might want to use the \texttt{--ncpus} argument described in Section~\ref{sec:smps}.
 
 Check to see if all the hosts you listed in mpd.hosts are in the output
 of 
 \begin{verbatim}
     mpdtrace
 \end{verbatim}
-and if so move on to step 12.
+and if so move on to the next step.
 
 There is a workaround if you cannot get \texttt{mpdboot} to work because of
 difficulties with \texttt{ssh} or \texttt{rsh} setup.  You can start the daemons ``by
@@ -453,19 +455,9 @@ or
 to ensure that the process with rank 0 runs on your workstation.
 
 The arguments between `:'s in this syntax are called ``argument sets,''
-since they apply to a set of processes.  \textbf{Change this to match
-new global and local arguments described in User's Guide.}  There can be
-an extra argument set for arguments that apply to all the processes,
-which must come first.  For example, to get rank labels on
-standard output, use
-\begin{verbatim}
-    mpiexec -l : -n 3 cpi
-\end{verbatim}
-This first `:' is optional, since \texttt{mpiexec} knows which are the
-global arguments and knows they are first.  So you can also use
-\begin{verbatim}
-    mpiexec -l : -n 3 cpi
-\end{verbatim}
+since they apply to a set of processes.  More argments are described in
+the \textit{User's Guide}.
+
 The \texttt{mpirun} command from the original MPICH is still available,
 although it does not support as many options as \texttt{mpiexec}.  You might
 want to use it in the case where you do not have the XML parser
@@ -479,10 +471,32 @@ installed MPICH2 and run an MPI example.
 \subsection{Common Non-Default Configuration Options}
 \label{sec:non-default}
 
+A list of \texttt{configure} options is found in
+Section~\ref{configure-options}.  Here we comment on some of them.  This
+section needs much more work.
+
+
+\subsubsection{Using the Absoft Fortran compilers with MPICH2}
+\label{sec:absoft}
+
+For best results, it is important to force the Absoft Fortran compilers to 
+make all routine names monocase.  In addition, if lower case is chosen 
+(this will match common use by many programs), you must also tell the the 
+Absoft compiles to append an underscore to global names in order to access 
+routines such as getarg (getarg is not used by MPICH2 but is used in some 
+of the tests and is often used in application programs).  We recommend 
+configuring MPICH2 with the following options
 \begin{verbatim}
-enable-g, enable-fast, devices, pms, etc.
+
+setenv F77 f77
+setenv MPI_FFLAGS "-f -N15"
+setenv MPI_F90FLAGS "-YALL_NAMES=LCS -YEXT_SFX=_"
+
+./configure ....
+
 \end{verbatim}
-Reference Section~\ref{configure-options}.
+
+
 
 
 \subsection{Shared Libraries}
@@ -546,10 +560,10 @@ For example, the new mpd has a new format and slightly different
 semantics for the -machinefile option.  Assume that you type this
 data into a file named \texttt{machfile}:
 \begin{verbatim}
-bp400:2
-bp401:2
-bp402:2
-bp403:2
+    bp400:2
+    bp401:2
+    bp402:2
+    bp403:2
 \end{verbatim}
 
 If you then run a parallel job with this machinefile, you would expect
@@ -563,11 +577,11 @@ before going on to bp401.  Ranks 2 and 3 would run on bp401, and rank
 
 produces:
 \begin{verbatim}
-0: bp400
-1: bp400
-2: bp401
-3: bp401
-4: bp402
+    0: bp400
+    1: bp400
+    2: bp401
+    3: bp401
+    4: bp402
 \end{verbatim}
 
 \section{Installing and Managing Process Managers}
@@ -601,6 +615,10 @@ time by adding
 to the \texttt{configure} argments.  This is not necessary, since
 \texttt{mpd} is the default.
 
+
+\subsubsection{System Requirements}
+\label{sec:mpd-requirements}
+
 \texttt{mpd} consists of a number of components written in Python.
 The \texttt{configure} script should automatically find a version of
 python in your \texttt{PATH} that has all the features needed to run
@@ -609,7 +627,10 @@ Python for \texttt{mpd} to use, you can do so by adding
 \begin{verbatim}
     --with-python=<fullpathname of python interpreter>
 \end{verbatim}
-to your \texttt{configure} arguments.
+to your \texttt{configure} arguments.  If your system doesn't have Python,
+you can get the latest version from \texttt{http://www.python.org}.
+Most Linux distributions include a moderately current version of Python.
+Mpd requires release 2.2 or later.
 
 The \texttt{mpd} process manager supports the use of the TotalView
 parallel debugger from Etnus.  If \texttt{totalview} is in your
@@ -703,11 +724,40 @@ with a ring started by root.  To use root's ring, they must use an option
 named \emph{MPD\_USE\_ROOT\_MPD}.  This option may either be set as an environment
 variable or they can set it in their own .mpd.conf file, e.g.:
 \begin{verbatim}
-MPD_USE_MPD_ROOT=1
+    MPD_USE_MPD_ROOT=1
 \end{verbatim}
 When root starts the mpds in the ring, the procedure is the same as for a regular
 user except that root's configuration file is in /etc/mpd.conf (note that
 there is no leading dot in the file name).
+
+
+\subsubsection{Running MPD on SMP's}
+\label{sec:mpd-on-smps}
+
+Typically one starts one \texttt{mpd} on each host.  When a job is
+started with \texttt{mpiexec} without any particular host specification,
+the processes are started on the ring of hosts one at a time, in
+round-robin fashion until all the processes have been started.  Thus, if
+you start a four-process job on a ring of two machines, hosta and hostb,
+then you will find ranks 0 and 2 on hosta and ranks 1 and 4  on hostb.
+This might not be what you want, especially if the machines are SMP's
+and you would like to have consecutive ranks on the same machine as much
+as possible.  If you tell the \texttt{mpd} how many cpus it has to work
+with by using the \texttt{--ncpus} argument, as in 
+\begin{verbatim}
+    mpd --ncpus=2
+\end{verbatim}
+then the number of processes started the first time the startup message
+circles the ring will be determined by this argument.  That is, in the
+above four-process example, ranks 0 and 1 will be on hosta and ranks 2
+and 3 will be on hostb.  This effect only occurs the first time around
+the ring.  That is if you start a six-process job on this ring (two
+mpd's, each started with \texttt{--ncpus=2}) you will get processes 0,
+1, and 4 on hosta and 2, 3, and 5 on hostb.  This is for load-balancing
+purposes.  (It is assumed that you do not want 0, 1, 4, and 5 on hosta
+and only 2 and 3 on hostb; if that is what you \emph{do} want, you can
+control process placement explicitly on the \texttt{mpiexec} command, as
+described in the \textit{User's Guide}.
 
 \subsection{SMPD}
 \label{sec:smpd}
@@ -791,9 +841,13 @@ host until smpd is started again.
 
 \subsection{gforker}
 \label{sec:forker}
-\texttt{gforker} is a simple process manager that runs all processes
-on a single node; it uses the system \texttt{fork} and \texttt{exec}
-calls to create the new processes.  
+\texttt{gforker} is a simple process manager that runs all processes on
+a single node; it's version of \texttt{mpiexec} uses the system
+\texttt{fork} and \texttt{exec} calls to create the new processes.
+To configure with the \texttt{gforker} process manager, use
+\begin{verbatim}
+    configure --with-pm=gforker ...
+\end{verbatim}
 
 \section{Testing}
 \label{sec:testing}
@@ -1000,56 +1054,58 @@ top-level configure.  It is the MPICH-specific part of the output of
 \begin{verbatim}
     configure --help
 \end{verbatim}
-Not all of these options may be fully supported yet.  Explain all of
-them \ldots\marginpar{The text includes the output of configure from
-  some time ago.  It may be preferable to either force the Makefile to
-  get an up-to-date version or even better to provide something more
-  informative that explains the options in more depth}
+Not all of these options may be fully supported yet.  
+% This snapshot of configure --help output was taken on Nov 3, 2005.  It
+% needs to be updated frequently (or automatically) and in the long run
+% to be replaced by real documentation.
 
 \begin{small}
 \begin{verbatim}
---enable and --with options recognized:
+Optional Features:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 --enable-cache  - Turn on configure caching
---enable-echo  - Turn on strong echoing. The default is enable=no. 
+--enable-echo  - Turn on strong echoing. The default is enable=no.
 --enable-strict - Turn on strict debugging with gcc
 --enable-coverage - Turn on coverage analysis using gcc and gcov
---enable-error-checking=level - Control the amount of error checking.  
-level may be 
+--enable-error-checking=level - Control the amount of error checking.
+level may be
     no        - no error checking
-    runtime   - error checking controllable at runtime through environment 
+    runtime   - error checking controllable at runtime through environment
                 variables
     all       - error checking always enabled
---enable-error-messages=level - Control the amount of detail in error 
+--enable-error-messages=level - Control the amount of detail in error
   messages.  Level may be
     all       - Maximum amount of information
     generic   - Only generic messages (no information about the specific
                 instance)
     class     - One message per MPI error class
     none      - No messages
---enable-timing=level - Control the amount of timing information 
+--enable-timing=level - Control the amount of timing information
 collected by the MPICH implementation.  level may be
     none    - Collect no data
     all     - Collect lots of data
     runtime - Runtime control of data collected
 The default is none.
---enable-threads=level - Control the level of thread support in the 
+--enable-threads=level - Control the level of thread support in the
 MPICH implementation.  The following levels are supported.
     single - No threads (MPI_THREAD_SINGLE)
     funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
     serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
-    multiple[:impl] - Fully multi-threaded (MPI_THREAD_MULTIPLE)
+    multiple:impl - Fully multi-threaded (MPI_THREAD_MULTIPLE)
 The default is funneled.  If enabled and no level is specified, the
 level is set to multiple.  If disabled, the level is set to single.
 When the level is set to multiple, an implementation may also be
 specified.  The following implementations are supported.
     global_mutex - a single global lock guards access to all MPI functions.
-    global_monitor - a single monitor guards access to all MPI functions.
 The default implementation is global_mutex.
 --enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
     none     - No debugging
+    mem      - Memory usage tracing
     handle   - Trace handle operations
     dbg      - Add compiler -g flags
+    log      - Enable debug event logging
     meminit  - Preinitialize memory associated structures and unions to
                eliminate access warnings from programs like valgrind
     all      - All of the above choices
@@ -1060,48 +1116,94 @@ implementation.  option may be a list of common separated names including
 --enable-cxx - Enable C++ bindings
 --enable-romio - Enable ROMIO MPI I/O implementation
 --enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
- such as the collectives, that may be implemented in terms of other MPI 
+ such as the collectives, that may be implemented in terms of other MPI
  routines
---with-device=name - Specify the communication device for MPICH.
---with-pmi=name - Specify the pmi interface for MPICH.
---with-pm=name - Specify the process manager for MPICH.
-      Multiple process managers may be specified as long as they all use
-      the same pmi interface by separating them with colons.  The 
-      mpiexec for the first named process manager will be installed.
-      Example: --with-pm=gforker:mpd builds the two process 
-      managers gforker and mpd; only the mpiexec from gforker
-      is installed into the bin directory.
---with-thread-package=package - Thread package to use.  Supported thread
-packages include:
-    posix or pthreads - POSIX threads
-    solaris - Solaris threads (Solaris OS only)
-The default package is posix.
---with-logging=name - Specify the logging library for MPICH.
---with-mpe - Build the MPE (MPI Parallel Environment) routines
+--enable-mpe - Build the MPE (MPI Parallel Environment) routines
 --enable-weak-symbols - Use weak symbols to implement PMPI routines (default)
---with-htmldir=dir - Specify the directory for html documentation
---with-docdir=dir - Specify the directory for documentation
---with-cross=file - Specify the values of variables that configure cannot
-determine in a cross-compilation environment
---with-flavor=name - Set the name to associate with this flavor of MPICH
---with-namepublisher=name - Choose the system that will support 
-                             MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
-                             include
-                               no (no service available)
-                               pmiext  (service using a pmi extension,
-                                        usually only within the same MPD ring)
-                               file:directory
-                               ldap:ldapservername
-                             Only no and file have been implemented so far.
 --enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gcc     - Standard gcc and GNU ld options for creating shared libraries
-    libtool - GNU libtool 
+    osx-gcc - Special options for gcc needed only on OS/X
+    solaris-cc - Solaris native (SPARC) compilers for 32 bit systems
+    cygwin-gcc - Special options for gcc needed only for cygwin
     none    - same as --disable-sharedlibs
-Only gcc is currently supported
+Only gcc, osx-gcc, and solaris-cc are currently supported
 
 --enable-dependencies - Generate dependencies for sourcefiles.  This
             requires that the Makefile.in files are also created
             to support dependencies (see maint/updatefiles)
+--enable-runtimevalues - Determine various parameters of the Fortran
+                         environment at run time, such as the values for
+                         .TRUE. and .FALSE. .  This allows a single MPICH
+                         library to be used with multiple Fortran compilers
+--enable-timer-type=name - Select the timer to use
+for MPI_Wtime and internal timestamps.  name may be one of
+    gethrtime - Solaris timer (Solaris systems only)
+    clock_gettime   - Posix timer (where available)
+    gettimeofday - Most Unix systems
+    linux86_cycle - Linux x86; returns cycle counts, not time in seconds
+    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
+    gcc_ia64_cycle - IPF ar.itc timer
+
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+--with-device=name - Specify the communication device for MPICH.
+--with-pmi=name - Specify the pmi interface for MPICH.
+--with-pm=name - Specify the process manager for MPICH.
+      Multiple process managers may be specified as long as they all use
+      the same pmi interface by separating them with colons.  The
+      mpiexec for the first named process manager will be installed.
+      Example: --with-pm=forker:mpd:remshell builds the three process
+      managers forker, mpd, and remshell; only the mpiexec from forker
+      is installed into the bin directory.
+--with-logging=name - Specify the logging library for MPICH.
+--with-mpe - Build the MPE (MPI Parallel Environment) routines
+--with-htmldir=dir - Specify the directory for html documentation
+--with-docdir=dir - Specify the directory for documentation
+--with-cross=file - Specify the values of variables that configure cannot
+determine in a cross-compilation environment
+--with-namepublisher=name - Choose the system that will support
+                             MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
+                             include
+                               no (no service available)
+                               mpd
+			       file:directory (optional directory)
+
+--with-cxxlibname=name  - Specify name of library containing C++ interface
+routines
+--with-flibname=name  - Specify name of library containing Fortran interface
+routines
+--with-fwrapname=name  - Specify name of library containing Fortran interface
+routines
+--with-thread-package=package - Thread package to use.  Supported thread
+packages include:
+    posix or pthreads - POSIX threads
+    solaris - Solaris threads (Solaris OS only)
+    none - no threads
+If the option is not specified, the default package is ${MPE_THREAD_DEFAULT}.
+If the option is specified, but a package is not given, then the default
+is posix.
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
+              headers in a nonstandard directory <include dir>
+  F77         Fortran 77 compiler command
+  FFLAGS      Fortran 77 compiler flags
+  F90         Fortran 90 compiler command
+  F90FLAGS    Fortran 90 compiler flags
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  CPP         C preprocessor
+
+Use these variables to override the choices made by `configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+
 \end{verbatim}
 \end{small}
 
@@ -1468,7 +1570,6 @@ This should print a range something like:
 \begin{verbatim}
     32768   61000
 \end{verbatim}
-
 
 \end{document}
 
