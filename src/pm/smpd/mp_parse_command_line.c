@@ -267,7 +267,7 @@ static int strip_args(int *argcp, char **argvp[], int n)
     return SMPD_SUCCESS;
 }
 
-static SMPD_BOOL isnumber(char *str)
+static SMPD_BOOL smpd_isnumber(char *str)
 {
     size_t i, n = strlen(str);
     for (i=0; i<n; i++)
@@ -608,7 +608,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     result = smpd_get_smpd_data("port", smpd_setting_tmp_buffer, 20);
     if (result == SMPD_SUCCESS)
     {
-	if (isnumber(smpd_setting_tmp_buffer))
+	if (smpd_isnumber(smpd_setting_tmp_buffer))
 	{
 	    result = atoi(smpd_setting_tmp_buffer);
 	    if (result != 0)
@@ -619,7 +619,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     env_str = getenv("MPIEXEC_SMPD_PORT");
     if (env_str)
     {
-	if (isnumber(env_str))
+	if (smpd_isnumber(env_str))
 	{
 	    result = atoi(env_str);
 	    if (result != 0)
@@ -848,7 +848,7 @@ configfile_loop:
 		/* check to see if there is a number after the localonly option */
 		if (argc > 2)
 		{
-		    if (isnumber((*argvp)[2]))
+		    if (smpd_isnumber((*argvp)[2]))
 		    {
 			if (nproc != 0)
 			{
@@ -1272,7 +1272,7 @@ configfile_loop:
 		}
 		if (argc > 2)
 		{
-		    if (isnumber((*argvp)[2]))
+		    if (smpd_isnumber((*argvp)[2]))
 		    {
 			/* initially set nproc to be the number of hosts */
 			nproc = atoi((*argvp)[2]);
@@ -1311,7 +1311,7 @@ configfile_loop:
 			    index++;
 			    if (argc > index)
 			    {
-				if (isnumber((*argvp)[index]))
+				if (smpd_isnumber((*argvp)[index]))
 				{
 				    host_node_ptr->nproc = atoi((*argvp)[index]);
 				    index++;
@@ -1441,7 +1441,7 @@ configfile_loop:
 	    {
 		if (argc > 2)
 		{
-		    if (isnumber((*argvp)[2]))
+		    if (smpd_isnumber((*argvp)[2]))
 		    {
 			smpd_process.port = atoi((*argvp)[2]);
 		    }
