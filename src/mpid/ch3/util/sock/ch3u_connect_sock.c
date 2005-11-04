@@ -222,7 +222,9 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 				     int *port, void *ifaddr, int *hasIfaddr )
 {
     int mpi_errno = MPI_SUCCESS;
+#if !defined(HAVE_WINDOWS_H) && defined(HAVE_INET_PTON)
     char ifname[256];
+#endif
 
     mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_HOST_DESCRIPTION_KEY, 
 				 host_description, maxlen);
