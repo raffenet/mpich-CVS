@@ -362,14 +362,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     }
 
  fn_exit:
-    if (val != NULL)
-    { 
-	MPIU_Free(val);
-    }
-    if (key != NULL)
-    { 
-	MPIU_Free(key);
-    }
+    MPIU_CHKLMEM_FREEALL();
     return mpi_errno;
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
@@ -423,9 +416,10 @@ static int getNumProcessors( void )
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int getNodeRootRank(int pg_rank, int *root_rank)
 {
-    int *ranks, num_ranks, min_rank;
+    int *ranks = NULL, num_ranks, min_rank;
     int pmi_errno, i;
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKLMEM_DECL(1);
 
     pmi_errno = PMI_Get_clique_size(&num_ranks);
     if (pmi_errno != PMI_SUCCESS)
@@ -443,13 +437,7 @@ static int getNodeRootRank(int pg_rank, int *root_rank)
 	    "**pmi_invalid_clique_size %d", num_ranks);
     }
 
-    ranks = MPIU_Malloc(sizeof(int) * num_ranks);
-    if (ranks == NULL)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-			     "**nomem", 
-			     "**nomem %s", "clique rank array");
-    }
+    MPIU_CHKLMEM_MALLOC(ranks, int *, sizeof(int) * num_ranks, mpi_errno, "an array of ranks");
 
     pmi_errno = PMI_Get_clique_ranks(ranks, num_ranks);
     if (pmi_errno != PMI_SUCCESS)
@@ -468,6 +456,7 @@ static int getNodeRootRank(int pg_rank, int *root_rank)
 
     *root_rank = min_rank;
 fn_exit:
+    MPIU_CHKLMEM_FREEALL();
     return mpi_errno;
 fn_fail:
     goto fn_exit;
