@@ -3821,7 +3821,7 @@ for subsys in $devsubsystems $subsystems ; do
 	;;
 
 dnl
-dnl Don't try to so this because it can fail for environment variables that
+dnl Don't try this because it can fail for environment variables that
 dnl contain quotes (particularly single quotes).  Rather than try to handle
 dnl all of these cases, we just leave off the cache file
 dnl	changequote(<<,>>)    
@@ -3838,6 +3838,13 @@ dnl	else
 dnl	    ac_sub_configure_args="$ac_sub_configure_args $ac_arg"
 dnl        fi
 dnl    ;;
+dnl
+dnl Here's the problem.  If the user set a few of the special variables
+dnl such as CPPFLAGS, those original settings will override the
+dnl updated values.  Here's an attempt at a fix
+        CPPFLAGS=*)
+	ac_sub_configure_args="$ac_sub_configure_args 'CPPFLAGS=$CPPFLAGS'"
+        ;;
 
     	*) 
 	    ac_sub_configure_args="$ac_sub_configure_args $ac_arg" ;;
