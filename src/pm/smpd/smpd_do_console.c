@@ -113,12 +113,14 @@ quit_job:
     }
 
     /* finalize */
+    /*
     smpd_dbg_printf("calling MPIDU_Sock_finalize\n");
     result = MPIDU_Sock_finalize();
     if (result != MPI_SUCCESS)
     {
 	smpd_err_printf("MPIDU_Sock_finalize failed,\nsock error: %s\n", get_sock_error_string(result));
     }
+    */
 
 #ifdef HAVE_WINDOWS_H
     if (smpd_process.hCloseStdinThreadEvent)
@@ -139,7 +141,7 @@ quit_job:
 	smpd_process.hCloseStdinThreadEvent = NULL;
     }
 #elif defined(USE_PTHREAD_STDIN_REDIRECTION)
-    pthread_cancel(smpd_process.stdin_thread);
+    smpd_cancel_stdin_thread();
 #endif
     smpd_exit_fn(FCNAME);
     smpd_exit(exit_code);

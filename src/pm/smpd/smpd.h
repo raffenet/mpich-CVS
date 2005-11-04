@@ -616,6 +616,7 @@ typedef struct smpd_global_t
 #endif
 #ifdef USE_PTHREAD_STDIN_REDIRECTION
     pthread_t stdin_thread;
+    int stdin_read, stdin_write;
 #endif
     int do_console;
     int port;
@@ -798,7 +799,8 @@ int smpd_start_unx_mgr(smpd_context_t *context);
 void smpd_stdin_thread(SOCKET hWrite);
 #endif
 #ifdef USE_PTHREAD_STDIN_REDIRECTION
-void *smpd_pthread_stdin_thread(void *pwrite_fd);
+void *smpd_pthread_stdin_thread(void *p);
+int smpd_cancel_stdin_thread();
 #endif
 int smpd_handle_command(smpd_context_t *context);
 int smpd_create_command_from_stdin(char *str, smpd_command_t **cmd_pptr);

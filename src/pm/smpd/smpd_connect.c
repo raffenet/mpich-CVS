@@ -76,6 +76,8 @@ smpd_global_t smpd_process =
 #endif
 #ifdef USE_PTHREAD_STDIN_REDIRECTION
       0,                /* stdin_thread           */
+      0,                /* stdin_read             */
+      0,                /* stdin_write            */
 #endif
       SMPD_FALSE,       /* do_console             */
       SMPD_LISTENER_PORT, /* smpd port            */

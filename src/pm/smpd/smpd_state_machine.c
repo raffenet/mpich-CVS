@@ -409,6 +409,75 @@ void smpd_stdin_thread(SOCKET hWrite)
 #endif
 #else
 #ifdef USE_PTHREAD_STDIN_REDIRECTION
+void *smpd_pthread_stdin_thread(void *p)
+{
+    int read_fd, write_fd;
+    char ch;
+    size_t num_read;
+    fd_set set;
+    int n;
+    /*struct timeval tv;*/
+
+    write_fd = smpd_process.stdin_write;
+    read_fd = fileno(stdin);
+
+    for(;;)
+    {
+	FD_ZERO(&set);
+	FD_SET(read_fd, &set);
+	FD_SET(write_fd, &set);
+
+	/*
+	  tv.tv_sec = -1;
+	  tv.tv_usec = -1;
+	*/
+	n = select(write_fd+1, &set, NULL, NULL, NULL/*&tv*/);
+	if (n<0)
+	{
+	    if (errno = EINTR || errno == 0)
+		continue;
+	    close(write_fd);
+	    return NULL;
+	}
+
+	if (FD_ISSET(write_fd, &set))
+	{
+	    read(write_fd, &ch, 1);
+	    close(write_fd);
+	    return NULL;
+	}
+	if (FD_ISSET(read_fd, &set))
+	{
+	    num_read = read(read_fd, &ch, 1);
+	    if (num_read > 0)
+	    {
+		if (write(write_fd, &ch, 1) != 1)
+		{
+		    smpd_dbg_printf("stdin redirection write failed, error %d\n", errno);
+		    close(write_fd);
+		    return NULL;
+		}
+	    }
+	}
+    }
+    close(write_fd);
+    return NULL;
+}
+
+int smpd_cancel_stdin_thread()
+{
+    char ch = 0;
+    /*printf("cancelling stin redirection thread\n");*/
+    if (smpd_process.stdin_thread == NULL)
+	return SMPD_SUCCESS;
+    write(smpd_process.stdin_read, &ch, 1);
+    pthread_join(smpd_process.stdin_thread, NULL);
+    /*pthread_cancel(smpd_process.stdin_thread);*/
+    smpd_process.stdin_thread = NULL;
+    return SMPD_SUCCESS;
+}
+
+/*
 void *smpd_pthread_stdin_thread(void *pwrite_fd)
 {
     int read_fd, write_fd;
@@ -432,6 +501,7 @@ void *smpd_pthread_stdin_thread(void *pwrite_fd)
     close(write_fd);
     return NULL;
 }
+*/
 #endif
 #endif
 
@@ -5086,6 +5156,9 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
     DWORD dwThreadID;
     SOCKET hWrite;
 #endif
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+    int fd[2];
+#endif
     smpd_host_node_t *left, *right, *host_node;
 
     smpd_enter_fn(FCNAME);
@@ -5573,6 +5646,11 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
+#elif defined(USE_PTHREAD_STDIN_REDIRECTION)
+	socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
+	smpd_process.stdin_read = fd[0];
+	smpd_process.stdin_write = fd[1];
+	stdin_fd = fd[0];
 #else
 	stdin_fd = fileno(stdin);
 #endif
@@ -5612,6 +5690,14 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
+#elif defined(USE_PTHREAD_STDIN_REDIRECTION)
+	if (pthread_create(&smpd_process.stdin_thread, NULL, smpd_pthread_stdin_thread, NULL) != 0)
+	{
+	    smpd_err_printf("Unable to create a thread to read stdin, error %d\n", errno);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	/*pthread_detach(smpd_process.stdin_thread);*/
 #endif
 
 	/* post a read for a user command from stdin */
@@ -5999,7 +6085,7 @@ int smpd_state_reading_timeout(smpd_context_t *context, MPIDU_Sock_event_t *even
     }
     */
 #elif defined(USE_PTHREAD_STDIN_REDIRECTION)
-    pthread_cancel(smpd_process.stdin_thread);
+    smpd_cancel_stdin_thread();
 #endif
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
