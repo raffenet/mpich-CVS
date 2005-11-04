@@ -15,7 +15,7 @@ AC_INIT(src/include/mpiimpl.h)
 if test -s "$srcdir/maint/Version" ; then
     VERSION="`cat $srcdir/maint/Version`"
 else
-    VERSION="1.0.2"
+    VERSION="1.0.3"
 fi
 dnl The autoconf documentation describes AC_PACKAGE_VERSION etc macros,
 dnl but they are not implemented
@@ -1016,6 +1016,9 @@ if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
         if test "$f90_with_f77" != yes ; then
 	    enable_f90=no
 	    AC_MSG_WARN([The selected Fortran 90 compiler $F90 does not work with the selected Fortran 77 compiler $F77.  Use the environment variables F90 and F77 respectively to select compatible Fortran compilers.  The check here tests to see if a main program compiled with the Fortran 90 compiler can link with a subroutine compiled with the Fortran 77 compiler.])
+        elif test "$f90_with_f77" = "yes" ; then
+            # If we got here, there is a Fortran 90 compiler that we can use
+            enable_f90=yes
         fi
     elif test "$pac_cv_prog_f90_works" = no; then
         AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
