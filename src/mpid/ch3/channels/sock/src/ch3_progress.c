@@ -418,6 +418,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    {
 		/* FIXME: the following should be handled by the close protocol */
 		if (MPIR_ERR_GET_CLASS(event->error) != MPIDU_SOCK_ERR_CONN_CLOSED) {
+		    mpi_errno = event->error;
 		    MPIU_ERR_POP(mpi_errno);
 		}		    
 		break;
