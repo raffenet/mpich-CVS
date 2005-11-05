@@ -149,7 +149,7 @@ sub CountUncoveredLines {
     my $lastLine;
 
     open( FD, "<$filename" ) || die "Could not open $filename\n";
-    $gFilename = $filename;
+    $gFilename = $filename;   # Export filename for error reporting
 
     # Note that linecount is relative to the foo.c.gcov file, not the
     # original foo.c file.
@@ -408,7 +408,7 @@ sub AnnotateUncoveredLines {
 		}
 	    }
 	    if (!$sawend) {
-		print STDERR "File $filename ended in HAVE ERROR CHECKING block\n";
+		print STDERR "File $gFilename ended in HAVE ERROR CHECKING block\n";
 	    }
 	    next;	       
 	}
@@ -758,7 +758,7 @@ sub skipBlockAndAnnotate {
 	}
     }
     if (!$sawend) {
-	print STDERR "File $filename ended in --BEGIN $blockName-- block\n";
+	print STDERR "File $gFilename ended in --BEGIN $blockName-- block\n";
     }
 }
 
