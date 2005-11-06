@@ -1378,6 +1378,7 @@ int main( int argc, char *argv[] )
     if (size != extent) is_packed = 0;
     CHECK((extent % sizeof(long double)) != 0,is_largest);
     CHECK((extent % 4) != 0,is_largestor4);
+    CHECK((extent % 16) == 0,is_largestor4);
     CHECK((extent % sizeof(long double)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
