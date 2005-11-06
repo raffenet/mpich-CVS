@@ -245,7 +245,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        allocated already will have an id of zero; this helps 
        separate memory leaks in the initialization code from 
        leaks in the "active" code */
-    MPIU_trid( 1 );
+    /* Uncomment this code to leave out any of the MPID_Init/etc 
+       memory allocations from the memory leak testing */
+    /* MPIU_trid( 1 ); */
 #endif
 #ifdef USE_DBG_LOGGING
     MPIU_DBG_Init( argc, argv, MPIR_Process.comm_world->rank );
