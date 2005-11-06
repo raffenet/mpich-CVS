@@ -1,5 +1,5 @@
 #SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors .
-SUBDIRS = pt2pt
+SUBDIRS = coll pt2pt
 
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \

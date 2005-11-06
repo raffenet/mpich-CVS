@@ -774,6 +774,7 @@ AC_OUTPUT(maint/testmerge \
 	  threads/Makefile \
 	  threads/pt2pt/Makefile \
 	  errors/Makefile \
+	  errors/coll/Makefile \
 	  errors/pt2pt/Makefile \
 	  testlist \
 	  cxx/testlist \
