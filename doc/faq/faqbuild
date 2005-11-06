@@ -177,6 +177,10 @@ sub ReadHeading {
 		$heading =~ s/\\$//;
 		$line = <$FD>;
 		$line =~ s/\r?\n//;
+		if ($line =~ /^\s*%/) {
+		    $line =~ s/^\s*%*//;
+		    print STDERR "Heading continuation lines do not need to start with %%\n";
+		}
 		$heading .= $line;
 	    }
 	}
