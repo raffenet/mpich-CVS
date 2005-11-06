@@ -1269,7 +1269,15 @@ AC_DEFUN(PAC_C_STRUCT_ALIGNMENT,[
 AC_CACHE_CHECK([for C struct alignment],pac_cv_c_struct_align,[
 AC_TRY_RUN([
 #include <stdio.h>
+#ifdef DEBUG_STRUCT_ALIGNMENT
+#define DBG(a,b,c) printf( "type %s, size = %d, extent = %d\n", a, b, c )
+#define CHECK(cond,flag) if (cond) { flag = 0; \
+    printf( "Setting %s to false because of %s\n", #flag, #cond ); }
+#else
 #define DBG(a,b,c)
+#define CHECK(cond,flag) if (cond) { flag = 0; }
+#endif
+
 int main( int argc, char *argv[] )
 {
     FILE *cf;
@@ -1278,7 +1286,14 @@ int main( int argc, char *argv[] )
     int is_four    = 1;
     int is_eight   = 1;
     int is_largest = 1;
+    int is_largestorword = 1;
+    int is_largestor4 = 1;
+    int numCases;
+
+    /* We've seen PowerPC systems where the alignment may
+       be largest for some items but not for double + int */
     struct { char a; int b; } char_int;
+    struct { short a; int b; } short_int;
     struct { char a; short b; } char_short;
     struct { char a; long b; } char_long;
     struct { char a; float b; } char_float;
@@ -1293,16 +1308,32 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(int);
     extent = sizeof(char_int);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(int)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(int)) != 0, is_largest); 
+    CHECK((extent % sizeof(int)) != 0, is_largestor4); 
+    CHECK((extent % sizeof(int)) != 0, is_largestorword); 
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(int) == 8 && (extent % 8) != 0) is_eight = 0;
     DBG("char_int",size,extent);
 
+    size = sizeof(short) + sizeof(int);
+    extent = sizeof(short_int);
+    if (size != extent) is_packed = 0;
+    CHECK((extent % sizeof(int)) != 0, is_largest); 
+    CHECK((extent % sizeof(int)) != 0, is_largestor4); 
+    CHECK((extent % sizeof(int)) != 0, is_largestorword); 
+    if ( (extent % 2) != 0) is_two = 0;
+    if ( (size == 6) && (extent == 8) ) is_two = 0;
+    if ( (extent % 4) != 0) is_four = 0;
+    if (sizeof(int) == 8 && (extent % 8) != 0) is_eight = 0;
+    DBG("short_int",size,extent);
+
     size = sizeof(char) + sizeof(short);
     extent = sizeof(char_short);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(short)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(short)) != 0,is_largest);
+    CHECK((extent % sizeof(short)) != 0,is_largestor4);
+    CHECK((extent % sizeof(short)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if (sizeof(short) == 4 && (extent % 4) != 0) is_four = 0;
     if (sizeof(short) == 8 && (extent % 8) != 0) is_eight = 0;
@@ -1311,7 +1342,9 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(long);
     extent = sizeof(char_long);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(long)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(long)) != 0,is_largest);
+    CHECK((extent % 4) != 0,is_largestor4);
+    CHECK((extent % sizeof(long)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(long) == 8 && (extent % 8) != 0) is_eight = 0;
@@ -1320,7 +1353,9 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(float);
     extent = sizeof(char_float);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(float)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(float)) != 0,is_largest);
+    CHECK((extent % sizeof(float)) != 0,is_largestor4);
+    CHECK((extent % sizeof(float)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(float) == 8 && (extent % 8) != 0) is_eight = 0;
@@ -1329,7 +1364,9 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(double);
     extent = sizeof(char_double);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(double)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(double)) != 0,is_largest);
+    CHECK((extent % 4) != 0,is_largestor4);
+    CHECK((extent % sizeof(int)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(double) == 8 && (extent % 8) != 0) is_eight = 0;
@@ -1339,7 +1376,9 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(long double);
     extent = sizeof(char_long_double);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(long double)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(long double)) != 0,is_largest);
+    CHECK((extent % 4) != 0,is_largestor4);
+    CHECK((extent % sizeof(long double)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(long double) >= 8 && (extent % 8) != 0) is_eight = 0;
@@ -1350,7 +1389,9 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(int) + sizeof(char);
     extent = sizeof(char_int_char);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(int)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(int)) != 0,is_largest);
+    CHECK((extent % sizeof(int)) != 0,is_largestor4);
+    CHECK((extent % sizeof(int)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(int) == 8 && (extent % 8) != 0) is_eight = 0;
@@ -1360,9 +1401,12 @@ int main( int argc, char *argv[] )
     size = sizeof(char) + sizeof(short) + sizeof(char);
     extent = sizeof(char_short_char);
     if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(short)) != 0) is_largest = 0;
+    CHECK((extent % sizeof(short)) != 0,is_largest);
+    CHECK((extent % sizeof(short)) != 0,is_largestor4);
+    CHECK((extent % sizeof(short)) != 0,is_largestorword);
     if ( (extent % 2) != 0) is_two = 0;
     if (sizeof(short) == 4 && (extent % 4) != 0) is_four = 0;
+    CHECK((extent == 6) && (size == 4),is_four);
     if (sizeof(short) == 8 && (extent % 8) != 0) is_eight = 0;
     DBG("char_short_char",size,extent);
 
@@ -1376,15 +1420,19 @@ int main( int argc, char *argv[] )
 
     /* Tabulate the results */
     cf = fopen( "ctest.out", "w" );
-    if (is_packed + is_largest + is_two + is_four + is_eight == 0) {
+    numCases = is_packed + is_largest + is_largestorword + is_largestor4 +
+	is_two + is_four + is_eight;
+    if (numCases == 0) {
 	fprintf( cf, "Could not determine alignment\n" );
     }
     else {
-	if (is_packed + is_largest + is_two + is_four + is_eight != 1) {
+	if (numCases != 1) {
 	    fprintf( cf, "Multiple cases:\n" );
 	}
 	if (is_packed) fprintf( cf, "packed\n" );
 	if (is_largest) fprintf( cf, "largest\n" );
+	if (is_largestorword) fprintf( cf, "largestorword\n" );
+	if (is_largestor4) fprintf( cf, "largestor4\n" );
 	if (is_two) fprintf( cf, "two\n" );
 	if (is_four) fprintf( cf, "four\n" );
 	if (is_eight) fprintf( cf, "eight\n" );
