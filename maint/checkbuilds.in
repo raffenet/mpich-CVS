@@ -107,6 +107,8 @@ $UsedNameStart = " -- Begin Check of used names --\n";
 $UsedNameEnd   = " -- End   Check of used names --\n";
 $MakeInstStart = " -- Begin Make Install Step --\n";
 $MakeInstEnd   = " -- End   Make Install Step --\n";
+$MakeInstcheckStart = " -- Begin Make Installcheck Step --\n";
+$MakeInstcheckEnd   = " -- End   Make Installcheck Step --\n";
 $RunTestStart  = " -- Begin Run Test Step --\n";
 $RunTestEnd    = " -- End   Run Test Step --\n";
 $SumStart = "";
@@ -349,6 +351,7 @@ sub RunTest {
     # were loaded for the simplest MPI Hello World program.
     #$usedname_status  = "none";
     $install_status   = "none";
+    $installcheck_status = "none";
     $test_status      = "none";
     if ($show) {
 	print "Configure: $enable_args $with_args $config_args\n";
@@ -421,6 +424,11 @@ sub RunTest {
 			# FIXME: Remaining problem: smpd needs to be told what
 			# port to use on the mpiexec line
 		    }
+		    # Try the install check target
+		    print $OUTFD $MakeInstcheckStart;
+		    $installcheck_status = &RunProgram( "$makepgm installcheck" );
+		    print $OUTFD $MakeInstcheckEnd;
+		    # Run the tests
 		    $test_status = &RunTestSuites;
 		}
 	    }
@@ -1040,6 +1048,8 @@ sub XMLStyle {
     $UsedNameEnd   = "</USEDNAMES>\n";
     $MakeInstStart = "<MAKEINST>\n";
     $MakeInstEnd   = "</MAKEINST>\n";
+    $MakeInstcheckStart = "<MAKEINSTCHECK>\n";
+    $MakeInstcheckEnd   = "</MAKEINSTCHECK>\n";
     $RunTestStart  = "<RUNTEST>\n";
     $RunTestEnd    = "</RUNTEST>\n";
     $SumStart      = "<SUMMARY>\n";
