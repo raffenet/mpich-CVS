@@ -24,6 +24,7 @@ spaiccreate_SOURCES = spaiccreate.c
 disconnect_SOURCES = disconnect.c
 disconnect2_SOURCES = disconnect2.c
 disconnect3_SOURCES = disconnect3.c
+concurrent_spawns_SOURCES = concurrent_spawns.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)
