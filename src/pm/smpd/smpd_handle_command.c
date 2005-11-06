@@ -812,6 +812,15 @@ int smpd_handle_result(smpd_context_t *context)
 				    smpd_exit_fn(FCNAME);
 				    return result;
 				}
+
+				smpd_process.spawning = SMPD_FALSE;
+				result = smpd_handle_delayed_spawn_command();
+				if (result != SMPD_SUCCESS)
+				{
+				    smpd_err_printf("An error occurred handling delayed spawn commands.\n");
+				    smpd_exit_fn(FCNAME);
+				    return result;
+				}
 			    }
 			}
 			else
@@ -915,6 +924,7 @@ int smpd_handle_result(smpd_context_t *context)
 		    }
 		    else
 		    {
+			/* FIXME: We shouldn't abort if a process fails to launch as part of a spawn command */
 			smpd_process.nproc_exited++;
 			if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "error", err_msg, SMPD_MAX_ERROR_LEN) == MPIU_STR_SUCCESS)
 			{

@@ -59,6 +59,13 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 
     smpd_enter_fn(FCNAME);
 
+    if (smpd_process.spawning == SMPD_TRUE)
+    {
+	result = smpd_delayed_spawn_enqueue(context);
+	smpd_exit_fn(FCNAME);
+	return result;
+    }
+
     cmd = &context->read_cmd;
     smpd_process.exit_on_done = SMPD_TRUE;
     /* populate the host list */
@@ -104,6 +111,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+
+    smpd_process.spawning = SMPD_TRUE;
 
     /* parse the spawn command */
 
@@ -572,6 +581,10 @@ int smpd_handle_spawn_command(smpd_context_t *context)
     info = NULL;
 
     /* create a spawn context to save parameters, state, etc. */
+    if (context->spawn_context != NULL)
+    {
+	free(context->spawn_context);
+    }
     context->spawn_context = (smpd_spawn_context_t*)malloc(sizeof(smpd_spawn_context_t));
     if (context->spawn_context == NULL)
     {
@@ -824,6 +837,8 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 
     if (launch_list == NULL)
     {
+	smpd_process.spawning = SMPD_FALSE;
+
 	/* spawn command received for zero processes, return a success result immediately */
 	result = smpd_add_command_arg(context->spawn_context->result_cmd, "result", SMPD_SUCCESS_STR);
 	if (result != SMPD_SUCCESS)
@@ -917,6 +932,9 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 */
 
 spawn_failed:
+
+    smpd_process.spawning = SMPD_FALSE;
+
     /* add the result */
     result = smpd_add_command_arg(temp_cmd, "result", SMPD_FAIL_STR);
     if (result != SMPD_SUCCESS)
@@ -934,6 +952,99 @@ spawn_failed:
 	smpd_err_printf("unable to post a write of the result command to the context.\n");
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
+
+    smpd_exit_fn(FCNAME);
+    return result;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_delayed_spawn_enqueue"
+int smpd_delayed_spawn_enqueue(smpd_context_t *context)
+{
+    smpd_delayed_spawn_node_t *iter, *node;
+
+    smpd_enter_fn(FCNAME);
+
+    node = (smpd_delayed_spawn_node_t*)malloc(sizeof(smpd_delayed_spawn_node_t));
+    if (node == NULL)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    node->next = NULL;
+    node->context = context;
+    node->cmd = context->read_cmd;
+ 
+    iter = smpd_process.delayed_spawn_queue;
+    if (iter == NULL)
+    {
+	smpd_process.delayed_spawn_queue = node;
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
+    while (iter->next != NULL)
+    {
+	iter = iter->next;
+    }
+    iter->next = node;
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_delayed_spawn_dequeue"
+int smpd_delayed_spawn_dequeue(smpd_context_t **context_pptr)
+{
+    smpd_delayed_spawn_node_t *node;
+
+    smpd_enter_fn(FCNAME);
+    if (smpd_process.delayed_spawn_queue != NULL)
+    {
+	*context_pptr = smpd_process.delayed_spawn_queue->context;
+	/* Copy the command in the queue to the context read command
+	 * restoring the context to the state it was when it was enqueued.
+	 */
+	(*context_pptr)->read_cmd = smpd_process.delayed_spawn_queue->cmd;
+	node = smpd_process.delayed_spawn_queue;
+	smpd_process.delayed_spawn_queue = smpd_process.delayed_spawn_queue->next;
+	free(node);
+    }
+    else
+    {
+	*context_pptr = NULL;
+    }
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
+#define FCNAME "smpd_handle_delayed_spawn_command"
+int smpd_handle_delayed_spawn_command(void)
+{
+    smpd_context_t *context = NULL;
+    int result = SMPD_SUCCESS;
+
+    smpd_enter_fn(FCNAME);
+
+    /* Handle delayed spawn commands until a spawn is in progress or the queue is empty */
+    while (smpd_process.spawning == SMPD_FALSE && smpd_process.delayed_spawn_queue != NULL)
+    {
+	result = smpd_delayed_spawn_dequeue(&context);
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_exit_fn(FCNAME);
+	    return result;
+	}
+	if (context != NULL)
+	{
+	    result = smpd_handle_spawn_command(context);
+	    if (result != SMPD_SUCCESS)
+	    {
+		smpd_exit_fn(FCNAME);
+		return result;
+	    }
+	}
     }
 
     smpd_exit_fn(FCNAME);

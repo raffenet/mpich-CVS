@@ -499,6 +499,13 @@ typedef struct smpd_spawn_context_t
     int num_outstanding_launch_cmds;
 } smpd_spawn_context_t;
 
+typedef struct smpd_delayed_spawn_node_t
+{
+    smpd_context_t *context;
+    smpd_command_t cmd;
+    struct smpd_delayed_spawn_node_t *next;
+} smpd_delayed_spawn_node_t;
+
 typedef struct smpd_env_node_t
 {
     char name[SMPD_MAX_NAME_LENGTH];
@@ -706,6 +713,8 @@ typedef struct smpd_global_t
     char env_channel[10];
     char env_dll[SMPD_MAX_FILENAME];
     char env_wrap_dll[SMPD_MAX_FILENAME];
+    smpd_delayed_spawn_node_t *delayed_spawn_queue;
+    SMPD_BOOL spawning;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -889,6 +898,9 @@ SMPD_BOOL smpd_isnumbers_with_colon(const char *str);
 int smpd_add_host_to_default_list(const char *hostname);
 int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt_hostname, const int num_cpus);
 int smpd_parse_map_string(const char *str, smpd_map_drive_node_t **list);
+int smpd_delayed_spawn_enqueue(smpd_context_t *context);
+int smpd_delayed_spawn_dequeue(smpd_context_t **context);
+int smpd_handle_delayed_spawn_command(void);
 
 #if defined(__cplusplus)
 }
