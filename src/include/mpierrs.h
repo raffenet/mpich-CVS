@@ -105,6 +105,15 @@
 				   "**bufalias", 0 );		\
     }
 
+#define MPIR_ERRTEST_ALIAS_COLL(ptr1,ptr2,err)			\
+    if ((ptr1)==(ptr2)) {		                        \
+        err = MPIR_Err_create_code(MPI_SUCCESS,			\
+				   MPIR_ERR_RECOVERABLE,	\
+				   FCNAME, __LINE__,		\
+				   MPI_ERR_BUFFER,		\
+				   "**bufalias", 0 );		\
+    }
+
 #define MPIR_ERRTEST_ARGNULL(arg,arg_name,err)          \
    if (!(arg)) {                                        \
        err = MPIR_Err_create_code(MPI_SUCCESS,          \

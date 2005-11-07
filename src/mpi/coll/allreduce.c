@@ -652,7 +652,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
 
-	MPIR_ERRTEST_ALIAS(sendbuf, recvbuf, mpi_errno);
+	MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
 	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
         MPID_END_ERROR_CHECKS;
