@@ -2,7 +2,7 @@ ALL: all-redirect
 SHELL = @SHELL@
 VPATH = @srcdir@
 srcdir = @srcdir@
-.SUFFIXES: .pdf .dvi .tex
+.SUFFIXES: .pdf .ps .dvi .tex
 
 # The tests on files that use -s really need to also check for a valid
 # link.  However, the -h test is not available in all shells,
