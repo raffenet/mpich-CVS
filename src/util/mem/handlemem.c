@@ -58,13 +58,34 @@ static void MPIU_Print_handle( int handle );
 
    void *MPIU_Handle_indirect_init( void (**indirect)[], int *indirect_size, 
                                     int indirect_max_size,
-                                    int indirect_block_size, int obj_size,
+                                    int indirect_block_size, 
+                                    int obj_size,
                                     int handle_type )
 	Initialize the indirect array (MPID_<obj>_indirect) of size
         indirect_size, each block of which contains indirect_block_size
 	members of size obj_size.  Returns the first available element, or
 	NULL if no memory is available.  
         Also incrementes indirect_size and assigns to indirect if it is null.
+
+	The Handle_indirect routine and the data structures that it manages
+	require a little more discussion.
+	This routine allocates an array of pointers to a block of storage.
+	The block of storage contains space for indirect_block_size 
+	instances of an object of obj_size.  These blocks are allocated
+	as needed; the pointers to these blocks are stored in the 
+	indirect array.  The value of indirect_size is the number of 
+	valid pointers in indirect.  In other words, indirect[0] through
+        indirect[*indirect_size-1] contain pointers to blocks of 
+	storage of size indirect_block_size * obj_size.  The array 
+	indirect has indirect_max_size entries, each holding a pointer.
+
+	The rationale for this approach is that this approach can 
+	handle large amounts of memory; however, relatively little
+	memory is used unless needed.  The definitions in 
+        mpich2/src/include/mpihandlemem.h define defaults for the
+	indirect_max_size (HANDLE_BLOCK_INDEX_SIZE = 1024) and
+	indirect_block_size (HANDLE_BLOCK_SIZE = 256) that permits
+	the allocation of 256K objects.  
 
    int MPIU_Handle_free( void *(*indirect)[], int indirect_size )
         Frees any memory allocated for the indirect handles.  Returns 0 on
@@ -279,8 +300,8 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 
 	    ptr = MPIU_Handle_indirect_init(&objmem->indirect, 
 					    &objmem->indirect_size, 
-					    HANDLE_BLOCK_SIZE, 
 					    HANDLE_BLOCK_INDEX_SIZE,
+					    HANDLE_BLOCK_SIZE, 
 					    objsize,
 					    objkind);
 	    if (ptr) {
