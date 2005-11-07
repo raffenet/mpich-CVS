@@ -33,10 +33,25 @@ int MPIDI_CH3_Comm_spawn_multiple(int count, char **commands,
    support those operations, so all functions are set to NULL */
 int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
 {
-    portFns.OpenPort    = 0;
-    portFns.ClosePort   = 0;
-    portFns.CommAccept  = 0;
-    portFns.CommConnect = 0;
+    portFns->OpenPort    = 0;
+    portFns->ClosePort   = 0;
+    portFns->CommAccept  = 0;
+    portFns->CommConnect = 0;
+    
     return MPI_SUCCESS;
+}
+
+int MPIDI_Comm_spawn_multiple(int count, char **commands, 
+			      char ***argvs, int *maxprocs, 
+			      MPID_Info **info_ptrs, int root,
+			      MPID_Comm *comm_ptr, MPID_Comm
+			      **intercomm, int *errcodes)
+{
+    return MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, "MPIDI_Comm_spawn_multiple", __LINE__, MPI_ERR_OTHER,"**notimpl", 0);
+}
+
+int MPIDI_CH3_Get_parent_port(char ** parent_port)
+{
+    return MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, "MPIDI_CH3_Get_parent_port", __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
 }
 

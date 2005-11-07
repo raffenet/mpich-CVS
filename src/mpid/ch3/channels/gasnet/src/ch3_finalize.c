@@ -28,8 +28,6 @@ int MPIDI_CH3_Finalize()
 	MPID_Abort(NULL, MPI_SUCCESS, -1, "GASNet barrier failed");
     }
     
-    PMI_Finalize ();
-    
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;
 }

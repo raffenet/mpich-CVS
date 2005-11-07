@@ -240,7 +240,7 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 #ifdef HAVE_CH3_PRE_INIT
     {
 	int setvals;
-	mpi_errno = MPIDI_CH3_Pre_init( &setvals, has_parent, pg_rank_p, 
+	mpi_errno = MPIDI_CH3_Pre_init( &setvals, has_parent, &pg_rank, 
 					&pg_size );
 	if (mpi_errno) {
 	    goto fn_fail;

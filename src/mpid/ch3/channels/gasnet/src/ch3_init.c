@@ -19,7 +19,7 @@ static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
     return TRUE;
 }
 
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg, void * id)
+static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg)
 {
     return MPI_SUCCESS;
 }
@@ -53,32 +53,24 @@ gasnet_handlerentry_t MPIDI_CH3_gasnet_handler_table[] =
     { MPIDI_CH3_reload_IOV_reply_handler_id, MPIDI_CH3_reload_IOV_reply_handler }
 };
 
-MPIDI_CH3I_Process_t MPIDI_CH3I_Process = { 0 };
+//MPIDI_CH3I_Process_t MPIDI_CH3I_Process = { 0 };
 
 /* XXX - all calls to assert() need to be turned into real error checking and
    return meaningful errors */
 
+static int called_pre_init = 0;
+
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Init
+#define FUNCNAME MPIDI_CH3_Pre_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
+int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
 {
-    MPIDI_PG_t * pg = NULL;
     int gn_errno;
-    int mpi_errno;    
-    int pg_rank;
-    int pg_size;
-    MPID_Comm * comm, *commworld, *intercomm;
-    int p;
-    int name_sz;
-#ifdef FOO
-    int i;
-#endif
+    int mpi_errno = MPI_SUCCESS;
     int null_argc = 0;
     char **null_argv = 0;
 
-    MPIDI_CH3I_inside_handler = 0;
 
 #ifdef HYBRID_ENABLED_GASNET
     if (gasnet_isInit ())
@@ -88,8 +80,8 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
 	 * handlers (and hope the handler ids don't collide)
 	 */
 	gn_errno = gasnet_registerHandlers (MPIDI_CH3_gasnet_handler_table,
-				  sizeof (MPIDI_CH3_gasnet_handler_table) /
-				  sizeof (gasnet_handlerentry_t));
+					    sizeof (MPIDI_CH3_gasnet_handler_table) /
+					    sizeof (gasnet_handlerentry_t));
 	if (gn_errno != GASNET_OK)
 	{
 	    mpi_errno = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
@@ -130,6 +122,40 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
 	    return mpi_errno;
 	}
     }
+    
+    MPIDI_CH3I_my_rank = gasnet_mynode ();
+    *rank = MPIDI_CH3I_my_rank;
+    *size = gasnet_nodes ();
+    *has_parent = 0;
+    *setvals = 1;
+    
+    called_pre_init = 1;
+
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank)
+{
+    int mpi_errno;    
+    int size;
+    MPID_Comm * comm, *commworld, *intercomm;
+    int p;
+    int name_sz;
+#ifdef FOO
+    int i;
+#endif
+
+    if (!called_pre_init)
+    {
+	mpi_errno =  MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0 );
+	return mpi_errno;
+    }
+
+    MPIDI_CH3I_inside_handler = 0;
 
     /*MPIDI_CH3_packet_len = gasnet_AMMaxMedium ();*/
     /* 16K gives better performance than 64K */
@@ -139,15 +165,9 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
     MPIDI_CH3_packet_buffer = MPIU_Malloc (MPIDI_CH3_packet_len);
     if (MPIDI_CH3_packet_buffer == NULL)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	return mpi_errno;
-    }
-    
-    pg_rank = gasnet_mynode ();
-    pg_size = gasnet_nodes ();
-
-    MPIDI_CH3I_my_rank = pg_rank;    
+    }    
 
     /*
      * Initialize Progress Engine 
@@ -155,63 +175,28 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int * pg_rank_p)
     mpi_errno = MPIDI_CH3I_Progress_init();
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**init_progress", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_progress", 0);
 	return mpi_errno;
-    }    
-    
-    /*
-     * Initialize the process group tracking subsystem
-     */
-    mpi_errno = MPIDI_PG_Init(MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					 FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**dev|pg_init", NULL);
-	return mpi_errno;
-	/* --END ERROR HANDLING-- */
     }
     
-    /*
-     * Create a new structure to track the process group
-     */
-    mpi_errno = MPIDI_PG_Create(pg_size, NULL, &pg);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					 FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**dev|pg_create", NULL);
-	if (pg != NULL)
-	{
-	    MPIDI_PG_Destroy(pg);
-	}
-	return mpi_errno;
-	/* --END ERROR HANDLING-- */
-    }
-
-    *pg_p = pg;
-    *pg_rank_p = pg_rank;
-
     /* initialize VCs */
-    for (p = 0; p < pg_size; p++)
+    for (p = 0; p < pg_p->size; p++)
     {
-	pg->vct[p].gasnet.pg_rank = p;
-	pg->vct[p].gasnet.data_sz = 0;
-	pg->vct[p].gasnet.data = NULL;
-	pg->vct[p].gasnet.recv_active = NULL;
-	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
+	struct MPIDI_VC *vcp;
+
+	MPIDI_PG_Get_vcr (pg_p, p, &vcp);
+	
+	vcp->gasnet.pg_rank = p;
+	vcp->gasnet.data_sz = 0;
+	vcp->gasnet.data = NULL;
+	vcp->gasnet.recv_active = NULL;
+	vcp->state = MPIDI_VC_STATE_ACTIVE;
     }
 
     if (has_parent) 
     {
 	/* gasnet can't spawn --Darius */
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
-					 __LINE__, MPI_ERR_OTHER,
-					 "**notimpl", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
 	return mpi_errno;
     }
 

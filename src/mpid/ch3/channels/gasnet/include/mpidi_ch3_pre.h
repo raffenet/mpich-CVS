@@ -19,6 +19,16 @@
 
 /*#define MPIDI_CH3_CHANNEL_RNDV*/
 
+#define HAVE_CH3_PRE_INIT
+#define MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+
+typedef struct MPIDI_CH3I_PG
+{
+    char *kvs_name;
+}
+MPIDI_CH3I_PG_t;
+#define MPIDI_CH3_PG_DECL MPIDI_CH3I_PG_t ch;
+
 typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
