@@ -416,21 +416,27 @@ EOF
     
     AC_LANG_FORTRAN77
     AC_MSG_CHECKING([whether integer*4 is supported])
-    AC_TRY_COMPILE(,[      integer*4 i],has_integer_4=4,has_integer_4=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*4 i])],
+        has_integer_4=4,
+        has_integer_4=0)
     if test "$has_integer_4" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether integer*8 is supported])
-    AC_TRY_COMPILE(,[      integer*8 i],has_integer_8=8,has_integer_8=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*8 i])],
+        has_integer_8=8,
+        has_integer_8=0)
     if test "$has_integer_8" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
         AC_MSG_RESULT(no)
     fi
     AC_MSG_CHECKING([whether integer*16 is supported])
-    AC_TRY_COMPILE(,[      integer*16 i],has_integer_16=16,has_integer_16=0)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*16 i])],
+        has_integer_16=16,
+        has_integer_16=0)
     if test "$has_integer_16" != 0 ; then 
         AC_MSG_RESULT(yes)
     else
@@ -470,20 +476,22 @@ EOF
     # FIXME: if we can't figure out how to get iargc/getarg, then 
     # we should really turn off those spawn tests
     AC_MSG_CHECKING([for Fortran libraries needed for getarg])
-    AC_TRY_LINK(,[character*64 s
+    AC_LINK_IFELSE([AC_LANG_PROGRAM(,[character*64 s
         integer i
         i = iargc()
-        call getarg(i,s)],
-    pac_cv_getarg_needs_u77=no,pac_cv_getarg_needs_u77=unknown)
+        call getarg(i,s)])],
+        pac_cv_getarg_needs_u77=no,
+        pac_cv_getarg_needs_u77=unknown)
     if test "$pac_cv_getarg_needs_u77" != "yes" ; then
         # Try again with -lU77
         saveLIBS="$LIBS"
         LIBS="$LIBS -lU77"
-        AC_TRY_LINK(,[character*64 s
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(,[character*64 s
         integer i
         i = iargc()
-        call getarg(i,s)],
-        pac_cv_getarg_needs_u77=yes,pac_cv_getarg_needs_u77=unavailable)
+        call getarg(i,s)])],
+            pac_cv_getarg_needs_u77=yes,
+            pac_cv_getarg_needs_u77=unavailable)
         LIBS="$saveLIBS"
         if test "$pac_cv_getarg_needs_u77" = "yes" ; then
             F77_GETARG_LIBS=-lU77
