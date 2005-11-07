@@ -20,6 +20,12 @@ all-preamble: $(MPIMOD).$(MOD)
 # (The mpimod.pcl file should contain only a local mpimod.pc name; if
 # it contains a file name in another directory and that file does not 
 # exist, the compiler may refuse to compile the file)
+#
+# FIXME: We may want to edit the mpif.h to convert Fortran77-specific
+# items (such as an integer*8 used for file offsets) into the 
+# corresponding Fortran 90 KIND type, to accomodate compilers that
+# reject non-standard features such as integer*8 (such as the Intel
+# Fortran compiler with -std95).
 $(MPIMOD).$(MOD): $(srcdir)/mpi.f90 mpif.h
 	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
