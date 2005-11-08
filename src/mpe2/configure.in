@@ -370,7 +370,9 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         PAC_MPI_LINK_F77_FUNC( $MPI_F77, [$FFLAGS $MPI_INC], $MPI_LIBS, [
         integer mytid
         integer ierr
-        ], [ call MPI_Comm_rank( MPI_COMM_WORLD, mytid, ierr ) ],
+        ], [
+        call MPI_Comm_rank( MPI_COMM_WORLD, mytid, ierr )
+        ],
         [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         if test "$mpe_link_ok" = "yes" ; then
             AC_MSG_RESULT(yes)

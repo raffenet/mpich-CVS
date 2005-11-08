@@ -28,13 +28,13 @@ dnl - set the parallel compiler environment
     CC="$pac_MPI_CC"
     CFLAGS="$pac_MPI_CFLAGS"
     LIBS="$pac_MPI_LIBS"
-    AC_TRY_LINK( [#include "mpi.h"], [
+    AC_LINK_IFELSE( [ AC_LANG_PROGRAM( [#include "mpi.h"], [
     int argc; char **argv;
     $4 ; 
     MPI_Init(&argc, &argv);
     $5 ;
     MPI_Finalize();
-                 ], pac_mpi_working=yes, pac_mpi_working=no )
+                    ] ) ], pac_mpi_working=yes, pac_mpi_working=no )
     CC="$pac_saved_CC"
     CFLAGS="$pac_saved_CFLAGS"
     LIBS="$pac_saved_LIBS"
@@ -75,14 +75,14 @@ dnl - set the parallel compiler environment for TRY_LINK
     F77="$pac_MPI_F77"
     FFLAGS="$pac_MPI_FFLAGS"
     LIBS="$pac_MPI_LIBS"
-    AC_TRY_LINK( , [
+    AC_LINK_IFELSE( [ AC_LANG_PROGRAM( [], [
 	include 'mpif.h'
 	integer pac_ierr
 	$4
 	call MPI_Init( pac_ierr )
 	$5
 	call MPI_Finalize( pac_ierr )
-                 ], pac_mpi_working=yes, pac_mpi_working=no )
+                    ] ) ], pac_mpi_working=yes, pac_mpi_working=no )
     F77="$pac_saved_F77"
     FFLAGS="$pac_saved_FFLAGS"
     LIBS="$pac_saved_LIBS"
