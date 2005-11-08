@@ -60,7 +60,7 @@ int struct_negdisp_test(void)
     MPI_Request request;
     MPI_Status status;
 
-    MPI_Aint disps[2]     = { 0,       -1*sizeof(int) };
+    MPI_Aint disps[2]     = { 0,       -1*((int) sizeof(int)) };
     int blks[2]           = { 1,       1, };
     MPI_Datatype types[2] = { MPI_INT, MPI_INT };
 
@@ -244,7 +244,7 @@ int indexed_negdisp_test(void)
     MPI_Request request;
     MPI_Status status;
 
-    MPI_Aint disps[2]     = { 0, -1 };
+    int disps[2]     = { 0, -1 };
     int blks[2]           = { 1, 1 };
 
     err = MPI_Type_indexed(2, blks, disps, MPI_INT, &myindexed);
