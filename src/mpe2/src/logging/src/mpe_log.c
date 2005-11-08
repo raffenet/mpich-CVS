@@ -53,19 +53,17 @@ MPEU_DLL_SPEC const CLOG_CommIDs_t *CLOG_CommIDs4World           ;
     MPE_Init_log - Initialize the logging of events.
 
     Notes:
-    Initializes the MPE logging package.  This must be called before any of
-    the other MPE logging routines.  It is collective over 'MPI_COMM_WORLD'.
-
-    Notes:
+    This routine must be called before any of the other MPE logging routines.
+    It is a collective call over 'MPI_COMM_WORLD'.
     MPE_Init_log() & MPE_Finish_log() are NOT needed when liblmpe.a is linked
     because MPI_Init() would have called MPE_Init_log() already.
     liblmpe.a will be included in the final executable if it is linked with
-    mpicc -mpe=log
+    either "mpicc -mpe=mpilog" or "mpecc -mpilog"
 
     Returns:
     Always return MPE_LOG_OK.
 
-.seealso: MPE_Finish_log
+.seealso: MPE_Finish_log()
 @*/
 int MPE_Init_log( void )
 {
@@ -129,12 +127,14 @@ int MPE_Stop_log( void )
 }
 
 /*@
-  MPE_Initialized_logging - Indicate whether MPE_Init_log or MPE_Finish_log
-  have been called.
+  MPE_Initialized_logging - Indicate whether MPE_Init_log()
+                            or MPE_Finish_log() have been called.
 
   Returns:
-  0 if MPE_Init_log has not been called, 1 if MPE_Init_log has been called
-  but MPE_Finish_log has not been called, and 2 otherwise.
+  0 if MPE_Init_log() has not been called,
+  1 if MPE_Init_log() has been called
+    but MPE_Finish_log() has not been called,
+  and 2 otherwise.
 @*/
 int MPE_Initialized_logging( void )
 {
@@ -244,14 +244,14 @@ N*/
 . local_thread  - local thread ID where the state is being defined.
 . state_startID - event number for the starting of the state.
 . state_finalID - event number for the ending of the state.
-. name          - name of the state.
-                  maximum length of the NULL-terminated string is,
+. name          - name of the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
-. color         - color of the state.
-                  maximum length of the NULL-terminated string is,
+. color         - color of the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_COLOR), 24.
-- format        - printf style %-token format control string for the state.
-                  maximum length of the NULL-terminated string is,
+- format        - printf style %-token format control string for the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
                   equivalent to calling MPE_Describe_state().  The fortran
                   interface of this routine considers the zero-length string,
@@ -264,7 +264,7 @@ N*/
 
 .N MPE_LOG_BYTE_FORMAT
 
-.see also: MPE_Log_get_event_number
+.seealso: MPE_Log_get_state_eventIDs()
 @*/
 int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
                              int state_startID, int state_finalID,
@@ -292,16 +292,16 @@ int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
                               in MPI_COMM_WORLD.
 
     Input Parameters:
-+ state_startID - event number for the beginning of the state
-. state_finalID - event number for the ending of the state
-. name          - name of the state.
-                  maximum length of the NULL-terminated string is,
++ state_startID - event number for the beginning of the state.
+. state_finalID - event number for the ending of the state.
+. name          - name of the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
-. color         - color of the state.
-                  maximum length of the NULL-terminated string is,
+. color         - color of the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_COLOR), 24.
-- format        - printf style %-token format control string for the state.
-                  maximum length of the NULL-terminated string is,
+- format        - printf style %-token format control string for the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
                   equivalent to calling MPE_Describe_state().  The fortran
                   interface of this routine considers the zero-length string,
@@ -311,12 +311,12 @@ int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
     Adds a state definition to the logfile.
     States are added to a logfile by calling 'MPE_Log_event()'
     for the start and end event numbers.  The function is provided
-    for backward compatibility purpose.  Users are urged to use
-    'MPE_Describe_comm_state' and 'MPE_Log_comm_event()' instead.
+    for backward compatibility purpose.  Users are urged to
+    use 'MPE_Describe_comm_state' and 'MPE_Log_comm_event()' instead.
 
 .N MPE_LOG_BYTE_FORMAT
 
-.see also: MPE_Log_get_event_number
+.seealso: MPE_Log_get_state_eventIDs().
 @*/
 int MPE_Describe_info_state( int state_startID, int state_finalID,
                              const char *name, const char *color,
@@ -365,23 +365,23 @@ int MPE_Describe_known_state( const CLOG_CommIDs_t *commIDs, int local_thread,
                          MPI_COMM_WORLD.
 
     Input Parameters:
-+ state_startID - event number for the beginning of the state
-. state_finalID - event number for the ending of the state
-. name          - name of the state
-                  maximum length of the NULL-terminated string is,
++ state_startID - event number for the beginning of the state.
+. state_finalID - event number for the ending of the state.
+. name          - name of the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
-- color         - color of the state
-                  maximum length of the NULL-terminated string is,
+- color         - color of the state,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_COLOR), 24.
 
     Notes:
     Adds a state definition to the logfile.
-    States are added to a log file by calling 'MPE_Log_event'
+    States are added to a log file by calling 'MPE_Log_event()'
     for the start and end event numbers.  The function is provided
-    for backward compatibility purpose.  Users are urged to use
-    'MPE_Describe_comm_state' and 'MPE_Log_comm_event()' instead.
+    for backward compatibility purpose.  Users are urged to
+    use 'MPE_Describe_comm_state()' and 'MPE_Log_comm_event()' instead.
 
-.seealso: MPE_Log_get_event_number, MPE_Describe_comm_state
+.seealso: MPE_Log_get_state_eventIDs(), MPE_Describe_comm_state()
 @*/
 int MPE_Describe_state( int state_startID, int state_finalID,
                         const char *name, const char *color )
@@ -401,14 +401,14 @@ int MPE_Describe_state( int state_startID, int state_finalID,
 + comm         - MPI_Comm where this process is part of.
 . local_thread - local thread ID where the event is being defined.
 . eventID      - event number for the event.
-. name         - name of the event.
-                 maximum length of the NULL-terminated string is,
+. name         - name of the event,
+                 the maximum length of the NULL-terminated string is,
                  sizeof(CLOG_DESC), 32.
-. color        - color of the event.
-                 maximum length of the NULL-terminated string is,
+. color        - color of the event,
+                 the maximum length of the NULL-terminated string is,
                  sizeof(CLOG_COLOR), 24.
-- format       - printf style %-token format control string for the event.
-                 maximum length of the NULL-terminated string is,
+- format       - printf style %-token format control string for the event,
+                 the maximum length of the NULL-terminated string is,
                  sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
                  equivalent to calling MPE_Describe_event(). The fortran
                  interface of this routine considers the zero-length string,
@@ -419,10 +419,11 @@ int MPE_Describe_state( int state_startID, int state_finalID,
 
 .N MPE_LOG_BYTE_FORMAT
 
-.seealso: MPE_Log_get_event_number
+.seealso: MPE_Log_get_solo_eventID()
 @*/
 int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
-                             int eventID, const char *name, const char *color,
+                             int eventID,
+                             const char *name, const char *color,
                              const char *format )
 {
     const CLOG_CommIDs_t *commIDs;
@@ -444,14 +445,14 @@ int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
     
     Input Parameters:
 + eventID       - event number for the event.
-. name          - name of the event.
-                  maximum length of the NULL-terminated string is,
+. name          - name of the event,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
-. color         - color of the event.
-                  maximum length of the NULL-terminated string is,
+. color         - color of the event,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_COLOR), 24.
-- format        - printf style %-token format control string for the event.
-                  maximum length of the NULL-terminated string is,
+- format        - printf style %-token format control string for the event,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_FORMAT), 40.  If format is NULL, it is
                   equivalent to calling MPE_Describe_event(). The fortran
                   interface of this routine considers the zero-length string,
@@ -459,14 +460,15 @@ int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
 
     Notes:
     Adds a event definition to the logfile. The function is provided
-    for backward compatibility purpose.  Users are urged to use
-    'MPE_Describe_comm_event' instead.
+    for backward compatibility purpose.  Users are urged to
+    use 'MPE_Describe_comm_event' instead.
 
 .N MPE_LOG_BYTE_FORMAT
 
-.seealso: MPE_Log_get_event_number, MPE_Describe_comm_event 
+.seealso: MPE_Log_get_solo_eventID(), MPE_Describe_comm_event() 
 @*/
-int MPE_Describe_info_event( int eventID, const char *name, const char *color,
+int MPE_Describe_info_event( int eventID,
+                             const char *name, const char *color,
                              const char *format )
 {
     return MPE_Describe_comm_event( MPI_COMM_WORLD, 0,
@@ -480,31 +482,29 @@ int MPE_Describe_info_event( int eventID, const char *name, const char *color,
 
     Input Parameters:
 + eventID       - event number for the event.
-. name          - name of the event.
-                  maximum length of the NULL-terminated string is,
+. name          - name of the event,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_DESC), 32.
-- color         - color of the event.
-                  maximum length of the NULL-terminated string is,
+- color         - color of the event,
+                  the maximum length of the NULL-terminated string is,
                   sizeof(CLOG_COLOR), 24.
 
     Notes:
     Adds a event definition to the logfile.  The function is provided
-    for backward compatibility purpose.  Users are urged to use
-    'MPE_Describe_comm_event' instead.
+    for backward compatibility purpose.  Users are urged to
+    use 'MPE_Describe_comm_event' instead.
 
-.seealso: MPE_Log_get_event_number, MPE_Describe_comm_event
+.seealso: MPE_Log_get_solo_eventID(), MPE_Describe_comm_event()
 @*/
-int MPE_Describe_event( int eventID, const char *name, const char *color )
+int MPE_Describe_event( int eventID,
+                        const char *name, const char *color )
 {
     return MPE_Describe_comm_event( MPI_COMM_WORLD, 0,
                                     eventID, name, color, NULL );
 }
 
 /*@
-  MPE_Log_get_event_number - Gets an unused event number
-  (The function is deprecated, its use is stronly discouraged.
-   The function has been replaced by
-   MPE_Log_get_state_eventID() and MPE_Log_get_event_eventID().)
+  MPE_Log_get_event_number - Get an unused event number.
 
   Returns:
   A value that can be used in MPE_Describe_info_event() and
@@ -514,6 +514,9 @@ int MPE_Describe_event( int eventID, const char *name, const char *color )
   This routine is provided to ensure that users are 
   using unique event numbers.  It relies on all packages using this
   routine.
+  *** The function is deprecated, its use is strongly discouraged.
+      The function has been replaced by
+   MPE_Log_get_state_eventIDs() and MPE_Log_get_event_eventID(). ***
 @*/
 int MPE_Log_get_event_number( void )
 {
@@ -521,9 +524,9 @@ int MPE_Log_get_event_number( void )
 }
 
 /*@
-    MPE_Log_get_state_eventIDs - Gets a pair of event numbers to be used to
-                                define STATE drawable through
-                                MPE_Describe_state().
+    MPE_Log_get_state_eventIDs - Get a pair of event numbers to be used to
+                                 define STATE drawable through
+                                 MPE_Describe_state().
 
     Input/Output Parameters:
 + statedef_startID  - starting eventID for the definition of state drawable.
@@ -534,7 +537,8 @@ int MPE_Log_get_event_number( void )
   using unique event numbers.  It relies on all packages using this
   routine.
 @*/
-int MPE_Log_get_state_eventIDs( int *statedef_startID, int *statedef_finalID )
+int MPE_Log_get_state_eventIDs( int *statedef_startID,
+                                int *statedef_finalID )
 {
     *statedef_startID = CLOG_Get_user_eventID( CLOG_Stream );
     *statedef_finalID = CLOG_Get_user_eventID( CLOG_Stream );
@@ -542,7 +546,7 @@ int MPE_Log_get_state_eventIDs( int *statedef_startID, int *statedef_finalID )
 }
 
 /*@
-    MPE_Log_get_solo_eventID - Gets a single event number to be used to
+    MPE_Log_get_solo_eventID - Get a single event number to be used to
                                define EVENT drawable through
                                MPE_Describe_event().
 
@@ -590,7 +594,7 @@ int MPE_Log_commIDs_send( const CLOG_CommIDs_t *commIDs, int local_thread,
 }
 
 /*@
-    MPE_Log_comm_send - Logs the send event of a message within
+    MPE_Log_comm_send - Log the send event of a message within
                         a specified MPI_Comm.
 
     Input Parameters:
@@ -612,7 +616,7 @@ int MPE_Log_comm_send( MPI_Comm comm, int local_thread,
 }
 
 /*@
-    MPE_Log_send - Logs the send event of a message within MPI_COMM_WORLD.
+    MPE_Log_send - Log the send event of a message within MPI_COMM_WORLD.
 
     Input Parameters:
 + other_party   - the rank of the other party, i.e. receive event's rank.
@@ -673,15 +677,16 @@ int MPE_Log_receive( int other_party, int tag, int size )
 }
 
 /*@
-    MPE_Log_pack - pack informational data into byte buffer to be stored
-                   in a infomational event.  The routine will byteswap
-                   data if it is invoked on a small endian machine.
+    MPE_Log_pack - pack the informational data into the byte buffer to
+                   be stored in a infomational event.  The routine will
+                   byteswap the data if it is invoked on a small endian
+                   machine.
 
-    Ouput Parameters:
+    Output Parameters:
 + bytebuf    - output byte buffer which is of sizeof(MPE_LOG_BYTES),
                i.e. 32 bytes.  For C, bytebuf could be of type
                MPE_LOG_BYTES.  For Fortran, bytebuf could be of
-               type 'character*32'
+               type 'character*32'.
 - position   - an offset measured from the beginning of the bytebuf.
                On input, data will be written to the offset position.
                On Output, position will be updated to reflect the next
@@ -689,9 +694,10 @@ int MPE_Log_receive( int other_party, int tag, int size )
              
    
     Input Parameters:
-+ tokentype  - a character token type indicator, currently supported tokens are
-               's', 'h', 'd', 'l', 'x', 'X', 'e' and 'E'.
-. count      - the number of continuous storage units as indicated by tokentype.
++ tokentype  - a character token type indicator, currently supported tokens
+               are 's', 'h', 'd', 'l', 'x', 'X', 'e' and 'E'.
+. count      - the number of continuous storage units as indicated by
+               tokentype.
 - data       - pointer to the beginning of the storage units being copied.
 
 .N MPE_LOG_BYTE_FORMAT
@@ -778,12 +784,12 @@ int MPE_Log_commIDs_event( const CLOG_CommIDs_t *commIDs, int local_thread,
 }
 
 /*@
-    MPE_Log_comm_event - Logs an event in a specified MPI_Comm.
+    MPE_Log_comm_event - Log an event in a specified MPI_Comm.
 
     Input Parameters:
 + comm          - MPI_Comm where this process is part of.
 . local_thread  - local thread ID where the receive event takes place.
-. event         - event number
+. event         - event number.
 - bytebuf       - optional byte informational array.  In C, bytebuf should be
                   set to NULL when no extra byte informational data.  In
                   Fortran, an zero-length string "", or a single blank string
@@ -802,12 +808,12 @@ int MPE_Log_comm_event( MPI_Comm comm, int local_thread,
 }
 
 /*@
-    MPE_Log_event - Logs an event in MPI_COMM_WORLD.
+    MPE_Log_event - Log an event in MPI_COMM_WORLD.
 
     Input Parameters:
-+   event   - event number
++   event   - event number.
 .   data    - integer data value
-              (not used, provided for backward compatibility purpose)
+              (not used, provided for backward compatibility purpose).
 -   bytebuf - optional byte informational array.  In C, bytebuf should be
               set to NULL when no extra byte informational data.  In Fortran,
               an zero-length string "", or a single blank string " ",
@@ -825,7 +831,7 @@ int MPE_Log_event( int event, int data, const char *bytebuf )
     MPE_Log_bare_event - Logs a bare event in MPI_COMM_WORLD.
 
     Input Parameters:
-.   event   - event number
+.   event   - event number.
 
     Returns:
     alway returns MPE_LOG_OK
@@ -841,7 +847,7 @@ int MPE_Log_bare_event( int event )
     MPE_Log_info_event - Logs an infomational event in MPI_COMM_WORLD.
 
     Input Parameters:
-+   event   - event number
++   event   - event number.
 -   bytebuf - byte informational array.  If no byte inforamtional array,
               use MPE_Log_bare_event() instead.
 
@@ -888,10 +894,10 @@ static char clog_merged_filename[ CLOG_PATH_STRLEN ] = "0";
     MPE_Finish_log() & MPE_Init_log() are NOT needed when liblmpe.a is linked
     because MPI_Finalize) would have called MPE_Finish_log() already.
     liblmpe.a will be included in the final executable if it is linked with
-    mpicc -mpe=log.
+    either "mpicc -mpe=mpilog" or "mpecc -mpilog"
 
-    This routine dumps the logfile in clog2 format.
-    It is collective over 'MPI_COMM_WORLD'.
+    This routine outputs the logfile in CLOG2 format, i.e.
+    a collective call over 'MPI_COMM_WORLD'.
 
 @*/
 int MPE_Finish_log( const char *filename )
@@ -936,7 +942,8 @@ int MPE_Finish_log( const char *filename )
 }
 
 /*@
-    MPE_Log_merged_logfilename - returns the merged final logfile name.
+    MPE_Log_merged_logfilename - return the immutable name of
+                                 the merged final logfile.
 
     Notes:
     This function has no fortran interface.
