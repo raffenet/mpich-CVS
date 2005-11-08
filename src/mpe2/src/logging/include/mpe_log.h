@@ -77,19 +77,23 @@ int MPE_Describe_state( int state_startID, int state_finalID,
   /* create state description lines in MPI_COMM_WORLD */
 
 int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
-                             int eventID, const char *name, const char *color,
+                             int eventID,
+                             const char *name, const char *color,
                              const char *format );
   /* create event with byte info data description lines in MPI_comm */
 
-int MPE_Describe_info_event( int eventID, const char *name, const char *color,
+int MPE_Describe_info_event( int eventID,
+                             const char *name, const char *color,
                              const char *format );
   /* create event with byte info data description lines in MPI_COMM_WORLD */
 
-int MPE_Describe_event( int eventID, const char *name, const char *color );
+int MPE_Describe_event( int eventID,
+                        const char *name, const char *color );
   /* create event description lines in MPI_COMM_WORLD */
 
 int MPE_Log_get_event_number( void );
-int MPE_Log_get_state_eventIDs( int *statedef_startID, int *statedef_finalID );
+int MPE_Log_get_state_eventIDs( int *statedef_startID,
+                                int *statedef_finalID );
 int MPE_Log_get_solo_eventID( int *eventdef_eventID );
   /* Get new user-space event number */
 
