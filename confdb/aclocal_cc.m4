@@ -1257,14 +1257,24 @@ dnl
 dnl
 dnl Return the structure alignment in pac_cv_c_struct_align
 dnl Possible values include
-dnl	packed
-dnl	largest
-dnl	two
-dnl	four
-dnl	eight
+dnl	packed - no padding or alignment, any item may begin on any byte
+dnl	largest - extent of a structure is a multiple of the largest item; 
+dnl               items are aligned with their size 
+dnl	four - structs padded to a multiple of four
+dnl     two  - like four, but to a multiple of two
+dnl     eight - If objects containing 8-byte items are padded to a multiple
+dnl             of eight
+dnl     largestor4 - like largest, except that for items of size > 4, align 
+dnl                  on 4-byte boundaries.  E.g., align on the 
+dnl                  min(4,max(size of items)).
+dnl     largestorword - (should be named largestorqword, with qword meaning 
+dnl                     quad-word): Like largestor4, but with a special case 
+dnl                     for 16-byte items (this is the 16-byte aligned 
+dnl                     quad-word-load special case).
 dnl
 dnl In addition, a "Could not determine alignment" and a 
 dnl "Multiple cases:" return is possible.  
+dnl
 AC_DEFUN(PAC_C_STRUCT_ALIGNMENT,[
 AC_CACHE_CHECK([for C struct alignment],pac_cv_c_struct_align,[
 AC_TRY_RUN([
@@ -1380,10 +1390,16 @@ int main( int argc, char *argv[] )
     CHECK((extent % 4) != 0,is_largestor4);
     CHECK((extent % 16) == 0,is_largestor4);
     CHECK((extent % sizeof(long double)) != 0,is_largestorword);
+    /* This case only applies to largestorword if long doubles are 16 bytes */
+    if (sizeof(long double) != 16) is_largestorword = 0;
     if ( (extent % 2) != 0) is_two = 0;
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(long double) >= 8 && (extent % 8) != 0) is_eight = 0;
     DBG("char_long-double",size,extent);
+#else
+    /* The special case of largestorword only applies if long double 
+       available */
+    is_largestorword=0;
 #endif
 
     /* char int char helps separate largest from 4/8 aligned */
