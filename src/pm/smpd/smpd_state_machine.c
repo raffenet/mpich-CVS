@@ -1265,6 +1265,11 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
     int num_encoded;
 
     smpd_enter_fn(FCNAME);
+    if (context->state == SMPD_CLOSING)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
     if (event_ptr->error != MPI_SUCCESS)
     {
 	if (MPIR_ERR_GET_CLASS(event_ptr->error) != MPIDU_SOCK_ERR_CONN_CLOSED)

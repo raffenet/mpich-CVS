@@ -1595,6 +1595,85 @@ static void add_environment_variables(char *str, char **vars, char *bEnv)
 }
 #endif
 
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+static void child_exited(int signo)
+{
+    pid_t pid;
+    int status = WNOHANG;
+    smpd_process_t *iter;
+
+    /*
+     * For some reason on the Macs, stdout and stderr are not closed when the
+     * process exits so we can't use the closing of the redirected stdout and
+     * stderr sockets as indications that the process has exited.  So this
+     * signal handler closes the stdout/err redirection socket on a SIGCHLD
+     * signal to simulate that behaviour.
+     */
+    if (signo == SIGCHLD)
+    {
+	smpd_dbg_printf("SIGCHLD received\n");
+	for (;;)
+	{
+	    status = WNOHANG;
+	    pid = wait(&status);
+	    if (pid == -1)
+		break;
+
+	    smpd_dbg_printf("SIGCHILD pid = %d\n", pid);
+	    iter = smpd_process.process_list;
+	    {
+		while (iter != NULL)
+		{
+		    if (iter->wait == pid)
+		    {
+			if (WIFEXITED(status))
+			{
+			    iter->exitcode =  WEXITSTATUS(status);
+			}
+			else
+			{
+			    iter->exitcode = -123;
+			}
+			if (iter->out != NULL)
+			{
+			    if (iter->out->read_state == SMPD_READING_STDOUT)
+			    {
+				smpd_dbg_printf("closing stdout redirection\n");
+				iter->out->state = SMPD_CLOSING;
+				MPIDU_Sock_post_close(iter->out->sock);
+			    }
+			    else
+			    {
+				smpd_err_printf("iter->out->read_state = %d\n", iter->out->read_state);
+			    }
+			}
+			if (iter->err != NULL)
+			{
+			    if (iter->err->read_state == SMPD_READING_STDERR)
+			    {
+				smpd_dbg_printf("closing stderr redirection\n");
+				iter->err->state = SMPD_CLOSING;
+				MPIDU_Sock_post_close(iter->err->sock);
+			    }
+			    else
+			    {
+				smpd_err_printf("iter->err->read_state = %d\n", iter->err->read_state);
+			    }
+			}
+			break;
+		    }
+		    iter = iter->next;
+		}
+	    }
+	}
+    }
+    else
+    {
+	smpd_dbg_printf("unexpected signal %d received\n", signo);
+    }
+}
+#endif
+
 #undef FCNAME
 #define FCNAME "smpd_launch_process"
 int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority, int dbg, MPIDU_Sock_set_t set)
@@ -1621,6 +1700,22 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     char **pEnvArray;
 
     smpd_enter_fn(FCNAME);
+
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+    {
+	/* On the Macs we must use a signal handler to determine when a process
+	 * has exited.  On all other systems we use the closing of stdout and
+	 * stderr to determine that a process has exited.
+	 */
+	static int sighandler_setup = 0;
+	if (!sighandler_setup)
+	{
+	    smpd_dbg_printf("setting child_exited signal handler\n");
+	    smpd_signal(SIGCHLD, child_exited);
+	    sighandler_setup = 1;
+	}
+    }
+#endif
 
     /* resolve the executable name */
     if (process->path[0] != '\0')
@@ -2023,8 +2118,14 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 	    case EINTR:
 		break;
 	    case ECHILD:
+#ifdef USE_PTHREAD_STDIN_REDIRECTION
+		/* On the Macs where stdout/err redirection hangs a SIGCHLD 
+		 * handler has been set up so ignore ECHILD errors.
+		 */
+#else
 		smpd_err_printf("waitpid(%d) returned ECHILD\n", wait);
 		*exit_code_ptr = -10;
+#endif
 		smpd_exit_fn(FCNAME);
 		return SMPD_SUCCESS;
 		break;
