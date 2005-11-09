@@ -151,17 +151,21 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 		/* The channel will be performing the rendezvous */
 
 		mpi_errno = MPIDI_CH3U_Post_data_receive(found, &rreq);
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS) {
 		    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
 					 "**ch3|postrecv",
 					 "**ch3|postrecv %s",
 					 "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
 		}
+		/* --END ERROR HANDLING-- */
 		mpi_errno = MPIDI_CH3_iStartRndvTransfer (vc, rreq);
+		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS) {
 		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 					"**ch3|ctspkt");
 		}
+		/* --END ERROR HANDLING-- */
 
 #else
 	    MPID_Request * cts_req;
