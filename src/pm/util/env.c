@@ -70,6 +70,9 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld,
     if (!cmd[0]) {
 	/* A basic name value command */
 	EnvData *p;
+	if (!argv[1] || !argv[2]) {
+	    mpiexec_usage( "Missing arguments to -env or -genv" );
+	}
 	p             = (EnvData *)MPIU_Malloc( sizeof(EnvData) );
 	p->name       = (const char *)MPIU_Strdup( argv[1] );
 	p->value      = (const char *)MPIU_Strdup( argv[2] );
@@ -89,6 +92,9 @@ int MPIE_ArgsCheckForEnv( int argc, char *argv[], ProcessWorld *pWorld,
 	char    *lPtr = argv[1], *name;
 	int      namelen;
 	
+	if (!argv[1]) {
+	    mpiexec_usage( "Missing argument to -envlist or -genvlist" );
+	}
 	while (*lPtr) {
 	    name = lPtr++;
 	    while (*lPtr && *lPtr != ',') lPtr++;
