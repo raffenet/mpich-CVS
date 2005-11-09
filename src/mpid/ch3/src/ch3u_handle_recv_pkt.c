@@ -1330,6 +1330,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 }
 
 /* FIXME: What does this routine do */
+/* This function is used in conjunction with MPIDI_CH3_iStartRndvTransfer */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Post_data_receive
 #undef FCNAME
