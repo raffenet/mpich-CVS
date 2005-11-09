@@ -74,7 +74,11 @@ MPIDI_CH3I_Process_group_t;
 MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
 MPIDI_CH3I_PKT_SC_CONN_ACCEPT,		        \
 MPIDI_CH3I_PKT_SC_OPEN_RESP,			\
-MPIDI_CH3I_PKT_SC_CLOSE
+MPIDI_CH3I_PKT_SC_CLOSE,                        \
+MPIDI_CH3_PKT_RTS_IOV,                          \
+MPIDI_CH3_PKT_CTS_IOV,                          \
+MPIDI_CH3_PKT_RELOAD,                           \
+MPIDI_CH3_PKT_IOV
 
 #define MPIDI_CH3_PKT_DEFS													  \
 typedef struct															  \
@@ -108,13 +112,46 @@ typedef struct															  \
     MPIDI_CH3_Pkt_type_t type;													  \
     int port_name_tag; 													          \
 }																  \
-MPIDI_CH3I_Pkt_sc_conn_accept_t;
+MPIDI_CH3I_Pkt_sc_conn_accept_t;												    \
+																    \
+typedef struct MPIDI_CH3_Pkt_rdma_rts_iov_t											    \
+{																    \
+    MPIDI_CH3_Pkt_type_t type;													    \
+    MPI_Request sreq;														    \
+    int iov_len;														    \
+} MPIDI_CH3_Pkt_rdma_rts_iov_t;													    \
+typedef struct MPIDI_CH3_Pkt_rdma_cts_iov_t											    \
+{																    \
+    MPIDI_CH3_Pkt_type_t type;													    \
+    MPI_Request sreq, rreq;													    \
+    int iov_len;														    \
+} MPIDI_CH3_Pkt_rdma_cts_iov_t;													    \
+typedef struct MPIDI_CH3_Pkt_rdma_reload_t											    \
+{																    \
+    MPIDI_CH3_Pkt_type_t type;													    \
+    int send_recv;														    \
+    MPI_Request sreq, rreq;													    \
+} MPIDI_CH3_Pkt_rdma_reload_t;													    \
+typedef struct MPIDI_CH3_Pkt_rdma_iov_t												    \
+{																    \
+    MPIDI_CH3_Pkt_type_t type;													    \
+    MPI_Request req;														    \
+    int send_recv;														    \
+    int iov_len;														    \
+} MPIDI_CH3_Pkt_rdma_iov_t;
 
-#define MPIDI_CH3_PKT_DECL			\
-MPIDI_CH3I_Pkt_sc_open_req_t sc_open_req;	\
-MPIDI_CH3I_Pkt_sc_conn_accept_t sc_conn_accept;  \
-MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	\
-MPIDI_CH3I_Pkt_sc_close_t sc_close;
+#define MPIDI_CH3_PKT_DECL			    \
+MPIDI_CH3I_Pkt_sc_open_req_t sc_open_req;	    \
+MPIDI_CH3I_Pkt_sc_conn_accept_t sc_conn_accept;	    \
+MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	    \
+MPIDI_CH3I_Pkt_sc_close_t sc_close;		    \
+MPIDI_CH3_Pkt_rdma_rts_iov_t rts_iov;		    \
+MPIDI_CH3_Pkt_rdma_cts_iov_t cts_iov;		    \
+MPIDI_CH3_Pkt_rdma_reload_t reload;		    \
+MPIDI_CH3_Pkt_rdma_iov_t iov;
+
+#define MPIDI_CH3_PKT_RELOAD_SEND 1
+#define MPIDI_CH3_PKT_RELOAD_RECV 0
 
 typedef enum MPIDI_CH3I_VC_state
 {
@@ -200,6 +237,10 @@ typedef struct MPIDI_CH3I_VC
 MPIDI_CH3I_CA_HANDLE_PKT,			\
 MPIDI_CH3I_CA_END_SSHM_CHANNEL
 
+#define MPIDI_CH3_REQUEST_KIND_DECL \
+MPIDI_CH3I_IOV_WRITE_REQUEST, \
+MPIDI_CH3I_IOV_READ_REQUEST, \
+MPIDI_CH3I_RTS_IOV_READ_REQUEST
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
@@ -212,6 +253,8 @@ struct MPIDI_CH3I_Request									\
 												\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
     MPIDI_CH3_Pkt_t pkt;									\
+                                                                                                \
+    struct MPID_Request *req;						                        \
 } ch;
 
 typedef struct MPIDI_CH3I_Progress_state

@@ -31,6 +31,14 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     char queue_name[100];
     int mpi_errno;
     MPIDI_PG_t * pg = MPIDI_Process.my_pg;
+#ifdef HAVE_SHARED_PROCESS_READ
+    char pid_str[20];
+#ifdef HAVE_WINDOWS_H
+    DWORD pid;
+#else
+    int pid;
+#endif
+#endif
 
     /* must ensure shm_hostname is set prior to this upcall */
 /*     printf("before first MPIU_Str_add_string_arg\n"); */
@@ -76,6 +84,29 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
 	return mpi_errno;
     }
     /* --END ERROR HANDLING-- */
+
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+    pid = GetCurrentProcessId();
+#else
+    pid = getpid();
+#endif
+    MPIU_Snprintf(pid_str, 20, "%d", pid);
+    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, 
+					MPIDI_CH3I_SHM_PID_KEY, pid_str);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM) {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
+	}
+	else {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**buscard");
+	}
+	return mpi_errno;
+    }
+    /* --END ERROR HANDLING-- */
+#endif
 
 /* FIXME: Why the #if 0? Should this code be fixed or deleted? */
 #if 0

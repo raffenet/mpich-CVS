@@ -293,6 +293,12 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     MPIDI_CH3I_BootstrapQ queue;
     MPIDI_CH3I_Shmem_queue_info shm_info;
     int i;
+#ifdef HAVE_SHARED_PROCESS_READ
+    char pid_str[20];
+#ifndef HAVE_WINDOWS_H
+    char filename[256];
+#endif
+#endif
 
     /* get the host and queue from the business card */
     mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_HOST_KEY, hostname, 256);
@@ -314,6 +320,16 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmq", 0);
 	return mpi_errno;
     }
+
+#ifdef HAVE_SHARED_PROCESS_READ
+    mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_PID_KEY, pid_str, 20);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	*flag = FALSE;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmpid", 0);
+	return mpi_errno;
+    }
+#endif
 
     /* compare this host's name with the business card host name */
     if (strcmp(MPIDI_Process.my_pg->ch.shm_hostname, hostname) != 0)
@@ -392,6 +408,36 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_detach", 0);
 	return mpi_errno;
     }
+
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+    /*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
+    vc->ch.hSharedProcessHandle =
+	OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
+	FALSE, atoi(pid_str));
+    if (vc->ch.hSharedProcessHandle == NULL)
+    {
+	int err = GetLastError();
+	MPIDI_CH3I_SHM_Unlink_mem(&vc->ch.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Release_mem(&vc->ch.shm_write_queue_info);
+	*flag = FALSE;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", i, err);
+	return mpi_errno;
+    }
+#else
+    MPIU_Snprintf(filename, 256, "/proc/%s/mem", pid_str);
+    pg->ch.nSharedProcessID = atoi(pid_str);
+    pg->ch.nSharedProcessFileDescriptor = open(filename, O_RDWR/*O_RDONLY*/);
+    if (pg->ch.nSharedProcessFileDescriptor == -1)
+    {
+	MPIDI_CH3I_SHM_Unlink_mem(&vc->ch.shm_write_queue_info);
+	MPIDI_CH3I_SHM_Release_mem(&vc->ch.shm_write_queue_info);
+	*flag = FALSE;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, atoi(pid_str), errno);
+	return mpi_errno;
+    }
+#endif
+#endif
 
     return MPI_SUCCESS;
 }
