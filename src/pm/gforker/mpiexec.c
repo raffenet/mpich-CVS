@@ -233,8 +233,12 @@ int main( int argc, char *argv[], char *envp[] )
 
 void mpiexec_usage( const char *msg )
 {
-    if (msg)
+    if (msg) {
 	MPIU_Error_printf( msg );
+	if (msg[strlen(msg)-1] != '\n') {
+	    MPIU_Error_printf( "\n" );
+	}
+    }
     MPIU_Usage_printf( "Usage: mpiexec %s\n", MPIE_ArgDescription() );
     exit( -1 );
 }
