@@ -24,7 +24,8 @@ dnl MPI-2 Spawn?
 dnl MPI-2 RMA?
 dnl PAC_LIB_MPI([found text],[not found text])
 AC_DEFUN(PAC_LIB_MPI,[
-AC_PREREQ(2.13)
+dnl Set the prereq to 2.50 to avoid having 
+AC_PREREQ(2.50)
 if test "X$pac_lib_mpi_is_building" != "Xyes" ; then
   # Use CC if TESTCC is defined
   if test "X$pac_save_level" != "X" ; then
@@ -134,6 +135,9 @@ ac_mpi_type=sgimpi)
 AC_ARG_WITH(mpichnt,
 [--with-mpichnt - Use MPICH for Windows NT ],
 ac_mpi_type=mpichnt)
+AC_ARG_WITH(mpi,
+[--with-mpi=path    - Use an MPI implementation with compile scripts mpicc
+                     and mpif77 in path/bin],ac_mpi_type=generic)
 
 if test "X$ac_mpi_type" = "X" ; then
     if test "X$1" != "X" ; then
@@ -264,6 +268,53 @@ case $ac_mpi_type in
 	MPIRUN=mpirun
 	MPIBOOT=""
 	MPIUNBOOT=""
+	;;
+
+	generic)
+	# Find the compilers.  Expect the compilers to be mpicc and mpif77
+	# in $with_mpi/bin
+        PAC_PROG_CC
+	# We only look for the other compilers if there is no
+	# disable for them
+	if test "$enable_f77" != no -a "$enable_fortran" != no ; then
+   	    AC_PROG_F77
+        fi
+	if test "$enable_cxx" != no ; then
+	    AC_PROG_CXX
+	fi
+	if test "$enable_f90" != no ; then
+	    PAC_PROG_F90
+	fi
+	# Set defaults for the TEST versions if not already set
+	if test -z "$TESTCC" ; then 
+	    TESTCC=${CC:=cc}
+        fi
+	if test -z "$TESTF77" ; then 
+  	    TESTF77=${F77:=f77}
+        fi
+	if test -z "$TESTCXX" ; then
+	    TESTCXX=${CXX:=CC}
+        fi
+	if test -z "$TESTF90" ; then
+       	    TESTF90=${F90:=f90}
+	fi
+        if test "X$MPICC" = "X" ; then
+            if test -x "$with_mpi/bin/mpicc" ; then
+                MPICC=$with_mpi/bin/mpicc
+            fi
+        fi
+        if test "X$MPIF77" = "X" ; then
+            if test -x "$with_mpi/bin/mpif77" ; then
+                MPIF77=$with_mpi/bin/mpif77
+            fi
+        fi
+        if test "X$MPIEXEC" = "X" ; then
+            if test -x "$with_mpi/bin/mpiexec" ; then
+                MPIEXEC=$with_mpi/bin/mpiexec
+            fi
+        fi
+        CC=$MPICC
+        F77=$MPIF77
 	;;
 
 	*)
