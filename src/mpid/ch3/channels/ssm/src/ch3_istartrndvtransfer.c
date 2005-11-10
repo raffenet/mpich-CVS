@@ -120,9 +120,12 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 	cts_pkt->sender_req_id = rreq->dev.sender_req_id;
 	cts_pkt->receiver_req_id = rreq->handle;
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-	if (mpi_errno != MPI_SUCCESS) {
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ctspkt");
 	}
+	/* --END ERROR HANDLING-- */
 	if (cts_req != NULL)
 	{
 	    /* FIXME: Ideally we could specify that a req not be returned.  This would avoid our having to decrement the
@@ -132,7 +135,7 @@ int MPIDI_CH3_iStartRndvTransfer(MPIDI_VC_t * vc, MPID_Request * rreq)
 	    {
 		MPIU_Object_set_ref(rreq, 0);
 		MPIDI_CH3_Request_destroy(rreq);
-		mpi_errno = MPIR_Err_create_code(cts_req->status.MPI_ERROR, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+		mpi_errno = MPIR_Err_create_code(cts_req->status.MPI_ERROR, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|ctspkt", 0);
 		MPID_Request_release(cts_req);
 		goto fn_fail;
 	    }
