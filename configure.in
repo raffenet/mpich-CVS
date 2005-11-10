@@ -2462,6 +2462,9 @@ if test "$enable_f77" = yes ; then
     MPI_CHARACTER=0x4c00011a
     AC_SUBST(MPI_CHARACTER)
 
+    if test -z "$pac_cv_f77_sizeof_integer" ; then
+        AC_MSG_ERROR([Unable to configure with Fortran support because configure could not determine the size of a Fortran INTEGER.  Consider setting CROSS_F77_SIZEOF_INTEGER to the length in bytes of a Fortran INTEGER])
+    fi
     len_integer=$pac_cv_f77_sizeof_integer
     # Convert to two digit hex
     len=$len_integer
@@ -2506,6 +2509,9 @@ if test "$enable_f77" = yes ; then
     AC_SUBST(MPI_REAL)
     AC_SUBST(MPI_LOGICAL)
 
+    if test -z "$pac_cv_f77_sizeof_double_precision" ; then
+        AC_MSG_ERROR([Unable to configure with Fortran support because configure could not determine the size of a Fortran DOUBLE PRECISION.  Consider setting CROSS_F77_SIZEOF_DOUBLE_PRECISION to the length in bytes of a Fortran DOUBLE PRECISION])
+    fi
     len_double=$pac_cv_f77_sizeof_double_precision
     # Convert to two digit hex
     len=$len_double
