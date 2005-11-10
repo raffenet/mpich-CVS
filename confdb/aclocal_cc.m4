@@ -1624,6 +1624,7 @@ int main( int argc, char *argv[] )
 #ifdef HAVE_LONG_DOUBLE
     struct { char a; long double b; } char_long_double;
     struct { long double b; char a; } long_double_char;
+    struct { long double a; int b; char c; } long_double_int_char;
 #endif
     int size, extent1, extent2;
 
@@ -1656,9 +1657,15 @@ int main( int argc, char *argv[] )
     if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
     if (sizeof(long double) >= 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
 	is_eight = 0;
-    if (sizeof(long double) == 16 && (extent1 % 16) != 0
+    if (sizeof(long double) > 8 && (extent1 % 16) != 0
 	&& (extent2 % 16) != 0) is_sixteen = 0;
     DBG("char_long-double",size,extent1);
+
+    extent1 = sizeof(long_double_int_char);
+    if ( (extent1 % 2) != 0) is_two = 0;
+    if ( (extent1 % 4) != 0) is_four = 0;
+    if (sizeof(long double) >= 8 && (extent1 % 8) != 0)	is_eight = 0;
+    if (sizeof(long double) > 8 && (extent1 % 16) != 0) is_sixteen = 0;
 #else
     is_sixteen = 0;
 #endif
