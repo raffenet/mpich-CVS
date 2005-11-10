@@ -1581,7 +1581,6 @@ dnl pac_cv_c_max_fp_align.
 dnl
 dnl Possible values include:
 dnl	packed
-dnl	largest
 dnl	two
 dnl	four
 dnl	eight
@@ -1601,41 +1600,46 @@ int main( int argc, char *argv[] )
     int is_two     = 1;
     int is_four    = 1;
     int is_eight   = 1;
-    int is_largest = 1;
     struct { char a; float b; } char_float;
+    struct { float b; char a; } float_char;
     struct { char a; double b; } char_double;
+    struct { double b; char a; } double_char;
 #ifdef HAVE_LONG_DOUBLE
     struct { char a; long double b; } char_long_double;
+    struct { long double b; char a; } long_double_char;
 #endif
-    int size, extent;
+    int size, extent1, extent2;
 
     size = sizeof(char) + sizeof(float);
-    extent = sizeof(char_float);
-    if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(float)) != 0) is_largest = 0;
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(float) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_float",size,extent);
+    extent1 = sizeof(char_float);
+    extent2 = sizeof(float_char);
+    if (size != extent1) is_packed = 0;
+    if ( (extent1 % 2) != 0 && (extent2 % 2) != 0) is_two = 0;
+    if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
+    if (sizeof(float) == 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
+	is_eight = 0;
+    DBG("char_float",size,extent1);
 
     size = sizeof(char) + sizeof(double);
-    extent = sizeof(char_double);
-    if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(double)) != 0) is_largest = 0;
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(double) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_double",size,extent);
+    extent1 = sizeof(char_double);
+    extent2 = sizeof(double_char);
+    if (size != extent1) is_packed = 0;
+    if ( (extent1 % 2) != 0 && (extent2 % 2) != 0) is_two = 0;
+    if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
+    if (sizeof(double) == 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
+	is_eight = 0;
+    DBG("char_double",size,extent1);
 
 #ifdef HAVE_LONG_DOUBLE
     size = sizeof(char) + sizeof(long double);
-    extent = sizeof(char_long_double);
-    if (size != extent) is_packed = 0;
-    if ( (extent % sizeof(long double)) != 0) is_largest = 0;
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(long double) >= 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_long-double",size,extent);
+    extent1 = sizeof(char_long_double);
+    extent2 = sizeof(long_double_char);
+    if (size != extent1) is_packed = 0;
+    if ( (extent1 % 2) != 0 && (extent2 % 2) != 0) is_two = 0;
+    if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
+    if (sizeof(long double) >= 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
+	is_eight = 0;
+    DBG("char_long-double",size,extent1);
 #endif
 
     /* If aligned mod 8, it will be aligned mod 4 */
@@ -1643,21 +1647,17 @@ int main( int argc, char *argv[] )
 
     if (is_four) is_two = 0;
 
-    /* largest superceeds eight */
-    if (is_largest) is_eight = 0;
-
     /* Tabulate the results */
     cf = fopen( "ctest.out", "w" );
-    if (is_packed + is_largest + is_two + is_four + is_eight == 0) {
+    if (is_packed + is_two + is_four + is_eight == 0) {
 	fprintf( cf, "Could not determine alignment\n" );
     }
     else {
-	if (is_packed + is_largest + is_two + is_four + is_eight != 1) {
+	if (is_packed + is_two + is_four + is_eight != 1) {
 	    fprintf( cf, "error!\n" );
 	}
 	else {
 	    if (is_packed) fprintf( cf, "packed\n" );
-	    if (is_largest) fprintf( cf, "largest\n" );
 	    if (is_two) fprintf( cf, "two\n" );
 	    if (is_four) fprintf( cf, "four\n" );
 	    if (is_eight) fprintf( cf, "eight\n" );
@@ -1675,6 +1675,67 @@ if test -z "$pac_cv_c_max_fp_align" ; then
     pac_cv_c_max_fp_align="unknown"
 fi
 ])
+dnl
+dnl
+dnl Test for odd struct alignment rule that only applies max.
+dnl padding when floating point value is at front of type.
+dnl Puts result in pac_cv_c_fp_pos_align.
+dnl
+dnl Possible values include yes, no, and unknown.
+dnl
+AC_DEFUN(PAC_C_FP_POS_ALIGN,[
+AC_CACHE_CHECK([if C struct floating point alignment is based on position],
+pac_cv_c_fp_pos_align,[
+AC_TRY_RUN([
+#include <stdio.h>
+#define DBG(a,b,c)
+int main( int argc, char *argv[] )
+{
+    FILE *cf;
+    int padding_varies_by_pos = 0;
+    struct { char a; float b; } char_float;
+    struct { float b; char a; } float_char;
+    struct { char a; double b; } char_double;
+    struct { double b; char a; } double_char;
+#ifdef HAVE_LONG_DOUBLE
+    struct { char a; long double b; } char_long_double;
+    struct { long double b; char a; } long_double_char;
+#endif
+    int extent1, extent2;
+
+    extent1 = sizeof(char_float);
+    extent2 = sizeof(float_char);
+    if (extent1 != extent2) padding_varies_by_pos = 1;
+
+    extent1 = sizeof(char_double);
+    extent2 = sizeof(double_char);
+    if (extent1 != extent2) padding_varies_by_pos = 1;
+
+
+#ifdef HAVE_LONG_DOUBLE
+    extent1 = sizeof(char_long_double);
+    extent2 = sizeof(long_double_char);
+    if (extent1 != extent2) padding_varies_by_pos = 1;
+
+#endif
+
+    cf = fopen( "ctest.out", "w" );
+    if (padding_varies_by_pos) fprintf( cf, "yes\n" );
+    else fprintf( cf, "no\n" );
+
+    fclose( cf );
+    return 0;
+}],
+pac_cv_c_fp_pos_align=`cat ctest.out`,
+pac_cv_c_fp_pos_align="unknown",
+pac_cv_c_fp_pos_align="$CROSS_FP_POS_ALIGN")
+rm -f ctest.out
+])
+if test -z "$pac_cv_c_fp_pos_align" ; then
+    pac_cv_c_fp_pos_align="unknown"
+fi
+])
+
 dnl
 dnl
 dnl/*D

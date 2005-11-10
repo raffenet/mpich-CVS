@@ -1929,6 +1929,13 @@ if test -n "$pac_cv_c_fp_align_nr" ; then
     AC_DEFINE_UNQUOTED(HAVE_MAX_FP_ALIGNMENT,$pac_cv_c_fp_align_nr,[Controls byte alignment of integer structures (for MPI structs)])
 fi
 
+# Test for weird struct alignment rules that vary padding based on
+# size of leading type only.
+PAC_C_FP_POS_ALIGN
+if test "$pac_cv_c_fp_pos_align" = "yes" ; then
+    AC_DEFINE_UNQUOTED(HAVE_FP_POS_ALIGNMENT,1,[Controls how alignment is applied based on position of floating point values in the structure])
+fi
+
 # Test whether pointers can be aligned on a int boundary or require
 # a pointer boundary.
 AC_MSG_CHECKING([for alignment restrictions on pointers])
