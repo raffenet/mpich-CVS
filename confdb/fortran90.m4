@@ -150,6 +150,7 @@ AU_DEFUN([AC_LANG_FORTRAN90], [AC_LANG(Fortran 90)])
 # ---------------------------
 m4_define([_AC_LANG_ABBREV(Fortran 90)], [f90])
 
+m4_define([_AC_LANG_PREFIX(Fortran 90)], [F90])
 
 
 ## ---------------------- ##
