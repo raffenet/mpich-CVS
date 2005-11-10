@@ -963,7 +963,10 @@ dnl
 dnl -std=c89 is used to select the C89 version of the ANSI/ISO C standard.
 dnl As of this writing, many C compilers still accepted only this version,
 dnl not the later C99 version.  When all compilers accept C99, this 
-dnl should be changed to the appropriate standard level.
+dnl should be changed to the appropriate standard level.  Note that we've
+dnl had trouble with gcc 2.95.3 accepting -std=c89 but then trying to 
+dnl compile program with a invalid set of options 
+dnl (-D __STRICT_ANSI__-trigraphs)
 dnl
 dnl If the value 'all' is given to '--enable-strict', additional warning
 dnl options are included.  These are
@@ -1049,6 +1052,15 @@ export enable_strict_done
 ])
 dnl
 dnl Use the value of enable-strict to update CFLAGS
+dnl
+dnl -std=c89 is used to select the C89 version of the ANSI/ISO C standard.
+dnl As of this writing, many C compilers still accepted only this version,
+dnl not the later C99 version.  When all compilers accept C99, this 
+dnl should be changed to the appropriate standard level.  Note that we've
+dnl had trouble with gcc 2.95.3 accepting -std=c89 but then trying to 
+dnl compile program with a invalid set of options 
+dnl (-D __STRICT_ANSI__-trigraphs)
+dnl
 dnl 
 AC_DEFUN(PAC_CC_STRICT,[
 export enable_strict_done
@@ -1061,8 +1073,19 @@ if test "$enable_strict_done" != "yes" ; then
 	yes)
         enable_strict_done="yes"
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
+            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
 	    AC_MSG_RESULT([Adding strict check arguments to CFLAGS])
+	    AC_MSG_CHECKING([whether we can add -std=c89])
+            # See if we can add -std=c89
+            savCFLAGS=$CFLAGS
+            CFLAGS="$CFLAGS -std=c89"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[int a;])],
+                  stdc_ok=yes,
+                  stdc_ok=no)
+            AC_MSG_RESULT($stdc_ok)
+            if test "$stdc_ok" != yes ; then
+                CFLAGS="$savCFLAGS"
+            fi
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
@@ -1070,7 +1093,18 @@ if test "$enable_strict_done" != "yes" ; then
 	all)
         enable_strict_done="yes"
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long -std=c89"
+            CFLAGS="${CFLAGS} -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
+	    AC_MSG_CHECKING([whether we can add -std=c89])
+            # See if we can add -std=c89
+            savCFLAGS=$CFLAGS
+            CFLAGS="$CFLAGS -std=c89"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[int a;])],
+                  stdc_ok=yes,
+                  stdc_ok=no)
+            AC_MSG_RESULT($stdc_ok)
+            if test "$stdc_ok" != yes ; then
+                CFLAGS="$savCFLAGS"
+            fi
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
@@ -1079,8 +1113,19 @@ if test "$enable_strict_done" != "yes" ; then
 	posix)
 	enable_strict_done="yes"
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L -std=c89"
+            CFLAGS="${CFLAGS} -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
 	    AC_MSG_RESULT([Adding strict check arguments (POSIX flavor) to CFLAGS])
+	    AC_MSG_CHECKING([whether we can add -std=c89])
+            # See if we can add -std=c89
+            savCFLAGS=$CFLAGS
+            CFLAGS="$CFLAGS -std=c89"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[int a;])],
+                  stdc_ok=yes,
+                  stdc_ok=no)
+            AC_MSG_RESULT($stdc_ok)
+            if test "$stdc_ok" != yes ; then
+                CFLAGS="$savCFLAGS"
+            fi
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
@@ -1089,8 +1134,19 @@ if test "$enable_strict_done" != "yes" ; then
 	noopt)
         enable_strict_done="yes"
         if test "$ac_cv_prog_gcc" = "yes" ; then 
-            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
+            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
 	    AC_MSG_RESULT([Adding strict check arguments to CFLAGS])
+	    AC_MSG_CHECKING([whether we can add -std=c89])
+            # See if we can add -std=c89
+            savCFLAGS=$CFLAGS
+            CFLAGS="$CFLAGS -std=c89"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[int a;])],
+                  stdc_ok=yes,
+                  stdc_ok=no)
+            AC_MSG_RESULT($stdc_ok)
+            if test "$stdc_ok" != yes ; then
+                CFLAGS="$savCFLAGS"
+            fi
 	else 
 	    AC_MSG_WARN([enable strict supported only for gcc])
     	fi
