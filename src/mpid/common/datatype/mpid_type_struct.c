@@ -39,9 +39,9 @@ static int MPID_Type_struct_alignsize(int count,
 	if (max_alignsize < tmp_alignsize) max_alignsize = tmp_alignsize;
     }
 
-#ifdef HAVE_MAX_STRUCT_ALIGNMENT
-    if (max_alignsize > HAVE_MAX_STRUCT_ALIGNMENT)
-	max_alignsize = HAVE_MAX_STRUCT_ALIGNMENT;
+#ifdef HAVE_MAX_INTEGER_ALIGNMENT
+    if (max_alignsize > HAVE_MAX_INTEGER_ALIGNMENT)
+	max_alignsize = HAVE_MAX_INTEGER_ALIGNMENT;
 #endif
     /* if we didn't calculate a maximum struct alignment (above), then the
      * alignment was either "largest", in which case we just use what we found,

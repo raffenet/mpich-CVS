@@ -176,9 +176,9 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 
     new_dtp->alignsize       = MPIR_MAX(MPID_Datatype_get_basic_size(types[0]),
 					MPID_Datatype_get_basic_size(types[1]));
-#ifdef HAVE_MAX_STRUCT_ALIGNMENT
+#ifdef HAVE_MAX_INTEGER_ALIGNMENT
     new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
-					HAVE_MAX_STRUCT_ALIGNMENT);
+					HAVE_MAX_INTEGER_ALIGNMENT);
 #endif
 				   
 

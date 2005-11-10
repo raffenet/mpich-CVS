@@ -1885,26 +1885,48 @@ pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
 if test "$pac_cv_have_long_long" = "yes" ; then
     AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
 fi
-# Get default structure alignment
-dnl PAC_C_STRUCT_ALIGNMENT places the default alignment into
-dnl pac_cv_c_struct_align, with possible values including
+# Get default structure alignment for integers
+dnl PAC_C_MAX_INTEGER_ALIGN places the default alignment into
+dnl pac_cv_c_max_integer_align, with possible values including
 dnl packed (byte), largest, two, four, eight (or other failure message).
-PAC_C_STRUCT_ALIGNMENT
+PAC_C_MAX_INTEGER_ALIGN
 
-if test "$pac_cv_c_struct_align" = "packed" ; then
+if test "$pac_cv_c_max_integer_align" = "packed" ; then
     pac_cv_c_struct_align_nr=1
-elif test "$pac_cv_c_struct_align" = "two" ; then
+elif test "$pac_cv_c_max_integer_align" = "two" ; then
     pac_cv_c_struct_align_nr=2
-elif test "$pac_cv_c_struct_align" = "four" ; then
+elif test "$pac_cv_c_max_integer_align" = "four" ; then
     pac_cv_c_struct_align_nr=4
-elif test "$pac_cv_c_struct_align" = "eight" ; then
+elif test "$pac_cv_c_max_integer_align" = "eight" ; then
     pac_cv_c_struct_align_nr=8
-elif test "$pac_cv_c_struct_align" = "largest" ; then
+elif test "$pac_cv_c_max_integer_align" = "largest" ; then
     AC_DEFINE(HAVE_LARGEST_STRUCT_ALIGNMENT,1,[Define when alignment of structures is based on largest component])
 fi
 
 if test -n "$pac_cv_c_struct_align_nr" ; then
-    AC_DEFINE_UNQUOTED(HAVE_MAX_STRUCT_ALIGNMENT,$pac_cv_c_struct_align_nr,[Controls byte alignment of structures])
+    AC_DEFINE_UNQUOTED(HAVE_MAX_INTEGER_ALIGNMENT,$pac_cv_c_struct_align_nr,[Controls byte alignment of integer structures (for MPI structs)])
+    AC_DEFINE_UNQUOTED(HAVE_MAX_STRUCT_ALIGNMENT,$pac_cv_c_struct_align_nr,[Controls byte alignment of structures (for aligning allocated structures)])
+fi
+# Get default structure alignment for floating point types
+dnl PAC_C_MAX_FP_ALIGN places the default alignment into
+dnl pac_cv_c_max_fp_align, with possible values including
+dnl packed (byte), largest, two, four, eight (or other failure message).
+PAC_C_MAX_FP_ALIGN
+
+if test "$pac_cv_c_max_fp_align" = "packed" ; then
+    pac_cv_c_fp_align_nr=1
+elif test "$pac_cv_c_max_fp_align" = "two" ; then
+    pac_cv_c_fp_align_nr=2
+elif test "$pac_cv_c_max_fp_align" = "four" ; then
+    pac_cv_c_fp_align_nr=4
+elif test "$pac_cv_c_max_fp_align" = "eight" ; then
+    pac_cv_c_fp_align_nr=8
+elif test "$pac_cv_c_max_fp_align" = "largest" ; then
+    AC_MSG_ERROR([Configure detected unsupported structure alignment rules.  Please email mpich2-maint@mcs.anl.gov with complete configure output and information on architecture.])
+fi
+
+if test -n "$pac_cv_c_fp_align_nr" ; then
+    AC_DEFINE_UNQUOTED(HAVE_MAX_FP_ALIGNMENT,$pac_cv_c_fp_align_nr,[Controls byte alignment of integer structures (for MPI structs)])
 fi
 
 # Test whether pointers can be aligned on a int boundary or require
