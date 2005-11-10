@@ -1494,7 +1494,11 @@ int main( int argc, char *argv[] )
     struct { char a; long b; } char_long;
     struct { char a; int b; char c; } char_int_char;
     struct { char a; short b; char c; } char_short_char;
-    int size, extent;
+#ifdef HAVE_LONG_LONG_INT
+    struct { long long int a; char b; } lli_c;
+    struct { char a; long long int b; } c_lli;
+#endif
+    int size, extent, extent2;
 
     /* assume max integer alignment isn't 8 if we don't have
      * an eight-byte value :)
@@ -1524,6 +1528,17 @@ int main( int argc, char *argv[] )
     if ( (extent % 4) != 0) is_four = 0;
     if (sizeof(long) == 8 && (extent % 8) != 0) is_eight = 0;
     DBG("char_long",size,extent);
+
+#ifdef HAVE_LONG_LONG_INT
+    size = sizeof(char) + sizeof(long long int);
+    extent = sizeof(lli_c);
+    extent2 = sizeof(c_lli);
+    if (size != extent) is_packed = 0;
+    if ( (extent % 2) != 0 && (extent2 % 2) != 0) is_two = 0;
+    if ( (extent % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
+    if (sizeof(long long int) >= 8 && (extent % 8) != 0 && (extent2 % 8) != 0)
+	is_eight = 0;
+#endif
 
     size = sizeof(char) + sizeof(int) + sizeof(char);
     extent = sizeof(char_int_char);
@@ -1584,6 +1599,7 @@ dnl	packed
 dnl	two
 dnl	four
 dnl	eight
+dnl     sixteen
 dnl
 dnl In addition, a "Could not determine alignment" and a "error!"
 dnl return is possible.  
@@ -1600,6 +1616,7 @@ int main( int argc, char *argv[] )
     int is_two     = 1;
     int is_four    = 1;
     int is_eight   = 1;
+    int is_sixteen = 1;
     struct { char a; float b; } char_float;
     struct { float b; char a; } float_char;
     struct { char a; double b; } char_double;
@@ -1639,21 +1656,26 @@ int main( int argc, char *argv[] )
     if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
     if (sizeof(long double) >= 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
 	is_eight = 0;
+    if (sizeof(long double) == 16 && (extent1 % 16) != 0
+	&& (extent2 % 16) != 0) is_sixteen = 0;
     DBG("char_long-double",size,extent1);
+#else
+    is_sixteen = 0;
 #endif
 
-    /* If aligned mod 8, it will be aligned mod 4 */
+    if (is_sixteen) { is_eight = 0; is_four = 0; is_two = 0; }
+
     if (is_eight) { is_four = 0; is_two = 0; }
 
     if (is_four) is_two = 0;
 
     /* Tabulate the results */
     cf = fopen( "ctest.out", "w" );
-    if (is_packed + is_two + is_four + is_eight == 0) {
+    if (is_packed + is_two + is_four + is_eight + is_sixteen == 0) {
 	fprintf( cf, "Could not determine alignment\n" );
     }
     else {
-	if (is_packed + is_two + is_four + is_eight != 1) {
+	if (is_packed + is_two + is_four + is_eight + is_sixteen != 1) {
 	    fprintf( cf, "error!\n" );
 	}
 	else {
@@ -1661,6 +1683,7 @@ int main( int argc, char *argv[] )
 	    if (is_two) fprintf( cf, "two\n" );
 	    if (is_four) fprintf( cf, "four\n" );
 	    if (is_eight) fprintf( cf, "eight\n" );
+	    if (is_sixteen) fprintf( cf, "sixteen\n" );
 	}
     }
     fclose( cf );
@@ -1678,14 +1701,16 @@ fi
 dnl
 dnl
 dnl Test for odd struct alignment rule that only applies max.
-dnl padding when floating point value is at front of type.
-dnl Puts result in pac_cv_c_fp_pos_align.
+dnl padding when double value is at front of type.
+dnl Puts result in pac_cv_c_double_pos_align.
+dnl
+dnl Search for "Power alignment mode" for more details.
 dnl
 dnl Possible values include yes, no, and unknown.
 dnl
-AC_DEFUN(PAC_C_FP_POS_ALIGN,[
-AC_CACHE_CHECK([if C struct floating point alignment is based on position],
-pac_cv_c_fp_pos_align,[
+AC_DEFUN(PAC_C_DOUBLE_POS_ALIGN,[
+AC_CACHE_CHECK([if alignment of structs with doubles is based on position],
+pac_cv_c_double_pos_align,[
 AC_TRY_RUN([
 #include <stdio.h>
 #define DBG(a,b,c)
@@ -1693,30 +1718,58 @@ int main( int argc, char *argv[] )
 {
     FILE *cf;
     int padding_varies_by_pos = 0;
-    struct { char a; float b; } char_float;
-    struct { float b; char a; } float_char;
     struct { char a; double b; } char_double;
     struct { double b; char a; } double_char;
-#ifdef HAVE_LONG_DOUBLE
-    struct { char a; long double b; } char_long_double;
-    struct { long double b; char a; } long_double_char;
-#endif
     int extent1, extent2;
-
-    extent1 = sizeof(char_float);
-    extent2 = sizeof(float_char);
-    if (extent1 != extent2) padding_varies_by_pos = 1;
 
     extent1 = sizeof(char_double);
     extent2 = sizeof(double_char);
     if (extent1 != extent2) padding_varies_by_pos = 1;
 
+    cf = fopen( "ctest.out", "w" );
+    if (padding_varies_by_pos) fprintf( cf, "yes\n" );
+    else fprintf( cf, "no\n" );
 
-#ifdef HAVE_LONG_DOUBLE
-    extent1 = sizeof(char_long_double);
-    extent2 = sizeof(long_double_char);
+    fclose( cf );
+    return 0;
+}],
+pac_cv_c_double_pos_align=`cat ctest.out`,
+pac_cv_c_double_pos_align="unknown",
+pac_cv_c_double_pos_align="$CROSS_DOUBLE_POS_ALIGN")
+rm -f ctest.out
+])
+if test -z "$pac_cv_c_double_pos_align" ; then
+    pac_cv_c_double_pos_align="unknown"
+fi
+])
+dnl
+dnl
+dnl Test for odd struct alignment rule that only applies max.
+dnl padding when long long int value is at front of type.
+dnl Puts result in pac_cv_c_llint_pos_align.
+dnl
+dnl Search for "Power alignment mode" for more details.
+dnl
+dnl Possible values include yes, no, and unknown.
+dnl
+AC_DEFUN(PAC_C_LLINT_POS_ALIGN,[
+AC_CACHE_CHECK([if alignment of structs with long long ints is based on position],
+pac_cv_c_llint_pos_align,[
+AC_TRY_RUN([
+#include <stdio.h>
+#define DBG(a,b,c)
+int main( int argc, char *argv[] )
+{
+    FILE *cf;
+    int padding_varies_by_pos = 0;
+#ifdef HAVE_LONG_LONG_INT
+    struct { char a; long long int b; } char_llint;
+    struct { long long int b; char a; } llint_char;
+    int extent1, extent2;
+
+    extent1 = sizeof(char_llint);
+    extent2 = sizeof(llint_char);
     if (extent1 != extent2) padding_varies_by_pos = 1;
-
 #endif
 
     cf = fopen( "ctest.out", "w" );
@@ -1726,13 +1779,13 @@ int main( int argc, char *argv[] )
     fclose( cf );
     return 0;
 }],
-pac_cv_c_fp_pos_align=`cat ctest.out`,
-pac_cv_c_fp_pos_align="unknown",
-pac_cv_c_fp_pos_align="$CROSS_FP_POS_ALIGN")
+pac_cv_c_llint_pos_align=`cat ctest.out`,
+pac_cv_c_llint_pos_align="unknown",
+pac_cv_c_llint_pos_align="$CROSS_LLINT_POS_ALIGN")
 rm -f ctest.out
 ])
-if test -z "$pac_cv_c_fp_pos_align" ; then
-    pac_cv_c_fp_pos_align="unknown"
+if test -z "$pac_cv_c_llint_pos_align" ; then
+    pac_cv_c_llint_pos_align="unknown"
 fi
 ])
 

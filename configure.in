@@ -1921,6 +1921,8 @@ elif test "$pac_cv_c_max_fp_align" = "four" ; then
     pac_cv_c_fp_align_nr=4
 elif test "$pac_cv_c_max_fp_align" = "eight" ; then
     pac_cv_c_fp_align_nr=8
+elif test "$pac_cv_c_max_fp_align" = "sixteen" ; then
+    pac_cv_c_fp_align_nr=16
 elif test "$pac_cv_c_max_fp_align" = "largest" ; then
     AC_MSG_ERROR([Configure detected unsupported structure alignment rules.  Please email mpich2-maint@mcs.anl.gov with complete configure output and information on architecture.])
 fi
@@ -1931,9 +1933,15 @@ fi
 
 # Test for weird struct alignment rules that vary padding based on
 # size of leading type only.
-PAC_C_FP_POS_ALIGN
-if test "$pac_cv_c_fp_pos_align" = "yes" ; then
-    AC_DEFINE_UNQUOTED(HAVE_FP_POS_ALIGNMENT,1,[Controls how alignment is applied based on position of floating point values in the structure])
+PAC_C_DOUBLE_POS_ALIGN
+if test "$pac_cv_c_double_pos_align" = "yes" ; then
+    AC_DEFINE_UNQUOTED(HAVE_DOUBLE_POS_ALIGNMENT,1,[Controls how alignment is applied based on position of doubles in the structure])
+fi
+
+# Test for same weird issues with long long int.
+PAC_C_LLINT_POS_ALIGN
+if test "$pac_cv_c_llint_pos_align" = "yes" ; then
+   AC_DEFINE_UNQUOTED(HAVE_LLINT_POS_ALIGNMENT,1,[Controls how alignment is applied based on position of long long ints in the structure])
 fi
 
 # Test whether pointers can be aligned on a int boundary or require

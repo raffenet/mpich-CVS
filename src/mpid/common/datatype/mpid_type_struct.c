@@ -14,12 +14,27 @@
 #undef MPID_STRUCT_DEBUG
 
 static int MPID_Type_struct_alignsize(int count,
-				      MPI_Datatype *oldtype_array);
+				      MPI_Datatype *oldtype_array,
+				      MPI_Aint *displacement_array);
 
+/* MPID_Type_struct_alignsize
+ *
+ * This function guesses at how the C compiler would align a structure
+ * with the given components.
+ *
+ * It uses these configure-time defines to do its magic:
+ * - HAVE_MAX_INTEGER_ALIGNMENT - maximum byte alignment of integers
+ * - HAVE_MAX_FP_ALIGNMENT      - maximum byte alignment of floating points
+ * - HAVE_DOUBLE_POS_ALIGNMENT  - indicates that structures with doubles
+ *                                are aligned differently if double isn't
+ *                                at displacement 0 (e.g. PPC32/64).
+ * - HAVE_LLINT_POS_ALIGNMENT   - same as above, for MPI_LONG_LONG_INT
+ */
 static int MPID_Type_struct_alignsize(int count,
-				      MPI_Datatype *oldtype_array)
+				      MPI_Datatype *oldtype_array,
+				      MPI_Aint *displacement_array)
 {
-    int i, max_alignsize = 0, tmp_alignsize;
+    int i, max_alignsize = 0, tmp_alignsize, derived_alignsize = 0;
 
     for (i=0; i < count; i++)
     {
@@ -28,6 +43,39 @@ static int MPID_Type_struct_alignsize(int count,
 	else if (HANDLE_GET_KIND(oldtype_array[i]) == HANDLE_KIND_BUILTIN)
 	{
 	    tmp_alignsize = MPID_Datatype_get_basic_size(oldtype_array[i]);
+
+	    switch(oldtype_array[i])
+	    {
+		case MPI_FLOAT:
+		case MPI_DOUBLE:
+		case MPI_LONG_DOUBLE:
+#ifdef HAVE_MAX_FP_ALIGNMENT
+		    if (tmp_alignsize > HAVE_MAX_FP_ALIGNMENT)
+			tmp_alignsize = HAVE_MAX_FP_ALIGNMENT;
+#endif		    
+#ifdef HAVE_DOUBLE_POS_ALIGNMENT
+		    /* sort of a hack, but so is this rule */
+		    if (oldtype_array[i] == MPI_DOUBLE &&
+			displacement_array[i] != (MPI_Aint) 0)
+		    {
+			tmp_alignsize = 4;
+		    }
+#endif
+		    break;
+		default:
+#ifdef HAVE_MAX_INTEGER_ALIGNMENT
+		    if (tmp_alignsize > HAVE_MAX_INTEGER_ALIGNMENT)
+			tmp_alignsize = HAVE_MAX_INTEGER_ALIGNMENT;
+#endif
+		    break;
+#ifdef HAVE_LLINT_POS_ALIGNMENT
+		    if (oldtype_array[i] == MPI_LONG_LONG_INT &&
+			displacement_array[i] != (MPI_Aint) 0)
+		    {
+			tmp_alignsize = 4;
+		    }
+#endif
+	    }
 	}
 	else
 	{
@@ -35,18 +83,12 @@ static int MPID_Type_struct_alignsize(int count,
 
 	    MPID_Datatype_get_ptr(oldtype_array[i], dtp);
 	    tmp_alignsize = dtp->alignsize;
+	    if (derived_alignsize < tmp_alignsize)
+		derived_alignsize = tmp_alignsize;
 	}
 	if (max_alignsize < tmp_alignsize) max_alignsize = tmp_alignsize;
-    }
 
-#ifdef HAVE_MAX_INTEGER_ALIGNMENT
-    if (max_alignsize > HAVE_MAX_INTEGER_ALIGNMENT)
-	max_alignsize = HAVE_MAX_INTEGER_ALIGNMENT;
-#endif
-    /* if we didn't calculate a maximum struct alignment (above), then the
-     * alignment was either "largest", in which case we just use what we found,
-     * or "unknown", in which case what we found is as good a guess as any.
-     */
+    }
 
     return max_alignsize;
 }
@@ -341,7 +383,9 @@ int MPID_Type_struct(int count,
     new_dtp->true_ub       = true_ub_disp;
     new_dtp->ub = (found_sticky_ub) ? sticky_ub_disp : true_ub_disp;
 
-    new_dtp->alignsize = MPID_Type_struct_alignsize(count, oldtype_array);
+    new_dtp->alignsize = MPID_Type_struct_alignsize(count,
+						    oldtype_array,
+						    displacement_array);
 
     new_dtp->extent = new_dtp->ub - new_dtp->lb;
     if ((!found_sticky_lb) && (!found_sticky_ub))

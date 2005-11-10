@@ -176,10 +176,24 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 
     new_dtp->alignsize       = MPIR_MAX(MPID_Datatype_get_basic_size(types[0]),
 					MPID_Datatype_get_basic_size(types[1]));
+    /* place maximum on alignment based on padding rules */
+    switch(type) {
+	case MPI_SHORT_INT:
+	case MPI_LONG_INT:
 #ifdef HAVE_MAX_INTEGER_ALIGNMENT
-    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
-					HAVE_MAX_INTEGER_ALIGNMENT);
+	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
+						HAVE_MAX_INTEGER_ALIGNMENT);
 #endif
+	    break;
+	case MPI_FLOAT_INT:
+	case MPI_DOUBLE_INT:
+	case MPI_LONG_DOUBLE_INT:
+#ifdef HAVE_MAX_FP_ALIGNMENT
+	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
+						HAVE_MAX_FP_ALIGNMENT);
+#endif
+	    break;
+    }
 				   
 
     new_dtp->is_contig       = (type_size == type_extent) ? 1 : 0;
