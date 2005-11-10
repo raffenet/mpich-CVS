@@ -264,9 +264,9 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     }
 #else
     MPIU_Snprintf(filename, 256, "/proc/%s/mem", pid_str);
-    pg->ch.nSharedProcessID = atoi(pid_str);
-    pg->ch.nSharedProcessFileDescriptor = open(filename, O_RDWR/*O_RDONLY*/);
-    if (pg->ch.nSharedProcessFileDescriptor == -1)
+    vc->ch.nSharedProcessID = atoi(pid_str);
+    vc->ch.nSharedProcessFileDescriptor = open(filename, O_RDWR/*O_RDONLY*/);
+    if (vc->ch.nSharedProcessFileDescriptor == -1)
     {
 	MPIDI_CH3I_SHM_Unlink_mem(&vc->ch.shm_write_queue_info);
 	MPIDI_CH3I_SHM_Release_mem(&vc->ch.shm_write_queue_info);
