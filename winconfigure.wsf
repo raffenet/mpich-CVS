@@ -2425,8 +2425,6 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef HAVE_GCC_ATTRIBUTE */")
 				Case "HAVE_GETTEXT"
 					fout.WriteLine("/* #undef HAVE_GETTEXT */")
-				Case "HAVE_LARGEST_STRUCT_ALIGNMENT"
-					fout.WriteLine("/* #undef HAVE_LARGEST_STRUCT_ALIGNMENT */")
 				Case "HAVE_LIBINTL_H"
 					fout.WriteLine("/* #undef HAVE_LIBINTL_H */")
 				Case "HAVE_LONG_DOUBLE"
@@ -2441,6 +2439,16 @@ Sub AddDefinitions( fout, filename, b64 )
 					'	fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 4")
 					'End If
 					fout.WriteLine("#define HAVE_MAX_STRUCT_ALIGNMENT 8")
+				Case "HAVE_MAX_FP_ALIGNMENT"
+					fout.WriteLine("#define HAVE_MAX_FP_ALIGNMENT 8")
+				Case "HAVE_MAX_INTEGER_ALIGNMENT"
+					fout.WriteLine("#define HAVE_MAX_INTEGER_ALIGNMENT 4")
+				Case "HAVE_LARGEST_STRUCT_ALIGNMENT"
+					fout.WriteLine("/* #undef HAVE_LARGEST_STRUCT_ALIGNMENT */")
+				Case "HAVE_DOUBLE_POS_ALIGNMENT"
+					fout.WriteLine("/* #undef HAVE_DOUBLE_POS_ALIGNMENT */")
+				Case "HAVE_LLINT_POS_ALIGNMENT"
+					fout.WriteLine("/* #undef HAVE_LLINT_POS_ALIGNMENT */")
 				Case "HAVE_NAMEPUB_SERVICE"
 					fout.WriteLine("#define HAVE_NAMEPUB_SERVICE 1")
 				Case "HAVE_NO_FORTRAN_MPI_TYPES_IN_C"
