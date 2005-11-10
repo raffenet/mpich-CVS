@@ -40,6 +40,9 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     MPIDI_VC_t *vc_ptr;
     static int spin_count = 1;
     static int msg_queue_count = 0;
+#if defined(HAVE_SHARED_PROCESS_READ) && !defined(HAVE_WINDOWS_H)
+    char filename[256];
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 #ifdef USE_SLEEP_YIELD
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SLEEP_YIELD);
@@ -209,6 +212,29 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    goto fn_exit;
 		}
 		MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+		/*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
+		vc_ptr->ch.hSharedProcessHandle =
+		    OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
+		    FALSE, info.pid);
+		if (vc_ptr->ch.hSharedProcessHandle == NULL)
+		{
+		    int err = GetLastError();
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", info.pg_rank, err);
+		    return mpi_errno;
+		}
+#else
+		MPIU_Snprintf(filename, 256, "/proc/%d/mem", info.pid);
+		vc_ptr->ch.nSharedProcessID = info.pid;
+		vc_ptr->ch.nSharedProcessFileDescriptor = open(filename, O_RDWR/*O_RDONLY*/);
+		if (vc_ptr->ch.nSharedProcessFileDescriptor == -1)
+		{
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, info.pid, errno);
+		    return mpi_errno;
+		}
+#endif
+#endif
 		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
 		vc_ptr->ch.shm_read_connected = 1;
 		vc_ptr->ch.bShm = TRUE;
@@ -264,6 +290,9 @@ int MPIDI_CH3I_Message_queue_progress()
     int num_bytes;
     MPIDI_VC_t *vc_ptr;
     int mpi_errno;
+#if defined(HAVE_SHARED_PROCESS_READ) && !defined(HAVE_WINDOWS_H)
+    char filename[256];
+#endif
 
     /* check for new shmem queue connection requests */
     /*printf("<%dR>", MPIR_Process.comm_world->rank);fflush(stdout);*/
@@ -299,6 +328,29 @@ int MPIDI_CH3I_Message_queue_progress()
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+	/*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
+	vc_ptr->ch.hSharedProcessHandle =
+	    OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
+	    FALSE, info.pid);
+	if (vc_ptr->ch.hSharedProcessHandle == NULL)
+	{
+	    int err = GetLastError();
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", info.pg_rank, err);
+	    return mpi_errno;
+	}
+#else
+	MPIU_Snprintf(filename, 256, "/proc/%d/mem", info.pid);
+	vc_ptr->ch.nSharedProcessID = info.pid;
+	vc_ptr->ch.nSharedProcessFileDescriptor = open(filename, O_RDWR/*O_RDONLY*/);
+	if (vc_ptr->ch.nSharedProcessFileDescriptor == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, info.pid, errno);
+	    return mpi_errno;
+	}
+#endif
+#endif
 	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
 	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
 	vc_ptr->ch.bShm = TRUE;
@@ -748,6 +800,9 @@ int MPIDI_CH3I_Message_queue_progress()
     int num_bytes;
     MPIDI_VC_t *vc_ptr;
     int rc, mpi_errno;
+#if defined(HAVE_SHARED_PROCESS_READ) && !defined(HAVE_WINDOWS_H)
+    char filename[256];
+#endif
 
     /* check for new shmem queue connection requests */
     rc = MPIDI_CH3I_BootstrapQ_recv_msg(
@@ -781,6 +836,29 @@ int MPIDI_CH3I_Message_queue_progress()
 	    return mpi_errno;
 	}
 	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+	/*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
+	vc_ptr->ch.hSharedProcessHandle =
+	    OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
+	    FALSE, info.pid);
+	if (vc_ptr->ch.hSharedProcessHandle == NULL)
+	{
+	    int err = GetLastError();
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", info.pg_rank, err);
+	    return mpi_errno;
+	}
+#else
+	MPIU_Snprintf(filename, 256, "/proc/%d/mem", info.pid);
+	vc_ptr->ch.nSharedProcessID = info.pid;
+	vc_ptr->ch.nSharedProcessFileDescriptor = open(filename, O_RDWR/*O_RDONLY*/);
+	if (vc_ptr->ch.nSharedProcessFileDescriptor == -1)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, info.pid, errno);
+	    return mpi_errno;
+	}
+#endif
+#endif
 	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
 	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
 	vc_ptr->ch.bShm = TRUE;
