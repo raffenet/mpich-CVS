@@ -26,7 +26,6 @@ Select the ch3sockDebug or ch3sockRelease configurations to build the sockets on
 Select the ch3shmDebug or ch3shmRelease configurations to build the shmem only dlls.
 Select the ch3sshmDebug or ch3sshmRelease configurations to build the scalable shmem only dlls.
 Select the ch3ssmDebug or ch3ssmRelease configurations to build the sockets+shmem dlls.
-Select the ch3essmDebug or ch3essmRelease configurations to build the non-polling-sockets+shmem dlls.
 Select the ch3ibDebug or ch3ibRelease configurations to build the infiniband dlls.
 
 Install the launcher:
