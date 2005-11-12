@@ -11,6 +11,61 @@
 
 - Numerous bug fixes and code cleanup
 
+        Creation of intercommunicators and intracommunicators 
+        from the intercommunicators created with Spawn and Connect/Accept
+
+        The computation of the alignment and padding of items within
+        structures now handles additional cases, including systems 
+        where the alignment an padding depends on the type of the first
+	item in the structure
+
+        MPD recognizes wdir info keyword
+
+        gforker's mpiexec supports -env and -genv arguments for controlling
+        which environment variables are delivered to created processes
+
+- While not a bug, to aid in the use of memory trace packages, MPICH2
+  tries to free all allocated data no later than when MPI_Finalize
+  returns.
+
+- Support for DESTDIR in install targets
+
+- Enhancements to SMPD
+
+- In order to support special compiler flags for users that may be
+  different from those used to build MPICH2, the environment variables
+  MPI_CFLAGS, MPI_FFLAGS, MPI_CXXFLAGS, and MPI_F90FLAGS may be used
+  to specify the flags used in mpicc, mpif77, mpicxx, and mpif90 
+  respectively.  The flags CFLAGS, FFLAGS, CXXFLAGS, and F90FLAGS are
+  used in the building of MPICH2.
+
+- Many enhancements to MPE
+
+- Enhanced support for features and idiosyncracies of Fortran 77 and 
+  Fortran 90 compilers, including gfortran, g95, and xlf
+
+- Enhanced support for C++ compilers that do not fully support abstract
+  base classes
+
+- Additional tests in the mpich2/tests/mpi
+    
+- New FAQ included (also available at
+    http://www.mcs.anl.gov/mpi/mpich2/faq.htm) 
+
+- Man pages for mpiexec and mpif90
+
+- Enhancements for developers, including a more flexible and general 
+  mechanism for inserting logging and information messages, controlable
+  with --mpich-dbg-xxx command line arguments or MPICH_DBG_XXX environment
+  variables.
+
+- Note to developers: 
+  This release contains many changes to the structure of the CH3
+  device implementation (in src/mpid/ch3), including signficant
+  reworking of the files (many files have been combined into fewer files
+  representing logical grouping of functions).  The next release of 
+  MPICH2 will contain even more significant changes to the device 
+  structure as we introduce a new communication implementation.
  
 ===============================================================================
 			       Changes in 1.0.2

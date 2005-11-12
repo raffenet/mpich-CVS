@@ -2,11 +2,8 @@
 		       Major Changes Impacting Usability
 -------------------------------------------------------------------------------
 
-- A new and improved process manager that spawns processes using fork() in now
-  available.  This process manager, named "gforker", replaces the "forker"
-  process manager found in previous releases.
-
-- (see the CHANGES file for a more extensive list of changes and new features)
+- None expected 
+  (see the CHANGES file for a more extensive list of changes and new features)
 
 -------------------------------------------------------------------------------
                               Known Deficiencies
@@ -63,7 +60,6 @@
 
 - --enable-sharedlibs=gcc does not work on Solaris because of difference
   between the GNU ld program and the Solaris ld program
-
 
 -------------------------------------------------------------------------------
 			Issues for Developers
