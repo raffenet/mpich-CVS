@@ -3,7 +3,7 @@
 JVM=@JVM@
 JVMFLAGS=@JVMFLAGS@
 
-# Set PATH to the jar needed by the print program
+# Set PATH to the jar files needed by the program
 GUI_LIBDIR=@libbuild_dir@
 GUI_HOME=${GUI_LIBDIR}/..
 MAIN_LIB=${GUI_LIBDIR}/slog2update205to206.jar
