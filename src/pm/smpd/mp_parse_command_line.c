@@ -158,12 +158,17 @@ void mp_print_extra_options(void)
     printf("-arch architecture\n");
     printf("  sun, linux, rs6000, ...\n");
     */
-    printf("-register\n");
+    printf("-register [-user n]\n");
     printf("  encrypt a user name and password to the Windows registry.\n");
-    printf("-remove\n");
+    printf("  optionally specify a user slot index\n");
+    printf("-remove [-user n]\n");
     printf("  delete the encrypted credentials from the Windows registry.\n");
-    printf("-validate [-host hostname]\n");
+    printf("  If no user index is specified then all entries are removed.\n");
+    printf("-validate [-user n] [-host hostname]\n");
     printf("  validate the encrypted credentials for the current or specified host.\n");
+    printf("  A specific user index can be specified otherwise index 0 is the default.\n");
+    printf("-user n\n");
+    printf("  use the registered user credentials from slot n to launch the job.\n");
     printf("-timeout seconds\n");
     printf("  timeout for the job.\n");
     printf("-plaintext\n");
@@ -172,6 +177,21 @@ void mp_print_extra_options(void)
     printf("  use passwordless delegation to launch processes\n");
     printf("-impersonate\n");
     printf("  use passwordless authentication to launch processes\n");
+    printf("-add_job <job_name> <domain\\user>\n");
+    printf("-add_job <job_name> <domain\\user> -host <hostname>\n");
+    printf("  add a job key for the specified domain user on the local or specified host\n");
+    printf("  requires administrator privileges\n");
+    printf("-remove_job <name>\n");
+    printf("-remove_job <name> -host <hostname>\n");
+    printf("  remove a job key from the local or specified host\n");
+    printf("  requires administrator privileges\n");
+    printf("-associate_job <name>\n");
+    printf("-associate_job <name> -host <hostname>\n");
+    printf("  associate the current user's token with the specified job on the local or specified host\n");
+    printf("-job <name>\n");
+    printf("  launch the processes in the context of the specified job\n");
+    printf("-whomai\n");
+    printf("  print the current user name\n");
 }
 
 #ifdef HAVE_WINDOWS_H
@@ -340,6 +360,10 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     SMPD_BOOL smpd_setting_priority = SMPD_INVALID_SETTING;
     char smpd_setting_path[SMPD_MAX_PATH_LENGTH] = "";
     SMPD_BOOL smpd_setting_localonly = SMPD_INVALID_SETTING;
+#ifdef HAVE_WINDOWS_H
+    int user_index;
+    char user_index_str[20];
+#endif
 
     smpd_enter_fn(FCNAME);
 
@@ -354,6 +378,12 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     {
 	if (strcmp((*argvp)[1], "-register") == 0)
 	{
+	    user_index = 0;
+	    smpd_get_opt_int(argcp, argvp, "-user", &user_index);
+	    if (user_index < 0)
+	    {
+		user_index = 0;
+	    }
 	    for (;;)
 	    {
 		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
@@ -363,7 +393,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    break;
 		printf("passwords don't match, please try again.\n");
 	    }
-	    if (smpd_save_password_to_registry(smpd_process.UserAccount, smpd_process.UserPassword, SMPD_TRUE)) 
+	    if (smpd_save_password_to_registry(user_index, smpd_process.UserAccount, smpd_process.UserPassword, SMPD_TRUE)) 
 	    {
 		printf("Password encrypted into the Registry.\n");
 		smpd_delete_cached_password();
@@ -377,7 +407,23 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
 	if ( (strcmp((*argvp)[1], "-remove") == 0) || (strcmp((*argvp)[1], "-unregister") == 0) )
 	{
-	    if (smpd_delete_current_password_registry_entry())
+	    user_index = 0;
+	    if (smpd_get_opt_string(argcp, argvp, "-user", user_index_str, 20))
+	    {
+		if (user_index_str[0] == 'a' && user_index_str[1] == 'l' && user_index_str[2] == 'l' && user_index_str[3] == '\0')
+		{
+		    user_index = -1;
+		}
+		else
+		{
+		    user_index = atoi(user_index_str);
+		    if (user_index < 0)
+		    {
+			user_index = 0;
+		    }
+		}
+	    }
+	    if (smpd_delete_current_password_registry_entry(user_index))
 	    {
 		smpd_delete_cached_password();
 		printf("Account and password removed from the Registry.\n");
@@ -391,7 +437,13 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	}
 	if (strcmp((*argvp)[1], "-validate") == 0)
 	{
-	    if (smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword))
+	    user_index = 0;
+	    smpd_get_opt_int(argcp, argvp, "-user", &user_index);
+	    if (user_index < 0)
+	    {
+		user_index = 0;
+	    }
+	    if (smpd_read_password_from_registry(user_index, smpd_process.UserAccount, smpd_process.UserPassword))
 	    {
 		if (!smpd_get_opt_string(argcp, argvp, "-host", smpd_process.console_host, SMPD_MAX_HOST_LENGTH))
 		{
@@ -457,7 +509,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		fflush(stdout);
 		smpd_exit(0);
 	    }
-	    printf("Invalid number of arguments passed to -add_job\n");
+	    printf("Invalid number of arguments passed to -add_job <job_key> <user_account>\n");
 	    fflush(stdout);
 	    smpd_exit(-1);
 	}
@@ -483,7 +535,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		fflush(stdout);
 		smpd_exit(0);
 	    }
-	    printf("Invalid number of arguments passed to -remove_job\n");
+	    printf("Invalid number of arguments passed to -remove_job <job_key>\n");
 	    fflush(stdout);
 	    smpd_exit(-1);
 	}
@@ -509,7 +561,7 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		fflush(stdout);
 		smpd_exit(0);
 	    }
-	    printf("Invalid number of arguments passed to -associate_job\n");
+	    printf("Invalid number of arguments passed to -associate_job <job_key>\n");
 	    fflush(stdout);
 	    smpd_exit(-1);
 	}
@@ -1599,6 +1651,20 @@ configfile_loop:
 		strncpy(env_node->value, "mpe", SMPD_MAX_VALUE_LENGTH);
 		env_node->next = env_list;
 		env_list = env_node;
+	    }
+	    else if (strcmp(&(*argvp)[1][1], "user") == 0)
+	    {
+		if (argc < 3)
+		{
+		    printf("Error: no index specified after -user option.\n");
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
+		}
+		smpd_process.user_index = atoi((*argvp)[2]);
+		if (smpd_process.user_index < 0)
+		    smpd_process.user_index = 0;
+		num_args_to_strip = 2;
+		smpd_delete_cached_password();
 	    }
 	    else
 	    {

@@ -4701,7 +4701,7 @@ int smpd_state_reading_cred_request(smpd_context_t *context, MPIDU_Sock_event_t 
 	{
 	    if (smpd_process.logon || 
 		(!smpd_get_cached_password(context->account, context->password) &&
-		!smpd_read_password_from_registry(context->account, context->password)))
+		!smpd_read_password_from_registry(smpd_process.user_index, context->account, context->password)))
 	    {
 		if (smpd_process.id > 0 && smpd_process.parent_context && smpd_process.parent_context->sock != MPIDU_SOCK_INVALID_SOCK)
 		{
@@ -5661,6 +5661,7 @@ int smpd_state_writing_session_header(smpd_context_t *context, MPIDU_Sock_event_
 #endif
 
 	/* convert the native handle to a sock */
+	/*printf("stdin native sock %d\n", stdin_fd);fflush(stdout);*/
 	result = MPIDU_Sock_native_to_sock(context->set, stdin_fd, NULL, &insock);
 	if (result != MPI_SUCCESS)
 	{

@@ -1283,16 +1283,19 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
 	*/
+	/*printf("native sock for stdin\n");fflush(stdout);*/
 	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockStdinW, NULL, &sock_in);
 	if (nError != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
+	/*printf("native sock for stdout\n");fflush(stdout);*/
 	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockStdoutR, NULL, &sock_out);
 	if (nError != MPI_SUCCESS)
 	{
 	    smpd_err_printf("MPIDU_Sock_native_to_sock failed, error %s\n", get_sock_error_string(nError));
 	}
+	/*printf("native sock for stderr\n");fflush(stdout);*/
 	nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockStderrR, NULL, &sock_err);
 	if (nError != MPI_SUCCESS)
 	{
@@ -1300,6 +1303,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	}
 	if (process->pmi != NULL && smpd_process.use_inherited_handles)
 	{
+	    /*printf("native sock for pmi\n");fflush(stdout);*/
 	    nError = MPIDU_Sock_native_to_sock(set, (MPIDU_SOCK_NATIVE_FD)hSockPmiR, NULL, &sock_pmi);
 	    if (nError != MPI_SUCCESS)
 	    {

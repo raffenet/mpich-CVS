@@ -715,6 +715,7 @@ typedef struct smpd_global_t
     char env_wrap_dll[SMPD_MAX_FILENAME];
     smpd_delayed_spawn_node_t *delayed_spawn_queue;
     SMPD_BOOL spawning;
+    int user_index;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;
@@ -830,9 +831,9 @@ int smpd_process_from_registry(smpd_process_t *process);
 int smpd_process_to_registry(smpd_process_t *process, char *actual_exe);
 int smpd_clear_process_registry();
 int smpd_validate_process_registry();
-SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword);
-SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPassword, SMPD_BOOL persistent);
-SMPD_BOOL smpd_delete_current_password_registry_entry();
+SMPD_BOOL smpd_read_password_from_registry(int index, char *szAccount, char *szPassword);
+SMPD_BOOL smpd_save_password_to_registry(int index, const char *szAccount, const char *szPassword, SMPD_BOOL persistent);
+SMPD_BOOL smpd_delete_current_password_registry_entry(int index);
 int smpd_cache_password(const char *account, const char *password);
 SMPD_BOOL smpd_get_cached_password(char *account, char *password);
 int smpd_delete_cached_password();

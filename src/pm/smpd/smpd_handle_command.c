@@ -852,6 +852,7 @@ int smpd_handle_result(smpd_context_t *context)
 #endif
 
 				    /* convert the native handle to a sock */
+				    /*printf("stdin native sock %d\n", stdin_fd);fflush(stdout);*/
 				    result = MPIDU_Sock_native_to_sock(smpd_process.set, stdin_fd, NULL, &insock);
 				    if (result != MPI_SUCCESS)
 				    {
@@ -3685,7 +3686,7 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	{
 	    if (smpd_process.logon || 
 		(!smpd_get_cached_password(smpd_process.UserAccount, smpd_process.UserPassword) &&
-		!smpd_read_password_from_registry(smpd_process.UserAccount, smpd_process.UserPassword)))
+		!smpd_read_password_from_registry(smpd_process.user_index, smpd_process.UserAccount, smpd_process.UserPassword)))
 	    {
 		if (smpd_process.credentials_prompt)
 		{

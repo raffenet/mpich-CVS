@@ -10,39 +10,149 @@
 #include <stdlib.h>
 
 #undef FCNAME
+#define FCNAME "smpd_get_all_key_names"
+static int smpd_get_all_key_names(smpd_data_t **data)
+{
+    HKEY tkey;
+    DWORD result;
+    LONG enum_result;
+    char name[SMPD_MAX_NAME_LENGTH];
+    DWORD name_length, index;
+    smpd_data_t *list, *item;
+
+    smpd_enter_fn(FCNAME);
+
+    if (data == NULL)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
+    result = RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY,
+	0, 
+	KEY_READ,
+	&tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	/* No key therefore no settings */
+	*data = NULL;
+	smpd_exit_fn(FCNAME);
+	return SMPD_SUCCESS;
+    }
+
+    list = NULL;
+    index = 0;
+    name_length = SMPD_MAX_NAME_LENGTH;
+    enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, NULL, NULL);
+    while (enum_result == ERROR_SUCCESS)
+    {
+	item = (smpd_data_t*)malloc(sizeof(smpd_data_t));
+	if (item == NULL)
+	{
+	    *data = NULL;
+	    RegCloseKey(tkey);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	memcpy(item->name, name, SMPD_MAX_NAME_LENGTH);
+	item->value[0] = '\0';
+	item->next = list;
+	list = item;
+	index++;
+	name_length = SMPD_MAX_NAME_LENGTH;
+	enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, NULL, NULL);
+    }
+    RegCloseKey(tkey);
+    *data = list;
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_delete_current_password_registry_entry"
-SMPD_BOOL smpd_delete_current_password_registry_entry()
+SMPD_BOOL smpd_delete_current_password_registry_entry(int index)
 {
     int nError;
     HKEY hRegKey = NULL;
     DWORD dwNumValues;
+    char key_name[256] = "smpdAccount";
+    char key_pwd[256] = "smpdPassword";
 
     smpd_enter_fn(FCNAME);
 
-    nError = RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_ALL_ACCESS, &hRegKey);
-    if (nError != ERROR_SUCCESS && nError != ERROR_PATH_NOT_FOUND && nError != ERROR_FILE_NOT_FOUND)
+    if (index > 0)
     {
-	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegOpenKeyEx(...) failed, error: %d\n", nError);
-	smpd_exit_fn(FCNAME);
-	return SMPD_FALSE;
+	sprintf(key_name, "smpdAccount%d", index);
+	sprintf(key_pwd, "smpdPassword%d", index);
     }
 
-    nError = RegDeleteValue(hRegKey, "smpdPassword");
-    if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
+    if (index >= 0)
     {
-	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(password) failed, error: %d\n", nError);
-	RegCloseKey(hRegKey);
-	smpd_exit_fn(FCNAME);
-	return SMPD_FALSE;
-    }
+	nError = RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_ALL_ACCESS, &hRegKey);
+	if (nError != ERROR_SUCCESS && nError != ERROR_PATH_NOT_FOUND && nError != ERROR_FILE_NOT_FOUND)
+	{
+	    smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegOpenKeyEx(...) failed, error: %d\n", nError);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FALSE;
+	}
 
-    nError = RegDeleteValue(hRegKey, "smpdAccount");
-    if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
+	nError = RegDeleteValue(hRegKey, key_pwd);
+	if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
+	{
+	    smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(password) failed, error: %d\n", nError);
+	    RegCloseKey(hRegKey);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FALSE;
+	}
+
+	nError = RegDeleteValue(hRegKey, key_name);
+	if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
+	{
+	    smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(account) failed, error: %d\n", nError);
+	    RegCloseKey(hRegKey);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FALSE;
+	}
+    }
+    else
     {
-	smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(account) failed, error: %d\n", nError);
-	RegCloseKey(hRegKey);
-	smpd_exit_fn(FCNAME);
-	return SMPD_FALSE;
+	/* find all keys named smpdAccount%d and smpdPassword%d and delete them */
+	smpd_data_t *data;
+
+	if (smpd_get_all_key_names(&data) == SMPD_SUCCESS)
+	{
+	    smpd_data_t *iter = data;
+
+	    nError = RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_ALL_ACCESS, &hRegKey);
+	    if (nError != ERROR_SUCCESS && nError != ERROR_PATH_NOT_FOUND && nError != ERROR_FILE_NOT_FOUND)
+	    {
+		smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegOpenKeyEx(...) failed, error: %d\n", nError);
+		smpd_exit_fn(FCNAME);
+		return SMPD_FALSE;
+	    }
+
+	    while (iter != NULL)
+	    {
+		if ((strncmp(iter->name, "smpdAccount", 11) == 0) || (strncmp(iter->name, "smpdPassword", 12) == 0))
+		{
+		    nError = RegDeleteValue(hRegKey, iter->name);
+		    if (nError != ERROR_SUCCESS && nError != ERROR_FILE_NOT_FOUND)
+		    {
+			smpd_err_printf("DeleteCurrentPasswordRegistryEntry:RegDeleteValue(%s) failed, error: %d\n", iter->name, nError);
+			RegCloseKey(hRegKey);
+			smpd_exit_fn(FCNAME);
+			return SMPD_FALSE;
+		    }
+		}
+		iter = iter->next;
+	    }
+	    while (data != NULL)
+	    {
+		iter = data;
+		data = data->next;
+		free(iter);
+	    }
+	}
     }
 
     if (RegQueryInfoKey(hRegKey, NULL, NULL, NULL, NULL, NULL, NULL, &dwNumValues, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
@@ -63,12 +173,14 @@ SMPD_BOOL smpd_delete_current_password_registry_entry()
 
 #undef FCNAME
 #define FCNAME "smpd_save_password_to_registry"
-SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPassword, SMPD_BOOL persistent)
+SMPD_BOOL smpd_save_password_to_registry(int index, const char *szAccount, const char *szPassword, SMPD_BOOL persistent)
 {
     int nError;
     SMPD_BOOL bResult = SMPD_TRUE;
     HKEY hRegKey = NULL;
     DATA_BLOB password_blob, blob;
+    char key_name[256] = "smpdAccount";
+    char key_pwd[256] = "smpdPassword";
 
     smpd_enter_fn(FCNAME);
 
@@ -108,8 +220,14 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 	}
     }
 
+    if (index > 0)
+    {
+	sprintf(key_name, "smpdAccount%d", index);
+	sprintf(key_pwd, "smpdPassword%d", index);
+    }
+
     /* Store the account name*/
-    if (RegSetValueEx(hRegKey, "smpdAccount", 0, REG_SZ, (BYTE*)szAccount, (DWORD)strlen(szAccount)+1) != ERROR_SUCCESS)
+    if (RegSetValueEx(hRegKey, key_name, 0, REG_SZ, (BYTE*)szAccount, (DWORD)strlen(szAccount)+1) != ERROR_SUCCESS)
     {
 	nError = GetLastError();
 	smpd_err_printf("SavePasswordToRegistry:RegSetValueEx(...) failed, error: %d\n", nError);
@@ -123,7 +241,7 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
     if (CryptProtectData(&password_blob, L"MPICH2 User Credentials", NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &blob))
     {
 	/* Write data to registry.*/
-	if (RegSetValueEx(hRegKey, "smpdPassword", 0, REG_BINARY, blob.pbData, blob.cbData) != ERROR_SUCCESS)
+	if (RegSetValueEx(hRegKey, key_pwd, 0, REG_BINARY, blob.pbData, blob.cbData) != ERROR_SUCCESS)
 	{
 	    nError = GetLastError();
 	    smpd_err_printf("SavePasswordToRegistry:RegSetValueEx(...) failed, error: %d\n", nError);
@@ -146,21 +264,29 @@ SMPD_BOOL smpd_save_password_to_registry(const char *szAccount, const char *szPa
 
 #undef FCNAME
 #define FCNAME "smpd_read_password_from_registry"
-SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword) 
+SMPD_BOOL smpd_read_password_from_registry(int index, char *szAccount, char *szPassword) 
 {
     int nError;
     SMPD_BOOL bResult = SMPD_TRUE;
     HKEY hRegKey = NULL;
     DWORD dwType;
     DATA_BLOB password_blob, blob;
+    char key_name[256] = "smpdAccount";
+    char key_pwd[256] = "smpdPassword";
 
     smpd_enter_fn(FCNAME);
+
+    if (index > 0)
+    {
+	sprintf(key_name, "smpdAccount%d", index);
+	sprintf(key_pwd, "smpdPassword%d", index);
+    }
 
     if (RegOpenKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY, 0, KEY_QUERY_VALUE, &hRegKey) == ERROR_SUCCESS) 
     {
 	DWORD dwLength = SMPD_MAX_PASSWORD_LENGTH;
 	*szAccount = '\0';
-	if (RegQueryValueEx(hRegKey, "smpdAccount", NULL, NULL, (BYTE*)szAccount, &dwLength) != ERROR_SUCCESS)
+	if (RegQueryValueEx(hRegKey, key_name, NULL, NULL, (BYTE*)szAccount, &dwLength) != ERROR_SUCCESS)
 	{
 	    nError = GetLastError();
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
@@ -175,11 +301,11 @@ SMPD_BOOL smpd_read_password_from_registry(char *szAccount, char *szPassword)
 	}
 
 	dwType = REG_BINARY;
-	if (RegQueryValueEx(hRegKey, "smpdPassword", NULL, &dwType, NULL, &dwLength) == ERROR_SUCCESS)
+	if (RegQueryValueEx(hRegKey, key_pwd, NULL, &dwType, NULL, &dwLength) == ERROR_SUCCESS)
 	{
 	    blob.cbData = dwLength;
 	    blob.pbData = MPIU_Malloc(dwLength);
-	    if (RegQueryValueEx(hRegKey, "smpdPassword", NULL, &dwType, (BYTE*)blob.pbData, &dwLength) == ERROR_SUCCESS)
+	    if (RegQueryValueEx(hRegKey, key_pwd, NULL, &dwType, (BYTE*)blob.pbData, &dwLength) == ERROR_SUCCESS)
 	    {
 		if (CryptUnprotectData(&blob, NULL, NULL, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &password_blob))
 		{

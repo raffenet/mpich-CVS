@@ -187,7 +187,8 @@ smpd_global_t smpd_process =
       "",               /* env_dll                 */
       "",               /* env_wrap_dll            */
       NULL,             /* delayed_spawn_queue     */
-      SMPD_FALSE        /* spawning                */
+      SMPD_FALSE,       /* spawning                */
+      0                 /* user_index              */
     };
 
 #undef FCNAME
