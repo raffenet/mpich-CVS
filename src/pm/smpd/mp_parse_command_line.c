@@ -1652,6 +1652,7 @@ configfile_loop:
 		env_node->next = env_list;
 		env_list = env_node;
 	    }
+#ifdef HAVE_WINDOWS_H
 	    else if (strcmp(&(*argvp)[1][1], "user") == 0)
 	    {
 		if (argc < 3)
@@ -1666,6 +1667,7 @@ configfile_loop:
 		num_args_to_strip = 2;
 		smpd_delete_cached_password();
 	    }
+#endif
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);
