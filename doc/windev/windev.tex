@@ -420,4 +420,59 @@ will be done without any passwords.  Example:
 mpiexec -delegate -n 3 cpi.exe
 \end{verbatim}
 
+With SSPI enabled you can also control access to nodes with job objects.
+
+First the nodes need to be set up so that only SSPI authentication is allowed.  An administrator
+can run the following on each node:
+\begin{enumerate}
+\item \texttt{smpd.exe -set sspi\_protect yes}
+\item \texttt{smpd.exe -set jobs\_only yes}
+\item \texttt{smpd.exe -restart}
+\end{enumerate}
+
+These settings mean that authentication must be done through SSPI and mpiexec commands will only be
+accepted for registered jobs.
+
+To register jobs an administrator or a scheduler running with administrator privileges can execute
+the following command:
+\begin{verbatim}
+mpiexec.exe -add_job <name> <domain\username> [-host <hostname>]
+\end{verbatim}
+This adds a job called ``name'' for the specified user on either the local or specified host.  Any
+name can be used but it must not collide with another job with the same name on the same host.  The
+command must be executed for each host that is to be allocated to the user.
+
+Then when the job has finished or the allotted time has expired for the user to use the nodes the 
+following command can be executed:
+\begin{verbatim}
+mpiexec.exe -remove_job <name> [-host <hostname>]
+\end{verbatim}
+This command removes the job from the local or specified host.  Any processes running on the host 
+under the specified job name will be terminated by this command.
+
+So \texttt{-add\_job} and \texttt{-remove\_job} can be used by a scheduler to create a window when a user is allowed to
+start jobs on a set of nodes.
+
+When the window is open the user can run jobs using the job name.  First the user must run:
+\begin{verbatim}
+mpiexec.exe -associate_job <name> [-host <hostname>]
+\end{verbatim}
+This will associate the user's token with the job object on the local or
+specified host.  This must be done for all of the hosts allocated to the user.  Then the user can issue
+mpiexec commands.  The mpiexec commands are of the usual format except they must contain one extra option -
+``\texttt{-job <name>}''.  This job name must match the job allocated by the \texttt{-add\_job} command.  So a typical command
+would look like this:
+\begin{verbatim}
+mpiexec.exe -job foo -machinefile hosts.txt -n 4 myapp.exe
+\end{verbatim}
+Multiple mpiexec commands can be issued until the \texttt{-remove\_job} command is issued.
+This allows the users to issue multiple 
+mpiexec commands and multiple MPI\_Comm\_spawn commands all using the same job name until the job is removed
+from the nodes.
+
+The rationale for the design where an adminstrator can create and destroy jobs but the user must first associate
+the job with his own token before running jobs is so that the administrator does not need to know the user's
+password.  In order for an administrator to do both the job allocation and association he would have to call
+LogonUser with the user name and password for each user that submits a job request.
+
 \end{document}
