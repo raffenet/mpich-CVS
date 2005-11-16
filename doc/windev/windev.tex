@@ -475,4 +475,25 @@ the job with his own token before running jobs is so that the administrator does
 password.  In order for an administrator to do both the job allocation and association he would have to call
 LogonUser with the user name and password for each user that submits a job request.
 
+\subsection{Firewalls}
+Windows comes with a default firewall that is usually turned on by default.
+Firewalls block all TCP ports by default which renders MPICH2 applications inoperable
+because the default communication mechanism used by MPICH2 are sockets on arbitrary
+ports assigned by the operating system.  This can be solved in several ways:
+
+\begin{itemize}
+\item Turn off the firewall completely.
+\item  MPICH2 applications can be limited to a range of TCP ports using the 
+MPICH\_PORT\_RANGE environment variable.  If you set your firewall to allow the
+same port range then MPICH2 applications will run.
+\item Leave the firewall on and allow exceptions for your MPICH2 applications.
+This can be done through the Security Center module of the Windows Control 
+Panel.  Click the Windows Firewall option in the Security Center to bring up
+the properties page and select the Exceptions tab.  Here you can add each 
+MPICH2 application to exempt.  Note that this exception includes the path to
+the executable so if you move the executable you will have to exempt the new
+location.  This solution obviously only will work for a small number of 
+applications since managing a large list would be difficult.
+\end{itemize}
+
 \end{document}
