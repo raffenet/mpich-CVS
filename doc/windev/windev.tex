@@ -213,6 +213,15 @@ When the batch file is finished you will be left with a mpich2.msi file that can
 install MPICH2 on any Win32 machine.  This file can be re-named to match our release naming 
 conventions.
 
+If you don't have access to the CVS repository but you have the MPICH2 source
+distribution you can still use the makewindist batch file.  Follow these steps:
+\begin{enumerate}
+\item unzip the source distribution
+\item cd into the mpich2xxx directory
+\item execute ``\texttt{winconfigure.wsf --cleancode}''
+\item execute ``\texttt{makewindist.bat --with-curdir}''
+\end{enumerate}
+
 \subsection{Platform SDK builds}
 \label{sec:psdk_build}
 
@@ -348,6 +357,18 @@ run must have saved credentials so mpiexec doesn't prompt for them.  So scripts 
 mpiexec provides a flag, \texttt{-noprompt}, that will cause mpiexec to print out errors in 
 cases when it normally would prompt for user input.  This can also be specified in the 
 environment with the variable MPIEXEC\_NOPROMPT.
+
+You can also save more than one set of user credentials.  Add the option \texttt{-user n}
+to the \texttt{-register}, \texttt{-remove}, \texttt{-validate}, and \texttt{mpiexec}
+commands to specify a saved user credential other than the default.  The parameter \texttt{n}
+is a non-zero positive number.  For example this will save credentials in slot 1:
+\begin{verbatim}
+mpiexec -register -user 1
+\end{verbatim}
+And this command will use the user 3 to launch a job:
+\begin{verbatim}
+mpiexec -user 3 -n 4 cpi.exe
+\end{verbatim}
 
 \subsection{MPICH2 channel selection}
 MPICH2 for Windows comes with multiple complete implementations of MPI.  These are called
