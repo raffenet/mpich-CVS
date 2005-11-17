@@ -290,7 +290,6 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_RECV_INIT);
     
     rreq = MPIDI_CH3_Request_create();
-    /* --BEGIN ERROR HANDLING-- */
     if (rreq == NULL)
     {
 	/* --BEGIN ERROR HANDLING-- */
@@ -298,7 +297,6 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 	/* --END ERROR HANDLING-- */
 	goto fn_exit;
     }
-    /* --END ERROR HANDLING-- */
     
     MPIU_Object_set_ref(rreq, 1);
     rreq->kind = MPID_PREQUEST_RECV;
