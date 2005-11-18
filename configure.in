@@ -4,6 +4,15 @@ dnl
 dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
 dnl bugs in autoconf caching.
 dnl
+dnl Special environment variables
+dnl To let other scripts and in particular the configure in test/mpi
+dnl know that they are being invoked from within the MPICH2 configure,
+dnl the following environment variables are set and exported:
+dnl    FROM_MPICH2
+dnl    MPICH2_ENABLE_F77
+dnl    MPICH2_ENABLE_F90
+dnl    MPICH2_ENABLE_CXX
+dnl
 dnl The file name here refers to a file in the source being configured
 dnl In later versions of autoconf, the binding of AC_INIT changed (!!!)
 dnl The original version was AC_INIT(a source file)
@@ -4128,6 +4137,21 @@ AC_SUBST(EXTERNAL_SRC_DIRS)
 
 dnl We can configure the test directory after the rest of the configure 
 dnl steps because it does not depend on them.
+# set and export values that the test/mpi configure will reference to ensure
+# that the correct decisions are made since this configure happens before the
+# MPICH2 library is built.  In addition to these values, 
+MPICH2_ENABLE_F77=$enable_f77
+MPICH2_ENABLE_F90=$enable_f90
+MPICH2_ENABLE_CXX=$enable_cxx
+export MPICH2_ENABLE_F77
+export MPICH2_ENABLE_F90
+export MPICH2_ENABLE_CXX
+MPICH2_BASEF77=$F77
+MPICH2_BASECXX=$CXX
+MPICH2_BASEF90=$F90
+export MPICH2_BASE_F77
+export MPICH2_BASE_F90
+export MPICH2_BASE_CXX
 AC_CONFIG_SUBDIRS(test/mpi)
 dnl
 dnl Generate the Makefiles from Makefile.in
