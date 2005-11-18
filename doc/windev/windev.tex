@@ -175,7 +175,7 @@ and PackageCode entries need to be changed to use new GUIDs.  Under Unix or Wind
 be used to generate a new GUID.  The ProductVersion entry needs to be changed to match the 
 version of MPICH2.
 
-Once the version and GUIDs have been updated, commit the changes to mpich2i.vdproj to cvs.
+Once the version and GUIDs have been updated, commit the changes to mpich2i.vdproj to CVS.
 
 Then you can build a distribution.
 
@@ -213,10 +213,11 @@ When the batch file is finished you will be left with a mpich2.msi file that can
 install MPICH2 on any Win32 machine.  This file can be re-named to match our release naming 
 conventions.
 
+\subsubsection{Automated build from the source distribution}
 If you don't have access to the CVS repository but you have the MPICH2 source
 distribution you can still use the makewindist batch file.  Follow these steps:
 \begin{enumerate}
-\item unzip the source distribution
+\item unzip/untar the source distribution
 \item cd into the mpich2xxx directory
 \item execute ``\texttt{winconfigure.wsf --cleancode}''
 \item execute ``\texttt{makewindist.bat --with-curdir}''
@@ -329,7 +330,7 @@ with the .msi distribution.
 This section describes development issues that are particular to the Windows build.
 
 Whenever a .h.in file is created on the Unix side, winconfigure.wsf needs to be updated to
-create the .h file from the .h.in file.  Use cut and paste to copy an existing section in 
+create the .h file from the .h.in file.  Copy and paste an existing section in 
 winconfigure.wsf that already does this and rename the file names.
 
 When new definitions are added to the .h.in files these definitions, usually in the form HAVE\_FOO 
@@ -369,6 +370,11 @@ And this command will use the user 3 to launch a job:
 \begin{verbatim}
 mpiexec -user 3 -n 4 cpi.exe
 \end{verbatim}
+
+User credentials can also be specified in a file using the \texttt{-pwdfile filename}
+option to mpiexec.  Put the username on the first line of the file and the password
+on the second line.  If you choose this option you should make sure the file is
+only readable by the current user.
 
 \subsection{MPICH2 channel selection}
 MPICH2 for Windows comes with multiple complete implementations of MPI.  These are called
@@ -507,17 +513,18 @@ ports assigned by the operating system.  This can be solved in several ways:
 \item  MPICH2 applications can be limited to a range of TCP ports using the 
 MPICH\_PORT\_RANGE environment variable.  If you set your firewall to allow the
 same port range then MPICH2 applications will run.
-\item Leave the firewall on and allow exceptions for your MPICH2 applications.
+\item Leave the Windows firewall on and allow exceptions for your MPICH2 applications.
 This can be done through the Security Center module of the Windows Control 
 Panel.  Click the Windows Firewall option in the Security Center to bring up
 the properties page and select the Exceptions tab.  Here you can add each 
 MPICH2 application to exempt.  Note that this exception includes the path to
 the executable so if you move the executable you will have to exempt the new
 location.  This solution obviously only will work for a small number of 
-applications since managing a large list would be difficult.
+applications since managing a large list would be difficult.  Make sure you add
+mpiexec.exe and the smpd.exe process manager to this exception list.
 \end{itemize}
 
-\subsection{mpiexec options}
+\subsection{MPIEXEC options}
 This section describes all the options to mpiexec.exe
 
 \begin{itemize}
@@ -605,6 +612,10 @@ shmp, and sshmp.  See the section on channel selection for additional informatio
 This option is a short cut to selecting the MPE wrapper library to log the MPI
 application.  When the job finishes there will be a .clog2 file created that
 can be viewed in Jumpshot.
+\item \texttt{-l}
+This flag causes mpiexec to prefix output to stdout and stderr with the rank of
+the process that produced the output.  (This option is the lower-case L not the
+number one)
 \item \texttt{-port port}
 Specify the port where the smpd process manager is listening.
 \item \texttt{-p port}
@@ -616,6 +627,8 @@ This is a Unix only option.  Under Windows the settings are stored in the Window
 Specify the passphrase used to authenticate with the smpd process managers.
 \item \texttt{-path search\_path}
 Specify the search path used to locate executables.  Separate multiple paths with semicolons.
+The path can be mixed when using both Windows and Linux machines.  For example:
+\texttt{-path c:$\backslash$temp;/home/user} is a valid search path.
 \item \texttt{-register [-user n]}
 Encrypt a user name and password into the Windows registry so that it can be 
 automatically retrieved by mpiexec to launch processes with.  If you specify
@@ -714,7 +727,7 @@ PMI server will exit.  This option can be executed in separate command simultane
 so that multiple jobs can be executed at the same time.
 \end{itemize}
 
-\subsection{smpd.exe process manager}
+\subsection{SMPD process manager options}
 This section describes some of the options for the smpd process manager.
 
 smpd.exe runs as a service under Windows.  This is required so that it can start
@@ -911,7 +924,7 @@ Don't prompt for user input for missing information, print an error instead.
 \item \texttt{MPIEXEC\_SMPD\_PORT}
 Connect to smpd on the specified port.
 
-These two only affect mpiexec for smpd if -rsh is on the command line:
+The following two only affect mpiexec for smpd if -rsh is on the command line:
 \item \texttt{MPIEXEC\_RSH}
 rsh command to use, default is ``ssh -x''
 \item \texttt{MPIEXEC\_RSH\_NO\_ESCAPE}
@@ -945,7 +958,8 @@ used by smpd to search for executables under Unix.
 \end{itemize}
 
 SMPD options specified on the command line can also be specified in the environment
-by prefixing \texttt{SMPD\_OPTION\_} to the option name.
+by prefixing \texttt{SMPD\_OPTION\_} to the option name and saving it as an
+environment variable.
 \begin{itemize}
 \item \texttt{SMPD\_OPTION\_app\_path}
 \item \texttt{SMPD\_OPTION\_logfile}
