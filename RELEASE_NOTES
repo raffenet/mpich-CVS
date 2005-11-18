@@ -12,7 +12,8 @@
 - The sock and ssm channels are the only channels that implements dynamic 
   process support (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, 
   etc.) under Unix.  All other channels will experience failures for tests 
-  exercising dynamic process functionality.
+  exercising dynamic process functionality.  Under Windows, the sock, ssm, 
+  and sshm channels implement the dynamic process support.
 
 - The ssm channel uses special interprocess locks (often assembly) that may 
   not work with some compilers or machine architectures. It works on
