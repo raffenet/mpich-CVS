@@ -188,7 +188,8 @@ smpd_global_t smpd_process =
       "",               /* env_wrap_dll            */
       NULL,             /* delayed_spawn_queue     */
       SMPD_FALSE,       /* spawning                */
-      0                 /* user_index              */
+      0,                /* user_index              */
+      SMPD_FALSE        /* prefix_output           */
     };
 
 #undef FCNAME
@@ -652,6 +653,8 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->sspi_context = NULL;
     context->sspi_type = SMPD_SSPI_DELEGATE;
     context->sspi_job_key[0] = '\0';
+    context->first_output_stderr = SMPD_TRUE;
+    context->first_output_stdout = SMPD_TRUE;
 
     if (sock != MPIDU_SOCK_INVALID_SOCK)
     {

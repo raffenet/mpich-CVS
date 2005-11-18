@@ -192,6 +192,8 @@ void mp_print_extra_options(void)
     printf("  launch the processes in the context of the specified job\n");
     printf("-whomai\n");
     printf("  print the current user name\n");
+    printf("-l\n");
+    printf("  prefix output with the process number. (This option is a lowercase L not the number one)\n");
 }
 
 #ifdef HAVE_WINDOWS_H
@@ -568,6 +570,13 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     }
 #endif
 
+    if ((*argcp == 2) &&
+	((strcmp((*argvp)[1], "-pmiserver") == 0) || (strcmp((*argvp)[1], "-pmi_server") == 0)))
+    {
+	smpd_err_printf("Error: No number of processes specified after the %s option\n", (*argvp)[1]);
+	return SMPD_FAIL;
+    }
+
     if (*argcp == 3)
     {
 	if ((strcmp((*argvp)[1], "-pmiserver") == 0) || (strcmp((*argvp)[1], "-pmi_server") == 0))
@@ -578,8 +587,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    smpd_process.nproc = atoi((*argvp)[2]);
 	    if (smpd_process.nproc < 1)
 	    {
-		printf("invalid number of processes: %s\n", (*argvp)[2]);
-		smpd_exit(-1);
+		smpd_err_printf("invalid number of processes: %s\n", (*argvp)[2]);
+		return SMPD_FAIL;
 	    }
 
 	    /* set up the host list to connect to only the local host */
@@ -1668,6 +1677,10 @@ configfile_loop:
 		smpd_delete_cached_password();
 	    }
 #endif
+	    else if (strcmp(&(*argvp)[1][1], "l") == 0)
+	    {
+		smpd_process.prefix_output = SMPD_TRUE;
+	    }
 	    else
 	    {
 		printf("Unknown option: %s\n", (*argvp)[1]);

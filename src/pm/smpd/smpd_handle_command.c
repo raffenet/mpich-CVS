@@ -322,17 +322,38 @@ int smpd_handle_close_stdin_command(smpd_context_t *context)
 }
 
 #undef FCNAME
+#define FCNAME "write_to_stdout"
+static int write_to_stdout(const char *buffer, size_t num_bytes)
+{
+#ifdef HAVE_WINDOWS_H
+    HANDLE hStdout;
+    DWORD num_written;
+
+    smpd_enter_fn(FCNAME);
+    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    WriteFile(hStdout, buffer, num_bytes, &num_written, NULL);
+#else
+    smpd_enter_fn(FCNAME);
+    fwrite(buffer, 1, num_bytes, stdout);
+    fflush(stdout);
+#endif
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_handle_stdout_command"
 int smpd_handle_stdout_command(smpd_context_t *context)
 {
     int rank;
     char data[SMPD_MAX_STDOUT_LENGTH];
     smpd_command_t *cmd;
-    int num_decoded;
-#ifdef HAVE_WINDOWS_H
-    HANDLE hStdout;
-    DWORD num_written;
-#endif
+    int num_decoded = 0;
+    int first;
+    char prefix[20];
+    size_t prefix_length;
+    char *token;
+    SMPD_BOOL ends_in_cr = SMPD_FALSE;
 
     smpd_enter_fn(FCNAME);
 
@@ -342,17 +363,52 @@ int smpd_handle_stdout_command(smpd_context_t *context)
 	rank = -1;
 	smpd_err_printf("no rank in the stdout command: '%s'\n", cmd->cmd);
     }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "first", &first) != MPIU_STR_SUCCESS)
+    {
+	first = 0;
+	smpd_err_printf("no first flag in the stdout command: '%s'\n", cmd->cmd);
+    }
     if (MPIU_Str_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH) == MPIU_STR_SUCCESS)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
+	data[num_decoded] = '\0';
+	if (data[num_decoded-1] == '\n')
+	{
+	    ends_in_cr = SMPD_TRUE;
+	}
 	/*printf("[%d]", rank);*/
-#ifdef HAVE_WINDOWS_H
-	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-	WriteFile(hStdout, data, num_decoded, &num_written, NULL);
-#else
-	fwrite(data, 1, num_decoded, stdout);
-	fflush(stdout);
-#endif
+	if (smpd_process.prefix_output == SMPD_TRUE)
+	{
+	    if (first)
+	    {
+		MPIU_Snprintf(prefix, 20, "[%d]", rank);
+		prefix_length = strlen(prefix);
+		write_to_stdout(prefix, prefix_length);
+	    }
+	    MPIU_Snprintf(prefix, 20, "\n[%d]", rank);
+	    prefix_length = strlen(prefix);
+	    token = strtok(data, "\r\n");
+	    while (token != NULL)
+	    {
+		write_to_stdout(token, strlen(token));
+		token = strtok(NULL, "\r\n");
+		if (token != NULL)
+		{
+		    write_to_stdout(prefix, prefix_length);
+		}
+		else
+		{
+		    if (ends_in_cr == SMPD_TRUE)
+		    {
+			write_to_stdout("\n", 1);
+		    }
+		}
+	    }
+	}
+	else
+	{
+	    write_to_stdout(data, num_decoded);
+	}
     }
     else
     {
@@ -364,17 +420,38 @@ int smpd_handle_stdout_command(smpd_context_t *context)
 }
 
 #undef FCNAME
+#define FCNAME "write_to_stderr"
+static int write_to_stderr(const char *buffer, size_t num_bytes)
+{
+#ifdef HAVE_WINDOWS_H
+    HANDLE hStderr;
+    DWORD num_written;
+
+    smpd_enter_fn(FCNAME);
+    hStderr = GetStdHandle(STD_ERROR_HANDLE);
+    WriteFile(hStderr, buffer, num_bytes, &num_written, NULL);
+#else
+    smpd_enter_fn(FCNAME);
+    fwrite(buffer, 1, num_bytes, stderr);
+    fflush(stdout);
+#endif
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+
+#undef FCNAME
 #define FCNAME "smpd_handle_stderr_command"
 int smpd_handle_stderr_command(smpd_context_t *context)
 {
     int rank;
     char data[SMPD_MAX_STDOUT_LENGTH];
     smpd_command_t *cmd;
-    int num_decoded;
-#ifdef HAVE_WINDOWS_H
-    HANDLE hStderr;
-    DWORD num_written;
-#endif
+    int num_decoded = 0;
+    int first;
+    char prefix[20];
+    size_t prefix_length;
+    char *token;
+    SMPD_BOOL ends_in_cr = SMPD_FALSE;
 
     smpd_enter_fn(FCNAME);
 
@@ -384,17 +461,49 @@ int smpd_handle_stderr_command(smpd_context_t *context)
 	rank = -1;
 	smpd_err_printf("no rank in the stderr command: '%s'\n", cmd->cmd);
     }
+    if (MPIU_Str_get_int_arg(cmd->cmd, "first", &first) != MPIU_STR_SUCCESS)
+    {
+	first = 0;
+	smpd_err_printf("no first flag in the stderr command: '%s'\n", cmd->cmd);
+    }
     if (MPIU_Str_get_string_arg(cmd->cmd, "data", data, SMPD_MAX_STDOUT_LENGTH) == MPIU_STR_SUCCESS)
     {
 	smpd_decode_buffer(data, data, SMPD_MAX_STDOUT_LENGTH, &num_decoded);
+	data[num_decoded] = '\0';
+	if (data[num_decoded-1] == '\n')
+	{
+	    ends_in_cr = SMPD_TRUE;
+	}
 	/*fprintf(stderr, "[%d]", rank);*/
-#ifdef HAVE_WINDOWS_H
-	hStderr = GetStdHandle(STD_ERROR_HANDLE);
-	WriteFile(hStderr, data, num_decoded, &num_written, NULL);
-#else
-	fwrite(data, 1, num_decoded, stderr);
-	fflush(stderr);
-#endif
+	if (smpd_process.prefix_output == SMPD_TRUE)
+	{
+	    if (first)
+	    {
+		MPIU_Snprintf(prefix, 20, "[%d]", rank);
+		prefix_length = strlen(prefix);
+		write_to_stderr(prefix, prefix_length);
+	    }
+	    MPIU_Snprintf(prefix, 20, "\n[%d]", rank);
+	    prefix_length = strlen(prefix);
+	    token = strtok(data, "\r\n");
+	    while (token != NULL)
+	    {
+		write_to_stderr(token, strlen(token));
+		token = strtok(NULL, "\r\n");
+		if (token != NULL)
+		{
+		    write_to_stderr(prefix, prefix_length);
+		}
+		else
+		{
+		    write_to_stderr("\n", 1);
+		}
+	    }
+	}
+	else
+	{
+	    write_to_stderr(data, num_decoded);
+	}
     }
     else
     {

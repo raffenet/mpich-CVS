@@ -423,6 +423,7 @@ typedef struct smpd_context_t
     char sspi_job_key[SMPD_SSPI_JOB_KEY_LENGTH];
     smpd_sspi_client_context_t *sspi_context;
     smpd_sspi_type_t sspi_type;
+    SMPD_BOOL first_output_stdout, first_output_stderr;
     struct smpd_context_t *next;
 } smpd_context_t;
 
@@ -716,6 +717,7 @@ typedef struct smpd_global_t
     smpd_delayed_spawn_node_t *delayed_spawn_queue;
     SMPD_BOOL spawning;
     int user_index;
+    SMPD_BOOL prefix_output;
 } smpd_global_t;
 
 extern smpd_global_t smpd_process;

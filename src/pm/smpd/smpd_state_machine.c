@@ -1263,6 +1263,7 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
     MPIU_Size_t num_read;
     char buffer[SMPD_MAX_CMD_LENGTH];
     int num_encoded;
+    SMPD_BOOL ends_in_cr = SMPD_FALSE;
 
     smpd_enter_fn(FCNAME);
     if (context->state == SMPD_CLOSING)
@@ -1302,6 +1303,11 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
 	num_read = 0;
 	smpd_dbg_printf("MPIDU_Sock_read(%d) failed (%s), assuming %s is closed.\n",
 	    MPIDU_Sock_get_sock_id(context->sock), get_sock_error_string(result), smpd_get_context_str(context));
+    }
+    /* Use num_read instead of num_read-1 because one byte was already read before increasing the buffer length by one */
+    if (context->read_cmd.cmd[num_read] == '\n')
+    {
+	ends_in_cr = SMPD_TRUE;
     }
     smpd_dbg_printf("%d bytes read from %s\n", num_read+1, smpd_get_context_str(context));
     if (context->type == SMPD_CONTEXT_STDOUT_RSH || context->type == SMPD_CONTEXT_STDERR_RSH)
@@ -1348,6 +1354,40 @@ int smpd_state_reading_stdouterr(smpd_context_t *context, MPIDU_Sock_event_t *ev
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to add the rank to the %s command.\n", smpd_get_context_str(context));
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	switch (context->type)
+	{
+	case SMPD_CONTEXT_STDOUT:
+	    if (context->first_output_stdout == SMPD_TRUE)
+	    {
+		result = smpd_add_command_int_arg(cmd_ptr, "first", 1);
+	    }
+	    else
+	    {
+		result = smpd_add_command_int_arg(cmd_ptr, "first", 0);
+	    }
+	    context->first_output_stdout = ends_in_cr;
+	    break;
+	case SMPD_CONTEXT_STDERR:
+	    if (context->first_output_stderr == SMPD_TRUE)
+	    {
+		result = smpd_add_command_int_arg(cmd_ptr, "first", 1);
+	    }
+	    else
+	    {
+		result = smpd_add_command_int_arg(cmd_ptr, "first", 0);
+	    }
+	    context->first_output_stderr = ends_in_cr;
+	    break;
+	default:
+	    result = smpd_add_command_int_arg(cmd_ptr, "first", 0);
+	    break;
+	}
+	if (result != SMPD_SUCCESS)
+	{
+	    smpd_err_printf("unable to add the first flag to the %s command.\n", smpd_get_context_str(context));
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
