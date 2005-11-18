@@ -594,13 +594,13 @@ where you cannot interact with any GUI.
 \item \texttt{-channel channel\_name}
 This option is only available under Windows and allows the user to select which
 channel implementation of MPICH2 to select at runtime.  The current channels
-supported are sock, ssm, shm, and sshm.  These represent the sockets, sockets 
-plus shared memory, shared memory, and scalable shared memory channels.  The
-shared memory channels only work on one node.  The sockets and sockets plus
-shared memory channels work on multiple nodes.  There are also profiled versions
-of the channels that produce RLOG files for each process when selected.  They
-are named p, ssmp, shmp, and sshmp.  See the section on channel selection for
-additional information.
+supported are sock, mt, ssm, shm, and sshm.  These represent the sockets, 
+multi-threaded sockets, sockets plus shared memory, shared memory, and scalable
+shared memory channels.  The shared memory channels only work on one node.  
+The sockets, multi-threaded sockets, and sockets plus shared memory channels 
+work on multiple nodes.  There are also profiled versions of the channels that
+produce RLOG files for each process when selected.  They are named p, mtp, ssmp,
+shmp, and sshmp.  See the section on channel selection for additional information.
 \item \texttt{-log}
 This option is a short cut to selecting the MPE wrapper library to log the MPI
 application.  When the job finishes there will be a .clog2 file created that
