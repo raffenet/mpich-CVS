@@ -1,4 +1,7 @@
-proberank
+noalias
 Makefile.in
 Makefile
 *.o
+*.vcproj
+Debug*
+Release*
