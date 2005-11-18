@@ -13,6 +13,13 @@
 #include <Ntdsapi.h>
 #endif
 
+/* prototype local functions */
+static int write_to_stdout(const char *buffer, size_t num_bytes);
+static int write_to_stderr(const char *buffer, size_t num_bytes);
+static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_code);
+static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t **pg_pptr);
+static int get_name_key_value(char *str, char *name, char *key, char *value);
+
 #undef FCNAME
 #define FCNAME "smpd_do_abort_job"
 static int smpd_do_abort_job(char *name, int rank, char *error_str, int exit_code)
