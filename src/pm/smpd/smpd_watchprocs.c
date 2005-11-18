@@ -39,6 +39,13 @@ int smpd_watch_processes_thread()
 restart:
 
     hRegEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (hRegEvent == NULL)
+    {
+	result = GetLastError();
+	smpd_translate_win_error(result, value, 1024, NULL);
+	smpd_err_printf("CreateEvent failed: %s\n", value);
+	return SMPD_FAIL;
+    }
 
     if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\MPICH\\SMPD\\process", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
     {
@@ -47,6 +54,8 @@ restart:
 	    result = RegNotifyChangeKeyValue(hKey, FALSE, REG_NOTIFY_CHANGE_NAME, hRegEvent, TRUE);
 	    if (result != ERROR_SUCCESS)
 	    {
+		smpd_translate_win_error(result, value, 1024, NULL);
+		smpd_err_printf("RegNotifyChangeKeyValue(SOFTWARE\\MPICH\\SMPD\\process) failed: %s\n", value);
 		/*printf("result = %d\n", result);*/
 		RegCloseKey(hKey);
 		break;
@@ -158,6 +167,33 @@ restart:
 	    result = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
 	    if (result < WAIT_OBJECT_0 || result > WAIT_OBJECT_0 + 2)
 	    {
+		if (result == WAIT_FAILED)
+		{
+		    result = GetLastError();
+		    smpd_translate_win_error(result, value, 1024, NULL);
+		    smpd_err_printf("WaitForMultipleObjects failed: %s\n", value);
+		    /*
+		    printf("hQuit = %p\n", hQuit);
+		    printf("hRegEvent = %p\n", hRegEvent);
+		    fflush(stdout);
+		    */
+		}
+		else if (result == WAIT_TIMEOUT)
+		{
+		    smpd_err_printf("WaitFoMultipleObjects timed out\n");
+		}
+		else if (result == WAIT_ABANDONED_0)
+		{
+		    smpd_err_printf("WaitForMultipleObjects abandoned due to the hQuit event.\n");
+		}
+		else if (result == (WAIT_ABANDONED_0 + 1))
+		{
+		    smpd_err_printf("WaitForMultipleObjects abandoned due to the hRegEvent.\n");
+		}
+		else
+		{
+		    smpd_err_printf("WaitForMultipleObjects returned an unexpected value: %d\n", result);
+		}
 		RegCloseKey(hKey);
 		break;
 	    }
@@ -174,7 +210,13 @@ restart:
 		break;
 	    }
 	    */
-	    ResetEvent(hRegEvent);
+	    if (!ResetEvent(hRegEvent))
+	    {
+		result = GetLastError();
+		smpd_translate_win_error(result, value, 1024, NULL);
+		smpd_err_printf("ResetEvent failed: %s\n", value);
+		return SMPD_FAIL;
+	    }
 	}
     }
     else
@@ -186,6 +228,8 @@ restart:
 		result = RegNotifyChangeKeyValue(hKey, FALSE, REG_NOTIFY_CHANGE_NAME, hRegEvent, TRUE);
 		if (result != ERROR_SUCCESS)
 		{
+		    smpd_translate_win_error(result, value, 1024, NULL);
+		    smpd_err_printf("RegNotifyChangeKeyValue(SOFTWARE\\MPICH\\SMPD) failed: %s\n", value);
 		    /*printf("result = %d\n", result);*/
 		    RegCloseKey(hKey);
 		    break;
@@ -214,9 +258,36 @@ restart:
 
 		hEvents[0] = hQuit;
 		hEvents[1] = hRegEvent;
-		result = WaitForMultipleObjects(3, hEvents, FALSE, INFINITE);
+		result = WaitForMultipleObjects(2, hEvents, FALSE, INFINITE);
 		if (result < WAIT_OBJECT_0 || result > WAIT_OBJECT_0 + 2)
 		{
+		    if (result == WAIT_FAILED)
+		    {
+			result = GetLastError();
+			smpd_translate_win_error(result, value, 1024, NULL);
+			smpd_err_printf("WaitForMultipleObjects failed: %s\n", value);
+			/*
+			printf("hQuit = %p\n", hQuit);
+			printf("hRegEvent = %p\n", hRegEvent);
+			fflush(stdout);
+			*/
+		    }
+		    else if (result == WAIT_TIMEOUT)
+		    {
+			smpd_err_printf("WaitFoMultipleObjects timed out\n");
+		    }
+		    else if (result == WAIT_ABANDONED_0)
+		    {
+			smpd_err_printf("WaitForMultipleObjects abandoned due to the hQuit event.\n");
+		    }
+		    else if (result == (WAIT_ABANDONED_0 + 1))
+		    {
+			smpd_err_printf("WaitForMultipleObjects abandoned due to the hRegEvent.\n");
+		    }
+		    else
+		    {
+			smpd_err_printf("WaitForMultipleObjects returned an unexpected value: %d\n", result);
+		    }
 		    RegCloseKey(hKey);
 		    break;
 		}
@@ -250,7 +321,18 @@ int smpd_watch_processes()
     char line[1024], cmd[1024];
     int result;
 
+    /* turn off extra error output */
+    smpd_process.dbg_state ^= SMPD_DBG_STATE_TRACE;
+    smpd_process.dbg_state ^= SMPD_DBG_STATE_PREPEND_RANK;
+
     hQuit = CreateEvent(NULL, TRUE, FALSE, NULL);
+    if (hQuit == NULL)
+    {
+	result = GetLastError();
+	smpd_translate_win_error(result, line, 1024, NULL);
+	smpd_err_printf("CreateEvent failed: %s\n", line);
+	goto fn_exit;
+    }
 
     hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)smpd_watch_processes_thread, NULL, 0, NULL);
     if (hThread == NULL)
