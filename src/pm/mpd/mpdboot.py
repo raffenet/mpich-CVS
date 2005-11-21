@@ -386,7 +386,11 @@ def chkupdn(hostList):
     dnList = []
     for hostname in hostList:
         print 'checking', hostname
-        cmd = "ssh %s -x -n /bin/echo hello" % (hostname)
+        if rshCmd == 'ssh':
+            rshArgs = '-x -n'
+        else:
+            rshArgs = '-n'
+        cmd = "%s %s %s /bin/echo hello" % (rshCmd,rshArgs,hostname)
         runner = Popen3(cmd,1,0)
         runout = runner.fromchild
         runerr = runner.childerr
