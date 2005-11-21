@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_ERR_LENGTH 512
+
 #undef FCNAME
 #define FCNAME "smpd_get_all_key_names"
 static int smpd_get_all_key_names(smpd_data_t **data)
@@ -19,6 +21,7 @@ static int smpd_get_all_key_names(smpd_data_t **data)
     char name[SMPD_MAX_NAME_LENGTH];
     DWORD name_length, index;
     smpd_data_t *list, *item;
+    char err_msg[MAX_ERR_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -62,7 +65,15 @@ static int smpd_get_all_key_names(smpd_data_t **data)
 	name_length = SMPD_MAX_NAME_LENGTH;
 	enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, NULL, NULL);
     }
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, MAX_ERR_LENGTH, "Unable to close the HKEY_CURRENT_USER\\" MPICH_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     *data = list;
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -181,6 +192,7 @@ SMPD_BOOL smpd_save_password_to_registry(int index, const char *szAccount, const
     DATA_BLOB password_blob, blob;
     char key_name[256] = "smpdAccount";
     char key_pwd[256] = "smpdPassword";
+    char err_msg[MAX_ERR_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -203,7 +215,9 @@ SMPD_BOOL smpd_save_password_to_registry(int index, const char *szAccount, const
     }
     else
     {
+	/* delete the key if it exists */
 	RegDeleteKey(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY);
+	/* create the key with the volatile option */
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, MPICH_REGISTRY_KEY,
 	    0, 
 	    NULL, 
@@ -256,7 +270,14 @@ SMPD_BOOL smpd_save_password_to_registry(int index, const char *szAccount, const
 	bResult = SMPD_FALSE;
     }
 
-    RegCloseKey(hRegKey);
+    nError = RegCloseKey(hRegKey);
+    if (nError != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(nError, err_msg, MAX_ERR_LENGTH, "Unable to close the HKEY_CURRENT_USER\\" MPICH_REGISTRY_KEY " registry key, error %d: ", nError);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FALSE;
+    }
 
     smpd_exit_fn(FCNAME);
     return bResult;
@@ -273,6 +294,7 @@ SMPD_BOOL smpd_read_password_from_registry(int index, char *szAccount, char *szP
     DATA_BLOB password_blob, blob;
     char key_name[256] = "smpdAccount";
     char key_pwd[256] = "smpdPassword";
+    char err_msg[MAX_ERR_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -333,7 +355,14 @@ SMPD_BOOL smpd_read_password_from_registry(int index, char *szAccount, char *szP
 	    /*smpd_err_printf("ReadPasswordFromRegistry:RegQueryValueEx(...) failed, error: %d\n", nError);*/
 	    bResult = SMPD_FALSE;
 	}
-	RegCloseKey(hRegKey);
+	nError = RegCloseKey(hRegKey);
+	if (nError != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(nError, err_msg, MAX_ERR_LENGTH, "Unable to close the HKEY_CURRENT_USER\\" MPICH_REGISTRY_KEY " registry key, error %d: ", nError);
+	    smpd_err_printf("%s\n", err_msg);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FALSE;
+	}
     }
     else
     {
@@ -355,6 +384,7 @@ int smpd_cache_password(const char *account, const char *password)
     HKEY hRegKey = NULL;
     int num_bytes;
     DWORD len;
+    char err_msg[MAX_ERR_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -406,7 +436,15 @@ int smpd_cache_password(const char *account, const char *password)
 	return SMPD_FAIL;
     }
 
-    RegCloseKey(hRegKey);
+    nError = RegCloseKey(hRegKey);
+    if (nError != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(nError, err_msg, MAX_ERR_LENGTH, "Unable to close the HKEY_CURRENT_USER\\" SMPD_REGISTRY_CACHE_KEY " registry key, error %d: ", nError);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
@@ -421,6 +459,7 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
     HKEY hRegKey = NULL;
     DWORD dwLength;
     int num_bytes;
+    char err_msg[MAX_ERR_LENGTH];
 
     smpd_enter_fn(FCNAME);
 
@@ -461,7 +500,14 @@ SMPD_BOOL smpd_get_cached_password(char *account, char *password)
 	    return SMPD_FALSE;
 	}
 
-	RegCloseKey(hRegKey);
+	nError = RegCloseKey(hRegKey);
+	if (nError != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(nError, err_msg, MAX_ERR_LENGTH, "Unable to close the HKEY_CURRENT_USER\\" SMPD_REGISTRY_CACHE_KEY " registry key, error %d: ", nError);
+	    smpd_err_printf("%s\n", err_msg);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FALSE;
+	}
 
 	strcpy(account, szAccount);
 	smpd_decode_buffer(szPassword, password, SMPD_MAX_PASSWORD_LENGTH, &num_bytes);

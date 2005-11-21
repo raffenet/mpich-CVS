@@ -20,19 +20,37 @@
 #include <stdlib.h>
 
 #ifndef HAVE_WINDOWS_H
+static FILE * smpd_open_smpd_file(SMPD_BOOL create);
+static void str_replace(char *str, char *find_chars, char replace_char);
+
+#undef FCNAME
+#define FCNAME "smpd_open_smpd_file"
 static FILE * smpd_open_smpd_file(SMPD_BOOL create)
 {
     char *homedir;
     struct stat s;
     FILE *fin = NULL;
+
+    smpd_enter_fn(FCNAME);
     if (smpd_process.smpd_filename[0] == '\0')
     {
 	homedir = getenv("HOME");
-	strcpy(smpd_process.smpd_filename, homedir);
-	if (smpd_process.smpd_filename[strlen(smpd_process.smpd_filename)-1] != '/')
-	    strcat(smpd_process.smpd_filename, "/.smpd");
+	if (homedir != NULL)
+	{
+	    strcpy(smpd_process.smpd_filename, homedir);
+	    if (smpd_process.smpd_filename[strlen(smpd_process.smpd_filename)-1] != '/')
+	    {
+		strcat(smpd_process.smpd_filename, "/.smpd");
+	    }
+	    else
+	    {
+		strcat(smpd_process.smpd_filename, ".smpd");
+	    }
+	}
 	else
-	    strcat(smpd_process.smpd_filename, ".smpd");
+	{
+	    strcpy(smpd_process.smpd_filename, ".smpd");
+	}
     }
     if (stat(smpd_process.smpd_filename, &s) == 0)
     {
@@ -43,9 +61,13 @@ static FILE * smpd_open_smpd_file(SMPD_BOOL create)
 	else
 	{
 	    if (create)
+	    {
 		fin = fopen(smpd_process.smpd_filename, "w");
+	    }
 	    else
+	    {
 		fin = fopen(smpd_process.smpd_filename, "r+");
+	    }
 	}
     }
     if (fin == NULL && create)
@@ -53,14 +75,18 @@ static FILE * smpd_open_smpd_file(SMPD_BOOL create)
 	umask(077);
 	fin = fopen(smpd_process.smpd_filename, "w");
     }
+    smpd_exit_fn(FCNAME);
     return fin;
 }
 
-void str_replace(char *str, char *find_chars, char replace_char)
+#undef FCNAME
+#define FCNAME "str_replace"
+static void str_replace(char *str, char *find_chars, char replace_char)
 {
     char *cur_str;
     int i;
 
+    smpd_enter_fn(FCNAME);
     for (i=0; i<strlen(find_chars); i++)
     {
 	cur_str = strchr(str, find_chars[i]);
@@ -70,8 +96,11 @@ void str_replace(char *str, char *find_chars, char replace_char)
 	    cur_str = strchr(cur_str, find_chars[i]);
 	}
     }
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_smpd_file"
 static smpd_data_t * smpd_parse_smpd_file()
 {
     FILE *fin;
@@ -85,15 +114,40 @@ static smpd_data_t * smpd_parse_smpd_file()
     int num_chars;
     int result;
 
+    smpd_enter_fn(FCNAME);
     fin = smpd_open_smpd_file(SMPD_FALSE);
     if (fin != NULL)
     {
-	fseek(fin, 0, SEEK_END);
+	result = fseek(fin, 0, SEEK_END);
+	if (result != 0)
+	{
+	    smpd_err_printf("Unable to seek to the end of the .smpd file.\n");
+	    smpd_exit_fn(FCNAME);
+	    return NULL;
+	}
 	len = ftell(fin);
-	fseek(fin, 0, SEEK_SET);
+	if (len == -1)
+	{
+	    smpd_err_printf("Unable to determine the length of the .smpd file, ftell returned -1 and errno = %d.\n", errno);
+	    smpd_exit_fn(FCNAME);
+	    return NULL;
+	}
+	result = fseek(fin, 0, SEEK_SET);
+	if (result != 0)
+	{
+	    smpd_err_printf("Unable to seek to the beginning of the .smpd file.\n");
+	    smpd_exit_fn(FCNAME);
+	    return NULL;
+	}
 	if (len > 0)
 	{
 	    buffer = (char*)malloc(len+1);
+	    if (buffer == NULL)
+	    {
+		smpd_err_printf("Unable to allocate a buffer of length %d, malloc failed.\n", len+1);
+		smpd_exit_fn(FCNAME);
+		return NULL;
+	    }
 	    iter = buffer;
 	    if ((len = (int)fread(buffer, 1, len, fin)) > 0)
 	    {
@@ -104,6 +158,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 		    result = MPIU_Str_get_string(&iter, name, SMPD_MAX_NAME_LENGTH);
 		    if (result != MPIU_STR_SUCCESS)
 		    {
+			smpd_exit_fn(FCNAME);
 			return NULL;
 		    }
 		    equal_str[0] = '\0';
@@ -114,6 +169,7 @@ static smpd_data_t * smpd_parse_smpd_file()
 			result = MPIU_Str_get_string(&iter, equal_str, SMPD_MAX_NAME_LENGTH);
 			if (result != MPIU_STR_SUCCESS)
 			{
+			    smpd_exit_fn(FCNAME);
 			    return NULL;
 			}
 		    }
@@ -123,6 +179,12 @@ static smpd_data_t * smpd_parse_smpd_file()
 		    if (result == MPIU_STR_SUCCESS)
 		    {
 			node = (smpd_data_t*)malloc(sizeof(smpd_data_t));
+			if (node == NULL)
+			{
+			    smpd_err_printf("Unable to allocate a smpd_data_t node, malloc failed.\n");
+			    smpd_exit_fn(FCNAME);
+			    return list; /* Should we return NULL or the current number of parsed options? */
+			}
 			strcpy(node->name, name);
 			strcpy(node->value, data);
 			node->next = list;
@@ -132,46 +194,75 @@ static smpd_data_t * smpd_parse_smpd_file()
 	    }
 	    else
 	    {
-		printf("unable to read the contents of %s\n", smpd_process.smpd_filename);
+		printf("Unable to read the contents of %s.\n", smpd_process.smpd_filename);
 	    }
 	    free(buffer);
 	}
 	fclose(fin);
     }
+    smpd_exit_fn(FCNAME);
     return list;
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_is_affirmative"
 SMPD_BOOL smpd_is_affirmative(const char *str)
 {
     const char *iter = str;
+
+    smpd_enter_fn(FCNAME);
     if (*iter != 'y' && *iter != 'Y')
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
     iter++;
     if (*iter == '\0')
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
+    }
     if (*iter == '\n')
     {
 	iter++;
 	if (*iter == '\0')
+	{
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_TRUE;
+	}
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
     if (*iter != 'e' && *iter != 'E')
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
     iter++;
     if (*iter != 's' && *iter != 's')
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
     iter++;
     if (*iter == '\n')
     {
 	iter++;
 	if (*iter == '\0')
+	{
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_TRUE;
+	}
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
     if (*iter == '\0')
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
+    }
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 
     /*
@@ -218,17 +309,22 @@ int smpd_delete_user_data(const char *key)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD result;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
     if (key == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     result = RegCreateKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
 	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -236,13 +332,22 @@ int smpd_delete_user_data(const char *key)
     result = RegDeleteValue(tkey, key);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to delete the user smpd registry value '%s', error %d\n", key, result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to delete the user smpd registry value '%s', error %d: ", key, result);
+	smpd_err_printf("%s\n", err_msg);
 	RegCloseKey(tkey);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -261,17 +366,22 @@ int smpd_delete_smpd_data(const char *key)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD result;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
     if (key == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
 	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -281,14 +391,23 @@ int smpd_delete_smpd_data(const char *key)
     {
 	if (result != ERROR_FILE_NOT_FOUND && result != ERROR_PATH_NOT_FOUND)
 	{
-	    smpd_err_printf("Unable to delete the smpd registry value '%s', error %d\n", key, result);
+	    smpd_translate_win_error(result, err_msg, 512, "Unable to delete the smpd registry value '%s', error %d: ", key, result);
+	    smpd_err_printf("%s\n", err_msg);
 	    RegCloseKey(tkey);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -307,7 +426,9 @@ int smpd_delete_smpd_data(const char *key)
 	if (strcmp(key, node->name) == 0)
 	{
 	    if (trailer != node)
+	    {
 		trailer->next = node->next;
+	    }
 	    else
 	    {
 		list = list->next;
@@ -317,7 +438,9 @@ int smpd_delete_smpd_data(const char *key)
 	    break;
 	}
 	if (trailer != node)
+	{
 	    trailer = trailer->next;
+	}
 	node = node->next;
     }
     if (found)
@@ -366,17 +489,22 @@ int smpd_set_user_data(const char *key, const char *value)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
     if (key == NULL || value == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     result = RegCreateKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
 	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -385,13 +513,22 @@ int smpd_set_user_data(const char *key, const char *value)
     result = RegSetValueEx(tkey, key, 0, REG_SZ, (const BYTE *)value, len);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to write the user smpd registry value '%s:%s', error %d\n", key, value, result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to write the user smpd registry value '%s:%s', error %d\n", key, value, result);
+	smpd_err_printf("%s\n", err_msg);
 	RegCloseKey(tkey);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -410,17 +547,22 @@ int smpd_set_smpd_data(const char *key, const char *value)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
     if (key == NULL || value == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     result = RegCreateKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
 	0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to open the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_err_printf("%s\n", err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -429,13 +571,22 @@ int smpd_set_smpd_data(const char *key, const char *value)
     result = RegSetValueEx(tkey, key, 0, REG_SZ, (const BYTE *)value, len);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to write the smpd registry value '%s:%s', error %d\n", key, value, result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to write the smpd registry value '%s:%s', error %d\n", key, value, result);
+	smpd_err_printf("%s\n", err_msg);
 	RegCloseKey(tkey);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -455,6 +606,12 @@ int smpd_set_smpd_data(const char *key, const char *value)
 
     list = smpd_parse_smpd_file();
     fout = smpd_open_smpd_file(SMPD_TRUE);
+    if (fout == NULL)
+    {
+	smpd_err_printf("Unable to open the .smpd file\n");
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     while (list)
     {
 	node = list;
@@ -508,9 +665,9 @@ int smpd_get_user_data_default(const char *key, char *value, int value_len)
 {
     smpd_enter_fn(FCNAME);
     /* FIXME: function not implemented */
-    key;
-    value;
-    value_len;
+    SMPD_UNREFERENCED_ARG(key);
+    SMPD_UNREFERENCED_ARG(value);
+    SMPD_UNREFERENCED_ARG(value_len);
     smpd_exit_fn(FCNAME);
     return SMPD_FAIL;
 }
@@ -522,16 +679,15 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
-    result = RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY,
-	0, 
-	KEY_READ,
-	&tkey);
+    result = RegOpenKeyEx(HKEY_CURRENT_USER, SMPD_REGISTRY_KEY, 0, KEY_READ, &tkey);
     if (result != ERROR_SUCCESS)
     {
-	smpd_dbg_printf("Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to open the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d\n", result);
+	smpd_dbg_printf("%s\n", err_msg);
 	result = smpd_get_user_data_default(key, value, value_len);
 	smpd_exit_fn(FCNAME);
 	return result;
@@ -541,14 +697,23 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
     result = RegQueryValueEx(tkey, key, 0, NULL, (unsigned char *)value, &len);
     if (result != ERROR_SUCCESS)
     {
-	smpd_dbg_printf("Unable to read the smpd registry key '%s', error %d\n", key, result);
+	smpd_translate_win_error(result, err_msg, 512, "Unable to read the smpd registry key '%s', error %d\n", key, result);
+	smpd_dbg_printf("%s\n", err_msg);
 	RegCloseKey(tkey);
 	result = smpd_get_user_data_default(key, value, value_len);
 	smpd_exit_fn(FCNAME);
 	return result;
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_CURRENT_USER\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -556,7 +721,9 @@ int smpd_get_user_data(const char *key, char *value, int value_len)
     smpd_enter_fn(FCNAME);
     result = smpd_get_smpd_data(key, value, value_len);
     if (result != SMPD_SUCCESS)
+    {
 	result = smpd_get_user_data_default(key, value, value_len);
+    }
     smpd_exit_fn(FCNAME);
     return result;
 #endif
@@ -662,6 +829,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 #ifdef HAVE_WINDOWS_H
     HKEY tkey;
     DWORD len, result;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
@@ -671,10 +839,7 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	return SMPD_SUCCESS;
     }
 
-    result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
-	0, 
-	KEY_READ,
-	&tkey);
+    result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY, 0, KEY_READ, &tkey);
     if (result != ERROR_SUCCESS)
     {
 	if (smpd_get_smpd_data_default(key, value, value_len) != SMPD_SUCCESS)
@@ -702,7 +867,15 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 	return SMPD_SUCCESS;
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -746,9 +919,13 @@ int smpd_get_smpd_data(const char *key, char *value, int value_len)
 
     result = smpd_get_smpd_data_default(key, value, value_len);
     if (result == SMPD_SUCCESS)
+    {
 	smpd_dbg_printf("smpd data: %s=%s\n", key, value);
+    }
     else
+    {
 	smpd_dbg_printf("smpd data: failed to get %s\n", key);
+    }
 
     smpd_exit_fn(FCNAME);
     return result;
@@ -766,6 +943,7 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
     char name[SMPD_MAX_NAME_LENGTH], value[SMPD_MAX_VALUE_LENGTH];
     DWORD name_length, value_length, index;
     smpd_data_t *list, *item;
+    char err_msg[512];
 
     smpd_enter_fn(FCNAME);
 
@@ -775,13 +953,11 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
 	return SMPD_FAIL;
     }
 
-    result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY,
-	0, 
-	KEY_READ,
-	&tkey);
+    result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY, 0, KEY_READ, &tkey);
     if (result != ERROR_SUCCESS)
     {
 	/* No key therefore no settings */
+	/* No access to the key, therefore no soup for you */
 	*data = NULL;
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
@@ -798,7 +974,7 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
 	if (item == NULL)
 	{
 	    *data = NULL;
-	    RegCloseKey(tkey);
+	    result = RegCloseKey(tkey);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
@@ -811,7 +987,16 @@ int smpd_get_all_smpd_data(smpd_data_t **data)
 	value_length = SMPD_MAX_VALUE_LENGTH;
 	enum_result = RegEnumValue(tkey, index, name, &name_length, NULL, NULL, (LPBYTE)value, &value_length);
     }
-    RegCloseKey(tkey);
+
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, 512, "Unable to close the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY " registry key, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+
     *data = list;
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -850,6 +1035,7 @@ int smpd_lock_smpd_data(void)
 	return SMPD_FAIL;
     }
 #else
+    /* No lock implemented for Unix systems */
 #endif
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -861,8 +1047,17 @@ int smpd_unlock_smpd_data(void)
 {
     smpd_enter_fn(FCNAME);
 #ifdef HAVE_WINDOWS_H
-    ReleaseMutex(smpd_process.hSMPDDataMutex);
+    if (!ReleaseMutex(smpd_process.hSMPDDataMutex))
+    {
+	int result;
+	char err_msg[512];
+	result = GetLastError();
+	smpd_translate_win_error(result, err_msg, 512, "Unable to release the SMPD data mutex, error %d: ", result);
+	smpd_err_printf("%s\n", err_msg);
+	return SMPD_FAIL;
+    }
 #else
+    /* No lock implemented for Unix systems */
 #endif
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;

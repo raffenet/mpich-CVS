@@ -22,6 +22,7 @@ int smpd_restart()
 	return SMPD_FAIL;
     }
 
+    /* Warning: This function can raise an exception */
     GetStartupInfo(&sInfo);
 
     snprintf(pszStr, 2048, "\"%s\" -restart", szExe);

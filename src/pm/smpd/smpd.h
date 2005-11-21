@@ -843,7 +843,7 @@ int smpd_delete_cached_password();
 int smpd_do_console();
 int smpd_restart();
 SMPD_BOOL smpd_snprintf_update(char **str_pptr, int *len_ptr, char *str_format, ...);
-char * smpd_get_state_string(smpd_state_t state);
+const char * smpd_get_state_string(smpd_state_t state);
 char * smpd_get_cmd_state_string(smpd_command_state_t state);
 SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd_command_t *cmd_ptr);
 SMPD_BOOL smpd_process_to_string(char **str_pptr, int *len_ptr, int indent, smpd_process_t *process);
