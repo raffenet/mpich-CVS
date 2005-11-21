@@ -1041,6 +1041,12 @@ fi # is not cross compiling
 dnl
 dnl PAC_F90_AND_F77_COMPATIBLE([action-if-true],[action-if-false])
 dnl
+dnl Determine whether object files compiled with Fortran 77 can be 
+dnl linked to Fortran 90 main programs.
+dnl
+dnl The test uses a name that includes an underscore unless the 3rd
+dnl argument provides another routine name.
+dnl
 AC_DEFUN([PAC_F90_AND_F77_COMPATIBLE],[
 AC_REQUIRE([PAC_PROG_F90_WORKS])
 AC_CACHE_CHECK([whether Fortran 90 works with Fortran 77],
@@ -1052,15 +1058,18 @@ if test -z "$ac_ext_f90" -a -n "$pac_cv_f90_ext" ; then ac_ext_f90=$pac_cv_f90_e
 link_f90='${F90-f90} -o conftest${ac_exeext} $F90FLAGS $LDFLAGS conftest1.$ac_ext_f90 conftest2.o $LIBS 1>&AC_FD_CC'
 compile_f77='${F77-f77} -c $FFLAGS conftest2.f 1>&AC_FD_CC'
 # Create test programs
+pacTestRoutine=t1_2
+# eval the assignment in case the argument is a variable.
+ifelse([$3],,,[eval pacTestRoutine=$3])
 cat > conftest1.$ac_ext_f90 <<EOF
        program main
        integer a
        a = 1
-       call t1_2(a)
+       call ${pacTestRoutine}(a)
        end
 EOF
 cat > conftest2.f <<EOF
-       subroutine t1_2(b)
+       subroutine ${pacTestRoutine}(b)
        integer b
        b = b + 1
        end

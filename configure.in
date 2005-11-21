@@ -970,17 +970,64 @@ if test "$ENABLE_SHLIB" != "none" ; then
    CREATESHLIB=`pwd`/src/util/createshlib
 fi
 AC_SUBST(CREATESHLIB)
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Basic properties of the C compiler; some are needed for the language 
+# bindings tests.
+# Set CFLAGS for enable strict if necessary.  Do this *first* because
+# it may influence the output of the other tests
+PAC_CC_STRICT
+# Check for support for weak symbols.  If not found, set NO_WEAK_SYM
+# to the Make target name understood by simplemake.
+# Set NEEDSPLIB to yes if link commands need both -l$MPILIBNAME
+# and -lp$MPILIBNAME.
+NO_WEAK_SYM_TARGET=build_proflib
+if test $enable_weak_symbols = yes ; then
+    # Turn off weak symbols if they aren't available
+    PAC_PROG_C_WEAK_SYMBOLS(,enable_weak_symbols=no)
+fi
+if test $enable_weak_symbols = "yes" ; then
+    AC_DEFINE(USE_WEAK_SYMBOLS,1,[Define if weak symbols should be used])
+    NEEDSPLIB=no
+    # Check for the ability to support multiple weak symbols
+    if test "$pac_cv_prog_c_weak_symbols" = "pragma weak" ; then
+       PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS(AC_DEFINE(HAVE_MULTIPLE_PRAGMA_WEAK,1,[Define if multiple weak symbols may be defined]))
+    fi
+else
+    NO_WEAK_SYM=build_proflib
+    PROFILE_DEF_MPI="-DMPICH_MPI_FROM_PMPI"
+    if test "$PMPILIBNAME" != "$MPILIBNAME" ; then
+        # NEEDSPLIB is used to indicate that there are two libraries,
+	# one with the basic routines (PMPI + utility) and one with the 
+	# MPI routines
+        NEEDSPLIB=yes
+    else
+        NEEDSPLIB=no
+    fi
+fi
+export NEEDSPLIB
+export NO_WEAK_SYM
+export NO_WEAK_SYM_TARGET
+export PROFILE_DEF_MPI
+AC_SUBST(NEEDSPLIB)
+AC_SUBST(NO_WEAK_SYM)
+AC_SUBST(NO_WEAK_SYM_TARGET)
+AC_SUBST(PROFILE_DEF_MPI)
+
+# ---------------------------------------------------------------------------
 # Support for the language bindings: Fortran 77, Fortran 90, and C++
 #
 # First, we handle the case of no explicit enable/disable option.  In that
 # case, we look for a usable compiler.  We cannot use the ac macros for this
 # because they abort the configure step if they fail to find a compiler 
-# (earlier versions of autoconf did not have this behavior).
+# (earlier versions of autoconf did not have this behavior!).
 #
 # Second, we perform the langugage-specific tests, if necessary.  This may
 # be relatively simple (C++) or complex (Fortran 77, including formation of 
 # the encoded MPI handles).
+#
+# Note that the bindings support needs to know some of the properties of
+# the C compiler, so those tests (particularly for weak symbols)
+# must come first.
 # ----------------------------------------------------------------------------
 
 #
@@ -1005,7 +1052,49 @@ if test "$enable_f77" = "default" ; then
         enable_f77_wasdefault=yes
         enable_f77=yes
     fi
+elif test "$enable_f77" = "yes" ; then
+    saveFFLAGS=$FFLAGS
+    AC_PROG_F77
+    FFLAGS=$saveFFLAGS
 fi
+#
+# We need to know the name mangling for Fortran before testing for F90
+# compatibility (we need this because of the way we decide to generate
+# the Fortran 77 bindings)
+if test "$enable_f77" = yes ; then
+    FLIBS_save="$FLIBS"
+    FLIBS=""
+    AC_F77_LIBRARY_LDFLAGS
+    PAC_PROG_F77_CHECK_FLIBS
+
+    PAC_PROG_F77_LINKER_WITH_C
+    # For name mangle, we need the library flags
+    PAC_PROG_F77_NAME_MANGLE
+    # Warn about mixed name mangling, since many of the tests will fail
+    if test "$pac_cv_prog_f77_name_mangle" = "mixed" ; then
+        AC_MSG_WARN([The compiler $F77 uses mixed case names.  Fortran is monocase
+and many Fortran programs may use either upper or lower case names for MPI
+calls.  Consider specifying a particular parameter to your Fortran compiler
+to select either upper or lower case names.  For the Absoft compiler, 
+-f selects lower case and -N109 selects upper case.  Specify new command
+line options by setting the environment variable FFLAGS to include
+the options (e.g., setenv FLAGS -f).  In addition, make sure that your
+Fortran 90 compiler uses a compatible naming choice.  For the 
+Absoft Fortran 90, -YALL_NAMES=LCS selects lower case names.  Pass this
+information to configure with the F90FLAGS environment variable.])
+        # If Fortran implicitly enabled, disable it now.  Otherwise,
+	# abort the configure since warning messages are often lost in
+	# the output.
+	if test "$enable_f77_wasdefault" = yes ; then
+	    AC_MSG_WARN([Turning off Fortran support because of mixed case names])
+	    enable_f77=no
+	    enable_f90=no
+	else
+	    AC_MSG_ERROR([Aborting configure because of mixed case names in Fortran.  Either select --disable-f77 or set FFLAGS to force the compiler to select monocase names])
+	fi
+    fi
+fi
+
 # F90 requires F77 as well.  If the user disabled f77, do not run the
 # next test; instead, drop into the warning message
 # Set a default value for f90 works with f77.  This value is
@@ -1021,7 +1110,21 @@ if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
 	    AC_PROG_F77
 	    FFLAGS=$saveFFLAGS
 	fi
-        PAC_F90_AND_F77_COMPATIBLE(f90_with_f77=yes,f90_with_f77=no)
+	#
+	# If we allow multiple weak symbols, we should test a name
+	# that does not contain an underscore.  The Fortran binding uses
+	# this rule for enabling multiple weak symbols:
+	# if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) &&
+	#    defined(HAVE_MULTIPLE_PRAGMA_WEAK) && 
+	#    defined(F77_NAME_LOWER_2USCORE)
+	# 
+	testRoutine="t1_2"
+	if test "$pac_cv_prog_c_multiple_weak_symbols" = "yes" -a \
+               "$enable_weak_symbols" = "yes" -a \
+	       "$pac_cv_prog_f77_name_mangle" = "lower doubleunderscore" ; then
+	    testRoutine="t12"
+        fi
+        PAC_F90_AND_F77_COMPATIBLE(f90_with_f77=yes,f90_with_f77=no,$testRoutine)
         if test "$f90_with_f77" != yes ; then
 	    enable_f90=no
 	    AC_MSG_WARN([The selected Fortran 90 compiler $F90 does not work with the selected Fortran 77 compiler $F77.  Use the environment variables F90 and F77 respectively to select compatible Fortran compilers.  The check here tests to see if a main program compiled with the Fortran 90 compiler can link with a subroutine compiled with the Fortran 77 compiler.])
@@ -1048,38 +1151,7 @@ if test "$enable_f77" = "yes" ; then
     # so that the paths will be defined.
     # FIXME: We should not need this
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/binding/f77 -I`pwd`/src/binding/f77"
-    FLIBS_save="$FLIBS"
-    FLIBS=""
-    AC_F77_LIBRARY_LDFLAGS
-    PAC_PROG_F77_CHECK_FLIBS
 
-    PAC_PROG_F77_LINKER_WITH_C
-    # For name mangle, we need the library flags
-    PAC_PROG_F77_NAME_MANGLE
-
-    # Warn about mixed name mangling, since many of the tests will fail
-    if test "$pac_cv_prog_f77_name_mangle" = "mixed" ; then
-        AC_MSG_WARN([The compiler $F77 uses mixed case names.  Fortran is monocase
-and many Fortran programs may use either upper or lower case names for MPI
-calls.  Consider specifying a particular parameter to your Fortran compiler
-to select either upper or lower case names.  For the Absoft compiler, 
--f selects lower case and -N109 selects upper case.  Specify new command
-line options by setting the environment variable FFLAGS to include
-the options (e.g., setenv FLAGS -f).  In addition, make sure that your
-Fortran 90 compiler uses a compatible naming choice.  For the 
-Absoft Fortran 90, -YALL_NAMES=LCS selects lower case names.  Pass this
-information to configure with the F90FLAGS environment variable.])
-        # If Fortran implicitly enable, disable it now.  Otherwise,
-	# abort the configure since warning messages are often lost in
-	# the output.
-	if test "$enable_f77_wasdefault" = yes ; then
-	    AC_MSG_WARN([Turning off Fortran support because of mixed case names])
-	    enable_f77=no
-	    enable_f90=no
-	else
-	    AC_MSG_ERROR([Aborting configure because of mixed case names in Fortran.  Either select --disable-f77 or set FFLAGS to force the compiler to select monocase names])
-	fi
-    fi
     AC_LANG_FORTRAN77
     PAC_PROG_F77_EXCLAIM_COMMENTS(has_exclaim="yes",has_exclaim="no")
 dnl    PAC_PROG_F77_NEW_CHAR_DECL(CHARDECL="(LEN=*)",CHARDECL="*(*)")
@@ -1554,8 +1626,6 @@ AC_SUBST(ETAGSADD)
 export ETAGS
 export ETAGSADD
 
-# Set CFLAGS for enable strict if necessary
-PAC_CC_STRICT
 # Check for broken handling of common symbols.  There are two fixes:
 # Force ranlib to handle correctly (ranlib -c on some BSD and MAC OS platforms)
 # or force gcc to not generate common symbols if using gcc (-fno-common).
@@ -1759,42 +1829,6 @@ export LIBTOOL
 
 # ----------------------------------------------------------------------------
 # Check for C compiler characteristics
-# Check for support for weak symbols.  If not found, set NO_WEAK_SYM
-# to the Make target name understood by simplemake.
-# Set NEEDSPLIB to yes if link commands need both -l$MPILIBNAME
-# and -lp$MPILIBNAME.
-NO_WEAK_SYM_TARGET=build_proflib
-if test $enable_weak_symbols = yes ; then
-    # Turn off weak symbols if they aren't available
-    PAC_PROG_C_WEAK_SYMBOLS(,enable_weak_symbols=no)
-fi
-if test $enable_weak_symbols = "yes" ; then
-    AC_DEFINE(USE_WEAK_SYMBOLS,1,[Define if weak symbols should be used])
-    NEEDSPLIB=no
-    # Check for the ability to support multiple weak symbols
-    if test "$pac_cv_prog_c_weak_symbols" = "pragma weak" ; then
-       PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS(AC_DEFINE(HAVE_MULTIPLE_PRAGMA_WEAK,1,[Define if multiple weak symbols may be defined]))
-    fi
-else
-    NO_WEAK_SYM=build_proflib
-    PROFILE_DEF_MPI="-DMPICH_MPI_FROM_PMPI"
-    if test "$PMPILIBNAME" != "$MPILIBNAME" ; then
-        # NEEDSPLIB is used to indicate that there are two libraries,
-	# one with the basic routines (PMPI + utility) and one with the 
-	# MPI routines
-        NEEDSPLIB=yes
-    else
-        NEEDSPLIB=no
-    fi
-fi
-export NEEDSPLIB
-export NO_WEAK_SYM
-export NO_WEAK_SYM_TARGET
-export PROFILE_DEF_MPI
-AC_SUBST(NEEDSPLIB)
-AC_SUBST(NO_WEAK_SYM)
-AC_SUBST(NO_WEAK_SYM_TARGET)
-AC_SUBST(PROFILE_DEF_MPI)
 AC_C_CONST
 PAC_C_VOLATILE
 PAC_C_RESTRICT
