@@ -99,10 +99,10 @@ if test "$FROM_MPICH2" = yes ; then
         enable_f77=$MPICH2_ENABLE_F77
     fi
     if test -n "$MPICH2_ENABLE_F90" ; then
-        enable_f77=$MPICH2_ENABLE_F90
+        enable_f90=$MPICH2_ENABLE_F90
     fi
     if test -n "$MPICH2_ENABLE_CXX" ; then
-        enable_f77=$MPICH2_ENABLE_CXX
+        enable_cxx=$MPICH2_ENABLE_CXX
     fi
     #
     # Set the BASE_xx variables from MPICH2_BASE_xx environment
@@ -570,6 +570,9 @@ if test "$enable_f90" = default -a "$enable_f77" = yes ; then
 	# will also make sure that the program named in F90 is
 	# a working Fortran 90 compiler
 	# Only check if we're *not* building within MPICH2 
+	# (MPICH2 will have made the test)
+        # FIXME: Do we want to check only simple routine names 
+	# (those without an underscore?)
 	if test "$FROM_MPICH2" != yes ; then
             PAC_F90_AND_F77_COMPATIBLE(enable_f90=yes,enable_f90=no)
         fi
