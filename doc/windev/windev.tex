@@ -1049,4 +1049,59 @@ Used by the process managers other than smpd:
 \item \texttt{MPIEXEC\_USE\_PORT}
 \end{itemize}
 
+\subsection{Compiling}
+This section describes how to set up a project to compile an MPICH2 application
+using MS Visual Studio 6.0 or MS Developer Studio .NET 2003.
+
+\subsubsection{Visual Studio 6.0}
+Visual C++ 6.0 cannot handle multiple functions with the same type signature 
+that only differ in their return type.  So you must define \texttt{HAVE\_NO\_VARIABLE\_RETURN\_TYPE\_SUPPORT}
+in your project.
+
+\begin{enumerate}
+\item Create a project and add your source files.
+
+\item Bring up the settings for the project by hitting Alt F7.  Select the Preprocessor
+Category from the C/C++ tab.  Enter \texttt{HAVE\_NO\_VARIABLE\_RETURN\_TYPE\_SUPPORT} into
+the Preprocessor box.  Enter \texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$include}
+into the ``Additional include directories'' box.
+
+\item Select the Input Category from the Link tab.  Add \texttt{cxx.lib} and \texttt{mpi.lib} to
+the Object/library modules box.  Add \texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$lib}
+to the ``Additional library path'' box.
+
+\item Compile your application.
+\end{enumerate}
+
+\subsubsection{Developer Studio .NET 2003}
+For Developer Studio .NET 2003 or newer you can use the example projects provided
+with the release as a guide to creating your own projects.
+
+\begin{enumerate}
+\item Create a project and add your source files.
+
+\item Bring up the properties dialog for your project by right clicking the project
+name and selecting Properties.
+
+\item Navigate to Configuration Properties::C/C++::General
+\item Add \texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$include}
+to the ``Additional Include Directories'' box.
+
+\item Navigate to Configuration Properties::Linker::General
+\item Add \texttt{C:$\backslash$Program Files$\backslash$MPICH2$\backslash$lib}
+to the ``Aditional Library Directories'' box.
+
+\item Navigate to Configuration Properties::Linker::Input
+\item Add \texttt{cxx.lib} and \texttt{mpi.lib} and \texttt{fmpich2.lib} to the ``Additional Dependencies'' box.  If your
+application is a C application then it only needs \texttt{mpi.lib}.  If it is a C++ application then it
+needs both \texttt{cxx.lib} and \texttt{mpi.lib}.  If it is a Fortran application then it only needs one of the \texttt{fmpich2[s,g].lib} libraries.
+The fortran library comes in three flavors \texttt{fmpich2.lib}, \texttt{fmpich2s.lib} and \texttt{fmpich2s.lib}.  \texttt{fmpich2.lib}
+contains all uppercase symbols and uses the C calling convention like this: \texttt{MPI\_INIT}.  \texttt{fmpich2s.lib}
+contains all uppercase symbols and uses the stdcall calling convention like this: \texttt{MPI\_INIT@4}.
+\texttt{fmpich2g.lib} contains all lowercase symbols with double underscores and the C calling convention
+like this: \texttt{mpi\_init\_\_}.  Add the library that matches your Fortran compiler.
+
+\item Compile your application.
+\end{enumerate}
+
 \end{document}
