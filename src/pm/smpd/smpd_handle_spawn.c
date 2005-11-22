@@ -9,10 +9,17 @@
 #include <ctype.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_isnumbers_with_colon"
 SMPD_BOOL smpd_isnumbers_with_colon(const char *str)
 {
-    size_t i, n = strlen(str);
-    SMPD_BOOL colon_found = SMPD_FALSE;
+    size_t i, n;
+    SMPD_BOOL colon_found;
+
+    smpd_enter_fn(FCNAME);
+
+    n = strlen(str);
+    colon_found = SMPD_FALSE;
     for (i=0; i<n; i++)
     {
 	if (!isdigit(str[i]))
@@ -20,15 +27,20 @@ SMPD_BOOL smpd_isnumbers_with_colon(const char *str)
 	    if (str[i] == ':')
 	    {
 		if (colon_found == SMPD_TRUE)
+		{
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FALSE;
+		}
 		colon_found = SMPD_TRUE;
 	    }
 	    else
 	    {
+		smpd_exit_fn(FCNAME);
 		return SMPD_FALSE;
 	    }
 	}
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_TRUE;
 }
 
@@ -339,6 +351,11 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    {
 		char *token;
 		char *env_str = strdup(info[j].val);
+
+		/* This simplistic parsing code assumes that environment variables do not have spaces in them
+		 * and that the variable name does not have the equals character in it.
+		 */
+
 		if (env_str == NULL)
 		{
 		    goto spawn_failed;

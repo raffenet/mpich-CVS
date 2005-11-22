@@ -290,6 +290,8 @@ void smpd_child_handler(int code)
 #endif
 
 #ifdef HAVE_WINDOWS_H
+#undef FCNAME
+#define FCNAME "smpd_make_socket_loop"
 int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
 {
     SOCKET sock;
@@ -301,6 +303,8 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     SOCKADDR_IN sockAddr;
     int error;
 
+    smpd_enter_fn(FCNAME);
+
     /* Create a listener */
 
     /* create the socket */
@@ -309,6 +313,7 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     {
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return WSAGetLastError();
     }
 
@@ -324,6 +329,7 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
 	smpd_err_printf("bind failed: error %d\n", error);
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return error;
     }
     
@@ -350,6 +356,7 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
 	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return error;
     }
 
@@ -382,6 +389,7 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
 	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return error;
     }
 
@@ -400,9 +408,12 @@ int smpd_make_socket_loop(SOCKET *pRead, SOCKET *pWrite)
     {
 	smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_make_socket_loop_choose"
 int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWrite, int write_overlapped)
 {
     SOCKET sock;
@@ -415,6 +426,8 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     int error;
     DWORD flag;
 
+    smpd_enter_fn(FCNAME);
+
     /* Create a listener */
 
     /* create the socket */
@@ -424,6 +437,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     {
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return WSAGetLastError();
     }
 
@@ -439,6 +453,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
 	smpd_err_printf("bind failed: error %d\n", error);
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return error;
     }
     
@@ -466,6 +481,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
 	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return error;
     }
 
@@ -496,6 +512,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
 	}
 	*pRead = INVALID_SOCKET;
 	*pWrite = INVALID_SOCKET;
+	smpd_exit_fn(FCNAME);
 	return error;
     }
 
@@ -511,6 +528,7 @@ int smpd_make_socket_loop_choose(SOCKET *pRead, int read_overlapped, SOCKET *pWr
     {
 	smpd_err_printf("closesocket failed, sock %d, error %d\n", sock, WSAGetLastError());
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 #endif
@@ -1169,6 +1187,8 @@ int smpd_add_host_to_default_list(const char *hostname)
 int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt_hostname, const int num_cpus)
 {
     smpd_host_node_t *iter;
+
+    smpd_enter_fn(FCNAME);
 
     iter = smpd_process.default_host_list;
     if (iter == NULL)

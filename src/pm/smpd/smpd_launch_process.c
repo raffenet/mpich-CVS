@@ -27,6 +27,8 @@
 
 #ifdef HAVE_WINDOWS_H
 
+#define MAX_ERROR_LENGTH 512
+
 #undef FCNAME
 #define FCNAME "smpd_clear_process_registry"
 int smpd_clear_process_registry()
@@ -43,6 +45,7 @@ int smpd_clear_process_registry()
     int i;
     DWORD dwNumSubKeys, dwMaxSubKeyLen;
     char pid_str[256];
+    char err_msg[MAX_ERROR_LENGTH] = "";
 
     smpd_enter_fn(FCNAME);
 
@@ -74,8 +77,22 @@ int smpd_clear_process_registry()
     }
     if (dwNumSubKeys == 0)
     {
-	RegCloseKey(tkey);
-	RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process");
+	result = RegCloseKey(tkey);
+	if (result != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	    smpd_err_printf("Error: RegCloseKey(HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY "\\process) failed, %s\n", err_msg);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+	result = RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process");
+	if (result != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	    smpd_err_printf("Error: Unable to remove the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY "\\process registry key, %s\n", err_msg);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
 	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
@@ -91,10 +108,31 @@ int smpd_clear_process_registry()
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
-	RegDeleteKey(tkey, pid_str);
+	result = RegDeleteKey(tkey, pid_str);
+	if (result != ERROR_SUCCESS)
+	{
+	    smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	    smpd_err_printf("Error: RegDeleteKey(HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY "\\process\\%s) failed, %s\n", pid_str, err_msg);
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
     }
-    RegCloseKey(tkey);
-    RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process");
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Error: RegCloseKey(HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY ") failed, %s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
+    result = RegDeleteKey(HKEY_LOCAL_MACHINE, SMPD_REGISTRY_KEY "\\process");
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Error: Unable to remove the HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY "\\process registry key, %s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
@@ -111,6 +149,7 @@ int smpd_validate_process_registry()
     char pid_str[100];
     int pid;
     HANDLE hTemp;
+    char err_msg[MAX_ERROR_LENGTH] = "";
 
     smpd_enter_fn(FCNAME);
 
@@ -119,7 +158,8 @@ int smpd_validate_process_registry()
     {
 	if (result != ERROR_PATH_NOT_FOUND)
 	{
-	    smpd_err_printf("Unable to open the smpd\\process registry key, error %d\n", result);
+	    smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	    smpd_err_printf("Unable to open the smpd\\process registry key, error %d, %s\n", result, err_msg);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
@@ -153,7 +193,8 @@ int smpd_validate_process_registry()
 	result = RegEnumKeyEx(tkey, i, pid_str, &dwLen, NULL, NULL, NULL, NULL);
 	if (result != ERROR_SUCCESS)
 	{
-	    smpd_err_printf("Error: Unable to enumerate the %d subkey in the smpd\\process registry key\n", i);
+	    smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	    smpd_err_printf("Error: Unable to enumerate the %d subkey in the smpd\\process registry key, %s\n", i, err_msg);
 	    RegCloseKey(tkey);
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
@@ -180,7 +221,14 @@ int smpd_validate_process_registry()
 	    CloseHandle(hTemp);
 	}
     }
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Error: RegCloseKey(HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY "\\process) failed, %s\n", err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
@@ -192,6 +240,7 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
     HKEY tkey;
     DWORD len, result;
     char name[1024];
+    char err_msg[MAX_ERROR_LENGTH] = "";
 
     smpd_enter_fn(FCNAME);
 
@@ -202,7 +251,7 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
     }
 
     len = snprintf(name, 1024, SMPD_REGISTRY_KEY "\\process\\%d", process->pid);
-    if (len < 0 || len > 1024)
+    if (len < 0 || len > 1023)
     {
 	smpd_dbg_printf("unable to create a string of the registry key.\n");
 	return SMPD_FAIL;
@@ -212,7 +261,8 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
 	0, NULL, REG_OPTION_VOLATILE, KEY_ALL_ACCESS, NULL, &tkey, NULL);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Unable to open the HKEY_LOCAL_MACHINE\\%s registry key, error %d, %s\n", name, result, err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -221,13 +271,21 @@ int smpd_process_to_registry(smpd_process_t *process, char *actual_exe)
     result = RegSetValueEx(tkey, "exe", 0, REG_SZ, (const BYTE *)actual_exe, len);
     if (result != ERROR_SUCCESS)
     {
-	smpd_err_printf("Unable to write the process registry value 'exe:%s', error %d\n", process->exe, result);
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Unable to write the process registry value 'exe:%s', error %d, %s\n", process->exe, result, err_msg);
 	RegCloseKey(tkey);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
-    RegCloseKey(tkey);
+    result = RegCloseKey(tkey);
+    if (result != ERROR_SUCCESS)
+    {
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Error: RegCloseKey(HKEY_LOCAL_MACHINE\\" SMPD_REGISTRY_KEY "\\process\\%d) failed, %s\n", process->pid, err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
@@ -238,15 +296,22 @@ int smpd_process_from_registry(smpd_process_t *process)
 {
     DWORD len, result;
     char name[1024];
+    char err_msg[MAX_ERROR_LENGTH] = "";
 
     smpd_enter_fn(FCNAME);
 
     if (process == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     len = snprintf(name, 1024, SMPD_REGISTRY_KEY "\\process\\%d", process->pid);
-    if (len < 0 || len > 1024)
+    if (len < 0 || len > 1023)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     result = RegDeleteKey(HKEY_LOCAL_MACHINE, name);
     if (result != ERROR_SUCCESS)
@@ -257,7 +322,8 @@ int smpd_process_from_registry(smpd_process_t *process)
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
-	smpd_err_printf("Unable to delete the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result);
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Unable to delete the HKEY_LOCAL_MACHINE\\%s registry key, error %d\n", name, result, err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
@@ -277,9 +343,13 @@ int smpd_get_user_handle(char *account, char *domain, char *password, HANDLE *ha
     smpd_enter_fn(FCNAME);
 
     if (domain)
+    {
 	smpd_dbg_printf("LogonUser(%s\\%s)\n", domain, account);
+    }
     else
+    {
 	smpd_dbg_printf("LogonUser(%s)\n", account);
+    }
 
     /* logon the user */
     while (!LogonUser(
@@ -371,84 +441,13 @@ int smpd_get_user_name(char *account, char *domain, char *full_domain)
     return SMPD_SUCCESS;
 }
 
-/*
-static void SetEnvironmentVariables(char *bEnv)
-{
-    char name[MAX_PATH]="", value[MAX_PATH]="";
-    char *pChar;
-    
-    pChar = name;
-    while (*bEnv != '\0')
-    {
-	if (*bEnv == '=')
-	{
-	    *pChar = '\0';
-	    pChar = value;
-	}
-	else
-	{
-	    if (*bEnv == ';')
-	    {
-		*pChar = '\0';
-		pChar = name;
-		smpd_dbg_printf("env: %s=%s\n", name, value);
-		SetEnvironmentVariable(name, value);
-	    }
-	    else
-	    {
-		*pChar = *bEnv;
-		pChar++;
-	    }
-	}
-	bEnv++;
-    }
-    *pChar = '\0';
-    if (name[0] != '\0')
-    {
-	smpd_dbg_printf("env: %s=%s\n", name, value);
-	SetEnvironmentVariable(name, value);
-    }
-}
-
-static void RemoveEnvironmentVariables(char *bEnv)
-{
-    char name[MAX_PATH]="", value[MAX_PATH]="";
-    char *pChar;
-    
-    pChar = name;
-    while (*bEnv != '\0')
-    {
-	if (*bEnv == '=')
-	{
-	    *pChar = '\0';
-	    pChar = value;
-	}
-	else
-	{
-	    if (*bEnv == ';')
-	    {
-		*pChar = '\0';
-		pChar = name;
-		SetEnvironmentVariable(name, NULL);
-	    }
-	    else
-	    {
-		*pChar = *bEnv;
-		pChar++;
-	    }
-	}
-	bEnv++;
-    }
-    *pChar = '\0';
-    if (name[0] != '\0')
-	SetEnvironmentVariable(name, NULL);
-}
-*/
-
+#undef FCNAME
+#define FCNAME "SetEnvironmentVariables"
 static void SetEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH], equals[3], value[MAX_PATH];
 
+    smpd_enter_fn(FCNAME);
     for (;;)
     {
 	name[0] = '\0';
@@ -467,12 +466,16 @@ static void SetEnvironmentVariables(char *bEnv)
 	smpd_dbg_printf("setting environment variable: <%s> = <%s>\n", name, value);
 	SetEnvironmentVariable(name, value);
     }
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "RemoveEnvironmentVariables"
 static void RemoveEnvironmentVariables(char *bEnv)
 {
     char name[MAX_PATH], equals[3], value[MAX_PATH];
 
+    smpd_enter_fn(FCNAME);
     for (;;)
     {
 	name[0] = '\0';
@@ -491,10 +494,14 @@ static void RemoveEnvironmentVariables(char *bEnv)
 	/*smpd_dbg_printf("removing environment variable <%s>\n", name);*/
 	SetEnvironmentVariable(name, NULL);
     }
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_priority_class_to_win_class"
 int smpd_priority_class_to_win_class(int *priorityClass)
 {
+    smpd_enter_fn(FCNAME);
     switch (*priorityClass)
     {
     case 0:
@@ -516,11 +523,15 @@ int smpd_priority_class_to_win_class(int *priorityClass)
 	*priorityClass = NORMAL_PRIORITY_CLASS;
 	break;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_priority_to_win_priority"
 int smpd_priority_to_win_priority(int *priority)
 {
+    smpd_enter_fn(FCNAME);
     switch (*priority)
     {
     case 0:
@@ -545,6 +556,7 @@ int smpd_priority_to_win_priority(int *priority)
 	*priority = THREAD_PRIORITY_NORMAL;
 	break;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -564,11 +576,14 @@ typedef struct smpd_pinthread_arg_t
     int pid;
 } smpd_pinthread_arg_t;
 
+#undef FCNAME
+#define FCNAME "smpd_easy_send"
 static int smpd_easy_send(SOCKET sock, char *buffer, int length)
 {
     int error;
     int num_sent, num_left;
 
+    smpd_exit_fn(FCNAME);
     num_left = length;
     while (num_left)
     {
@@ -584,18 +599,26 @@ static int smpd_easy_send(SOCKET sock, char *buffer, int length)
 	    {
 		/* If there is no buffer space available then split the buffer in half and send each piece separately.*/
 		if (smpd_easy_send(sock, buffer, num_left/2) == SOCKET_ERROR)
+		{
+		    smpd_exit_fn(FCNAME);
 		    return SOCKET_ERROR;
+		}
 		if (smpd_easy_send(sock, buffer+(num_left/2), num_left - (num_left/2)) == SOCKET_ERROR)
+		{
+		    smpd_exit_fn(FCNAME);
 		    return SOCKET_ERROR;
+		}
+		smpd_exit_fn(FCNAME);
 		return length;
 	    }
 	    WSASetLastError(error);
+	    smpd_exit_fn(FCNAME);
 	    return SOCKET_ERROR;
 	}
 	num_left = num_left - num_sent;
 	buffer = buffer + num_sent;
     }
-    
+    smpd_exit_fn(FCNAME);
     return length;
 }
 
@@ -722,7 +745,9 @@ int smpd_pinthread(smpd_pinthread_arg_t *p)
 		}
 	    }
 	    if (num_read != 0)
+	    {
 		smpd_dbg_printf("recv from stdin socket failed, error %d.\n", WSAGetLastError());
+	    }
 	    break;
 	}
 	if (str[index] == '\n' || index == SMPD_MAX_CMD_LENGTH-1)
@@ -860,6 +885,7 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     smpd_context_t *listener_context;
     int listener_port = 0;
     char host_description[256];
+    char err_msg[MAX_ERROR_LENGTH] = "";
 
     smpd_enter_fn(FCNAME);
 
@@ -899,7 +925,15 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     smpd_priority_to_win_priority(&priority);
 
     /* Save stdin, stdout, and stderr */
-    WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
+    result = WaitForSingleObject(smpd_process.hLaunchProcessMutex, INFINITE);
+    if (result == WAIT_FAILED)
+    {
+	result = GetLastError();
+	smpd_translate_win_error(result, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("Error waiting for smpd_process.hLaunchProcessMutex %d, %s\n", result, err_msg);
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     hStdin = GetStdHandle(STD_INPUT_HANDLE);
     hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     hStderr = GetStdHandle(STD_ERROR_HANDLE);
@@ -907,7 +941,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	nError = GetLastError(); /* This will only be correct if stderr failed */
 	ReleaseMutex(smpd_process.hLaunchProcessMutex);
-	smpd_err_printf("GetStdHandle failed, error %d\n", nError);
+	smpd_translate_win_error(nError, err_msg, MAX_ERROR_LENGTH, NULL);
+	smpd_err_printf("GetStdHandle failed, error %d, %s\n", nError, err_msg);
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;;
     }
@@ -1523,10 +1558,13 @@ static void set_environment_variables(char *bEnv)
 */
 
 #ifdef HAVE_SETENV
+#undef FCNAME
+#define FCNAME "set_environment_variables"
 static void set_environment_variables(char *bEnv)
 {
     char name[1024], equals[3], value[8192];
 
+    smpd_enter_fn(FCNAME);
     while (1)
     {
 	name[0] = '\0';
@@ -1544,13 +1582,17 @@ static void set_environment_variables(char *bEnv)
 	    break;
 	setenv(name, value, 1);
     }
+    smpd_exit_fn(FCNAME);
 }
 #else
+#undef FCNAME
+#define FCNAME "get_env_size"
 static int get_env_size(char *bEnv, int *count)
 {
     char name[1024], equals[3], value[8192];
     int size = 0;
 
+    smpd_enter_fn(FCNAME);
     while (1)
     {
 	name[0] = '\0';
@@ -1569,14 +1611,18 @@ static int get_env_size(char *bEnv, int *count)
 	*count = *count + 1;
 	size = size + strlen(name) + strlen(value) + 2; /* length of 'name=value\0' */
     }
+    smpd_exit_fn(FCNAME);
     return size;
 }
 
+#undef FCNAME
+#define FCNAME "add_environment_variables"
 static void add_environment_variables(char *str, char **vars, char *bEnv)
 {
     char name[1024], equals[3], value[8192];
     int i = 0;
 
+    smpd_enter_fn(FCNAME);
     while (1)
     {
 	name[0] = '\0';
@@ -1596,6 +1642,7 @@ static void add_environment_variables(char *str, char **vars, char *bEnv)
 	str += sprintf(str, "%s=%s", name, value) + 1;
 	i++;
     }
+    smpd_exit_fn(FCNAME);
 }
 #endif
 
@@ -1611,7 +1658,7 @@ static void child_exited(int signo)
      * process exits so we can't use the closing of the redirected stdout and
      * stderr sockets as indications that the process has exited.  So this
      * signal handler closes the stdout/err redirection socket on a SIGCHLD
-     * signal to simulate that behaviour.
+     * signal to simulate that behavior.
      */
     if (signo == SIGCHLD)
     {
@@ -2074,6 +2121,7 @@ int smpd_wait_process(smpd_pwait_t wait, int *exit_code_ptr)
 #ifdef HAVE_WINDOWS_H
     int result;
     DWORD exit_code;
+
     smpd_enter_fn(FCNAME);
 
     if (wait.hProcess == INVALID_HANDLE_VALUE || wait.hProcess == NULL)

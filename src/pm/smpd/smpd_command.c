@@ -9,35 +9,57 @@
 #include "mpiexec.h"
 #include "smpd.h"
 
-char * smpd_get_cmd_state_string(smpd_command_state_t state)
+#undef FCNAME
+#define FCNAME "smpd_get_cmd_state_string"
+const char * smpd_get_cmd_state_string(smpd_command_state_t state)
 {
+    const char *result;
     static char unknown_str[100];
+
+    smpd_enter_fn(FCNAME);
 
     switch (state)
     {
     case SMPD_CMD_INVALID:
-	return "SMPD_CMD_INVALID";
+	result = "SMPD_CMD_INVALID";
+	break;
     case SMPD_CMD_READING_HDR:
-	return "SMPD_CMD_READING_HDR";
+	result = "SMPD_CMD_READING_HDR";
+	break;
     case SMPD_CMD_READING_CMD:
-	return "SMPD_CMD_READING_CMD";
+	result = "SMPD_CMD_READING_CMD";
+	break;
     case SMPD_CMD_WRITING_CMD:
-	return "SMPD_CMD_WRITING_CMD";
+	result = "SMPD_CMD_WRITING_CMD";
+	break;
     case SMPD_CMD_READY:
-	return "SMPD_CMD_READY";
+	result = "SMPD_CMD_READY";
+	break;
     case SMPD_CMD_HANDLED:
-	return "SMPD_CMD_HANDLED";
+	result = "SMPD_CMD_HANDLED";
+	break;
+    default:
+	sprintf(unknown_str, "unknown state %d", state);
+	result = unknown_str;
+	break;
     }
-    sprintf(unknown_str, "unknown state %d", state);
-    return unknown_str;
+    smpd_exit_fn(FCNAME);
+    return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_command_to_string"
 SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd_command_t *cmd_ptr)
 {
     char indent_str[SMPD_MAX_TO_STRING_INDENT+1];
 
+    smpd_enter_fn(FCNAME);
+
     if (*len_ptr < 1)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
 
     if (indent > SMPD_MAX_TO_STRING_INDENT)
 	indent = SMPD_MAX_TO_STRING_INDENT;
@@ -46,38 +68,39 @@ SMPD_BOOL smpd_command_to_string(char **str_pptr, int *len_ptr, int indent, smpd
     indent_str[indent] = '\0';
 
     smpd_snprintf_update(str_pptr, len_ptr, "%sstate: %s\n", indent_str, smpd_get_cmd_state_string(cmd_ptr->state));
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%scmd_str: %s\n", indent_str, cmd_ptr->cmd_str);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%ssrc: %d\n", indent_str, cmd_ptr->src);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%sdest: %d\n", indent_str, cmd_ptr->dest);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%stag: %d\n", indent_str, cmd_ptr->tag);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%swait: %s\n", indent_str, cmd_ptr->wait ? "TRUE" : "FALSE");
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%scmd_hdr_str: %s\n", indent_str, cmd_ptr->cmd_hdr_str);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%slength: %d\n", indent_str, cmd_ptr->length);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%scmd: %s\n", indent_str, cmd_ptr->cmd);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%sfreed: %d\n", indent_str, cmd_ptr->freed);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].buf: %p\n", indent_str, cmd_ptr->iov[0].MPID_IOV_BUF);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%siov[0].len: %d\n", indent_str, cmd_ptr->iov[0].MPID_IOV_LEN);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].buf: %p\n", indent_str, cmd_ptr->iov[1].MPID_IOV_BUF);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%siov[1].len: %d\n", indent_str, cmd_ptr->iov[1].MPID_IOV_LEN);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%sstdin_read_offset: %d\n", indent_str, cmd_ptr->stdin_read_offset);
-    if (*len_ptr < 1) return SMPD_FALSE;
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; }
     smpd_snprintf_update(str_pptr, len_ptr, "%snext: %p\n", indent_str, cmd_ptr->next);
-    if (*len_ptr < 1) return SMPD_FALSE; /* this misses the case of an exact fit */
+    if (*len_ptr < 1) { smpd_exit_fn(FCNAME); return SMPD_FALSE; } /* this misses the case of an exact fit */
 
+    smpd_exit_fn(FCNAME);
     return SMPD_TRUE;
 }
 
@@ -250,6 +273,7 @@ int smpd_parse_command(smpd_command_t *cmd_ptr)
     }
 
     /* get the tag */
+    /* A command does not have to have a tag so don't check for failure */
     MPIU_Str_get_int_arg(cmd_ptr->cmd, "tag", &cmd_ptr->tag);
 
     smpd_exit_fn(FCNAME);
@@ -323,7 +347,9 @@ int smpd_create_command(char *cmd, int src, int dest, int want_reply, smpd_comma
 	return SMPD_FAIL;
     }
     if (want_reply)
+    {
 	cmd_ptr->wait = SMPD_TRUE;
+    }
 
     *cmd_pptr = cmd_ptr;
     smpd_exit_fn(FCNAME);
@@ -364,6 +390,7 @@ int smpd_free_command(smpd_command_t *cmd_ptr)
 	if (cmd_ptr->freed == SMPD_FREE_COOKIE)
 	{
 	    smpd_err_printf("attempt to free a command more than once.\n");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	/* erase the contents to help track down use of freed structures */
@@ -524,6 +551,8 @@ int smpd_free_context(smpd_context_t *context)
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_add_command_arg"
 int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
 {
     char *str;
@@ -531,10 +560,13 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
     int result;
     int cmd_length;
 
+    smpd_enter_fn(FCNAME);
+
     cmd_length = (int)strlen(cmd_ptr->cmd);
     if (cmd_length > SMPD_MAX_CMD_LENGTH)
     {
 	smpd_err_printf("invalid cmd string length: %d\n", cmd_length);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -549,6 +581,7 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
 	    if (len < 2)
 	    {
 		smpd_err_printf("unable to add the command parameter: %s=%s\n", param, value);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    cmd_ptr->cmd[cmd_length] = MPIU_STR_SEPAR_CHAR;
@@ -561,11 +594,15 @@ int smpd_add_command_arg(smpd_command_t *cmd_ptr, char *param, char *value)
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the command parameter: %s=%s\n", param, value);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_add_command_int_arg"
 int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
 {
     char *str;
@@ -573,10 +610,13 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
     int result;
     int cmd_length;
 
+    smpd_enter_fn(FCNAME);
+
     cmd_length = (int)strlen(cmd_ptr->cmd);
     if (cmd_length > SMPD_MAX_CMD_LENGTH)
     {
 	smpd_err_printf("invalid cmd string length: %d\n", cmd_length);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -591,6 +631,7 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
 	    if (len < 2)
 	    {
 		smpd_err_printf("unable to add the command parameter: %s=%d\n", param, value);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    cmd_ptr->cmd[cmd_length] = MPIU_STR_SEPAR_CHAR;
@@ -603,8 +644,10 @@ int smpd_add_command_int_arg(smpd_command_t *cmd_ptr, char *param, int value)
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the command parameter: %s=%d\n", param, value);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -618,10 +661,13 @@ int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buff
     int cmd_length;
     int saved_length;
 
+    smpd_enter_fn(FCNAME);
+
     cmd_length = (int)strlen(cmd_ptr->cmd);
     if (cmd_length > SMPD_MAX_CMD_LENGTH)
     {
 	smpd_err_printf("invalid cmd string length: %d\n", cmd_length);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -636,6 +682,7 @@ int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buff
 	    if (len < 2)
 	    {
 		smpd_err_printf("unable to add the command parameter: %s=%d byte buffer\n", param, length);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    cmd_ptr->cmd[cmd_length] = MPIU_STR_SEPAR_CHAR;
@@ -649,8 +696,10 @@ int smpd_add_command_binary_arg(smpd_command_t *cmd_ptr, char *param, void *buff
     if (result != MPIU_STR_SUCCESS)
     {
 	smpd_err_printf("unable to add the command parameter: %s=%d byte buffer won't fit in %d character length string\n", param, length, saved_length);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -719,6 +768,7 @@ int smpd_post_write_command(smpd_context_t *context, smpd_command_t *cmd)
     if (context == NULL)
     {
 	smpd_dbg_printf("unable to post a write of command '%s' on a NULL context", cmd->cmd);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 

@@ -17,30 +17,54 @@
 #include <ctype.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "first_token"
 static const char * first_token(const char *str)
 {
+    smpd_enter_fn(FCNAME);
     if (str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return NULL;
+    }
     while (isspace(*str))
 	str++;
     if (*str == '\0')
+    {
+	smpd_exit_fn(FCNAME);
 	return NULL;
+    }
+    smpd_exit_fn(FCNAME);
     return str;
 }
 
+#undef FCNAME
+#define FCNAME "next_token"
 static const char * next_token(const char *str)
 {
+    const char *result;
+
+    smpd_enter_fn(FCNAME);
     if (str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return NULL;
+    }
     str = first_token(str);
     if (str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return NULL;
+    }
     if (*str == SMPD_QUOTE_CHAR)
     {
 	/* move over string */
 	str++; /* move over the first quote */
 	if (*str == '\0')
+	{
+	    smpd_exit_fn(FCNAME);
 	    return NULL;
+	}
 	while (*str != SMPD_QUOTE_CHAR)
 	{
 	    /* move until the last quote, ignoring escaped quotes */
@@ -55,7 +79,10 @@ static const char * next_token(const char *str)
 		str++;
 	    }
 	    if (*str == '\0')
+	    {
+		smpd_exit_fn(FCNAME);
 		return NULL;
+	    }
 	}
 	str++; /* move over the last quote */
     }
@@ -73,13 +100,22 @@ static const char * next_token(const char *str)
 		str++;
 	}
     }
-    return first_token(str);
+    result = first_token(str);
+    smpd_exit_fn(FCNAME);
+    return result;
 }
 
+#undef FCNAME
+#define FCNAME "compare_token"
 static int compare_token(const char *token, const char *str)
 {
+    smpd_enter_fn(FCNAME);
+
     if (token == NULL || str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return -1;
+    }
 
     if (*token == SMPD_QUOTE_CHAR)
     {
@@ -109,11 +145,21 @@ static int compare_token(const char *token, const char *str)
 	    str++;
 	}
 	if (*str == '\0' && *token == SMPD_QUOTE_CHAR)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return 0;
+	}
 	if (*token == SMPD_QUOTE_CHAR)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return 1;
+	}
 	if (*str < *token)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return -1;
+	}
+	smpd_exit_fn(FCNAME);
 	return 1;
     }
 
@@ -124,11 +170,19 @@ static int compare_token(const char *token, const char *str)
 	{
 	    str++;
 	    if (*str == '\0')
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
 	if (*token < *str)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return -1;
+	}
+	smpd_exit_fn(FCNAME);
 	return 1;
     }
 
@@ -139,37 +193,58 @@ static int compare_token(const char *token, const char *str)
 	str++;
     }
     if ( (*str == '\0') && (*token == SMPD_DELIM_CHAR || isspace(*token) || *token == '\0') )
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
     if (*token == SMPD_DELIM_CHAR || isspace(*token) || *token < *str)
+    {
+	smpd_exit_fn(FCNAME);
 	return -1;
+    }
+    smpd_exit_fn(FCNAME);
     return 1;
 }
 
+#undef FCNAME
+#define FCNAME "token_copy"
 static void token_copy(const char *token, char *str, int maxlen)
 {
+    smpd_enter_fn(FCNAME);
     /* check parameters */
     if (token == NULL || str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return;
+    }
 
     /* check special buffer lengths */
     if (maxlen < 1)
+    {
+	smpd_exit_fn(FCNAME);
 	return;
+    }
     if (maxlen == 1)
     {
 	*str = '\0';
+	smpd_exit_fn(FCNAME);
 	return;
     }
 
     /* cosy up to the token */
     token = first_token(token);
     if (token == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return;
+    }
 
     if (*token == SMPD_DELIM_CHAR)
     {
 	/* copy the special deliminator token */
 	str[0] = SMPD_DELIM_CHAR;
 	str[1] = '\0';
+	smpd_exit_fn(FCNAME);
 	return;
     }
 
@@ -190,6 +265,7 @@ static void token_copy(const char *token, char *str, int maxlen)
 		if (*token == SMPD_QUOTE_CHAR)
 		{
 		    *str = '\0';
+		    smpd_exit_fn(FCNAME);
 		    return;
 		}
 		*str = *token;
@@ -201,6 +277,7 @@ static void token_copy(const char *token, char *str, int maxlen)
 	/* we've run out of destination characters so back up and null terminate the string */
 	str--;
 	*str = '\0';
+	smpd_exit_fn(FCNAME);
 	return;
     }
 
@@ -214,22 +291,33 @@ static void token_copy(const char *token, char *str, int maxlen)
     }
     if (maxlen)
 	*str = '\0';
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "token_hide"
 static void token_hide(char *token)
 {
+    smpd_enter_fn(FCNAME);
     /* check parameters */
     if (token == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return;
+    }
 
     /* cosy up to the token */
     token = (char*)first_token(token);
     if (token == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return;
+    }
 
     if (*token == SMPD_DELIM_CHAR)
     {
 	*token = SMPD_HIDE_CHAR;
+	smpd_exit_fn(FCNAME);
 	return;
     }
 
@@ -254,12 +342,14 @@ static void token_hide(char *token)
 		if (*token == SMPD_QUOTE_CHAR)
 		{
 		    *token = SMPD_HIDE_CHAR;
+		    smpd_exit_fn(FCNAME);
 		    return;
 		}
 		*token = SMPD_HIDE_CHAR;
 	    }
 	    token++;
 	}
+	smpd_exit_fn(FCNAME);
 	return;
     }
 
@@ -269,17 +359,27 @@ static void token_hide(char *token)
 	*token = SMPD_HIDE_CHAR;
 	token++;
     }
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_string_arg"
 int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen)
 {
+    smpd_enter_fn(FCNAME);
     if (maxlen < 1)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
 
     /* line up with the first token */
     str = first_token(str);
     if (str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
+    }
 
     /* This loop will match the first instance of "flag = value" in the string. */
     do
@@ -291,8 +391,12 @@ int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen
 	    {
 		str = next_token(str);
 		if (str == NULL)
+		{
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FALSE;
+		}
 		token_copy(str, val, maxlen);
+		smpd_exit_fn(FCNAME);
 		return SMPD_TRUE;
 	    }
 	}
@@ -301,15 +405,22 @@ int smpd_get_string_arg(const char *str, const char *flag, char *val, int maxlen
 	    str = next_token(str);
 	}
     } while (str);
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_hide_string_arg"
 int smpd_hide_string_arg(char *str, const char *flag)
 {
+    smpd_enter_fn(FCNAME);
     /* line up with the first token */
     str = (char*)first_token(str);
     if (str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
+    }
 
     do
     {
@@ -320,8 +431,12 @@ int smpd_hide_string_arg(char *str, const char *flag)
 	    {
 		str = (char*)next_token(str);
 		if (str == NULL)
+		{
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_SUCCESS;
+		}
 		token_hide(str);
+		smpd_exit_fn(FCNAME);
 		return SMPD_SUCCESS;
 	    }
 	}
@@ -330,26 +445,38 @@ int smpd_hide_string_arg(char *str, const char *flag)
 	    str = (char*)next_token(str);
 	}
     } while (str);
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_int_arg"
 int smpd_get_int_arg(const char *str, const char *flag, int *val_ptr)
 {
     char int_str[12];
 
+    smpd_enter_fn(FCNAME);
     if (smpd_get_string_arg(str, flag, int_str, 12))
     {
 	*val_ptr = atoi(int_str);
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "quoted_printf"
 static int quoted_printf(char *str, int maxlen, const char *val)
 {
     int count = 0;
+    smpd_enter_fn(FCNAME);
     if (maxlen < 1)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
     *str = SMPD_QUOTE_CHAR;
     str++;
     maxlen--;
@@ -365,7 +492,10 @@ static int quoted_printf(char *str, int maxlen, const char *val)
 	    maxlen--;
 	    count++;
 	    if (maxlen == 0)
+	    {
+		smpd_exit_fn(FCNAME);
 		return count;
+	    }
 	}
 	*str = *val;
 	str++;
@@ -380,16 +510,23 @@ static int quoted_printf(char *str, int maxlen, const char *val)
 	maxlen--;
 	count++;
 	if (maxlen == 0)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return count;
+	}
 	*str = '\0';
     }
+    smpd_exit_fn(FCNAME);
     return count;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_add_string"
 int smpd_add_string(char *str, int maxlen, const char *val)
 {
     int num_chars;
 
+    smpd_enter_fn(FCNAME);
     if (strstr(val, " ") || val[0] == SMPD_QUOTE_CHAR)
     {
 	num_chars = quoted_printf(str, maxlen, val);
@@ -404,14 +541,19 @@ int smpd_add_string(char *str, int maxlen, const char *val)
     {
 	num_chars = snprintf(str, maxlen, "%s ", val);
     }
+    smpd_exit_fn(FCNAME);
     return num_chars;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_string"
 const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_chars)
 {
+    smpd_enter_fn(FCNAME);
     if (maxlen < 1)
     {
 	*num_chars = 0;
+	smpd_exit_fn(FCNAME);
 	return NULL;
     }
 
@@ -420,6 +562,7 @@ const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_ch
     if (str == NULL)
     {
 	*num_chars = 0;
+	smpd_exit_fn(FCNAME);
 	return NULL;
     }
 
@@ -430,15 +573,22 @@ const char * smpd_get_string(const char *str, char *val, int maxlen, int *num_ch
     /* move to the next token */
     str = next_token(str);
 
+    smpd_exit_fn(FCNAME);
     return str;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_add_string_arg"
 int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const char *val)
 {
     int num_chars;
 
+    smpd_enter_fn(FCNAME);
     if (*maxlen_ptr < 1)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     /* add the flag */
     if (strstr(flag, " ") || strstr(flag, SMPD_DELIM_STR) || flag[0] == SMPD_QUOTE_CHAR)
@@ -454,6 +604,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const
     {
 	(*str_ptr)[num_chars-1] = '\0';
 	smpd_dbg_printf("partial argument added to string: '%s'\n", *str_ptr);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     *str_ptr = *str_ptr + num_chars;
@@ -479,6 +630,7 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const
 	*str_ptr = *str_ptr - 1;
 	**str_ptr = '\0';
 	smpd_dbg_printf("partial argument added to string: '%s'\n", *str_ptr);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     
@@ -488,21 +640,35 @@ int smpd_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, const
     **str_ptr = '\0';
     *maxlen_ptr = *maxlen_ptr - 1;
 
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_add_int_arg"
 int smpd_add_int_arg(char **str_ptr, int *maxlen_ptr, const char *flag, int val)
 {
+    int result;
     char val_str[12];
+    smpd_enter_fn(FCNAME);
     sprintf(val_str, "%d", val);
-    return smpd_add_string_arg(str_ptr, maxlen_ptr, flag, val_str);
+    result = smpd_add_string_arg(str_ptr, maxlen_ptr, flag, val_str);
+    smpd_exit_fn(FCNAME);
+    return result;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_opt"
 int smpd_get_opt(int *argc, char ***argv, char * flag)
 {
     int i,j;
+
+    smpd_enter_fn(FCNAME);
     if (flag == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
 
     for (i=0; i<*argc; i++)
     {
@@ -513,87 +679,130 @@ int smpd_get_opt(int *argc, char ***argv, char * flag)
 		(*argv)[j] = (*argv)[j+1];
 	    }
 	    *argc -= 1;
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_opt_int"
 int smpd_get_opt_int(int *argc, char ***argv, char * flag, int *n)
 {
     int i,j;
+
+    smpd_enter_fn(FCNAME);
     if (flag == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
 
     for (i=0; i<*argc; i++)
     {
 	if (strcmp((*argv)[i], flag) == 0)
 	{
 	    if (i+1 == *argc)
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    *n = atoi((*argv)[i+1]);
 	    for (j=i; j<*argc-1; j++)
 	    {
 		(*argv)[j] = (*argv)[j+2];
 	    }
 	    *argc -= 2;
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_opt_long"
 int smpd_get_opt_long(int *argc, char ***argv, char * flag, long *n)
 {
     int i;
+
+    smpd_enter_fn(FCNAME);
     if (smpd_get_opt_int(argc, argv, flag, &i))
     {
 	*n = (long)i;
+	smpd_exit_fn(FCNAME);
 	return 1;
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_opt_double"
 int smpd_get_opt_double(int *argc, char ***argv, char * flag, double *d)
 {
     int i,j;
 
+    smpd_enter_fn(FCNAME);
     if (flag == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
 
     for (i=0; i<*argc; i++)
     {
 	if (strcmp((*argv)[i], flag) == 0)
 	{
 	    if (i+1 == *argc)
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    *d = atof((*argv)[i+1]);
 	    for (j=i; j<*argc-1; j++)
 	    {
 		(*argv)[j] = (*argv)[j+2];
 	    }
 	    *argc -= 2;
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_opt_string"
 int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len)
 {
     int i,j;
 
+    smpd_enter_fn(FCNAME);
     if (flag == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
 
     for (i=0; i<*argc; i++)
     {
 	if (strcmp((*argv)[i], flag) == 0)
 	{
 	    if (i+1 == (*argc))
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    if ((*argv)[i+1][0] == '-')
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    strncpy(str, (*argv)[i+1], len);
 	    str[len-1] = '\0';
 	    for (j=i; j<(*argc)-1; j++)
@@ -601,31 +810,51 @@ int smpd_get_opt_string(int *argc, char ***argv, char * flag, char *str, int len
 		(*argv)[j] = (*argv)[j+2];
 	    }
 	    *argc -= 2;
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_opt_two_strings"
 int smpd_get_opt_two_strings(int *argc, char ***argv, char * flag, char *str1, int len1, char *str2, int len2)
 {
     int i, j;
 
+    smpd_enter_fn(FCNAME);
     if (flag == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
 
     for (i=0; i<*argc; i++)
     {
 	if (strcmp((*argv)[i], flag) == 0)
 	{
 	    if (i+1 == (*argc))
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    if ((*argv)[i+1][0] == '-')
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    if (i+2 == (*argc))
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    if ((*argv)[i+2][0] == '-')
+	    {
+		smpd_exit_fn(FCNAME);
 		return 0;
+	    }
 	    strncpy(str1, (*argv)[i+1], len1);
 	    str1[len1-1] = '\0';
 	    strncpy(str2, (*argv)[i+2], len2);
@@ -635,19 +864,27 @@ int smpd_get_opt_two_strings(int *argc, char ***argv, char * flag, char *str1, i
 		(*argv)[j] = (*argv)[j+3];
 	    }
 	    *argc -= 3;
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_win_opt_string"
 int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int len)
 {
     int i,j;
     char *iter;
 
+    smpd_enter_fn(FCNAME);
     if (flag == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return 0;
+    }
 
     for (i=0; i<*argc; i++)
     {
@@ -672,8 +909,10 @@ int smpd_get_win_opt_string(int *argc, char ***argv, char * flag, char *str, int
 		(*argv)[j] = (*argv)[j+1];
 	    }
 	    *argc -= 1;
+	    smpd_exit_fn(FCNAME);
 	    return 1;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return 0;
 }

@@ -76,10 +76,14 @@ int smpd_parse_map_string(const char *str, smpd_map_drive_node_t **list)
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_fix_up_host_tree"
 void smpd_fix_up_host_tree(smpd_host_node_t *node)
 {
     smpd_host_node_t *cur, *iter;
     SMPD_BOOL left_found;
+
+    smpd_enter_fn(FCNAME);
 
     cur = node;
     while (cur != NULL)
@@ -102,47 +106,76 @@ void smpd_fix_up_host_tree(smpd_host_node_t *node)
 	}
 	cur = cur->next;
     }
+    smpd_exit_fn(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME "smpd_append_env_option"
 int smpd_append_env_option(char *str, int maxlen, const char *env_name, const char *env_val)
 {
-    int len = (int)strlen(str);
+    int len;
+    
+    smpd_enter_fn(FCNAME);
+    len = (int)strlen(str);
     if (len > (maxlen-2))
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
     str[len] = ' ';
     str = &str[len+1];
     maxlen = maxlen - len - 1;
     if (MPIU_Str_add_string_arg(&str, &maxlen, env_name, env_val) != MPIU_STR_SUCCESS)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
     str--;
     *str = '\0'; /* trim the extra space at the end */
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_hostname"
 int smpd_get_hostname(char *host, int length)
 {
 #ifdef HAVE_WINDOWS_H
     DWORD len = length;
+    smpd_enter_fn(FCNAME);
     /*if (!GetComputerName(host, &len))*/
     if (!GetComputerNameEx(ComputerNameDnsFullyQualified, host, &len))
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 #else
+    smpd_enter_fn(FCNAME);
     if (gethostname(host, length))
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 #endif
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_pwd_from_file"
 int smpd_get_pwd_from_file(char *file_name)
 {
     char line[1024];
     FILE *fin;
+
+    smpd_enter_fn(FCNAME);
 
     /* open the file */
     fin = fopen(file_name, "r");
     if (fin == NULL)
     {
 	printf("Error, unable to open account file '%s'\n", file_name);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -151,6 +184,7 @@ int smpd_get_pwd_from_file(char *file_name)
     {
 	printf("Error, unable to read the account in '%s'\n", file_name);
 	fclose(fin);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -161,6 +195,7 @@ int smpd_get_pwd_from_file(char *file_name)
     {
 	printf("Error, first line in password file must be the account name. (%s)\n", file_name);
 	fclose(fin);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -172,6 +207,7 @@ int smpd_get_pwd_from_file(char *file_name)
     {
 	printf("Error, unable to read the password in '%s'\n", file_name);
 	fclose(fin);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /* strip off the newline characters */
@@ -186,11 +222,15 @@ int smpd_get_pwd_from_file(char *file_name)
 
     fclose(fin);
 
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_next_hostname"
 int smpd_get_next_hostname(char *host, char *alt_host)
 {
+    smpd_enter_fn(FCNAME);
     if (smpd_process.s_host_list == NULL)
     {
 	if (smpd_process.cur_default_host)
@@ -200,7 +240,10 @@ int smpd_get_next_hostname(char *host, char *alt_host)
 		smpd_process.cur_default_host = smpd_process.cur_default_host->next;
 		smpd_process.cur_default_iproc = 0;
 		if (smpd_process.cur_default_host == NULL) /* This should never happen because the hosts are in a ring */
+		{
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
+		}
 	    }
 	    strcpy(host, smpd_process.cur_default_host->host);
 	    strcpy(alt_host, smpd_process.cur_default_host->alt_host);
@@ -209,8 +252,12 @@ int smpd_get_next_hostname(char *host, char *alt_host)
 	else
 	{
 	    if (smpd_get_hostname(host, SMPD_MAX_HOST_LENGTH) != 0)
+	    {
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
+	    }
 	}
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
     if (smpd_process.s_cur_host == NULL)
@@ -226,13 +273,17 @@ int smpd_get_next_hostname(char *host, char *alt_host)
 	smpd_process.s_cur_host = smpd_process.s_cur_host->next;
 	smpd_process.s_cur_count = 0;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_extra_machinefile_options"
 int smpd_parse_extra_machinefile_options(const char *line, smpd_host_node_t *node)
 {
     char *flag, *p;
 
+    smpd_enter_fn(FCNAME);
     flag = strstr(line, "-ifhn");
     if (flag != NULL)
     {
@@ -260,9 +311,12 @@ int smpd_parse_extra_machinefile_options(const char *line, smpd_host_node_t *nod
 	MPIU_Strncpy(node->alt_host, p, SMPD_MAX_HOST_LENGTH);
     }
 
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_machine_file"
 SMPD_BOOL smpd_parse_machine_file(char *file_name)
 {
     char line[1024];
@@ -270,6 +324,8 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
     smpd_host_node_t *node, *node_iter;
     char *hostname, *iter;
     int nproc;
+
+    smpd_enter_fn(FCNAME);
 
     smpd_process.s_host_list = NULL;
     smpd_process.s_cur_host = NULL;
@@ -280,6 +336,7 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
     if (fin == NULL)
     {
 	printf("Error, unable to open machine file '%s'\n", file_name);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -326,6 +383,7 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	    if (node == NULL)
 	    {
 		smpd_err_printf("unable to allocate memory to parse the machinefile\n");
+		smpd_exit_fn(FCNAME);
 		return SMPD_FALSE;
 	    }
 	    strcpy(node->host, hostname);
@@ -359,11 +417,15 @@ SMPD_BOOL smpd_parse_machine_file(char *file_name)
 	    smpd_dbg_printf("host = %s, nproc = %d\n", node->host, node->nproc);
 	    node = node->next;
 	}
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_parse_hosts_string"
 int smpd_parse_hosts_string(const char *host_str)
 {
     char *token, *str;
@@ -371,6 +433,8 @@ int smpd_parse_hosts_string(const char *host_str)
     smpd_host_node_t *node, *node_iter;
     char *hostname, *iter;
     int nproc;
+
+    smpd_enter_fn(FCNAME);
 
     /* FIXME: If these are not NULL should they be freed? */
     smpd_process.s_host_list = NULL;
@@ -380,6 +444,7 @@ int smpd_parse_hosts_string(const char *host_str)
     str = MPIU_Strdup(host_str);
     if (str == NULL)
     {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FALSE;
     }
 
@@ -427,6 +492,7 @@ int smpd_parse_hosts_string(const char *host_str)
 	    {
 		smpd_err_printf("unable to allocate memory to parse the hosts string <%s>\n", host_str);
 		MPIU_Free(str);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FALSE;
 	    }
 	    strcpy(node->host, hostname);
@@ -460,15 +526,21 @@ int smpd_parse_hosts_string(const char *host_str)
 	    smpd_dbg_printf("host = %s, nproc = %d\n", node->host, node->nproc);
 	    node = node->next;
 	}
+	smpd_exit_fn(FCNAME);
 	return SMPD_TRUE;
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_FALSE;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_host_id"
 int smpd_get_host_id(char *host, int *id_ptr)
 {
     smpd_host_node_t *node;
     int bit, mask, temp;
+
+    smpd_enter_fn(FCNAME);
 
     /* look for the host in the list */
     node = smpd_process.host_list;
@@ -478,6 +550,7 @@ int smpd_get_host_id(char *host, int *id_ptr)
 	{
 	    /* return the id */
 	    *id_ptr = node->id;
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_SUCCESS;
 	}
 	if (node->next == NULL)
@@ -499,6 +572,7 @@ int smpd_get_host_id(char *host, int *id_ptr)
     if (node == NULL)
     {
 	smpd_err_printf("malloc failed to allocate a host node structure\n");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     strcpy(node->host, host);
@@ -528,9 +602,12 @@ int smpd_get_host_id(char *host, int *id_ptr)
     /* return the id */
     *id_ptr = node->id;
 
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
+#undef FCNAME
+#define FCNAME "smpd_get_next_host"
 int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node)
 {
     int result;
@@ -538,9 +615,12 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
     char alt_host[SMPD_MAX_HOST_LENGTH];
     smpd_host_node_t *host_node_ptr;
 
+    smpd_enter_fn(FCNAME);
+
     if (host_node_pptr == NULL)
     {
 	smpd_err_printf("invalid host_node_pptr argument.\n");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -550,16 +630,19 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to get the next available host name\n");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	result = smpd_get_host_id(host, &launch_node->host_id);
 	if (result != SMPD_SUCCESS)
 	{
 	    smpd_err_printf("unable to get a id for host %s\n", host);
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
 	MPIU_Strncpy(launch_node->hostname, host, SMPD_MAX_HOST_LENGTH);
 	MPIU_Strncpy(launch_node->alt_hostname, alt_host, SMPD_MAX_HOST_LENGTH);
+	smpd_exit_fn(FCNAME);
 	return SMPD_SUCCESS;
     }
 
@@ -572,6 +655,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	if (host_node_ptr == NULL)
 	{
 	    smpd_err_printf("no more hosts in the list.\n");
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -579,6 +663,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
     if (result != SMPD_SUCCESS)
     {
 	smpd_err_printf("unable to get a id for host %s\n", host_node_ptr->host);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     MPIU_Strncpy(launch_node->hostname, host_node_ptr->host, SMPD_MAX_HOST_LENGTH);
@@ -590,6 +675,7 @@ int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *la
 	free(host_node_ptr);
     }
 
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -658,6 +744,7 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 		argv[index] = NULL;
 	    *argcp = index;
 	    *argvp = argv;
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_TRUE;
 	}
     }
@@ -666,6 +753,8 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
     return SMPD_FALSE;
 }
 #if 0 /* This way simply tokenizes by space characters without any escape capabilities */
+#undef FCNAME
+#define FCNAME "smpd_get_argcv_from_file"
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 {
     static char line[SMPD_MAX_LINE_LENGTH];
@@ -697,6 +786,7 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 		argv[index] = NULL;
 	    *argcp = index;
 	    *argvp = argv;
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_TRUE;
 	}
     }
@@ -706,25 +796,39 @@ SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp)
 }
 #endif
 
+#undef FCNAME
+#define FCNAME "next_launch_node"
 static smpd_launch_node_t *next_launch_node(smpd_launch_node_t *node, int id)
 {
+    smpd_enter_fn(FCNAME);
     while (node)
     {
 	if (node->host_id == id)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return node;
+	}
 	node = node->next;
     }
+    smpd_exit_fn(FCNAME);
     return NULL;
 }
 
+#undef FCNAME
+#define FCNAME "prev_launch_node"
 static smpd_launch_node_t *prev_launch_node(smpd_launch_node_t *node, int id)
 {
+    smpd_enter_fn(FCNAME);
     while (node)
     {
 	if (node->host_id == id)
+	{
+	    smpd_exit_fn(FCNAME);
 	    return node;
+	}
 	node = node->prev;
     }
+    smpd_exit_fn(FCNAME);
     return NULL;
 }
 

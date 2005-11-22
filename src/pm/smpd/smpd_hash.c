@@ -12,6 +12,8 @@
 
 #define HASH_LENGTH 16
 
+#undef FCNAME
+#define FCNAME "smpd_hash"
 int smpd_hash(char *input, int input_length, char *output, int output_length)
 {
     /*DWORD i;*/
@@ -22,8 +24,11 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
     BYTE                         hash[HASH_LENGTH];
     DWORD                        hash_len = HASH_LENGTH;
 
+    smpd_enter_fn(FCNAME);
+
     if (output_length < (HASH_LENGTH * 2 + 1))
     {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -69,9 +74,11 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
     }
     else
     {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
+    smpd_exit_fn(FCNAME);
     return 0;
 }
 
@@ -84,13 +91,18 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
 #include <openssl/md5.h>
 #endif
 
+#undef FCNAME
+#define FCNAME "smpd_hash"
 int smpd_hash(char *input, int input_length, char *output, int output_length)
 {
     /*int i;*/
     unsigned char hash[MD5_DIGEST_LENGTH];
 
+    smpd_enter_fn(FCNAME);
+
     if (output_length < (MD5_DIGEST_LENGTH * 2 + 1))
     {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
 
@@ -111,6 +123,7 @@ int smpd_hash(char *input, int input_length, char *output, int output_length)
 	hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
 	hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15]);
 
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 

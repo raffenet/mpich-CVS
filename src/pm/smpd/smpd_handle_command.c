@@ -337,6 +337,8 @@ static int write_to_stdout(const char *buffer, size_t num_bytes)
     DWORD num_written;
 
     smpd_enter_fn(FCNAME);
+    /* MT - This should acquire the hLaunchProcessMutex so that it doesn't acquire a redirected handle. */
+    /* But since the code is not multi-threaded yet this doesn't matter */
     hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     WriteFile(hStdout, buffer, num_bytes, &num_written, NULL);
 #else
@@ -435,6 +437,8 @@ static int write_to_stderr(const char *buffer, size_t num_bytes)
     DWORD num_written;
 
     smpd_enter_fn(FCNAME);
+    /* MT - This should acquire the hLaunchProcessMutex so that it doesn't acquire a redirected handle. */
+    /* But since the code is not multi-threaded yet this doesn't matter */
     hStderr = GetStdHandle(STD_ERROR_HANDLE);
     WriteFile(hStderr, buffer, num_bytes, &num_written, NULL);
 #else
@@ -527,12 +531,15 @@ static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t 
 {
     int i;
     smpd_process_group_t *pg;
-    
+
+    smpd_enter_fn(FCNAME);
+
     /* initialize a new process group structure */
     pg = (smpd_process_group_t*)malloc(sizeof(smpd_process_group_t));
     if (pg == NULL)
     {
 	smpd_err_printf("unable to allocate memory for a process group structure.\n");
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     pg->aborted = SMPD_FALSE;
@@ -544,6 +551,7 @@ static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t 
     if (pg->processes == NULL)
     {
 	smpd_err_printf("unable to allocate an array of %d process exit structures.\n", nproc);
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     for (i=0; i<nproc; i++)
@@ -561,6 +569,7 @@ static int create_process_group(int nproc, char *kvs_name, smpd_process_group_t 
     pg->next = smpd_process.pg_list;
     smpd_process.pg_list = pg;
     *pg_pptr = pg;
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -1635,13 +1644,19 @@ int smpd_handle_result(smpd_context_t *context)
 #define FCNAME "get_name_key_value"
 static int get_name_key_value(char *str, char *name, char *key, char *value)
 {
+    smpd_enter_fn(FCNAME);
+
     if (str == NULL)
+    {
+	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
+    }
 
     if (name != NULL)
     {
 	if (MPIU_Str_get_string_arg(str, "name", name, SMPD_MAX_DBS_NAME_LEN) != MPIU_STR_SUCCESS)
 	{
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -1649,6 +1664,7 @@ static int get_name_key_value(char *str, char *name, char *key, char *value)
     {
 	if (MPIU_Str_get_string_arg(str, "key", key, SMPD_MAX_DBS_KEY_LEN) != MPIU_STR_SUCCESS)
 	{
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
@@ -1656,9 +1672,11 @@ static int get_name_key_value(char *str, char *name, char *key, char *value)
     {
 	if (MPIU_Str_get_string_arg(str, "value", value, SMPD_MAX_DBS_VALUE_LEN) != MPIU_STR_SUCCESS)
 	{
+	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
 	}
     }
+    smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 }
 
@@ -1770,6 +1788,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the get value('%s') to the result command.\n", value);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    result_str = DBS_SUCCESS_STR;
@@ -1793,6 +1812,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the dbcreate name('%s') to the result command.\n", name);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    result_str = DBS_SUCCESS_STR;
@@ -1822,6 +1842,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the dbfirst key('%s') to the result command.\n", key);
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1831,12 +1852,14 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the dbfirst key('%s') to the result command.\n", key);
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		result = smpd_add_command_arg(temp_cmd, "value", value);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the dbfirst value('%s') to the result command.\n", value);
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1860,6 +1883,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the dbndext key('%s') to the result command.\n", key);
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1869,12 +1893,14 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the dbnext key('%s') to the result command.\n", key);
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 		result = smpd_add_command_arg(temp_cmd, "value", value);
 		if (result != SMPD_SUCCESS)
 		{
 		    smpd_err_printf("unable to add the dbnext value('%s') to the result command.\n", value);
+		    smpd_exit_fn(FCNAME);
 		    return SMPD_FAIL;
 		}
 	    }
@@ -1897,6 +1923,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the dbfirstdb name('%s') to the result command.\n", name);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    result_str = DBS_SUCCESS_STR;
@@ -1918,6 +1945,7 @@ int smpd_handle_dbs_command(smpd_context_t *context)
 	    if (result != SMPD_SUCCESS)
 	    {
 		smpd_err_printf("unable to add the dbnextdb name('%s') to the result command.\n", name);
+		smpd_exit_fn(FCNAME);
 		return SMPD_FAIL;
 	    }
 	    result_str = DBS_SUCCESS_STR;
@@ -3816,7 +3844,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 			smpd_exit_fn(FCNAME);
 			return result;
 		    }
-		    /* FIXME: encrypt the password */
 		    result = smpd_encrypt_data(smpd_process.UserPassword, (int)strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 		    if (result != SMPD_SUCCESS)
 		    {
@@ -3859,7 +3886,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		    smpd_exit_fn(FCNAME);
 		    return result;
 		}
-		/* FIXME: encrypt the password */
 		result = smpd_encrypt_data(smpd_process.UserPassword, (int)strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 		if (result != SMPD_SUCCESS)
 		{
@@ -3892,7 +3918,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	    /* FIXME: encrypt the password */
 	    result = smpd_encrypt_data(smpd_process.UserPassword, (int)strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
@@ -3930,7 +3955,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 		smpd_exit_fn(FCNAME);
 		return result;
 	    }
-	    /* FIXME: encrypt the password */
 	    result = smpd_encrypt_data(smpd_process.UserPassword, (int)strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 	    if (result != SMPD_SUCCESS)
 	    {
@@ -3973,7 +3997,6 @@ int smpd_handle_cred_request_command(smpd_context_t *context)
 	    smpd_exit_fn(FCNAME);
 	    return result;
 	}
-	/* FIXME: encrypt the password */
 	result = smpd_encrypt_data(smpd_process.UserPassword, (int)strlen(smpd_process.UserPassword)+1, context->encrypted_password, SMPD_MAX_PASSWORD_LENGTH);
 	if (result != SMPD_SUCCESS)
 	{
@@ -4750,6 +4773,8 @@ int smpd_handle_exit_command(smpd_context_t *context)
     char name[SMPD_MAX_DBS_NAME_LEN+1] = "";
     smpd_process_group_t *pg;
     int i, print;
+
+    smpd_enter_fn(FCNAME);
 
     cmd = &context->read_cmd;
 
