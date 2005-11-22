@@ -668,11 +668,11 @@ main()
 
 #   Determmine if MPI_Status_f2c() and MPI_Status_c2f() are there
     AC_MSG_CHECKING( [for MPI_Status_c2f() and MPI_Status_f2c()] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [[
                           MPI_Status        c_status;
                           ${MPI_FINT_TYPE}  f_status[ ${mpe_MPI_STATUS_SIZE} ];
                           int ierr;
-                          ], [
+                          ]], [
                           ierr=MPI_Status_c2f( &c_status, f_status ) ;
                           ierr=MPI_Status_f2c( f_status, &c_status ) ;
                           ], [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
