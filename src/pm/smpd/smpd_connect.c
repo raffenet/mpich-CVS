@@ -1023,6 +1023,32 @@ int smpd_get_default_hosts()
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
 #else
+	if (smpd_option_on("no_dynamic_hosts"))
+	{
+	    if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) == SMPD_SUCCESS)
+	    {
+		smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		if (smpd_process.default_host_list == NULL)
+		{
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
+		}
+		strcpy(smpd_process.default_host_list->host, myhostname);
+		smpd_process.default_host_list->alt_host[0] = '\0';
+		smpd_process.default_host_list->nproc = 1;
+		smpd_process.default_host_list->connected = SMPD_FALSE;
+		smpd_process.default_host_list->connect_cmd_tag = -1;
+		smpd_process.default_host_list->next = smpd_process.default_host_list;
+		smpd_process.default_host_list->left = NULL;
+		smpd_process.default_host_list->right = NULL;
+		smpd_process.cur_default_host = smpd_process.default_host_list;
+		smpd_exit_fn(FCNAME);
+		return SMPD_SUCCESS;
+	    }
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+	}
+
 	smpd_lock_smpd_data();
 	if (smpd_get_smpd_data(SMPD_DYNAMIC_HOSTS_KEY, hosts, 8192) != SMPD_SUCCESS)
 	{
