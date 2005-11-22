@@ -1006,13 +1006,17 @@ sub StopMPD {
 }
 # ---------------------------------------------------------------------------
 #
-# We need a variation of this that will start MPDs on mulitple hosts.
+# We need a variation of this that will start SMPDs on mulitple hosts.
 # 
 sub RunSMPD {
     system "$instdir/bin/smpd -port 10101 -s";
     # FIXME: Placeholder for correct environment variable for providing
     # mpiexec with the smpd port that should be used.
     $ENV{"MPIEXEC_SMPD_PORT"} = 10101;
+    # print errors instead of prompting for input
+    $ENV{"MPIEXEC_NOPROMPT"} = 1;
+    # use only the local host
+    $ENV{"SMPD_OPTION_NO_DYNAMIC_HOSTS"} = 1;
     $rc = $? >> 8;
     if ($rc != 0) {
 	print $OUTFD "Error running $instdir/bin/smpd -port 10101 -s\n";
