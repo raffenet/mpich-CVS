@@ -3,7 +3,7 @@
 ===============================================================================
 
 - There are major changes to the ch3 device implementation.  Old and 
-  unsupported channels (essm, rdma, ib?) have been removed.   The
+  unsupported channels (essm, rdma) have been removed.   The
   internal interface between ch3 and the channels has been improved to 
   similify the process of adding a new channel (sharing existing code
   where possible) and to improve performance.  Further changes in this
