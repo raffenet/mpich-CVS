@@ -218,10 +218,18 @@ If you don't have access to the CVS repository but you have the MPICH2 source
 distribution you can still use the makewindist batch file.  Follow these steps:
 \begin{enumerate}
 \item unzip/untar the source distribution
+\item bring up a Visual Studio Command Prompt
 \item cd into the mpich2xxx directory
 \item execute ``\texttt{winconfigure.wsf --cleancode}''
 \item execute ``\texttt{makewindist.bat --with-curdir}''
 \end{enumerate}
+
+\subsubsection{Building without Fortran}
+If you don't have a Fortran compiler you can use winconfigure.wsf to remove the
+Fortran projects.  Execute \texttt{winconfigure.wsf --remove-fortran --cleancode}
+Then you can build the projects without Fortran support.  If you want to use the
+\texttt{makewindist.bat} script you will need to remove the Fortran lines from
+it before executing it.
 
 \subsection{Platform SDK builds}
 \label{sec:psdk_build}
@@ -979,6 +987,7 @@ environment variable.
 \item \texttt{SMPD\_OPTION\_delegate}
 \item \texttt{SMPD\_OPTION\_internode\_channel}
 \item \texttt{SMPD\_OPTION\_log}
+\item \texttt{SMPD\_OPTION\_no\_dynamic\_hosts}
 \end{itemize}
 
 Variables to control debugging output when enabled:
