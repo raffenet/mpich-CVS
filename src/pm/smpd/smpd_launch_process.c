@@ -1961,8 +1961,12 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 	result = execvp( argv[0], argv );
 
 	result = errno;
-	/*fprintf(stderr, "Unable to exec '%s'.\nError %d - %s\n", process->exe, result, strerror(result));*/
-	sprintf(process->err_msg, "Error %d - %s", result, strerror(result));
+	{
+	    char myhostname[SMPD_MAX_HOST_LENGTH];
+	    smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH);
+	    snprintf(process->err_msg, SMPD_MAX_ERROR_LEN, "Unable to exec '%s' on %s.  Error %d - %s\n", process->exe, myhostname, result, strerror(result));
+	    /*sprintf(process->err_msg, "Error %d - %s", result, strerror(result));*/
+	}
 
 	if (process->pmi != NULL)
 	{
