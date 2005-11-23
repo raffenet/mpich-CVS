@@ -316,7 +316,7 @@ is there.  Here is the configure options.
 note: configure option --with-flib_path_leader="-Wl,-L" may not needed.
 
 
-For LAM, do
+For LAM/MPI implementation, do
 
     setenv MPI_CC ${LAM_INSTALL_DIR}/bin/mpicc
     setenv MPI_F77 ${LAM_INSTALL_DIR}/bin/mpif77
@@ -369,6 +369,24 @@ libmpe_f2cmpi.a)
 Preferred Solution: Upgrade to newer version of LAM, 7.1.2b24 or later
          Or
 Temporary Solution: Configured with --with-f2cmpilibs=-llamf77mpi. 
+
+
+For OpenMPI, do
+
+    ${MPE_SRC_DIR}/configure MPI_CC=${OPENMPI_INSTALL_DIR}/bin/mpicc \
+                             CC=<C_COMPILER_used_to_build_OpenMPI> \
+                             MPI_F77=${OPENMPI_INSTALL_DIR}/bin/mpif77 \
+                             F77=<FORTRAN_COMPILER_used_to_build_OpenMPI> \
+                             --with-java2=/usr/local/j2sdk-1.4.2
+                             --prefix=<MPE_INSTALL_DIR>
+    make
+    make install
+    make installcheck
+
+OpenMPI-1.0 does not instantiate MPI_F_STATUS(ES)_IGNORE, so fortran program
+may not be able to use MPI_STATUS(ES)_IGNORE with OpenMPI+MPE.
+
+See http://www.open-mpi.org/community/lists/users/2005/11/0380.php
 
 
 For prebuilt version of MPICH-1.1.2 or MPICH-1.2.0, e.g. donner, do
