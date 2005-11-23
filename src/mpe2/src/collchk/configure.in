@@ -550,13 +550,13 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     if test "$enable_checkMPI" = "yes" ; then
         AC_MSG_CHECKING( [for the C version of MPI_Alltoallw] )
         PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
-                              [
+                              [[
 #define MAX 10
     int *sbuff, *rbuff;
     int scounts[MAX], rcounts[MAX], sdispls[MAX], rdispls[MAX];
     MPI_Datatype  stypes[MAX], rtypes[MAX];
     int itmp
-                              ],
+                              ]],
                               [
     itmp=MPI_Alltoallw( sbuff, scounts, sdispls, stypes,
                         rbuff, rcounts, rdispls, rtypes, MPI_COMM_WORLD )
@@ -566,13 +566,13 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
             AC_MSG_RESULT(yes)
             AC_MSG_CHECKING( [for the C version of PMPI_Alltoallw] )
             PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
-                                  [
+                                  [[
 #define MAX 10
     int *sbuff, *rbuff;
     int scounts[MAX], rcounts[MAX], sdispls[MAX], rdispls[MAX];
     MPI_Datatype  stypes[MAX], rtypes[MAX];
     int itmp
-                                  ],
+                                  ]],
                                   [
     itmp=PMPI_Alltoallw( sbuff, scounts, sdispls, stypes,
                          rbuff, rcounts, rdispls, rtypes, MPI_COMM_WORLD )
