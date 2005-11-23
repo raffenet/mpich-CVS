@@ -135,6 +135,24 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_5C8C7FAD649149C19305AA675DC72AC2"
+        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5C8C7FAD649149C19305AA675DC72AC2"
+        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5C8C7FAD649149C19305AA675DC72AC2"
+        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_6554112CB61046CD9A18A45F7910568C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -214,6 +232,12 @@
         "Entry"
         {
         "MsmKey" = "8:_97A8EA0847D242429469558A2F7FC731"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_991BB62075544FE2AF30A36D0AF75334"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -333,24 +357,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D4AE5FB21D93449AAAD07D638DF50095"
-        "OwnerKey" = "8:_55B5CAEEC65B41548EFC545A48218F87"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D4AE5FB21D93449AAAD07D638DF50095"
-        "OwnerKey" = "8:_AD63A10BAE3B42AE9BA9DDBE274523EE"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D4AE5FB21D93449AAAD07D638DF50095"
-        "OwnerKey" = "8:_9456918885EA443184468C81D254F3F3"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_D97D87A0F42F40A18D9BBFA94647E2FB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -418,6 +424,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F4AFB45860624DE580E74853EA7E28CE"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F5DE15D6D59A4924945EE75573A5BE31"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -876,7 +888,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.2127.28781, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiexec, Version=1.0.2151.10080, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_55B5CAEEC65B41548EFC545A48218F87"
@@ -1167,7 +1179,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.2127.28780, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiregister, Version=1.0.2151.10080, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_9456918885EA443184468C81D254F3F3"
@@ -1220,6 +1232,26 @@
             "TargetName" = "8:fmpich2s.dll"
             "Tag" = "8:"
             "Folder" = "8:_BB1583009D63480DBB484EB460D60D15"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_991BB62075544FE2AF30A36D0AF75334"
+            {
+            "SourcePath" = "8:..\\src\\mpe2\\src\\logging\\include\\clog_commset.h"
+            "TargetName" = "8:clog_commset.h"
+            "Tag" = "8:"
+            "Folder" = "8:_2FD87C1387F843A5BF89B818287DC235"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1358,7 +1390,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.2127.28782, Culture=neutral"
+            "AssemblyAsmDisplayName" = "8:wmpiconfig, Version=1.0.2151.10081, Culture=neutral"
                 "ScatterAssemblies"
                 {
                     "_AD63A10BAE3B42AE9BA9DDBE274523EE"
@@ -1851,6 +1883,26 @@
             "TargetName" = "8:cpi.exe"
             "Tag" = "8:"
             "Folder" = "8:_7F73272448274F47B6C5C0E0BEDDE4DB"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_F5DE15D6D59A4924945EE75573A5BE31"
+            {
+            "SourcePath" = "8:..\\src\\mpe2\\src\\logging\\include\\clog_uuid.h"
+            "TargetName" = "8:clog_uuid.h"
+            "Tag" = "8:"
+            "Folder" = "8:_2FD87C1387F843A5BF89B818287DC235"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3133,7 +3185,7 @@
         }
         "MergeModule"
         {
-            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_D4AE5FB21D93449AAAD07D638DF50095"
+            "{35A69C6E-5BA4-440D-803D-762B59A45393}:_5C8C7FAD649149C19305AA675DC72AC2"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
