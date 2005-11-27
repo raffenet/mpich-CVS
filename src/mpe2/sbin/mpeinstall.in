@@ -442,10 +442,10 @@ if [ -n "$binbuild_dir" ] ; then
          echo "Copying MPE utility programs to $DESTDIR$bindir"
          CopyDirRecurP $binbuild_dir $bindir $XMODE
          if [ -s $binbuild_dir/mpecc -a -x $binbuild_dir/mpecc ] ; then
-             FixInstallFile $binbuild_dir/mpecc $DESTDIR$bindir/mpecc $XMODE
+             FixInstallFile $binbuild_dir/mpecc $bindir/mpecc $XMODE
          fi
          if [ -s $binbuild_dir/mpefc -a -x $binbuild_dir/mpefc ] ; then
-             FixInstallFile $binbuild_dir/mpefc $DESTDIR$bindir/mpefc $XMODE
+             FixInstallFile $binbuild_dir/mpefc $bindir/mpefc $XMODE
          fi
     fi
 fi
@@ -457,7 +457,7 @@ if [ -n "$etcbuild_dir" ] ; then
          CopyDirRecurP $etcbuild_dir $sysconfdir $MODE
          cd $etcbuild_dir && \
          for file in *.conf ; do \
-             FixInstallFile $file $DESTDIR$sysconfdir/$file ; \
+             FixInstallFile $file $sysconfdir/$file ; \
          done
     fi
 fi
