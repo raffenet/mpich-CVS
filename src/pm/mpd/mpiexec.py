@@ -531,6 +531,9 @@ def collect_args(args,localArgSets):
     argidx = 1
     while argidx < len(args)  and  args[argidx] in validGlobalArgs.keys():
         garg = args[argidx]
+        if len(args) <= (argidx+validGlobalArgs[garg]):
+            print "missing sub-arg to %s" % (garg)
+            usage()
         if garg == '-genv':
             parmdb['genv'][args[argidx+1]] = args[argidx+2]
             argidx += 3
@@ -624,6 +627,9 @@ def collect_args(args,localArgSets):
         elif garg == '-1':
             parmdb[('cmdline','MPIEXEC_TRY_1ST_LOCALLY')] = 0  # reverses meaning
             argidx += 1
+    if len(args) <= argidx:
+        print "mpiexec: missing arguments after global args"
+        usage()
     if args[argidx] == ':':
         argidx += 1
     localArgsKey = 0
