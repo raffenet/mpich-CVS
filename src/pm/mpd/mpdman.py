@@ -56,6 +56,7 @@ class MPDMan(object):
         self.posInRing = int(os.environ['MPDMAN_POS_IN_RING'])
         self.myId      = self.myHost + '_mpdman_' + str(self.myRank)
         self.spawned   = int(os.environ['MPDMAN_SPAWNED'])
+        self.spawnInProgress = 0
         if self.spawned:
             self.myId = self.myId + '_s'
         mpd_set_my_id(myid=self.myId)
@@ -204,7 +205,7 @@ class MPDMan(object):
             self.conSock.connect((self.conIfhn,self.conPort))
             self.streamHandler.set_handler(self.conSock,self.handle_console_input)
             if self.spawned:
-                msgToSend = { 'cmd' : 'spawned_child_is_up',
+                msgToSend = { 'cmd' : 'spawned_man0_is_up',
                               'spawned_id' : os.environ['MPDMAN_SPAWNED'] }
                 self.conSock.send_dict_msg(msgToSend)
                 msg = self.conSock.recv_dict_msg()
@@ -335,9 +336,10 @@ class MPDMan(object):
                 os.close(self.fd_write_cli_stdin)
         if self.doingBNR:
             self.cliBNRSock.close()
-        msgToSend = { 'cmd' : 'client_info', 'jobid' : self.jobid,
-                      'manpid' : os.getpid(), 'clipid' : clientPid,
-                      'rank' : self.myRank }
+        msgToSend = { 'cmd' : 'client_info', 'jobid' : self.jobid, 'clipid' : clientPid,
+                      'manpid' : os.getpid(), 'rank' : self.myRank,
+                      'spawner_manpid' : int(os.environ['MPDMAN_SPAWNER_MANPID']),
+                      'spawner_mpd' : os.environ['MPDMAN_SPAWNER_MPD'] }
         self.mpdSock.send_dict_msg(msgToSend)
         if not self.subproc:
             self.streamHandler.set_handler(self.fd_read_cli_stdout,
@@ -445,7 +447,7 @@ class MPDMan(object):
                 self.streamHandler.set_handler(tempSock,self.handle_child_stderr_tree_input)
                 self.childrenStderrTreeSocks.append(tempSock)
                 self.numConndWithIO += 1
-            elif msg['cmd'] == 'spawned_child_is_up':
+            elif msg['cmd'] == 'spawned_man0_is_up':
                 self.streamHandler.set_handler(tempSock,self.handle_spawned_child_input)
                 self.spawnedChildSocks.append(tempSock)
                 tempID = msg['spawned_id']
@@ -455,9 +457,9 @@ class MPDMan(object):
                 tempSock.send_dict_msg(msgToSend)
                 msgToSend = { 'cmd' : 'ringsize', 'ring_ncpus' : self.universeSize }
                 tempSock.send_dict_msg(msgToSend)
-                if self.pmiSock:  # may have disappeared in early shutdown
-                    pmiMsgToSend = 'cmd=spawn_result status=spawn_done rc=0\n'
-                    self.pmiSock.send_char_msg(pmiMsgToSend)
+                ### if self.pmiSock:  # may have disappeared in early shutdown
+                    ### pmiMsgToSend = 'cmd=spawn_result status=spawn_done rc=0\n'
+                    ### self.pmiSock.send_char_msg(pmiMsgToSend)
             else:
                 mpd_print(1, 'unknown msg recvd on listenNonRingSock :%s:' % (msg) )
     def handle_lhs_input(self,sock):
@@ -882,6 +884,8 @@ class MPDMan(object):
             self.pmiSock.send_char_msg(pmiMsgToSend)
     def handle_pmi_input(self,sock):
         global clientPid, clientExited, clientExitStatus, clientExitStatusSent
+        if self.spawnInProgress:
+            return
         line = self.pmiSock.recv_char_msg()
         if not line:
             self.streamHandler.del_handler(self.pmiSock)
@@ -1123,7 +1127,9 @@ class MPDMan(object):
                               'singinitport' : 0,
                             }
                 msgToSend['line_labels'] = self.lineLabelFmt
+                msgToSend['spawner_manpid'] = os.getpid()
                 self.mpdSock.send_dict_msg(msgToSend)
+                self.spawnInProgress = parsedMsg
                 # I could send the preput_info along but will keep it here
                 # and let the spawnee call me up and ask for it; he will
                 # call me anyway since I am his parent in the tree.  So, I
@@ -1315,6 +1321,10 @@ class MPDMan(object):
             pmiMsgToSend = 'cmd=lookup_result info=%s port=%s\n' % \
                            (msg['info'],msg['port'])
             self.pmiSock.send_char_msg(pmiMsgToSend)
+        elif msg['cmd'] == 'spawn_result':
+            pmiMsgToSend = 'cmd=spawn_result status=spawn_done rc=0\n'
+            self.pmiSock.send_char_msg(pmiMsgToSend)
+            self.spawnInProgress = 0
         else:
             mpd_print(1, 'invalid msg recvd on mpdSock :%s:' % msg )
     def launch_client_via_fork_exec(self,cli_env):

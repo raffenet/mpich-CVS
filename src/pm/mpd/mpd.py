@@ -110,6 +110,8 @@ class MPD(object):
             syslog.openlog("mpd",0,syslog.LOG_DAEMON)
             syslog.syslog(syslog.LOG_INFO,"mpd starting; no mpdid yet")
         sys.excepthook = mpd_uncaught_except_tb
+        self.spawnQ = []
+        self.spawnInProgress = 0
         self.parmdb = MPDParmDB(orderedSources=['cmdline','xml','env','rcfile','thispgm'])
         self.parmsToOverride = {
                                  'MPD_SECRETWORD'       :  '',
@@ -173,8 +175,8 @@ class MPD(object):
             print self.parmdb['MPD_LISTEN_PORT']
             sys.stdout.flush()
             ##### NEXT 2 for debugging
-            print >>sys.stderr, self.parmdb['MPD_LISTEN_PORT']
-            sys.stderr.flush()
+            ## print >>sys.stderr, self.parmdb['MPD_LISTEN_PORT']
+            ## sys.stderr.flush()
         self.myRealUsername = mpd_get_my_username()
         self.currRingSize = 1    # default
         self.currRingNCPUs = 1   # default
@@ -263,6 +265,11 @@ class MPD(object):
     def runmainloop(self):
         # Main Loop
         while 1:
+            if self.spawnQ  and  not self.spawnInProgress:
+                self.ring.rhsSock.send_dict_msg(self.spawnQ[0])
+                self.spawnQ = self.spawnQ[1:]
+                self.spawnInProgress = 1
+                continue
             rv = self.streamHandler.handle_active_streams(timeout=8.0)
             if rv[0] < 0:
                 if type(rv[1]) == ClassType  and  rv[1] == KeyboardInterrupt: # ^C
@@ -678,9 +685,17 @@ class MPD(object):
             jobid = msg['jobid']
             manPid = msg['manpid']
             self.activeJobs[jobid][manPid]['clipid'] = msg['clipid']
+            if msg['spawner_manpid']  and  msg['rank'] == 0:
+                if msg['spawner_mpd'] == self.myId:
+                    spawnerManPid = msg['spawner_manpid']
+                    spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
+                    msgToSend = { 'cmd' : 'spawn_result', 'rc' : 0, 'reason' : '' }
+                    spawnerManSock.send_dict_msg(msgToSend)
+                else:
+                    self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'spawn':
-            msg['cmd'] = 'mpdrun'  # handle much like an mpdrun from a console
             msg['mpdid_mpdrun_start'] = self.myId
+            msg['spawner_mpd'] = self.myId
             msg['nstarted_on_this_loop'] = 0
             msg['first_loop'] = 1
             msg['jobalias'] = ''
@@ -689,7 +704,7 @@ class MPD(object):
             msg['ring_ncpus'] = 0
             msg['gdb'] = 0
             msg['totalview'] = 0
-            self.ring.rhsSock.send_dict_msg(msg)
+            self.spawnQ.append(msg)
         elif msg['cmd'] == 'publish_name':
             self.pmi_published_names[msg['service']] = msg['port']
             msgToSend = { 'cmd' : 'publish_result', 'info' : 'ok' }
@@ -725,13 +740,15 @@ class MPD(object):
             self.ring.lhsSock.close()
             self.ring.lhsSock = 0
             return
-        if msg['cmd'] == 'mpdrun':
+        if msg['cmd'] == 'mpdrun'  or  msg['cmd'] == 'spawn':
             if  msg.has_key('mpdid_mpdrun_start')  \
             and msg['mpdid_mpdrun_start'] == self.myId:
                 if msg['first_loop']:
                     self.currRingSize = msg['ringsize']
                     self.currRingNCPUs = msg['ring_ncpus']
                 if msg['nstarted'] == msg['nprocs']:
+                    if msg['cmd'] == 'spawn':
+                        self.spawnInProgress = 0
                     if self.conSock:
                         msgToSend = {'cmd' : 'mpdrun_ack',
                                      'ringsize' : self.currRingSize,
@@ -954,6 +971,16 @@ class MPD(object):
                     del self.pmi_published_names[msg['service']]
                     msg['done'] = 1
                 self.ring.rhsSock.send_dict_msg(msg)
+        elif msg['cmd'] == 'client_info':
+            if msg['spawner_manpid']  and  msg['rank'] == 0:
+                if msg['spawner_mpd'] == self.myId:
+                    jobid = msg['jobid']
+                    spawnerManPid = msg['spawner_manpid']
+                    spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
+                    msgToSend = { 'cmd' : 'spawn_result', 'rc' : 0, 'reason' : '' }
+                    spawnerManSock.send_dict_msg(msgToSend)
+                else:
+                    self.ring.rhsSock.send_dict_msg(msg)
         else:
             mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
     def handle_rhs_input(self,sock):
@@ -1168,6 +1195,14 @@ class MPD(object):
         man_env['MPDMAN_CWD'] = cwd
         man_env['MPDMAN_UMASK'] = pgmUmask
         man_env['MPDMAN_SPAWNED'] = str(msg['spawned'])
+        if msg.has_key('spawner_manpid'):
+            man_env['MPDMAN_SPAWNER_MANPID'] = str(msg['spawner_manpid'])
+        else:
+            man_env['MPDMAN_SPAWNER_MANPID'] = '0'
+        if msg.has_key('spawner_mpd'):
+            man_env['MPDMAN_SPAWNER_MPD'] = msg['spawner_mpd']
+        else:
+            man_env['MPDMAN_SPAWNER_MPD'] = ''
         man_env['MPDMAN_NPROCS'] = str(msg['nprocs'])
         man_env['MPDMAN_MPD_LISTEN_PORT'] = str(self.parmdb['MPD_LISTEN_PORT'])
         man_env['MPDMAN_MPD_CONF_SECRETWORD'] = self.parmdb['MPD_SECRETWORD']
