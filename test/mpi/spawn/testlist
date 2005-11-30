@@ -27,4 +27,4 @@ multiple_ports2 4
 disconnect 3
 disconnect2 3
 disconnect3 3
-# concurrent_spawns 1
+concurrent_spawns 1
