@@ -467,6 +467,14 @@ foreach $_ (@ARGV) {
     elsif (/-checktargets/) {
 	$gCheckForTargets = 1;
     }
+    elsif (/-configdir=(.*)/) {
+	# Use this option to specify the location of the configure
+	# that controls the Makefile.in in this directory.
+	# This is normally used when rebuilding a single Makefile.in
+	# from a Makefile.sm .
+	$last_config_dir = $1;
+	$#keepargs--;  # remove this entry (it is explicitly recreated)
+    }
     elsif (/-debugdirs/) {
 	$debug_dirs = 1;
     }
@@ -1304,17 +1312,23 @@ sub DefaultRules {
 	}
     }
     if ($maint_targets && $smdir && $smdir ne "") {
+	# FIXME: make smdir take a value from the Makefile.in (e.g,
+	# $(top_abs_src)/maint instead of the location where it 
+	# was originally run.
 	print FD "$newline";
 	print FD $makeBlockSep;
 	print FD "\${srcdir}/Makefile.in: \${srcdir}/Makefile.sm$newline";
+	print FD "\t( cd \${srcdir} && $smdir/simplemake \\$newline";
 	if ($rootdir) {
-	    print FD "\t( cd \${srcdir} && $smdir/simplemake -rootdir=$rootdir \\$newline";
+	    print FD "\t-rootdir=$rootdir \\$newline";
 	}
-	else {
-	    # This should be the top level directory
-	    print FD "\t( cd \${srcdir} && $smdir/simplemake \\$newline";
+	print STDOUT "last_config_dir is $last_config_dir in $curdir\n";
+	if (defined($last_config_dir) && $last_config_dir ne "") {
+	    print FD "\t-configdir=$last_config_dir \\$newline";
 	}
 	foreach $curarg (@keepargs) {
+	    # Skip some special cases
+	    if ($curarg =~ /^-smvar_doc_attop=0/) { next; }
 	    # Must handle $ specially
 	    $tmparg = $curarg;
 	    $tmparg =~ s/\$/\\\$\$/;
@@ -3400,6 +3414,9 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
     -nodepend        - Do not generate dependency information\
 \
     -rootdir=PATH    - Set the root directory for all Makefiles\
+    -configdir=PATH  - Location of the configure that controls the Makefile\
+                       in this directory (used to rebuild a single \
+                       Makefile.in)\
     -debug           - Turn on debugging output\
     -dos             - Use DOS-style newlines on output files\
     -help            - This output\
