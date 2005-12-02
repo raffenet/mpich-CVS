@@ -98,6 +98,18 @@ N*/
  as in 'integer status(MPI_STATUS_SIZE,10)' (assuming no more than 10 
  requests are provided as input).
 N*/
+
+/*N FortranString
+
+ The sizes of MPI strings in Fortran are one less than the sizes of that 
+ string in C/C++ because the C/C++ versions provide room for the trailing
+ null character required by C/C++.  For example, 'MPI_MAX_ERROR_STRING' is 
+ 'mpif.h' is one smaller than the same value in 'mpi.h'.  See the MPI-2 
+ standard, sections 2.6.2 and 4.12.9.
+
+N*/
+
+
 -----------------------------------------------------------------------------
 /*N collops
 Notes on collective operations:
@@ -130,7 +142,11 @@ MPI-2 deprecated some routines (see 2.6.1)
 N*/
 -----------------------------------------------------------------------------
 /*N Errhandler
-  The MPI error handler for this routine is taken from 'MPI_COMM_WORLD'.
+    Error handlers:
+    The MPI error handler for this routine is taken from 'MPI_COMM_WORLD'.
+    For MPI routines that do not have an obvious communicator, file, or
+    window object, the MPI standard specifies that the error handler 
+    attached to 'MPI_COMM_WORLD' be used.
 N*/
 -----------------------------------------------------------------------------
 
