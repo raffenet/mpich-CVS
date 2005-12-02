@@ -1337,6 +1337,7 @@ class MPDMan(object):
             if self.conSock:
                 self.streamHandler.del_handler(self.conSock)
                 self.conSock.close()
+                self.conSock = 0
             self.pmiListenSock.close()
             os.setpgrp()
 
