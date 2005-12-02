@@ -231,11 +231,11 @@ install-preamble:
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.@SHLIB_EXT@ \
-			${libdir}/libtvmpich.@SHLIB_EXT@ ; fi
-	if test ! -d ${exec_prefix}/examples ; then \
-	    $(MKDIR_P) ${exec_prefix}/examples ; \
+			${DESTDIR}${libdir}/libtvmpich.@SHLIB_EXT@ ; fi
+	if test ! -d ${DESTDIR}${exec_prefix}/examples ; then \
+	    $(MKDIR_P) ${DESTDIR}${exec_prefix}/examples ; \
 	fi
-	$(INSTALL_PROGRAM) examples/cpi ${exec_prefix}/examples/cpi
+	$(INSTALL_PROGRAM) examples/cpi ${DESTDIR}${exec_prefix}/examples/cpi
 
 install-devdocs:
 	(cd doc && $(MAKE) install-devdocs)
