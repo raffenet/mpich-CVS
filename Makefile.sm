@@ -1,3 +1,4 @@
+# -*- Mode: makefile; -*-
 SUBDIRS = . src @EXTERNAL_SRC_DIRS@ examples
 # Do not include test in the basic build.  
 OTHER_DIRS = test
@@ -121,7 +122,7 @@ dist-with-version:
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
 	    ( cd tmpdir2 && ./configure --without-mpe --disable-f90 \
-              --disable-f7 && \
+              --disable-f77 --disable-cxx --disable-romio && \
               ${MAKE} mandoc && ${MAKE} htmldoc && \
               ${MAKE} latexdoc ) >manlog.txt 2>&1 ; \
 	    if [ ! -d tmpdir2/man ] ; then echo "WARNING: unable to build manpages" ; \
@@ -133,6 +134,7 @@ dist-with-version:
 	    cp tmpdir2/doc/installguide/install.pdf tmpdir/${PACKAGE}-${version}/doc/installguide/install.pdf ; \
 	    cp tmpdir2/doc/smpd/smpd_pmi.pdf tmpdir/${PACKAGE}-${version}/doc/smpd/smpd_pmi.pdf ; \
 	    cp tmpdir2/doc/logging/logging.pdf tmpdir/${PACKAGE}-${version}/doc/logging/logging.pdf ; \
+	    cp tmpdir2/doc/windev/windev.pdf tmpdir/${PACKAGE}-${version}/doc/windev/windev.pdf ; \
 	    rm -rf tmpdir2 ; \
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
