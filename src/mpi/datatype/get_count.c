@@ -41,7 +41,7 @@ zero.  If the amount of data in 'status' is not an exact multiple of the
 size of 'datatype' (so that 'count' would not be integral), a 'count' of
 'MPI_UNDEFINED' is returned instead.
 
-.N fortran
+.N Fortran
 
 .N Errors
 .N MPI_SUCCESS
