@@ -626,6 +626,9 @@ sub ReadMfile {
             $shared_libraries_exports{ $libname } = $libexports;
         }
         elsif (/^lib([@\${}\(\)\w-]*)_so_LIBS\s*=\s*(.*)$/) {
+	    # Specify dependent libraries for a shared library
+	    # (Some systems require knowledge of all of the libraries
+	    # needed when creating a shared library.)
             $libname = "$1";
             $dependentlibs = $2;
             $shared_libraries_libs{ $libname } = $dependentlibs;
@@ -877,9 +880,15 @@ sub WriteMfile {
 	&TargetSharedLibraries( \%libraries );
 	if (defined($optinstall_files{'SHLIB'})) {
 	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
-		$libspec =~ /(.*)\/([^\/]*)/;
-		$libdir = $1;
-		$libname = $2;
+		if ($libspec =~ /(.*)\/([^\/]*)/) {
+		    $libdir = $1;
+		    $libname = $2;
+		}
+		else {
+		    # The library is built in this directory
+		    $libdir = ".";
+		    $libname = $libspec;
+		}
 		$libsrc = $libname;
 		if ($libsrc =~ /\.so$/) {
 		    $libsrc =~ s/\.so/\.la/;
@@ -1322,7 +1331,7 @@ sub DefaultRules {
 	if ($rootdir) {
 	    print FD "\t-rootdir=$rootdir \\$newline";
 	}
-	print STDOUT "last_config_dir is $last_config_dir in $curdir\n";
+	print STDOUT "last_config_dir is $last_config_dir in $curdir\n" if $debug_confdir;
 	if (defined($last_config_dir) && $last_config_dir ne "") {
 	    print FD "\t-configdir=$last_config_dir \\$newline";
 	}
@@ -1605,6 +1614,9 @@ sub ExpandMakeVars {
 
 $last_config_dir = "";
 
+#
+# ===========================================================================
+
 # These next two routines let us print out the file being processed only
 # when we need to (e.g., before an error message).
 $curFilename = "";
@@ -1629,8 +1641,9 @@ sub ProcessFile {
     $configure_has_config_headers = "no";
     if (-s "configure.in") {
 	&ReadAutoconf;
-	print "Found configure.in in $curdir\n" if $debug_confdir;
-	$last_config_dir = $curdir;
+	print "Found configure.in in $curdir, set last_config_dir to $curdir\n" if $debug_confdir;
+	if ($curdir eq "") { $last_config_dir = "."; }
+	else {	$last_config_dir = $curdir; }
     }
     &ReadMfile( $file );
     $output_name = $file;
@@ -1723,7 +1736,7 @@ sub ProcessFile {
 	print "config stack has depth $#config_dir\n" if $debug_confdir;
 	print "relative path to configure dir is " . &GetPathToParent( $curdir, $last_config_dir ) . "\n" if $debug_confdir;
 	&ProcessFile( $file );
-	$last_config_dir = $config_dir[$#config_dir-1]; $#config_dir--;
+	$last_config_dir = $config_dir[$#config_dir]; $#config_dir--;
 	print "after processing, last_config_dir = $last_config_dir\n" if $debug_confdir;
 	print "config stack has depth $#config_dir\n" if $debug_confdir;
 	$rootdirpath =~ s/\.\.\/$//;
