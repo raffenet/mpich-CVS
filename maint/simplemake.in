@@ -1380,7 +1380,8 @@ sub DefaultRules {
 	}
 	$relcurdir = $curdir;
 	if ($last_config_dir) {
-	    $relcurdir =~ s/^$last_config_dir//;
+	    my $quoted_dir = quotemeta $last_config_dir;
+	    $relcurdir =~ s/^$quoted_dir//;
 	}
 	print STDOUT "curdir is $curdir and relcurdir is $relcurdir\n" if $debug_confdir;
 	print FD "\t${ignore_step}if [ -x config.status ] ; then CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status ; fi$newline";
@@ -3807,7 +3808,11 @@ sub GetPathToParent {
     my ($path_child, $path_parent) = @_;
     # Remove parent path from child path
     if (defined($path_parent)) {
+	# first, deal with a possible "." path
+	$path_parent = quotemeta $path_parent;
+	#print "path_parent = $path_parent, child = $path_child\n";
 	$path_child =~ s/^$path_parent//;
+	#print "After parent, child = $path_child\n";
 	# convert all of the non directory separators into ..
     }
     else {
