@@ -19,8 +19,7 @@
  *                    of the bc_val and should
  *                    do KVS Put/Commit/Barrier on business card before 
  *                    returning
- *     bc_key_p     - business card key buffer pointer.  freed if successfully
- *                    published
+ *     bc_key_p     - business card key buffer pointer.  
  *     bc_val_p     - business card value buffer pointer, updated to the next
  *                    available location or freed if published.
  *     val_max_sz_p - ptr to maximum value buffer size reduced by the number 
@@ -42,7 +41,8 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int p;
 
     /*
-     * Initialize the VCs associated with this process group (and thus MPI_COMM_WORLD)
+     * Initialize the VCs associated with this process group (and thus 
+     * MPI_COMM_WORLD)
      */
 
     pmi_errno = PMI_Get_size(&pg_size);
