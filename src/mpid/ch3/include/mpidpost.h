@@ -691,6 +691,7 @@ int MPIDI_CH3U_Finalize_sshm(void);
 /* Dynamic process support */
 int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
 			    int local_gpids[], int *singlePG );
+int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] );
 int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] );
 int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
 			    int size, const int lpids[] );

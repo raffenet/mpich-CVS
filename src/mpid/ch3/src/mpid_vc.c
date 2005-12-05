@@ -278,6 +278,27 @@ int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_GPID_Get
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] )
+{
+    int i;
+    int lastPGID = -1, pgid;
+    MPID_VCR vc;
+    
+    vc = comm_ptr->vcr[rank];
+
+    /* Get the process group id as an int */
+    MPIDI_PG_IdToNum( vc->pg, &pgid );
+    
+    *gpid++ = pgid;
+    *gpid++ = vc->pg_rank;
+    
+    return 0;
+}
+
 /* 
  * The following is a very simple code for looping through 
  * the GPIDs
