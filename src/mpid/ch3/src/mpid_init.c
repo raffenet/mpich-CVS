@@ -405,6 +405,13 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
  * FIXME: The code to set the business card should be more channel-specific, 
  * and not in this routine (and it should be performed within the channel 
  * init)
+ *
+ * The routine MPIDI_CH3I_BCFree should be called with the values
+ * returned by bc_key_p and publish_bc_p (publish_bc_p is the pointer to the 
+ * value string; bc_val_p points to the current first free location in the
+ * value string, which is used when appending additional information to the
+ * value string).
+ *
  */
 int MPIDI_CH3I_BCInit( int pg_rank, 
 		       char **publish_bc_p, char **bc_key_p,
@@ -464,6 +471,21 @@ int MPIDI_CH3I_BCInit( int pg_rank,
 
   fn_fail:
     goto fn_exit;
+}
+
+/* Free the business card.  This routine should be called once the business
+   card is published. */
+int MPIDI_CH3I_BCFree( char *bc_key, char *bc_val )
+{
+    /* */
+    if (bc_key) {
+	MPIU_Free( bc_key );
+    }
+    if (bc_val) {
+	MPIU_Free( bc_val );
+    }
+    
+    return 0;
 }
 
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
