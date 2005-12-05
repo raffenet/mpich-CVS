@@ -4,4 +4,7 @@ Release*
 g77
 intel
 .deps
+.libs
+.libstamp*
+*.lo
 .*-cache

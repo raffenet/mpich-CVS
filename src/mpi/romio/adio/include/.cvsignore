@@ -1,4 +1,7 @@
 romioconf.h
 romioconf.h.in
 .deps
-.*-cache
+.libs
+.libstamp*
+*.lo
+*-cache
