@@ -747,9 +747,11 @@ int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_BCInit( int pg_rank, 
 		       char **publish_bc_p, char **bc_key_p, 
 		       char **bc_val_p, int *val_max_sz_p);
+/* Function to free the storage allocated by MPIDI_CH3I_BCInit */
+int MPIDI_CH3I_BCFree( char *publish_bc, char *bc_key );
 
-
-/* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the macros require their declarations. */
+/* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the 
+   macros require their declarations. */
 
 /* Access the business card (used in mpid_port) */
 int MPIDI_CH3I_Get_business_card(char *value, int length);
