@@ -113,6 +113,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank )
 				     &val_max_remaining);
     if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
 
+    /* Free the business card now that it is published
+     (note that publish_bc_orig is the head of bc_val ) */
+    MPIDI_CH3I_BCFree( publish_bc_orig, bc_key );
+
     mpi_errno = PMI_Get_size(&pg_size);
     if (mpi_errno != 0) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
@@ -134,12 +138,6 @@ fn_exit:
     return mpi_errno;
 
 fn_fail:
-    if (bc_key != NULL) {
-        MPIU_Free(bc_key);
-    }
-    if (publish_bc_orig != NULL) {
-        MPIU_Free(publish_bc_orig);
-    }           
     goto fn_exit;
 }
 

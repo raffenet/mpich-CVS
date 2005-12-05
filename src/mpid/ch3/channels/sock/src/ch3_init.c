@@ -43,6 +43,11 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
     mpi_errno = MPIDI_CH3U_Init_sock(has_parent, pg_p, pg_rank,
 				     &publish_bc_orig, &bc_key, &bc_val, 
 				     &val_max_remaining);
+
+    /* Free the business card now that it is published
+     (note that publish_bc_orig is the head of bc_val ) */
+    MPIDI_CH3I_BCFree( publish_bc_orig, bc_key );
+
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
  fn_exit:

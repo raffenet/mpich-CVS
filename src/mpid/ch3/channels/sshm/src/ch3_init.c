@@ -50,6 +50,9 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
     }
+    /* Free the business card now that it is published
+     (note that publish_bc_orig is the head of bc_val ) */
+    MPIDI_CH3I_BCFree( publish_bc_orig, bc_key );
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
