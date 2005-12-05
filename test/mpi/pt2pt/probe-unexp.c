@@ -34,12 +34,14 @@ int main(int argc, char **argv)
     {
 	const int msg_size = 1 << msg_size_lg;
 	int msg_cnt;
-	
+
+	MTestPrintfMsg( 2, "testing messages of size %d\n", msg_size );
 	for (msg_cnt = 0; msg_cnt < NUM_MSGS_PER_BUF_SIZE; msg_cnt++)
         {
 	    MPI_Status status;
 	    const int tag = msg_size_lg * NUM_MSGS_PER_BUF_SIZE + msg_cnt;
 	    
+	    MTestPrintfMsg( 2, "Message count %d\n", msg_cnt );
 	    if (p_rank == 0)
 	    {
 		int p;
