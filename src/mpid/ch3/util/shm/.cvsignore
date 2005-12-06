@@ -1,6 +1,8 @@
 Makefile
 Makefile.in
 .deps
-.libstamp0
+.libs
+.libstamp*
+*.lo
 *.o
 .state-cache
