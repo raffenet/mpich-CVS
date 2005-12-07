@@ -272,14 +272,16 @@ private class ContentIterator implements Iterator
         evtdefs.put( arrowdef.final_evt,
                      arrowform.getFinalEventObjMethod() );
 
+        List      defs;
+        Iterator  itr;
         // Gather all the known (i.e. MPI's, internal MPE/CLOG's) and
         // user-defined undefined RecDefStates, i.e. CLOG_Rec_StateDef_t.
-        List defs = InputLog.super.getKnownUndefinedInitedStateDefs();
+        defs = InputLog.super.getKnownUndefinedInitedStateDefs();
         defs.addAll( InputLog.super.getUserUndefinedInitedStateDefs() );
 
-        // Convert them to the appropriate categories + corresponding
-        // stack event matching object functions.
-        Iterator itr = defs.iterator();
+        // Convert statedef[] to the appropriate categories
+        // and corresponding stack event matching object functions.
+        itr = defs.iterator();
         while ( itr.hasNext() ) {
             staterec = ( RecDefState ) itr.next();
 
@@ -293,8 +295,24 @@ private class ContentIterator implements Iterator
                          stateform.getFinalEventObjMethod() );
         }
 
-        // Add all the user-defined undefined RecDefEvents, CLOG_Rec_EventDef_t.
+        // Add all the known and user-defined undefined RecDefEvents,
+        // CLOG_Rec_EventDef_t.
+        defs = InputLog.super.getKnownUndefinedInitedEventDefs();
         defs.addAll( InputLog.super.getUserUndefinedInitedEventDefs() );
+
+        // Convert eventdef[] to the appropriate categories
+        // and corresponding stack event matching object functions.
+        itr = defs.iterator();
+        while ( itr.hasNext() ) {
+            eventrec = ( RecDefEvent ) itr.next();
+
+            eventform = new Topo_Event();
+            def_idx   = ObjDef.getNextCategoryIndex();
+            eventdef  = new ObjDef( def_idx, eventrec, eventform, 1 );
+            eventform.setCategory( eventdef );
+            evtdefs.put( eventdef.start_evt,
+                         eventform.getEventObjMethod() );
+        }
 
         /*
         System.err.println( "\n\t evtdefs : " );
