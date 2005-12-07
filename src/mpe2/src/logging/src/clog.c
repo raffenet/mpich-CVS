@@ -15,6 +15,7 @@
 #endif
 
 #include "clog.h"
+#include "clog_util.h"
 #include "clog_record.h"
 #include "clog_preamble.h"
 #include "clog_timer.h"
@@ -68,6 +69,7 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
 {
     CLOG_Buffer_t  *buffer;
 
+    stream->known_solo_eventID = CLOG_KNOWN_SOLO_EVENTID_START;
     stream->known_eventID      = CLOG_KNOWN_EVENTID_START;
     stream->known_stateID      = CLOG_KNOWN_STATEID_START;
     stream->user_eventID       = CLOG_USER_EVENTID_START;
@@ -127,6 +129,21 @@ void CLOG_Local_finalize( CLOG_Stream_t *stream )
 
     CLOG_Buffer_save_endlog( buffer );
     CLOG_Buffer_localIO_flush( buffer );
+}
+
+int  CLOG_Get_known_solo_eventID( CLOG_Stream_t *stream )
+{
+    if ( stream->known_solo_eventID < CLOG_KNOWN_EVENTID_START )
+        return (stream->known_solo_eventID)++;
+    else {
+        fprintf( stderr, __FILE__":CLOG_Get_known_solo_eventID() - \n"
+                         "\t""CLOG internal KNOWN solo eventID are used up, "
+                         "last known solo eventID is %d.  Aborting...\n",
+                         stream->known_solo_eventID );
+        fflush( stderr );
+        CLOG_Util_abort( 1 );
+        return stream->known_solo_eventID;
+    }
 }
 
 int  CLOG_Get_known_eventID( CLOG_Stream_t *stream )
@@ -201,6 +218,8 @@ void CLOG_Converge_init(       CLOG_Stream_t *stream,
     */
     stream->buffer->preamble->user_stateID_count
     = stream->user_stateID - CLOG_USER_STATEID_START; 
+    stream->buffer->preamble->known_solo_eventID_count
+    = stream->known_solo_eventID  - CLOG_KNOWN_SOLO_EVENTID_START;
     stream->buffer->preamble->user_solo_eventID_count
     = stream->user_solo_eventID  - CLOG_USER_SOLO_EVENTID_START;
     CLOG_Merger_init( stream->merger, stream->buffer->preamble,
