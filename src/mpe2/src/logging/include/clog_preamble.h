@@ -20,9 +20,11 @@ typedef struct {
     unsigned int  comm_world_size;
     unsigned int  known_eventID_start;
     unsigned int  user_eventID_start;
+    unsigned int  known_solo_eventID_start;
     unsigned int  user_solo_eventID_start;
     unsigned int  known_stateID_count;
     unsigned int  user_stateID_count;
+    unsigned int  known_solo_eventID_count;
     unsigned int  user_solo_eventID_count;
 } CLOG_Preamble_t;
 
