@@ -475,6 +475,26 @@ int MPE_Describe_info_event( int eventID,
                                     eventID, name, color, format );
 }
 
+/*
+    This is an MPE internal function to describe MPI events.
+    It is not meant for user application.
+    eventID should be fetched from CLOG_Get_known_solo_eventID()
+    i.e, MPE_Log_get_known_solo_eventID()
+*/
+int MPE_Describe_known_event( const CLOG_CommIDs_t *commIDs, int local_thread,
+                              int eventID,
+                              const char *name, const char *color,
+                              const char *format )
+{
+    if (!MPE_Log_hasBeenInit)
+        return MPE_LOG_NOT_INITIALIZED;
+
+    CLOG_Buffer_save_eventdef( CLOG_Buffer, commIDs, local_thread,
+                               eventID, color, name, format );
+
+    return MPE_LOG_OK;
+}
+
 /*@
    MPE_Describe_event - Describe the attributes of an event
                         without byte informational data in
@@ -571,6 +591,15 @@ int MPE_Log_get_solo_eventID( int *eventdef_eventID )
 int MPE_Log_get_known_eventID( void )
 {
     return CLOG_Get_known_eventID( CLOG_Stream );
+}
+
+/*
+    This is an MPE internal function in defining MPE_Event[] evtID components.
+    It is not meant for user application.
+*/
+int MPE_Log_get_known_solo_eventID( void )
+{
+    return CLOG_Get_known_solo_eventID( CLOG_Stream );
 }
 
 /*
