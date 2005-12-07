@@ -12,7 +12,7 @@ package logformat.clog2;
 public class Const
 {
     // Current Version ID
-           static final String    VERSION         = "CLOG-02.40";
+           static final String    VERSION         = "CLOG-02.41";
 
     /*
        Older Version IDs, COMPAT_VERSIONS, that are compataible to VERSION.
@@ -25,6 +25,9 @@ public class Const
        VERSION 2.40 updates clog2TOdrawable to support user-defined events,
                     and updates CLOG2's preamble to contain various
                     eventID and stateID info.
+       VERSION 2.41 updates CLOG2's preamble with (MPE internal solo events)
+                    known_solo_events' info and updates clog2TOdrawable to
+                    understand/prefdefine known_solo_events.
     */
            static final String[]  COMPAT_VERSIONS = {};
 
