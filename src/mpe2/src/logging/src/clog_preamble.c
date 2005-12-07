@@ -52,16 +52,18 @@ CLOG_Preamble_t *CLOG_Preamble_create( void )
     }
 
     strcpy( preamble->version, "" );
-    preamble->block_size              = 0;
-    preamble->num_buffered_blocks     = 0;
-    preamble->is_big_endian           = CLOG_BOOL_NULL;
-    preamble->comm_world_size         = 0;
-    preamble->known_eventID_start     = 0;
-    preamble->user_eventID_start      = 0;
-    preamble->user_solo_eventID_start = 0;
-    preamble->known_stateID_count     = 0;
-    preamble->user_stateID_count      = 0;
-    preamble->user_solo_eventID_count = 0;
+    preamble->block_size                = 0;
+    preamble->num_buffered_blocks       = 0;
+    preamble->is_big_endian             = CLOG_BOOL_NULL;
+    preamble->comm_world_size           = 0;
+    preamble->known_eventID_start       = 0;
+    preamble->user_eventID_start        = 0;
+    preamble->known_solo_eventID_start  = 0;
+    preamble->user_solo_eventID_start   = 0;
+    preamble->known_stateID_count       = 0;
+    preamble->user_stateID_count        = 0;
+    preamble->known_solo_eventID_count  = 0;
+    preamble->user_solo_eventID_count   = 0;
 
     return preamble;
 }
@@ -155,13 +157,15 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
        some typical values, just in case the the program crashes
        before CLOG_Merger_init() is called.
     */
-    preamble->known_eventID_start     = CLOG_KNOWN_EVENTID_START;
-    preamble->user_eventID_start      = CLOG_USER_EVENTID_START;
-    preamble->user_solo_eventID_start = CLOG_USER_SOLO_EVENTID_START;
-    preamble->known_stateID_count     = CLOG_USER_STATEID_START
-                                      - CLOG_KNOWN_STATEID_START;
-    preamble->user_stateID_count      = 100;
-    preamble->user_solo_eventID_count = 100;
+    preamble->known_eventID_start      = CLOG_KNOWN_EVENTID_START;
+    preamble->user_eventID_start       = CLOG_USER_EVENTID_START;
+    preamble->known_solo_eventID_start = CLOG_KNOWN_SOLO_EVENTID_START;
+    preamble->user_solo_eventID_start  = CLOG_USER_SOLO_EVENTID_START;
+    preamble->known_stateID_count      = CLOG_USER_STATEID_START
+                                       - CLOG_KNOWN_STATEID_START;
+    preamble->user_stateID_count       = 100;
+    preamble->known_solo_eventID_count =  10;
+    preamble->user_solo_eventID_count  = 100;
 }
 
 #define CLOG_PREAMBLE_STRLEN  32
@@ -257,9 +261,20 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "CLOG_USER_EVENTID_START Value" );
 
+    /* Write the CLOG_USER_KNOWN_EVENTID_START */
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
+                                    "known_solo_eventID_start=",
+                                    "CLOG_KNOWN_SOLO_EVENTID_START Title" );
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
+              preamble->known_solo_eventID_start );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "CLOG_KNOWN_SOLO_EVENTID_START Value" );
+
     /* Write the CLOG_USER_SOLO_EVENTID_START */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
-                                    "user_eventID_start=",
+                                    "user_solo_eventID_start=",
                                     "CLOG_USER_SOLO_EVENTID_START Title" );
     snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
               preamble->user_solo_eventID_start );
@@ -289,6 +304,18 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "CLOG user_stateID_count Value" );
+
+
+    /* Write the CLOG known_solo_eventID_count */
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
+                                    "known_solo_eventID_count=",
+                                    "CLOG known_solo_eventID_count Title" );
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
+              preamble->known_solo_eventID_count );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "CLOG known_solo_eventID_count Value" );
 
     /* Write the CLOG user_solo_eventID_count */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
@@ -411,6 +438,16 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr,
+                                    "CLOG_KNOWN_SOLO_EVENTID_START Title" );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG_KNOWN_SOLO_EVENTID_START Value" );
+    preamble->known_solo_eventID_start = (unsigned int) atoi( value_str );
+
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
                                     "CLOG_USER_SOLO_EVENTID_START Title" );
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -433,6 +470,16 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG user_stateID_count Value" );
     preamble->user_stateID_count = (unsigned int) atoi( value_str );
+
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG known_solo_eventID_count Title" );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG known_solo_eventID_count Value" );
+    preamble->known_solo_eventID_count = (unsigned int) atoi( value_str );
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -464,12 +511,16 @@ void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
                      preamble->known_eventID_start );
     fprintf( stream, "user_eventID_start = %d\n",
                      preamble->user_eventID_start );
+    fprintf( stream, "known_solo_eventID_start = %d\n",
+                     preamble->known_solo_eventID_start );
     fprintf( stream, "user_solo_eventID_start = %d\n",
                      preamble->user_solo_eventID_start );
     fprintf( stream, "known_stateID_count = %d\n",
                      preamble->known_stateID_count );
     fprintf( stream, "user_stateID_count = %d\n",
                      preamble->user_stateID_count );
+    fprintf( stream, "known_solo_eventID_count = %d\n",
+                     preamble->known_solo_eventID_count );
     fprintf( stream, "user_solo_eventID_count = %d\n",
                      preamble->user_solo_eventID_count );
 }
