@@ -101,12 +101,21 @@ typedef struct {
     int  stateID;      /* CLOG state ID */
     int  start_evtID;  /* CLOG Event ID for the beginning event */
     int  final_evtID;  /* CLOG event ID for the ending event */
-    int  n_calls;      /* Number of times this state used */
+    int  n_calls;      /* Number of times this state used * 2 */
     int  is_active;    /* Allows each state to be selectively switched off */
     int  kind_mask;    /* Indicates kind of state (message, environment) */
     char *name;        /* Pointer to name */
-    char *color;       /* Color (or B&W representation) */
+    char *color;       /* Color */
 } MPE_State;
+
+typedef struct {
+    int  eventID;      /* CLOG event ID */
+    int  n_calls;      /* Number of times this event used */
+    int  is_active;    /* Allows each event to be selectively switched off */
+    int  kind_mask;    /* Indicates kind of state (message, environment) */
+    char *name;        /* Pointer to name */
+    char *color;       /* Color */
+} MPE_Event;
 
 /* Kind_mask values */
 #define MPE_KIND_MSG 0x1
@@ -144,6 +153,8 @@ typedef struct {
 */
 #define MPE_MAX_KNOWN_STATES 300
 
+#define MPE_MAX_KNOWN_EVENTS 2
+
 #ifdef HAVE_MPI_RMA
 void MPE_Init_MPIRMA( void );
 #endif
@@ -153,10 +164,19 @@ void MPE_Init_MPIIO( void );
 #endif
 
 
+/* define global known states and events */
 static MPE_State states[MPE_MAX_KNOWN_STATES];
+static MPE_Event events[MPE_MAX_KNOWN_EVENTS];
+
 /* Global trace control */
 static int trace_on = 0;
 
+
+/* define known events' ID, i.e. index to the corresponding event in events[] */
+#define MPE_COMM_INIT_ID 0
+#define MPE_COMM_FINALIZE_ID 1
+
+/* define known states' ID, i.e. index to the corresponding state in states[] */
 #define MPE_ALLGATHER_ID 0
 #define MPE_ALLGATHERV_ID 1
 #define MPE_ALLREDUCE_ID 2
@@ -378,6 +398,16 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
         state->n_calls += 2; \
     }
 
+#define MPE_LOG_SOLO_EVENT(commIDs,name) \
+    MPE_Event  *solo_event; \
+    if (trace_on) { \
+        solo_event = &events[name]; \
+        if (solo_event->is_active) { \
+            MPE_Log_commIDs_event( commIDs, 0, solo_event->eventID, NULL ); \
+            solo_event->n_calls += 1; \
+        } \
+    }
+
 #define MPE_LOG_COMM_SEND(comm,receiver,tag,size) \
     if (trace_on && state->is_active) { \
         MPE_Log_commIDs_send( commIDs, 0, receiver, tag, size ); \
@@ -409,9 +439,11 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
             new_commIDs = CLOG_CommSet_add_intracomm( CLOG_CommSet, \
                                                       new_comm ); \
             MPE_Log_commIDs_intracomm( commIDs, 0, comm_etype, new_commIDs ); \
+            MPE_LOG_SOLO_EVENT( new_commIDs,MPE_COMM_INIT_ID ) \
         } \
         else { \
             MPE_Log_commIDs_nullcomm( commIDs, 0, comm_etype ); \
+            MPE_LOG_SOLO_EVENT( commIDs,MPE_COMM_FINALIZE_ID ) \
         } \
     }
 
@@ -1855,30 +1887,49 @@ MPI_Errhandler errhandler;
 int  MPI_Finalize( )
 {
     MPE_State       *state;
-    int              cnt[MPE_MAX_KNOWN_STATES];
-    int              totcnt[MPE_MAX_KNOWN_STATES];
+    MPE_Event       *event;
+    int              state_count[MPE_MAX_KNOWN_STATES];
+    int              state_total[MPE_MAX_KNOWN_STATES];
+    int              event_count[MPE_MAX_KNOWN_STATES];
+    int              event_total[MPE_MAX_KNOWN_STATES];
     int              returnVal, idx;
     
 /*
     MPI_Finalize - prototyping replacement for MPI_Finalize
 */
+    MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, MPE_COMM_FINALIZE_ID )
 
-  /* First, get the total number of calls by any processor */
+    /* set the total number of state calls by any processor */
     for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) 
-        cnt[idx] = states[idx].n_calls;
-    PMPI_Reduce( cnt, totcnt, MPE_MAX_KNOWN_STATES, MPI_INT, MPI_SUM, 
-                 0, MPI_COMM_WORLD );
+        state_count[idx] = states[idx].n_calls;
+    PMPI_Reduce( state_count, state_total, MPE_MAX_KNOWN_STATES,
+                 MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
+
+    /* set the total number of event calls by any processor */
+    for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) 
+        event_count[idx] = events[idx].n_calls;
+    PMPI_Reduce( event_count, event_total, MPE_MAX_KNOWN_EVENTS,
+                 MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
 
     if (procid_0 == 0) {
         fprintf( stderr, "Writing logfile....\n" );
         for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
-            if (totcnt[idx] > 0) {
+            if (state_total[idx] > 0) {
                 state  = &states[idx];
                 MPE_Describe_known_state( CLOG_CommIDs4World, 0,
                                           state->stateID,
                                           state->start_evtID,
                                           state->final_evtID, 
                                           state->name, state->color,
+                                          NULL );
+            }
+        }
+        for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
+            if (event_total[idx] > 0) {
+                event  = &events[idx];
+                MPE_Describe_known_event( CLOG_CommIDs4World, 0,
+                                          event->eventID,
+                                          event->name, event->color,
                                           NULL );
             }
         }
@@ -1934,6 +1985,7 @@ int * argc;
 char *** argv;
 {
   MPE_State  *state;
+  MPE_Event  *event;
   int         returnVal, idx;
   int         allow_mask;
 
@@ -1943,7 +1995,18 @@ char *** argv;
   MPE_Init_log();
   PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
 
-  /* Initialize all states */
+  /* Initialize all internal events */
+  for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
+      event               = &events[idx];
+      event->eventID      = MPE_Log_get_known_solo_eventID();
+      event->n_calls      = 0;
+      event->is_active    = 0;
+      event->name         = NULL;
+      event->kind_mask    = 0;
+      event->color        = "white";
+  }
+
+  /* Initialize all internal states */
   for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
       state               = &states[idx];
       state->stateID      = MPE_Log_get_known_stateID();
@@ -2551,6 +2614,7 @@ char *** argv;
   MPE_Init_MPIRMA();
 #endif
 
+  /* These are MPE internal states */
   state = &states[MPE_ISEND_WAITED_ID];
   state->kind_mask = MPE_KIND_INTERNAL;
   state->name = "MPE_Isend_waited";
@@ -2560,6 +2624,17 @@ char *** argv;
   state->kind_mask = MPE_KIND_INTERNAL;
   state->name = "MPE_Irecv_waited";
   state->color="DarkOrange";
+
+  /* These are MPE internal Events */
+  event = &events[MPE_COMM_INIT_ID];
+  event->kind_mask = MPE_KIND_INTERNAL;
+  event->name = "MPE_Comm_init";
+  event->color = "red";
+
+  event = &events[MPE_COMM_FINALIZE_ID];
+  event->kind_mask = MPE_KIND_INTERNAL;
+  event->name = "MPE_Comm_finalize";
+  event->color = "orange";
 
 #ifdef HAVE___ARGV
   if ( argv == NULL )
@@ -2578,9 +2653,17 @@ char *** argv;
           states[idx].is_active = 1;
   }
 
+  /* Enable the basic events */
+  for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
+      if ( (events[idx].kind_mask & allow_mask) != 0 )
+          events[idx].is_active = 1;
+  }
+
   rq_init( requests_avail_0 );
 
   trace_on = 1;
+
+  MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, MPE_COMM_INIT_ID )
 
   return returnVal;
 }
