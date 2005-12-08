@@ -230,7 +230,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_CREATE);
-    
+
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -507,26 +507,19 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
     /* All processes in the local_comm now build the communicator */
 
-    newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    if (!newcomm_ptr) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
-    }
+    mpi_errno = MPIR_Comm_create( &newcomm_ptr );
+    if (mpi_errno) goto fn_fail;
 
-    MPIU_Object_set_ref( newcomm_ptr, 1 );
-    newcomm_ptr->attributes   = 0;
     newcomm_ptr->context_id   = final_context_id;
     newcomm_ptr->remote_size  = remote_size;
     newcomm_ptr->local_size   = comm_ptr->local_size;
     newcomm_ptr->rank         = comm_ptr->rank;
-    newcomm_ptr->local_group  = 0;
-    newcomm_ptr->remote_group = 0;
     newcomm_ptr->comm_kind    = MPID_INTERCOMM;
     newcomm_ptr->local_comm   = 0;
     newcomm_ptr->is_low_group = is_low_group;
 
     mpi_errno = MPID_VCR_CommFromLpids( newcomm_ptr, remote_size, remote_lpids );
     if (mpi_errno) goto fn_fail;
-
 
     /* Setup the communicator's vc table: local group.  This is
      just a duplicate of the local_comm's group */

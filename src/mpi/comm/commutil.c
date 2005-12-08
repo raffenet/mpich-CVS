@@ -45,16 +45,14 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
    See MPIR_Comm_copy for a function to produce a copy of part of a
    communicator 
 */
-/*  FIXME : comm_create can't use this because the context id must be
-   created separately from the communicator (creating the context
-   is collective over oldcomm_ptr, but this routine may be called only
-   by a subset of processes in the new communicator)
 
-   Only Comm_split currently uses this
+/*  
+    Create a communicator structure and perform basic initialization 
+    (mostly clearing fields and updating the reference count).  
  */
-int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
+int MPIR_Comm_create( MPID_Comm **newcomm_ptr )
 {   
-    int mpi_errno, new_context_id;
+    int mpi_errno;
     MPID_Comm *newptr;
 
     newptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
@@ -68,19 +66,22 @@ int MPIR_Comm_create( MPID_Comm *oldcomm_ptr, MPID_Comm **newcomm_ptr )
     *newcomm_ptr = newptr;
     MPIU_Object_set_ref( newptr, 1 );
 
-    /* If there is a context id cache in oldcomm, use it here.  Otherwise,
-       use the appropriate algorithm to get a new context id */
-    newptr->context_id = new_context_id = 
-	MPIR_Get_contextid( oldcomm_ptr );
-    newptr->attributes = 0;
-    /* --BEGIN ERROR HANDLING-- */
-    if (new_context_id == 0) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-                                 "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER,
-					  "**toomanycomm", 0 );
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
+    /* Clear many items (empty means to use the default; some of these
+       may be overridden within the communicator initialization) */
+    newptr->errhandler   = 0;
+    newptr->attributes	 = 0;
+    newptr->remote_group = 0;
+    newptr->local_group	 = 0;
+    newptr->coll_fns	 = 0;
+    newptr->topo_fns	 = 0;
+    newptr->name[0]	 = 0;
+
+    /* Fields not set include context_id, remote and local size, and 
+       kind, since different communicator construction routines need 
+       different values */
+
+    /* Insert hook here for linking the communicators together */
+
     return 0;
 }
 
@@ -552,7 +553,9 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     return MPI_SUCCESS;
 }
 
-
+/* Release a reference to a communicator.  If there are no pending
+   references, delete the communicator and recover all storage and 
+   context ids */
 int MPIR_Comm_release(MPID_Comm * comm_ptr)
 {
     static const char FCNAME[] = "MPIR_Comm_release";

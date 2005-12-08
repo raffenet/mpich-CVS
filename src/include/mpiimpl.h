@@ -3495,7 +3495,7 @@ int MPIR_Barrier( MPID_Comm *comm_ptr );
 
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
-int MPIR_Comm_create( MPID_Comm *, MPID_Comm ** );
+int MPIR_Comm_create( MPID_Comm ** );
 
 void MPIR_Free_err_dyncodes( void );
 

@@ -159,11 +159,10 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	}
 
 	/* Get the new communicator structure and context id */
-	newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-	MPIU_ERR_CHKANDJUMP(!newcomm_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem");
+	
+	mpi_errno = MPIR_Comm_create( &newcomm_ptr );
+	if (mpi_errno) goto fn_fail;
 
-	MPIU_Object_set_ref( newcomm_ptr, 1 );
-	newcomm_ptr->attributes  = 0;
 	newcomm_ptr->context_id  = new_context_id;
 	newcomm_ptr->remote_size = newcomm_ptr->local_size = n;
 	newcomm_ptr->rank        = group_ptr->rank;
@@ -175,9 +174,6 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	newcomm_ptr->remote_group = group_ptr;
 	MPIU_Object_add_ref( group_ptr );
 	MPIU_Object_add_ref( group_ptr );
-
-	newcomm_ptr->coll_fns = 0;
-	newcomm_ptr->topo_fns = 0;
 
 	/* Setup the communicator's vc table */
 	MPID_VCRT_Create( n, &newcomm_ptr->vcrt );

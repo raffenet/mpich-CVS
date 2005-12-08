@@ -97,6 +97,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;
     splittype *table, *keytable;
     int       rank, size, i, new_size, first_entry = 0, *last_ptr;
+    int       new_context_id;
     MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
 
@@ -172,12 +173,24 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
        the list for only the known size of the group */
 
     /* Step 3: Create the communicator */
-    /* Must collectively create the communicator but we
-       can recover the storage for color == MPI_UNDEFINED */
-    mpi_errno = MPIR_Comm_create( comm_ptr, &newcomm_ptr );
-    if (mpi_errno) goto fn_fail;
-
+    /* Collectively create a new context id.  The same context id will
+       be used by each (disjoint) collections of processes.  The
+       processes whose color is MPI_UNDEFINED will return the 
+       context id to the pool */
+    new_context_id = new_context_id = MPIR_Get_contextid( comm_ptr );
+    if (new_context_id == 0) {
+	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+                                 "MPI_Comm_split", __LINE__, MPI_ERR_OTHER,
+					  "**toomanycomm", 0 );
+	goto fn_fail;
+    }
+    
+    /* Now, create the new communicator structure if necessary */
     if (color != MPI_UNDEFINED) {
+	mpi_errno = MPIR_Comm_create( &newcomm_ptr );
+	if (mpi_errno) goto fn_fail;
+
+	newcomm_ptr->context_id  = new_context_id;
 	newcomm_ptr->remote_size = new_size;
 	newcomm_ptr->local_size  = new_size;
 	newcomm_ptr->comm_kind   = MPID_INTRACOMM;
@@ -215,13 +228,6 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	    MPIU_Object_add_ref( comm_ptr->errhandler );
 	}
 
-	/* Clear other items */
-	newcomm_ptr->remote_group = 0;
-	newcomm_ptr->local_group  = 0;
-	newcomm_ptr->coll_fns	  = 0;
-	newcomm_ptr->topo_fns     = 0;
-	newcomm_ptr->name[0]	  = 0;
-
         /* Notify the device of this new communicator */
 	/*printf( "about to notify device\n" ); */
 	MPID_Dev_comm_create_hook( newcomm_ptr );
@@ -230,8 +236,9 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	*newcomm = newcomm_ptr->handle;
     }
     else {
+	/* color was MPI_UNDEFINED.  Free the context id */
 	*newcomm = MPI_COMM_NULL;
-	MPIU_Handle_obj_free( &MPID_Comm_mem, newcomm_ptr ); 
+	MPIR_Free_contextid( new_context_id );
     }
     
     /* ... end of body of routine ... */

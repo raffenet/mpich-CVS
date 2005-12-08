@@ -191,18 +191,15 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     MPIR_Nest_incr();
     NMPI_Bcast( &local_high, 1, MPI_INT, 0, comm_ptr->local_comm->handle );
     MPIR_Nest_decr();
-    newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    MPIU_ERR_CHKANDJUMP(!newcomm_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem");
+
+    mpi_errno = MPIR_Comm_create( &newcomm_ptr );
+    if (mpi_errno) goto fn_fail;
 
     new_size = comm_ptr->local_size + comm_ptr->remote_size;
-    MPIU_Object_set_ref( newcomm_ptr, 1 );
     newcomm_ptr->context_id   = comm_ptr->context_id + 2; /* See below */
     newcomm_ptr->remote_size  = newcomm_ptr->local_size   = new_size;
     newcomm_ptr->rank         = -1;
-    newcomm_ptr->local_group  = 0;
-    newcomm_ptr->remote_group = 0;
     newcomm_ptr->comm_kind    = MPID_INTRACOMM;
-    newcomm_ptr->attributes   = 0;
 
     /* Now we know which group comes first.  Build the new vcr 
        from the existing vcrs */

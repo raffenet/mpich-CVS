@@ -242,9 +242,9 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     }
 #endif
 
-
     /* create and fill in the new intercommunicator */
-    mpi_errno = MPIR_Comm_create(comm_ptr, newcomm);
+    /* WDG - old call allocated a context id that was then discarded */
+    mpi_errno = MPIR_Comm_create(newcomm);
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -736,11 +736,15 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
        context id to the other side. */
     /* FIXME: There is a danger that the context id won't be unique
        on the other side of this connection */
-    mpi_errno = MPIR_Comm_create(comm_ptr, newcomm);
+    mpi_errno = MPIR_Comm_create(newcomm);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-
+    (*newcomm)->context_id = MPIR_Get_contextid( comm_ptr );
+    if ((*newcomm)->context_id == 0) {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanycomm" );
+    }
+    
     rank = comm_ptr->rank;
     local_comm_size = comm_ptr->local_size;
     
@@ -909,7 +913,8 @@ int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, in
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
 
     MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
-    mpi_errno = MPIR_Comm_create(commself_ptr, &tmp_comm);
+    /* WDG-old code allocated a context id that was then discarded */
+    mpi_errno = MPIR_Comm_create(&tmp_comm);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -919,17 +924,11 @@ int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, in
     tmp_comm->remote_size = 1;
 
     /* Fill in new intercomm */
-    /* FIXME: This should share a routine with the communicator code to
-       ensure that the initialization is consistent */
-    tmp_comm->attributes   = NULL;
     tmp_comm->local_size   = 1;
     tmp_comm->rank         = 0;
-    tmp_comm->local_group  = NULL;
-    tmp_comm->remote_group = NULL;
     tmp_comm->comm_kind    = MPID_INTERCOMM;
     tmp_comm->local_comm   = NULL;
     tmp_comm->is_low_group = is_low_group;
-    tmp_comm->coll_fns     = NULL;
 
     /* No pg structure needed since vc has already been set up (connection has been established). */
 
