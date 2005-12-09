@@ -36,6 +36,17 @@ static MPID_Request * recvq_posted_tail = 0;
 static MPID_Request * recvq_unexpected_head = 0;
 static MPID_Request * recvq_unexpected_tail = 0;
 
+/* Export the location of the queue heads if debugger support is enabled.
+ * This allows the queue code to rely on the local variables for the
+ * queue heads while also exporting those variables to the debugger.
+ * See src/mpi/debugger/dll_mpich2.c for how this is used to 
+ * access the message queues.
+ */
+#ifdef HAVE_DEBUGGER_SUPPORT
+MPID_Request ** const MPID_Recvq_posted_head_ptr     = &recvq_posted_head;
+MPID_Request ** const MPID_Recvq_unexpected_head_ptr = &recvq_unexpected_head;
+#endif
+
 /*
  * MPIDI_CH3U_Recvq_FU()
  *
