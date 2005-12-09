@@ -53,7 +53,7 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 	    ret = PVFS_sys_getparent(fs_id, pvfs_name,
 		    &(pvfs2_fs->credentials), &resp_getparent); 
 	    if (ret < 0) {
-		FPRINTF(stderr, "pvfs_sys_getparent returns with %d\n", ret);
+		fprintf(stderr, "pvfs_sys_getparent returns with %d\n", ret);
 		o_status->error = ret;
 		return;
 	    } 
@@ -75,7 +75,7 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 	    }
 	    o_status->object_ref = resp_create.ref;
 	} else {
-	    FPRINTF(stderr, "cannot create file without MPI_MODE_CREATE\n");
+	    fprintf(stderr, "cannot create file without MPI_MODE_CREATE\n");
 	    o_status->error = ret;
 	    return;
 	}

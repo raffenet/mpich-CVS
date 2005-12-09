@@ -19,6 +19,14 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	MPI_Info_create(&(fd->info));
 	MPI_Info_set(fd->info, "romio_pvfs2_debugmask", "0");
 	fd->hints->fs_hints.pvfs2.debugmask = 0;
+	MPI_Info_set(fd->info, "romio_pvfs2_posix_read", "disable");
+        MPI_Info_set(fd->info, "romio_pvfs2_posix_write", "disable");
+        fd->hints->fs_hints.pvfs2.posix_read = ADIOI_HINT_DISABLE;
+        fd->hints->fs_hints.pvfs2.posix_write = ADIOI_HINT_DISABLE;
+        MPI_Info_set(fd->info, "romio_pvfs2_dtype_read", "disable");
+        MPI_Info_set(fd->info, "romio_pvfs2_dtype_write", "disable");
+        fd->hints->fs_hints.pvfs2.dtype_read = ADIOI_HINT_DISABLE;
+        fd->hints->fs_hints.pvfs2.dtype_write = ADIOI_HINT_DISABLE;
 	
 	/* any user-provided hints? */
 	if (users_info != MPI_INFO_NULL) {
@@ -61,6 +69,106 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		
 		MPI_Info_set(fd->info, "striping_factor", value);
 	    }
+
+	    /* POSIX read */
+            MPI_Info_get(users_info, "romio_pvfs2_posix_read",
+                         MPI_MAX_INFO_VAL, value, &flag);
+            if (flag) {
+                if ( !strcmp(value, "enable") || !strcmp(value, "ENABLE"))
+                {
+                    MPI_Info_set(fd->info, "romio_pvfs2_posix_read", value);
+                    fd->hints->fs_hints.pvfs2.posix_read = ADIOI_HINT_ENABLE;
+                }
+                else if ( !strcmp(value, "disable") ||
+                          !strcmp(value, "DISABLE"))
+                {
+                    MPI_Info_set(fd->info , "romio_pvfs2_posix_read", value);
+                    fd->hints->fs_hints.pvfs2.posix_read = ADIOI_HINT_DISABLE;
+                }
+                tmp_value = fd->hints->fs_hints.pvfs2.posix_read;
+                MPI_Bcast(&tmp_value, 1, MPI_INT, 0, fd->comm);
+                if (tmp_value != fd->hints->fs_hints.pvfs2.posix_read) {
+                    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+                                                       "posix_read",
+                                                       error_code);
+                    return;
+                }
+            }
+
+            /* POSIX write */
+            MPI_Info_get(users_info, "romio_pvfs2_posix_write",
+                         MPI_MAX_INFO_VAL, value, &flag);
+            if (flag) {
+                if ( !strcmp(value, "enable") || !strcmp(value, "ENABLE"))
+                {
+                    MPI_Info_set(fd->info, "romio_pvfs2_posix_write", value);
+                    fd->hints->fs_hints.pvfs2.posix_write = ADIOI_HINT_ENABLE;
+                }
+                else if ( !strcmp(value, "disable") ||
+                          !strcmp(value, "DISABLE"))
+                {
+                    MPI_Info_set(fd->info , "romio_pvfs2_posix_write", value);
+                    fd->hints->fs_hints.pvfs2.posix_write = ADIOI_HINT_DISABLE;
+                }
+                tmp_value = fd->hints->fs_hints.pvfs2.posix_write;
+                MPI_Bcast(&tmp_value, 1, MPI_INT, 0, fd->comm);
+                if (tmp_value != fd->hints->fs_hints.pvfs2.posix_write) {
+                    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+                                                       "posix_write",
+                                                       error_code);
+                    return;
+                }
+            }
+
+	    /* Datatype read */
+            MPI_Info_get(users_info, "romio_pvfs2_dtype_read",
+                         MPI_MAX_INFO_VAL, value, &flag);
+            if (flag) {
+                if ( !strcmp(value, "enable") || !strcmp(value, "ENABLE"))
+                {
+                    MPI_Info_set(fd->info, "romio_pvfs2_dtype_read", value);
+                    fd->hints->fs_hints.pvfs2.dtype_read = ADIOI_HINT_ENABLE;
+                }
+                else if ( !strcmp(value, "disable") ||
+                          !strcmp(value, "DISABLE"))
+                {
+                    MPI_Info_set(fd->info , "romio_pvfs2_dtype_read", value);
+                    fd->hints->fs_hints.pvfs2.dtype_read = ADIOI_HINT_DISABLE;
+                }
+                tmp_value = fd->hints->fs_hints.pvfs2.dtype_read;
+                MPI_Bcast(&tmp_value, 1, MPI_INT, 0, fd->comm);
+                if (tmp_value != fd->hints->fs_hints.pvfs2.dtype_read) {
+                    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+                                                       "dtype_read",
+                                                       error_code);
+                    return;
+                }
+            }
+
+            /* Datatype write */
+            MPI_Info_get(users_info, "romio_pvfs2_dtype_write",
+                         MPI_MAX_INFO_VAL, value, &flag);
+            if (flag) {
+                if ( !strcmp(value, "enable") || !strcmp(value, "ENABLE"))
+                {
+                    MPI_Info_set(fd->info, "romio_pvfs2_dtype_write", value);
+                    fd->hints->fs_hints.pvfs2.dtype_write = ADIOI_HINT_ENABLE;
+                }
+                else if ( !strcmp(value, "disable") ||
+                          !strcmp(value, "DISABLE"))
+                {
+                    MPI_Info_set(fd->info , "romio_pvfs2_dtype_write", value);
+                    fd->hints->fs_hints.pvfs2.dtype_write = ADIOI_HINT_DISABLE;
+                }
+                tmp_value = fd->hints->fs_hints.pvfs2.dtype_write;
+                MPI_Bcast(&tmp_value, 1, MPI_INT, 0, fd->comm);
+                if (tmp_value != fd->hints->fs_hints.pvfs2.dtype_write) {
+                    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname,
+                                                       "dtype_write",
+                                                       error_code);
+                    return;
+                }
+            }
 
             ADIOI_Free(value);
 	}

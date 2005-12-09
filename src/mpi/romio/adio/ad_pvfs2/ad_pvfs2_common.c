@@ -81,7 +81,7 @@ void ADIOI_PVFS2_makeattribs(PVFS_sys_attr * attribs)
     
     attribs->owner = geteuid();
     attribs->group = getegid();
-    attribs->perms = 0644;
+    attribs->perms = 1877;
     attribs->mask =  PVFS_ATTR_SYS_ALL_SETABLE;
     attribs->atime = time(NULL);
     attribs->mtime = attribs->atime;
