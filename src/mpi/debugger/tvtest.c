@@ -10,11 +10,18 @@
  * debugger performs using the routines defined in mpi_interface.h .
  */
 
+/* You can build this with -DNOT_STANDALONE and then run it with a debugger;
+   by default, it builds routines to simulate some actions that a 
+   debugger might take when running it with the message queue interface */
+
 #include <stdio.h>
 #include "mpi.h"
 #include <stdlib.h>
 
 #include "mpi_interface.h"
+
+int showQueues(void);
+int init_dbr(void);
 
 int main( int argc, char *argv[] )
 {
@@ -38,7 +45,7 @@ int main( int argc, char *argv[] )
     MPI_Isend( &sbuf, 1, MPI_INT, (wrank + wsize - 1) % wsize, 18, 
 	       MPI_COMM_WORLD, &sreq );
     /* This relies on buffering short eager messages */
-    //    MPI_Send( &ssbuf, 1, MPI_INT, (wrank + 2) %wsize, 18, dupworld );
+    /*    MPI_Send( &ssbuf, 1, MPI_INT, (wrank + 2) %wsize, 18, dupworld );*/
 
     /* Access the queues */
     showQueues();
@@ -65,6 +72,7 @@ int main( int argc, char *argv[] )
     return 0;
 }
 
+#if !defined(NOT_STANDALONE)
 /* ------------------------------------------------------------------------- */
 /* Forward references for the functions that simulate debugger operations */
 static void dbgrI_put_image_info( mqs_image *image, mqs_image_info *info );
@@ -158,7 +166,7 @@ int init_dbr( void )
     return 0;
 }
 
-int showQueues( )
+int showQueues( void )
 {
     mqs_communicator comm;
     mqs_pending_operation op;
@@ -325,3 +333,7 @@ static int dbgrI_get_global_rank( mqs_process *process )
 
     return wrank;
 }
+#else
+int init_dbr(void) { return 0;}
+int showQueues(void) { return 0; }
+#endif
