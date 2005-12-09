@@ -21,6 +21,9 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
 				      sizeof(MPID_Comm), MPID_Comm_direct,
                                       MPID_COMM_PREALLOC};
 
+/* To help the debugger, we provide a list of all active communicators */
+MPIR_Comm_list MPIR_All_communicators = { 0, 0 };
+
 /* FIXME :
    Reusing context ids can lead to a race condition if (as is desirable)
    MPI_Comm_free does not include a barrier.  Consider the following:
@@ -80,7 +83,15 @@ int MPIR_Comm_create( MPID_Comm **newcomm_ptr )
        kind, since different communicator construction routines need 
        different values */
 
-    /* Insert hook here for linking the communicators together */
+    /* Insert this new communicator into the list of known communicators.
+       Make this conditional on debugger support to match the test in 
+       MPIR_Comm_release . */
+    /* FIXME: Ensure thread-safe */
+#ifdef HAVE_DEBUGGER_SUPPORT
+    newptr->comm_next = MPIR_All_communicators.head;
+    MPIR_All_communicators.head = newptr;
+    MPIR_All_communicators.sequence_number++;
+#endif
 
     return 0;
 }
@@ -496,15 +507,9 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     /* We're left with the processes that will have a non-null communicator.
        Create the object, initialize the data, and return the result */
 
-    newcomm_ptr = (MPID_Comm *)MPIU_Handle_obj_alloc( &MPID_Comm_mem );
-    /* --BEGIN ERROR HANDLING-- */
-    if (!newcomm_ptr) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-                     "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
-    MPIU_Object_set_ref( newcomm_ptr, 1 );
+    mpi_errno = MPIR_Comm_create( &newcomm_ptr );
+    if (mpi_errno) return mpi_errno;
+
     newcomm_ptr->context_id = new_context_id;
 
     /* Save the kind of the communicator */
@@ -528,24 +533,11 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     newcomm_ptr->rank        = comm_ptr->rank;
     newcomm_ptr->local_size  = comm_ptr->local_size;
 
-    /* More advanced version: if the group is available, dup it by 
-       increasing the reference count */
-    newcomm_ptr->local_group  = 0;
-    newcomm_ptr->remote_group = 0;
-
     /* Inherit the error handler (if any) */
     newcomm_ptr->errhandler = comm_ptr->errhandler;
     if (comm_ptr->errhandler) {
 	MPIU_Object_add_ref( comm_ptr->errhandler );
     }
-    /* We could also inherit the communicator function pointer */
-    newcomm_ptr->coll_fns = 0;
-
-    /* Similarly, we could also inherit the topology function pointer */
-    newcomm_ptr->topo_fns = 0;
-
-    /* We do *not* inherit any name */
-    newcomm_ptr->name[0] = 0;
 
     /* Start with no attributes on this communicator */
     newcomm_ptr->attributes = 0;
@@ -604,6 +596,30 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
                 MPIR_Group_release(comm_ptr->remote_group);
 
   	    MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );  
+	    
+	    /* Remove from the list of active communicators if 
+	       we are supporting message-queue debugging.  We make this
+	       conditional on having debugger support since the
+	       operation is not constant-time */
+#ifdef HAVE_DEBUGGER_SUPPORT
+	    /* FIXME: Ensure thread-safe */
+	    {
+		MPID_Comm *p, *prev;
+		p = MPIR_All_communicators.head;
+		prev = 0;
+		while (p) {
+		    if (p == comm_ptr) {
+			if (prev) prev->comm_next = p->comm_next;
+			else MPIR_All_communicators.head = p;
+			break;
+		    }
+		    prev = p;
+		    p = p->comm_next;
+		}
+		/* Record a change to the list */
+		MPIR_All_communicators.sequence_number++;
+	    }
+#endif
 	}
 	else {
 	    /* If the user attribute free function returns an error,
