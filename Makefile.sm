@@ -53,7 +53,7 @@ all-preamble:
 # Move the "pkglist.new" file to "pkglist" on successful completion
 all-postamble:
 	@if [ "@BUILD_TVDLL@" = "yes" ] ; then \
-	( cd src/mpi/debugger && $(MAKE) ./libtvmpich.@SHLIB_EXT@ ) ; fi
+	( cd src/mpi/debugger && $(MAKE) ./libtvmpich2.@SHLIB_EXT@ ) ; fi
 	@if [ -s lib/pkglist.new ] ; then mv -f lib/pkglist.new lib/pkglist ; fi
 	@echo "Make completed"
 
@@ -200,7 +200,7 @@ optinstall_LIB = lib/lib${MPICXXLIBNAME}.a
 # UNUSED, example for experimentation only
 #lib${MPILIBNAME}_so_EXPORTS = maint/mpi.def
 #libf${MPILIBNAME}_so_EXPORTS = maint/fmpi.def
-#libf${MPILIBNAME}_so_LIBS = -L. -l$(MPILIBNAME)
+libf${MPILIBNAME}_so_LIBS = -L. -l$(MPILIBNAME)
 
 install_INCLUDE = src/include/mpi.h
 
@@ -230,8 +230,8 @@ install-preamble:
 
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
-	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich.@SHLIB_EXT@ \
-			${DESTDIR}${libdir}/libtvmpich.@SHLIB_EXT@ ; fi
+	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich2.@SHLIB_EXT@ \
+			${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
 	if test ! -d ${DESTDIR}${exec_prefix}/examples ; then \
 	    $(MKDIR_P) ${DESTDIR}${exec_prefix}/examples ; \
 	fi
