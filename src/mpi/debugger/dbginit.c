@@ -1,12 +1,14 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id$
- *
+/*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
 #include "mpiimpl.h"
 
+/* We prototype this routine here because it is only used in this file.  It 
+   is not static so that the debugger can find it (the debugger will set a 
+   breakpoint at this routine */
 void *MPIR_Breakpoint(void);
 
 /*
@@ -24,6 +26,7 @@ void *MPIR_Breakpoint(void);
 #ifdef HAVE_DEBUGGER_SUPPORT
 #ifdef MPICH_INFODLL_LOC
 char MPIR_dll_name[] = MPICH_INFODLL_LOC;
+#endif
 #endif
 
 /* 
@@ -67,7 +70,6 @@ int MPIR_proctable_size          = 1;
  * MPIR_acquired_pre_main - 
  * MPIR_partial_attach_ok -
 */
-#endif
 
 /*
  * If MPICH2 is built with the --enable-debugger option, MPI_Init and 
@@ -85,6 +87,10 @@ void MPIR_WaitForDebugger( void )
     int rank = MPIR_Process.comm_world->rank;
     int size = MPIR_Process.comm_world->local_size;
 
+    /* FIXME: In MPICH2, the executables may not have the information
+       on the other processes; this is part of the Process Manager Interface
+       (PMI).  We need another way to provide this information to 
+       a debugger */
     if (rank == 0) {
 	MPIR_proctable    = (MPIR_PROCDESC *)MPIU_Malloc( size * sizeof(MPIR_PROCDESC) );
 	/* Temporary to see if we can get totalview's attention */
@@ -92,7 +98,7 @@ void MPIR_WaitForDebugger( void )
 	MPIR_proctable[0].executable_name = 0;
 	MPIR_proctable[0].pid             = getpid();
 
-	MPIR_proctable_size          = 1;
+	MPIR_proctable_size               = 1;
     }
 
     /* Put the breakpoint after setting up the proctable */
@@ -101,8 +107,6 @@ void MPIR_WaitForDebugger( void )
     /* After we exit the MPIR_Breakpoint routine, the debugger may have
        set variables such as MPIR_being_debugged */
 
-#ifdef MPID_HAS_PROCTABLE_INFO
-#endif
     /* Check to see if we're not the master,
      * and wait for the debugger to attach if we're 
      * a slave. The debugger will reset the debug_gate.
@@ -142,3 +146,69 @@ void * MPIR_Breakpoint( void )
 {
     return 0;
 }
+
+/* ------------------------------------------------------------------------- */
+/* 
+ * Manage the send queue.
+ */
+
+/* We need to save the tag and rank since this information may not 
+   be included in the request.  Saving the context_id also simplifies
+   matching these entries with a communicator */
+typedef struct MPIR_Sendq {
+    MPID_Request *sreq;
+    int tag, rank, context_id;
+    struct MPIR_Sendq *next;
+} MPIR_Sendq;
+
+MPIR_Sendq *MPIR_Sendq_head = 0;
+/* Keep a pool of previous sendq elements to speed allocation of queue 
+   elements */
+static MPIR_Sendq *pool = 0;
+
+void MPIR_Sendq_remember( MPID_Request *req, 
+			  int rank, int tag, int context_id )
+{
+    MPIR_Sendq *p;
+    if (pool) {
+	p = pool;
+	pool = p->next;
+    }
+    else {
+	p = (MPIR_Sendq *)MPIU_Malloc( sizeof(MPIR_Sendq) );
+	if (!p) {
+	    /* Just ignore it */
+	    return;
+	}
+    }
+    p->sreq       = req;
+    p->tag        = tag;
+    p->rank       = rank;
+    p->context_id = context_id;
+    p->next       = MPIR_Sendq_head;
+    MPIR_Sendq_head = p;
+}
+
+void MPIR_Sendq_forget( MPID_Request *req )
+{
+    MPIR_Sendq *p, *prev;
+
+    p    = MPIR_Sendq_head;
+    prev = 0;
+
+    /* FIXME: Thread-safe */
+    while (p) {
+	if (p->sreq == req) {
+	    if (prev) prev->next = p->next;
+	    else MPIR_Sendq_head = p->next;
+	    /* Return this element to the pool */
+	    p->next = pool;
+	    pool    = p;
+	    break;
+	}
+	prev = p;
+	p    = p->next;
+    }
+    /* If we don't find the request, just ignore it */
+}
+   
