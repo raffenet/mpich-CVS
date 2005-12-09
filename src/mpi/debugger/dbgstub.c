@@ -74,7 +74,7 @@ int dbgrI_field_offset(mqs_type *type, char *name)
     case TYPE_MPID_COMM:
 	{
 	    MPID_Comm c;
-	    if (strcmp( name, "comm_name" ) == 0) {
+	    if (strcmp( name, "name" ) == 0) {
 		off = ((char*)&(c.name[0]) - (char*)&c.handle);
 	    }
 	    else if (strcmp( name, "comm_next" ) == 0) {
@@ -82,6 +82,9 @@ int dbgrI_field_offset(mqs_type *type, char *name)
 	    }
 	    else if (strcmp( name, "remote_size" ) == 0) {
 		off = ((char*)&c.remote_size - (char*)&c.handle);
+	    }
+	    else if (strcmp( name, "rank" ) == 0) {
+		off = ((char*)&c.rank - (char*)&c.handle);
 	    }
 	    else if (strcmp( name, "context_id" ) == 0) {
 		off = ((char*)&c.context_id - (char*)&c.handle);

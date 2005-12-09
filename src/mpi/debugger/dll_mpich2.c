@@ -7,6 +7,7 @@
 /* Fixme: include the mpichconf.h file? */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include "mpi.h"
 
@@ -238,9 +239,10 @@ int mqs_image_has_queues (mqs_image *image, char **message)
 	mqs_type *co_type = dbgr_find_type( image, "MPID_Comm", mqs_lang_c );
 	if (co_type) {
 	    have_co = 1;
-	    i_info->comm_name_offs = dbgr_field_offset( co_type, "comm_name" );
+	    i_info->comm_name_offs = dbgr_field_offset( co_type, "name" );
 	    i_info->comm_next_offs = dbgr_field_offset( co_type, "comm_next" );
 	    i_info->comm_rsize_offs = dbgr_field_offset( co_type, "remote_size" );
+	    i_info->comm_rank_offs = dbgr_field_offset( co_type, "rank" );
 	    i_info->comm_context_id_offs = dbgr_field_offset( co_type, "context_id" );
 	}
     }
@@ -585,7 +587,7 @@ static int fetch_receive (mqs_process *proc, mpich_process_info *p_info,
 						not be available) */
 	    res->desired_length = -1;
 	    
-	    res->tag_wild == (tag < 0);
+	    res->tag_wild = (tag < 0);
 	    /* We don't know the rest of these */
 	    res->buffer   = 0;
 	    res->system_buffer = 0;
@@ -892,7 +894,10 @@ static int rebuild_communicator_list (mqs_process *proc)
 	    strncpy (nc->comm_info.name, name, 64);
 	    nc->comm_info.unique_id = comm_base;
 	    nc->comm_info.size      = np;
+	    nc->comm_info.local_rank = fetch_int (proc, comm_base+i_info->comm_rank_offs,p_info);
+#if 0
 	    nc->comm_info.local_rank= reverse_translate (g, dbgr_get_global_rank (proc));
+#endif
 	}
 	/* Step to the next communicator on the list */
 	comm_base = fetch_pointer (proc, comm_base+i_info->comm_next_offs, p_info);
@@ -1003,7 +1008,8 @@ static mqs_tword_t fetch_int16 (mqs_process * proc, mqs_taddr_t addr,
 } 
 
 /* ------------------------------------------------------------------------- */
-/* With each communicator we 
+/* With each communicator we need to translate ranks to/from their
+   MPI_COMM_WORLD equivalents.  This code is not yet implemented */
 /* ------------------------------------------------------------------------- */
 static int translate (group_t *this, int idx) 
 { 	

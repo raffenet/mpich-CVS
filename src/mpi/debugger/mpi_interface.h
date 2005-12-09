@@ -110,7 +110,7 @@ extern "C" {
  */
 enum
 {
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
   MQS_INTERFACE_COMPATIBILITY = 3		/* Has MPI-2 functions */
 #else
   MQS_INTERFACE_COMPATIBILITY = 2
@@ -137,13 +137,13 @@ enum
 /* Types which will be (cast to) concrete types in the DLL */
 typedef struct _mqs_image_info   mqs_image_info;
 typedef struct _mqs_process_info mqs_process_info;
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 typedef struct _mqs_job_info     mqs_job_info;
 #endif
 
 /* Types which will be (cast to) concrete types in the debugger */
 typedef struct mqs_image_    mqs_image;
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 typedef struct mqs_job_      mqs_job;
 #endif
 typedef struct mqs_process_  mqs_process;
@@ -209,7 +209,7 @@ enum {
   mqs_first_user_code = 100			/* Allow for more pre-defines */
 };
 
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 /* For handling attachment to new processes in MPI-2 we need to know
  * where they are.
  */
@@ -302,7 +302,7 @@ typedef void (*mqs_put_image_info_ft) (mqs_image *, mqs_image_info *);
 /* Get it back */
 typedef mqs_image_info * (*mqs_get_image_info_ft) (mqs_image *);
 
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 /* Given a job and an index return the process object */
 typedef mqs_process * (*mqs_get_process_ft) (mqs_job *, int);
 
@@ -329,7 +329,7 @@ typedef void (*mqs_put_process_info_ft) (mqs_process *, mqs_process_info *);
 /* Get it back */
 typedef mqs_process_info * (*mqs_get_process_info_ft) (mqs_process *);
 
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 /* Given a process, return the job it belongs to */
 typedef mqs_job * (*mqs_get_process_job_ft) (mqs_process *);
 /* Given a process, return its identity (index in the job's universe of processes) */
@@ -406,13 +406,13 @@ typedef struct mqs_basic_callbacks
   mqs_get_image_info_ft	  mqs_get_image_info_fp;
   mqs_put_process_info_ft mqs_put_process_info_fp;
   mqs_get_process_info_ft mqs_get_process_info_fp;
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
   mqs_put_job_info_ft     mqs_put_job_info_fp;
   mqs_get_job_info_ft     mqs_get_job_info_fp;
 #endif
 } mqs_basic_callbacks;
 
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 typedef struct mqs_job_callbacks {
   mqs_get_process_ft	mqs_get_process_fp;
 } mqs_job_callbacks;
@@ -434,7 +434,7 @@ typedef struct mqs_process_callbacks
   mqs_get_image_ft             mqs_get_image_fp;
   mqs_fetch_data_ft	       mqs_fetch_data_fp;
   mqs_target_to_host_ft        mqs_target_to_host_fp;
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
   mqs_get_process_job_ft       mqs_get_process_job_fp;
   mqs_get_process_identity_ft  mqs_get_process_identity_fp;
 #endif
@@ -505,7 +505,7 @@ extern int mqs_image_has_queues (mqs_image *, char **);
  */
 extern void mqs_destroy_image_info (mqs_image_info *);
 
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 /***********************************************************************
  * Calls related to a specific job, which owns a universe of processes.
  */
@@ -592,7 +592,7 @@ extern int mqs_setup_operation_iterator (mqs_process *, int);
  */
 extern int mqs_next_operation (mqs_process *, mqs_pending_operation *);
 
-#if (FOR_MPI2)
+#if defined(FOR_MPI2)
 /* Information about newly created (or connected to) processes.
  * This is how we pick up processes created with MPI_Spawn (and friends),
  * or attached to with MPI_Comm_connect or MPI_Comm_join.

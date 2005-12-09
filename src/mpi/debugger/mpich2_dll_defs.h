@@ -23,6 +23,7 @@ typedef struct
   /* Fields in MPID_Comm */
   int comm_rsize_offs;
   int lrank_to_grank_offs;
+  int comm_rank_offs;
   int comm_context_id_offs;
   int comm_next_offs;
   int comm_name_offs;
