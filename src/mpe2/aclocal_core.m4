@@ -245,6 +245,35 @@ else
 fi
 ])dnl
 dnl
+dnl
+dnl Use the value of enable-strict to update CFLAGS
+dnl
+dnl -std=c89 is used to select the C89 version of the ANSI/ISO C standard.
+dnl As of this writing, many C compilers still accepted only this version,
+dnl not the later C99 version.  When all compilers accept C99, this
+dnl should be changed to the appropriate standard level.  Note that we've
+dnl had trouble with gcc 2.95.3 accepting -std=c89 but then trying to
+dnl compile program with a invalid set of options
+dnl (-D __STRICT_ANSI__-trigraphs)
+dnl
+AC_DEFUN(PAC_CHECK_GCC_STD_C89,[
+AC_MSG_CHECKING([whether $1 accepts -std=c89])
+# We must know the compiler type, assumed used in PAC_GET_GCC_STRICT_FLAGS.
+dnl if test -z "CC" ; then
+dnl    AC_CHECK_PROGS(CC,gcc)
+dnl fi
+# See if we can add -std=c89
+savedCFLAGS="[$]$1"
+$1="[$]$1 -std=c89"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[int a;])],
+      stdc_ok=yes,
+      stdc_ok=no)
+AC_MSG_RESULT($stdc_ok)
+if test "$stdc_ok" != yes ; then
+   $1="$savedCFLAGS"
+fi
+])dnl
+dnl
 dnl Modified from mpich2/confdb/aclocal_cc.m4's PAC_CC_STRICT,
 dnl remove all reference to enable_strict_done.  Also, make it
 dnl more flexible by appending the content of $1 with the
@@ -260,40 +289,47 @@ dnl
 dnl AC_PROG_CC should be called before this macro function.
 dnl
 AC_DEFUN(PAC_GET_GCC_STRICT_FLAGS,[
-AC_MSG_CHECKING( [whether to add strict compiler check flags to $1] )
 # We must know the compiler type
 if test -z "CC" ; then
     AC_CHECK_PROGS(CC,gcc)
 fi
 case "$enable_strict" in
     yes)
+        AC_MSG_CHECKING( [whether $1 accepts strict compiler flags] )
         if test "$ac_cv_prog_gcc" = "yes" ; then
-            $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
+            $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
             AC_MSG_RESULT([yes])
+            PAC_CHECK_GCC_STD_C89($1)
         else
             AC_MSG_WARN([no, strict support for gcc only!])
         fi
         ;;
     all)
+        AC_MSG_CHECKING( [whether $1 accepts strict compiler flags] )
         if test "$ac_cv_prog_gcc" = "yes" ; then
-            $1="[$]$1 -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long -std=c89"
+            $1="[$]$1 -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
             AC_MSG_RESULT([yes, all possible flags.])
+            PAC_CHECK_GCC_STD_C89($1)
         else
             AC_MSG_WARN([no, strict support for gcc only!])
         fi
         ;;
     posix)
+        AC_MSG_CHECKING( [whether $1 accepts strict compiler flags] )
         if test "$ac_cv_prog_gcc" = "yes" ; then
-            $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L -std=c89"
+            $1="[$]$1 -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
             AC_MSG_RESULT([yes, POSIX flavored flags.])
+            PAC_CHECK_GCC_STD_C89($1)
         else
             AC_MSG_WARN([no, strict support for gcc only!])
         fi
         ;;
     noopt)
+        AC_MSG_CHECKING( [whether $1 accepts strict compiler flags] )
         if test "$ac_cv_prog_gcc" = "yes" ; then
-            $1="[$]$1 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -std=c89"
+            $1="[$]$1 -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
             AC_MSG_RESULT([yes, non-optimized flags.])
+            PAC_CHECK_GCC_STD_C89($1)
         else
             AC_MSG_WARN([no, strict support for gcc only!])
         fi
