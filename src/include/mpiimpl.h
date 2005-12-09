@@ -1208,6 +1208,8 @@ typedef struct MPID_Comm {
 				     intercommunicator collective operations
 				     that wish to use half-duplex operations
 				     to implement a full-duplex operation */
+    struct MPID_Comm     *comm_next;/* Provides a chain through all active 
+				       communicators */
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
                                               implementing the collective 
                                               routines */
@@ -1225,6 +1227,15 @@ typedef struct MPID_Comm {
 extern MPIU_Object_alloc_t MPID_Comm_mem;
 void MPIR_Comm_add_ref(MPID_Comm *);
 int MPIR_Comm_release(MPID_Comm *);
+
+/* Provide a list of all active communicators.  This is used only by the
+   debugger message queue interface */
+typedef struct MPIR_Comm_list {
+    int sequence_number;   /* Used to detect changes in the list */
+    MPID_Comm *head;       /* Head of the list */
+} MPIR_Comm_list;
+/* The home for MPIR_All_communicators is src/mpi/comm/commutil.c */
+extern MPIR_Comm_list MPIR_All_communicators;
 
 #define MPIR_Comm_add_ref(_comm) MPIU_Object_add_ref((_comm))
 /* Preallocated comm objects */
@@ -1331,6 +1342,21 @@ typedef struct MPID_Request {
 extern MPIU_Object_alloc_t MPID_Request_mem;
 /* Preallocated request objects */
 extern MPID_Request MPID_Request_direct[];
+
+/* These macros allow us to implement a sendq when debugger support is
+   selected.  As there is extra overhead for this, we only do this
+   when specifically requested */
+#ifdef HAVE_DEBUGGER_SUPPORT
+void MPIR_Sendq_forget(MPID_Request *);
+void MPIR_Sendq_remember(MPID_Request *, int, int, int );
+#define MPIR_SENDQ_FORGET(_a) MPIR_Sendq_forget(_a)
+#define MPIR_SENDQ_REMEMBER(_a,_b,_c,_d) MPIR_Sendq_remember(_a,_b,_c,_d)
+#else
+#define MPIR_SENDQ_FORGET(a)
+#define MPIR_SENDQ_REMEMBER(a,b,c,d)
+#endif
+
+
 /* ------------------------------------------------------------------------- */
 
 
