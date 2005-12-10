@@ -905,8 +905,12 @@ sub WriteMfile {
 		$baselibname =~ s/^lib//;
 		$baselibname =~ s/\..*//;
 		if (!defined($profile_libraries_basename{$baselibname})) {
-		    print "Building sharedlib library $baselibname (from $libname) in $libdir as part of optinstall\n" if $gDebugWhy;
-		    &TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
+		    # Skip libraries that will be built in the step 
+		    # below
+		    if (!defined($shared_libraries{$baselibname})) {
+			print "Building sharedlib library $baselibname (from $libname) in $libdir as part of optinstall\n" if $gDebugWhy;
+			&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
+		    }
 		}
 	    }
 	}
@@ -1021,7 +1025,7 @@ sub DefaultVariables {
 	}
     }
 
-    if (scalar(%install_files)) { 
+    if (scalar(%install_files) || scalar(%optinstall_files)) { 
 	print FD "INSTALL         = \@INSTALL\@$newline";
 	print FD "INSTALL_PROGRAM = \@INSTALL_PROGRAM\@$newline";
 	print FD "INSTALL_DATA    = \@INSTALL_DATA\@$newline";
@@ -1044,11 +1048,13 @@ sub DefaultVariables {
 	    }
 	}
     }
-    if (scalar(%install_files)) {
-	$dir_added{'prefix'} = 1;
-	print FD "$dirdefs{'prefix'}$newline";
+    if (scalar(%install_files) || scalar(%optinstall_files)) {
+	if (!defined($dir_added{'prefix'})) {
+	    $dir_added{'prefix'} = 1;
+	    print FD "$dirdefs{'prefix'}$newline";
+	}
     }
-    foreach $dir (keys(%install_files)) {
+    foreach $dir (keys(%install_files),keys(%optinstall_files)) {
 	# Handle the derived dirs for the install directories
 	$dir = $InstallDirFromKind{$dir};
 	foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
@@ -1058,10 +1064,13 @@ sub DefaultVariables {
 	    }
 	}
     }
-    foreach $dir (keys(%install_files)) {
+    foreach $dir (keys(%install_files),keys(%optinstall_files)) {
 	$dir = $InstallDirFromKind{$dir};
-	#$resultdir = $dirdefs{$dir};
-	print FD "$dirdefs{$dir}$newline";
+	if (!defined($dir_added{$dir})) {
+	    #$resultdir = $dirdefs{$dir};
+	    print FD "$dirdefs{$dir}$newline";
+	    $dir_added{$dir} = 1;
+	}
     }
 
     &InstallDocDirs;
@@ -2671,10 +2680,11 @@ library, or new library name)\n" if $debug;
     if (defined($shared_libraries_libs{$libbasename})) {
 	$otherlibs = $shared_libraries_libs{$libbasename};
     }
-    print FD "# Build the shared library from the shared object files\n";
-    print FD "$libdir/$newlibname: $libdir/$libname
+    if (!defined($usertargets{"$libdir/$newlibname"})) {
+	print FD "# Build the shared library from the shared object files\n";
+	print FD "$libdir/$newlibname: $libdir/$libname
 \t(cd $libdir && \$(CREATESHLIB) --mode=link -o $libname $exports -rpath \$(libdir) $otherlibs)\n";
-
+    }
     # If there is a profiling library, we need to build it
     # now, as part of this target, to handle the case where the
     # profiling library name might be the same as the regular name
@@ -3190,7 +3200,8 @@ sub InstallDocDirs {
 # maintainers may create them in the builddir.
 sub TargetInstall {
     %dirschecked = ();
-    if (!scalar(%install_files) && !scalar($install_dirs)) { return ; }
+    if (!scalar(%install_files) && !scalar($install_dirs) &&
+	!scalar(%optinstall_files) && !scalar($optinstall_dirs)) { return ; }
     print FD "# Install target$newline";
     print FD "install: ";
     &TargetPreamble( "install" );   # allow an install-preamble for testing
