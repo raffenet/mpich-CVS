@@ -2713,7 +2713,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
 }\n";
     close ($OUTFD);
     &ReplaceIfDifferent( $filename, $filename . ".new" );
-    &AddPrototype( "null_delete_fn", $args );
+    &AddPrototype( "null_delete_fn", $args );n
 
     $OUTFD = "NULLCOPYFN";
     $filename = "null_copy_fnf.c";
@@ -2736,22 +2736,26 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     &WriteAttrDefaults( "type_" );
 
     # Datarep conversion function
-#     $OUTFD = "NULLCONVERSIONFN";
-#     $filename = "null_conv_fnf.c";
-#     $returnType = "int";
-#     open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
-#     $files[$#files+1] = $filename;
-#     $args = "void *, MPI_Fint *, MPI_Fint *, void *, MPI_Offset *, MPI_Aint *, MPI_Fint *";
-#     &print_header( "mpi_conversion_fn_null", "conversion_fn_null", $args,
-# 	   "#ifdef MPI_CONVERSION_FN_NULL\n#undef MPI_CONVERSION_FN_NULL\n#endif\n" );
-#     &print_routine_type_decl( $OUTFD, "conversion_fn_null" );
-#     &print_args( $OUTFD, $args, 0, "conversion_fn_null" );
-#     # This is tricky; we don't want to call this function at all
-#     # FIXME    
-#     print $OUTFD "\n{\n   return MPI_SUCCESS;\n}\n";
-#     close ($OUTFD);
-#     &ReplaceIfDifferent( $filename, $filename . ".new" );
-#     &AddPrototype( "conversion_fn_null", $args );
+    # This is a special case.  We need to define this function
+    # but it should never be called (we convert a reference to it
+    # to a reference to null, which is how the C version of this
+    # routine is defined.
+    $OUTFD = "NULLCONVERSIONFN";
+    $filename = "null_conv_fnf.c";
+    $returnType = "int";
+    open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
+    $args = "void *, MPI_Fint *, MPI_Fint *, void *, MPI_Offset *, MPI_Aint *, MPI_Fint *";
+    &print_header( "mpi_conversion_fn_null", "conversion_fn_null", $args,
+	   "#ifdef MPI_CONVERSION_FN_NULL\n#undef MPI_CONVERSION_FN_NULL\n#endif\n" );
+    &print_routine_type_decl( $OUTFD, "conversion_fn_null" );
+    &print_args( $OUTFD, $args, 0, "conversion_fn_null" );
+    # This is tricky; we don't want to call this function at all
+    # FIXME    
+    print $OUTFD "\n{\n   return MPI_SUCCESS;\n}\n";
+    close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
+    &AddPrototype( "conversion_fn_null", $args );
 
 
     # The status conversion functions.
