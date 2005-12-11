@@ -77,6 +77,10 @@ for arg in "$@" ; do
        -l*|-L*)
        dependentLibs="$dependentLibs $arg"
        ;;
+       # -cc and -clink allow us to override the commands used to 
+       # build the shared library
+       -cc=*) CC_SHL=$option ;;
+       -clink=*) CC_LINK_SHL=$option ;;
        *)
        # The remaining arguments are used for install
        if [ -z "$srclibname" ] ; then
