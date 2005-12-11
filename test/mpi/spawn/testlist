@@ -17,11 +17,11 @@ join 2
 # code that is disconnecting it is still in progress.  This is a 
 # rare case (which needs to be fixed) but we'll leave it out
 # of the tests for now.
-#disconnect_reconnect 3
-#disconnect_reconnect2 3
+disconnect_reconnect 3
+disconnect_reconnect2 3
 # The third version of this test fails for a reason other than the
 # race condition mentioned above.
-#disconnect_reconnect3 3
+disconnect_reconnect3 3
 multiple_ports 3
 multiple_ports2 4
 disconnect 3
