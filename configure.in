@@ -965,8 +965,11 @@ if test -z "$ENABLE_SHLIB" -o "$ENABLE_SHLIB" = "no" ; then
     # Also turn off the libtool tests
     enable_shared=no
 fi
+# We need the script that is used to create shared libraries if either
+# we are creating shared libraries for MPICH2 or we are creating the
+# dynamically loadable library for the debugger interface
 CREATESHLIB=false
-if test "$ENABLE_SHLIB" != "none" ; then
+if test "$ENABLE_SHLIB" != "none" -o "$enable_debuginfo" != "no" ; then
    CREATESHLIB=`pwd`/src/util/createshlib
 fi
 AC_SUBST(CREATESHLIB)
