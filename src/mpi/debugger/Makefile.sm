@@ -28,7 +28,7 @@ dbginit.o: $(srcdir)/dbginit.c
 #
 # We require special steps to compile the debugger interface library.
 dll_mpich2.lo: $(srcdir)/dll_mpich2.c $(srcdir)/mpich2_dll_defs.h
-	$(C_COMPILE_SHL) -g -c @PROFILE_DEF_MPI@ $(srcdir)/dll_mpich2.c -o _sdll_mpich2.o
+	@CC_SHL_DBG@ $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS) -g -c $(srcdir)/dll_mpich2.c -o _sdll_mpich2.o
 	@mv -f _sdll_mpich2.o dll_mpich2.lo
 #
 # We may want to add some documentation on using the various debugger
