@@ -728,6 +728,7 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
     /* The while loop allows us to skip communicators that are too small.
        MPI_COMM_NULL is always considered large enough */
     while (!done) {
+	intraCommName = "";
 	switch (intraCommIdx) {
 	case 0:
 	    *comm = MPI_COMM_WORLD;
@@ -776,6 +777,9 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 		if (rank >= newsize) {
 		    MPI_Comm_free( comm );
 		    *comm = MPI_COMM_NULL;
+		}
+		else {
+		    intraCommName = "Split of WORLD";
 		}
 	    }
 	    else {
