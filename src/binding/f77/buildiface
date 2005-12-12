@@ -2713,7 +2713,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
 }\n";
     close ($OUTFD);
     &ReplaceIfDifferent( $filename, $filename . ".new" );
-    &AddPrototype( "null_delete_fn", $args );n
+    &AddPrototype( "null_delete_fn", $args );
 
     $OUTFD = "NULLCOPYFN";
     $filename = "null_copy_fnf.c";
