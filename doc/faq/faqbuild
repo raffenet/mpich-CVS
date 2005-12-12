@@ -603,6 +603,9 @@ sub deLaTeX {
 
 	    # Substitute the arguments
 	    for (my $i=1; $i<=$argcount; $i++) {
+		if (!defined($args[$i-1])) {
+		    $args[$i-1] = "";
+		}
 		$val =~ s/\\$i/$args[$i-1]/g;
 	    }
 	    # Handle simple recursion (e.g., \_ within an argument)

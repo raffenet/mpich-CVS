@@ -20,7 +20,10 @@
 % \texttt, \emph, \textbf, \url, \_, and the environments verbatim, itemize,
 % enumerate, and small (there are some others, but these should normally
 % be sufficient).  One difference from basic LaTeX is that paragraph
-% breaks must be made explicitly with \par.
+% breaks must be made explicitly with \par.  
+% One additional restriction: LaTeX commands (such as \texttt) should not
+% cross line boundaries.  For simplicity, the "faqbuild" script expects
+% to find all of the arguments to these commands on one line.
 %
 % To rebuild the faq files in all three (HTML, PDF, Text) formats, do
 %    make
@@ -50,6 +53,68 @@ MPD is the default process manager for MPICH2 on Unix platforms. It is written i
 Python. SMPD is the primary process manager for MPICH2 on Windows. It
 is also used for running on a combination of Windows and Linux
 machines. It is written in C.
+
+%% Heading: Q: Do I have to configure/make/install MPICH2 each time for each \
+ compiler I use?
+%% Filename: compilers
+%% End
+No, in many cases you can build MPICH2 using one set of compilers and then
+use the libraries (and compilation scripts) with other compilers.  However, 
+this depends on the compilers producing \emph{compatible} object files.
+Specifically, the compilers must
+\begin{itemize}
+\item Support the same basic datatypes with the same sizes.  For example, the
+ C compilers should use the same sizes for \texttt{long long} and 
+ \texttt{long double}. 
+\item Map the names of routines in the source code to names in the object
+ files in the object file in the same way.  This can be a problem for Fortran
+ and C++ compilers, though you can often force the Fortran compilers to use
+ the same name mapping.  More specifically, most Fortran compilers map names
+ in the source code into all lower-case with one or two underscores appended
+ to the name.  To use the same MPICH2 library with all Fortran compilers,
+ those compilers must make the same name mapping.  There is one exception to
+ this that is described below.
+\item Perform the same layout for C structures.  The C langauge does not
+ specify how structures are layed out in memory.  For 100\% compatibility, all
+ compilers must follow the same rules.  However, if you do not use any of the 
+ \texttt{MPI\_MIN\_LOC} or \texttt{MPI\_MAX\_LOC} datatypes, and you do not
+ rely on the MPICH2 library to set the extent of a type created with 
+ \texttt{MPI\_Type\_struct} or \texttt{MPI\_Type\_create\_struct}, you can
+ often ignore this requirement.
+\item Require the same additional runtime libraries.  Not all compilers will
+ implement the same version of Unix, and some routines that MPICH2 uses may be
+ present in only some of the run time libraries associated with specific
+ compilers.  
+\end{itemize}
+The above may seem like a stringint set of requirements, but in practice, many
+ systems and compiler sets meet these needs, if for no other reason than that
+ any software built with multiple libraries will have  requirements similar to
+ those of MPICH2 for compatibility.
+\par
+If your compilers are completely compatible, down to the runtime libraries,
+ you may use the compilation scripts (\texttt{mpicc} etc.) by either
+ specifying the compiler on the command line, e.g.
+\begin{verbatim}
+    mpicc -cc=icc -c foo.c
+\end{verbatim}
+or with the environment variables \texttt{MPICH\_CC} etc. (this example assume
+ a c-shell syntax):
+\begin{verbatim}
+    setenv MPICH_CC icc
+    mpicc -c foo.c
+\end{verbatim}
+If the compiler is compatible \emph{except} for the runtime libraries, then
+ this same format works as long as a configuration file that describes the
+ necessary runtime libraries is created and placed into the appropriate
+ directory (the "\texttt{sysconfdir}" directory in configure terms).  See the
+ installation manual for more details.
+\par
+In some cases, MPICH2 is able to build the Fortran interfaces in a way that
+ supports multiple mappings of names from the Fortran source code to the
+ object file.  This is done by using the "multiple weak symbol" support in
+ some environments.  For example, when using \texttt{gcc} under Linux, this is
+ the default.
+
 
 %% Heading: Q: When I use the g95 Fortran compiler on a 64-bit platform, some\
   of the tests fail
