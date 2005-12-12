@@ -114,6 +114,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     
     *flag = FALSE;
 
+    /* FIXME: Who defines this value? */
 #   if defined(USE_MPID_PROGRESS_AVOIDANCE)
     {
 	if (*request_ptr->cc_ptr == 0)

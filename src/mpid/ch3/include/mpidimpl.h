@@ -148,29 +148,6 @@ extern volatile int MPIDI_Outstanding_close_ops;
     (sreq_)->dev.datatype = datatype;						\
 }
 
-#define MPIDI_Request_create_psreq(sreq_, mpi_errno_, FAIL_)			\
-{										\
-    (sreq_) = MPIDI_CH3_Request_create();					\
-    if ((sreq_) == NULL)							\
-    {										\
-	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));	\
-	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;					\
-	FAIL_;									\
-    }										\
-										\
-    MPIU_Object_set_ref((sreq_), 1);						\
-    (sreq_)->kind = MPID_PREQUEST_SEND;						\
-    (sreq_)->comm = comm;							\
-    MPIR_Comm_add_ref(comm);							\
-    (sreq_)->dev.match.rank = rank;						\
-    (sreq_)->dev.match.tag = tag;						\
-    (sreq_)->dev.match.context_id = comm->context_id + context_offset;		\
-    (sreq_)->dev.user_buf = (void *) buf;					\
-    (sreq_)->dev.user_count = count;						\
-    (sreq_)->dev.datatype = datatype;						\
-    (sreq_)->partner_request = NULL;						\
-}
-
 /* Masks and flags for channel device state in an MPID_Request */
 #define MPIDI_Request_state_init(req_)		\
 {						\

@@ -18,6 +18,32 @@
 /* FIXME: Where is the memory registration call in the init routines, 
    in case the channel wishes to take special action (such as pinning for DMA)
    the memory? This was part of the design. */
+
+/* This macro initializes all of the fields in a persistent request */
+#define MPIDI_Request_create_psreq(sreq_, mpi_errno_, FAIL_)		\
+{									\
+    (sreq_) = MPIDI_CH3_Request_create();				\
+    if ((sreq_) == NULL)						\
+    {									\
+	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));\
+	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;				\
+	FAIL_;								\
+    }									\
+									\
+    MPIU_Object_set_ref((sreq_), 1);					\
+    (sreq_)->cc   = 0;                                                  \
+    (sreq_)->kind = MPID_PREQUEST_SEND;					\
+    (sreq_)->comm = comm;						\
+    MPIR_Comm_add_ref(comm);						\
+    (sreq_)->dev.match.rank = rank;					\
+    (sreq_)->dev.match.tag = tag;					\
+    (sreq_)->dev.match.context_id = comm->context_id + context_offset;	\
+    (sreq_)->dev.user_buf = (void *) buf;				\
+    (sreq_)->dev.user_count = count;					\
+    (sreq_)->dev.datatype = datatype;					\
+    (sreq_)->partner_request = NULL;					\
+}
+
 	
 /*
  * MPID_Startall()
@@ -126,8 +152,10 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	/* --BEGIN ERROR HANDLING-- */
 	else
 	{
-	    /* If a failure occurs attempting to start the request, then we assume that partner request was not created, and stuff
-	       the error code in the persistent request.  The wait and test routines will look at the error code in the persistent
+	    /* If a failure occurs attempting to start the request, then we 
+	       assume that partner request was not created, and stuff
+	       the error code in the persistent request.  The wait and test
+	       routines will look at the error code in the persistent
 	       request if a partner request is not present. */
 	    preq->partner_request = NULL;
 	    preq->status.MPI_ERROR = rc;
@@ -301,6 +329,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
     MPIU_Object_set_ref(rreq, 1);
     rreq->kind = MPID_PREQUEST_RECV;
     rreq->comm = comm;
+    rreq->cc   = 0;
     MPIR_Comm_add_ref(comm);
     rreq->dev.match.rank = rank;
     rreq->dev.match.tag = tag;
