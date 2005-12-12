@@ -1398,7 +1398,8 @@ sub DefaultRules {
     }
     # The following are general targets that can be used to run a program
     # specified on the make command line
-    print FD "apply:$newline";
+    &TargetInit( "apply" );
+    print FD "\n";
     print FD "\t\$(ACTION) \$(ACTION_INPUT)$newline";
     # ToDo: we could control the subdirectories over which the recursion
     # is applied.
@@ -2044,7 +2045,19 @@ sub TargetAll {
     }
     print_make_endline( FD );
 }
-
+# ---------------------------------------------------------------------------
+# Routines to provide standard extensions through -preamble, -postamble,
+# and -local
+# -preamble allows you to *ADD* a step to be performed before the other
+# dependencies, -postamble adds a step after the target is formed
+#
+# To ensure uniform handling of -preamble, the routine TargetInit( name )
+# outputs the target and the preamble.
+sub TargetInit {
+    my $name = $_[0];
+    print FD "$name: ";
+    &TargetPreamble( $name );
+}
 sub TargetPreamble {
     my $name = $_[0];
     $name .= "-preamble";
@@ -2142,7 +2155,7 @@ sub TargetClean {
     my $otherMakefiles = "";
 
     $programnames = join( ' ', keys(%programs));
-    print FD "clean:";
+    &TargetInit( "clean" );
     if (defined($usertargets{"clean-local"})) { print FD " clean-local"; }
     print FD "$newline";
     print FD "\t-${quietLine}rm -f *.o \${srcdir}/*.o $programnames$newline";
@@ -2182,7 +2195,8 @@ sub TargetClean {
 
     # --------------------------------------------
     # distclean target
-    print FD "distclean: clean";
+    &TargetInit( "distclean" );
+    print FD " clean";
     if (defined($usertargets{"distclean-local"})) { 
 	print FD " distclean-local";
     }
@@ -2243,7 +2257,7 @@ sub TargetClean {
 	# No, because distclean needs to remove the Makefiles, and 
 	# this target needs to remove entries that have dependencies
 	# (e.g., the Makefile : Makefile.in : Makefile.sm dependency)
-	print FD "maintainer-clean:";
+	&TargetInit( "maintainer-clean" );
 	if (defined($usertargets{"maintainer-clean-local"})) {
 	    print FD " maintainer-clean-local";
 	}
@@ -3203,8 +3217,7 @@ sub TargetInstall {
     if (!scalar(%install_files) && !scalar($install_dirs) &&
 	!scalar(%optinstall_files) && !scalar($optinstall_dirs)) { return ; }
     print FD "# Install target$newline";
-    print FD "install: ";
-    &TargetPreamble( "install" );   # allow an install-preamble for testing
+    &TargetInit( "install" );
     print FD " FORCE_TARGET $newline";
     # Create the directories for the install directories
     foreach $kind (keys(%install_dirs)) {
@@ -3360,7 +3373,8 @@ sub TargetInstall {
     # unilaterally uninstalling files, we may want an option to create
     # a file that will uninstall only the installed files (as MPICH-1
     # does).
-    print FD "uninstall:$newline";
+    &TargetInit( "uninstall" );
+    print FD "\n";
     foreach $kind (keys(%install_files)) {
 	$dir = $InstallDirFromKind{$kind};
 	foreach $file (split(/\s+/,$install_files{$kind})) {
@@ -3383,11 +3397,10 @@ sub TargetInstall {
     }
 
     # also add the recursive installcheck target
-    print FD "installcheck:";
+    &TargetInit( "installcheck" );
     if (defined($usertargets{"installcheck-local"})) {
 	print FD " installcheck-local"; 
     }
-    &TargetPreamble( "installcheck" );
     print FD $newline;
     if ($#install_subdirs >= 0) {
 	&RecursiveOp( "installcheck", "install_subdirs" );
@@ -4061,7 +4074,8 @@ sub GcovClean {
 # coverage target
 sub TargetGcov {
     if (!$maint_targets) { return; }
-    print FD "coverage:$newline";
+    &TargetInit( "coverage" );
+    print FD "$newline";
     foreach $lib (keys(%libraries)) {
 	$sourcefiles = $libraries{$lib};
 	PrintMakeLongline( FD, 
