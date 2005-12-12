@@ -35,15 +35,21 @@ all-local:
 		mv -f lib/pkglist.new lib/pkglist ; \
 	    fi ; \
 	fi
+
+clean-preamble:
+	${MAKE} cleanlibs
+
 cleanobjsandlibs:
+	${MAKE} clean && cd test && ${MAKE} clean
+	rm -f lib/newconfig
+# cleanlibs makes sure that we clean all of the library files
+cleanlibs:
 	rm -f lib/lib${MPILIBNAME}.a lib/lib${PMPILIBNAME}.a
 	rm -f lib/lib${MPILIBNAME}cxx.a 
 	rm -f lib/lib${MPILIBNAME}.@SHLIB_EXT@* lib/lib${PMPILIBNAME}.@SHLIB_EXT@*
 	rm -f lib/lib${MPILIBNAME}cxx.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}.la* lib/lib${PMPILIBNAME}.la*
 	rm -f lib/lib${MPILIBNAME}cxx.la* 
-	${MAKE} clean ; cd test && ${MAKE} clean
-	rm -f lib/newconfig
 
 all-preamble:
 	@echo "Beginning make"
