@@ -150,6 +150,21 @@ void * MPIR_Breakpoint( void )
 /* ------------------------------------------------------------------------- */
 /* 
  * Manage the send queue.
+ *
+ * The send queue is needed only by the debugger.  The communication
+ * device has a separate notion of send queue, which are the operations
+ * that it needs to complete, independent of whether the user has called
+ * MPI_Wait/Test/etc on the request.
+ * 
+ * This implementation uses a simple linked list of user-visible requests
+ * (more specifically, requests created with MPI_Isend, MPI_Issend, or 
+ * MPI_Irsend).
+ *
+ * FIXME: We need to add MPI_Ibsend and the persistent send requests to
+ * the known send requests.
+ * FIXME: We need to register a Finalize call back to free memory.
+ * FIXME: We should exploit this to allow Finalize to report on 
+ * send requests that were never completed.
  */
 
 /* We need to save the tag and rank since this information may not 
