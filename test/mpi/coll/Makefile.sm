@@ -1,7 +1,7 @@
 INCLUDES = -I../include -I${srcdir}/../include
 EXTERNAL_LIBS = m
 LDADD = 
-DEPADD = @MPILIBLOC@
+DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 #
 bcasttest_SOURCES = bcasttest.c
