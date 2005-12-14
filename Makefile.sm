@@ -46,10 +46,13 @@ cleanobjsandlibs:
 cleanlibs:
 	rm -f lib/lib${MPILIBNAME}.a lib/lib${PMPILIBNAME}.a
 	rm -f lib/lib${MPILIBNAME}cxx.a 
+	rm -f lib/libf${MPILIBNAME}.a 
 	rm -f lib/lib${MPILIBNAME}.@SHLIB_EXT@* lib/lib${PMPILIBNAME}.@SHLIB_EXT@*
 	rm -f lib/lib${MPILIBNAME}cxx.@SHLIB_EXT@* 
+	rm -f lib/libf${MPILIBNAME}.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}.la* lib/lib${PMPILIBNAME}.la*
 	rm -f lib/lib${MPILIBNAME}cxx.la* 
+	rm -f lib/libf${MPILIBNAME}.la* 
 
 all-preamble:
 	@echo "Beginning make"
@@ -194,9 +197,11 @@ testing:
 profilelib_${MPILIBNAME} = ${PMPILIBNAME}
 MPICXXLIBNAME = @MPICXXLIBNAME@
 MPIFLIBNAME   = @MPIFLIBNAME@
+MPIFWRAPNAME  = @FWRAPNAME@
 install_LIB = lib/lib${MPILIBNAME}.a
 optinstall_LIB = lib/lib${MPIFLIBNAME}.a
 optinstall_LIB = lib/lib${MPICXXLIBNAME}.a
+optinstall_LIB = lib/lib${MPIFWRAPNAME}.a
 #optinstall_SHLIB = lib/lib${MPIFLIBNAME}.@SHLIB_EXT@
 #optinstall_SHLIB = lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@
 
