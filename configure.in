@@ -4254,19 +4254,23 @@ AC_OUTPUT_COMMANDS([if test "$enable_romio" = "yes" ; then
   cp src/mpi/romio/include/mpio.h src/include ; fi],enable_romio=$enable_romio
 top_srcdir=$top_srcdir)
 
-#
-# If dependencies are enabled in the updatefiles/simplemake step, then
-# we must generate the dependency directories.  We do this by detecting 
-# the dependencies target.  Note that this refers to the Makefile,
-# in case we are building with VPATH
-# Grr. Finds differ on how they handle {} in a string.  We could use
-# xargs, but that may not be standard enough.  Instead we fall back on 
-# the old standby of using find with -print, then sed to
-# construct the line, which is fed to sh
-#    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
+dnl
+dnl If dependencies are enabled in the updatefiles/simplemake step, then
+dnl we must generate the dependency directories.  We do this by detecting 
+dnl the dependencies target.  Note that this refers to the Makefile,
+dnl in case we are building with VPATH
+dnl Grr. Finds differ on how they handle {} in a string.  We could use
+dnl xargs, but that may not be standard enough.  Instead we fall back on 
+dnl the old standby of using find with -print, then sed to
+dnl construct the line, which is fed to sh
+dnl
+dnl Note that once dependencies are enabled, we always try to
+dnl update the dependencies (that is usually the desired behavior)
+dnl    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
 AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
+    echo "Updating dependency directories .deps" 
     find . -type d -print | sed -e 's%\(.*\)%(cd \1 \&\& grep MAKE_DEPEND_C Makefile >/dev/null 2>\&1 \&\& ( test -d .deps || mkdir .deps) \&\& touch .deps/alldeps)%g' | sh
-fi],enable_dependencies="$enable_dependencies")
+fi])
 
 AC_OUTPUT_COMMANDS([chmod +x doc/mansrc/createhtmlindex])
 
