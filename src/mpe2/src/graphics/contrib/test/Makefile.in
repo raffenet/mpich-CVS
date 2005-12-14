@@ -23,10 +23,15 @@ C_INCS               = -I$(MPE_INCDIR) $(MPI_INC)
 F_INCS               = @FINC_PATH_LEADER@$(MPE_INCDIR) $(MPI_INC)
 LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
-RM                   = @RM@ 
 MPE_OUTFILE          = mpe2_graphics_test.txt
 
 ### End User configurable options ###
+
+SHELL         = @SHELL@
+ECHO_N        = @ECHO_N@
+ECHO_C        = @ECHO_C@
+ECHO_T        = @ECHO_T@
+RM            = @RM@ 
 
 @VPATH@
 
@@ -63,27 +68,27 @@ linktest: linktest_C
 
 linktest_C: 
 	@-echo ; \
-	echo -n "*** Link C program with the MPI animation library ........................ " ; \
+	echo $(ECHO_N) "*** Link C program with the MPI animation library ........................ $(ECHO_C)" ; \
 	$(RM) -f cpi_anim@EXEEXT@ ; \
 	$(MAKE) cpi_anim@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpi_anim@EXEEXT@ ; then \
-	    echo "Yes." ; \
+	    echo "$(ECHO_T)Yes." ; \
 	    $(RM) -f cpi_anim@EXEEXT@ ; \
 	else \
-	    echo "No." ; \
+	    echo "$(ECHO_T)No." ; \
 	    echo "    The failed command: " ; \
 	    cat $(MPE_OUTFILE) ; \
 	fi ; \
 	$(RM) -f $(MPE_OUTFILE)
 	@-echo ; \
-	echo -n "*** Link C program with the X11 graphics library ......................... " ; \
+	echo $(ECHO_N) "*** Link C program with the X11 graphics library ......................... $(ECHO_C)" ; \
 	$(RM) -f cxgraphics@EXEEXT@ ; \
 	$(MAKE) cxgraphics@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cxgraphics@EXEEXT@ ; then \
-	    echo "Yes." ; \
+	    echo "$(ECHO_T)Yes." ; \
 	    $(RM) -f cxgraphics@EXEEXT@ ; \
 	else \
-	    echo "No." ; \
+	    echo "$(ECHO_T)No." ; \
 	    echo "    The failed command: " ; \
 	    cat $(MPE_OUTFILE) ; \
 	fi ; \
@@ -93,14 +98,14 @@ linktest_C:
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	      echo ; \
-	      echo -n "** Link F77 program with the X11 graphics library ........................ " ; \
+	      echo $(ECHO_N) "*** Link F77 program with the X11 graphics library ....................... $(ECHO_C)" ; \
 	      $(RM) -f fxgraphics@EXEEXT@ ; \
 	      $(MAKE) fxgraphics@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	      if test -x fxgraphics@EXEEXT@ ; then \
-	          echo "Yes." ; \
+	          echo "$(ECHO_T)Yes." ; \
 	          $(RM) -f fxgraphics@EXEEXT@ ; \
 	      else \
-	          echo "No." ; \
+	          echo "$(ECHO_T)No." ; \
 	          echo "    The failed command: " ; \
 	          cat $(MPE_OUTFILE) ; \
 	      fi ; \

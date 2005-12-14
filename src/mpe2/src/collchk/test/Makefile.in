@@ -25,10 +25,17 @@ C_INCS               = -I$(MPE_INCDIR) $(MPI_INC)
 F_INCS               = @FINC_PATH_LEADER@$(MPE_INCDIR) $(MPI_INC)
 LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
-RM                   = @RM@
 MPE_OUTFILE          = mpe2_collchk_test.txt
 
 #### End User configurable options ###
+
+SHELL         = @SHELL@
+ECHO_N        = @ECHO_N@
+ECHO_C        = @ECHO_C@
+ECHO_T        = @ECHO_T@
+RM            = @RM@
+
+@VPATH@
 
 srcdir        = @srcdir@
 
@@ -36,8 +43,6 @@ CC_FLAGS      = $(CFLAGS) $(C_INCS) $(MPE_COPTS)
 FC_FLAGS      = $(FFLAGS) $(F_INCS) $(MPE_FOPTS)
 CC_LDFLAGS    = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
-
-@VPATH@
 
 .SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
 
@@ -89,14 +94,14 @@ linktest: linktest_C
 
 linktest_C:
 	@-echo ; \
-	echo -n "*** Link C program with the MPI collective/datatype checking library ..... " ; \
+	echo $(ECHO_N) "*** Link C program with the MPI collective/datatype checking library ..... $(ECHO_C)" ; \
 	$(RM) -f wrong_int_byte@EXEEXT@ ; \
 	$(MAKE) wrong_int_byte@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x wrong_int_byte@EXEEXT@ ; then \
-	    echo "Yes." ; \
+	    echo "$(ECHO_T)Yes." ; \
 	    $(RM) -f wrong_int_byte@EXEEXT@ ; \
 	else \
-	    echo "No." ; \
+	    echo "$(ECHO_T)No." ; \
 	    echo "    The failed command: " ; \
 	    cat $(MPE_OUTFILE) ; \
 	fi ; \
@@ -106,14 +111,14 @@ linktest_C:
 linktest_F77:
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	    echo ; \
-	    echo -n "*** Link F77 program with the MPI collective/datatype checking library ... " ; \
+	    echo $(ECHO_N) "*** Link F77 program with the MPI collective/datatype checking library ... $(ECHO_C)" ; \
 	    $(RM) -f wrong_reals@EXEEXT@ ; \
 	    $(MAKE) wrong_reals@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	    if test -x wrong_reals@EXEEXT@ ; then \
-	        echo "Yes." ; \
+	        echo "$(ECHO_T)Yes." ; \
 	        $(RM) -f wrong_reals@EXEEXT@ ; \
 	    else \
-	        echo "No." ; \
+	        echo "$(ECHO_T)No." ; \
 	        echo "    The failed command: " ; \
 	        cat $(MPE_OUTFILE) ; \
 	    fi ; \

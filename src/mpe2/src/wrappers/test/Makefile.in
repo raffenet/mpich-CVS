@@ -31,10 +31,15 @@ C_INCS               = -I$(MPE_INCDIR) $(MPI_INC)
 F_INCS               = @FINC_PATH_LEADER@$(MPE_INCDIR) $(MPI_INC)
 LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
-RM                   = @RM@
 MPE_OUTFILE          = mpe2_wrappers_test.txt
 
 ### End User configurable options ###
+
+SHELL         = @SHELL@
+ECHO_N        = @ECHO_N@
+ECHO_C        = @ECHO_C@
+ECHO_T        = @ECHO_T@
+RM            = @RM@
 
 @VPATH@
 
@@ -133,40 +138,40 @@ linktest: linktest_C
 
 linktest_C: 
 	@-echo ; \
-	echo -n "*** Link C program with the MPI tracing library .......................... " ; \
+	echo $(ECHO_N) "*** Link C program with the MPI tracing library .......................... $(ECHO_C)" ; \
 	$(RM) -f cpi_trace@EXEEXT@ ; \
 	$(MAKE) cpi_trace@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpi_trace@EXEEXT@ ; then \
-	    echo "Yes." ; \
+	    echo "$(ECHO_T)Yes." ; \
 	    $(RM) -f cpi_trace@EXEEXT@ ; \
 	else \
-	    echo "No." ; \
+	    echo "$(ECHO_T)No." ; \
 	    echo "    The failed command: " ; \
 	    cat $(MPE_OUTFILE) ; \
 	fi ; \
 	$(RM) -f $(MPE_OUTFILE )
 	@-echo ; \
-	echo -n "*** Link C program with the MPI logging library .......................... " ; \
+	echo $(ECHO_N) "*** Link C program with the MPI logging library .......................... $(ECHO_C)" ; \
 	$(RM) -f cpi_log@EXEEXT@ ; \
 	$(MAKE) cpi_log@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpi_log@EXEEXT@ ; then \
-	    echo "Yes." ; \
+	    echo "$(ECHO_T)Yes." ; \
 	    $(RM) -f cpi_log@EXEEXT@ ; \
 	else \
-	    echo "No." ; \
+	    echo "$(ECHO_T)No." ; \
 	    echo "    The failed command: " ; \
 	    cat $(MPE_OUTFILE) ; \
 	fi ; \
 	$(RM) -f $(MPE_OUTFILE )
 	@-echo ; \
-	echo -n "*** Link C program with the MPI and manual logging libraries ............. " ; \
+	echo $(ECHO_N) "*** Link C program with the MPI and manual logging libraries ............. $(ECHO_C)" ; \
 	$(RM) -f cpilog@EXEEXT@ ; \
 	$(MAKE) cpilog@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	if test -x cpilog@EXEEXT@ ; then \
-	    echo "Yes." ; \
+	    echo "$(ECHO_T)Yes." ; \
 	    $(RM) -f cpilog@EXEEXT@ ; \
 	else \
-	    echo "No." ; \
+	    echo "$(ECHO_T)No." ; \
 	    echo "    The failed command: " ; \
 	    cat $(MPE_OUTFILE) ; \
 	fi ; \
@@ -176,14 +181,14 @@ linktest_C:
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	    echo ; \
-	    echo -n "*** Link F77 program with the MPI and manual logging libraries ........... " ; \
+	    echo $(ECHO_N) "*** Link F77 program with the MPI and manual logging libraries ........... $(ECHO_C)" ; \
 	    $(RM) -f fpilog@EXEEXT@ ; \
 	    $(MAKE) fpilog@EXEEXT@ > $(MPE_OUTFILE) 2>&1 ; \
 	    if test -x fpilog@EXEEXT@ ; then \
-	        echo "Yes." ; \
+	        echo "$(ECHO_T)Yes." ; \
 	        $(RM) -f fpilog@EXEEXT@ ; \
 	    else \
-	        echo "No." ; \
+	        echo "$(ECHO_T)No." ; \
 	        echo "    The failed command: " ; \
 	        cat $(MPE_OUTFILE) ; \
 	    fi ; \
