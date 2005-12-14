@@ -1194,6 +1194,7 @@ dnl PAC_F77_CHECK_COMPILER_OPTION(-g)
     # shared library support.  
     AC_MSG_CHECKING([whether using gcc and g77 together])
     if test "$ac_cv_prog_gcc" = "yes" -a "$ac_cv_prog_g77" = "yes" ; then
+        # FIXME: Who uses this definition?
         AC_DEFINE(USE_GCC_G77_DECLS,1,[Define if using gcc and g77 together])
         AC_MSG_RESULT(yes)
     else 
@@ -1209,21 +1210,50 @@ dnl PAC_F77_CHECK_COMPILER_OPTION(-g)
 	 gcc)
 	 # Assume that the compiler is g77 if gcc style shared libraries chosen
 	 # (unfortunately, the name may be g77 or f77)
-	 FC_SHL="$F77 -shared -fpic"
+	 # To make this a little more robust, only add the -shared
+	 # if the compiler allows it (e.g., building with gcc but
+	 # a different Fortran compiler. Another option is to
+	 # *require* g77.
+	 AC_MSG_CHECKING([whether $F77 allows -shared -fpic])
+	 rm -f conftest.f
+	 cat > conftest.f <<EOF
+       program main
+       end
+EOF
+         if $F77 -shared -fpic -o conftest conftest.f >/dev/null 2>&1 ; then
+	     FC_SHL="$F77 -shared -fpic"
+             AC_MSG_RESULT(yes)
+         else
+             AC_MSG_RESULT(no)
+             AC_MSG_CHECKING([whether $F77 allows -fpic])
+             if $F77 -fpic -o conftest conftest.f >/dev/null 2>&1 ; then
+	         FC_SHL="$F77 -fpic"
+                 AC_MSG_RESULT(yes)
+             else
+	         FC_SHL=false
+                 AC_MSG_RESULT(no)
+		 AC_MSG_WARN([Cannot build shared libraries for Fortran with this compiler])
+             fi
+         fi
+         rm -f conftest*
+
 	 FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	 ;;
 	 cygwin|cygwin-gcc)
 	 FC_SHL="$F77 -shared"
 	 FC_LINKPATH_SHL=""
 	 ;;
+
 	 solaris|solaris-cc)
 	 FC_SHL="$F77 -xcode=pic32"
          FC_LINKPATH_SHL=$C_LINKPATH_SHL
 	 ;;
+
 	 libtool)
 	 FC_SHL='${LIBTOOL} --mode=compile ${F77}'
          FC_LINKPATH_SHL="-rpath "
 	 ;;
+
 	 *)
 	 FC_SHL=false
 	 ;;
