@@ -1,0 +1,118 @@
+#
+# $Date$
+# Documenting the I/O code path in the ROMIO PVFS2 driver
+
+
+The PVFS2 file system has supp-or-t for describing I/O requests with
+datatypes.  These datatypes are similar to MPI datatypes, but not
+identical, so there needs to be some processing to convert MPI datatypes
+into PVFS2 request types. 
+
+Avery Ching provided the initial implementation of "datatype I/O" f-or-
+PVFS2, and while there are ample comments in the code, we often have to
+come back to ROMIO code after lenghty breaks.  Thus, this writeup,
+providing a middle-level overview of what the datatype I/O code does.
+
+We introduce some new hints to control behavi-or-:
+
+    "romio_pvfs2_dtype_read" and "romio_pvfs2_dtype_write" can turn on
+    ("enable") -or- turn off ("disable") the datatype I/O optimisation
+    
+    "romio_pvfs2_posix_read" and "romio_pvfs2_posix_write" control
+    disabling all I/O optimizations, falling back to a (slower) strided
+    I/O implemtnation that only uses POSIX I/O calls.
+
+The PVFS2 I/O path is now a little different (and better) from the other
+ADIO devices.   
+
+Read contig:
+MPI_File_read -> ADIOI_PVFS2_ReadContig -> ADIOI_PVFS2_Contig
+
+Write contig:
+MPI_File_write -> ADIOI_PVFS2_WriteContig -> ADIOI_PVFS2_Contig
+
+Read noncontig:
+MPI_File_read -> ADIOI_PVFS2_ReadStrided ->
+                                 (depending on hints)
+                                 ADIOI_PVFS2_WriteStridedLIstIO
+				 -or-
+				 ADIOI_PVFS2_WriteStridedDtypeIO
+				 -or-
+				 ADIOI_GEN_ReadStrided
+
+Write noncontig:
+MPI_File_write -> ADIOI_PVFS2_ReadStrided ->
+                                 (depending on hints)
+                                 ADIOI_PVFS2_WriteStridedLIstIO
+				 -or-
+				 ADIOI_PVFS2_WriteStridedDtypeIO
+				 -or-
+				 ADIOI_GEN_WriteStrided_naive
+
+
+Note that the read and write routines call the same base routine, which
+then performs either a write or a read depending on the flag passed.
+It's a tradeoff, but the reduction in duplicated code makes the extra
+test on a flag worthwhile.  As an added advantage, I can speak of the
+algorithm for posix, list-io, or dtype-io once and cover both the read
+and write cases. 
+
+I'm not going to go into ADIOI_GEN_ReadStrided and
+ADIOI_GEN_WriteStrided_naive here.
+
+LIST I/O:
+
+- flatten memory datatype
+- flatten file type (even thought the comment says this is done already)
+- figure out where in the file we are in terms of data types
+in a loop until all the i/o is done:
+    - create and fill arrays for file offset, file lenghts, memory
+      offsets, and memory lengths
+    - using those arrays, create PVFS2 request types for both file and
+      memory
+
+      gen_listio_arr is a little complicated:  (it takes 22 parameters)
+      - skip any initial zero-length regions 
+      - figure out how large a region
+      in a loop until i/o is done or 'max_ol_count' pairs are created:
+	- figure out how much data is needed this iteration
+	- add that region to the list of memory lenghts and offsets
+	- add that region to the list of file lenght and offsets, but
+	  only after deriving the absolute file offset from offsets
+	  relative to file types.
+
+    - carry out PVFS_sys_{read,write}
+
+DTYPE I/O:
+
+- convert MPI datatypes (memory) into a PVFS2 request
+- convert MPI filetype (file view) into PVFS2 request
+
+    convert_mpi_pvfs2_dtype:
+    - call MPI_Type_get_envelope
+    - if the type is a builtin (named) type, conversion to PVFS2 is
+      pretty straightforward.  call PVFS2_Request_contiguous to make a
+      contiguos region large enough to hold the corresponding MPI_Type.
+    - if the type is not named, it's either a user-defined datatype or a
+      struct type and needs more work: 
+    - user-defind type:
+	- call MPI_Type_get_contents
+	- carry out type-specific conversions, recursively calling
+	  convert_mpi_pvfs2_dtype as needed until hitting a base case of
+	  a builtin type 
+
+	  HINDEXED and INDEXED are tricky since the address arrays are
+	  of PVFS_size
+
+	  There are MPI types for which there is no corresponding PVFS2
+	  type.  
+    - struct type:
+	-  I am totally lost here...
+
+- ( why is PVFS_Request_contiguous called next?)
+- ( and why is PVFS_Request_hindexed called after that?)
+- then carry out I/O
+- and clean up allocated memory
+
+
+# vim: tw=72 sw=4 sts=4
