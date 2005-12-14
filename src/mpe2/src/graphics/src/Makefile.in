@@ -32,7 +32,7 @@ LDFLAGS              = @LDFLAGS@
 
 ### End User configurable options ###
 
-SHELL            = /bin/sh
+SHELL            = @SHELL@
 RM               = @RM@
 
 @VPATH@
