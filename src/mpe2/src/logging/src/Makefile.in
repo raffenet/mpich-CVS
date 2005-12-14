@@ -29,8 +29,9 @@ LDFLAGS              = @LDFLAGS@
 MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 
 ### End User configurable options ###
-SHELL = /bin/sh
-RM    = @RM@
+
+SHELL            = /bin/sh
+RM               = @RM@
 
 @VPATH@
 

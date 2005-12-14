@@ -31,8 +31,9 @@ LIB_PATH             = @X_LIB@ $(MPI_LIBS)
 LDFLAGS              = @LDFLAGS@
 
 ### End User configurable options ###
-SHELL = /bin/sh
-RM    = @RM@
+
+SHELL            = /bin/sh
+RM               = @RM@
 
 @VPATH@
 

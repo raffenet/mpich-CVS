@@ -36,9 +36,10 @@ COLLCHK_BUILD_RMA    = @COLLCHK_BUILD_RMA@
 COLLCHK_BUILD_COMMS  = @COLLCHK_BUILD_COMMS@
 
 ### End User configurable options ###
-SHELL = /bin/sh
-RM    = @RM@
-CP    = @CPRP@
+
+SHELL            = /bin/sh
+RM               = @RM@
+CP               = @CPRP@
 
 @VPATH@
 

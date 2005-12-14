@@ -30,8 +30,9 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 MPEDBG               = @MPEDBG@
 
 ### End User configurable options ###
-SHELL = /bin/sh
-RM    = @RM@
+
+SHELL            = /bin/sh
+RM               = @RM@
 
 @VPATH@
 
