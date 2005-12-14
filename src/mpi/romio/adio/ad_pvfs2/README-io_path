@@ -3,20 +3,20 @@
 # Documenting the I/O code path in the ROMIO PVFS2 driver
 
 
-The PVFS2 file system has supp-or-t for describing I/O requests with
+The PVFS2 file system has support for describing I/O requests with
 datatypes.  These datatypes are similar to MPI datatypes, but not
 identical, so there needs to be some processing to convert MPI datatypes
 into PVFS2 request types. 
 
-Avery Ching provided the initial implementation of "datatype I/O" f-or-
+Avery Ching provided the initial implementation of "datatype I/O" for
 PVFS2, and while there are ample comments in the code, we often have to
 come back to ROMIO code after lenghty breaks.  Thus, this writeup,
 providing a middle-level overview of what the datatype I/O code does.
 
-We introduce some new hints to control behavi-or-:
+We introduce some new hints to control behavior:
 
     "romio_pvfs2_dtype_read" and "romio_pvfs2_dtype_write" can turn on
-    ("enable") -or- turn off ("disable") the datatype I/O optimisation
+    ("enable") or turn off ("disable") the datatype I/O optimisation
     
     "romio_pvfs2_posix_read" and "romio_pvfs2_posix_write" control
     disabling all I/O optimizations, falling back to a (slower) strided
