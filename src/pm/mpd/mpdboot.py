@@ -48,14 +48,15 @@ __credits__ = ""
 
 import re
 
-from os     import environ, system, path, kill, access, X_OK
-from sys    import argv, exit, stdout
-from popen2 import Popen4, Popen3, popen2
-from socket import gethostname, gethostbyname_ex
-from select import select, error
-from signal import SIGKILL
-from mpdlib import mpd_set_my_id, mpd_get_my_username, mpd_same_ips, mpd_get_ranks_in_binary_tree, \
-                   mpd_print, MPDSock
+from os       import environ, path, kill, access, X_OK
+from sys      import argv, exit, stdout
+from popen2   import Popen4, Popen3, popen2
+from socket   import gethostname, gethostbyname_ex
+from select   import select, error
+from signal   import SIGKILL
+from commands import getoutput, getstatusoutput
+from mpdlib   import mpd_set_my_id, mpd_get_my_username, mpd_same_ips, \
+                     mpd_get_ranks_in_binary_tree, mpd_print, MPDSock
 
 global myHost, fullDirName, rshCmd, user, mpdCmd, debug, verbose
 
@@ -237,7 +238,8 @@ def mpdboot():
             exit(0)
 
     try:
-        system('%s/mpdallexit.py > /dev/null' % (fullDirName)) # stop current mpds
+        # stop current (if any) mpds; ignore the output
+        getoutput('%s/mpdallexit.py' % (fullDirName))
         if verbose or debug:
             print 'running mpdallexit on %s' % (myHost)
     except:
@@ -252,6 +254,7 @@ def mpdboot():
     mpdArgs = '%s %s --ncpus=%d' % (localConArg,ifhn,myNcpus)
     (mpdPID,mpdFD) = launch_one_mpd(0,0,mpdArgs,hostsAndInfo)
     fd2idx = {mpdFD : 0}
+    # ----------------  Above here  ------------------------------
     handle_mpd_output(mpdFD,fd2idx,hostsAndInfo)
 
     try:
@@ -360,20 +363,20 @@ def handle_mpd_output(fd,fd2idx,hostsAndInfo):
                           (host,msg) )
                 tempOut = tempSock.recv(1000)
                 print tempOut
-                try: system('%s/mpdallexit.py > /dev/null &' % (fullDirName))
+                try: getoutput('%s/mpdallexit.py' % (fullDirName))
                 except: pass
                 exit(-1)
             tempSock.close()
         else:
             mpd_print(1,'failed to connect to mpd on %s' % (host) )
-            try: system('%s/mpdallexit.py > /dev/null &' % (fullDirName))
+            try: getoutput('%s/mpdallexit.py' % (fullDirName))
             except: pass
             exit(-1)
     else:
         mpd_print(1,'from mpd on %s, invalid port info:' % (host) )
         print port
         print fd.read()
-        try: system('%s/mpdallexit.py > /dev/null &' % (fullDirName))
+        try: getoutput('%s/mpdallexit.py' % (fullDirName))
         except: pass
         exit(-1)
     if verbose:
