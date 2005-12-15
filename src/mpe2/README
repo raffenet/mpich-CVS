@@ -225,9 +225,9 @@ from the MPI implementation to generate sample logfiles.
 VI. c) ENVIRONMENTAL VARIABLES
 ------------------------------
 
-There are 2 environmental variables, MPE_TMPDIR and MPE_LOGFILE_PREFIX,
-that most users find them to be very useful.  So it is recommended to set
-these 2 env. variables before launching the MPI program. :
+For MPE logging, MPE_TMPDIR and MPE_LOGFILE_PREFIX are 2 environment variables
+that most users find to be very useful.  So it is recommended to set these
+2 env. variables before launching the MPI program during logging :
 
 CLOG_BLOCK_SIZE: The integer value determines the clog2 buffer block size
                  which set the least minimum clog2 file size.  If
@@ -286,6 +286,12 @@ MPE_LOG_OVERHEAD: The boolean value determines to log MPE/CLOG2's internal
 
 Possible boolean values are "true", "false", "yes" and "no" in either
 all lower or upper cases.
+
+
+For MPE X11 graphics, environment variables DISPLAY set in each process
+is read during MPE_Open_graphics.
+
+DISPLAY: determines where MPE X11 graphics on each process is connected to.
 
 
 
@@ -464,16 +470,36 @@ In this example, the option -MPDENV- is needed to make sure
 that all processes have their environmental variable, MPE_LOGFILE_PREFIX,
 set to the desirable output logfile prefix.
 
+
 In MPICH2, when using MPD as a process manage, passing MPE_LOGFILE_PREFIX
 and MPE_TMPDIR can be done as follows:
 
 mpiexec -env MPE_LOGFILE_PREFIX <output-logname-prefix> \
         -env MPE_TMPDIR <local-tmp-dir> -n 32 <executable-name>
 
-For other MPI implementations, how environmental variables are passed
-remains unchanged.  User needs to get familar with the environment and
-set the environmental variables accordingly.
+Also, with MPE X11 graphics library, the local DISPLAY variable set on each
+process is read (so ssh tunnelling can be used), for examples assume
+an mpd ring has been set up by on 2 machines, schwinn and triumph, as follows:
 
+cat > mpd.hosts << EOF
+schwinn
+triumph
+EOF
+
+mpdboot -n 2 -f mpd.hosts
+
+Now launch MPE X11 graphics sample code, cxgraphics, as follows:
+
+mpiexec -host schwinn -env DISPLAY <display_0> cxgraphics : \
+        -host triumph -env DISPLAY <display_1> cxgraphics
+
+Where <display_0> and <display_1> are the local DISPLAY variable
+echoed from consoles connected to schwinn and triumph respectively.
+
+
+For other MPI implementations, how environmental variables are passed
+remains unchanged.  User needs to get familar with the runtime environment
+and set the environmental variables appropriately.
 
 
 VII. b) Viewing Logfiles
