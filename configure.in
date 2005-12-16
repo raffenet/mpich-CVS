@@ -871,7 +871,9 @@ pm_name=$first_pm_name
 AC_SUBST(pm_name)
 AC_SUBST(other_pm_names)
 
-other_install_dirs="${other_install_dirs} src/pm/$first_pm_name"
+if test -n "$first_pm_name" ; then
+    other_install_dirs="${other_install_dirs} src/pm/$first_pm_name"
+fi
 # FIXME: in the multiple pm case, we need to be careful that
 # the PMs don't add conflicting definitions to the configure
 # environment.  To ensure that, we'll need an alternate install target
