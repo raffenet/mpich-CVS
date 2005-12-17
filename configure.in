@@ -1446,14 +1446,27 @@ EOF
     # top-level configure.  FC_SHL must be determined in this configure
     AC_SUBST(F90_SHL)
     AC_SUBST(F90_LINKPATH_SHL)
-    if test "$ENABLE_SHLIB" = "gcc" -a "$F90" = "g95" ; then
+    case "$ENABLE_SHLIB" in
+    gcc)
+    if "$F90" = "g95" ; then
         # If we have the GNU Fortran 95 compiler (untested)
         F90_SHL="$F90 -shared -fpic"
         F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
-    elif test "$ENABLE_SHLIB" = "solaris" -o "$ENABLE_SHLIB" = "solaris-cc" ; then
+    fi
+    # Absoft f90 is *probably* ("-X " is like "-Wl,")
+    # "-X -rpath -X "
+    ;;
+    solaris|solaris-cc)
+        # Assume the Solaris F90 compiler, in 32-bit mode
         F90_SHL="$F90 -xcode=pic32"
         F90_LINKPATH_SHL=$C_LINKPATH_SHL
+    ;;
+    *)
+    if test -z "$F90_LINKPATH_SHL" -a -n "$C_LINKPATH_SHL" ; then
+        AC_MSG_WARN([Unable to determine how to pass the shared-library link patth to the Fortran 90 compiler $F90.  Set the environment variable F90_LINKPATH_SHL and rerun configure (the corresponding value for the C compiler is $C_LINKPATH_SHL)])
     fi
+    ;;
+    esac
     # ------------------------------------------------
 fi
 
