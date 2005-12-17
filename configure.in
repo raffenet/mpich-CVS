@@ -1446,15 +1446,66 @@ EOF
     # top-level configure.  FC_SHL must be determined in this configure
     AC_SUBST(F90_SHL)
     AC_SUBST(F90_LINKPATH_SHL)
+
+    # Try to get a version string for the F90 compiler.  We may
+    # need this to find likely command-line arguments for accessing
+    # shared libraries
+    AC_MSG_CHECKING([for f90 compiler vendor])
+    rm -f conftest.txt
+    $F90 --version </dev/null >conftest.txt 2>&1
+    if test "$?" != 0 ; then
+        # Put -V before -v because that's better for PGI and Solaris
+        $F90 --version </dev/null >conftest.txt 2>&1 
+        if test "$?" != 0 ; then 
+	    $F90 --version </dev/null  >conftest.txt 2>&1
+            if test "$?" != 0 ; then 
+	        rm -f conftest.txt
+            fi
+        fi
+    fi
+    # Try to find the compiler information
+    # Known limitation.  For the Intel compiler, -V with no program
+    # returns status 1 and -v gives ONLY the version number
+    pac_cv_f90_vendor="unknown"
+    if grep 'Portland Group' conftest.txt >/dev/null 2>&1 ; then
+        pac_cv_f90_vendor=pgi
+    elif grep 'Sun Workshop' conftest.txt >/dev/null 2>&1 ; then
+        pac_cv_f90_vendor=sun
+    elif grep 'Absoft' conftest.txt >/dev/null 2>&1 ; then
+        pac_cv_f90_vendor=absoft
+    elif grep 'G95' conftest.txt >/dev/null 2>&1 ; then
+        pac_cv_f90_vendor=gnu
+    elif test ! -f conftest.txt ; then
+        # Try to use the compiler name
+        if test "$F90" = "ifort" -o "$F90" = "ifc" ; then 
+            pac_cv_f90_vendor=intel
+        elif test "$F90" = "pgf90" ; then
+            pac_cv_f90_vendor=pgi
+        elif test "$F90" = "xlf90" -o "$F90" = "xlf90_r" ; then
+            pac_cv_f90_vendor=ibm
+        fi
+    fi
+    AC_MSG_RESULT($pac_cv_f90_vendor)
+    rm -f conftest.txt
+    # End of checking for F90 compiler vendor
+
     case "$ENABLE_SHLIB" in
     gcc)
-    if "$F90" = "g95" ; then
+    if test "$pac_cv_f90_vendor" = gnu -o "$F90" = "g95" ; then
         # If we have the GNU Fortran 95 compiler (untested)
         F90_SHL="$F90 -shared -fpic"
         F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
+    else
+        case "$pac_cv_f90_vendor" in 
+	    absoft)
+	    F90_SHL="$F90 -fpic"
+            F90_LINKPATH_SHL="-X -rpath -X "
+	    ;;
+	    *)
+	    # Unknown, ignore
+	    ;;
+        esac
     fi
-    # Absoft f90 is *probably* ("-X " is like "-Wl,")
-    # "-X -rpath -X "
     ;;
     solaris|solaris-cc)
         # Assume the Solaris F90 compiler, in 32-bit mode
