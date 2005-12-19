@@ -790,6 +790,11 @@ sub RunIntelTestSuite {
     # Switch to using the checked-in version of the Intel test
     $config[$nargs++] = "$projects_dir/IntelMPITEST/configure";
     $config[$nargs++] = "--with-mpich2=$instdir";
+    # The Absoft Fortran compiler fails some tests if MAX_RANKS
+    # (used to dimension some arrays) is too large.  Since the 
+    # default tests never use more than 6 processes, setting a 
+    # maximum of 16 is safe.
+    $config[$nargs++] = "--enable-maxprocs=16";
     # f77 is now the default, so we should run with the f77 tests
     # unless we did not build f77
     if (!$has_f77) {       # defined($chosenEnable{"f77"})
