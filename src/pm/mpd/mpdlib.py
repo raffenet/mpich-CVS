@@ -417,19 +417,17 @@ class MPDSock(object):
                     break
             msg += c
         return msg
-    def send_dict_msg(self,msg,errprint=1):
+    def send_dict_msg(self,msg,errprint=0):
         pickledMsg = dumps(msg) 
         try:
             self.sendall( "%08d%s" % (len(pickledMsg),pickledMsg) )
         except Exception, errmsg:
-            if errprint:
-                mpd_print_tb(1, 'send_dict_msg: sock=%s errmsg=:%s:' % (self.name,errmsg) )
-    def send_char_msg(self,msg,errprint=1):
+            mpd_print_tb(errprint,'send_dict_msg: sock=%s errmsg=:%s:' % (self.name,errmsg))
+    def send_char_msg(self,msg,errprint=0):
         try:
             self.sock.sendall(msg)
         except Exception, errmsg:
-            if errprint:
-                mpd_print_tb(1, 'send_char_msg: sock=%s errmsg=:%s:' % (self.name,errmsg) )
+            mpd_print_tb(errprint,'send_char_msg: sock=%s errmsg=:%s:' % (self.name,errmsg))
 
 class MPDListenSock(MPDSock):
     def __init__(self,host='',port=0,filename='',listen=5,name='listener',**kargs):
