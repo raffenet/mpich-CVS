@@ -64,12 +64,15 @@ asm_memcpy(void *dst, const void *src, size_t n)
   return dst;
 }
 #endif /* USE A MACRO */
+
+
 #ifdef i386
-//#define MPID_NEM_MEMCPY(a,b,c)  MP_memcpy( (a), (b), (unsigned)(c))
 //#define MPID_NEM_MEMCPY(a,b,c)    asm_memcpy((a), (b), (unsigned)(c))
 #define MPID_NEM_MEMCPY_CROSSOVER (63*1024)
-#define MPID_NEM_MEMCPY(a,b,c)  (((unsigned)(c)) >= MPID_NEM_MEMCPY_CROSSOVER) ? MP_memcpy( (a), (b), (unsigned)(c)) : asm_memcpy((a), (b), (unsigned)(c))
-#else
-#define MPID_NEM_MEMCPY(a,b,c)    memcpy((a), (b), (unsigned)(c))
-#endif
+#define MPID_NEM_MEMCPY(a,b,c)  (((c)) >= MPID_NEM_MEMCPY_CROSSOVER) ? amd_memcpy (a, b, c) : asm_memcpy (a, b, c)
+#else /* i386 */
+#define MPID_NEM_MEMCPY(a,b,c)    memcpy (a, b, c)
+#endif /* i386 */
+
+
 #endif /* MPID_MEMDEFS_H */
