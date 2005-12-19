@@ -22,6 +22,29 @@
  * part of the channel API). 
  */
 
+
+/*E
+  MPIDI_CH3_Pre_init - Allows the channel to initialize before PMI_init is called, and allows the
+  channel to optionally set the rank, size, and whether this process has a parent.
+
+  Output Parameters:
++ setvals - boolean value that is true if this function set has_parent, rank, and size
+. has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
+. rank - rank of this process in the process group
+- size - number of processes in the process group
+
+  Return value:
+  A MPI error code.
+
+  Notes:
+  This function is optional, and is used only when HAVE_CH3_PRE_INIT is defined.  It is called by
+  CH3 before PMI_Init.  If the function sets setvals to TRUE, CH3 will not use PMI to get the rank,
+  size, etc.
+E*/
+
+int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
+
+
 /*E
   MPIDI_CH3_Init - Initialize the channel implementation.
 
