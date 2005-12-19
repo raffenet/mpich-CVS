@@ -1,0 +1,26 @@
+
+eval _conf_array=($ac_configure_args) 
+
+for arg in "${_conf_array[@]}" ; do
+  case "$arg" in  
+    --with-papi=* ) 
+      papi_dir=`echo "$arg" | sed 's/--with-papi=//'` 
+      ;;
+    --with-perfctr=* ) 
+      perfctr_dir=`echo "$arg" | sed 's/--with-perfctr=//'` 
+      ;;
+    --with-gm=* ) 
+      gm_dir=`echo "$arg" | sed 's/--with-gm=//'` 
+      ;;
+    --with-gm-include=* ) 
+      gm_include_dir=`echo "$arg" | sed 's/--with-gm-include=//'` 
+      ;;
+    --with-gm-lib=* ) 
+      gm_lib_dir=`echo "$arg" | sed 's/--with-gm-lib=//'` 
+      ;;
+    --without-gm ) 
+      no_gm=1 
+      ;;
+  esac 
+done 
+

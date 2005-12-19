@@ -1,0 +1,1527 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+
+#include "mpidi_ch3_impl.h"
+#include "pmi.h"
+
+#ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK
+#define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) do {} while (0)
+#endif
+#ifndef MPIDI_POSTED_RECV_DEQUEUE_HOOK
+#define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) do {} while (0)
+#endif
+
+#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+#define MPIDI_Recvq_lock() MPID_Thread_lock(&MPIDI_Process.recvq_mutex)
+#define MPIDI_Recvq_unlock() MPID_Thread_unlock(&MPIDI_Process.recvq_mutex)
+#else
+#define MPIDI_Recvq_lock()
+#define MPIDI_Recvq_unlock()
+#endif
+
+
+volatile unsigned int MPIDI_CH3I_progress_completions = 0;
+
+struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES];
+struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES];
+struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
+
+#if !defined(MPIDI_CH3_Progress_start)
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_start
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3_Progress_start (MPID_Progress_state * state)
+{
+    /* MT - This function is empty for the single-threaded implementation */
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_START);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_START);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_START);
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Progress (int is_blocking)
+{
+    unsigned completions = MPIDI_CH3I_progress_completions;
+    int mpi_errno = MPI_SUCCESS;
+    int complete;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
+
+#if defined(MPICH_DBG_OUTPUT)
+    {
+	if (is_blocking)
+	{
+	    MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s",
+			      is_blocking ? "true" : "false"));
+	}
+    }
+#endif
+
+    do
+    {
+	MPID_Request *sreq;
+	MPID_Request *rreq;
+	MPID_nem_cell_t     *cell;
+	int           in_fbox;
+	MPIDI_VC_t   *vc;
+
+	/* make progress receiving */
+	/* check queue */
+	  
+	if (!MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] && !MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE) && is_blocking)
+	{
+	    MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
+	}
+	else
+	{
+	    MPID_nem_mpich2_test_recv (&cell, &in_fbox);
+	}
+
+	if (cell)
+	{
+	    char *cell_buf     = cell->pkt.mpich2.payload;
+	    int    payload_len = cell->pkt.mpich2.datalen;
+
+	    if (in_fbox)
+	    {
+		MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+
+		mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    goto exit_fn;
+		}
+		cell_buf    += sizeof (MPIDI_CH3_Pkt_t);
+		payload_len -= sizeof (MPIDI_CH3_Pkt_t);
+	    }
+	    else
+	    {
+		MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+		
+		rreq = vc->ch.recv_active;
+		
+		if (!rreq)
+		{
+		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
+		    if (mpi_errno != MPI_SUCCESS)
+		    {
+			goto exit_fn;
+		    }
+		    cell_buf += sizeof (MPIDI_CH3_Pkt_t);
+		    payload_len -= sizeof (MPIDI_CH3_Pkt_t);
+		}
+	    }
+	    
+	    if (rreq)
+	    {
+		MPID_IOV *iov;
+		int n_iov;
+		int complete = 0;
+
+		do
+		{
+		    iov = &rreq->dev.iov[rreq->ch.iov_offset];
+		    n_iov = rreq->dev.iov_count;
+		
+		    while ((n_iov) && (payload_len >= iov->iov_len))
+		    {
+			int _iov_len = iov->iov_len;
+			MPID_NEM_MEMCPY (iov->iov_base, cell_buf, _iov_len);
+			payload_len -= _iov_len;
+			cell_buf += _iov_len;
+			--n_iov;
+			++iov;
+		    }
+		
+		    if (n_iov)
+		    {
+			if (payload_len > 0)
+			{
+			    MPID_NEM_MEMCPY (iov->iov_base, cell_buf, payload_len);
+			    iov->iov_base += payload_len;
+			    iov->iov_len -= payload_len;
+			    payload_len = 0;
+			}
+		    
+			rreq->ch.iov_offset = iov - rreq->dev.iov;
+			rreq->dev.iov_count = n_iov;
+			vc->ch.recv_active = rreq;
+		    }
+		    else
+		    {				       
+			MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
+			if (!complete)
+			{
+			    rreq->ch.iov_offset = 0;
+			}
+			else
+			{
+			    vc->ch.recv_active = NULL;
+			}
+		    }
+		}
+		while ((payload_len) && (!complete));	    
+	    }
+
+	    if (!in_fbox)
+	    {
+		MPID_nem_mpich2_release_cell (cell);
+	    }
+	    else
+	    {
+		MPID_nem_mpich2_release_fbox (cell);
+	    }	    
+	}
+
+	/* make progress sending */
+	sreq = MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE];
+	if (!sreq)
+	{
+	    sreq = MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE);
+	    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+	}
+	if (sreq)
+	{
+	    MPID_IOV *_iov;
+	    int _n_iov;
+	    int shmem_errno;
+	    
+	    _iov = &sreq->dev.iov[sreq->ch.iov_offset];
+	    _n_iov = sreq->dev.iov_count;
+
+	    do 
+	    {
+		MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet\n"));
+		shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, sreq->ch.vc->lpid);
+	    }
+	    while (shmem_errno != MPID_NEM_MPICH2_AGAIN && _n_iov > 0);
+
+	    if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
+	    {
+		sreq->ch.iov_offset = _iov - sreq->dev.iov;
+		sreq->dev.iov_count = _n_iov;
+	    }
+	    else
+	    {
+		complete = 0;
+		mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->ch.vc, sreq, &complete);
+		if (mpi_errno != MPI_SUCCESS)
+		{
+		    goto exit_fn;
+		}
+	    
+		if (complete)
+		{
+		    MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
+		    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+		}
+		else
+		{
+		    sreq->ch.iov_offset = 0;
+		}
+	    }
+	}
+    }
+    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+    
+#if defined(MPICH_DBG_OUTPUT)
+    {
+	if (is_blocking)
+	{
+	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
+	}
+    }
+#endif
+
+ exit_fn:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
+    return mpi_errno;
+}
+
+
+#define set_request_info(rreq_, pkt_, msg_type_)                \
+{                                                               \
+    (rreq_)->status.MPI_SOURCE = (pkt_)->match.rank;            \
+    (rreq_)->status.MPI_TAG = (pkt_)->match.tag;                \
+    (rreq_)->status.count = (pkt_)->data_sz;                    \
+    (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;         \
+    (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;                \
+    MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);          \
+    MPIDI_Request_set_msg_type((rreq_), (msg_type_));           \
+}
+#ifdef BYPASS_PROGRESS
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_poke_with_matching
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_Comm *comm,int context_id,int *foundp, void *buf, int count, MPI_Datatype datatype,MPI_Status * status)   
+{
+    int             mpi_errno = MPI_SUCCESS;
+    MPID_Request   *rreq  = NULL;
+    MPID_nem_cell_t       *cell  = NULL;
+    int             in_fbox;
+    int             dt_contig;
+    MPI_Aint        dt_true_lb;
+    MPIDI_msg_sz_t  userbuf_sz;
+    MPID_Datatype  *dt_ptr;
+    
+
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_POKE_WITH_MATCHING);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_POKE_WITH_MATCHING);    
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering, buf=%p, count=%d, dtype=%d",
+		      buf,count,datatype));
+
+    *foundp = FALSE ;
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+
+    /* handle only contiguous types (for now) and one-cell packets */
+    if((dt_contig) && (( userbuf_sz <= MPID_NEM__BYPASS_Q_MAX_VAL))) 
+    {
+	MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
+	
+	if (cell)
+	    {	 
+		char *cell_buf    = cell->pkt.mpich2.payload;
+
+		switch(((MPIDI_CH3_Pkt_t *)cell_buf)->type)
+		    {
+		    case MPIDI_CH3_PKT_EAGER_SEND:
+			{
+			    MPIDI_CH3_Pkt_eager_send_t *eager_pkt =  &((MPIDI_CH3_Pkt_t *)cell_buf)->eager_send;
+			    int payload_len = eager_pkt->data_sz; 
+			    cell_buf += sizeof (MPIDI_CH3_Pkt_t);
+			    
+			    if(((eager_pkt->match.tag  == tag   )||(tag    == MPI_ANY_TAG   )) &&
+			       ((eager_pkt->match.rank == source)||(source == MPI_ANY_SOURCE)) &&
+			        (eager_pkt->match.context_id == context_id))
+				{
+				    /* cell matches */
+				    *foundp = TRUE;
+				    
+				    if (payload_len > 0)
+					{
+					    if (payload_len <= userbuf_sz)
+						{				    
+						    MPID_NEM_MEMCPY((char *)(buf+ dt_true_lb), cell_buf,payload_len);
+						}
+					    else
+						{
+						    /* error : truncate */
+						    MPID_NEM_MEMCPY((char *)(buf+dt_true_lb),cell_buf, userbuf_sz);
+						    status->MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,"**truncate", "**truncate %d %d %d %d", status->MPI_SOURCE,status->MPI_TAG,payload_len, userbuf_sz );
+						    mpi_errno = status->MPI_ERROR;
+						    goto exit_fn;
+						}
+					}
+				}
+			    else
+				{
+				    /* create a request for the cell, enqueue it on
+				       the unexpected queue */
+				    rreq  = MPID_Request_create();
+				    if (rreq != NULL)
+					{
+					    MPIU_Object_set_ref(rreq, 2);
+					    rreq->kind                 = MPID_REQUEST_RECV;
+					    rreq->dev.match.tag        = eager_pkt->match.tag ;
+					    rreq->dev.match.rank       = eager_pkt->match.rank;
+					    rreq->dev.match.context_id = eager_pkt->match.context_id;
+					    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
+					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
+					    rreq->dev.next             = NULL;
+					    MPIDI_Recvq_lock();
+					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+						{
+						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						}
+					    else
+						{
+						    MPIDI_Process.recvq_unexpected_head = rreq;
+						}
+					    MPIDI_Process.recvq_unexpected_tail = rreq;
+					    MPIDI_Recvq_unlock();       
+					    MPID_Request_initialized_clear(rreq);
+					}
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_READY_SEND:
+			{
+			    MPIDI_CH3_Pkt_ready_send_t *ready_pkt =  &((MPIDI_CH3_Pkt_t *)cell_buf)->ready_send;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_READY_SEND not handled (yet) \n");			    
+			}
+			break;
+		    case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
+			{
+			    MPIDI_CH3_Pkt_eager_send_t *es_pkt =  &((MPIDI_CH3_Pkt_t *)cell_buf)->eager_send;
+			    int payload_len = es_pkt->data_sz; 
+			    cell_buf += sizeof (MPIDI_CH3_Pkt_t);
+			    
+			    if(((es_pkt->match.tag  == tag   )||(tag    == MPI_ANY_TAG   )) &&
+			       ((es_pkt->match.rank == source)||(source == MPI_ANY_SOURCE)) &&
+			        (es_pkt->match.context_id == context_id))
+				{
+				    MPIDI_CH3_Pkt_t  upkt;
+				    MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt = &upkt.eager_sync_ack;
+				    MPID_Request * esa_req = NULL;
+				    MPIDI_VC_t   *vc;
+
+				    /* cell matches */
+				    *foundp = TRUE;
+				    
+				    if (payload_len > 0)
+					{
+					    if (payload_len <= userbuf_sz)
+						{				    
+						    MPID_NEM_MEMCPY((char *)(buf+ dt_true_lb), cell_buf,payload_len);
+						}
+					    else
+						{
+						    /* error : truncate */
+						    MPID_NEM_MEMCPY((char *)(buf+dt_true_lb),cell_buf, userbuf_sz);
+						    status->MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,"**truncate", "**truncate %d %d %d %d", status->MPI_SOURCE,status->MPI_TAG,payload_len, userbuf_sz );
+						    mpi_errno = status->MPI_ERROR;
+						    goto exit_fn;
+						}
+					}
+				    
+				    /* send Ack back */
+				    MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
+				    esa_pkt->sender_req_id = es_pkt->sender_req_id;
+				    if (in_fbox)
+					{
+					    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+					}
+				    else
+					{
+					    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+					}
+				    
+				    mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
+				    
+				    /* --BEGIN ERROR HANDLING-- */
+				    if (mpi_errno != MPI_SUCCESS)
+					{
+					    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,"**ch3|syncack", 0);
+					    goto exit_fn;
+					}
+				    /* --END ERROR HANDLING-- */
+				    if (esa_req != NULL)
+					{
+					    MPID_Request_release(esa_req);
+					}
+				}
+			    else
+				{
+				    /* create a request for the cell, enqueue it on
+				       the unexpected queue */
+				    rreq  = MPID_Request_create();
+				    if (rreq != NULL)
+					{
+					    MPIU_Object_set_ref(rreq, 2);
+					    rreq->kind                 = MPID_REQUEST_RECV;
+					    rreq->dev.match.tag        = es_pkt->match.tag ;
+					    rreq->dev.match.rank       = es_pkt->match.rank;
+					    rreq->dev.match.context_id = es_pkt->match.context_id;
+					    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
+					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
+					    rreq->dev.next             = NULL;
+					    MPIDI_Recvq_lock();
+					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+						{
+						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						}
+					    else
+						{
+						    MPIDI_Process.recvq_unexpected_head = rreq;
+						}
+					    MPIDI_Process.recvq_unexpected_tail = rreq;
+					    MPIDI_Recvq_unlock();       
+					    MPID_Request_initialized_clear(rreq);
+					    MPIDI_Request_set_sync_send_flag(rreq,TRUE);
+					}
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_EAGER_SYNC_ACK:
+			{
+			    MPIDI_CH3_Pkt_eager_sync_ack_t * esa_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->eager_sync_ack;
+			    MPID_Request * sreq;
+			    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
+			    MPIDI_CH3U_Request_complete(sreq);
+			}
+			break;
+		    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
+			{
+			    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
+			    MPIDI_CH3_Pkt_rndv_req_to_send_t *rts_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->rndv_req_to_send;
+			    rreq  = MPID_Request_create();
+			    if (rreq != NULL)
+				{
+				    MPIU_Object_set_ref(rreq, 2);
+				    rreq->kind                 = MPID_REQUEST_RECV;
+				    rreq->dev.next             = NULL;     
+				}    
+			    
+			    if(((rts_pkt->match.tag  == tag   )||(tag    == MPI_ANY_TAG   )) &&
+			       ((rts_pkt->match.rank == source)||(source == MPI_ANY_SOURCE)) &&
+			        (rts_pkt->match.context_id == context_id))
+				{
+				    *foundp = TRUE;
+				    rreq->dev.match.tag        = tag;
+				    rreq->dev.match.rank       = source;
+				    rreq->dev.match.context_id = context_id;
+				    rreq->comm                 = comm;
+				    MPIR_Comm_add_ref(comm);
+				    rreq->dev.user_buf         = buf;
+				    rreq->dev.user_count       = count;
+				    rreq->dev.datatype         = datatype;
+				    MPID_Request_initialized_wait(rreq);
+				    set_request_info(rreq,rts_pkt, MPIDI_REQUEST_RNDV_MSG);
+				}
+			    else
+				{
+				    /* enqueue rreq on the unexp queue */
+				    rreq->dev.match.tag        = rts_pkt->match.tag;
+				    rreq->dev.match.rank       = rts_pkt->match.rank;
+				    rreq->dev.match.context_id = rts_pkt->match.context_id;
+				    MPIDI_Recvq_lock();
+				    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+					{
+					    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						}
+				    else
+					{
+					    MPIDI_Process.recvq_unexpected_head = rreq;
+					}
+				    MPIDI_Process.recvq_unexpected_tail = rreq;
+				    MPIDI_Recvq_unlock();       
+				    MPID_Request_initialized_clear(rreq);
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_RNDV_CLR_TO_SEND:
+			{
+			    MPIDI_CH3_Pkt_rndv_clr_to_send_t *cts_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->rndv_clr_to_send;
+			    MPID_Request   *sreq;
+			    MPID_Request   *rts_sreq;
+			    MPIDI_CH3_Pkt_t upkt;
+			    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &upkt.rndv_send;
+			    int             dt_contig;
+			    MPI_Aint        dt_true_lb;
+			    MPIDI_msg_sz_t  data_sz;
+			    MPID_Datatype  *dt_ptr;
+			    MPID_IOV        iov[MPID_IOV_LIMIT];
+			    int             iov_n;
+			    MPIDI_VC_t     *vc;
+
+			    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
+			    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);
+			    if (rts_sreq != NULL)
+				{
+				    MPID_Request_release(rts_sreq);
+				}
+
+			    MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
+			    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
+			    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
+			    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
+			    MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+
+			    if (dt_contig)
+				{
+				    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+				    iov[1].MPID_IOV_BUF = (char *)sreq->dev.user_buf + dt_true_lb;
+				    iov[1].MPID_IOV_LEN = data_sz;
+				    iov_n = 2;
+				}
+			    else
+				{
+				    MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment,0);
+				    iov_n = MPID_IOV_LIMIT - 1;
+				    sreq->dev.segment_first = 0;
+				    sreq->dev.segment_size = data_sz;
+				    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
+				    /* --BEGIN ERROR HANDLING-- */
+				    if (mpi_errno != MPI_SUCCESS)
+					{
+					    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+									     "**ch3|loadsendiov", 0);
+					    goto exit_fn;
+					}
+				    /* --END ERROR HANDLING-- */
+				    iov_n += 1;
+				}
+			    
+			    if (in_fbox)
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+				}
+			    else
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+				}
+			    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+				{
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|senddata", 0);
+				    goto exit_fn;
+				}
+			    /* --END ERROR HANDLING-- */
+			}
+			break;
+		    case MPIDI_CH3_PKT_RNDV_SEND:
+			{
+			    /* this case can't happen since there is a posted request for the recv */
+			    /* this code is only active when both queues are empty */
+			}
+			break;
+		    case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
+			{
+			    MPIDI_CH3_Pkt_cancel_send_req_t * req_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->cancel_send_req;
+			    MPID_Request * rreq;
+			    int ack;
+			    MPIDI_CH3_Pkt_t upkt;
+			    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &upkt.cancel_send_resp;
+			    MPID_Request * resp_sreq;
+			    MPIDI_VC_t     *vc;
+
+			    rreq = MPIDI_CH3U_Recvq_FDU(req_pkt->sender_req_id, &req_pkt->match);
+			    if (rreq != NULL)
+				{
+				    if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG && rreq->dev.recv_data_sz > 0)
+					{
+					    MPIU_Free(rreq->dev.tmpbuf);
+					}
+				    MPID_Request_release(rreq);
+				    ack = TRUE;
+				}
+			    else
+				{
+				    ack = FALSE;
+				}
+			    MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CANCEL_SEND_RESP);
+			    resp_pkt->sender_req_id = req_pkt->sender_req_id;
+			    resp_pkt->ack = ack;
+			    if (in_fbox)
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+				}
+			    else
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+				}
+			    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+				{
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**\
+ch3|cancelresp", 0);
+				    goto exit_fn;
+				}
+			    /* --END ERROR HANDLING-- */
+			    if (resp_sreq != NULL)
+				{
+				    MPID_Request_release(resp_sreq);
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_CANCEL_SEND_RESP:
+			{
+			    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->cancel_send_resp;
+			    MPID_Request * sreq;
+
+			    MPID_Request_get_ptr(resp_pkt->sender_req_id, sreq);
+			    if (resp_pkt->ack)
+				{
+				    sreq->status.cancelled = TRUE;
+				    if (MPIDI_Request_get_msg_type(sreq) == MPIDI_REQUEST_RNDV_MSG ||
+					MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_SSEND)
+					{
+					    int cc;
+					    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
+					}
+				}
+			    else
+				{
+				    MPIDI_DBG_PRINTF((35, FCNAME, "unable to cancel message"));
+				}
+			    MPIDI_CH3U_Request_complete(sreq);
+			}
+			break;
+		    case MPIDI_CH3_PKT_PUT:
+			{
+			    MPIDI_CH3_Pkt_put_t * put_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->put;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_PUT not handled (yet) \n");			    
+			}
+			break;
+		    case MPIDI_CH3_PKT_ACCUMULATE:
+			{
+			    MPIDI_CH3_Pkt_accum_t * accum_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->accum;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_ACCUMULATE not handled (yet) \n");			    
+			}
+			break;			
+		    case MPIDI_CH3_PKT_GET:
+			{
+			    MPIDI_CH3_Pkt_get_t * get_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->get;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_GET not handled (yet) \n");			    
+			}
+			break;			
+		    case MPIDI_CH3_PKT_GET_RESP:
+			{
+			    MPIDI_CH3_Pkt_get_resp_t * get_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->get_resp;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_GET_RESP not handled (yet) \n");			    
+			}
+			break;			
+		    case MPIDI_CH3_PKT_LOCK:
+			{
+			    MPIDI_CH3_Pkt_lock_t * lock_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock;
+			    MPID_Win *win_ptr;
+			    MPIDI_VC_t     *vc;
+
+			    if (in_fbox)
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+				}
+			    else
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+				}
+
+			    MPID_Win_get_ptr(lock_pkt->target_win_handle, win_ptr);
+			    if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr,lock_pkt->lock_type) == 1)
+				{				 
+				    mpi_errno = MPIDI_CH3I_Send_lock_granted_pkt(vc,lock_pkt->source_win_handle);
+				}			    
+			    else 
+				{
+				    /* queue the lock information */
+				    MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
+				    
+				    /* FIXME: MT: This may need to be done atomically. */
+				    
+				    curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+				    prev_ptr = curr_ptr;
+				    while (curr_ptr != NULL)
+					{
+					    prev_ptr = curr_ptr;
+					    curr_ptr = curr_ptr->next;
+					}
+				    
+				    new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
+				    /* --BEGIN ERROR HANDLING-- */
+				    if (!new_ptr)
+					{
+					    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+									      "**nomem", 0 );
+					    goto exit_fn;
+					}
+				    /* --END ERROR HANDLING-- */
+				if (prev_ptr != NULL)
+				    prev_ptr->next = new_ptr;
+				else
+				    win_ptr->lock_queue = new_ptr;
+				
+				new_ptr->next = NULL;
+				new_ptr->lock_type = lock_pkt->lock_type;
+				new_ptr->source_win_handle = lock_pkt->source_win_handle;
+				new_ptr->vc = vc;
+				new_ptr->pt_single_op = NULL;
+				}
+			}
+			break;			
+		    case MPIDI_CH3_PKT_LOCK_GRANTED:
+			{
+			    MPIDI_CH3_Pkt_lock_granted_t * lock_granted_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock_granted;
+			    MPID_Win *win_ptr;
+			    MPID_Win_get_ptr(lock_granted_pkt->source_win_handle, win_ptr);
+			    win_ptr->lock_granted = 1;
+			    MPIDI_CH3_Progress_signal_completion();
+			}
+			break;			
+		    case MPIDI_CH3_PKT_PT_RMA_DONE:
+			{
+			    MPIDI_CH3_Pkt_pt_rma_done_t * pt_rma_done_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->pt_rma_done;
+			    MPID_Win *win_ptr;
+			    MPID_Win_get_ptr(pt_rma_done_pkt->source_win_handle, win_ptr);
+			    win_ptr->lock_granted = 0;
+			    MPIDI_CH3_Progress_signal_completion();
+			}
+			break;
+		    case MPIDI_CH3_PKT_LOCK_PUT_UNLOCK:
+                        {
+                            MPIDI_CH3_Pkt_lock_put_unlock_t * lock_put_unlock_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock_put_unlock;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_LOCK_PUT_UNLOCK not handled (yet) \n");			    
+			}
+			break;
+		    case MPIDI_CH3_PKT_LOCK_GET_UNLOCK:
+                        {
+                            MPIDI_CH3_Pkt_lock_get_unlock_t * lock_get_unlock_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock_get_unlock;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_LOCK_GET_UNLOCK not handled (yet) \n");			    
+			}
+			break;						
+		    default:
+			{
+			    /* nothing */
+			}
+		    }
+		
+		if (!in_fbox)
+		    {
+			MPID_nem_mpich2_release_cell (cell);
+		    }
+		else
+		    {
+			MPID_nem_mpich2_release_fbox (cell);
+		    }	 
+
+		if(*foundp == FALSE)
+		    {
+			/* the cell does not match the request: create one */
+			/* this is the request that sould be returned !    */
+			goto make_req;
+		    }
+	    }
+	else
+	    {
+	    make_req:
+		rreq  = MPID_Request_create();
+		if (rreq != NULL)
+		    {
+			MPIU_Object_set_ref(rreq, 2);
+			rreq->kind                 = MPID_REQUEST_RECV;
+			rreq->dev.match.tag        = tag;
+			rreq->dev.match.rank       = source;
+			rreq->dev.match.context_id = context_id;
+			rreq->dev.next             = NULL;			  
+			MPIDI_Recvq_lock();
+			if (MPIDI_Process.recvq_posted_tail != NULL)
+			    {
+				MPIDI_Process.recvq_posted_tail->dev.next = rreq;
+			    }
+			else
+			    {
+				MPIDI_Process.recvq_posted_head = rreq;
+			    }
+			MPIDI_Process.recvq_posted_tail = rreq;
+			MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
+			MPIDI_Recvq_unlock();       
+			MPID_Request_initialized_clear(rreq);
+		    }
+	    }	
+    }
+ exit_fn:
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, blocking=false"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_POKE_WITH_MATCHING);
+    return rreq;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_ipoke_with_matching
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPID_Comm *comm,int context_id,int *foundp, void *buf, int count, MPI_Datatype datatype,MPI_Status * status)   
+{
+    int             mpi_errno = MPI_SUCCESS;
+    MPID_Request   *rreq  = NULL;
+    MPID_nem_cell_t       *cell  = NULL;
+    int             in_fbox;
+    int             dt_contig;
+    MPI_Aint        dt_true_lb;
+    MPIDI_msg_sz_t  userbuf_sz;
+    MPID_Datatype  *dt_ptr;
+    
+
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_IPOKE_WITH_MATCHING);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_IPOKE_WITH_MATCHING);    
+    MPIDI_DBG_PRINTF((50, FCNAME, "entering, buf=%p, count=%d, dtype=%d",
+		      buf,count,datatype));
+
+    *foundp = FALSE ;
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+
+    /* handle only contiguous types (for now) and one-cell packets */
+    if((dt_contig) && (( userbuf_sz <= MPID_NEM__BYPASS_Q_MAX_VAL))) 
+    {
+	MPID_nem_mpich2_test_recv_wait (&cell, &in_fbox,1000);
+	
+	if (cell)
+	    {	 
+		char *cell_buf    = cell->pkt.mpich2.payload;
+
+		switch(((MPIDI_CH3_Pkt_t *)cell_buf)->type)
+		    {
+		    case MPIDI_CH3_PKT_EAGER_SEND:
+			{
+			    MPIDI_CH3_Pkt_eager_send_t *eager_pkt =  &((MPIDI_CH3_Pkt_t *)cell_buf)->eager_send;
+			    int payload_len = eager_pkt->data_sz; 
+			    cell_buf += sizeof (MPIDI_CH3_Pkt_t);
+			    
+			    if(((eager_pkt->match.tag  == tag   )||(tag    == MPI_ANY_TAG   )) &&
+			       ((eager_pkt->match.rank == source)||(source == MPI_ANY_SOURCE)) &&
+			        (eager_pkt->match.context_id == context_id))
+				{
+				    /* cell matches */
+				    *foundp = TRUE;
+				    
+				    if (payload_len > 0)
+					{
+					    if (payload_len <= userbuf_sz)
+						{				    
+						    MPID_NEM_MEMCPY((char *)(buf+ dt_true_lb), cell_buf,payload_len);
+						}
+					    else
+						{
+						    /* error : truncate */
+						    MPID_NEM_MEMCPY((char *)(buf+dt_true_lb),cell_buf, userbuf_sz);
+						    status->MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,"**truncate", "**truncate %d %d %d %d", status->MPI_SOURCE,status->MPI_TAG,payload_len, userbuf_sz );
+						    mpi_errno = status->MPI_ERROR;
+						    goto exit_fn;
+						}
+					}
+				}
+			    else
+				{
+				    /* create a request for the cell, enqueue it on
+				       the unexpected queue */
+				    rreq  = MPID_Request_create();
+				    if (rreq != NULL)
+					{
+					    MPIU_Object_set_ref(rreq, 2);
+					    rreq->kind                 = MPID_REQUEST_RECV;
+					    rreq->dev.match.tag        = eager_pkt->match.tag ;
+					    rreq->dev.match.rank       = eager_pkt->match.rank;
+					    rreq->dev.match.context_id = eager_pkt->match.context_id;
+					    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
+					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
+					    rreq->dev.next             = NULL;
+					    MPIDI_Recvq_lock();
+					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+						{
+						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						}
+					    else
+						{
+						    MPIDI_Process.recvq_unexpected_head = rreq;
+						}
+					    MPIDI_Process.recvq_unexpected_tail = rreq;
+					    MPIDI_Recvq_unlock();       
+					    MPID_Request_initialized_clear(rreq);
+					}
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_READY_SEND:
+			{
+			    MPIDI_CH3_Pkt_ready_send_t *ready_pkt =  &((MPIDI_CH3_Pkt_t *)cell_buf)->ready_send;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_READY_SEND not handled (yet) \n");			    
+			}
+			break;
+		    case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
+			{
+			    MPIDI_CH3_Pkt_eager_send_t *es_pkt =  &((MPIDI_CH3_Pkt_t *)cell_buf)->eager_send;
+			    int payload_len = es_pkt->data_sz; 
+			    cell_buf += sizeof (MPIDI_CH3_Pkt_t);
+			    
+			    if(((es_pkt->match.tag  == tag   )||(tag    == MPI_ANY_TAG   )) &&
+			       ((es_pkt->match.rank == source)||(source == MPI_ANY_SOURCE)) &&
+			        (es_pkt->match.context_id == context_id))
+				{
+				    MPIDI_CH3_Pkt_t  upkt;
+				    MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt = &upkt.eager_sync_ack;
+				    MPID_Request * esa_req = NULL;
+				    MPIDI_VC_t   *vc;
+
+				    /* cell matches */
+				    *foundp = TRUE;
+				    
+				    if (payload_len > 0)
+					{
+					    if (payload_len <= userbuf_sz)
+						{				    
+						    MPID_NEM_MEMCPY((char *)(buf+ dt_true_lb), cell_buf,payload_len);
+						}
+					    else
+						{
+						    /* error : truncate */
+						    MPID_NEM_MEMCPY((char *)(buf+dt_true_lb),cell_buf, userbuf_sz);
+						    status->MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,"**truncate", "**truncate %d %d %d %d", status->MPI_SOURCE,status->MPI_TAG,payload_len, userbuf_sz );
+						    mpi_errno = status->MPI_ERROR;
+						    goto exit_fn;
+						}
+					}
+				    
+				    /* send Ack back */
+				    MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
+				    esa_pkt->sender_req_id = es_pkt->sender_req_id;
+				    if (in_fbox)
+					{
+					    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+					}
+				    else
+					{
+					    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+					}
+				    
+				    mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
+				    
+				    /* --BEGIN ERROR HANDLING-- */
+				    if (mpi_errno != MPI_SUCCESS)
+					{
+					    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,"**ch3|syncack", 0);
+					    goto exit_fn;
+					}
+				    /* --END ERROR HANDLING-- */
+				    if (esa_req != NULL)
+					{
+					    MPID_Request_release(esa_req);
+					}
+				}
+			    else
+				{
+				    /* create a request for the cell, enqueue it on
+				       the unexpected queue */
+				    rreq  = MPID_Request_create();
+				    if (rreq != NULL)
+					{
+					    MPIU_Object_set_ref(rreq, 2);
+					    rreq->kind                 = MPID_REQUEST_RECV;
+					    rreq->dev.match.tag        = es_pkt->match.tag ;
+					    rreq->dev.match.rank       = es_pkt->match.rank;
+					    rreq->dev.match.context_id = es_pkt->match.context_id;
+					    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
+					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
+					    rreq->dev.next             = NULL;
+					    MPIDI_Recvq_lock();
+					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+						{
+						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						}
+					    else
+						{
+						    MPIDI_Process.recvq_unexpected_head = rreq;
+						}
+					    MPIDI_Process.recvq_unexpected_tail = rreq;
+					    MPIDI_Recvq_unlock();       
+					    MPID_Request_initialized_clear(rreq);
+					    MPIDI_Request_set_sync_send_flag(rreq,TRUE);
+					}
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_EAGER_SYNC_ACK:
+			{
+			    MPIDI_CH3_Pkt_eager_sync_ack_t * esa_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->eager_sync_ack;
+			    MPID_Request * sreq;
+			    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
+			    MPIDI_CH3U_Request_complete(sreq);
+			}
+			break;
+		    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
+			{
+			    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
+			    MPIDI_CH3_Pkt_rndv_req_to_send_t *rts_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->rndv_req_to_send;
+			    rreq  = MPID_Request_create();
+			    if (rreq != NULL)
+				{
+				    MPIU_Object_set_ref(rreq, 2);
+				    rreq->kind                 = MPID_REQUEST_RECV;
+				    rreq->dev.next             = NULL;     
+				}    
+			    
+			    if(((rts_pkt->match.tag  == tag   )||(tag    == MPI_ANY_TAG   )) &&
+			       ((rts_pkt->match.rank == source)||(source == MPI_ANY_SOURCE)) &&
+			        (rts_pkt->match.context_id == context_id))
+				{
+				    *foundp = TRUE;
+				    rreq->dev.match.tag        = tag;
+				    rreq->dev.match.rank       = source;
+				    rreq->dev.match.context_id = context_id;
+				    rreq->comm                 = comm;
+				    MPIR_Comm_add_ref(comm);
+				    rreq->dev.user_buf         = buf;
+				    rreq->dev.user_count       = count;
+				    rreq->dev.datatype         = datatype;
+				    MPID_Request_initialized_wait(rreq);
+				    set_request_info(rreq,rts_pkt, MPIDI_REQUEST_RNDV_MSG);
+				}
+			    else
+				{
+				    /* enqueue rreq on the unexp queue */
+				    rreq->dev.match.tag        = rts_pkt->match.tag;
+				    rreq->dev.match.rank       = rts_pkt->match.rank;
+				    rreq->dev.match.context_id = rts_pkt->match.context_id;
+				    MPIDI_Recvq_lock();
+				    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+					{
+					    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						}
+				    else
+					{
+					    MPIDI_Process.recvq_unexpected_head = rreq;
+					}
+				    MPIDI_Process.recvq_unexpected_tail = rreq;
+				    MPIDI_Recvq_unlock();       
+				    MPID_Request_initialized_clear(rreq);
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_RNDV_CLR_TO_SEND:
+			{
+			    MPIDI_CH3_Pkt_rndv_clr_to_send_t *cts_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->rndv_clr_to_send;
+			    MPID_Request   *sreq;
+			    MPID_Request   *rts_sreq;
+			    MPIDI_CH3_Pkt_t upkt;
+			    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &upkt.rndv_send;
+			    int             dt_contig;
+			    MPI_Aint        dt_true_lb;
+			    MPIDI_msg_sz_t  data_sz;
+			    MPID_Datatype  *dt_ptr;
+			    MPID_IOV        iov[MPID_IOV_LIMIT];
+			    int             iov_n;
+			    MPIDI_VC_t     *vc;
+
+			    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
+			    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);
+			    if (rts_sreq != NULL)
+				{
+				    MPID_Request_release(rts_sreq);
+				}
+
+			    MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
+			    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
+			    iov[0].MPID_IOV_BUF = (void*)rs_pkt;
+			    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
+			    MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+
+			    if (dt_contig)
+				{
+				    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+				    iov[1].MPID_IOV_BUF = (char *)sreq->dev.user_buf + dt_true_lb;
+				    iov[1].MPID_IOV_LEN = data_sz;
+				    iov_n = 2;
+				}
+			    else
+				{
+				    MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment,0);
+				    iov_n = MPID_IOV_LIMIT - 1;
+				    sreq->dev.segment_first = 0;
+				    sreq->dev.segment_size = data_sz;
+				    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
+				    /* --BEGIN ERROR HANDLING-- */
+				    if (mpi_errno != MPI_SUCCESS)
+					{
+					    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+									     "**ch3|loadsendiov", 0);
+					    goto exit_fn;
+					}
+				    /* --END ERROR HANDLING-- */
+				    iov_n += 1;
+				}
+			    
+			    if (in_fbox)
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+				}
+			    else
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+				}
+			    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+				{
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|senddata", 0);
+				    goto exit_fn;
+				}
+			    /* --END ERROR HANDLING-- */
+			}
+			break;
+		    case MPIDI_CH3_PKT_RNDV_SEND:
+			{
+			    /* this case can't happen since there is a posted request for the recv */
+			    /* this code is only active when both queues are empty */
+			}
+			break;
+		    case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
+			{
+			    MPIDI_CH3_Pkt_cancel_send_req_t * req_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->cancel_send_req;
+			    MPID_Request * rreq;
+			    int ack;
+			    MPIDI_CH3_Pkt_t upkt;
+			    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &upkt.cancel_send_resp;
+			    MPID_Request * resp_sreq;
+			    MPIDI_VC_t     *vc;
+
+			    rreq = MPIDI_CH3U_Recvq_FDU(req_pkt->sender_req_id, &req_pkt->match);
+			    if (rreq != NULL)
+				{
+				    if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG && rreq->dev.recv_data_sz > 0)
+					{
+					    MPIU_Free(rreq->dev.tmpbuf);
+					}
+				    MPID_Request_release(rreq);
+				    ack = TRUE;
+				}
+			    else
+				{
+				    ack = FALSE;
+				}
+			    MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CANCEL_SEND_RESP);
+			    resp_pkt->sender_req_id = req_pkt->sender_req_id;
+			    resp_pkt->ack = ack;
+			    if (in_fbox)
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+				}
+			    else
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+				}
+			    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+				{
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**\
+ch3|cancelresp", 0);
+				    goto exit_fn;
+				}
+			    /* --END ERROR HANDLING-- */
+			    if (resp_sreq != NULL)
+				{
+				    MPID_Request_release(resp_sreq);
+				}
+			}
+			break;
+		    case MPIDI_CH3_PKT_CANCEL_SEND_RESP:
+			{
+			    MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->cancel_send_resp;
+			    MPID_Request * sreq;
+
+			    MPID_Request_get_ptr(resp_pkt->sender_req_id, sreq);
+			    if (resp_pkt->ack)
+				{
+				    sreq->status.cancelled = TRUE;
+				    if (MPIDI_Request_get_msg_type(sreq) == MPIDI_REQUEST_RNDV_MSG ||
+					MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_SSEND)
+					{
+					    int cc;
+					    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
+					}
+				}
+			    else
+				{
+				    MPIDI_DBG_PRINTF((35, FCNAME, "unable to cancel message"));
+				}
+			    MPIDI_CH3U_Request_complete(sreq);
+			}
+			break;
+		    case MPIDI_CH3_PKT_PUT:
+			{
+			    MPIDI_CH3_Pkt_put_t * put_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->put;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_PUT not handled (yet) \n");			    
+			}
+			break;
+		    case MPIDI_CH3_PKT_ACCUMULATE:
+			{
+			    MPIDI_CH3_Pkt_accum_t * accum_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->accum;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_ACCUMULATE not handled (yet) \n");			    
+			}
+			break;			
+		    case MPIDI_CH3_PKT_GET:
+			{
+			    MPIDI_CH3_Pkt_get_t * get_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->get;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_GET not handled (yet) \n");			    
+			}
+			break;			
+		    case MPIDI_CH3_PKT_GET_RESP:
+			{
+			    MPIDI_CH3_Pkt_get_resp_t * get_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->get_resp;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_GET_RESP not handled (yet) \n");			    
+			}
+			break;			
+		    case MPIDI_CH3_PKT_LOCK:
+			{
+			    MPIDI_CH3_Pkt_lock_t * lock_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock;
+			    MPID_Win *win_ptr;
+			    MPIDI_VC_t     *vc;
+
+			    if (in_fbox)
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+				}
+			    else
+				{
+				    MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
+				}
+
+			    MPID_Win_get_ptr(lock_pkt->target_win_handle, win_ptr);
+			    if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr,lock_pkt->lock_type) == 1)
+				{				 
+				    mpi_errno = MPIDI_CH3I_Send_lock_granted_pkt(vc,lock_pkt->source_win_handle);
+				}			    
+			    else 
+				{
+				    /* queue the lock information */
+				    MPIDI_Win_lock_queue *curr_ptr, *prev_ptr, *new_ptr;
+				    
+				    /* FIXME: MT: This may need to be done atomically. */
+				    
+				    curr_ptr = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+				    prev_ptr = curr_ptr;
+				    while (curr_ptr != NULL)
+					{
+					    prev_ptr = curr_ptr;
+					    curr_ptr = curr_ptr->next;
+					}
+				    
+				    new_ptr = (MPIDI_Win_lock_queue *) MPIU_Malloc(sizeof(MPIDI_Win_lock_queue));
+				    /* --BEGIN ERROR HANDLING-- */
+				    if (!new_ptr)
+					{
+					    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+									      "**nomem", 0 );
+					    goto exit_fn;
+					}
+				    /* --END ERROR HANDLING-- */
+				if (prev_ptr != NULL)
+				    prev_ptr->next = new_ptr;
+				else
+				    win_ptr->lock_queue = new_ptr;
+				
+				new_ptr->next = NULL;
+				new_ptr->lock_type = lock_pkt->lock_type;
+				new_ptr->source_win_handle = lock_pkt->source_win_handle;
+				new_ptr->vc = vc;
+				new_ptr->pt_single_op = NULL;
+				}
+			}
+			break;			
+		    case MPIDI_CH3_PKT_LOCK_GRANTED:
+			{
+			    MPIDI_CH3_Pkt_lock_granted_t * lock_granted_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock_granted;
+			    MPID_Win *win_ptr;
+			    MPID_Win_get_ptr(lock_granted_pkt->source_win_handle, win_ptr);
+			    win_ptr->lock_granted = 1;
+			    MPIDI_CH3_Progress_signal_completion();
+			}
+			break;			
+		    case MPIDI_CH3_PKT_PT_RMA_DONE:
+			{
+			    MPIDI_CH3_Pkt_pt_rma_done_t * pt_rma_done_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->pt_rma_done;
+			    MPID_Win *win_ptr;
+			    MPID_Win_get_ptr(pt_rma_done_pkt->source_win_handle, win_ptr);
+			    win_ptr->lock_granted = 0;
+			    MPIDI_CH3_Progress_signal_completion();
+			}
+			break;
+		    case MPIDI_CH3_PKT_LOCK_PUT_UNLOCK:
+                        {
+                            MPIDI_CH3_Pkt_lock_put_unlock_t * lock_put_unlock_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock_put_unlock;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_LOCK_PUT_UNLOCK not handled (yet) \n");			    
+			}
+			break;
+		    case MPIDI_CH3_PKT_LOCK_GET_UNLOCK:
+                        {
+                            MPIDI_CH3_Pkt_lock_get_unlock_t * lock_get_unlock_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->lock_get_unlock;
+			    fprintf(stdout,"ERROR : MPIDI_CH3_PKT_LOCK_GET_UNLOCK not handled (yet) \n");			    
+			}
+			break;						
+		    default:
+			{
+			    /* nothing */
+			}
+		    }
+		
+		if (!in_fbox)
+		    {
+			MPID_nem_mpich2_release_cell (cell);
+		    }
+		else
+		    {
+			MPID_nem_mpich2_release_fbox (cell);
+		    }	 
+
+		if(*foundp == FALSE)
+		    {
+			/* the cell does not match the request: create one */
+			/* this is the request that sould be returned !    */
+			goto make_req;
+		    }
+	    }
+	else
+	    {
+	    make_req:
+		rreq  = MPID_Request_create();
+		if (rreq != NULL)
+		    {
+			MPIU_Object_set_ref(rreq, 2);
+			rreq->kind                 = MPID_REQUEST_RECV;
+			rreq->dev.match.tag        = tag;
+			rreq->dev.match.rank       = source;
+			rreq->dev.match.context_id = context_id;
+			rreq->dev.next             = NULL;			  
+			MPIDI_Recvq_lock();
+			if (MPIDI_Process.recvq_posted_tail != NULL)
+			    {
+				MPIDI_Process.recvq_posted_tail->dev.next = rreq;
+			    }
+			else
+			    {
+				MPIDI_Process.recvq_posted_head = rreq;
+			    }
+			MPIDI_Process.recvq_posted_tail = rreq;
+			MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
+			MPIDI_Recvq_unlock();       
+			MPID_Request_initialized_clear(rreq);
+		    }
+	    }	
+    }
+ exit_fn:
+    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, blocking=true"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_IPOKE_WITH_MATCHING);
+    return rreq;
+}
+
+#endif /* BYPASS_PROGRESS */
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_poke
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Progress_poke()
+{
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    
+    mpi_errno = MPIDI_CH3I_Progress(FALSE);
+    
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
+    return mpi_errno;
+}
+
+#if !defined(MPIDI_CH3_Progress_end)
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Progress_end
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3_Progress_end(MPID_Progress_state * state)
+{
+    /* MT: This function is empty for the single-threaded implementation */
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_END);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_END);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_END);
+}
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Progress_init()
+{
+    int mpi_errno = MPI_SUCCESS;
+    int i;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
+
+    for (i = 0; i < CH3_NUM_QUEUES; ++i)
+    {
+	MPIDI_CH3I_sendq_head[i] = NULL;
+	MPIDI_CH3I_sendq_tail[i] = NULL;
+    }
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Progress_finalize()
+{
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
+    return MPI_SUCCESS;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connection_terminate
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    mpi_errno = MPIDI_CH3U_Handle_connection (vc, MPIDI_VC_EVENT_TERMINATED);
+    return mpi_errno;
+}
+/* end MPIDI_CH3_Connection_terminate() */
+
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Posted_recv_enqueued
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
+{
+    int ret;
+
+    /* don't enqueue for anysource */
+    if (rreq->dev.match.rank < 0)
+	return MPI_SUCCESS;
+    /* don't enqueue a fastbox for yourself */
+    if (rreq->dev.match.rank == MPIDI_CH3I_my_rank)
+	return MPI_SUCCESS;
+    /* don't enqueue non-local processes */
+    if (!MPID_NEM_IS_LOCAL (rreq->dev.match.rank))
+	return MPI_SUCCESS;
+
+    ret = MPID_nem_mpich2_enqueue_fastbox (MPID_NEM_LOCAL_RANK (rreq->dev.match.rank));
+    if (ret == MPID_NEM_MPICH2_SUCCESS)
+	return MPI_SUCCESS;
+    else
+	return MPI_ERR_INTERN;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Posted_recv_dequeued
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq)
+{
+    int ret;
+    
+    if (rreq->dev.match.rank < 0)
+	return MPI_SUCCESS;
+    if (rreq->dev.match.rank == MPIDI_CH3I_my_rank)
+	return MPI_SUCCESS;
+    if (!MPID_NEM_IS_LOCAL (rreq->dev.match.rank))
+	return MPI_SUCCESS;
+
+    ret = MPID_nem_mpich2_dequeue_fastbox (MPID_NEM_LOCAL_RANK (rreq->dev.match.rank));
+    if (ret == MPID_NEM_MPICH2_SUCCESS)
+	return MPI_SUCCESS;
+    else
+	return MPI_ERR_INTERN;
+}
