@@ -2231,6 +2231,8 @@ void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 void MPIR_Nest_incr(void);
 void MPIR_Nest_decr(void);
 int MPIR_Nest_value(void);
+/* FIXME: Shouldn't this be the opposite (use the per-thread information 
+   if using THREAD_MULTIPLE) ? */
 #if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
 /* Eventually, we can make this work independent of thread level */
 #ifdef MPICH_DEBUG_NESTING
