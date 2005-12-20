@@ -18,30 +18,37 @@ dnl In later versions of autoconf, the binding of AC_INIT changed (!!!)
 dnl The original version was AC_INIT(a source file)
 dnl The later version is AC_INIT(package,version,[bug-report],[tarname])
 dnl Here we use the original version
-AC_INIT(src/include/mpiimpl.h)
+dnl AC_INIT(src/include/mpiimpl.h)
 #
+CONFIGURE_ARGUMENTS="$*"
+AC_SUBST(CONFIGURE_ARGUMENTS)
+if test -n "$*" ; then
+    echo "Configuring MPICH2 version $VERSION with $@"
+else 
+    echo "Configuring MPICH2 version $VERSION"
+fi
+dnl AC_INIT requires an explicit version number
+dnl Args are package name, version, bug report, and tar file name
+dnl All must be literals
+dnl Note that AC_PACKAGE_STRING is not a command but must be defined(!)
+dnl Unfortunately, setting the PACKAGE names is not compatible with
+dnl AC_CONFIG_SUBDIRS, since the resulting values in the generated
+dnl conf file will not be consistent.
+dnl define([AC_PACKAGE_STRING],[MPICH2 1.0.3])
+dnl AC_INIT(mpich2,1.0.3,mpich2-maint@mcs.anl.gov,mpich2-1.0.3)
+dnl Use the oldstyle AC_INIT instead
+AC_INIT(src/include/mpichconf.h.in)
 # Try to find the version
 if test -s "$srcdir/maint/Version" ; then
     VERSION="`cat $srcdir/maint/Version`"
 else
     VERSION="1.0.3"
 fi
-dnl The autoconf documentation describes AC_PACKAGE_VERSION etc macros,
-dnl but they are not implemented
-PACKAGE_VERSION=$VERSION
+dnl if test "$VERSION" != "$PACKAGE_VERSION" ; then
+dnl     AC_MSG_WARN([PACKAGE_VERSION = $PACKAGE_VERSION but VERSION = $VERSION])
+dnl fi
 AC_SUBST(VERSION)
-CONFIGURE_ARGUMENTS="$*"
-AC_SUBST(CONFIGURE_ARGUMENTS)
-dnl
-PACKAGE_NAME=MPICH2
-PACKAGE_BUGREPORT=mpich2-maint@mcs.anl.gov
-PACKAGE_TARNAME="mpich2-$VERSION"
-if test -n "$*" ; then
-    echo "Configuring MPICH2 version $VERSION with $@"
-else 
-    echo "Configuring MPICH2 version $VERSION"
-fi
-dnl
+
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(src/include/mpichconf.h)
 dnl
@@ -147,10 +154,8 @@ AC_ARG_ENABLE(romio,
 [--enable-romio - Enable ROMIO MPI I/O implementation],
 ,enable_romio=yes)
 dnl
-dnl Comment out until support for totalview is possible
-dnl AC_ARG_ENABLE(debuginfo,
-dnl [--enable-debuginfo - Enable support for debuggers],
-dnl ,enable_debuginfo=no)
+AC_ARG_ENABLE(debuginfo,
+[--enable-debuginfo - Enable support for debuggers],,enable_debuginfo=no)
 dnl
 AC_ARG_ENABLE(nmpi-as-mpi,
 [--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
@@ -1455,9 +1460,9 @@ EOF
     $F90 --version </dev/null >conftest.txt 2>&1
     if test "$?" != 0 ; then
         # Put -V before -v because that's better for PGI and Solaris
-        $F90 --version </dev/null >conftest.txt 2>&1 
+        $F90 -V </dev/null >conftest.txt 2>&1 
         if test "$?" != 0 ; then 
-	    $F90 --version </dev/null  >conftest.txt 2>&1
+	    $F90 -v </dev/null  >conftest.txt 2>&1
             if test "$?" != 0 ; then 
 	        rm -f conftest.txt
             fi
