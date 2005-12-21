@@ -220,11 +220,14 @@ int MPID_Finalize(void)
     rc = MPIDI_KVS_Finalize();
 #endif
     /* Let PMI know the process is about to exit */
-    rc = PMI_Finalize();
-    if (rc != 0) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-			     "**ch3|pmi_finalize", 
-			     "**ch3|pmi_finalize %d", rc);
+    if (MPIDI_Process.my_pg->ch.kvs_name)
+    {
+	rc = PMI_Finalize();
+	if (rc != 0) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+				 "**ch3|pmi_finalize", 
+				 "**ch3|pmi_finalize %d", rc);
+	}
     }
 
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);

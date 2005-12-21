@@ -349,6 +349,9 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**dev|pg_create");
     }
+
+    /* This must be set to NULL if CH3 doesn't initialize PMI.
+       MPID_Finalize will call PMI_Finalize only if ch.kvs_name is not NULL */
     pg->ch.kvs_name = NULL;
 
     if (usePMI) {
