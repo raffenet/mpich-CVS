@@ -1318,18 +1318,22 @@ class MPDMan(object):
             except Exception, errmsg:
                 mpd_print(1, 'invalid signal (%d) from mpd' % (signum) )
         elif msg['cmd'] == 'publish_result':
-            pmiMsgToSend = 'cmd=publish_result info=%s\n' % (msg['info'])
-            self.pmiSock.send_char_msg(pmiMsgToSend)
+            if self.pmiSock:
+                pmiMsgToSend = 'cmd=publish_result info=%s\n' % (msg['info'])
+                self.pmiSock.send_char_msg(pmiMsgToSend)
         elif msg['cmd'] == 'unpublish_result':
-            pmiMsgToSend = 'cmd=unpublish_result info=%s\n' % (msg['info'])
-            self.pmiSock.send_char_msg(pmiMsgToSend)
+            if self.pmiSock:
+                pmiMsgToSend = 'cmd=unpublish_result info=%s\n' % (msg['info'])
+                self.pmiSock.send_char_msg(pmiMsgToSend)
         elif msg['cmd'] == 'lookup_result':
-            pmiMsgToSend = 'cmd=lookup_result info=%s port=%s\n' % \
-                           (msg['info'],msg['port'])
-            self.pmiSock.send_char_msg(pmiMsgToSend)
+            if self.pmiSock:
+                pmiMsgToSend = 'cmd=lookup_result info=%s port=%s\n' % \
+                               (msg['info'],msg['port'])
+                self.pmiSock.send_char_msg(pmiMsgToSend)
         elif msg['cmd'] == 'spawn_result':
-            pmiMsgToSend = 'cmd=spawn_result status=spawn_done rc=0\n'
-            self.pmiSock.send_char_msg(pmiMsgToSend)
+            if self.pmiSock:
+                pmiMsgToSend = 'cmd=spawn_result status=spawn_done rc=0\n'
+                self.pmiSock.send_char_msg(pmiMsgToSend)
             self.spawnInProgress = 0
         else:
             mpd_print(1, 'invalid msg recvd on mpdSock :%s:' % msg )
