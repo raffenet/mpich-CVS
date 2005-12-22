@@ -6,6 +6,7 @@ config.log
 config.status
 config.system
 localdefs
+*conf.h.in
 *.o
 *.lo
 *.bb
