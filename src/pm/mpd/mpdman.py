@@ -1226,9 +1226,15 @@ class MPDMan(object):
                     except:
                         pass
             elif msg['signo'] == 'SIGKILL':
-                self.ring.rhsSock.send_dict_msg(msg)
+                try:
+                    self.ring.rhsSock.send_dict_msg(msg)
+                except:
+                    pass
                 for s in self.spawnedChildSocks:
-                    s.send_dict_msg(msg)
+                    try:
+                        s.send_dict_msg(msg)
+                    except:
+                        pass
                 if self.gdb:
                     os.kill(clientPid,signal.SIGUSR1)    # tell gdb driver to kill all
                 else:
