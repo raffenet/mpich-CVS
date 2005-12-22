@@ -1,4 +1,18 @@
 
+if test -z "${channel_args}" ; then
+    nemesis_network="tcp"
+else
+    case "${channel_args}" in
+	gm | tcp | none )
+	    nemesis_network=${channel_args}
+	    ;;
+	* )
+	    echo "ERROR: invalid network type for Nemesis channel ($channel_args)"
+	    exit 1
+	    ;;
+    esac
+fi
+
 eval _conf_array=($ac_configure_args) 
 
 for arg in "${_conf_array[@]}" ; do
@@ -17,9 +31,6 @@ for arg in "${_conf_array[@]}" ; do
       ;;
     --with-gm-lib=* ) 
       gm_lib_dir=`echo "$arg" | sed 's/--with-gm-lib=//'` 
-      ;;
-    --without-gm ) 
-      no_gm=1 
       ;;
   esac 
 done 

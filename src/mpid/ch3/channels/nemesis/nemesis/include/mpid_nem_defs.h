@@ -2,6 +2,7 @@
 #define MPID_NEM_DEFS_H
 
 #include "mpid_nem_datatypes.h"
+#include "mpidi_ch3i_nemesis_conf.h"
 
 #define MPID_NEM_RET_OK       1
 #define MPID_NEM_RET_NG      -1
@@ -16,7 +17,7 @@
 #define MPID_NEM_GM_MODULE    1
 #define MPID_NEM_TCP_MODULE   2
 
-#define MPID_NEM_NET_MODULE   MPID_NEM_NO_MODULE
+//#define MPID_NEM_NET_MODULE   MPID_NEM_NO_MODULE
 
 #define MPID_NEM_POLL_IN      0
 #define MPID_NEM_POLL_OUT     1

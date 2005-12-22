@@ -21,6 +21,37 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+if test "${nemesis_network}" == "gm" ; then
+    if test -n "$gm_dir" ; then
+	LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
+	CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
+    fi
+    if test -n "$gm_include_dir" ; then
+	CPPFLAGS="$CPPFLAGS -I${gm_include_dir}"
+    fi
+    if test -n "$gm_lib_dir" ; then
+	LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
+    fi
+    AC_CHECK_HEADER([gm.h], , [
+        AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm-include?'])
+    ])
+    AC_CHECK_LIB(gm, gm_init, , [
+	AC_MSG_ERROR(['gm library not found.  Did you specify --with-gm-lib?'])
+    ])
+fi
+
+case "${nemesis_network}" in
+     gm )
+     AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_GM_MODULE, 
+       [Choose gm, tcp, or no network]) ;;
+     tcp )
+     AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_TCP_MODULE,
+       [Choose gm, tcp, or no network]) ;;
+     * )
+     AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_NO_MODULE, 
+       [Choose gm, tcp, or no network]) ;;
+esac
+
 PAC_PROG_MAKE
 
 dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
@@ -63,6 +94,7 @@ fi
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
+AC_SUBST(nemesis_network)
 
 AC_SUBST(AS, [as])
 AC_SUBST(AR)
@@ -78,4 +110,4 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 
-AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/gm_module/Makefile nemesis/net_mod/tcp_module/Makefile localdefs)
+AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/gm_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/none_module/Makefile localdefs)

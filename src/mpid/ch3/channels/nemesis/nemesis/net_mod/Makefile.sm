@@ -1,1 +1,3 @@
-SUBDIRS = gm_module tcp_module
+SUBDIRS_nemesis_network = gm_module tcp_module none_module
+SUBDIRS = @nemesis_network@_module
+

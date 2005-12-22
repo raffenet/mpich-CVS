@@ -261,7 +261,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	{
 	    if (rank == 0)
 	      {
-		fprintf (stderr, "Using TCP module\n");
+		  //fprintf (stderr, "Using TCP module\n");
 	      }
 	    errno = tcp_module_init (MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.RecvQ[rank]), 
 				     MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.FreeQ[rank]), 

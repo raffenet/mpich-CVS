@@ -39,29 +39,10 @@ CPPFLAGS="$CPPFLAGS -D${ARCH}"
 prototype_dir=${master_top_srcdir}/src/mpid/${device_name}/channels/${channel_name}/nemesis
 CPPFLAGS="$CPPFLAGS -I${prototype_dir}/include -I${prototype_dir}/utils/monitor"
 
-#LDFLAGS="$LDFLAGS -L${prototype_dir}/lib"
-#LIBS="$LIBS -lnem -lmonitor"
-
 #include papi
 if test -n "${papi_dir}" ; then
     CPPFLAGS="$CPPFLAGS -I${perfctr_dir}/include -I${papi_dir}/include"
     LIBS="$LIBS ${papi_dir}/lib/libpapi.a ${papi_dir}/lib/libperfctr.a"
 fi
 
-#include gm
-if test -n "$gm_dir" ; then
-    LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
-    CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
-fi
-if test -n "$gm_include_dir" ; then
-    CPPFLAGS="$CPPFLAGS -I${gm_include_dir}"
-fi
-if test -n "$gm_lib_dir" ; then
-    LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
-fi
-
-if test "$no_gm" != "1" ; then
-    LIBS="$LIBS -lgm"
-fi
-
-CFLAGS="${CFLAGS} -g -Wall"
+export nemesis_network
