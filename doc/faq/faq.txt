@@ -115,6 +115,23 @@ In some cases, MPICH2 is able to build the Fortran interfaces in a way that
  some environments.  For example, when using \texttt{gcc} under Linux, this is
  the default.
 
+%% Heading: Q: When I configure MPICH2, I get a message about FDZERO and the\
+ configure aborts
+%% Filename: fdzero
+%% End
+A: \texttt{FD\_ZERO} is part of the support for the select calls (see "man
+select" or "man 2 select" on Linux and many other Unix systems) .  What this
+means is that your system (probably a Mac) has a broken version of the
+select call and related data types.  This is an OS bug; the only repair is to
+update the OS to get past this bug.  This test was added specifically to
+detect this error; if there was an easy way to work around it, we would have
+included it (we don't just implement \texttt{FD\_ZERO} ourselves because we
+don't know what else is broken in this implementation of select). 
+
+If this configure works with gcc but not with xlc, then the problem is with
+the include files that xlc is using; since this is an OS call (even if
+emulated), all compilers should be using consistent if not identical include
+files.  In this case, you may need to update xlc. 
 
 %% Heading: Q: When I use the g95 Fortran compiler on a 64-bit platform, some\
   of the tests fail
