@@ -17,8 +17,10 @@
 #define MPID_TIMING_KIND_RUNTIME 5
 
 /* Routine tracing (see --enable-timing for control of this) */
-#if defined(HAVE_TIMING) && (HAVE_TIMING == MPID_TIMING_KIND_LOG || HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED || \
-    HAVE_TIMING == MPID_TIMING_KIND_ALL)
+#if defined(HAVE_TIMING) && (HAVE_TIMING == MPID_TIMING_KIND_LOG || \
+    HAVE_TIMING == MPID_TIMING_KIND_LOG_DETAILED || \
+    HAVE_TIMING == MPID_TIMING_KIND_ALL || \
+    HAVE_TIMING == MPID_TIMING_KIND_RUNTIME)
 
 /* define MPID_LOG_RECV_FROM_BEGINNING to log arrows from the beginning of 
    send operations to the beginning of the corresponding receive operations.  
