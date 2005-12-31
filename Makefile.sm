@@ -22,11 +22,15 @@ DOC_SUBDIRS = doc
 #          then mv lib/pkglist.new lib/pkglist
 #          
 all-local:
-	if [ ! -d lib ] ; then mkdir lib ; \
+	@if [ ! -d lib ] ; then mkdir lib ; \
 	else \
 	    echo "@subsystems@" > lib/pkglist.new ; \
-	    echo "@CC@" >>lib/pkglist.new ;\
+	    echo "@CC@ @CFLAGS@" >>lib/pkglist.new ;\
+	    echo "@CXX@ @CXXFLAGS@" >> lib/pkglist.new ;\
+	    echo "@F77@ @FFLAGS@" >> lib/pkglist.new ;\
+	    echo "@F90@ @F90FLAGS@" >> lib/pkglist.new ;\
 	    echo "@CONFIGURE_ARGUMENTS@" >>lib/pkglist.new ; \
+	    echo "@LDFLAGS@" >> libpkglist.new ;\
 	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
 	        rm -f lib/pkglist.new ; \
             else \
