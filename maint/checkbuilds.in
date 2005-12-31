@@ -64,7 +64,7 @@ $hasDemon   = 0;
 %chosenEnable = ();
 @with_array = (
 	       'logging;none;rlog',
-	       'pmi;simple:smpd',    #; uni no longer supported
+	       'pmi;simple;smpd',    #; uni no longer supported
 	       'pm;gforker;mpd', #;remshell
 	       'namepublisher;no;file;mpd', #;ldap:ldapserver',
 	       'device;ch3;ch3:shm;ch3:ssm',
