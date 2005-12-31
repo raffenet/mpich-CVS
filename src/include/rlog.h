@@ -70,6 +70,10 @@ typedef struct RLOG_STATE
     char description[RLOG_DESCRIPTION_LENGTH];
 } RLOG_STATE;
 
+/* FIXME: RLOG should use the generic (and lighter weight) timestamp type,
+   not a double, for recording the timestamp bits.  This is an unnecessary
+   extra overhead that makes RLOG less appropriate for fine-grain logging */
+   
 typedef struct RLOG_EVENT
 {
     int rank;
