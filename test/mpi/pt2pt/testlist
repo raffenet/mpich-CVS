@@ -26,3 +26,4 @@ isendselfprobe 1
 # Inactive, persistent requests are not handled correctly in MPICH2 1.0.3
 # and earlier.
 inactivereq 1
+waittestnull 1
