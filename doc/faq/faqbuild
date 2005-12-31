@@ -40,6 +40,7 @@ else {
     $nl = "\n";
 }
 
+# Translations from the LaTeX allowed in faq.txt to HTML
 %latexCmdToHtml = ( 'file' => '1:<tt>\1</tt>',
 		    'textem' => '1:<em>\1</em>',
 		    'textbf' => '1:<b>\1</b>',
@@ -68,6 +69,7 @@ else {
 		    '}'           => '0:}',
 		    );
 
+# Translations from the LaTeX allowed in faq.txt to ASCII text
 %latexCmdToText = ( 'file' => '1:\'\1\'',
 		    'textem' => '1:\1',
 		    'textbf' => '1:\1',
@@ -364,28 +366,34 @@ sub CreateLatexHeader {
     }
 }
 
+#
+# Create an itemized list of sections, with an enumerated list of topics
+# within each section
 sub CreateLatexMenu {
     # Create headings
-    my $inItemize = 0;
+    my $inEnumerate = 0;
+    print LATEXFD "\\section{List of FAQ Items}\n";
+    print LATEXFD "\\begin{itemize}\n";
     for (my $i=0; $i<=$#filelist; $i++) {
 	if (defined($IndexToSectionHead{$i})) {
-	    if ($inItemize) {
-		print LATEXFD "\\end{itemize}\n";
-		$inItemize = 0;
+	    if ($inEnumerate) {
+		print LATEXFD "\\end{enumerate}\n";
+		$inEnumerate = 0;
 	    }
-	    print LATEXFD "\\section{" . $IndexToSectionHead{$i} . "}\n";
+	    print LATEXFD "\\item " . $IndexToSectionHead{$i} . "\n";
 	}
 	my $file = $filelist[$i];
 	my $heading = $fileToHeading{$file};
-	if (! $inItemize) {
-	    print LATEXFD "\\begin{itemize}\n";
-	    $inItemize = 1;
+	if (! $inEnumerate) {
+	    print LATEXFD "\\begin{enumerate}\n";
+	    $inEnumerate = 1;
 	}
 	print LATEXFD "\\item $heading\n";
     }
-    if ($inItemize) {
-	print LATEXFD "\\end{itemize}\n";
+    if ($inEnumerate) {
+	print LATEXFD "\\end{enumerate}\n";
     }
+    print LATEXFD "\\end{itemize}\n";
 }
 
 sub CreateLatexBody {
@@ -393,6 +401,9 @@ sub CreateLatexBody {
     for (my $i=0; $i<=$#filelist; $i++) {
 	my $file = $filelist[$i];
 	my $heading = $fileToHeading{$file};
+	if (defined($IndexToSectionHead{$i})) {
+	    print LATEXFD "\\section{" . $IndexToSectionHead{$i} . "}\n";
+	}
 	print LATEXFD "\\subsection{$heading}\n";
 	foreach $line (split(/\n/,$fileToText{$file})) {
 	    print LATEXFD $line . "\n";
