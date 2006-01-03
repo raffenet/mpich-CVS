@@ -33,18 +33,28 @@ AC_ARG_ENABLE(sharedlibs,
     libtool - GNU libtool 
 This option is currently ignored])
 dnl enable-g
-case "$enable_g" in 
+# strip off multiple options, separated by commas
+save_IFS="$IFS"
+IFS=","
+for option in $enable_g ; do
+case "$option" in 
     no|none)
     ;;
-    mem|all)
+    mem|all|yes)
     AC_DEFINE(USE_MEMORY_TRACING,,[Define to enable memory tracing])
     enable_g_mem=yes
     CFLAGS="$CFLAGS -g"
     ;;
+    log|nesting|handle|debug|dbg)
+    # Ignore these (they are valid for other configures)
+    ;;
     *)
-    AC_MSG_WARN([Unknown value $enable_g for enable-g])
+    AC_MSG_WARN([Unknown value $option for enable-g])
     ;;
 esac
+done
+IFS="$save_IFS"
+dnl
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
