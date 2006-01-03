@@ -288,7 +288,7 @@ typedef int MPI_Info;
 #define MPI_DISTRIBUTE_NONE     123
 #define MPI_DISTRIBUTE_DFLT_DARG -49767
 
-#define MPI_IN_PLACE  (void *) -1  /* temporary, don't know the right value */
+#define MPI_IN_PLACE  (void *) -1
 
 /* asserts for one-sided communication */
 #define MPI_MODE_NOCHECK      1024
