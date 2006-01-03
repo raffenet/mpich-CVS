@@ -1217,6 +1217,9 @@ sub DefaultRules {
     foreach $ext (keys(%ext_seen)) {
 	# Skip any rules for .o files that we've seen
 	if ($ext eq "o") { next; }
+	# If we overrode the default rule for this key, then skip that
+	# as well
+	if (defined($usertargets{".$ext.o"})) { next; }
 	print FD ".$ext.o:$newline";
 	if ($found_profilelib) {
 	    # Use a special rule when building the non-profile-lib version
