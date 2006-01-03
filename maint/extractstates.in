@@ -15,6 +15,13 @@
 #                                 optional display colors).
 #                                 Replaces describe_states.c in the
 #                                 older version.
+#
+# Also allows an exceptions list on a per-directory basis.  This file is
+# describe_estates.txt, and contains
+# statename routine-name [r g b]
+# where [r g b] are optional and provide the color values as bytes, e.g.,
+#    255 0 0 
+# is red
 
 
 # Defaults for this step.  These are globals variables that are used
@@ -23,6 +30,7 @@
 $scanFile = "findStateDecl";
 $cachefile = '.state-cache';
 $pattern = '\.[chi]$';
+$exceptionsFile = "describe_estates.txt";
 
 # Load in the routines to extract strings from files
 $maintdir = "maint";
@@ -259,6 +267,24 @@ sub findStateDecl {
     return $info;
 }
 
+sub ReadExceptionsFile {
+    my ($dir, $efile) = @_;
+    my %fileInfo = ();
+    my $found = 0;
+    
+    if (! -f "$dir/$efile") { return %fileInfo; }
+    open CFD, "<$dir/$efile" || return %fileInfo;
+    while (<CFD>) {
+	s/#.*//;
+	if (/^(\S+)\s+(\S+)\s*(.*)/) {
+	    # Found a conforming line
+	}
+    }
+    close CFD;
+
+    return %fileInfo;
+}
+
 # Read the cache file and add the information to the hash allInfo
 sub catState {
    my ($dir,$cachefile) = @_;
@@ -267,6 +293,14 @@ sub catState {
        foreach my $key (keys(%f)) {
 	   foreach my $value (split/\n/,$f{$key}) {
 	       $allInfo{$value} = "$dir/$cachefile";
+	   }
+       }
+   }
+   if (-s "$dir/$exceptionsFile") {
+       my %f = &ReadExceptionsFile( $dir, $exceptionsFile );
+       foreach my $key (keys(%f)) {
+	   foreach my $value (split/\n/,$f{$key}) {
+	       $allInfo{$value} = "$dir/$exceptionsFile";
 	   }
        }
    }
