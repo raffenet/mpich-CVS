@@ -15,9 +15,11 @@
 
 #include <math.h>
 
-
 /* global variables */
+
 #if (USE_LOGGING == MPID_LOGGING_RLOG)
+/* FIXME: This name needs to be changed to ensure no conflicts with 
+   user-defined globals */
 RLOG_Struct *g_pRLOG = NULL;
 #endif
 
@@ -110,7 +112,8 @@ static unsigned long getColorRGB(double fraction, double intensity, unsigned cha
     return RGB(*r,*g,*b);
 }
 
-static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned char *b)
+static unsigned long random_color(unsigned char *r, unsigned char *g, 
+				  unsigned char *b)
 {
     double d1, d2;
 
@@ -125,7 +128,7 @@ static unsigned long random_color(unsigned char *r, unsigned char *g, unsigned c
 
 #define MAX_RANDOM_COLOR_STR 40
 static char random_color_str[MAX_RANDOM_COLOR_STR];
-static char *get_random_color_str()
+static char *get_random_color_str(void)
 {
     unsigned char r,g,b;
     random_color(&r, &g, &b);

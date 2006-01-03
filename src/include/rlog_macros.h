@@ -12,6 +12,9 @@
 #include "mpichtimer.h"
 
 /* structures, global variables */
+/* FIXME: All global names should follow the prefix rules to ensure that 
+   there are no collisions with user-defined global names.  g_pRLOG should be
+   RLOG_something */
 extern RLOG_Struct *g_pRLOG;
 
 /* state declaration macros */
