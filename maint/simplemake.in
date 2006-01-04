@@ -237,12 +237,12 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	       'f'   => '$(F77_LINK) $(FFLAGS) $(LDFLAGS)',
 	       'f90' => '$(F90_LINK) $(F90FLAGS) $(LDFLAGS)',
 	      );
-%progdefs = ( 'c' =>   'C_LINK      = $(CC)',
-	      'cxx' => 'CXX_LINK    = $(CXX)',
-	      'cpp' => 'CXX_LINK    = $(CXX)',
-	      'cs'  => 'CSHARP_LINK = $(CSHARP)',
-	      'f'   => 'F77_LINK    = $(FC)',
-	      'f90' => 'F90_LINK    = $(F90)',
+%progdefs = ( 'c' =>   'C_LINK         = $(CC)',
+	      'cxx' => 'CXX_LINK       = $(CXX)',
+	      'cpp' => 'CXX_LINK       = $(CXX)',
+	      'cs'  => 'CSHARP_LINK    = $(CSHARP)',
+	      'f'   => 'F77_LINK       = $(FC)',
+	      'f90' => 'F90_LINK       = $(F90)',
 	     );
 
 # Rules to build shared libraries (these are like programs
@@ -1135,7 +1135,14 @@ sub DefaultVariables {
 	    }
 	}
 	if (defined($pgmlinktypes{$ext})) {
-	    print FD "$progdefs{$ext}$newline";
+	    # Allow the user to override the definition
+	    my $def = $progdefs{$ext};
+	    if ($def =~ /(\S+)\s*=.*/) {
+		$def = $1;
+	    }
+	    if (!defined($makevars{$def})) {
+		print FD "$progdefs{$ext}$newline";
+	    }
 	    $any_prog_def = 1;
 	}
 	if ($do_sharedlibs || $found_sharedlib) {
