@@ -463,6 +463,7 @@ case "$enable_timing" in
     logging_required=true
     ;;
     none|default)
+    timing_name=none
     ;;
     *)
     AC_MSG_WARN([Unknown value $enable_timing for enable-timing])
