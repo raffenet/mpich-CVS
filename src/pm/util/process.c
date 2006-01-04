@@ -226,8 +226,11 @@ int MPIE_ProcessGetExitStatus( int *signaled )
 #endif
 #define MAX_CLIENT_ARG 50
 #define MAX_CLIENT_ENV 200
-
+/* MAXNAMELEN is used for sizing the char arrays used for 
+ * defining environment variables */
 #define MAXNAMELEN 1024
+
+
 int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 {
     int j, rc, nj;
