@@ -3,7 +3,10 @@
 # Use something like this:
 #
 #    find . \( -name '*.h' -o -name '*.py' -o -name '*.c' \) -exec ~/mpich2/maint/cpywrtcheck \{\} \;
-
+#
+# It is better to use the copyright check in the coding check package;
+# that check is more sophisticated and thorough
+#
 from sys import *
 from re  import *
 phrases = [ 'copyright' ]     # could add to this list
