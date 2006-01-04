@@ -3,10 +3,13 @@ rtest_SOURCES     = rtest.c
 rtestf_SOURCES    = rtestf.f
 rtestx_SOURCES    = rtestx.cxx
 
+C_LINK = $(bindir)/mpicc
 MPICC = $(bindir)/mpicc
 MPICXX = $(bindir)/mpicxx
 MPIF77 = $(bindir)/mpif77
 
+.c:
+	$(MPICC) -o $* $<
 .c.o:
 	$(MPICC) -c $<
 .f.o:

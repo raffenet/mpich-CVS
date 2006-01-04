@@ -11,11 +11,21 @@
 my $prefix      = "@prefix@";
 my $exec_prefix = "@exec_prefix@";
 my $bindir      = "@bindir@";
+my $srcdir      = "@srcdir@";
 
 # Global variables
 my $errors = 0;
 
 $gVerbose = 0;
+# -------------------------------------------------------------------------
+foreach $_ (@ARGV) {
+    if (/-debug/ || /-verbose/) { 
+	$gVerbose = 1;
+    }
+    else {
+	print STDERR "Unrecognized argument $_\n";
+    }
+}
 # -------------------------------------------------------------------------
 # mpiexec env handling
 # We assume that we can run non-MPI programs
@@ -37,9 +47,13 @@ $mpiexec = "$bindir/mpiexec" ;
 # Do we get the environment?
 %EnvSeen = ();
 %EnvExpected = ( 'PATH' => $ENV{PATH} );
-open MOUT, "$mpiexec printenv |" || die "Could not run $mpiexec";
+
+&Announce( "$mpiexec printenv" );
+open MOUT, "$mpiexec printenv 2>&1 |" || die "Could not run $mpiexec";
 while (<MOUT>) {
-    if (/([^=]+)=(.*)/) {
+    # We check for the error output from gforker mpiexec; we can
+    # add others here as well
+    if (/([^=]+)=(.*)/ && ! /Return code/) {
 	$EnvSeen{$1} = $2;
     }
     else {
@@ -61,9 +75,12 @@ foreach my $key (keys(%copyEnv)) {
 
 %EnvSeen = ();
 %EnvExpected = ( 'PATH' => $ENV{PATH} );
-open MOUT, "$mpiexec -envnone -envlist PATH printenv |" || die "Could not run $mpiexec";
+&Announce( "$mpiexec -envnone -envlist PATH printenv" );
+open MOUT, "$mpiexec -envnone -envlist PATH printenv 2>&1 |" || die "Could not run $mpiexec";
 while (<MOUT>) {
-    if (/([^=]+)=(.*)/) {
+    # We check for the error output from gforker mpiexec; we can
+    # add others here as well
+    if (/([^=]+)=(.*)/ && ! /Return code/) {
 	$EnvSeen{$1} = $2;
     }
     else {
@@ -77,9 +94,12 @@ $errors += &CheckEnvVars;
 
 %EnvSeen = ();
 %EnvExpected = ( 'PATH' => $ENV{PATH} );
-open MOUT, "$mpiexec -genvnone -genvlist PATH printenv |" || die "Could not run $mpiexec";
+&Announce( "$mpiexec -genvnone -genvlist PATH printenv " );
+open MOUT, "$mpiexec -genvnone -genvlist PATH printenv 2>&1 |" || die "Could not run $mpiexec";
 while (<MOUT>) {
-    if (/([^=]+)=(.*)/) {
+    # We check for the error output from gforker mpiexec; we can
+    # add others here as well
+    if (/([^=]+)=(.*)/ && ! /Return code/) {
 	$EnvSeen{$1} = $2;
     }
     else {
@@ -94,9 +114,12 @@ $errors += &CheckEnvVars;
 %EnvSeen = ();
 %EnvExpected = ( 'PATH' => $ENV{PATH},
 		 'TestEnvVar' => $ENV{TestEnvVar} );
-open MOUT, "$mpiexec -genvnone -genvlist PATH printenv : -envlist TestEnvVar,PATH printenv |" || die "Could not run $mpiexec";
+&Announce ( "$mpiexec -genvnone -genvlist PATH printenv : -envlist TestEnvVar,PATH printenv" );
+open MOUT, "$mpiexec -genvnone -genvlist PATH printenv : -envlist TestEnvVar,PATH printenv 2>&1 |" || die "Could not run $mpiexec";
 while (<MOUT>) {
-    if (/([^=]+)=(.*)/) {
+    # We check for the error output from gforker mpiexec; we can
+    # add others here as well
+    if (/([^=]+)=(.*)/ && ! /Return code/) {
 	$EnvSeen{$1} = $2;
     }
     else {
@@ -105,10 +128,16 @@ while (<MOUT>) {
     }
 }
 close MOUT;
+$rc = $?;
+if ($rc != 0) {
+    $errors ++;
+    print STDERR "Non-zero return from mpiexec\n";
+}
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
 # -------------------------------------------------------------------------
 # mpiexec stdout/stderr handling
+&Announce( "$mpiexec stdiotest 2>err.txt 1>out.txt" );
 if (! -x "stdiotest" ) {
     system "make stdiotest";
     if (! -x "stdiotest") {
@@ -117,6 +146,8 @@ if (! -x "stdiotest" ) {
     }
 }
 if (-x "stdiotest") {
+    unlink "err.txt";
+    unlink "out.txt";
     system "$mpiexec stdiotest 2>err.txt 1>out.txt";
     # Compare the expected output
     if (-s "err.txt" && -s "out.txt") {
@@ -181,13 +212,16 @@ if (-x "stdiotest") {
 	    $errors ++;
 	}
     }
+    unlink "err.txt";
+    unlink "out.txt";
 }
 # -------------------------------------------------------------------------
 $cmd = "mpicc";
 #$outlog = "/dev/null";
 $outlog = "out.log";
 unlink $outlog;
-system "$bindir/mpicc -Dtestname=\\\"foo\\\" rtest.c > $outlog 2>&1";
+&Announce( "$bindir/mpicc -Dtestname=\\\"foo\\\" $srcdir/rtest.c" );
+system "$bindir/mpicc -Dtestname=\\\"foo\\\" $srcdir/rtest.c > $outlog 2>&1";
 $rc = $?;
 if ($rc != 0) {
     print STDERR "Error with escaped double quotes in $cmd\n";
@@ -196,7 +230,8 @@ if ($rc != 0) {
 }
 
 unlink $outlog;
-system "$bindir/mpicc -Dtestname='\"foo bar\"' rtest.c  > $outlog 2>&1";
+&Announce( "$bindir/mpicc -Dtestname='\"foo bar\"' $srcdir/rtest.c" );
+system "$bindir/mpicc -Dtestname='\"foo bar\"' $srcdir/rtest.c  > $outlog 2>&1";
 $rc = $?;
 if ($rc != 0) {
     print STDERR "Error with double inside of single quotes in $cmd\n";
@@ -208,7 +243,8 @@ if ($rc != 0) {
 if ("@bindings@" =~ /cxx/) {
     $cmd = "mpicxx";
     unlink $outlog;
-    system "$bindir/mpicxx -Dtestname=\\\"foo\\\" rtestx.cxx  > $outlog 2>&1";
+    &Announce( "$bindir/mpicxx -Dtestname=\\\"foo\\\" $srcdir/rtestx.cxx" );
+    system "$bindir/mpicxx -Dtestname=\\\"foo\\\" $srcdir/rtestx.cxx  > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
 	print STDERR "Error with escaped double quotes in $cmd\n";
@@ -216,7 +252,8 @@ if ("@bindings@" =~ /cxx/) {
 	$errors ++;
     }
     unlink $outlog;
-    system "$bindir/mpicxx -Dtestname='\"foo bar\"' rtestx.cxx > $outlog 2>&1";
+    &Announce( "$bindir/mpicxx -Dtestname='\"foo bar\"' $srcdir/rtestx.cxx" );
+    system "$bindir/mpicxx -Dtestname='\"foo bar\"' $srcdir/rtestx.cxx > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
 	print STDERR "Error with double inside of single quotes in $cmd\n";
@@ -228,7 +265,8 @@ if ("@bindings@" =~ /cxx/) {
 if ("@bindings@" =~ /f77/) {
     $cmd = "mpif77";
     unlink $outlog;
-    system "$bindir/mpif77 -Dtestname=\\\"foo\\\" rtestf.F  > $outlog 2>&1";
+    &Announce( "$bindir/mpif77 -Dtestname=\\\"foo\\\" $srcdir/rtestf.F" );
+    system "$bindir/mpif77 -Dtestname=\\\"foo\\\" $srcdir/rtestf.F  > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
 	print STDERR "Error with escaped double quotes in $cmd\n";
@@ -236,7 +274,8 @@ if ("@bindings@" =~ /f77/) {
 	$errors ++;
     }
     unlink $outlog;
-    system "$bindir/mpif77 -Dtestname='\"foo bar\"' rtestf.F > $outlog 2>&1";
+    &Announce( "$bindir/mpif77 -Dtestname='\"foo bar\"' $srcdir/rtestf.F" );
+    system "$bindir/mpif77 -Dtestname='\"foo bar\"' $srcdir/rtestf.F > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
 	print STDERR "Error with double inside of single quotes in $cmd\n";
@@ -272,9 +311,15 @@ sub CheckEnvVars {
 	if (defined($EnvBase{$key})) { next; }
 	if (defined($EnvExpected{$key})) { next; }
 	if (defined($EnvForced{$key})) { next; }
-	print "Unexpected environment variable $key\n";
+	$value = $EnvSeen{$key};
+	print "Unexpected environment variable $key with $value\n";
 	$errcount ++;
     }
     return $errcount;
 }
     
+sub Announce {
+    my $msg = $_[0];
+
+    print STDOUT $msg . "\n";
+}
