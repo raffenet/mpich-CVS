@@ -53,16 +53,25 @@ dnl
 dnl Process any enable or with values
 dnl
 dnl enable-g
-case "$enable_g" in 
+# strip off multiple options, separated by commas
+save_IFS="$IFS"
+IFS=","
+for option in $enable_g ; do
+case "$option" in 
     no|none)
     ;;
-    mem|dbg|all|yes)
+    mem|dbg|all|yes|debug)
     CFLAGS="$CFLAGS -g"
     ;;
+    log|handle|fine-grain-nesting|fg-nesting|nesting)
+    # Simply ignore these
+    ;;
     *)
-    AC_MSG_WARN([Unknown value $enable_g for enable-g])
+    AC_MSG_WARN([Unknown value $option for enable-g])
     ;;
 esac
+done
+IFS="$save_IFS"
 dnl
 dnl This test is complicated by the fact that top_srcdir is not set until
 dnl the very end of configure.  Instead, we get it ourselves
