@@ -26,6 +26,8 @@
    send operations to the beginning of the corresponding receive operations.  
    Otherwise, arrows are logged from the beginning of the send to the end of 
    the receive. */
+/* FIXME: Document this and/or make it a runtime feature or decide on a 
+   single approach. */
 #undef MPID_LOG_RECV_FROM_BEGINNING
 /*#define MPID_LOG_RECV_FROM_BEGINNING*/
 
