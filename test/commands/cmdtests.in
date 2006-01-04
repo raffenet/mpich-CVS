@@ -34,7 +34,13 @@ foreach $_ (@ARGV) {
 $ENV{TestEnvVar} = "test var name";
 %EnvBase = ('PMI_FD' => 1, 'PMI_RANK' => 0, 'PMI_SIZE' => 1, 
 	    'PMI_DEBUG' => 0, 
-	    'MPI_APPNUM' => 0, 'MPI_UNIVERSE_SIZE' => 1, );
+	    'MPI_APPNUM' => 0, 'MPI_UNIVERSE_SIZE' => 1, 
+	    'PMI_PORT' => 1, 
+	    # These are suspicious
+	    'PMI_SPAWNED' => 0, 
+	    );
+# Other environment variables should be rejected
+
 # Processes on cygwin always have SYSTEMROOT set
 %EnvForced = ( 'SYSTEMROOT' => 1 );
 
