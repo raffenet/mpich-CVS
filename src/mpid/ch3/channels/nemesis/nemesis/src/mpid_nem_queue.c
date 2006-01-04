@@ -17,7 +17,7 @@ inline void MPID_nem_rel_cell_init( MPID_nem_cell_ptr_t cell)
 {
   cell->next =  (MPID_nem_cell_ptr_t) MPID_NEM_ASYMM_NULL ;
   memset (&cell->pkt, 0, 4*1024);
-  //  memset (&cell->pkt, 0, sizeof (MPID_nem_pkt_header_t));
+  /*  memset (&cell->pkt, 0, sizeof (MPID_nem_pkt_header_t)); */
 }
 
 
@@ -75,7 +75,7 @@ inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 
 }
 
-//inline
+/*inline */
 void __MPID_nem_dump_cell_mpich2 ( MPID_nem_cell_ptr_t cell, int master, char *file, int line)
 {
   int mark;
@@ -100,7 +100,7 @@ void MPID_nem_dump_queue(  MPID_nem_queue_ptr_t qhead )
     fprintf(stderr,"[HEAD: %p][TAIL: %p]\n" ,
 	    qhead->head,
 	    qhead->tail);
-#else //SHADOW_HEAD
+#else /*SHADOW_HEAD */
     MPID_nem_cell_ptr_t ptr =  qhead->my_head;   
     fprintf(stderr,
 	    "[HEAD: %p][MYHEAD: %p][TAIL: %p]\n" ,
@@ -111,7 +111,7 @@ void MPID_nem_dump_queue(  MPID_nem_queue_ptr_t qhead )
     if (ptr == NULL)
       ptr = qhead->head;   
 
-#endif //SHADOW_HEAD
+#endif /*SHADOW_HEAD */
 
     while( ptr != NULL )
     {
@@ -185,7 +185,7 @@ void MPID_nem_rel_dump_queue(  MPID_nem_queue_ptr_t rel_qhead )
 	    qhead->head,
 	    MPID_NEM_SET_ABS_NULL( qhead->tail ),
             qhead->tail);
-#else //SHADOW_HEAD
+#else /*SHADOW_HEAD */
     MPID_nem_cell_ptr_t ptr     = MPID_NEM_SET_ABS_NULL( qhead->my_head );  
     fprintf(stderr,
 	    "[HEAD: %p (rel %p)][MYHEAD: %p (rel %p)][TAIL: %p (rel %p)]\n" ,
@@ -199,7 +199,7 @@ void MPID_nem_rel_dump_queue(  MPID_nem_queue_ptr_t rel_qhead )
     if (ptr == NULL)
       ptr = MPID_NEM_REL_TO_ABS( qhead->head );   
 
-#endif //SHADOW_HEAD
+#endif /*SHADOW_HEAD */
 
     while( ptr != NULL )
     {
@@ -232,7 +232,7 @@ void MPID_nem_rel_dump_queue(  MPID_nem_queue_ptr_t rel_qhead )
 	  else
 	    fprintf(stderr," [type:%i]\n", cell_buf[0] );
 	  
-#else //MPICH2
+#else /*MPICH2 */
 	
 	pkt_type_t type = ptr->pkt.type;
 
@@ -277,14 +277,14 @@ void MPID_nem_rel_dump_queue(  MPID_nem_queue_ptr_t rel_qhead )
 	fprintf(stderr," [type:%i] [Match: ???] [dest : ?] [Data_ptr : ?]\n",
 		type);	  
 	}
-#endif // MPICH2
+#endif /* MPICH2 */
 	}
 
         ptr = MPID_NEM_SET_ABS_NULL(  ptr->next );
 
 	index++;
     }  
-    //if (index != (qhead->size))
+    /*if (index != (qhead->size)) */
     fprintf ( stderr, "[] RecvQ Size is : %i \n",index);
 }
 #endif

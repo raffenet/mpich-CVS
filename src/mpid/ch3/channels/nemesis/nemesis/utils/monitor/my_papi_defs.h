@@ -2,18 +2,18 @@
 #define _MY_PAPI_DEFS_H
 
 #ifdef PAPI_MONITOR
-#define ENABLE_PAPI_TIMING 0
+#undef ENABLE_PAPI_TIMING 
 #else
-#define ENABLE_PAPI_TIMING 0
+#undef ENABLE_PAPI_TIMING 
 #endif 
 
-#if ENABLE_PAPI_TIMING
+#ifdef ENABLE_PAPI_TIMING
 #define DO_PAPI(x) x
-#else  //ENABLE_PAPI_TIMING
+#else  /*ENABLE_PAPI_TIMING */
 #define DO_PAPI(x)
-#endif //ENABLE_PAPI_TIMING
+#endif /*ENABLE_PAPI_TIMING */
 
-#define DO_PAPI2(x) //x
+#define DO_PAPI2(x) /*x */
 
 #ifdef PAPI_MONITOR
 #define NEVENTS 6
@@ -70,5 +70,5 @@ void my_papi_close(void);
 int PAPI_accum_min (int EventSet, long_long *values);
 int PAPI_accum_var (int EventSet, long_long values[2][NEVENTS]);
 
-#endif  //PAPI_MONITOR
-#endif //_MY_PAPI_DEFS_H
+#endif  /*PAPI_MONITOR */
+#endif /*_MY_PAPI_DEFS_H */

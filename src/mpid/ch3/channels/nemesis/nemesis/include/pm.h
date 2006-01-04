@@ -17,7 +17,7 @@ extern int pmi_key_max_sz;
 extern int pmi_val_max_sz;
 
 int pm_init (int *size, int *rank);
-void pm_finalize();
+void pm_finalize(void);
 
 
 #endif

@@ -2,11 +2,11 @@
 #include "gm_module.h"
 #include "tcp_module.h"
 
-#define BLOCKING_FBOX 0
+/* #define BLOCKING_FBOX */
 
-#define DO_PAPI(x)  //x
-#define DO_PAPI2(x) //x
-#define DO_PAPI3(x) //x
+#define DO_PAPI(x)  /*x */
+#define DO_PAPI2(x) /*x */
+#define DO_PAPI3(x) /*x */
 
 static MPID_nem_fboxq_elem_t *fboxq_head;
 static MPID_nem_fboxq_elem_t *fboxq_tail;
@@ -19,10 +19,10 @@ extern int MPID_nem_ckpt_logging_messages; /* are we in logging-message-mode? */
 extern int MPID_nem_ckpt_sending_markers; /* are we in the process of sending markers? */
 extern struct cli_message_log_total *MPID_nem_ckpt_message_log; /* are we replaying messages? */
 
-//static int gm_poll_count = 0;
-//#define GM_POLL_FREQ (!(gm_poll_count++ % 100))
-//#define GM_POLL_FREQ (gm_poll_count == gm_poll_count)
-//#define GM_POLL_FREQ (gm_poll_count != gm_poll_count)
+/*static int gm_poll_count = 0; */
+/*#define GM_POLL_FREQ (!(gm_poll_count++ % 100)) */
+/*#define GM_POLL_FREQ (gm_poll_count == gm_poll_count) */
+/*#define GM_POLL_FREQ (gm_poll_count != gm_poll_count) */
 
 MPID_nem_cell_t *prefetched_cell;
 
@@ -102,16 +102,16 @@ MPID_nem_mpich2_init (int ckpt_restart)
 int
 MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 {
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     MPID_nem_cell_t *el;
     MPID_nem_cell_t *el_abs;
     int my_rank;
 
     my_rank = MPID_nem_mem_region.rank;
 
-#define PREFETCH_CELL 1
+#define PREFETCH_CELL
     
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     el = prefetched_cell;
     
     if (!el)
@@ -120,14 +120,14 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 	    return MPID_NEM_MPICH2_AGAIN;
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
     }
-#else //PREFETCH_CELL   
+#else /*PREFETCH_CELL    */
     if (MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank])) 
     { 
 	return MPID_NEM_MPICH2_AGAIN;
     }
 
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
-#endif  //PREFETCH_CELL     
+#endif  /*PREFETCH_CELL      */
     el_abs = MPID_NEM_REL_TO_ABS( el );
 
     el_abs->pkt.ckpt.source  = my_rank;
@@ -140,7 +140,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
     if(MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_rel_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
-	//MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] );
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
     }
     else
     {
@@ -160,13 +160,13 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
     }
 
 
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     if (!MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
     else
 	prefetched_cell = 0;
-#endif //PREFETCH_CELL
-#endif //MPID_NEM_CKPT_ENABLED
+#endif /*PREFETCH_CELL */
+#endif /*MPID_NEM_CKPT_ENABLED */
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -185,7 +185,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     MPID_nem_cell_t *el_abs;
     int my_rank;
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -193,15 +193,15 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     }
 #endif
 
-    //DO_PAPI (PAPI_reset (PAPI_EventSet));
+    /*DO_PAPI (PAPI_reset (PAPI_EventSet)); */
 
     assert (size <= MPID_NEM_MPICH2_DATA_LEN);
 
     my_rank = MPID_nem_mem_region.rank;
 
-#define PREFETCH_CELL 1
+#define PREFETCH_CELL
     
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     el = prefetched_cell;
     
@@ -212,7 +212,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
-#else //PREFETCH_CELL   
+#else /*PREFETCH_CELL    */
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank])) 
     { 
@@ -223,7 +223,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
-#endif  //PREFETCH_CELL     
+#endif  /*PREFETCH_CELL      */
     el_abs = MPID_NEM_REL_TO_ABS( el );
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
@@ -231,7 +231,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     el_abs->pkt.mpich2.dest    = dest;
     el_abs->pkt.mpich2.datalen = size;
     el_abs->pkt.mpich2.seqno   = send_seqno[dest]++;
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     el_abs->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
     MPID_NEM_MEMCPY (el_abs->pkt.mpich2.payload, buf, size);
@@ -241,7 +241,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     if(MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_rel_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
-	//MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] );
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
     }
@@ -270,17 +270,17 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     }
 
 
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (!MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
     else
 	prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
-#endif //PREFETCH_CELL   
+#endif /*PREFETCH_CELL    */
 
 
-    //DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
+    /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -292,7 +292,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     MPID_nem_cell_t *el_abs;
     int my_rank;
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -300,13 +300,13 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     }
 #endif
     
-    //DO_PAPI (PAPI_reset (PAPI_EventSet));
+    /*DO_PAPI (PAPI_reset (PAPI_EventSet)); */
 
     assert (size == MPID_NEM__MPICH2_HEADER_LEN);
 
     my_rank = MPID_nem_mem_region.rank;
 
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
     if (MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[dest]]->mpich2;
@@ -314,23 +314,23 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 	u_int32_t *payload_32 = (u_int32_t *)pbox->cell.pkt.mpich2.payload;
 	u_int32_t *buf_32 = (u_int32_t *)buf;
 
-#if BLOCKING_FBOX
+#ifdef BLOCKING_FBOX
 	MPID_nem_waitforlock ((MPID_nem_fbox_common_ptr_t)pbox, 0, count);
-#else //BLOCKING_FBOX
+#else /*BLOCKING_FBOX */
 	if (MPID_nem_islocked ((MPID_nem_fbox_common_ptr_t)pbox, 0, count))
 	    goto usequeue_l;
-#endif //BLOCKING_FBOX
+#endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    //pbox->cell.pkt.mpich2.datalen = size;
+	    /*pbox->cell.pkt.mpich2.datalen = size; */
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
 	    pbox->cell.pkt.mpich2.datalen = size;
 	    pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
-#endif
+#endif /* MPID_NEM_CKPT_ENABLED */
 	    payload_32[0] = buf_32[0];
 	    payload_32[1] = buf_32[1];
 	    payload_32[2] = buf_32[2];
@@ -342,10 +342,11 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #if MPID_NEM__MPICH2_HEADER_LEN == 40
 	    payload_32[8] = buf_32[8];
     	    payload_32[9] = buf_32[9];
-#endif
+#endif /* MPID_NEM__MPICH2_HEADER_LEN == 40 */
+
 #if MPID_NEM__MPICH2_HEADER_LEN > 40
 #error Cant handle case for MPICH2_HEADER_LEN >40
-#endif
+#endif /* MPID_NEM__MPICH2_HEADER_LEN > 40 */
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
 	
@@ -353,9 +354,9 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 	}
     }
  usequeue_l:
-#endif //USE_FASTBOX
+#endif /*USE_FASTBOX */
     
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     el = prefetched_cell;
     
@@ -368,7 +369,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     }
     el_abs = MPID_NEM_REL_TO_ABS( el );
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
-#else // PREFETCH_CELL
+#else /* PREFETCH_CELL */
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
     {
@@ -380,14 +381,14 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank] , &el);
     el_abs = MPID_NEM_REL_TO_ABS( el );
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
-#endif // PREFETCH_CELL
+#endif /* PREFETCH_CELL */
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     el_abs->pkt.mpich2.source  = my_rank;
     el_abs->pkt.mpich2.dest    = dest;
     el_abs->pkt.mpich2.datalen = size;
     el_abs->pkt.mpich2.seqno   = send_seqno[dest]++;
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     el_abs->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 #if 1
@@ -409,16 +410,16 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #if MPID_NEM__MPICH2_HEADER_LEN > 40
 #error Cant handle case for MPICH2_HEADER_LEN >40
 #endif
-#else //1
+#else /*1 */
     MPID_NEM_MEMCPY (el_abs->pkt.mpich2.payload, buf, size);
-#endif //1
+#endif /*1 */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_rel_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
-	//MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] );
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
     }
@@ -445,16 +446,16 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     }
     
 
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (!MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
     else
 	prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
-#endif //PREFETCH_CELL
+#endif /*PREFETCH_CELL */
 
-    //DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
+    /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
     return MPID_NEM_MPICH2_SUCCESS;
 }
 /*
@@ -475,7 +476,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     int payload_len;    
     int my_rank;
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -487,7 +488,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 
     my_rank = MPID_nem_mem_region.rank;
 	
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     el = prefetched_cell;
     
     if (!el)
@@ -500,7 +501,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 	
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
     }
-#else //PREFETCH_CELL    
+#else /*PREFETCH_CELL     */
     if (MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
     {
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
@@ -508,7 +509,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     }
 
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank] , &el);
-#endif //PREFETCH_CELL    
+#endif /*PREFETCH_CELL     */
 
     el_abs = MPID_NEM_REL_TO_ABS( el );
     payload_len = MPID_NEM_MPICH2_DATA_LEN;
@@ -536,14 +537,14 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     el_abs->pkt.mpich2.dest    = dest;
     el_abs->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
     el_abs->pkt.mpich2.seqno   = send_seqno[dest]++;
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     el_abs->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
     if(MPID_NEM_IS_LOCAL (dest))
       {
 	MPID_nem_rel_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
-	//MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] );
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
       }
     else
     {
@@ -562,12 +563,12 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 	}
     }
 
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     if (!MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
     else
 	prefetched_cell = 0;
-#endif //PREFETCH_CELL
+#endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
     return MPID_NEM_MPICH2_SUCCESS;
 }
@@ -582,7 +583,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     int payload_len;    
     int my_rank;
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -595,7 +596,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 
     my_rank = MPID_nem_mem_region.rank;
 
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
     if (MPID_NEM_IS_LOCAL (dest) && (*n_iov == 2 && (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN <= MPID_NEM_FBOX_DATALEN))
     {
 	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[dest]]->mpich2;
@@ -603,21 +604,21 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 	u_int32_t *payload_32 = (u_int32_t *)(pbox->cell.pkt.mpich2.payload ) ;
 	u_int32_t *buf_32 = (u_int32_t *)(*iov)->iov_base;
 
-#if BLOCKING_FBOX
+#ifdef BLOCKING_FBOX
 	DO_PAPI3 (PAPI_reset (PAPI_EventSet));
 	MPID_nem_waitforlock ((MPID_nem_fbox_common_ptr_t)pbox, 0, count);
-#else //BLOCKING_FBOX
+#else /*BLOCKING_FBOX */
 	if (MPID_nem_islocked ((MPID_nem_fbox_common_ptr_t)pbox, 0, count))
 	    goto usequeue_l;
-#endif //BLOCKING_FBOX
+#endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    //pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN;
+	    /*pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN; */
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
 	    pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN;
 	    pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
@@ -647,9 +648,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     }
  usequeue_l:
     
-#endif //USE_FASTBOX
+#endif /*USE_FASTBOX */
 	
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     el = prefetched_cell;
     
     if (!el)
@@ -662,7 +663,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 	
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
     }
-#else //PREFETCH_CELL   
+#else /*PREFETCH_CELL    */
     if (MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
     {
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
@@ -670,7 +671,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     }
 
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
-#endif //PREFETCH_CELL
+#endif /*PREFETCH_CELL */
 
     el_abs = MPID_NEM_REL_TO_ABS( el );
 
@@ -720,14 +721,14 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     el_abs->pkt.mpich2.dest    = dest;
     el_abs->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
     el_abs->pkt.mpich2.seqno   = send_seqno[dest]++;
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     el_abs->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
     if (MPID_NEM_IS_LOCAL (dest))
       {    
 	MPID_nem_rel_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);	
-	//MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] );
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
       }
     else
     {
@@ -747,12 +748,12 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     }
     
 
-#if PREFETCH_CELL
+#ifdef PREFETCH_CELL
     if (!MPID_nem_rel_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
     else
 	prefetched_cell = 0;
-#endif //PREFETCH_CELL
+#endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
     return MPID_NEM_MPICH2_SUCCESS;
 }
@@ -931,7 +932,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_t **cell, int *in_fbox)
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     MPID_nem_ckpt_maybe_take_checkpoint();
 
     if (MPID_nem_ckpt_message_log)
@@ -944,9 +945,9 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_t **cell, int *in_fbox)
     }
 #endif
     
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
     poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-#endif// USE_FASTBOX    
+#endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
       {
@@ -955,9 +956,9 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_t **cell, int *in_fbox)
 
     if (MPID_nem_rel_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank]))
     {
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
 	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-#endif// USE_FASTBOX    
+#endif/* USE_FASTBOX     */
 	*cell = NULL;
 	goto exit_l;
     }
@@ -965,13 +966,13 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_t **cell, int *in_fbox)
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.RecvQ[my_rank], &rel_cell);
     *cell = MPID_NEM_REL_TO_ABS( rel_cell ); 
     
-    //MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[my_rank] );
-    //    MPID_nem_dump_cell_mpich ( *cell, 111);
+    /*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[my_rank] ); */
+    /*    MPID_nem_dump_cell_mpich ( *cell, 111); */
 
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
  exit_l:
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
 	MPID_nem_ckpt_got_marker (cell, in_fbox);
     else if (MPID_nem_ckpt_logging_messages)
@@ -989,9 +990,9 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_t **cell, int *in_fbox, int timeou
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
     poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-#endif// USE_FASTBOX    
+#endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
       {
@@ -1000,9 +1001,9 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_t **cell, int *in_fbox, int timeou
 
     while ((--timeout > 0) && (MPID_nem_rel_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank])))
     {
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
 	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-#endif// USE_FASTBOX    
+#endif/* USE_FASTBOX     */
 	*cell = NULL;
 	goto exit_l;
     }
@@ -1035,7 +1036,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_t **cell, int *in_fbox)
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     MPID_nem_ckpt_maybe_take_checkpoint();
 
  top_l:
@@ -1050,9 +1051,9 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_t **cell, int *in_fbox)
 #endif
     
 
-#if USE_FASTBOX
+#ifdef USE_FASTBOX
     poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-#endif //USE_FASTBOX
+#endif /*USE_FASTBOX */
    
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
     {
@@ -1063,10 +1064,10 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_t **cell, int *in_fbox)
     {
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#if USE_FASTBOX	
+#ifdef USE_FASTBOX	
 	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
 	poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-#endif //USE_FASTBOX
+#endif /*USE_FASTBOX */
 
 	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
 	{
@@ -1077,14 +1078,14 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_t **cell, int *in_fbox)
     MPID_nem_rel_queue_dequeue (MPID_nem_mem_region.RecvQ[my_rank], &rel_cell);
     *cell = MPID_NEM_REL_TO_ABS( rel_cell ); 
 
-    //MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[my_rank] );    
-    //MPID_nem_dump_cell_mpich ( *cell, 777);
+    /*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[my_rank] );     */
+    /*MPID_nem_dump_cell_mpich ( *cell, 777); */
 
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;    
 
  exit_l:
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
     {
 	MPID_nem_ckpt_got_marker (cell, in_fbox);
@@ -1111,7 +1112,7 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_t *cell)
     int source = cell->pkt.mpich2.source;
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     if (cell->pkt.header.type == MPID_NEM_PKT_CKPT_REPLAY)
     {
 	if (!MPID_nem_ckpt_message_log)
@@ -1121,7 +1122,7 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_t *cell)
     }
 #endif
     
-    //MPID_nem_rel_cell_init(cell);
+    /*MPID_nem_rel_cell_init(cell); */
 
     if (MPID_NEM_IS_LOCAL (source))
     {

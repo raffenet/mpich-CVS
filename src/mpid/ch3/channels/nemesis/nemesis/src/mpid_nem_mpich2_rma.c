@@ -160,7 +160,7 @@ MPID_nem_mpich2_win_put (void *s_buf, void *d_buf, int len, MPID_nem_mpich2_win_
 	ERROR_RET (MPID_NEM_MPICH2_FAILURE, "win_put out of bounds");
 
     MPID_NEM_MEMCPY (_d_buf, s_buf, len);
-    //MPID_NEM_MEMCPY (s_buf, _d_buf, len);
+    /*MPID_NEM_MEMCPY (s_buf, _d_buf, len); */
     
     return MPID_NEM_MPICH2_SUCCESS;
 }

@@ -22,4 +22,4 @@ void tcp_module_send (int, MPID_nem_cell_t *, int);
 int tcp_module_get (void *target_p, void *source_p, int source_node, int len, int *completion_ctr);
 int tcp_module_put (void *target_p, int target_node, void *source_p, int len, int *completion_ctr);
 
-#endif //TCP_MODULE.H
+#endif /*TCP_MODULE.H */

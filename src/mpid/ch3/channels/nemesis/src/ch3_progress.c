@@ -149,7 +149,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 			if (payload_len > 0)
 			{
 			    MPID_NEM_MEMCPY (iov->iov_base, cell_buf, payload_len);
-			    iov->iov_base += payload_len;
+			    iov->iov_base = (void *)((char *)iov->iov_base + payload_len);
 			    iov->iov_len -= payload_len;
 			    payload_len = 0;
 			}

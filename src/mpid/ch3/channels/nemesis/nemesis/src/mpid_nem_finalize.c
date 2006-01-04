@@ -3,7 +3,7 @@
 #include "tcp_module.h"
 #include "pm.h"
 
-//#define TRACE
+/*#define TRACE */
 int MPID_nem_finalize()
 {
     int rank     = MPID_nem_mem_region.rank;
@@ -46,7 +46,7 @@ int MPID_nem_finalize()
     
 #ifdef PAPI_MONITOR
     my_papi_close();
-#endif //PAPI_MONITOR
+#endif /*PAPI_MONITOR */
    
     errno = PMI_Barrier();
     if (errno != 0)

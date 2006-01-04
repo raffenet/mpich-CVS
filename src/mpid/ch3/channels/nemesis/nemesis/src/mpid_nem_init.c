@@ -3,11 +3,11 @@
 #include "gm_module.h"
 #include "tcp_module.h"
 
-#if MEM_REGION_IN_HEAP
+#ifdef MEM_REGION_IN_HEAP
 MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
-#else
+#else /* MEM_REGION_IN_HEAP */
 MPID_nem_mem_region_t MPID_nem_mem_region;
-#endif
+#endif /* MEM_REGION_IN_HEAP */
 
 char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 
@@ -51,11 +51,11 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     if (errno != 0)
 	FATAL_ERROR ("get_local_procs() failed");
 
-#if MEM_REGION_IN_HEAP
+#ifdef MEM_REGION_IN_HEAP
     MPID_nem_mem_region_ptr = malloc (sizeof(MPID_nem_mem_region_t));
     if (!MPID_nem_mem_region_ptr)
 	FATAL_ERROR ("failed to allocate mem_region");
-#endif
+#endif /* MEM_REGION_IN_HEAP */
 
     
     MPID_nem_mem_region.num_seg        = 6;
@@ -150,8 +150,8 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 				    MAP_SHARED ,
 				    descs,0);
     }
-    //fprintf(stderr,"[%i] -- address shift ok \n",rank);
-#endif  //FORCE_ASYM
+    /*fprintf(stderr,"[%i] -- address shift ok \n",rank); */
+#endif  /*FORCE_ASYM */
 
 /*     if (num_local > 1) */
 /* 	MPID_nem_mem_region.map_lock = make_sem (local_rank, num_local, 0); */
@@ -243,7 +243,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     case MPID_NEM_GM_MODULE:
 	if (rank == 0)
 	{
-	    //fprintf (stderr, "Using GM module\n");
+	    /*fprintf (stderr, "Using GM module\n"); */
 	}
 	errno = gm_module_init ( MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.RecvQ[rank]), 
 				 MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.FreeQ[rank]), 
@@ -261,7 +261,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	{
 	    if (rank == 0)
 	      {
-		  //fprintf (stderr, "Using TCP module\n");
+		  /*fprintf (stderr, "Using TCP module\n"); */
 	      }
 	    errno = tcp_module_init (MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.RecvQ[rank]), 
 				     MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.FreeQ[rank]), 
@@ -278,7 +278,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	break;
     default:
 	if (rank == 0)
-	    //fprintf (stderr, "Using no network module\n");
+	    /*fprintf (stderr, "Using no network module\n"); */
 	MPID_nem_mem_region.net_recv_queue = NULL;
 	MPID_nem_mem_region.net_free_queue = NULL;
 	break;
@@ -340,14 +340,14 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     MPID_nem_mpich2_init (ckpt_restart);
     MPID_nem_barrier (num_local, local_rank);
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     MPID_nem_ckpt_init (ckpt_restart);
 #endif
     
 
 #ifdef PAPI_MONITOR
     my_papi_start( rank );
-#endif //PAPI_MONITOR  
+#endif /*PAPI_MONITOR   */
  
     *myrank = rank;
     *num_procs = num_processes;

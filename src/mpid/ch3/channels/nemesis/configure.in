@@ -54,6 +54,8 @@ esac
 
 PAC_PROG_MAKE
 
+AC_C_INLINE
+
 dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
 AC_TRY_COMPILE([
 #include <sys/types.h>

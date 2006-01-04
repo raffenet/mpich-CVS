@@ -4,6 +4,8 @@
 #include "mpid_nem_datatypes.h"
 #include "mpidi_ch3i_nemesis_conf.h"
 
+/* #define MPID_NEM_CKPT_ENABLED */
+
 #define MPID_NEM_RET_OK       1
 #define MPID_NEM_RET_NG      -1
 #define MPID_NEM_KEY          632236
@@ -17,7 +19,7 @@
 #define MPID_NEM_GM_MODULE    1
 #define MPID_NEM_TCP_MODULE   2
 
-//#define MPID_NEM_NET_MODULE   MPID_NEM_NO_MODULE
+/*#define MPID_NEM_NET_MODULE   MPID_NEM_NO_MODULE */
 
 #define MPID_NEM_POLL_IN      0
 #define MPID_NEM_POLL_OUT     1
@@ -28,19 +30,19 @@ extern  char *MPID_nem_asymm_base_addr;
 extern  char *MPID_nem_asymm_null_var;
 
 #define MPID_NEM_ASYMM_NULL ((void *)0x0)
-//#define MPID_NEM_ASYMM_NULL MPID_nem_asymm_null_var
+/*#define MPID_NEM_ASYMM_NULL MPID_nem_asymm_null_var */
 
 #ifndef MPID_NEM_SYMMETRIC_QUEUES
 #define MPID_NEM_REL_TO_ABS( ptr ) (( __typeof__((ptr)))(((char *)(ptr)) + ((MPID_nem_addr_t)(MPID_nem_asymm_base_addr))))
 #define MPID_NEM_ABS_TO_REL( ptr ) (( __typeof__((ptr)))(((char *)(ptr)) - ((MPID_nem_addr_t)(MPID_nem_asymm_base_addr))))
 #define MPID_NEM_SET_REL_NULL( ptr ) (((char *)(ptr)) == NULL ) ? (( __typeof__((ptr)))( MPID_NEM_ASYMM_NULL)) : MPID_NEM_ABS_TO_REL( ptr )
 #define MPID_NEM_SET_ABS_NULL( ptr ) (((char *)(ptr)) == ((char *)(MPID_NEM_ASYMM_NULL))) ? (( __typeof__((ptr))) 0 ) : MPID_NEM_REL_TO_ABS( ptr )
-#else //MPID_NEM_SYMMETRIC_QUEUES
+#else /*MPID_NEM_SYMMETRIC_QUEUES */
 #define MPID_NEM_REL_TO_ABS( ptr )   (ptr)
 #define MPID_NEM_ABS_TO_REL( ptr )   (ptr)
 #define MPID_NEM_SET_REL_NULL( ptr ) (ptr)
 #define MPID_NEM_SET_ABS_NULL( ptr ) (ptr)
-#endif //MPID_NEM_SYMMETRIC_QUEUES
+#endif /*MPID_NEM_SYMMETRIC_QUEUES */
 
 typedef struct MPID_nem_barrier
 {
@@ -100,12 +102,12 @@ typedef struct MPID_nem_mem_region
     struct MPID_nem_mem_region *next;
 } MPID_nem_mem_region_t, *MPID_nem_mem_region_ptr_t;
 
-#define MEM_REGION_IN_HEAP 0
-#if MEM_REGION_IN_HEAP
+/* #define MEM_REGION_IN_HEAP */
+#ifdef MEM_REGION_IN_HEAP
 #define MPID_nem_mem_region (*MPID_nem_mem_region_ptr)
 extern MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
-#else
+#else /* MEM_REGION_IN_HEAP */
 extern MPID_nem_mem_region_t MPID_nem_mem_region;
-#endif
+#endif /* MEM_REGION_IN_HEAP */
 
 #endif /* MPID_NEM_DEFS_H */

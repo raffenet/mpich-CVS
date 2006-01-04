@@ -64,6 +64,9 @@ MPID_Request *MPIDI_CH3_Progress_ipoke_with_matching(int,int,MPID_Comm *comm,int
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(FALSE)
 #define MPIDI_CH3_Progress_wait(state) MPIDI_CH3I_Progress(TRUE)
 
+int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq);
+int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq);
+
 /*
  * Enable optional functionality
  */

@@ -3,7 +3,7 @@
 #include "gm_module.h"
 #include "my_papi_defs.h"
 
-#define DO_PAPI3(x) //x
+#define DO_PAPI3(x) /*x */
 
 static void
 send_callback (struct gm_port *p, void *context, gm_status_t status)
@@ -58,12 +58,12 @@ send_cell (int dest, MPID_nem_cell_t *cell, int datalen)
 } while (0)
 #endif
 
-#define BOUNCE_BUFFER 0
+/* #define BOUNCE_BUFFER */
 inline void
 send_from_queue()
 {
     gm_module_send_queue_t *e;
-#if BOUNCE_BUFFER
+#ifdef BOUNCE_BUFFER
     static MPID_nem_cell_t c;
     static int first = 1;
 
@@ -72,7 +72,7 @@ send_from_queue()
 	first = 0;
 	gm_register_memory (port, &c, sizeof (c));
     }
-#endif
+#endif /* BOUNCE_BUFFER */
     
     while (!gm_module_queue_empty (send) && num_send_tokens)
     {

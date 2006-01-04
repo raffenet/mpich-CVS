@@ -41,8 +41,8 @@ gm_module_recv()
 	case GM_FAST_RECV_EVENT:
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 	    DO_PAPI (PAPI_reset (PAPI_EventSet));
-	    //gm_memorize_message (gm_ntohp (e->recv.message), gm_ntohp (e->recv.buffer), gm_ntoh_u32 (e->recv.length));
-	    //my_memcpy (gm_ntohp (e->recv.buffer), gm_ntohp (e->recv.message), gm_ntoh_u32 (e->recv.length));
+	    /*gm_memorize_message (gm_ntohp (e->recv.message), gm_ntohp (e->recv.buffer), gm_ntoh_u32 (e->recv.length)); */
+	    /*my_memcpy (gm_ntohp (e->recv.buffer), gm_ntohp (e->recv.message), gm_ntoh_u32 (e->recv.length)); */
 	    MPID_NEM_MEMCPY (gm_ntohp (e->recv.buffer), gm_ntohp (e->recv.message), gm_ntoh_u32 (e->recv.length));
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues7));
 	case GM_PEER_RECV_EVENT:
@@ -111,7 +111,7 @@ void
 gm_module_send_poll()
 {
     send_from_queue();
-    //lmt_poll();
+    /*lmt_poll(); */
     gm_module_recv();
 }
 
@@ -120,5 +120,5 @@ gm_module_recv_poll()
 {
     gm_module_recv();
     send_from_queue();
-    //lmt_poll();
+    /*lmt_poll(); */
 }

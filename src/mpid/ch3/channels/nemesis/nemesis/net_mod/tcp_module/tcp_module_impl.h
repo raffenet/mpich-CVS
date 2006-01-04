@@ -91,7 +91,7 @@ internal_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
      *e = _e;
   }
 }
-#else //MPID_NEM_USE_SHADOW_HEAD
+#else /*MPID_NEM_USE_SHADOW_HEAD */
 static inline int 
 internal_queue_empty ( MPID_nem_queue_ptr_t qhead )
 {
@@ -130,8 +130,8 @@ internal_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
      *e = _e;
   }
 }
-#endif //MPID_NEM_USE_SHADOW_HEAD
-#else  //USE_MACROS
+#endif /*MPID_NEM_USE_SHADOW_HEAD */
+#else  /*USE_MACROS */
 #define internal_queue_enqueue(qhead, element) do { \
     MPID_nem_cell_ptr_t prev = (qhead)->tail;              \
                                                     \
@@ -165,7 +165,7 @@ internal_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
      *(e) = _e;                                  \
   }                                              \
 } while(0)                                       
-#else //MPID_NEM_USE_SHADOW_HEAD
+#else /*MPID_NEM_USE_SHADOW_HEAD */
 #define internal_queue_empty(qhead)      ({      \
   int __ret = 0;                                 \
   if ((qhead)->my_head == NULL)                  \
@@ -200,9 +200,9 @@ internal_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
      *(e) = _e;                                  \
   }                                              \
 } while(0)
-#endif //MPID_NEM_USE_SHADOW_HEAD
-#endif //USE_MACROS
+#endif /*MPID_NEM_USE_SHADOW_HEAD */
+#endif /*USE_MACROS */
 
 #define MPID_NEM_USE_MACROS
 
-#endif //MODULE2.H
+#endif /*MODULE2.H */

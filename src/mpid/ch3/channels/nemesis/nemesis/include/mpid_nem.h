@@ -9,9 +9,9 @@
 #ifdef PAPI_MONITOR
 #include "my_papi_defs.h"
 #include "rdtsc.h"		
-#endif // PAPI_MONITOR
+#endif /* PAPI_MONITOR */
 
-#define USE_FASTBOX 1
+#define USE_FASTBOX
 
 typedef struct MPID_nem_fboxq_elem
 {
@@ -25,8 +25,8 @@ MPID_nem_fboxq_elem_t;
 
 int MPID_nem_init (int argc, char **argv, int *rank, int *num_procs);
 int _MPID_nem_init (int argc, char **argv, int *rank, int *num_procs, int ckpt_restart);
-int MPID_nem_finalize();
-int MPID_nem_ckpt_shutdown();
+int MPID_nem_finalize (void);
+int MPID_nem_ckpt_shutdown (void);
 void MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
 void MPID_nem_barrier(int, int);
 void MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, char [], int num_local, int local_rank);
@@ -53,18 +53,18 @@ int MPID_nem_mpich2_test_recv (MPID_nem_cell_t **cell, int *in_fbox);
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_t **cell, int *in_fbox, int timeout);
 int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_t **cell, int *in_fbox);
 int MPID_nem_mpich2_release_cell (MPID_nem_cell_t *cell);
-//int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell);
+/* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPID_NEM_MPICH2_SUCCESS)
 
 int MPID_nem_ckpt_init (int ckpt_restart);
-void MPID_nem_ckpt_finalize();
-void MPID_nem_ckpt_maybe_take_checkpoint();
+void MPID_nem_ckpt_finalize (void);
+void MPID_nem_ckpt_maybe_take_checkpoint (void);
 void MPID_nem_ckpt_got_marker (MPID_nem_cell_t **cell, int *in_fbox);
 void MPID_nem_ckpt_log_message (MPID_nem_cell_t *cell);
-void MPID_nem_ckpt_send_markers();
+void MPID_nem_ckpt_send_markers (void);
 int MPID_nem_ckpt_replay_message (MPID_nem_cell_t **cell);
-void MPID_nem_ckpt_free_msg_log();
+void MPID_nem_ckpt_free_msg_log (void);
 
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank);
 int MPID_nem_mpich2_dequeue_fastbox (int local_rank);
@@ -132,7 +132,7 @@ int MPID_nem_mpich2_lmt_send_post (int dest, struct iovec cookie);
 int MPID_nem_mpich2_lmt_recv_post (int src, struct iovec cookie);
 #endif
 
-//#define DO_PAPI2(x) x
+/* #define DO_PAPI2(x) x */
 static inline void
 MPID_nem_waitforlock (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 {
@@ -157,4 +157,4 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
     return (pbox->flag.value != value);
 }
 
-#endif // _MPID_NEM_H
+#endif /* _MPID_NEM_H */

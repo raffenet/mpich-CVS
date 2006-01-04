@@ -8,8 +8,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
+/*#include <sys/ipc.h>
+  #include <sys/sem.h> */
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -39,7 +39,7 @@
 #define MPID_NEM_MPICH2_HEAD_LEN sizeof(MPID_nem_pkt_header_t)
 #define MPID_NEM_MPICH2_DATA_LEN (MPID_NEM_CELL_PAYLOAD_LEN - MPID_NEM_MPICH2_HEAD_LEN)
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
 #define MPID_NEM_PKT_HEADER_FIELDS		\
     int source;					\
     int dest;					\
@@ -65,7 +65,7 @@ typedef struct MPID_nem_pkt_mpich2
     char payload[MPID_NEM_MPICH2_DATA_LEN];
 } MPID_nem_pkt_mpich2_t;
 
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
 /* checkpoint marker */
 typedef struct MPID_nem_pkt_ckpt
 {
@@ -78,7 +78,7 @@ typedef union
 {    
     MPID_nem_pkt_header_t      header;
     MPID_nem_pkt_mpich2_t      mpich2;
-#if MPID_NEM_CKPT_ENABLED
+#ifdef MPID_NEM_CKPT_ENABLED
     MPID_nem_pkt_ckpt_t        ckpt;
 #endif
 } MPID_nem_pkt_t;

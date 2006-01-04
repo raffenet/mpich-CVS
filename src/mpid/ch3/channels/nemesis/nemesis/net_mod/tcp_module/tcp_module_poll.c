@@ -1,7 +1,7 @@
 #include "tcp_module_impl.h"
 /********************* MPICH2 FLAVOR ***************************/
 
-//#define TRACE 
+/*#define TRACE  */
 
 void
 tcp_module_poll_send( void )
@@ -23,7 +23,7 @@ tcp_module_poll_send( void )
 	    {	     
 #ifdef TRACE 
 	      fprintf(stderr,"[%i] -- TCP RETRY SEND for %i ... \n",rank,grank);
-	      //MPID_nem_dump_queue( nodes[grank].internal_recv_queue );
+	      /*MPID_nem_dump_queue( nodes[grank].internal_recv_queue ); */
 #endif		  	  
 #ifndef MPID_NEM_USE_SHADOW_HEAD
 	      pkt    = MPID_NEM_CELL_TO_PACKET ( nodes[grank].internal_recv_queue->head );
@@ -129,7 +129,7 @@ tcp_module_poll_send( void )
 }
 
 
-//#define TRACE 
+/*#define TRACE  */
 
 void
 tcp_module_poll_recv( void  )

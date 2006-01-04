@@ -2,9 +2,9 @@
 #include "tcp_module.h"
 #include "my_papi_defs.h"
 
-#define DO_PAPI3(x) //x
+#define DO_PAPI3(x) /*x */
 
-//#define TRACE
+/*#define TRACE */
 
 static inline void
 send_cell (int dest, MPID_nem_cell_t *cell, int datalen)

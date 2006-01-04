@@ -7,7 +7,7 @@
 static inline void * my_memcpy(void * to, const void * from, size_t n)
 {
   int d0, d1, d2;
-  __asm__ __volatile__(
+  asm volatile(
         "rep ; movsl     \n"
         "testb $2,%b4    \n"
         "je 1f           \n"

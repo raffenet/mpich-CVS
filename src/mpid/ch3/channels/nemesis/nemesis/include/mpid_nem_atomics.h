@@ -20,13 +20,13 @@ typedef struct { char x[100]; } MPID_NEM_DUMMY_STRUCT;
 static inline unsigned long MPID_NEM_SWAP_ (void *ptr, unsigned long val)
 {
 #ifdef i386
-    __asm__ __volatile__ ("xchgl %0,%1"
+    asm volatile ("xchgl %0,%1"
 			  :"=r" (val)
 			  :"m" (*DC(ptr)), "0" (val)
 			  :"memory");
     return val;
 #elif defined(x86_64)
-    __asm__ __volatile__ ("xchgq %0,%1"
+    asm volatile ("xchgq %0,%1"
 			  :"=r" (val)
 			  :"m" (*DC(ptr)), "0" (val)
 			  :"memory");
@@ -43,14 +43,14 @@ static inline unsigned long MPID_NEM_CAS_ (void *ptr, unsigned long oldv, unsign
 {
 #ifdef i386
     unsigned long prev;
-    __asm__ __volatile__ (LOCK_PREFIX "cmpxchgl %1,%2"
+    asm volatile (LOCK_PREFIX "cmpxchgl %1,%2"
 			  : "=a" (prev)
 			  : "q" (newv), "m" (*DC(ptr)), "0" (oldv)
 			  : "memory");
     return prev;
 #elif defined(x86_64)
     unsigned long prev;
-    __asm__ __volatile__ (LOCK_PREFIX "cmpxchgq %1,%2"
+    asm volatile (LOCK_PREFIX "cmpxchgq %1,%2"
 			  : "=a" (prev)
 			  : "q" (newv), "m" (*DC(ptr)), "0" (oldv)
 			  : "memory");
@@ -65,12 +65,12 @@ static inline unsigned long MPID_NEM_CAS_ (void *ptr, unsigned long oldv, unsign
 static inline unsigned long MPID_NEM_FETCH_AND_ADD_ (int *ptr, unsigned long val)
 {
 #ifdef i386
-    __asm__ __volatile__ (LOCK_PREFIX "xaddl %0,%1"
+    asm volatile (LOCK_PREFIX "xaddl %0,%1"
 			  : "=r" (val)
 			  : "m" (*ptr), "0" (val));
     return val;
 #elif defined(x86_64)
-    __asm__ __volatile__ (LOCK_PREFIX "xaddq %0,%1"
+    asm volatile (LOCK_PREFIX "xaddq %0,%1"
 			  : "=r" (val)
 			  : "m" (*ptr), "0" (val));
     return val;
@@ -84,12 +84,12 @@ static inline unsigned long MPID_NEM_FETCH_AND_ADD_ (int *ptr, unsigned long val
 static inline void MPID_NEM_ATOMIC_ADD_ (int val, int *ptr)
 {
 #ifdef i386
-    __asm__ __volatile__ (LOCK_PREFIX "addl %1,%0"
+    asm volatile (LOCK_PREFIX "addl %1,%0"
 			  :"=m" (*ptr)
 			  :"ir" (val), "m" (*ptr));
     return;
 #elif defined(x86_64)
-    __asm__ __volatile__ (LOCK_PREFIX "addq %1,%0"
+    asm volatile (LOCK_PREFIX "addq %1,%0"
 			  :"=m" (*ptr)
 			  :"ir" (val), "m" (*ptr));
     return;
@@ -103,12 +103,12 @@ static inline void MPID_NEM_ATOMIC_ADD_ (int val, int *ptr)
 static inline void MPID_NEM_ATOMIC_INC_ (int *ptr)
 {
 #ifdef i386
-    __asm__ __volatile__ (LOCK_PREFIX "incl %0"
+    asm volatile (LOCK_PREFIX "incl %0"
 			  :"=m" (*ptr)
 			  :"m" (*ptr));
     return;
 #elif defined(x86_64)
-    __asm__ __volatile__ (LOCK_PREFIX "incq %0"
+    asm volatile (LOCK_PREFIX "incq %0"
 			  :"=m" (*ptr)
 			  :"m" (*ptr));
     return;
@@ -122,12 +122,12 @@ static inline void MPID_NEM_ATOMIC_INC_ (int *ptr)
 static inline void MPID_NEM_ATOMIC_DEC_ (int *ptr)
 {
 #ifdef i386
-    __asm__ __volatile__ (LOCK_PREFIX "decl %0"
+    asm volatile (LOCK_PREFIX "decl %0"
 			  :"=m" (*ptr)
 			  :"m" (*ptr));
     return;
 #elif defined(x86_64)
-    __asm__ __volatile__ (LOCK_PREFIX "decq %0"
+    asm volatile (LOCK_PREFIX "decq %0"
 			  :"=m" (*ptr)
 			  :"m" (*ptr));
     return;
@@ -138,7 +138,7 @@ static inline void MPID_NEM_ATOMIC_DEC_ (int *ptr)
 
 #undef MPID_NEM_DUMMY_STRUCT
 
-#if REMOVE_THIS
+#ifdef REMOVE_THIS
 
 
 struct __xchg_dummy { unsigned long a[100]; };
@@ -150,19 +150,19 @@ static inline unsigned long __xchg (unsigned long x, volatile void * ptr, int si
     switch (size)
     {
     case 1:
-	__asm__ __volatile__("xchgb %b0,%1"
+	asm volatile("xchgb %b0,%1"
 			     :"=q" (x)
 			     :"m" (*__xg(ptr)), "0" (x)
 			     :"memory");
 	break;
     case 2:
-	__asm__ __volatile__("xchgw %w0,%1"
+	asm volatile("xchgw %w0,%1"
 			     :"=r" (x)
 			     :"m" (*__xg(ptr)), "0" (x)
 			     :"memory");
 	break;
     case 4:
-	__asm__ __volatile__("xchgl %0,%1"
+	asm volatile("xchgl %0,%1"
 			     :"=r" (x)
 			     :"m" (*__xg(ptr)), "0" (x)
 			     :"memory");
@@ -176,25 +176,25 @@ static inline unsigned long __xchg (unsigned long x, volatile void * ptr, int si
     switch (size) 
     {
     case 1:
-	__asm__ __volatile__ ("xchgb %b0,%1"
+	asm volatile ("xchgb %b0,%1"
 			      :"=q" (x)
 			      :"m" (*__xg (ptr)), "0" (x)
 			      :"memory");
 	break;
     case 2:
-	__asm__ __volatile__ ("xchgw %w0,%1"
+	asm volatile ("xchgw %w0,%1"
 			      :"=r" (x)
 			      :"m" (*__xg (ptr)), "0" (x)
 			      :"memory");
 	break;
     case 4:
-	__asm__ __volatile__ ("xchgl %k0,%1"
+	asm volatile ("xchgl %k0,%1"
 			      :"=r" (x)
 			      :"m" (*__xg (ptr)), "0" (x)
 			      :"memory");
 	break;
     case 8:
-	__asm__ __volatile__ ("xchgq %0,%1"
+	asm volatile ("xchgq %0,%1"
 			      :"=r" (x)
 			      :"m" (*__xg (ptr)), "0" (x)
 			      :"memory");
@@ -219,19 +219,19 @@ static inline unsigned long __cmpxchg (volatile void *ptr, unsigned long old, un
     switch (size)
     {
     case 1:
-	__asm__ __volatile__(LOCK_PREFIX "cmpxchgb %b1,%2"
+	asm volatile(LOCK_PREFIX "cmpxchgb %b1,%2"
 			     : "=a"(prev)
 			     : "q"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");
 	return prev;
     case 2:
-	__asm__ __volatile__(LOCK_PREFIX "cmpxchgw %w1,%2"
+	asm volatile(LOCK_PREFIX "cmpxchgw %w1,%2"
 			     : "=a"(prev)
 			     : "q"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");
 	return prev;
     case 4:
-	__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1,%2"
+	asm volatile(LOCK_PREFIX "cmpxchgl %1,%2"
 			     : "=a"(prev)
 			     : "q"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");
@@ -245,25 +245,25 @@ static inline unsigned long __cmpxchg (volatile void *ptr, unsigned long old, un
     switch (size) 
     {
     case 1:
-	__asm__ __volatile__ (LOCK_PREFIX "cmpxchgb %b1,%2"
+	asm volatile (LOCK_PREFIX "cmpxchgb %b1,%2"
 			      : "=a"(prev)
 			      : "q"(new), "m"(*__xg (ptr)), "0"(old)
 			      : "memory");
 	return prev;
     case 2:
-	__asm__ __volatile__ (LOCK_PREFIX "cmpxchgw %w1,%2"
+	asm volatile (LOCK_PREFIX "cmpxchgw %w1,%2"
 			      : "=a"(prev)
 			      : "q"(new), "m"(*__xg (ptr)), "0"(old)
 			      : "memory");
 	return prev;
     case 4:
-	__asm__ __volatile__ (LOCK_PREFIX "cmpxchgl %k1,%2"
+	asm volatile (LOCK_PREFIX "cmpxchgl %k1,%2"
 			      : "=a"(prev)
 			      : "q"(new), "m"(*__xg (ptr)), "0"(old)
 			      : "memory");
 	return prev;
     case 8:
-	__asm__ __volatile__ (LOCK_PREFIX "cmpxchgq %1,%2"
+	asm volatile (LOCK_PREFIX "cmpxchgq %1,%2"
 			      : "=a"(prev)
 			      : "q"(new), "m"(*__xg (ptr)), "0"(old)
 			      : "memory");
@@ -286,19 +286,19 @@ static inline unsigned long __xadd (volatile void *ptr, unsigned long val, int s
     switch (size)
     {
     case 1:
-	__asm__ __volatile__(LOCK_PREFIX "xaddb %b0,%1"
+	asm volatile(LOCK_PREFIX "xaddb %b0,%1"
 			     : "=r"(val)
 			     : "m"(*__xg(ptr)), "0"(val)
 			     : "memory");
 	return val;
     case 2:
-	__asm__ __volatile__(LOCK_PREFIX "xaddw %w0,%1"
+	asm volatile(LOCK_PREFIX "xaddw %w0,%1"
 			     : "=r"(val)
 			     : "m"(*__xg(ptr)), "0"(val)
 			     : "memory");
 	return val;
     case 4:
-	__asm__ __volatile__(LOCK_PREFIX "xaddl %0,%1"
+	asm volatile(LOCK_PREFIX "xaddl %0,%1"
 			     : "=r"(val)
 			     : "m"(*__xg(ptr)), "0"(val));
 	return val;
@@ -310,24 +310,24 @@ static inline unsigned long __xadd (volatile void *ptr, unsigned long val, int s
     switch (size)
     {
     case 1:
-	__asm__ __volatile__ (LOCK_PREFIX "xaddb %b0,%1"
+	asm volatile (LOCK_PREFIX "xaddb %b0,%1"
 			      : "=r"(val)
 			      : "m"(*__xg (ptr)), "0"(val)
 			      : "memory");
 	return val;
     case 2:
-	__asm__ __volatile__ (LOCK_PREFIX "xaddw %w0,%1"
+	asm volatile (LOCK_PREFIX "xaddw %w0,%1"
 			      : "=r"(val)
 			      : "m"(*__xg (ptr)), "0"(val)
 			      : "memory");
 	return val;
     case 4:
-	__asm__ __volatile__ (LOCK_PREFIX "xaddl %k0,%1"
+	asm volatile (LOCK_PREFIX "xaddl %k0,%1"
 			      : "=r"(val)
 			      : "m"(*__xg (ptr)), "0"(val));
 	return val;
     case 8:
-	__asm__ __volatile__ (LOCK_PREFIX "xaddq %0,%1"
+	asm volatile (LOCK_PREFIX "xaddq %0,%1"
 			      : "=r"(val)
 			      : "m"(*__xg (ptr)), "0"(val));
 	return val;
@@ -348,17 +348,17 @@ static inline void __atomic_add (int i, int *ptr, int size)
     switch (size)
     {
     case 1:
-	__asm__ __volatile__(LOCK_PREFIX "addb %b1,%0"
+	asm volatile(LOCK_PREFIX "addb %b1,%0"
 			     :"=m" (*__xg(ptr))
 			     :"ir" (i), "m" (*__xg(ptr)));
 	return;
     case 2:
-	__asm__ __volatile__(LOCK_PREFIX "addw %w1,%0"
+	asm volatile(LOCK_PREFIX "addw %w1,%0"
 			     :"=m" (*__xg(ptr))
 			     :"ir" (i), "m" (*__xg(ptr)));
 	return;
     case 4:
-	__asm__ __volatile__(LOCK_PREFIX "addl %1,%0"
+	asm volatile(LOCK_PREFIX "addl %1,%0"
 			     :"=m" (*__xg(ptr))
 			     :"ir" (i), "m" (*__xg(ptr)));
 	return;
@@ -369,22 +369,22 @@ static inline void __atomic_add (int i, int *ptr, int size)
     switch (size)
     {
     case 1:
-	__asm__ __volatile__ (LOCK_PREFIX "addb %b1,%0"
+	asm volatile (LOCK_PREFIX "addb %b1,%0"
 			      :"=m" (*__xg (ptr))
 			      :"ir" (i), "m" (*__xg (ptr)));
 	return;
     case 2:
-	__asm__ __volatile__ (LOCK_PREFIX "addw %w1,%0"
+	asm volatile (LOCK_PREFIX "addw %w1,%0"
 			      :"=m" (*__xg (ptr))
 			      :"ir" (i), "m" (*__xg (ptr)));
 	return;
     case 4:
-	__asm__ __volatile__ (LOCK_PREFIX "addl %k1,%0"
+	asm volatile (LOCK_PREFIX "addl %k1,%0"
 			      :"=m" (*__xg (ptr))
 			      :"ir" (i), "m" (*__xg (ptr)));
 	return;
     case 8:
-	__asm__ __volatile__ (LOCK_PREFIX "addq %1,%0"
+	asm volatile (LOCK_PREFIX "addq %1,%0"
 			      :"=m" (*__xg (ptr))
 			      :"ir" (i), "m" (*__xg (ptr)));
 	return;
@@ -402,17 +402,17 @@ static inline void __atomic_inc (int *ptr, int size)
     switch (size)
     {
     case 1:
-	__asm__ __volatile__(LOCK_PREFIX "incb %b0"
+	asm volatile(LOCK_PREFIX "incb %b0"
 			     :"=m" (*__xg(ptr))
 			     :"m" (*__xg(ptr)));
 	return;
     case 2:
-	__asm__ __volatile__(LOCK_PREFIX "incw %w0"
+	asm volatile(LOCK_PREFIX "incw %w0"
 			     :"=m" (*__xg(ptr))
 			     :"m" (*__xg(ptr)));
 	return;
     case 4:
-	__asm__ __volatile__(LOCK_PREFIX "incl %0"
+	asm volatile(LOCK_PREFIX "incl %0"
 			     :"=m" (*__xg(ptr))
 			     :"m" (*__xg(ptr)));
 	return;
@@ -423,22 +423,22 @@ static inline void __atomic_inc (int *ptr, int size)
     switch (size)
     {
     case 1:
-	__asm__ __volatile__ (LOCK_PREFIX "incb %b0"
+	asm volatile (LOCK_PREFIX "incb %b0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
     case 2:
-	__asm__ __volatile__ (LOCK_PREFIX "incw %w0"
+	asm volatile (LOCK_PREFIX "incw %w0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
     case 4:
-	__asm__ __volatile__ (LOCK_PREFIX "incl %k0"
+	asm volatile (LOCK_PREFIX "incl %k0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
     case 8:
-	__asm__ __volatile__ (LOCK_PREFIX "incq %0"
+	asm volatile (LOCK_PREFIX "incq %0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
@@ -456,17 +456,17 @@ static inline void __atomic_dec (int *ptr, int size)
     switch (size)
     {
     case 1:
-	__asm__ __volatile__(LOCK_PREFIX "decb %b0"
+	asm volatile(LOCK_PREFIX "decb %b0"
 			     :"=m" (*__xg(ptr))
 			     :"m" (*__xg(ptr)));
 	return;
     case 2:
-	__asm__ __volatile__(LOCK_PREFIX "decw %w0"
+	asm volatile(LOCK_PREFIX "decw %w0"
 			     :"=m" (*__xg(ptr))
 			     :"m" (*__xg(ptr)));
 	return;
     case 4:
-	__asm__ __volatile__(LOCK_PREFIX "decl %0"
+	asm volatile(LOCK_PREFIX "decl %0"
 			     :"=m" (*__xg(ptr))
 			     :"m" (*__xg(ptr)));
 	return;
@@ -477,22 +477,22 @@ static inline void __atomic_dec (int *ptr, int size)
     switch (size)
     {
     case 1:
-	__asm__ __volatile__ (LOCK_PREFIX "decb %b0"
+	asm volatile (LOCK_PREFIX "decb %b0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
     case 2:
-	__asm__ __volatile__ (LOCK_PREFIX "decw %w0"
+	asm volatile (LOCK_PREFIX "decw %w0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
     case 4:
-	__asm__ __volatile__ (LOCK_PREFIX "decl %k0"
+	asm volatile (LOCK_PREFIX "decl %k0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
     case 8:
-	__asm__ __volatile__ (LOCK_PREFIX "decq %0"
+	asm volatile (LOCK_PREFIX "decq %0"
 			      :"=m" (*__xg (ptr))
 			      :"m" (*__xg (ptr)));
 	return;
@@ -508,33 +508,33 @@ static inline void __atomic_dec (int *ptr, int size)
 #define ATOMIC_INC(ptr) (__atomic_inc ((ptr), sizeof(*ptr)))
 #define ATOMIC_DEC(ptr) (__atomic_dec ((ptr), sizeof(*ptr)))
 
-#endif //REMOVE_THIS
+#endif /* REMOVE_THIS */
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 
 #ifdef HAVE_GCC_ASM_AND_X86_SFENCE
-#define MPID_NEM_WRITE_BARRIER() __asm__ __volatile__  ( "sfence" ::: "memory" )
-#else // HAVE_GCC_ASM_AND_X86_SFENCE
+#define MPID_NEM_WRITE_BARRIER() asm volatile  ( "sfence" ::: "memory" )
+#else /* HAVE_GCC_ASM_AND_X86_SFENCE */
 #define MPID_NEM_WRITE_BARRIER()
-#endif // HAVE_GCC_ASM_AND_X86_SFENCE
+#endif /* HAVE_GCC_ASM_AND_X86_SFENCE */
 
 #ifdef HAVE_GCC_ASM_AND_X86_LFENCE
 /*
-  #define MPID_NEM_READ_BARRIER() __asm__ __volatile__  ( ".byte 0x0f, 0xae, 0xe8" ::: "memory" ) */
-#define MPID_NEM_READ_BARRIER() __asm__ __volatile__  ( "lfence" ::: "memory" )
-#else // HAVE_GCC_ASM_AND_X86_LFENCE
+  #define MPID_NEM_READ_BARRIER() asm volatile  ( ".byte 0x0f, 0xae, 0xe8" ::: "memory" ) */
+#define MPID_NEM_READ_BARRIER() asm volatile  ( "lfence" ::: "memory" )
+#else /* HAVE_GCC_ASM_AND_X86_LFENCE */
 #define MPID_NEM_READ_BARRIER()
-#endif // HAVE_GCC_ASM_AND_X86_LFENCE
+#endif /* HAVE_GCC_ASM_AND_X86_LFENCE */
 
 
 #ifdef HAVE_GCC_ASM_AND_X86_MFENCE
 /*
-  #define MPID_NEM_READ_WRITE_BARRIER() __asm__ __volatile__  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )
+  #define MPID_NEM_READ_WRITE_BARRIER() asm volatile  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )
 */
-#define MPID_NEM_READ_WRITE_BARRIER() __asm__ __volatile__  ( "mfence" ::: "memory" )
-#else // HAVE_GCC_ASM_AND_X86_MFENCE
+#define MPID_NEM_READ_WRITE_BARRIER() asm volatile  ( "mfence" ::: "memory" )
+#else /* HAVE_GCC_ASM_AND_X86_MFENCE */
 #define MPID_NEM_READ_WRITE_BARRIER()
-#endif // HAVE_GCC_ASM_AND_X86_MFENCE
+#endif /* HAVE_GCC_ASM_AND_X86_MFENCE */
 
 #elif defined(HAVE_MASM_AND_X86)
 #define MPID_NEM_WRITE_BARRIER()
@@ -545,7 +545,7 @@ static inline void __atomic_dec (int *ptr, int size)
 #define MPID_NEM_WRITE_BARRIER()
 #define MPID_NEM_READ_BARRIER()
 #define MPID_NEM_READ_WRITE_BARRIER()
-#endif // HAVE_GCC_AND_PENTIUM_ASM
+#endif /* HAVE_GCC_AND_PENTIUM_ASM */
 
 
-#endif // MPID_NEM_ATOMICS_H
+#endif /* MPID_NEM_ATOMICS_H */

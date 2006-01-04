@@ -68,7 +68,7 @@ int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_Progress_poke(void);
 
-//#define BYPASS_PROGRESS
+/* #define BYPASS_PROGRESS */
 
 MPID_Request *MPIDI_CH3_Progress_poke_with_matching(int,int,MPID_Comm *comm,int,int*,void *,int, MPI_Datatype, MPI_Status *);
 MPID_Request *MPIDI_CH3_Progress_ipoke_with_matching(int,int,MPID_Comm *comm,int,int*,void *,int, MPI_Datatype, MPI_Status *);

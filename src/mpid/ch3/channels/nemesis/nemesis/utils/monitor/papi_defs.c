@@ -11,7 +11,7 @@ int DO_TEST = 0;
 
 int PAPI_events[NEVENTS]  = {PAPI_TOT_INS,
                              PAPI_TOT_CYC,
-                             //PAPI_RES_STL,
+                             /*PAPI_RES_STL, */
                              PAPI_L1_DCM,
                              PAPI_L1_ICM,
                              PAPI_L2_LDM,
@@ -19,14 +19,14 @@ int PAPI_events[NEVENTS]  = {PAPI_TOT_INS,
 
 char PAPI_msgs[NEVENTS][PAPI_MAX_STR_LEN] = {"Number of Instructions          ",
                                              "Number of Cycles                ",
-                                             //"Number of Cycles (stalled)      ",
+                                             /*"Number of Cycles (stalled)      ", */
                                              "Number of L1 Cache Data misses  ",
                                              "Number of L1 Cache Inst misses  ",
                                              "Number of L2 Cache load misses  ",
                                              "Number of L2 Cache store misses "};
 
 int        PAPI_EventSet         = PAPI_NULL ;
-//long_long  PAPI_overhead_values[NEVENTS]  = { 240, 1040, /*0,*/ 6, 1, 0, 0 };
+/*long_long  PAPI_overhead_values[NEVENTS]  = { 240, 1040, /*0,*/ 6, 1, 0, 0 }; */
 
 long_long  PAPI_dummy_values[NEVENTS]  = {(long_long) 0 };
 long_long  PAPI_values[NEVENTS]  = {(long_long) 0 };
@@ -42,7 +42,7 @@ long_long  PAPI_values10[NEVENTS] = {(long_long) 0 };
 long_long  PAPI_values11[NEVENTS] = {(long_long) 0 };
 long_long  PAPI_values12[NEVENTS] = {(long_long) 0 };
 
-//double  PAPI_overhead_vvalues[NEVENTS] = {240.0, 1013.0, /*0.0,*/ 12.0, 1.0, 0.0, 0.0};
+/*double  PAPI_overhead_vvalues[NEVENTS] = {240.0, 1013.0, /*0.0,*/ 12.0, 1.0, 0.0, 0.0}; */
 double  PAPI_overhead_vvalues[NEVENTS] = {222.0, 960.0, /*0.0,*/ 5.0, 2.0, 0.0, 0.0};
 long_long  PAPI_vvalues1[2][NEVENTS];
 long_long  PAPI_vvalues2[2][NEVENTS];
@@ -88,16 +88,16 @@ void my_papi_start( int myrank )
   for (index = 0 ; index < NEVENTS ; index ++)
     {
       PAPI_event_code_to_name(PAPI_events[index], EventCodeStr);
-      //fprintf(stderr,"Adding event %s ... ",EventCodeStr);
+      /*fprintf(stderr,"Adding event %s ... ",EventCodeStr); */
       if (PAPI_add_event(PAPI_EventSet,PAPI_events[index]) != PAPI_OK)
 	exit(1);
-      //fprintf(stderr," DONE !\n");
+      /*fprintf(stderr," DONE !\n"); */
     }
-  //fprintf(stderr,"\n");
+  /*fprintf(stderr,"\n"); */
 
   if (PAPI_start(PAPI_EventSet) != PAPI_OK)
     exit(1);
-#endif //PAPI_MONITOR
+#endif /*PAPI_MONITOR */
 }
 
 void my_papi_close(void)
@@ -105,7 +105,7 @@ void my_papi_close(void)
 #ifdef PAPI_MONITOR
   PAPI_shutdown();
   fprintf(stderr,"PAPI library shutdown ... \n");
-#endif //PAPI_MONITOR
+#endif /*PAPI_MONITOR */
 }
 
 
@@ -148,4 +148,4 @@ PAPI_accum_var (int EventSet, long_long values[2][NEVENTS])
 
     return (PAPI_reset(EventSet));
 }
-#endif //PAPI_MONITOR
+#endif /*PAPI_MONITOR */

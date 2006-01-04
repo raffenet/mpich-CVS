@@ -2,30 +2,31 @@
 #define MPID_NEM_DEBUG_H
 #include <pm.h>
 
-//#define NDEBUG 1
+/*#define NDEBUG 1 */
 #include <assert.h>
 
-#define MY_DEBUG 0
-#if MY_DEBUG
+/*#define MY_DEBUG*/
+#ifdef MY_DEBUG
 #define printf_d printf
 #else
 #define printf_d(x...) do { } while (0)
 #endif
 
-#define YIELD_IN_SKIP 0
-#if YIELD_IN_SKIP
+/*#define YIELD_IN_SKIP*/
+#ifdef YIELD_IN_SKIP
 #define SKIP sched_yield()
 #warning "SKIP is sched_yield"
-#else 
+#else /* YIELD_IN_SKIP */
 #define SKIP do{}while(0)
-//#warning "SKIP is do ...while"
-#endif
+/*#warning "SKIP is do ...while" */
+#endif /* YIELD_IN_SKIP */
 
-#if HOLD_ON_ERROR
+/* #define HOLD_ON_ERROR */
+#ifdef HOLD_ON_ERROR
 #define MAYBE_HOLD_ON_ERROR(x) while(1)
-#else
+#else /* HOLD_ON_ERROR */
 #define MAYBE_HOLD_ON_ERROR(x) x
-#endif
+#endif /* HOLD_ON_ERROR */
 
 #define MAX_ERR_STR_LEN 256
 extern char MPID_nem_err_str[MAX_ERR_STR_LEN];
@@ -54,10 +55,10 @@ extern char MPID_nem_err_str[MAX_ERR_STR_LEN];
     MAYBE_HOLD_ON_ERROR (goto label);			\
 } while (0)
 
-#define FATAL_ERROR(err...) do {								\
-    snprintf (MPID_nem_err_str, MAX_ERR_STR_LEN, err);						\
+#define FATAL_ERROR(err...) do {									\
+    snprintf (MPID_nem_err_str, MAX_ERR_STR_LEN, err);							\
     printf ("%s FATAL ERROR (%s:%d) %s\n", MPID_nem_hostname, __FILE__, __LINE__, MPID_nem_err_str);	\
-    MAYBE_HOLD_ON_ERROR (exit (-1));								\
+    MAYBE_HOLD_ON_ERROR (exit (-1));									\
 } while (0)
 
 #define FATAL_PERROR(err...) do {			\

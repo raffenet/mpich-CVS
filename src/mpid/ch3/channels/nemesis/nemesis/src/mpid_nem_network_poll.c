@@ -2,7 +2,7 @@
 #include "gm_module.h"
 #include "tcp_module.h"
 
-//static int count = 0;
+/*static int count = 0; */
 
 void
 MPID_nem_network_poll( int in_or_out )

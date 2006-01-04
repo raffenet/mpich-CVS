@@ -73,7 +73,7 @@ main() {
 #define __RDTSC_H
 #include <stdlib.h>
 #include <stdio.h>
-//#include "asm/msr.h"
+/*#include "asm/msr.h" */
 #define rdtsc(x) asm volatile("rdtsc" : "=A" (x))
 
 #define TIME_INIT do {__cpuMHz = SetMHz();} while(0)
