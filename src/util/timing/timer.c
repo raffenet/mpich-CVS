@@ -17,7 +17,7 @@
 
 /* global variables */
 
-#if (USE_LOGGING == MPID_LOGGING_RLOG)
+#if defined(MPID_LOGGING_RLOG) && (USE_LOGGING == MPID_LOGGING_RLOG)
 /* FIXME: This name needs to be changed to ensure no conflicts with 
    user-defined globals */
 RLOG_Struct *g_pRLOG = NULL;
@@ -124,7 +124,7 @@ static unsigned long random_color(unsigned char *r, unsigned char *g,
 }
 
 /* This section of code is for the RLOG logging library */
-#if (USE_LOGGING == MPID_LOGGING_RLOG)
+#if defined(MPID_LOGGING_RLOG) && (USE_LOGGING == MPID_LOGGING_RLOG)
 
 #define MAX_RANDOM_COLOR_STR 40
 static char random_color_str[MAX_RANDOM_COLOR_STR];
