@@ -47,6 +47,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->comm = comm;       /* dup'ed in MPI_File_open */
     fd->filename = ADIOI_Strdup(filename);
     fd->file_system = file_system;
+    fd->fs_ptr = NULL;
 
     /* TODO: VERIFY THAT WE DON'T NEED TO ALLOCATE THESE, THEN DON'T. */
     fd->fns = (ADIOI_Fns *) ADIOI_Malloc(sizeof(ADIOI_Fns));
@@ -111,9 +112,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	MPI_Info_set(fd->info, "cb_nodes", value);
 	ADIOI_Free(value);
     }
-/* bcast the rank map (could do an allgather above and avoid
- * this...would that really be any better?)
- */
+
     ADIOI_cb_bcast_rank_map(fd);
     if (fd->hints->cb_nodes <= 0) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
