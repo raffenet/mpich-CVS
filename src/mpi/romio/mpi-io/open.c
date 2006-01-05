@@ -223,7 +223,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
            indiv. file pointer already set to end of file in ADIO_Open. 
            Here file view is just bytes. */
 	if ((*fh)->access_mode & MPI_MODE_APPEND) {
-	    if ((*fh)->io_worker)  /* only one person need set the sharedfp */
+	    if (rank == (*fh)->hints->ranklist[0])  /* only one person need set the sharedfp */
 		    ADIO_Set_shared_fp(*fh, (*fh)->fp_ind, &error_code);
 	    MPI_Barrier(dupcomm);
 	}
