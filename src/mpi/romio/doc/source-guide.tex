@@ -240,7 +240,7 @@ standard but do not allow for overlap of I/O and computation or communication.
 These are used in cases where AIO support is otherwise unavailable or
 unimplemented.
 
-The final category of generic functions are the "naïve" functions (e.g.
+The final category of generic functions are the "naïve" functions (e.g.
 ADIOI\_GEN\_WriteStrided\_naive in adio/common/ad\_write\_str\_naive.c).  These
 functions avoid the use of certain optimizations, such as data sieving.
 
@@ -289,9 +289,26 @@ continue to be serviced by the process making the call.
 
 ... how implemented ...
 
-Aggregators are referenced by their rank in the communicator used to open the
-file.  These ranks are stored in fd->hints->ranklist[].  Note that this could
-be a very big list...
+Rank 0 in the communicator opening a file \emph{always} processes the
+cb\_config\_list hint using ADIOI\_cb\_config\_list\_parse.  A previous call to
+ADIOI\_cb\_gather\_name\_array had collected the processor names from all hosts
+into an array that is cached on the communicator (so we don't have to gather
+it more than once).  This creates an ordered array of ranks (relative to the
+communicator used to open the file) that will be aggregators.  This array is
+distributed to all processes using ADIOI\_cb\_bcast\_rank\_map.  Aggregators are
+referenced by their rank in the communicator used to open the file.  These
+ranks are stored in fd->hints->ranklist[].
+
+Note that this could be a big list for very large runs.  If we were to
+restrict aggregators to a rank order subset, we could use a bitfield instead.
+
+If the user specified hints and met conditions for deferred open, then a
+separate communicator is also set up (fd->agg\_comm) that contains all the
+aggregators, in order of their original ranks (not their order in the rank
+list).  Otherwise this communicator is set to MPI\_COMM\_NULL, and in any case
+it is set to this for non-aggregators.  This communicator is currently only
+used at ADIO\_Close (adio/common/ad\_close.c), but could be useful in two-phase
+I/O as well (discussed later).
 
 
 \subsection{Deferred Open}
@@ -315,6 +332,14 @@ function.
 ... how implemented ...
 
 \subsection{Two-Phase I/O}
+
+Two-Phase I/O is a technique for increasing the efficiency of I/O operations
+by reordering data between processes, either before writes, or after reads.
+
+ROMIO implements two-phase I/O as part of the generic implementations of
+ADIO\_WriteStridedColl and ADIO\_ReadStridedColl.  These implementations in turn
+rely heavily on the aggregation code to determine what processes will actually
+perform I/O on behalf of the application as a whole.
 
 
 
@@ -346,6 +371,8 @@ value in a separate file...
 Note that the ROMIO team has devised a portable method for implementing shared
 file pointers using only MPI-1 and MPI-2 functions.  However, this method has
 not yet been implemented in ROMIO.
+
+file name is selected at end of mpi-io/open.c.
 
 \subsection{Error Handling}
 
