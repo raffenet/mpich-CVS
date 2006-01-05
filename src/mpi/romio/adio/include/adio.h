@@ -326,7 +326,7 @@ void ADIO_End(int *error_code);
 MPI_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
 		   int file_system, ADIOI_Fns *ops,
 		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-		   MPI_Datatype filetype, int iomode, 
+		   MPI_Datatype filetype, 
 		   MPI_Info info, int perm, int *error_code);
 void ADIO_ImmediateOpen(ADIO_File fd, int *error_code);
 void ADIO_Close(ADIO_File fd, int *error_code);
