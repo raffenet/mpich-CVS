@@ -192,7 +192,8 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     MPI_Type_struct(2, lens, offsets, types, &open_status_type);
     MPI_Type_commit(&open_status_type);
 
-    MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 0, fd->comm);
+    MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 
+	    fd->hints->ranklist[0] , fd->comm);
     MPI_Type_free(&open_status_type);
 
     /* --BEGIN ERROR HANDLING-- */

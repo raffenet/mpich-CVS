@@ -135,7 +135,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
      * communicator until we try to do independent IO */
     fd->agg_comm = MPI_COMM_NULL;
     fd->is_open = 0;
-    fd->io_worker = 0;
     if (fd->hints->deferred_open && 
 		    ADIOI_Uses_generic_read(fd) &&
 		    ADIOI_Uses_generic_write(fd) ) {
@@ -147,18 +146,11 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 		    MPI_Comm_split(fd->comm, 1, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
 		    MPI_Comm_rank(fd->agg_comm, &agg_rank);
-		    if (agg_rank == 0) {
-			    fd->io_worker = 1;
-		    }
 	    } else {
 		    MPI_Comm_split(fd->comm, MPI_UNDEFINED, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
 	    }
 
-    } else {
-	    if (rank == 0) {
-		    fd->io_worker = 1;
-	    }
     }
 
     orig_amode_excl = access_mode;
@@ -171,15 +163,16 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	   check this. Otherwise, if all processes try to check and the file
 	   does not exist, one process will create the file and others who
 	   reach later will return error. */
-       if(fd->io_worker) {
+       if(rank == fd->hints->ranklist[0]) {
     		fd->access_mode = access_mode;
     		(*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
-		MPI_Bcast(error_code, 1, MPI_INT, 0, fd->comm);
+		MPI_Bcast(error_code, 1, MPI_INT, \
+				fd->hints->ranklist[0], fd->comm);
 		/* if no error, close the file and reopen normally below */
 		if (*error_code == MPI_SUCCESS) 
 			(*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
        }
-       else MPI_Bcast(error_code, 1, MPI_INT, 0, fd->comm);
+       else MPI_Bcast(error_code, 1, MPI_INT, fd->hints->ranklist[0], fd->comm);
 
        if (*error_code != MPI_SUCCESS) {
            goto fn_exit;
