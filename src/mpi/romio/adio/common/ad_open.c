@@ -24,7 +24,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     MPI_File mpi_fh;
     ADIO_File fd;
     ADIO_cb_name_array array;
-    int orig_amode_excl, orig_amode_wronly, err, rank, procs, agg_rank;
+    int orig_amode_excl, orig_amode_wronly, err, rank, procs;
     char *value;
     static char myname[] = "ADIO_OPEN";
     int rank_ct, max_error_code;
@@ -49,9 +49,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->file_system = file_system;
     fd->fs_ptr = NULL;
 
-    /* TODO: VERIFY THAT WE DON'T NEED TO ALLOCATE THESE, THEN DON'T. */
-    fd->fns = (ADIOI_Fns *) ADIOI_Malloc(sizeof(ADIOI_Fns));
-    *fd->fns = *ops;
+    fd->fns = ops;
 
     fd->disp = disp;
     fd->split_coll_count = 0;
@@ -144,7 +142,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	    if (is_aggregator(rank, fd)) {
 		    MPI_Comm_split(fd->comm, 1, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
-		    MPI_Comm_rank(fd->agg_comm, &agg_rank);
 	    } else {
 		    MPI_Comm_split(fd->comm, MPI_UNDEFINED, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
