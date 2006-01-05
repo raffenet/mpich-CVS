@@ -201,7 +201,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 /* use default values for disp, etype, filetype */    
 
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, fsops, amode, 0,
-		    MPI_BYTE, MPI_BYTE, 0, info, ADIO_PERM_NULL, &error_code);
+		    MPI_BYTE, MPI_BYTE, info, ADIO_PERM_NULL, &error_code);
 
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS) {

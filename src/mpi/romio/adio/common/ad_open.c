@@ -20,7 +20,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 		   ADIOI_Fns *ops,
 		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
 		   MPI_Datatype filetype,
-		   int iomode /* ignored */,
 		   MPI_Info info, int perm, int *error_code)
 {
     MPI_File mpi_fh;
@@ -32,8 +31,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     int rank_ct, max_error_code;
     int *tmp_ranklist;
     MPI_Comm aggregator_comm = MPI_COMM_NULL; /* just for deferred opens */
-
-    ADIOI_UNREFERENCED_ARG(iomode);
 
     *error_code = MPI_SUCCESS;
 
