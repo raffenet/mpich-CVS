@@ -49,7 +49,7 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
     ret = PVFS_sys_lookup(fs_id, pvfs_name,
 	    &(pvfs2_fs->credentials), &resp_lookup, PVFS2_LOOKUP_LINK_FOLLOW);
     if ( (ret < 0) ) { /* XXX: check what the error was */
-	if (access_mode & MPI_MODE_CREATE)  {
+	if (access_mode & ADIO_CREATE)  {
 	    ret = PVFS_sys_getparent(fs_id, pvfs_name,
 		    &(pvfs2_fs->credentials), &resp_getparent); 
 	    if (ret < 0) {
@@ -79,7 +79,7 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 	    o_status->error = ret;
 	    return;
 	}
-    } else if (access_mode & MPI_MODE_EXCL) {
+    } else if (access_mode & ADIO_EXCL) {
 	/* lookup should not succeed if opened with EXCL */
 	o_status->error = -1; /* XXX: what should it be? */
 	return;
@@ -173,7 +173,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
      * That's because our ADIO_Open only calls this open from that aggregator
      * with that flag.
      */
-    if ((fd->access_mode & MPI_MODE_EXCL)) {
+    if ((fd->access_mode & ADIO_EXCL)) {
 	if (o_status.error == 0)
 	{
 	    *error_code = MPI_SUCCESS;

@@ -157,7 +157,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     /* we used to do this EXCL|CREAT workaround in MPI_File_open, but if we are
      * doing deferred open, we more easily know who the aggregators are in
      * ADIO_Open */
-    if ((access_mode & MPI_MODE_CREATE) && (access_mode & MPI_MODE_EXCL)) {
+    if ((access_mode & ADIO_CREATE) && (access_mode & ADIO_EXCL)) {
        /* the open should fail if the file exists. Only *1* process should
 	   check this. Otherwise, if all processes try to check and the file
 	   does not exist, one process will create the file and others who
@@ -178,7 +178,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
        } 
        else {
            /* turn off EXCL for real open */
-           access_mode = access_mode ^ MPI_MODE_EXCL; 
+           access_mode = access_mode ^ ADIO_EXCL; 
        }
     }
 
@@ -240,7 +240,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
             }
         }
 
-	if (fd->fns) ADIOI_Free(fd->fns);
 	if (fd->filename) ADIOI_Free(fd->filename);
 	if (fd->info != MPI_INFO_NULL) MPI_Info_free(&(fd->info));
 	ADIOI_Free(fd);

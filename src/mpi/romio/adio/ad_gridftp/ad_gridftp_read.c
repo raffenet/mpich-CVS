@@ -115,7 +115,7 @@ void ADIOI_GRIDFTP_ReadContig(ADIO_File fd, void *buf, int count,
     globus_off_t goff;
     globus_result_t result;
 
-    if ( fd->access_mode&MPI_MODE_WRONLY )
+    if ( fd->access_mode&ADIO_WRONLY )
 	{
 	    *error_code=MPIR_ERR_MODE_WRONLY;
 	    return;
@@ -211,7 +211,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
     globus_result_t result;
     globus_byte_t *tmp;
 
-    if ( fd->access_mode&MPI_MODE_WRONLY )
+    if ( fd->access_mode&ADIO_WRONLY )
 	{
 	    *error_code=MPIR_ERR_MODE_WRONLY;
 	    return;

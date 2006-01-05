@@ -65,7 +65,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
     MPI_Comm_rank(fd->comm, &myrank);
 
     /* Sanity check */
-    if ( fd->access_mode&MPI_MODE_RDONLY )
+    if ( fd->access_mode&ADIO_RDONLY )
 	{
 	    FPRINTF(stderr,"%s:  attempt to resize read-only file %s!\n",
 		    myname,fd->filename);

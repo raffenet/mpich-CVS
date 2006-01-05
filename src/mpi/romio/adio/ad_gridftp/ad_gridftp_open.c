@@ -108,7 +108,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	globus_err_handler("globus_ftp_client_handleattr_set_cache_all",myname,result);
 
     /* Assume that it's safe to cache a file if it's read-only */
-    if ( (fd->access_mode&MPI_MODE_RDONLY) &&
+    if ( (fd->access_mode&ADIO_RDONLY) &&
 	 (result=globus_ftp_client_handleattr_add_cached_url(&hattr,fd->filename))!=GLOBUS_SUCCESS )
 	globus_err_handler("globus_ftp_client_handleattr_add_cached_url",myname,result);
 
@@ -128,7 +128,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
     */
 
     /* Set append mode if necessary */
-    if ( (fd->access_mode&MPI_MODE_APPEND) && 
+    if ( (fd->access_mode&ADIO_APPEND) && 
 	 ((result=globus_ftp_client_operationattr_set_append(&(oattr[fd->fd_sys]),GLOBUS_TRUE))!=GLOBUS_SUCCESS) )
 	globus_err_handler("globus_ftp_client_operationattr_set_append",myname,result);
 
@@ -278,8 +278,8 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
     MPI_Bcast(&file_exists,1,MPI_INT,0,fd->comm);
 
     /* It turns out that this is handled by MPI_File_open() directly */
-    if ( (file_exists!=GLOBUS_TRUE) && (fd->access_mode&MPI_MODE_CREATE) &&
-	 !(fd->access_mode&MPI_MODE_EXCL) && !(fd->access_mode&MPI_MODE_RDONLY) )
+    if ( (file_exists!=GLOBUS_TRUE) && (fd->access_mode&ADIO_CREATE) &&
+	 !(fd->access_mode&ADIO_EXCL) && !(fd->access_mode&ADIO_RDONLY) )
 	{
 	    if ( myrank==0 )
 		{
@@ -324,7 +324,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 		}
 	    MPI_Barrier(fd->comm);
 	}
-    else if ( (fd->access_mode&MPI_MODE_EXCL) && (file_exists==GLOBUS_TRUE) )
+    else if ( (fd->access_mode&ADIO_EXCL) && (file_exists==GLOBUS_TRUE) )
 	{
 	    fd->fd_sys = -1;
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
@@ -332,7 +332,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 			    "**io", 0);
 	    return;
 	}
-    else if ( (fd->access_mode&MPI_MODE_RDONLY) && (file_exists!=GLOBUS_TRUE) )
+    else if ( (fd->access_mode&ADIO_RDONLY) && (file_exists!=GLOBUS_TRUE) )
 	{
 	    if ( myrank==0 )
 		{

@@ -117,7 +117,7 @@ void ADIOI_GRIDFTP_WriteContig(ADIO_File fd, void *buf, int count,
     globus_off_t goff;
     globus_result_t result;
 
-    if ( fd->access_mode&MPI_MODE_RDONLY )
+    if ( fd->access_mode&ADIO_RDONLY )
 	{
 	    *error_code=MPI_ERR_AMODE;
 	    return;
@@ -384,7 +384,7 @@ void ADIOI_GRIDFTP_WriteStrided(ADIO_File fd, void *buf, int count,
 #ifdef GRIDFTP_USE_GENERIC_STRIDED
     int myrank, nprocs;
 
-    if ( fd->access_mode&MPI_MODE_RDONLY )
+    if ( fd->access_mode&ADIO_RDONLY )
 	{
 	    *error_code=MPI_ERR_AMODE;
 	    return;
