@@ -137,12 +137,11 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	return;
     }
 
+    /* currently everyone gets their own credentials */
     ADIOI_PVFS2_makecredentials(&(pvfs2_fs->credentials));
 
-    /* we only have to do this on one node. we'll broadcast the handle to
-     * everyone else in the communicator */
-
-    if (rank == fd->hints->ranklist[0]) {
+    /* one process resolves name and will later bcast to others */
+    if (rank == fd->hints->ranklist[0] && fd->fs_ptr == NULL) {
 	/* given the filename, figure out which pvfs filesystem it is on */
 	ret = PVFS_util_resolve(fd->filename, &cur_fs, 
 		pvfs_path, PVFS_NAME_MAX);
@@ -155,6 +154,10 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 		    fd->access_mode, fd->hints->striping_factor, 
 		    pvfs2_fs, &o_status);
 	}
+
+	/* store credentials and object reference in fd */
+	pvfs2_fs->object_ref = o_status.object_ref;
+	fd->fs_ptr = pvfs2_fs;
     }
 
     /* NOTE: if MPI_MODE_EXCL was set, ADIO_Open will call
@@ -162,17 +165,24 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
      * one procesor on a communicator broadcasts to no listners.  
      *
      * Since ADIO_Open will close the file and call ADIOI_PVFS2_Open again (but
-     * w/o EXCL), we can bail out right here and return early */
+     * w/o EXCL), we can bail out right here and return early
+     *
+     * Assertion: if MPI_MODE_EXCL is passed, then
+     *            rank == fd->hints->ranklist[0].
+     *
+     * That's because our ADIO_Open only calls this open from that aggregator
+     * with that flag.
+     */
     if ((fd->access_mode & MPI_MODE_EXCL)) {
 	if (o_status.error == 0)
 	{
 	    *error_code = MPI_SUCCESS;
-	    fd->fs_ptr = pvfs2_fs;
 	}
 	else
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    ADIOI_Free(pvfs2_fs);
+	    fd->fs_ptr = NULL;
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					       MPIR_ERR_RECOVERABLE,
 					       myname, __LINE__,
@@ -192,8 +202,13 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     MPI_Type_struct(2, lens, offsets, types, &open_status_type);
     MPI_Type_commit(&open_status_type);
 
-    MPI_Bcast(MPI_BOTTOM, 1, open_status_type, 
-	    fd->hints->ranklist[0] , fd->comm);
+    /* Assertion: if we hit this Bcast, then all processes collectively
+     *            called this open.
+     *
+     * That's because deferred open never happens with PVFS2.
+     */
+    MPI_Bcast(MPI_BOTTOM, 1, open_status_type, fd->hints->ranklist[0],
+	      fd->comm);
     MPI_Type_free(&open_status_type);
 
     /* --BEGIN ERROR HANDLING-- */
