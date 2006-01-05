@@ -76,6 +76,18 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->info = MPI_INFO_NULL;
     ADIO_SetInfo(fd, info, &err);
 
+     /* deferred open: 
+     * we can only do this optimization if 'fd->hints->deferred_open' is set
+     * (which means the user hinted 'no_indep_rw' and collective buffering).
+     * Furthermore, we only do this if our collective read/write routines use
+     * our generic function, and not an fs-specific routine (we can defer opens
+     * only if we use our aggreagation code). */
+    if (fd->hints->deferred_open && 
+		    !(ADIOI_Uses_generic_read(fd) \
+			    || ADIOI_Uses_generic_write(fd))) {
+	    fd->hints->deferred_open == 0;
+    }
+
 /* gather the processor name array if we don't already have it */
 
 /* this has to be done here so that we can cache the name array in both
@@ -120,21 +132,14 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
         goto fn_exit;
     }
 
-    /* deferred open: 
-     * we can only do this if 'fd->hints->deferred_open' is set (which means
-     * the user hinted 'no_indep_rw' and collective buffering).  Furthermore,
-     * we only do this if our collective read/write routines use our generic
-     * function, and not an fs-specific routine (we can defer opens only if we
-     * use our aggreagation code). 
-     *
-     * if we are an aggregator, create a new communicator.  we'll use this
-     * aggregator communicator for opens and closes.  otherwise, we have a NULL
-     * communicator until we try to do independent IO */
+
+     /* deferred open: if we are an aggregator, create a new communicator.
+      * we'll use this aggregator communicator for opens and closes.
+      * otherwise, we have a NULL communicator until we try to do independent
+      * IO */
     fd->agg_comm = MPI_COMM_NULL;
     fd->is_open = 0;
-    if (fd->hints->deferred_open && 
-		    ADIOI_Uses_generic_read(fd) &&
-		    ADIOI_Uses_generic_write(fd) ) {
+    if (fd->hints->deferred_open )
 	    /* MPI_Comm_split will create a communication group of aggregators.
 	     * for non-aggregators it will return MPI_COMM_NULL .  we rely on
 	     * fd->agg_comm == MPI_COMM_NULL for non-aggregators in several
@@ -146,7 +151,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 		    MPI_Comm_split(fd->comm, MPI_UNDEFINED, 0, &aggregator_comm);
 		    fd->agg_comm = aggregator_comm;
 	    }
-
     }
 
     orig_amode_excl = access_mode;
@@ -180,9 +184,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     }
 
     /* if we are doing deferred open, non-aggregators should return now */
-    if (fd->hints->deferred_open && 
-		    ADIOI_Uses_generic_read(fd) &&
-		    ADIOI_Uses_generic_write(fd) ) {
+    if (fd->hints->deferred_open ) {
         if (fd->agg_comm == MPI_COMM_NULL) {
             /* we might have turned off EXCL for the aggregators.
              * restore access_mode that non-aggregators get the right
@@ -229,9 +231,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
         
             /* in the deferred open case, only those who have actually
                opened the file should close it */
-            if (fd->hints->deferred_open && 
-                ADIOI_Uses_generic_read(fd) &&
-                ADIOI_Uses_generic_write(fd) ) {
+            if (fd->hints->deferred_open)  {
                 if (fd->agg_comm != MPI_COMM_NULL) {
                     (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
                 }
