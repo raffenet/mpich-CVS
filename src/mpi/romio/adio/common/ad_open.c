@@ -12,6 +12,8 @@
 #include "mpio.h"
 
 static int is_aggregator(int rank, ADIO_File fd);
+static int uses_generic_read(ADIO_File fd);
+static int uses_generic_write(ADIO_File fd);
 
 MPI_File ADIO_Open(MPI_Comm orig_comm,
 		   MPI_Comm comm, char *filename, int file_system,
@@ -83,9 +85,9 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
      * our generic function, and not an fs-specific routine (we can defer opens
      * only if we use our aggreagation code). */
     if (fd->hints->deferred_open && 
-		    !(ADIOI_Uses_generic_read(fd) \
-			    || ADIOI_Uses_generic_write(fd))) {
-	    fd->hints->deferred_open == 0;
+		    !(uses_generic_read(fd) \
+			    && uses_generic_write(fd))) {
+	    fd->hints->deferred_open = 0;
     }
 
 /* gather the processor name array if we don't already have it */
@@ -139,7 +141,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
       * IO */
     fd->agg_comm = MPI_COMM_NULL;
     fd->is_open = 0;
-    if (fd->hints->deferred_open )
+    if (fd->hints->deferred_open) {
 	    /* MPI_Comm_split will create a communication group of aggregators.
 	     * for non-aggregators it will return MPI_COMM_NULL .  we rely on
 	     * fd->agg_comm == MPI_COMM_NULL for non-aggregators in several
@@ -274,4 +276,29 @@ int is_aggregator(int rank, ADIO_File fd ) {
                         return 1;
         }
         return 0;
+}
+
+/* 
+ * we special-case TESTFS because all it does is wrap logging info around GEN 
+ */
+static int uses_generic_read(ADIO_File fd)
+{
+    ADIOI_Fns *fns = fd->fns;
+    if (fns->ADIOI_xxx_ReadStridedColl == ADIOI_GEN_ReadStridedColl || 
+        fd->file_system == ADIO_TESTFS )
+    {
+        return 1;
+    }
+    return 0;
+}
+
+static int uses_generic_write(ADIO_File fd)
+{
+    ADIOI_Fns *fns = fd->fns;
+    if (fns->ADIOI_xxx_WriteStridedColl == ADIOI_GEN_WriteStridedColl ||
+        fd->file_system == ADIO_TESTFS )
+    {
+        return 1;
+    }
+    return 0;
 }
