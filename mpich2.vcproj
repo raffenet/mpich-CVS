@@ -2835,9 +2835,6 @@ copy $(ConfigurationName)\mpich2ib.lib lib\mpich2ib.lib
 				RelativePath=".\src\mpid\common\datatype\gen_type_vector.c">
 			</File>
 			<File
-				RelativePath=".\src\mpi\romio\adio\common\gencheck.c">
-			</File>
-			<File
 				RelativePath=".\src\mpi\rma\get.c">
 			</File>
 			<File
