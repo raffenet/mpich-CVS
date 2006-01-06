@@ -16,3 +16,5 @@ localdefs
 *Debug*
 *Release*
 *.cache
+.deps
+.state-cache
