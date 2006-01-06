@@ -109,7 +109,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
      * doing the error checking.  define a struct for both the object reference
      * and the error code to broadcast to all the processors */
 
-    open_status o_status;
+    open_status o_status = {0, {0, 0}};
     MPI_Datatype open_status_type;
     MPI_Datatype types[2] = {MPI_INT, MPI_BYTE};
     int lens[2] = {1, sizeof(PVFS_object_ref)};
