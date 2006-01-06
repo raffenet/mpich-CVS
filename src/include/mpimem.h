@@ -19,6 +19,7 @@ extern "C" {
 /* style: allow:free:2 sig:0 */
 /* style: allow:strdup:2 sig:0 */
 /* style: allow:calloc:2 sig:0 */
+/* style: allow:realloc:1 sig:0 */
 /* style: allow:alloca:1 sig:0 */
 /* style: define:__strdup:1 sig:0 */
 /* style: define:strdup:1 sig:0 */
