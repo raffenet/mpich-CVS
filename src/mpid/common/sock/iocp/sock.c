@@ -472,11 +472,11 @@ int MPIDU_Sock_init()
     szRange = getenv("MPICH_PORT_RANGE");
     if (szRange != NULL)
     {
-	szNum = strtok(szRange, ",."); /* tokenize both min,max and min..max */
+	szNum = strtok(szRange, ",.:"); /* tokenize min,max and min..max and min:max */
 	if (szNum)
 	{
 	    g_min_port = atoi(szNum);
-	    szNum = strtok(NULL, ",.");
+	    szNum = strtok(NULL, ",.:");
 	    if (szNum)
 	    {
 		g_max_port = atoi(szNum);
