@@ -88,7 +88,7 @@ static int printFailure = 0;
 /* Note that envp is common but not standard */
 int main( int argc, char *argv[], char *envp[] )
 {
-    int          rc, erc, signaled;
+    int          rc, erc = 0, signaled;
     int          reason;
     SetupInfo    s;
     int          fdPMI;
@@ -192,10 +192,12 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 
     return 0;
 }
-int myexec( void *predata, void *data, ProcessState *pState, 
-	    char *argv[] )
+
+/*
+int myexec( void *predata, void *data, ProcessState *pState, char *argv[] )
 {
 }
+*/
 
 /* Close one side of the pipe pair and register a handler for the I/O */
 int mypostamble( void *predata, void *data, ProcessState *pState )
@@ -223,7 +225,7 @@ int myspawn( ProcessWorld *pWorld, void *data )
 
     /* Fork Processes may call a routine that is passed s but not pWorld;
        this makes sure that all routines can access the current world */
-    s->pmiinfo.pWorld = pWorld;
+    s.pmiinfo.pWorld = pWorld;
 
     /* FIXME: This should be part of the PMI initialization in the clients */
     putenv( "PMI_SPAWNED=1" );
