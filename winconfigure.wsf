@@ -3031,6 +3031,8 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef HAVE_SYS_MSG_H */")
 				Case "HAVE_INET_PTON"
 					fout.WriteLine("/* #undef HAVE_INET_PTON */")
+				Case "_LARGE_FILES"
+					fout.WriteLine("/* #undef _LARGE_FILES */")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
