@@ -49,10 +49,10 @@ int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest);
 int MPID_nem_mpich2_send_header (void* buf, int size, int dest);
 int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
 int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest);
-int MPID_nem_mpich2_test_recv (MPID_nem_cell_t **cell, int *in_fbox);
-int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_t **cell, int *in_fbox, int timeout);
-int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_t **cell, int *in_fbox);
-int MPID_nem_mpich2_release_cell (MPID_nem_cell_t *cell);
+int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
+int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell);
 /* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPID_NEM_MPICH2_SUCCESS)
@@ -60,10 +60,10 @@ int MPID_nem_mpich2_release_cell (MPID_nem_cell_t *cell);
 int MPID_nem_ckpt_init (int ckpt_restart);
 void MPID_nem_ckpt_finalize (void);
 void MPID_nem_ckpt_maybe_take_checkpoint (void);
-void MPID_nem_ckpt_got_marker (MPID_nem_cell_t **cell, int *in_fbox);
-void MPID_nem_ckpt_log_message (MPID_nem_cell_t *cell);
+void MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+void MPID_nem_ckpt_log_message (MPID_nem_cell_ptr_t cell);
 void MPID_nem_ckpt_send_markers (void);
-int MPID_nem_ckpt_replay_message (MPID_nem_cell_t **cell);
+int MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell);
 void MPID_nem_ckpt_free_msg_log (void);
 
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank);

@@ -72,7 +72,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
     {
 	MPID_Request *sreq;
 	MPID_Request *rreq;
-	MPID_nem_cell_t     *cell;
+	MPID_nem_cell_ptr_t cell;
 	int           in_fbox;
 	MPIDI_VC_t   *vc;
 
@@ -269,7 +269,7 @@ MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID
 {
     int             mpi_errno = MPI_SUCCESS;
     MPID_Request   *rreq  = NULL;
-    MPID_nem_cell_t       *cell  = NULL;
+    MPID_nem_cell_ptr_t cell  = NULL;
     int             in_fbox;
     int             dt_contig;
     MPI_Aint        dt_true_lb;
@@ -836,7 +836,7 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 {
     int             mpi_errno = MPI_SUCCESS;
     MPID_Request   *rreq  = NULL;
-    MPID_nem_cell_t       *cell  = NULL;
+    MPID_nem_cell_ptr_t cell  = NULL;
     int             in_fbox;
     int             dt_contig;
     MPI_Aint        dt_true_lb;

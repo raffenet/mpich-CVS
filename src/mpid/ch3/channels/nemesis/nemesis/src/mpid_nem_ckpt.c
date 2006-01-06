@@ -147,7 +147,7 @@ MPID_nem_ckpt_maybe_take_checkpoint()
 }
 
 void
-MPID_nem_ckpt_got_marker (MPID_nem_cell_t **cell, int *in_fbox)
+MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int ret;
     int source;
@@ -247,7 +247,7 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_t **cell, int *in_fbox)
 }
 
 void
-MPID_nem_ckpt_log_message (MPID_nem_cell_t *cell)
+MPID_nem_ckpt_log_message (MPID_nem_cell_ptr_t cell)
 {
     int source;
     
@@ -293,11 +293,11 @@ MPID_nem_ckpt_send_markers()
 }
 
 int
-MPID_nem_ckpt_replay_message (MPID_nem_cell_t **cell)
+MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell)
 {
     assert (MPID_nem_ckpt_message_log);
 
-    *cell = (MPID_nem_cell_t *)MPID_nem_ckpt_message_log->ptr;
+    *cell = (MPID_nem_cell_ptr_t)MPID_nem_ckpt_message_log->ptr;
     (*cell)->pkt.header.type = MPID_NEM_PKT_CKPT_REPLAY;
     printf_dd ("%d: replaying message source = %d (%d) seno=%d\n", _rank, MPID_nem_ckpt_message_log->from, (*cell)->pkt.header.source,
 	       (*cell)->pkt.header.seqno);

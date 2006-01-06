@@ -3,6 +3,7 @@
 
 #include "mpid_nem_datatypes.h"
 #include "mpidi_ch3i_nemesis_conf.h"
+#include "mpi.h"
 
 /* #define MPID_NEM_CKPT_ENABLED */
 
@@ -25,23 +26,31 @@
 #define MPID_NEM_POLL_OUT     1
 
 #define MPID_NEM_ASYMM_NULL_VAL    64
-typedef unsigned int MPID_nem_addr_t;
+typedef MPI_Aint MPID_nem_addr_t;
 extern  char *MPID_nem_asymm_base_addr;
-extern  char *MPID_nem_asymm_null_var;
 
-#define MPID_NEM_ASYMM_NULL ((void *)0x0)
-/*#define MPID_NEM_ASYMM_NULL MPID_nem_asymm_null_var */
+#define MPID_NEM_REL_NULL (0x0)
+#define MPID_NEM_IS_REL_NULL(rel_ptr) ((rel_ptr).p == MPID_NEM_REL_NULL)
+#define MPID_NEM_SET_REL_NULL(rel_ptr) ((rel_ptr).p = MPID_NEM_REL_NULL)
+#define MPID_NEM_REL_ARE_EQUAL(rel_ptr1, rel_ptr2) ((rel_ptr1).p == (rel_ptr2).p)
 
 #ifndef MPID_NEM_SYMMETRIC_QUEUES
-#define MPID_NEM_REL_TO_ABS( ptr ) (( __typeof__((ptr)))(((char *)(ptr)) + ((MPID_nem_addr_t)(MPID_nem_asymm_base_addr))))
-#define MPID_NEM_ABS_TO_REL( ptr ) (( __typeof__((ptr)))(((char *)(ptr)) - ((MPID_nem_addr_t)(MPID_nem_asymm_base_addr))))
-#define MPID_NEM_SET_REL_NULL( ptr ) (((char *)(ptr)) == NULL ) ? (( __typeof__((ptr)))( MPID_NEM_ASYMM_NULL)) : MPID_NEM_ABS_TO_REL( ptr )
-#define MPID_NEM_SET_ABS_NULL( ptr ) (((char *)(ptr)) == ((char *)(MPID_NEM_ASYMM_NULL))) ? (( __typeof__((ptr))) 0 ) : MPID_NEM_REL_TO_ABS( ptr )
+
+static inline MPID_nem_cell_ptr_t MPID_NEM_REL_TO_ABS (MPID_nem_cell_rel_ptr_t r)
+{
+    return (MPID_nem_cell_ptr_t)(r.p + (MPID_nem_addr_t)MPID_nem_asymm_base_addr);
+}
+
+static inline MPID_nem_cell_rel_ptr_t MPID_NEM_ABS_TO_REL (MPID_nem_cell_ptr_t a)
+{
+    MPID_nem_cell_rel_ptr_t ret;
+    ret.p = (char *)a - (MPID_nem_addr_t)MPID_nem_asymm_base_addr;
+    return ret;
+}
+
 #else /*MPID_NEM_SYMMETRIC_QUEUES */
-#define MPID_NEM_REL_TO_ABS( ptr )   (ptr)
-#define MPID_NEM_ABS_TO_REL( ptr )   (ptr)
-#define MPID_NEM_SET_REL_NULL( ptr ) (ptr)
-#define MPID_NEM_SET_ABS_NULL( ptr ) (ptr)
+#define MPID_NEM_REL_TO_ABS(ptr) (ptr)
+#define MPID_NEM_ABS_TO_REL(ptr) (ptr)
 #endif /*MPID_NEM_SYMMETRIC_QUEUES */
 
 typedef struct MPID_nem_barrier

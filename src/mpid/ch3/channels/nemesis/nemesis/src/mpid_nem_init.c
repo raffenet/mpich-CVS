@@ -17,7 +17,6 @@ char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 #define ERROR(err...) ERROR_RET (-1, err)
 
 char *MPID_nem_asymm_base_addr;
-char *MPID_nem_asymm_null_var;
 
 int get_local_procs (int *num_local, int **local_procs, int *local_rank);
 int get_MPID_nem_key();
@@ -192,8 +191,8 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 
     my_pid = getpid();
     MPID_NEM_MEMCPY(&(((pid_t *)(MPID_nem_mem_region.seg[0].addr))[local_rank]),
-	   &my_pid,
-	   sizeof(pid_t));
+		    &my_pid,
+		    sizeof(pid_t));
    
     /* syncro part */  
     MPID_nem_barrier (num_local, local_rank);   
@@ -212,28 +211,29 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     */
 
     /* SHMEM QS */
-    MPID_nem_mem_region.Elements = (MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[1].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));    
+    MPID_nem_mem_region.Elements =
+	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[1].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));    
     MPID_nem_mem_region.FreeQ = (MPID_nem_queue_ptr_t *)MALLOC (num_processes * sizeof(MPID_nem_queue_ptr_t));
-    MPID_nem_mem_region.RecvQ =( MPID_nem_queue_ptr_t *)MALLOC (num_processes * sizeof(MPID_nem_queue_ptr_t));
-    MPID_nem_mem_region.net_elements = (MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[2].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));
+    MPID_nem_mem_region.RecvQ = (MPID_nem_queue_ptr_t *)MALLOC (num_processes * sizeof(MPID_nem_queue_ptr_t));
+    MPID_nem_mem_region.net_elements =
+	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[2].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));
 
-    MPID_nem_mem_region.FreeQ[rank] = 
-	(MPID_nem_queue_ptr_t)(MPID_NEM_ABS_TO_REL(((char *)MPID_nem_mem_region.seg[3].addr + local_rank * sizeof(MPID_nem_queue_t))));
+    MPID_nem_mem_region.FreeQ[rank] =
+	(MPID_nem_queue_ptr_t)(((char *)MPID_nem_mem_region.seg[3].addr + local_rank * sizeof(MPID_nem_queue_t)));
     
     MPID_nem_mem_region.RecvQ[rank] = 
-	(MPID_nem_queue_ptr_t)(MPID_NEM_ABS_TO_REL(((char *)MPID_nem_mem_region.seg[3].addr + (num_local + local_rank) * sizeof(MPID_nem_queue_t))));
+	(MPID_nem_queue_ptr_t)(((char *)MPID_nem_mem_region.seg[3].addr + (num_local + local_rank) * sizeof(MPID_nem_queue_t)));
 
     /* Free Q init and building*/
-    MPID_nem_rel_queue_init (MPID_nem_mem_region.FreeQ[rank] );
+    MPID_nem_queue_init (MPID_nem_mem_region.FreeQ[rank] );
     for (index = 0; index < MPID_NEM_NUM_CELLS; ++index)
     {         
-	MPID_nem_rel_cell_init (&(MPID_nem_mem_region.Elements[index]));       
-	MPID_nem_rel_queue_enqueue (MPID_nem_mem_region.FreeQ[rank], 
-			   MPID_NEM_ABS_TO_REL(&(MPID_nem_mem_region.Elements[index])));
+	MPID_nem_cell_init (&(MPID_nem_mem_region.Elements[index]));       
+	MPID_nem_queue_enqueue (MPID_nem_mem_region.FreeQ[rank], &(MPID_nem_mem_region.Elements[index]));
     }
 
     /* Recv Q init only*/
-    MPID_nem_rel_queue_init (MPID_nem_mem_region.RecvQ[rank]);
+    MPID_nem_queue_init (MPID_nem_mem_region.RecvQ[rank]);
 
     close (MPID_nem_mem_region.memory.base_descs);   
 
@@ -245,8 +245,26 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	{
 	    /*fprintf (stderr, "Using GM module\n"); */
 	}
-	errno = gm_module_init ( MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.RecvQ[rank]), 
-				 MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.FreeQ[rank]), 
+	errno = gm_module_init (MPID_nem_mem_region.RecvQ[rank],
+				MPID_nem_mem_region.FreeQ[rank],
+				MPID_nem_mem_region.Elements, 
+				MPID_NEM_NUM_CELLS,
+				MPID_nem_mem_region.net_elements, 
+				MPID_NEM_NUM_CELLS, 
+				&MPID_nem_mem_region.net_recv_queue, 
+				&MPID_nem_mem_region.net_free_queue,
+				ckpt_restart);
+	if (errno != 0)
+	    FATAL_ERROR ("gm_module_init() failed");
+	break;
+    case MPID_NEM_TCP_MODULE:
+    {
+	if (rank == 0)
+	{
+	    /*fprintf (stderr, "Using TCP module\n"); */
+	}
+	errno = tcp_module_init (MPID_nem_mem_region.RecvQ[rank],
+				 MPID_nem_mem_region.FreeQ[rank],
 				 MPID_nem_mem_region.Elements, 
 				 MPID_NEM_NUM_CELLS,
 				 MPID_nem_mem_region.net_elements, 
@@ -255,31 +273,13 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 				 &MPID_nem_mem_region.net_free_queue,
 				 ckpt_restart);
 	if (errno != 0)
-	    FATAL_ERROR ("gm_module_init() failed");
-	break;
-    case MPID_NEM_TCP_MODULE:
-	{
-	    if (rank == 0)
-	      {
-		  /*fprintf (stderr, "Using TCP module\n"); */
-	      }
-	    errno = tcp_module_init (MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.RecvQ[rank]), 
-				     MPID_NEM_REL_TO_ABS(MPID_nem_mem_region.FreeQ[rank]), 
-				     MPID_nem_mem_region.Elements, 
-				     MPID_NEM_NUM_CELLS,
-				     MPID_nem_mem_region.net_elements, 
-				     MPID_NEM_NUM_CELLS, 
-				     &MPID_nem_mem_region.net_recv_queue, 
-				     &MPID_nem_mem_region.net_free_queue,
-				     ckpt_restart);
-	    if (errno != 0)
-		FATAL_ERROR ("tcp_module_init() failed");
-	}
-	break;
+	    FATAL_ERROR ("tcp_module_init() failed");
+    }
+    break;
     default:
 	if (rank == 0)
 	    /*fprintf (stderr, "Using no network module\n"); */
-	MPID_nem_mem_region.net_recv_queue = NULL;
+	    MPID_nem_mem_region.net_recv_queue = NULL;
 	MPID_nem_mem_region.net_free_queue = NULL;
 	break;
     }
@@ -298,11 +298,11 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     {
 	index2 = local_procs[index];
 	MPID_nem_mem_region.FreeQ[index2] = 
-	    (MPID_nem_queue_ptr_t)(MPID_NEM_ABS_TO_REL(((char *)MPID_nem_mem_region.seg[3].addr + index * sizeof(MPID_nem_queue_t))));	
+	    (MPID_nem_queue_ptr_t)(((char *)MPID_nem_mem_region.seg[3].addr + index * sizeof(MPID_nem_queue_t)));
 	MPID_nem_mem_region.RecvQ[index2] =
-	    (MPID_nem_queue_ptr_t)(MPID_NEM_ABS_TO_REL(((char *)MPID_nem_mem_region.seg[3].addr + (num_local + index) * sizeof(MPID_nem_queue_t))));
-	assert (MPID_NEM_ALIGNED (MPID_NEM_REL_TO_ABS (MPID_nem_mem_region.FreeQ[index2]), MPID_NEM_CACHE_LINE_LEN));
-	assert (MPID_NEM_ALIGNED (MPID_NEM_REL_TO_ABS (MPID_nem_mem_region.RecvQ[index2]), MPID_NEM_CACHE_LINE_LEN));
+	    (MPID_nem_queue_ptr_t)(((char *)MPID_nem_mem_region.seg[3].addr + (num_local + index) * sizeof(MPID_nem_queue_t)));
+	assert (MPID_NEM_ALIGNED (MPID_nem_mem_region.FreeQ[index2], MPID_NEM_CACHE_LINE_LEN));
+	assert (MPID_NEM_ALIGNED (MPID_nem_mem_region.RecvQ[index2], MPID_NEM_CACHE_LINE_LEN));
 
     }
     MPID_nem_barrier (num_local, local_rank);

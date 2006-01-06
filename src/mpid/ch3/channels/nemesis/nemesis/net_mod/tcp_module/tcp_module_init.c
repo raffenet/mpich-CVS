@@ -198,11 +198,13 @@ static int init_tcp()
       if(grank != rank)
 	{
 
-	  nodes[grank].internal_recv_queue = (MPID_nem_queue_ptr_t)MALLOC(sizeof(MPID_nem_queue_t));
-	  nodes[grank].internal_free_queue = (MPID_nem_queue_ptr_t)MALLOC(sizeof(MPID_nem_queue_t));
-	  MPID_nem_queue_init ( nodes[grank].internal_recv_queue );
-	  MPID_nem_queue_init ( nodes[grank].internal_free_queue );
-
+	  nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MALLOC(sizeof(internal_queue_t));
+	  nodes[grank].internal_free_queue = (internal_queue_ptr_t)MALLOC(sizeof(internal_queue_t));
+	  nodes[grank].internal_recv_queue->head = NULL;
+	  nodes[grank].internal_recv_queue->tail = NULL;
+	  nodes[grank].internal_free_queue->head = NULL;
+	  nodes[grank].internal_free_queue->tail = NULL;
+	  
 	  nodes[grank].left2write     = 0;
 	  nodes[grank].left2read_head = 0;
 	  nodes[grank].left2read      = 0;

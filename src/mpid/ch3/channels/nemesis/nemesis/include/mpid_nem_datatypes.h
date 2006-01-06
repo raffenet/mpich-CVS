@@ -83,12 +83,39 @@ typedef union
 #endif
 } MPID_nem_pkt_t;
 
-/* SMP Qs */
+/* Nemesis cells which are to be used in shared memory need to use
+ * "relative pointers" because the absolute pointers to a cell from
+ * different processes may be different.  Relative pointers are
+ * offsets from the beginning of the mmapped region where they live.
+ * We use different types for relative and absolute pointers to help
+ * catch errors.  Use MPID_NEM_REL_TO_ABS and MPID_NEM_ABS_TO_REL to
+ * convert between relative and absolute pointers. */
+
+typedef struct MPID_nem_cell_rel_ptr
+{
+    char *p;
+}
+MPID_nem_cell_rel_ptr_t;
+
+/* MPID_nem_cell and MPID_nem_abs_cell must be kept in sync so that we
+ * can cast between them.  MPID_nem_abs_cell should only be used when
+ * a cell is enqueued on a queue local to a single process (e.g., a
+ * queue in a network module) where relative pointers are not
+ * needed. */
+
 typedef struct MPID_nem_cell
 {
-  struct MPID_nem_cell *volatile next;
-  MPID_nem_pkt_t pkt;
-} MPID_nem_cell_t, *volatile MPID_nem_cell_ptr_t;
+    MPID_nem_cell_rel_ptr_t next;
+    MPID_nem_pkt_t pkt;
+} MPID_nem_cell_t;
+typedef volatile MPID_nem_cell_t *MPID_nem_cell_ptr_t;
+
+typedef struct MPID_nem_abs_cell
+{
+    struct MPID_nem_abs_cell *next;
+    volatile MPID_nem_pkt_t pkt;
+} MPID_nem_abs_cell_t;
+typedef MPID_nem_abs_cell_t *MPID_nem_abs_cell_ptr_t;
 
 
 #define MPID_NEM_CELL_TO_PACKET(cellp) (&(cellp)->pkt)
@@ -106,18 +133,18 @@ typedef struct MPID_nem_cell
 
 typedef struct MPID_nem_queue
 {
-    MPID_nem_cell_ptr_t     head;
-    MPID_nem_cell_ptr_t     tail;
-    char             _reserved_after_tail[MPID_NEM_CACHE_LINE_LEN - 2 * sizeof(MPID_nem_cell_ptr_t)];
-    MPID_nem_cell_ptr_t     my_head;
-    char             _reserved_after_my_head[MPID_NEM_CACHE_LINE_LEN - sizeof(MPID_nem_cell_ptr_t)];
-} MPID_nem_queue_t, * volatile MPID_nem_queue_ptr_t;
+    volatile MPID_nem_cell_rel_ptr_t head;
+    volatile MPID_nem_cell_rel_ptr_t tail;
+    char padding1[MPID_NEM_CACHE_LINE_LEN - 2 * sizeof(MPID_nem_cell_rel_ptr_t)];
+    MPID_nem_cell_rel_ptr_t my_head;
+    char padding2[MPID_NEM_CACHE_LINE_LEN - sizeof(MPID_nem_cell_rel_ptr_t)];
+} MPID_nem_queue_t, *MPID_nem_queue_ptr_t;
 
 /* Fast Boxes*/ 
 typedef union
 {
-  volatile int value;
-  char padding[MPID_NEM_CACHE_LINE_LEN];
+    volatile int value;
+    char padding[MPID_NEM_CACHE_LINE_LEN];
 }
 MPID_nem_opt_volint_t;
 

@@ -19,7 +19,7 @@ send_callback (struct gm_port *p, void *context, gm_status_t status)
 
     ++num_send_tokens;
 
-    MPID_nem_queue_enqueue (process_free_queue, MPID_NEM_ABS_TO_REL (cell));
+    MPID_nem_queue_enqueue (process_free_queue, cell);
 }
 
 
@@ -35,26 +35,26 @@ send_cell (int dest, MPID_nem_cell_t *cell, int datalen)
     assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    gm_send_with_callback (port, pkt, PACKET_SIZE, datalen + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, nodes[dest].node_id, nodes[dest].port_id,
-			   send_callback, cell);
+    gm_send_with_callback (port, pkt, PACKET_SIZE, datalen + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, nodes[dest].node_id,
+			   nodes[dest].port_id, send_callback, cell);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));
     printf_d ("  Sent packet to node = %d, port = %d\n", nodes[dest].node_id, nodes[dest].port_id);
     printf_d ("    dest %d\n", dest);
     printf_d ("    datalen %d\n", datalen);
 }
 #else
-#define send_cell(dest, cell, datalen) do {										\
-    MPID_nem_pkt_t *pkt = MPID_NEM_CELL_TO_PACKET (cell);										\
-															\
+#define send_cell(dest, cell, datalen) do {											\
+    MPID_nem_pkt_t *pkt = MPID_NEM_CELL_TO_PACKET (cell);									\
+																\
     assert ((datalen) <= MPID_NEM_MPICH2_DATA_LEN);										\
-															\
-    DO_PAPI (PAPI_reset (PAPI_EventSet));										\
+																\
+    DO_PAPI (PAPI_reset (PAPI_EventSet));											\
     gm_send_with_callback (port, pkt, PACKET_SIZE, (datalen) + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, nodes[dest].node_id,	\
-			   nodes[dest].port_id, send_callback, cell);							\
-    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));								\
-    printf_d ("  Sent packet to node = %d, port = %d\n", nodes[dest].node_id, nodes[dest].port_id);			\
-    printf_d ("    dest %d\n", dest);											\
-    printf_d ("    datalen + MPID_NEM_MPICH2_HEAD_LEN %d\n", datalen + MPID_NEM_MPICH2_HEAD_LEN);					\
+			   nodes[dest].port_id, send_callback, cell);								\
+    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));									\
+    printf_d ("  Sent packet to node = %d, port = %d\n", nodes[dest].node_id, nodes[dest].port_id);				\
+    printf_d ("    dest %d\n", dest);												\
+    printf_d ("    datalen + MPID_NEM_MPICH2_HEAD_LEN %d\n", datalen + MPID_NEM_MPICH2_HEAD_LEN);				\
 } while (0)
 #endif
 

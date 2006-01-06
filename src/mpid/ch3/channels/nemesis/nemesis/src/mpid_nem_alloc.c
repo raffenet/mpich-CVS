@@ -110,14 +110,12 @@ void MPID_nem_check_alloc (int num_processes)
 	/*fprintf(stderr,"[%i] ===  Symmetrical Alloc ...  \n",rank);	 */
 	MPID_nem_mem_region.memory.symmetrical = 1;
 	MPID_nem_asymm_base_addr = NULL;
-	MPID_nem_asymm_null_var  = NULL;
       }	
     else 
       {	     
 	/*fprintf(stderr,"[%i] ===  ASymmetrical Alloc !!!  \n",rank);	 */
 	MPID_nem_mem_region.memory.symmetrical = 0;
 	MPID_nem_asymm_base_addr = MPID_nem_mem_region.memory.base_addr;
-	MPID_nem_asymm_null_var  = (char *)MPID_NEM_ASYMM_NULL_VAL;
 #ifdef MPID_NEM_SYMMETRIC_QUEUES
 	fprintf(stderr,"[%i] ===  Expecting symmetric...aborting \n",rank);	
 	exit (-1);

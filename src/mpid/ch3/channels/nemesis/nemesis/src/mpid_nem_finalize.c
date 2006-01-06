@@ -13,7 +13,7 @@ int MPID_nem_finalize()
     fprintf(stderr,"[%i] Waiting for empty RecvQ \n",rank);    
 #endif
     /* this test is not the right one */
-    while (! MPID_nem_rel_queue_empty( MPID_nem_mem_region.RecvQ[rank] ))
+    while (! MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[rank] ))
     {
 	MPID_nem_dump_queue( MPID_nem_mem_region.RecvQ[rank] );
 	exit(0);

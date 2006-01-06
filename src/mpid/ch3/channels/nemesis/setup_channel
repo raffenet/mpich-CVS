@@ -32,8 +32,8 @@ for path in $pathlist ; do
     CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/${path}"
 done
 
-ARCH=`uname -m | sed -es/i.86/i386/`
-CPPFLAGS="$CPPFLAGS -D${ARCH}"
+#ARCH=`uname -m | sed -es/i.86/i386/`
+#CPPFLAGS="$CPPFLAGS -D${ARCH}"
 
 # include prototype
 prototype_dir=${master_top_srcdir}/src/mpid/${device_name}/channels/${channel_name}/nemesis

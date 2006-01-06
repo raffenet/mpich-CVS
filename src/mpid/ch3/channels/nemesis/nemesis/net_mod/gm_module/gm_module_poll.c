@@ -58,7 +58,7 @@ gm_module_recv()
 	    printf_d ("    seqno %d\n", header->seqno);
 
 	    DO_PAPI (PAPI_reset (PAPI_EventSet));	    
-	    MPID_nem_queue_enqueue ( process_recv_queue, MPID_NEM_ABS_TO_REL( c ));
+	    MPID_nem_queue_enqueue (process_recv_queue, c);
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues9));
 
 /* 	    if (!MPID_nem_queue_empty (module_gm_free_queue)) */

@@ -1,4 +1,5 @@
-INCLUDES = -I. -I../include -I${master_top_srcdir}/src/ch3/channels/nemesis/nemesis/include -I${master_top_srcdir}/src/include
+INCLUDES = -I. -I../include -I${master_top_srcdir}/src/ch3/channels/nemesis/nemesis/include -I${master_top_srcdir}/src/include \
+           -I${top_builddir}/src/include
 lib${MPILIBNAME}_a_SOURCES = \
   mpid_nem_alloc.c mpid_nem_init.c mpid_nem_queue.c copy.c mpid_nem_barrier.c \
   mpid_nem_mpich2.c pm.c mpid_nem_ckpt.c mpid_nem_mpich2_rma.c mmx_copy.s \
@@ -6,3 +7,4 @@ lib${MPILIBNAME}_a_SOURCES = \
 
 mmx_copy.o : mmx_copy.s
 	$(AS) -o $@ $<
+
