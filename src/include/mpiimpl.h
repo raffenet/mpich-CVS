@@ -1260,6 +1260,13 @@ extern MPID_Comm MPID_Comm_direct[];
 #define MPID_CONTEXT_INTER_COLL  1
 #define MPID_CONTEXT_INTER_COLLA 2
 #define MPID_CONTEXT_INTER_COLLB 3
+
+/* Utility routines.  Where possible, these are kept in the source directory
+   with the other comm routines (src/mpi/comm, in mpicomm.h).  However,
+   to create a new communicator after a spawn or connect-accept operation, 
+   the device may need to create a new contextid */
+int MPIR_Get_contextid( MPID_Comm * );
+
 /* ------------------------------------------------------------------------- */
 
 /* Requests */
