@@ -367,9 +367,13 @@ fi
 
 # Run some of the simple codes
 #
-if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
+# if [ -x maint/genstates -a $do_genstates = "yes" ] ; then
+#     echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
+#     maint/genstates
+# fi
+if [ -x maint/extractstates -a $do_genstates = "yes" ] ; then
     echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
-    maint/genstates
+    maint/extractstates
 fi
 # Create and/or update the f90 tests
 if [ -x maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then

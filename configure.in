@@ -437,7 +437,7 @@ AC_DEFINE_UNQUOTED(MPICH_ERROR_MSG_LEVEL,$error_message_kind,[define to enable e
 # ----------------------------------------------------------------------------
 collect_stats=false
 logging_required=false
-if "$enable_timing" = default ; then
+if "$enable_timing" = "default" ; then
     if test "$with_logging" = "rlog" -o "$with_logging" = "default" ; then
         enable_timing=all
     fi
@@ -4530,7 +4530,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           examples/mpiexec/Makefile \
           src/util/logging/Makefile \
           src/util/logging/common/Makefile \
-          src/util/timing/Makefile \
 	  doc/Makefile doc/mansrc/Makefile \
 	  doc/mansrc/createhtmlindex \
 	  doc/refman/Makefile \

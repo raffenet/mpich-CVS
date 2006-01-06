@@ -10,11 +10,6 @@
 
 #include <stdio.h>
 
-/*
-#include "mpi.h"
-#define RLOG_timestamp PMPI_Wtime
-*/
-
 #if defined(__cplusplus)
 extern "C" {
 #endif

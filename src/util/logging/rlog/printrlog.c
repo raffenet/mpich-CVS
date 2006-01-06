@@ -71,7 +71,9 @@ void PrintComm(RLOG_COMM *pComm)
 	pComm->rank,
 	pComm->newcomm);
 }
-
+/* FIXME: Add a structured comment for the man page generate to
+ * create the basic documentation on this routine, particularly 
+ * since this routine only prints a subset of information by default */
 int main(int argc, char *argv[])
 {
     RLOG_IOStruct *pInput;
@@ -95,8 +97,11 @@ int main(int argc, char *argv[])
     int bJumpCheck = 0;
     double dJump = 0.0;
 
+    /* FIXME: This should also check for the GNU-standard --help, --usage,
+     * and -h options.  */
     if (argc < 2)
     {
+	/* FIXME: What is the default behavior with just an rlogfile? */
 	printf("printrlog rlogfile [EVENTS | STATES | ARROWS | HEADER | COMM | ALL | SUMMARY ]\n");
 	printf("printrlog rlogfile find endtime\n");
 	printf("printrlog rlogfile validate\n");
