@@ -92,9 +92,9 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 }
 
 
-/* if MPI_File_open was called with MPI_MODE_CREATE|MPI_MODE_EXCL, then we have
+/* if MPI_File_open was called with MPI_MODE_CREATE, then we have
  * a little problem: our usual open-and-broadcast test will not work because
- * only one person (the first aggregator) will perform the open w/ CREATE|EXCL
+ * only one person (the first aggregator) will perform the open w/ CREATE
  */
 void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 {
@@ -160,20 +160,20 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	fd->fs_ptr = pvfs2_fs;
     }
 
-    /* NOTE: if MPI_MODE_EXCL was set, ADIO_Open will call
+    /* NOTE: if MPI_MODE_CREATE was set, ADIO_Open will call
      * ADIOI_PVFS2_Open from just one processor.  This really confuses MPI when
      * one procesor on a communicator broadcasts to no listners.  
      *
      * Since ADIO_Open will close the file and call ADIOI_PVFS2_Open again (but
-     * w/o EXCL), we can bail out right here and return early
+     * w/o CREATE or EXCL), we can bail out right here and return early
      *
-     * Assertion: if MPI_MODE_EXCL is passed, then
+     * Assertion: if MPI_MODE_CREATE is passed, then
      *            rank == fd->hints->ranklist[0].
      *
      * That's because our ADIO_Open only calls this open from that aggregator
      * with that flag.
      */
-    if ((fd->access_mode & ADIO_EXCL)) {
+    if ((fd->access_mode & ADIO_CREATE)) {
 	if (o_status.error == 0)
 	{
 	    *error_code = MPI_SUCCESS;

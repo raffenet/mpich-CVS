@@ -154,14 +154,17 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 
     orig_amode_excl = access_mode;
 
-    /* we used to do this EXCL|CREAT workaround in MPI_File_open, but if we are
-     * doing deferred open, we more easily know who the aggregators are in
-     * ADIO_Open */
-    if ((access_mode & ADIO_CREATE) && (access_mode & ADIO_EXCL)) {
-       /* the open should fail if the file exists. Only *1* process should
-	   check this. Otherwise, if all processes try to check and the file
-	   does not exist, one process will create the file and others who
-	   reach later will return error. */
+    /* optimization: by having just one process create a file, close it, then
+     * have all N processes open it, we can possibly avoid contention for write
+     * locks on a directory for some file systems. 
+     *
+     * we used to special-case EXCL|CREATE, since when N processes are trying
+     * to create a file exclusively, only 1 will succeed and the rest will
+     * (spuriously) fail.   Since we are now carrying out the CREATE on one
+     * process anyway, the EXCL case falls out and we don't need to explicitly
+     * worry about it, other than turning off both the EXCL and CREATE flags 
+     */
+    if (access_mode & ADIO_CREATE) {
        if(rank == fd->hints->ranklist[0]) {
     		fd->access_mode = access_mode;
     		(*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
@@ -177,8 +180,10 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
            goto fn_exit;
        } 
        else {
-           /* turn off EXCL for real open */
-           access_mode = access_mode ^ ADIO_EXCL; 
+           /* turn off CREAT (and EXCL if set) for real multi-processor open */
+           access_mode ^= ADIO_CREATE; 
+	   if (access_mode & ADIO_EXCL)
+		   access_mode ^= ADIO_EXCL;
        }
     }
 
