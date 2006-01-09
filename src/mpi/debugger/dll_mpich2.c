@@ -715,7 +715,8 @@ static int fetch_send (mqs_process *proc, mpich_process_info *p_info,
     /* Say what operation it is. We can only see non blocking send operations
      * in MPICH. Other MPI systems may be able to show more here. 
      */
-    strcpy ((char *)res->extra_text[0],"Non-blocking send");
+    /* FIXME: handle size properly (declared as 64 in mpi_interface.h) */
+    strncpy ((char *)res->extra_text[0],"Non-blocking send",20);
     res->extra_text[1][0] = 0;
     
     while (base != 0) {
