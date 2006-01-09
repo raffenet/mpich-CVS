@@ -301,7 +301,8 @@ int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] )
 
 /* 
  * The following is a very simple code for looping through 
- * the GPIDs
+ * the GPIDs.  Note that this code requires that all processes
+ * have information on the process groups.
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_GPID_ToLpidArray

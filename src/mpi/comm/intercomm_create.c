@@ -447,17 +447,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		    local_comm );
 	MPIU_DBG_PRINTF(( "end of bcast on local_comm of size %d\n", 
 		      comm_ptr->local_size ));
-	/* FIXME: Here we should:
-	   ensure that all processes have all of the process groups
-	   (allreduce to check, unless only group is group of comm world)
-	   if not all processes have all process groups, 
-	   call routine to bcast process group information
-	   to the other proceses.  Do this before the
-	   GPID_ToLpidArray call, since that call will 
-	   rely on having that information */
-	MPID_PG_ForwardPGInfo( peer_comm_ptr, 
-			       comm_ptr, remote_size, remote_gpids, 
-			       local_leader );
     }
     else
     {
@@ -471,18 +460,45 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 			    mpi_errno,"remote_lpids");
 	NMPI_Bcast( remote_gpids, 2*remote_size, MPI_INT, local_leader, 
 		    local_comm );
-	/* Check on the remote process groups */
-	MPID_PG_ForwardPGInfo( peer_comm_ptr, 
-			       comm_ptr, remote_size, remote_gpids, 
-			       local_leader );
-	/* Convert the remote gpids to the lpids */
-	mpi_errno = MPID_GPID_ToLpidArray( remote_size, remote_gpids, remote_lpids );
-	if (mpi_errno) { MPIR_Nest_decr(); goto fn_fail; }
 
 	/* Extract the context and group sign informatin */
 	final_context_id = comm_info[1];
 	is_low_group     = comm_info[2];
     }
+
+    /* Finish up by giving the device the opportunity to update 
+       any other infomration among these processes.  Note that the
+       new intercomm has not been set up; in fact, we haven't yet
+       attempted to set up the connection tables.
+       
+       In the case of the ch3 device, this calls MPID_PG_ForwardPGInfo
+       to ensure that all processes have the information about all
+       process groups.  This must be done before the call 
+       to MPID_GPID_ToLpidArray, as that call needs to know about 
+       all of the process groups.
+    */
+#ifdef MPID_ICCREATE_REMOTECOMM_HOOK
+    MPID_ICCREATE_REMOTECOMM_HOOK( peer_comm_ptr, comm_ptr,
+				   remote_size, remote_gpids, local_leader );
+				   
+#endif
+#if 0
+    MPID_PG_ForwardPGInfo( peer_comm_ptr, 
+			   comm_ptr, remote_size, remote_gpids, 
+			   local_leader );
+#endif
+
+    /* Finally, if we are not the local leader, we need to 
+       convert the remote gpids to local pids.  This must be done
+       after we allow the device to handle any steps that it needs to 
+       take to ensure that all processes contain the necessary process
+       group information */
+    if (comm_ptr->rank != local_leader) {
+	mpi_errno = MPID_GPID_ToLpidArray( remote_size, remote_gpids, 
+					   remote_lpids );
+	if (mpi_errno) { MPIR_Nest_decr(); goto fn_fail; }
+    }
+
 
     /* If we did not choose this context, free it.  We won't do this
        once we have MPI2 intercomms (at least, not for intercomms that
@@ -491,14 +507,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	MPIR_Free_contextid( context_id );
     }
 
-    /* Finish up by giving the device the opportunity to update 
-       any other infomration among these processes.  Note that the
-       new intercomm has not been set up; in fact, we haven't yet
-       attempted to set up the connection tables. */
-#ifdef MPID_ICCREATE_REMOTECOMM_HOOK
-    MPID_ICCREATE_REMOTECOMM_HOOK( comm_ptr, peer_comm_ptr, local_leader, 
-				   remote_leader );
-#endif
 
     /* At last, we now have the information that we need to build the 
        intercommunicator */

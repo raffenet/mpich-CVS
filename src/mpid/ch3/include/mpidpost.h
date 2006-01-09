@@ -721,5 +721,10 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr, 
 			   int nPGids, int gpids[], 
 			   int root );
+/* PG_ForwardPGInfo is used as the implementation of the intercomm-create
+   hook that is needed with dynamic processes because of limitations
+   in the current definition of PMI */
+#define MPID_ICCREATE_REMOTECOMM_HOOK(_p,_c,_np,_gp,_r) \
+     MPID_PG_ForwardPGInfo(_p,_c,_np,_gp,_r)
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */
