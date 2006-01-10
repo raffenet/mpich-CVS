@@ -29,7 +29,7 @@ int MPID_nem_finalize (void);
 int MPID_nem_ckpt_shutdown (void);
 void MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
 void MPID_nem_barrier(int, int);
-void MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, char [], int num_local, int local_rank);
+void MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, int num_local, int local_rank);
 void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
 void MPID_nem_check_alloc(int) ;
 static inline void MPID_nem_waitforlock(MPID_nem_fbox_common_ptr_t pbox, int value, int count);

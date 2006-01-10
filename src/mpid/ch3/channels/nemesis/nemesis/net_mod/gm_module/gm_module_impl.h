@@ -138,7 +138,7 @@ extern gm_module_send_queue_t *gm_module_send_free_queue;
     }												\
     else											\
     {												\
-	e = (gm_module_##queue##_queue_t *)malloc (sizeof (gm_module_##queue##_queue_t));	\
+	e = (gm_module_##queue##_queue_t *)MALLOC (sizeof (gm_module_##queue##_queue_t));	\
     }												\
     e;												\
 })

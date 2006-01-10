@@ -22,7 +22,7 @@ gm_module_lmt_init()
     {
 	gm_module_lmt_queue_t *e;
 	
-	e = malloc (sizeof (gm_module_lmt_queue_t));
+	e = MALLOC (sizeof (gm_module_lmt_queue_t));
 	if (!e)
 	    ERROR_RET (-1, "malloc failed");
 	e->next = gm_module_lmt_free_queue;
@@ -63,7 +63,7 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iove
 	    goto error_exit;
 	}
     }
-    iov_copy = malloc (sizeof (struct iovec) * n_iov);
+    iov_copy = MALLOC (sizeof (struct iovec) * n_iov);
     if (iov_copy == 0)
     {
 	errno = -1;

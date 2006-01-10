@@ -30,7 +30,6 @@ MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs)
 int
 _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_restart)
 {   
-    char             name[MPID_NEM_MAX_FNAME_LEN]  = "/tmp/shmem.map_";
     pid_t            my_pid;
     int              num_processes;
     int              rank;
@@ -51,7 +50,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	FATAL_ERROR ("get_local_procs() failed");
 
 #ifdef MEM_REGION_IN_HEAP
-    MPID_nem_mem_region_ptr = malloc (sizeof(MPID_nem_mem_region_t));
+    MPID_nem_mem_region_ptr = MALLOC (sizeof(MPID_nem_mem_region_t));
     if (!MPID_nem_mem_region_ptr)
 	FATAL_ERROR ("failed to allocate mem_region");
 #endif /* MEM_REGION_IN_HEAP */
@@ -155,7 +154,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 /*     if (num_local > 1) */
 /* 	MPID_nem_mem_region.map_lock = make_sem (local_rank, num_local, 0); */
     
-    MPID_nem_seg_create (&(MPID_nem_mem_region.memory), global_size, name, num_local, local_rank);
+    MPID_nem_seg_create (&(MPID_nem_mem_region.memory), global_size, num_local, local_rank);
     MPID_nem_check_alloc (num_local);    
 
     /* Fastpath boxes */

@@ -269,9 +269,7 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     {
 	gm_module_send_queue_t *e;
 	
-	e = malloc (sizeof (gm_module_send_queue_t));
-	if (!e)
-	    ERROR_RET (-1, "malloc failed");
+	e = safe_malloc (sizeof (gm_module_send_queue_t));
 	e->next = gm_module_send_free_queue;
 	gm_module_send_free_queue = e;
     }

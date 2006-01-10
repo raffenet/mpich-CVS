@@ -3,8 +3,9 @@
 #include <errno.h>
 #include "pm.h"
 
-void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, char name[MPID_NEM_MAX_FNAME_LEN], int num_local, int local_rank)
+void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank)
 {
+    char name[MPID_NEM_MAX_FNAME_LEN]  = "/tmp/shmem.map_";
     char *user           = getenv("USER");
     int ret;
     int errno;
@@ -19,15 +20,20 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, char name[MPID_NEM
 	exit (-1);
     }
     
-    ftruncate(memory->base_descs, memory->max_size);
-    memory->base_addr    = (char *)mmap (NULL,
-					 memory->max_size,
-					 PROT_READ | PROT_WRITE ,
-					 MAP_SHARED ,
-					 memory->base_descs,0);
+    ret = ftruncate(memory->base_descs, memory->max_size);
+    if (ret == -1)
+    {
+	perror ("Resizing shared file failed.");
+	printf ("max size = %d\n", memory->max_size);
+	unlink (memory->file_name);
+	exit (-1);
+    }
+    
+    memory->base_addr = mmap (NULL, memory->max_size, PROT_READ | PROT_WRITE, MAP_SHARED, memory->base_descs, 0);
     if (memory->base_addr == MAP_FAILED)
     {
 	perror ("Error mmap()ing shared memory region.");
+	unlink (memory->file_name);
 	exit (-1);
     }
     
@@ -43,8 +49,11 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, char name[MPID_NEM
     
     errno = PMI_Barrier();
     if (errno != 0)
+    {
+	unlink (memory->file_name);
 	FATAL_ERROR ("PMI_Barrier failed %d", errno);
-
+    }
+    
     unlink (memory->file_name);
     
     memory->current_addr = memory->base_addr;

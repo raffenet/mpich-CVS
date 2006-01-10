@@ -2,10 +2,11 @@
 #define MPID_MEMDEFS_H
 #include <mpid_nem_copy.h>
 #include <mpichconf.h>
+#include <mpimem.h>
 
-#define MALLOC(a)     malloc((a))
-#define CALLOC(a,b)   calloc((unsigned)(a),(unsigned)(b))
-#define FREE(a)       free((a)) 
+#define MALLOC(a) ({void *my_ptr___ = MPIU_Malloc(a); if (!my_ptr___) fprintf(stderr, "malloc failed %s:%d\n", __FILE__, __LINE__); my_ptr___;})
+#define CALLOC(a,b)   MPIU_Calloc((a),(b))
+#define FREE(a)       MPIU_Free((a)) 
 
 #if defined(HAVE_GCC_AND_PENTIUM_ASM)
 #define asm_memcpy(dst, src, n) ({					\
