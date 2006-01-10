@@ -35,3 +35,4 @@ for arg in "${_conf_array[@]}" ; do
   esac 
 done 
 
+export papi_dir perfctr_dir gm_dir gm_include_dir gm_lib_dir
