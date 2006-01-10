@@ -16,7 +16,7 @@ gm_module_recv()
     while (num_recv_tokens && !MPID_nem_queue_empty (module_gm_free_queue))
     {
 	MPID_nem_queue_dequeue (module_gm_free_queue, &c);
-	gm_provide_receive_buffer_with_tag (port, MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
+	gm_provide_receive_buffer_with_tag (port, (void *)MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
 	--num_recv_tokens;
 	DO_PAPI (if (!(num_recv_tokens && !MPID_nem_queue_empty (module_gm_free_queue)))
 		 PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));

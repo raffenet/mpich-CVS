@@ -78,7 +78,7 @@ static inline void MPID_NEM_ATOMIC_ADD (int *ptr, int val)
 #endif
 }
 
-static inline void MPID_NEM_ATOMIC_INC_ (int *ptr)
+static inline void MPID_NEM_ATOMIC_INC (int *ptr)
 {
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
     asm volatile ("lock ; incl %0"
@@ -95,7 +95,7 @@ static inline void MPID_NEM_ATOMIC_INC_ (int *ptr)
 #endif
 }
 
-static inline void MPID_NEM_ATOMIC_DEC_ (int *ptr)
+static inline void MPID_NEM_ATOMIC_DEC (int *ptr)
 {
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
     asm volatile ("lock ; decl %0"

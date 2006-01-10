@@ -227,11 +227,11 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     process_recv_queue = proc_recv_queue;
     process_free_queue = proc_free_queue;
 
-    status = gm_register_memory (port, proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);
+    status = gm_register_memory (port, (void *)proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);
     if (status != GM_SUCCESS)
 	ERROR_RET (-1, "gm_register_memory() for proc elements failed");
 
-    status = gm_register_memory (port, module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
+    status = gm_register_memory (port, (void *)module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
     if (status != GM_SUCCESS)
 	ERROR_RET (-1, "gm_register_memory() for module elements failed");
 
@@ -253,7 +253,7 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     {
 	MPID_nem_cell_ptr_t c;
 	MPID_nem_queue_dequeue (module_gm_free_queue, &c);
-	gm_provide_receive_buffer_with_tag (port, MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
+	gm_provide_receive_buffer_with_tag (port, (void *)MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
 	--num_recv_tokens;
     }
 

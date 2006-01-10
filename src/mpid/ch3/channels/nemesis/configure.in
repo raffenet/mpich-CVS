@@ -33,7 +33,7 @@ if test "${nemesis_network}" == "gm" ; then
 	LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
     fi
     AC_CHECK_HEADER([gm.h], , [
-        AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm-include?'])
+        AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm-include? $CPPFLAGS'])
     ])
     AC_CHECK_LIB(gm, gm_init, , [
 	AC_MSG_ERROR(['gm library not found.  Did you specify --with-gm-lib?'])

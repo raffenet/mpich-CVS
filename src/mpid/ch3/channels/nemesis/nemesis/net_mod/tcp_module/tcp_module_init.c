@@ -226,7 +226,7 @@ static int init_tcp()
 		      TCP_NODELAY,  
 		      &option, 
 		      sizeof(int));	  
-	  option = MPID_NEM_CELL_PAYLOAD_LEN ;
+	  option = 2 * MPID_NEM_CELL_PAYLOAD_LEN ;
 	  setsockopt( nodes[grank].desc, 
 		      SOL_SOCKET,  
 		      SO_RCVBUF,  
