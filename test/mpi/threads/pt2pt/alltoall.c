@@ -48,7 +48,6 @@ void* listener(void*extra) {
     }
 
     DEBUG(printf( "node %d has stopped listener\n", rank ));
-    pthread_cancel(0);
 } 
 
 
