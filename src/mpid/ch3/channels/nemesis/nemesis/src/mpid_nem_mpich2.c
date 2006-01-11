@@ -29,6 +29,10 @@ MPID_nem_cell_ptr_t prefetched_cell;
 unsigned short *send_seqno;
 unsigned short *recv_seqno;
 
+#ifndef ENABLE_NO_SCHED_YIELD
+#define POLLS_BEFORE_YIELD 1000
+#endif
+
 void
 MPID_nem_mpich2_init (int ckpt_restart)
 {
@@ -749,14 +753,14 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 int
 MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     MPID_nem_fboxq_elem_t *el;
 
     el = &fboxq_elem_list[local_rank];
 
     if (!el->usage)
     {
-	errno = MPID_NEM_MPICH2_FAILURE;
+	ret = MPID_NEM_MPICH2_FAILURE;
 	goto exit_l;
     }
 
@@ -783,13 +787,13 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
      }
     
  exit_l:
-    return errno;
+    return ret;
 }
 
 int
 MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     MPID_nem_fboxq_elem_t *el;
 
     el = &fboxq_elem_list[local_rank];
@@ -816,7 +820,7 @@ MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 	fboxq_tail = el;
     }
     
-    return errno;
+    return ret;
 }
 
 #if 0 /* papi timing stuff added */
@@ -1016,6 +1020,9 @@ int
 MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int my_rank = MPID_nem_mem_region.rank;
+#ifndef ENABLE_NO_SCHED_YIELD
+    int pollcount = 0;
+#endif
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
@@ -1056,6 +1063,14 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	{
 	    MPID_nem_network_poll (MPID_NEM_POLL_IN);
 	}
+#ifndef ENABLE_NO_SCHED_YIELD
+	if (pollcount >= POLLS_BEFORE_YIELD)
+	{
+	    pollcount = 0;
+	    sched_yield();
+	}
+	++pollcount;
+#endif
     }
 
     MPID_nem_queue_dequeue (MPID_nem_mem_region.RecvQ[my_rank], cell);
@@ -1140,90 +1155,90 @@ MPID_nem_mpich2_release_fbox (MPID_nem_cell_ptr_t cell)
 int
 MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iovec *cookie)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
       if (gm_module_lmt_send_pre (iov, n_iov, dest, cookie) != 0)
 	{
-	    errno = MPID_NEM_MPICH2_FAILURE;
+	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
     }	    
-    return errno;
+    return ret;
 }
 
 int
 MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, int src, struct iovec *cookie)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (src))
     {
 	if (gm_module_lmt_recv_pre (iov, n_iov, src, cookie) != 0)
 	{
-	    errno = MPID_NEM_MPICH2_FAILURE;
+	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
     }
 	    
-    return errno;
+    return ret;
 }
 
 int
 MPID_nem_mpich2_lmt_start_send (int dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
       gm_module_lmt_start_send (dest, s_cookie, r_cookie, completion_ctr);
     }
     
-    return errno;
+    return ret;
 }
 
 int
 MPID_nem_mpich2_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (src))
     {
       gm_module_lmt_start_recv (src, s_cookie, r_cookie, completion_ctr);
     }
     
-    return errno;
+    return ret;
 }
 
 int
 MPID_nem_mpich2_lmt_send_post (int dest, struct iovec cookie)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
 	if (gm_module_lmt_send_post (cookie) != 0)
 	{
-	    errno = MPID_NEM_MPICH2_FAILURE;
+	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
     }
     
-    return errno;
+    return ret;
 }
 
 int
 MPID_nem_mpich2_lmt_recv_post (int src, struct iovec cookie)
 {
-    int errno = MPID_NEM_MPICH2_SUCCESS;
+    int ret = MPID_NEM_MPICH2_SUCCESS;
 
     if (!MPID_NEM_IS_LOCAL (src))
     {
 	if (gm_module_lmt_send_post (cookie) != 0)
 	{
-	    errno = MPID_NEM_MPICH2_FAILURE;
+	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
     }
     
-    return errno;
+    return ret;
 }
 #endif
 

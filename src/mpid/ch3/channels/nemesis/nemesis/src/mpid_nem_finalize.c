@@ -7,7 +7,7 @@
 int MPID_nem_finalize()
 {
     int rank     = MPID_nem_mem_region.rank;
-    int errno;
+    int ret;
 
 #ifdef TRACE
     fprintf(stderr,"[%i] Waiting for empty RecvQ \n",rank);    
@@ -48,9 +48,9 @@ int MPID_nem_finalize()
     my_papi_close();
 #endif /*PAPI_MONITOR */
    
-    errno = PMI_Barrier();
-    if (errno != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", errno);
+    ret = PMI_Barrier();
+    if (ret != 0)
+	FATAL_ERROR ("PMI_Barrier failed %d", ret);
 
     pm_finalize();
 

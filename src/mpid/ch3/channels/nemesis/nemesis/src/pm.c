@@ -36,43 +36,43 @@ int
 pm_init (int *size, int *rank)
 {
     int len;
-    int errno;
+    int ret;
     int spawned;
 
     gethostname (MPID_nem_hostname, MAX_HOSTNAME_LEN);
     MPID_nem_hostname[MAX_HOSTNAME_LEN-1] = '\0';
 
-    errno = PMI_Init (&spawned);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Init failed %d", errno);
+    ret = PMI_Init (&spawned);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Init failed %d", ret);
     
-    errno = PMI_Get_rank (rank);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Get_rank failed %d", errno);
+    ret = PMI_Get_rank (rank);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_rank failed %d", ret);
     
-    errno = PMI_Get_size (size);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Get_size failed %d", errno);
+    ret = PMI_Get_size (size);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_size failed %d", ret);
 
     printf_d ("  rank = %d\n  size = %d\n", *rank, *size);
 
-    errno = PMI_KVS_Get_name_length_max(&len);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_Get_name_length_max failed %d", errno);
+    ret = PMI_KVS_Get_name_length_max(&len);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Get_name_length_max failed %d", ret);
     pmi_kvs_name = safe_malloc (len + 1);
     
-    errno = PMI_KVS_Get_my_name(pmi_kvs_name, len);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_Get_my_name failed %d", errno);
+    ret = PMI_KVS_Get_my_name(pmi_kvs_name, len);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Get_my_name failed %d", ret);
 
-    errno = PMI_KVS_Get_key_length_max(&pmi_key_max_sz);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_Get_key_length_max failed %d", errno);
+    ret = PMI_KVS_Get_key_length_max(&pmi_key_max_sz);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Get_key_length_max failed %d", ret);
     pmi_key = safe_malloc (pmi_key_max_sz);
     
-    errno = PMI_KVS_Get_value_length_max(&pmi_val_max_sz);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_Get_value_length_max failed %d", errno);
+    ret = PMI_KVS_Get_value_length_max(&pmi_val_max_sz);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Get_value_length_max failed %d", ret);
     pmi_val = safe_malloc (pmi_val_max_sz);
 
      return 0;

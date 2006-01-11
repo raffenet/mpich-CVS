@@ -93,7 +93,7 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
     {
 	ret = close (memory->base_descs);
     }
-    while (ret == EINTR);
+    while (errno == EINTR);
     if (ret)
 	fprintf (stderr, "%d: Error closing shared memory file: %s \n", local_rank, strerror(errno));
     

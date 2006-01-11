@@ -119,7 +119,7 @@ init_gm (int *board_id, int *port_id, unsigned char *unique_id)
 static int
 distribute_mac_ids (unsigned port_id, unsigned char *unique_id)
 {
-    int errno;
+    int ret;
     int i;
     
     nodes = safe_malloc (sizeof (node_t) * numnodes);
@@ -131,17 +131,17 @@ distribute_mac_ids (unsigned port_id, unsigned char *unique_id)
     snprintf (pmi_key, pmi_key_max_sz, "portUnique[%d]", rank);
 
     /* Put my unique id */
-    errno = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_Put failed %d", errno);
+    ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
     
-    errno = PMI_KVS_Commit (pmi_kvs_name);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_commit failed %d", errno);
+    ret = PMI_KVS_Commit (pmi_kvs_name);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
 
-    errno = PMI_Barrier();
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Barrier failed %d", errno);
+    ret = PMI_Barrier();
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
 
     /* Gather unique ids */
     for (i = 0; i < numnodes; ++i)
@@ -151,17 +151,17 @@ distribute_mac_ids (unsigned port_id, unsigned char *unique_id)
 	memset (pmi_key, 0, pmi_key_max_sz);
 	snprintf (pmi_key, pmi_key_max_sz, "portUnique[%d]", i);
 	
-	errno = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
-	if (errno != 0)
-	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", errno, i);
+	ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
+	if (ret != 0)
+	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
 
 	if (sscanf (pmi_val, "{%u:%Lu}", &p, &u) != 2)
 	    ERROR_RET (-1, "unable to parse data from PMI_KVS_Get %s", pmi_val);
 
 	nodes[i].port_id = p;
 	UINT64_TO_UNIQUE (u, nodes[i].unique_id);
-	errno = gm_unique_id_to_node_id (port, (char *)nodes[i].unique_id, &nodes[i].node_id);
-	if (errno != GM_SUCCESS)
+	ret = gm_unique_id_to_node_id (port, (char *)nodes[i].unique_id, &nodes[i].node_id);
+	if (ret != GM_SUCCESS)
 	    ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", i, UNIQUE_TO_STR (nodes[i].unique_id));
 	
 	printf_d ("  %d: %s node = %d port = %d\n", i, UNIQUE_TO_STR (nodes[i].unique_id), nodes[i].node_id, nodes[i].port_id);

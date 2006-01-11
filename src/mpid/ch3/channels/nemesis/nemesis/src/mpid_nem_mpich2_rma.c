@@ -34,7 +34,7 @@ MPID_nem_mpich2_alloc_win (void **buf, int len, MPID_nem_mpich2_win_t **win)
     {
 	ret = close (fd);
     }
-    while (ret == EINTR);
+    while (errno == EINTR);
     if (ret == -1)
 	PERROR_GOTO (err3_l, "file close failed");
     
@@ -54,7 +54,7 @@ MPID_nem_mpich2_alloc_win (void **buf, int len, MPID_nem_mpich2_win_t **win)
     {
 	ret = close (fd);
     }
-    while (ret == EINTR);
+    while (errno == EINTR);
     if (ret == -1)
 	perror ("close failed");
 
@@ -111,7 +111,7 @@ MPID_nem_mpich2_attach_win (void **buf, MPID_nem_mpich2_win_t *remote_win)
 	{
 	    ret = close (fd);
 	}
-	while (ret == EINTR);
+	while (errno == EINTR);
 	if (ret == -1)
 	    PERROR_GOTO (err2_l, "file close failed");
     }
@@ -129,7 +129,7 @@ MPID_nem_mpich2_attach_win (void **buf, MPID_nem_mpich2_win_t *remote_win)
     {
 	ret = close (fd);
     }
-    while (ret == EINTR);
+    while (errno == EINTR);
     if (ret == -1)
 	perror ("file close failed");
  err0_l:

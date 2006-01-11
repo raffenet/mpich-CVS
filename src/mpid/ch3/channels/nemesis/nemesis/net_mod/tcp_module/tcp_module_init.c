@@ -103,13 +103,13 @@ static int init_tcp()
 	  snprintf (pmi_key, pmi_key_max_sz, "TCPkey[%d:%d]", rank,grank);
 
 	  /* Put my unique id */
-	  errno = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
-	  if (errno != 0)
-	    ERROR_RET (-1, "PMI_KVS_Put failed %d", errno);
+	  ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
+	  if (ret != 0)
+	    ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
 	  
-	  errno = PMI_KVS_Commit (pmi_kvs_name);
-	  if (errno != 0)
-	    ERROR_RET (-1, "PMI_KVS_commit failed %d", errno);
+	  ret = PMI_KVS_Commit (pmi_kvs_name);
+	  if (ret != 0)
+	    ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
 	}       
       else if (grank < rank)
 	{
@@ -130,9 +130,9 @@ static int init_tcp()
 
 	}
     }
-  errno = PMI_Barrier();
-  if (errno != 0)
-    ERROR_RET (-1, "PMI_Barrier failed %d", errno);
+  ret = PMI_Barrier();
+  if (ret != 0)
+    ERROR_RET (-1, "PMI_Barrier failed %d", ret);
 
 #ifdef TRACE
   fprintf(stderr,"[%i] ---- Creating sockets done \n",rank);	  	  
@@ -167,9 +167,9 @@ static int init_tcp()
 	  memset(pmi_val, 0, pmi_val_max_sz);
 	  snprintf (pmi_key, pmi_key_max_sz,"TCPkey[%d:%d]", grank,rank);
 	      
-	  errno = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
-	  if (errno != 0)
-	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", errno, grank);
+	  ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
+	  if (ret != 0)
+	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, grank);
 	  
 	  ret = sscanf (pmi_val, "%d:%s", &port_num,s) ;
 	  if ( ret != 2)
@@ -283,20 +283,20 @@ tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 		 MPID_nem_queue_ptr_t *module_free_queue,
 		 int ckpt_restart)
 {
-    int errno;
+    int ret;
     int index;
 
     
     /* FIXME: what's the right way to get (and store) our rank and numnodes? */
     
     /*
-    errno = PMI_Get_rank (&rank);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Get_rank failed %d", errno);
+    ret = PMI_Get_rank (&rank);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_rank failed %d", ret);
     
-    errno = PMI_Get_size (&numnodes);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Get_size failed %d", errno);
+    ret = PMI_Get_size (&numnodes);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_size failed %d", ret);
     */
     
     rank            = MPID_nem_mem_region.rank;
@@ -311,8 +311,8 @@ tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 
     if( MPID_nem_mem_region.ext_procs > 0)
       {
-	errno = init_tcp();
-	if (errno != 0)
+	ret = init_tcp();
+	if (ret != 0)
 	  ERROR_RET (-1, "init_tcp() failed");
 
 	if(MPID_nem_mem_region.num_local == 0)

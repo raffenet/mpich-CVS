@@ -49,7 +49,7 @@ gm_module_lmt_finalize()
 static inline int
 gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iovec *cookie)
 {
-    int errno = 0;
+    int ret = 0;
     int ret;
     int i, j;
     struct iovec *iov_copy;
@@ -59,21 +59,21 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iove
 	ret = gm_module_register_mem (iov[i].iov_base, iov[i].iov_len);
 	if (ret != 0)
 	{
-	    errno = -1;
+	    ret = -1;
 	    goto error_exit;
 	}
     }
     iov_copy = MALLOC (sizeof (struct iovec) * n_iov);
     if (iov_copy == 0)
     {
-	errno = -1;
+	ret = -1;
 	goto error_exit;
     }
     MPID_NEM_MEMCPY (iov_copy, iov, sizeof (struct iovec) * n_iov);
     cookie->iov_base = iov_copy;
     cookie->iov_len = sizeof (struct iovec) * n_iov;
 
-    return errno;
+    return ret;
     
  error_exit:
     for (j = i-1; j <= 0; --j)
@@ -81,7 +81,7 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iove
 	gm_module_deregister_mem (iov[j].iov_base, iov[j].iov_len);
     }
 
-    return errno;
+    return ret;
 }
 
 int
@@ -151,7 +151,7 @@ gm_module_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie,
 static inline int
 gm_module_lmt_post (struct iovec cookie)
 {
-    int errno = 0;
+    int ret = 0;
     int i;
     struct iovec *iov;
     int n_iov;
@@ -166,7 +166,7 @@ gm_module_lmt_post (struct iovec cookie)
     
     free (iov);
 
-    return errno;
+    return ret;
 }
 
 int

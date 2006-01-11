@@ -33,7 +33,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     pid_t            my_pid;
     int              num_processes;
     int              rank;
-    int              errno;
+    int              ret;
     int              num_local;
     int             *local_procs;
     int              local_rank;
@@ -41,12 +41,12 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     int              index, index2, size;
     int i;
 
-    errno = pm_init (&num_processes, &rank);
-    if (errno != 0)
+    ret = pm_init (&num_processes, &rank);
+    if (ret != 0)
 	FATAL_ERROR ("pm_init() failed");
 
-    errno = get_local_procs (&num_local, &local_procs, &local_rank);
-    if (errno != 0)
+    ret = get_local_procs (&num_local, &local_procs, &local_rank);
+    if (ret != 0)
 	FATAL_ERROR ("get_local_procs() failed");
 
 #ifdef MEM_REGION_IN_HEAP
@@ -184,9 +184,9 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     /* set up barrier region */
     MPID_nem_barrier_init ((MPID_nem_barrier_t *)(MPID_nem_mem_region.seg[5].addr));	
     
-    errno = PMI_Barrier();
-    if (errno != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", errno);
+    ret = PMI_Barrier();
+    if (ret != 0)
+	FATAL_ERROR ("PMI_Barrier failed %d", ret);
 
     my_pid = getpid();
     MPID_NEM_MEMCPY(&(((pid_t *)(MPID_nem_mem_region.seg[0].addr))[local_rank]),
@@ -244,7 +244,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	{
 	    /*fprintf (stderr, "Using GM module\n"); */
 	}
-	errno = gm_module_init (MPID_nem_mem_region.RecvQ[rank],
+	ret = gm_module_init (MPID_nem_mem_region.RecvQ[rank],
 				MPID_nem_mem_region.FreeQ[rank],
 				MPID_nem_mem_region.Elements, 
 				MPID_NEM_NUM_CELLS,
@@ -253,7 +253,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 				&MPID_nem_mem_region.net_recv_queue, 
 				&MPID_nem_mem_region.net_free_queue,
 				ckpt_restart);
-	if (errno != 0)
+	if (ret != 0)
 	    FATAL_ERROR ("gm_module_init() failed");
 	break;
     case MPID_NEM_TCP_MODULE:
@@ -262,7 +262,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	{
 	    /*fprintf (stderr, "Using TCP module\n"); */
 	}
-	errno = tcp_module_init (MPID_nem_mem_region.RecvQ[rank],
+	ret = tcp_module_init (MPID_nem_mem_region.RecvQ[rank],
 				 MPID_nem_mem_region.FreeQ[rank],
 				 MPID_nem_mem_region.Elements, 
 				 MPID_NEM_NUM_CELLS,
@@ -271,7 +271,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 				 &MPID_nem_mem_region.net_recv_queue, 
 				 &MPID_nem_mem_region.net_free_queue,
 				 ckpt_restart);
-	if (errno != 0)
+	if (ret != 0)
 	    FATAL_ERROR ("tcp_module_init() failed");
     }
     break;
@@ -370,19 +370,19 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 int
 get_local_procs (int *num_local, int **local_procs, int *local_rank)
 {
-    int errno;
+    int ret;
     int global_rank;
     int global_size;
     int *procs;
     int i;
     
-    errno = PMI_Get_rank (&global_rank);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Get_rank failed %d", errno);
+    ret = PMI_Get_rank (&global_rank);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_rank failed %d", ret);
     
-    errno = PMI_Get_size (&global_size);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Get_size failed %d", errno);
+    ret = PMI_Get_size (&global_size);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_size failed %d", ret);
 
     memset(pmi_val, 0, pmi_val_max_sz);
     snprintf (pmi_val, pmi_val_max_sz, "%s", MPID_nem_hostname);
@@ -391,17 +391,17 @@ get_local_procs (int *num_local, int **local_procs, int *local_rank)
     snprintf (pmi_key, pmi_key_max_sz, "hostname[%d]", global_rank);
 
     /* Put my hostname id */
-    errno = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_Put failed %d", errno);
+    ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
     
-    errno = PMI_KVS_Commit (pmi_kvs_name);
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_KVS_commit failed %d", errno);
+    ret = PMI_KVS_Commit (pmi_kvs_name);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
 
-    errno = PMI_Barrier();
-    if (errno != 0)
-	ERROR_RET (-1, "PMI_Barrier failed %d", errno);
+    ret = PMI_Barrier();
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
 
     procs = MALLOC (global_size * sizeof (int));
     if (!procs)
@@ -414,9 +414,9 @@ get_local_procs (int *num_local, int **local_procs, int *local_rank)
 	memset (pmi_key, 0, pmi_key_max_sz);
 	snprintf (pmi_key, pmi_key_max_sz, "hostname[%d]", i);
 	
-	errno = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
-	if (errno != 0)
-	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", errno, i);
+	ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
+	if (ret != 0)
+	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
 
 	if (!strncmp (MPID_nem_hostname, pmi_val, pmi_val_max_sz))
 	{
