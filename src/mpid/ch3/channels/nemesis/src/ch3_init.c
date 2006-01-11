@@ -31,6 +31,9 @@ static int called_pre_init = 0;
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
 {
+    int mpi_errno = MPI_SUCCESS;
+    int appnum;
+    int pmi_errno;
     int nem_errno;
     int null_argc = 0;
     char **null_argv = 0;
@@ -41,6 +44,20 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
 	return MPI_ERR_INTERN;
     }
 
+    pmi_errno = PMI_Get_appnum (&appnum);
+    if (pmi_errno != PMI_SUCCESS)
+    {
+	MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**pmi_get_appnum", "**pmi_get_appnum %d", pmi_errno);
+    }
+
+    /* Note that if pmi is not availble, the value of MPI_APPNUM is 
+       not set */
+    if (appnum != -1)
+    {
+	MPIR_Process.attrs.appnum = appnum;
+    }
+
+
     MPIDI_CH3I_my_rank = *rank;
     
     *has_parent = 0;
@@ -48,7 +65,8 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
     
     called_pre_init = 1;
 
-    return MPI_SUCCESS;
+ fn_fail:
+    return mpi_errno;
 }
 
 #undef FUNCNAME
