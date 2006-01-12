@@ -373,7 +373,7 @@ if [ ! -n "$prefix" ] ; then
     exit 1
 fi
 if [ $verbose = 1 ] ; then
-    echo "Install into $prefix"
+    echo "Install into $DESTDIR$prefix"
 fi
 
 if [ -d $DESTDIR$prefix ] ; then
