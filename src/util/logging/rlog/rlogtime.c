@@ -166,9 +166,22 @@ int MPIU_Timer_finalize()
 
     RLOG_DisableLogging(g_pRLOG);
 
-    MPIU_Msg_printf( "Writing logfile.\n");fflush(stdout);
+    /* The code originally included output statements that surrounded the
+       writing of the logfiles with "Writing logfile." and "finished."
+       While sometimes useful, it is often valuable to have 
+       the use of logging make no changes in the observable output 
+       from the program, for example, in testing that the logging 
+       does not impact the correctness of the code or while used 
+       within an environment that expects all stdout/err to come
+       from code that the user has specifically written.
+
+       To that end, the output lines have been commented out.  Should
+       there be a strong desire to provide this output, it should be
+       made optional, turned on (off by default) with a runtime parameter.
+     */
+    /* MPIU_Msg_printf( "Writing logfile.\n");fflush(stdout); */
     RLOG_FinishLog(g_pRLOG);
-    MPIU_Msg_printf("finished.\n");fflush(stdout);
+    /* MPIU_Msg_printf("finished.\n");fflush(stdout); */
     s_RLOG_Initialized = 0;
 
     return MPI_SUCCESS;
