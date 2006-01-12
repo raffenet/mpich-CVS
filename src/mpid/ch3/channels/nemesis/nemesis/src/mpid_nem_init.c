@@ -339,7 +339,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     MPID_nem_mpich2_init (ckpt_restart);
     MPID_nem_barrier (num_local, local_rank);
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     MPID_nem_ckpt_init (ckpt_restart);
 #endif
     

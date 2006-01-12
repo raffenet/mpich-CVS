@@ -6,7 +6,7 @@ int MPID_nem_ckpt_logging_messages; /* are we in logging-message-mode? */
 int MPID_nem_ckpt_sending_markers; /* are we in the process of sending markers? */
 struct cli_message_log_total *MPID_nem_ckpt_message_log; /* are we replaying messages? */
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
 #include "cli.h"
 
 static int* log_msg;

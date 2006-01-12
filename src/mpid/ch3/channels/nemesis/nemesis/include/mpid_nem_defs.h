@@ -5,7 +5,7 @@
 #include "mpidi_ch3i_nemesis_conf.h"
 #include "mpi.h"
 
-/* #define MPID_NEM_CKPT_ENABLED */
+/* #define ENABLED_CHECKPOINTING */
 
 #define MPID_NEM_RET_OK       1
 #define MPID_NEM_RET_NG      -1

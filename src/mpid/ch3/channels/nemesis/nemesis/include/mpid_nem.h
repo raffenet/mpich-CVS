@@ -1,7 +1,7 @@
 #ifndef _MPID_NEM_H
 #define _MPID_NEM_H
 
-/* #define MPID_NEM_CKPT_ENABLED 1 */
+/* #define ENABLED_CHECKPOINTING 1 */
 
 #include "mpid_nem_defs.h"
 #include "mpid_nem_queue.h"

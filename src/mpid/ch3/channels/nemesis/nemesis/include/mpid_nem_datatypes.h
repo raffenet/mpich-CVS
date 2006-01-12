@@ -15,6 +15,7 @@
 #include <string.h>
 #include <limits.h>
 #include <sched.h>
+#include <mpidi_ch3i_nemesis_conf.h>
 
 #define MPID_NEM_OFFSETOF(struc, field) ((int)(&((struc *)0)->field))
 #define MPID_NEM_CACHE_LINE_LEN     64
@@ -39,7 +40,7 @@
 #define MPID_NEM_MPICH2_HEAD_LEN sizeof(MPID_nem_pkt_header_t)
 #define MPID_NEM_MPICH2_DATA_LEN (MPID_NEM_CELL_PAYLOAD_LEN - MPID_NEM_MPICH2_HEAD_LEN)
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
 #define MPID_NEM_PKT_HEADER_FIELDS		\
     int source;					\
     int dest;					\
@@ -65,7 +66,7 @@ typedef struct MPID_nem_pkt_mpich2
     char payload[MPID_NEM_MPICH2_DATA_LEN];
 } MPID_nem_pkt_mpich2_t;
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
 /* checkpoint marker */
 typedef struct MPID_nem_pkt_ckpt
 {
@@ -78,7 +79,7 @@ typedef union
 {    
     MPID_nem_pkt_header_t      header;
     MPID_nem_pkt_mpich2_t      mpich2;
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     MPID_nem_pkt_ckpt_t        ckpt;
 #endif
 } MPID_nem_pkt_t;

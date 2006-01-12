@@ -106,7 +106,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
 int
 MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 {
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     MPID_nem_cell_ptr_t el;
     int my_rank;
 
@@ -168,7 +168,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
     else
 	prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
-#endif /*MPID_NEM_CKPT_ENABLED */
+#endif /*ENABLED_CHECKPOINTING */
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -186,7 +186,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     MPID_nem_cell_ptr_t el;
     int my_rank;
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -231,7 +231,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     el->pkt.mpich2.dest    = dest;
     el->pkt.mpich2.datalen = size;
     el->pkt.mpich2.seqno   = send_seqno[dest]++;
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
     MPID_NEM_MEMCPY (el->pkt.mpich2.payload, buf, size);
@@ -291,7 +291,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     MPID_nem_cell_ptr_t el;
     int my_rank;
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -326,10 +326,10 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
 	    pbox->cell.pkt.mpich2.datalen = size;
 	    pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
-#endif /* MPID_NEM_CKPT_ENABLED */
+#endif /* ENABLED_CHECKPOINTING */
 	    payload_32[0] = buf_32[0];
 	    payload_32[1] = buf_32[1];
 	    payload_32[2] = buf_32[2];
@@ -385,7 +385,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     el->pkt.mpich2.dest    = dest;
     el->pkt.mpich2.datalen = size;
     el->pkt.mpich2.seqno   = send_seqno[dest]++;
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 #if 1
@@ -472,7 +472,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     int payload_len;    
     int my_rank;
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -532,7 +532,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     el->pkt.mpich2.dest    = dest;
     el->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
     el->pkt.mpich2.seqno   = send_seqno[dest]++;
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
@@ -577,7 +577,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     int payload_len;    
     int my_rank;
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
@@ -612,7 +612,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
 	    pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN;
 	    pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
@@ -713,7 +713,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     el->pkt.mpich2.dest    = dest;
     el->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
     el->pkt.mpich2.seqno   = send_seqno[dest]++;
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
@@ -923,7 +923,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     MPID_nem_ckpt_maybe_take_checkpoint();
 
     if (MPID_nem_ckpt_message_log)
@@ -962,7 +962,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
  exit_l:
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
 	MPID_nem_ckpt_got_marker (cell, in_fbox);
     else if (MPID_nem_ckpt_logging_messages)
@@ -1026,7 +1026,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     MPID_nem_ckpt_maybe_take_checkpoint();
 
  top_l:
@@ -1082,7 +1082,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     *in_fbox = 0;    
 
  exit_l:
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
     {
 	MPID_nem_ckpt_got_marker (cell, in_fbox);
@@ -1109,7 +1109,7 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell)
     int source = cell->pkt.mpich2.source;
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
-#ifdef MPID_NEM_CKPT_ENABLED
+#ifdef ENABLED_CHECKPOINTING
     if (cell->pkt.header.type == MPID_NEM_PKT_CKPT_REPLAY)
     {
 	if (!MPID_nem_ckpt_message_log)
