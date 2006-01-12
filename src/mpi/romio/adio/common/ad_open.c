@@ -86,6 +86,10 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 			    && uses_generic_write(fd))) {
 	    fd->hints->deferred_open = 0;
     }
+    if (fd->file_system == ADIO_PVFS2)
+	    /* disable deferred open on PVFS2 so that scalable broadcast will
+	     * always use the propper communicator */
+	    fd->hints->deferred_open = 0;
 
 /* gather the processor name array if we don't already have it */
 
@@ -164,7 +168,9 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
      * process anyway, the EXCL case falls out and we don't need to explicitly
      * worry about it, other than turning off both the EXCL and CREATE flags 
      */
-    if (access_mode & ADIO_CREATE) {
+    /* pvfs2 handles opens specially, so it is actually more efficent for that
+     * file system if we skip this optimization */
+    if (access_mode & ADIO_CREATE && fd->file_system != ADIO_PVFS2) {
        if(rank == fd->hints->ranklist[0]) {
     		fd->access_mode = access_mode;
     		(*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
