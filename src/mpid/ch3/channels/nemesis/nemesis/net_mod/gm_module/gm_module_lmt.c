@@ -50,7 +50,6 @@ static inline int
 gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iovec *cookie)
 {
     int ret = 0;
-    int ret;
     int i, j;
     struct iovec *iov_copy;
     

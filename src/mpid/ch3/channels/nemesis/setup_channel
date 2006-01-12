@@ -40,9 +40,9 @@ prototype_dir=${master_top_srcdir}/src/mpid/${device_name}/channels/${channel_na
 CPPFLAGS="$CPPFLAGS -I${prototype_dir}/include -I${prototype_dir}/utils/monitor"
 
 #include papi
-if test -n "${papi_dir}" ; then
-    CPPFLAGS="$CPPFLAGS -I${perfctr_dir}/include -I${papi_dir}/include"
-    LIBS="$LIBS ${papi_dir}/lib/libpapi.a ${papi_dir}/lib/libperfctr.a"
-fi
+#if test -n "${papi_dir}" ; then
+#    CPPFLAGS="$CPPFLAGS -I${perfctr_dir}/include -I${papi_dir}/include"
+#    LIBS="$LIBS ${papi_dir}/lib/libpapi.a ${papi_dir}/lib/libperfctr.a"
+#fi
 
 export nemesis_network
