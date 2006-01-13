@@ -387,21 +387,25 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     return 0;
 }
 
-/* These are used to simplify the handling of options */
+/* These are used to simplify the handling of options.  Classbits, Classname,
+   and LCClassname must be updated consistently; also see MPIU_DBG_CLASS
+   in src/include/mpidbg.h */
 static const int MPIU_Classbits[] = { 
     0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x30, 0x40, 0x80, 0x100, 0x180,
-    ~0, 0 };
+    0x200, 0x400, ~0, 0 };
 static const char *MPIU_Classname[] = { "PT2PT", "RMA", "THREAD", "PM", 
 					"ROUTINE_ENTER", "ROUTINE_EXIT", 
 					"ROUTINE", "SYSCALL", 
 					"CH3_CONNECT", "CH3_PROGRESS",
 					"CH3",
+					"DATATYPE", "HANDLE", 
 					"ALL", 0 };
 static const char *MPIU_LCClassname[] = { "pt2pt", "rma", "thread", "pm", 
 					  "routine_enter", "routine_exit", 
 					  "routine", "syscall", 
 					  "ch3_connect", "ch3_progress",
 					  "ch3",
+					  "datatype", "handle", 
 					  "all", 0 };
 
 static const int  MPIU_Levelvalues[] = { MPIU_DBG_TERSE,

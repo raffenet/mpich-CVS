@@ -6,6 +6,17 @@
 #ifndef MPIDBG_H_INCLUDED
 #define MPIDBG_H_INCLUDED
 
+/*
+ * Multilevel debugging and tracing macros.
+ * The design is discussed at 
+ * http://www-unix.mcs.anl.gov/mpi/mpich2/developer/design/debugmsg.htm
+ *
+ * Basically, this provide a way to place debugging messages into
+ * groups (called *classes*), with levels of detail, and arbitrary
+ * messages.  The messages can be turned on and off using environment
+ * variables and/or command-line options.
+ */
+
 #ifdef USE_DBG_LOGGING
 #define MPIU_DBG_MSG(_class,_level,_string)  \
    {if ( (MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
@@ -28,11 +39,15 @@
           char _s[MPIU_DBG_MAXLINE]; \
           MPIU_Snprintf _fmatargs ; \
      MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 0, _s ); }}
+#define MPIU_DBG_STMT(_class,_level,_stmt) \
+   {if ( (MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
+          MPIU_DBG_##_level <= MPIU_DBG_MaxLevel ) { _stmt; }}
 #else
 #define MPIU_DBG_MSG(_class,_level,_string) 
 #define MPIU_DBG_MSG_S(_class,_level,_fmat,_string)
 #define MPIU_DBG_MSG_D(_class,_level,_fmat,_int)
 #define MPIU_DBG_MSG_FMT(_class,_level,_fmatargs)
+#define MPIU_DBG_STMT(_class,_level,_stmt)
 #endif
 
 /* Special constants */
@@ -51,6 +66,8 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_CH3_CONNECT   = 0x80,
 		      MPIU_DBG_CH3_PROGRESS  = 0x100,
 		      MPIU_DBG_CH3           = 0x180,
+		      MPIU_DBG_DATATYPE      = 0x200,
+		      MPIU_DBG_HANDLE        = 0x400,
 		      MPIU_DBG_ALL           = (~0) };
 
 extern int MPIU_DBG_ActiveClasses;
