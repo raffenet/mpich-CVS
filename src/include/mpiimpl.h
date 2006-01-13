@@ -498,13 +498,26 @@ M*/
     }																\
 }
 #else
+/* The MPIU_DBG... statements are macros that vanish unless
+   --enable-g=log is selected */
 #define MPIU_Object_set_ref(objptr,val) \
-    {((MPIU_Handle_head*)(objptr))->ref_count = val;}
+    {((MPIU_Handle_head*)(objptr))->ref_count = val; \
+    MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,\
+            "set %p (0x%08x) refcount to %d in %s:%d", \
+       (objptr), (objptr)->handle, val, __FILE__, __LINE__));}
 #define MPIU_Object_add_ref(objptr) \
-    {((MPIU_Handle_head*)(objptr))->ref_count++;}
+    {((MPIU_Handle_head*)(objptr))->ref_count++;\
+    MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,\
+      "incr %p (0x%08x) refcount in %s:%d, count=%d",	\
+     (objptr), (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));}
 #define MPIU_Object_release_ref(objptr,inuse_ptr) \
-    {*(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;}
+    {*(inuse_ptr)=--((MPIU_Handle_head*)(objptr))->ref_count;\
+	MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,\
+  "decr %p (0x%08x) refcount in %s:%d, count=%d",\
+  (objptr), (objptr)->handle, __FILE__, __LINE__, (objptr)->ref_count));}
+
 #endif
+
 #else
 #if defined(USE_ATOMIC_UPDATES)
 #define MPIU_Object_set_ref(objptr,val) \
@@ -517,6 +530,7 @@ M*/
     MPID_Atomic_decr_flag(&((objptr)->ref_count),nzflag__);	\
     *inuse_ptr = nzflag__;					\
 }
+
 #else
 #define MPIU_Object_set_ref(objptr,val) \
     {((MPIU_Handle_head*)(objptr))->ref_count = val;}
