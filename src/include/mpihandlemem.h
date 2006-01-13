@@ -42,7 +42,16 @@
   multiple types (for example, we may want a universal error handler for 
   errors return).  This is also used to indicate the type of MPI object a 
   MPI handle represents.  It is an enum because only this applies only the
-  the MPI objects.
+  the MPI and internal MPICH2 objects.
+
+  The 'MPID_PROCGROUP' kind is used to manage process groups (different
+  from MPI Groups) that are used to keep track of collections of
+  processes (each 'MPID_PROCGROUP' corresponds to a group of processes
+  that define an 'MPI_COMM_WORLD'.  This becomes important only 
+  when MPI-2 dynamic process features are supported.  'MPID_VCONN' is
+  a virtual connection; while this is not part of the overall ADI3
+  design, an object that manages connections to other processes is
+  a common need, and 'MPID_VCONN' may be used for that.
 
   Module:
   Attribute-DS
@@ -58,7 +67,9 @@ typedef enum MPID_Object_kind {
   MPID_WIN        = 0x8,
   MPID_KEYVAL     = 0x9,
   MPID_ATTR       = 0xa,
-  MPID_REQUEST    = 0xb
+  MPID_REQUEST    = 0xb,
+  MPID_PROCGROUP  = 0xc,
+  MPID_VCONN      = 0xd
   } MPID_Object_kind;
 /* The above objects should correspond to MPI objects only. */
 #define HANDLE_MPI_KIND_SHIFT 26
