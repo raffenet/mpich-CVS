@@ -346,23 +346,30 @@ MPIDI_CA_t;
 
 typedef struct MPIDI_PG
 {
-    /* MPIU_Object field.  MPIDI_PG_t objects are not allocated using the MPIU_Object system, but we do use the associated
-       reference counting routines.  Therefore, handle must be present, but is not used. */
+    /* MPIU_Object field.  MPIDI_PG_t objects are not allocated using the 
+       MPIU_Object system, but we do use the associated reference counting 
+       routines.  Therefore, handle must be present, but is not used 
+       except by debugging routines */
     int handle;
     volatile int ref_count;
 
-    /* Next pointer used to maintain a list of all process groups known to this process */
+    /* Next pointer used to maintain a list of all process groups known to 
+       this process */
     struct MPIDI_PG * next;
 
     /* Number of processes in the process group */
     int size;
 
-    /* VC table.  At present this is a pointer to an array of VC structures.  Someday we may want make this a pointer to an array
-       of VC references.  Thus, it is important to use MPIDI_PG_Get_vc() instead of directly referencing this field. */
+    /* VC table.  At present this is a pointer to an array of VC structures. 
+       Someday we may want make this a pointer to an array
+       of VC references.  Thus, it is important to use MPIDI_PG_Get_vc() 
+       instead of directly referencing this field. */
     struct MPIDI_VC * vct;
 
-    /* Pointer to the process group ID.  The actual ID is defined and allocated by the process group.  The pointer is kept in the
-       device space because it is necessary for the device to be able to find a particular process group. */
+    /* Pointer to the process group ID.  The actual ID is defined and 
+       allocated by the process group.  The pointer is kept in the
+       device space because it is necessary for the device to be able to 
+       find a particular process group. */
     void * id;
     
 #if defined(MPIDI_CH3_PG_DECL)
@@ -385,10 +392,11 @@ typedef struct MPIDI_VC
     /* XXX - need better comment */
     /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the 
        MPIU_Object system, but we do use the associated
-       reference counting routines.  The first field is normal a handle, but 
-       since we are not using MPIU_Object for allocation,
-       we instead replace the handle with a dummy field. */
-    int dummy;
+       reference counting routines.  The handle value is required 
+       when debugging objects (the handle kind is used in reporting
+       on changes to the object).
+    */
+    int handle;
     volatile int ref_count;
 
     /* state of the VC */
