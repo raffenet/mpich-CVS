@@ -25,6 +25,20 @@ srcdir = @srcdir@
 .dvi.ps:
 	dvips $*
 
+# Use latex2html to create the HTML version.  There are several 
+# steps needed to workaround features of latex2html
+# 1. latex2html needs the user.aux file, so we run a latex step if
+#    necessary
+# 2. latex2html is not compatible with VPATH builds (it runs in the
+#    directory that contains the source file), so we copy the source
+#    file.  If more source files are added, this step will need to 
+#    be changed
+user.aux: $(srcdir)/user.tex
+	latex $(srcdir)/user.tex
+user/user.html: user.aux $(srcdir)/user.tex $(srcdir)/user.bib
+	if [ ! -s user.tex -a -s $(srcdir)/user.tex ] ; then cp $(srcdir)/user.tex . ; fi
+	latex2html user.tex
+
 all-redirect: user.pdf
 
 mandoc:
