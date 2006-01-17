@@ -574,7 +574,7 @@ def collect_args(args,localArgSets):
             parmdb[('cmdline','-genv')] = args[argidx+1]
             argidx += 2
         elif garg == '-genvlist':
-            parmdb[('cmdline','-genvlist')] = args[argidx+1]
+            parmdb[('cmdline','-genvlist')] = args[argidx+1].split(',')
             argidx += 2
         elif garg == '-genvnone':
             parmdb[('cmdline','-genvnone')] = args[argidx+1]
@@ -659,8 +659,6 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         envall = 0
     else:
         envall = 1
-    if parmdb['-genvlist']:
-        parmdb[('cmdline','-genvlist')] = parmdb['-genvlist'].split(',')
     localEnvlist = []
     localEnv  = {}
     
