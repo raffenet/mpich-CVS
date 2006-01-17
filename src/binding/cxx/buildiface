@@ -1640,8 +1640,11 @@ Datatype TWOINTEGER(MPI_2INTEGER);
 #endif\n";
     }
     else {
+	# This is for the mpicxx.h.in file, so instead of assuming that
+	# we have mpichconf.h (which we do not, so as to keep the user's
+	# CPP name space clean), we directly set this value
 	print $OUTFD "
-#ifdef HAVE_FORTRAN_BINDING
+#if \@FORTRAN_BINDING\@
 extern Datatype INTEGER;
 extern Datatype REAL;
 extern Datatype DOUBLE_PRECISION;
@@ -1809,6 +1812,7 @@ sub build_specials {
     &print_header;
     print $OUTFD "#include \"mpi.h\"\n";
     print $OUTFD "#include <stdarg.h>\n";    # Required for pcontrol
+    print $OUTFD "#include \"mpichconf.h\"\n"; # Requires for HAVE_FORTRAN_BINDING
 
     # The coverage header is included in mpicxx.h.in
     #&printCoverageHeader( $OUTFD, 0 );
