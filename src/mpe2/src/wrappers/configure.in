@@ -84,8 +84,14 @@ AC_SUBST(RM)
 AC_SUBST(MV)
  
 AC_ARG_WITH( mpiio,
-[--with-mpiio                       - Include/exclude MPI-IO from mpe logging.
-                                     The default is yes.], ,
+[--with-mpiio                       - Enable/Disable MPI-IO logging
+                                     in MPICHx build.  The default is yes.], ,
+with_mpiio=yes )
+
+AC_ARG_ENABLE( romio,
+[--enable-romio                     - Enable/Disable ROMIO MPI-IO logging
+                                     in MPICHx build.  The default is yes.],
+with_mpiio=$enableval,
 with_mpiio=yes )
 
 AC_ARG_ENABLE( checkMPI,
@@ -310,7 +316,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         fi
     fi
 else
-dnl When it is built with MPICHx, MPE configure observes --with[out]-mpiio
+dnl When built with MPICHx, MPE configure observes --with-mpiio & --enable-romio
 dnl if test \( "$MPI_IMPL" = "MPICH" -o "$MPI_IMPL" = "MPICH2" \) \
     if test "$with_mpiio" = "yes" ; then
         AC_DEFINE( HAVE_MPI_IO, 1, [Define if MPI-IO available] )
