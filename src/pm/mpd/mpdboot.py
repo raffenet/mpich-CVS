@@ -321,7 +321,7 @@ def launch_one_mpd(idxToStart,currRoot,mpdArgs,hostsAndInfo):
         cmd = '%s %s -e -d' % (mpdCmd,mpdArgs)
     else:
         if rshCmd == 'ssh':
-            rshArgs = '-x -n'
+            rshArgs = '-x -n -q'
         else:
             rshArgs = '-n'
         mpdHost = hostsAndInfo[idxToStart]['host']
