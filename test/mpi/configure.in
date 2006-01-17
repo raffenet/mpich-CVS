@@ -345,6 +345,13 @@ EOF
     fi
     rm -f conftest*
 fi
+#
+# At least one test (C++ test of C and Fortran datatypes) needs to 
+# know if Fortran is supported
+if test "$f77dir" = "f77" ; then
+    AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
+fi
+
 # Common tests for F77
 if test "$buildingF77" = "yes" ; then
     # Match integer types to the MPI types for MPI_Aint and MPI_Offset
