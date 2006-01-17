@@ -103,7 +103,8 @@ def mpd_print_tb(*args):
         splitLine[2] = sub(' in ','',splitLine[2])
         printLine = printLine + '    %s,  %s,  %s\n' % tuple(splitLine)
     if mpd_cli_app:    # debug mpich apps in nightly tests
-        printLine += '    mpd_cli_app=%s' % (mpd_cli_app)
+        printLine += '    mpd_cli_app=%s\n' % (mpd_cli_app)
+        printLine += '    cwd=%s' % (os.getcwd())
     print printLine
     sys.stdout.flush()
     if syslog_module_available:
@@ -124,7 +125,8 @@ def mpd_uncaught_except_tb(arg1,arg2,arg3):
         # errstr += '    file %s  line# %i  procedure %s\n        %s\n' % (tup)
         errstr += '    %s  %i  %s\n        %s\n' % (tup)
     if mpd_cli_app:    # debug mpich apps in nightly tests
-        errstr += '    mpd_cli_app=%s' % (mpd_cli_app)
+        errstr += '    mpd_cli_app=%s\n' % (mpd_cli_app)
+        errstr += '    cwd=%s' % (os.getcwd())
     print errstr,
     if syslog_module_available:
         syslog.syslog(syslog.LOG_ERR, errstr)
