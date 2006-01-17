@@ -79,6 +79,8 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
 
     /* ... body of routine ...  */
     
+    /* Note that MPIU_DBG_OpenFile also uses this code (so as to avoid
+       calling an MPI routine while logging it */
     *parent = (MPIR_Process.comm_parent == NULL) ? MPI_COMM_NULL :
                (MPIR_Process.comm_parent)->handle;  
 
@@ -94,8 +96,8 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_get_parent",
-	    "**mpi_comm_get_parent %p", parent);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_comm_get_parent", "**mpi_comm_get_parent %p", parent);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );

@@ -68,6 +68,7 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_CH3           = 0x180,
 		      MPIU_DBG_DATATYPE      = 0x200,
 		      MPIU_DBG_HANDLE        = 0x400,
+		      MPIU_DBG_COMM          = 0x800,
 		      MPIU_DBG_ALL           = (~0) };
 
 extern int MPIU_DBG_ActiveClasses;

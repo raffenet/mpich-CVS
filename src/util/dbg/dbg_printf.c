@@ -322,7 +322,8 @@ int MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
 static int mpiu_dbg_initialized = 0;
 static FILE *MPIU_DBG_fp = 0;
 static char *filePattern = "-stdout-"; /* "log%d.log"; */
-static char *defaultFilePattern = "dbg-%d.log";
+/* static char *defaultFilePattern = "dbg-%d.log"; */
+static char *defaultFilePattern = "dbg@W%w-@%d@T-%t@.log";
 static int worldNum  = 0;
 static int worldRank = -1;
 static int threadID  = 0;
@@ -392,20 +393,20 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
    in src/include/mpidbg.h */
 static const int MPIU_Classbits[] = { 
     0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x30, 0x40, 0x80, 0x100, 0x180,
-    0x200, 0x400, ~0, 0 };
+    0x200, 0x400, 0x800, ~0, 0 };
 static const char *MPIU_Classname[] = { "PT2PT", "RMA", "THREAD", "PM", 
 					"ROUTINE_ENTER", "ROUTINE_EXIT", 
 					"ROUTINE", "SYSCALL", 
 					"CH3_CONNECT", "CH3_PROGRESS",
 					"CH3",
-					"DATATYPE", "HANDLE", 
+					"DATATYPE", "HANDLE", "COMM",
 					"ALL", 0 };
 static const char *MPIU_LCClassname[] = { "pt2pt", "rma", "thread", "pm", 
 					  "routine_enter", "routine_exit", 
 					  "routine", "syscall", 
 					  "ch3_connect", "ch3_progress",
 					  "ch3",
-					  "datatype", "handle", 
+					  "datatype", "handle", "comm", 
 					  "all", 0 };
 
 static const int  MPIU_Levelvalues[] = { MPIU_DBG_TERSE,
@@ -569,8 +570,28 @@ Environment variables\n\
 #define MAXPATHLEN 1024
 #endif
 
+/* This routine can make no MPI calls, since it may be logging those
+   calls. */
 static int MPIU_DBG_OpenFile( void )
 {
+    int withinMworld = 0,         /* True if within an @W...@ */
+	withinMthread = 0;        /* True if within an @T...@ */
+    /* FIXME: Need to know how many MPI_COMM_WORLDs are known */
+    int nWorld = 1;
+#if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+    int nThread = 2;
+#else
+    int nThread = 1;
+#endif
+    static char worldNumAsChar[10] = "0";
+
+    /* FIXME: This is a hack to handle the common case of two worlds */
+    if (MPIR_Process.comm_parent != NULL) {
+	nWorld = 2;
+	worldNumAsChar[0] = '1';
+	worldNumAsChar[1] = '\0';
+    }
+	
     if (!filePattern || *filePattern == 0 ||
 	strcmp(filePattern, "-stdout-" ) == 0) {
 	MPIU_DBG_fp = stdout;
@@ -581,7 +602,50 @@ static int MPIU_DBG_OpenFile( void )
 	pDest = filename;
 	*filename = 0;
 	while (*p && (pDest-filename) < MAXPATHLEN) {
-	    if (*p == '%') {
+	    /* There are two special cases that allow text to
+	       be optionally included.  Those patterns are
+	       @T...@ (only if multi-threaded) and
+	       @W...@ (only if more than one MPI_COMM_WORLD) 
+	       UNIMPLEMENTED/UNTESTED */
+	    if (*p == '@') {
+		/* Escaped @? */
+		if (p[1] == '@') {
+		    *pDest++ = *++p;
+		    continue;
+		}
+		/* If within an @...@, terminate it */
+		if (withinMworld) {
+		    withinMworld = 0;
+		    p++;
+		}
+		else if (withinMthread) {
+		    withinMthread = 0;
+		    p++;
+		}
+		else {
+		    /* Look for command */
+		    p++;
+		    if (*p == 'W') {
+			p++;
+			withinMworld = 1;
+		    }
+		    else if (*p == 'T') {
+			p++;
+			withinMthread = 1;
+		    }
+		    else {
+			/* Unrecognized char */
+			*pDest++ = *p++;
+		    }
+		}
+	    }
+	    else if ( (withinMworld && nWorld == 1) ||
+		      (withinMthread && nThread == 1) ) {
+		/* Simply skip this character since we're not showing
+		   this string */
+		p++;
+	    }
+	    else if (*p == '%') {
 		p++;
 		if (*p == 'd') {
 		    char rankAsChar[20];
@@ -593,7 +657,6 @@ static int MPIU_DBG_OpenFile( void )
 		}
 		else if (*p == 't') {
 #if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
-		    int threadID;
 		    char threadIDAsChar[20];
 		    MPE_Thread_self(&threadID);
 		    MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
@@ -607,7 +670,10 @@ static int MPIU_DBG_OpenFile( void )
 		}
 		else if (*p == 'w') {
 		    /* FIXME: Get world number */
-		    *pDest++ = '0';
+		    /* *pDest++ = '0'; */
+		    *pDest = 0;
+		    MPIU_Strnapp( filename, worldNumAsChar, MAXPATHLEN );
+		    pDest += strlen(worldNumAsChar);
 		}
 		else {
 		    *pDest++ = '%';
