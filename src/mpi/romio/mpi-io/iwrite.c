@@ -123,8 +123,8 @@ int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count,
 
     /* FIXME: Shouldn't status be freed before leaving this function */
 
-    MPID_CS_EXIT();
     MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     /* passed the buck to the blocking version...*/
     return MPI_SUCCESS;
@@ -258,8 +258,8 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
 			   offset, request, &error_code);
     }
 fn_exit:
-    MPID_CS_EXIT();
     MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }

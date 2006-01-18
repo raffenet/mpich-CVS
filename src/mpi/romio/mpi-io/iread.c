@@ -250,8 +250,8 @@ int MPIOI_File_iread(MPI_File mpi_fh,
     else ADIO_IreadStrided(fh, buf, count, datatype, file_ptr_type,
 			   offset, request, &error_code); 
 fn_exit:
-    MPID_CS_EXIT();
     MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }
