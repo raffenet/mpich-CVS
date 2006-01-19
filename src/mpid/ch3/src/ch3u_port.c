@@ -332,6 +332,7 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     pg_list->pg_id = MPIU_Strdup(comm_p->vcr[0]->pg->id);
     pg_list->index = cur_index++;
     pg_list->next = NULL;
+    MPIU_Assert( comm_p->vcr[0]->pg->ref_count);
     mpi_errno = MPIDI_PG_To_string(comm_p->vcr[0]->pg, &pg_list->str);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -343,6 +344,8 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
 	pg_iter = pg_list;
 	pg_trailer = pg_list;
 	while (pg_iter != NULL) {
+	    /* Check to ensure pg is (probably) valid */
+	    MPIU_Assert(comm_p->vcr[i]->pg->ref_count != 0);
 	    if (MPIDI_PG_Id_compare(comm_p->vcr[i]->pg->id, pg_iter->pg_id)) {
 		local_translation[i].pg_index = pg_iter->index;
 		local_translation[i].pg_rank = comm_p->vcr[i]->pg_rank;
