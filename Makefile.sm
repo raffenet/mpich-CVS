@@ -268,3 +268,5 @@ installdir_HTML = $(srcdir)/www
 installdir_MAN  = $(srcdir)/man
 #install_BIN = 
 #install_SBIN = 	
+# Still to do: figure out the appropriate target for installing the html
+# versions of the documents.
