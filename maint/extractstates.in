@@ -16,7 +16,6 @@
 #                                 Replaces describe_states.c in the
 #                                 older version.
 #
-# FIXME: Not yet implemented
 # Also allows an exceptions list on a per-directory basis.  This file is
 # describe_estates.txt, and contains
 # statename routine-name [r g b]
@@ -24,6 +23,12 @@
 #    255 0 0 
 # is red
 #
+# FIXME: Add better error detection and reporting
+# In the previous genstates.in script, a different set of problems in
+# the source code was detected.  Those included:
+#   Using STATE_DECL without FUNC_ENTER/EXIT
+#   Using FUNC_ENTER after FUNC_ENTER without FUNC_EXIT first
+#   Using FUNC_ENTER after FUNC_EXIT without a STATE_DECL first
 #
 # Defaults for this step.  These are globals variables that are used
 # by routines in the extractstrings script.
