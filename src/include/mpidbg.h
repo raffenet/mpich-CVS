@@ -30,6 +30,10 @@
    {if ( (MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
           MPIU_DBG_##_level <= MPIU_DBG_MaxLevel ) {\
      MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 2, _fmat, _int ); }}
+#define MPIU_DBG_MSG_P(_class,_level,_fmat,_pointer) \
+   {if ( (MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
+          MPIU_DBG_##_level <= MPIU_DBG_MaxLevel ) {\
+     MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 2, _fmat, _pointer ); }}
 
 #define MPIU_DBG_MAXLINE 256
 #define MPIU_DBG_FDEST _s,MPIU_DBG_MAXLINE
@@ -46,6 +50,7 @@
 #define MPIU_DBG_MSG(_class,_level,_string) 
 #define MPIU_DBG_MSG_S(_class,_level,_fmat,_string)
 #define MPIU_DBG_MSG_D(_class,_level,_fmat,_int)
+#define MPIU_DBG_MSG_P(_class,_level,_fmat,_int)
 #define MPIU_DBG_MSG_FMT(_class,_level,_fmatargs)
 #define MPIU_DBG_STMT(_class,_level,_stmt)
 #endif
@@ -69,6 +74,7 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_DATATYPE      = 0x200,
 		      MPIU_DBG_HANDLE        = 0x400,
 		      MPIU_DBG_COMM          = 0x800,
+		      MPIU_DBG_BSEND         = 0x1000,
 		      MPIU_DBG_ALL           = (~0) };
 
 extern int MPIU_DBG_ActiveClasses;
