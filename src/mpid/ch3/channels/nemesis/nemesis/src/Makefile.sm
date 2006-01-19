@@ -7,4 +7,8 @@ lib${MPILIBNAME}_a_SOURCES = \
 
 mmx_copy.o : mmx_copy.s
 	$(AS) -o $@ $<
+# Provide a target to construct the version for a shared library.
+# FIXME: Is this enough, or is something else required?
+mmx_copy.lo : mmx_copy.s
+	$(AS) -o $@ $<
 
