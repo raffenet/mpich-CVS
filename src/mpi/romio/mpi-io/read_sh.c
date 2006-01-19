@@ -119,8 +119,8 @@ int MPI_File_read_shared(MPI_File mpi_fh, void *buf, int count,
     }
 
 fn_exit:
-    MPID_CS_EXIT();
     MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }

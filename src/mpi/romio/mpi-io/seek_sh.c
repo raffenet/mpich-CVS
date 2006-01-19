@@ -177,8 +177,8 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
     error_code = MPI_SUCCESS;
 
 fn_exit:
-    MPID_CS_EXIT();
     MPIR_Nest_decr();
+    MPID_CS_EXIT();
 
     return error_code;
 }
