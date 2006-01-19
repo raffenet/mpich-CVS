@@ -319,9 +319,6 @@
 			<File
 				RelativePath=".\src\shm_memory.c">
 			</File>
-			<File
-				RelativePath="..\..\..\..\util\timing\timer.c">
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
