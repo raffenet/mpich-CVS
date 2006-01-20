@@ -51,6 +51,8 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 		     */
 		    if (vc->pg != NULL)
 		    { 
+			/* FIXME: Who increments the reference count that
+			   this is decrementing? */
 			MPIDI_PG_Release_ref(vc->pg, &inuse);
 			if (inuse == 0)
 			{
