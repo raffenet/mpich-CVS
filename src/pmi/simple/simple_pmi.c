@@ -34,7 +34,7 @@
 #if defined(HAVE_SYS_SOCKET_H)
 #include <sys/socket.h>
 #endif
-/* mpimem includes the definitions for MPIU_Snprintfl, MPIU_Malloc, and 
+/* mpimem includes the definitions for MPIU_Snprintf, MPIU_Malloc, and 
    MPIU_Free */
 #include "mpimem.h"
 
