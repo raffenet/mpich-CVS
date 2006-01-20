@@ -472,6 +472,8 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	     * need to be walked though in the later stages of finalize to
 	     * free queue_info's.
 	     */
+	    /* FIXME: Need to understand this and either remove or make
+	       common to all channels */
 	    MPIDI_PG_Add_ref(remote_pg[i]);
 #endif
 	    for (p=0; p<remote_pg[i]->size; p++) {
