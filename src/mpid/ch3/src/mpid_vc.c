@@ -284,7 +284,6 @@ int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size,
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] )
 {
-    int i;
     int lastPGID = -1, pgid;
     MPID_VCR vc;
     
