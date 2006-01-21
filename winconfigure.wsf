@@ -28,38 +28,6 @@
 			required = "false"
 		/>
 -->
-<!--
-		<unnamed
-			name = "--f77_name_lower"
-			helpstring = "Generate lowercase Fortran interface"
-			required = "false"
-		/>
-		<unnamed
-			name = "--f77_name_lower_uscore"
-			helpstring = "Generate lowercase Fortran interface with one underscore"
-			required = "false"
-		/>
-		<unnamed
-			name = "--f77_name_lower_2uscore"
-			helpstring = "Generate lowercase Fortran interface with two underscores"
-			required = "false"
-		/>
-		<unnamed
-			name = "--f77_name_upper"
-			helpstring = "Generate uppercase Fortran interface"
-			required = "false"
-		/>
-		<unnamed
-			name = "--f77_name_mixed"
-			helpstring = "Generate mixed case Fortran interface"
-			required = "false"
-		/>
-		<unnamed
-			name = "--f77_name_mixed_uscore"
-			helpstring = "Generate mixed case Fortran interface with one underscore"
-			required = "false"
-		/>
--->
 		<unnamed
 			name = "--defmsg"
 			helpstring = "Generate defmsg.h"
@@ -1804,28 +1772,75 @@ End If
 '
 ' Generate mpiallstates.h and describe_states.c
 '
+'Function GenerateStatesFiles()
+'	set f = WScript.CreateObject("Scripting.FileSystemObject")
+'	If f.FileExists("maint\genstates.in") Then
+'
+'		set fin = f.OpenTextFile("maint\genstates.in")
+'		cEcho "Creating maint\genstates"
+'		set fout = f.CreateTextFile("maint\genstates")
+'		contents = fin.ReadAll()
+'		contents = Replace(contents, "@PERL@", "perl")
+'		fout.Write(contents)
+'		fin.Close()
+'		fout.Close()
+'		Set WshShell = CreateObject("WScript.Shell")
+'		cEcho WshShell.CurrentDirectory & ">perl maint\genstates"
+'		WshShell.Run "perl maint\genstates", 0, true
+'
+'	Else
+'
+'		If InStr(1, LCase(WScript.FullName), "cscript") > 0 Then
+'			WScript.Echo("Missing file: maint\genstates.in")
+'		End If
+' 
+'	End If
+'
+'End Function
+
+'
+' Generate state_names.h
+'
 Function GenerateStatesFiles()
 	set f = WScript.CreateObject("Scripting.FileSystemObject")
-	If f.FileExists("maint\genstates.in") Then
+	If f.FileExists("maint\extractstates.in") Then
 
-		set fin = f.OpenTextFile("maint\genstates.in")
-		cEcho "Creating maint\genstates"
-		set fout = f.CreateTextFile("maint\genstates")
+		set fin = f.OpenTextFile("maint\extractstates.in")
+		cEcho "Creating maint\extractstates"
+		set fout = f.CreateTextFile("maint\extractstates")
 		contents = fin.ReadAll()
 		contents = Replace(contents, "@PERL@", "perl")
 		fout.Write(contents)
 		fin.Close()
 		fout.Close()
+	
+	End If
+	
+	If f.FileExists("maint\extractstrings.in") Then
+
+		set fin = f.OpenTextFile("maint\extractstrings.in")
+		cEcho "Creating maint\extractstrings"
+		set fout = f.CreateTextFile("maint\extractstrings")
+		contents = fin.ReadAll()
+		contents = Replace(contents, "@PERL@", "perl")
+		fout.Write(contents)
+		fin.Close()
+		fout.Close()
+		
+	End If
+	
+	If f.FileExists("maint\extractstates") And f.FileExists("maint\extractstrings") Then
+		
 		Set WshShell = CreateObject("WScript.Shell")
-		cEcho WshShell.CurrentDirectory & ">perl maint\genstates"
-		WshShell.Run "perl maint\genstates", 0, true
+		cEcho WshShell.CurrentDirectory & ">perl maint\extractstates"
+		WshShell.Run "perl maint\extractstates", 0, true
 
 	Else
 
 		If InStr(1, LCase(WScript.FullName), "cscript") > 0 Then
-			WScript.Echo("Missing file: maint\genstates.in")
+			WScript.Echo("Missing files: maint\extractstates.in and maint\extractstrings.in")
 		End If
-  
+ 
 	End If
 
 End Function
@@ -2207,6 +2222,8 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@MPIU_DLL_SPEC_DEF@", mpi_dll_spec_definition)
 			Case "@INCLUDE_MPICXX_H@"
 				str = Replace(str, "@INCLUDE_MPICXX_H@", "#include ""mpicxx.h""")
+			Case "@FORTRAN_BINDING@"
+				str = Replace(str, "@FORTRAN_BINDING@", "1")
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
@@ -4591,7 +4608,7 @@ Function GenBuild()
 	CreateRules f.GetFolder("src\mpid\common\locks"), trimlength
 	CreateRules f.GetFolder("src\mpid\common\sock\iocp"), trimlength
 	CreateRules f.GetFolder("src\util\info"), trimlength
-	CreateRules f.GetFolder("src\util\timing"), trimlength
+'	CreateRules f.GetFolder("src\util\timing"), trimlength
 	CreateRules f.GetFolder("src\util\logging\common"), trimlength
 	' Insert rules for romio manually since romio is not build with Makefile.sm files
 	mfile.WriteLine("{..\src\mpi\romio\adio\ad_ntfs}.c{$(OUTDIR)}.obj:")
@@ -4623,7 +4640,7 @@ Function GenBuild()
 	CreateObjs "mpich2", f.GetFolder("src\mpid\common\locks"), trimlength, false, false
 	CreateObjs "mpich2", f.GetFolder("src\mpid\common\sock\iocp"), trimlength, false, false
 	CreateObjs "mpich2", f.GetFolder("src\util\info"), trimlength, false, false
-	CreateObjs "mpich2", f.GetFolder("src\util\timing"), trimlength, false, false
+'	CreateObjs "mpich2", f.GetFolder("src\util\timing"), trimlength, false, false
 	CreateObjs "mpich2", f.GetFolder("src\util\logging\common"), trimlength, false, false
 	mfile.WriteLine(" \" & vbCrLf & "	$(OUTDIR)\ad_ntfs.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_ntfs_close.obj \")

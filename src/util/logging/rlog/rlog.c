@@ -422,17 +422,3 @@ void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
     /* advance the current position pointer */
     pRLOG->pOutput->pCurHeader += pHeader->length;
 }
-
-/* This routine makes the RLOG_DescribeState call for each name */
-#include "state_names.h"
-int MPIR_Describe_timer_states( void )
-{
-    MPIU_State_defs *def = mpich_states;
-    
-    while (def && def->state >= 0) {
-	RLOG_DescribeState( g_pRLOG, def->state, (char *)def->funcname, 
-			    (char *)def->color );
-	def++;
-    }
-    return 0;
-}
