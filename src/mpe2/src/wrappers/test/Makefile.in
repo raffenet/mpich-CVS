@@ -134,17 +134,17 @@ fcomm1_isr@EXEEXT@: fcomm1_isr.@OBJEXT@
 linktest: linktest_C
 
 linktest_C: 
-	@-$(MPE_SBINDIR)/mpelinktest cpi_trace@EXEEXT@ \
+	@-$(MPE_SBINDIR)/mpetestlink cpi_trace@EXEEXT@ \
 	  "*** Link C program with the MPI tracing library .........................."
-	@-$(MPE_SBINDIR)/mpelinktest cpi_log@EXEEXT@ \
+	@-$(MPE_SBINDIR)/mpetestlink cpi_log@EXEEXT@ \
 	  "*** Link C program with the MPI logging library .........................."
-	@-$(MPE_SBINDIR)/mpelinktest cpilog@EXEEXT@ \
+	@-$(MPE_SBINDIR)/mpetestlink cpilog@EXEEXT@ \
 	  "*** Link C program with the MPI and manual logging libraries ............."
 	@-echo ; $(MAKE) clean
 
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	    $(MPE_SBINDIR)/mpelinktest fpilog@EXEEXT@ \
+	    $(MPE_SBINDIR)/mpetestlink fpilog@EXEEXT@ \
 	    "*** Link F77 program with the MPI and manual logging libraries ..........." ; \
 	    $(MAKE) clean ; \
 	    echo ; \

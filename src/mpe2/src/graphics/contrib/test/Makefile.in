@@ -64,15 +64,15 @@ fxgraphics@EXEEXT@: fxgraphics.@OBJEXT@
 linktest: linktest_C
 
 linktest_C: 
-	@-$(MPE_SBINDIR)/mpelinktest cpi_anim@EXEEXT@ \
+	@-$(MPE_SBINDIR)/mpetestlink cpi_anim@EXEEXT@ \
 	  "*** Link C program with the MPI animation library ........................"
-	@-$(MPE_SBINDIR)/mpelinktest cxgraphics@EXEEXT@ \
+	@-$(MPE_SBINDIR)/mpetestlink cxgraphics@EXEEXT@ \
 	  "*** Link C program with the X11 graphics library ........................."
 	@-echo ; $(MAKE) clean
 
 linktest_F77: 
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	      $(MPE_SBINDIR)/mpelinktest fxgraphics@EXEEXT@ \
+	      $(MPE_SBINDIR)/mpetestlink fxgraphics@EXEEXT@ \
 	      "*** Link F77 program with the X11 graphics library ......................." ; \
 	      $(MAKE) clean ; \
 	      echo ; \

@@ -9,7 +9,8 @@ ECHO_C="@ECHO_C@"
 ECHO_T="@ECHO_T@"
 RM="@RM@"
 
-MPE_OUTFILE=mpe2_linktest.txt
+execbasename=`basename $0`
+MPE_OUTFILE="mpe2_$execbasename.txt"
 
 pgm=$1
 message=$2
