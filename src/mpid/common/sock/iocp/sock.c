@@ -1269,14 +1269,14 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
 	    {
 		int random_time;
 		int error = WSAGetLastError();
-		if (error != WSAECONNREFUSED || i == 4)
+		if ((error != WSAECONNREFUSED && error != WSAETIMEDOUT) || i == 4)
 		{
 		    connect_errno = MPIR_Err_create_code(connect_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT, "**sock_connect", "**sock_connect %s %d %s %d", host, port, get_error_string(error), error);
 		    /*
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_CONNECT);
 		    return mpi_errno;
 		    */
-		    /* This code assumes that all errors other than WSAECONNREFUSED should not cause a connection retry */
+		    /* This code assumes that all errors other than WSAECONNREFUSED and WSAETIMEDOUT should not cause a connection retry */
 		    /* FIXME: Is this correct for resource errors like WSAENOBUFS or an interrupted operation? */
 		    /*        Should all errors cause a retry? or just WSAECONNREFUSED? or a subset of the possible errors? */
 		    /*        The reason for not retrying on all errors is that it slows down connection time for multi-nic
