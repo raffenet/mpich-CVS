@@ -24,9 +24,8 @@ void MPID_nem_network_poll (int in_or_out);
 /* void MPID_nem_rel_network_poll (int in_or_out); */
 
 #define MPID_NEM_USE_SHADOW_HEAD
-
 #define MPID_NEM_USE_MACROS
-#undef MPID_NEM_USE_MACROS//DARIUS
+//Guillaume #undef MPID_NEM_USE_MACROS//DARIUS
 
 /* MPID_NEM_SWAP_REL and MPID_NEM_CAS_REL_NULL are swap and compare-and-swap functions with strict type-checking */
 static inline MPID_nem_cell_rel_ptr_t MPID_NEM_SWAP_REL (volatile MPID_nem_cell_rel_ptr_t *ptr, MPID_nem_cell_rel_ptr_t val)
