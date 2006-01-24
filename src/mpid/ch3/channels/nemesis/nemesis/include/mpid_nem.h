@@ -6,24 +6,13 @@
 #include "mpid_nem_defs.h"
 #include "mpid_nem_queue.h"
 #include "mpid_nem_memdefs.h"
+#include "mpid_nem_fbox.h"
 #include <sys/uio.h>
 
 #ifdef PAPI_MONITOR
 #include "my_papi_defs.h"
 #include "rdtsc.h"		
 #endif /* PAPI_MONITOR */
-
-#define USE_FASTBOX
-
-typedef struct MPID_nem_fboxq_elem
-{
-    int usage;
-    struct MPID_nem_fboxq_elem *prev;
-    struct MPID_nem_fboxq_elem *next;
-    int grank;
-    MPID_nem_fbox_mpich2_t *fbox;
-}
-MPID_nem_fboxq_elem_t;
 
 int MPID_nem_init (int argc, char **argv, int *rank, int *num_procs);
 int _MPID_nem_init (int argc, char **argv, int *rank, int *num_procs, int ckpt_restart);
@@ -53,8 +42,11 @@ int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
 int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest);
 int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
+int recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;
 int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell);
+
+
 /* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPID_NEM_MPICH2_SUCCESS)
@@ -159,4 +151,8 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
     return (pbox->flag.value != value);
 }
 
-#endif /* _MPID_NEM_H */
+#define PREFETCH_CELL
+extern MPID_nem_cell_ptr_t prefetched_cell;
+
+#endif
+
