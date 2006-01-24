@@ -60,6 +60,15 @@ build_lib_bin: clean_lib
 	     fi ; \
 	 done
 
+build_check:
+	@if [ -n "$(MPERUN)" ] ; then \
+	     ./sbin/mpecheckbuild -run="$(MPERUN)" ; \
+	 else \
+	     ./sbin/mpecheckbuild -run ; \
+	 fi ; \
+
+check : build_check
+
 ########  Installing
 install:
 	@if [ -n "$(PREFIX)" ] ; then \
@@ -70,9 +79,24 @@ install:
 
 installcheck:
 	@if [ -n "$(PREFIX)" ] ; then \
-	     ./sbin/mpeinstallcheck -prefix=$(PREFIX) ; \
+	     ./sbin/mpecheckinstall -prefix=$(PREFIX) ; \
 	 else \
-	     ./sbin/mpeinstallcheck ; \
+	     ./sbin/mpecheckinstall ; \
+	 fi
+
+installcheck-all:
+	@if [ -n "$(PREFIX)" ] ; then \
+	     if [ -n "$(MPERUN)" ] ; then \
+	         ./sbin/mpecheckinstall -prefix=$(PREFIX) -run="$(MPERUN)" ; \
+	     else \
+	         ./sbin/mpecheckinstall -prefix=$(PREFIX) -run ; \
+	     fi ; \
+	 else \
+	     if [ -n "$(MPERUN)" ] ; then \
+	         ./sbin/mpecheckinstall -run="$(MPERUN)" ; \
+	     else \
+	         ./sbin/mpecheckinstall -run ; \
+	     fi ; \
 	 fi
 
 uninstall:
@@ -113,6 +137,8 @@ clean: clean_lib
 	@-$(RM) -f work.pc work.pcl
 
 distclean-misc: clean_include clean_etc
+	@-$(RM) -f sbin/mpetestlink sbin/mpetestexec sbin/mpetestexeclog
+	@-$(RM) -f sbin/mpecheckinstall sbin/mpecheckbuild
 	@-$(RM) -f sbin/mpeinstall sbin/mpeuninstall
 	@-$(RM) -f Makefile
 	@-$(RM) -f mpe_conf.h

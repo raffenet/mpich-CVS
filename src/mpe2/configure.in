@@ -644,14 +644,23 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 fi
 
 AC_OUTPUT_COMMANDS( [
-if test ! -x ./sbin/mpetestlink -a -s ./sbin/mpetestlink; then
-    chmod u+x ./sbin/mpetestlink
-fi
 if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall; then
     chmod u+x ./sbin/mpeinstall
 fi
-if test ! -x ./sbin/mpeinstallcheck -a -s ./sbin/mpeinstallcheck; then
-    chmod u+x ./sbin/mpeinstallcheck
+if test ! -x ./sbin/mpecheckinstall -a -s ./sbin/mpecheckinstall; then
+    chmod u+x ./sbin/mpecheckinstall
+fi
+if test ! -x ./sbin/mpecheckbuild -a -s ./sbin/mpecheckbuild; then
+    chmod u+x ./sbin/mpecheckbuild
+fi
+if test ! -x ./sbin/mpetestlink -a -s ./sbin/mpetestlink; then
+    chmod u+x ./sbin/mpetestlink
+fi
+if test ! -x ./sbin/mpetestexec -a -s ./sbin/mpetestexec; then
+    chmod u+x ./sbin/mpetestexec
+fi
+if test ! -x ./sbin/mpetestexeclog -a -s ./sbin/mpetestexeclog; then
+    chmod u+x ./sbin/mpetestexeclog
 fi
 if test ! -x ./bin/mpecc -a -s ./bin/mpecc; then
     chmod a+x ./bin/mpecc
@@ -660,7 +669,8 @@ if test ! -x ./bin/mpefc -a -s ./bin/mpefc; then
     chmod a+x ./bin/mpefc
 fi
 ] )
-AC_OUTPUT( Makefile sbin/mpetestlink sbin/mpeinstall sbin/mpeinstallcheck \
+AC_OUTPUT( Makefile sbin/mpetestlink sbin/mpetestexec sbin/mpetestexeclog \
+           sbin/mpeinstall sbin/mpecheckinstall sbin/mpecheckbuild \
            etc/mpe_help.conf etc/mpe_f77env.conf $mpe_compilers )
 
 configured_pkgs=""
