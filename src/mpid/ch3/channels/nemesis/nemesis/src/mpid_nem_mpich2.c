@@ -1,4 +1,5 @@
 #include "mpid_nem.h"
+#include "mpid_nem_fbox.h"
 #include "gm_module.h"
 #include "tcp_module.h"
 
@@ -8,12 +9,12 @@
 #define DO_PAPI2(x) /*x */
 #define DO_PAPI3(x) /*x */
 
-static MPID_nem_fboxq_elem_t *fboxq_head;
-static MPID_nem_fboxq_elem_t *fboxq_tail;
-static MPID_nem_fboxq_elem_t *fboxq_elem_list;
-static MPID_nem_fboxq_elem_t *fboxq_elem_list_last;
-static MPID_nem_fboxq_elem_t *curr_fboxq_elem;
-static MPID_nem_fboxq_elem_t *curr_fbox_all_poll;
+MPID_nem_fboxq_elem_t *fboxq_head;
+MPID_nem_fboxq_elem_t *fboxq_tail;
+MPID_nem_fboxq_elem_t *fboxq_elem_list;
+MPID_nem_fboxq_elem_t *fboxq_elem_list_last;
+MPID_nem_fboxq_elem_t *curr_fboxq_elem;
+MPID_nem_fboxq_elem_t *curr_fbox_all_poll;
 
 extern int MPID_nem_ckpt_logging_messages; /* are we in logging-message-mode? */
 extern int MPID_nem_ckpt_sending_markers; /* are we in the process of sending markers? */
@@ -112,7 +113,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 
     my_rank = MPID_nem_mem_region.rank;
 
-#define PREFETCH_CELL
+    //#define PREFETCH_CELL
     
 #ifdef PREFETCH_CELL
     el = prefetched_cell;
@@ -823,83 +824,7 @@ MPID_nem_mpich2_enqueue_fastbox (int local_rank)
     return ret;
 }
 
-#if 0 /* papi timing stuff added */
-#define poll_fboxes(_cell, do_found) do {								\
-    MPID_nem_fboxq_elem_t *orig_fboxq_elem;									\
-													\
-    if (fboxq_head != NULL)										\
-    {													\
-	orig_fboxq_elem = curr_fboxq_elem;								\
-	do												\
-	{												\
-	    int value;											\
-	    MPID_nem_fbox_mpich2_t *fbox;										\
-													\
-	    fbox = curr_fboxq_elem->fbox;								\
-													\
-	    DO_PAPI2 (PAPI_reset (PAPI_EventSet));							\
-	    value = fbox->flag.value;									\
-	    if (value == 1)										\
-		DO_PAPI2 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues9));				\
-										       		\
-	    if (value == 1 && fbox->cell.pkt.mpich2.seqno == recv_seqno[curr_fboxq_elem->grank])	\
-	    {												\
-		++recv_seqno[curr_fboxq_elem->grank];							\
-		*(_cell) = &fbox->cell;									\
-		do_found;										\
-	    }												\
-	    curr_fboxq_elem = curr_fboxq_elem->next;							\
-	    if (curr_fboxq_elem == NULL)								\
-		curr_fboxq_elem = fboxq_head;								\
-	}												\
-	while (curr_fboxq_elem != orig_fboxq_elem);							\
-    }													\
-    *(_cell) = NULL;											\
-} while (0)
-#else
-#define poll_fboxes(_cell, do_found) do {									\
-    MPID_nem_fboxq_elem_t *orig_fboxq_elem;										\
-														\
-    if (fboxq_head != NULL)											\
-    {														\
-	orig_fboxq_elem = curr_fboxq_elem;									\
-	do													\
-	{													\
-	    MPID_nem_fbox_mpich2_t *fbox;											\
-														\
-	    fbox = curr_fboxq_elem->fbox;									\
-	    if (fbox->flag.value == 1 && fbox->cell.pkt.mpich2.seqno == recv_seqno[curr_fboxq_elem->grank])	\
-	    {													\
-                ++recv_seqno[curr_fboxq_elem->grank];								\
-		*(_cell) = &fbox->cell;										\
-		do_found;											\
-	    }													\
-	    curr_fboxq_elem = curr_fboxq_elem->next;								\
-	    if (curr_fboxq_elem == NULL)									\
-		curr_fboxq_elem = fboxq_head;									\
-	}													\
-	while (curr_fboxq_elem != orig_fboxq_elem);								\
-    }														\
-    *(_cell) = NULL;												\
-} while (0)
-#endif
-     
-#define poll_all_fboxes(_cell, do_found) do {										\
-    MPID_nem_fbox_mpich2_t *fbox;													\
-															\
-    fbox = curr_fbox_all_poll->fbox;											\
-    if (fbox && fbox->flag.value == 1 && fbox->cell.pkt.mpich2.seqno == recv_seqno[curr_fbox_all_poll->grank])	\
-    {															\
-	++recv_seqno[curr_fbox_all_poll->grank];									\
-	*(_cell) = &fbox->cell;												\
-	do_found;													\
-    }															\
-    ++curr_fbox_all_poll;												\
-    if (curr_fbox_all_poll > fboxq_elem_list_last)									\
-	curr_fbox_all_poll = fboxq_elem_list;										\
-} while(0)
-
-static inline int
+int
 recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 {
     MPID_nem_cell_ptr_t cell = MPID_NEM_REL_TO_ABS(qhead->my_head);
@@ -1007,23 +932,18 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 }
 
 
-
-
-/*
-  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+/*  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 
   blocking receive
   waits until there is something to receive, then sets cell to the received cell. in_fbox is true iff the cell was found in a fbox
   the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
 */
-int
-MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
+int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int my_rank = MPID_nem_mem_region.rank;
 #ifndef ENABLE_NO_SCHED_YIELD
     int pollcount = 0;
 #endif
-
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
 #ifdef ENABLED_CHECKPOINTING
@@ -1093,7 +1013,6 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif
 
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues8));
-
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -1241,6 +1160,4 @@ MPID_nem_mpich2_lmt_recv_post (int src, struct iovec cookie)
     return ret;
 }
 #endif
-
-
 
