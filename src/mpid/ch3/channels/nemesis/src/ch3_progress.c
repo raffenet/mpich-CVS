@@ -23,6 +23,10 @@
 #define MPIDI_Recvq_unlock()
 #endif
 
+MPID_Request ** const MPID_Recvq_posted_head_ptr;     
+MPID_Request ** const MPID_Recvq_unexpected_head_ptr; 
+MPID_Request ** const MPID_Recvq_posted_tail_ptr;     
+MPID_Request ** const MPID_Recvq_unexpected_tail_ptr;
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
@@ -260,12 +264,13 @@ int MPIDI_CH3I_Progress (int is_blocking)
     MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);          \
     MPIDI_Request_set_msg_type((rreq_), (msg_type_));           \
 }
-#ifdef BYPASS_PROGRESS
+
+//#ifdef BYPASS_PROGRESS
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke_with_matching
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_Comm *comm,int context_id,int *foundp, void *buf, int count, MPI_Datatype datatype,MPI_Status * status)   
+MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_Comm *comm,int context_id,int *foundp, void *buf, int count, MPI_Datatype datatype,MPI_Status * status)   
 {
     int             mpi_errno = MPI_SUCCESS;
     MPID_Request   *rreq  = NULL;
@@ -288,8 +293,10 @@ MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID
     /* handle only contiguous types (for now) and one-cell packets */
     if((dt_contig) && (( userbuf_sz <= MPID_NEM__BYPASS_Q_MAX_VAL))) 
     {
+	//PAPI_reset(PAPI_EventSet);
 	MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
-	
+	//PAPI_accum(PAPI_EventSet, PAPI_values2);	
+
 	if (cell)
 	    {	 
 		char *cell_buf    = cell->pkt.mpich2.payload;
@@ -341,15 +348,15 @@ MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID
 					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
 					    rreq->dev.next             = NULL;
 					    MPIDI_Recvq_lock();
-					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+					    if (*MPID_Recvq_unexpected_tail_ptr != NULL)
 						{
-						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						    (*MPID_Recvq_unexpected_tail_ptr)->dev.next = rreq;
 						}
 					    else
 						{
-						    MPIDI_Process.recvq_unexpected_head = rreq;
+						   *MPID_Recvq_unexpected_head_ptr = rreq;
 						}
-					    MPIDI_Process.recvq_unexpected_tail = rreq;
+					    *MPID_Recvq_unexpected_tail_ptr = rreq;     
 					    MPIDI_Recvq_unlock();       
 					    MPID_Request_initialized_clear(rreq);
 					}
@@ -438,15 +445,15 @@ MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID
 					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
 					    rreq->dev.next             = NULL;
 					    MPIDI_Recvq_lock();
-					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+					    if (*MPID_Recvq_unexpected_tail_ptr != NULL)
 						{
-						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
+						    (*MPID_Recvq_unexpected_tail_ptr)->dev.next = rreq; 
 						}
 					    else
 						{
-						    MPIDI_Process.recvq_unexpected_head = rreq;
+						    *MPID_Recvq_unexpected_head_ptr = rreq; 
 						}
-					    MPIDI_Process.recvq_unexpected_tail = rreq;
+					    *MPID_Recvq_unexpected_tail_ptr = rreq; 
 					    MPIDI_Recvq_unlock();       
 					    MPID_Request_initialized_clear(rreq);
 					    MPIDI_Request_set_sync_send_flag(rreq,TRUE);
@@ -497,15 +504,15 @@ MPID_Request *  MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID
 				    rreq->dev.match.rank       = rts_pkt->match.rank;
 				    rreq->dev.match.context_id = rts_pkt->match.context_id;
 				    MPIDI_Recvq_lock();
-				    if (MPIDI_Process.recvq_unexpected_tail != NULL)
+				    if (*MPID_Recvq_unexpected_tail_ptr != NULL)
 					{
-					    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
-						}
+					    (*MPID_Recvq_unexpected_tail_ptr)->dev.next = rreq;
+					}
 				    else
 					{
-					    MPIDI_Process.recvq_unexpected_head = rreq;
+					    *MPID_Recvq_unexpected_head_ptr  = rreq;
 					}
-				    MPIDI_Process.recvq_unexpected_tail = rreq;
+				    *MPID_Recvq_unexpected_tail_ptr  = rreq;
 				    MPIDI_Recvq_unlock();       
 				    MPID_Request_initialized_clear(rreq);
 				}
@@ -807,15 +814,15 @@ ch3|cancelresp", 0);
 			rreq->dev.match.context_id = context_id;
 			rreq->dev.next             = NULL;			  
 			MPIDI_Recvq_lock();
-			if (MPIDI_Process.recvq_posted_tail != NULL)
+			if (*MPID_Recvq_posted_tail_ptr != NULL)
 			    {
-				MPIDI_Process.recvq_posted_tail->dev.next = rreq;
+				(*MPID_Recvq_posted_tail_ptr)->dev.next = rreq;
 			    }
 			else
 			    {
-				MPIDI_Process.recvq_posted_head = rreq;
+				*MPID_Recvq_posted_head_ptr = rreq;
 			    }
-			MPIDI_Process.recvq_posted_tail = rreq;
+			*MPID_Recvq_posted_tail_ptr = rreq;
 			MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
 			MPIDI_Recvq_unlock();       
 			MPID_Request_initialized_clear(rreq);
@@ -828,6 +835,7 @@ ch3|cancelresp", 0);
     return rreq;
 }
 
+#ifdef BYPASS_PROGRESS
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_ipoke_with_matching
 #undef FCNAME
@@ -1395,7 +1403,7 @@ ch3|cancelresp", 0);
     return rreq;
 }
 
-#endif /* BYPASS_PROGRESS */
+#endif  /* BYPASS_PROGRESS */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke
