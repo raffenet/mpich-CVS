@@ -1,4 +1,4 @@
-#! @SHELL@
+#! /bin/sh
 
 # The script is designed to be invoked from a "Makefile",
 # notice the command "$MAKE $pgm" below.
@@ -40,7 +40,7 @@ if test -x $pgm ; then
         fi
         if [ -f $pgm.clog2 ] ; then
             echo "${ECHO_T}Yes."
-            echo ${ECHO_N} "    Convert $pgm.clog2 to slog2 file ............ "
+            echo ${ECHO_N} "    Convert $pgm.clog2 to slog2 file .............. ${ECHO_C}"
             if [ -x $CLOG2TOSLOG2 ] ; then
                 $RM -f $MPE_OUTFILE
                 echo "$CLOG2TOSLOG2 $pgm.clog2" > $MPE_OUTFILE

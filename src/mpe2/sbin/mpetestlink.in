@@ -1,4 +1,4 @@
-#! @SHELL@
+#! /bin/sh
 
 # The script is designed to be invoked from a "Makefile",
 # notice the command "$MAKE $pgm" below.
