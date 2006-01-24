@@ -102,6 +102,20 @@ linktest_F77:
 	    echo ; \
 	  fi
 
+
+runtest_C:
+	@-$(MPE_SBINDIR)/mpetestexec wrong_int_byte@EXEEXT@ \
+	  "*** Test C program with the MPI collective/datatype checking library ....."
+	@-echo ; $(MAKE) clean
+
+runtest_F77:
+	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	    $(MPE_SBINDIR)/mpetestexec wrong_reals@EXEEXT@ \
+	    "*** Test F77 program with the MPI collective/datatype checking library ..." ; \
+	    $(MAKE) clean ; \
+	    echo ; \
+	  fi
+
 clean:
 	@-$(RM) -f $(C_OBJS) $(F_OBJS) *.@OBJEXT@
 	@-$(RM) -f $(C_EXECS) $(OPT_C_EXECS) $(OPT_F_EXECS)

@@ -150,6 +150,24 @@ linktest_F77:
 	    echo ; \
 	  fi
 
+
+runtest_C: 
+	@-$(MPE_SBINDIR)/mpetestexec cpi_trace@EXEEXT@ \
+	  "*** Test C program with the MPI tracing library .........................."
+	@-$(MPE_SBINDIR)/mpetestexeclog cpi_log@EXEEXT@ \
+	  "*** Test C program with the MPI logging library .........................."
+	@-$(MPE_SBINDIR)/mpetestexeclog cpilog@EXEEXT@ \
+	  "*** Test C program with the MPI and manual logging libraries ............."
+	@-echo ; $(MAKE) clean
+
+runtest_F77: 
+	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	      $(MPE_SBINDIR)/mpetestexeclog fpilog@EXEEXT@ \
+	      "*** Test F77 program with the MPI and manual logging libraries ..........." ; \
+	      $(MAKE) clean ; \
+	      echo ; \
+	  fi
+
 clean:
 	@-$(RM) -f work.pc work.pcl
 	@-$(RM) -f *.@OBJEXT@ *.n@OBJEXT@ *~ PI*

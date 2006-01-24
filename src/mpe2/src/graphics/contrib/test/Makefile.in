@@ -78,6 +78,21 @@ linktest_F77:
 	      echo ; \
 	  fi
 
+runtest_C: 
+	@-$(MPE_SBINDIR)/mpetestexec cpi_anim@EXEEXT@ \
+	  "*** Test C program with the MPI animation library ........................"
+	@-$(MPE_SBINDIR)/mpetestexec cxgraphics@EXEEXT@ \
+	  "*** Test C program with the X11 graphics library ........................."
+	@-echo ; $(MAKE) clean
+
+runtest_F77: 
+	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	      $(MPE_SBINDIR)/mpetestexec fxgraphics@EXEEXT@ \
+	      "*** Test F77 program with the X11 graphics library ......................." ; \
+	      $(MAKE) clean ; \
+	      echo ; \
+	  fi
+
 clean:
 	@-$(RM) -f work.pc work.pcl
 	@-$(RM) -f *.@OBJEXT@ *~ PI* $(EXECS)
