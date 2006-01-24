@@ -26,16 +26,6 @@ libbuild_dir=@libbuild_dir@
 binbuild_dir=@binbuild_dir@
 sbinbuild_dir=@sbinbuild_dir@
 
-# Installation directories: Default paths (set at configure time)
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-includedir=@includedir@
-libdir=@libdir@
-bindir=@bindir@
-sbindir=@sbindir@
-datadir=@datadir@
-sysconfdir=@sysconfdir@
-
 # Assume PROF_LIBNAME=MPE_LIBNAME.
 PROF_LIBNAME=@MPE_LIBNAME@
 CPRP="@CPRP@"
@@ -47,23 +37,31 @@ MPE_BUILD_FORTRAN2C=@MPE_BUILD_FORTRAN2C@
 Show=eval
 prefix_override=0
 
+make_target=linktest
+make_mperun=
+
 for arg in "$@" ; do
     case "$arg" in
-        -prefix=*)
-            prefix=`echo $arg | sed -e 's/-prefix=//g'`
-            if [ "$prefix" != "@prefix@" ] ; then
-                prefix_override=1
-            fi
-            ;;
         -t)
             Show=echo
+            ;;
+        -run)
+            make_target=runtest
+            ;;
+        -run=*)
+            make_target=runtest
+            # Added extra quotes '\"' and '\"' so -run= can accept blanks.
+            make_mperun="MPERUN=\"`echo $arg | sed -e 's/-run=//g'`\""
             ;;
         -echo)                    set -x ;;
         -help|-u|-usage|-h)
 cat <<EOF
-Check MPE installed at $prefix.
--prefix=path     - Destination directory.
--t               - Try only; do no actual checking.
+Check MPE build at $libbuild_dir.
+-t                  - Try only; do NO actual checking.
+-run                - Do build runtests instead of linktests with
+                      MPERUN="$bindir/mpiexec -n 4".
+-run=<mpiexec_cmd>  - Do build runtests instead of linktests with
+                      MPERUN=<mpiexec_cmd>.
 EOF
             exit 1
             ;;
@@ -72,7 +70,7 @@ EOF
             # some systems and within some scripts; they are
             # harmless)
             if [ -n "$arg" ] ; then
-                echo "mpeinstallcheck: Unrecognized argument $arg ."
+                echo "mpecheckbuild: Unrecognized argument $arg ."
                 exit 1
             fi
             ;;
@@ -83,25 +81,10 @@ if [ "$SHELL_ECHO" = "on" ] ; then
     set -x
 fi
 
-# Check if installation location is set
-if [ ! -n "$prefix" ] ; then
-    echo "Set an installation location with -prefix=<location> ."
-    exit 1
-fi
-
-# If the prefix was set, we want to override these choices
-if [ "$prefix_override" = 1 ] ; then
-    includedir=$prefix/include
-    libdir=$prefix/lib
-    bindir=$prefix/bin
-    sbindir=$prefix/sbin
-    datadir=$prefix/share
-fi
-
-if [ ! -s $libdir/lib${PROF_LIBNAME}.a ] ; then
-    echo "Could not find $libdir/lib${PROF_LIBNAME}.a !"
-    echo "You must install MPE before checking the installation!"
-    echo "Try to do make install or mpeinstall first."
+if [ ! -s $libbuild_dir/lib${PROF_LIBNAME}.a ] ; then
+    echo "Could not find $libbuild_dir/lib${PROF_LIBNAME}.a !"
+    echo "You must build MPE before checking the build!"
+    echo "Try to do a \"make\" first."
     exit 1
 fi
 
@@ -112,13 +95,14 @@ collchk_dirname="src/collchk/test"
 for pkg in logging graphics collchk ; do
     dirname=${pkg}_dirname
     eval dirvalue=\$"$dirname"
-    examplesdir=$datadir/examples_${pkg}
-    if [ -f $examplesdir/Makefile ] ; then
-        echo "Running installation test for C $pkg program..."
-        $Show "( cd $examplesdir && $MAKE linktest_C )"
+    if [ -f $libbuild_dir/../$dirvalue/Makefile ] ; then
+        echo "Running build $make_target for C $pkg program..."
+        $Show "( cd $libbuild_dir/../$dirvalue && \
+                 $MAKE ${make_target}_C $make_mperun )"
         if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
-            echo "Running installation test for Fortran $pkg program..."
-            $Show "( cd $examplesdir && $MAKE linktest_F77 )"
+            echo "Running build $make_target for Fortran $pkg program..."
+            $Show "( cd $libbuild_dir/../$dirvalue && \
+                     $MAKE ${make_target}_F77 $make_mperun )"
         fi
     fi
 done

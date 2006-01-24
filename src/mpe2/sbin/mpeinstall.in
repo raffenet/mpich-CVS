@@ -472,8 +472,10 @@ MkDir $sbindir
 if [ -n "$sbinbuild_dir" ] ; then
     if [ -d $sbinbuild_dir ] ; then
          echo "Copying MPE system utility programs to $DESTDIR$sbindir"
-#        CopyFileP $sbinbuild_dir/mpetestlink $sbindir $XMODE
-         FixInstallFile $sbinbuild_dir/mpetestlink $sbindir $XMODE
+         CopyFileP      $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
+         FixInstallFile $sbinbuild_dir/mpetestlink      $sbindir $XMODE
+         FixInstallFile $sbinbuild_dir/mpetestexec      $sbindir $XMODE
+         FixInstallFile $sbinbuild_dir/mpetestexeclog   $sbindir $XMODE
     fi
 fi
 
