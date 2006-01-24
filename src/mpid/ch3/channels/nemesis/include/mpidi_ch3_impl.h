@@ -11,6 +11,7 @@
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
 #include "mpid_nem.h"
+#include "mpid_nem_fbox.h"
 
 #if defined(HAVE_ASSERT_H)
 #include <assert.h>
@@ -70,9 +71,6 @@ int MPIDI_CH3I_Progress_poke(void);
 
 /* #define BYPASS_PROGRESS */
 
-MPID_Request *MPIDI_CH3_Progress_poke_with_matching(int,int,MPID_Comm *comm,int,int*,void *,int, MPI_Datatype, MPI_Status *);
-MPID_Request *MPIDI_CH3_Progress_ipoke_with_matching(int,int,MPID_Comm *comm,int,int*,void *,int, MPI_Datatype, MPI_Status *);
-
 /* short MPIDI_CH3I_Listener_get_port(void); */
 /* int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *); */
 /* int MPIDI_CH3I_VC_post_read(MPIDI_VC_t *, MPID_Request *); */
@@ -80,18 +78,6 @@ MPID_Request *MPIDI_CH3_Progress_ipoke_with_matching(int,int,MPID_Comm *comm,int
 /* int MPIDI_CH3I_sock_errno_to_mpi_errno(char * fcname, int sock_errno); */
 /* int MPIDI_CH3I_Get_business_card(char *value, int length); */
 
-typedef struct MPIDI_CH3I_fboxq_elem
-{
-    int usage;
-    struct MPIDI_CH3I_fboxq_elem *prev;
-    struct MPIDI_CH3I_fboxq_elem *next;
-    int lrank;
-    MPID_nem_fbox_mpich2_t *fbox;
-}
-MPIDI_CH3I_fboxq_elem_t;
 
-extern MPIDI_CH3I_fboxq_elem_t *MPIDI_CH3I_fboxq_head;
-extern MPIDI_CH3I_fboxq_elem_t *MPIDI_CH3I_fboxq_tail;
-extern MPIDI_CH3I_fboxq_elem_t *MPIDI_CH3I_fboxq_elem_list;
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */
