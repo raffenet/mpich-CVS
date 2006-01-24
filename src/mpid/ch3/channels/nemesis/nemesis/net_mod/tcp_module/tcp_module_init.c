@@ -237,11 +237,13 @@ static int init_tcp()
 		      SO_SNDBUF,  
 		      &option, 
 		      sizeof(int));	  	  
+	  /*
 	  setsockopt( nodes[grank].desc, 
 		      IPPROTO_TCP,  
 		      TCP_MAXSEG,  
 		      &option, 
 		      sizeof(int));	  	 
+	  */
 	}
     }
   max_fd++;
