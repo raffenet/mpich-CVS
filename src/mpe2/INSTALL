@@ -49,6 +49,16 @@ F2CMPI_LIBS : compiler's library flag for Fortran to C MPI profiling wrapper
               library, e.g. "-lfmpich" when MPI_CC=mpicc & MPI_F77=mpif77
               for MPICH.
 
+MPERUN      : MPI application launch command. This variable is necessary only
+              if user wants to run "make check", "make installcheck-all" or
+              "$sbindir/mpecheckinstall -run" and the default MPERUN value,
+              "$bindir/mpiexec -n 4", is not correct.  This variable does
+              not launch the process manager if it is required to run
+              the MPI application.  Therefore, user needs to make sure that
+              the MPI runtime environment has been set up correctly before
+              invoking "make check", "make installcheck-all" or
+              "$sbindir/mpecheckinstall -run".
+
 Among above listed variables, CC, MPI_CC, F77 and MPI_F77 are usually set
 by the corresponding environmental variables.  The rest can be set through 
 command line arguments to configure.  In some MPI implementations, like 
@@ -92,7 +102,7 @@ that user should do a "make install" to install the MPE in a separate directory
 after the build is done.  The benefit is that all utility programs will be in
 bin/, all libraries will be in lib/ and all graphic tools will be nicely 
 organized in share/ ...  Finally, to test if the MPE installation is working
-correctly, user is urged to do "make installcheck" or
+correctly, user is urged to do "make installcheck" or the demanding test
 "make installcheck-all MPERUN='<path_to_mpiexec> -n 4'" in the build directory.
 
 There are 2 types of configure options.
@@ -326,6 +336,9 @@ For LAM/MPI implementation, do
     make
     make install PREFIX=${MPE_INSTALL_DIR}
     make installcheck PREFIX=${MPE_INSTALL_DIR}
+
+    optional tests:
+    "launch the process manager": e.g. lamboot.
     make installcheck-all PREFIX=${MPE_INSTALL_DIR} \
                           MPERUN="<path_to_mpirun> -np 4"
 

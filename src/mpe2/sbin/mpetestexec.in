@@ -12,7 +12,10 @@ RM="@RM@"
 execdirname=`dirname $0`
 execbasename=`basename $0`
 MPE_OUTFILE="mpe2_${execbasename}.txt"
-MPERUN=${MPERUN:-"$execdirname/../bin/mpiexec -n 4"}
+# If MPERUN is set by configure, it should have been doubly quoted.
+MPERUN_DEF=@MPERUN@
+MPERUN_DEF=${MPERUN_DEF:-"$execdirname/../bin/mpiexec -n 4"}
+MPERUN=${MPERUN:-${MPERUN_DEF}}
 
 pgm=$1
 message=$2

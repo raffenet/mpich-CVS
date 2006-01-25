@@ -277,6 +277,12 @@ AC_ARG_VAR( MPI_CC, [C compiler to compile MPI program and to create parallel ex
 AC_ARG_VAR( MPI_F77, [F77 compiler to compile MPI program and to create parallel executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx or LAM-MPI.] )
 AC_ARG_VAR( MPI_INC, [MPI compiler's include flags prefixed with -I.  It specifies where mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include.] )
 AC_ARG_VAR( MPI_LIBS, [MPI compiler's library flags prefixed with -L for the library path and prefixed with -l for the name of the MPI libraries. It specifies the location of the MPI libraries. e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.] )
+AC_ARG_VAR( MPERUN, [MPI application launch command.  This variable is necessary only if user wants to run "make check", "make installcheck-all" or "$sbindir/mpecheckinstall -run" and the default MPERUN value, "$bindir/mpiexec -n 4", is not correct.] )
+
+# Prepend/Append '"' before/after MPERUN.
+if test "x$MPERUN" != "x" ; then
+    MPERUN="\"$MPERUN\""
+fi
 
 dnl
 dnl Set non-standard autoconf/GNU install directory variables, htmldir & docdir
@@ -472,6 +478,7 @@ AC_SUBST(MPI_F77)
 AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(MPERUN)
 
 dnl  Make the directories that do not contain Makefiles (should they?) but 
 dnl  are needed for the subsequent directories.
