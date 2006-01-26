@@ -80,7 +80,7 @@ if test "${with_papi}" != "no" ; then
 
     AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <papi.h>]],
 				   [[PAPI_library_init(PAPI_VER_CURRENT);]])], [], 
-				   [AC_MSG_ERROR(['Error compiling and running program with papi.  See config.log for details.'])]
+				   [AC_MSG_ERROR(['Error compiling and running program with papi.  See config.log for details.'])])
 
 
 
