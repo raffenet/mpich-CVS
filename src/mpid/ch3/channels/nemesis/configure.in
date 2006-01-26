@@ -76,12 +76,12 @@ if test "${with_papi}" != "no" ; then
 	LIBS="${with_papi}/lib/libperfctr.a $LIBS"
     fi
 
-    AC_CHECK_HEADER([papi.h], , [AC_MSG_ERROR(['papi.h not found in ${with_papi}.  Did you specify the path with --with-papi=?'])])
+    AC_CHECK_HEADER([papi.h], , [AC_MSG_ERROR(['papi.h not found in ${with_papi}/include.  Did you specify the correct path with --with-papi=?'])])
 
+    echo -n "checking for papi libraries... "
     AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <papi.h>]],
-				   [[PAPI_library_init(PAPI_VER_CURRENT);]])], [], 
-				   [AC_MSG_ERROR(['Error compiling and running program with papi.  See config.log for details.'])])
-
+				   [[PAPI_library_init(PAPI_VER_CURRENT);]])], [echo "yes"], 
+				   [echo "yes" ; AC_MSG_ERROR(['Cannot link with papi:  Cannot find ${with_papi}/lib/libpapi.a or ${with_papi}/lib/libperfctr.a'])])
 
 
 #    AC_CHECK_LIB(papi, PAPI_accum, , [AC_MSG_ERROR(['papi library not found.  Did you specify --with-papi=?'])])
