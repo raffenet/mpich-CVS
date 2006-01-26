@@ -13,13 +13,13 @@ else
     esac
 fi
 
-#eval _conf_array=($ac_configure_args) 
+eval _conf_array=($ac_configure_args) 
 
-# for arg in "${_conf_array[@]}" ; do
-#   case "$arg" in  
-#     --with-papi=* ) 
-#       papi_dir=`echo "$arg" | sed 's/--with-papi=//'` 
-#       ;;
+for arg in "${_conf_array[@]}" ; do
+  case "$arg" in  
+    --with-papi=* ) 
+      papi_dir=`echo "$arg" | sed 's/--with-papi=//'` 
+      ;;
 #     --with-perfctr=* ) 
 #       perfctr_dir=`echo "$arg" | sed 's/--with-perfctr=//'` 
 #       ;;
@@ -32,7 +32,7 @@ fi
 #     --with-gm-lib=* ) 
 #       gm_lib_dir=`echo "$arg" | sed 's/--with-gm-lib=//'` 
 #       ;;
-#   esac 
-# done 
+  esac 
+done 
 
 # export papi_dir perfctr_dir gm_dir gm_include_dir gm_lib_dir

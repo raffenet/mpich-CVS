@@ -70,7 +70,8 @@ AC_ARG_WITH(papi, [--with-papi[=path] - specify path where papi include and lib 
 
 if test "${with_papi}" != "no" ; then
     if test "${with_papi}" != "yes" ; then
-        CPPFLAGS="$CPPFLAGS -I${with_papi}/include"
+        PAPI_INCLUDE="-I${with_papi}/include"
+        CPPFLAGS="$CPPFLAGS $PAPI_INCLUDE"
 #	LDFLAGS="$LDFLAGS -L${with_papi}/lib"
 	LIBS="${with_papi}/lib/libpapi.a $LIBS"
 	LIBS="${with_papi}/lib/libperfctr.a $LIBS"
@@ -155,6 +156,7 @@ AC_SUBST(device_name)
 AC_SUBST(channel_name)
 AC_SUBST(nemesis_network)
 
+AC_SUBST(PAPI_INCLUDE)
 AC_SUBST(AS, [as])
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
