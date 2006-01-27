@@ -152,6 +152,11 @@ if test "$ac_cv_header_netinet_in_h" = yes ; then
     AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
 fi
 
+AC_DEFINE(MPID_NEM_INLINE,1,[Define to turn on the inlining optimizations in Nemesis code])
+AC_DEFINE(PREFETCH_CELL,1,[Define to turn on the prefetching optimization in Nemesis code])	
+AC_DEFINE(USE_FASTBOX,1,[Define to use the fastboxes in Nemesis code])	
+
+
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
 AC_SUBST(nemesis_network)
