@@ -99,8 +99,8 @@ MPICVSHOME = @MPICVSHOME@
 dist: dist-check
 	@version=${VERSION} ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
-	if test "$$prever" = "-CVS" ; then version=$${version}-`date "+%Y%m%d%H%M"` ; fi ; \
-	if test -z "${TAG}" ; then tag=HEAD ; else tag=${TAG}; fi ; \
+	if [ "$$prever" = "-CVS" ] ; then version=$${version}-`date "+%Y%m%d%H%M"` ; fi ; \
+	if [ -z "${TAG}" ] ; then tag=HEAD ; else tag=${TAG}; fi ; \
 	$(MAKE) version=$${version} tag=$${tag} doc=yes dist-with-version
 
 # snap creates a simple snapshot of the currently checked in MPICH2 sources.
@@ -131,7 +131,7 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'autom4te.cache' \
 	  -print | xargs -r rm -rf)
 	( cd tmpdir//${PACKAGE}-${version} && rm -rf src/mpe2/src/slog2sdk/doc/jumpshot-4/tex  )
-	if test "$(doc)" = "yes" ; then \
+	if [ "$(doc)" = "yes" ] ; then \
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
 	    ( cd tmpdir2 && ./configure --without-mpe --disable-f90 \
@@ -247,7 +247,7 @@ install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich2.@SHLIB_EXT@ \
 			${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
-	if test ! -d ${DESTDIR}${exec_prefix}/examples ; then \
+	if [ ! -d ${DESTDIR}${exec_prefix}/examples ] ; then \
 	    $(MKDIR_P) ${DESTDIR}${exec_prefix}/examples ; \
 	fi
 	$(INSTALL_PROGRAM) examples/cpi ${DESTDIR}${exec_prefix}/examples/cpi
@@ -255,6 +255,13 @@ install-local:
 install-devdocs:
 	(cd doc && $(MAKE) install-devdocs)
 
+# installcheck-postable adds checks that may require special
+# handling.  
+# FIXME: Some install checks require that the Process Manager be
+# started first.  This step does not handle that.
+installcheck-postamble:
+	@if [ -n "@mpe_dir@" -a -d "src/@mpe_dir@" ] ; then \
+	    (cd src/@mpe_dir@ && $(MAKE) installcheck-all ; ) ; fi
 #
 # The documents are shipped as part of the release, and so should be 
 # installed from the source directory, not a VPATH build directory
