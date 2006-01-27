@@ -6,6 +6,7 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* FIXME: Where is this used and why does it always return false */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Cancel_send
 #undef FCNAME
