@@ -35,18 +35,6 @@ static inline int MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value,
 #define MPID_NEM_MPICH2_AGAIN   2  /* try again */
 
 void MPID_nem_mpich2_init (int ckpt_restart);
-int MPID_nem_mpich2_send (void* buf, int size, int dest);
-int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest);
-int MPID_nem_mpich2_send_header (void* buf, int size, int dest);
-int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
-int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest);
-int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
-int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
-int recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;
-int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
-int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell);
-
-
 /* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPID_NEM_MPICH2_SUCCESS)
@@ -60,8 +48,6 @@ void MPID_nem_ckpt_send_markers (void);
 int MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell);
 void MPID_nem_ckpt_free_msg_log (void);
 
-int MPID_nem_mpich2_enqueue_fastbox (int local_rank);
-int MPID_nem_mpich2_dequeue_fastbox (int local_rank);
 
 /* one-sided */
 
@@ -151,8 +137,22 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
     return (pbox->flag.value != value);
 }
 
-#define PREFETCH_CELL
-extern MPID_nem_cell_ptr_t prefetched_cell;
+#if MPID_NEM_INLINE
+#include "mpid_nem_inline.h"
+#else //MPID_NEM_INLINE
+int MPID_nem_mpich2_send (void* buf, int size, int dest);
+int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest);
+int MPID_nem_mpich2_send_header (void* buf, int size, int dest);
+int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
+int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest);
+int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
+int recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;
+int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell);
+int MPID_nem_mpich2_enqueue_fastbox (int local_rank);
+int MPID_nem_mpich2_dequeue_fastbox (int local_rank);
+#endif //MPID_NEM_INLINE
 
 #endif
 
