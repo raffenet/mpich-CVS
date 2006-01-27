@@ -594,7 +594,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
     }
     /* --BEGIN ERROR HANDLING-- */
     else {
-	MPIDI_DBG_Print_packet(&conn->pkt);
+	MPIU_DBG_STMT(CH3_CONNECT,VERBOSE,MPIDI_DBG_Print_packet(&conn->pkt));
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
 					 "**ch3|sock|badpacket", "**ch3|sock|badpacket %d", conn->pkt.type);
 	goto fn_fail;
@@ -776,8 +776,6 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
     
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-
     MPIU_Assert(vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
     
     MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING");
@@ -850,7 +848,6 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
     }
 
   fn_exit:
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
     return mpi_errno;
  fn_fail:
