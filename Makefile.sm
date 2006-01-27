@@ -30,7 +30,7 @@ all-local:
 	    echo "@F77@ @FFLAGS@" >> lib/pkglist.new ;\
 	    echo "@F90@ @F90FLAGS@" >> lib/pkglist.new ;\
 	    echo "@CONFIGURE_ARGUMENTS@" >>lib/pkglist.new ; \
-	    echo "@LDFLAGS@" >> libpkglist.new ;\
+	    echo "@LDFLAGS@" >> lib/pkglist.new ;\
 	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
 	        rm -f lib/pkglist.new ; \
             else \
