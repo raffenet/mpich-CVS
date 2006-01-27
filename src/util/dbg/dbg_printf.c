@@ -331,7 +331,7 @@ static double timeOrigin = 0.0;
 
 static int MPIU_DBG_Usage( const char *, const char * );
 static int MPIU_DBG_OpenFile( void );
-static int setDBGClass( const char *, const char *([]) );
+static int setDBGClass( const char * );
 static int SetDBGLevel( const char *, const char *([]) );
 
 int MPIU_DBG_Outevent( const char *file, int line, int class, int kind, 
@@ -340,6 +340,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     va_list list;
     char *str, stmp[MPIU_DBG_MAXLINE];
     int  i;
+    void *p;
     MPID_Time_t t;
     double  curtime;
 
@@ -381,6 +382,15 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 		     worldNum, worldRank, threadID, class, curtime, 
 		     file, line, stmp );
 	    break;
+	case 3: 
+	    va_start(list,fmat);
+	    p = va_arg(list,void *);
+	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, p);
+	    va_end(list);
+	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, class, curtime, 
+		     file, line, stmp );
+	    break;
         default:
 	    break;
     }
@@ -388,35 +398,53 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     return 0;
 }
 
-/* These are used to simplify the handling of options.  Classbits, Classname,
-   and LCClassname must be updated consistently; also see MPIU_DBG_CLASS
-   in src/include/mpidbg.h */
-static const int MPIU_Classbits[] = { 
-    0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x30, 0x40, 0x80, 0x100, 0x180,
-    0x200, 0x400, 0x800, 0x1000, ~0, 0 };
-static const char *MPIU_Classname[] = { "PT2PT", "RMA", "THREAD", "PM", 
-					"ROUTINE_ENTER", "ROUTINE_EXIT", 
-					"ROUTINE", "SYSCALL", 
-					"CH3_CONNECT", "CH3_PROGRESS",
-					"CH3",
-					"DATATYPE", "HANDLE", "COMM",
-					"BSEND",
-					"ALL", 0 };
-static const char *MPIU_LCClassname[] = { "pt2pt", "rma", "thread", "pm", 
-					  "routine_enter", "routine_exit", 
-					  "routine", "syscall", 
-					  "ch3_connect", "ch3_progress",
-					  "ch3",
-					  "datatype", "handle", "comm", 
-					  "bsend", 
-					  "all", 0 };
+/* These are used to simplify the handling of options.  
+   To add a new name, add an MPIU_DBG_ClassName element to the array
+   MPIU_Classnames.  The "classbits" values are defined by MPIU_DBG_CLASS
+   in src/include/mpidbg.h 
+ */
 
+typedef struct MPIU_DBG_ClassName {
+    int        classbits;
+    const char *UCName, *LCName; 
+} MPIU_DBG_ClassName;
+
+static const MPIU_DBG_ClassName MPIU_Classnames[] = {
+    { MPIU_DBG_PT2PT,         "PT2PT",         "pt2pt" },
+    { MPIU_DBG_RMA,           "RMA",           "rma"   },
+    { MPIU_DBG_THREAD,        "THREAD",        "thread" },
+    { MPIU_DBG_PM,            "PM",            "pm" },
+    { MPIU_DBG_ROUTINE_ENTER, "ROUTINE_ENTER", "routine_enter" },
+    { MPIU_DBG_ROUTINE_EXIT,  "ROUTINE_EXIT",  "routine_exit" },
+    { MPIU_DBG_ROUTINE_ENTER |
+      MPIU_DBG_ROUTINE_EXIT,  "ROUTINE",       "routine" },
+    { MPIU_DBG_SYSCALL,       "SYSCALL",       "syscall" },
+    { MPIU_DBG_DATATYPE,      "DATATYPE",      "datatype" },
+    { MPIU_DBG_HANDLE,        "HANDLE",        "handle" },
+    { MPIU_DBG_COMM,          "COMM",          "comm" },
+    { MPIU_DBG_BSEND,         "BSEND",         "bsend" },
+    { MPIU_DBG_OTHER,         "OTHER",         "other" },
+    { MPIU_DBG_CH3_CONNECT,   "CH3_CONNECT",   "ch3_connect" },
+    { MPIU_DBG_CH3_PROGRESS,  "CH3_PROGRESS",  "ch3_progress" },
+    { MPIU_DBG_CH3_CHANNEL,   "CH3_CHANNEL",   "ch3_channel" },
+    { MPIU_DBG_CH3,           "CH3",           "ch3" },
+    { MPIU_DBG_ALL,           "ALL",           "all" }, 
+    { 0,                      0,               0 }
+};
+
+/* Because the level values are simpler and are rarely changed, these
+   use a simple set of parallel arrays */
 static const int  MPIU_Levelvalues[] = { MPIU_DBG_TERSE,
 					 MPIU_DBG_TYPICAL,
 					 MPIU_DBG_VERBOSE, 100 };
 static const char *MPIU_Levelname[] = { "TERSE", "TYPICAL", "VERBOSE", 0 };
 static const char *MPIU_LCLevelname[] = { "terse", "typical", "verbose", 0 };
 
+/* 
+ * Initialize the DBG_MSG system.  This is called during MPI_Init to process
+ * command-line arguments as well as checking the MPICH_DBG environment
+ * variables.
+ */
 int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 {
     char *s = 0;
@@ -424,6 +452,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
     int  i, rc;
     MPID_Time_t t;
     long  whichRank = -1;  /* All ranks */
+
     /* Check to see if any debugging was selected */
     /* First, the environment variables */
 
@@ -444,7 +473,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
     }
 
     s = getenv( "MPICH_DBG_CLASS" );
-    rc = setDBGClass( s, MPIU_Classname );
+    rc = setDBGClass( s );
     if (rc) 
 	MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
 
@@ -495,7 +524,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 		    char *p = s + 6;
 		    if (*p == '=') {
 			p++;
-			rc = setDBGClass( p, MPIU_LCClassname );
+			rc = setDBGClass( p );
 			if (rc)
 			    MPIU_DBG_Usage( "-mpich-dbg-class", 0 );
 		    }
@@ -540,6 +569,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
     return 0;
 }
 
+/* Print the usage statement to stderr */
 static int MPIU_DBG_Usage( const char *cmd, const char *vals )
 {
     if (vals) {
@@ -694,28 +724,56 @@ static int MPIU_DBG_OpenFile( void )
 }
 
 /* Support routines for processing mpich-dbg values */
-static int setDBGClass( const char *s, const char *(classnames[]) )
+/* Update the GLOBAL variable MPIU_DBG_ActiveClasses with
+   the bits corresponding to this name */
+static int setDBGClass( const char *s )
 {
     int i;
+    int slen = 0;
+    int len = 0;
+	    
+    if (s && *s) slen = strlen(s);
 
     while (s && *s) {
-	for (i=0; classnames[i]; i++) {
-	    int len = strlen(classnames[i]);
-	    if (strlen(s) >= len && 
-		strncmp(s,classnames[i],len) == 0 && 
-		(s[len] == ',' || s[len] == 0)) {
-		MPIU_DBG_ActiveClasses |= MPIU_Classbits[i];
+	for (i=0; MPIU_Classnames[i].LCName; i++) {
+	    /* The LCLen and UCLen *should* be the same, but
+	       just in case, we separate them */
+	    int LClen = strlen(MPIU_Classnames[i].LCName);
+	    int UClen = strlen(MPIU_Classnames[i].UCName);
+	    int matchClass = 0;
+
+	    /* Allow the upper case and lower case in all cases */
+	    if (slen >= LClen && 
+		strncmp(s,MPIU_Classnames[i].LCName, LClen) == 0 &&
+		(s[LClen] == ',' || s[LClen] == 0) ) {
+		matchClass = 1;
+		len = LClen;
+	    }
+	    else if (slen >= UClen && 
+		strncmp(s,MPIU_Classnames[i].UCName, UClen) == 0 &&
+		(s[UClen] == ',' || s[UClen] == 0) ) {
+		matchClass = 1;
+		len = UClen;
+	    }
+	    if (matchClass) {
+		MPIU_DBG_ActiveClasses |= MPIU_Classnames[i].classbits;
 		s += len;
-		if (*s == ',') s++;
+		slen -= len;
+		if (*s == ',') { s++; slen--; }
+		/* If we found a name, we need to restart the for loop */
 		break;
 	    }
 	}
-	if (!classnames[i]) {
+	if (!MPIU_Classnames[i].LCName) {
 	    return 1;
 	}
     }
     return 0;
 }
+
+/* Set the global MPIU_DBG_MaxLevel if there is a match with the known level
+   names 
+*/
 static int SetDBGLevel( const char *s, const char *(names[]) )
 {
     int i;
