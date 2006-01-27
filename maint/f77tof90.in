@@ -88,12 +88,19 @@ if ($makeTemplate ne "" &&
     &ReplaceIfDifferent( "$outdir/$makeTemplate", 
 			 "$outdir/$makeTemplate.new" );
 }
-if (-s "$indir/testlist") {
-    &ConvertTestlist( $indir, $outdir );
-    if (-s "$outdir/testlist.ap") {
-	&AppendFile( "$outdir/testlist.ap", "$outdir/testlist.new" );
+if (-s "$indir/testlist" || -s "$indir/testlist.in") {
+    # We allow both testlist.in and testlist as source files;
+    # testlist.in gets priority
+    my $filename = "testlist";
+    if (-s "$indir/testlist.in") {
+	$filename = "testlist.in";
     }
-    &ReplaceIfDifferent( "$outdir/testlist", "$outdir/testlist.new" );
+    &ConvertTestlist( $indir, $outdir );
+    
+    if (-s "$outdir/testlist.ap") {
+	&AppendFile( "$outdir/testlist.ap", "$outdir/$filename.new" );
+    }
+    &ReplaceIfDifferent( "$outdir/$filename", "$outdir/$filename.new" );
 }
 
 exit 0;
@@ -258,6 +265,15 @@ sub ConvertMakefile {
 	if (/EXTRA_PROGRAMS/) {
 	    s/allocmemf/allocmemf90/;   # allocmemf test is special 
 	}
+	# Handle the special case of C programs (used for f2d/c2f testing)
+	if (/(\w+)_SOURCES(\s*=\s*)(\w+)\.c\s*$/) {
+	    my $progname = $1;
+	    my $spacing  = $2;
+	    my $name     = $3;
+	    $name =~ s/f/f90/;
+	    $progname =~ s/f/f90/;
+	    $_ = "$progname" . "_SOURCES" . $spacing . $name . ".c\n";
+	}
 
 	# Eventually need some way to update directory paths (particularly
 	# relative ones) and add F90 compile rules when not present.
@@ -315,10 +331,14 @@ sub ReplaceIfDifferent {
 }
 
 # Change the names of the tests.  Remove any that were skipped from the 
-# Makefile
+# Makefile.  Check for a  testlist.in before testlist
 sub ConvertTestlist {
     my ($indir, $outdir) = @_;
-    my $filename = "testlist";
+    my $filename = "testlist.in";
+    
+    if (! -s "$indir/$filename" ) { 
+	$filename = "testlist";
+    }
     open( INF, "<$indir/$filename" ) || die "Cannot open $indir/$filename\n";
     open( OUTF, ">$outdir/$filename.new" ) || die "Cannot open $outdir/$filename.new\n";
     while (<INF>) {

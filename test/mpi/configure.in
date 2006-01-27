@@ -808,6 +808,7 @@ AC_OUTPUT(maint/testmerge \
 	  f90/spawn/Makefile \
 	  f90/timer/Makefile \
 	  f90/ext/Makefile \
+	  f90/ext/testlist \
           f90/io/Makefile \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
