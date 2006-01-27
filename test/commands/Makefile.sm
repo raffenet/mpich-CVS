@@ -22,3 +22,5 @@ MPIF77 = $(bindir)/mpif77
 testing:
 	./cmdtests
 
+clean-local:
+	-rm -f err.txt out.log out.txt
