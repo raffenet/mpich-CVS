@@ -137,7 +137,6 @@ C     name is temp, in comm world, no info provided
       call mpi_group_free( group, ierr )
       call mpi_group_free( wgroup, ierr )
       call mpi_file_close( file, ierr )
-
 C
 C Summarize the errors
 C
