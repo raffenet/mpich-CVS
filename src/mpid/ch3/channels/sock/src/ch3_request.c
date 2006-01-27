@@ -29,7 +29,8 @@ MPID_Request * MPIDI_CH3_Request_create()
     req = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (req != NULL)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "allocated request, handle=0x%08x", req->handle));
+	MPIU_DBG_MSG_P(CH3_CHANNEL,VERBOSE,
+		       "allocated request, handle=0x%08x", req->handle);
 #       if defined(HAVE_ERROR_CHECKING)
 	{
 	    int mpi_errno;
@@ -47,7 +48,7 @@ MPID_Request * MPIDI_CH3_Request_create()
     }
     else
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "unable to allocate a request"));
+	MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"unable to allocate a request");
     }
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
@@ -149,7 +150,8 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
-    MPIDI_DBG_PRINTF((60, FCNAME, "freeing request, handle=0x%08x", req->handle));
+    MPIU_DBG_MSG_P(CH3_CHANNEL,VERBOSE,
+		   "freeing request, handle=0x%08x", req->handle);
     
 #   if defined(HAVE_ERROR_CHECKING)
     {

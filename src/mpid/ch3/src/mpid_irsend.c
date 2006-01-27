@@ -35,8 +35,9 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_IRSEND);
 
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
-    MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag, comm->context_id + context_offset));
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                "rank=%d, tag=%d, context=%d", 
+                rank, tag, comm->context_id + context_offset));
     
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
@@ -68,7 +69,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
     if (data_sz == 0)
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending zero length message");
 
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
@@ -95,7 +96,9 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
     if (dt_contig)
     {
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+          "sending contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, 
+					    data_sz));
 	    
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
@@ -123,7 +126,9 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     {
 	int iov_n;
 	    
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+       "sending non-contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT,
+					    data_sz));
 	    
 	MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
 	sreq->dev.segment_first = 0;
@@ -171,17 +176,15 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
  
   fn_exit:
     *request = sreq;
-    
-#   if defined(MPICH_DBG_OUTPUT)
-    {
+
+    MPIU_DBG_STMT(CH3_OTHER,VERBOSE,{
 	if (sreq != NULL)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
+	    MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,"request allocated, handle=0x%08x", sreq->handle);
 	}
     }
-#   endif
+		  );
     
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_IRSEND);
     return mpi_errno;
 }

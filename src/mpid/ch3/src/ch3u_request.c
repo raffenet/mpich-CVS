@@ -35,7 +35,8 @@ MPID_Request * MPIDI_CH3_Request_create()
     req = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (req != NULL)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "allocated request, handle=0x%08x", req->handle));
+	MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
+		       "allocated request, handle=0x%08x", req->handle);
 #       if defined(HAVE_ERROR_CHECKING)
 	{
 	    int mpi_errno;
@@ -55,7 +56,7 @@ MPID_Request * MPIDI_CH3_Request_create()
     else
     {
 	/* FIXME: This fails to fail if debugging is turned off */
-	MPIDI_DBG_PRINTF((60, FCNAME, "unable to allocate a request"));
+	MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"unable to allocate a request");
     }
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
@@ -157,7 +158,8 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
-    MPIDI_DBG_PRINTF((60, FCNAME, "freeing request, handle=0x%08x", req->handle));
+    MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
+		   "freeing request, handle=0x%08x", req->handle);
     
 #   if defined(HAVE_ERROR_CHECKING)
     {
@@ -224,24 +226,26 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
     last = sreq->dev.segment_size;
-    MPIDI_DBG_PRINTF((40, FCNAME, "pre-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+     "pre-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
     MPIU_Assert(sreq->dev.segment_first < last);
     MPIU_Assert(last > 0);
     MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     MPID_Segment_pack_vector(&sreq->dev.segment, sreq->dev.segment_first, &last, iov, iov_n);
-    MPIDI_DBG_PRINTF((40, FCNAME, "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+    "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
     MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     
     if (last == sreq->dev.segment_size)
     {
-	MPIDI_DBG_PRINTF((40, FCNAME, "remaining data loaded into IOV"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"remaining data loaded into IOV");
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     }
     else if ((last - sreq->dev.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
-	MPIDI_DBG_PRINTF((40, FCNAME, "more data loaded into IOV"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"more data loaded into IOV");
 	sreq->dev.segment_first = last;
 	sreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
     }
@@ -249,7 +253,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
     {
 	MPIDI_msg_sz_t data_sz;
 	
-	MPIDI_DBG_PRINTF((40, FCNAME, "low density.  using SRBuf."));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"low density.  using SRBuf.");
 	    
 	data_sz = sreq->dev.segment_size - sreq->dev.segment_first;
 	if (!MPIDI_Request_get_srbuf_flag(sreq))
@@ -258,7 +262,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (sreq->dev.tmpbuf_sz == 0)
 	    {
-		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
+		MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
@@ -268,22 +272,24 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 		    
 	last = (data_sz <= sreq->dev.tmpbuf_sz) ? sreq->dev.segment_size :
 	    sreq->dev.segment_first + sreq->dev.tmpbuf_sz;
-	MPIDI_DBG_PRINTF((40, FCNAME, "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+               "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			  sreq->dev.segment_first, last));
 	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, sreq->dev.tmpbuf);
-	MPIDI_DBG_PRINTF((40, FCNAME, "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+              "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->dev.segment_first, last));
 	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.tmpbuf;
 	iov[0].MPID_IOV_LEN = last - sreq->dev.segment_first;
 	*iov_n = 1;
 	if (last == sreq->dev.segment_size)
 	{
-	    MPIDI_DBG_PRINTF((40, FCNAME, "remaining data packed into SRBuf"));
+	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"remaining data packed into SRBuf");
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else 
 	{
-	    MPIDI_DBG_PRINTF((40, FCNAME, "more data packed into SRBuf"));
+	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"more data packed into SRBuf");
 	    sreq->dev.segment_first = last;
 	    sreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	}
@@ -337,12 +343,14 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    MPIU_Assert(rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
 	    if (rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off == rreq->dev.recv_data_sz)
 	    {
-		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining data into the SRBuf"));
+		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+		  "updating rreq to read the remaining data into the SRBuf");
 		rreq->dev.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE;
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read more data into the SRBuf"));
+		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+		       "updating rreq to read more data into the SRBuf");
 		rreq->dev.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
 	    }
 	    goto fn_exit;
@@ -350,12 +358,14 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	
 	last = rreq->dev.segment_size;
 	rreq->dev.iov_count = MPID_IOV_LIMIT;
-	MPIDI_DBG_PRINTF((40, FCNAME, "pre-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+   "pre-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	MPIU_Assert(rreq->dev.segment_first < last);
 	MPIU_Assert(last > 0);
 	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
-	MPIDI_DBG_PRINTF((40, FCNAME, "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+   "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= MPID_IOV_LIMIT);
 
@@ -375,12 +385,14 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 
 	if (last == rreq->dev.recv_data_sz)
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read the remaining data directly into the user buffer"));
+	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+     "updating rreq to read the remaining data directly into the user buffer");
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else if (last == rreq->dev.segment_size || (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read more data directly into the user buffer"));
+	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	     "updating rreq to read more data directly into the user buffer");
 	    rreq->dev.segment_first = last;
 	    rreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	}
@@ -397,7 +409,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    {
 		/* FIXME - we should drain the data off the pipe here, but we don't have a buffer to drain it into.  should this be
 		   a fatal error? */
-		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
+		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
@@ -420,7 +432,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (rreq->dev.tmpbuf_sz == 0)
 	    {
-		MPIDI_DBG_PRINTF((40, FCNAME, "SRBuf allocation failure"));
+		MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
@@ -430,13 +442,15 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 
 	if (data_sz <= rreq->dev.tmpbuf_sz)
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read overflow data into the SRBuf and complete"));
+	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	    "updating rreq to read overflow data into the SRBuf and complete");
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else
 	{
-	    MPIDI_DBG_PRINTF((35, FCNAME, "updating rreq to read overflow data into the SRBuf and reload IOV"));
+	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	  "updating rreq to read overflow data into the SRBuf and reload IOV");
 	    rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.tmpbuf_sz;
 	    rreq->dev.segment_first += rreq->dev.tmpbuf_sz;
 	    rreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
@@ -551,8 +565,10 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     else
     {
 	/* --BEGIN ERROR HANDLING-- */
-	MPIDI_DBG_PRINTF((40, FCNAME, "receive buffer overflow; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", buf_sz="
-			  MPIDI_MSG_SZ_FMT, rreq->dev.recv_data_sz, userbuf_sz));
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+      "receive buffer overflow; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", buf_sz="
+			  MPIDI_MSG_SZ_FMT, 
+                rreq->dev.recv_data_sz, userbuf_sz));
 	unpack_sz = userbuf_sz;
 	rreq->status.count = (int)userbuf_sz;
 	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,

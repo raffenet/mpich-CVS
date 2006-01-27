@@ -83,7 +83,6 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 #ifdef MPICH_DBG_OUTPUT
     /* --BEGIN ERROR HANDLING-- */
     if (n_iov > MPID_IOV_LIMIT)
@@ -101,7 +100,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
-    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
+    MPIU_DBG_STMT(CH3_CHANNEL,VERBOSE,
+	   MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF));
     
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
@@ -111,7 +111,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	    int rc;
 	    MPIU_Size_t nb;
 
-	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
+			 "send queue empty, attempting to write");
 	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
@@ -120,7 +121,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	    {
 		int offset = 0;
     
-		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
+		MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
+			       "wrote %ld bytes", (unsigned long) nb);
 		
 		while (offset < n_iov)
 		{
@@ -131,7 +133,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 		    }
 		    else
 		    {
-			MPIDI_DBG_PRINTF((55, FCNAME, "partial write, request enqueued at head"));
+			MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
+			     "partial write, request enqueued at head");
 			sreq = create_request(iov, n_iov, offset, nb);
 			/* --BEGIN ERROR HANDLING-- */
 			if (sreq == NULL)
@@ -142,7 +145,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 			}
 			/* --END ERROR HANDLING-- */
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+			MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+					 (MPIU_DBG_FDEST,"posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 			vc->ch.conn->send_active = sreq;
 			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov + offset,
 							   sreq->dev.iov_count - offset, NULL);
@@ -160,13 +164,14 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 
 		if (offset == n_iov)
 		{
-		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete"));
+		    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"entire write complete");
 		}
 	    }
 	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_writev failed, rc=%d", rc));
+		MPIU_DBG_MSG_D(CH3_CHANNEL,TYPICAL,
+			       "ERROR - MPIDU_Sock_writev failed, rc=%d", rc);
 		sreq = MPIDI_CH3_Request_create();
 		if (sreq == NULL)
 		{
@@ -182,7 +187,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	}
 	else
 	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
+			 "send in progress, request enqueued");
 	    sreq = create_request(iov, n_iov, 0, 0);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (sreq == NULL)
@@ -196,7 +202,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
     }
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
-	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
+		     "unconnected.  posting connect and enqueuing request");
 	
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(iov, n_iov, 0, 0);
@@ -215,7 +222,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
-	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"forming connection, request enqueued");
 	sreq = create_request(iov, n_iov, 0, 0);
 	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
@@ -230,7 +237,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
     else
     {
 	/* Connection failed, so allocate a request and return an error. */
-	MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed"));
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"ERROR - connection failed");
 	sreq = MPIDI_CH3_Request_create();
 	if (sreq == NULL)
 	{
@@ -246,7 +253,6 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 
   fn_exit:
     *sreq_ptr = sreq;
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
     return mpi_errno;
 }

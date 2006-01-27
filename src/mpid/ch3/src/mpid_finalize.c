@@ -24,7 +24,6 @@ int MPID_Finalize(void)
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     /*
      * Wait for all posted receives to complete.  For now we are not doing 
@@ -141,8 +140,10 @@ int MPID_Finalize(void)
 		/* FIXME: This global variable should be encapsulated
 		   in the appropriate module (connections?) */
 		MPIDI_Outstanding_close_ops += 1;
-		MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
-				       i, MPIDI_Outstanding_close_ops));
+		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+			      "sending close(%s) to %d, ops = %d", 
+			      close_pkt->ack ? "TRUE" : "FALSE",
+			      i, MPIDI_Outstanding_close_ops));
 		    
 
 		/*
@@ -186,8 +187,9 @@ int MPID_Finalize(void)
                     }
                 }
 
-		MPIDI_DBG_PRINTF((30, FCNAME, "not sending a close to %d, vc in state %s", i,
-				  MPIDI_VC_Get_state_description(vc->state)));
+		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+		     "not sending a close to %d, vc in state %s", i,
+		     MPIDI_VC_Get_state_description(vc->state)));
 	    }
 	}
     }
@@ -237,7 +239,6 @@ int MPID_Finalize(void)
     MPIDI_Process.my_pg = NULL;
 
  fn_exit:
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
  fn_fail:

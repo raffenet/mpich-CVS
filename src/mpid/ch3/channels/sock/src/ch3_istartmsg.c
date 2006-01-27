@@ -53,7 +53,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 #ifdef MPICH_DBG_OUTPUT
     /* --BEGIN ERROR HANDLING-- */
     if (hdr_sz > sizeof(MPIDI_CH3_Pkt_t))
@@ -66,7 +65,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 
     /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
-    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr);
+    MPIU_DBG_STMT(CH3_CHANNEL,VERBOSE,
+		  MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr));
 
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
@@ -76,23 +76,27 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	    MPIU_Size_t nb;
 	    int rc;
 
-	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
+			 "send queue empty, attempting to write");
 	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
 	    rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb);
 	    if (rc == MPI_SUCCESS)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "wrote %ld bytes", (unsigned long) nb));
+		MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
+			       "wrote %ld bytes", (unsigned long) nb);
 		
 		if (nb == hdr_sz)
 		{ 
-		    MPIDI_DBG_PRINTF((55, FCNAME, "entire write complete, %d bytes", nb));
+		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
+				   "entire write complete, %d bytes", nb);
 		    /* done.  get us out of here as quickly as possible. */
 		}
 		else
 		{
-		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
+		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
+                    "partial write of %d bytes, request enqueued at head", nb);
 		    sreq = create_request(hdr, hdr_sz, nb);
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (sreq == NULL)
@@ -103,7 +107,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 		    }
 		    /* --END ERROR HANDLING-- */
 		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    MPIDI_DBG_PRINTF((55, FCNAME, "posting write, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+		    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+     (MPIU_DBG_FDEST,"posting write, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 		    vc->ch.conn->send_active = sreq;
 		    mpi_errno = MPIDU_Sock_post_write(vc->ch.conn->sock, sreq->dev.iov[0].MPID_IOV_BUF,
 						      sreq->dev.iov[0].MPID_IOV_LEN, sreq->dev.iov[0].MPID_IOV_LEN, NULL);
@@ -121,7 +126,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_write failed, rc=%d", rc));
+		MPIU_DBG_MSG_D(CH3_CHANNEL,TYPICAL,
+			       "ERROR - MPIDU_Sock_write failed, rc=%d", rc);
 		sreq = MPIDI_CH3_Request_create();
 		if (sreq == NULL)
 		{
@@ -137,7 +143,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	}
 	else
 	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
+			 "send in progress, request enqueued");
 	    sreq = create_request(hdr, hdr_sz, 0);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (sreq == NULL)
@@ -151,7 +158,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     }
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
-	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
+		     "unconnected.  posting connect and enqueuing request");
 	
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(hdr, hdr_sz, 0);
@@ -170,7 +178,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
-	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
+		     "forming connection, request enqueued");
 	sreq = create_request(hdr, hdr_sz, 0);
 	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
@@ -185,7 +194,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     else
     {
 	/* Connection failed, so allocate a request and return an error. */
-	MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - connection failed"));
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"ERROR - connection failed");
 	sreq = MPIDI_CH3_Request_create();
 	if (sreq == NULL)
 	{
@@ -201,7 +210,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 
   fn_exit:
     *sreq_ptr = sreq;
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     return mpi_errno;
 }

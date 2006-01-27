@@ -25,7 +25,7 @@
     (sreq_) = MPIDI_CH3_Request_create();				\
     if ((sreq_) == NULL)						\
     {									\
-	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));\
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"send request allocation failed");\
 	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;				\
 	FAIL_;								\
     }									\

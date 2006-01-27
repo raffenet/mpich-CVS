@@ -44,8 +44,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_ISEND);
 
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
-    MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag, comm->context_id + context_offset));
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                  "rank=%d, tag=%d, context=%d", 
+                  rank, tag, comm->context_id + context_offset));
     
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
@@ -75,7 +76,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending zero length message");
 	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.rank = comm->rank;
 	eager_pkt->match.tag = tag;
@@ -125,7 +126,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	
 	if (dt_contig)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                 "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
+						data_sz));
 	    
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    
@@ -155,7 +158,9 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	       (b) the size of the individual blocks is small (faster to pack 
 	       than to create the iov).  This fixme applies to all send
 	       modes */
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+             "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
+						data_sz));
 	    
 	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
 	    sreq->dev.segment_first = 0;
@@ -209,7 +214,8 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	MPID_Request * rts_sreq;
 #endif
 	    
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                   "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
 	/* FIXME: The partner request should be set to the rts_sreq so that local cancellation can occur; however, this requires
@@ -229,11 +235,12 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
-	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using iStartRndvMsg"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Rendezvous send using iStartRndvMsg");
     
 	if (dt_contig) 
 	{
-	    MPIDI_DBG_PRINTF((30, FCNAME, "  contiguous rndv data, data_sz="
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                              "  contiguous rndv data, data_sz="
 			      MPIDI_MSG_SZ_FMT, data_sz));
 		
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
@@ -315,17 +322,16 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
   fn_exit:
     *request = sreq;
-    
-#   if defined(MPICH_DBG_OUTPUT)
+
+    MPIU_DBG_STMT(CH3_OTHER,VERBOSE,
     {
 	if (sreq != NULL)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
+	    MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,"request allocated, handle=0x%08x", sreq->handle);
 	}
     }
-#   endif
+		  );
     
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_ISEND);
     return mpi_errno;
 }

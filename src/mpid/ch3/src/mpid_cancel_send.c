@@ -23,7 +23,6 @@ int MPID_Cancel_send(MPID_Request * sreq)
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_SEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CANCEL_SEND);
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
     
     MPIU_Assert(sreq->kind == MPID_REQUEST_SEND);
 
@@ -51,15 +50,17 @@ int MPID_Cancel_send(MPID_Request * sreq)
     {
 	MPID_Request * rreq;
 	
-	MPIDI_DBG_PRINTF((15, FCNAME, "attempting to cancel message sent to self"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+		     "attempting to cancel message sent to self");
 	
 	rreq = MPIDI_CH3U_Recvq_FDU(sreq->handle, &sreq->dev.match);
 	if (rreq)
 	{
 	    MPIU_Assert(rreq->partner_request == sreq);
 	    
-	    MPIDI_DBG_PRINTF((15, FCNAME, "send-to-self cancellation successful, sreq=0x%08x, rreq=0x%08x",
-			      sreq->handle, rreq->handle));
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+             "send-to-self cancellation successful, sreq=0x%08x, rreq=0x%08x",
+						sreq->handle, rreq->handle));
 	    
 	    MPIU_Object_set_ref(rreq, 0);
 	    MPIDI_CH3_Request_destroy(rreq);
@@ -71,8 +72,9 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	}
 	else
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "send-to-self cancellation failed, sreq=0x%08x, rreq=0x%08x",
-			      sreq->handle, rreq->handle));
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+               "send-to-self cancellation failed, sreq=0x%08x, rreq=0x%08x",
+						sreq->handle, rreq->handle));
 	}
 	
 	goto fn_exit;
@@ -140,7 +142,8 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	}
     }
 
-    /* Part or all of the message has already been sent, so we need to send a cancellation request to the receiver in an attempt
+    /* Part or all of the message has already been sent, so we need to send a 
+       cancellation request to the receiver in an attempt
        to catch the message before it is matched. */
     {
 	int was_incomplete;
@@ -148,14 +151,19 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	MPIDI_CH3_Pkt_cancel_send_req_t * const csr_pkt = &upkt.cancel_send_req;
 	MPID_Request * csr_sreq;
 	
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending cancel request to %d for 0x%08x", sreq->dev.match.rank, sreq->handle));
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+              "sending cancel request to %d for 0x%08x", 
+	      sreq->dev.match.rank, sreq->handle));
 	
-	/* The completion counter and reference count are incremented to keep the request around long enough to receive a
-	   response regardless of what the user does (free the request before waiting, etc.). */
+	/* The completion counter and reference count are incremented to keep 
+	   the request around long enough to receive a
+	   response regardless of what the user does (free the request before 
+	   waiting, etc.). */
 	MPIDI_CH3U_Request_increment_cc(sreq, &was_incomplete);
 	if (!was_incomplete)
 	{
-	    /* The reference count is incremented only if the request was complete before the increment. */
+	    /* The reference count is incremented only if the request was 
+	       complete before the increment. */
 	    MPIDI_CH3_Request_add_ref(sreq);
 	}
 
@@ -180,14 +188,16 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	}
     }
     
-    /* FIXME: if send cancellation packets are allowed to arrive out-of-order with respect to send packets, then we need to
-       timestamp send and cancel packets to insure that a cancellation request does not bypass the send packet to be cancelled
-       and erroneously cancel a previously sent message with the same request handle. */
+    /* FIXME: if send cancellation packets are allowed to arrive out-of-order 
+       with respect to send packets, then we need to
+       timestamp send and cancel packets to insure that a cancellation request 
+       does not bypass the send packet to be cancelled
+       and erroneously cancel a previously sent message with the same request 
+       handle. */
     /* FIXME: A timestamp is more than is necessary; a message sequence number
        should be adequate. */
 
   fn_exit:
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_SEND);
     return mpi_errno;
 }

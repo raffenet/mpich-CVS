@@ -83,7 +83,6 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_RELEASE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
 
     MPIU_Object_release_ref(vcrt, &in_use);
     if (!in_use)
@@ -136,8 +135,10 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    
 		    /* MT: this is not thread safe */
 		    MPIDI_Outstanding_close_ops += 1;
-		    MPIDI_DBG_PRINTF((30, FCNAME, "sending close(%s) to %d, ops = %d", close_pkt->ack ? "TRUE" : "FALSE",
-				      i, MPIDI_Outstanding_close_ops));
+		    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                               "sending close(%s) to %d, ops = %d", 
+			       close_pkt->ack ? "TRUE" : "FALSE",
+			       i, MPIDI_Outstanding_close_ops));
 
 		    /*
 		     * A close packet acknowledging this close request could be received during iStartMsg, therefore the state
@@ -179,8 +180,9 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
                         MPIDI_PG_Destroy(vc->pg);
                     }
 
-		    MPIDI_DBG_PRINTF((30, FCNAME, "not sending a close to %d, vc in state %s", i,
-				      MPIDI_VC_Get_state_description(vc->state)));
+		    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                             "not sending a close to %d, vc in state %s", i,
+			     MPIDI_VC_Get_state_description(vc->state)));
 		}
 	    }
 	}
@@ -188,7 +190,6 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	MPIU_Free(vcrt);
     }
     
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
 }

@@ -30,8 +30,9 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 {
     int inuse;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_CONNECTION);
 
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_CONNECTION);
 
     switch (event)
     {
@@ -62,7 +63,8 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 
 		    /* MT: this is not thread safe */
 		    MPIDI_Outstanding_close_ops -= 1;
-		    MPIDI_DBG_PRINTF((30, FCNAME, "outstanding close operations = %d", MPIDI_Outstanding_close_ops));
+		    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
+             "outstanding close operations = %d", MPIDI_Outstanding_close_ops);
 	    
 		    if (MPIDI_Outstanding_close_ops == 0)
 		    {
@@ -90,6 +92,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 	}
     }
 	
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_CONNECTION);
+
     return mpi_errno;
 }

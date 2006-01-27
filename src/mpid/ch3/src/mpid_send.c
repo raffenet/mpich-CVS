@@ -37,8 +37,9 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEND);
 
-    MPIDI_DBG_PRINTF((10, FCNAME, "entering"));
-    MPIDI_DBG_PRINTF((15, FCNAME, "rank=%d, tag=%d, context=%d", rank, tag, comm->context_id + context_offset));
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                "rank=%d, tag=%d, context=%d", 
+		rank, tag, comm->context_id + context_offset));
 
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
@@ -78,7 +79,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
 
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending zero length message"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending zero length message");
 	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.rank = comm->rank;
 	eager_pkt->match.tag = tag;
@@ -131,7 +132,9 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 
 	if (dt_contig)
 	{
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
+						data_sz));
 	    
 	    iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
 	    iov[1].MPID_IOV_LEN = data_sz;
@@ -160,7 +163,9 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	{
 	    int iov_n;
 	    
-	    MPIDI_DBG_PRINTF((15, FCNAME, "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+             "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
+						data_sz));
 	    
 	    MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
@@ -217,7 +222,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	MPID_Request * rts_sreq;
 #endif
 
-	MPIDI_DBG_PRINTF((15, FCNAME, "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                    "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
 	    
 	MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
@@ -242,11 +248,12 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 /* FIXME: What is MPIDI_CH3_CHANNEL_RNDV, who defines it, and why? */
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
-	MPIDI_DBG_PRINTF((30, FCNAME, "Rendezvous send using iStartRndvMsg"));
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Rendezvous send using iStartRndvMsg");
     
 	if (dt_contig) 
 	{
-	    MPIDI_DBG_PRINTF((30, FCNAME, "  contiguous rndv data, data_sz="
+	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+                              "  contiguous rndv data, data_sz="
 			      MPIDI_MSG_SZ_FMT, data_sz));
 		
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
@@ -331,24 +338,23 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 
   fn_exit:
     *request = sreq;
-    
-#   if defined(MPICH_DBG_OUTPUT)
+
+    MPIU_DBG_STMT(CH3_OTHER,VERBOSE,
     {
-	if (mpi_errno == MPI_SUCCESS)
-	{
-	    if (sreq)
-	    {
-		MPIDI_DBG_PRINTF((15, FCNAME, "request allocated, handle=0x%08x", sreq->handle));
+	if (mpi_errno == MPI_SUCCESS) {
+	    if (sreq) {
+		MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
+			 "request allocated, handle=0x%08x", sreq->handle);
 	    }
 	    else
 	    {
-		MPIDI_DBG_PRINTF((15, FCNAME, "operation complete, no requests allocated"));
+		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+			     "operation complete, no requests allocated");
 	    }
 	}
     }
-#   endif
+		  );
     
-    MPIDI_DBG_PRINTF((10, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEND);
     return mpi_errno;
 }
