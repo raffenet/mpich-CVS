@@ -64,16 +64,21 @@ int MPIU_Strnapp( char *, const char *, size_t );
 char *MPIU_Strdup( const char * );
 
 /* ---------------------------------------------------------------------- */
-
+/* FIXME - The string routines do not belong in the memory header file  */
+/* FIXME - The string error code such be MPICH2-usable error codes */
 #define MPIU_STR_SUCCESS    0
 #define MPIU_STR_FAIL      -1
 #define MPIU_STR_NOMEM      1
 
+/* FIXME: TRUE/FALSE definitions should either not be used or be
+   used consistently.  These also do not belong in the mpimem header file. */
 #define MPIU_TRUE  1
 #define MPIU_FALSE 0
 
+/* FIXME: Global types like this need to be discussed and agreed to */
 typedef int MPIU_BOOL;
 
+/* FIXME: These should be scoped to only the routines that need them */
 #ifdef USE_HUMAN_READABLE_TOKENS
 
 #define MPIU_STR_QUOTE_CHAR     '\"'
@@ -114,27 +119,6 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val);
 int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 
 /* ------------------------------------------------------------------------- */
-
-#if 0
-/*  
-   These definitions were made for historical reasons; 
-   earlier versions of MPICH made use of a tracing memory 
-   package.  The current developers prefer to use other approaches.
-*/
-#define MPIU_Malloc(a)    malloc((unsigned)(a))
-#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
-#define MPIU_Free(a)      free((void *)(a))
-#ifdef HAVE_STRDUP
-/* Watch for the case where strdup is defined as a macro by a header include */
-# if defined(NEEDS_STRDUP_DECL) && !defined(strdup)
-extern char *strdup( const char * );
-# endif
-#define MPIU_Strdup(a)    strdup(a)
-#else
-/* Don't define MPIU_Strdup, provide it in safestr.c */
-#endif /* HAVE_STRDUP */
-
-#endif /* 0 */
 
 #ifdef USE_MEMORY_TRACING
 /*M
@@ -256,12 +240,13 @@ void MPIU_trdump ( FILE *, int );
 void MPIU_trSummary ( FILE *, int );
 void MPIU_trdumpGrouped ( FILE *, int );
 
-#else
+#else /* USE_MEMORY_TRACING */
 /* No memory tracing; just use native functions */
 #define MPIU_Malloc(a)    malloc((unsigned)(a))
 #define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
 #define MPIU_Free(a)      free((void *)(a))
 #define MPIU_Realloc(a,b)  realloc((a),(b))
+
 #ifdef HAVE_STRDUP
 /* Watch for the case where strdup is defined as a macro by a header include */
 # if defined(NEEDS_STRDUP_DECL) && !defined(strdup)
@@ -271,8 +256,8 @@ extern char *strdup( const char * );
 #else
 /* Don't define MPIU_Strdup, provide it in safestr.c */
 #endif /* HAVE_STRDUP */
-#endif /* USE_MEMORY_TRACING */
 
+#endif /* USE_MEMORY_TRACING */
 
 
 /* Memory allocation macros. See document. */
