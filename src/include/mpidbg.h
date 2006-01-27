@@ -33,7 +33,7 @@
 #define MPIU_DBG_MSG_P(_class,_level,_fmat,_pointer) \
    {if ( (MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
           MPIU_DBG_##_level <= MPIU_DBG_MaxLevel ) {\
-     MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 2, _fmat, _pointer ); }}
+     MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 3, _fmat, _pointer ); }}
 
 #define MPIU_DBG_MAXLINE 256
 #define MPIU_DBG_FDEST _s,MPIU_DBG_MAXLINE
@@ -68,14 +68,17 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_ROUTINE_ENTER = 0x10,
 		      MPIU_DBG_ROUTINE_EXIT  = 0x20,
 		      MPIU_DBG_SYSCALL       = 0x40,
-		      MPIU_DBG_CH3_CONNECT   = 0x80,
-		      MPIU_DBG_CH3_PROGRESS  = 0x100,
-		      MPIU_DBG_CH3           = 0x180,
-		      MPIU_DBG_DATATYPE      = 0x200,
-		      MPIU_DBG_HANDLE        = 0x400,
-		      MPIU_DBG_COMM          = 0x800,
-		      MPIU_DBG_BSEND         = 0x1000,
-		      MPIU_DBG_ALL           = (~0) };
+		      MPIU_DBG_DATATYPE      = 0x80,
+		      MPIU_DBG_HANDLE        = 0x100,
+		      MPIU_DBG_COMM          = 0x200,
+		      MPIU_DBG_BSEND         = 0x400,
+		      MPIU_DBG_OTHER         = 0x800,
+		      MPIU_DBG_CH3_CONNECT   = 0x1000,
+		      MPIU_DBG_CH3_PROGRESS  = 0x2000,
+		      MPIU_DBG_CH3_CHANNEL   = 0x4000,
+		      MPIU_DBG_CH3_OTHER     = 0x8000,
+		      MPIU_DBG_CH3           = 0xf000,   /* alias for all Ch3*/
+		      MPIU_DBG_ALL           = (~0) };   /* alias for all */
 
 extern int MPIU_DBG_ActiveClasses;
 extern int MPIU_DBG_MaxLevel;
