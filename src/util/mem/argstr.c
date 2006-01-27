@@ -54,7 +54,7 @@ static int encode_buffer(char *dest, int dest_length, const char *src, int src_l
 	    *num_encoded = n;
 	    return MPIU_STR_TRUNCATED;
 	}
-	/*MPIU_DBG_PRINTF((" %c = %c%c\n", ch, dest[0], dest[1]));*/
+	/*MPIU_DBG_MSG_FMT(OTHER,VERBOSE,(MPIU_DBG_FDEST," %c = %c%c", ch, dest[0], dest[1]));*/
 	dest += num_used;
 	dest_length -= num_used;
 	src++;
@@ -94,7 +94,7 @@ static int decode_buffer(const char *str, char *dest, int length, int *num_decod
 	str++;
 	sscanf(hex, "%X", &value);
 	*dest = (char)value;
-	/*MPIU_DBG_PRINTF((" %s = %c\n", hex, *dest));*/
+	/*MPIU_DBG_MSG_FMT(OTHER,VERBOSE,(MPIU_DBG_FDEST," %s = %c\n", hex, *dest));*/
 	dest++;
 	n++;
 	length--;
@@ -802,7 +802,8 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
     {
-	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
+	MPIU_DBG_MSG_S(OTHER,VERBOSE,
+                  "partial argument added to string: '%s'", *str_ptr);
 	**str_ptr = '\0';
 	/*(*str_ptr)[num_chars-1] = '\0';*/
 	return MPIU_STR_NOMEM;
@@ -835,7 +836,8 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 2)
     {
-	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
+	MPIU_DBG_MSG_S(OTHER,VERBOSE,
+		       "partial argument added to string: '%s'", *str_ptr);
 	**orig_str_ptr = '\0';
 	/*
 	*str_ptr = *str_ptr - 1;
@@ -931,7 +933,8 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
     {
-	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
+	MPIU_DBG_MSG_S(OTHER,VERBOSE,
+		       "partial argument added to string: '%s'", *str_ptr);
 	**str_ptr = '\0';
 	/*(*str_ptr)[num_chars-1] = '\0';*/
 	return MPIU_STR_NOMEM;
@@ -955,7 +958,8 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag, c
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 2)
     {
-	MPIU_DBG_PRINTF(("partial argument added to string: '%s'\n", *str_ptr));
+	MPIU_DBG_MSG_S(OTHER,VERBOSE,
+		       "partial argument added to string: '%s'", *str_ptr);
 	/*
 	*str_ptr = *str_ptr - 1;
 	**str_ptr = '\0';
