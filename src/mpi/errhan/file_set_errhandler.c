@@ -14,7 +14,7 @@
  */
 int MPIR_ROMIO_Get_file_errhand( MPI_File, MPI_Errhandler * );
 int MPIR_ROMIO_Set_file_errhand( MPI_File, MPI_Errhandler );
-void MPIR_Get_file_error_routine( MPID_Errhandler *, 
+void MPIR_Get_file_error_routine( MPI_Errhandler, 
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
 int MPIO_Err_return_file( MPI_File, int );
@@ -195,27 +195,53 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 }
 
 #ifndef MPICH_MPI_FROM_PMPI
-void MPIR_Get_file_error_routine( MPID_Errhandler *e, 
+/* Export this routine only once (if we need to compile this file twice
+   to get the PMPI and MPI versions without weak symbols */
+#undef FUNCNAME
+#define FUNCNAME MPIR_Get_file_error_routine
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+void MPIR_Get_file_error_routine( MPI_Errhandler e, 
 				  void (**c)(MPI_File *, int *, ...), 
 				   int *kind )
 {
+    MPID_Errhandler *e_ptr = 0;
+    int mpi_errno = MPI_SUCCESS;
+
+    /* Convert the MPI_Errhandler into an MPID_Errhandler */
+
     if (!e) {
 	*c = 0;
 	*kind = 1; /* Use errors return as the default */
     }
     else {
-	if (e->handle == MPI_ERRORS_RETURN) {
+	MPIR_ERRTEST_ERRHANDLER(e,mpi_errno);
+	if (mpi_errno != MPI_SUCCESS) {
+	    /* FIXME: We need an error return */
+	    *c = 0;
+	    *kind = 1;
+	    return;
+	}
+	MPID_Errhandler_get_ptr(e,e_ptr);
+	if (!e_ptr) {
+	    /* FIXME: We need an error return */
+	    *c = 0;
+	    *kind = 1;
+	    return;
+	}
+	if (e_ptr->handle == MPI_ERRORS_RETURN) {
 	    *c = 0;
 	    *kind = 1;
 	}
-	else if (e->handle == MPI_ERRORS_ARE_FATAL) {
+	else if (e_ptr->handle == MPI_ERRORS_ARE_FATAL) {
 	    *c = 0;
 	    *kind = 0;
 	}
 	else {
-	    *c = e->errfn.C_File_Handler_function;
+	    *c = e_ptr->errfn.C_File_Handler_function;
 	    *kind = 2;
 	}
     }
+ fn_fail:
+    return;
 }
 #endif
