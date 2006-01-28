@@ -12,6 +12,7 @@ setviewcur_SOURCES = setviewcur.c
 i_noncontig_SOURCES = i_noncontig.c
 async_SOURCES = async.c
 async_any_SOURCES = async_any.c
+userioerr_SOURCES = userioerr.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)
