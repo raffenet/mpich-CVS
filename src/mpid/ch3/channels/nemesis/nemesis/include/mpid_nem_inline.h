@@ -52,19 +52,7 @@ int MPID_nem_mpich2_send (void* buf, int size, int dest)
     }
     else
     {
- 	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
-	{
-	    gm_module_send (dest, el, size);
-	}
-	else  if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
-	{ 
-	    tcp_module_send (dest, el, size);
-	}
-	else 
-	{
-	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
-	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
-	}
+      net_module_send (dest, el, size);
     }
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
@@ -193,19 +181,7 @@ int MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     }
     else
     {
-	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
-	{
-	    gm_module_send (dest, el, size);
-	}       
-	else  if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
-	{
-	    tcp_module_send (dest, el, size);
-	}
-	else
-	{
-	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
-	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
-	}
+      net_module_send (dest, el, size);
     }
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
@@ -289,19 +265,7 @@ int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
       }
     else
     {
-	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
-	{
-	     gm_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
-	}
-	else if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
-	{
-	    tcp_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
-	}
-	else
-	{
-	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
-	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
-	}
+      net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
     }
 
 #ifdef PREFETCH_CELL
@@ -462,22 +426,9 @@ int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
       }
     else
     {
-	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
-	{
-	    gm_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
-	}
-	else if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
-	{
-	    tcp_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);	    
-	}
-	else
-	{
-	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
-	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
-	}
+      net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
     }
     
-
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
