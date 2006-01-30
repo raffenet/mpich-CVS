@@ -3,7 +3,6 @@
 #include "mpid_nem_datatypes.h"
 #include "mpid_nem_defs.h"
 #include "mpid_nem_atomics.h"
-/*#include "papi.h" */
 
 /*#define PAPI_MONITOR */
 #include "my_papi_defs.h"
@@ -25,7 +24,6 @@ void MPID_nem_network_poll (int in_or_out);
 
 #define MPID_NEM_USE_SHADOW_HEAD
 #define MPID_NEM_USE_MACROS
-//Guillaume #undef MPID_NEM_USE_MACROS//DARIUS
 
 /* MPID_NEM_SWAP_REL and MPID_NEM_CAS_REL_NULL are swap and compare-and-swap functions with strict type-checking */
 static inline MPID_nem_cell_rel_ptr_t MPID_NEM_SWAP_REL (volatile MPID_nem_cell_rel_ptr_t *ptr, MPID_nem_cell_rel_ptr_t val)
