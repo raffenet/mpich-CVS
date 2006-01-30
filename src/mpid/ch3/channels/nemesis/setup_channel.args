@@ -13,7 +13,8 @@ else
     esac
 fi
 
-eval _conf_array=($ac_configure_args) 
+#eval _conf_array=($ac_configure_args) 
+eval _conf_array=\($ac_configure_args\) 
 
 for arg in "${_conf_array[@]}" ; do
   case "$arg" in  
