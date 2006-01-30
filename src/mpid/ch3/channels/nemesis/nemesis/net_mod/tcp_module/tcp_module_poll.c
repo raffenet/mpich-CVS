@@ -1,7 +1,4 @@
 #include "tcp_module_impl.h"
-/********************* MPICH2 FLAVOR ***************************/
-
-/*#define TRACE  */
 
 void
 tcp_module_poll_send( void )
