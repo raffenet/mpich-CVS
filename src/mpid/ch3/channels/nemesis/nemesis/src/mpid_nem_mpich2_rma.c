@@ -1,6 +1,5 @@
 #include "mpid_nem.h"
-#include "gm_module.h"
-#include "tcp_module.h"
+#include "mpid_nem_nets.h"
 #include <string.h>
 #include <errno.h>
 
@@ -333,7 +332,7 @@ MPID_nem_mpich2_register_memory (void *buf, int len)
 {
     if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     {
-	return gm_module_register_mem (buf, len);
+      //return gm_module_register_mem (buf, len);
     }
     
     return MPID_NEM_MPICH2_SUCCESS;
@@ -344,7 +343,7 @@ MPID_nem_mpich2_deregister_memory (void *buf, int len)
 {
     if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     {
-	return gm_module_deregister_mem (buf, len);
+      //return gm_module_deregister_mem (buf, len);
     }
 
     return MPID_NEM_MPICH2_SUCCESS;
@@ -359,6 +358,7 @@ MPID_nem_mpich2_put (void *s_buf, void *d_buf, int len, int proc, int *completio
     }
     else 
     {
+      /*
 	switch (MPID_NEM_NET_MODULE)
 	{
 	case MPID_NEM_GM_MODULE:
@@ -369,7 +369,7 @@ MPID_nem_mpich2_put (void *s_buf, void *d_buf, int len, int proc, int *completio
 	    ERROR_RET (MPID_NEM_MPICH2_FAILURE, "not implemented");
 	    break;
 	}
-	
+      */
     }
     return MPID_NEM_MPICH2_SUCCESS;
 }
@@ -386,6 +386,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
     }
     else 
     {
+      /*
 	switch (MPID_NEM_NET_MODULE)
 	{
 	case MPID_NEM_GM_MODULE:
@@ -433,7 +434,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 	    ERROR_RET (MPID_NEM_MPICH2_FAILURE, "not implemented");
 	    break;
 	}
-	
+      */
     }
     return MPID_NEM_MPICH2_SUCCESS;
 }
@@ -447,7 +448,8 @@ MPID_nem_mpich2_get (void *s_buf, void *d_buf, int len, int proc, int *completio
     }
     else 
     {
-	switch (MPID_NEM_NET_MODULE)
+      /*
+      switch (MPID_NEM_NET_MODULE)
 	{
 	case MPID_NEM_GM_MODULE:
 	    MPID_NEM_ATOMIC_INC (completion_ctr);
@@ -457,7 +459,7 @@ MPID_nem_mpich2_get (void *s_buf, void *d_buf, int len, int proc, int *completio
 	    ERROR_RET (MPID_NEM_MPICH2_FAILURE, "not implemented");
 	    break;
 	}
-	
+      */
     }
     return MPID_NEM_MPICH2_SUCCESS;
 }
@@ -474,6 +476,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
     }
     else 
     {
+      /*
 	switch (MPID_NEM_NET_MODULE)
 	{
 	case MPID_NEM_GM_MODULE:
@@ -521,7 +524,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 	    ERROR_RET (MPID_NEM_MPICH2_FAILURE, "not implemented");
 	    break;
 	}
-	
+      */
     }
     return MPID_NEM_MPICH2_SUCCESS;
 }
