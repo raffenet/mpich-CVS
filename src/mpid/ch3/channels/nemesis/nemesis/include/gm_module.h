@@ -9,6 +9,7 @@ int gm_module_ckpt_shutdown();
 void gm_module_send (int dest, MPID_nem_cell_ptr_t cell, int datalen);
 void gm_module_send_poll();
 void gm_module_recv_poll();
+void gm_module_poll(int);
 int gm_module_test();
 
 #define gm_module_poll gm_module_recv_poll
