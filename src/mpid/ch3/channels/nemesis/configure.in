@@ -42,20 +42,17 @@ if test "${with_gm_lib}" != "yes" -a "${with_gm_lib}" != "no" ; then
     LDFLAGS="$LDFLAGS -L${with_gm_lib}"
 fi,)
 
-if test "${nemesis_network}" == "gm" ; then
-dnl     if test -n "$gm_dir" ; then
-dnl 	LDFLAGS="$LDFLAGS -L${gm_dir}/lib"
-dnl 	CPPFLAGS="$CPPFLAGS -I${gm_dir}/include"
-dnl     fi
-dnl     if test -n "$gm_include_dir" ; then
-dnl 	CPPFLAGS="$CPPFLAGS -I${gm_include_dir}"
-dnl     fi
-dnl     if test -n "$gm_lib_dir" ; then
-dnl 	LDFLAGS="$LDFLAGS -L${gm_lib_dir}"
-dnl     fi
-    AC_CHECK_HEADER([gm.h], , [AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm= or --with-gm-include=?'])])
-    AC_CHECK_LIB(gm, gm_init, , [AC_MSG_ERROR(['gm library not found.  Did you specify --with-gm= or --with-gm-lib=?'])])
-fi
+AC_CHECK_HEADER([gm.h], , [
+    if test "${nemesis_network}" == "gm" ; then
+        AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm= or --with-gm-include=?'])
+    fi;
+])
+AC_CHECK_LIB(gm, gm_init, , [
+    if test "${nemesis_network}" == "gm" ; then
+        AC_MSG_ERROR(['gm library not found.  Did you specify --with-gm= or --with-gm-lib=?'])
+    fi;
+])
+
 
 case "${nemesis_network}" in
      gm )
