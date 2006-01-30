@@ -138,6 +138,7 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 }
 
 #if MPID_NEM_INLINE
+#include "mpid_nem_nets.h"
 #include "mpid_nem_inline.h"
 #else //MPID_NEM_INLINE
 int MPID_nem_mpich2_send (void* buf, int size, int dest);
