@@ -1,7 +1,6 @@
 #include "mpid_nem.h"
 #include "mpid_nem_fbox.h"
-#include "gm_module.h"
-#include "tcp_module.h"
+#include "mpid_nem_nets.h"
 
 /* #define BLOCKING_FBOX */
 
@@ -112,8 +111,6 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
     int my_rank;
 
     my_rank = MPID_nem_mem_region.rank;
-
-    //#define PREFETCH_CELL
     
 #ifdef PREFETCH_CELL
     el = prefetched_cell;
@@ -143,13 +140,15 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
     if(MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
     }
     else
     {
- 	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
+      net_module_send (dest, el, el->pkt.ckpt.datalen);
+      
+      /*
+      if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 	{
-	    gm_module_send (dest, el, el->pkt.ckpt.datalen);
+	  gm_module_send (dest, el, el->pkt.ckpt.datalen);
 	}
 	else  if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
 	{ 
@@ -160,6 +159,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
 	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
 	}
+      */
     }
 
 
@@ -200,8 +200,6 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     assert (size <= MPID_NEM_MPICH2_DATA_LEN);
 
     my_rank = MPID_nem_mem_region.rank;
-
-#define PREFETCH_CELL
     
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
@@ -248,6 +246,8 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     }
     else
     {
+      net_module_send (dest, el, size);
+      /*
  	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 	{
 	    gm_module_send (dest, el, size);
@@ -268,6 +268,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
 	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues13));
 	}
+      */
     }
 
 
@@ -423,6 +424,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     }
     else
     {
+      net_module_send (dest, el, size);
+      /*
 	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 	{
 	    gm_module_send (dest, el, size);
@@ -441,6 +444,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues13));
 	}
+      */
     }
     
 
@@ -544,6 +548,8 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
       }
     else
     {
+      net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+      /*
 	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 	{
 	     gm_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
@@ -557,6 +563,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
 	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
 	}
+      */
     }
 
 #ifdef PREFETCH_CELL
@@ -725,6 +732,8 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
       }
     else
     {
+      net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+      /*
 	if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 	{
 	    gm_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
@@ -738,6 +747,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 	    MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
 	    MPID_nem_network_poll (MPID_NEM_POLL_OUT);
 	}
+      */
     }
     
 
@@ -1070,7 +1080,6 @@ MPID_nem_mpich2_release_fbox (MPID_nem_cell_ptr_t cell)
 
 
 #if 0
-
 int
 MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iovec *cookie)
 {
