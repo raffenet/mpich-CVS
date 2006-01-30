@@ -122,3 +122,16 @@ gm_module_recv_poll()
     send_from_queue();
     /*lmt_poll(); */
 }
+
+void
+gm_module_poll(int in_or_out)
+{
+  if (in_or_out == MPID_NEM_POLL_OUT)
+    {
+      gm_module_send_poll();
+    }
+  else
+    {
+      gm_module_recv_poll();
+    }
+}
