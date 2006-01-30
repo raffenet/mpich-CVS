@@ -1,7 +1,7 @@
 #include "mpid_nem.h"
+#include "mpid_nem_nets.h"
 #include "pm.h"
-#include "gm_module.h"
-#include "tcp_module.h"
+
 
 #ifdef MEM_REGION_IN_HEAP
 MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
@@ -233,16 +233,29 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 
     /* Recv Q init only*/
     MPID_nem_queue_init (MPID_nem_mem_region.RecvQ[rank]);
-
     close (MPID_nem_mem_region.memory.base_descs);   
 
+    /* Initialize generic  ner module pointers */
+    MPID_nem_net_init();
+
     /* network init */
+    ret = net_module_init (MPID_nem_mem_region.RecvQ[rank],
+			   MPID_nem_mem_region.FreeQ[rank],
+			   MPID_nem_mem_region.Elements, 
+			   MPID_NEM_NUM_CELLS,
+			   MPID_nem_mem_region.net_elements, 
+			   MPID_NEM_NUM_CELLS, 
+			   &MPID_nem_mem_region.net_recv_queue, 
+			   &MPID_nem_mem_region.net_free_queue,
+			   ckpt_restart);
+    
+    /*
     switch (MPID_NEM_NET_MODULE)
     {
     case MPID_NEM_GM_MODULE:
 	if (rank == 0)
 	{
-	    /*fprintf (stderr, "Using GM module\n"); */
+	    //fprintf (stderr, "Using GM module\n"); 
 	}
 	ret = gm_module_init (MPID_nem_mem_region.RecvQ[rank],
 				MPID_nem_mem_region.FreeQ[rank],
@@ -260,7 +273,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     {
 	if (rank == 0)
 	{
-	    /*fprintf (stderr, "Using TCP module\n"); */
+	    //fprintf (stderr, "Using TCP module\n"); 
 	}
 	ret = tcp_module_init (MPID_nem_mem_region.RecvQ[rank],
 				 MPID_nem_mem_region.FreeQ[rank],
@@ -277,11 +290,12 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     break;
     default:
 	if (rank == 0)
-	    /*fprintf (stderr, "Using no network module\n"); */
-	    MPID_nem_mem_region.net_recv_queue = NULL;
+	MPID_nem_mem_region.net_recv_queue = NULL;
 	MPID_nem_mem_region.net_free_queue = NULL;
 	break;
-    }
+	}
+    */
+
 
     /* set default route for only external processes through network */
     for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
