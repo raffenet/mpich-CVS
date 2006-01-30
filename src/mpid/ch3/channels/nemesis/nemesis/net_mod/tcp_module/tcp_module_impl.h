@@ -19,24 +19,24 @@ typedef struct internal_queue
 
 typedef struct nodes_struct
 {
-    int                node_id; 
-    int                desc;
-    struct sockaddr_in sock_id;
-    int                left2write;
-    int                left2read_head; 
-    int                left2read;
-    int                toread;
-    internal_queue_ptr_t     internal_recv_queue;
-    internal_queue_ptr_t     internal_free_queue;
+    int                  node_id; 
+    int                  desc;
+    struct sockaddr_in   sock_id;
+    int                  left2write;
+    int                  left2read_head; 
+    int                  left2read;
+    int                  toread;
+    internal_queue_ptr_t internal_recv_queue;
+    internal_queue_ptr_t internal_free_queue;
 } node_t;
 
 extern fd_set set;
 extern int    max_fd;
 
-extern int  ext_numnodes;
-extern int *ext_ranks;
-extern int numnodes;
-extern int rank;
+extern int     ext_numnodes;
+extern int    *ext_ranks;
+extern int     numnodes;
+extern int     rank;
 extern node_t *nodes;
 
 extern int  n_pending_send;
@@ -53,7 +53,6 @@ extern MPID_nem_queue_ptr_t module_tcp_free_queue;
 extern MPID_nem_queue_ptr_t process_recv_queue;
 extern MPID_nem_queue_ptr_t process_free_queue;
 
-#undef MPID_NEM_USE_MACROS
 #ifndef MPID_NEM_USE_MACROS
 static inline void
 internal_queue_enqueue (internal_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
@@ -136,7 +135,5 @@ internal_queue_dequeue (internal_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
     }							\
 } while(0)                                       
 #endif /* USE_MACROS */
-
-#define MPID_NEM_USE_MACROS
 
 #endif /* TCP_MODULE_IMPL_H */
