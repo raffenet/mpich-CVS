@@ -108,7 +108,7 @@ lmt_poll()
 
 
 void
-gm_module_send_poll()
+gm_module_send_poll( void )
 {
     send_from_queue();
     /*lmt_poll(); */
@@ -116,7 +116,7 @@ gm_module_send_poll()
 }
 
 void
-gm_module_recv_poll()
+gm_module_recv_poll( void )
 {
     gm_module_recv();
     send_from_queue();
