@@ -54,7 +54,6 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     if (!MPID_nem_mem_region_ptr)
 	FATAL_ERROR ("failed to allocate mem_region");
 #endif /* MEM_REGION_IN_HEAP */
-
     
     MPID_nem_mem_region.num_seg        = 6;
     MPID_nem_mem_region.seg            = (MPID_nem_seg_info_ptr_t)MALLOC (MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t));
@@ -95,28 +94,27 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	    MPID_nem_mem_region.ext_ranks[index2++] = index;
 	}
     }
-    
     /*
-      fprintf(stderr,"=========== TOPOLOGY 1 for [%i]==============\n",rank);
-      for(index = 0 ; index < num_processes ; index ++)
+    fprintf(stderr,"=========== TOPOLOGY 1 for [%i]==============\n",rank);
+    for(index = 0 ; index < num_processes ; index ++)
       {
-      fprintf(stderr," Proc grank %i  is  lrank %i \n", 
-      index,
-      MPID_nem_mem_region.local_ranks[index]);
+	fprintf(stderr," Proc grank %i  is  lrank %i \n", 
+		index,
+		MPID_nem_mem_region.local_ranks[index]);
       }
-      fprintf(stderr,"=========== TOPOLOGY 2 for [%i]==============\n",rank);
-      for(index = 0 ; index < num_local ; index ++)
+    fprintf(stderr,"=========== TOPOLOGY 2 for [%i]==============\n",rank);
+    for(index = 0 ; index < num_local ; index ++)
       {
-      fprintf(stderr," Proc lrank %i  is  grank %i \n", 
-      index,
-      MPID_nem_mem_region.local_procs[index]);
+	fprintf(stderr," Proc lrank %i  is  grank %i \n", 
+		index,
+		MPID_nem_mem_region.local_procs[index]);
       }
-      fprintf(stderr,"=========== TOPOLOGY 3 for [%i ]==============\n",rank);
-      for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index ++)
+    fprintf(stderr,"=========== TOPOLOGY 3 for [%i]==============\n",rank);
+    for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index ++)
       {
-      fprintf(stderr," Ext proc index %i  is  grank %i \n", 
-      index,
-      MPID_nem_mem_region.ext_ranks[index]);
+	fprintf(stderr," Ext proc index %i  is  grank %i \n", 
+		index,
+		MPID_nem_mem_region.ext_ranks[index]);
       }    
     */
 
@@ -128,7 +126,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 				 ((MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t))))+   
 		   (MAX((num_local * ((num_local-1) * sizeof(MPID_nem_fastbox_t))) , MPID_NEM_ASYMM_NULL_VAL)) +
 		   sizeof (MPID_nem_barrier_t));
-    
+
 #ifdef FORCE_ASYM
     {
 	char name[MPID_NEM_MAX_FNAME_LEN] = "/tmp/shmem.map2_";
@@ -201,14 +199,6 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     }
     MPID_nem_barrier (num_local, local_rank);   
 
-    /*
-      for (index = 0 ; index < num_local ; index ++)
-      {
-      fprintf(stderr,"[%i] PID[%i] is %i \n", rank, index, MPID_nem_mem_region.pid[index]);
-      }   
-      MPID_nem_barrier (num_local, local_rank);   
-    */
-
     /* SHMEM QS */
     MPID_nem_mem_region.Elements =
 	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[1].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));    
@@ -235,67 +225,31 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     MPID_nem_queue_init (MPID_nem_mem_region.RecvQ[rank]);
     close (MPID_nem_mem_region.memory.base_descs);   
 
-    /* Initialize generic  ner module pointers */
+    /* Initialize generic net module pointers */
     MPID_nem_net_init();
-
-    /* network init */
-    ret = net_module_init (MPID_nem_mem_region.RecvQ[rank],
-			   MPID_nem_mem_region.FreeQ[rank],
-			   MPID_nem_mem_region.Elements, 
-			   MPID_NEM_NUM_CELLS,
-			   MPID_nem_mem_region.net_elements, 
-			   MPID_NEM_NUM_CELLS, 
-			   &MPID_nem_mem_region.net_recv_queue, 
-			   &MPID_nem_mem_region.net_free_queue,
-			   ckpt_restart);
     
-    /*
-    switch (MPID_NEM_NET_MODULE)
-    {
-    case MPID_NEM_GM_MODULE:
-	if (rank == 0)
-	{
-	    //fprintf (stderr, "Using GM module\n"); 
-	}
-	ret = gm_module_init (MPID_nem_mem_region.RecvQ[rank],
-				MPID_nem_mem_region.FreeQ[rank],
-				MPID_nem_mem_region.Elements, 
-				MPID_NEM_NUM_CELLS,
-				MPID_nem_mem_region.net_elements, 
-				MPID_NEM_NUM_CELLS, 
-				&MPID_nem_mem_region.net_recv_queue, 
-				&MPID_nem_mem_region.net_free_queue,
-				ckpt_restart);
+    /* network init */
+    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
+      {
+	ret = net_module_init (MPID_nem_mem_region.RecvQ[rank],
+			       MPID_nem_mem_region.FreeQ[rank],
+			       MPID_nem_mem_region.Elements, 
+			       MPID_NEM_NUM_CELLS,
+			       MPID_nem_mem_region.net_elements, 
+			       MPID_NEM_NUM_CELLS, 
+			       &MPID_nem_mem_region.net_recv_queue, 
+			       &MPID_nem_mem_region.net_free_queue,
+			       ckpt_restart);
 	if (ret != 0)
-	    FATAL_ERROR ("gm_module_init() failed");
-	break;
-    case MPID_NEM_TCP_MODULE:
-    {
-	if (rank == 0)
+	  FATAL_ERROR ("net_module_init() failed");
+      }
+    else{
+      if (rank == 0)
 	{
-	    //fprintf (stderr, "Using TCP module\n"); 
+	  MPID_nem_mem_region.net_recv_queue = NULL;
+	  MPID_nem_mem_region.net_free_queue = NULL;
 	}
-	ret = tcp_module_init (MPID_nem_mem_region.RecvQ[rank],
-				 MPID_nem_mem_region.FreeQ[rank],
-				 MPID_nem_mem_region.Elements, 
-				 MPID_NEM_NUM_CELLS,
-				 MPID_nem_mem_region.net_elements, 
-				 MPID_NEM_NUM_CELLS, 
-				 &MPID_nem_mem_region.net_recv_queue, 
-				 &MPID_nem_mem_region.net_free_queue,
-				 ckpt_restart);
-	if (ret != 0)
-	    FATAL_ERROR ("tcp_module_init() failed");
     }
-    break;
-    default:
-	if (rank == 0)
-	MPID_nem_mem_region.net_recv_queue = NULL;
-	MPID_nem_mem_region.net_free_queue = NULL;
-	break;
-	}
-    */
-
 
     /* set default route for only external processes through network */
     for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
