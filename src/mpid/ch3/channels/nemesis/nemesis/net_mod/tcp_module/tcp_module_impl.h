@@ -53,6 +53,7 @@ extern MPID_nem_queue_ptr_t module_tcp_free_queue;
 extern MPID_nem_queue_ptr_t process_recv_queue;
 extern MPID_nem_queue_ptr_t process_free_queue;
 
+#undef MPID_NEM_USE_MACROS
 #ifndef MPID_NEM_USE_MACROS
 static inline void
 internal_queue_enqueue (internal_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
@@ -136,4 +137,6 @@ internal_queue_dequeue (internal_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 } while(0)                                       
 #endif /* USE_MACROS */
 
+
+#define MPID_NEM_USE_MACROS
 #endif /* TCP_MODULE_IMPL_H */

@@ -20,8 +20,6 @@
 #define MPID_NEM_GM_MODULE    1
 #define MPID_NEM_TCP_MODULE   2
 
-/*#define MPID_NEM_NET_MODULE   MPID_NEM_NO_MODULE */
-
 #define MPID_NEM_POLL_IN      0
 #define MPID_NEM_POLL_OUT     1
 
