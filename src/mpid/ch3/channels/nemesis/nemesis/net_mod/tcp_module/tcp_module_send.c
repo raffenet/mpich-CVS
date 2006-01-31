@@ -34,8 +34,6 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 	    */
 	}
 #endif
-
-//      MPID_nem_queue_enqueue ( process_free_queue, MPID_NEM_ABS_TO_REL( cell ));
 	MPID_nem_queue_enqueue (process_free_queue, cell);
     }
     else if(offset != -1)
