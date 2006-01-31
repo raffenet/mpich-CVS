@@ -32,7 +32,8 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	memset (pmi_val, 0, pmi_val_max_sz);
 	snprintf (pmi_val, pmi_val_max_sz, "%s", memory->file_name);
 	memset (pmi_key, 0, pmi_key_max_sz);
-	snprintf (pmi_key, pmi_key_max_sz, "sharedFilename");
+	ASSERT(MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
+	snprintf (pmi_key, pmi_key_max_sz, "sharedFilename[%i]",MPID_nem_mem_region.rank);
 	ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
 	if (ret != 0)
 	{
@@ -63,7 +64,7 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	}
 
 	/* get name of shared file */
-	snprintf (pmi_key, pmi_key_max_sz, "sharedFilename");
+	snprintf (pmi_key, pmi_key_max_sz, "sharedFilename[%i]",MPID_nem_mem_region.local_procs[0]);
 	memset (pmi_val, 0, pmi_val_max_sz);
 	ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
 	if (ret != 0)
@@ -76,7 +77,7 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	memory->base_descs = open (memory->file_name, O_RDWR);
 	if (memory->base_descs == -1)
 	{
-	    fprintf (stderr, "%d: Error opening shared file \"%s\": %s \n", local_rank, memory->file_name, strerror(ret));
+	    fprintf (stderr, "%d: Error opening shared file \"%s\": %s \n", local_rank, memory->file_name, strerror(errno));
 	    exit (-1);
 	}
     }
