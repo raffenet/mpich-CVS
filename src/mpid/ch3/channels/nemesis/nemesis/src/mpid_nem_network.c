@@ -1,9 +1,9 @@
 #include "mpid_nem.h"
-#if      (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
+#if(MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 #include "gm_module.h"
-#else if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
 #include "tcp_module.h"
-#else if (MPID_NEM_NET_MODULE == MPID_NEM_NONE_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_NONE_MODULE)
 #include "dummy_module.h"
 #else
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE SELECTION"
@@ -34,7 +34,7 @@ MPID_nem_net_init( void)
     net_module_poll          = gm_module_poll;
     net_module_send          = gm_module_send ;
   }
-#else if (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
   {
     net_module_init          = tcp_module_init; 
     net_module_finalize      = tcp_module_finalize;
@@ -42,7 +42,7 @@ MPID_nem_net_init( void)
     net_module_poll          = tcp_module_poll;
     net_module_send          = tcp_module_send ;
   }
-#else if (MPID_NEM_NET_MODULE == MPID_NEM_NONE_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_NONE_MODULE)
   {
     net_module_init          = dummy_module_init; 
     net_module_finalize      = dummy_module_finalize;
