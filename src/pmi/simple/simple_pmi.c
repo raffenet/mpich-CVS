@@ -49,6 +49,7 @@
 
 #include "pmi.h"
 #include "simple_pmiutil.h"
+#include "mpi.h"		/* to get MPI_MAX_PORT_NAME */
 
 /* 
    These are global variable used *ONLY* in this file, and are hence
@@ -683,7 +684,7 @@ int PMI_Lookup_name( const char service_name[], char port[] )
 		****/
 	        return( PMI_FAIL );
 	    }
-	    PMIU_getval( "port", port, PMIU_MAXLINE );
+	    PMIU_getval( "port", port, MPI_MAX_PORT_NAME );
         }
     }
     else
