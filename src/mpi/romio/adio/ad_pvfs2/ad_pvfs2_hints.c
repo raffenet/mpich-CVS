@@ -62,6 +62,30 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 		MPI_Info_set(fd->info, "striping_factor", value);
 	    }
 
+	    /* the striping unit */
+	    MPI_Info_get(users_info, "striping_unit",
+		    MPI_MAX_INFO_VAL, value, &flag);
+	    if (flag) {
+		tmp_value = fd->hints->striping_unit = atoi(value);
+		MPI_Bcast(&tmp_value, 1, MPI_INT, 0, fd->comm);
+		/* --BEGIN ERROR HANDLING-- */
+		if (tmp_value != fd->hints->striping_unit) {
+		    MPIO_ERR_CREATE_CODE_INFO_NOT_SAME(myname, 
+			                               "striping_unit",
+			                                error_code);
+		    return;
+		}
+		/* --END ERROR HANDLING-- */
+
+		MPI_Info_set(fd->info, "striping_unit", value);
+	    }
+
+	    /* distribution name */
+	    MPI_Info_get(users_info, "romio_pvfs2_distribution_name",
+		    MPI_MAX_INFO_VAL, value, &flag);
+	    if (flag) {
+	    }
+
             ADIOI_Free(value);
 	}
     }
