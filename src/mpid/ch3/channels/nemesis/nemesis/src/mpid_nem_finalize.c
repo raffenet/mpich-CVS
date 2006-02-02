@@ -31,7 +31,7 @@ int MPID_nem_finalize()
 int
 MPID_nem_ckpt_shutdown()
 {
-  net_module_ckpt_shutdown();
+  MPID_nem_net_module_ckpt_shutdown();
   munmap (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
   return 0;
 }

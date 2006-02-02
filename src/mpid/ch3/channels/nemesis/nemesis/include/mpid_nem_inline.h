@@ -46,14 +46,14 @@ int MPID_nem_mpich2_send (void* buf, int size, int dest)
     if(MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
-	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
-	DO_PAPI (PAPI_reset (PAPI_EventSet));
     }
     else
     {
-      net_module_send (dest, el, size);
+      MPID_nem_net_module_send (dest, el, size);
     }
+    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
+    DO_PAPI (PAPI_reset (PAPI_EventSet));
+    
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
@@ -94,7 +94,9 @@ int MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    /*pbox->cell.pkt.mpich2.datalen = size; */
+	    //#ifdef BYPASS_PROGRESS
+	    pbox->cell.pkt.mpich2.datalen = size; 
+	    //#endif
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
@@ -177,11 +179,10 @@ int MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     if (MPID_NEM_IS_LOCAL (dest))
     {
 	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
     }
     else
     {
-      net_module_send (dest, el, size);
+       MPID_nem_net_module_send (dest, el, size);
     }
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
@@ -259,13 +260,12 @@ int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 #endif
 
     if(MPID_NEM_IS_LOCAL (dest))
-      {
+    {
 	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
-      }
+    }
     else
     {
-      net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+       MPID_nem_net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
     }
 
 #ifdef PREFETCH_CELL
@@ -312,7 +312,9 @@ int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 #endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    /*pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN; */
+	    //#ifdef BYPASS_PROGRESS
+	    pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN; 
+	    //#endif
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
@@ -420,13 +422,12 @@ int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 #endif
 
     if (MPID_NEM_IS_LOCAL (dest))
-      {    
+    {    
 	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);	
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[dest] ); */
-      }
+    }
     else
     {
-      net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+       MPID_nem_net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
     }
     
 #ifdef PREFETCH_CELL

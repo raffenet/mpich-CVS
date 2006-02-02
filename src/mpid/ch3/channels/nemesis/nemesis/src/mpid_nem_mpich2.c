@@ -282,7 +282,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    /*pbox->cell.pkt.mpich2.datalen = size; */
+	    //pbox->cell.pkt.mpich2.datalen = size; 
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
@@ -536,7 +536,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 #endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    /*pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN; */
+	    //pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN; 
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
