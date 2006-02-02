@@ -13,7 +13,7 @@ int MPID_nem_finalize()
 	exit(0);
 	SKIP;
     }
-    net_module_finalize();
+    MPID_nem_net_module_finalize();
     munmap(MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
 
 #ifdef PAPI_MONITOR

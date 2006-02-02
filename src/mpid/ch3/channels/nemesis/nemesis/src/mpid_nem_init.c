@@ -231,15 +231,15 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     /* network init */
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
       {
-	ret = net_module_init (MPID_nem_mem_region.RecvQ[rank],
-			       MPID_nem_mem_region.FreeQ[rank],
-			       MPID_nem_mem_region.Elements, 
-			       MPID_NEM_NUM_CELLS,
-			       MPID_nem_mem_region.net_elements, 
-			       MPID_NEM_NUM_CELLS, 
-			       &MPID_nem_mem_region.net_recv_queue, 
-			       &MPID_nem_mem_region.net_free_queue,
-			       ckpt_restart);
+	ret = MPID_nem_net_module_init (MPID_nem_mem_region.RecvQ[rank],
+					MPID_nem_mem_region.FreeQ[rank],
+					MPID_nem_mem_region.Elements, 
+					MPID_NEM_NUM_CELLS,
+					MPID_nem_mem_region.net_elements, 
+					MPID_NEM_NUM_CELLS, 
+					&MPID_nem_mem_region.net_recv_queue, 
+					&MPID_nem_mem_region.net_free_queue,
+					ckpt_restart);
 	if (ret != 0)
 	  FATAL_ERROR ("net_module_init() failed");
       }
