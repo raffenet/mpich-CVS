@@ -60,7 +60,7 @@ typedef enum MPID_Object_kind {
   MPID_COMM       = 0x1, 
   MPID_GROUP      = 0x2,
   MPID_DATATYPE   = 0x3,
-  MPID_FILE       = 0x4,
+  MPID_FILE       = 0x4,               /* This is not used */
   MPID_ERRHANDLER = 0x5,
   MPID_OP         = 0x6,
   MPID_INFO       = 0x7,
@@ -68,10 +68,10 @@ typedef enum MPID_Object_kind {
   MPID_KEYVAL     = 0x9,
   MPID_ATTR       = 0xa,
   MPID_REQUEST    = 0xb,
-  MPID_PROCGROUP  = 0xc,
+  MPID_PROCGROUP  = 0xc,               /* These are internal device objects */
   MPID_VCONN      = 0xd
   } MPID_Object_kind;
-/* The above objects should correspond to MPI objects only. */
+
 #define HANDLE_MPI_KIND_SHIFT 26
 #define HANDLE_GET_MPI_KIND(a) ( ((a)&0x3c000000) >> HANDLE_MPI_KIND_SHIFT )
 
