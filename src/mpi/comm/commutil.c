@@ -554,17 +554,21 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
     MPIU_Object_release_ref( comm_ptr, &inuse);
     if (!inuse) {
 
-        if (MPIR_Process.comm_parent == comm_ptr)
-            MPIR_Process.comm_parent = NULL;
-
 	/* Remove the attributes, executing the attribute delete routine.  
-           Do this only if the attribute functions are defined. */
+           Do this only if the attribute functions are defined. 
+	   This must be done first, because if freeing the attributes
+	   returns an error, the communicator is not freed */
 	if (MPIR_Process.attr_free && comm_ptr->attributes) {
 	    mpi_errno = MPIR_Process.attr_free( comm_ptr->handle, 
 						comm_ptr->attributes );
 	}
 
 	if (mpi_errno == MPI_SUCCESS) {
+	    /* If this communicator is our parent, and we're disconnecting
+	       from the parent, mark that fact */
+	    if (MPIR_Process.comm_parent == comm_ptr)
+		MPIR_Process.comm_parent = NULL;
+
 	    /* Notify the device that the communicator is about to be 
 	       destroyed */
 	    MPID_Dev_comm_destroy_hook(comm_ptr);
