@@ -45,6 +45,18 @@ $annoteBaseDir = "";
 %AnnoteFilesToOrig = (); # Map from annoted file key to original name (used for
                          # indexing into AnnoteMissed)
 $gDebug = 0;
+
+# The line leaders are used to provide a common set of expressions to match
+# the begining of a line.  This matches the output from the gcov tools.
+# There are two of these because the output from the tools associtated with
+# gcc version 2.x and 3.x are different.
+# We also permit an isolated open or close brace on the line (a non-executable
+# statement)
+$lineLeader2 = '^\s*[\{\}]?\s*';
+$lineLeader3 = '^\s*-:\s*\d+:\s*[\{\}]?\s*';
+#
+# This is the list of known block names.
+@BlockNames = ( "DEBUG", "ERROR HANDLING", "EXPERIMENTAL" );
 #
 # Keep track of coverage amounts
 $GrandTotal       = 0;
@@ -90,7 +102,7 @@ for (@ARGV) {
 	# subdirectories, expand them too (e.g., get a list of 
 	# *every* file within the directory tree. 
 	@files = &ExpandDir( $filename );
-	foreach $file (@files) {
+	foreach my $file (@files) {
 	    ($missed_lines,$total_lines) = &CountUncoveredLines( $file );
 	    $GrandTotal       += $total_lines;
 	    $GrandTotalMissed += $missed_lines;
@@ -157,7 +169,7 @@ sub CountUncoveredLines {
     # a - for unexecuted lines, i.e.,
     # ^\s*-:\s*\d+:original-text-line
     
-    while (<FD>) {
+L:  while (<FD>) {
 	$linecount++;
 	# Coverage messages appear to always begin in the first column.
 	if (/^\s/) { $fileline++; }
@@ -174,31 +186,17 @@ sub CountUncoveredLines {
 	    }
 	    next;	       
 	}
+
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
-	    /^\s*-:\s*d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
-	    ($lineincr,$filelineincr) = &skipBlock( "DEBUG", 0, $linecount );
-	    $linecount += $lineincr;
-	    $fileline += $filelineincr;
-	    next;	       
-	}
-	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
-	    ($lineincr,$filelineincr) = &skipBlock( "ERROR HANDLING", 0, 
-						    $linecount );
-	    $linecount += $lineincr;
-	    $fileline += $filelineincr;
-	    next;	       
-	}
-	# Skip any blocks marked as experimental
-	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
-	    ($lineincr,$filelineincr) = &skipBlock( "EXPERIMENTAL", 1, 
-						    $linecount);
-	    $linecount += $lineincr;
-	    $fileline += $filelineincr;
-	    next;	       
+	foreach my $name (@BlockNames) {
+	    if (/$lineLeader2\/\*\s+--BEGIN $name--\s+\*\// ||
+		/$lineLeader3\/\*\s+--BEGIN $name--\s+\*\//) {
+		($lineincr,$filelineincr) = &skipBlock( $name, 0, $linecount );
+		$linecount += $lineincr;
+		$fileline += $filelineincr;
+		next L;
+	    }
 	}
 
 	# If requested, skip obvious error checking lines
@@ -290,18 +288,19 @@ sub ExpandDir {
 #   exec - within executed code
 #   skip - within skipped code (code that we don't care whether it is
 #          executed).  Currently contains 3 sub states:
-#             errcheck (error checking code)
-#             errhandle (error handling code)
-#             debug     (debug code)
-#             exper     (experimental)
+#             errcheck         (error checking code)
+#             ERROR HANDLING   (error handling code)
+#             DEBUG            (debug code)
+#             EXPERIMENTAL     (experimental)
+#          The uppercase names are the same as the @BlockNames.
 #          Currently, the skipcolors are 
 sub AnnotateUncoveredLines {
     my $filename = $_[0];
     my $bgcolor  = $_[1];
     my %skipcolors = ( "errcheck" => "lightblue",
-		       "errhandle" => "lightblue",
-		       "debug" => "lightblue", 
-		       "exper" => "lightblue" );
+		       "ERROR HANDLING" => "lightblue",
+		       "DEBUG" => "lightblue", 
+		       "EXPERIMENTAL" => "lightblue" );
     my $outfile  = $_[2];
     my $curstate = "init";    # Current state
     my $newstate;             # New state implied by the last line read
@@ -315,7 +314,7 @@ sub AnnotateUncoveredLines {
 
     # Note that linecount is relative to the foo.c.gcov file, not the
     # original foo.c file.
-    while (<FD>) {
+L2: while (<FD>) {
 	# Skip coverage messages (always start in the first column) 
 	if (! /^\s/) { next; }
 
@@ -352,20 +351,15 @@ sub AnnotateUncoveredLines {
 	    $newstate = "skip";
 	    $substate = "errcheck";
 	}
-	elsif (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
-	       /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
-	    $newstate = "skip";
-	    $substate = "debug";
-	}
-	elsif (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
-	       /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
-	    $newstate = "skip";
-	    $substate = "errhandle";
-	}
-	elsif (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
-	       /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
-	    $newstate = "skip";
-	    $substate = "exper";
+	else {
+	    foreach my $name (@BlockNames) {
+		if (/$lineLeader2\/\*\s+--BEGIN $name--\s+\*\// ||
+		    /$lineLeader3\/\*\s+--BEGIN $name--\s+\*\//) {
+		    $newstate = "skip";
+		    $substate = $name;
+		    last;
+		}
+	    }
 	}
 
 	# If there is a change in state, generate the correct code
@@ -373,7 +367,7 @@ sub AnnotateUncoveredLines {
 	    print "Newstate = $newstate\n" if $gDebug;
 	    if ($curstate ne "init") {
 		# Finish off the current state
-		print $outfile "</PRE></TD></TR>";
+		print $outfile "</PRE></TD></TR>$newline";
 	    }
 	    if ($newstate eq "exec")    { $bgcolor = "white"; } 
 	    elsif ($newstate eq "unex") { $bgcolor = "red"; }
@@ -414,23 +408,15 @@ sub AnnotateUncoveredLines {
 	}
 	# Skip any blocks marked as debugging or unavoidable error checking
 	# code 
-	if (/^\s*\/\*\s+--BEGIN DEBUG--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN DEBUG--\s+\*\//) {
-	    &skipBlockAndAnnotate( $outfile, "DEBUG" );
-	    next;	       
-	}
-	if (/^\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN ERROR HANDLING--\s+\*\//) {
-	    &skipBlockAndAnnotate( $outfile, "ERROR HANDLING" );
-	    next;	       
+	foreach my $name (@BlockNames) {
+	    if (/$lineLeader2\/\*\s+--BEGIN $name--\s+\*\// ||
+		/$lineLeader3\/\*\s+--BEGIN $name--\s+\*\//) {
+		&skipBlockAndAnnotate( $outfile, $name );
+		next L2;	       
+	    }
 	}
 
-	if (/^\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--BEGIN EXPERIMENTAL--\s+\*\//) {
-	    &skipBlockAndAnnotate( $outfile, "EXPERIMENTAL" );
-	    next;	       
-	}
-
+	# FIXME: Should this be enabled, and under what conditions?
 #	# If requested, skip obvious error checking lines
 #	if ($skipErrExits && 
 #	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
