@@ -619,7 +619,14 @@ static int connToString( char **buf_p, int *slen, MPIDI_PG_t *pg )
 	while (*p) { str[len++] = *p++; }
 	str[len++] = 0;
     }
-    
+
+    if (len > connInfo->toStringLen) {
+	*buf_p = 0;
+	*slen  = 0;
+	return MPIR_Err_create_code(MPI_SUCCESS,MPIR_ERR_FATAL,"connToString",
+			    __LINE__, MPI_ERR_INTERN, "**intern", NULL);
+    }
+
     *buf_p = string;
     *slen = len;
 
@@ -629,7 +636,8 @@ static int connFromString( const char *buf, MPIDI_PG_t *pg )
 {
     MPIDI_ConnInfo *conninfo = 0;
     int i, mpi_errno = MPI_SUCCESS;
-    int totlen = strlen(buf) + 1;
+    int totlen = 0;
+    const char *buf0 = buf;   /* save the start of buf */
 
     /* printf( "Starting with buf = %s\n", buf );fflush(stdout); */
 
@@ -642,9 +650,6 @@ static int connFromString( const char *buf, MPIDI_PG_t *pg )
 
     conninfo = (MPIDI_ConnInfo *)MPIU_Malloc( sizeof(MPIDI_ConnInfo) );
     conninfo->connStrings = (char **)MPIU_Malloc( pg->size * sizeof(char *));
-    /* Save the length of the string needed to encode the connection
-       information */
-    conninfo->toStringLen = totlen;
 
     /* For now, make a copy of each item */
     for (i=0; i<pg->size; i++) {
@@ -655,6 +660,10 @@ static int connFromString( const char *buf, MPIDI_PG_t *pg )
     }
     pg->connData = conninfo;
 	
+    /* Save the length of the string needed to encode the connection
+       information */
+    conninfo->toStringLen = (int)(buf - buf0) + 1;
+
     return mpi_errno;
 }
 static int connFree( MPIDI_PG_t *pg )
