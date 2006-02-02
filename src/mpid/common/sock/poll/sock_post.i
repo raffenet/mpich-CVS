@@ -35,7 +35,6 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
     struct MPIDU_Sock * sock = NULL;
     struct pollfd * pollfd;
     struct pollinfo * pollinfo;
-    struct hostent * hostent;
     int fd = -1;
     struct sockaddr_in addr;
     long flags;
@@ -536,6 +535,7 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr,
 /* end MPIDU_Sock_listen() */
 
 
+/* FIXME: What does this function do? */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_read
 #undef FCNAME
