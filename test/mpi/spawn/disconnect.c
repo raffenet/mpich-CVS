@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
     int rank, size, rsize;
     int np = 3;
     MPI_Comm      parentcomm, intercomm;
-    MPI_Status    status;
     int verbose = 0;
     char *env;
 
