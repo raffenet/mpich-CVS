@@ -43,7 +43,7 @@ int snprintf(char *, size_t, const char *, ...);
 
 #define MAX_LABEL 32
 
-typedef struct { char label[MAX_LABEL]; int lastNL; FILE *dest } IOLabel;
+typedef struct { char label[MAX_LABEL]; int lastNL; FILE *dest; } IOLabel;
 
 static int IOLabelWriteLine( int, int, void * );
 static int IOLabelSetLabelText( const char [], char [], int, int, int );
@@ -210,7 +210,7 @@ static int IOLabelSetLabelText( const char pattern[], char label[],
 	    case 'd': 
 		dlen = strlen( rankAsChar );
 		if (dlen < lenleft) {
-		    MPIU_Strnapp( pout, rankAsChar, maxlabel );
+		    MPIU_Strncpy( pout, rankAsChar, lenleft );
 		    pout += dlen;
 		    lenleft -= dlen;
 		}
@@ -222,7 +222,7 @@ static int IOLabelSetLabelText( const char pattern[], char label[],
 	    case 'w':
 		dlen = strlen(worldnumAsChar);
 		if (dlen < lenleft) {
-		    MPIU_Strnapp( pout, worldnumAsChar, maxlabel );
+		    MPIU_Strncpy( pout, worldnumAsChar, lenleft );
 		    pout += dlen;
 		    lenleft -= dlen;
 		}
@@ -244,11 +244,12 @@ static int IOLabelSetLabelText( const char pattern[], char label[],
 		    }
 		    *wptr = 0;
 		    if (worldnum > 0) {
+			/* Recursively invoke the label routine */
 			IOLabelSetLabelText( wPattern, wLabel, sizeof(wLabel), 
 					     rank, worldnum );
 			dlen = strlen(wLabel);
 			if (dlen < lenleft) {
-			    MPIU_Strnapp( pout, wLabel, maxlabel );
+			    MPIU_Strncpy( pout, wLabel, lenleft );
 			    pout    += dlen;
 			    lenleft -= dlen;
 			}
