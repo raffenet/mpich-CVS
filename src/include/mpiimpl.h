@@ -1734,28 +1734,6 @@ typedef struct MPID_TopoOps {
 /* end of mpitopo.h (in src/mpi/topo? */
 /* ------------------------------------------------------------------------- */
 
-/* ------------------------------------------------------------------------- */
-/* Files */
-/* FIXME: Make this compatible with ROMIO */
-/* The "USE_ROMIO_FILE" definition tells MPICH2 to use the MPI_File
-   defined by ROMIO, rather than the standard object handles used for the
-   other MPI objects.  This is temporary, until ROMIO is modified to 
-   work with the new object handles */
-#define USE_ROMIO_FILE
-typedef struct MPID_File {
-    int           handle;             /* value of MPI_File for this structure */
-    volatile int  ref_count;
-    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
-  /* Other, device-specific information */
-#ifdef MPID_DEV_FILE_DECL
-    MPID_DEV_FILE_DECL
-#endif
-} MPID_File;
-extern MPIU_Object_alloc_t MPID_File_mem;
-/* Preallocated file objects */
-extern MPID_File MPID_File_direct[];
-/* ------------------------------------------------------------------------- */
-
 /* Time stamps */
 /* Get the timer definitions.  The source file for this include is
    src/mpi/timer/mpichtimer.h.in */
