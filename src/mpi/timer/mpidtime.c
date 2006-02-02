@@ -74,6 +74,8 @@ void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
     t3->tv_sec = sec;
     t3->tv_nsec = nsec;
 }
+
+/* FIXME: We need to cleanup the use of the MPID_Generic_wtick prototype */
 double MPID_Generic_wtick(void);
 
 double MPID_Wtick( void )
