@@ -449,7 +449,6 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
     char val[MPIDI_MAX_KVS_VALUE_LEN];
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
@@ -473,21 +472,10 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     /* get the business card */
-
-    rc = MPIU_Snprintf(key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", vc->pg_rank);
-    if (rc < 0 || rc > MPIDI_MAX_KVS_KEY_LEN)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
-	goto fn_fail;
+    mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
+    if (mpi_errno) {
+	MPI_ERR_POP(mpi_errno);
     }
-
-    mpi_errno = MPIDI_KVS_Get(vc->pg->ch.kvs_name, key, val);
-    if (mpi_errno != MPI_SUCCESS) {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", rc);
-	goto fn_fail;
-    }
-
-/*     MPIU_DBG_PRINTF(("%s: %s\n", key, val)); */
 
     /* attempt to connect through shared memory */
 /*    printf( "trying to connect through shared memory...\n"); fflush(stdout); */

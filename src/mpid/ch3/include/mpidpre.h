@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* FIXME: This header should contain only the definitions exported to the
+   mpiimpl.h level */
+
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #define MPICH_MPIDPRE_H_INCLUDED
 
@@ -27,6 +30,7 @@ typedef MPI_Aint MPIDI_msg_sz_t;
    (mpiimpl.h) can be defined. */
 #include "mpidi_ch3_pre.h"
 
+/* FIXME: Who defines this name */
 #if defined (MPIDI_CH3_MSGS_UNORDERED)
 #define MPID_USE_SEQUENCE_NUMBERS
 #endif
@@ -306,28 +310,41 @@ MPIDI_CH3_Pkt_send_container_t;
 /*
  * MPIDI_CH3_CA_t
  *
- * An enumeration of the actions to perform when the requested I/O operation has completed.
+ * An enumeration of the actions to perform when the requested I/O operation 
+ * has completed.
  *
- * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.  The completion counter should be decremented.  If
- * it has reached zero, then the request should be released by calling MPID_Request_release().
+ * MPIDI_CH3_CA_COMPLETE - The last operation for this request has completed.
+ * The completion counter should be decremented.  If
+ * it has reached zero, then the request should be released by calling 
+ * MPID_Request_release().
  *
- * MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE - This is a special case of the MPIDI_CH3_CA_COMPLETE.  The data for an unexpected
- * eager messaage has been stored into a temporary buffer and needs to be copied/unpacked into the user buffer before the
+ * MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE - This is a special case of the 
+ * MPIDI_CH3_CA_COMPLETE.  The data for an unexpected
+ * eager messaage has been stored into a temporary buffer and needs to be 
+ * copied/unpacked into the user buffer before the
  * completion counter can be decremented, etc.
  *
- * MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE - This is a special case of the MPIDI_CH3_CA_COMPLETE.  The data from the completing
- * read has been stored into a temporary send/receive buffer and needs to be copied/unpacked into the user buffer before the
+ * MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE - This is a special case of the 
+ * MPIDI_CH3_CA_COMPLETE.  The data from the completing
+ * read has been stored into a temporary send/receive buffer and needs to be 
+ * copied/unpacked into the user buffer before the
  * completion counter can be decremented, etc.
  *
- * MPIDI_CH3_CA_RELOAD_IOV - This request contains more segments of data than the IOV or buffer space allow.  Since the
- * previously request operation has completed, the IOV in the request should be reload at this time.
+ * MPIDI_CH3_CA_RELOAD_IOV - This request contains more segments of data than 
+ * the IOV or buffer space allow.  Since the
+ * previously request operation has completed, the IOV in the request should 
+ * be reload at this time.
  *
- * MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV - This is a special case of the MPIDI_CH3_CA_RELOAD_IOV.  The data from the
- * completing read operation has been stored into a temporary send/receive buffer and needs to be copied/unpacked into the user
+ * MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV - This is a special case of the 
+ * MPIDI_CH3_CA_RELOAD_IOV.  The data from the
+ * completing read operation has been stored into a temporary send/receive 
+ * buffer and needs to be copied/unpacked into the user
  * buffer before the IOV is reloaded.
  *
- * MPIDI_CH3_CA_END_CH3 - This not a real action, but rather a marker.  All actions numerically less than MPID_CA_END are defined
- * by channel device.  Any actions numerically greater than MPIDI_CA_END are internal to the channel instance and must be handled
+ * MPIDI_CH3_CA_END_CH3 - This not a real action, but rather a marker.  
+ * All actions numerically less than MPID_CA_END are defined
+ * by channel device.  Any actions numerically greater than MPIDI_CA_END are 
+ * internal to the channel instance and must be handled
  * by the channel instance.
  */
 typedef enum MPIDI_CA
@@ -344,6 +361,13 @@ typedef enum MPIDI_CA
 }
 MPIDI_CA_t;
 
+/*S
+  MPIDI_PG_t - Process group description
+
+  Notes:
+  Every 'MPI_COMM_WORLD' known to this process has an associated process 
+  group.  
+  S*/
 typedef struct MPIDI_PG
 {
     /* MPIU_Object field.  MPIDI_PG_t objects are not allocated using the 
@@ -371,13 +395,44 @@ typedef struct MPIDI_PG
        device space because it is necessary for the device to be able to 
        find a particular process group. */
     void * id;
-    
+
+    /* Replacement abstraction for connection information */
+    /* Connection information needed to access processes in this process 
+       group and to share the data with other processes.  The items are
+       connData - pointer for data used to implement these functions 
+                  (e.g., a pointer to an array of process group info)
+       getConnInfo( rank, buf, bufsize, self ) - function to store into
+                  buf the connection information for rank in this process 
+                  group
+       connInfoToString( buf_p, size, self ) - return in buf_p a string
+                  that can be sent to another process to recreate the
+                  connection information (the info needed to support
+                  getConnInfo)
+       connInfoFromString( buf, self ) - setup the information needed
+                  to implement getConnInfo
+       freeConnInfo( self ) - free any storage or resources associated
+                  with the connection information.
+
+       See ch3/src/mpidi_pg.c 
+    */
+    void *connData;
+    int  (*getConnInfo)( int, char *, int, struct MPIDI_PG * );
+    int  (*connInfoToString)( char **, int *, struct MPIDI_PG * );
+    int  (*connInfoFromString)( const char *,  struct MPIDI_PG * );
+    int  (*freeConnInfo)( struct MPIDI_PG * );
+
 #if defined(MPIDI_CH3_PG_DECL)
     MPIDI_CH3_PG_DECL
 #endif    
 }
 MPIDI_PG_t;
 
+/*E
+  MPIDI_VC_State - States for a virtual connection.
+ 
+  Notes:
+  A closed connection is placed into 'STATE_INACTIVE'. (is this true?)
+ E*/
 typedef enum MPIDI_VC_State
 {
     MPIDI_VC_STATE_INACTIVE=1,
@@ -405,7 +460,7 @@ typedef struct MPIDI_VC
     /* Process group to which this VC belongs */
     MPIDI_PG_t * pg;
 
-    /* Rank of the process associated with this VC */
+    /* Rank of the process in that process group associated with this VC */
     int pg_rank;
 
     /* Local process ID */

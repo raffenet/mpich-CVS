@@ -147,13 +147,14 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    if (vc->state == MPIDI_VC_STATE_ACTIVE)
 		    {
 			MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
-			MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE");
+			MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE (%p)", vc);
 			vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
 		    }
 		    else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
 		    {
+			MPIU_Assert( vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );
 			MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
-			MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED");
+			MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED (%p)",vc);
 			vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 		    }
 		    
@@ -181,7 +182,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
                     }
 
 		    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-                             "not sending a close to %d, vc in state %s", i,
+                             "not sending a close to %d, vc (%p) in state %s",
+							i, vc, 
 			     MPIDI_VC_Get_state_description(vc->state)));
 		}
 	    }
@@ -285,7 +287,7 @@ int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size,
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] )
 {
-    int lastPGID = -1, pgid;
+    int      pgid;
     MPID_VCR vc;
     
     vc = comm_ptr->vcr[rank];

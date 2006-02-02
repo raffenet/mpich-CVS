@@ -50,7 +50,7 @@ int MPIDI_PG_Finalize(void)
        only after ch3_finalize returns. If I release it before ch3_finalize, 
        the ssm channel crashes. */
     
-#ifdef FOO
+#if 0
 
     if (MPIDI_PG_list != NULL)
     { 
@@ -91,6 +91,8 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 			mpi_errno,"pg->vct");
 
     pg->handle = 0;
+    /* FIXME: This reference count may be too large, depending on 
+       what communicator is associated with the process group. */
     MPIU_Object_set_ref(pg, vct_sz);
     pg->size = vct_sz;
     pg->id = pg_id;
@@ -100,6 +102,15 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 	/* Initialize device fields in the VC object */
 	MPIDI_VC_Init(&pg->vct[p], pg, p);
     }
+    
+    /* Initialize the connection information to null.  Use
+       the appropriate MPIDI_PG_InitConnXXX routine to set up these 
+       fields */
+    pg->connData           = 0;
+    pg->getConnInfo        = 0;
+    pg->connInfoToString   = 0;
+    pg->connInfoFromString = 0;
+    pg->freeConnInfo       = 0;
 
 #if 0
     /* Add pg's to the head */
@@ -255,115 +266,35 @@ int MPIDI_PG_Iterate_reset()
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_Allocate_more
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPIDI_Allocate_more(char **str, char **cur_pos, int *cur_len)
-{
-    char *longer;
-    size_t orig_length, longer_length;
-
-    orig_length = (*cur_pos - *str);
-    /* FIXME: Really try to add a MB here?!  Why not just double? */
-    longer_length = (*cur_pos - *str) + (1024*1024);
-
-    longer = (char*)MPIU_Malloc(longer_length * sizeof(char));
-    if (longer == NULL)
-    {
-	return MPI_ERR_NO_MEM;
-    }
-    memcpy(longer, *str, orig_length);
-    longer[orig_length] = '\0';
-    MPIU_Free(*str);
-    
-    *str = longer;
-    *cur_pos = &longer[orig_length];
-    *cur_len = (int)(longer_length - orig_length);
-
-    return MPI_SUCCESS;
-}
-
 /* Note: Allocated memory that is returned in str_ptr.  The user of
    this routine must free that data */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_To_string
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr)
+int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *lenStr)
 {
     int mpi_errno = MPI_SUCCESS;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
-    char *str, *cur_pos;
-    int cur_len;
-    char len_str[20];
 
-    cur_len = 1024*1024;
-    str = (char*)MPIU_Malloc(cur_len*sizeof(char));
-    if (str == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	goto fn_fail;
-    }
-    cur_pos = str;
-    /* Save the PG id */
-    mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, pg_ptr->id);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    /* Save the PG size */
-    MPIU_Snprintf(len_str, 20, "%d", pg_ptr->size);
-    mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, len_str);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    /* Save all the KVS entries for this PG */
-    mpi_errno = MPIDI_KVS_First(pg_ptr->ch.kvs_name, key, val);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-
-    while (mpi_errno == MPI_SUCCESS && key[0] != '\0')
-    {
-	mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, key);
-	if (mpi_errno != MPIU_STR_SUCCESS)
-	{
-	    mpi_errno = MPIDI_Allocate_more(&str, &cur_pos, &cur_len);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_POP(mpi_errno);
-	    }
-	    mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, key);
-	    if (mpi_errno != MPIU_STR_SUCCESS) {
-		MPIU_ERR_POP(mpi_errno);
-	    }
+    /* Replace this with the new string */
+    if (pg_ptr->connInfoToString) {
+	(*pg_ptr->connInfoToString)( str_ptr, lenStr, pg_ptr );
+#if 0
+	{ char *p; int i, len = *lenStr;
+	p = *str_ptr;
+	printf( "pg id is %s\n", p ); while (*p) p++; p++;
+	printf( "size is %s\n", p ); while (*p) p++; p++;
+	for (i=0; i<pg_ptr->size; i++) {
+	    printf( "[%d] = %s\n", i, p );
+	    while (*p) p++; p++;
 	}
-#ifndef USE_PERSISTENT_SHARED_MEMORY
-	/* FIXME: This is a hack to avoid including shared-memory 
-	   queue names in the buisness card that may be used
-	   by processes that were not part of the same COMM_WORLD. */
-/*	printf( "Adding key %s value %s\n", key, val ); */
-	if (strstr( key, "businesscard" )) {
-	    char *p = strstr( val, "$shm_host" );
-	    if (p) p[1] = 0;
-/*	    printf( "(fixed) Adding key %s value %s\n", key, val ); */
+	printf( "string len is %d\n", len );fflush(stdout);
 	}
 #endif
-	mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, val);
-	if (mpi_errno != MPIU_STR_SUCCESS)
-	{
-	    mpi_errno = MPIDI_Allocate_more(&str, &cur_pos, &cur_len);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_POP(mpi_errno);
-	    }
-	    mpi_errno = MPIU_Str_add_string(&cur_pos, &cur_len, val);
-	    if (mpi_errno != MPIU_STR_SUCCESS) {
-		MPIU_ERR_POP(mpi_errno);
-	    }
-	}
-	mpi_errno = MPIDI_KVS_Next(pg_ptr->ch.kvs_name, key, val);
     }
-    *str_ptr = str;
+    else {
+	printf( "Panic! no connInfoToString!\n" );fflush(stdout);
+    }
 
 fn_exit:
     return mpi_errno;
@@ -374,48 +305,26 @@ fn_fail:
 /* This routine takes a string description of a process group (created with 
    MPIDI_PG_To_string, usually on a different process) and returns a pointer to
    the matching process group.  If the group already exists, flag is set to 
-   false.  If the group does not exist, it is created with MPIDI_PG_Creat (and
+   false.  If the group does not exist, it is created with MPIDI_PG_Create (and
    hence is added to the list of active process groups) and flag is set to 
-   true.  In addition, the matching KVS space in the KVS cache is initialized
-   from the input string, using the routines in mpidi_kvs.c 
+   true.  In addition, the connection information is set up using the 
+   information in the input string.
 */
 #undef FUNCNAME
-#define FUNCNAME MPIDI_PG_Create_with_kvs
+#define FUNCNAME MPIDI_PG_Create_from_string
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
-    char *pg_id = 0;
-    int pgid_len;
-    char sz_str[20];
+    char *p;
     int vct_sz;
     MPIDI_PG_t *existing_pg, *pg_ptr=0;
-    MPIU_CHKPMEM_DECL(1);
 
-    mpi_errno = PMI_Get_id_length_max(&pgid_len);
-    if (mpi_errno != PMI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-          "**pmi_get_id_length_max", "**pmi_get_id_length_max %d", mpi_errno);
-    }
-    pgid_len = MPIDU_MAX(pgid_len, MPIDI_MAX_KVS_NAME_LEN);
-
-    /* This memory will be attached to a process group */
-    MPIU_CHKPMEM_MALLOC(pg_id,char *,pgid_len,mpi_errno,"pg_id");
-
-    mpi_errno = MPIU_Str_get_string(&str, pg_id, pgid_len);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    mpi_errno = MPIU_Str_get_string(&str, sz_str, 20);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    vct_sz = atoi(sz_str);
-
-    mpi_errno = MPIDI_PG_Find(pg_id, &existing_pg);
+    /* The pg_id is at the beginning of the string, so we can just pass
+       it to the find routine */
+    /* printf( "Looking for pg with id %s\n", str );fflush(stdout); */
+    mpi_errno = MPIDI_PG_Find(str, &existing_pg);
     if (mpi_errno != PMI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -429,42 +338,26 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     }
     *flag = 1;
 
-    /* The pg_id, allocated above, is saved in the created process group */
-    mpi_errno = MPIDI_PG_Create(vct_sz, pg_id, pg_pptr);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    /* The memory for pg_id that we allocated is now saved in *pg_pptr */
-    MPIU_CHKPMEM_COMMIT();
-    pg_ptr = *pg_pptr;
-    pg_ptr->ch.kvs_name = (char*)MPIU_Malloc(MPIDI_MAX_KVS_NAME_LEN);
-    if (pg_ptr->ch.kvs_name == NULL) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    /* FIXME: This creates a new kvs name in the "cached" KVS space.
-       What is the scope of this name (which processes know it)?  
-       Is it a private (this process only) cache?  */
-    mpi_errno = MPIDI_KVS_Create(pg_ptr->ch.kvs_name);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
+    /* Get the size from the string */
+    p = str;
+    while (*p) p++; p++;
+    vct_sz = atoi(p);
 
-    key[0] = '\0';
-    MPIU_Str_get_string(&str, key, MPIDI_MAX_KVS_KEY_LEN);
-    MPIU_Str_get_string(&str, val, MPIDI_MAX_KVS_VALUE_LEN);
-    while (key[0] != '\0')
-    {
-	mpi_errno = MPIDI_KVS_Put(pg_ptr->ch.kvs_name, key, val);
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_POP(mpi_errno);
-	}
-	key[0] = '\0';
-	MPIU_Str_get_string(&str, key, MPIDI_MAX_KVS_KEY_LEN);
-	MPIU_Str_get_string(&str, val, MPIDI_MAX_KVS_VALUE_LEN);
+    mpi_errno = MPIDI_PG_Create(vct_sz, str, pg_pptr);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
     }
+    
+    pg_ptr = *pg_pptr;
+    pg_ptr->id = MPIU_Strdup( str );
+    
+    /* Set up the functions to use strings to manage connection information */
+    MPIDI_PG_InitConnString( pg_ptr );
+    (*pg_ptr->connInfoFromString)( str, pg_ptr );
+
+    pg_ptr->ch.kvs_name = 0;
 
 fn_exit:
-    MPIU_CHKPMEM_REAP();
     return mpi_errno;
 fn_fail:
     goto fn_exit;
@@ -512,3 +405,306 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
     *id = 0;
 }
 #endif
+
+/*
+ * Managing connection information for process groups
+ * 
+ *
+ */
+
+/* For all of these routines, the format of the process group description
+   that is created and used by the connTo/FromString routines is this:
+   (All items are strings, terminated by null)
+
+   process group id string
+   sizeof process group (as string)
+   conninfo for rank 0
+   conninfo for rank 1
+   ...
+
+   The "conninfo for rank 0" etc. for the original (MPI_COMM_WORLD)
+   process group are stored in the PMI_KVS space with the keys 
+   p<rank>-businesscard .  
+
+   Fixme: Add a routine to publish the connection info to this file so that
+   the key for the businesscard is defined in just this one file.
+*/
+
+
+/* The "KVS" versions are for the process group to which the calling 
+   process belongs.  These use the PMI_KVS routines to access the
+   process information */
+static int getConnInfoKVS( int rank, char *buf, int bufsize, MPIDI_PG_t *pg )
+{
+    char key[MPIDI_MAX_KVS_KEY_LEN];
+    int  mpi_errno = MPI_SUCCESS, rc, pmi_errno;;
+
+    rc = MPIU_Snprintf(key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", rank );
+    if (rc < 0 || rc > MPIDI_MAX_KVS_KEY_LEN) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+    }
+    pmi_errno = PMI_KVS_Get(pg->connData, key, buf, bufsize );
+    if (pmi_errno) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_get");
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+static int connToStringKVS( char **buf_p, int *slen, MPIDI_PG_t *pg )
+{
+    char *string = 0;
+    char *pg_idStr = (char *)pg->id;      /* In the PMI/KVS space,
+					     the pg id is a string */
+    char buf[MPIDI_MAX_KVS_VALUE_LEN];
+    int   i, j, vallen, rc, mpi_errno = MPI_SUCCESS, len;
+    int   curSlen;
+
+    /* Make an initial allocation of a string with an estimate of the
+       needed space */
+    len = 0;
+    curSlen = 10 + pg->size * 128;
+    string = (char *)MPIU_Malloc( curSlen );
+
+    /* Start with the id of the pg */
+    while (*pg_idStr && len < curSlen) 
+	string[len++] = *pg_idStr++;
+    string[len++] = 0;
+    
+    /* Add the size of the pg */
+    MPIU_Snprintf( &string[len], curSlen, "%d", pg->size );
+    while (string[len]) len++;
+    len++;
+
+    for (i=0; i<pg->size; i++) {
+	rc = getConnInfoKVS( i, buf, MPIDI_MAX_KVS_VALUE_LEN, pg );
+#ifndef USE_PERSISTENT_SHARED_MEMORY
+	/* FIXME: This is a hack to avoid including shared-memory 
+	   queue names in the buisness card that may be used
+	   by processes that were not part of the same COMM_WORLD. 
+	   To fix this, the shared memory channels should look at the
+	   returned connection info and decide whether to use 
+	   sockets or shared memory by determining whether the
+	   process is in the same MPI_COMM_WORLD. */
+/*	printf( "Adding key %s value %s\n", key, val ); */
+	{
+	char *p = strstr( buf, "$shm_host" );
+	if (p) p[1] = 0;
+	/*	    printf( "(fixed) Adding key %s value %s\n", key, val ); */
+	}
+#endif
+	/* Add the information to the output buffer */
+	vallen = strlen(buf);
+	/* Check that this will fix in the remaining space */
+	if (len + vallen + 1 >= curSlen) {
+	    string = MPIU_Realloc( string, 
+				   curSlen + (pg->size - i) * (vallen + 1 ));
+	}
+	/* Append to string */
+	for (j=0; j<vallen+1; j++) {
+	    string[len++] = buf[j];
+	}
+    }
+
+    *buf_p = string;
+    *slen  = len;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    if (string) MPIU_Free(string);
+    goto fn_exit;
+}
+static int connFromStringKVS( const char *buf, MPIDI_PG_t *pg )
+{
+    /* Fixme: this should be a failure to call this routine */
+    return MPI_SUCCESS;
+}
+static int connFreeKVS( MPIDI_PG_t *pg )
+{
+    /* In this implementation, there is no local data */
+    return MPI_SUCCESS;
+}
+
+int MPIDI_PG_InitConnKVS( MPIDI_PG_t *pg )
+{
+    int pmi_errno, kvs_name_sz;
+    int mpi_errno = MPI_SUCCESS;
+
+    pmi_errno = PMI_KVS_Get_name_length_max( &kvs_name_sz );
+    if (pmi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+			     "**pmi_kvs_get_name_length_max", 
+			     "**pmi_kvs_get_name_length_max %d", pmi_errno);
+    }
+    
+    pg->connData = (char *)MPIU_Malloc(kvs_name_sz + 1);
+    if (pg->connData == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
+    }
+    
+    pmi_errno = PMI_KVS_Get_my_name(pg->connData, kvs_name_sz);
+    if (pmi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+			     "**pmi_kvs_get_my_name", 
+			     "**pmi_kvs_get_my_name %d", pmi_errno);
+    }
+    
+    pg->getConnInfo        = getConnInfoKVS;
+    pg->connInfoToString   = connToStringKVS;
+    pg->connInfoFromString = connFromStringKVS;
+    pg->freeConnInfo       = connFreeKVS;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    if (pg->connData) { MPIU_Free(pg->connData); }
+    goto fn_exit;
+}
+
+/* For process groups that are not our MPI_COMM_WORLD, store the connection
+   information in an array of strings.  These routines and structure
+   implement the access to this information. */
+typedef struct {
+    int     toStringLen;   /* Length needed to encode this connection info */
+    char ** connStrings;   /* pointer to an array, indexed by rank, containing
+			      connection information */
+} MPIDI_ConnInfo;
+
+static int getConnInfo( int rank, char *buf, int bufsize, MPIDI_PG_t *pg )
+{
+    MPIDI_ConnInfo *connInfo = (MPIDI_ConnInfo *)pg->connData;
+
+    /* printf( "Entering getConnInfo\n" ); fflush(stdout); */
+    if (!connInfo || !connInfo->connStrings || !connInfo->connStrings[rank]) {
+	/* FIXME: Turn this into a valid error code create/return */
+	printf( "Fatal error in getConnInfo (rank = %d)\n", rank );
+	printf( "connInfo = %p\n", connInfo );fflush(stdout);
+	if (connInfo) {
+	    printf( "connInfo->connStrings = %p\n", connInfo->connStrings );
+	}
+	/* Fatal error.  Connection information missing */
+	fflush(stdout);   
+    }
+
+    /* printf( "Copying %s to buf\n", connInfo->connStrings[rank] ); fflush(stdout); */
+    
+    MPIU_Strncpy( buf, connInfo->connStrings[rank], bufsize );
+    return MPI_SUCCESS;
+}
+static int connToString( char **buf_p, int *slen, MPIDI_PG_t *pg )
+{
+    char *string = 0, *str, *pg_id;
+    int  i, len=0;
+    
+    MPIDI_ConnInfo *connInfo = (MPIDI_ConnInfo *)pg->connData;
+
+    /* Create this from the string array */
+    string = (char *)MPIU_Malloc( connInfo->toStringLen );
+    str = string;
+
+    pg_id = pg->id;
+    while (*pg_id) str[len++] = *pg_id++;
+    str[len++] = 0;
+    
+    MPIU_Snprintf( &str[len], 20, "%d", pg->size);
+    /* Skip over the length */
+    while (str[len++]);
+
+    /* Copy each connection string */
+    for (i=0; i<pg->size; i++) {
+	char *p = connInfo->connStrings[i];
+	while (*p) { str[len++] = *p++; }
+	str[len++] = 0;
+    }
+    
+    *buf_p = string;
+    *slen = len;
+
+    return MPI_SUCCESS;
+}
+static int connFromString( const char *buf, MPIDI_PG_t *pg )
+{
+    MPIDI_ConnInfo *conninfo = 0;
+    int i, mpi_errno = MPI_SUCCESS;
+    int totlen = strlen(buf) + 1;
+
+    /* printf( "Starting with buf = %s\n", buf );fflush(stdout); */
+
+    /* Skip the pg id */
+    while (*buf) buf++; buf++;
+
+    /* Determine the size of the pg */
+    pg->size = atoi( buf );
+    while (*buf) buf++; buf++;
+
+    conninfo = (MPIDI_ConnInfo *)MPIU_Malloc( sizeof(MPIDI_ConnInfo) );
+    conninfo->connStrings = (char **)MPIU_Malloc( pg->size * sizeof(char *));
+    /* Save the length of the string needed to encode the connection
+       information */
+    conninfo->toStringLen = totlen;
+
+    /* For now, make a copy of each item */
+    for (i=0; i<pg->size; i++) {
+	/* printf( "Adding conn[%d] = %s\n", i, buf );fflush(stdout); */
+	conninfo->connStrings[i] = MPIU_Strdup( buf );
+	while (*buf) buf++;
+	buf++;
+    }
+    pg->connData = conninfo;
+	
+    return mpi_errno;
+}
+static int connFree( MPIDI_PG_t *pg )
+{
+    MPIDI_ConnInfo *conninfo = (MPIDI_ConnInfo *)pg->connData;
+    int i;
+
+    for (i=0; i<pg->size; i++) {
+	MPIU_Free( conninfo->connStrings[i] );
+    }
+    MPIU_Free( conninfo->connStrings );
+    MPIU_Free( conninfo );
+
+    return MPI_SUCCESS;
+}
+
+int MPIDI_PG_InitConnString( MPIDI_PG_t *pg )
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    pg->connData           = 0;
+    pg->getConnInfo        = getConnInfo;
+    pg->connInfoToString   = connToString;
+    pg->connInfoFromString = connFromString;
+    pg->freeConnInfo       = connFree;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+/* Temp to get connection value for rank r */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PG_GetConnString
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_PG_GetConnString( MPIDI_PG_t *pg, int rank, char *val, int vallen )
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (pg->getConnInfo) {
+	mpi_errno = (*pg->getConnInfo)( rank, val, vallen, pg );
+    }
+    else {
+	printf( "Panic: no getConnInfo defined!\n" );
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}

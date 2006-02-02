@@ -10,6 +10,15 @@
 #include <windows.h>
 #endif
 
+/* FIXME: Are these needed here (these were defined within an unrelated 
+   ifdef in mpidimpl.h) */
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
+#endif
+
 /* FIXME: These routines allocate memory but rarely free it.  They need
    a finalize handler to remove the allocated memory.  A clear description
    of the purpose of these routines and their scope of use would make that
@@ -65,6 +74,7 @@ typedef struct MPIDI_CH3I_BootstrapQ_struct
 static MPIDI_CH3I_BootstrapQ_struct * g_queue_list = NULL;
 
 #ifdef HAVE_WINDOWS_H
+
 #undef FUNCNAME
 #define FUNCNAME GetNextBootstrapMsg
 #undef FCNAME

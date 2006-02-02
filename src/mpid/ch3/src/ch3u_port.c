@@ -26,14 +26,16 @@
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 
 typedef struct pg_translation {
-    int pg_index;
+    int pg_index;    /* index of a process group (index in pg_node) */
     int pg_rank;
 } pg_translation;
 
 typedef struct pg_node {
-    int index;
+    int  index;            /* Internal index of process group 
+			      (see pg_translation) */
     char *pg_id;
-    char *str;
+    char *str;             /* String describing connection info for pg */
+    int   lenStr;          /* Length of this string */
     struct pg_node *next;
 } pg_node;
 
@@ -223,7 +225,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     else
     {
 	mpi_errno = ReceivePGAndDistribute( tmp_comm, comm_ptr, root, &recvtag,
-					n_remote_pgs, remote_pg );
+					    n_remote_pgs, remote_pg );
     }
 
     /* Broadcast out the remote rank translation array */
@@ -302,6 +304,10 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
  * rank in process group to rank in that communicator (local translation
  * must be allocated before this routine is called).  The number of 
  * distinct process groups is returned in n_local_pgs_p .
+ *
+ * This allows an intercomm_create to exchange the full description of
+ * all of the process groups that have made up the communicator that
+ * will define the "remote group".  
  */
 #undef FUNCNAME
 #define FUNCNAME ExtractLocalPGInfo
@@ -333,7 +339,8 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     pg_list->index = cur_index++;
     pg_list->next = NULL;
     MPIU_Assert( comm_p->vcr[0]->pg->ref_count);
-    mpi_errno = MPIDI_PG_To_string(comm_p->vcr[0]->pg, &pg_list->str);
+    mpi_errno = MPIDI_PG_To_string(comm_p->vcr[0]->pg, &pg_list->str, 
+				   &pg_list->lenStr );
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -348,7 +355,7 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
 	    MPIU_Assert(comm_p->vcr[i]->pg->ref_count != 0);
 	    if (MPIDI_PG_Id_compare(comm_p->vcr[i]->pg->id, pg_iter->pg_id)) {
 		local_translation[i].pg_index = pg_iter->index;
-		local_translation[i].pg_rank = comm_p->vcr[i]->pg_rank;
+		local_translation[i].pg_rank  = comm_p->vcr[i]->pg_rank;
 		break;
 	    }
 	    if (pg_trailer != pg_iter)
@@ -365,7 +372,8 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
 	    pg_iter->pg_id = MPIU_Strdup(comm_p->vcr[i]->pg->id);
 	    pg_iter->index = cur_index++;
 	    pg_iter->next = NULL;
-	    mpi_errno = MPIDI_PG_To_string(comm_p->vcr[i]->pg, &pg_iter->str);
+	    mpi_errno = MPIDI_PG_To_string(comm_p->vcr[i]->pg, &pg_iter->str,
+					   &pg_iter->lenStr );
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_POP(mpi_errno);
 	    }
@@ -522,7 +530,6 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
     /* Now, broadcast the number of local pgs */
     NMPI_Bcast( &n_local_pgs, 1, MPI_INT, root, comm_p->handle );
 
-    /* printf( "Number of pgs = %d\n", n_local_pgs ); fflush(stdout);  */
     pg_list = pg_head;
     for (i=0; i<n_local_pgs; i++) {
 	int len, flag;
@@ -535,9 +542,10 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 		printf( "Unexpected end of pg_list\n" ); fflush(stdout);
 		break;
 	    }
+	    
 	    pg_str  = pg_list->str;
+	    len     = pg_list->lenStr + 1;
 	    pg_list = pg_list->next;
-	    len     = (int)strlen(pg_str) + 1;
 	}
 	NMPI_Bcast( &len, 1, MPI_INT, root, comm_p->handle );
 	if (rank != root) {
@@ -567,6 +575,7 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 
     /* Free pg_list */
     pg_list = pg_head;
+#if 1   /* used to try and detect an error */
     /* FIXME: We should use the PG destroy function for this, and ensure that
        the PG fields are valid for that function */
     while (pg_list) {
@@ -578,6 +587,7 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 	MPIU_Free( pg_list );
 	pg_list = pg_next;
     }
+#endif
 
  fn_exit:
     MPIU_CHKLMEM_FREEALL();
@@ -603,7 +613,7 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
 
     while (pg_list != NULL) {
 	pg_iter = pg_list;
-	i = (int)(strlen(pg_iter->str) + 1);
+	i = pg_iter->lenStr + 1;
 	/*printf("connect:sending 1 int: %d\n", i);fflush(stdout);*/
 	mpi_errno = MPIC_Send(&i, 1, MPI_INT, 0, sendtag++, tmp_comm->handle);
 	*sendtag_p = sendtag;
@@ -611,7 +621,7 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
 	    MPIU_ERR_POP(mpi_errno);
 	}
 	
-	/*printf("connect:sending string length %d\n", i);fflush(stdout);*/
+	/* printf("connect:sending string length %d\n", i);fflush(stdout); */
 	mpi_errno = MPIC_Send(pg_iter->str, i, MPI_CHAR, 0, sendtag++, 
 			      tmp_comm->handle);
 	*sendtag_p = sendtag;
@@ -1028,32 +1038,6 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
     goto fn_exit;
 }
 
-#if 0
-    /* synchronize with remote root */
-    if (rank == root)
-    {
-	MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"sync with peer");
-        mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
-                                  sendtag++, &j, 0, MPI_INT,
-                                  0, recvtag++, tmp_comm->handle,
-                                  MPI_STATUS_IGNORE);
-        if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_POP(mpi_errno);
-        }
-
-        /* All communication with remote root done. Release the communicator. */
-        MPIR_Comm_release(tmp_comm);
-    }
-
-    /*printf("connect:barrier\n");fflush(stdout);*/
-    mpi_errno = MPIR_Barrier(comm_ptr);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-
-}
-#endif
-
 /* Free new_vc. It was explicitly allocated in MPIDI_CH3_Connect_to_root. */
 #undef FUNCNAME
 #define FUNCNAME FreeNewVC
@@ -1141,7 +1125,7 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
     q_item->vc = vc;
 
     MPIDI_Acceptq_lock();
-
+    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Enqueuing accept connection %p",vc);
     q_item->next = acceptq_head;
     acceptq_head = q_item;
     
@@ -1193,6 +1177,9 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 	}
     }
 
+    MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,
+	      (MPIU_DBG_FDEST,"Dequeuing accept connection %p with tag %d",
+	       *vc,port_name_tag));
     MPIDI_Acceptq_unlock();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);

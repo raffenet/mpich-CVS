@@ -36,6 +36,7 @@
  */
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
+
 #include "pmi.h"
 
 typedef struct MPIDI_KVS_database_element_t
@@ -64,6 +65,13 @@ static MPIDI_KVS_Global_t kvs = { 0 };
 /* FIXME: Why is get_uuid used/needed?  Will this set of routines ever
    need to create a *new* KVS name (assuming that the congecture is true 
    that this is a KVS cache only? */
+
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
+#endif
 
 #undef FUNCNAME 
 #define FUNCNAME get_uuid
@@ -230,78 +238,6 @@ int MPIDI_KVS_Create(char *name)
     return MPI_SUCCESS;
 }
 
-/* FIXME: What is this routine for? */
-#if 0
-#undef FUNCNAME
-#define FUNCNAME MPIDI_KVS_Create_name_in
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_KVS_Create_name_in(char *name)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_KVS_database_node_t *pNode;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-
-    if (strlen(name) < 1 || strlen(name) > MPIDI_MAX_KVS_NAME_LEN)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-	return mpi_errno;
-    }
-
-    /* Check if the name already exists */
-    pNode = kvs.pDatabase;
-    while (pNode)
-    {
-	if (strcmp(pNode->pszName, name) == 0)
-	{
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-	    return MPI_SUCCESS;
-	}
-	pNode = pNode->pNext;
-    }
-
-    pNode = kvs.pDatabase;
-    if (pNode)
-    {
-	while (pNode->pNext)
-	{
-	    pNode = pNode->pNext;
-	}
-	pNode->pNext = (MPIDI_KVS_database_node_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_node_t));
-	if (pNode->pNext == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_node_t");
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-	    return mpi_errno;
-	}
-	pNode = pNode->pNext;
-    }
-    else
-    {
-	kvs.pDatabase = (MPIDI_KVS_database_node_t*)MPIU_Malloc(sizeof(MPIDI_KVS_database_node_t));
-	/* --BEGIN ERROR HANDLING-- */
-	if (kvs.pDatabase == NULL)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIDI_KVS_database_node_t");
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-	    return mpi_errno;
-	}
-	/* --END ERROR HANDLING-- */
-	pNode = kvs.pDatabase;
-    }
-    pNode->pNext = NULL;
-    pNode->pData = NULL;
-    pNode->pIter = NULL;
-    MPIU_Strncpy(pNode->pszName, name, MPIDI_MAX_KVS_NAME_LEN);
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_CREATE_NAME_IN);
-    return MPI_SUCCESS;
-}
-#endif 
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_KVS_Get
 #undef FCNAME
@@ -409,63 +345,6 @@ int MPIDI_KVS_Put(const char *name, const char *key, const char *value)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_PUT);
     return mpi_errno;
 }
-
-/* FIXME: No one uses this routine */
-#if 0
-#undef FUNCNAME
-#define FUNCNAME MPIDI_KVS_Delete
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_KVS_Delete(const char *name, const char *key)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_KVS_database_node_t *pNode;
-    MPIDI_KVS_database_element_t *pElement, *pElementTrailer;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_DELETE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_DELETE);
-
-    pNode = kvs.pDatabase;
-    while (pNode)
-    {
-	if (strcmp(pNode->pszName, name) == 0)
-	{
-	    pElementTrailer = pElement = pNode->pData;
-	    while (pElement)
-	    {
-		if (strcmp(pElement->pszKey, key) == 0)
-		{
-		    if (pElementTrailer != pElement)
-		    {
-			pElementTrailer->pNext = pElement->pNext;
-		    }
-		    else
-		    {
-			pNode->pData = pElement->pNext;
-		    }
-		    MPIU_Free(pElement);
-		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
-		    return MPI_SUCCESS;
-		}
-		pElementTrailer = pElement;
-		pElement = pElement->pNext;
-	    }
-	    /* --BEGIN ERROR HANDLING-- */
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
-	    return mpi_errno;
-	    /* --END ERROR HANDLING-- */
-	}
-	pNode = pNode->pNext;
-    }
-
-    /* --BEGIN ERROR HANDLING-- */
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_DELETE);
-    return mpi_errno;
-    /* --END ERROR HANDLING-- */
-}
-#endif
 
 /* FIXME: This routine is unused (should be used during finalize) */
 #undef FUNCNAME
@@ -694,67 +573,5 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXT);
     return mpi_errno;
 }
-
-/* FIXME: What is this routine for? */
-#if 0
-#undef FUNCNAME
-#define FUNCNAME MPIDI_KVS_Firstkvs
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_KVS_Firstkvs(char *name)
-{
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_FIRSTKVS);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_FIRSTKVS);
-
-    kvs.pDatabaseIter = kvs.pDatabase;
-    if (name != NULL)
-    {
-	if (kvs.pDatabaseIter)
-	{
-	    MPIU_Strncpy(name, kvs.pDatabaseIter->pszName, MPIDI_MAX_KVS_NAME_LEN);
-	}
-	else
-	{
-	    name[0] = '\0';
-	}
-    }
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_FIRSTKVS);
-    return MPI_SUCCESS;
-}
-
-/* FIXME: What is this routine for? */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_KVS_Nextkvs
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_KVS_Nextkvs(char *name)
-{
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_KVS_NEXTKVS);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_KVS_NEXTKVS);
-
-    if (kvs.pDatabaseIter == NULL)
-    {
-	name[0] = '\0';
-    }
-    else
-    {
-	kvs.pDatabaseIter = kvs.pDatabaseIter->pNext;
-	if (kvs.pDatabaseIter)
-	{
-	    MPIU_Strncpy(name, kvs.pDatabaseIter->pszName, MPIDI_MAX_KVS_NAME_LEN);
-	}
-	else
-	{
-	    name[0] = '\0';
-	}
-    }
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_KVS_NEXTKVS);
-    return MPI_SUCCESS;
-}
-#endif  /* unused routines */
 
 #endif

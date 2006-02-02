@@ -286,7 +286,6 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
-    char key[MPIDI_MAX_KVS_KEY_LEN];
     char val[MPIDI_MAX_KVS_VALUE_LEN];
     int rc;
     int mpi_errno = MPI_SUCCESS;
@@ -308,25 +307,17 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
-    /* get the business card */
-    rc = MPIU_Snprintf(key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", vc->pg_rank);
-    if (rc < 0 || rc > MPIDI_MAX_KVS_NAME_LEN)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**snprintf", "**snprintf %d", rc);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
-	return mpi_errno;
-    }
-    mpi_errno = MPIDI_KVS_Get(vc->pg->ch.kvs_name, key, val);
+    mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	return mpi_errno;
     }
 
-    MPIU_DBG_PRINTF(("%s: %s\n", key, val));
+    MPIU_DBG_PRINTF(("%d: %s\n", vc->pg_rank, val));
 
     /* attempt to connect through shared memory */
     connected = FALSE;
-    MPIU_DBG_PRINTF(("business card: <%s> = <%s>\n", key, val));
+    MPIU_DBG_PRINTF(("business card: <%d> = <%s>\n", vc->pg_rank, val));
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
     if (mpi_errno != MPI_SUCCESS)
     {

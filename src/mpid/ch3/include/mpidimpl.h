@@ -390,7 +390,7 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 #define MPIDI_PG_Get_size(pg_) ((pg_)->size)
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
-int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr);
+int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *);
 int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 #endif
 /*-------------------------
@@ -603,29 +603,9 @@ int MPIDI_CH3I_Acceptq_init(void);
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#endif
-
 #define MPIDI_MAX_KVS_NAME_LEN     256
 #define MPIDI_MAX_KVS_KEY_LEN      256
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
-
-int MPIDI_KVS_Init(void);
-int MPIDI_KVS_Finalize(void);
-int MPIDI_KVS_Create(char *name);
-int MPIDI_KVS_Create_name_in(char *name);
-int MPIDI_KVS_Destroy(const char *name);
-int MPIDI_KVS_Get(const char *name, const char *key, char *value);
-int MPIDI_KVS_Put(const char *name, const char *key, const char *value);
-int MPIDI_KVS_Delete(const char *name, const char *key);
-int MPIDI_KVS_First(const char *name, char *key, char *value);
-int MPIDI_KVS_Next(const char *name, char *key, char *value);
-int MPIDI_KVS_Firstkvs(char *name);
-int MPIDI_KVS_Nextkvs(char *name);
 
 #endif /* MPIDI_DEV_IMPLEMENTS_KVS */
 
@@ -744,6 +724,10 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
 int MPIDI_VC_InitSock( MPIDI_VC_t *);
 int MPIDI_CH3I_Connect_to_root_sock(const char *, MPIDI_VC_t **);
 int MPIDI_CH3U_Get_business_card_sock(char **, int *);
+
+
+int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * );
+
 /* FIXME: Where should this go? */
 /*int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **); */
 

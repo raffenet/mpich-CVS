@@ -9,6 +9,8 @@
 
 #include "mpidu_sock.h"
 
+#include "ch3usock.h"
+
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
 #endif
@@ -82,6 +84,8 @@ int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 			     "**pmi_get_id_length_max %d", mpi_errno);
     }
     MPIU_CHKPMEM_MALLOC(conn->pg_id,char*,id_sz + 1,mpi_errno,"conn->pg_id");
+    conn->pg_id[0] = 0;           /* Be careful about pg_id in case a later 
+				     error */
     *connp = conn;
 
   fn_exit:
@@ -161,6 +165,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
         vc->ch.conn = conn;
         vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
         conn->vc = vc;
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECT_ACCEPT (%p)", vc );
         conn->state = CONN_STATE_CONNECT_ACCEPT;
         conn->send_active = NULL;
         conn->recv_active = NULL;
@@ -399,12 +404,11 @@ int MPIDI_CH3_Sockconn_handle_accept_event( void )
     mpi_errno = MPIDU_Sock_accept(MPIDI_CH3I_listener_conn->sock, 
 				  MPIDI_CH3I_sock_set, conn, &conn->sock);
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-			    "**ch3|sock|accept");
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|sock|accept");
     }
     
     conn->vc = NULL;
-    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LRECV_PKT");
+    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LRECV_PKT (conn = %p, vc=NULL)",conn);
     conn->state = CONN_STATE_OPEN_LRECV_PKT;
     conn->send_active = NULL;
     conn->recv_active = NULL;
@@ -441,7 +445,7 @@ int MPIDI_CH3_Sockconn_handle_connect_event( MPIDI_CH3I_Connection_t *conn,
     /* --END ERROR HANDLING-- */
 
     if (conn->state == CONN_STATE_CONNECTING) {
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CSEND");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CSEND (conn=%p)",conn);
 	conn->state = CONN_STATE_OPEN_CSEND;
 	MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_REQ);
 	conn->pkt.sc_open_req.pg_id_len = (int) strlen(MPIDI_Process.my_pg->id) + 1;
@@ -453,7 +457,7 @@ int MPIDI_CH3_Sockconn_handle_connect_event( MPIDI_CH3I_Connection_t *conn,
 	/* CONN_STATE_CONNECT_ACCEPT */
 	int port_name_tag;
 	
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CSEND");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CSEND (conn=%p)", conn);
 	conn->state = CONN_STATE_OPEN_CSEND;
 	
 	/* pkt contains port name tag. In memory debugging mode, 
@@ -478,6 +482,10 @@ int MPIDI_CH3_Sockconn_handle_connect_event( MPIDI_CH3I_Connection_t *conn,
     goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Sockconn_handle_close_event
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Sockconn_handle_close_event( MPIDI_CH3I_Connection_t * conn )
 {
     int mpi_errno = MPI_SUCCESS;
@@ -488,7 +496,7 @@ int MPIDI_CH3_Sockconn_handle_close_event( MPIDI_CH3I_Connection_t * conn )
 	    MPIU_Assert(conn->send_active == NULL);
 	    MPIU_Assert(conn->recv_active == NULL);
 	    if (conn->vc != NULL) {
-		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_UNCONNECTED");
+		MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_UNCONNECTED (conn=%p)",conn);
 		conn->vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
 		conn->vc->ch.sock = MPIDU_SOCK_INVALID_SOCK;
 		MPIDI_CH3U_Handle_connection(conn->vc, MPIDI_VC_EVENT_TERMINATED);
@@ -504,7 +512,7 @@ int MPIDI_CH3_Sockconn_handle_close_event( MPIDI_CH3I_Connection_t * conn )
 	}
 		
 	conn->sock = MPIDU_SOCK_INVALID_SOCK;
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSED");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSED (conn=%p)",conn);
 	conn->state = CONN_STATE_CLOSED;
 	connection_free(conn); 
     }
@@ -519,8 +527,10 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 {
     int mpi_errno = MPI_SUCCESS;
 
+    /* FIXME: Is there an assumption about conn->state? */
+
     if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_REQ) {
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LRECV_DATA");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LRECV_DATA (conn=%p)",conn);
 	conn->state = CONN_STATE_OPEN_LRECV_DATA;
 	mpi_errno = MPIDU_Sock_post_read(conn->sock, conn->pg_id, conn->pkt.sc_open_req.pg_id_len, 
 					 conn->pkt.sc_open_req.pg_id_len, NULL);   
@@ -541,7 +551,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	/* --END ERROR HANDLING-- */
 	/* FIXME - where does this vc get freed? */
 	
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING vc=%p", vc);
 	MPIDI_VC_Init(vc, NULL, 0);
 	vc->ch.sendq_head = NULL;
 	vc->ch.sendq_tail = NULL;
@@ -555,7 +565,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 	conn->pkt.sc_open_resp.ack = TRUE;
 	
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LSEND");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LSEND (conn=%p)",conn);
 	conn->state = CONN_STATE_OPEN_LSEND;
 	mpi_errno = connection_post_send_pkt(conn);
 	if (mpi_errno != MPI_SUCCESS) {
@@ -569,7 +579,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
     }
     else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_RESP) {
 	if (conn->pkt.sc_open_resp.ack) {
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTED");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTED (conn=%p)",conn);
 	    conn->state = CONN_STATE_CONNECTED;
 	    conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	    MPIU_Assert(conn->vc->ch.conn == conn);
@@ -586,14 +596,16 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	    }
 	}
 	else {
+	    /* FIXME: Should conn->vc be freed? Who allocated? Why not? */
 	    conn->vc = NULL;
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING (conn=%p)",conn);
 	    conn->state = CONN_STATE_CLOSING;
 	    MPIDU_Sock_post_close(conn->sock);
 	}
     }
     /* --BEGIN ERROR HANDLING-- */
     else {
+	printf( "Foo!\n" );
 	MPIU_DBG_STMT(CH3_CONNECT,VERBOSE,MPIDI_DBG_Print_packet(&conn->pkt));
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
 					 "**ch3|sock|badpacket", "**ch3|sock|badpacket %d", conn->pkt.type);
@@ -635,7 +647,7 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
     
     if (vc->ch.conn == NULL) {
 	/* no head-to-head connects, accept the connection */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING (%p)",vc);
 	vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 	vc->ch.sock = conn->sock;
 	vc->ch.conn = conn;
@@ -650,7 +662,7 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
 	    /* the other process is in the same comm_world; just compare the ranks */
 	    if (MPIR_Process.comm_world->rank < pg_rank) {
 		/* accept connection */
-		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING");
+		MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING (%p)",vc);
 		vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 		vc->ch.sock = conn->sock;
 		vc->ch.conn = conn;
@@ -661,6 +673,7 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
 	    }
 	    else {
 		/* refuse connection */
+		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Refuse head-to-head connection (my process group)");
 		MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		conn->pkt.sc_open_resp.ack = FALSE;
 	    }
@@ -669,7 +682,7 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
 	    /* the two processes are in different comm_worlds; compare their unique pg_ids. */
 	    if (strcmp(MPIDI_Process.my_pg->id, pg->id) < 0) {
 		/* accept connection */
-		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING");
+		MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING (%p)",vc);
 		vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 		vc->ch.sock = conn->sock;
 		vc->ch.conn = conn;
@@ -680,13 +693,14 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
 	    }
 	    else {
 		/* refuse connection */
+		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Refuse head-to-head connection (two process groups)");
 		MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		conn->pkt.sc_open_resp.ack = FALSE;
 	    }
 	}
     }
     
-    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LSEND");
+    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LSEND (conn=%p)",conn);
     conn->state = CONN_STATE_OPEN_LSEND;
     mpi_errno = connection_post_send_pkt(conn);
     if (mpi_errno != MPI_SUCCESS) {
@@ -711,7 +725,7 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
     if (conn->state == CONN_STATE_OPEN_CSEND) {
 	/* finished sending open request packet */
 	/* post receive for open response packet */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CRECV");
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CRECV (conn=%p)", conn);
 	conn->state = CONN_STATE_OPEN_CRECV;
 	mpi_errno = connection_post_recv_pkt(conn);
 	if (mpi_errno != MPI_SUCCESS) {
@@ -722,9 +736,9 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
 	/* finished sending open response packet */
 	if (conn->pkt.sc_open_resp.ack == TRUE) {
 	    /* post receive for packet header */
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTED");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTED (conn=%p)",conn);
 	    conn->state = CONN_STATE_CONNECTED;
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTED");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTED (vc=%p)",conn->vc);
 	    conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
 	    mpi_errno = connection_post_recv_pkt(conn);
 	    if (mpi_errno != MPI_SUCCESS) {
@@ -739,7 +753,7 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
 	}
 	else {
 	    /* head-to-head connections - close this connection */
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSIANG");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING (conn=%p)",conn);
 	    conn->state = CONN_STATE_CLOSING;
 	    mpi_errno = MPIDU_Sock_post_close(conn->sock);
 	    if (mpi_errno != MPI_SUCCESS) {
@@ -764,7 +778,6 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
 int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
     char val[MPIDI_MAX_KVS_VALUE_LEN];
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
@@ -778,22 +791,13 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
     
     MPIU_Assert(vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
     
-    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING");
+    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING (%p)",vc);
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
-    rc = MPIU_Snprintf(key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", vc->pg_rank);
-    /* --BEGIN ERROR HANDLING-- */
-    if (rc < 0 || rc > MPIDI_MAX_KVS_KEY_LEN)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
-    mpi_errno = MPIDI_KVS_Get(vc->pg->ch.kvs_name, key, val);
+    mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
 						 &port, ifaddr, &hasIfaddr );
@@ -824,7 +828,7 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 	}
 	if (mpi_errno == MPI_SUCCESS)
 	{
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTING");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTING (conn=%p)",conn);
 	    vc->ch.sock = conn->sock;
 	    vc->ch.conn = conn;
 	    conn->vc = vc;
@@ -835,7 +839,7 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 	/* --BEGIN ERROR HANDLING-- */
 	else
 	{
-	    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_FAILED");
+	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_FAILED (%p)",vc);
 	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|postconnect",
 		"**ch3|sock|postconnect %d %d %s", MPIR_Process.comm_world->rank, vc->pg_rank, val);

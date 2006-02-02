@@ -292,16 +292,6 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 	    MPIR_Process.attrs.appnum = appnum;
 	}
 	
-	/* FIXME: Who does/does not use this? */
-#ifdef MPIDI_DEV_IMPLEMENTS_KVS
-	/* Initialize the CH3 device KVS cache interface */
-	/* KVS is used for connection handling; thus, this should go into 
-	   code for that purpose, not here */
-	/* Do this after PMI_Init because MPIDI_KVS uses PMI (The init 
-	   funcion may or may not use PMI)*/
-	MPIDI_KVS_Init();
-#endif
-
 	/* Now, initialize the process group information with PMI calls */
 	/*
 	 * Get the process group id
@@ -343,13 +333,22 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
     }
 
     /*
-     * Create a new structure to track the process group
+     * Create a new structure to track the process group for our MPI_COMM_WORLD
      */
     mpi_errno = MPIDI_PG_Create(pg_size, pg_id, &pg);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**dev|pg_create");
     }
 
+    /* FIXME: We can allow the channels to tell the PG how to get
+       connection information by passing the pg to the channel init routine */
+    if (usePMI) {
+	/* Tell the process group how to get connection information */
+	MPIDI_PG_InitConnKVS( pg );
+    }
+
+    /* FIXME: Remove this once the new connection code is in place */
+#if 1
     /* This must be set to NULL if CH3 doesn't initialize PMI.
        MPID_Finalize will call PMI_Finalize only if ch.kvs_name is not NULL */
     pg->ch.kvs_name = NULL;
@@ -377,6 +376,7 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 				 "**pmi_kvs_get_my_name %d", pmi_errno);
 	}
     }
+#endif
 
     /* FIXME: Who is this for and where does it belong? */
 #ifdef USE_MPIU_DBG_PRINT_VC

@@ -217,10 +217,7 @@ int MPID_Finalize(void)
 	MPIU_ERR_POP(mpi_errno);
     }
     mpi_errno = MPIDI_CH3_Finalize();
-#ifdef MPIDI_DEV_IMPLEMENTS_KVS
-    /* Finalize the CH3 device KVS cache interface */
-    rc = MPIDI_KVS_Finalize();
-#endif
+
     /* Let PMI know the process is about to exit */
     if (MPIDI_Process.my_pg->ch.kvs_name)
     {
