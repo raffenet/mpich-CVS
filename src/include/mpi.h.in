@@ -104,16 +104,12 @@ typedef int MPI_Win;
 #define MPI_WIN_NULL ((MPI_Win)0x20000000)
 
 /* File and IO */
-/* This define is temporary; it lets ROMIO know that MPI_File has been defined */
+/* This define lets ROMIO know that MPI_File has been defined */
 #define MPI_FILE_DEFINED
-#ifdef MPICH_NEW_MPIIO
-typedef int MPI_File;
-/* commenting out the line below otherwise maint/updatefiles prints a warning */
-/* #define MPI_FILE_NULL ((MPI_File)0x10000000) */
-#else
+/* ROMIO uses a pointer for MPI_File objects.  This must be the same definition
+   as in src/mpi/romio/include/mpio.h.in  */
 typedef struct ADIOI_FileD *MPI_File;
 #define MPI_FILE_NULL ((MPI_File)0)
-#endif
 
 /* Collective operations */
 typedef int MPI_Op;
