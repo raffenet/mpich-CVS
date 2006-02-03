@@ -921,7 +921,8 @@ class MPDMan(object):
         else:
             parsedMsg = parse_pmi_msg(line)
         if not parsedMsg.has_key('cmd'):
-            mpd_print(1, "unrecognized pmi msg (no cmd) :%s:" % line )
+            pmiMsgToSend = 'cmd=unparseable_msg rc=-1\n'
+            self.pmiSock.send_char_msg(pmiMsgToSend)
             return
         # execution_problem is sent BEFORE client actually starts
         if parsedMsg['cmd'] == 'execution_problem':
@@ -1487,6 +1488,7 @@ def parse_pmi_msg(msg):
             parsed_msg[se[0]] = se[1]
     except:
         print 'unable to parse pmi msg :%s:' % msg
+        parsed_msg = {}
     return parsed_msg
 
 def set_limits(limits):
