@@ -7,7 +7,7 @@
 #define LNIO_DEBUG 0
 
 void pmaps(struct lnio_handle_t *handle);
-int ADIOI_LNIO_File_exists(char *);
+
 
 /* TODO: Be sure to flush the buffer if buffer size has been changed by 
    calling set_view */
@@ -35,23 +35,15 @@ void ADIOI_LNIO_Free_handle(struct lnio_handle_t *handle) {
 
 
 
-int ADIOI_LNIO_File_exists(char *fname) {
-  struct stat s;
-  
-  if (stat(fname, &s) == -1 && errno == ENOENT) 
-    return 0;
-  else return 1;
-}
-
-
 
 int ADIOI_LNIO_Open(ADIO_File fd) 
 {
   int perm, flag, file_exists, tempfd, ret;
   struct lnio_handle_t *handle;
-  char *value = NULL, *c;
-  int i, num_depot;
+  char *value = NULL, *c, *buf;
+  int i, num_depot, rank, length;
   LorsSet *set;
+  struct stat mystat;
 
   LorsDepot *dp;
   JRB jrb_node;
@@ -165,7 +157,6 @@ int ADIOI_LNIO_Open(ADIO_File fd)
     handle->sync_at_collective_io = 1; 
   }
 
-  /***** TEST PURPOSE *****/
   MPI_Info_get(fd->info, "LN_NONCONTIG_WRITE_NAIVE", MPI_MAX_INFO_VAL, value, &flag);
   if (flag) {
     handle->noncontig_write_naive = 1;
@@ -211,13 +202,6 @@ int ADIOI_LNIO_Open(ADIO_File fd)
   ADIOI_LNIO_Debug_msg("ADIOI_LNIO_Open: lors_servers %d \tlors_size %d\n", handle->lors_servers, handle->lors_size);
 
 
-  /*if (!handle->lbone_server && !(fd->access_mode & ADIO_RDONLY || 
-				 !fd->access_mode || 
-				 fd->access_mode & ADIO_RDWR)) {
-    errno = EINVAL;
-    return -1;
-    }*/  /* Why do we need this? */
-
 
   handle->offset = 0;
   handle->exnode_modified = 0;
@@ -229,23 +213,19 @@ int ADIOI_LNIO_Open(ADIO_File fd)
 
   
   /* check if the requested file exists */
-  /*tempfd = open(fd->filename, O_RDONLY);
-  if (tempfd == -1) file_exists = 0; 
-  else {
-    file_exists = 1;
-    close(tempfd);
-    }*/
 
   system("sync;sync");
   MPI_Barrier(fd->comm);
   
-  file_exists = ADIOI_LNIO_File_exists(fd->filename);
+  if (stat(fd->filename, &mystat) == -1 && errno == ENOENT) 
+    file_exists = 0;
+  else file_exists = 1;
   
   ADIOI_LNIO_Debug_msg("ADIOI_LNIO_Open: requested file %s\n", file_exists ? "exists" : "does not exist");
-
-
+  
+  
   if (file_exists) {  /* file exists */
-
+    
     if (fd->access_mode & ADIO_EXCL) {
       ADIOI_LNIO_Free_handle(handle);
       printf("ERROR: ADIO_EXCL is enabled and the requested file exists (%s:%d)\n", __FILE__, __LINE__);
@@ -258,14 +238,45 @@ int ADIOI_LNIO_Open(ADIO_File fd)
        if WRONLY, create an exnode */
     if (fd->access_mode & ADIO_RDONLY || fd->access_mode & ADIO_RDWR) {
       /* handle->ex will be created when FileDeserialize is called */
-      ret = lorsFileDeserialize(&handle->ex, fd->filename, NULL);
+      /* ret = lorsFileDeserialize(&handle->ex, fd->filename, NULL);
+	 if (ret != LORS_SUCCESS) {
+	 ADIOI_LNIO_Free_handle(handle);	
+	 printf("ERROR: lorsFileDeserialize failed (returned %d) (%s:%d)\n", ret, __FILE__, __LINE__);
+	 errno = EIO;
+	 return ret;
+	 } */
+      
+      MPI_Comm_rank(fd->comm, &rank);
+      
+      if (!rank) { /* root */
+	length = mystat.st_size;
+	
+	tempfd = open(fd->filename, O_RDONLY);
+	buf = (char *)malloc(sizeof(char) * length);
+	LNIO_ERROR_CHECK(!buf, -1, "malloc failed", EIO);
+	ret = read(tempfd, buf, length);
+	LNIO_ERROR_CHECK(ret != length, -1, "read failed", EIO);
+	close(fd);
+	
+	MPI_Bcast((void *)&length, 1, MPI_INT, 0, fd->comm);
+	MPI_Bcast((void *)buf, length, MPI_CHAR, 0, fd->comm);
+      } else {
+	MPI_Bcast((void *)&length, 1, MPI_INT, 0, fd->comm);
+	buf = (char *)malloc(sizeof(char) * length);
+	LNIO_ERROR_CHECK(!buf, -1, "malloc failed", EIO);
+	MPI_Bcast((void *)buf, length, MPI_CHAR, 0, fd->comm);
+      }
+      
+      ret = lorsDeserialize(&handle->ex, buf, length, NULL);
       if (ret != LORS_SUCCESS) {
 	ADIOI_LNIO_Free_handle(handle);	
-	printf("ERROR: lorsFileDeserialize failed (returned %d) (%s:%d)\n", ret, __FILE__, __LINE__);
+	printf("ERROR: lorsDeserialize failed (returned %d) (%s:%d)\n", ret, __FILE__, __LINE__);
 	errno = EIO;
 	return ret;
       } 
       
+      free(buf);
+
       pmaps(handle);
 
       /* put all the mappings in the exnode to "set" */
@@ -330,16 +341,16 @@ int ADIOI_LNIO_Open(ADIO_File fd)
       
       /* this is not safe, but for now, let's leave it */
       handle->dp->duration = handle->lors_duration; 
-
+      
       if (fd->access_mode & ADIO_RDWR) {
 	/* RDWR should be treated specially. Depots for both existing 
 	   mappings and future writes should be included in the depot pool. 
 	   We first added the depots from existing mapping to the depotpool
 	   by calling lorsUpdateDepotPool above. Now, we need to find 
 	   depots for future writes */
-
+	
 	/* first, extract depots from handle->ex and add them to 
-	 handle->depot_array */
+	   handle->depot_array */
 	
 	/* this function hasn't been included in the lors library yet, 
 	   hence the prefix ADIOI_LNIO_ is added for now */
@@ -391,7 +402,7 @@ int ADIOI_LNIO_Open(ADIO_File fd)
      
        for both cases, create a depot pool by calling lorsGetDepotPool */
 
-    /* for the test purpose... */
+    /* for the test purpose only ... */
     /*    depot_array = (IBP_depot *)calloc(2, sizeof(IBP_depot));
 	  for (i = 0; i < 1; i++)
 	  depot_array[i] = (IBP_depot)calloc(1, sizeof(struct ibp_depot));
@@ -406,9 +417,10 @@ int ADIOI_LNIO_Open(ADIO_File fd)
     */
     
     ret = lorsGetDepotPool(&handle->dp, 			  
-			   /* handle->lbone_server,
-			      handle->lbone_port,*/
-			   NULL, 0, 
+			   handle->lbone_server,
+			   handle->lbone_port,
+			   /* for test purpose, replace the second and 
+			      third params to NULL and 0 */
 			   handle->depot_array,
 			   handle->lors_servers,
 			   handle->lbone_location, 
@@ -436,13 +448,6 @@ int ADIOI_LNIO_Open(ADIO_File fd)
   } 
   
 
-  /*
-    jrb_traverse(jrb_node, handle->dp->list) {
-    dp = jrb_node->val.v;
-    printf("depot: %s:%d\n", dp->depot->host, dp->depot->port);
-    };
-  */
-  
   fd->fs_ptr = (void *)handle;
 
   pmaps(handle);
@@ -730,7 +735,7 @@ ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count)
   ulong_t sub_count;
 
 
-  printf("Entering ADIOI_LNIO_Buffered_read - cur_buf [%Ld...%Ld], cur_offset %ld\n", handle->buf_lb, handle->buf_ub, handle->offset);
+  /*  printf("Entering ADIOI_LNIO_Buffered_read - cur_buf [%Ld...%Ld], cur_offset %ld\n", handle->buf_lb, handle->buf_ub, handle->offset);*/
 
   if (count == 0) return 0;
 
@@ -751,12 +756,12 @@ ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count)
   req_lb = handle->offset;
   req_ub = handle->offset + count - 1;
 
-  printf("buf [%Ld...%Ld], req [%Ld...%Ld]\n", buf_lb, buf_ub, req_lb, req_ub);
+  /*  printf("buf [%Ld...%Ld], req [%Ld...%Ld]\n", buf_lb, buf_ub, req_lb, req_ub);*/
 
   /* if the requested data are contained in the current buffer, 
      simply return the buffered data */
   if (buf_lb <= req_lb && req_ub <= buf_ub) {
-    printf("!memcpy from handle->buffer[%Ld] to buf for %d bytes\n", req_lb - buf_lb, count);
+    /*    printf("!memcpy from handle->buffer[%Ld] to buf for %d bytes\n", req_lb - buf_lb, count);*/
     memcpy(buf, handle->buffer + (req_lb - buf_lb), count);
     handle->offset += count;
     return count;
@@ -805,15 +810,15 @@ ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count)
 	prev_ptr = mclist_ptr;
 	mclist_ptr = mclist_ptr->next;
       } else {
-	printf("READ: found a cluster (%Ld-%Ld) that overlaps with a mapping (%Ld-%Ld)\n", mclist_ptr->lb, mclist_ptr->ub, mp->exnode_offset, 
-	       mp->exnode_offset + mp->logical_length - 1);
+	/*	printf("READ: found a cluster (%Ld-%Ld) that overlaps with a mapping (%Ld-%Ld)\n", mclist_ptr->lb, mclist_ptr->ub, mp->exnode_offset, 
+		mp->exnode_offset + mp->logical_length - 1);*/
 	ret = lorsSetAddMapping(mclist_ptr->set, mp);
 	if (ret != LORS_SUCCESS) return ret;
 	if (mp->exnode_offset < mclist_ptr->lb) 
 	  mclist_ptr->lb = mp->exnode_offset;
 	if (mp->exnode_offset + mp->logical_length - 1 > mclist_ptr->ub)
 	  mclist_ptr->ub = mp->exnode_offset + mp->logical_length - 1;
-	printf("READ: a cluster has now been expanded to (%Ld-%Ld)\n", mclist_ptr->lb, mclist_ptr->ub); 
+	/*	printf("READ: a cluster has now been expanded to (%Ld-%Ld)\n", mclist_ptr->lb, mclist_ptr->ub);*/ 
 	found = 1;
 	break;
       }
@@ -828,7 +833,7 @@ ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count)
       if (ret != LORS_SUCCESS) return ret;
       newitem->lb = mp->exnode_offset;
       newitem->ub = mp->exnode_offset + mp->logical_length - 1;
-      printf("READ: there is no cluster that overlaps with mapping (%Ld-%Ld), and now created one\n", newitem->lb, newitem->ub);
+      /*      printf("READ: there is no cluster that overlaps with mapping (%Ld-%Ld), and now created one\n", newitem->lb, newitem->ub);*/
       if (!mclist_head) mclist_head = newitem;
       else prev_ptr->next = newitem;
     }
@@ -847,8 +852,8 @@ ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count)
       sub_count = handle->offset + count - start_offset;
     else sub_count = mclist_ptr->ub - start_offset + 1;
     
-    printf("READ: issuing lorsSetLoad with offset %Ld, count %ld from buf[%Ld]\n", start_offset, sub_count, start_offset - handle->offset);
-    if (jrb_empty(mclist_ptr->set->mapping_map)) printf("READ: mclist_ptr->set is empty\n"); else printf("READ: mclist_ptr->set is not empty\n");
+    /*    printf("READ: issuing lorsSetLoad with offset %Ld, count %ld from buf[%Ld]\n", start_offset, sub_count, start_offset - handle->offset);
+	  if (jrb_empty(mclist_ptr->set->mapping_map)) printf("READ: mclist_ptr->set is empty\n"); else printf("READ: mclist_ptr->set is not empty\n");*/
 
     ret = lorsSetLoad(mclist_ptr->set, buf + start_offset - handle->offset, 
 		      start_offset, sub_count, handle->lors_blocksize,
@@ -871,7 +876,7 @@ ssize_t ADIOI_LNIO_Buffered_read(ADIO_File fd, void *buf, size_t count)
     if (buf_lb > req_lb) overlap_lb = buf_lb; else overlap_lb = req_lb;
     if (buf_ub < req_ub) overlap_ub = buf_ub; else overlap_ub = req_ub;
     if (overlap_lb <= overlap_ub) { /* if they overlap */
-      printf("memcpy from handle->buffer[%Ld] to buf[%Ld] for %Ld bytes\n", overlap_lb - buf_lb, overlap_lb - req_lb, overlap_ub - overlap_lb + 1);
+      /*      printf("memcpy from handle->buffer[%Ld] to buf[%Ld] for %Ld bytes\n", overlap_lb - buf_lb, overlap_lb - req_lb, overlap_ub - overlap_lb + 1);*/
       memcpy(buf + (overlap_lb - req_lb), handle->buffer + (overlap_lb - buf_lb), overlap_ub - overlap_lb + 1);
     }
   }
@@ -1065,7 +1070,7 @@ ssize_t ADIOI_LNIO_Write(ADIO_File fd, const void *buf, size_t count)
 }
 
 
-
+/* TODO: what if the buffer is smaller than the request? */
 ssize_t ADIOI_LNIO_Buffered_write(ADIO_File fd, const void *buf, size_t count)
 {
   struct lnio_handle_t *handle = (struct lnio_handle_t *)fd->fs_ptr;
@@ -1110,7 +1115,7 @@ ssize_t ADIOI_LNIO_Buffered_write(ADIO_File fd, const void *buf, size_t count)
 
     if (new_ub < cur_lb - 1 || cur_ub + 1 < new_lb || 
 	max_ub - min_lb + 1 > handle->buffer_size) {
-      printf("Buffered_write: Case 1\n");
+      /*      printf("Buffered_write: Case 1\n");*/
       if (handle->dirty_buffer) {
 	/* flush the current buffer */
 	flush_start_offset = cur_lb;
@@ -1123,7 +1128,7 @@ ssize_t ADIOI_LNIO_Buffered_write(ADIO_File fd, const void *buf, size_t count)
 	    flush_size = cur_ub - new_ub;
 	  }
 	}
-	printf("Buffered write: calling Buffer Flush with size %d, offset %ld\n", flush_size, flush_start_offset);
+	/*	printf("Buffered write: calling Buffer Flush with size %d, offset %ld\n", flush_size, flush_start_offset);*/
 	ADIOI_LNIO_Buffer_flush(fd, flush_start_offset, flush_size);
       }
 
@@ -1148,7 +1153,7 @@ ssize_t ADIOI_LNIO_Buffered_write(ADIO_File fd, const void *buf, size_t count)
       handle->offset += subcount;
       handle->dirty_buffer = 1;
 
-      printf("Buffered_write: Case 2 - now buffer [%ld...%ld], handle->offset %ld, nwritten %d\n", handle->buf_lb, handle->buf_ub, handle->offset, nwritten);
+      /*      printf("Buffered_write: Case 2 - now buffer [%ld...%ld], handle->offset %ld, nwritten %d\n", handle->buf_lb, handle->buf_ub, handle->offset, nwritten);*/
     } else
     
     /* case 3: new_lb < cur_lb */
@@ -1157,7 +1162,7 @@ ssize_t ADIOI_LNIO_Buffered_write(ADIO_File fd, const void *buf, size_t count)
     /* res:        nnnnnccc     |     nnnnn         */
 
     if (new_lb < cur_lb) {
-      printf("Buffered_write: Case 3\n");
+      /*      printf("Buffered_write: Case 3\n");*/
       /* move the data in the current buffer to an appropriate position */
       memmove(handle->buffer + (cur_lb - new_lb), handle->buffer, 
 	      cur_ub - cur_lb + 1);
@@ -1183,10 +1188,10 @@ void pmaps(struct lnio_handle_t *handle)
   i = 0;
   jrb_traverse(node, handle->ex->mapping_map) {
     lm = node->val.v;
-    printf("mapping[%d]: ex_off %Ld log_len %ld alloc_off %ld metadata %s\n", i, lm->exnode_offset, lm->logical_length, lm->alloc_offset, lm->md ? "not NULL" : "NULL");
+    /*    printf("mapping[%d]: ex_off %Ld log_len %ld alloc_off %ld metadata %s\n", i, lm->exnode_offset, lm->logical_length, lm->alloc_offset, lm->md ? "not NULL" : "NULL");*/
     i++;
   }
-  if (i == 0) printf("No mappings in handle->ex\n");
+  /*  if (i == 0) printf("No mappings in handle->ex\n");*/
 }
 
 
@@ -1457,8 +1462,8 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
     ret = lorsSetInit(&set, handle->lors_blocksize, 1, 0);
     LNIO_ERROR_CHECK(ret != LORS_SUCCESS, ret, "lorsSetInit failed", EIO);
     
-    if (bufsize != userbuf_off) printf("CHECK THE PARAMETER\n");
-    printf("calling lorsSetStore with offset %Ld and bufsize %d\n",start_off, bufsize);
+    /*    if (bufsize != userbuf_off) printf("CHECK THE PARAMETER\n");
+	  printf("calling lorsSetStore with offset %Ld and bufsize %d\n",start_off, bufsize);*/
     ret = lorsSetStore(set, handle->dp, buf, start_off, bufsize, NULL, 
 		       handle->lors_threads, handle->lors_timeout,
 		       LORS_RETRY_UNTIL_TIMEOUT);
@@ -1471,7 +1476,7 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
   else {
     int i, tmp_bufsize = 0;
     /* noncontiguous in memory as well as in file */
-    printf("ADIOI_LN_WriteStrided: noncontiguous in mem, noncontiguous in file\n");
+    /*    printf("ADIOI_LN_WriteStrided: noncontiguous in mem, noncontiguous in file\n");*/
     
     ADIOI_Flatten_datatype(buftype);
     flat_buf = ADIOI_Flatlist;
@@ -1568,7 +1573,7 @@ int ADIOI_LNIO_WriteStrided(ADIO_File fd, void *buf, int count,
     ret = lorsSetInit(&set, handle->lors_blocksize, 1, 0);
     LNIO_ERROR_CHECK(ret != LORS_SUCCESS, ret, "lorsSetInit failed", EIO);
     
-    if (bufsize != userbuf_off) printf("CHECK THE PARAMETER\n");
+    /*    if (bufsize != userbuf_off) printf("CHECK THE PARAMETER\n");*/
     /* check the parameters for lorsSetStore */
     ret = lorsSetStore(set, handle->dp, packed_buf, start_off, packed_off, NULL, 
 		       handle->lors_threads, handle->lors_timeout,
@@ -1853,7 +1858,7 @@ int ADIOI_LNIO_Flush(ADIO_File fd)
     for (i = 0; i < size; i++) {
       if (i == rank) continue;
       MPI_Isend((void *)buf, length, MPI_CHAR, i, rank, fd->comm, &request);
-      printf("Isend to proc %d, msg length %d\n", i, length);
+      /*      printf("Isend to proc %d, msg length %d\n", i, length);*/
     }
   }
   
@@ -1866,8 +1871,8 @@ int ADIOI_LNIO_Flush(ADIO_File fd)
     MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, fd->comm, &status);
     MPI_Get_count(&status, MPI_CHAR, &count);
     buf2 = (char *)calloc(count + 1, 1);
-    if (!buf2) printf("buf2 is NULL\n");
-    printf("There is a message from proc %d size %d\n", status.MPI_SOURCE, count);
+    /*    if (!buf2) printf("buf2 is NULL\n");
+	  printf("There is a message from proc %d size %d\n", status.MPI_SOURCE, count);*/
     MPI_Recv(buf2, count, MPI_CHAR, status.MPI_SOURCE, status.MPI_TAG, 
 	     fd->comm, &status);
 
@@ -1983,12 +1988,13 @@ int ADIOI_LNIO_Ftruncate(ADIO_File fd, off_t size)
   LorsExnode *temp_ex;
   char c = 0;
 
-  printf("ADIOI_LNIO_Ftruncate: size %Ld, ex->logical_length %Ld\n", size, handle->ex->logical_length);
+  /*  printf("ADIOI_LNIO_Ftruncate: size %Ld, ex->logical_length %Ld\n", size, handle->ex->logical_length);*/
   pmaps(handle);
 
   if (size == handle->ex->logical_length) return 0; /* do nothing */
 
   if (size > handle->ex->logical_length) {   
+    /* TODO: does everybody write this? Should we call sync after this? */
     /* to be safe, write a single byte at the last offset */
     ret = lorsSetInit(&set, handle->lors_blocksize, 1, 0);
     LNIO_ERROR_CHECK(ret != LORS_SUCCESS, ret, "lorsSetInit failed", EIO);
@@ -2054,8 +2060,8 @@ int ADIOI_LNIO_Ftruncate(ADIO_File fd, off_t size)
   ret = lorsAppendSet(handle->ex, set); 
   LNIO_ERROR_CHECK(ret != LORS_SUCCESS, ret, "lorsAppendSet failed", EIO);
   
-  printf("ADIOI_LNIO_Ftruncate: requested size %Ld, ex->logical_length now %Ld\n", size, handle->ex->logical_length);
-  
+  /*  printf("ADIOI_LNIO_Ftruncate: requested size %Ld, ex->logical_length now %Ld\n", size, handle->ex->logical_length);
+   */
   /* there is a bug in lorsQuery(), and it doesn't update ex->logical_length
      after some mappings are removed. Until it is fixed, we manually set 
      logical_length here */

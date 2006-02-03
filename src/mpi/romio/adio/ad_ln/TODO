@@ -1,9 +1,0 @@
-1. file permission - how should we use it? 
-	- for permission for the exNode file? 
-	- for the data file itself (by manipulating caps?)
-
-2. when opening a file, we need to reorder depots obtained by lorsGetDepotPool
-   in the depot pool
-
-3. 
-
