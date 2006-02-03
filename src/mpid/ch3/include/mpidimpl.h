@@ -701,11 +701,13 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 int MPIDI_CH3I_Progress_finalize(void);
 
 /* Function that may be used to provide buisness card info */
-int MPIDI_CH3I_BCInit( int pg_rank, 
-		       char **publish_bc_p, char **bc_key_p, 
-		       char **bc_val_p, int *val_max_sz_p);
+int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p);
 /* Function to free the storage allocated by MPIDI_CH3I_BCInit */
-int MPIDI_CH3I_BCFree( char *publish_bc, char *bc_key );
+int MPIDI_CH3I_BCFree( char *publish_bc );
+
+/* Inform the process group of our connection information string (business
+   card) */
+int MPIDI_PG_SetConnInfo( int rank, const char *connString );
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the 
    macros require their declarations. */

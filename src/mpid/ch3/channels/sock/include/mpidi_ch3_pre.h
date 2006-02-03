@@ -69,12 +69,7 @@ MPIDI_CH3I_Pkt_sc_open_resp_t sc_open_resp;	\
 MPIDI_CH3I_Pkt_sc_close_t sc_close;
 
 
-typedef struct MPIDI_CH3I_PG
-{
-    char * kvs_name;
-}
-MPIDI_CH3I_PG;
-
+/* This channel has no special channel data for the process group structure */
 
 typedef enum MPIDI_CH3I_VC_state
 {
@@ -85,7 +80,6 @@ typedef enum MPIDI_CH3I_VC_state
 }
 MPIDI_CH3I_VC_state_t;
 
-#define MPIDI_CH3_PG_DECL MPIDI_CH3I_PG ch;
 typedef struct MPIDI_CH3I_VC
 {
     struct MPID_Request * sendq_head;

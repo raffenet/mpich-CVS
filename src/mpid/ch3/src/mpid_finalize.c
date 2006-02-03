@@ -218,16 +218,9 @@ int MPID_Finalize(void)
     }
     mpi_errno = MPIDI_CH3_Finalize();
 
-    /* Let PMI know the process is about to exit */
-    if (MPIDI_Process.my_pg->ch.kvs_name)
-    {
-	rc = PMI_Finalize();
-	if (rc != 0) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-				 "**ch3|pmi_finalize", 
-				 "**ch3|pmi_finalize %d", rc);
-	}
-    }
+    /* Tell the process group code that we're done with the process groups.
+       This will notify PMI (with PMI_Finalize) if necessary */
+    MPIDI_PG_Finalize();
 
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
     if (inuse == 0) {

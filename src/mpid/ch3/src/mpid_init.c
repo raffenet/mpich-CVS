@@ -229,7 +229,7 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 {
     int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
-    int pg_rank, pg_size, appnum, pg_id_sz, kvs_name_sz;
+    int pg_rank, pg_size, appnum, pg_id_sz;
     int usePMI=1;
     char *pg_id;
     MPIDI_PG_t *pg = 0;
@@ -347,37 +347,6 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 	MPIDI_PG_InitConnKVS( pg );
     }
 
-    /* FIXME: Remove this once the new connection code is in place */
-#if 1
-    /* This must be set to NULL if CH3 doesn't initialize PMI.
-       MPID_Finalize will call PMI_Finalize only if ch.kvs_name is not NULL */
-    pg->ch.kvs_name = NULL;
-
-    if (usePMI) {
-	/*
-	 * Get the name of the key-value space (KVS)
-	 */
-	pmi_errno = PMI_KVS_Get_name_length_max(&kvs_name_sz);
-	if (pmi_errno != PMI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-				 "**pmi_kvs_get_name_length_max", 
-			 "**pmi_kvs_get_name_length_max %d", pmi_errno);
-	}
-	
-	pg->ch.kvs_name = MPIU_Malloc(kvs_name_sz + 1);
-	if (pg->ch.kvs_name == NULL) {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
-	}
-	
-	pmi_errno = PMI_KVS_Get_my_name(pg->ch.kvs_name, kvs_name_sz);
-	if (pmi_errno != PMI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-				 "**pmi_kvs_get_my_name", 
-				 "**pmi_kvs_get_my_name %d", pmi_errno);
-	}
-    }
-#endif
-
     /* FIXME: Who is this for and where does it belong? */
 #ifdef USE_MPIU_DBG_PRINT_VC
     MPIU_DBG_parent_str = (*has_parent) ? "+" : "";
@@ -402,45 +371,19 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
 }
 
 /*
- * Initialize the business card.  This creates only the key part of the
- * business card; the value is later set by the channel.
- * 
- * FIXME: The code to set the business card should be more channel-specific, 
- * and not in this routine (and it should be performed within the channel 
- * init)
+ * Create the storage for the business card. 
  *
- * The routine MPIDI_CH3I_BCFree should be called with the values
- * returned by bc_key_p and publish_bc_p (publish_bc_p is the pointer to the 
- * value string; bc_val_p points to the current first free location in the
- * value string, which is used when appending additional information to the
- * value string).
+ * The routine MPIDI_CH3I_BCFree should be called with the original 
+ * value *bc_val_p .  Note that the routines that set the value 
+ * of the businesscard return a pointer to the first free location,
+ * so you need to remember the original location in order to free 
+ * it later.
  *
  */
-int MPIDI_CH3I_BCInit( int pg_rank, 
-		       char **publish_bc_p, char **bc_key_p,
-		       char **bc_val_p, int *val_max_sz_p )
+int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p )
 {
     int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
-    int key_max_sz;
-
-    /*
-     * Publish the contact information (a.k.a. business card) for this 
-     * process into the PMI keyval space associated with this process group.
-     */
-    pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-			     "**pmi_kvs_get_key_length_max", 
-			     "**pmi_kvs_get_key_length_max %d", pmi_errno);
-    }
-
-    /* This memroy is returned by this routine */
-    *bc_key_p = MPIU_Malloc(key_max_sz);
-    if (*bc_key_p == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
-    }
 
     pmi_errno = PMI_KVS_Get_value_length_max(val_max_sz_p);
     if (pmi_errno != PMI_SUCCESS)
@@ -455,19 +398,6 @@ int MPIDI_CH3I_BCInit( int pg_rank,
     if (*bc_val_p == NULL) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
-    *publish_bc_p = *bc_val_p;  /* need to keep a pointer to the front of the 
-				   front of this buffer to publish */
-
-    /* Create the bc key but not the value */ 
-    mpi_errno = MPIU_Snprintf(*bc_key_p, key_max_sz, "P%d-businesscard", 
-			      pg_rank);
-    if (mpi_errno < 0 || mpi_errno > key_max_sz)
-    {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**snprintf",
-			     "**snprintf %d", mpi_errno);
-    }
-    mpi_errno = MPI_SUCCESS;
-    
     
   fn_exit:
     return mpi_errno;
@@ -478,12 +408,9 @@ int MPIDI_CH3I_BCInit( int pg_rank,
 
 /* Free the business card.  This routine should be called once the business
    card is published. */
-int MPIDI_CH3I_BCFree( char *bc_key, char *bc_val )
+int MPIDI_CH3I_BCFree( char *bc_val )
 {
     /* */
-    if (bc_key) {
-	MPIU_Free( bc_key );
-    }
     if (bc_val) {
 	MPIU_Free( bc_val );
     }
@@ -499,11 +426,6 @@ static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg)
 {
-    if (pg->ch.kvs_name != NULL)
-    {
-	MPIU_Free(pg->ch.kvs_name);
-    }
-
     if (pg->id != NULL)
     { 
 	MPIU_Free(pg->id);

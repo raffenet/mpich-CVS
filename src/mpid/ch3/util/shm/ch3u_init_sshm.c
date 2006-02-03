@@ -13,11 +13,6 @@ static int getNodeRootRank( int, int * );
 
 /*  MPIDI_CH3U_Init_sshm - does scalable shared memory specific channel 
  *  initialization
- *     publish_bc - if non-NULL, will be a pointer to the original position of 
- *     the bc_val and should do KVS Put/Commit/Barrier on business card before 
- *     returning
- *     bc_key     - business card key buffer pointer.  freed if successfully 
- *                  published
  *     bc_val     - business card value buffer pointer, updated to the next 
  *                  available location or freed if published.
  *     val_max_sz - maximum value buffer size reduced by the number of 
@@ -32,7 +27,6 @@ static int getNodeRootRank( int, int * );
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, 
 			 char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -51,6 +45,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int val_max_sz;
     char * key = NULL;
     char * val = NULL;
+    char *kvsname = NULL;
     MPIU_CHKLMEM_DECL(2);
 
     srand(getpid()); /* brad : needed by generate_shm_string */
@@ -58,6 +53,9 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIDI_CH3I_Process.shm_reading_list = NULL;
     MPIDI_CH3I_Process.shm_writing_list = NULL;
     MPIDI_CH3I_Process.num_cpus = -1;
+
+    /* Get the kvsname associated with MPI_COMM_WORLD */
+    MPIDI_PG_GetConnKVSname( &kvsname );
 
     /* brad : need to set these locally */
     pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
@@ -203,19 +201,24 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     if (pg_rank == 0)
     {
 #ifdef USE_PERSISTENT_SHARED_MEMORY
-	/* With persistent shared memory, only the first process of the first group needs to create the bootstrap queue. */
-	/* Everyone else including spawned processes will attach to this queue. */
+	/* With persistent shared memory, only the first process of the first
+	   group needs to create the bootstrap queue. */
+	/* Everyone else including spawned processes will attach to this queue.
+	 */
 	if (has_parent)
 	{
-	    /* If you have a parent then you must not initialize the queue since the parent already did. */
+	    /* If you have a parent then you must not initialize the queue 
+	       since the parent already did. */
 	    initialize_queue = 0;
 	    MPIU_Strncpy(queue_name, pg_p->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
 	    MPIU_Strncpy(val, queue_name, val_max_sz);
 	}
 	else
 #else
-	/* Without persistent shared memory the root process of each process group creates a unique
-	 * bootstrap queue to be used only by processes within the same process group */
+	/* Without persistent shared memory the root process of each process 
+	 * group creates a unique
+	 * bootstrap queue to be used only by processes within the same process
+	 * group */
 #endif
 	{
 	    mpi_errno = MPIDI_CH3I_BootstrapQ_create_unique_name(queue_name, MPIDI_MAX_SHM_NAME_LENGTH);
@@ -234,12 +237,12 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	}
 	/*printf("root process created bootQ: '%s'\n", queue_name);fflush(stdout);*/
 
-	mpi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, key, val);          
+	mpi_errno = PMI_KVS_Put(kvsname, key, val);          
 	if (mpi_errno != 0) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_put", 
 				 "**pmi_kvs_put %d", mpi_errno);
 	}
-	mpi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
+	mpi_errno = PMI_KVS_Commit(kvsname);
 	if (mpi_errno != 0) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_commit", 
 				 "**pmi_kvs_commit %d", mpi_errno);
@@ -257,7 +260,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_barrier", 
 				 "**pmi_barrier %d", mpi_errno);
 	}
-	mpi_errno = PMI_KVS_Get(pg_p->ch.kvs_name, key, val, val_max_sz);
+	mpi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
 	if (mpi_errno != 0) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_get", 
 				 "**pmi_kvs_get %d", mpi_errno);
@@ -334,33 +337,6 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
     }
 
-    /* see if we're meant to publish */
-    if (publish_bc_p != NULL) {
-	/*
-	printf("business card:\n<%s>\npg_id:\n<%s>\n\n", *publish_bc_p, pg_p->id);
-	fflush(stdout);
-	*/
-	pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, *bc_key_p, *publish_bc_p);
-	if (pmi_errno != PMI_SUCCESS)
-	{
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_put",
-				 "**pmi_kvs_put %d", pmi_errno);
-	}
-	pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
-	if (pmi_errno != PMI_SUCCESS)
-	{
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_commit",
-				 "**pmi_kvs_commit %d", pmi_errno);
-	}
-
-	pmi_errno = PMI_Barrier();
-	if (pmi_errno != PMI_SUCCESS)
-	{
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**pmi_barrier",
-				 "**pmi_barrier %d", pmi_errno);
-	}
-    }
-
  fn_exit:
     MPIU_CHKLMEM_FREEALL();
     return mpi_errno;
@@ -368,7 +344,6 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     /* --BEGIN ERROR HANDLING-- */
     if (pg_p != NULL)
     {
-	/* MPIDI_CH3I_PG_Destroy(), which is called by MPIDI_PG_Destroy(), frees pg->ch.kvs_name */
 	MPIDI_PG_Destroy( pg_p );
     }
 

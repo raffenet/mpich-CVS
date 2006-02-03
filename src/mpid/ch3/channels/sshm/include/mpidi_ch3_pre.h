@@ -53,7 +53,6 @@ typedef struct MPIDI_CH3I_BootstrapQ_struct * MPIDI_CH3I_BootstrapQ;
 
 typedef struct MPIDI_Process_group_s
 {
-    char * kvs_name;
     int nShmEagerLimit;
 #ifdef HAVE_SHARED_PROCESS_READ
     int nShmRndvLimit;

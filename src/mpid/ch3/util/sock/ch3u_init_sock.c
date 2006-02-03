@@ -32,7 +32,6 @@
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, 
 			 char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -45,6 +44,7 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
      * MPI_COMM_WORLD)
      */
 
+    /* FIXME: Get the size from the process group */
     pmi_errno = PMI_Get_size(&pg_size);
     if (pmi_errno != 0) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_size",
@@ -67,36 +67,16 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
     }
 
-    /* might still have something to add (e.g. ssm channel) so don't publish */
-    if (publish_bc_p != NULL)
-    {
-	pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, *bc_key_p, *publish_bc_p);
-	if (pmi_errno != PMI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_put",
-				 "**pmi_kvs_put %d", pmi_errno);
-	}
-	pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
-	if (pmi_errno != PMI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_commit",
-				 "**pmi_kvs_commit %d", pmi_errno);
-	}
-
-	pmi_errno = PMI_Barrier();
-	if (pmi_errno != PMI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_barrier",
-				 "**pmi_barrier %d", pmi_errno);
-	}
-    }
-
  fn_exit:
     
     return mpi_errno;
     
  fn_fail:
+    /* FIXME: This doesn't belong here, since the pg is not created in 
+       this routine */
     /* --BEGIN ERROR HANDLING-- */
-    if (pg_p != NULL)
+    if (pg_p != NULL) 
     {
-	/* MPIDI_CH3I_PG_Destroy(), which is called by MPIDI_PG_Destroy(), frees pg->ch.kvs_name */
 	MPIDI_PG_Destroy(pg_p);
     }
 

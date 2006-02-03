@@ -578,9 +578,9 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
    util directories  */
 /* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be executed by two or more channels */
 int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);                         
+                         char **bc_val_p, int *val_max_sz_p);                         
 int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, char **bc_val_p, int *val_max_sz_p);
+                         char **bc_val_p, int *val_max_sz_p);
 
 /* added by brad.  business card related global and functions */
 #define MAX_HOST_DESCRIPTION_LEN 256

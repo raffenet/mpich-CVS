@@ -51,7 +51,6 @@ typedef struct MPIDI_CH3I_Shared_process
 typedef struct MPIDI_Process_group_s
 {
     volatile int ref_count;
-    char * kvs_name;
     int nShmEagerLimit;
 #ifdef HAVE_SHARED_PROCESS_READ
     int nShmRndvLimit;

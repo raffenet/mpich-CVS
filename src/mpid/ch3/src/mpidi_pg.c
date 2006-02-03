@@ -17,6 +17,9 @@ static MPIDI_PG_t * MPIDI_PG_iterator_next = NULL;
 static MPIDI_PG_Compare_ids_fn_t MPIDI_PG_Compare_ids_fn;
 static MPIDI_PG_Destroy_fn_t MPIDI_PG_Destroy_fn;
 
+/* Key track of the process group corresponding to the MPI_COMM_WORLD 
+   of this process */
+static MPIDI_PG_t *pg_world = NULL;
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Init
@@ -49,7 +52,16 @@ int MPIDI_PG_Finalize(void)
        That reference is released
        only after ch3_finalize returns. If I release it before ch3_finalize, 
        the ssm channel crashes. */
-    
+
+    if (pg_world->connData) {
+	int rc;
+	rc = PMI_Finalize();
+	if (rc) {
+	    MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, 
+			  "**ch3|pmi_finalize", 
+			  "**ch3|pmi_finalize %d", rc);
+	}
+    }
 #if 0
 
     if (MPIDI_PG_list != NULL)
@@ -112,6 +124,8 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     pg->connInfoFromString = 0;
     pg->freeConnInfo       = 0;
 
+    /* The first process group is always the world group */
+    if (!pg_world) { pg_world = pg; }
 #if 0
     /* Add pg's to the head */
     pg->next = MPIDI_PG_list;
@@ -355,8 +369,6 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     MPIDI_PG_InitConnString( pg_ptr );
     (*pg_ptr->connInfoFromString)( str, pg_ptr );
 
-    pg_ptr->ch.kvs_name = 0;
-
 fn_exit:
     return mpi_errno;
 fn_fail:
@@ -411,6 +423,46 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
  * 
  *
  */
+
+/* Setting a process's connection information 
+   
+   This is a collective call (for scalability) over all of the processes in 
+   the same MPI_COMM_WORLD.
+*/
+int MPIDI_PG_SetConnInfo( int rank, const char *connString )
+{
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
+    char key[128];
+
+    MPIU_Assert(pg_world->connData);
+    
+    mpi_errno = MPIU_Snprintf(key, sizeof(key), "P%d-businesscard", rank);
+    if (mpi_errno < 0 || mpi_errno > sizeof(key)) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**snprintf",
+			     "**snprintf %d", mpi_errno);
+    }
+    pmi_errno = PMI_KVS_Put(pg_world->connData, key, connString );
+    if (pmi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_put",
+			     "**pmi_kvs_put %d", pmi_errno);
+    }
+    pmi_errno = PMI_KVS_Commit(pg_world->connData);
+    if (pmi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_commit",
+			     "**pmi_kvs_commit %d", pmi_errno);
+    }
+    
+    pmi_errno = PMI_Barrier();
+    if (pmi_errno != PMI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_barrier",
+			     "**pmi_barrier %d", pmi_errno);
+    }
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
 
 /* For all of these routines, the format of the process group description
    that is created and used by the connTo/FromString routines is this:
@@ -562,6 +614,13 @@ int MPIDI_PG_InitConnKVS( MPIDI_PG_t *pg )
  fn_fail:
     if (pg->connData) { MPIU_Free(pg->connData); }
     goto fn_exit;
+}
+
+/* Return the kvsname associated with the MPI_COMM_WORLD of this process. */
+int MPIDI_PG_GetConnKVSname( char ** kvsname )
+{
+    *kvsname = pg_world->connData;
+    return MPI_SUCCESS;
 }
 
 /* For process groups that are not our MPI_COMM_WORLD, store the connection

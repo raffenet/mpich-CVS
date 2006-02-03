@@ -375,11 +375,10 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
     shm_info.info = vc->ch.shm_write_queue_info;
     /*
-    printf("comm_world rank %d\nvc->pg_rank %d\nmy_pg_rank %d\nkvs_name:\n<%s>\npg_id:\n<%s>\n",
+    printf("comm_world rank %d\nvc->pg_rank %d\nmy_pg_rank %d\n\npg_id:\n<%s>\n",
 	MPIR_Process.comm_world->rank,
 	vc->pg_rank,
 	MPIDI_Process.my_pg_rank,
-	vc->pg->ch.kvs_name,
 	vc->pg->id);
     fflush(stdout);
     */
@@ -474,7 +473,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     /* get the business card */
     mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
     if (mpi_errno) {
-	MPI_ERR_POP(mpi_errno);
+	MPIU_ERR_POP(mpi_errno);
     }
 
     /* attempt to connect through shared memory */

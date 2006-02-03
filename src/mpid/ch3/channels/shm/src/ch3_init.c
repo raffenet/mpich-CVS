@@ -45,6 +45,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     int p;
     char * key;
     char * val;
+    char *kvsname = NULL;
     int key_max_sz;
     int val_max_sz;
     char shmemkey[MPIDI_MAX_SHM_NAME_LENGTH];
@@ -61,6 +62,9 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
      * MPI_COMM_SELF
      */
     /* MPID_Init in mpid_init.c handles the process group initialization. */
+
+    /* Get the kvsname associated with MPI_COMM_WORLD */
+    MPIDI_PG_GetConnKVSname( &kvsname );
 
     /* set the global variable defaults */
     pg->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
@@ -168,7 +172,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	    mpi_errno = PMI_KVS_Put(kvsname, key, val);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
@@ -188,14 +192,14 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 #else
 	    gethostname(val, val_max_sz); /* Don't call this under Windows because it requires the socket library */
 #endif
-	    mpi_errno = PMI_KVS_Put(pg->ch.kvs_name, key, val);
+	    mpi_errno = PMI_KVS_Put(kvsname, key, val);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
 		return mpi_errno;
 	    }
 
-	    mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
+	    mpi_errno = PMI_KVS_Commit(kvsname);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
@@ -222,7 +226,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	    mpi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
@@ -239,7 +243,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(pg->ch.kvs_name, key, val, val_max_sz);
+	    mpi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
 	    if (mpi_errno != 0)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
@@ -358,7 +362,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 #endif
 #endif
 
-    mpi_errno = PMI_KVS_Commit(pg->ch.kvs_name);
+    mpi_errno = PMI_KVS_Commit(kvsname);
     if (mpi_errno != 0)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);

@@ -249,7 +249,10 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
     if (parent_port_name == NULL)
     {
 	/* We can always use PMI_KVS_Get on our own process group */
-	mpi_errno = PMI_KVS_Get(MPIDI_Process.my_pg->ch.kvs_name, 
+	/* FIXME: we may want to put this within the mpidi_pg.c file
+	   as a special method on the process group (to hide the connData
+	   item) */
+	mpi_errno = PMI_KVS_Get(MPIDI_Process.my_pg->connData,
 				  "PARENT_ROOT_PORT_NAME", val, sizeof(val));
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);

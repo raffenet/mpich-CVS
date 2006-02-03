@@ -108,26 +108,5 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
     /* --END ERROR HANDLING-- */
 #endif
 
-/* FIXME: Why the #if 0? Should this code be fixed or deleted? */
-#if 0
-#ifdef MPIDI_CH3_USES_SHM_NAME
-    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_SHM_QUEUE_NAME_KEY, pg->ch.shm_name);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard_len", 0);
-	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**buscard", 0);
-	}
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
-#endif    
-#endif
-
     return MPI_SUCCESS;
 }
