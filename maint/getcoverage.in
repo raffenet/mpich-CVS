@@ -192,7 +192,13 @@ L:  while (<FD>) {
 	foreach my $name (@BlockNames) {
 	    if (/$lineLeader2\/\*\s+--BEGIN $name--\s+\*\// ||
 		/$lineLeader3\/\*\s+--BEGIN $name--\s+\*\//) {
-		($lineincr,$filelineincr) = &skipBlock( $name, 0, $linecount );
+		# It is usually an error to encounter a block begin 
+		# within another block.  The exception is the
+		# EXPERIMENTAL block, which may contain ERROR HANDLING blocks
+		my $allowNest = 0;
+		if ($name eq "EXPERIMENTAL") { $allowNest = 1; }
+		($lineincr,$filelineincr) = 
+		    &skipBlock( $name, $allowNest, $linecount );
 		$linecount += $lineincr;
 		$fileline += $filelineincr;
 		next L;
@@ -737,8 +743,8 @@ sub skipBlockAndAnnotate {
     print "Skipping BEGIN $blockName\n" if $gDebug; 
     while (<FD>) {
 	if (/^\s/) { print $outfile &HTMLify($_); }
-	if (/^\s*\/\*\s+--END $blockName--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--END $blockName--\s+\*\//) {
+	if (/^$lineLeader2\/\*\s+--END $blockName--\s+\*\// ||
+	    /^$lineLeader3\/\*\s+--END $blockName--\s+\*\//) {
 	    $sawend = 1;
 	    last; 
 	}
@@ -762,8 +768,8 @@ sub skipBlock {
 	$lineincr++;
 	if (/^\s/) { $fileline++; }
 	if (! $allowNested) {
-	    if (/^\s*\/\*\s+--BEGIN/ ||
-		/^\s*-:\s*\d+:\s*\/\*\s+--BEGIN/) {
+	    if (/^$lineLeader2\/\*\s+--BEGIN/ ||
+		/^$lineLeader3\/\*\s+--BEGIN/) {
 		my $cleanline = $_;
 		$cleanline =~ s/^\s*//;
 		chop $cleanline;
@@ -781,8 +787,8 @@ sub skipBlock {
 # 		last; 
 # 	    }
 # 	}
-	if (/^\s*\/\*\s+--END $blockName--\s+\*\// ||
-	    /^\s*-:\s*\d+:\s*\/\*\s+--END $blockName--\s+\*\//) {
+	if (/^$lineLeader2\/\*\s+--END $blockName--\s+\*\// ||
+	    /^$lineLeader3\/\*\s+--END $blockName--\s+\*\//) {
 	    last; 
 	}
 	# If we match the following but not the preceeding, there are extra 
