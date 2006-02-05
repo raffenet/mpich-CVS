@@ -5,9 +5,7 @@
  */
 
 #include "mpidimpl.h"
-#ifdef MPIDI_DEV_IMPLEMENTS_KVS
 #include "pmi.h"
-#endif
 
 /* FIXME: These routines need a description.  What is their purpose?  Who
    calls them and why?  What does each one do?
