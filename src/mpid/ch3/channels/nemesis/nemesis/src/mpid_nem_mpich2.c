@@ -33,6 +33,11 @@ unsigned short *recv_seqno;
 #define POLLS_BEFORE_YIELD 1000
 #endif
 
+/* here we include the non-inlined versions of the files in mpid_nem_inline.h */
+#define MPID_NEM_DONT_INLINE_FUNCTIONS 1
+#include <mpid_nem_inline.h>
+
+
 void
 MPID_nem_mpich2_init (int ckpt_restart)
 {
@@ -157,6 +162,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /*
   int MPID_nem_mpich2_send (void* buf, int size, int dest);
 
@@ -244,7 +250,8 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
     return MPID_NEM_MPICH2_SUCCESS;
 }
-
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /* same as above, but sends MPICH2 32 byte header */
 int
 MPID_nem_mpich2_send_header (void* buf, int size, int dest)
@@ -397,6 +404,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
     return MPID_NEM_MPICH2_SUCCESS;
 }
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /*
   int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
 
@@ -496,7 +505,8 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
     return MPID_NEM_MPICH2_SUCCESS;
 }
-
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /* same as above but first iov element is an MPICH2 32 byte header */
 int
 MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
@@ -664,7 +674,8 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
     return MPID_NEM_MPICH2_SUCCESS;
 }
-
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 int
 MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 {
@@ -704,6 +715,8 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
  exit_l:
     return ret;
 }
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
 int
 MPID_nem_mpich2_enqueue_fastbox (int local_rank)
@@ -737,6 +750,8 @@ MPID_nem_mpich2_enqueue_fastbox (int local_rank)
     
     return ret;
 }
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
 int
 recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
@@ -746,6 +761,8 @@ recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
     
     return (cell->pkt.mpich2.seqno == recv_seqno[source]);
 }
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
 
 /*
@@ -807,6 +824,8 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues6));
     return MPID_NEM_MPICH2_SUCCESS;
 }
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
 int
 MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout)
@@ -841,6 +860,8 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues6));
     return MPID_NEM_MPICH2_SUCCESS;
 }
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
 
 /*  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
@@ -925,6 +946,8 @@ int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 }
 
 
+#endif
+#ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /*
   int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, int from);
 
@@ -948,6 +971,7 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9));
     return MPID_NEM_MPICH2_SUCCESS;
 }
+#endif
 
 /*
   int MPID_nem_mpich2_release_fbox (MPID_nem_cell_ptr_t cell);

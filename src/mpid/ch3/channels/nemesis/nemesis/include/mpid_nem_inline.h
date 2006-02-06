@@ -1,9 +1,17 @@
+#ifdef MPID_NEM_DONT_INLINE_FUNCTIONS
+#define MPID_NEM_INLINE_DECL
+#undef _MPID_NEM_INLINE_H /* ok to include again: we're including the non-inline functions in a .c file */
+#else
+#undef MPID_NEM_INLINE_DECL
+#define MPID_NEM_INLINE_DECL extern inline
+#endif
+
 #ifndef _MPID_NEM_INLINE_H
 #define _MPID_NEM_INLINE_H
 
 extern MPID_nem_cell_ptr_t prefetched_cell;
 
-extern inline 
+MPID_NEM_INLINE_DECL 
 int MPID_nem_mpich2_send (void* buf, int size, int dest)
 {
     MPID_nem_cell_ptr_t el;
@@ -63,7 +71,7 @@ int MPID_nem_mpich2_send (void* buf, int size, int dest)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 {
     MPID_nem_cell_ptr_t el;
@@ -193,7 +201,7 @@ int MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 {
     MPID_nem_cell_ptr_t el;
@@ -277,7 +285,7 @@ int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline 
+MPID_NEM_INLINE_DECL 
 int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 {
     MPID_nem_cell_ptr_t el;
@@ -439,7 +447,7 @@ int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 {
     int errno = MPID_NEM_MPICH2_SUCCESS;
@@ -479,7 +487,7 @@ int MPID_nem_mpich2_dequeue_fastbox (int local_rank)
     return errno;
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 {
     int errno = MPID_NEM_MPICH2_SUCCESS;
@@ -512,7 +520,7 @@ int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
     return errno;
 }
 
-extern inline 
+MPID_NEM_INLINE_DECL 
 int recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 {
     MPID_nem_cell_ptr_t cell = MPID_NEM_REL_TO_ABS(qhead->my_head);
@@ -521,7 +529,7 @@ int recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
     return (cell->pkt.mpich2.seqno == recv_seqno[source]);
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int my_rank = MPID_nem_mem_region.rank;
@@ -569,7 +577,7 @@ int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline 
+MPID_NEM_INLINE_DECL 
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout)
 {
     int my_rank = MPID_nem_mem_region.rank;
@@ -600,7 +608,7 @@ int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int my_rank = MPID_nem_mem_region.rank;
@@ -659,7 +667,7 @@ int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
-extern inline
+MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell)
 {
     int source = cell->pkt.mpich2.source;
