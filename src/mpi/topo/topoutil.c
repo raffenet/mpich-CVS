@@ -24,10 +24,13 @@ MPIR_Topology *MPIR_Topology_get( MPID_Comm *comm_ptr )
 {
     MPIR_Topology *topo_ptr;
     int flag;
+    MPIU_THREADPRIV_DECL;
 
     if (MPIR_Topology_keyval == MPI_KEYVAL_INVALID) {
 	return 0;
     }
+
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     (void)NMPI_Comm_get_attr(comm_ptr->handle, MPIR_Topology_keyval,
 			     &topo_ptr, &flag );
@@ -39,6 +42,9 @@ MPIR_Topology *MPIR_Topology_get( MPID_Comm *comm_ptr )
 int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 {
     int mpi_errno;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     if (MPIR_Topology_keyval == MPI_KEYVAL_INVALID) {
 	/* Create a new keyval */
@@ -65,6 +71,10 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 /* begin:nested */
 static int MPIR_Topology_finalize( void *p )
 {
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
+
     MPIR_Nest_incr();
 
     MPIU_UNREFERENCED_ARG(p);

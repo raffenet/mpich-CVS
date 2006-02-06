@@ -759,6 +759,9 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root,
     }
     else
     {
+	MPIU_THREADPRIV_DECL;
+	MPIU_THREADPRIV_GET;
+
 	MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM)
 	{

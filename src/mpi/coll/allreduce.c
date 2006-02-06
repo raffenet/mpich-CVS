@@ -110,7 +110,7 @@ int MPIR_Allreduce (
     MPI_User_function *uop;
     MPID_Op *op_ptr;
     MPI_Comm comm;
-    MPICH_PerThread_t *p;
+    MPIU_THREADPRIV_DECL;
 #ifdef HAVE_CXX_BINDING
     int is_cxx_uop = 0;
 #endif
@@ -119,6 +119,7 @@ int MPIR_Allreduce (
     if (count == 0) return MPI_SUCCESS;
     comm = comm_ptr->handle;
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     
     is_homogeneous = 1;
@@ -150,8 +151,7 @@ int MPIR_Allreduce (
         /* homogeneous */
         
         /* set op_errno to 0. stored in perthread structure */
-        MPIR_GetPerThread(&p);
-        p->op_errno = 0;
+        MPIU_THREADPRIV_FIELD(op_errno) = 0;
 
         comm_size = comm_ptr->local_size;
         rank = comm_ptr->rank;
@@ -466,7 +466,8 @@ int MPIR_Allreduce (
         /* check if multiple threads are calling this collective function */
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
 
-        if (p->op_errno) mpi_errno = p->op_errno;
+        if (MPIU_THREADPRIV_FIELD(op_errno)) 
+	    mpi_errno = MPIU_THREADPRIV_FIELD(op_errno);
     }
 
   fn_exit:
@@ -499,6 +500,9 @@ int MPIR_Allreduce_inter (
     static const char FCNAME[] = "MPIR_Allreduce_inter";
     int rank, mpi_errno, root;
     MPID_Comm *newcomm_ptr = NULL;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     MPIR_Nest_incr();
     

@@ -224,12 +224,15 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int i;
     MPID_Comm *newcomm_ptr;
     MPIU_CHKLMEM_DECL(4);
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_CREATE);
+
+    MPIU_THREADPRIV_GET;
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING

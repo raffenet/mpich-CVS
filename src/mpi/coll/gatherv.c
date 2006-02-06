@@ -326,6 +326,8 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
 	}
 	else 
         */
+	MPIU_THREADPRIV_DECL;
+	MPIU_THREADPRIV_GET;
         
         MPIR_Nest_incr();
         mpi_errno = MPIR_Gatherv(sendbuf, sendcnt, sendtype, 

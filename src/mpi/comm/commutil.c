@@ -259,11 +259,14 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 {
     int          context_id = 0;
     unsigned int local_mask[MAX_CONTEXT_MASK];
+    MPIU_THREADPRIV_DECL;
 
     if (initialize_context_mask) {
 	MPIR_Init_contextid();
     }
     memcpy( local_mask, context_mask, MAX_CONTEXT_MASK * sizeof(int) );
+
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     /* Comm must be an intracommunicator */
     NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
@@ -295,6 +298,9 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
     int          context_id = 0;
     unsigned int local_mask[MAX_CONTEXT_MASK];
     int          own_mask = 0;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     /* We lock only around access to the mask.  If another thread is
        using the mask, we take a mask of zero */
@@ -385,6 +391,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 		        context instead?.  Or can we use the tag 
 		        provided in the intercomm routine? (not on a dup, 
 			but in that case it can use the collective context) */
+    MPIU_THREADPRIV_DECL;
 
     if (!comm_ptr->local_comm) {
 	/* Manufacture the local communicator */
@@ -395,6 +402,8 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
       comm_ptr->local_comm->local_size, comm_ptr->local_size );*/
     context_id = MPIR_Get_contextid( comm_ptr->local_comm );
     if (context_id == 0) return 0;
+
+    MPIU_THREADPRIV_GET;
 
     /* MPIC routine uses an internal context id.  The local leads (process 0)
        exchange data */

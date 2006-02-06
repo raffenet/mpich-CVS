@@ -60,6 +60,9 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
     MPID_Delete_function delfn;
     MPID_Lang_t          language;
     int                  mpi_errno=0;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     MPIR_Nest_incr();
     
@@ -171,7 +174,9 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
     void               *new_value = NULL;
     int                flag;
     int                mpi_errno = 0;
+    MPIU_THREADPRIV_DECL;
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     
     p = old_attrs;

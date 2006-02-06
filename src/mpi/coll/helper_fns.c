@@ -184,6 +184,9 @@ int MPIR_Localcopy(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     int sendtype_iscontig, recvtype_iscontig, sendsize;
     int rank, mpi_errno = MPI_SUCCESS;
     MPI_Aint true_extent, sendtype_true_lb, recvtype_true_lb;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     MPIR_Nest_incr();
     

@@ -334,6 +334,9 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs,
 	else 
 */
 
+	MPIU_THREADPRIV_DECL;
+	MPIU_THREADPRIV_GET;
+
         MPIR_Nest_incr();
         mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype, 
                                   recvbuf, recvcnt, recvtype, 

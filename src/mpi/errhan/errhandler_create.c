@@ -62,6 +62,7 @@ int MPI_Errhandler_create(MPI_Handler_function *function,
 {
     static const char FCNAME[] = "MPI_Errhandler_create";
     int mpi_errno = MPI_SUCCESS;
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ERRHANDLER_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -83,6 +84,7 @@ int MPI_Errhandler_create(MPI_Handler_function *function,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    MPIU_THREADPRIV_GET;
     
     MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_create_errhandler( function, errhandler );

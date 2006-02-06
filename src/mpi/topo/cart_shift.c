@@ -125,6 +125,10 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	*source = *dest = rank;
     }
     else {
+	MPIU_THREADPRIV_DECL;
+
+	MPIU_THREADPRIV_GET;
+
 	/* To support advanced implementations that support MPI_Cart_create,
 	   we compute the new position and call PMPI_Cart_rank to get the
 	   source and destination.  We could bypass that step if we know that

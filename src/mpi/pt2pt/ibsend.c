@@ -60,8 +60,12 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
     ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
     MPI_Status status;
     MPI_Request req = ibsend_info->req->handle;
+    MPIU_THREADPRIV_DECL;
 
+    /* FIXME: There should be no unreferended args! */
     MPIU_UNREFERENCED_ARG(complete);
+
+    MPIU_THREADPRIV_GET;
 
     /* Try to cancel the underlying request */
     MPIR_Nest_incr();
@@ -113,12 +117,15 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr;
     ibsend_req_info *ibinfo;
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IBSEND);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_IBSEND);
+
+    MPIU_THREADPRIV_GET;
     
     /* Validate handle parameters needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING

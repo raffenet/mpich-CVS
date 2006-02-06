@@ -217,6 +217,9 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
     char *string;
     int size;
     MPI_Aint extent, true_lb, true_ub, lb, ub, sticky_lb, sticky_ub;
+    MPIU_THREADPRIV_DECL;
+    
+    MPIU_THREADPRIV_GET;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
 	string = MPIDU_Datatype_builtin_to_string(type);

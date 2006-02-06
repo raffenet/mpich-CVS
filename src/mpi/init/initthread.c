@@ -95,6 +95,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int has_args;
     int has_env;
     int thread_provided;
+    MPIU_THREADPRIV_DECL;
 #if defined(HAVE_WINDOWS_H) && defined(_WIN64)
     UINT mode, old_mode;
 #endif
@@ -217,6 +218,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Err_init();
     MPID_Wtime_init();
     MPIR_Datatype_init();
+
+    MPIU_THREADPRIV_GET;
+
     MPIR_Nest_init();
     /* MPIU_Timer_pre_init(); */
 
@@ -328,6 +332,12 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 
     MPID_CS_INITIALIZE();
     MPID_CS_ENTER();
+
+    /* Create the thread-private region if necessary and go ahead 
+       and initialize it */
+    MPIU_THREADPRIV_INITKEY;
+    MPIU_THREADPRIV_INIT;
+
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
     
 #   ifdef HAVE_ERROR_CHECKING

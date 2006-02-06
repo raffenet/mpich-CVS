@@ -1776,19 +1776,48 @@ typedef struct MPICH_PerThread_t {
 #endif    
 } MPICH_PerThread_t;
 
-/* FIXME: Is this correct?  Better to have a simple test here so that we 
-   have no doubt that the same test is used everywhere */
-#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE || USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-
+#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE) 
 /* If single threaded, make this point at a pre-allocated segment */
 extern MPICH_PerThread_t MPIR_Thread;
 
 /* The following three macros define a way to portably access thread-private
    storage in MPICH2, and avoid extra overhead when MPICH2 is single 
-   threaded */
-#define MPIU_THREADPRIV_DECL
+   threaded
+   INITKEY - Create the key.  Must happen *before* the other threads 
+             are created
+   INIT    - Create the thread-private storage.  Must happen once per thread
+   DECL    - Declare local variables
+   GET     - Access the thread-private storage
+   FIELD   - Access the thread-private field (by name)
+
+   The "DECL" is the extern so that there is always a statement for
+   the declaration.
+*/
+#define MPIU_THREADPRIV_INITKEY
+#define MPIU_THREADPRIV_INIT 
+#define MPIU_THREADPRIV_DECL extern MPICH_PerThread_t MPIR_Thread
 #define MPIU_THREADPRIV_GET
 #define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread._a)
+
+#else
+/* The following three macros define a way to portably access thread-private
+   storage in MPICH2, and avoid extra overhead when MPICH2 is single 
+   threaded */
+
+#define MPIU_THREADPRIV_INITKEY  \
+    MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL)
+#define MPIU_THREADPRIV_INIT {\
+	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
+	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
+        }
+#define MPIU_THREADPRIV_DECL MPICH_PerThread_t *MPIR_Thread
+#define MPIU_THREADPRIV_GET  MPIR_GetPerThread(&MPIR_Thread )
+#define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread->_a)
+#endif
+
+/* FIXME: Is this correct?  Better to have a simple test here so that we 
+   have no doubt that the same test is used everywhere */
+#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE || USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 
 /* FIXME: Are these used? Documented? */
 #define MPID_Common_thread_lock()
@@ -1874,7 +1903,10 @@ M*/
 /* The basic thread lock/unlock are defined in mpiimplthread.h */
 /* #define MPID_Thread_lock( ptr ) */
 /* #define MPID_Thread_unlock( ptr ) */
+
 #else
+
+
 #define MPID_Common_thread_lock() \
      { MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");\
      MPID_Thread_mutex_lock( &MPIR_Process.common_lock ); }
@@ -2247,10 +2279,7 @@ void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 void MPIR_Nest_incr(void);
 void MPIR_Nest_decr(void);
 int MPIR_Nest_value(void);
-/* FIXME: Shouldn't this be the opposite (use the per-thread information 
-   if using THREAD_MULTIPLE) ? */
-#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
-/* Eventually, we can make this work independent of thread level */
+
 #ifdef MPICH_DEBUG_NESTING
 /* FIXME: We should move the initialization and error reporting into
    routines that can be called when necessary */
@@ -2283,9 +2312,7 @@ int MPIR_Nest_value(void);
 #endif /* MPICH_DEBUG_NESTING */
 
 #define MPIR_Nest_value() (MPIU_THREADPRIV_FIELD(nest_count))
-#else
-#define MPIR_Nest_init()
-#endif
+
 
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/

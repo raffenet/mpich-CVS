@@ -195,6 +195,9 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 	local_size, rem, count;
     MPI_Aint stride, disps[3];
     MPI_Datatype type_tmp, types[3];
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     if (darg == MPI_DISTRIBUTE_DFLT_DARG) blksize = 1;
     else blksize = darg;
@@ -370,6 +373,7 @@ int MPI_Type_create_darray(int size,
 
     int *ints;
     MPID_Datatype *datatype_ptr = NULL;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(3);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 
@@ -378,6 +382,7 @@ int MPI_Type_create_darray(int size,
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 
+    MPIU_THREADPRIV_GET;
     
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING

@@ -221,7 +221,10 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
     if (BsendBuffer.active) {
 	/* Loop through each active element and wait on it */
 	BsendData_t *p = BsendBuffer.active;
+	MPIU_THREADPRIV_DECL;
 	
+	MPIU_THREADPRIV_GET;
+
 	MPIR_Nest_incr();
 	while (p) {
 	    MPI_Request r = p->request->handle;
@@ -250,6 +253,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 {
     BsendData_t *p;
     int packsize, mpi_errno, pass;
+    MPIU_THREADPRIV_DECL;
 
     /* Find a free segment and copy the data into it.  If we could 
        have, we would already have used tBsend to send the message with
@@ -259,6 +263,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
        or if we can just use (a memcpy) of the buffer.
     */
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
 
     /* We check the active buffer first.  This helps avoid storage 

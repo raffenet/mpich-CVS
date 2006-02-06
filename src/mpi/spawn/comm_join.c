@@ -131,6 +131,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     static const char FCNAME[] = "MPI_Comm_join";
     int mpi_errno = MPI_SUCCESS, err;
     char *local_port, *remote_port;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_JOIN);
 
@@ -141,6 +142,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 
     /* ... body of routine ...  */
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     
     MPIU_CHKLMEM_MALLOC(local_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "local port name");

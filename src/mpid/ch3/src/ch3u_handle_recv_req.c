@@ -127,6 +127,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
                 MPID_Datatype *new_dtp;
                 MPI_Aint true_lb, true_extent, extent;
                 void *tmp_buf;
+		MPIU_THREADPRIV_DECL;
+
+		MPIU_THREADPRIV_GET;
                
                 /* create derived datatype */
                 create_derived_datatype(rreq, &new_dtp);
@@ -541,6 +544,9 @@ static int do_accumulate_op(MPID_Request *rreq)
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint true_lb, true_extent;
     MPI_User_function *uop;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     if (rreq->dev.op == MPI_REPLACE)
     {

@@ -126,6 +126,9 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	case MPID_UREQUEST:
 	{
 	    int rc;
+	    MPIU_THREADPRIV_DECL;
+
+	    MPIU_THREADPRIV_GET;
 
 	    /* The user error handler may make calls to MPI routines, so the nesting counter must be incremented before the
 	     * handler is called */
@@ -223,6 +226,9 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 {
     static const char FCNAME[] = "MPIR_Request_get_error";
     int mpi_errno = MPI_SUCCESS;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     switch(request_ptr->kind)
     {

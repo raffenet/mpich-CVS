@@ -735,6 +735,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 
             if (HANDLE_GET_KIND(accum_pkt->datatype) == HANDLE_KIND_BUILTIN)
 	    {
+		MPIU_THREADPRIV_DECL;
+		MPIU_THREADPRIV_GET;
                 MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_ACCUM_RESP);
                 req->dev.datatype = accum_pkt->datatype;
 

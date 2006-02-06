@@ -194,6 +194,9 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     const int error_class = ERROR_GET_CLASS(errcode);
     char error_msg[4096];
     int len;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
     
     if (error_class > MPICH_ERR_LAST_CLASS)
     {
@@ -308,6 +311,9 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     const int error_class = ERROR_GET_CLASS(errcode);
     char error_msg[4096];
     int len;
+    MPIU_THREADPRIV_DECL;
+
+    MPIU_THREADPRIV_GET;
 
     if (win_ptr == NULL || win_ptr->errhandler == NULL)
 	return MPIR_Err_return_comm(NULL, fcname, errcode);
@@ -2128,7 +2134,14 @@ static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
    In a single-threaded environment, These are replaced with
    MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
  */
-#if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
+
+/* Undefine the macro values to allow us to export these as routines
+   for external packages such as ROMIO */
+#if defined(MPIR_Nest_incr)
+#undef MPIR_Nest_incr
+#undef MPIR_Nest_decr
+#undef MPIR_Nest_value
+#endif
 void MPIR_Nest_incr( void )
 {
     MPICH_PerThread_t *p;
@@ -2147,7 +2160,7 @@ int MPIR_Nest_value()
     MPIR_GetPerThread(&p);
     return p->nest_count;
 }
-#endif
+
 
 /*
  * Error handlers.  These are handled just like the other opaque objects

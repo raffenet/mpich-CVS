@@ -98,6 +98,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     splittype *table, *keytable;
     int       rank, size, i, new_size, first_entry = 0, *last_ptr;
     int       new_context_id;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
 
@@ -146,6 +147,8 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     table[rank].color = color;
     table[rank].key   = key;
     
+    MPIU_THREADPRIV_GET;
+
     MPIR_Nest_incr();
     NMPI_Allgather( MPI_IN_PLACE, 2, MPI_INT, table, 2, MPI_INT, comm );
     MPIR_Nest_decr();

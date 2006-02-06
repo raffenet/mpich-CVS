@@ -180,6 +180,9 @@ int MPI_Finalize( void )
     /* FIXME: the (1) in the if test should be replaced by a 
        parameter call */
     if (1) {
+	MPIU_THREADPRIV_DECL;
+
+	MPIU_THREADPRIV_GET;
 	/* Check for an error in the nesting level */
 	if (MPIR_Nest_value()) {
 	    int i,n;
@@ -188,8 +191,8 @@ int MPI_Finalize( void )
 	    fprintf( stderr, "Nest stack is:\n" );
 	    for (i=n-1; i>=0; i--) {
 		fprintf( stderr, "\t[%d] %s:%d\n", i, 
-			 MPIR_Thread.nestinfo[i].file, 
-			 MPIR_Thread.nestinfo[i].line );
+			 MPIU_THREADPRIV_FIELD(nestinfo[i].file), 
+			 MPIU_THREADPRIV_FIELD(nestinfo[i].line) );
 	    }
 	}
     }

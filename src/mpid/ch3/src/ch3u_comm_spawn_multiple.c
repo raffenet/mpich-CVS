@@ -63,11 +63,13 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     int vallen, flag;
     int *pmi_errcodes;
     int total_num_processes;
+    MPIU_THREADPRIV_DECL;
 
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
-    
+
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
 
     if (comm_ptr->rank == root)

@@ -94,7 +94,7 @@ int MPIR_Reduce (
     void       *tmp_buf;
     MPID_Op *op_ptr;
     MPI_Comm comm;
-    MPICH_PerThread_t *p;
+    MPIU_THREADPRIV_DECL;
 #ifdef HAVE_CXX_BINDING
     int is_cxx_uop = 0;
 #endif
@@ -102,6 +102,7 @@ int MPIR_Reduce (
     
     if (count == 0) return MPI_SUCCESS;
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     
     comm = comm_ptr->handle;
@@ -109,8 +110,7 @@ int MPIR_Reduce (
     rank = comm_ptr->rank;
     
     /* set op_errno to 0. stored in perthread structure */
-    MPIR_GetPerThread(&p);
-    p->op_errno = 0;
+    MPIU_THREADPRIV_FIELD(op_errno) = 0;
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
@@ -548,9 +548,8 @@ int MPIR_Reduce (
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     /* --BEGIN ERROR HANDLING-- */
-    if (p->op_errno)
-    {
-	mpi_errno = p->op_errno;
+    if (MPIU_THREADPRIV_FIELD(op_errno)) {
+	mpi_errno = MPIU_THREADPRIV_FIELD(op_errno);
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
@@ -590,6 +589,7 @@ int MPIR_Reduce_inter (
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(1);
 
     if (root == MPI_PROC_NULL) {
@@ -597,6 +597,7 @@ int MPIR_Reduce_inter (
         return MPI_SUCCESS;
     }
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     
     comm = comm_ptr->handle;

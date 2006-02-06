@@ -372,6 +372,8 @@ int MPI_Barrier( MPI_Comm comm )
     }
     else
     {
+	MPIU_THREADPRIV_DECL;
+	MPIU_THREADPRIV_GET;
         MPIR_Nest_incr();
         if (comm_ptr->comm_kind == MPID_INTRACOMM) {
 	    mpi_errno = MPIR_Barrier( comm_ptr );

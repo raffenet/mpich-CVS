@@ -55,6 +55,7 @@ int MPI_Keyval_free(int *keyval)
 {
     static const char FCNAME[] = "MPI_Keyval_free";
     int mpi_errno = MPI_SUCCESS;
+    MPIU_THREADPRIV_DECL;                                       \
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_KEYVAL_FREE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -74,6 +75,7 @@ int MPI_Keyval_free(int *keyval)
 
     /* ... body of routine ...  */
     
+    MPIU_THREADPRIV_GET;                                        \
     MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_free_keyval( keyval );
     MPIR_Nest_decr();

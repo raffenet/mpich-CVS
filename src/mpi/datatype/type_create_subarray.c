@@ -74,6 +74,7 @@ int MPI_Type_create_subarray(int ndims,
     MPID_Datatype *new_dtp;
 
     MPID_Datatype *datatype_ptr = NULL;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
 
@@ -82,6 +83,7 @@ int MPI_Type_create_subarray(int ndims,
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
 
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     
     /* Get handles to MPI objects. */

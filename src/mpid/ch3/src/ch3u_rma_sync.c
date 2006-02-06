@@ -33,11 +33,13 @@ int MPIDI_Win_fence(int assert, MPID_Win *win_ptr)
     MPIDI_RMA_dtype_info *dtype_infos=NULL;
     void **dataloops=NULL;    /* to store dataloops for each datatype */
     MPID_Progress_state progress_state;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(7);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_FENCE);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_FENCE);
 
+    MPIU_THREADPRIV_GET;
     /* In case this process was previously the target of passive target rma
      * operations, we need to take care of the following...
      * Since we allow MPI_Win_unlock to return without a done ack from
@@ -714,11 +716,13 @@ int MPIDI_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     int mpi_errno=MPI_SUCCESS;
     MPI_Group win_grp, post_grp;
     int i, post_grp_size, *ranks_in_post_grp, *ranks_in_win_grp, dst, rank;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_POST);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_POST);
 
+    MPIU_THREADPRIV_GET;
     /* Reset the fence counter so that in case the user has switched from fence to 
        post-wait synchronization, he cannot use the previous fence to mark the beginning 
        of a fence epoch.  */
@@ -896,11 +900,13 @@ int MPIDI_Win_complete(MPID_Win *win_ptr)
     void **dataloops=NULL;    /* to store dataloops for each datatype */
     MPI_Group win_grp, start_grp;
     int start_grp_size, *ranks_in_start_grp, *ranks_in_win_grp, rank;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(7);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_COMPLETE);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_COMPLETE);
 
+    MPIU_THREADPRIV_GET;
     MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
     comm_size = comm_ptr->local_size;
         

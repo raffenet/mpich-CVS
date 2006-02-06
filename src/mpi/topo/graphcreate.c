@@ -43,6 +43,10 @@ int MPIR_Graph_create( const MPID_Comm *comm_ptr, int nnodes,
     if (reorder) {
 	int nrank;
 	MPI_Comm ncomm;
+	MPIU_THREADPRIV_DECL;
+
+	MPIU_THREADPRIV_GET;
+
 	/* Allow the cart map routine to remap the assignment of ranks to 
 	   processes */
 	MPIR_Nest_incr();

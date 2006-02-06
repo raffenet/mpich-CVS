@@ -70,12 +70,15 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     static MPI_Datatype complex_types[] = { MPI_COMPLEX, MPI_DOUBLE_COMPLEX };
     MPI_Datatype matched_datatype = MPI_DATATYPE_NULL;
     int i, tsize;
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
+
+    MPIU_THREADPRIV_GET;
     
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING

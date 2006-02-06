@@ -37,6 +37,7 @@
 	*(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) *(pt_));		\
     }											\
+/*printf( "perthread storage (key = %x) is %p\n", MPIR_Process.thread_storage,*pt_); fflush(stdout);*/\
 }
 #endif
 
@@ -51,18 +52,23 @@
 #define MPID_CS_ENTER()
 #define MPID_CS_EXIT()
 #elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+/* FIXME: The "thread storage" needs to be moved out of this */
 #define MPID_CS_INITIALIZE()						\
 {									\
     MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);		\
-    MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);	\
+    MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);   \
 }
 #define MPID_CS_FINALIZE()						\
 {									\
     MPID_Thread_tls_destroy(&MPIR_Process.thread_storage, NULL);	\
     MPID_Thread_mutex_destroy(&MPIR_Process.global_mutex, NULL);	\
 }
+/* FIXME: Figure out what we want to do for the nest count on 
+   these routines, so as to avoid extra function calls */
 #define MPID_CS_ENTER()						\
 {								\
+    MPIU_THREADPRIV_DECL;                                       \
+    MPIU_THREADPRIV_GET;                                        \
     if (MPIR_Nest_value() == 0)					\
     { 								\
         MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");\
@@ -71,6 +77,8 @@
 }
 #define MPID_CS_EXIT()						\
 {								\
+    MPIU_THREADPRIV_DECL;                                       \
+    MPIU_THREADPRIV_GET;                                        \
     if (MPIR_Nest_value() == 0)					\
     { 								\
         MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");\

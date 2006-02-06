@@ -86,7 +86,7 @@ int MPIR_Exscan (
     MPI_User_function *uop;
     MPID_Op *op_ptr;
     MPI_Comm comm;
-    MPICH_PerThread_t *p;
+    MPIU_THREADPRIV_DECL;
 #ifdef HAVE_CXX_BINDING
     int is_cxx_uop = 0;
 #endif
@@ -98,8 +98,8 @@ int MPIR_Exscan (
     rank = comm_ptr->rank;
     
     /* set op_errno to 0. stored in perthread structure */
-    MPIR_GetPerThread(&p);
-    p->op_errno = 0;
+    MPIU_THREADPRIV_GET;
+    MPIU_THREADPRIV_FIELD(op_errno) = 0;
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
@@ -273,7 +273,8 @@ int MPIR_Exscan (
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
-    if (p->op_errno) mpi_errno = p->op_errno;
+    if (MPIU_THREADPRIV_FIELD(op_errno)) 
+	mpi_errno = MPIU_THREADPRIV_FIELD(op_errno);
 
     return (mpi_errno);
 }
@@ -404,6 +405,9 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
     }
     else
     {
+	MPIU_THREADPRIV_DECL;
+	MPIU_THREADPRIV_GET;
+
 	MPIR_Nest_incr();
 	mpi_errno = MPIR_Exscan(sendbuf, recvbuf, count, datatype,
                               op, comm_ptr); 

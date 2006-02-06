@@ -69,12 +69,15 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr1 = NULL;
     MPID_Comm *comm_ptr2 = NULL;
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_COMPARE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_COMPARE);
+
+    MPIU_THREADPRIV_GET;
     
 #   ifdef HAVE_ERROR_CHECKING
     {

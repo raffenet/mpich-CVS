@@ -22,11 +22,15 @@ int MPIDI_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     MPIU_CHKPMEM_DECL(4);
     MPIU_CHKLMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_CREATE);
+    MPIU_THREADPRIV_DECL;
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_CREATE);
 
+    /* FIXME: There should be no unreferenced args */
     MPIU_UNREFERENCED_ARG(info);
     MPIU_UNREFERENCED_ARG(RMAFns);
+
+    MPIU_THREADPRIV_GET;
 
     MPIR_Nest_incr();
         
@@ -114,12 +118,14 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, total_pt_rma_puts_accs, i, *recvcnts, comm_size;
     MPID_Comm *comm_ptr;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(1);
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_FREE);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_FREE);
         
+    MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
 
     /* set up the recvcnts array for the reduce scatter to check if all
@@ -194,11 +200,13 @@ int MPIDI_Put(void *origin_addr, int origin_count, MPI_Datatype
     MPID_Datatype *dtp;
     MPI_Aint dt_true_lb;
     MPIDI_msg_sz_t data_sz;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PUT);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_PUT);
 
+    MPIU_THREADPRIV_GET;
     MPIDI_Datatype_get_info(origin_count, origin_datatype,
 			    dt_contig, data_sz, dtp,dt_true_lb); 
     
@@ -291,12 +299,13 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
     MPI_Aint dt_true_lb;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
-        
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_GET);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_GET);
 
+    MPIU_THREADPRIV_GET;
     MPIDI_Datatype_get_info(origin_count, origin_datatype,
 			    dt_contig, data_sz, dtp, dt_true_lb); 
 
@@ -394,12 +403,14 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     MPI_Aint dt_true_lb;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
+    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
     MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_ACCUMULATE);
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_ACCUMULATE);
 
+    MPIU_THREADPRIV_GET;
     MPIDI_Datatype_get_info(origin_count, origin_datatype,
 			    dt_contig, data_sz, dtp, dt_true_lb);  
     

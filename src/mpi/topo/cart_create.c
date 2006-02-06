@@ -55,8 +55,11 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
        (but do not duplicate the attributes) */
     if (reorder) {
 	MPI_Comm ncomm;
+	MPIU_THREADPRIV_DECL;
+
 	/* Allow the cart map routine to remap the assignment of ranks to 
 	   processes */
+	MPIU_THREADPRIV_GET;
 	MPIR_Nest_incr();
 	mpi_errno = NMPI_Cart_map( comm_ptr->handle, ndims, (int *)dims, 
 				   (int *)periods, &rank );
