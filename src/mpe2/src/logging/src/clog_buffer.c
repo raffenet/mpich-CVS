@@ -352,7 +352,7 @@ void CLOG_Buffer_init_timeshift( CLOG_Buffer_t *buffer )
 {
     const CLOG_CommIDs_t  *commIDs;
     /*
-       The default CLOG_Rec_Timeshift recird needs to be saved before
+       The default CLOG_Rec_Timeshift record needs to be saved before
        CLOG_Buffer_t.timeshift_fptr is updated to account for the possibility
        that CLOG_Buffer_t.curr_block may not have enough room for a
        CLOG_Rec_Timeshift record.  After saving the record, the location
