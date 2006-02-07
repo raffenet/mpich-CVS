@@ -4501,7 +4501,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/mpi/errhan/Makefile \
           src/mpi/group/Makefile \
           src/mpi/init/Makefile \
-          src/mpi/io/Makefile \
           src/mpi/misc/Makefile \
           src/mpi/pt2pt/Makefile \
           src/mpi/rma/Makefile \
