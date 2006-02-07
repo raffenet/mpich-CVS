@@ -601,13 +601,7 @@ int MPIDI_CH3I_Acceptq_init(void);
   END MPI PORT SECTION 
   --------------------------*/
 
-#ifdef MPIDI_DEV_IMPLEMENTS_KVS
-
-#define MPIDI_MAX_KVS_NAME_LEN     256
-#define MPIDI_MAX_KVS_KEY_LEN      256
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
-
-#endif /* MPIDI_DEV_IMPLEMENTS_KVS */
 
 /* ------------------------------------------------------------------------- */
 /* mpirma.h (in src/mpi/rma?) */

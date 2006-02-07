@@ -19,6 +19,8 @@ static MPIDI_PG_Destroy_fn_t MPIDI_PG_Destroy_fn;
    of this process */
 static MPIDI_PG_t *pg_world = NULL;
 
+#define MPIDI_MAX_KVS_KEY_LEN      256
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Init
 #undef FCNAME
