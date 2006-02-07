@@ -1,6 +1,6 @@
 #ifndef PM_H
 #define PM_H
-
+#if 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,5 +19,5 @@ extern int pmi_val_max_sz;
 int pm_init (int *size, int *rank);
 void pm_finalize(void);
 
-
+#endif
 #endif

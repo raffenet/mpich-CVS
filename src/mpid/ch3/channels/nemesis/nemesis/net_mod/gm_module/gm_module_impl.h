@@ -6,22 +6,19 @@
 
 #define UNIQUE_ID_LEN 6 /* why doesn't GM define this? */
 
-typedef struct nodes_struct 
-{
-    unsigned port_id;
-    unsigned node_id;
-    unsigned char unique_id[UNIQUE_ID_LEN];
-} node_t;
+/* typedef struct nodes_struct  */
+/* { */
+/*     unsigned port_id; */
+/*     unsigned node_id; */
+/*     unsigned char unique_id[UNIQUE_ID_LEN]; */
+/* } node_t; */
 
-extern node_t *nodes;
+/* extern node_t *nodes; */
 
 #define PACKET_SIZE (gm_min_size_for_length (MPID_NEM_MAX_PACKET_LEN))
 
 extern int num_send_tokens;
 extern int num_recv_tokens;
-
-extern int numnodes;
-extern int rank;
 
 extern struct gm_port *port;
 
@@ -74,7 +71,6 @@ typedef struct gm_module_rdma_desc
     void *target_p;
     void *source_p;
     int len;
-    int node;
     int *completion_ctr;
 }
 gm_module_rdma_desc_t;
@@ -82,6 +78,8 @@ gm_module_rdma_desc_t;
 typedef struct gm_module_send_queue
 {
     struct gm_module_send_queue *next;
+    int node_id;
+    int port_id;
     enum {SEND_TYPE_RDMA, SEND_TYPE_CELL} type;
     union 
     {

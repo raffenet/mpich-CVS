@@ -11,7 +11,7 @@
 #define TCP_POLL_FREQ_ALONE 1
 #define TCP_POLL_FREQ_NO   -1
 
-typedef struct internal_queue
+typedef struct tcp_module_internal_queue
 {
     MPID_nem_abs_cell_ptr_t     head;
     MPID_nem_abs_cell_ptr_t     tail;

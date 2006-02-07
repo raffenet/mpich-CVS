@@ -3,7 +3,12 @@
 
 #include "mpid_nem_datatypes.h"
 #include "mpidi_ch3i_nemesis_conf.h"
+#include "mpidimpl.h"
 #include "mpi.h"
+#include "pmi.h"
+
+#define MAX_HOSTNAME_LEN 256
+extern char MPID_nem_hostname[MAX_HOSTNAME_LEN];
 
 /* #define ENABLED_CHECKPOINTING */
 
@@ -19,6 +24,8 @@
 #define MPID_NEM_NO_MODULE    0
 #define MPID_NEM_GM_MODULE    1
 #define MPID_NEM_TCP_MODULE   2
+
+typedef enum {MPID_NEM_POLL_IN, MPID_NEM_POLL_OUT} MPID_nem_poll_dir_t;
 
 #define MPID_NEM_POLL_IN      0
 #define MPID_NEM_POLL_OUT     1

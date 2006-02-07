@@ -1,6 +1,7 @@
 #include "pm.h"
 #include "mpid_nem_debug.h"
 
+#if 0
 char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
 
 #define ERROR(err...) do {					\
@@ -83,3 +84,4 @@ pm_finalize()
 {
     PMI_Finalize();
 }
+#endif

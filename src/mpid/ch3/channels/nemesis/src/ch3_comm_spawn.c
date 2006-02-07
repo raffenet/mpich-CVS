@@ -81,3 +81,18 @@ int MPIDI_CH3_Comm_connect(char *port_name, int root, MPID_Comm
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_COMM_CONNECT);
     return mpi_errno;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Get_business_card (char *value, int length)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    
+    ret = MPID_nem_get_business_card (value, length);
+    if (ret != 0)
+	mpi_errno =  MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0);
+    return mpi_errno;
+}

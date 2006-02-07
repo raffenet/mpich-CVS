@@ -51,11 +51,11 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	int _n_iov = n_iov;
 
 	MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet with sendv_header\n"));
-	shmem_errno = MPID_nem_mpich2_sendv_header (&_iov, &_n_iov, vc->lpid);
+	shmem_errno = MPID_nem_mpich2_sendv_header (&_iov, &_n_iov, vc);
 	while ((shmem_errno != MPID_NEM_MPICH2_AGAIN) && (_n_iov > 0))
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet with sendv \n"));
-	    shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, vc->lpid);
+	    shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, vc);
 	}
 
 	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)

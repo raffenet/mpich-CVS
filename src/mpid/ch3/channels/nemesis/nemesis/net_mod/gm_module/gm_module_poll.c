@@ -107,7 +107,7 @@ lmt_poll()
 }
 
 
-void
+static inline void
 gm_module_send_poll( void )
 {
     send_from_queue();
@@ -115,7 +115,7 @@ gm_module_send_poll( void )
     gm_module_recv();
 }
 
-void
+static inline void
 gm_module_recv_poll( void )
 {
     gm_module_recv();
@@ -124,14 +124,14 @@ gm_module_recv_poll( void )
 }
 
 void
-gm_module_poll(int in_or_out)
+gm_module_poll(MPID_nem_poll_dir_t in_or_out)
 {
-  if (in_or_out == MPID_NEM_POLL_OUT)
+    if (in_or_out == MPID_NEM_POLL_OUT)
     {
-      gm_module_send_poll();
+	gm_module_send_poll();
     }
-  else
+    else
     {
-      gm_module_recv_poll();
+	gm_module_recv_poll();
     }
 }

@@ -7,7 +7,7 @@ tcp_module_finalize ()
     long int toto = 1000;
     
 #ifdef TRACE
-    fprintf(stderr,"[%i] --- TCP END PENDING SEND & RECV \n",rank);
+    fprintf(stderr,"[%i] --- TCP END PENDING SEND & RECV \n",MPID_nem_mem_region.rank);
 #endif
     while( n_pending_send > 0 )
     {
@@ -15,12 +15,12 @@ tcp_module_finalize ()
     }
 
 #ifdef TRACE
-    fprintf(stderr,"[%i] --- TCP END PENDING DONE  1\n",rank);
+    fprintf(stderr,"[%i] --- TCP END PENDING DONE  1\n",MPID_nem_mem_region.rank);
 #endif
     while(--toto)
 	tcp_module_poll( 1 );
 #ifdef TRACE
-    fprintf(stderr,"[%i] --- TCP END PENDING DONE  2\n",rank);
+    fprintf(stderr,"[%i] --- TCP END PENDING DONE  2\n",MPID_nem_mem_region.rank);
 #endif
 
     return tcp_module_ckpt_shutdown ();    
@@ -33,10 +33,10 @@ tcp_module_ckpt_shutdown ()
     int         grank;
     
     /* close the sockets */
-    for (index = 0 ; index < ext_numnodes ; index++)
+    for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
     {
-	grank = ext_ranks[index];
-	if ((grank != rank) && (!MPID_NEM_IS_LOCAL (grank)))
+	grank = MPID_nem_mem_region.ext_ranks[index];
+	if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
 	{
 	    shutdown (nodes[grank].desc, SHUT_RDWR);
 	    close (nodes[grank].desc);
@@ -44,7 +44,7 @@ tcp_module_ckpt_shutdown ()
     }
 
 #ifdef TRACE
-    fprintf(stderr,"[%i] --- sockets closed .... \n",rank);
+    fprintf(stderr,"[%i] --- sockets closed .... \n",MPID_nem_mem_region.rank);
 #endif
 
     return 0 ;

@@ -18,7 +18,7 @@ getput_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 int
 gm_module_get (void *target_p, void *source_p, int len, int source_node, int *completion_ctr)
 {
-    assert (source_node >= 0 && source_node < numnodes);
+    assert (source_node >= 0 && source_node < MPID_nem_mem_region.num_procs);
     assert (len >= 0);
     
     if (len == 0)
@@ -66,7 +66,7 @@ gm_module_get (void *target_p, void *source_p, int len, int source_node, int *co
 int
 gm_module_put (void *target_p, void *source_p, int len, int target_node, int *completion_ctr)
 {
-    assert (target_node >= 0 && target_node < numnodes);
+    assert (target_node >= 0 && target_node < MPID_nem_mem_region.num_procs);
     assert (len >= 0);
     
     if (len == 0)

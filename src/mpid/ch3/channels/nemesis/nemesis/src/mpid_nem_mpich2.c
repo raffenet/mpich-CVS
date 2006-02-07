@@ -102,14 +102,14 @@ MPID_nem_mpich2_init (int ckpt_restart)
 }
 
 /*
-  int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest);
+  int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc);
 
-  sends checkpoint marker with wave number wave to dest
+  sends checkpoint marker with wave number wave to vc
   Non-blocking
   returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
 */
 int
-MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
+MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
 {
 #ifdef ENABLED_CHECKPOINTING
     MPID_nem_cell_ptr_t el;
@@ -136,19 +136,20 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 #endif  /*PREFETCH_CELL      */
 
     el->pkt.ckpt.source  = my_rank;
-    el->pkt.ckpt.dest    = dest;
+    el->pkt.ckpt.dest    = vc->lpid;
     el->pkt.ckpt.datalen = sizeof(el->pkt.ckpt.wave); /* FIXME: we need a way to handle packet types w/ different sizes */
-    el->pkt.ckpt.seqno   = send_seqno[dest]++;
+    el->pkt.ckpt.seqno   = send_seqno[vc->lpid]++;
     el->pkt.ckpt.type = MPID_NEM_PKT_CKPT;
     el->pkt.ckpt.wave = wave;
 
-    if(MPID_NEM_IS_LOCAL (dest))
+    if(MPID_NEM_IS_LOCAL (vc->lpid))
     {
-	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
+	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[vc->lpid], el);
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
     }
     else
     {
-        MPID_nem_net_module_send (dest, el, el->pkt.ckpt.datalen);
+        MPID_nem_net_module_send (vc, el, el->pkt.ckpt.datalen);
     }
 
 
@@ -164,15 +165,15 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest)
 
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /*
-  int MPID_nem_mpich2_send (void* buf, int size, int dest);
+  int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc);
 
-  sends buf to dest
+  sends buf to vc
   Non-blocking
   size must not be greater than MPID_NEM_MPICH2_DATA_LEN
   returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
 */
 int
-MPID_nem_mpich2_send (void* buf, int size, int dest)
+MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 {
     MPID_nem_cell_ptr_t el;
     int my_rank;
@@ -197,7 +198,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     if (!el)
     {
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
-	  return MPID_NEM_MPICH2_AGAIN;
+	    return MPID_NEM_MPICH2_AGAIN;
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
@@ -205,7 +206,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank])) 
     { 
-      return MPID_NEM_MPICH2_AGAIN;
+	return MPID_NEM_MPICH2_AGAIN;
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
@@ -216,9 +217,9 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     el->pkt.mpich2.source  = my_rank;
-    el->pkt.mpich2.dest    = dest;
+    el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = size;
-    el->pkt.mpich2.seqno   = send_seqno[dest]++;
+    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
@@ -226,13 +227,14 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if(MPID_NEM_IS_LOCAL (dest))
+    if(MPID_NEM_IS_LOCAL (vc->lpid))
     {
-	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
+	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[vc->lpid], el);
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
     }
     else
     {
-        MPID_nem_net_module_send (dest, el, size);
+        MPID_nem_net_module_send (vc, el, size);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
     DO_PAPI (PAPI_reset (PAPI_EventSet));
@@ -254,7 +256,7 @@ MPID_nem_mpich2_send (void* buf, int size, int dest)
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /* same as above, but sends MPICH2 32 byte header */
 int
-MPID_nem_mpich2_send_header (void* buf, int size, int dest)
+MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 {
     MPID_nem_cell_ptr_t el;
     int my_rank;
@@ -274,9 +276,9 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     my_rank = MPID_nem_mem_region.rank;
 
 #ifdef USE_FASTBOX
-    if (MPID_NEM_IS_LOCAL (dest))
+    if (MPID_NEM_IS_LOCAL (vc->lpid))
     {
-	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[dest]]->mpich2;
+	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	int count = 10;
 	u_int32_t *payload_32 = (u_int32_t *)pbox->cell.pkt.mpich2.payload;
 	u_int32_t *buf_32 = (u_int32_t *)buf;
@@ -289,7 +291,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    //pbox->cell.pkt.mpich2.datalen = size; 
+	    pbox->cell.pkt.mpich2.datalen = size;
 	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
@@ -339,7 +341,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
     {
-      return MPID_NEM_MPICH2_AGAIN;
+	return MPID_NEM_MPICH2_AGAIN;
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
@@ -350,9 +352,9 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     el->pkt.mpich2.source  = my_rank;
-    el->pkt.mpich2.dest    = dest;
+    el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = size;
-    el->pkt.mpich2.seqno   = send_seqno[dest]++;
+    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
@@ -381,13 +383,14 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if (MPID_NEM_IS_LOCAL (dest))
+    if (MPID_NEM_IS_LOCAL (vc->lpid))
     {
-	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[dest], el);
+	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[vc->lpid], el);
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
     }
     else
     {
-        MPID_nem_net_module_send (dest, el, size);
+        MPID_nem_net_module_send (vc, el, size);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
     DO_PAPI (PAPI_reset (PAPI_EventSet));    
@@ -407,16 +410,16 @@ MPID_nem_mpich2_send_header (void* buf, int size, int dest)
 #endif
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /*
-  int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
+  int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int vc);
 
-  sends iov to dest
+  sends iov to vc
   Non-blocking
   if iov specifies more than MPID_NEM_MPICH2_DATA_LEN of data, the iov will be truncated, so that after MPID_nem_mpich2_sendv returns,
-      iov will describe unsent data
+  iov will describe unsent data
   returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
 */
 int
-MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
+MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int vc)
 {
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
@@ -480,20 +483,21 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
     }
 
     el->pkt.mpich2.source  = my_rank;
-    el->pkt.mpich2.dest    = dest;
+    el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
-    el->pkt.mpich2.seqno   = send_seqno[dest]++;
+    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
-    if(MPID_NEM_IS_LOCAL (dest))
+    if(MPID_NEM_IS_LOCAL (vc->lpid))
     {
-	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);
+	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[vc->lpid], el);
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
     }
     else
     {
-        MPID_nem_net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+        MPID_nem_net_module_send (vc, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
     }
 
 #ifdef PREFETCH_CELL
@@ -509,7 +513,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest)
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 /* same as above but first iov element is an MPICH2 32 byte header */
 int
-MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
+MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 {
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
@@ -530,9 +534,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     my_rank = MPID_nem_mem_region.rank;
 
 #ifdef USE_FASTBOX
-    if (MPID_NEM_IS_LOCAL (dest) && (*n_iov == 2 && (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN <= MPID_NEM_FBOX_DATALEN))
+    if (MPID_NEM_IS_LOCAL (vc->lpid) && (*n_iov == 2 && (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN <= MPID_NEM_FBOX_DATALEN))
     {
-	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[dest]]->mpich2;
+	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	int count = 10;
 	u_int32_t *payload_32 = (u_int32_t *)(pbox->cell.pkt.mpich2.payload ) ;
 	u_int32_t *buf_32 = (u_int32_t *)(*iov)->iov_base;
@@ -546,8 +550,8 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 #endif /*BLOCKING_FBOX */
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
-	    //pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN; 
-	    pbox->cell.pkt.mpich2.seqno   = send_seqno[dest]++;
+	    pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN;
+	    pbox->cell.pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
@@ -649,20 +653,21 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
     }
 
     el->pkt.mpich2.source  = my_rank;
-    el->pkt.mpich2.dest    = dest;
+    el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
-    el->pkt.mpich2.seqno   = send_seqno[dest]++;
+    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
-    if (MPID_NEM_IS_LOCAL (dest))
+    if (MPID_NEM_IS_LOCAL (vc->lpid))
     {    
-	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[dest], el);	
+	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[vc->lpid], el);	
+	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
     }
     else
     {
-        MPID_nem_net_module_send (dest, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+        MPID_nem_net_module_send (vc, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
     }
 
 #ifdef PREFETCH_CELL
@@ -676,6 +681,13 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
 }
 #endif
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
+/*
+  MPID_nem_mpich2_dequeue_fastbox (int local_rank)
+  decrements usage count on fastbox for process with local rank local_rank and
+  dequeues it from fbox queue if usage is 0.
+  This function is called whenever a receive for a process on this node is matched.
+  Fastboxes on fbox queue are polled regularly for incoming messages.
+*/
 int
 MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 {
@@ -710,7 +722,7 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 	    else
 		curr_fboxq_elem = el->next;
 	}
-     }
+    }
     
  exit_l:
     return ret;
@@ -718,6 +730,12 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 #endif
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
+/*
+  MPID_nem_mpich2_enqueue_fastbox (int local_rank)
+  enqueues fastbox for process with local rank local_rank on fbox queue
+  This function is called whenever a receive is posted for a process on this node.
+  Fastboxes on fbox queue are polled regularly for incoming messages.
+*/
 int
 MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 {
@@ -753,6 +771,11 @@ MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 #endif
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
+/*
+  recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
+  check whether the sequence number for the cell at the head of qhead is the one
+  expected from the sender of that cell
+*/
 int
 recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 {
@@ -797,9 +820,9 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-      {
+    {
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
-      }
+    }
 
     if (MPID_nem_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank]))
     {
@@ -827,21 +850,27 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
+/*
+  int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
+
+  blocking receive with timeout
+  waits up to timeout iterations to receive a cell
+  sets cell to the received cell, or NULL if there is nothing to receive. in_fbox is true iff the cell was found in a fbox
+  the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
+*/
 int
 MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout)
 {
     int my_rank = MPID_nem_mem_region.rank;
-
-    DO_PAPI (PAPI_reset (PAPI_EventSet));
 
 #ifdef USE_FASTBOX
     poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-      {
+    {
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
-      }
+    }
 
     while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank])))
     {
@@ -857,20 +886,21 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
  exit_l:
-    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues6));
     return MPID_NEM_MPICH2_SUCCESS;
 }
 #endif
 #ifndef MPID_NEM_DONT_INLINE_FUNCTIONS
 
 
-/*  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+/*
+  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 
   blocking receive
   waits until there is something to receive, then sets cell to the received cell. in_fbox is true iff the cell was found in a fbox
   the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
 */
-int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
+int
+MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int my_rank = MPID_nem_mem_region.rank;
 #ifndef ENABLE_NO_SCHED_YIELD
@@ -978,14 +1008,14 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell)
   releases the fbox back to the subsystem to be used for subsequent receives
 */
 /*
-int 
-MPID_nem_mpich2_release_fbox (MPID_nem_cell_ptr_t cell) 
- { 
-   DO_PAPI (PAPI_reset (PAPI_EventSet)); 
-   MPID_nem_mem_region.mailboxes.in[cell->pkt.mpich2.source]->mpich2.flag.value = 0; 
-   DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9)); 
-   return MPID_NEM_MPICH2_SUCCESS; 
- }
+  int 
+  MPID_nem_mpich2_release_fbox (MPID_nem_cell_ptr_t cell) 
+  { 
+  DO_PAPI (PAPI_reset (PAPI_EventSet)); 
+  MPID_nem_mem_region.mailboxes.in[cell->pkt.mpich2.source]->mpich2.flag.value = 0; 
+  DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9)); 
+  return MPID_NEM_MPICH2_SUCCESS; 
+  }
 */
 
 
@@ -997,7 +1027,7 @@ MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iov
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-      if (gm_module_lmt_send_pre (iov, n_iov, dest, cookie) != 0)
+	if (gm_module_lmt_send_pre (iov, n_iov, dest, cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -1028,7 +1058,7 @@ MPID_nem_mpich2_lmt_start_send (int dest, struct iovec s_cookie, struct iovec r_
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-      gm_module_lmt_start_send (dest, s_cookie, r_cookie, completion_ctr);
+	gm_module_lmt_start_send (dest, s_cookie, r_cookie, completion_ctr);
     }
     
     return ret;
@@ -1041,7 +1071,7 @@ MPID_nem_mpich2_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_c
     
     if (!MPID_NEM_IS_LOCAL (src))
     {
-      gm_module_lmt_start_recv (src, s_cookie, r_cookie, completion_ctr);
+	gm_module_lmt_start_recv (src, s_cookie, r_cookie, completion_ctr);
     }
     
     return ret;

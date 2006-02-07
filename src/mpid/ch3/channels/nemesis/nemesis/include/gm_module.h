@@ -3,14 +3,13 @@
 
 int gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, MPID_nem_cell_ptr_t proc_elements,
 		    int num_proc_elements, MPID_nem_cell_ptr_t module_elements, int num_module_elements,
-		    MPID_nem_queue_ptr_t *module_recv_queue, MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart);
-int gm_module_finalize( void );
-int gm_module_ckpt_shutdown( void );
-void gm_module_send (int dest, MPID_nem_cell_ptr_t cell, int datalen);
-void gm_module_send_poll( void );
-void gm_module_recv_poll( void );
-void gm_module_poll( int );
-int gm_module_test( void );
+		    MPID_nem_queue_ptr_t *module_recv_queue, MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart, MPIDI_PG_t *pg_p);
+int gm_module_finalize (void);
+int gm_module_ckpt_shutdown (void);
+void gm_module_poll(MPID_nem_poll_dir_t in_or_out);
+void gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
+
+int gm_module_test (void);
 
 int gm_module_register_mem (void *p, int len);
 int gm_module_deregister_mem (void *p, int len);
@@ -26,6 +25,10 @@ int gm_module_lmt_start_send (int dest, struct iovec s_cookie, struct iovec r_co
 int gm_module_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
 int gm_module_lmt_send_post (struct iovec cookie);
 int gm_module_lmt_recv_post (struct iovec cookie);
+
+int gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p);
+int gm_module_connect_to_root (const char *business_card, const int lpid);
+
 
 #define LMT_COMPLETE 0
 #define LMT_FAILURE 1

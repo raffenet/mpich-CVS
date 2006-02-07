@@ -21,7 +21,7 @@
 /*#warning "SKIP is do ...while" */
 #endif /* YIELD_IN_SKIP */
 
-/* #define HOLD_ON_ERROR */
+#define HOLD_ON_ERROR 
 #ifdef HOLD_ON_ERROR
 #define MAYBE_HOLD_ON_ERROR(x) while(1)
 #else /* HOLD_ON_ERROR */

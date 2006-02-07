@@ -25,11 +25,11 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 	{
 	    int index;
 	    fprintf(stderr,"[%i] -- TCP DIRECT SEND : sent ALL MSG (%i len, payload is %i , datalen %i)\n",
-		    rank, offset, pkt->mpich2.datalen,datalen);
+		    MPID_nem_mem_region.rank, offset, pkt->mpich2.datalen,datalen);
 	    /*
 	      for(index = 0 ; index < ((pkt->mpich2.datalen)/sizeof(int)); index ++)
 	      {
-	      fprintf(stderr,"[%i] --- cell[%i] : %i\n",rank,index,((int *)&(cell->pkt.mpich2))[index] );
+	      fprintf(stderr,"[%i] --- cell[%i] : %i\n",MPID_nem_mem_region.rank,index,((int *)&(cell->pkt.mpich2))[index] );
 	      }
 	    */
 	}
@@ -39,10 +39,10 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
     else if(offset != -1)
     {
 #ifdef TRACE
-	fprintf(stderr,"[%i] -- TCP DIRECT SEND : sent PARTIAL  MSG (%i offset, payload is %i)\n",rank,offset, pkt->mpich2.datalen);
+	fprintf(stderr,"[%i] -- TCP DIRECT SEND : sent PARTIAL  MSG (%i offset, payload is %i)\n",MPID_nem_mem_region.rank,offset, pkt->mpich2.datalen);
 #endif
 
-	cell->pkt.mpich2.source = rank;
+	cell->pkt.mpich2.source = MPID_nem_mem_region.rank;
 	cell->pkt.mpich2.dest   = dest;
 	nodes[dest].left2write      = offset;
 	internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
@@ -55,9 +55,9 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 	{
 
 #ifdef TRACE
-	    fprintf(stderr,"[%i] -- TCP DIRECT SEND : Direct EnQ \n",rank );
+	    fprintf(stderr,"[%i] -- TCP DIRECT SEND : Direct EnQ \n",MPID_nem_mem_region.rank );
 #endif
-	    cell->pkt.mpich2.source = rank;
+	    cell->pkt.mpich2.source = MPID_nem_mem_region.rank;
 	    cell->pkt.mpich2.dest   = dest;
 	    nodes[dest].left2write      = 0;
 	    internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
@@ -72,25 +72,27 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 }
 
 void
-tcp_module_send (int dest, MPID_nem_cell_ptr_t cell, int datalen)
+tcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 {
-  DO_PAPI3 (PAPI_reset (PAPI_EventSet));
-  cell->pkt.mpich2.datalen = datalen;
-  if ( n_pending_sends[dest] == 0 )
+    int dest = vc->lpid;
+    
+    DO_PAPI3 (PAPI_reset (PAPI_EventSet));
+    cell->pkt.mpich2.datalen = datalen;
+    if ( n_pending_sends[dest] == 0 )
     {
-      DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
-      send_cell (dest, cell, datalen);
-      DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues16));
+	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
+	send_cell (dest, cell, datalen);
+	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues16));
     }
-  else
+    else
     {
-      DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
-      cell->pkt.mpich2.source  = rank;
-      cell->pkt.mpich2.dest    = dest;
-      internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
-      n_pending_send++;
-      n_pending_sends[dest]++;
-      tcp_module_poll_send();
-      DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues17));
+	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
+	cell->pkt.mpich2.source  = MPID_nem_mem_region.rank;
+	cell->pkt.mpich2.dest    = dest;
+	internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
+	n_pending_send++;
+	n_pending_sends[dest]++;
+	tcp_module_poll_send();
+	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues17));
     }
 }

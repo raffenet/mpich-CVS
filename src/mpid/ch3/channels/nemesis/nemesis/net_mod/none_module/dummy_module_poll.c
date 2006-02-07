@@ -12,7 +12,7 @@ tcp_module_poll_recv( void  )
 }
 
 void 
-dummy_module_poll( int in_or_out )
+dummy_module_poll (MPID_nem_poll_dir_t in_or_out)
 {  
   return;
 }

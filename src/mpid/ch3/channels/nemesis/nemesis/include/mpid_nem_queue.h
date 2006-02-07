@@ -15,12 +15,12 @@ inline void   MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int);
 inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell);
 static inline void MPID_nem_dump_queue( MPID_nem_queue_ptr_t q) {printf ("dump queue not implemented\n"); exit (-1);};
 inline void MPID_nem_queue_init( MPID_nem_queue_ptr_t );
-void MPID_nem_network_poll (int in_or_out);
+void MPID_nem_network_poll (MPID_nem_poll_dir_t in_or_out);
 
 /* inline void MPID_nem_rel_cell_init( MPID_nem_cell_ptr_t cell); */
 /* static inline void MPID_nem_rel_dump_queue( MPID_nem_queue_ptr_t q){printf ("dump queue not implemented\n"); exit (-1);}; */
 /* inline void MPID_nem_rel_queue_init( MPID_nem_queue_ptr_t ); */
-/* void MPID_nem_rel_network_poll (int in_or_out); */
+/* void MPID_nem_rel_network_poll (MPID_nem_poll_dir_t in_or_out); */
 
 #define MPID_NEM_USE_SHADOW_HEAD
 #define MPID_NEM_USE_MACROS
@@ -457,7 +457,7 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 
 #ifdef MPID_NEM_USE_SHADOW_HEAD
 static inline 
-void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, int in_or_out)
+void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_out)
 {
     MPID_nem_network_poll (in_or_out);
     if (MPID_NEM_IS_REL_NULL (qhead->my_head))
@@ -472,7 +472,7 @@ void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, int in_or_out)
     }
 }
 #else 
-static inline void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, int in_or_out)
+static inline void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_out)
 {
     MPID_nem_network_poll (in_or_out);    
     while (MPID_NEM_IS_REL_NULL (qhead->head))
@@ -485,7 +485,7 @@ static inline void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, int in_or_ou
 
 /* #ifdef MPID_NEM_USE_SHADOW_HEAD */
 /* static inline  */
-/* void MPID_nem_rel_queue_poll (MPID_nem_queue_ptr_t rel_qhead, int in_or_out) */
+/* void MPID_nem_rel_queue_poll (MPID_nem_queue_ptr_t rel_qhead, MPID_nem_poll_dir_t in_or_out) */
 /* { */
 /*     MPID_nem_queue_ptr_t  qhead = MPID_NEM_REL_TO_ABS( rel_qhead ); */
 
@@ -502,7 +502,7 @@ static inline void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, int in_or_ou
 /*     } */
 /* } */
 /* #else  */
-/* static inline void MPID_nem_rel_queue_poll (MPID_nem_queue_ptr_t rel_qhead, int in_or_out) */
+/* static inline void MPID_nem_rel_queue_poll (MPID_nem_queue_ptr_t rel_qhead, MPID_nem_poll_dir_t in_or_out) */
 /* { */
 /*     MPID_nem_queue_ptr_t  qhead = MPID_NEM_REL_TO_ABS( rel_qhead ); */
 

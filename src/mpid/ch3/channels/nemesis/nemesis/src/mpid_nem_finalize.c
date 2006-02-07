@@ -1,6 +1,6 @@
 #include "mpid_nem.h"
+#include "mpidimpl.h"
 #include "mpid_nem_nets.h"
-#include "pm.h"
 
 int MPID_nem_finalize()
 {
@@ -14,7 +14,7 @@ int MPID_nem_finalize()
 	SKIP;
     }
     MPID_nem_net_module_finalize();
-    munmap(MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
+    munmap (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
 
 #ifdef PAPI_MONITOR
     my_papi_close();
@@ -24,7 +24,6 @@ int MPID_nem_finalize()
     if (ret != 0)
 	FATAL_ERROR ("PMI_Barrier failed %d", ret);
 
-    pm_finalize();
     return MPID_NEM_RET_OK;
 }
 

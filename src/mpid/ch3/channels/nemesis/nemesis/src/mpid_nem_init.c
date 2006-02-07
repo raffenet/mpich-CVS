@@ -1,7 +1,6 @@
 #include "mpid_nem.h"
+#include "mpidimpl.h"
 #include "mpid_nem_nets.h"
-#include "pm.h"
-
 
 #ifdef MEM_REGION_IN_HEAP
 MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
@@ -9,6 +8,7 @@ MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
 MPID_nem_mem_region_t MPID_nem_mem_region;
 #endif /* MEM_REGION_IN_HEAP */
 
+char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
 char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 
 #define MIN( a , b ) ((a) >  (b)) ? (b) : (a)
@@ -16,23 +16,24 @@ char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 
 #define ERROR(err...) ERROR_RET (-1, err)
 
+static int intcompar (const void *a, const void *b) { return *(int *)a - *(int *)b; }
+
 char *MPID_nem_asymm_base_addr;
 
-int get_local_procs (int *num_local, int **local_procs, int *local_rank);
+int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank);
 int get_MPID_nem_key();
 
 int
-MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs)
+MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 {
-    return  _MPID_nem_init (argc, argv, myrank, num_procs, 0);
+    return  _MPID_nem_init (rank, pg_p, 0);
 }
 
 int
-_MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_restart)
-{   
+_MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
+{
+    int num_procs = pg_p->size;
     pid_t            my_pid;
-    int              num_processes;
-    int              rank;
     int              ret;
     int              num_local;
     int             *local_procs;
@@ -41,13 +42,13 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     int              index, index2, size;
     int i;
 
-    ret = pm_init (&num_processes, &rank);
-    if (ret != 0)
-	FATAL_ERROR ("pm_init() failed");
+    gethostname (MPID_nem_hostname, MAX_HOSTNAME_LEN);
+    MPID_nem_hostname[MAX_HOSTNAME_LEN-1] = '\0';
 
-    ret = get_local_procs (&num_local, &local_procs, &local_rank);
+    ret = get_local_procs (rank, num_procs, &num_local, &local_procs, &local_rank);
     if (ret != 0)
-	FATAL_ERROR ("get_local_procs() failed");
+    	FATAL_ERROR ("get_local_procs() failed");
+    
 
 #ifdef MEM_REGION_IN_HEAP
     MPID_nem_mem_region_ptr = MALLOC (sizeof(MPID_nem_mem_region_t));
@@ -64,19 +65,19 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	FATAL_ERROR ("malloc failed");
     MPID_nem_mem_region.rank           = rank;
     MPID_nem_mem_region.num_local      = num_local;
-    MPID_nem_mem_region.num_procs      = num_processes;
+    MPID_nem_mem_region.num_procs      = num_procs;
     MPID_nem_mem_region.local_procs    = local_procs;
     MPID_nem_mem_region.local_rank     = local_rank;
-    MPID_nem_mem_region.local_ranks    = (int *)MALLOC (num_processes* sizeof(int));
+    MPID_nem_mem_region.local_ranks    = (int *)MALLOC (num_procs* sizeof(int));
     if (MPID_nem_mem_region.local_ranks == NULL)
 	FATAL_ERROR ("malloc failed");
-    MPID_nem_mem_region.ext_procs      = num_processes - num_local ; 
+    MPID_nem_mem_region.ext_procs      = num_procs - num_local ; 
     MPID_nem_mem_region.ext_ranks      = (int *)MALLOC (MPID_nem_mem_region.ext_procs * sizeof(int));
     if (MPID_nem_mem_region.ext_ranks == NULL)
 	FATAL_ERROR ("malloc failed");
     MPID_nem_mem_region.next           = NULL;
     
-    for (index = 0 ; index < num_processes; index++)
+    for (index = 0 ; index < num_procs; index++)
     {
 	MPID_nem_mem_region.local_ranks[index] = MPID_NEM_NON_LOCAL;
     }
@@ -87,36 +88,13 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     }
 
     index2 = 0;
-    for(index = 0 ; index < num_processes ; index++)
+    for(index = 0 ; index < num_procs ; index++)
     {
 	if( ! MPID_NEM_IS_LOCAL (index))
 	{
 	    MPID_nem_mem_region.ext_ranks[index2++] = index;
 	}
     }
-    /*
-    fprintf(stderr,"=========== TOPOLOGY 1 for [%i]==============\n",rank);
-    for(index = 0 ; index < num_processes ; index ++)
-      {
-	fprintf(stderr," Proc grank %i  is  lrank %i \n", 
-		index,
-		MPID_nem_mem_region.local_ranks[index]);
-      }
-    fprintf(stderr,"=========== TOPOLOGY 2 for [%i]==============\n",rank);
-    for(index = 0 ; index < num_local ; index ++)
-      {
-	fprintf(stderr," Proc lrank %i  is  grank %i \n", 
-		index,
-		MPID_nem_mem_region.local_procs[index]);
-      }
-    fprintf(stderr,"=========== TOPOLOGY 3 for [%i]==============\n",rank);
-    for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index ++)
-      {
-	fprintf(stderr," Ext proc index %i  is  grank %i \n", 
-		index,
-		MPID_nem_mem_region.ext_ranks[index]);
-      }    
-    */
 
     /* Global size for the segment */
     /* Data cells + Header Qs + control blocks + Net data cells + POBoxes */
@@ -149,10 +127,10 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     /*fprintf(stderr,"[%i] -- address shift ok \n",rank); */
 #endif  /*FORCE_ASYM */
 
-/*     if (num_local > 1) */
-/* 	MPID_nem_mem_region.map_lock = make_sem (local_rank, num_local, 0); */
+    /*     if (num_local > 1) */
+    /* 	MPID_nem_mem_region.map_lock = make_sem (local_rank, num_local, 0); */
     
-    MPID_nem_seg_create (&(MPID_nem_mem_region.memory), global_size, num_local, local_rank);
+    MPID_nem_seg_create (&(MPID_nem_mem_region.memory), global_size, num_local, local_rank, pg_p);
     MPID_nem_check_alloc (num_local);    
 
     /* Fastpath boxes */
@@ -187,9 +165,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	FATAL_ERROR ("PMI_Barrier failed %d", ret);
 
     my_pid = getpid();
-    MPID_NEM_MEMCPY(&(((pid_t *)(MPID_nem_mem_region.seg[0].addr))[local_rank]),
-		    &my_pid,
-		    sizeof(pid_t));
+    MPID_NEM_MEMCPY (&(((pid_t *)(MPID_nem_mem_region.seg[0].addr))[local_rank]), &my_pid, sizeof(pid_t));
    
     /* syncro part */  
     MPID_nem_barrier (num_local, local_rank);   
@@ -202,8 +178,8 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     /* SHMEM QS */
     MPID_nem_mem_region.Elements =
 	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[1].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));    
-    MPID_nem_mem_region.FreeQ = (MPID_nem_queue_ptr_t *)MALLOC (num_processes * sizeof(MPID_nem_queue_ptr_t));
-    MPID_nem_mem_region.RecvQ = (MPID_nem_queue_ptr_t *)MALLOC (num_processes * sizeof(MPID_nem_queue_ptr_t));
+    MPID_nem_mem_region.FreeQ = (MPID_nem_queue_ptr_t *)MALLOC (num_procs * sizeof(MPID_nem_queue_ptr_t));
+    MPID_nem_mem_region.RecvQ = (MPID_nem_queue_ptr_t *)MALLOC (num_procs * sizeof(MPID_nem_queue_ptr_t));
     MPID_nem_mem_region.net_elements =
 	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[2].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));
 
@@ -230,7 +206,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
     
     /* network init */
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-      {
+    {
 	ret = MPID_nem_net_module_init (MPID_nem_mem_region.RecvQ[rank],
 					MPID_nem_mem_region.FreeQ[rank],
 					MPID_nem_mem_region.Elements, 
@@ -239,15 +215,15 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 					MPID_NEM_NUM_CELLS, 
 					&MPID_nem_mem_region.net_recv_queue, 
 					&MPID_nem_mem_region.net_free_queue,
-					ckpt_restart);
+					ckpt_restart, pg_p);
 	if (ret != 0)
-	  FATAL_ERROR ("net_module_init() failed");
-      }
+	    FATAL_ERROR ("net_module_init() failed");
+    }
     else{
-      if (rank == 0)
+	if (rank == 0)
 	{
-	  MPID_nem_mem_region.net_recv_queue = NULL;
-	  MPID_nem_mem_region.net_free_queue = NULL;
+	    MPID_nem_mem_region.net_recv_queue = NULL;
+	    MPID_nem_mem_region.net_free_queue = NULL;
 	}
     }
 
@@ -293,8 +269,8 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 	    }
 	    else
 	    {
-		MPID_nem_mem_region.mailboxes.in [i] =  ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (i, local_rank);
-		MPID_nem_mem_region.mailboxes.out[i] =  ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (local_rank, i);
+		MPID_nem_mem_region.mailboxes.in [i] = ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (i, local_rank);
+		MPID_nem_mem_region.mailboxes.out[i] = ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (local_rank, i);
 		MPID_nem_mem_region.mailboxes.in [i]->common.flag.value  = 0;
 		MPID_nem_mem_region.mailboxes.out[i]->common.flag.value  = 0;	   
 	    }
@@ -314,11 +290,7 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
 
 #ifdef PAPI_MONITOR
     my_papi_start( rank );
-#endif /*PAPI_MONITOR   */
- 
-    *myrank = rank;
-    *num_procs = num_processes;
-
+#endif /*PAPI_MONITOR   */ 
 
     return 0;
 }
@@ -336,57 +308,77 @@ _MPID_nem_init (int argc, char **argv, int *myrank, int *num_procs, int ckpt_res
    hostname, and puts them into local_procs sorted by global rank.
 */
 int
-get_local_procs (int *num_local, int **local_procs, int *local_rank)
+get_local_procs (int global_rank, int num_global, int *num_local, int **local_procs, int *local_rank)
 {
+#if 0
     int ret;
-    int global_rank;
-    int global_size;
+    int *lrank_p;
+
+    /* get an array of all processes on this node */
+    ret = PMI_Get_clique_size (num_local);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_clique_size failed %d", ret);
+    
+    *local_procs = MALLOC (*num_local * sizeof (int));
+    if (*local_procs == NULL)
+	ERROR_RET (-1, "malloc failed");
+
+    ret = PMI_Get_clique_ranks (*local_procs, *num_local);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Get_clique_ranks failed %d", ret);
+
+    /* make sure it's sorted  so that ranks are consistent between processes */
+    qsort (*local_procs, *num_local, sizeof (**local_procs), intcompar);
+
+    /* find our local rank */
+    lrank_p = bsearch (&global_rank, *local_procs, *num_local, sizeof (**local_procs), intcompar);
+    if (lrank_p == NULL)
+	ERROR_RET (-1, "Can't find our rank in local ranks");
+    *local_rank = lrank_p - *local_procs;
+
+    return 0;
+#else
+
+    int ret;
     int *procs;
     int i;
+    char key[MPIDI_MAX_KVS_KEY_LEN];
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char *kvs_name;
     
-    ret = PMI_Get_rank (&global_rank);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Get_rank failed %d", ret);
-    
-    ret = PMI_Get_size (&global_size);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Get_size failed %d", ret);
-
-    memset(pmi_val, 0, pmi_val_max_sz);
-    snprintf (pmi_val, pmi_val_max_sz, "%s", MPID_nem_hostname);
-
-    memset (pmi_key, 0, pmi_key_max_sz);
-    snprintf (pmi_key, pmi_key_max_sz, "hostname[%d]", global_rank);
+    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
 
     /* Put my hostname id */
-    ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
-    if (ret != 0)
+    memset (key, 0, MPIDI_MAX_KVS_KEY_LEN);
+    snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "hostname[%d]", global_rank);
+
+    ret = PMI_KVS_Put (kvs_name, key, MPID_nem_hostname);
+    if (ret != MPI_SUCCESS)
 	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
-    
-    ret = PMI_KVS_Commit (pmi_kvs_name);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
 
     ret = PMI_Barrier();
     if (ret != 0)
 	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
 
-    procs = MALLOC (global_size * sizeof (int));
+    /* Gather hostnames */
+    procs = MALLOC (num_global * sizeof (int));
     if (!procs)
 	ERROR_RET (-1, "malloc failed");
     *num_local = 0;
 
-    /* Gather hostnames */
-    for (i = 0; i < global_size; ++i)
+    for (i = 0; i < num_global; ++i)
     {
-	memset (pmi_key, 0, pmi_key_max_sz);
-	snprintf (pmi_key, pmi_key_max_sz, "hostname[%d]", i);
-	
-	ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
-	if (ret != 0)
-	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
+	memset (val, 0, MPIDI_MAX_KVS_VALUE_LEN);
+	memset (key, 0, MPIDI_MAX_KVS_KEY_LEN);
+	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "hostname[%d]", i);
 
-	if (!strncmp (MPID_nem_hostname, pmi_val, pmi_val_max_sz))
+	ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
+	if (ret != MPI_SUCCESS)
+	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
+	
+	if (!strncmp (MPID_nem_hostname, val, MPIDI_MAX_KVS_VALUE_LEN))
 	{
 	    if (i == global_rank)
 		*local_rank = *num_local;
@@ -394,9 +386,9 @@ get_local_procs (int *num_local, int **local_procs, int *local_rank)
 	    ++*num_local;
 	}
 	
-	printf_d ("  %d: %s\n", i, pmi_val);
+	printf_d ("  %d: %s\n", i, val);
     }
-
+	
     /* copy over local procs into smaller array */
     *local_procs = MALLOC (*num_local * sizeof (int));
     if (!local_procs)
@@ -406,6 +398,39 @@ get_local_procs (int *num_local, int **local_procs, int *local_rank)
     FREE (procs);
     
     return 0;
+#endif
 }
 
 
+int
+MPID_nem_get_business_card (char *value, int length)
+{
+    switch (MPID_NEM_NET_MODULE)
+    {
+    case MPID_NEM_GM_MODULE:
+	return gm_module_get_business_card (&value, &length);
+        break;
+    case MPID_NEM_TCP_MODULE:
+	return tcp_module_get_business_card (&value, &length);
+        break;
+    default:
+        break;
+    }
+    return -1;
+}
+
+int MPID_nem_connect_to_root (const char *business_card, const int lpid)
+{
+    switch (MPID_NEM_NET_MODULE)
+    {
+    case MPID_NEM_GM_MODULE:
+	return gm_module_connect_to_root (business_card, lpid);
+        break;
+    case MPID_NEM_TCP_MODULE:
+	return tcp_module_connect_to_root (business_card, lpid);
+        break;
+    default:
+        break;
+    }
+    return -1;
+}

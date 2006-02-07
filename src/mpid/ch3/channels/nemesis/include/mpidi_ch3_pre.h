@@ -9,24 +9,42 @@
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 /*#define MPIDI_CH3_CHANNEL_RNDV*/
-#define HAVE_CH3_PRE_INIT
-#define MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+/*#define HAVE_CH3_PRE_INIT*/
+/* #define MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS */
+#define MPIDI_DEV_IMPLEMENTS_KVS
 
+struct tcp_module_internal_queue;
 typedef struct MPIDI_CH3I_VC
 {
+    int port_name_tag;
     int pg_rank;
     struct MPID_Request *recv_active;
+#if MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE
+    unsigned port_id;
+    unsigned node_id;
+    unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
+#elif MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE
+    int node_id; 
+    int desc;
+    struct sockaddr_in sock_id;
+    int left2write;
+    int left2read_head; 
+    int left2read;
+    int toread;
+    struct tcp_module_internal_queue *internal_recv_queue;
+    struct tcp_module_internal_queue *internal_free_queue;
+#endif
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
-typedef struct MPIDI_CH3_PG
-{
-    char *kvs_name;
-} MPIDI_CH3_PG;
+/* typedef struct MPIDI_CH3_PG */
+/* { */
+/*     char *kvs_name; */
+/* } MPIDI_CH3_PG; */
 
 
-#define MPIDI_CH3_PG_DECL MPIDI_CH3_PG ch;
+/* #define MPIDI_CH3_PG_DECL MPIDI_CH3_PG ch; */
 
 /*
  * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)

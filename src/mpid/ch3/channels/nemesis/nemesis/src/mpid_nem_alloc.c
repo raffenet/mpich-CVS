@@ -1,12 +1,19 @@
 #include "mpid_nem.h"
 #include <unistd.h>
 #include <errno.h>
-#include "pm.h"
+#include "mpidimpl.h"
 
-void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank)
+void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank, MPIDI_PG_t *pg_p)
 {
     int ret;
-
+    char key[MPIDI_MAX_KVS_KEY_LEN];
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char *kvs_name;
+    
+    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+    
     memory->max_size = size;
     
     if (local_rank == 0)
@@ -29,18 +36,15 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	}
 	
 	/* post name of shared file */
-	memset (pmi_val, 0, pmi_val_max_sz);
-	snprintf (pmi_val, pmi_val_max_sz, "%s", memory->file_name);
-	memset (pmi_key, 0, pmi_key_max_sz);
-	assert(MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
-	snprintf (pmi_key, pmi_key_max_sz, "sharedFilename[%i]",MPID_nem_mem_region.rank);
-	ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
-	if (ret != 0)
+	assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
+	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "sharedFilename[%i]", MPID_nem_mem_region.rank);
+	ret = PMI_KVS_Put (kvs_name, key, memory->file_name);
+	if (ret != MPI_SUCCESS)
 	{
 	    unlink (memory->file_name);
 	    FATAL_ERROR ("PMI_KVS_Put failed %d", ret);
 	}
-	ret = PMI_KVS_Commit (pmi_kvs_name);
+	ret = PMI_KVS_Commit (kvs_name);
 	if (ret != 0)
 	{
 	    unlink (memory->file_name);
@@ -64,15 +68,14 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	}
 
 	/* get name of shared file */
-	snprintf (pmi_key, pmi_key_max_sz, "sharedFilename[%i]",MPID_nem_mem_region.local_procs[0]);
-	memset (pmi_val, 0, pmi_val_max_sz);
-	ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
-	if (ret != 0)
+	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "sharedFilename[%i]", MPID_nem_mem_region.local_procs[0]);
+	ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
+	if (ret != MPI_SUCCESS)
 	{
 	    FATAL_ERROR ("PMI_KVS_Get failed %d", ret);
 	}
 
-	MPIU_Strncpy (memory->file_name, pmi_val, MPID_NEM_MAX_FNAME_LEN);
+	MPIU_Strncpy (memory->file_name, val, MPID_NEM_MAX_FNAME_LEN);
 
 	memory->base_descs = open (memory->file_name, O_RDWR);
 	if (memory->base_descs == -1)

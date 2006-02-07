@@ -9,7 +9,7 @@ dummy_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 		   int                   num_module_elements, 
 		   MPID_nem_queue_ptr_t *module_recv_queue,
 		   MPID_nem_queue_ptr_t *module_free_queue,
-		   int ckpt_restart)
+		   int ckpt_restart, MPIDI_PG_t *pg_p)
 {
     return 0;
 }

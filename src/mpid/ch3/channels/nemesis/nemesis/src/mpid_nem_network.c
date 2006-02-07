@@ -9,46 +9,45 @@
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE SELECTION"
 #endif 
 
-int  (* MPID_nem_net_module_init) (MPID_nem_queue_ptr_t,
-				   MPID_nem_queue_ptr_t,
-				   MPID_nem_cell_ptr_t,
-				   int,
-				   MPID_nem_cell_ptr_t,
-				   int,
-				   MPID_nem_queue_ptr_t *,
-				   MPID_nem_queue_ptr_t *,
-				   int ckpt_restart);
+int  (* MPID_nem_net_module_init) (MPID_nem_queue_ptr_t proc_recv_queue, 
+				   MPID_nem_queue_ptr_t proc_free_queue, 
+				   MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
+				   MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
+				   MPID_nem_queue_ptr_t *module_recv_queue,
+				   MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart, MPIDI_PG_t *pg_p);
 int  (* MPID_nem_net_module_finalize) (void);
 int  (* MPID_nem_net_module_ckpt_shutdown) (void);
-void (* MPID_nem_net_module_poll) (int);
-void (* MPID_nem_net_module_send) (int, MPID_nem_cell_ptr_t , int);
+void (* MPID_nem_net_module_poll) (MPID_nem_poll_dir_t in_or_out);
+void (* MPID_nem_net_module_send) (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
+int (* MPID_nem_net_module_get_business_card) (char **bc_val_p, int *val_max_sz_p);
+int (* MPID_nem_net_module_connect_to_root) (const char *business_card, const int lpid);
+int (* MPID_nem_net_module_vc_init) (MPIDI_VC_t *vc);
+
+#define assign_functions(prefix) do {						\
+    MPID_nem_net_module_init              = prefix##_module_init;		\
+    MPID_nem_net_module_finalize          = prefix##_module_finalize;		\
+    MPID_nem_net_module_ckpt_shutdown     = prefix##_module_ckpt_shutdown;	\
+    MPID_nem_net_module_poll              = prefix##_module_poll;		\
+    MPID_nem_net_module_send              = prefix##_module_send;		\
+    MPID_nem_net_module_get_business_card = prefix##_module_get_business_card;	\
+    MPID_nem_net_module_connect_to_root   = prefix##_module_connect_to_root;	\
+    MPID_nem_net_module_vc_init           = prefix##_module_vc_init;		\
+} while (0)
 
 int
 MPID_nem_net_init( void)
 {
 #if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
   {
-    MPID_nem_net_module_init          = gm_module_init; 
-    MPID_nem_net_module_finalize      = gm_module_finalize;
-    MPID_nem_net_module_ckpt_shutdown = gm_module_ckpt_shutdown; 
-    MPID_nem_net_module_poll          = gm_module_poll;
-    MPID_nem_net_module_send          = gm_module_send ;
+      assign_functions (gm);
   }
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
   {
-    MPID_nem_net_module_init          = tcp_module_init; 
-    MPID_nem_net_module_finalize      = tcp_module_finalize;
-    MPID_nem_net_module_ckpt_shutdown = tcp_module_ckpt_shutdown; 
-    MPID_nem_net_module_poll          = tcp_module_poll;
-    MPID_nem_net_module_send          = tcp_module_send ;
+      assign_functions (tcp);
   }
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
   {
-    MPID_nem_net_module_init          = dummy_module_init; 
-    MPID_nem_net_module_finalize      = dummy_module_finalize;
-    MPID_nem_net_module_ckpt_shutdown = dummy_module_ckpt_shutdown; 
-    MPID_nem_net_module_poll          = dummy_module_poll;
-    MPID_nem_net_module_send          = dummy_module_send ;
+      assign_functions (dummy);
   }
 #else
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE INITIALIZATION"

@@ -268,6 +268,7 @@ MPID_nem_ckpt_send_markers()
     /* keep sending markers until we're done or out of cells */
     int ret;
     int num_procs = MPID_nem_mem_region.num_procs;
+    MPIDI_VC_t vc;
     
     assert (MPID_nem_ckpt_sending_markers);
     assert (next_marker_dest < num_procs);
@@ -280,7 +281,8 @@ MPID_nem_ckpt_send_markers()
 	    continue;
 	}
 	
-	ret = MPID_nem_mpich2_send_ckpt_marker (current_wave, next_marker_dest);
+	MPIDI_PG_Get_vc (MPIDI_Process.my_pg, next_marker_dest, &vc);
+	ret = MPID_nem_mpich2_send_ckpt_marker (current_wave, vc);
 	if (ret == MPID_NEM_MPICH2_AGAIN)
 	    break;
 	if (ret == MPID_NEM_MPICH2_FAILURE)

@@ -20,9 +20,11 @@
 } while (0)
 
 
-void          *MPIDI_CH3_packet_buffer;
-int            MPIDI_CH3I_my_rank;
+void *MPIDI_CH3_packet_buffer;
+int MPIDI_CH3I_my_rank;
 
+#undef USE_PRE_INIT
+#ifdef USE_PRE_INIT
 static int called_pre_init = 0;
 
 #undef FUNCNAME
@@ -68,6 +70,7 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
  fn_fail:
     return mpi_errno;
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
@@ -75,16 +78,26 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
 {
+    int nem_errno;
     int mpi_errno;
-    int p;
-
+    
     __GM_COMPILE_TIME_ASSERT (sizeof(MPIDI_CH3_Pkt_t) == MPID_NEM__MPICH2_HEADER_LEN);
 
+#if USE_PRE_INIT
     if (!called_pre_init)
     {
 	mpi_errno =  MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0 );
 	return mpi_errno;
     }
+#endif
+    
+    nem_errno = MPID_nem_init (pg_rank, pg_p);
+    if (nem_errno != 0)
+    {
+	return MPI_ERR_INTERN;
+    }
+    
+    MPIDI_CH3I_my_rank = pg_rank;
     
     /*
      * Initialize Progress Engine 
@@ -96,18 +109,6 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
 	mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_progress", 0);
 	return mpi_errno;
 	/* --END ERROR HANDLING-- */
-    }    
-
-    /* initialize VCs */
-    for (p = 0; p < pg_p->size; p++)
-    {
-	struct MPIDI_VC *vcp;
-
-	MPIDI_PG_Get_vcr (pg_p, p, &vcp);
-	
-	vcp->ch.pg_rank = p;
-	vcp->ch.recv_active = NULL;
-	vcp->state = MPIDI_VC_STATE_ACTIVE;
     }
 
     return MPI_SUCCESS;
@@ -126,4 +127,67 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
 int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a ) 
 { 
     return 0;
+}
+
+/* Perform the channel-specific vc initialization */
+int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
+{
+    int ret = 0;
+    
+    vc->ch.recv_active = NULL;
+    vc->state = MPIDI_VC_STATE_ACTIVE;
+
+    if (MPID_NEM_IS_LOCAL (vc->lpid))
+    {
+	
+    }
+    else
+    {
+	switch (MPID_NEM_NET_MODULE)
+	{
+	case MPID_NEM_GM_MODULE:
+	    ret = gm_module_vc_init (vc);
+	    break;
+	case MPID_NEM_TCP_MODULE:
+	    ret = tcp_module_vc_init (vc);
+	    break;
+	default:
+	    ret = -1;
+	    break;
+	}
+    }
+    
+    if (ret)
+	return MPI_ERR_INTERN;
+    else
+	return MPI_SUCCESS;
+}
+
+int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    MPIDI_VC_t * vc;
+    MPIU_CHKPMEM_DECL (1);
+    
+    MPIU_CHKPMEM_MALLOC (vc, MPIDI_VC_t *, sizeof(MPIDI_VC_t), mpi_errno, "vc");
+    /* FIXME - where does this vc get freed? */
+
+    *new_vc = vc;
+
+    MPIDI_VC_Init (vc, NULL, 0);
+    MPIDI_CH3_VC_Init (vc);
+    
+    ret = MPID_nem_connect_to_root (port_name, vc->lpid);
+    if (ret != 0)
+    {
+	mpi_errno =  MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0);
+        goto fn_fail;
+    }
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }

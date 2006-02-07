@@ -14,17 +14,19 @@
 #include "rdtsc.h"		
 #endif /* PAPI_MONITOR */
 
-int MPID_nem_init (int argc, char **argv, int *rank, int *num_procs);
-int _MPID_nem_init (int argc, char **argv, int *rank, int *num_procs, int ckpt_restart);
+int MPID_nem_init (int rank, MPIDI_PG_t *pg_p);
+int _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart);
 int MPID_nem_finalize (void);
 int MPID_nem_ckpt_shutdown (void);
 void MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
 void MPID_nem_barrier(int, int);
-void MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, int num_local, int local_rank);
+void MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, int num_local, int local_rank, MPIDI_PG_t *pg_p);
 void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
-void MPID_nem_check_alloc(int) ;
+void MPID_nem_check_alloc(int);
 static inline void MPID_nem_waitforlock(MPID_nem_fbox_common_ptr_t pbox, int value, int count);
 static inline int MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count);
+int MPID_nem_get_business_card (char *value, int length);
+int MPID_nem_connect_to_root (const char *port_name, const int lpid);
 
 /* set this to 32 for 32-bit arch and 40 for 64-bit */
 #define MPID_NEM__MPICH2_HEADER_LEN 32
@@ -104,12 +106,12 @@ int MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 
 #if 0
 /* large message transfer functions */
-int MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iovec *cookie);
-int MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, int src, struct iovec *cookie);
-int MPID_nem_mpich2_lmt_start_send (int dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int MPID_nem_mpich2_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int MPID_nem_mpich2_lmt_send_post (int dest, struct iovec cookie);
-int MPID_nem_mpich2_lmt_recv_post (int src, struct iovec cookie);
+int MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, MPIDI_VC_t *dest_vc, struct iovec *cookie);
+int MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, MPIDI_VC_t *src_vc, struct iovec *cookie);
+int MPID_nem_mpich2_lmt_start_send (MPIDI_VC_t *dest_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
+int MPID_nem_mpich2_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
+int MPID_nem_mpich2_lmt_send_post (MPIDI_VC_t *dest_vc, struct iovec cookie);
+int MPID_nem_mpich2_lmt_recv_post (MPIDI_VC_t *src_vc, struct iovec cookie);
 #endif
 
 /* #define DO_PAPI2(x) x */
@@ -141,11 +143,11 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 #include "mpid_nem_nets.h"
 #include "mpid_nem_inline.h"
 #else //MPID_NEM_INLINE
-int MPID_nem_mpich2_send (void* buf, int size, int dest);
-int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, int dest);
-int MPID_nem_mpich2_send_header (void* buf, int size, int dest);
-int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, int dest);
-int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest);
+int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc);
+int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc);
+int MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc);
+int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc);
+int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc);
 int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
 int recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;

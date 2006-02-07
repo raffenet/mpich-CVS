@@ -1,10 +1,13 @@
 #include "gm.h"
-#include "pm.h"
+#include "mpidimpl.h"
 #include "gm_module_impl.h"
 #include "mpid_nem.h"
 
 #define MAX_GM_BOARDS 16
 #define UNIQUE_ID_LEN 6
+#define MPIDI_CH3I_PORT_KEY "port"
+#define MPIDI_CH3I_UNIQUE_KEY "unique"
+
 
 #define safe_malloc(x) _safe_malloc(x, __FILE__, __LINE__)
 static inline void *
@@ -44,15 +47,14 @@ char UNIQUE_TO_STR_TMPSTR[UNIQUE_TO_STR_TMPSTR_LEN];
 
 #define UNDEFINED_UNIQUE_ID_VAL "\0\0\0\0\0\0"
 
-node_t *nodes;
+//node_t *nodes;
+unsigned char unique_id[UNIQUE_ID_LEN] = UNDEFINED_UNIQUE_ID_VAL;
+int port_id;
 
 int num_send_tokens;
 int num_recv_tokens;
 
 struct gm_port *port;
-
-int numnodes;
-int rank;
 
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
@@ -68,12 +70,12 @@ gm_module_send_queue_head_t gm_module_send_queue;
 gm_module_send_queue_t *gm_module_send_free_queue;
 
 static int
-init_gm (int *board_id, int *port_id, unsigned char *unique_id)
+init_gm (int *boardId, int *portId, unsigned char unique_id[])
 {
     gm_status_t status;
     int max_gm_ports;
     
-    strncpy ((char *)unique_id, UNDEFINED_UNIQUE_ID_VAL, UNIQUE_ID_LEN);
+    //    strncpy ((char *)unique_id, UNDEFINED_UNIQUE_ID_VAL, UNIQUE_ID_LEN);
     
     status = gm_init();
     if (status != GM_SUCCESS)
@@ -83,14 +85,14 @@ init_gm (int *board_id, int *port_id, unsigned char *unique_id)
     
     max_gm_ports = gm_num_ports (NULL);
     
-    for (*port_id = 0; *port_id < max_gm_ports; ++*port_id)
+    for (*portId = 0; *portId < max_gm_ports; ++*portId)
     {
 	/* skip reserved gm ports */
-	if (*port_id == 0 || *port_id == 1 || *port_id == 3)
+	if (*portId == 0 || *portId == 1 || *portId == 3)
 	    continue;
-	for (*board_id = 0; *board_id < MAX_GM_BOARDS; ++*board_id)
+	for (*boardId = 0; *boardId < MAX_GM_BOARDS; ++*boardId)
 	{
-	    status = gm_open (&port, *board_id, *port_id, " ", GM_API_VERSION);
+	    status = gm_open (&port, *boardId, *portId, " ", GM_API_VERSION);
 		
 	    switch (status)
 	    {
@@ -116,26 +118,31 @@ init_gm (int *board_id, int *port_id, unsigned char *unique_id)
     ERROR_RET (-1, "unable to allocate a GM port\n");
 }
 
+#if 0
 static int
-distribute_mac_ids (unsigned port_id, unsigned char *unique_id)
+distribute_mac_ids ()
 {
     int ret;
     int i;
+    char key[MPIDI_MAX_KVS_KEY_LEN];
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char *kvs_name;
     
-    nodes = safe_malloc (sizeof (node_t) * numnodes);
+    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
 
-    memset(pmi_val, 0, pmi_val_max_sz);
-    snprintf (pmi_val, pmi_val_max_sz, "{%u:%Lu}", port_id, UNIQUE_TO_UINT64 (unique_id));
-
-    memset (pmi_key, 0, pmi_key_max_sz);
-    snprintf (pmi_key, pmi_key_max_sz, "portUnique[%d]", rank);
+    nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
 
     /* Put my unique id */
-    ret = PMI_KVS_Put (pmi_kvs_name, pmi_key, pmi_val);
+    snprintf (val, MPIDI_MAX_KVS_VALUE_LEN, "{%u:%Lu}", port_id, UNIQUE_TO_UINT64 (unique_id));
+    snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "portUnique[%d]", MPID_nem_mem_region.rank);
+
+    ret = PMI_KVS_Put (kvs_name, key, val);
     if (ret != 0)
 	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
     
-    ret = PMI_KVS_Commit (pmi_kvs_name);
+    ret = PMI_KVS_Commit (kvs_name);
     if (ret != 0)
 	ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
 
@@ -144,19 +151,20 @@ distribute_mac_ids (unsigned port_id, unsigned char *unique_id)
 	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
 
     /* Gather unique ids */
-    for (i = 0; i < numnodes; ++i)
+    for (i = 0; i < MPID_nem_mem_region.num_procs; ++i)
     {
 	unsigned p;
 	gm_u64_t u;
-	memset (pmi_key, 0, pmi_key_max_sz);
-	snprintf (pmi_key, pmi_key_max_sz, "portUnique[%d]", i);
+
+	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "portUnique[%d]", i);
+	memset (val, 0, MPIDI_MAX_KVS_VALUE_LEN);
 	
-	ret = PMI_KVS_Get (pmi_kvs_name, pmi_key, pmi_val, pmi_val_max_sz);
+	ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
 	if (ret != 0)
 	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
 
-	if (sscanf (pmi_val, "{%u:%Lu}", &p, &u) != 2)
-	    ERROR_RET (-1, "unable to parse data from PMI_KVS_Get %s", pmi_val);
+	if (sscanf (val, "{%u:%Lu}", &p, &u) != 2)
+	    ERROR_RET (-1, "unable to parse data from PMI_KVS_Get %s", val);
 
 	nodes[i].port_id = p;
 	UINT64_TO_UNIQUE (u, nodes[i].unique_id);
@@ -168,6 +176,7 @@ distribute_mac_ids (unsigned port_id, unsigned char *unique_id)
     }
     return 0;
 }
+#endif
 
 /*
    int  
@@ -198,31 +207,21 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 		MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
 		MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
 		MPID_nem_queue_ptr_t *module_recv_queue,
-		MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart)
+		MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart, MPIDI_PG_t *pg_p)
 {
     int board_id;
-    int port_id;
-    unsigned char unique_id[UNIQUE_ID_LEN];
     int ret;
     gm_status_t status;
     int i;
 
-    /* FIXME: what's the right way to get (and store) our rank and numnodes? */
-    ret = PMI_Get_rank (&rank);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Get_rank failed %d", ret);
-    
-    ret = PMI_Get_size (&numnodes);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Get_size failed %d", ret);
-
     ret = init_gm (&board_id, &port_id, unique_id);
     if (ret != 0)
 	ERROR_RET (-1, "init_gm() failed");
-    
-    ret = distribute_mac_ids (port_id, unique_id);
-    if (ret != 0)
-	ERROR_RET (-1, "distribute_mac_ids() failed");
+
+/* using business cards now */
+/*     ret = distribute_mac_ids (); */
+/*     if (ret != 0) */
+/* 	ERROR_RET (-1, "distribute_mac_ids() failed"); */
     
     process_recv_queue = proc_recv_queue;
     process_free_queue = proc_free_queue;
@@ -281,3 +280,117 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME gm_module_get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
+gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, port_id);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM) {
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+	}
+	else {
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
+	}
+	return mpi_errno;
+    }
+
+    mpi_errno = MPIU_Str_add_binary_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+	if (mpi_errno == MPIU_STR_NOMEM) {
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+	}
+	else {
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
+	}
+	return mpi_errno;
+    }
+
+    return mpi_errno;
+}
+
+int
+gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, char *unique_id)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int len;
+    
+    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, port_id);
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	/* FIXME: create a real error string for this */
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
+    }
+
+    mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, unique_id, UNIQUE_ID_LEN, &len);
+    if (mpi_errno != MPIU_STR_SUCCESS || len != UNIQUE_ID_LEN) {
+	/* FIXME: create a real error string for this */
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+int
+gm_module_connect_to_root (const char *business_card, const int lpid)
+{
+    
+}
+
+int
+gm_module_vc_init (MPIDI_VC_t *vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char key[MPIDI_MAX_KVS_KEY_LEN];
+    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    int ret;
+    char *kvs_name;
+    
+    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+
+    ret = MPIU_Snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", vc->pg_rank);
+    /* --BEGIN ERROR HANDLING-- */
+    if (ret < 0 || ret > MPIDI_MAX_KVS_KEY_LEN)
+    {
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
+	goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+
+    mpi_errno = PMI_KVS_Get(kvs_name, key, val);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    /* --END ERROR HANDLING-- */
+
+    mpi_errno = gm_module_get_port_unique_from_bc (val, &vc->ch.port_id, &vc->ch.unique_id);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno) {
+	MPIU_ERR_POP (mpi_errno);
+    }
+    /* --END ERROR HANDLING-- */
+
+    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    /* --BEGIN ERROR HANDLING-- */
+    if (ret != GM_SUCCESS)
+    {
+	mpi_errno = MPI_ERR_INTERN;
+	goto fn_exit;
+    }
+    /* --END ERROR HANDLING-- */
+
+ fn_exit:
+    return mpi_errno;
+}

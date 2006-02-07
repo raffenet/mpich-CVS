@@ -207,7 +207,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	    do 
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet\n"));
-		shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, sreq->ch.vc->lpid);
+		shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, sreq->ch.vc);
 	    }
 	    while (shmem_errno != MPID_NEM_MPICH2_AGAIN && _n_iov > 0);
 
