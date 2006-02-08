@@ -1,0 +1,91 @@
+ad_ln
+=====
+
+ad_ln is an ADIO module for ROMIO that enables remote I/O to IBP depots 
+through Logistical Networking. For more detailed information on Logistical 
+Networking, check http://loci.cs.utk.edu. The implementation of ad_ln 
+is partly based on libxio version 0.2, which provides Unix I/O interface 
+that uses Logistical Networking. 
+
+ad_ln provides most of the I/O functionalities that MPI-IO requires. 
+The features that have not been implemented yet include atomic mode and 
+shared file pointers. The detailed description on how ad_ln was designed 
+and implemented can be found in ANL/MCS-TM-290. 
+
+When opening a file for ad_ln, the prefix "ln:" must be used in front of 
+a file name. The file name provided is actually for the metadata information
+for the remote file. This metadata file is represented in XML and stored 
+locally. Only the root process (rank 0) accesses this file, and thus ad_ln 
+does not really require a shared file system.  
+
+User can set the values of MPI-IO/L-specific parameters by providing hints to 
+MPI_File_open using MPI_Info objects. Following are the examples of available
+parameters (keys are case sensitive). 
+
+LN_LBONE_SERVER 		hostname for an L-bone server to be used
+				(default: "vertex.cs.utk.edu")
+LN_LBONE_PORT 			port number for the specified L-bone server 
+				(default: "6767")
+LN_LBONE_LOCATION 		desired location of depots 
+				(should follow LoRS-specified format)
+				(default: "zip= 37996")
+LN_LORS_BLOCKSIZE		unit size of data transfer in MB
+				(default: "1")
+LN_LORS_DURATION		duration of allocation in seconds
+				(default: "36000" - 10 hours)
+LN_LORS_COPIES			number of copies to be created at each write
+				(default: "1")
+LN_LORS_THREADS			number of threads to be used for transfer
+				(default: "2")
+LN_LORS_TIMEOUT			maximum duration of time allowed for each I/O 
+				operation in seconds
+				(LoRS will return error if a LoRS operation 
+				spends longer than this value)
+				(default: "30")
+LN_LORS_SERVERS		 	(default: "5")	
+LN_LORS_SIZE			the maximum amount of storage space in MB
+				to request to an IBP depot 
+				(default: "1")	
+LN_LORS_DEMO			LoRS-specific parameter
+LN_IO_BUFFER_SIZE		size of buffer to be prepared on each process 
+				for buffered I/O
+				(default: "0" - direct I/O)
+LN_NO_SYNC_AT_COLLECTIVE_IO	do not perform sync at each collective I/O 
+				(use this with caution. this can actually 
+				violate the MPI-IO consistency semantics)
+				("yes" or "no")
+LN_NONCONTIG_WRITE_NAIVE	naive write for noncontiguous writes
+				("yes" or "no")
+				(for noncontiguous read, use predefined ROMIO 
+				hint key)
+LN_DEPOT_LIST			list of depots that user wants to use	
+				(default: "")
+
+../../test/simple.c should give you some ideas on how to use these 
+hints.
+
+The current version of MPI-IO/L has been developed based on LoRS 
+version 0.82.1 that can be obtained from the LoCI group page. The IBP 
+version 1.3 that is included in the LoRS package does not support 
+persistent TCP connections. For better performance, you should separately 
+download and use the IBP version 1.4.
+
+One of the bugs of LoRS ver 0.82.1 has to be fixed to run MPI-IO/L. Add 
+following lines to lors_set_trim.c after line 396.
+
+lm2->alloc_length = lm->alloc_length;
+lm2->e2e_bs = lm->e2e_bs;
+if (lm->md) {
+    exnodeCreateMetadata(&lm2->md);
+    exnodeCopyMetadata(&lm2->md, lm->md);
+}
+
+
+
+
+
+
+
+
+
+
