@@ -6,6 +6,7 @@
 
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
+#include <mpid_nem_datatypes.h>
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 /*#define MPIDI_CH3_CHANNEL_RNDV*/
@@ -19,6 +20,14 @@ typedef struct MPIDI_CH3I_VC
     int port_name_tag;
     int pg_rank;
     struct MPID_Request *recv_active;
+
+    int is_local;
+    int send_seqno;
+    MPID_nem_fbox_mpich2_t *fbox_out;
+    MPID_nem_fbox_mpich2_t *fbox_in;
+    MPID_nem_queue_ptr_t recv_queue;
+    MPID_nem_queue_ptr_t free_queue;
+
 #if MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE
     unsigned port_id;
     unsigned node_id;

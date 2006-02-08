@@ -155,6 +155,7 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     int num_procs;
     int rank;
     int i;
+    MPIDI_VC_t *vc;
     
     num_procs = MPID_nem_mem_region.num_procs;
     rank = MPID_nem_mem_region.rank;
@@ -164,7 +165,8 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
     if (!*in_fbox)
     {
-	MPID_nem_mpich2_release_cell (*cell);
+	MPIDI_PG_Get_vc (MPIDI_Process.my_pg, source, &vc);
+	MPID_nem_mpich2_release_cell (*cell, vc);
     }
     else
     {

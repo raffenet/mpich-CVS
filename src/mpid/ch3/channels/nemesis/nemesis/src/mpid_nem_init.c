@@ -248,6 +248,11 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 	assert (MPID_NEM_ALIGNED (MPID_nem_mem_region.RecvQ[index2], MPID_NEM_CACHE_LINE_LEN));
 
     }
+
+    MPID_nem_mem_region.my_freeQ = MPID_nem_mem_region.FreeQ[MPID_nem_mem_region.rank];
+    MPID_nem_mem_region.my_recvQ = MPID_nem_mem_region.RecvQ[MPID_nem_mem_region.rank];
+    
+    
     MPID_nem_barrier (num_local, local_rank);
 
     /* POboxes stuff */
@@ -402,36 +407,40 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 #endif
 }
 
+int
+MPID_nem_vc_init (MPIDI_VC_t *vc)
+{
+    int ret = MPI_SUCCESS;
+
+    vc->ch.is_local = MPID_NEM_IS_LOCAL (vc->lpid);
+    vc->ch.send_seqno = 0;
+    vc->ch.free_queue = MPID_nem_mem_region.FreeQ[vc->lpid]; /* networks and local procs have free queues */
+
+    vc->ch.fbox_out = NULL;
+    vc->ch.fbox_in = NULL;
+    vc->ch.recv_queue = NULL;
+    
+    if (vc->ch.is_local)
+    {
+	vc->ch.fbox_out = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
+	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
+	
+	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
+    }
+    else
+	ret = MPID_nem_net_module_vc_init (vc);
+    
+    return ret;
+}
+
 
 int
 MPID_nem_get_business_card (char *value, int length)
 {
-    switch (MPID_NEM_NET_MODULE)
-    {
-    case MPID_NEM_GM_MODULE:
-	return gm_module_get_business_card (&value, &length);
-        break;
-    case MPID_NEM_TCP_MODULE:
-	return tcp_module_get_business_card (&value, &length);
-        break;
-    default:
-        break;
-    }
-    return -1;
+    return MPID_nem_net_module_get_business_card (&value, &length);    
 }
 
 int MPID_nem_connect_to_root (const char *business_card, const int lpid)
 {
-    switch (MPID_NEM_NET_MODULE)
-    {
-    case MPID_NEM_GM_MODULE:
-	return gm_module_connect_to_root (business_card, lpid);
-        break;
-    case MPID_NEM_TCP_MODULE:
-	return tcp_module_connect_to_root (business_card, lpid);
-        break;
-    default:
-        break;
-    }
-    return -1;
+    return MPID_nem_net_module_connect_to_root (business_card, lpid);
 }

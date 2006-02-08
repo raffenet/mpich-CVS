@@ -78,6 +78,7 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
 {
+    int i;
     int nem_errno;
     int mpi_errno;
     
@@ -111,6 +112,13 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
 	/* --END ERROR HANDLING-- */
     }
 
+    for (i = 0; i < pg_p->size; i++)
+    {
+	MPIDI_VC_t *vc;
+	MPIDI_PG_Get_vcr (pg_p, i, &vc);
+	MPIDI_CH3_VC_Init (vc);
+    }
+
     return MPI_SUCCESS;
 }
 
@@ -137,30 +145,7 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     vc->ch.recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
 
-    if (MPID_NEM_IS_LOCAL (vc->lpid))
-    {
-	
-    }
-    else
-    {
-	switch (MPID_NEM_NET_MODULE)
-	{
-	case MPID_NEM_GM_MODULE:
-	    ret = gm_module_vc_init (vc);
-	    break;
-	case MPID_NEM_TCP_MODULE:
-	    ret = tcp_module_vc_init (vc);
-	    break;
-	default:
-	    ret = -1;
-	    break;
-	}
-    }
-    
-    if (ret)
-	return MPI_ERR_INTERN;
-    else
-	return MPI_SUCCESS;
+    return MPID_nem_vc_init (vc);
 }
 
 int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)

@@ -25,6 +25,7 @@ void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
 void MPID_nem_check_alloc(int);
 static inline void MPID_nem_waitforlock(MPID_nem_fbox_common_ptr_t pbox, int value, int count);
 static inline int MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count);
+int MPID_nem_vc_init (MPIDI_VC_t *vc);
 int MPID_nem_get_business_card (char *value, int length);
 int MPID_nem_connect_to_root (const char *port_name, const int lpid);
 
@@ -152,7 +153,7 @@ int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
 int recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;
 int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
-int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell);
+int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc);
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank);
 int MPID_nem_mpich2_dequeue_fastbox (int local_rank);
 #endif //MPID_NEM_INLINE

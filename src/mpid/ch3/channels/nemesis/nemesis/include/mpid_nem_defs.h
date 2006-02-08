@@ -98,7 +98,6 @@ typedef struct MPID_nem_mem_region
     int                num_seg;
     int                map_lock;
     pid_t             *pid;
-    int                rank;
     int                num_local;
     int                num_procs;
     int               *local_procs; /* local_procs[lrank] gives the global rank of proc with local rank lrank */
@@ -114,6 +113,9 @@ typedef struct MPID_nem_mem_region
     MPID_nem_queue_ptr_t     net_free_queue;
     MPID_nem_queue_ptr_t     net_recv_queue;
     MPID_nem_barrier_t *barrier;
+    MPID_nem_queue_ptr_t    my_freeQ;
+    MPID_nem_queue_ptr_t    my_recvQ;
+    int                rank;
     struct MPID_nem_mem_region *next;
 } MPID_nem_mem_region_t, *MPID_nem_mem_region_ptr_t;
 

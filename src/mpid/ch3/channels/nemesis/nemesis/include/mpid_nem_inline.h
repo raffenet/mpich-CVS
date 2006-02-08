@@ -48,21 +48,21 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     
     if (!el)
     {
-	if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	    return MPID_NEM_MPICH2_AGAIN;
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 #else /*PREFETCH_CELL    */
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank])) 
+    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ)) 
     { 
 	return MPID_NEM_MPICH2_AGAIN;
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
 #endif  /*PREFETCH_CELL      */
 
@@ -70,7 +70,7 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     el->pkt.mpich2.source  = my_rank;
     el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = size;
-    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
+    el->pkt.mpich2.seqno   = vc->ch.send_seqno++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
@@ -78,10 +78,10 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if(MPID_NEM_IS_LOCAL (vc->lpid))
+    if (vc->ch.is_local)
     {
-	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[vc->lpid], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
+	MPID_nem_queue_enqueue (vc->ch.recv_queue, el);
+	/*MPID_nem_rel_dump_queue( vc->ch.recv_queue ); */
     }
     else
     {
@@ -92,8 +92,8 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
+    if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
     else
 	prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
@@ -127,9 +127,9 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     my_rank = MPID_nem_mem_region.rank;
 
 #ifdef USE_FASTBOX
-    if (MPID_NEM_IS_LOCAL (vc->lpid))
+    if (vc->ch.is_local)
     {
-	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
+	MPID_nem_fbox_mpich2_t *pbox = vc->ch.fbox_out;
 	int count = 10;
 	u_int32_t *payload_32 = (u_int32_t *)pbox->cell.pkt.mpich2.payload;
 	u_int32_t *buf_32 = (u_int32_t *)buf;
@@ -143,7 +143,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
 	    pbox->cell.pkt.mpich2.datalen = size;
-	    pbox->cell.pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
+	    pbox->cell.pkt.mpich2.seqno   = vc->ch.send_seqno++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
@@ -182,22 +182,22 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     
     if (!el)
     {
-	if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	    return MPID_NEM_MPICH2_AGAIN;
 	
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 #else /* PREFETCH_CELL */
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
     {
 	return MPID_NEM_MPICH2_AGAIN;
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank] , &el);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ , &el);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
 #endif /* PREFETCH_CELL */
 
@@ -205,7 +205,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     el->pkt.mpich2.source  = my_rank;
     el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = size;
-    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
+    el->pkt.mpich2.seqno   = vc->ch.send_seqno++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
@@ -234,10 +234,10 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if (MPID_NEM_IS_LOCAL (vc->lpid))
+    if (vc->ch.is_local)
     {
-	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[vc->lpid], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
+	MPID_nem_queue_enqueue (vc->ch.recv_queue, el);
+	/*MPID_nem_rel_dump_queue( vc->ch.recv_queue ); */
     }
     else
     {
@@ -248,8 +248,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
+    if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
     else
 	prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
@@ -294,22 +294,22 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     
     if (!el)
     {
-	if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	{
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 	    return MPID_NEM_MPICH2_AGAIN;
 	}
 	
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL     */
-    if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
     {
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 	return MPID_NEM_MPICH2_AGAIN;
     }
 
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank] , &el);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ , &el);
 #endif /*PREFETCH_CELL     */
 
     payload_len = MPID_NEM_MPICH2_DATA_LEN;
@@ -336,15 +336,15 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     el->pkt.mpich2.source  = my_rank;
     el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
-    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
+    el->pkt.mpich2.seqno   = vc->ch.send_seqno++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
-    if(MPID_NEM_IS_LOCAL (vc->lpid))
+    if(vc->ch.is_local)
     {
-	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[vc->lpid], el);
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
+	MPID_nem_queue_enqueue (vc->ch.recv_queue, el);
+	/*MPID_nem_rel_dump_queue( vc->ch.recv_queue ); */
     }
     else
     {
@@ -352,8 +352,8 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     }
 
 #ifdef PREFETCH_CELL
-    if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
+    if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
     else
 	prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
@@ -385,9 +385,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     my_rank = MPID_nem_mem_region.rank;
 
 #ifdef USE_FASTBOX
-    if (MPID_NEM_IS_LOCAL (vc->lpid) && (*n_iov == 2 && (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN <= MPID_NEM_FBOX_DATALEN))
+    if (vc->ch.is_local && (*n_iov == 2 && (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN <= MPID_NEM_FBOX_DATALEN))
     {
-	MPID_nem_fbox_mpich2_t *pbox = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
+	MPID_nem_fbox_mpich2_t *pbox = vc->ch.fbox_out;
 	int count = 10;
 	u_int32_t *payload_32 = (u_int32_t *)(pbox->cell.pkt.mpich2.payload ) ;
 	u_int32_t *buf_32 = (u_int32_t *)(*iov)->iov_base;
@@ -402,7 +402,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	{
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
 	    pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN;
-	    pbox->cell.pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
+	    pbox->cell.pkt.mpich2.seqno   = vc->ch.send_seqno++;
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
 #error Cant handle case for MPICH2_HEADER_LEN < 32
 #endif
@@ -442,22 +442,22 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     
     if (!el)
     {
-	if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	{
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 	    return MPID_NEM_MPICH2_AGAIN;
 	}
 	
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL    */
-    if (MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
+    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
     {
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 	return MPID_NEM_MPICH2_AGAIN;
     }
 
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &el);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
 #endif /*PREFETCH_CELL */
 
 #if MPID_NEM__MPICH2_HEADER_LEN < 32
@@ -505,15 +505,15 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     el->pkt.mpich2.source  = my_rank;
     el->pkt.mpich2.dest    = vc->lpid;
     el->pkt.mpich2.datalen = MPID_NEM_MPICH2_DATA_LEN - payload_len;
-    el->pkt.mpich2.seqno   = send_seqno[vc->lpid]++;
+    el->pkt.mpich2.seqno   = vc->ch.send_seqno++;
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
-    if (MPID_NEM_IS_LOCAL (vc->lpid))
+    if (vc->ch.is_local)
     {    
-	MPID_nem_queue_enqueue (MPID_nem_mem_region.RecvQ[vc->lpid], el);	
-	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
+	MPID_nem_queue_enqueue (vc->ch.recv_queue, el);	
+	/*MPID_nem_rel_dump_queue( vc->ch.recv_queue ); */
     }
     else
     {
@@ -521,8 +521,8 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     }
 
 #ifdef PREFETCH_CELL
-    if (!MPID_nem_queue_empty (MPID_nem_mem_region.FreeQ[my_rank]))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.FreeQ[my_rank], &prefetched_cell);
+    if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
     else
 	prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
@@ -639,8 +639,6 @@ recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
-    int my_rank = MPID_nem_mem_region.rank;
-
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
 #ifdef ENABLED_CHECKPOINTING
@@ -665,7 +663,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
     }
 
-    if (MPID_nem_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank]))
+    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
 #ifdef USE_FASTBOX
 	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
@@ -674,7 +672,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	goto exit_l;
     }
     
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.RecvQ[my_rank], cell);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
@@ -700,8 +698,6 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout)
 {
-    int my_rank = MPID_nem_mem_region.rank;
-
 #ifdef USE_FASTBOX
     poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
 #endif/* USE_FASTBOX     */
@@ -711,7 +707,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
       }
 
-    while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank])))
+    while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ)))
     {
 #ifdef USE_FASTBOX
 	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
@@ -720,7 +716,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 	goto exit_l;
     }
     
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.RecvQ[my_rank], cell);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
@@ -738,7 +734,6 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
-    int my_rank = MPID_nem_mem_region.rank;
 #ifndef ENABLE_NO_SCHED_YIELD
     int pollcount = 0;
 #endif
@@ -768,7 +763,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
     }
 
-    while (MPID_nem_queue_empty (MPID_nem_mem_region.RecvQ[my_rank]) || !recv_seqno_matches (MPID_nem_mem_region.RecvQ[my_rank]))
+    while (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
 
@@ -791,7 +786,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif
     }
 
-    MPID_nem_queue_dequeue (MPID_nem_mem_region.RecvQ[my_rank], cell);
+    MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;    
@@ -812,14 +807,13 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 }
 
 /*
-  int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, int from);
+  int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc);
 
   releases the cell back to the subsystem to be used for subsequent receives
 */
 MPID_NEM_INLINE_DECL int
-MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell)
+MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 {
-    int source = cell->pkt.mpich2.source;
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 #ifdef ENABLED_CHECKPOINTING
     if (cell->pkt.header.type == MPID_NEM_PKT_CKPT_REPLAY)
@@ -830,7 +824,7 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell)
 	return MPID_NEM_MPICH2_SUCCESS;
     }
 #endif
-    MPID_nem_queue_enqueue (MPID_nem_mem_region.FreeQ[source], cell);
+    MPID_nem_queue_enqueue (vc->ch.free_queue, cell);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9));
     return MPID_NEM_MPICH2_SUCCESS;
 }
