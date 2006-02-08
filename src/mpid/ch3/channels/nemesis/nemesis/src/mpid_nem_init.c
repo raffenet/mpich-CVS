@@ -310,7 +310,7 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 int
 get_local_procs (int global_rank, int num_global, int *num_local, int **local_procs, int *local_rank)
 {
-#if 0
+#if 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
     int ret;
     int *lrank_p;
 
@@ -337,6 +337,7 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     *local_rank = lrank_p - *local_procs;
 
     return 0;
+    
 #else
 
     int ret;
