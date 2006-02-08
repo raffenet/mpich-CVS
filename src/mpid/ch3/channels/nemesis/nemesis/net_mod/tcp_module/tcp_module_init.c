@@ -54,8 +54,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
     int    grank;
     int    index;
 
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     
     ret = MPIDI_PG_GetConnKVSname (&kvs_name);
@@ -100,8 +100,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    fprintf(stderr,"[%i] ID :  %s_%d_%d_%d \n",MPID_nem_mem_region.rank,s,
 		    ntohs(nodes[grank].sock_id.sin_port),grank,MPID_nem_mem_region.rank);
 #endif
-	    snprintf (val, MPIDI_MAX_KVS_VALUE_LEN, "%d:%s", ntohs(nodes[grank].sock_id.sin_port), s);
-	    snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "TCPkey[%d:%d]", MPID_nem_mem_region.rank, grank);
+	    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%d:%s", ntohs(nodes[grank].sock_id.sin_port), s);
+	    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "TCPkey[%d:%d]", MPID_nem_mem_region.rank, grank);
 
 	    /* Put my unique id */
 	    ret = PMI_KVS_Put (kvs_name, key, val);
@@ -164,10 +164,10 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    char                s[255];
 	    int                 port_num;  
 		  
-	    memset(val, 0, MPIDI_MAX_KVS_VALUE_LEN);
-	    snprintf (key, MPIDI_MAX_KVS_KEY_LEN,"TCPkey[%d:%d]", grank, MPID_nem_mem_region.rank);
+	    memset(val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+	    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN,"TCPkey[%d:%d]", grank, MPID_nem_mem_region.rank);
 	      
-	    ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
+	    ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
 	    if (ret != 0)
 		ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, grank);
 	  

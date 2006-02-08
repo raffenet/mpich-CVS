@@ -124,8 +124,8 @@ distribute_mac_ids ()
 {
     int ret;
     int i;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     
     ret = MPIDI_PG_GetConnKVSname (&kvs_name);
@@ -135,8 +135,8 @@ distribute_mac_ids ()
     nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
 
     /* Put my unique id */
-    snprintf (val, MPIDI_MAX_KVS_VALUE_LEN, "{%u:%Lu}", port_id, UNIQUE_TO_UINT64 (unique_id));
-    snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "portUnique[%d]", MPID_nem_mem_region.rank);
+    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "{%u:%Lu}", port_id, UNIQUE_TO_UINT64 (unique_id));
+    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "portUnique[%d]", MPID_nem_mem_region.rank);
 
     ret = PMI_KVS_Put (kvs_name, key, val);
     if (ret != 0)
@@ -156,10 +156,10 @@ distribute_mac_ids ()
 	unsigned p;
 	gm_u64_t u;
 
-	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "portUnique[%d]", i);
-	memset (val, 0, MPIDI_MAX_KVS_VALUE_LEN);
+	snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "portUnique[%d]", i);
+	memset (val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
 	
-	ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
+	ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
 	if (ret != 0)
 	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
 
@@ -350,8 +350,8 @@ int
 gm_module_vc_init (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     int ret;
     char *kvs_name;
     
@@ -359,9 +359,9 @@ gm_module_vc_init (MPIDI_VC_t *vc)
     if (ret != MPI_SUCCESS)
 	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
 
-    ret = MPIU_Snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "P%d-businesscard", vc->pg_rank);
+    ret = MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "P%d-businesscard", vc->pg_rank);
     /* --BEGIN ERROR HANDLING-- */
-    if (ret < 0 || ret > MPIDI_MAX_KVS_KEY_LEN)
+    if (ret < 0 || ret > MPID_NEM_MAX_KEY_VAL_LEN)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
 	goto fn_exit;

@@ -342,8 +342,8 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     int ret;
     int *procs;
     int i;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     
     ret = MPIDI_PG_GetConnKVSname (&kvs_name);
@@ -351,8 +351,8 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
 
     /* Put my hostname id */
-    memset (key, 0, MPIDI_MAX_KVS_KEY_LEN);
-    snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "hostname[%d]", global_rank);
+    memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", global_rank);
 
     ret = PMI_KVS_Put (kvs_name, key, MPID_nem_hostname);
     if (ret != MPI_SUCCESS)
@@ -370,15 +370,15 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 
     for (i = 0; i < num_global; ++i)
     {
-	memset (val, 0, MPIDI_MAX_KVS_VALUE_LEN);
-	memset (key, 0, MPIDI_MAX_KVS_KEY_LEN);
-	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "hostname[%d]", i);
+	memset (val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+	memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+	snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", i);
 
-	ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
+	ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
 	if (ret != MPI_SUCCESS)
 	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
 	
-	if (!strncmp (MPID_nem_hostname, val, MPIDI_MAX_KVS_VALUE_LEN))
+	if (!strncmp (MPID_nem_hostname, val, MPID_NEM_MAX_KEY_VAL_LEN))
 	{
 	    if (i == global_rank)
 		*local_rank = *num_local;

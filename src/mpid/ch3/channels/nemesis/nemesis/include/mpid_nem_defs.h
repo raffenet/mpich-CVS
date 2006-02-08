@@ -7,6 +7,8 @@
 #include "mpi.h"
 #include "pmi.h"
 
+#define MPID_NEM_MAX_KEY_VAL_LEN 256
+#define MPID_NEM_MAX_FNAME_LEN 256
 #define MAX_HOSTNAME_LEN 256
 extern char MPID_nem_hostname[MAX_HOSTNAME_LEN];
 
@@ -18,7 +20,6 @@ extern char MPID_nem_hostname[MAX_HOSTNAME_LEN];
 #define MPID_NEM_ANY_SOURCE  -1
 #define MPID_NEM_IN           1
 #define MPID_NEM_OUT          0 
-#define MPID_NEM_MAX_FNAME_LEN 256
 
 /* Network module defines */
 #define MPID_NEM_NO_MODULE    0

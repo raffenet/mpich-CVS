@@ -6,8 +6,8 @@
 void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank, MPIDI_PG_t *pg_p)
 {
     int ret;
-    char key[MPIDI_MAX_KVS_KEY_LEN];
-    char val[MPIDI_MAX_KVS_VALUE_LEN];
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     
     ret = MPIDI_PG_GetConnKVSname (&kvs_name);
@@ -37,7 +37,7 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	
 	/* post name of shared file */
 	assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
-	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "sharedFilename[%i]", MPID_nem_mem_region.rank);
+	snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.rank);
 	ret = PMI_KVS_Put (kvs_name, key, memory->file_name);
 	if (ret != MPI_SUCCESS)
 	{
@@ -68,8 +68,8 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	}
 
 	/* get name of shared file */
-	snprintf (key, MPIDI_MAX_KVS_KEY_LEN, "sharedFilename[%i]", MPID_nem_mem_region.local_procs[0]);
-	ret = PMI_KVS_Get (kvs_name, key, val, MPIDI_MAX_KVS_VALUE_LEN);
+	snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.local_procs[0]);
+	ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
 	if (ret != MPI_SUCCESS)
 	{
 	    FATAL_ERROR ("PMI_KVS_Get failed %d", ret);
