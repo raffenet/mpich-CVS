@@ -1,0 +1,196 @@
+
+#ifndef _ZOIDFS_H_
+#define _ZOIDFS_H_
+
+/**
+ * The ZOID file system API is used to forward system
+ * calls from compute nodes to a service node that invokes the
+ * appropriate parallel/networked file system operations,
+ * The API defines a common set of routines
+ * with differing underlying implementations.  On the ZOID
+ * client, the implementation encodes the control message
+ * and forwards it to the service node, where the ZOID server is running.  
+ * The ZOID server then decodes the control message and calls the associated
+ * ZOID fs routine, which is implemented to map to different
+ * file system routines, such as PVFS2 or the local system call.
+ */
+
+typedef int zoidfs_fsid_t;
+typedef uint64_t zoidfs_handle_t;
+
+/**
+ * File system reference gives us a reference to a particular
+ * file system and a reference to the specific client
+ * making requests.
+ *
+ * @param fspath The path to the file system 'mount point' for the 
+ *        particular file system.  This may be a fstype
+ *        prefixed string, such as pvfs2:/foo/bar/bazfs.
+ *        Calls from MPI-IO may need to be prefixed as well,
+ *        since ROMIO removes the file system type prefix, such
+ *        as bglfs:pvfs2:/foo/bar/bazfs
+ * @param fsid A pointer to the file system unique id.  This parameter
+ *        is assumed to be non-null and it gets filled
+ *        in by the zoidfs_fsref call.  Except for the fact that
+ *        its a null-terminated string used by the encoding/decoding
+ *        layer, it should be treated as an opaque handle to the file
+ *        system.
+ *
+ * @return a system errno
+ */
+int
+zoidfs_fsref(const char * fspath, 
+             zoidfs_fsid_t * fsid);
+
+/** 
+ * Lookup gives the caller a handle to a particular
+ * file based on the path.  
+ * 
+ * @param fsid A reference to the file system mount id 
+ * @param path The file or directory path to lookup.  Because
+ *        the path is encoded and sent over the wire, client
+ *        implementations of this api may return an error for
+ *        path lengths greater than an implementation specific
+ *        max size.
+ * @param fhandle the resulting handle to the file system
+ *        entry (directory, file, symlink) use by other
+ *        zoidfs routines.  This parameter is expected to
+ *        be non-null and pointing to a valid zoidfs_handle_t
+ *        variable, which may either be dynamically or locally
+ *        allocated.
+ *
+ * @return a system errno
+ */
+int
+zoidfs_lookup(zoidfs_fsid_t * fsid, 
+ 	      const char * path, 
+              zoidfs_handle_t * fhandle);
+
+/* Holds the time info for file creates
+ */
+struct zoidfs_time
+{
+    uint32_t seconds;
+    uint32_t useconds;
+};
+
+/**
+ * Settable attributes for file creates
+ */
+typedef struct
+{
+    uint32_t mode;
+    uint32_t uid;
+    uint32_t gid;
+    uint64_t size;
+    struct zoidfs_time atime;
+    struct zoidfs_time mtime;
+} zoidfs_attr_t;
+
+typedef enum
+{
+    /**
+     * When passed to create, allow handle to be set even if the file already
+     * exists.  Create and return the handle if it does not.
+     */
+    ZOIDFS_CREAT,
+    /**
+     * When passed to create, only return a handle if the file was created
+     * by this call, otherwise, error
+     */
+    ZOIDFS_EXCL
+} zoidfs_create_flag_t;
+
+/**
+ * Create adds a file to the file system in the
+ * directory referenced by the dir_handle.
+ *
+ * @param dir_handle the handle for where to put the file
+ * @param file_name name of file relative to directory
+ * @param newfile handle of the new file created.
+ * @param flags to pass to create 
+ *
+ * @return errno
+ */
+int
+zoidfs_create(const zoidfs_fsid_t * fsid,
+              const char * file_path,
+              const zoidfs_attr_t * attrs,
+              zoidfs_handle_t * file_handle,
+              zoidfs_create_flag_t flags);
+
+/**
+ * Remove a file.
+ *
+ * @param fsid the reference to the file system
+ * @param fhandle the handle to the file to be removed. Once this function
+ *        completes successfully, the handle is no longer valid.
+ * 
+ * @return errno
+ */
+int zoidfs_remove(const zoidfs_fsid_t * fsid,
+                  zoidfs_handle_t * fhandle);
+
+/**
+ * Make a directory.
+ *
+ * @param fsid the reference to the filesystem
+ * @param path the path name of the directory to create
+ * @param attr attributes on the new directory
+ * @param dhandle the handle to the new directory
+ *
+ * @return errno
+ */
+int
+zoidfs_mkdir(const zoidfs_fsid_t * fsid,
+             const char * path,
+             const zoidfs_attr_t * attr,
+             zoidfs_handle_t * dhandle);
+
+typedef struct
+{
+    char name[ZOIDFS_NAME_MAX];
+    zoidfs_handle_t handle;
+} zoidfs_dirent_t;
+
+int
+zoidfs_readdir(const zoidfs_fsid_t * fsid,
+               const zoidfs_handle_t * dhandle,
+               int * entry_count,
+               zoidfs_dirent_t * entries);
+
+/**
+ * Resize changes the size of a file.
+ *
+ * @param fsid the reference to the file system
+ * @param fhandle the handle to the file
+ * @param size the size to change the file to
+ *
+ * @return errno
+ */
+int
+zoidfs_resize(const zoidfs_fsid_t * fsid,
+              const zoidfs_handle_t * fhandle,
+	      int64_t size);
+
+/**
+ * FS dereference takes an id to the file system and
+ * does cleanup at the service node for the
+ * managed file system id reference, such as closing the file
+ * descriptor, etc.
+ *
+ * @param fsid The id to close
+int
+zoidfs_fsderef(zoidfs_fsid_t * fsid);
+
+#endif /* _ZOIDFS_H_ */
+
+/*
+ * Local variables:
+ *  c-indent-level: 4
+ *  c-basic-offset: 4
+ * End: 
+ *
+ * vim: ts=8 sts=4 sw=4 expandtab
+ */
+

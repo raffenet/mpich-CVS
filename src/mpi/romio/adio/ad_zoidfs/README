@@ -1,0 +1,12 @@
+ad_zoidfs
+=========
+
+ad_zoidfs is an ADIO module for zoidfs. It is not a complete implementation. 
+It has not been debugged at all, either. However, it should give some ideas
+about what the actual implementation looks like. ad_zoidfs is based on 
+ad_pvfs2. 
+
+ADIOI_ZOIDFS_WriteStrided has not been implemented yet, but should look like 
+its counterpart, ADIOI_ZOIDFS_ReadStrided. 
+
+
