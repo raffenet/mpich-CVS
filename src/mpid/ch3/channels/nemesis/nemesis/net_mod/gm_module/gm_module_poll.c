@@ -107,7 +107,7 @@ lmt_poll()
 }
 
 
-static inline void
+inline void
 gm_module_send_poll( void )
 {
     send_from_queue();
@@ -115,7 +115,7 @@ gm_module_send_poll( void )
     gm_module_recv();
 }
 
-static inline void
+inline void
 gm_module_recv_poll( void )
 {
     gm_module_recv();

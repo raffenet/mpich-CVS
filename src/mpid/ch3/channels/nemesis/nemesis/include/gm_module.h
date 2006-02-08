@@ -8,6 +8,9 @@ int gm_module_finalize (void);
 int gm_module_ckpt_shutdown (void);
 void gm_module_poll(MPID_nem_poll_dir_t in_or_out);
 void gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
+int gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p);
+int gm_module_connect_to_root (const char *business_card, const int lpid);
+int gm_module_vc_init (MPIDI_VC_t *vc);
 
 int gm_module_test (void);
 
@@ -26,8 +29,6 @@ int gm_module_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_coo
 int gm_module_lmt_send_post (struct iovec cookie);
 int gm_module_lmt_recv_post (struct iovec cookie);
 
-int gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p);
-int gm_module_connect_to_root (const char *business_card, const int lpid);
 
 
 #define LMT_COMPLETE 0

@@ -14,9 +14,7 @@ gm_module_finalize()
     {
 	gm_module_recv_poll();
     }
-
-    free (nodes);
-
+    
     while (gm_module_send_free_queue)
     {
 	e = gm_module_send_free_queue;

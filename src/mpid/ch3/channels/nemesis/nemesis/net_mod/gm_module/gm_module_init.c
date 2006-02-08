@@ -317,7 +317,7 @@ gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 }
 
 int
-gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, char *unique_id)
+gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, unsigned char *unique_id)
 {
     int mpi_errno = MPI_SUCCESS;
     int len;
@@ -364,18 +364,18 @@ gm_module_vc_init (MPIDI_VC_t *vc)
     if (ret < 0 || ret > MPID_NEM_MAX_KEY_VAL_LEN)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_exit;
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
-    mpi_errno = PMI_KVS_Get(kvs_name, key, val);
+    mpi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
     /* --END ERROR HANDLING-- */
 
-    mpi_errno = gm_module_get_port_unique_from_bc (val, &vc->ch.port_id, &vc->ch.unique_id);
+    mpi_errno = gm_module_get_port_unique_from_bc (val, &vc->ch.port_id, vc->ch.unique_id);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno) {
 	MPIU_ERR_POP (mpi_errno);
@@ -387,10 +387,10 @@ gm_module_vc_init (MPIDI_VC_t *vc)
     if (ret != GM_SUCCESS)
     {
 	mpi_errno = MPI_ERR_INTERN;
-	goto fn_exit;
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
- fn_exit:
+ fn_fail:
     return mpi_errno;
 }
