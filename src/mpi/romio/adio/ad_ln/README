@@ -61,8 +61,6 @@ LN_NONCONTIG_WRITE_NAIVE	naive write for noncontiguous writes
 LN_DEPOT_LIST			list of depots that user wants to use	
 				(default: "")
 
-../../test/simple.c should give you some ideas on how to use these 
-hints.
 
 The current version of MPI-IO/L has been developed based on LoRS 
 version 0.82.1 that can be obtained from the LoCI group page. The IBP 
