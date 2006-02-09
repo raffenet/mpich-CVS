@@ -40,20 +40,12 @@
 #define MPID_NEM_MPICH2_HEAD_LEN sizeof(MPID_nem_pkt_header_t)
 #define MPID_NEM_MPICH2_DATA_LEN (MPID_NEM_CELL_PAYLOAD_LEN - MPID_NEM_MPICH2_HEAD_LEN)
 
-#ifdef ENABLED_CHECKPOINTING
 #define MPID_NEM_PKT_HEADER_FIELDS		\
     int source;					\
     int dest;					\
     int datalen;				\
     unsigned short seqno;			\
-    unsigned short type
-#else
-#define MPID_NEM_PKT_HEADER_FIELDS		\
-    int source;					\
-    int dest;					\
-    int datalen;				\
-    int seqno
-#endif
+    unsigned short type /* currently used only with checkpointing */
 
 typedef struct MPID_nem_pkt_header
 {
