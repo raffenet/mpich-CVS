@@ -47,7 +47,7 @@ gm_module_lmt_finalize()
 
 
 static inline int
-gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iovec *cookie)
+gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_vc, struct iovec *cookie)
 {
     int ret = 0;
     int i, j;
@@ -84,26 +84,26 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, int remote_node, struct iove
 }
 
 int
-gm_module_lmt_send_pre (struct iovec *iov, size_t n_iov, int dest, struct iovec *cookie)
+gm_module_lmt_send_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie)
 {
     return gm_module_lmt_pre (iov, n_iov, dest, cookie);
 }
 
 int
-gm_module_lmt_recv_pre (struct iovec *iov, size_t n_iov, int src, struct iovec *cookie)
+gm_module_lmt_recv_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie)
 {
     return gm_module_lmt_pre (iov, n_iov, src, cookie);
 }
 
 int
-gm_module_lmt_start_send (int dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
+gm_module_lmt_start_send (MPIDI_VC_t *dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
 {
     /* We're using gets to transfer the data so, this should not be called */
     return -1;
 }
 
 int
-gm_module_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
+gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
 {
     int ret;
     struct iovec *s_iov;
@@ -120,7 +120,8 @@ gm_module_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie,
     r_offset = 0;
     s_offset = 0;
     
-    ret = gm_module_lmt_do_get (src, &r_iov, &r_n_iov, &r_offset, &s_iov, &s_n_iov, &s_offset, completion_ctr);
+    ret = gm_module_lmt_do_get (src_vc->ch.node_id, src_vc->ch.port_id, &r_iov, &r_n_iov, &r_offset, &s_iov, &s_n_iov, &s_offset,
+				completion_ctr);
     if (ret == LMT_AGAIN)
     {
 	gm_module_lmt_queue_t *e = gm_module_queue_alloc (lmt);
@@ -129,7 +130,8 @@ gm_module_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_cookie,
 	    printf ("error: malloc failed\n");
 	    return -1;
 	}
-	e->src = src;
+	e->node_id = src_vc->ch.node_id;
+	e->port_id = src_vc->ch.port_id;
 	e->r_iov = r_iov;
 	e->r_n_iov = r_n_iov;
 	e->r_offset = r_offset;
@@ -195,8 +197,8 @@ get_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 
 
 int
-gm_module_lmt_do_get (int src, struct iovec **r_iov, int *r_n_iov, int *r_offset, struct iovec **s_iov, int *s_n_iov, int *s_offset,
-		      int *compl_ctr)
+gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, int *r_n_iov, int *r_offset, struct iovec **s_iov, int *s_n_iov,
+		      int *s_offset, int *compl_ctr)
 {
     int s_i, r_i;
     char *s_buf;
@@ -212,7 +214,7 @@ gm_module_lmt_do_get (int src, struct iovec **r_iov, int *r_n_iov, int *r_offset
     s_len = (*s_iov)[s_i].iov_len;
     r_len = (*r_iov)[r_i].iov_len;
     
-    while (0)
+    while (1)
     {
 	if (num_recv_tokens == 0)
 	{
@@ -232,7 +234,7 @@ gm_module_lmt_do_get (int src, struct iovec **r_iov, int *r_n_iov, int *r_offset
 	if (len > 0)
 	{
 	    MPID_NEM_ATOMIC_INC (compl_ctr);
-	    gm_get (port, (long)s_buf, r_buf, len, GM_LOW_PRIORITY, nodes[src].node_id, nodes[src].port_id, get_callback, compl_ctr);
+	    gm_get (port, (long)s_buf, r_buf, len, GM_LOW_PRIORITY, node_id, port_id, get_callback, compl_ctr);
 	    
 	    --num_send_tokens;
 	    

@@ -34,14 +34,20 @@ inline void send_from_queue();
 
 int gm_module_lmt_init();
 void gm_module_lmt_finalize();
-int gm_module_lmt_do_get (int src, struct iovec **r_iov, int *r_n_iov, int *r_offset, struct iovec **s_iov, int *s_n_iov, int *s_offset,
-			  int *compl_ctr);
+int gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, int *r_n_iov, int *r_offset, struct iovec **s_iov, int *s_n_iov,
+			  int *s_offset, int *compl_ctr);
+
+/* these perform the gm_put or gm_get call, there must be at least one send token  */
+/* called by gm_module_put and _get and by polling functions */
+void gm_module_do_put (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr);
+void gm_module_do_get (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr);
 
 /* lmt queues */
 
 typedef struct gm_module_lmt_queue
 {
-    int src;
+    int node_id;
+    int port_id;
     struct iovec *r_iov;
     int r_n_iov;
     int r_offset;

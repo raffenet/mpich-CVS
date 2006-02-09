@@ -91,7 +91,8 @@ lmt_poll()
     
     while (e && num_send_tokens)
     {
-	ret = gm_module_lmt_do_get (e->src, &e->r_iov, &e->r_n_iov, &e->r_offset, &e->s_iov, &e->s_n_iov, &e->s_offset, e->compl_ctr);
+	ret = gm_module_lmt_do_get (e->node_id, e->port_id, &e->r_iov, &e->r_n_iov, &e->r_offset, &e->s_iov, &e->s_n_iov, &e->s_offset,
+				    e->compl_ctr);
 	if (ret == LMT_AGAIN)
 	{
 	    gm_module_queue_free (lmt, e);

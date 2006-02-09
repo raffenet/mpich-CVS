@@ -86,10 +86,12 @@ send_from_queue()
 	    switch (e->u.rdma.type)
 	    {
 	    case RDMA_TYPE_GET:
-		gm_module_get (e->u.rdma.target_p, e->u.rdma.source_p, e->u.rdma.len, e->u.rdma.node, e->u.rdma.completion_ctr);
+		gm_module_do_get (e->u.rdma.target_p, e->u.rdma.source_p, e->u.rdma.len, e->node_id, e->port_id,
+				  e->u.rdma.completion_ctr);
 		break;
 	    case RDMA_TYPE_PUT:
-		gm_module_put (e->u.rdma.target_p, e->u.rdma.source_p, e->u.rdma.len, e->u.rdma.node, e->u.rdma.completion_ctr);
+		gm_module_do_put (e->u.rdma.target_p, e->u.rdma.source_p, e->u.rdma.len, e->node_id, e->port_id,
+				  e->u.rdma.completion_ctr);
 		break;
 	    default:
 		FATAL_ERROR ("internal error");

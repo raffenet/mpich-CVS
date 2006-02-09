@@ -118,6 +118,38 @@ init_gm (int *boardId, int *portId, unsigned char unique_id[])
     ERROR_RET (-1, "unable to allocate a GM port\n");
 }
 
+static int
+post_businesscard()
+{
+    int ret;
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
+    char *kvs_name;
+
+    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+
+    /* Put my unique id */
+    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "{%u:%Lu}", port_id, UNIQUE_TO_UINT64 (unique_id));
+    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "portUnique[%d]", MPID_nem_mem_region.rank);
+
+    ret = PMI_KVS_Put (kvs_name, key, val);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
+    
+    ret = PMI_KVS_Commit (kvs_name);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
+
+    ret = PMI_Barrier();
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
+
+    return 0;
+}
+
+
 #if 0
 static int
 distribute_mac_ids ()
@@ -222,7 +254,10 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 /*     ret = distribute_mac_ids (); */
 /*     if (ret != 0) */
 /* 	ERROR_RET (-1, "distribute_mac_ids() failed"); */
-    
+    ret = post_businesscard();
+    if (ret != 0)
+	ERROR_RET (-1, "post_businesscard() failed");
+
     process_recv_queue = proc_recv_queue;
     process_free_queue = proc_free_queue;
 
@@ -349,6 +384,38 @@ gm_module_connect_to_root (const char *business_card, const int lpid)
 int
 gm_module_vc_init (MPIDI_VC_t *vc)
 {
+    int ret;
+    char key[MPID_NEM_MAX_KEY_VAL_LEN];
+    char val[MPID_NEM_MAX_KEY_VAL_LEN];
+    char *kvs_name;
+    
+    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+
+    
+    unsigned p;
+    gm_u64_t u;
+
+    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "portUnique[%d]", vc->pg_rank);
+    memset (val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+	
+    ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+    if (ret != 0)
+	ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, vc->pg_rank);
+
+    if (sscanf (val, "{%u:%Lu}", &p, &u) != 2)
+	ERROR_RET (-1, "unable to parse data from PMI_KVS_Get %s", val);
+
+    vc->ch.port_id = p;
+    UINT64_TO_UNIQUE (u, vc->ch.unique_id);
+    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    if (ret != GM_SUCCESS)
+	ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id));
+	
+    printf_d ("gm info for %d: %s node = %d port = %d\n", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id), vc->ch.node_id, vc->ch.port_id);
+    
+#if 0 /* not using CH3 bc method yet */ 
     int mpi_errno = MPI_SUCCESS;
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
@@ -393,4 +460,5 @@ gm_module_vc_init (MPIDI_VC_t *vc)
 
  fn_fail:
     return mpi_errno;
+#endif
 }
