@@ -411,10 +411,10 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
   This is the basic routine.  MPIDU_Sock_post_connect converts the
   host description into the ifaddr and calls this routine.
   @*/
-int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set, 
+int MPIDU_Sock_post_connect_ifaddr( MPIDU_Sock_set_t sock_set, 
 				    void * user_ptr, 
 				    unsigned char ifaddr[], int port,
-				    struct MPIDU_Sock ** sockp);
+				    MPIDU_Sock_t * sockp);
 
 
 /*@
