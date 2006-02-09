@@ -4068,6 +4068,7 @@ Function MyTrim(str)
 	MyTrim = str
 End Function
 
+' Use this function to exclude files that shouldn't be compiled
 Function CompileFile(fname)
 	CompileFile = true
 	'fname = MyTrim(fname)
@@ -4101,6 +4102,9 @@ Function CompileFile(fname)
 '	If fname = "register_datarepf.c" Then
 '		CompileFile = false
 '	End If
+	If fname = "fileutil.c" Then
+		CompileFile = false
+	End If
 End Function
 
 Sub OutputLine(path, line)
@@ -4124,6 +4128,7 @@ Sub OutputLine(path, line)
 	End If
 	If do_output Then
 		'WScript.Echo line
+		line = Replace(line, "	", " ")
 		fnames = Split(line)
 		For Each fname in fnames
 			fname = MyTrim(fname)
@@ -4626,6 +4631,9 @@ Function GenBuild()
 	mfile.WriteLine("{..\src\mpi\romio\mpi2-other\array}.c{$(OUTDIR)}.obj:")
 	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(OUTDIR)\\"" /Fd""$(OUTDIR)\\"" $**")
 	mfile.WriteLine
+	mfile.WriteLine("$(OUTDIR)\rlogtime.obj: ..\src\util\logging\rlog\rlogtime.c")
+	mfile.WriteLine("	$(cc) $(cflags) /I..\src\util\logging\common /Fo""$(OUTDIR)\\"" /Fd""$(OUTDIR)\\"" ..\src\util\logging\rlog\rlogtime.c")
+	mfile.WriteLine
 
 	CreateObjs "mpich2", f.GetFolder("src\mpi"), trimlength, true, false
 	CreateObjs "mpich2", f.GetFolder("src\mpid\common\datatype"), trimlength, false, false
@@ -4684,7 +4692,6 @@ Function GenBuild()
 	mfile.WriteLine("	$(OUTDIR)\eof_offset.obj \")
 	mfile.WriteLine("	$(OUTDIR)\error.obj \")
 	mfile.WriteLine("	$(OUTDIR)\flatten.obj \")
-	mfile.WriteLine("	$(OUTDIR)\gencheck.obj \")
 	mfile.WriteLine("	$(OUTDIR)\get_fp_posn.obj \")
 	mfile.WriteLine("	$(OUTDIR)\iscontig.obj \")
 	mfile.WriteLine("	$(OUTDIR)\lock.obj \")
@@ -4754,6 +4761,10 @@ Function GenBuild()
 	mfile.WriteLine("	$(OUTDIR)\write_ordb.obj \")
 	mfile.WriteLine("	$(OUTDIR)\write_orde.obj \")
 	mfile.WriteLine("	$(OUTDIR)\write_sh.obj")
+	mfile.WriteLine
+	mfile.WriteLine("!IFDEF RLOG")
+	mfile.WriteLine("mpich2_objs = $(mpich2_objs) $(OUTDIR)\rlogtime.obj")
+	mfile.WriteLine("!ENDIF")
 
 	mfile.WriteLine
 	mfile.WriteLine("# ch3sock")
