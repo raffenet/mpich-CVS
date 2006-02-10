@@ -178,6 +178,7 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
     if (rc == 0)
     {
 	/* connection succeeded */
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to SOCKI_STATE_CONNECTED_RW for sock %p",sock);
 	pollinfo->state = MPIDU_SOCKI_STATE_CONNECTED_RW;
 	MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_CONNECT, 0, user_ptr, MPI_SUCCESS, mpi_errno, fn_fail);
     }
@@ -185,11 +186,13 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
     else if (errno == EINPROGRESS)
     {
 	/* connection pending */
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to SOCKI_STATE_CONNECTING for sock %p",sock);
 	pollinfo->state = MPIDU_SOCKI_STATE_CONNECTING;
 	MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLOUT);
     }
     else
     {
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to SOCKI_STATE_DISCONNECTED (failure in connect) for sock %p",sock);
 	pollinfo->os_errno = errno;
 	pollinfo->state = MPIDU_SOCKI_STATE_DISCONNECTED;
 
@@ -796,8 +799,10 @@ int MPIDU_Sock_post_close(struct MPIDU_Sock * sock)
     else /* if (pollinfo->type == MPIDU_SOCKI_TYPE_LISTENER) */
     {
 	/*
-	 * The event queue may contain an accept event which means that MPIDU_Sock_accept() may be legally called after
-	 * MPIDU_Sock_post_close().  However, MPIDU_Sock_accept() must be called before the close event is return by
+	 * The event queue may contain an accept event which means that 
+	 * MPIDU_Sock_accept() may be legally called after
+	 * MPIDU_Sock_post_close().  However, MPIDU_Sock_accept() must be 
+	 * called before the close event is return by
 	 * MPIDU_Sock_wait().
 	 */
 	MPIDU_SOCKI_POLLFD_OP_CLEAR(pollfd, pollinfo, POLLIN);
