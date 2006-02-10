@@ -9,6 +9,7 @@ EXTRA_PROGRAMS       =
 
 threaded_sr_SOURCES  = threaded_sr.c
 alltoall_SOURCES = alltoall.c
+sendself_SOURCES = sendself.c
 
 ../../util/mtest.o:
 	(cd ../../util && $(MAKE) mtest.o)
