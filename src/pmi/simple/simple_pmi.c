@@ -384,6 +384,8 @@ int PMI_Abort(int exit_code, const char error_msg[])
 
 /**************************************** Keymap functions *************************/
 
+/*FIXME: need to return an error if the value of the kvs name returned is truncated
+  because it is larger than length */
 int PMI_KVS_Get_my_name( char kvsname[], int length )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -402,7 +404,7 @@ int PMI_KVS_Get_my_name( char kvsname[], int length )
 	return( -1 );
     }
     else {
-	PMIU_getval( "kvsname", kvsname, PMI_kvsname_max );
+	PMIU_getval( "kvsname", kvsname, length );
 	return( 0 );
     }
 }
@@ -452,6 +454,8 @@ int PMI_Get_kvs_domain_id( char id_str[], int length )
     return PMI_KVS_Get_my_name( id_str, length );
 }
 
+/*FIXME: need to return an error if the value of the kvs name returned is truncated
+  because it is larger than length */
 int PMI_KVS_Create( char kvsname[], int length )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -470,7 +474,7 @@ int PMI_KVS_Create( char kvsname[], int length )
 	return( -1 );
     }
     else {
-	PMIU_getval( "kvsname", kvsname, PMI_kvsname_max );
+	PMIU_getval( "kvsname", kvsname, length );
 	return( 0 );
     }
 }
@@ -548,6 +552,8 @@ int PMI_KVS_Commit( const char kvsname[] )
     return( 0 );
 }
 
+/*FIXME: need to return an error if the value returned is truncated
+  because it is larger than length */
 int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int length)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -567,7 +573,7 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int lengt
 	PMIU_getval( "rc", buf, PMIU_MAXLINE );
 	rc = atoi( buf );
 	if ( rc == 0 ) {
-	    PMIU_getval( "value", value, PMI_vallen_max );
+	    PMIU_getval( "value", value, length );
 	    return( 0 );
 	}
 	else {
