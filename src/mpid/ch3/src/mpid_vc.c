@@ -11,7 +11,8 @@
 /*
  * MPIDI_VCRT - virtual connection reference table
  *
- * handle - this element is not used, but exists so that we may use the MPIU_Object routines for reference counting
+ * handle - this element is not used, but exists so that we may use the 
+ * MPIU_Object routines for reference counting
  *
  * ref_count - number of references to this table
  *
