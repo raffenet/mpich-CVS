@@ -293,6 +293,7 @@ int MPIDI_CH3I_Progress_init(void)
     }
     
     /* establish non-blocking listener */
+    /* FIXME: Move into socket connection code */
     mpi_errno = MPIDI_CH3I_Connection_alloc(&MPIDI_CH3I_listener_conn);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
