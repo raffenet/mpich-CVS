@@ -242,8 +242,14 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
     }
     /* --END ERROR HANDLING-- */
 
-    /* This works because Get_business_card uses the same MPIU_Str_xxx functions as above to
-       add the business card to the input string */
+    /* This works because Get_business_card uses the same MPIU_Str_xxx 
+       functions as above to add the business card to the input string */
+    /* FIXME: We should instead ask the mpid_pg routines to give us
+       a connection string. There may need to be a separate step to 
+       restrict us to a connection information that is only valid for
+       connections between processes that are started separately (e.g.,
+       may not use shared memory).  We may need a channel-specific 
+       function to create an exportable connection string.  */
     mpi_errno = MPIDI_CH3I_Get_business_card(port_name, len);
 
 fn_exit:
