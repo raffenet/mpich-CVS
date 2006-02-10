@@ -81,7 +81,9 @@ int MPID_Finalize(void)
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-		
+
+    /* FIXME: The close actions should use the same code as the other
+       connection close code */
     /*
      * Initiate close protocol for all active VCs
      */
