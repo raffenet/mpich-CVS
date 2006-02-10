@@ -322,7 +322,6 @@ int MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
 static int mpiu_dbg_initialized = 0;
 static FILE *MPIU_DBG_fp = 0;
 static char *filePattern = "-stdout-"; /* "log%d.log"; */
-/* static char *defaultFilePattern = "dbg-%d.log"; */
 static char *defaultFilePattern = "dbg@W%w-@%d@T-%t@.log";
 static int worldNum  = 0;
 static int worldRank = -1;
@@ -458,7 +457,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 
     s = getenv( "MPICH_DBG" );
     if (s) {
-	/* Set te defaults */
+	/* Set the defaults */
 	MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
 	MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
 	if (strncmp(s,"FILE",4) == 0) {
