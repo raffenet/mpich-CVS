@@ -42,7 +42,6 @@ int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 THREAD_RETURN_TYPE send_thread(void *p)
 {
     int err;
-    char *buffer;
     int length;
     int rank;
     char buffer[100];
