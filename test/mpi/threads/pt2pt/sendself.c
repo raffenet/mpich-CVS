@@ -41,24 +41,20 @@ int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 
 THREAD_RETURN_TYPE send_thread(void *p)
 {
-    int err;
-    int length;
     int rank;
     char buffer[100];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     MPI_Send(buffer, sizeof(buffer), MPI_CHAR, rank, 0, MPI_COMM_WORLD);
-    return (THREAD_RETURN_TYPE)err;
+    return (THREAD_RETURN_TYPE)0;
 }
 
 int main( int argc, char *argv[] )
 {
-    int err;
     int rank, size;
     int provided;
     char buffer[100];
-    int length;
     MPI_Status status;
 
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
