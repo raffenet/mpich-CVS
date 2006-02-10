@@ -58,6 +58,8 @@ int MPIDU_Sock_accept(struct MPIDU_Sock * listener, struct MPIDU_Sock_set * sock
      * alogorithm (to minimize latency of small messages).
      */
     addr_len = sizeof(struct sockaddr_in);
+    /* FIXME: Either use the syscall macro or correctly wrap this in a
+       test for EINTR */
     fd = accept(pollinfo->fd, (struct sockaddr *) &addr, &addr_len);
 
     if (pollinfo->state != MPIDU_SOCKI_STATE_CLOSING)
