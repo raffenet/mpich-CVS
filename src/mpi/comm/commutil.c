@@ -545,6 +545,9 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 	MPIU_Object_add_ref( comm_ptr->errhandler );
     }
 
+    /* Notify the device of the new communicator */
+    MPID_Dev_comm_create_hook(newcomm_ptr);
+	    
     /* Start with no attributes on this communicator */
     newcomm_ptr->attributes = 0;
     *outcomm_ptr = newcomm_ptr;
