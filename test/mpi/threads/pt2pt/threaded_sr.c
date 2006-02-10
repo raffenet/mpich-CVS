@@ -11,7 +11,8 @@
 
 static char MTEST_Descrip[] = "Threaded Send-Recv";
 
-/* The buffer size needs to be large enough to cause the rndv protocol to be used.
+/* The buffer size needs to be large enough to cause the rndv protocol to be 
+   used.
    If the MPI provider doesn't use a rndv protocol then the size doesn't matter.
  */
 #define MSG_SIZE 1024*1024
