@@ -77,6 +77,9 @@ int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
     MPIU_CHKPMEM_MALLOC(conn,MPIDI_CH3I_Connection_t*,
 			sizeof(MPIDI_CH3I_Connection_t),mpi_errno,"conn");
 
+    /* FIXME: This size is unchanging, so get it only once (at most); 
+       we might prefer for connections to simply point at the single process
+       group to which the remote process belong */
     mpi_errno = PMI_Get_id_length_max(&id_sz);
     if (mpi_errno != PMI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
@@ -456,7 +459,8 @@ int MPIDI_CH3_Sockconn_handle_connect_event( MPIDI_CH3I_Connection_t *conn,
     else {
 	/* CONN_STATE_CONNECT_ACCEPT */
 	int port_name_tag;
-	
+
+	MPIU_Assert(conn->state == CONN_STATE_CONNECT_ACCEPT);
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_CSEND (conn=%p)", conn);
 	conn->state = CONN_STATE_OPEN_CSEND;
 	
@@ -523,6 +527,8 @@ int MPIDI_CH3_Sockconn_handle_close_event( MPIDI_CH3I_Connection_t * conn )
 }
 
 /* Cycle through the connection setup states */
+/* FIXME: separate out the accept and connect sides to make it easier
+   to follow the logic */
 int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 {
     int mpi_errno = MPI_SUCCESS;
@@ -530,6 +536,9 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
     /* FIXME: Is there an assumption about conn->state? */
 
     if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_REQ) {
+	/* Answer to fixme: it appears from the control flow that this is
+	   the required state) */
+	MPIU_Assert( conn->state == CONN_STATE_OPEN_LRECV_PKT);
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LRECV_DATA (conn=%p)",conn);
 	conn->state = CONN_STATE_OPEN_LRECV_DATA;
 	mpi_errno = MPIDU_Sock_post_read(conn->sock, conn->pg_id, conn->pkt.sc_open_req.pg_id_len, 
@@ -565,6 +574,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 	conn->pkt.sc_open_resp.ack = TRUE;
 	
+	/* FIXME: Possible ambiguous state (two ways to get to OPEN_LSEND) */
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_OPEN_LSEND (conn=%p)",conn);
 	conn->state = CONN_STATE_OPEN_LSEND;
 	mpi_errno = connection_post_send_pkt(conn);
@@ -578,6 +588,8 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 
     }
     else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_RESP) {
+	/* FIXME: is this the correct assert? */
+	MPIU_Assert( conn->state == CONN_STATE_OPEN_CRECV );
 	if (conn->pkt.sc_open_resp.ack) {
 	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CONNECTED (conn=%p)",conn);
 	    conn->state = CONN_STATE_CONNECTED;
@@ -597,6 +609,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	}
 	else {
 	    /* FIXME: Should conn->vc be freed? Who allocated? Why not? */
+	    /* FIXME: Should probably reduce ref count on conn->vc */
 	    conn->vc = NULL;
 	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING (conn=%p)",conn);
 	    conn->state = CONN_STATE_CLOSING;
@@ -754,6 +767,10 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
 	else {
 	    /* head-to-head connections - close this connection */
 	    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING (conn=%p)",conn);
+	    /* FIXME: the connect side of this sets conn->vc to NULL. Why is
+	       this different? The code that checks CONN_STATE_CLOSING uses
+	       conn == NULL to identify intentional close, which this 
+	       appears to be. */
 	    conn->state = CONN_STATE_CLOSING;
 	    mpi_errno = MPIDU_Sock_post_close(conn->sock);
 	    if (mpi_errno != MPI_SUCCESS) {
