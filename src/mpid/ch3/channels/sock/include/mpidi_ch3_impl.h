@@ -17,6 +17,7 @@
 
 /* This is all socket connection definitions */
 
+/* FIXME: This should be part of the shared socket support, not socket channel */
 enum MPIDI_CH3I_Conn_state
 {
     CONN_STATE_UNCONNECTED,

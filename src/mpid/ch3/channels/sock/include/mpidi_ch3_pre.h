@@ -71,6 +71,7 @@ MPIDI_CH3I_Pkt_sc_close_t sc_close;
 
 /* This channel has no special channel data for the process group structure */
 
+/* FIXME: Explain these; why is this separate from the VC state? */
 typedef enum MPIDI_CH3I_VC_state
 {
     MPIDI_CH3I_VC_STATE_UNCONNECTED,
