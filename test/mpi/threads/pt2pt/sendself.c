@@ -75,8 +75,7 @@ int main( int argc, char *argv[] )
 
     start_send_thread(send_thread);
 
-    /* give the send thread time to start up and begin sending the message */
-    sleep(3); 
+    MPI_Probe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 
     MPI_Recv(buffer, sizeof(buffer), MPI_CHAR, rank, 0, MPI_COMM_WORLD, &status);
 
