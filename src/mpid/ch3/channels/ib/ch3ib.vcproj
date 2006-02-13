@@ -433,9 +433,6 @@
 				RelativePath="..\..\src\mpidi_isend_self.c">
 			</File>
 			<File
-				RelativePath="..\..\src\mpidi_kvs.c">
-			</File>
-			<File
 				RelativePath="..\..\src\mpidi_pg.c">
 			</File>
 			<File
