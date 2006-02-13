@@ -20,7 +20,6 @@ inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell)
 /*   /\*  memset (&cell->pkt, 0, sizeof (MPID_nem_pkt_header_t)); *\/ */
 /* } */
 
-
 inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 {
     MPID_nem_pkt_mpich2_t *mpkt     = (MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2); /* cast away volatile */
@@ -104,17 +103,4 @@ inline void MPID_nem_queue_init (MPID_nem_queue_ptr_t qhead )
   MPID_NEM_SET_REL_NULL (qhead->my_head);
   MPID_NEM_SET_REL_NULL (qhead->tail);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 

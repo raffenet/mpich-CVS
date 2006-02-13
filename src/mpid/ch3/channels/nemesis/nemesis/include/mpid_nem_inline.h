@@ -77,6 +77,9 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     MPID_NEM_MEMCPY (el->pkt.mpich2.payload, buf, size);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
+
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (vc->ch.is_local)
     {
@@ -98,7 +101,6 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 	prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
 #endif /*PREFETCH_CELL    */
-
 
     /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
     return MPID_NEM_MPICH2_SUCCESS;
@@ -169,7 +171,10 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 #endif /* MPID_NEM__MPICH2_HEADER_LEN > 40 */
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
-	
+
+	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via fbox");
+	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
+
 	    return MPID_NEM_MPICH2_SUCCESS;
 	}
     }
@@ -233,6 +238,9 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 #endif /*1 */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
+
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (vc->ch.is_local)
     {
@@ -256,6 +264,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 #endif /*PREFETCH_CELL */
 
     /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
+
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -341,6 +350,9 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
+
     if(vc->ch.is_local)
     {
 	MPID_nem_queue_enqueue (vc->ch.recv_queue, el);
@@ -358,6 +370,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
+
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -429,6 +442,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
 	    *n_iov = 0;
+
+	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via fbox");
+	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
 	    return MPID_NEM_MPICH2_SUCCESS;
 	}
@@ -510,6 +526,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
 
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
+
     if (vc->ch.is_local)
     {    
 	MPID_nem_queue_enqueue (vc->ch.recv_queue, el);	
@@ -527,6 +546,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
+
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -684,6 +704,15 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPID_nem_ckpt_log_message (*cell);
 #endif
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues6));
+    
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+	if (*cell)
+	{
+	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Received cell via %s", (*in_fbox) ? "fbox" : "queue");
+	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
+	}
+    });
+    
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -721,6 +750,15 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     ++recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
  exit_l:
+    
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+	if (*cell)
+	{
+	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Received cell via %s", (*in_fbox) ? "fbox" : "queue");
+	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
+	}
+    });
+    
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
@@ -803,6 +841,10 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif
 
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues8));
+    
+    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Received cell via %s", (*in_fbox) ? "fbox" : "queue");
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
+
     return MPID_NEM_MPICH2_SUCCESS;
 }
 

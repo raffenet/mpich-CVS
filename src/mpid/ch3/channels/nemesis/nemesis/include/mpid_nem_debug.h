@@ -1,6 +1,5 @@
 #ifndef MPID_NEM_DEBUG_H
 #define MPID_NEM_DEBUG_H
-#include <pm.h>
 
 /*#define NDEBUG 1 */
 #include <assert.h>
@@ -20,6 +19,14 @@
 #define SKIP do{}while(0)
 /*#warning "SKIP is do ...while" */
 #endif /* YIELD_IN_SKIP */
+
+/* debugging message functions */
+
+struct MPID_nem_cell;
+void MPID_nem_dbg_dump_cell (volatile struct MPID_nem_cell *cell);
+
+
+/* Error handling routines */
 
 #define HOLD_ON_ERROR 
 #ifdef HOLD_ON_ERROR
@@ -66,5 +73,6 @@ extern char MPID_nem_err_str[MAX_ERR_STR_LEN];
     perror(MPID_nem_err_str);				\
     MAYBE_HOLD_ON_ERROR (exit (-1));			\
 } while (0)
+
 
 #endif /* MPID_NEM_DEBUG_H */
