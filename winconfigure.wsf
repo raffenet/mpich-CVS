@@ -3661,41 +3661,41 @@ End If
 '
 ' mpiu_events_conf.h
 '
-If f.FileExists("src\util\events\mpiu_events_conf.h.in") Then
-	cEcho "Creating src\include\win32\mpiu_events_conf.h"
-	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
-	Call WriteHeader(fout, "mpiu_events_")
-	Call AddDefinitions(fout, "src\util\events\mpiu_events_conf.h.in", false)
-	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
-	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
-	fout.WriteLine("#endif")
-	Call WriteFooter(fout)
-	fout.Close()
-	cEcho "Creating src\include\win64\mpiu_events_conf.h"
-	Set fout = f.CreateTextFile("src\include\win64\mpiu_events_conf.h")
-	Call WriteHeader(fout, "mpiu_events_")
-	Call AddDefinitions(fout, "src\util\events\mpiu_events_conf.h.in", false)
-	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
-	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
-	fout.WriteLine("#endif")
-	Call WriteFooter(fout)
-	fout.Close()
-Else
-	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
-	Call WriteHeader(fout, "mpiu_events_")
-	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
-	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
-	fout.WriteLine("#endif")
-	Call WriteFooter(fout)
-	fout.Close()
-	Set fout = f.CreateTextFile("src\include\win64\mpiu_events_conf.h")
-	Call WriteHeader(fout, "mpiu_events_")
-	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
-	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
-	fout.WriteLine("#endif")
-	Call WriteFooter(fout)
-	fout.Close()
-End If
+'If f.FileExists("src\util\events\mpiu_events_conf.h.in") Then
+'	cEcho "Creating src\include\win32\mpiu_events_conf.h"
+'	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
+'	Call WriteHeader(fout, "mpiu_events_")
+'	Call AddDefinitions(fout, "src\util\events\mpiu_events_conf.h.in", false)
+'	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
+'	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
+'	fout.WriteLine("#endif")
+'	Call WriteFooter(fout)
+'	fout.Close()
+'	cEcho "Creating src\include\win64\mpiu_events_conf.h"
+'	Set fout = f.CreateTextFile("src\include\win64\mpiu_events_conf.h")
+'	Call WriteHeader(fout, "mpiu_events_")
+'	Call AddDefinitions(fout, "src\util\events\mpiu_events_conf.h.in", false)
+'	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
+'	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
+'	fout.WriteLine("#endif")
+'	Call WriteFooter(fout)
+'	fout.Close()
+'Else
+'	Set fout = f.CreateTextFile("src\include\win32\mpiu_events_conf.h")
+'	Call WriteHeader(fout, "mpiu_events_")
+'	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
+'	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
+'	fout.WriteLine("#endif")
+'	Call WriteFooter(fout)
+'	fout.Close()
+'	Set fout = f.CreateTextFile("src\include\win64\mpiu_events_conf.h")
+'	Call WriteHeader(fout, "mpiu_events_")
+'	fout.WriteLine("#ifndef USE_MPIU_EVENT_TYPE")
+'	fout.WriteLine("#define USE_MPIU_EVENT_TYPE MPIU_EVENT_TYPE_WINDOWS")
+'	fout.WriteLine("#endif")
+'	Call WriteFooter(fout)
+'	fout.Close()
+'End If
 
 '
 ' trace_impl.h
@@ -4783,13 +4783,13 @@ Function GenBuild()
 	outdir = "MT_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\sock"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\sock"), trimlength
-	CreateRules f.GetFolder("src\util\events"), trimlength
+	'CreateRules f.GetFolder("src\util\events"), trimlength
 	mfile.WriteLine("{..\src\util\thread}.c{$(MT_OUTDIR)}.obj:")
 	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(MT_OUTDIR)\\"" /Fd""$(MT_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	CreateObjs "ch3mt", f.GetFolder("src\mpid\ch3\channels\sock"), trimlength, true, false
 	CreateObjs "ch3mt", f.GetFolder("src\mpid\ch3\util\sock"), trimlength, false, false
-	CreateObjs "ch3mt", f.GetFolder("src\util\events"), trimlength, false, false
+	'CreateObjs "ch3mt", f.GetFolder("src\util\events"), trimlength, false, false
 	mfile.WriteLine(" \" & vbCrLf & "	$(MT_OUTDIR)\mpe_thread_win.obj")
 
 	mfile.WriteLine
