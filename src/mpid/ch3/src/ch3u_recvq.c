@@ -6,6 +6,14 @@
 
 #include "mpidimpl.h"
 
+/* These are needed for nemesis to know from where to expect a message */
+#ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK
+#define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) do {} while (0)
+#endif
+#ifndef MPIDI_POSTED_RECV_DEQUEUE_HOOK
+#define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) do {} while (0)
+#endif
+
 /* FIXME: 
  * Are locks required here?  Not when the current code uses the "one big lock"
  * approach.  In addition, some routines can be implemented in a lock-free
@@ -330,6 +338,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
 		recvq_posted_head = rreq;
 	    }
 	    recvq_posted_tail = rreq;
+	    /* This is for nemesis to know from where to expect a message */
+	    MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
 	}
     
 	found = FALSE;
@@ -395,7 +405,8 @@ int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq)
 		{
 		    recvq_posted_tail = prev_rreq;
 		}
-	    
+		/* This is for nemesis to know from where to expect a message */
+		MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
 		found = TRUE;
 		break;
 	    }
@@ -455,6 +466,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match)
 		    recvq_posted_tail = prev_rreq;
 		}
 
+		/* This is for nemesis to know from where to expect a message */
+		MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
 		break;
 	    }
 	    
@@ -515,6 +528,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match,
 		    recvq_posted_tail = prev_rreq;
 		}
 		found = TRUE;
+		/* This is for nemesis to know from where to expect a message */
+		MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
 		goto lock_exit;
 	    }
 	    
