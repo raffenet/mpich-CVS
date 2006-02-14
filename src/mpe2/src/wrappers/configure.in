@@ -130,31 +130,15 @@ AC_ARG_WITH( f2cmpilibs,
                                      MPICH.],
 F2CMPI_LIBS="$withval" ; enable_f2cmpilib=no )
 
-
-if test -z "$nonopt" ; then nonopt=NONE ; fi
-AC_CANONICAL_HOST
-AC_ARG_ENABLE( broken-procnull,
-[--enable-broken-procnull           - Handle MPI implementations with buggy
-                                     handling of MPI_PROC_NULL.],
-procnull_broken=$enableval, procnull_broken=default )
-if test "$host" = "irix" ; then
-dnl FIXME: the test has a problem when LAM on irix is configured!
-    if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-        if test "$procnull_broken" = "default" ; then
-            procnull_broken=yes
-        fi
-    fi
-fi
-if test "$procnull_broken" = "yes" ; then
-    AC_DEFINE( HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL, 1,
-               [Define if MPI_PROCNULL not handled in MPI_Status] )
-fi
-
-
 AC_ARG_ENABLE( debugcheck,
 [--enable-debugcheck                - Turn on/off the debugging & diagnostic
                                      checking code in MPE code.
                                      The default is enable=no.] )
+
+AC_ARG_ENABLE( broken-procnull,
+[--enable-broken-procnull           - Handle MPI implementations with buggy
+                                     handling of MPI_PROC_NULL.],
+procnull_broken=$enableval, procnull_broken=default )
 
 dnl Set the various build directories from their mpe_ prefixed env variables.
 dnl
@@ -265,6 +249,41 @@ if test "$have_proto" = "yes" ; then
     AC_MSG_RESULT([yes])
 else
     AC_MSG_RESULT([no])
+fi
+
+if test -z "$nonopt" ; then nonopt=NONE ; fi
+AC_CANONICAL_HOST
+case "$host" in
+    *irix*)
+dnl     FIXME: the test has a problem when LAM on irix is configured!
+        if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+            if test "$procnull_broken" = "default" ; then
+                procnull_broken=yes
+            fi
+        fi
+        ;;
+    *cray*)
+        if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
+            AC_MSG_CHECKING( [for Cray's FCD logical type] )
+            AC_LINK_IFELSE( [ AC_LANG_PROGRAM( [#include <fortran.h>], [
+                                int clogical, flogical;
+                                clogical = 1;
+                                flogical = _btol( clogical );
+                                clogical = _ltob( &flogical );
+                            ] ) ], [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+            if test "$mpe_link_ok" = "yes" ; then
+                AC_MSG_RESULT(yes)
+                AC_DEFINE( HAVE_CRAY_FCD_LOGICAL, 1,
+                           [Define if CRAY's FCD logical is found] )
+            else
+                AC_MSG_RESULT(no)
+            fi
+        fi
+        ;;
+esac
+if test "$procnull_broken" = "yes" ; then
+    AC_DEFINE( HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL, 1,
+               [Define if MPI_PROCNULL not handled in MPI_Status] )
 fi
 
 
@@ -439,11 +458,50 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 else
 dnl if MPICH2, assume MPI-RMA is available.
     if test "$MPI_IMPL" = "MPICH2" ; then
-        AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA available] )
+        AC_DEFINE( HAVE_MPI_RMA, 1, [Define if MPI-RMA is available] )
         AC_DEFINE( HAVE_MPI_RMA_LOCK, 1,
                    [Define if MPI_Win_lock/unlock are available] )
         AC_DEFINE(HAVE_MPI_RMA_TEST, 1,
                    [Define if MPI_Win_test is available])
+    fi
+fi
+
+dnl Check MPI-2 communicator functions
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    if test "$enable_checkMPI" = "yes" ; then
+        AC_MSG_CHECKING( [for the C version of MPI_Comm_connect/accept()] )
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                              [ MPI_Comm intercomm; char *port ],
+                              [
+    MPI_Comm_connect( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm );
+    MPI_Comm_accept( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm )
+                              ],
+                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        if test "$mpe_link_ok" = "yes" ; then
+            AC_MSG_RESULT(yes)
+            AC_MSG_CHECKING( [for the C version of PMPI_Comm_connect/accept()] )
+            PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                                  [ MPI_Comm intercomm; char *port ],
+                                  [
+    PMPI_Comm_connect( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm );
+    PMPI_Comm_accept( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm )
+                                  ],
+                                  [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+            if test "$mpe_link_ok" = "yes" ; then
+                AC_MSG_RESULT(yes)
+                AC_DEFINE( HAVE_MPI_SPAWN, 1,
+                           [Define if MPI-SPAWN is available] )
+            else
+                AC_MSG_RESULT(no)
+            fi
+        else
+            AC_MSG_RESULT(no)
+        fi
+    fi
+else
+dnl if MPICH2 assume all MPI-2 communicator functions are available.
+    if test "$MPI_IMPL" = "MPICH2" ; then
+        AC_DEFINE( HAVE_MPI_SPAWN, 1, [Define if MPI-SPAWN is available] )
     fi
 fi
 
