@@ -96,7 +96,16 @@ MPI_Fint MPER_F_TRUE = MPE_F77_TRUE_VALUE;
 MPI_Fint MPER_F_FALSE = MPE_F77_FALSE_VALUE;
 
 /* Fortran logical values */
-#ifndef _CRAY
+#if defined( WITH_CRAY_FCD_LOGICAL )
+/*
+   CRAY Vector processors only; these are defined in /usr/include/fortran.h 
+   Thanks to lmc@cray.com
+*/
+#include <fortran.h>
+#define MPIR_TO_FLOG(a) (_btol(a))
+#define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /*(a) must be a pointer */
+
+#else
 /*  extern MPI_Fint MPER_F_TRUE, MPER_F_FALSE;  */
 #define MPIR_TO_FLOG(a) ((a) ? MPER_F_TRUE : MPER_F_FALSE)
 /* 
@@ -107,12 +116,6 @@ MPI_Fint MPER_F_FALSE = MPE_F77_FALSE_VALUE;
    system.
  */
 #define MPIR_FROM_FLOG(a) ( (a) == MPER_F_TRUE ? 1 : 0 )
-
-#else
-/* CRAY Vector processors only; these are defined in /usr/include/fortran.h 
-   Thanks to lmc@cray.com */
-#define MPIR_TO_FLOG(a) (_btol(a))
-#define MPIR_FROM_FLOG(a) ( _ltob(&(a)) )    /*(a) must be a pointer */
 #endif
 
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
