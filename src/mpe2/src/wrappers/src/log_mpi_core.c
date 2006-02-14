@@ -130,23 +130,10 @@ typedef struct {
 #define MPE_KIND_MSG_INIT 0x200
 #define MPE_KIND_FILE 0x400
 #define MPE_KIND_RMA 0x800
-#define MPE_KIND_INTERNAL 0x1000
+#define MPE_KIND_SPAWN 0x1000
+#define MPE_KIND_INTERNAL 0x10000000
 
-/* More as needed */
-
-/* Number of MPI routines; increase to allow user extensions */
-/*
-#ifdef HAVE_MPI_RMA
-#define MPE_MAX_KNOWN_STATES 200
-#else
-#ifdef HAVE_MPI_IO
-#define MPE_MAX_KNOWN_STATES 180
-#else
-#define MPE_MAX_KNOWN_STATES 128
-#endif
-#endif
-*/
-
+#define HAVE_MPI_SPAWN 1
 /*
    Because of existence of MPE internal states whose state ID is higher than
    any of MPI states' ID.  MPE_MAX_KNOWN_STATES needs to be defined in full.
@@ -155,12 +142,18 @@ typedef struct {
 
 #define MPE_MAX_KNOWN_EVENTS 2
 
-#ifdef HAVE_MPI_RMA
-void MPE_Init_MPIRMA( void );
-#endif
+void MPE_Init_mpi_core( void );
 
 #ifdef HAVE_MPI_IO
-void MPE_Init_MPIIO( void );
+void MPE_Init_mpi_io( void );
+#endif
+
+#ifdef HAVE_MPI_RMA
+void MPE_Init_mpi_rma( void );
+#endif
+
+#ifdef HAVE_MPI_SPAWN
+void MPE_Init_mpi_spawn( void );
 #endif
 
 
@@ -170,7 +163,6 @@ static MPE_Event events[MPE_MAX_KNOWN_EVENTS];
 
 /* Global trace control */
 static int trace_on = 0;
-
 
 /* define known events' ID, i.e. index to the corresponding event in events[] */
 #define MPE_COMM_INIT_ID 0
@@ -438,6 +430,9 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 #define MPE_REQ_WAIT_TEST(request,status,note) \
     MPE_Req_wait_test( request, status, note, state );
 
+#define MPE_LOG_OFF    trace_on  = 0;
+#define MPE_LOG_ON     trace_on  = 1;
+
 #define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
     if (trace_on && state->is_active) { \
         if ( new_comm != MPI_COMM_NULL ) { \
@@ -448,7 +443,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
         } \
         else { \
             MPE_Log_commIDs_nullcomm( commIDs, 0, comm_etype ); \
-            MPE_LOG_SOLO_EVENT( commIDs,MPE_COMM_FINALIZE_ID ) \
+            MPE_LOG_SOLO_EVENT( commIDs, MPE_COMM_FINALIZE_ID ) \
         } \
     }
 
@@ -458,11 +453,11 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
             new_commIDs = CLOG_CommSet_add_intercomm( CLOG_CommSet, \
                                                       new_comm, commIDs ); \
             MPE_Log_commIDs_intercomm( commIDs, 0, comm_etype, new_commIDs ); \
-            MPE_LOG_SOLO_EVENT( new_commIDs,MPE_COMM_INIT_ID ) \
+            MPE_LOG_SOLO_EVENT( new_commIDs, MPE_COMM_INIT_ID ) \
         } \
         else { \
             MPE_Log_commIDs_nullcomm( commIDs, 0, comm_etype ); \
-            MPE_LOG_SOLO_EVENT( commIDs,MPE_COMM_FINALIZE_ID ) \
+            MPE_LOG_SOLO_EVENT( commIDs, MPE_COMM_FINALIZE_ID ) \
         } \
     }
 
@@ -652,1402 +647,10 @@ MPE_State   *state;
     }
 }
 
-
-/*
- * Here begins the individual routines.  We may eventually want to
- * break them up, at least by class (no need to load the MPI_CART/GRAPH
- * routines if the application doesn't use them).
- */
-
-
-int   MPI_Allgather( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm )
-void * sendbuf;
-int sendcount;
-MPI_Datatype sendtype;
-void * recvbuf;
-int recvcount;
-MPI_Datatype recvtype;
-MPI_Comm comm;
-{
-  int       returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Allgather - prototyping replacement for MPI_Allgather
-    Log the beginning and ending of the time spent in MPI_Allgather calls.
-*/
-  MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHER_ID)
-  
-  returnVal = PMPI_Allgather( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Allgatherv( sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm )
-void * sendbuf;
-int sendcount;
-MPI_Datatype sendtype;
-void * recvbuf;
-int * recvcounts;
-int * displs;
-MPI_Datatype recvtype;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Allgatherv - prototyping replacement for MPI_Allgatherv
-    Log the beginning and ending of the time spent in MPI_Allgatherv calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHERV_ID)
-  
-  returnVal = PMPI_Allgatherv( sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm )
-void * sendbuf;
-void * recvbuf;
-int count;
-MPI_Datatype datatype;
-MPI_Op op;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Allreduce - prototyping replacement for MPI_Allreduce
-    Log the beginning and ending of the time spent in MPI_Allreduce calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ALLREDUCE_ID)
-  
-  returnVal = PMPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int  MPI_Alltoall( sendbuf, sendcount, sendtype, recvbuf, recvcnt, recvtype, comm )
-void * sendbuf;
-int sendcount;
-MPI_Datatype sendtype;
-void * recvbuf;
-int recvcnt;
-MPI_Datatype recvtype;
-MPI_Comm comm;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Alltoall - prototyping replacement for MPI_Alltoall
-    Log the beginning and ending of the time spent in MPI_Alltoall calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALL_ID)
-  
-  returnVal = PMPI_Alltoall( sendbuf, sendcount, sendtype, recvbuf, recvcnt, recvtype, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Alltoallv( sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm )
-void * sendbuf;
-int * sendcnts;
-int * sdispls;
-MPI_Datatype sendtype;
-void * recvbuf;
-int * recvcnts;
-int * rdispls;
-MPI_Datatype recvtype;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Alltoallv - prototyping replacement for MPI_Alltoallv
-    Log the beginning and ending of the time spent in MPI_Alltoallv calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALLV_ID)
-  
-  returnVal = PMPI_Alltoallv( sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Barrier( comm )
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Barrier - prototyping replacement for MPI_Barrier
-    Log the beginning and ending of the time spent in MPI_Barrier calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_BARRIER_ID)
-  
-  returnVal = PMPI_Barrier( comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int MPI_Bcast( buffer, count, datatype, root, comm )
-void * buffer;
-int count;
-MPI_Datatype datatype;
-int root;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Bcast - prototyping replacement for MPI_Bcast
-    Log the beginning and ending of the time spent in MPI_Bcast calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_BCAST_ID)
-  
-  returnVal = PMPI_Bcast( buffer, count, datatype, root, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int MPI_Gather( sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm )
-void * sendbuf;
-int sendcnt;
-MPI_Datatype sendtype;
-void * recvbuf;
-int recvcount;
-MPI_Datatype recvtype;
-int root;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Gather - prototyping replacement for MPI_Gather
-    Log the beginning and ending of the time spent in MPI_Gather calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_GATHER_ID)
-  
-  returnVal = PMPI_Gather( sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int MPI_Gatherv( sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm )
-void * sendbuf;
-int sendcnt;
-MPI_Datatype sendtype;
-void * recvbuf;
-int * recvcnts;
-int * displs;
-MPI_Datatype recvtype;
-int root;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Gatherv - prototyping replacement for MPI_Gatherv
-    Log the beginning and ending of the time spent in MPI_Gatherv calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_GATHERV_ID)
-  
-  returnVal = PMPI_Gatherv( sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int  MPI_Op_create( function, commute, op )
-MPI_User_function * function;
-int commute;
-MPI_Op * op;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Op_create - prototyping replacement for MPI_Op_create
-    Log the beginning and ending of the time spent in MPI_Op_create calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_CREATE_ID)
-  
-  returnVal = PMPI_Op_create( function, commute, op );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int  MPI_Op_free( op )
-MPI_Op * op;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Op_free - prototyping replacement for MPI_Op_free
-    Log the beginning and ending of the time spent in MPI_Op_free calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_FREE_ID)
-  
-  returnVal = PMPI_Op_free( op );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Reduce_scatter( sendbuf, recvbuf, recvcnts, datatype, op, comm )
-void * sendbuf;
-void * recvbuf;
-int * recvcnts;
-MPI_Datatype datatype;
-MPI_Op op;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Reduce_scatter - prototyping replacement for MPI_Reduce_scatter
-    Log the beginning and ending of the time spent in MPI_Reduce_scatter calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_SCATTER_ID)
-  
-  returnVal = PMPI_Reduce_scatter( sendbuf, recvbuf, recvcnts, datatype, op, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm )
-void * sendbuf;
-void * recvbuf;
-int count;
-MPI_Datatype datatype;
-MPI_Op op;
-int root;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Reduce - prototyping replacement for MPI_Reduce
-    Log the beginning and ending of the time spent in MPI_Reduce calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_ID)
-  
-  returnVal = PMPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Scan( sendbuf, recvbuf, count, datatype, op, comm )
-void * sendbuf;
-void * recvbuf;
-int count;
-MPI_Datatype datatype;
-MPI_Op op;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Scan - prototyping replacement for MPI_Scan
-    Log the beginning and ending of the time spent in MPI_Scan calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_SCAN_ID)
-  
-  returnVal = PMPI_Scan( sendbuf, recvbuf, count, datatype, op, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Scatter( sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm )
-void * sendbuf;
-int sendcnt;
-MPI_Datatype sendtype;
-void * recvbuf;
-int recvcnt;
-MPI_Datatype recvtype;
-int root;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Scatter - prototyping replacement for MPI_Scatter
-    Log the beginning and ending of the time spent in MPI_Scatter calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_SCATTER_ID)
-  
-  returnVal = PMPI_Scatter( sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Scatterv( sendbuf, sendcnts, displs, sendtype,
-                    recvbuf, recvcnt, recvtype, root, comm )
-void * sendbuf;
-int * sendcnts;
-int * displs;
-MPI_Datatype sendtype;
-void * recvbuf;
-int recvcnt;
-MPI_Datatype recvtype;
-int root;
-MPI_Comm comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Scatterv - prototyping replacement for MPI_Scatterv
-    Log the beginning and ending of the time spent in MPI_Scatterv calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_SCATTERV_ID)
-  
-  returnVal = PMPI_Scatterv( sendbuf, sendcnts, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Attr_delete( comm, keyval )
-MPI_Comm comm;
-int keyval;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Attr_delete - prototyping replacement for MPI_Attr_delete
-    Log the beginning and ending of the time spent in MPI_Attr_delete calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_DELETE_ID)
-  
-  returnVal = PMPI_Attr_delete( comm, keyval );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Attr_get( comm, keyval, attr_value, flag )
-MPI_Comm comm;
-int keyval;
-void * attr_value;
-int * flag;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  
-/*
-    MPI_Attr_get - prototyping replacement for MPI_Attr_get
-    Log the beginning and ending of the time spent in MPI_Attr_get calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_GET_ID)
-  
-  returnVal = PMPI_Attr_get( comm, keyval, attr_value, flag );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Attr_put( comm, keyval, attr_value )
-MPI_Comm comm;
-int keyval;
-void * attr_value;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Attr_put - prototyping replacement for MPI_Attr_put
-    Log the beginning and ending of the time spent in MPI_Attr_put calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_PUT_ID)
-  
-  returnVal = PMPI_Attr_put( comm, keyval, attr_value );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_compare( comm1, comm2, result )
-MPI_Comm comm1;
-MPI_Comm comm2;
-int * result;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-/*
-    MPI_Comm_compare - prototyping replacement for MPI_Comm_compare
-    Log the beginning and ending of the time spent in MPI_Comm_compare calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_COMM_COMPARE_ID)
-  
-  returnVal = PMPI_Comm_compare( comm1, comm2, result );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Comm_create( comm, group, comm_out )
-MPI_Comm comm;
-MPI_Group group;
-MPI_Comm * comm_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  MPE_LOG_COMM_DECL
-
-/*
-    MPI_Comm_create - prototyping replacement for MPI_Comm_create
-    Log the beginning and ending of the time spent in MPI_Comm_create calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_CREATE_ID)
-  
-  trace_on  = 0;
-  returnVal = PMPI_Comm_create( comm, group, comm_out );
-  trace_on  = 1;
-
-  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_dup( comm, comm_out )
-MPI_Comm comm;
-MPI_Comm * comm_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  MPE_LOG_COMM_DECL
-
-/*
-    MPI_Comm_dup - prototyping replacement for MPI_Comm_dup
-    Log the beginning and ending of the time spent in MPI_Comm_dup calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_DUP_ID)
-  
-  trace_on  = 0;
-  returnVal = PMPI_Comm_dup( comm, comm_out );
-  trace_on  = 1;
-
-  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_free( comm )
-MPI_Comm * comm;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  MPE_LOG_COMM_DECL
-
-/*
-    MPI_Comm_free - prototyping replacement for MPI_Comm_free
-    Log the beginning and ending of the time spent in MPI_Comm_free calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(*comm,MPE_COMM_FREE_ID)
-  
-  trace_on  = 0;
-  returnVal = PMPI_Comm_free( comm );
-  trace_on  = 1;
-
-  if ( *comm == MPI_COMM_NULL ) {
-      MPE_LOG_INTRACOMM(*comm,MPI_COMM_NULL,CLOG_COMM_FREE)
-  }
-
-  MPE_LOG_STATE_END(*comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_group( comm, group )
-MPI_Comm comm;
-MPI_Group * group;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Comm_group - prototyping replacement for MPI_Comm_group
-    Log the beginning and ending of the time spent in MPI_Comm_group calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_GROUP_ID)
-  
-  returnVal = PMPI_Comm_group( comm, group );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_rank( comm, rank )
-MPI_Comm comm;
-int * rank;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Comm_rank - prototyping replacement for MPI_Comm_rank
-    Log the beginning and ending of the time spent in MPI_Comm_rank calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_RANK_ID)
-
-  returnVal = PMPI_Comm_rank( comm, rank );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_remote_group( comm, group )
-MPI_Comm comm;
-MPI_Group * group;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Comm_remote_group - prototyping replacement for MPI_Comm_remote_group
-    Log the beginning and ending of the time spent in MPI_Comm_remote_group calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_GROUP_ID)
-  
-  returnVal = PMPI_Comm_remote_group( comm, group );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_remote_size( comm, size )
-MPI_Comm comm;
-int * size;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Comm_remote_size - prototyping replacement for MPI_Comm_remote_size
-    Log the beginning and ending of the time spent in MPI_Comm_remote_size calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_SIZE_ID)
-  
-  returnVal = PMPI_Comm_remote_size( comm, size );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_size( comm, size )
-MPI_Comm comm;
-int * size;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Comm_size - prototyping replacement for MPI_Comm_size
-    Log the beginning and ending of the time spent in MPI_Comm_size calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SIZE_ID)
-  
-  returnVal = PMPI_Comm_size( comm, size );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_split( comm, color, key, comm_out )
-MPI_Comm comm;
-int color;
-int key;
-MPI_Comm * comm_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  MPE_LOG_COMM_DECL
-
-/*
-    MPI_Comm_split - prototyping replacement for MPI_Comm_split
-    Log the beginning and ending of the time spent in MPI_Comm_split calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SPLIT_ID)
-  
-  trace_on  = 0;
-  returnVal = PMPI_Comm_split( comm, color, key, comm_out );
-  trace_on  = 1;
-
-  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Comm_test_inter( comm, flag )
-MPI_Comm comm;
-int * flag;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Comm_test_inter - prototyping replacement for MPI_Comm_test_inter
-    Log the beginning and ending of the time spent in MPI_Comm_test_inter calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_TEST_INTER_ID)
-  
-  returnVal = PMPI_Comm_test_inter( comm, flag );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Group_compare( group1, group2, result )
-MPI_Group group1;
-MPI_Group group2;
-int * result;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_compare - prototyping replacement for MPI_Group_compare
-    Log the beginning and ending of the time spent in MPI_Group_compare calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_COMPARE_ID)
-  
-  returnVal = PMPI_Group_compare( group1, group2, result );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_difference( group1, group2, group_out )
-MPI_Group group1;
-MPI_Group group2;
-MPI_Group * group_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_difference - prototyping replacement for MPI_Group_difference
-    Log the beginning and ending of the time spent in MPI_Group_difference calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_DIFFERENCE_ID)
-  
-  returnVal = PMPI_Group_difference( group1, group2, group_out );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_excl( group, n, ranks, newgroup )
-MPI_Group group;
-int n;
-int * ranks;
-MPI_Group * newgroup;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_excl - prototyping replacement for MPI_Group_excl
-    Log the beginning and ending of the time spent in MPI_Group_excl calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_EXCL_ID)
-  
-  returnVal = PMPI_Group_excl( group, n, ranks, newgroup );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_free( group )
-MPI_Group * group;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_free - prototyping replacement for MPI_Group_free
-    Log the beginning and ending of the time spent in MPI_Group_free calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_FREE_ID)
-  
-  returnVal = PMPI_Group_free( group );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_incl( group, n, ranks, group_out )
-MPI_Group group;
-int n;
-int * ranks;
-MPI_Group * group_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_incl - prototyping replacement for MPI_Group_incl
-    Log the beginning and ending of the time spent in MPI_Group_incl calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INCL_ID)
-  
-  returnVal = PMPI_Group_incl( group, n, ranks, group_out );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_intersection( group1, group2, group_out )
-MPI_Group group1;
-MPI_Group group2;
-MPI_Group * group_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_intersection - prototyping replacement for MPI_Group_intersection
-    Log the beginning and ending of the time spent in MPI_Group_intersection calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INTERSECTION_ID)
-  
-  returnVal = PMPI_Group_intersection( group1, group2, group_out );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_rank( group, rank )
-MPI_Group group;
-int * rank;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_rank - prototyping replacement for MPI_Group_rank
-    Log the beginning and ending of the time spent in MPI_Group_rank calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANK_ID)
-  
-  returnVal = PMPI_Group_rank( group, rank );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_range_excl( group, n, ranges, newgroup )
-MPI_Group group;
-int n;
-int ranges[][3];
-MPI_Group * newgroup;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_range_excl - prototyping replacement for MPI_Group_range_excl
-    Log the beginning and ending of the time spent in MPI_Group_range_excl calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_EXCL_ID)
-  
-  returnVal = PMPI_Group_range_excl( group, n, ranges, newgroup );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_range_incl( group, n, ranges, newgroup )
-MPI_Group group;
-int n;
-int ranges[][3];
-MPI_Group * newgroup;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_range_incl - prototyping replacement for MPI_Group_range_incl
-    Log the beginning and ending of the time spent in MPI_Group_range_incl calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_INCL_ID)
-  
-  returnVal = PMPI_Group_range_incl( group, n, ranges, newgroup );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_size( group, size )
-MPI_Group group;
-int * size;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_size - prototyping replacement for MPI_Group_size
-    Log the beginning and ending of the time spent in MPI_Group_size calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_SIZE_ID)
-  
-  returnVal = PMPI_Group_size( group, size );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_translate_ranks( group_a, n, ranks_a, group_b, ranks_b )
-MPI_Group group_a;
-int n;
-int * ranks_a;
-MPI_Group group_b;
-int * ranks_b;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_translate_ranks - prototyping replacement for MPI_Group_translate_ranks
-    Log the beginning and ending of the time spent in MPI_Group_translate_ranks calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_TRANSLATE_RANKS_ID)
-  
-  returnVal = PMPI_Group_translate_ranks( group_a, n, ranks_a, group_b, ranks_b );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Group_union( group1, group2, group_out )
-MPI_Group group1;
-MPI_Group group2;
-MPI_Group * group_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Group_union - prototyping replacement for MPI_Group_union
-    Log the beginning and ending of the time spent in MPI_Group_union calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_UNION_ID)
-  
-  returnVal = PMPI_Group_union( group1, group2, group_out );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Intercomm_create( local_comm, local_leader, peer_comm, remote_leader, tag, comm_out )
-MPI_Comm local_comm;
-int local_leader;
-MPI_Comm peer_comm;
-int remote_leader;
-int tag;
-MPI_Comm * comm_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  MPE_LOG_COMM_DECL
-
-/*
-    MPI_Intercomm_create - prototyping replacement for MPI_Intercomm_create
-    Log the beginning and ending of the time spent in MPI_Intercomm_create calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(local_comm,MPE_INTERCOMM_CREATE_ID)
-  
-  trace_on  = 0;
-  returnVal = PMPI_Intercomm_create( local_comm, local_leader,
-                                     peer_comm, remote_leader,
-                                     tag, comm_out );
-  trace_on  = 1;
-
-  MPE_LOG_INTERCOMM(local_comm,*comm_out,CLOG_COMM_INTER_CREATE)
-
-  MPE_LOG_STATE_END(local_comm)
-
-  return returnVal;
-}
-
-int   MPI_Intercomm_merge( comm, high, comm_out )
-MPI_Comm comm;
-int high;
-MPI_Comm * comm_out;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-  MPE_LOG_COMM_DECL
-
-/*
-    MPI_Intercomm_merge - prototyping replacement for MPI_Intercomm_merge
-    Log the beginning and ending of the time spent in MPI_Intercomm_merge calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_INTERCOMM_MERGE_ID)
-  
-  trace_on  = 0;
-  returnVal = PMPI_Intercomm_merge( comm, high, comm_out );
-  trace_on  = 1;
-
-  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int   MPI_Keyval_create( copy_fn, delete_fn, keyval, extra_state )
-MPI_Copy_function * copy_fn;
-MPI_Delete_function * delete_fn;
-int * keyval;
-void * extra_state;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Keyval_create - prototyping replacement for MPI_Keyval_create
-    Log the beginning and ending of the time spent in MPI_Keyval_create calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_CREATE_ID)
-  
-  returnVal = PMPI_Keyval_create( copy_fn, delete_fn, keyval, extra_state );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int   MPI_Keyval_free( keyval )
-int * keyval;
-{
-  int   returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Keyval_free - prototyping replacement for MPI_Keyval_free
-    Log the beginning and ending of the time spent in MPI_Keyval_free calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_FREE_ID)
-  
-  returnVal = PMPI_Keyval_free( keyval );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int  MPI_Abort( comm, errorcode )
-MPI_Comm comm;
-int errorcode;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Abort - prototyping replacement for MPI_Abort
-    Log the beginning and ending of the time spent in MPI_Abort calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ABORT_ID)
-  
-  returnVal = PMPI_Abort( comm, errorcode );
-
-  /* Pretty implausible... */
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int  MPI_Error_class( errorcode, errorclass )
-int errorcode;
-int * errorclass;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Error_class - prototyping replacement for MPI_Error_class
-    Log the beginning and ending of the time spent in MPI_Error_class calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_CLASS_ID)
-  
-  returnVal = PMPI_Error_class( errorcode, errorclass );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int  MPI_Errhandler_create( function, errhandler )
-MPI_Handler_function * function;
-MPI_Errhandler * errhandler;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Errhandler_create - prototyping replacement for MPI_Errhandler_create
-    Log the beginning and ending of the time spent in MPI_Errhandler_create calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_CREATE_ID)
-  
-  returnVal = PMPI_Errhandler_create( function, errhandler );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int  MPI_Errhandler_free( errhandler )
-MPI_Errhandler * errhandler;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Errhandler_free - prototyping replacement for MPI_Errhandler_free
-    Log the beginning and ending of the time spent in MPI_Errhandler_free calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_FREE_ID)
-  
-  returnVal = PMPI_Errhandler_free( errhandler );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int  MPI_Errhandler_get( comm, errhandler )
-MPI_Comm comm;
-MPI_Errhandler * errhandler;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Errhandler_get - prototyping replacement for MPI_Errhandler_get
-    Log the beginning and ending of the time spent in MPI_Errhandler_get calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_GET_ID)
-  
-  returnVal = PMPI_Errhandler_get( comm, errhandler );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int  MPI_Error_string( errorcode, string, resultlen )
-int errorcode;
-char * string;
-int * resultlen;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Error_string - prototyping replacement for MPI_Error_string
-    Log the beginning and ending of the time spent in MPI_Error_string calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_STRING_ID)
-  
-  returnVal = PMPI_Error_string( errorcode, string, resultlen );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-int  MPI_Errhandler_set( comm, errhandler )
-MPI_Comm comm;
-MPI_Errhandler errhandler;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Errhandler_set - prototyping replacement for MPI_Errhandler_set
-    Log the beginning and ending of the time spent in MPI_Errhandler_set calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_SET_ID)
-  
-  returnVal = PMPI_Errhandler_set( comm, errhandler );
-
-  MPE_LOG_STATE_END(comm)
-
-  return returnVal;
-}
-
-int  MPI_Finalize( )
-{
-    MPE_State       *state;
-    MPE_Event       *event;
-    int              state_count[MPE_MAX_KNOWN_STATES];
-    int              state_total[MPE_MAX_KNOWN_STATES];
-    int              event_count[MPE_MAX_KNOWN_STATES];
-    int              event_total[MPE_MAX_KNOWN_STATES];
-    int              returnVal, idx;
-
-    MPE_LOG_SOLO_EVENT_DECL
-
-/*
-    MPI_Finalize - prototyping replacement for MPI_Finalize
-*/
-    MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, MPE_COMM_FINALIZE_ID )
-
-    /* set the total number of state calls by any processor */
-    for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) 
-        state_count[idx] = states[idx].n_calls;
-    PMPI_Reduce( state_count, state_total, MPE_MAX_KNOWN_STATES,
-                 MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
-
-    /* set the total number of event calls by any processor */
-    for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) 
-        event_count[idx] = events[idx].n_calls;
-    PMPI_Reduce( event_count, event_total, MPE_MAX_KNOWN_EVENTS,
-                 MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
-
-    if (procid_0 == 0) {
-        fprintf( stderr, "Writing logfile....\n" );
-        for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
-            if (state_total[idx] > 0) {
-                state  = &states[idx];
-                MPE_Describe_known_state( CLOG_CommIDs4World, 0,
-                                          state->stateID,
-                                          state->start_evtID,
-                                          state->final_evtID, 
-                                          state->name, state->color,
-                                          NULL );
-            }
-        }
-        for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
-            if (event_total[idx] > 0) {
-                event  = &events[idx];
-                MPE_Describe_known_event( CLOG_CommIDs4World, 0,
-                                          event->eventID,
-                                          event->name, event->color,
-                                          NULL );
-            }
-        }
-    }
-
-    MPE_Finish_log( logFileName_0 );
-    if (procid_0 == 0)
-        fprintf( stderr, "Finished writing logfile %s.\n",
-                 MPE_Log_merged_logfilename() );
-
-     /* Recover all of the allocated requests */
-     rq_end( requests_avail_0 );
-
-     /*
-        To guard again erroneous implementation of PMPI_Finalize which
-        make MPI_ calls, e.g. BG/L, from calling MPE_Log_events
-        i.e. writing to the CLOG's stream when it is already closed in
-        MPE_Finish_log(), turn the trace off explicitly.
-     */
-     trace_on = 0;
-     returnVal = PMPI_Finalize(  );
-
-     return returnVal;
-}
-
-int  MPI_Get_processor_name( name, resultlen )
-char * name;
-int * resultlen;
-{
-  int  returnVal;
-  MPE_LOG_STATE_DECL
-
-/*
-    MPI_Get_processor_name - prototyping replacement for MPI_Get_processor_name
-    Log the beginning and ending of the time spent in MPI_Get_processor_name calls.
-*/
-
-  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_PROCESSOR_NAME_ID)
-  
-  returnVal = PMPI_Get_processor_name( name, resultlen );
-
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-  return returnVal;
-}
-
-/*
- * Replacement for MPI_Init.  Initializes logging and sets up basic
- * state definitions, including default color/pattern values
- */
-int  MPI_Init( argc, argv )
-int * argc;
-char *** argv;
+void MPE_Init_mpi_core( void )
 {
     MPE_State  *state;
-    MPE_Event  *event;
-    int         returnVal, idx;
-    int         allow_mask;
 
-    MPE_LOG_SOLO_EVENT_DECL
-
-
-    returnVal = PMPI_Init( argc, argv );
-
-    MPE_Init_log();
-    PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
-
-    /* Initialize all internal events */
-    for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
-        event               = &events[idx];
-        event->eventID      = MPE_Log_get_known_solo_eventID();
-        event->n_calls      = 0;
-        event->is_active    = 0;
-        event->name         = NULL;
-        event->kind_mask    = 0;
-        event->color        = "white";
-    }
-
-    /* Initialize all internal states */
-    for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
-        state               = &states[idx];
-        state->stateID      = MPE_Log_get_known_stateID();
-        state->start_evtID  = MPE_Log_get_known_eventID();
-        state->final_evtID  = MPE_Log_get_known_eventID();
-        state->n_calls      = 0;
-        state->is_active    = 0;
-        state->name         = NULL;
-        state->kind_mask    = 0;
-        state->color        = "white";
-    }
-
-    /* By default, log only message-passing (pt-to-pt and collective) */
-    allow_mask  = MPE_KIND_MSG | MPE_KIND_COLL;
-    allow_mask |= MPE_KIND_COMM | MPE_KIND_COMM_INFO;
-    allow_mask |= MPE_KIND_TOPO;
-    /* And file operations, if included */
-#ifdef HAVE_MPI_IO
-    allow_mask |= MPE_KIND_FILE;
-#endif
-
-#ifdef HAVE_MPI_RMA
-     allow_mask |= MPE_KIND_RMA;
-#endif
-
-     /* The internal flag is always ON */
-     allow_mask |= MPE_KIND_INTERNAL;
-
-    /* Should check environment and command-line for changes to allow_mask */
-    
     /* We COULD read these definitions from a file, but accessing the file
        in PARALLEL can be a problem and even if one process accessed it and
        broadcast, we'd still have to find the file.  Is this a problem?
@@ -2616,14 +1219,1741 @@ char *** argv;
     state->kind_mask = MPE_KIND_MSG;
     state->name = "MPI_Recv_idle";
     state->color ="SeaGreen1";
+}
+
+/*
+ * Here begins the individual routines.  We may eventually want to
+ * break them up, at least by class (no need to load the MPI_CART/GRAPH
+ * routines if the application doesn't use them).
+ */
+
+
+int   MPI_Allgather( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm )
+void * sendbuf;
+int sendcount;
+MPI_Datatype sendtype;
+void * recvbuf;
+int recvcount;
+MPI_Datatype recvtype;
+MPI_Comm comm;
+{
+  int       returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Allgather - prototyping replacement for MPI_Allgather
+    Log the beginning and ending of the time spent in MPI_Allgather calls.
+*/
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHER_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Allgather( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Allgatherv( sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm )
+void * sendbuf;
+int sendcount;
+MPI_Datatype sendtype;
+void * recvbuf;
+int * recvcounts;
+int * displs;
+MPI_Datatype recvtype;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Allgatherv - prototyping replacement for MPI_Allgatherv
+    Log the beginning and ending of the time spent in MPI_Allgatherv calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHERV_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Allgatherv( sendbuf, sendcount, sendtype,
+                               recvbuf, recvcounts, displs, recvtype, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm )
+void * sendbuf;
+void * recvbuf;
+int count;
+MPI_Datatype datatype;
+MPI_Op op;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Allreduce - prototyping replacement for MPI_Allreduce
+    Log the beginning and ending of the time spent in MPI_Allreduce calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLREDUCE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int  MPI_Alltoall( sendbuf, sendcount, sendtype, recvbuf, recvcnt, recvtype, comm )
+void * sendbuf;
+int sendcount;
+MPI_Datatype sendtype;
+void * recvbuf;
+int recvcnt;
+MPI_Datatype recvtype;
+MPI_Comm comm;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Alltoall - prototyping replacement for MPI_Alltoall
+    Log the beginning and ending of the time spent in MPI_Alltoall calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALL_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Alltoall( sendbuf, sendcount, sendtype,
+                             recvbuf, recvcnt, recvtype, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Alltoallv( sendbuf, sendcnts, sdispls, sendtype, recvbuf, recvcnts, rdispls, recvtype, comm )
+void * sendbuf;
+int * sendcnts;
+int * sdispls;
+MPI_Datatype sendtype;
+void * recvbuf;
+int * recvcnts;
+int * rdispls;
+MPI_Datatype recvtype;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Alltoallv - prototyping replacement for MPI_Alltoallv
+    Log the beginning and ending of the time spent in MPI_Alltoallv calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALLV_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Alltoallv( sendbuf, sendcnts, sdispls, sendtype,
+                              recvbuf, recvcnts, rdispls, recvtype, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Barrier( comm )
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Barrier - prototyping replacement for MPI_Barrier
+    Log the beginning and ending of the time spent in MPI_Barrier calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_BARRIER_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Barrier( comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int MPI_Bcast( buffer, count, datatype, root, comm )
+void * buffer;
+int count;
+MPI_Datatype datatype;
+int root;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Bcast - prototyping replacement for MPI_Bcast
+    Log the beginning and ending of the time spent in MPI_Bcast calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_BCAST_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Bcast( buffer, count, datatype, root, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int MPI_Gather( sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm )
+void * sendbuf;
+int sendcnt;
+MPI_Datatype sendtype;
+void * recvbuf;
+int recvcount;
+MPI_Datatype recvtype;
+int root;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Gather - prototyping replacement for MPI_Gather
+    Log the beginning and ending of the time spent in MPI_Gather calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_GATHER_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Gather( sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int MPI_Gatherv( sendbuf, sendcnt, sendtype, recvbuf, recvcnts, displs, recvtype, root, comm )
+void * sendbuf;
+int sendcnt;
+MPI_Datatype sendtype;
+void * recvbuf;
+int * recvcnts;
+int * displs;
+MPI_Datatype recvtype;
+int root;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Gatherv - prototyping replacement for MPI_Gatherv
+    Log the beginning and ending of the time spent in MPI_Gatherv calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_GATHERV_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Gatherv( sendbuf, sendcnt, sendtype,
+                            recvbuf, recvcnts, displs, recvtype, root, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int  MPI_Op_create( function, commute, op )
+MPI_User_function * function;
+int commute;
+MPI_Op * op;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Op_create - prototyping replacement for MPI_Op_create
+    Log the beginning and ending of the time spent in MPI_Op_create calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_CREATE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Op_create( function, commute, op );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int  MPI_Op_free( op )
+MPI_Op * op;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Op_free - prototyping replacement for MPI_Op_free
+    Log the beginning and ending of the time spent in MPI_Op_free calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_FREE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Op_free( op );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Reduce_scatter( sendbuf, recvbuf, recvcnts, datatype, op, comm )
+void * sendbuf;
+void * recvbuf;
+int * recvcnts;
+MPI_Datatype datatype;
+MPI_Op op;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Reduce_scatter - prototyping replacement for MPI_Reduce_scatter
+    Log the beginning and ending of the time spent in MPI_Reduce_scatter calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_SCATTER_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Reduce_scatter( sendbuf, recvbuf, recvcnts,
+                                   datatype, op, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm )
+void * sendbuf;
+void * recvbuf;
+int count;
+MPI_Datatype datatype;
+MPI_Op op;
+int root;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Reduce - prototyping replacement for MPI_Reduce
+    Log the beginning and ending of the time spent in MPI_Reduce calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Scan( sendbuf, recvbuf, count, datatype, op, comm )
+void * sendbuf;
+void * recvbuf;
+int count;
+MPI_Datatype datatype;
+MPI_Op op;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Scan - prototyping replacement for MPI_Scan
+    Log the beginning and ending of the time spent in MPI_Scan calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_SCAN_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Scan( sendbuf, recvbuf, count, datatype, op, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Scatter( sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm )
+void * sendbuf;
+int sendcnt;
+MPI_Datatype sendtype;
+void * recvbuf;
+int recvcnt;
+MPI_Datatype recvtype;
+int root;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Scatter - prototyping replacement for MPI_Scatter
+    Log the beginning and ending of the time spent in MPI_Scatter calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_SCATTER_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Scatter( sendbuf, sendcnt, sendtype,
+                            recvbuf, recvcnt, recvtype, root, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Scatterv( sendbuf, sendcnts, displs, sendtype,
+                    recvbuf, recvcnt, recvtype, root, comm )
+void * sendbuf;
+int * sendcnts;
+int * displs;
+MPI_Datatype sendtype;
+void * recvbuf;
+int recvcnt;
+MPI_Datatype recvtype;
+int root;
+MPI_Comm comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Scatterv - prototyping replacement for MPI_Scatterv
+    Log the beginning and ending of the time spent in MPI_Scatterv calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_SCATTERV_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Scatterv( sendbuf, sendcnts, displs, sendtype,
+                             recvbuf, recvcnt, recvtype, root, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Attr_delete( comm, keyval )
+MPI_Comm comm;
+int keyval;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Attr_delete - prototyping replacement for MPI_Attr_delete
+    Log the beginning and ending of the time spent in MPI_Attr_delete calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_DELETE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Attr_delete( comm, keyval );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Attr_get( comm, keyval, attr_value, flag )
+MPI_Comm comm;
+int keyval;
+void * attr_value;
+int * flag;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  
+/*
+    MPI_Attr_get - prototyping replacement for MPI_Attr_get
+    Log the beginning and ending of the time spent in MPI_Attr_get calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_GET_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Attr_get( comm, keyval, attr_value, flag );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Attr_put( comm, keyval, attr_value )
+MPI_Comm comm;
+int keyval;
+void * attr_value;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Attr_put - prototyping replacement for MPI_Attr_put
+    Log the beginning and ending of the time spent in MPI_Attr_put calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_PUT_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Attr_put( comm, keyval, attr_value );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_compare( comm1, comm2, result )
+MPI_Comm comm1;
+MPI_Comm comm2;
+int * result;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+/*
+    MPI_Comm_compare - prototyping replacement for MPI_Comm_compare
+    Log the beginning and ending of the time spent in MPI_Comm_compare calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_COMM_COMPARE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_compare( comm1, comm2, result );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Comm_create( comm, group, comm_out )
+MPI_Comm comm;
+MPI_Group group;
+MPI_Comm * comm_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
+
+/*
+    MPI_Comm_create - prototyping replacement for MPI_Comm_create
+    Log the beginning and ending of the time spent in MPI_Comm_create calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_CREATE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_create( comm, group, comm_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_dup( comm, comm_out )
+MPI_Comm comm;
+MPI_Comm * comm_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
+
+/*
+    MPI_Comm_dup - prototyping replacement for MPI_Comm_dup
+    Log the beginning and ending of the time spent in MPI_Comm_dup calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_DUP_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_dup( comm, comm_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_free( comm )
+MPI_Comm * comm;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
+
+/*
+    MPI_Comm_free - prototyping replacement for MPI_Comm_free
+    Log the beginning and ending of the time spent in MPI_Comm_free calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(*comm,MPE_COMM_FREE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_free( comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  if ( *comm == MPI_COMM_NULL ) {
+      MPE_LOG_INTRACOMM(*comm,MPI_COMM_NULL,CLOG_COMM_FREE)
+  }
+
+  MPE_LOG_STATE_END(*comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_group( comm, group )
+MPI_Comm comm;
+MPI_Group * group;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Comm_group - prototyping replacement for MPI_Comm_group
+    Log the beginning and ending of the time spent in MPI_Comm_group calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_GROUP_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_group( comm, group );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_rank( comm, rank )
+MPI_Comm comm;
+int * rank;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Comm_rank - prototyping replacement for MPI_Comm_rank
+    Log the beginning and ending of the time spent in MPI_Comm_rank calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_RANK_ID)
+
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_rank( comm, rank );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_remote_group( comm, group )
+MPI_Comm comm;
+MPI_Group * group;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Comm_remote_group - prototyping replacement for MPI_Comm_remote_group
+    Log the beginning and ending of the time spent in MPI_Comm_remote_group calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_GROUP_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_remote_group( comm, group );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_remote_size( comm, size )
+MPI_Comm comm;
+int * size;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Comm_remote_size - prototyping replacement for MPI_Comm_remote_size
+    Log the beginning and ending of the time spent in MPI_Comm_remote_size calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_SIZE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_remote_size( comm, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_size( comm, size )
+MPI_Comm comm;
+int * size;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Comm_size - prototyping replacement for MPI_Comm_size
+    Log the beginning and ending of the time spent in MPI_Comm_size calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SIZE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_size( comm, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_split( comm, color, key, comm_out )
+MPI_Comm comm;
+int color;
+int key;
+MPI_Comm * comm_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
+
+/*
+    MPI_Comm_split - prototyping replacement for MPI_Comm_split
+    Log the beginning and ending of the time spent in MPI_Comm_split calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SPLIT_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_split( comm, color, key, comm_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Comm_test_inter( comm, flag )
+MPI_Comm comm;
+int * flag;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Comm_test_inter - prototyping replacement for MPI_Comm_test_inter
+    Log the beginning and ending of the time spent in MPI_Comm_test_inter calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_COMM_TEST_INTER_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Comm_test_inter( comm, flag );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Group_compare( group1, group2, result )
+MPI_Group group1;
+MPI_Group group2;
+int * result;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_compare - prototyping replacement for MPI_Group_compare
+    Log the beginning and ending of the time spent in MPI_Group_compare calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_COMPARE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_compare( group1, group2, result );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_difference( group1, group2, group_out )
+MPI_Group group1;
+MPI_Group group2;
+MPI_Group * group_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_difference - prototyping replacement for MPI_Group_difference
+    Log the beginning and ending of the time spent in MPI_Group_difference calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_DIFFERENCE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_difference( group1, group2, group_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_excl( group, n, ranks, newgroup )
+MPI_Group group;
+int n;
+int * ranks;
+MPI_Group * newgroup;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_excl - prototyping replacement for MPI_Group_excl
+    Log the beginning and ending of the time spent in MPI_Group_excl calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_EXCL_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_excl( group, n, ranks, newgroup );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_free( group )
+MPI_Group * group;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_free - prototyping replacement for MPI_Group_free
+    Log the beginning and ending of the time spent in MPI_Group_free calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_FREE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_free( group );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_incl( group, n, ranks, group_out )
+MPI_Group group;
+int n;
+int * ranks;
+MPI_Group * group_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_incl - prototyping replacement for MPI_Group_incl
+    Log the beginning and ending of the time spent in MPI_Group_incl calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INCL_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_incl( group, n, ranks, group_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_intersection( group1, group2, group_out )
+MPI_Group group1;
+MPI_Group group2;
+MPI_Group * group_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_intersection - prototyping replacement for MPI_Group_intersection
+    Log the beginning and ending of the time spent in MPI_Group_intersection calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INTERSECTION_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_intersection( group1, group2, group_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_rank( group, rank )
+MPI_Group group;
+int * rank;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_rank - prototyping replacement for MPI_Group_rank
+    Log the beginning and ending of the time spent in MPI_Group_rank calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANK_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_rank( group, rank );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_range_excl( group, n, ranges, newgroup )
+MPI_Group group;
+int n;
+int ranges[][3];
+MPI_Group * newgroup;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_range_excl - prototyping replacement for MPI_Group_range_excl
+    Log the beginning and ending of the time spent in MPI_Group_range_excl calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_EXCL_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_range_excl( group, n, ranges, newgroup );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_range_incl( group, n, ranges, newgroup )
+MPI_Group group;
+int n;
+int ranges[][3];
+MPI_Group * newgroup;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_range_incl - prototyping replacement for MPI_Group_range_incl
+    Log the beginning and ending of the time spent in MPI_Group_range_incl calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_INCL_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_range_incl( group, n, ranges, newgroup );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_size( group, size )
+MPI_Group group;
+int * size;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_size - prototyping replacement for MPI_Group_size
+    Log the beginning and ending of the time spent in MPI_Group_size calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_SIZE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_size( group, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_translate_ranks( group_a, n, ranks_a, group_b, ranks_b )
+MPI_Group group_a;
+int n;
+int * ranks_a;
+MPI_Group group_b;
+int * ranks_b;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_translate_ranks - prototyping replacement for MPI_Group_translate_ranks
+    Log the beginning and ending of the time spent in MPI_Group_translate_ranks calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_TRANSLATE_RANKS_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_translate_ranks( group_a, n, ranks_a,
+                                          group_b, ranks_b );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Group_union( group1, group2, group_out )
+MPI_Group group1;
+MPI_Group group2;
+MPI_Group * group_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Group_union - prototyping replacement for MPI_Group_union
+    Log the beginning and ending of the time spent in MPI_Group_union calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_UNION_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Group_union( group1, group2, group_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Intercomm_create( local_comm, local_leader, peer_comm, remote_leader, tag, comm_out )
+MPI_Comm local_comm;
+int local_leader;
+MPI_Comm peer_comm;
+int remote_leader;
+int tag;
+MPI_Comm * comm_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
+
+/*
+    MPI_Intercomm_create - prototyping replacement for MPI_Intercomm_create
+    Log the beginning and ending of the time spent in MPI_Intercomm_create calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(local_comm,MPE_INTERCOMM_CREATE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Intercomm_create( local_comm, local_leader,
+                                     peer_comm, remote_leader,
+                                     tag, comm_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_INTERCOMM(local_comm,*comm_out,CLOG_COMM_INTER_CREATE)
+
+  MPE_LOG_STATE_END(local_comm)
+
+  return returnVal;
+}
+
+int   MPI_Intercomm_merge( comm, high, comm_out )
+MPI_Comm comm;
+int high;
+MPI_Comm * comm_out;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+  MPE_LOG_COMM_DECL
+
+/*
+    MPI_Intercomm_merge - prototyping replacement for MPI_Intercomm_merge
+    Log the beginning and ending of the time spent in MPI_Intercomm_merge calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_INTERCOMM_MERGE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Intercomm_merge( comm, high, comm_out );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_INTRACOMM(comm,*comm_out,CLOG_COMM_INTRA_CREATE)
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int   MPI_Keyval_create( copy_fn, delete_fn, keyval, extra_state )
+MPI_Copy_function * copy_fn;
+MPI_Delete_function * delete_fn;
+int * keyval;
+void * extra_state;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Keyval_create - prototyping replacement for MPI_Keyval_create
+    Log the beginning and ending of the time spent in MPI_Keyval_create calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_CREATE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Keyval_create( copy_fn, delete_fn, keyval, extra_state );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int   MPI_Keyval_free( keyval )
+int * keyval;
+{
+  int   returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Keyval_free - prototyping replacement for MPI_Keyval_free
+    Log the beginning and ending of the time spent in MPI_Keyval_free calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_FREE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Keyval_free( keyval );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int  MPI_Abort( comm, errorcode )
+MPI_Comm comm;
+int errorcode;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Abort - prototyping replacement for MPI_Abort
+    Log the beginning and ending of the time spent in MPI_Abort calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ABORT_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Abort( comm, errorcode );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  /* Pretty implausible... */
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int  MPI_Error_class( errorcode, errorclass )
+int errorcode;
+int * errorclass;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Error_class - prototyping replacement for MPI_Error_class
+    Log the beginning and ending of the time spent in MPI_Error_class calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_CLASS_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Error_class( errorcode, errorclass );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int  MPI_Errhandler_create( function, errhandler )
+MPI_Handler_function * function;
+MPI_Errhandler * errhandler;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Errhandler_create - prototyping replacement for MPI_Errhandler_create
+    Log the beginning and ending of the time spent in MPI_Errhandler_create calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_CREATE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Errhandler_create( function, errhandler );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int  MPI_Errhandler_free( errhandler )
+MPI_Errhandler * errhandler;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Errhandler_free - prototyping replacement for MPI_Errhandler_free
+    Log the beginning and ending of the time spent in MPI_Errhandler_free calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_FREE_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Errhandler_free( errhandler );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int  MPI_Errhandler_get( comm, errhandler )
+MPI_Comm comm;
+MPI_Errhandler * errhandler;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Errhandler_get - prototyping replacement for MPI_Errhandler_get
+    Log the beginning and ending of the time spent in MPI_Errhandler_get calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_GET_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Errhandler_get( comm, errhandler );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int  MPI_Error_string( errorcode, string, resultlen )
+int errorcode;
+char * string;
+int * resultlen;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Error_string - prototyping replacement for MPI_Error_string
+    Log the beginning and ending of the time spent in MPI_Error_string calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_STRING_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Error_string( errorcode, string, resultlen );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+int  MPI_Errhandler_set( comm, errhandler )
+MPI_Comm comm;
+MPI_Errhandler errhandler;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Errhandler_set - prototyping replacement for MPI_Errhandler_set
+    Log the beginning and ending of the time spent in MPI_Errhandler_set calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_SET_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Errhandler_set( comm, errhandler );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(comm)
+
+  return returnVal;
+}
+
+int  MPI_Finalize( )
+{
+    MPE_State       *state;
+    MPE_Event       *event;
+    int              state_count[MPE_MAX_KNOWN_STATES];
+    int              state_total[MPE_MAX_KNOWN_STATES];
+    int              event_count[MPE_MAX_KNOWN_STATES];
+    int              event_total[MPE_MAX_KNOWN_STATES];
+    int              returnVal, idx;
+
+    MPE_LOG_SOLO_EVENT_DECL
+
+/*
+    MPI_Finalize - prototyping replacement for MPI_Finalize
+*/
+    MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, MPE_COMM_FINALIZE_ID )
+
+    /* set the total number of state calls by any processor */
+    for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) 
+        state_count[idx] = states[idx].n_calls;
+    PMPI_Reduce( state_count, state_total, MPE_MAX_KNOWN_STATES,
+                 MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
+
+    /* set the total number of event calls by any processor */
+    for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) 
+        event_count[idx] = events[idx].n_calls;
+    PMPI_Reduce( event_count, event_total, MPE_MAX_KNOWN_EVENTS,
+                 MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
+
+    if (procid_0 == 0) {
+        fprintf( stderr, "Writing logfile....\n" );
+        for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
+            if (state_total[idx] > 0) {
+                state  = &states[idx];
+                MPE_Describe_known_state( CLOG_CommIDs4World, 0,
+                                          state->stateID,
+                                          state->start_evtID,
+                                          state->final_evtID, 
+                                          state->name, state->color,
+                                          NULL );
+            }
+        }
+        for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
+            if (event_total[idx] > 0) {
+                event  = &events[idx];
+                MPE_Describe_known_event( CLOG_CommIDs4World, 0,
+                                          event->eventID,
+                                          event->name, event->color,
+                                          NULL );
+            }
+        }
+    }
+
+    MPE_Finish_log( logFileName_0 );
+    if (procid_0 == 0)
+        fprintf( stderr, "Finished writing logfile %s.\n",
+                 MPE_Log_merged_logfilename() );
+
+    /* Recover all of the allocated requests */
+    rq_end( requests_avail_0 );
+
+    /*
+       To guard again erroneous implementation of PMPI_Finalize which
+       make MPI_ calls, e.g. BG/L, from calling MPE_Log_events
+       i.e. writing to the CLOG's stream when it is already closed in
+       MPE_Finish_log(), turn the trace off explicitly.
+    */
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+    returnVal = PMPI_Finalize(  );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+    return returnVal;
+}
+
+int  MPI_Get_processor_name( name, resultlen )
+char * name;
+int * resultlen;
+{
+  int  returnVal;
+  MPE_LOG_STATE_DECL
+
+/*
+    MPI_Get_processor_name - prototyping replacement for MPI_Get_processor_name
+    Log the beginning and ending of the time spent in MPI_Get_processor_name calls.
+*/
+
+  MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_PROCESSOR_NAME_ID)
+  
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Get_processor_name( name, resultlen );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+  MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+  return returnVal;
+}
+
+/*
+ * Replacement for MPI_Init.  Initializes logging and sets up basic
+ * state definitions, including default color/pattern values
+ */
+int  MPI_Init( argc, argv )
+int * argc;
+char *** argv;
+{
+    MPE_State  *state;
+    MPE_Event  *event;
+    int         returnVal, idx;
+    int         allow_mask;
+
+    MPE_LOG_SOLO_EVENT_DECL
+
+
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+    returnVal = PMPI_Init( argc, argv );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+    MPE_Init_log();
+    PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
+
+    /* Initialize all internal events */
+    for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
+        event               = &events[idx];
+        event->eventID      = MPE_Log_get_known_solo_eventID();
+        event->n_calls      = 0;
+        event->is_active    = 0;
+        event->name         = NULL;
+        event->kind_mask    = 0;
+        event->color        = "white";
+    }
+
+    /* Initialize all internal states */
+    for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
+        state               = &states[idx];
+        state->stateID      = MPE_Log_get_known_stateID();
+        state->start_evtID  = MPE_Log_get_known_eventID();
+        state->final_evtID  = MPE_Log_get_known_eventID();
+        state->n_calls      = 0;
+        state->is_active    = 0;
+        state->name         = NULL;
+        state->kind_mask    = 0;
+        state->color        = "white";
+    }
+
+    /* Should check environment and command-line for changes to allow_mask */
+
+    /* By default, log only message-passing (pt-to-pt and collective) */
+    allow_mask  = MPE_KIND_MSG | MPE_KIND_COLL;
+    allow_mask |= MPE_KIND_COMM | MPE_KIND_COMM_INFO;
+    allow_mask |= MPE_KIND_TOPO;
+    MPE_Init_mpi_core();
 
 #ifdef HAVE_MPI_IO
-    MPE_Init_MPIIO();
+    allow_mask |= MPE_KIND_FILE;
+    MPE_Init_mpi_io();
 #endif
 
 #ifdef HAVE_MPI_RMA
-    MPE_Init_MPIRMA();
+     allow_mask |= MPE_KIND_RMA;
+    MPE_Init_mpi_rma();
 #endif
+
+#ifdef HAVE_MPI_SPAWN
+     allow_mask |= MPE_KIND_SPAWN;
+    MPE_Init_mpi_spawn();
+#endif
+
+     /* The internal flag is always ON */
+     allow_mask |= MPE_KIND_INTERNAL;
 
     /* These are MPE internal states */
     state = &states[MPE_ISEND_WAITED_ID];
@@ -2692,7 +3022,13 @@ int * flag;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_INITIALIZED_ID)
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Initialized( flag );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2700,9 +3036,10 @@ int * flag;
 }
 
 #ifdef FOO
-/* Use the regular routines for these.  Note that the state logging needs
+/*
+   Use the regular routines for these.  Note that the state logging needs
    MPI_Wtime; make sure that it uses PMPI_Wtime if you use these
-   */
+*/
 double  MPI_Wtick(  )
 {
   double  returnVal;
@@ -2715,7 +3052,13 @@ double  MPI_Wtick(  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTICK_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Wtick(  );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2734,7 +3077,13 @@ double  MPI_Wtime(  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTIME_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Wtime(  );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2756,7 +3105,13 @@ MPI_Aint * address;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ADDRESS_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Address( location, address );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2785,7 +3140,13 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Bsend( buf, count, datatype, dest, tag, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -2811,7 +3172,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_BSEND_INIT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Bsend_init( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   /* Note not started yet ... */
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
@@ -2835,7 +3202,13 @@ int size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_ATTACH_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Buffer_attach( buffer, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2856,7 +3229,13 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_DETACH_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Buffer_detach( buffer, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2878,7 +3257,13 @@ MPI_Request * request;
   
   MPE_Req_cancel( *request );
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cancel( request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2900,7 +3285,13 @@ MPI_Request * request;
 
   MPE_Req_remove( *request );
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Request_free( request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -2926,7 +3317,14 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_RECV_INIT_ID)
   
-  returnVal = PMPI_Recv_init( buf, count, datatype, source, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Recv_init( buf, count, datatype, source, tag,
+                              comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   if (returnVal == MPI_SUCCESS) {
       /* Not started yet ... */
@@ -2957,7 +3355,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SEND_INIT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Send_init( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   /* Note not started yet ... */
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
@@ -2982,7 +3386,13 @@ int * elements;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ELEMENTS_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Get_elements( status, datatype, elements );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3004,7 +3414,13 @@ int * count;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_COUNT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Get_count( status, datatype, count );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3030,7 +3446,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IBSEND_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Ibsend( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
@@ -3062,7 +3484,13 @@ MPI_Status * status;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IPROBE_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Iprobe( source, tag, comm, flag, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3098,7 +3526,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IRECV_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Irecv( buf, count, datatype, source, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   if (returnVal == MPI_SUCCESS) {
       MPE_REQ_ADD_RECV( *request, datatype, count, source, tag, comm, 0 )
@@ -3128,7 +3562,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IRSEND_ID)
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Irsend( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
@@ -3159,7 +3599,13 @@ MPI_Request * request;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Isend( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
@@ -3191,7 +3637,13 @@ MPI_Request * request;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Issend( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 0 )
 
@@ -3219,7 +3671,14 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_PACK_ID)
   
-  returnVal = PMPI_Pack( inbuf, incount, type, outbuf, outcount, position, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Pack( inbuf, incount, type, outbuf, outcount,
+                         position, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3242,7 +3701,13 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_PACK_SIZE_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Pack_size( incount, datatype, comm, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3271,7 +3736,13 @@ MPI_Status * status;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_PROBE_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Probe( source, tag, comm, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3313,7 +3784,13 @@ MPI_Status * status;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_RECV_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Recv( buf, count, datatype, source, tag, comm, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -3356,7 +3833,13 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Rsend( buf, count, datatype, dest, tag, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3382,7 +3865,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_RSEND_INIT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Rsend_init( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   /* Note not started yet ... */
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
@@ -3413,7 +3902,13 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Send( buf, count, datatype, dest, tag, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3456,9 +3951,15 @@ MPI_Status * status;
       PMPI_Type_size( sendtype, &sendsize );
       MPE_LOG_COMM_SEND( comm, dest, sendtag, sendcount * sendsize )
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Sendrecv( sendbuf, sendcount, sendtype, dest, sendtag, 
                              recvbuf, recvcount, recvtype, source, recvtag, 
                              comm, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -3509,8 +4010,14 @@ MPI_Status * status;
       PMPI_Type_size( datatype, &sendsize );
       MPE_LOG_COMM_SEND( comm, dest, sendtag, count * sendsize )
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Sendrecv_replace( buf, count, datatype, dest, 
                                      sendtag, source, recvtag, comm, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
 #ifdef HAVE_MPI_STATUS_BROKEN_ON_PROC_NULL
   if (status && source == MPI_PROC_NULL) {
@@ -3550,7 +4057,13 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Ssend( buf, count, datatype, dest, tag, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -3576,7 +4089,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SSEND_INIT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Ssend_init( buf, count, datatype, dest, tag, comm, request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_REQ_ADD_SEND( *request, datatype, count, dest, tag, comm, 1 )
 
@@ -3598,7 +4117,13 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_START_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Start( request );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_REQ_START( *request )
 
@@ -3621,7 +4146,13 @@ MPI_Request * array_of_requests;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_STARTALL_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Startall( count, array_of_requests );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   for (i=0; i<count; i++)
       MPE_REQ_START( array_of_requests[i] )
@@ -3653,7 +4184,13 @@ MPI_Status * status;
 
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Test( request, flag, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (*flag) 
         MPE_REQ_WAIT_TEST( lreq, status, "MPI_Test" )
@@ -3705,8 +4242,14 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Testall( count, array_of_requests, flag,
                               array_of_statuses );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (*flag && count <= MPE_MAX_REQUESTS) {
         for (i=0; i < count; i++) {
@@ -3761,7 +4304,13 @@ MPI_Status * status;
             req[i] = array_of_requests[i];
     }
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Testany( count, array_of_requests, index, flag, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (*flag && count <= MPE_MAX_REQUESTS) 
         MPE_REQ_WAIT_TEST( req[*index], status, "MPI_Testany" )
@@ -3785,7 +4334,13 @@ int * flag;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_CANCELLED_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Test_cancelled( status, flag );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3839,8 +4394,14 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Testsome( incount, array_of_requests, outcount, 
                                array_of_indices, array_of_statuses );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (incount <= MPE_MAX_REQUESTS) {
         for (i=0; i < *outcount; i++) {
@@ -3871,7 +4432,13 @@ MPI_Datatype * datatype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_COMMIT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_commit( datatype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3893,7 +4460,13 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_CONTIGUOUS_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_contiguous( count, old_type, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3914,7 +4487,13 @@ MPI_Aint * extent;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_EXTENT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_extent( datatype, extent );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3934,7 +4513,13 @@ MPI_Datatype * datatype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_FREE_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_free( datatype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3958,7 +4543,14 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HINDEXED_ID)
   
-  returnVal = PMPI_Type_hindexed( count, blocklens, indices, old_type, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Type_hindexed( count, blocklens, indices,
+                                  old_type, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -3982,7 +4574,13 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HVECTOR_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_hvector( count, blocklen, stride, old_type, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4006,7 +4604,13 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_INDEXED_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_indexed( count, blocklens, indices, old_type, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4027,7 +4631,13 @@ MPI_Aint * displacement;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_LB_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_lb( datatype, displacement );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4048,7 +4658,13 @@ int          * size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_SIZE_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_size( datatype, size );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4072,7 +4688,13 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_STRUCT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_struct( count, blocklens, indices, old_types, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4093,7 +4715,13 @@ MPI_Aint * displacement;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_UB_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_ub( datatype, displacement );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4117,7 +4745,13 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_VECTOR_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Type_vector( count, blocklen, stride, old_type, newtype );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4143,7 +4777,14 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_UNPACK_ID)
   
-  returnVal = PMPI_Unpack( inbuf, insize, position, outbuf, outcount, type, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+  returnVal = PMPI_Unpack( inbuf, insize, position,
+                           outbuf, outcount, type, comm );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4171,7 +4812,13 @@ MPI_Status * status;
 
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAIT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Wait( request, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     MPE_REQ_WAIT_TEST( lreq, status, "MPI_Wait" )
 
@@ -4222,7 +4869,13 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Waitall( count, array_of_requests, array_of_statuses );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (count <= MPE_MAX_REQUESTS) {
         for (i=0; i < count; i++) {
@@ -4276,7 +4929,13 @@ MPI_Status * status;
             req[i] = array_of_requests[i];
     }
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Waitany( count, array_of_requests, index, status );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (*index <= MPE_MAX_REQUESTS) {
         MPE_REQ_WAIT_TEST( req[*index], status, "MPI_Waitany" )
@@ -4341,8 +5000,14 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     returnVal = PMPI_Waitsome( incount, array_of_requests, outcount, 
                                array_of_indices, array_of_statuses );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     if (incount <= MPE_MAX_REQUESTS) {
         for (i=0; i < *outcount; i++) {
@@ -4376,7 +5041,13 @@ int * coords;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_COORDS_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_coords( comm, rank, maxdims, coords );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4402,10 +5073,14 @@ MPI_Comm * comm_cart;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_CREATE_ID)
   
-  trace_on  = 0;
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_create( comm_old, ndims, dims, periods, reorder,
                                 comm_cart );
-  trace_on  = 1;
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_INTRACOMM(comm_old,*comm_cart,CLOG_COMM_INTRA_CREATE)
 
@@ -4431,7 +5106,13 @@ int * coords;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_GET_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_get( comm, maxdims, dims, periods, coords );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4455,7 +5136,13 @@ int * newrank;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_MAP_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_map( comm_old, ndims, dims, periods, newrank );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm_old)
 
@@ -4477,7 +5164,13 @@ int * rank;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_RANK_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_rank( comm, coords, rank );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4501,7 +5194,13 @@ int * dest;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SHIFT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_shift( comm, direction, displ, source, dest );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4524,9 +5223,13 @@ MPI_Comm * comm_new;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SUB_ID)
   
-  trace_on  = 0;
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cart_sub( comm, remain_dims, comm_new );
-  trace_on  = 1;
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_INTRACOMM(comm,*comm_new,CLOG_COMM_INTRA_CREATE)
 
@@ -4549,7 +5252,13 @@ int * ndims;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CARTDIM_GET_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Cartdim_get( comm, ndims );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4571,7 +5280,13 @@ int * dims;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_DIMS_CREATE_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Dims_create( nnodes, ndims, dims );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(MPE_COMM_NULL)
 
@@ -4597,10 +5312,14 @@ MPI_Comm * comm_graph;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_CREATE_ID)
   
-  trace_on  = 0;
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Graph_create( comm_old, nnodes, index, edges, reorder,
                                  comm_graph );
-  trace_on  = 1;
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_INTRACOMM(comm_old,*comm_graph,CLOG_COMM_INTRA_CREATE)
 
@@ -4626,7 +5345,13 @@ int * edges;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_GET_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Graph_get( comm, maxindex, maxedges, index, edges );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4650,7 +5375,13 @@ int * newrank;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_MAP_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Graph_map( comm_old, nnodes, index, edges, newrank );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm_old)
 
@@ -4673,7 +5404,13 @@ int * neighbors;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Graph_neighbors( comm, rank, maxneighbors, neighbors );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4695,7 +5432,13 @@ int * nneighbors;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_COUNT_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Graph_neighbors_count( comm, rank, nneighbors );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4717,7 +5460,13 @@ int * nedges;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPHDIMS_GET_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Graphdims_get( comm, nnodes, nedges );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4738,7 +5487,13 @@ int * top_type;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_TOPO_TEST_ID)
   
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
   returnVal = PMPI_Topo_test( comm, top_type );
+#if defined( WITH_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
   MPE_LOG_STATE_END(comm)
 
@@ -4778,4 +5533,8 @@ int MPI_Pcontrol(const int level, ...)
 
 #ifdef HAVE_MPI_RMA
 #include "log_mpi_rma.c"
+#endif
+
+#ifdef HAVE_MPI_SPAWN
+#include "log_mpi_spawn.c"
 #endif
