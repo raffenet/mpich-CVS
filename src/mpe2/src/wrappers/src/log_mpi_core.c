@@ -161,8 +161,14 @@ void MPE_Init_mpi_spawn( void );
 static MPE_State states[MPE_MAX_KNOWN_STATES];
 static MPE_Event events[MPE_MAX_KNOWN_EVENTS];
 
-/* Global trace control */
-static int trace_on = 0;
+/*
+   Global trace control
+   is_mpilog_on : a boolean flag indicates if MPI user level profiling is on.
+   is_mpelog_on : a boolean flag indicates if internal MPE profiling is on.
+                  This allows MPE to turn off logging for safe PMPI calls.
+*/
+static int is_mpilog_on = 0;
+static int is_mpelog_on = 0;
 
 /* define known events' ID, i.e. index to the corresponding event in events[] */
 #define MPE_COMM_INIT_ID 0
@@ -383,7 +389,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
    the functions that invoke these macros will look clearer and more consistent.
 */
 #define MPE_LOG_STATE_BEGIN(comm,name) \
-    if (trace_on) { \
+    if (is_mpilog_on && is_mpelog_on) { \
         state = &states[name]; \
         if (state->is_active) { \
             commIDs = CLOG_CommSet_get_IDs( CLOG_CommSet, comm ); \
@@ -391,13 +397,13 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
         } \
     }
 #define MPE_LOG_STATE_END(comm) \
-    if (trace_on && state->is_active) { \
+    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
         MPE_Log_commIDs_event( commIDs, 0, state->final_evtID, NULL ); \
         state->n_calls += 2; \
     }
 
 #define MPE_LOG_SOLO_EVENT(commIDs,name) \
-    if (trace_on) { \
+    if (is_mpilog_on && is_mpelog_on) { \
         solo_event = &events[name]; \
         if (solo_event->is_active) { \
             MPE_Log_commIDs_event( commIDs, 0, solo_event->eventID, NULL ); \
@@ -406,11 +412,11 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
     }
 
 #define MPE_LOG_COMM_SEND(comm,receiver,tag,size) \
-    if (trace_on && state->is_active) { \
+    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
         MPE_Log_commIDs_send( commIDs, 0, receiver, tag, size ); \
     }
 #define MPE_LOG_COMM_RECV(comm,sender,tag,size) \
-    if (trace_on && state->is_active) { \
+    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
         MPE_Log_commIDs_receive( commIDs, 0, sender, tag, size ); \
     }
 
@@ -430,11 +436,11 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 #define MPE_REQ_WAIT_TEST(request,status,note) \
     MPE_Req_wait_test( request, status, note, state );
 
-#define MPE_LOG_OFF    trace_on  = 0;
-#define MPE_LOG_ON     trace_on  = 1;
+#define MPE_LOG_OFF    is_mpelog_on  = 0;
+#define MPE_LOG_ON     is_mpelog_on  = 1;
 
 #define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
-    if (trace_on && state->is_active) { \
+    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
         if ( new_comm != MPI_COMM_NULL ) { \
             new_commIDs = CLOG_CommSet_add_intracomm( CLOG_CommSet, \
                                                       new_comm ); \
@@ -448,7 +454,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
     }
 
 #define MPE_LOG_INTERCOMM(comm,new_comm,comm_etype) \
-    if (trace_on && state->is_active) { \
+    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
         if ( new_comm != MPI_COMM_NULL ) { \
             new_commIDs = CLOG_CommSet_add_intercomm( CLOG_CommSet, \
                                                       new_comm, commIDs ); \
@@ -552,7 +558,7 @@ MPE_State   *state;
     }
 
     if ((rq->status & RQ_SEND) && rq->mate != MPI_PROC_NULL) {
-        if (trace_on && state->is_active) {
+        if (is_mpilog_on && is_mpelog_on && state->is_active) {
             istate  = &states[MPE_ISEND_WAITED_ID];
             if (istate->is_active) {
                 MPE_Log_commIDs_event( rq->commIDs, 0, istate->start_evtID,
@@ -621,7 +627,7 @@ MPE_State   *state;
         */    
         if ((rq->status & RQ_RECV) && (status->MPI_SOURCE != MPI_PROC_NULL)) {
             PMPI_Get_count( status, MPI_BYTE, &size );
-            if (trace_on && state->is_active) {
+            if (is_mpilog_on && is_mpelog_on && state->is_active) {
                 istate  = &states[MPE_IRECV_WAITED_ID];
                 if (istate->is_active) {
                     MPE_Log_commIDs_event( rq->commIDs, 0, istate->start_evtID,
@@ -1246,11 +1252,11 @@ MPI_Comm comm;
 */
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHER_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Allgather( sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1278,12 +1284,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHERV_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Allgatherv( sendbuf, sendcount, sendtype,
                                recvbuf, recvcounts, displs, recvtype, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1310,11 +1316,11 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLREDUCE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Allreduce( sendbuf, recvbuf, count, datatype, op, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1342,12 +1348,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Alltoall( sendbuf, sendcount, sendtype,
                              recvbuf, recvcnt, recvtype, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1376,12 +1382,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALLV_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Alltoallv( sendbuf, sendcnts, sdispls, sendtype,
                               recvbuf, recvcnts, rdispls, recvtype, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1402,11 +1408,11 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_BARRIER_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Barrier( comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1431,11 +1437,11 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_BCAST_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Bcast( buffer, count, datatype, root, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1463,11 +1469,11 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GATHER_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Gather( sendbuf, sendcnt, sendtype, recvbuf, recvcount, recvtype, root, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1496,12 +1502,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GATHERV_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Gatherv( sendbuf, sendcnt, sendtype,
                             recvbuf, recvcnts, displs, recvtype, root, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1524,11 +1530,11 @@ MPI_Op * op;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Op_create( function, commute, op );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1550,11 +1556,11 @@ MPI_Op * op;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_FREE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Op_free( op );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1580,12 +1586,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_SCATTER_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Reduce_scatter( sendbuf, recvbuf, recvcnts,
                                    datatype, op, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1612,11 +1618,11 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Reduce( sendbuf, recvbuf, count, datatype, op, root, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1643,11 +1649,11 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SCAN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Scan( sendbuf, recvbuf, count, datatype, op, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1676,12 +1682,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SCATTER_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Scatter( sendbuf, sendcnt, sendtype,
                             recvbuf, recvcnt, recvtype, root, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1712,12 +1718,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SCATTERV_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Scatterv( sendbuf, sendcnts, displs, sendtype,
                              recvbuf, recvcnt, recvtype, root, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1740,11 +1746,11 @@ int keyval;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_DELETE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Attr_delete( comm, keyval );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1769,11 +1775,11 @@ int * flag;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_GET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Attr_get( comm, keyval, attr_value, flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1796,11 +1802,11 @@ void * attr_value;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_PUT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Attr_put( comm, keyval, attr_value );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1823,11 +1829,11 @@ int * result;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_COMM_COMPARE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_compare( comm1, comm2, result );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1852,11 +1858,11 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_create( comm, group, comm_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1882,11 +1888,11 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_DUP_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_dup( comm, comm_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1911,11 +1917,11 @@ MPI_Comm * comm;
 
   MPE_LOG_STATE_BEGIN(*comm,MPE_COMM_FREE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_free( comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1942,11 +1948,11 @@ MPI_Group * group;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_GROUP_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_group( comm, group );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1969,11 +1975,11 @@ int * rank;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_RANK_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_rank( comm, rank );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1996,11 +2002,11 @@ MPI_Group * group;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_GROUP_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_remote_group( comm, group );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2023,11 +2029,11 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_remote_size( comm, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2050,11 +2056,11 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_size( comm, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2080,11 +2086,11 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SPLIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_split( comm, color, key, comm_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2109,11 +2115,11 @@ int * flag;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_TEST_INTER_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Comm_test_inter( comm, flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2137,11 +2143,11 @@ int * result;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_COMPARE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_compare( group1, group2, result );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2165,11 +2171,11 @@ MPI_Group * group_out;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_DIFFERENCE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_difference( group1, group2, group_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2194,11 +2200,11 @@ MPI_Group * newgroup;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_EXCL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_excl( group, n, ranks, newgroup );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2220,11 +2226,11 @@ MPI_Group * group;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_FREE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_free( group );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2249,11 +2255,11 @@ MPI_Group * group_out;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INCL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_incl( group, n, ranks, group_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2277,11 +2283,11 @@ MPI_Group * group_out;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INTERSECTION_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_intersection( group1, group2, group_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2304,11 +2310,11 @@ int * rank;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANK_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_rank( group, rank );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2333,11 +2339,11 @@ MPI_Group * newgroup;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_EXCL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_range_excl( group, n, ranges, newgroup );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2362,11 +2368,11 @@ MPI_Group * newgroup;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_INCL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_range_incl( group, n, ranges, newgroup );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2389,11 +2395,11 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_size( group, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2419,12 +2425,12 @@ int * ranks_b;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_TRANSLATE_RANKS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_translate_ranks( group_a, n, ranks_a,
                                           group_b, ranks_b );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2448,11 +2454,11 @@ MPI_Group * group_out;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_UNION_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Group_union( group1, group2, group_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2480,13 +2486,13 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(local_comm,MPE_INTERCOMM_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Intercomm_create( local_comm, local_leader,
                                      peer_comm, remote_leader,
                                      tag, comm_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2513,11 +2519,11 @@ MPI_Comm * comm_out;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_INTERCOMM_MERGE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Intercomm_merge( comm, high, comm_out );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2544,11 +2550,11 @@ void * extra_state;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Keyval_create( copy_fn, delete_fn, keyval, extra_state );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2570,11 +2576,11 @@ int * keyval;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_FREE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Keyval_free( keyval );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2597,11 +2603,11 @@ int errorcode;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ABORT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Abort( comm, errorcode );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2625,11 +2631,11 @@ int * errorclass;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_CLASS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Error_class( errorcode, errorclass );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2652,11 +2658,11 @@ MPI_Errhandler * errhandler;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Errhandler_create( function, errhandler );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2678,11 +2684,11 @@ MPI_Errhandler * errhandler;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_FREE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Errhandler_free( errhandler );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2705,11 +2711,11 @@ MPI_Errhandler * errhandler;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_GET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Errhandler_get( comm, errhandler );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2733,11 +2739,11 @@ int * resultlen;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_STRING_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Error_string( errorcode, string, resultlen );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2760,11 +2766,11 @@ MPI_Errhandler errhandler;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_SET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Errhandler_set( comm, errhandler );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2840,11 +2846,11 @@ int  MPI_Finalize( )
        i.e. writing to the CLOG's stream when it is already closed in
        MPE_Finish_log(), turn the trace off explicitly.
     */
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Finalize(  );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2865,11 +2871,11 @@ int * resultlen;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_PROCESSOR_NAME_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Get_processor_name( name, resultlen );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -2894,11 +2900,11 @@ char *** argv;
     MPE_LOG_SOLO_EVENT_DECL
 
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Init( argc, argv );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3002,7 +3008,8 @@ char *** argv;
 
     rq_init( requests_avail_0 );
 
-    trace_on = 1;
+    is_mpilog_on = 1;
+    is_mpelog_on = 1;
 
     MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, MPE_COMM_INIT_ID )
 
@@ -3022,11 +3029,11 @@ int * flag;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_INITIALIZED_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Initialized( flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3052,11 +3059,11 @@ double  MPI_Wtick(  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTICK_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Wtick(  );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3077,11 +3084,11 @@ double  MPI_Wtime(  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTIME_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Wtime(  );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3105,11 +3112,11 @@ MPI_Aint * address;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ADDRESS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Address( location, address );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3140,11 +3147,11 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Bsend( buf, count, datatype, dest, tag, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3172,11 +3179,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_BSEND_INIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Bsend_init( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3202,11 +3209,11 @@ int size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_ATTACH_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Buffer_attach( buffer, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3229,11 +3236,11 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_DETACH_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Buffer_detach( buffer, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3257,11 +3264,11 @@ MPI_Request * request;
   
   MPE_Req_cancel( *request );
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cancel( request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3285,11 +3292,11 @@ MPI_Request * request;
 
   MPE_Req_remove( *request );
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Request_free( request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3317,12 +3324,12 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_RECV_INIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Recv_init( buf, count, datatype, source, tag,
                               comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3355,11 +3362,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SEND_INIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Send_init( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3386,11 +3393,11 @@ int * elements;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ELEMENTS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Get_elements( status, datatype, elements );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3414,11 +3421,11 @@ int * count;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_COUNT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Get_count( status, datatype, count );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3446,11 +3453,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IBSEND_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Ibsend( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3484,11 +3491,11 @@ MPI_Status * status;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IPROBE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Iprobe( source, tag, comm, flag, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3526,11 +3533,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IRECV_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Irecv( buf, count, datatype, source, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3562,11 +3569,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_IRSEND_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Irsend( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3599,11 +3606,11 @@ MPI_Request * request;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Isend( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3637,11 +3644,11 @@ MPI_Request * request;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Issend( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3671,12 +3678,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_PACK_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Pack( inbuf, incount, type, outbuf, outcount,
                          position, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3701,11 +3708,11 @@ int * size;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_PACK_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Pack_size( incount, datatype, comm, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3736,11 +3743,11 @@ MPI_Status * status;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_PROBE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Probe( source, tag, comm, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3784,11 +3791,11 @@ MPI_Status * status;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_RECV_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Recv( buf, count, datatype, source, tag, comm, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3833,11 +3840,11 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Rsend( buf, count, datatype, dest, tag, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3865,11 +3872,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_RSEND_INIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Rsend_init( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3902,11 +3909,11 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, size * count )
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Send( buf, count, datatype, dest, tag, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -3951,13 +3958,13 @@ MPI_Status * status;
       PMPI_Type_size( sendtype, &sendsize );
       MPE_LOG_COMM_SEND( comm, dest, sendtag, sendcount * sendsize )
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Sendrecv( sendbuf, sendcount, sendtype, dest, sendtag, 
                              recvbuf, recvcount, recvtype, source, recvtag, 
                              comm, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4010,12 +4017,12 @@ MPI_Status * status;
       PMPI_Type_size( datatype, &sendsize );
       MPE_LOG_COMM_SEND( comm, dest, sendtag, count * sendsize )
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Sendrecv_replace( buf, count, datatype, dest, 
                                      sendtag, source, recvtag, comm, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4057,11 +4064,11 @@ MPI_Comm comm;
   PMPI_Type_size( datatype, &size );
   MPE_LOG_COMM_SEND( comm, dest, tag, count * size )
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Ssend( buf, count, datatype, dest, tag, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4089,11 +4096,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_SSEND_INIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Ssend_init( buf, count, datatype, dest, tag, comm, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4117,11 +4124,11 @@ MPI_Request * request;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_START_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Start( request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4146,11 +4153,11 @@ MPI_Request * array_of_requests;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_STARTALL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Startall( count, array_of_requests );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4184,11 +4191,11 @@ MPI_Status * status;
 
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Test( request, flag, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4242,12 +4249,12 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Testall( count, array_of_requests, flag,
                               array_of_statuses );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4304,11 +4311,11 @@ MPI_Status * status;
             req[i] = array_of_requests[i];
     }
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Testany( count, array_of_requests, index, flag, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4334,11 +4341,11 @@ int * flag;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_CANCELLED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Test_cancelled( status, flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4394,12 +4401,12 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Testsome( incount, array_of_requests, outcount, 
                                array_of_indices, array_of_statuses );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4432,11 +4439,11 @@ MPI_Datatype * datatype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_COMMIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_commit( datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4460,11 +4467,11 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_CONTIGUOUS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_contiguous( count, old_type, newtype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4487,11 +4494,11 @@ MPI_Aint * extent;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_EXTENT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_extent( datatype, extent );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4513,11 +4520,11 @@ MPI_Datatype * datatype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_FREE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_free( datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4543,12 +4550,12 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HINDEXED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_hindexed( count, blocklens, indices,
                                   old_type, newtype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4574,11 +4581,11 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HVECTOR_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_hvector( count, blocklen, stride, old_type, newtype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4604,11 +4611,11 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_INDEXED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_indexed( count, blocklens, indices, old_type, newtype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4631,11 +4638,11 @@ MPI_Aint * displacement;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_LB_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_lb( datatype, displacement );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4658,11 +4665,11 @@ int          * size;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_size( datatype, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4688,11 +4695,11 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_STRUCT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_struct( count, blocklens, indices, old_types, newtype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4715,11 +4722,11 @@ MPI_Aint * displacement;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_UB_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_ub( datatype, displacement );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4745,11 +4752,11 @@ MPI_Datatype * newtype;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_VECTOR_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Type_vector( count, blocklen, stride, old_type, newtype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4777,12 +4784,12 @@ MPI_Comm comm;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_UNPACK_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Unpack( inbuf, insize, position,
                            outbuf, outcount, type, comm );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4812,11 +4819,11 @@ MPI_Status * status;
 
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAIT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Wait( request, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4869,11 +4876,11 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Waitall( count, array_of_requests, array_of_statuses );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -4929,11 +4936,11 @@ MPI_Status * status;
             req[i] = array_of_requests[i];
     }
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Waitany( count, array_of_requests, index, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5000,12 +5007,12 @@ MPI_Status * array_of_statuses;
             req[i] = array_of_requests[i];
     }
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Waitsome( incount, array_of_requests, outcount, 
                                array_of_indices, array_of_statuses );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5041,11 +5048,11 @@ int * coords;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_COORDS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_coords( comm, rank, maxdims, coords );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5073,12 +5080,12 @@ MPI_Comm * comm_cart;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_create( comm_old, ndims, dims, periods, reorder,
                                 comm_cart );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5106,11 +5113,11 @@ int * coords;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_GET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_get( comm, maxdims, dims, periods, coords );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5136,11 +5143,11 @@ int * newrank;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_MAP_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_map( comm_old, ndims, dims, periods, newrank );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5164,11 +5171,11 @@ int * rank;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_RANK_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_rank( comm, coords, rank );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5194,11 +5201,11 @@ int * dest;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SHIFT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_shift( comm, direction, displ, source, dest );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5223,11 +5230,11 @@ MPI_Comm * comm_new;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SUB_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cart_sub( comm, remain_dims, comm_new );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5252,11 +5259,11 @@ int * ndims;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_CARTDIM_GET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Cartdim_get( comm, ndims );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5280,11 +5287,11 @@ int * dims;
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_DIMS_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Dims_create( nnodes, ndims, dims );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5312,12 +5319,12 @@ MPI_Comm * comm_graph;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_CREATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Graph_create( comm_old, nnodes, index, edges, reorder,
                                  comm_graph );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5345,11 +5352,11 @@ int * edges;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_GET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Graph_get( comm, maxindex, maxedges, index, edges );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5375,11 +5382,11 @@ int * newrank;
 
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_MAP_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Graph_map( comm_old, nnodes, index, edges, newrank );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5404,11 +5411,11 @@ int * neighbors;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Graph_neighbors( comm, rank, maxneighbors, neighbors );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5432,11 +5439,11 @@ int * nneighbors;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_COUNT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Graph_neighbors_count( comm, rank, nneighbors );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5460,11 +5467,11 @@ int * nedges;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPHDIMS_GET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Graphdims_get( comm, nnodes, nedges );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5487,11 +5494,11 @@ int * top_type;
 
   MPE_LOG_STATE_BEGIN(comm,MPE_TOPO_TEST_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Topo_test( comm, top_type );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -5523,7 +5530,7 @@ int MPI_Pcontrol(const int level, ...)
 #endif
 #endif
 {
-    trace_on = level;
+    is_mpilog_on = level;
     return MPI_SUCCESS;
 }
 
