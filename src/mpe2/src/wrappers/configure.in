@@ -130,6 +130,15 @@ AC_ARG_WITH( f2cmpilibs,
                                      MPICH.],
 F2CMPI_LIBS="$withval" ; enable_f2cmpilib=no )
 
+AC_ARG_ENABLE( safePMPI,
+[--enable-safePMPI                  - Turn on/off the safe PMPI invocation, ie.
+                                     Turn off logging before making PMPI call.
+                                     Turn on logging after PMPI call.  For
+                                     non-MPICH2 (standalone build), the default
+                                     is enable=yes.  For MPICH2 build, the
+                                     default is enable=no.], ,
+enable_safePMPI=yes )
+
 AC_ARG_ENABLE( debugcheck,
 [--enable-debugcheck                - Turn on/off the debugging & diagnostic
                                      checking code in MPE code.
@@ -237,7 +246,7 @@ return 0;
 }
 int main() { func( 1, 2 ); return 0;}],
 AC_DEFINE( USE_STDARG, 1, [Define is stdarg can be used] )
-CFLAGS="$CFLAGS -DUSE_STDARG")
+)
 fi
 dnl
 AC_MSG_CHECKING( [if compiler accepts prototypes] )
@@ -245,7 +254,6 @@ AC_TRY_COMPILE(, int f(double a);, have_proto=yes, have_proto=no)
 if test "$have_proto" = "yes" ; then
     AC_DEFINE( HAVE_PROTOTYPES, 1,
                [Define if the compiler supports simple prototyptes] )
-    CFLAGS="$CFLAGS -DHAVE_PROTOTYPES"
     AC_MSG_RESULT([yes])
 else
     AC_MSG_RESULT([no])
@@ -295,6 +303,18 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
 #   value supplied in --with-f2cmpilibs will be used.
 else
     F2CMPI_LIBS=""
+fi
+
+dnl Check Safe PMPI invocations
+AC_MSG_CHECKING( [for safe PMPI invocations] )
+if test "$MPI_IMPL" = "MPICH" -o "$MPI_IMPL" = "MPICH2" ; then
+    enable_safePMPI=no
+fi
+if test "$enable_safePMPI" = "yes" ; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE( MAKE_SAFE_PMPI_CALL, 1, [Define if safe PMPI calls are made] )
+else
+    AC_MSG_RESULT(no)
 fi
 
 
