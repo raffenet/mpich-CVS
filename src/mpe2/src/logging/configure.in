@@ -106,15 +106,6 @@ AC_SUBST(MKDIR)
 AC_SUBST(CPRP)
 AC_SUBST(RM)
 AC_SUBST(MV)
- 
-if test -z "$nonopt" ; then nonopt=NONE ; fi
-AC_CANONICAL_HOST
-case "$host" in
-   *cray*)
-        host=cray
-        CFLAGS="$CFLAGS -DMPI_CRAY"
-        ;;
-esac
 
 dnl Set the various build directories from their mpe_ prefixed env variables.
 dnl
@@ -196,6 +187,30 @@ else
 fi
 
 dnl ****   Checking for specific functions needed for the package.
+ 
+if test -z "$nonopt" ; then nonopt=NONE ; fi
+AC_CANONICAL_HOST
+case "$host" in
+   *cray*)
+        if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
+            AC_MSG_CHECKING( [for Cray's FCD string type] )
+            AC_LINK_IFELSE( [ AC_LANG_PROGRAM( [#include <fortran.h>], [
+                                char  *cstr;
+                                int   cstrlen;
+                                _fcd  fstr;
+                                cstr      = _fcdtocp( fstr );
+                                cstr_len  = _fcdlen( fstr );
+                            ] ) ], [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+            if test "$mpe_link_ok" = "yes" ; then
+                AC_MSG_RESULT(yes)
+                AC_DEFINE( HAVE_CRAY_FCD_STRING, 1,
+                           [Define if CRAY's FCD string is found] )
+            else
+                AC_MSG_RESULT(no)
+            fi
+        fi
+        ;;
+esac
 
 dnl snprintf may have been missing in headerfile,
 dnl e.g. gcc -ansi remove snprintf's prototype
