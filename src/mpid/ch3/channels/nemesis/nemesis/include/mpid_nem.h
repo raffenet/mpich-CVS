@@ -29,8 +29,7 @@ int MPID_nem_vc_init (MPIDI_VC_t *vc);
 int MPID_nem_get_business_card (char *value, int length);
 int MPID_nem_connect_to_root (const char *port_name, const int lpid);
 
-/* set this to 32 for 32-bit arch and 40 for 64-bit */
-#define MPID_NEM__MPICH2_HEADER_LEN 32
+#define MPID_NEM__MPICH2_HEADER_LEN sizeof(MPIDI_CH3_Pkt_t)
 #define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (MPID_NEM__MPICH2_HEADER_LEN))
 
 #define MPID_NEM_MPICH2_SUCCESS 0

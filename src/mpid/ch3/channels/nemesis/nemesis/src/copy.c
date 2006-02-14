@@ -1,4 +1,4 @@
-
+#if defined(HAVE_GCC_AND_PENTIUM_ASM)
 #include <mpid_nem_copy.h>
 #include <stdio.h>
 #include <string.h>
@@ -69,3 +69,4 @@ void *amd_memcpy (void *to, const void *from, size_t length)
     return to;
 }
 
+#endif

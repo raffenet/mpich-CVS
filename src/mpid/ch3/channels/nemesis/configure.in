@@ -107,6 +107,27 @@ if test "$enable_checkpointing" != "no" ; then
     AC_DEFINE(ENABLED_CHECKPOINTING, 1, [Define to enable nemesis checkpointing])
 fi
 
+# Check whether x86 asm and 32-bit push instructions are available
+# so we know whether mmx_copy.s will compile
+AC_MSG_CHECKING([for gcc __asm__ and pentium 32-bit push instruction])
+AC_TRY_RUN([
+int main(int argc, char *argv[])
+{
+    int ret;
+    __asm__ __volatile__ ("mov $1, %%eax \n"
+			  "push %%eax \n"
+			  "mov $0, %%eax \n"
+			  "pop %%eax \n"
+			  : "=a" (ret));
+    return (ret == 1) ? 0 : -1;
+}
+], AC_MSG_RESULT(yes)
+   AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM_32_PUSH, 1,[Define if using gcc on a system with Pentium and 32-bit push instructions])
+   mmx_copy_s="mmx_copy.s",
+   AC_MSG_RESULT(no)
+   mmx_copy_s="", AC_MSG_RESULT(not checking when cross compiling)
+)
+
 PAC_PROG_MAKE
 
 AC_C_INLINE
@@ -149,6 +170,9 @@ if test "$ac_cv_header_netinet_in_h" = yes ; then
     AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
 fi
 
+
+
+# These are defines to turn on different optimizations.  Turn them off only for testing
 AC_DEFINE(MPID_NEM_INLINE,1,[Define to turn on the inlining optimizations in Nemesis code])
 AC_DEFINE(PREFETCH_CELL,1,[Define to turn on the prefetching optimization in Nemesis code])	
 AC_DEFINE(USE_FASTBOX,1,[Define to use the fastboxes in Nemesis code])	
@@ -158,6 +182,7 @@ AC_SUBST(device_name)
 AC_SUBST(channel_name)
 AC_SUBST(nemesis_network)
 
+AC_SUBST(mmx_copy_s)
 AC_SUBST(PAPI_INCLUDE)
 AC_SUBST(AS, [as])
 AC_SUBST(AR)

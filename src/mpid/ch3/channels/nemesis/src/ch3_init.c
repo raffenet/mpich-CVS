@@ -81,8 +81,11 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
     int i;
     int nem_errno;
     int mpi_errno;
-    
-    __GM_COMPILE_TIME_ASSERT (sizeof(MPIDI_CH3_Pkt_t) == MPID_NEM__MPICH2_HEADER_LEN);
+
+    /* There are hard-coded copy routines that depend on the size of the mpich2 header
+       We only handle the 32- and 40-byte cases.
+    */
+    MPIU_Assert (MPID_NEM__MPICH2_HEADER_LEN >= 32 && MPID_NEM__MPICH2_HEADER_LEN <= 40);
 
 #if USE_PRE_INIT
     if (!called_pre_init)

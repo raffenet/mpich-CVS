@@ -2,7 +2,7 @@ INCLUDES = -I. -I../include -I${master_top_srcdir}/src/ch3/channels/nemesis/neme
            -I${top_builddir}/src/include
 lib${MPILIBNAME}_a_SOURCES = \
   mpid_nem_alloc.c mpid_nem_init.c mpid_nem_queue.c copy.c mpid_nem_barrier.c \
-  mpid_nem_mpich2.c pm.c mpid_nem_ckpt.c mpid_nem_mpich2_rma.c mmx_copy.s \
+  mpid_nem_mpich2.c pm.c mpid_nem_ckpt.c mpid_nem_mpich2_rma.c @mmx_copy_s@ \
   mpid_nem_finalize.c mpid_nem_network_poll.c mpid_nem_network.c mpid_nem_debug.c
 
 mmx_copy.o : mmx_copy.s

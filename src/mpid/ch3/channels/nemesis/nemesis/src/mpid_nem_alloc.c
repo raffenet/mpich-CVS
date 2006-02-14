@@ -131,7 +131,7 @@ void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg,
    memory->size_left    -= size;
    memory->current_addr  = (char *)(memory->current_addr) + size;
    
-   assert( (int)(memory->current_addr) <=  (int) (memory->max_addr) );   
+   assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );   
 }
 
 void MPID_nem_check_alloc (int num_processes)

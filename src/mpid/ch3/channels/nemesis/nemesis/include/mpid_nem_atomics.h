@@ -33,7 +33,7 @@ static inline void *MPID_NEM_CAS (volatile void *ptr, void *oldv, void *newv)
 		  : "memory");
     return prev;
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
-    unsigned long prev;
+    void *prev;
     asm volatile ("lock ; cmpxchgq %1,%2"
 		  : "=a" (prev)
 		  : "q" (newv), "m" (*(void **)ptr), "0" (oldv)
@@ -52,7 +52,7 @@ static inline int MPID_NEM_FETCH_AND_ADD (volatile int *ptr, int val)
 		  : "m" (*ptr), "0" (val));
     return val;
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
-    asm volatile ("lock ; xaddq %0,%1"
+    asm volatile ("lock ; xadd %0,%1" /* xadd not xaddq: let the assembler choose which one to use */
 		  : "=r" (val)
 		  : "m" (*ptr), "0" (val));
     return val;
