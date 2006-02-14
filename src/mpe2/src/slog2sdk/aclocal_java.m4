@@ -146,7 +146,7 @@ case "$host" in
     *freebsd*)
         if test -d "/software/freebsd" ; then
             subdir="freebsd"
-   	    fi
+        fi
 esac
 #
 if test -z "$subdir" ; then
