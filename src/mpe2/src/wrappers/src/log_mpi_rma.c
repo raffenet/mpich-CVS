@@ -137,14 +137,14 @@ int MPI_Accumulate( void *origin_addr, int origin_count,
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ACCUMULATE_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Accumulate( origin_addr, origin_count,
                                origin_datatype, target_rank,
                                target_disp, target_count,
                                target_datatype, op, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -165,11 +165,11 @@ int MPI_Alloc_mem( MPI_Aint size, MPI_Info info, void *baseptr )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ALLOC_MEM_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Alloc_mem( size, info, baseptr );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -190,11 +190,11 @@ int MPI_Free_mem( void *base )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_FREE_MEM_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Free_mem( base );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -218,14 +218,14 @@ int MPI_Get( void *origin_addr, int origin_count,
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Get( origin_addr, origin_count,
                         origin_datatype, target_rank,
                         target_disp, target_count,
                         target_datatype, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -249,14 +249,14 @@ int MPI_Put( void *origin_addr, int origin_count,
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_PUT_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Put( origin_addr, origin_count,
                         origin_datatype, target_rank,
                         target_disp, target_count,
                         target_datatype, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -277,11 +277,11 @@ int MPI_Win_complete( MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_COMPLETE_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_complete( win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -303,11 +303,11 @@ int MPI_Win_create( void *base, MPI_Aint size, int disp_unit,
 
   MPE_LOG_STATE_BEGIN(comm,MPE_WIN_CREATE_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_create( base, size, disp_unit, info, comm, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -328,11 +328,11 @@ int MPI_Win_fence( int assert, MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_FENCE_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_fence( assert, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -353,11 +353,11 @@ int MPI_Win_free( MPI_Win *win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_FREE_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_free( win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -378,11 +378,11 @@ int MPI_Win_get_group( MPI_Win win, MPI_Group *group )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_GET_GROUP_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_get_group( win, group );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -403,11 +403,11 @@ int MPI_Win_get_name( MPI_Win win, char *win_name, int *resultlen )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_GET_NAME_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_get_name( win, win_name, resultlen );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -429,11 +429,11 @@ int MPI_Win_lock( int lock_type, int rank, int assert, MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_LOCK_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_lock( lock_type, rank, assert, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -455,11 +455,11 @@ int MPI_Win_post( MPI_Group group, int assert, MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_POST_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_post( group, assert, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -480,11 +480,11 @@ int MPI_Win_set_name( MPI_Win win, char *win_name )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_SET_NAME_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_set_name( win, win_name );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -505,11 +505,11 @@ int MPI_Win_start( MPI_Group group, int assert, MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_START_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_start( group, assert, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -531,11 +531,11 @@ int MPI_Win_test( MPI_Win win, int *flag )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_TEST_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_test( win, flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -558,11 +558,11 @@ int MPI_Win_unlock( int rank, MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_UNLOCK_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_unlock( rank, win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -584,11 +584,11 @@ int MPI_Win_wait( MPI_Win win )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_WAIT_ID)
 
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_Win_wait( win );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 

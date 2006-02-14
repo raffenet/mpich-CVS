@@ -345,11 +345,11 @@ int MPI_File_open( MPI_Comm  comm,char * filename,int  amode,MPI_Info  info,MPI_
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_OPEN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_open( comm, filename, amode, info, fh );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -371,11 +371,11 @@ int MPI_File_close( MPI_File * fh  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_CLOSE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_close( fh );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -397,11 +397,11 @@ int MPI_File_delete( char * filename,MPI_Info  info  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_DELETE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_delete( filename, info );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -423,11 +423,11 @@ int MPI_File_set_size( MPI_File  fh,MPI_Offset  size  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_set_size( fh, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -449,11 +449,11 @@ int MPI_File_preallocate( MPI_File  fh,MPI_Offset  size  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_PREALLOCATE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_preallocate( fh, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -475,11 +475,11 @@ int MPI_File_get_size( MPI_File  fh,MPI_Offset * size  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_SIZE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_size( fh, size );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -501,11 +501,11 @@ int MPI_File_get_group( MPI_File  fh,MPI_Group * group  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_GROUP_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_group( fh, group );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -527,11 +527,11 @@ int MPI_File_get_amode( MPI_File  fh,int * amode  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_AMODE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_amode( fh, amode );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -553,11 +553,11 @@ int MPI_File_set_info( MPI_File  fh,MPI_Info  info  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_INFO_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_set_info( fh, info );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -579,11 +579,11 @@ int MPI_File_get_info( MPI_File  fh,MPI_Info * info_used  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_INFO_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_info( fh, info_used );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -605,11 +605,11 @@ int MPI_File_set_view( MPI_File  fh,MPI_Offset  disp,MPI_Datatype  etype,MPI_Dat
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_VIEW_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_set_view( fh, disp, etype, filetype, datarep, info );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -631,11 +631,11 @@ int MPI_File_get_view( MPI_File  fh,MPI_Offset * disp,MPI_Datatype * etype,MPI_D
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_VIEW_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_view( fh, disp, etype, filetype, datarep );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -657,11 +657,11 @@ int MPI_File_read_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI_
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_at( fh, offset, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -683,11 +683,11 @@ int MPI_File_read_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ALL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_at_all( fh, offset, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -709,11 +709,11 @@ int MPI_File_write_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_at( fh, offset, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -735,11 +735,11 @@ int MPI_File_write_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ALL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_at_all( fh, offset, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -761,11 +761,11 @@ int MPI_File_iread_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IREAD_AT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_iread_at( fh, offset, buf, count, datatype, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -787,11 +787,11 @@ int MPI_File_iwrite_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MP
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IWRITE_AT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_iwrite_at( fh, offset, buf, count, datatype, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -813,11 +813,11 @@ int MPI_File_read( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MPI
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -839,11 +839,11 @@ int MPI_File_read_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ALL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_all( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -865,11 +865,11 @@ int MPI_File_write( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -891,11 +891,11 @@ int MPI_File_write_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatyp
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ALL_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_all( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -917,11 +917,11 @@ int MPI_File_iread( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IREAD_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_iread( fh, buf, count, datatype, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -943,11 +943,11 @@ int MPI_File_iwrite( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,M
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IWRITE_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_iwrite( fh, buf, count, datatype, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -969,11 +969,11 @@ int MPI_File_seek( MPI_File  fh,MPI_Offset  offset,int  whence  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SEEK_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_seek( fh, offset, whence );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -995,11 +995,11 @@ int MPI_File_get_position( MPI_File  fh,MPI_Offset * offset  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_POSITION_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_position( fh, offset );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1021,11 +1021,11 @@ int MPI_File_get_byte_offset( MPI_File  fh,MPI_Offset  offset,MPI_Offset * disp 
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_BYTE_OFFSET_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_byte_offset( fh, offset, disp );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1047,11 +1047,11 @@ int MPI_File_read_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  datat
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_SHARED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_shared( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1073,11 +1073,11 @@ int MPI_File_write_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_SHARED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_shared( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1099,11 +1099,11 @@ int MPI_File_iread_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IREAD_SHARED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_iread_shared( fh, buf, count, datatype, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1125,11 +1125,11 @@ int MPI_File_iwrite_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_IWRITE_SHARED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_iwrite_shared( fh, buf, count, datatype, request );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1151,11 +1151,11 @@ int MPI_File_read_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ORDERED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_ordered( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1177,11 +1177,11 @@ int MPI_File_write_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ORDERED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_ordered( fh, buf, count, datatype, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1203,11 +1203,11 @@ int MPI_File_seek_shared( MPI_File  fh,MPI_Offset  offset,int  whence  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SEEK_SHARED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_seek_shared( fh, offset, whence );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1229,11 +1229,11 @@ int MPI_File_get_position_shared( MPI_File  fh,MPI_Offset * offset  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_POSITION_SHARED_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_position_shared( fh, offset );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1255,11 +1255,11 @@ int MPI_File_read_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int  
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ALL_BEGIN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_at_all_begin( fh, offset, buf, count, datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1281,11 +1281,11 @@ int MPI_File_read_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_AT_ALL_END_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_at_all_end( fh, buf, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1307,11 +1307,11 @@ int MPI_File_write_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int 
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ALL_BEGIN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_at_all_begin( fh, offset, buf, count, datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1333,11 +1333,11 @@ int MPI_File_write_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_AT_ALL_END_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_at_all_end( fh, buf, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1359,11 +1359,11 @@ int MPI_File_read_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  da
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ALL_BEGIN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_all_begin( fh, buf, count, datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1385,11 +1385,11 @@ int MPI_File_read_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ALL_END_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_all_end( fh, buf, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1411,11 +1411,11 @@ int MPI_File_write_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  d
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ALL_BEGIN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_all_begin( fh, buf, count, datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1437,11 +1437,11 @@ int MPI_File_write_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ALL_END_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_all_end( fh, buf, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1463,11 +1463,11 @@ int MPI_File_read_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ORDERED_BEGIN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_ordered_begin( fh, buf, count, datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1489,11 +1489,11 @@ int MPI_File_read_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_READ_ORDERED_END_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_read_ordered_end( fh, buf, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1515,11 +1515,11 @@ int MPI_File_write_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatyp
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ORDERED_BEGIN_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_ordered_begin( fh, buf, count, datatype );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1541,11 +1541,11 @@ int MPI_File_write_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_WRITE_ORDERED_END_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_write_ordered_end( fh, buf, status );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1567,11 +1567,11 @@ int MPI_File_get_type_extent( MPI_File  fh,MPI_Datatype  datatype,MPI_Aint * ext
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_TYPE_EXTENT_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_type_extent( fh, datatype, extent );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1593,11 +1593,11 @@ int MPI_File_set_atomicity( MPI_File  fh,int  flag  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SET_ATOMICITY_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_set_atomicity( fh, flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1619,11 +1619,11 @@ int MPI_File_get_atomicity( MPI_File  fh,int * flag  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_GET_ATOMICITY_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_get_atomicity( fh, flag );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
@@ -1645,11 +1645,11 @@ int MPI_File_sync( MPI_File  fh  )
 
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL, MPE_FILE_SYNC_ID)
   
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
   returnVal = PMPI_File_sync( fh );
-#if defined( WITH_SAFE_PMPI_CALL )
+#if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
