@@ -282,6 +282,7 @@ def mpdboot():
                 hostsAndInfo[idxToStart]['entry_port'] = entryPort
                 if hostsSeen.has_key(hostsAndInfo[idxToStart]['host']):
                     remoteConArg = '-n'
+                myNcpus = hostsAndInfo[idxToStart]['ncpus']
                 ifhn = hostsAndInfo[idxToStart]['ifhn']
                 if ifhn:
                     ifhn = '--ifhn=%s' % (ifhn)
