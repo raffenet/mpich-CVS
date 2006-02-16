@@ -357,10 +357,14 @@ void MPE_Req_wait_test( MPI_Request, MPI_Status *, char *, MPE_State * );
    declares this as register MPE_State *state = 0; when error checking 
    is on, just to suppress unnecessary warnings
 */
+#define MPE_LOG_SWITCH_DECL \
+    register       int              is_mylog_on = 0;
+
 #ifdef GCC_WALL
 #define MPE_LOG_STATE_DECL \
     register       MPE_State       *state   = 0; \
-    register const CLOG_CommIDs_t  *commIDs = 0;
+    register const CLOG_CommIDs_t  *commIDs = 0; \
+    MPE_LOG_SWITCH_DECL
 #define MPE_LOG_COMM_DECL \
     register       MPE_Event       *solo_event  = 0; \
     register const CLOG_CommIDs_t  *new_commIDs = 0;
@@ -369,7 +373,8 @@ void MPE_Req_wait_test( MPI_Request, MPI_Status *, char *, MPE_State * );
 #else
 #define MPE_LOG_STATE_DECL \
     register       MPE_State       *state; \
-    register const CLOG_CommIDs_t  *commIDs;
+    register const CLOG_CommIDs_t  *commIDs; \
+    MPE_LOG_SWITCH_DECL
 #define MPE_LOG_COMM_DECL \
     register       MPE_Event       *solo_event; \
     register const CLOG_CommIDs_t  *new_commIDs;
@@ -394,16 +399,19 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
         if (state->is_active) { \
             commIDs = CLOG_CommSet_get_IDs( CLOG_CommSet, comm ); \
             MPE_Log_commIDs_event( commIDs, 0, state->start_evtID, NULL ); \
+            is_mylog_on = 1; \
         } \
     }
+/*    if (is_mpilog_on && is_mpelog_on && state->is_active) { \ */
 #define MPE_LOG_STATE_END(comm) \
-    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
+    if (is_mylog_on) { \
         MPE_Log_commIDs_event( commIDs, 0, state->final_evtID, NULL ); \
         state->n_calls += 2; \
     }
 
+/*    if (is_mpilog_on && is_mpelog_on) { \ */
 #define MPE_LOG_SOLO_EVENT(commIDs,name) \
-    if (is_mpilog_on && is_mpelog_on) { \
+    if (is_mylog_on) { \
         solo_event = &events[name]; \
         if (solo_event->is_active) { \
             MPE_Log_commIDs_event( commIDs, 0, solo_event->eventID, NULL ); \
@@ -411,12 +419,14 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
         } \
     }
 
+/*    if (is_mpilog_on && is_mpelog_on && state->is_active) { \ */
 #define MPE_LOG_COMM_SEND(comm,receiver,tag,size) \
-    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
+    if (is_mylog_on) { \
         MPE_Log_commIDs_send( commIDs, 0, receiver, tag, size ); \
     }
+/*    if (is_mpilog_on && is_mpelog_on && state->is_active) { \ */
 #define MPE_LOG_COMM_RECV(comm,sender,tag,size) \
-    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
+    if (is_mylog_on) { \
         MPE_Log_commIDs_receive( commIDs, 0, sender, tag, size ); \
     }
 
@@ -436,11 +446,12 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 #define MPE_REQ_WAIT_TEST(request,status,note) \
     MPE_Req_wait_test( request, status, note, state );
 
-#define MPE_LOG_OFF    is_mpelog_on  = 0;
-#define MPE_LOG_ON     is_mpelog_on  = 1;
+#define MPE_LOG_OFF    if (is_mylog_on) is_mpelog_on  = 0;
+#define MPE_LOG_ON     if (is_mylog_on) is_mpelog_on  = 1;
 
+/*    if (is_mpilog_on && is_mpelog_on && state->is_active) { \ */
 #define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
-    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
+    if (is_mylog_on) { \
         if ( new_comm != MPI_COMM_NULL ) { \
             new_commIDs = CLOG_CommSet_add_intracomm( CLOG_CommSet, \
                                                       new_comm ); \
@@ -453,8 +464,9 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
         } \
     }
 
+/*    if (is_mpilog_on && is_mpelog_on && state->is_active) { \ */
 #define MPE_LOG_INTERCOMM(comm,new_comm,comm_etype) \
-    if (is_mpilog_on && is_mpelog_on && state->is_active) { \
+    if (is_mylog_on) { \
         if ( new_comm != MPI_COMM_NULL ) { \
             new_commIDs = CLOG_CommSet_add_intercomm( CLOG_CommSet, \
                                                       new_comm, commIDs ); \
@@ -2789,13 +2801,18 @@ int  MPI_Finalize( )
     int              event_total[MPE_MAX_KNOWN_STATES];
     int              returnVal, idx;
 
+    MPE_LOG_SWITCH_DECL
     MPE_LOG_SOLO_EVENT_DECL
 
 /*
     MPI_Finalize - prototyping replacement for MPI_Finalize
 */
+    is_mylog_on  = 1;
     MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, MPE_COMM_FINALIZE_ID )
 
+#if defined( MAKE_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
     /* set the total number of state calls by any processor */
     for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) 
         state_count[idx] = states[idx].n_calls;
@@ -2846,13 +2863,7 @@ int  MPI_Finalize( )
        i.e. writing to the CLOG's stream when it is already closed in
        MPE_Finish_log(), turn the trace off explicitly.
     */
-#if defined( MAKE_SAFE_PMPI_CALL )
-    MPE_LOG_OFF
-#endif
     returnVal = PMPI_Finalize(  );
-#if defined( MAKE_SAFE_PMPI_CALL )
-    MPE_LOG_ON
-#endif
 
     return returnVal;
 }
@@ -2897,19 +2908,21 @@ char *** argv;
     int         returnVal, idx;
     int         allow_mask;
 
+    MPE_LOG_SWITCH_DECL
     MPE_LOG_SOLO_EVENT_DECL
 
 
 #if defined( MAKE_SAFE_PMPI_CALL )
+    is_mylog_on  = 1;
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Init( argc, argv );
-#if defined( MAKE_SAFE_PMPI_CALL )
-    MPE_LOG_ON
-#endif
 
     MPE_Init_log();
     PMPI_Comm_rank( MPI_COMM_WORLD, &procid_0 );
+#if defined( MAKE_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
 
     /* Initialize all internal events */
     for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
