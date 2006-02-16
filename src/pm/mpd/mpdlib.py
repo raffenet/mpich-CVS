@@ -437,9 +437,43 @@ class MPDListenSock(MPDSock):
         self.sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         if filename:
             self.sock.bind(filename)
+            self.sock.listen(listen)
+            return
+        # see if we have an MPICH_PORT_RANGE environment variable
+        try:
+            port_range = os.environ['MPICH_PORT_RANGE']
+            (low_port, high_port) = map(int, port_range.split(':'))
+        except:
+            (low_port,high_port) = (0,0)
+        if low_port < 0  or  high_port < low_port:
+            (low_port,high_port) = (0,0)
+        if low_port != 0  and  high_port != 0:
+            if port == 0:
+                port = low_port
+                while 1:
+                    try:
+                        self.sock.bind((host,port))
+                        self.sock.listen(listen)
+                        break
+                    except socket.error, e:
+                        port += 1
+                        if port <= high_port:
+                            self.sock.close()
+                            MPDSock.__init__(self,name=name,**kargs)
+                            self.sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+                            continue
+                        else:
+                            mpd_print_tb(1,'** no free ports in MPICH_PORT_RANGE')
+                            sys.exit(-1)
+            else:  # else use the explicitly specified port
+                if port < low_port  or  port > high_port:
+                    mpd_print_tb(1,'** port %d is outside MPICH_PORT_RANGE' % port)
+                    sys.exit(-1)
+                self.sock.bind((host,port))  # go ahead and bind
+                self.sock.listen(listen)
         else:
-            self.sock.bind((host,port))
-        self.sock.listen(listen)
+            self.sock.bind((host,port))  # no port range set, so just bind as usual
+            self.sock.listen(listen)
 
 class MPDStreamHandler(object):
     def __init__(self):
