@@ -572,7 +572,7 @@ before going on to bp401.  Ranks 2 and 3 would run on bp401, and rank
 4 on bp402, e.g.:
 
 \begin{verbatim}
-    mpiexec.py -l -machinefile machfile -n 5 hostname
+    mpiexec -l -machinefile machfile -n 5 hostname
 \end{verbatim}
 
 produces:
@@ -680,6 +680,12 @@ So for example, to see a complete list of the possible arguments for
 \begin{description}
 \item[--help] causes mpd to print a list and description of all options
 \end{description}
+
+In addition to the cmd-line options, mpd will also check for presence of
+the environment variable MPICH\_PORT\_RANGE (note MPICH instead of MPD)
+and use only the ports in that range for listening sockets.  The range
+is separated by a colon, e.g. 2000:8000.
+
 
 \subsubsection{Running MPD on multi-homed systems}
 \label{sec:mpd-multi-homed}
