@@ -483,6 +483,25 @@ cicc -I${MPICH_INSTALL_DIR}/include -L${MPICH_INSTALL_DIR}/lib $@ <-lmpi>
     make install PREFIX=${MPE_INSTALL_DIR}
 
 
+For Cray X1E MPI implementation: cross-compilation at a linux front-end
+(e.g. phoenix at Oak Ridge)
+
+    ${MPE_SRC_DIR}/configure                                              \
+    MPI_F77="ftn -s real64 -dp"                                           \
+    F77="ftn -s real64 -dp"                                               \
+    --host=craynv-cray-unicosmp3.0.X                                      \
+    CROSS_SIZEOF_CHAR=1                                                   \
+    CROSS_SIZEOF_SHORT=2                                                  \
+    CROSS_SIZEOF_INT=4                                                    \
+    CROSS_SIZEOF_LONG_LONG=8                                              \
+    CROSS_BIGENDIAN=true                                                  \
+    CROSS_MPI_STATUS_SIZE=24                                              \
+    CROSS_FORTRAN2C_TRUE=1                                                \
+    CROSS_FORTRAN2C_FALSE=0                                               \
+    --disable-misc --disable-graphics --disable-collchk                   \
+    --disable-sample --disable-rlog
+
+
 For BlueGene/Light's MPI implementation: If the compilers are set up correctly
 
     ${MPE_SRC_DIR}/configure                                               \
