@@ -1,3 +1,7 @@
+/*
+   (C) 2001 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -5,16 +9,12 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include "mpi.h"
 
 
 void handle_error(int errcode, char *str);
-int server_routine(MPI_Comm comm);
-int client_routine(MPI_Comm comm);
+MPI_Comm server_routine(MPI_Comm comm);
+MPI_Comm client_routine(MPI_Comm comm);
 void usage(char * name);
 int parse_args(int argc, char ** argv);
 
@@ -76,7 +76,6 @@ void usage(char * name)
 int parse_args(int argc, char ** argv)
 {
     int c;
-    extern char* optarg;
     while ( (c = getopt(argc, argv, "csp:")) != -1 ) {
         switch (c) {
             case 's':
