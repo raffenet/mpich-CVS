@@ -133,7 +133,6 @@ typedef struct {
 #define MPE_KIND_SPAWN 0x1000
 #define MPE_KIND_INTERNAL 0x10000000
 
-#define HAVE_MPI_SPAWN 1
 /*
    Because of existence of MPE internal states whose state ID is higher than
    any of MPI states' ID.  MPE_MAX_KNOWN_STATES needs to be defined in full.
