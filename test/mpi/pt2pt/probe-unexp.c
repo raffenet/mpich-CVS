@@ -110,12 +110,12 @@ int main(int argc, char **argv)
 		if (status.MPI_TAG != tag && errs++ < 10)
 		{
 		    printf("ERROR: unexpected message tag from MPI_Probe(): p=%d, expected=%d, actual=%d, count=%d\n",
-			   p_rank, status.MPI_TAG, tag, msg_cnt);
+			   p_rank, tag, status.MPI_TAG, msg_cnt);
 		}
 		if (incoming_msg_size != msg_size && errs++ < 10)
 		{
 		    printf("ERROR: unexpected message size from MPI_Probe(): p=%d, expected=%d, actual=%d, count=%d\n",
-			   p_rank, incoming_msg_size, msg_size, msg_cnt);
+			   p_rank, msg_size, incoming_msg_size, msg_cnt);
 		}
 
 		/* Receive the probed message from the master process */
@@ -138,12 +138,12 @@ int main(int argc, char **argv)
 		if (status.MPI_TAG != tag && errs++ < 10)
 		{
 		    printf("ERROR: unexpected message tag from MPI_Recv(): p=%d, expected=%d, actual=%d, count=%d\n",
-			   p_rank, status.MPI_TAG, tag, msg_cnt);
+			   p_rank, tag, status.MPI_TAG, msg_cnt);
 		}
 		if (incoming_msg_size != msg_size && errs++ < 10)
 		{
 		    printf("ERROR: unexpected message size from MPI_Recv(): p=%d, expected=%d, actual=%d, count=%d\n",
-			   p_rank, incoming_msg_size, msg_size, msg_cnt);
+			   p_rank, msg_size, incoming_msg_size, msg_cnt);
 		}
 	    }
 	}
