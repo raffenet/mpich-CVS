@@ -200,7 +200,7 @@ sub ProcessDir {
 # ---------------------------------------------------------------------------
 # Run the programs listed in the file given as the argument. 
 # This file describes the tests in the format
-#  programname number-of-processes [ routine to test success [ setup routine ] ]
+#  programname number-of-processes [ key=value ... ]
 # If the second value is not given, the default value is used.
 # 
 sub RunList { 
@@ -208,14 +208,14 @@ sub RunList {
     my $listfile = $_[0];
     my $ResultTest = "";
     my $InitForRun = "";
+    my $listfileSource = $listfile;
 
     print "Looking in $curdir/$listfile\n" if $debug;
     if (! -s "$listfile" && -s "$srcdir/$curdir/$listfile" ) {
-	open( $LIST, "<$srcdir/$curdir/$listfile" ) || die "Could not open $srcdir/$curdir/$listfile\n";
+	$listfileSource = "$srcdir/$curdir/$listfile";
     }
-    else {
-	open( $LIST, "<$listfile" ) || die "Could not open $listfile\n";
-    }
+    open( $LIST, "<$listfileSource" ) || 
+	die "Could not open $listfileSource\n";
     while (<$LIST>) {
 	# Check for stop file
 	if (-s $stopfile) {
@@ -235,8 +235,37 @@ sub RunList {
 	    `cd $1 && make $2`;
 	    next;
 	}
-	# List files are "program <optional-np>"
-	my ($programname,$np,$ResultTest,$InitForRun) = split(/\s+/,$_);
+	# List file entries have the form:
+	# program [ np [ name=value ... ] ]
+	# See files errhan/testlist, init/testlist, and spawn/testlist
+	# for examples of using the key=value form
+	my @args = split(/\s+/,$_);
+	my $programname = $args[0];
+	my $np = "";
+	my $ResultTest = "";
+	my $InitForRun = "";
+	my $timeLimit  = "";
+	if ($#args >= 1) { $np = $args[1]; }
+	# Process the key=value arguments
+	for (my $i=2; $i <= $#args; $i++) {
+	    if ($args[$i] =~ /([^=]+)=(.*)/) {
+		my $key = $1;
+		my $value = $2;
+		if ($key eq "resultTest") {
+		    $ResultTest = $value;
+		}
+		elsif ($key eq "init") {
+		    $InitForRun = $value;
+		}
+		elsif ($key eq "timeLimit") {
+		    $timeLimit = $value;
+		}
+		else {
+		    print STDERR "Unrecognized key $key in $listfileSource\n";
+		}
+	    }
+	}
+
 	if ($np eq "") { $np = $np_default; }
 	if ($np_max > 0 && $np > $np_max) { $np = $np_max; }
 	# skip empty lines
@@ -249,7 +278,8 @@ sub RunList {
 	else {
 	    $total_count++;
 	    if (&BuildMPIProgram( $programname ) == 0) {
-		&RunMPIProgram( $programname, $np, $ResultTest, $InitForRun );
+		&RunMPIProgram( $programname, $np, $ResultTest, $InitForRun, 
+				$timeLimit );
 	    }
 	    else {
 		# We expected to run this program, so failure to build
@@ -338,7 +368,7 @@ sub ProcessImplicitList {
 # If the 3rd arg is not present, the a default that simply checks that the
 # return status is 0 and that the output is " No Errors" is used.
 sub RunMPIProgram {
-    my ($programname,$np,$ResultTest,$InitForTest) = @_;
+    my ($programname,$np,$ResultTest,$InitForTest,$timeLimit) = @_;
     my $found_error   = 0;
     my $found_noerror = 0;
     my $inline = "";
@@ -347,7 +377,12 @@ sub RunMPIProgram {
 
     unlink "err";
     # Set a default timeout on tests (3 minutes for now)
-    $ENV{"MPIEXEC_TIMEOUT"} = 180;
+    my $defaultTimeLimit = 180;
+    my $timeout = $defaultTimeLimit;
+    if (defined($timeLimit) && $timeLimit =~ /^\d+$/) {
+	$timeout = $timeLimit;
+    }
+    $ENV{"MPIEXEC_TIMEOUT"} = $timeout;
     
     # Run the optional setup routine. For example, the timeout tests could
     # be set to a shorter timeout.

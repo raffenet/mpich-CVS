@@ -2,4 +2,4 @@ adderr 1
 commcall 2
 winerr 2
 winerr2 2
-errfatal 1 TestErrFatal
+errfatal 1 resultTest=TestErrFatal
