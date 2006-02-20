@@ -177,3 +177,13 @@ int MPIDI_CH3_Connect_to_root(const char * port_name,
 {
     return MPIDI_CH3I_Connect_to_root_sock( port_name, new_vc );
 }
+
+/* This routine is a hook for initializing information for a process
+   group before the MPIDI_CH3_VC_Init routine is called */
+int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
+{
+    /* FIXME: This should call a routine from the ch3/util/shm directory
+       to initialize the use of shared memory for processes WITHIN this 
+       process group */
+    return MPI_SUCCESS;
+}

@@ -40,19 +40,21 @@ int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn,
 #define FUNCNAME MPIDI_PG_Finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
+/*@ 
+   MPIDI_PG_Finalize - Finalize the process groups, including freeing all
+   process group structures
+  @*/
 int MPIDI_PG_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
+    int inuse;
+    MPIDI_PG_t *pg, *pgNext;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_FINALIZE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_FINALIZE);
 
     /* FIXME - straighten out the use of PG_Finalize - no use after 
        PG_Finalize */
-    /* ifdefing out this check because the list will not be NULL in 
-       Ch3_finalize because
-       one additional reference is retained in MPIDI_Process.my_pg. 
-       That reference is released
-       only after ch3_finalize returns. If I release it before ch3_finalize, 
-       the ssm channel crashes. */
-
     if (pg_world->connData) {
 	int rc;
 	rc = PMI_Finalize();
@@ -62,6 +64,27 @@ int MPIDI_PG_Finalize(void)
 			  "**ch3|pmi_finalize %d", rc);
 	}
     }
+
+    /* ifdefing out this check because the list will not be NULL in 
+       Ch3_finalize because
+       one additional reference is retained in MPIDI_Process.my_pg. 
+       That reference is released
+       only after ch3_finalize returns. If I release it before ch3_finalize, 
+       the ssm channel crashes. */
+
+    /* Free the storage associated with the process groups */
+    MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
+    pg = MPIDI_PG_list;
+    while (pg) {
+	pgNext = pg->next;
+	
+	if (pg->ref_count == 0) {
+	    MPIDI_PG_Destroy(pg);
+	}
+	pg     = pgNext;
+    }
+    MPIDI_Process.my_pg = NULL;
+
 #if 0
 
     if (MPIDI_PG_list != NULL)
@@ -73,6 +96,7 @@ int MPIDI_PG_Finalize(void)
     }
 #endif
 
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_FINALIZE);
     return mpi_errno;
 }
 
@@ -97,6 +121,9 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     int p;
     int mpi_errno = MPI_SUCCESS;
     MPIU_CHKPMEM_DECL(2);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CREATE);
     
     MPIU_CHKPMEM_MALLOC(pg,MPIDI_PG_t*,sizeof(MPIDI_PG_t),mpi_errno,"pg");
     MPIU_CHKPMEM_MALLOC(pg->vct,MPIDI_VC_t *,sizeof(MPIDI_VC_t)*vct_sz,
@@ -113,6 +140,17 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     {
 	/* Initialize device fields in the VC object */
 	MPIDI_VC_Init(&pg->vct[p], pg, p);
+    }
+
+    /* We may first need to initialize the channel before calling the channel 
+       VC init functions.  This routine may be a no-op; look in the ch3_init.c file
+       in each channel */
+    MPIDI_CH3_PG_Init( pg );
+
+    for (p = 0; p < vct_sz; p++)
+    {
+	/* Initialize the channel fields in the VC object */
+	MPIDI_CH3_VC_Init( &pg->vct[p] );
     }
     
     /* Initialize the connection information to null.  Use
@@ -154,6 +192,7 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     *pg_ptr = pg;
     
   fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_CREATE);
     return mpi_errno;
     
   fn_fail:
@@ -171,6 +210,9 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
     MPIDI_PG_t * pg_prev;
     MPIDI_PG_t * pg_cur;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_DESTROY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_DESTROY);
 
     pg_prev = NULL;
     pg_cur = MPIDI_PG_list;
@@ -210,6 +252,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		  "**dev|pg_not_found", "**dev|pg_not_found %p", pg);
 
   fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_DESTROY);
     return mpi_errno;
 }
 
@@ -221,6 +264,9 @@ int MPIDI_PG_Find(void * id, MPIDI_PG_t ** pg_ptr)
 {
     MPIDI_PG_t * pg;
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_FIND);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_FIND);
     
     pg = MPIDI_PG_list;
     while (pg != NULL)
@@ -237,6 +283,7 @@ int MPIDI_PG_Find(void * id, MPIDI_PG_t ** pg_ptr)
     *pg_ptr = NULL;
 
   fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_FIND);
     return mpi_errno;
 }
 
@@ -289,6 +336,9 @@ int MPIDI_PG_Iterate_reset()
 int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *lenStr)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_TO_STRING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_TO_STRING);
 
     /* Replace this with the new string */
     if (pg_ptr->connInfoToString) {
@@ -311,6 +361,7 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *lenStr)
     }
 
 fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_TO_STRING);
     return mpi_errno;
 fn_fail:
     goto fn_exit;
@@ -334,6 +385,9 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     char *p;
     int vct_sz;
     MPIDI_PG_t *existing_pg, *pg_ptr=0;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE_FROM_STRING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CREATE_FROM_STRING);
 
     /* The pg_id is at the beginning of the string, so we can just pass
        it to the find routine */
@@ -370,6 +424,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
     (*pg_ptr->connInfoFromString)( str, pg_ptr );
 
 fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_CREATE_FROM_STRING);
     return mpi_errno;
 fn_fail:
     goto fn_exit;
@@ -384,6 +439,7 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
 {
     const char *p = (const char *)pg->id;
     int pgid = 0;
+
     while (*p && !isdigit(*p)) p++;
     if (!*p) {
 	p = (const char *)pg->id;
@@ -429,11 +485,18 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
    This is a collective call (for scalability) over all of the processes in 
    the same MPI_COMM_WORLD.
 */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PG_SetConnInfo
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_PG_SetConnInfo( int rank, const char *connString )
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     char key[128];
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_SetConnInfo);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_SetConnInfo);
 
     MPIU_Assert(pg_world->connData);
     
@@ -459,6 +522,7 @@ int MPIDI_PG_SetConnInfo( int rank, const char *connString )
 			     "**pmi_barrier %d", pmi_errno);
     }
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_SetConnInfo);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -580,6 +644,11 @@ static int connFreeKVS( MPIDI_PG_t *pg )
     return MPI_SUCCESS;
 }
 
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PG_InitConnKVS
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_PG_InitConnKVS( MPIDI_PG_t *pg )
 {
     int pmi_errno, kvs_name_sz;
@@ -776,3 +845,174 @@ int MPIDI_PG_GetConnString( MPIDI_PG_t *pg, int rank, char *val, int vallen )
  fn_fail:
     goto fn_exit;
 }
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PG_Dup_vcr
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+/*@
+  MPIDI_PG_Dup_vcr - Duplicate a virtual connection from a process group
+
+  Notes:
+  This routine provides a dup of a virtual connection given a process group
+  and a rank in that group.  This routine is used only in initializing
+  the MPI-1 communicators 'MPI_COMM_WORLD' and 'MPI_COMM_SELF', and in creating
+  the initial intercommunicator after an 'MPI_Comm_spawn', 
+  'MPI_Comm_spawn_multiple', or 'MPI_Comm_connect/MPI_Comm_accept'.  
+
+  In addition to returning a dup of the virtual connection, it manages the
+  reference count of the process group, which is always the number of inuse
+  virtual connections.
+  @*/
+int MPIDI_PG_Dup_vcr( MPIDI_PG_t *pg, int rank, MPIDI_VC_t **vc_p )
+{
+    MPIDI_VC_t *vc;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_DUP_VCR);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_DUP_VCR);
+
+    vc = &pg->vct[rank];
+    /* Increase the reference count of the vc.  If the reference count 
+       increases from 0 to 1, increase the reference count of the 
+       process group */
+    /* FIXME: This should be a fetch and increment for thread-safety */
+    if (vc->ref_count == 0) {
+	MPIU_Object_add_ref(pg);
+    }
+    MPIU_Object_add_ref(vc);
+    *vc_p = vc;
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_DUP_VCR);
+    return MPI_SUCCESS;
+}
+
+/* FIXME: This routine should invoke a close method on the connection,
+   rather than have all of the code here */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PG_Close_VCs
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+/*@
+  MPIDI_PG_Close_VCs - Close all virtual connections on all process groups.
+  
+  Note:
+  This routine is used in MPID_Finalize.  It is here to 
+  @*/
+int MPIDI_PG_Close_VCs( void )
+{
+    MPIDI_PG_t * pg = MPIDI_PG_list;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_CLOSE_VCS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CLOSE_VCS);
+
+    while (pg) {
+	int i, inuse;
+
+	MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Closing vcs for pg %s",(char *)pg->id );
+
+
+	for (i = 0; i < pg->size; i++)
+	{
+	    MPIDI_VC_t * vc = &pg->vct[i];
+	    /* If the VC is myself then skip the close message */
+	    if (pg == MPIDI_Process.my_pg && i == MPIDI_Process.my_pg_rank) {
+                if (vc->ref_count != 0) {
+                    MPIDI_PG_Release_ref(pg, &inuse);
+                }
+		continue;
+	    }
+
+	    if (vc->state == MPIDI_VC_STATE_ACTIVE || 
+		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
+#ifdef MPIDI_CH3_USES_SSHM
+		 /* FIXME: Remove this IFDEF */
+		/* sshm queues are uni-directional.  A VC that is connected 
+		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
+		 * so that a connection will be formed on the first write.  
+		 * Since the other side is marked MPIDI_VC_STATE_ACTIVE for 
+		 * writing 
+		 * we need to initiate the close protocol on the read side 
+		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
+		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected)
+#endif
+		)
+	    {
+		MPIDI_CH3U_VC_SendClose( vc, i );
+#if 0
+		MPIDI_CH3_Pkt_t upkt;
+		MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
+		MPID_Request * sreq;
+		    
+		MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
+		close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
+		
+		/* MT: this is not thread safe */
+		/* FIXME: This global variable should be encapsulated
+		   in the appropriate module (connections?) */
+		MPIDI_Outstanding_close_ops += 1;
+		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+			      "sending close(%s) to rank %d, ops = %d", 
+			      close_pkt->ack ? "TRUE" : "FALSE",
+			      i, MPIDI_Outstanding_close_ops));
+		    
+
+		/*
+		 * A close packet acknowledging this close request could be
+		 * received during iStartMsg, therefore the state must
+		 * be changed before the close packet is sent.
+		 */
+		if (vc->state == MPIDI_VC_STATE_ACTIVE)
+		{ 
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
+		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE");
+		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
+		}
+		else 
+		{
+		    MPIU_Assert( vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );
+		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
+		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED");
+		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+		}
+		
+		mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, 
+						sizeof(*close_pkt), &sreq);
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno != MPI_SUCCESS) {
+		    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,
+				 "**ch3|send_close_ack");
+		    continue;
+		}
+		/* --END ERROR HANDLING-- */
+		    
+		if (sreq != NULL)
+		{
+		    MPID_Request_release(sreq);
+		}
+#endif
+	    }
+	    else
+	    {
+                if (vc->state == MPIDI_VC_STATE_INACTIVE && vc->ref_count != 0) {
+		    /* FIXME: If the reference count for the vc is not 0, something is wrong */
+                    MPIDI_PG_Release_ref(pg, &inuse);
+                }
+
+		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+		     "not sending a close to %d, vc in state %s", i,
+		     MPIDI_VC_Get_state_description(vc->state)));
+	    }
+	}
+	pg = pg->next;
+    }
+    /* Note that we do not free the process groups within this routine, even
+       if the reference counts have gone to zero. That is done once the 
+       connections are in fact closed (by the final progress loop that
+       handles any close requests that this code generates) */
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_CLOSE_VCS);
+    return mpi_errno;
+}
+

@@ -28,6 +28,14 @@ typedef struct MPIDI_VCRT
 MPIDI_VCRT_t;
 
 
+/*@
+  MPID_VCRT_Create - Create a table of VC references
+
+  Notes:
+  This routine only provides space for the VC references.  Those should
+  be added by assigning to elements of the vc array within the 
+  'MPID_VCRT' object.
+  @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Create
 #undef FCNAME
@@ -47,12 +55,11 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 	vcrt->size = size;
 	*vcrt_ptr = vcrt;
     }
-    /* --BEGIN ERROR HANDLING-- */
     else
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
     }
-    /* --END ERROR HANDLING-- */
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
     return mpi_errno;
 }
@@ -90,6 +97,14 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     {
 	int i, inuse;
 
+	/* FIXME: Need a better way to define how vc's are closed that 
+	 takes into account pending operations on vcs, including 
+	 close events received from other processes. */
+	/*
+	mpi_errno = MPIDI_CH3U_VC_FinishPending( vcrt );
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	*/
+
 	for (i = 0; i < vcrt->size; i++)
 	{
 	    MPIDI_VC_t * const vc = vcrt->vcr_table[i];
@@ -108,8 +123,10 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    continue;
 		}
 		
-		if (vc->state != MPIDI_VC_STATE_INACTIVE)
-		{
+		/* FIXME: the correct test is ACTIVE or REMOTE_CLOSE */
+		if (vc->state != MPIDI_VC_STATE_INACTIVE) {
+		    MPIDI_CH3U_VC_SendClose( vc, i );
+#if 0
 		    MPIDI_CH3_Pkt_t upkt;
 		    MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
 		    MPID_Request * sreq;
@@ -136,7 +153,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    
 		    /* MT: this is not thread safe */
 		    MPIDI_Outstanding_close_ops += 1;
-		    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+		    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
                                "sending close(%s) to %d, ops = %d", 
 			       close_pkt->ack ? "TRUE" : "FALSE",
 			       i, MPIDI_Outstanding_close_ops));
@@ -173,6 +190,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		    {
 			MPID_Request_release(sreq);
 		    }
+#endif
 		}
 		else
 		{
@@ -192,9 +210,12 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 
 	MPIU_Free(vcrt);
     }
-    
+
+ fn_exit:    
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -492,3 +513,100 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 #endif
     return MPI_SUCCESS;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_VC_FinishPending
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_VC_t **vc;
+    int i, size, nPending;
+    MPID_Progress_state progress_state; 
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_VC_FINISHPENDING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_FINISHPENDING);
+
+    do {
+	/* Compute the number of pending ops.
+	   A virtual connection has pending operations if the state
+	   is not INACTIVE or if the sendq is not null */
+	nPending = 0;
+	vc       = vcrt->vcr_table;
+	size     = vcrt->size;
+	/* printf( "Size = %d\n", size ); fflush(stdout); */
+	for (i=0; i<size; i++) {
+	    if (vc[i]->state != MPIDI_VC_STATE_INACTIVE) {
+		printf ("state for vc[%d] is %d\n",
+			i, vc[i]->state ); fflush(stdout);
+		nPending++;
+	    }
+	    if (vc[i]->ch.sendq_head) {
+		printf( "Nonempty sendQ for vc[%d]\n", i ); fflush(stdout);
+		nPending++;
+	    }
+	}
+	if (nPending > 0) {
+	    printf( "Panic! %d pending operations!\n", nPending );
+	    fflush(stdout);
+	    MPIU_Assert( nPending == 0 );
+	}
+	else {
+	    break;
+	}
+
+	MPID_Progress_start(&progress_state);
+	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Waiting for %d close operations",
+		       nPending);
+	mpi_errno = MPID_Progress_wait(&progress_state);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPID_Progress_end(&progress_state);
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				"**ch3|close_progress");
+	}
+	/* --END ERROR HANDLING-- */
+	MPID_Progress_end(&progress_state);
+    } while(nPending > 0);
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_VC_FINISHPENDING);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+/*
+ * MPIDI_CH3U_Comm_FinishPending - Complete any pending operations on the 
+ * communicator.  
+ *
+ * Notes: 
+ * This should be used before freeing or disconnecting a communicator.
+ *
+ * For better scalability, we might want to form a list of VC's with 
+ * pending operations.
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Comm_FinishPending
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3U_Comm_FinishPending( MPID_Comm *comm_ptr )
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_COMM_FINISHPENDING);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_COMM_FINISHPENDING);
+
+    mpi_errno = MPIDI_CH3U_VC_FinishPending( comm_ptr->vcrt );
+    if (!mpi_errno && comm_ptr->local_vcrt) {
+	mpi_errno = MPIDI_CH3U_VC_FinishPending( comm_ptr->local_vcrt );
+    }
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_COMM_FINISHPENDING);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+

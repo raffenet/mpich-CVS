@@ -43,6 +43,11 @@
 int gethostname(char *name, size_t len);
 # endif
 
+/*S
+  MPIDI_Process_t - The information required about this process by the CH3 
+  device.
+
+  S*/
 typedef struct MPIDI_Process
 {
     MPIDI_PG_t * my_pg;
@@ -53,12 +58,16 @@ MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
 
-extern volatile int MPIDI_Outstanding_close_ops;
+/* FIXME: When we're sure that this works as a file-local variable, remote 
+   it */
+/* extern volatile int MPIDI_Outstanding_close_ops; */
 
 
 /*----------------------
   BEGIN DATATYPE SECTION
   ----------------------*/
+/* FIXME: We want to avoid even storing information about the builtins
+   if we can */
 #define MPIDI_Datatype_get_info(count_, datatype_, dt_contig_out_, data_sz_out_, dt_ptr_, dt_true_lb_)\
 {									\
     if (HANDLE_GET_KIND(datatype_) == HANDLE_KIND_BUILTIN)		\
@@ -347,6 +356,8 @@ extern volatile int MPIDI_Outstanding_close_ops;
 /*---------------------------
   BEGIN PROCESS GROUP SECTION
   ---------------------------*/
+/* FIXME: Determine which of these functions should be exported to all of 
+   the MPICH routines and which are internal to the device implementation */
 typedef int (*MPIDI_PG_Compare_ids_fn_t)(void * id1, void * id2);
 typedef int (*MPIDI_PG_Destroy_fn_t)(MPIDI_PG_t * pg);
 
@@ -360,7 +371,10 @@ int MPIDI_PG_Find(void * id, MPIDI_PG_t ** pgp);
 int MPIDI_PG_Id_compare(void *id1, void *id2);
 int MPIDI_PG_Get_next(MPIDI_PG_t ** pgp);
 int MPIDI_PG_Iterate_reset(void);
-int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc);
+/* FIXME: MPIDI_PG_Get_vc is a macro, not a routine */
+int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc); 
+
+int MPIDI_PG_Dup_vcr( MPIDI_PG_t *, int, MPIDI_VC_t ** );
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 
@@ -374,6 +388,7 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 {						\
     MPIU_Object_release_ref(pg_, inuse_);	\
 }
+/* FIXME: What is the difference between get_vcr and get_vc? */
 #define MPIDI_PG_Get_vc(pg_, rank_, vcp_)		\
 {							\
     *(vcp_) = &(pg_)->vct[rank_];			\
@@ -383,10 +398,13 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 	(*(vcp_))->state = MPIDI_VC_STATE_ACTIVE;	\
     }							\
 }
+#if 0
+/* Replaced with MPIDI_PG_Dup_vcr */
 #define MPIDI_PG_Get_vcr(pg_, rank_, vcp_)		\
 {							\
     *(vcp_) = &(pg_)->vct[rank_];			\
 }
+#endif
 #define MPIDI_PG_Get_size(pg_) ((pg_)->size)
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
@@ -438,6 +456,7 @@ int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
 {						\
     (vc_)->state = MPIDI_VC_STATE_INACTIVE;	\
     MPIU_Object_set_ref((vc_), 0);		\
+    (vc_)->handle = MPID_VCONN;                 \
     (vc_)->pg = (pg_);				\
     (vc_)->pg_rank = (rank_);			\
     MPIDI_VC_Get_next_lpid(&(vc_)->lpid);	\

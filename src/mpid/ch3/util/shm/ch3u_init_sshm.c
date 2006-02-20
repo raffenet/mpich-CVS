@@ -11,6 +11,11 @@
 static int getNumProcessors( void );
 static int getNodeRootRank( int, int * );
 
+/* FIXME: This file contains too many ifdefs.  A cleaner design is needed; 
+   examples may be found in MPICH1.  For example, separate files for each 
+   type of shared memory and common routines implementing a shared memory
+   abstraction */
+
 /*  MPIDI_CH3U_Init_sshm - does scalable shared memory specific channel 
  *  initialization
  *     bc_val     - business card value buffer pointer, updated to the next 
@@ -125,7 +130,14 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_size",
 			     "**pmi_get_size %d", pmi_errno);
     }
-    
+
+    /* FIXME: Is this initialization correct (it should have been done
+       when the pg was created. If not, then the process by which channels
+       and PG's are initialized needs to be documented and explained! 
+       An alternate approach to having this done after the PG is created
+       is to define a method initialization routine that is called
+       after the pg is created but before the final, channel-specific 
+       virtual connection initialization is done. */
     /* Initialize the VC table associated with this process group (and thus COMM_WORLD) */
     for (p = 0; p < pg_size; p++)
     {

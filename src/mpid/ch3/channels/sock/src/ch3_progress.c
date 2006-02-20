@@ -476,8 +476,8 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    /* --END ERROR HANDLING-- */
 
 			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-    (MPIU_DBG_FDEST,"immediate readv, vc=0x%p nb=%d, rreq=0x%08x",
-     conn->vc, rreq->handle, nb));
+    (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=%d, rreq=0x%08x",
+     conn->vc, nb, rreq->handle));
 				
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
 			    {
@@ -500,7 +500,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    else
 			    {
 				MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-        (MPIU_DBG_FDEST,"posting readv, vc=0x%p, rreq=0x%08x", 
+        (MPIU_DBG_FDEST,"posting readv, vc=%p, rreq=0x%08x", 
 	 conn->vc, rreq->handle));
 				conn->recv_active = rreq;
 				mpi_errno = MPIDU_Sock_post_readv(conn->sock, iovp, rreq->dev.iov_count, NULL);
@@ -555,7 +555,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    /* --END ERROR HANDLING-- */
 
 			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-        (MPIU_DBG_FDEST,"immediate readv, vc=0x%p nb=%d, rreq=0x%08x",
+        (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=%d, rreq=0x%08x",
 	 conn->vc, rreq->handle, nb));
 				
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
@@ -579,7 +579,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    else
 			    {
 				MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-     (MPIU_DBG_FDEST,"posting readv, vc=0x%p, rreq=0x%08x", 
+     (MPIU_DBG_FDEST,"posting readv, vc=%p, rreq=0x%08x", 
       conn->vc, rreq->handle));
 				/* conn->recv_active = rreq;  -- already set to current request */
 				mpi_errno = MPIDU_Sock_post_readv(conn->sock, iovp, rreq->dev.iov_count, NULL);
@@ -662,7 +662,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			/* --END ERROR HANDLING-- */
 
 			MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-       (MPIU_DBG_FDEST,"immediate writev, vc=0x%p, sreq=0x%08x, nb=%d",
+       (MPIU_DBG_FDEST,"immediate writev, vc=%p, sreq=0x%08x, nb=%d",
 	conn->vc, sreq->handle, nb));
 			    
 			if (nb > 0 && adjust_iov(&iovp, &sreq->dev.iov_count, nb))
@@ -685,7 +685,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			else
 			{
 			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-       (MPIU_DBG_FDEST,"posting writev, vc=0x%p, sreq=0x%08x", 
+       (MPIU_DBG_FDEST,"posting writev, vc=%p, sreq=0x%08x", 
 	conn->vc, sreq->handle));
 			    mpi_errno = MPIDU_Sock_post_writev(conn->sock, iovp, sreq->dev.iov_count, NULL);
 			    /* --BEGIN ERROR HANDLING-- */

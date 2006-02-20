@@ -19,7 +19,12 @@
 /* FIXME: *E is the "enum" doctext structure comment marker; these should be
  *@ instead.  Also, these may be out of date; not all of these are referenced
  * (They should all be used in the ch3/src directory; otherwise they're not
- * part of the channel API). 
+ * part of the channel API). In addition, routine descriptions belong where
+ * the function is implemented (the .c file), not where the header is 
+ * prototyped (the .h file) because changes to the behavior of the function
+ * should be captured when the code is edited, and having the comment block
+ * with the function definition instead of the prototype makes this more 
+ * likely. 
  */
 
 
@@ -446,18 +451,10 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 E*/
 int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int * complete);
 
-
-/*E
-  MPIDI_CH3U_Handle_connection - handle connection event
-
-  Input Parameters:
-+ vc - virtual connection
-. event - connection event
-
-  NOTE:
-  At present this function is only used for connection termination
-E*/
 int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);
+
+int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank );
+int MPIDI_CH3U_VC_WaitForClose( void );
 
 
 /*E

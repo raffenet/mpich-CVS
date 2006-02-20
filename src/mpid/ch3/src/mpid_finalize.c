@@ -19,7 +19,9 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Finalize(void)
 {
-    MPID_Progress_state progress_state;
+#if 0
+    MPID_Progress_state progress_state; 
+#endif
     int mpi_errno = MPI_SUCCESS, inuse, rc;
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
@@ -84,6 +86,8 @@ int MPID_Finalize(void)
 
     /* FIXME: The close actions should use the same code as the other
        connection close code */
+    MPIDI_PG_Close_VCs();
+#if 0
     /*
      * Initiate close protocol for all active VCs
      */
@@ -195,13 +199,18 @@ int MPID_Finalize(void)
 	    }
 	}
     }
-
+#endif
     /*
      * Wait for all VCs to finish the close protocol
      */
+    mpi_errno = MPIDI_CH3U_VC_WaitForClose();
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#if 0
     MPID_Progress_start(&progress_state);
     while(MPIDI_Outstanding_close_ops > 0)
     {
+	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Waiting for %d close operations",
+		       MPIDI_Outstanding_close_ops);
 	mpi_errno = MPID_Progress_wait(&progress_state);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS) {
@@ -212,23 +221,20 @@ int MPID_Finalize(void)
 	/* --END ERROR HANDLING-- */
     }
     MPID_Progress_end(&progress_state);
-
+#endif
     /* FIXME: Progress finalize should be in CH3_Finalize */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
     mpi_errno = MPIDI_CH3_Finalize();
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     /* Tell the process group code that we're done with the process groups.
-       This will notify PMI (with PMI_Finalize) if necessary */
-    MPIDI_PG_Finalize();
-
-    MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
-    if (inuse == 0) {
-        MPIDI_PG_Destroy(MPIDI_Process.my_pg);
-    }
-    MPIDI_Process.my_pg = NULL;
+       This will notify PMI (with PMI_Finalize) if necessary.  It
+       also frees al PG structures, including the PG for COMM_WORLD, whose 
+       pointer is also saved in MPIDI_Process.my_pg */
+    mpi_errno = MPIDI_PG_Finalize();
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);

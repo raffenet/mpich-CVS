@@ -417,7 +417,7 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 				   int n_remote_pgs, MPIDI_PG_t *remote_pg[] )
 {
     char *pg_str = 0;
-    int  i, j, flag, p;
+    int  i, j, flag;
     int  rank = comm_ptr->rank;
     int  mpi_errno = 0;
     int  recvtag = *recvtag_p;
@@ -484,11 +484,13 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	       common to all channels */
 	    MPIDI_PG_Add_ref(remote_pg[i]);
 #endif
+#if 0
 	    for (p=0; p<remote_pg[i]->size; p++) {
 		MPIDI_VC_t *vc;
 		MPIDI_PG_Get_vcr(remote_pg[i], p, &vc);
 		MPIDI_CH3_VC_Init( vc );
 	    }
+#endif
 	}
     }
  fn_exit:
@@ -557,17 +559,18 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 	       already existed */
 	    MPIDI_PG_Create_from_string( pg_str, &pgptr, &flag );
 	    if (flag) {
-		int p;
 		/*printf( "[%d]Added pg named %s to list\n", rank, 
 			(char *)pgptr->id );
 			fflush(stdout); */
 		/* FIXME: This initalization should be done
 		   when the pg is created ? */
+#if 0
 		for (p=0; p<pgptr->size; p++) {
 		    MPIDI_VC_t *vc;
 		    MPIDI_PG_Get_vcr(pgptr, p, &vc);
 		    MPIDI_CH3_VC_Init( vc );
 		}
+#endif
 	    }
 	    MPIU_Free( pg_str );
 	}
@@ -920,7 +923,8 @@ fn_fail:
 #define FUNCNAME  MPIDI_CH3I_Initialize_tmp_comm
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr, int is_low_group)
+int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr,
+				   int is_low_group)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *tmp_comm, *commself_ptr;
@@ -981,7 +985,25 @@ fn_fail:
 /* This routine initializes the new intercomm, setting up the
    VCRT and other common structures.  The is_low_group and context_id
    fields are NOT set because they differ in the use of this 
-   routine in Comm_accept and Comm_connect */
+   routine in Comm_accept and Comm_connect.  The virtual connections
+   are initialized from a collection of process groups. 
+
+   Input parameters:
++  comm_ptr - communicator that gives the group for the "local" group on the
+   new intercommnicator
+.  remote_comm_size - size of remote group
+.  remote_translation - array that specifies the process group and rank in 
+   that group for each of the processes to include in the remote group of the
+   new intercommunicator
+-  remote_pg - array of remote process groups
+
+   Input/Output Parameter:
+.  intercomm - New intercommunicator.  The intercommunicator must already
+   have been allocated; this routine initializes many of the fields
+
+   Note:
+   This routine performance a barrier over 'comm_ptr'.  Why?
+*/
 #undef FUNCNAME
 #define FUNCNAME SetupNewIntercomm
 #undef FCNAME
@@ -1017,12 +1039,9 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
     }
-    for (i=0; i < intercomm->remote_size; i++)
-    {
-	MPIDI_VC_t *vc;
-	MPIDI_PG_Get_vcr(remote_pg[remote_translation[i].pg_index], 
-			 remote_translation[i].pg_rank, &vc);
-        MPID_VCR_Dup(vc, &intercomm->vcr[i]);
+    for (i=0; i < intercomm->remote_size; i++) {
+	MPIDI_PG_Dup_vcr(remote_pg[remote_translation[i].pg_index], 
+			 remote_translation[i].pg_rank, &intercomm->vcr[i]);
     }
 
     MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
@@ -1049,6 +1068,8 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
     int mpi_errno = MPI_SUCCESS;
     
     if (new_vc->state != MPIDI_VC_STATE_INACTIVE) {
+	/* If the new_vc isn't done, run the progress engine until
+	   the state of the new vc is complete */
 	MPID_Progress_start(&progress_state);
 	while (new_vc->state != MPIDI_VC_STATE_INACTIVE) {
 	    mpi_errno = MPID_Progress_wait(&progress_state);
@@ -1063,6 +1084,7 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
 	MPID_Progress_end(&progress_state);
     }
 
+    /* FIXME: remove this ifdef - method on connection? */
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
     mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
 #endif
