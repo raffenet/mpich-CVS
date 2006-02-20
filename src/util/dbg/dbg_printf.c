@@ -452,7 +452,9 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
     MPID_Time_t t;
     long  whichRank = -1;  /* All ranks */
 
-    /* Check to see if any debugging was selected */
+    /* Check to see if any debugging was selected.  The order of these
+       tests is important, as they allow general defaults to be set,
+       followed by more specific modifications */
     /* First, the environment variables */
 
     s = getenv( "MPICH_DBG" );
