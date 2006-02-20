@@ -141,6 +141,9 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap);
 #define MPIU_DBG_PRINTF(e)
 #define MPIU_DBG_PRINTF_CLASS(_c,_l,_e)
 #endif
+/* FIXME: These should use the MPIU_DBG_STMT macros and not be defined
+   as macros themselves (to make it clear that they are macros, and not
+   always called) */
 #ifdef USE_MPIU_DBG_PRINT_VC
 void MPIU_DBG_PrintVC(MPIDI_VC_t *vc);
 void MPIU_DBG_PrintVCState2(MPIDI_VC_t *vc, MPIDI_VC_State_t new_state);
