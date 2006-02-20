@@ -204,8 +204,14 @@ int main( int argc, char *argv[], char *envp[] )
     if (reason == IOLOOP_TIMEOUT) {
 	/* Exited due to timeout.  Generate an error message and
 	   terminate the children */
-	MPIU_Error_printf( "Timeout of %d minutes expired; job aborted\n",
-			 pUniv.timeout / 60 );
+	if (pUniv.timeout > 60) {
+	    MPIU_Error_printf( "Timeout of %d minutes expired; job aborted\n",
+			       pUniv.timeout / 60 );
+	}
+	else {
+	    MPIU_Error_printf( "Timeout of %d seconds expired; job aborted\n",
+			       pUniv.timeout );
+	}
 	erc = 1;
 	MPIE_KillUniverse( &pUniv );
     }
