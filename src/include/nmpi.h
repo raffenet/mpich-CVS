@@ -91,6 +91,8 @@
 #define NMPI_Grequest_complete MPI_Grequest_complete
 #define NMPI_Cancel MPI_Cancel
 #define NMPI_Test_cancelled MPI_Test_cancelled
+#define NMPI_Ibsend MPI_Ibsend
+#define NMPI_Buffer_detach MPI_Buffer_detach
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -160,5 +162,7 @@
 #define NMPI_Grequest_complete PMPI_Grequest_complete
 #define NMPI_Cancel PMPI_Cancel
 #define NMPI_Test_cancelled PMPI_Test_cancelled
+#define NMPI_Ibsend PMPI_Ibsend
+#define NMPI_Buffer_detach PMPI_Buffer_detach
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */
