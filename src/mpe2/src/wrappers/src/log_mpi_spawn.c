@@ -54,7 +54,7 @@ void MPE_Init_mpi_spawn( void )
 
     state = &states[MPE_COMM_DISCONNECT_ID];
     state->kind_mask = MPE_KIND_SPAWN;
-    state->name = "DarkSeaGreen4";
+    state->name = "MPI_Comm_disconnect";
     state->color = "MediumSpringGreen";
 
     state = &states[MPE_COMM_JOIN_ID];
