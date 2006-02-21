@@ -17,6 +17,9 @@
  */
 
 #define MPID_Datatype_get_ptr(a,ptr)   MPID_Getb_ptr(Datatype,a,0x000000ff,ptr)
+/* MPID_Datatype_get_basic_id() is useful for creating and indexing into arrays
+   that store data on a per-basic type basis */
+#define MPID_Datatype_get_basic_id(a) ((a)&0x000000ff)
 #define MPID_Datatype_get_basic_size(a) (((a)&0x0000ff00)>>8)
 
 #define MPID_Datatype_add_ref(datatype_ptr) MPIU_Object_add_ref((datatype_ptr))
