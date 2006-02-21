@@ -19,9 +19,6 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Finalize(void)
 {
-#if 0
-    MPID_Progress_state progress_state; 
-#endif
     int mpi_errno = MPI_SUCCESS, inuse, rc;
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
@@ -87,141 +84,12 @@ int MPID_Finalize(void)
     /* FIXME: The close actions should use the same code as the other
        connection close code */
     MPIDI_PG_Close_VCs();
-#if 0
-    /*
-     * Initiate close protocol for all active VCs
-     */
-    MPIDI_PG_Iterate_reset();
-    for (;;)
-    {
-	int i;
-	MPIDI_PG_t * pg;
-	MPIDI_VC_t * vc;
-
-	MPIDI_PG_Get_next(&pg);
-	if (pg == NULL)
-	{
-	    break;
-	}
-
-	for (i = 0; i < MPIDI_PG_Get_size(pg); i++)
-	{
-	    MPIDI_PG_Get_vcr(pg, i, &vc);
-
-	    /* If the VC is myself then skip the close message */
-	    if (pg == MPIDI_Process.my_pg && i == MPIDI_Process.my_pg_rank)
-	    {
-                if (vc->ref_count != 0) {
-                    MPIDI_PG_Release_ref(pg, &inuse);
-                    if (inuse == 0)
-                    {
-                        MPIDI_PG_Destroy(pg);
-                    }
-                }
-
-		continue;
-	    }
-
-	    if (vc->state == MPIDI_VC_STATE_ACTIVE || vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
-#ifdef MPIDI_CH3_USES_SSHM
-		/* sshm queues are uni-directional.  A VC that is connected 
-		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
-		 * so that a connection will be formed on the first write.  
-		 * Since the other side is marked MPIDI_VC_STATE_ACTIVE for 
-		 * writing 
-		 * we need to initiate the close protocol on the read side 
-		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
-		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected)
-#endif
-		)
-	    {
-		MPIDI_CH3_Pkt_t upkt;
-		MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
-		MPID_Request * sreq;
-		    
-		MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
-		close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
-		
-		/* MT: this is not thread safe */
-		/* FIXME: This global variable should be encapsulated
-		   in the appropriate module (connections?) */
-		MPIDI_Outstanding_close_ops += 1;
-		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
-			      "sending close(%s) to %d, ops = %d", 
-			      close_pkt->ack ? "TRUE" : "FALSE",
-			      i, MPIDI_Outstanding_close_ops));
-		    
-
-		/*
-		 * A close packet acknowledging this close request could be received during iStartMsg, therefore the state must
-		 * be changed before the close packet is sent.
-		 */
-		if (vc->state == MPIDI_VC_STATE_ACTIVE)
-		{ 
-		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
-		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE");
-		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
-		}
-		else /* if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) */
-		{
-		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
-		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED");
-		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
-		}
-		
-		mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, sizeof(*close_pkt), &sreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS) {
-		    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,
-				 "**ch3|send_close_ack");
-		    continue;
-		}
-		/* --END ERROR HANDLING-- */
-		    
-		if (sreq != NULL)
-		{
-		    MPID_Request_release(sreq);
-		}
-	    }
-	    else
-	    {
-                if (vc->state == MPIDI_VC_STATE_INACTIVE && vc->ref_count != 0) {
-                    MPIDI_PG_Release_ref(pg, &inuse);
-                    if (inuse == 0)
-                    {
-                        MPIDI_PG_Destroy(pg);
-                    }
-                }
-
-		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
-		     "not sending a close to %d, vc in state %s", i,
-		     MPIDI_VC_Get_state_description(vc->state)));
-	    }
-	}
-    }
-#endif
     /*
      * Wait for all VCs to finish the close protocol
      */
     mpi_errno = MPIDI_CH3U_VC_WaitForClose();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-#if 0
-    MPID_Progress_start(&progress_state);
-    while(MPIDI_Outstanding_close_ops > 0)
-    {
-	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Waiting for %d close operations",
-		       MPIDI_Outstanding_close_ops);
-	mpi_errno = MPID_Progress_wait(&progress_state);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPID_Progress_end(&progress_state);
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-				"**ch3|close_progress");
-	}
-	/* --END ERROR HANDLING-- */
-    }
-    MPID_Progress_end(&progress_state);
-#endif
+
     /* FIXME: Progress finalize should be in CH3_Finalize */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }

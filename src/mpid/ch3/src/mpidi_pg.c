@@ -164,15 +164,6 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 
     /* The first process group is always the world group */
     if (!pg_world) { pg_world = pg; }
-#if 0
-    /* Add pg's to the head */
-    pg->next = MPIDI_PG_list;
-    if (MPIDI_PG_iterator_next == MPIDI_PG_list)
-    {
-	MPIDI_PG_iterator_next = pg;
-    }
-    MPIDI_PG_list = pg;
-#else
     /* Add pg's at the tail so that comm world is always the first pg */
     pg->next = 0;
     if (!MPIDI_PG_list)
@@ -188,7 +179,6 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 	}
 	pgnext->next = pg;
     }
-#endif    
     *pg_ptr = pg;
     
   fn_exit:
@@ -343,21 +333,9 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *lenStr)
     /* Replace this with the new string */
     if (pg_ptr->connInfoToString) {
 	(*pg_ptr->connInfoToString)( str_ptr, lenStr, pg_ptr );
-#if 0
-	{ char *p; int i, len = *lenStr;
-	p = *str_ptr;
-	printf( "pg id is %s\n", p ); while (*p) p++; p++;
-	printf( "size is %s\n", p ); while (*p) p++; p++;
-	for (i=0; i<pg_ptr->size; i++) {
-	    printf( "[%d] = %s\n", i, p );
-	    while (*p) p++; p++;
-	}
-	printf( "string len is %d\n", len );fflush(stdout);
-	}
-#endif
     }
     else {
-	printf( "Panic! no connInfoToString!\n" );fflush(stdout);
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_INTERN,"**noConnInfoToString");
     }
 
 fn_exit:
@@ -940,58 +918,6 @@ int MPIDI_PG_Close_VCs( void )
 		)
 	    {
 		MPIDI_CH3U_VC_SendClose( vc, i );
-#if 0
-		MPIDI_CH3_Pkt_t upkt;
-		MPIDI_CH3_Pkt_close_t * close_pkt = &upkt.close;
-		MPID_Request * sreq;
-		    
-		MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
-		close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
-		
-		/* MT: this is not thread safe */
-		/* FIXME: This global variable should be encapsulated
-		   in the appropriate module (connections?) */
-		MPIDI_Outstanding_close_ops += 1;
-		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
-			      "sending close(%s) to rank %d, ops = %d", 
-			      close_pkt->ack ? "TRUE" : "FALSE",
-			      i, MPIDI_Outstanding_close_ops));
-		    
-
-		/*
-		 * A close packet acknowledging this close request could be
-		 * received during iStartMsg, therefore the state must
-		 * be changed before the close packet is sent.
-		 */
-		if (vc->state == MPIDI_VC_STATE_ACTIVE)
-		{ 
-		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
-		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE");
-		    vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
-		}
-		else 
-		{
-		    MPIU_Assert( vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );
-		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
-		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED");
-		    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
-		}
-		
-		mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, 
-						sizeof(*close_pkt), &sreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS) {
-		    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,
-				 "**ch3|send_close_ack");
-		    continue;
-		}
-		/* --END ERROR HANDLING-- */
-		    
-		if (sreq != NULL)
-		{
-		    MPID_Request_release(sreq);
-		}
-#endif
 	    }
 	    else
 	    {

@@ -398,13 +398,7 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 	(*(vcp_))->state = MPIDI_VC_STATE_ACTIVE;	\
     }							\
 }
-#if 0
-/* Replaced with MPIDI_PG_Dup_vcr */
-#define MPIDI_PG_Get_vcr(pg_, rank_, vcp_)		\
-{							\
-    *(vcp_) = &(pg_)->vct[rank_];			\
-}
-#endif
+
 #define MPIDI_PG_Get_size(pg_) ((pg_)->size)
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS

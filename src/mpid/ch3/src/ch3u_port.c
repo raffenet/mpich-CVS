@@ -466,7 +466,8 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
-	/* Then reconstruct the received process group */
+	/* Then reconstruct the received process group.  This step
+	   also initializes the created process group */
 	mpi_errno = MPIDI_PG_Create_from_string(pg_str, &remote_pg[i], &flag);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
@@ -483,13 +484,6 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	    /* FIXME: Need to understand this and either remove or make
 	       common to all channels */
 	    MPIDI_PG_Add_ref(remote_pg[i]);
-#endif
-#if 0
-	    for (p=0; p<remote_pg[i]->size; p++) {
-		MPIDI_VC_t *vc;
-		MPIDI_PG_Get_vcr(remote_pg[i], p, &vc);
-		MPIDI_CH3_VC_Init( vc );
-	    }
 #endif
 	}
     }
@@ -556,21 +550,13 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 	NMPI_Bcast( pg_str, len, MPI_CHAR, root, comm_p->handle );
 	if (rank != root) {
 	    /* flag is true if the pg was created, false if it
-	       already existed */
+	       already existed. This step
+	       also initializes the created process group  */
 	    MPIDI_PG_Create_from_string( pg_str, &pgptr, &flag );
 	    if (flag) {
 		/*printf( "[%d]Added pg named %s to list\n", rank, 
 			(char *)pgptr->id );
 			fflush(stdout); */
-		/* FIXME: This initalization should be done
-		   when the pg is created ? */
-#if 0
-		for (p=0; p<pgptr->size; p++) {
-		    MPIDI_VC_t *vc;
-		    MPIDI_PG_Get_vcr(pgptr, p, &vc);
-		    MPIDI_CH3_VC_Init( vc );
-		}
-#endif
 	    }
 	    MPIU_Free( pg_str );
 	}
