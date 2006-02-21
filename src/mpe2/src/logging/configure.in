@@ -307,9 +307,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_CHECKING( [for PMPI_Comm_create_keyval()] )
     PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                           [ int comm_keyval ], [
-#ifndef NULL
-#define NULL 0
-#endif
                           PMPI_Comm_create_keyval( MPI_COMM_NULL_COPY_FN,
                                                    MPI_COMM_NULL_DELETE_FN,
                                                    &comm_keyval, NULL )

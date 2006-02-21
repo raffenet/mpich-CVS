@@ -370,9 +370,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                               [ int itmp; MPI_Win win ],
                               [
-#ifndef NULL
-#define NULL 0
-#endif
     itmp=MPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win )
                               ],
                               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
@@ -382,9 +379,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
             PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                   [ int itmp; MPI_Win win ],
                                   [
-#ifndef NULL
-#define NULL 0
-#endif
     itmp=PMPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win )
                                   ],
                                   [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
@@ -397,9 +391,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                 PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                      [ int itmp; MPI_Win win ],
                                      [
-#ifndef NULL
-#define NULL 0
-#endif
     itmp=MPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win );
     itmp=MPI_Win_lock( MPI_LOCK_EXCLUSIVE, 0, 0, win );
     itmp=MPI_Win_unlock( 0, win )
@@ -411,9 +402,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                     PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                          [ int itmp; MPI_Win win ],
                                          [
-#ifndef NULL
-#define NULL 0
-#endif
     itmp=PMPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win );
     itmp=PMPI_Win_lock( MPI_LOCK_EXCLUSIVE, 0, 0, win );
     itmp=PMPI_Win_unlock( 0, win )
@@ -436,9 +424,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                 PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                      [ int itmp, flag; MPI_Win win ],
                                      [
-#ifndef NULL
-#define NULL 0
-#endif
     itmp=MPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win );
     itmp=MPI_Win_test( win, &flag )
                                      ],
@@ -449,9 +434,6 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
                     PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
                                          [ int itmp, flag; MPI_Win win ],
                                          [
-#ifndef NULL
-#define NULL 0
-#endif
     itmp=PMPI_Win_create( NULL, 0, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &win );
     itmp=PMPI_Win_test( win, &flag )
                                          ],
