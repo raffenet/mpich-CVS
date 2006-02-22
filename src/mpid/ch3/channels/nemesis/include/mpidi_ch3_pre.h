@@ -43,6 +43,11 @@ typedef struct MPIDI_CH3I_VC
     struct tcp_module_internal_queue *internal_recv_queue;
     struct tcp_module_internal_queue *internal_free_queue;
 #endif
+
+    /* FIXME: ch3 assumes there is a field called sendq_head in the ch
+       portion of the vc.  This is unused in nemesis and should be set
+       to NULL */
+    void *sendq_head;
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
@@ -96,6 +101,10 @@ struct MPIDI_CH3I_Request			\
 
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_enqueued(x)
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_dequeued(x)
+
+/* We don't initialize before calling MPIDI_CH3_VC_Init */
+static inline void MPIDI_CH3_PG_Init (void *pg_p) {};
+
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
 

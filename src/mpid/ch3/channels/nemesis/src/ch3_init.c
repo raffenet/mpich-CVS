@@ -23,54 +23,8 @@
 void *MPIDI_CH3_packet_buffer;
 int MPIDI_CH3I_my_rank;
 
-#undef USE_PRE_INIT
-#ifdef USE_PRE_INIT
-static int called_pre_init = 0;
+static int nemesis_initialized = 0;
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Pre_init
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int appnum;
-    int pmi_errno;
-    int nem_errno;
-    int null_argc = 0;
-    char **null_argv = 0;
-    
-    nem_errno = MPID_nem_init (null_argc, null_argv, rank, size);
-    if (nem_errno != 0)
-    {
-	return MPI_ERR_INTERN;
-    }
-
-    pmi_errno = PMI_Get_appnum (&appnum);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-	MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**pmi_get_appnum", "**pmi_get_appnum %d", pmi_errno);
-    }
-
-    /* Note that if pmi is not availble, the value of MPI_APPNUM is 
-       not set */
-    if (appnum != -1)
-    {
-	MPIR_Process.attrs.appnum = appnum;
-    }
-
-
-    MPIDI_CH3I_my_rank = *rank;
-    
-    *has_parent = 0;
-    *setvals = 1;
-    
-    called_pre_init = 1;
-
- fn_fail:
-    return mpi_errno;
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
@@ -86,20 +40,14 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
        We only handle the 32- and 40-byte cases.
     */
     MPIU_Assert (MPID_NEM__MPICH2_HEADER_LEN >= 32 && MPID_NEM__MPICH2_HEADER_LEN <= 40);
-
-#if USE_PRE_INIT
-    if (!called_pre_init)
-    {
-	mpi_errno =  MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0 );
-	return mpi_errno;
-    }
-#endif
     
     nem_errno = MPID_nem_init (pg_rank, pg_p);
     if (nem_errno != 0)
     {
 	return MPI_ERR_INTERN;
     }
+
+    nemesis_initialized = 1;
     
     MPIDI_CH3I_my_rank = pg_rank;
     
@@ -118,7 +66,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
     for (i = 0; i < pg_p->size; i++)
     {
 	MPIDI_VC_t *vc;
-	MPIDI_PG_Get_vcr (pg_p, i, &vc);
+	MPIDI_PG_Get_vc (pg_p, i, &vc);
 	MPIDI_CH3_VC_Init (vc);
     }
 
@@ -143,7 +91,25 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
 /* Perform the channel-specific vc initialization */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
 {
-    int ret = 0;
+    /* FIXME: Circular dependency.  Before calling MPIDI_CH3_Init,
+       MPID_Init calls InitPG which calls MPIDI_PG_Create which calls
+       MPIDI_CH3_VC_Init.  But MPIDI_CH3_VC_Init needs nemesis to be
+       initialized.  We can't call MPIDI_CH3_Init before initializing
+       the PG, because it needs the PG.
+
+        There is a hook called MPIDI_CH3_PG_Init which is called from
+        MPIDI_PG_Create before MPIDI_CH3_VC_Init, but we don't have
+        the pg_rank in that function.
+
+        Maybe this shouldn't really be a FIXME, since I believe that
+        this issue will be moot once nemesis is a device.
+
+	So what we do now, is do nothing if MPIDI_CH3_VC_Init is
+	called before MPIDI_CH3_Init, and call MPIDI_CH3_VC_Init from
+	inside MPIDI_CH3_Init after initializing nemesis
+    */
+    if (!nemesis_initialized)
+	return MPI_SUCCESS;
     
     vc->ch.recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;

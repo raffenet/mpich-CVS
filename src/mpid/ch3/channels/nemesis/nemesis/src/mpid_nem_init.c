@@ -430,6 +430,11 @@ MPID_nem_vc_init (MPIDI_VC_t *vc)
     else
 	ret = MPID_nem_net_module_vc_init (vc);
     
+    /* FIXME: ch3 assumes there is a field called sendq_head in the ch
+       portion of the vc.  This is unused in nemesis and should be set
+       to NULL */
+    vc->ch.sendq_head = NULL;
+    
     return ret;
 }
 
