@@ -51,16 +51,16 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     
 
 #ifdef MEM_REGION_IN_HEAP
-    MPID_nem_mem_region_ptr = MALLOC (sizeof(MPID_nem_mem_region_t));
+    MPID_nem_mem_region_ptr = MPIU_Malloc (sizeof(MPID_nem_mem_region_t));
     if (!MPID_nem_mem_region_ptr)
 	FATAL_ERROR ("failed to allocate mem_region");
 #endif /* MEM_REGION_IN_HEAP */
     
     MPID_nem_mem_region.num_seg        = 6;
-    MPID_nem_mem_region.seg            = (MPID_nem_seg_info_ptr_t)MALLOC (MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t));
+    MPID_nem_mem_region.seg            = (MPID_nem_seg_info_ptr_t)MPIU_Malloc (MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t));
     if (MPID_nem_mem_region.seg == NULL)
 	FATAL_ERROR ("malloc failed");
-    MPID_nem_mem_region.pid            = (pid_t *)MALLOC (num_local * sizeof(pid_t));
+    MPID_nem_mem_region.pid            = (pid_t *)MPIU_Malloc (num_local * sizeof(pid_t));
     if (MPID_nem_mem_region.pid == NULL)
 	FATAL_ERROR ("malloc failed");
     MPID_nem_mem_region.rank           = rank;
@@ -68,11 +68,11 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.num_procs      = num_procs;
     MPID_nem_mem_region.local_procs    = local_procs;
     MPID_nem_mem_region.local_rank     = local_rank;
-    MPID_nem_mem_region.local_ranks    = (int *)MALLOC (num_procs* sizeof(int));
+    MPID_nem_mem_region.local_ranks    = (int *)MPIU_Malloc (num_procs* sizeof(int));
     if (MPID_nem_mem_region.local_ranks == NULL)
 	FATAL_ERROR ("malloc failed");
     MPID_nem_mem_region.ext_procs      = num_procs - num_local ; 
-    MPID_nem_mem_region.ext_ranks      = (int *)MALLOC (MPID_nem_mem_region.ext_procs * sizeof(int));
+    MPID_nem_mem_region.ext_ranks      = (int *)MPIU_Malloc (MPID_nem_mem_region.ext_procs * sizeof(int));
     if (MPID_nem_mem_region.ext_ranks == NULL)
 	FATAL_ERROR ("malloc failed");
     MPID_nem_mem_region.next           = NULL;
@@ -178,8 +178,8 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     /* SHMEM QS */
     MPID_nem_mem_region.Elements =
 	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[1].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));    
-    MPID_nem_mem_region.FreeQ = (MPID_nem_queue_ptr_t *)MALLOC (num_procs * sizeof(MPID_nem_queue_ptr_t));
-    MPID_nem_mem_region.RecvQ = (MPID_nem_queue_ptr_t *)MALLOC (num_procs * sizeof(MPID_nem_queue_ptr_t));
+    MPID_nem_mem_region.FreeQ = (MPID_nem_queue_ptr_t *)MPIU_Malloc (num_procs * sizeof(MPID_nem_queue_ptr_t));
+    MPID_nem_mem_region.RecvQ = (MPID_nem_queue_ptr_t *)MPIU_Malloc (num_procs * sizeof(MPID_nem_queue_ptr_t));
     MPID_nem_mem_region.net_elements =
 	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[2].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));
 
@@ -256,8 +256,8 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_barrier (num_local, local_rank);
 
     /* POboxes stuff */
-    MPID_nem_mem_region.mailboxes.in  = (MPID_nem_fastbox_t **)MALLOC((num_local)*sizeof(MPID_nem_fastbox_t *));
-    MPID_nem_mem_region.mailboxes.out = (MPID_nem_fastbox_t **)MALLOC((num_local)*sizeof(MPID_nem_fastbox_t *));
+    MPID_nem_mem_region.mailboxes.in  = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
+    MPID_nem_mem_region.mailboxes.out = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
 
     if (num_local > 1)
     {
@@ -324,7 +324,7 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     if (ret != 0)
 	ERROR_RET (-1, "PMI_Get_clique_size failed %d", ret);
     
-    *local_procs = MALLOC (*num_local * sizeof (int));
+    *local_procs = MPIU_Malloc (*num_local * sizeof (int));
     if (*local_procs == NULL)
 	ERROR_RET (-1, "malloc failed");
 
@@ -369,7 +369,7 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
 
     /* Gather hostnames */
-    procs = MALLOC (num_global * sizeof (int));
+    procs = MPIU_Malloc (num_global * sizeof (int));
     if (!procs)
 	ERROR_RET (-1, "malloc failed");
     *num_local = 0;
@@ -396,12 +396,12 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     }
 	
     /* copy over local procs into smaller array */
-    *local_procs = MALLOC (*num_local * sizeof (int));
+    *local_procs = MPIU_Malloc (*num_local * sizeof (int));
     if (!local_procs)
 	ERROR_RET (-1, "malloc failed");
     MPID_NEM_MEMCPY (*local_procs, procs, *num_local * sizeof (int));
 
-    FREE (procs);
+    MPIU_Free (procs);
     
     return 0;
 #endif

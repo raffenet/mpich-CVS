@@ -832,7 +832,6 @@ ch3|cancelresp", 0);
 	}	
     }
  exit_fn:
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, blocking=false"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_POKE_WITH_MATCHING);
     return rreq;
 }
@@ -1402,7 +1401,6 @@ ch3|cancelresp", 0);
 	    }	
     }
  exit_fn:
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting, blocking=true"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_IPOKE_WITH_MATCHING);
     return rreq;
 }

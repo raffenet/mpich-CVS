@@ -19,7 +19,7 @@ gm_module_finalize()
     {
 	e = gm_module_send_free_queue;
 	gm_module_send_free_queue = e->next;
-	free (e);
+	MPIU_Free (e);
     }
     
     gm_module_lmt_finalize();

@@ -22,7 +22,7 @@ gm_module_lmt_init()
     {
 	gm_module_lmt_queue_t *e;
 	
-	e = MALLOC (sizeof (gm_module_lmt_queue_t));
+	e = MPIU_Malloc (sizeof (gm_module_lmt_queue_t));
 	if (!e)
 	    ERROR_RET (-1, "malloc failed");
 	e->next = gm_module_lmt_free_queue;
@@ -40,7 +40,7 @@ gm_module_lmt_finalize()
     {
 	e = gm_module_lmt_free_queue;
 	gm_module_lmt_free_queue = e->next;
-	free (e);
+	MPIU_Free (e);
     }
 
 }
@@ -62,7 +62,7 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_vc, struc
 	    goto error_exit;
 	}
     }
-    iov_copy = MALLOC (sizeof (struct iovec) * n_iov);
+    iov_copy = MPIU_Malloc (sizeof (struct iovec) * n_iov);
     if (iov_copy == 0)
     {
 	ret = -1;
@@ -165,7 +165,7 @@ gm_module_lmt_post (struct iovec cookie)
 	gm_module_deregister_mem (iov[i].iov_base, iov[i].iov_len);
     }
     
-    free (iov);
+    MPIU_Free (iov);
 
     return ret;
 }

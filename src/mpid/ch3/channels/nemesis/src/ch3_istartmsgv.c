@@ -66,17 +66,17 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	    assert(sreq != NULL);
 	    MPIU_Object_set_ref(sreq, 2);
 	    sreq->kind = MPID_REQUEST_SEND;
-	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    for (j = 0; j < _n_iov; ++j)
 	    {
 		sreq->dev.iov[j] = _iov[j];
 	    }
 	    sreq->ch.iov_offset = 0;
 	    sreq->dev.iov_count = _n_iov;
+	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    sreq->ch.vc = vc;
 	    if ( iov == _iov )
 	    {
-		/* header was not sent */
+		/* header was not sent, so iov[0] might point to something on the stack */
 		sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 		sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;
 		sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
@@ -116,7 +116,6 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
     
     *sreq_ptr = sreq;
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
     return mpi_errno;
 }

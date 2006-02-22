@@ -35,9 +35,9 @@ MPID_nem_ckpt_init (int ckpt_restart)
     {
 	process_id_t *procids;
 
-	procids = MALLOC (sizeof (*procids) * num_procs);
+	procids = MPIU_Malloc (sizeof (*procids) * num_procs);
 	if (!procids)
-	    ERROR_RET (-1, "MALLOC_FAILED");
+	    ERROR_RET (-1, "Malloc_FAILED");
 
 	for (i = 0; i < num_procs; ++i)
 	    procids[i] = i;
@@ -45,12 +45,12 @@ MPID_nem_ckpt_init (int ckpt_restart)
 	cli_init (num_procs, procids, rank, checkpoint_shutdown);
     }
 	    
-    log_msg = MALLOC (sizeof (*log_msg) * num_procs);
+    log_msg = MPIU_Malloc (sizeof (*log_msg) * num_procs);
     if (!log_msg)
-	ERROR_RET (-1, "MALLOC failed");
-    sent_marker = MALLOC (sizeof (*sent_marker) * num_procs);
+	ERROR_RET (-1, "Malloc failed");
+    sent_marker = MPIU_Malloc (sizeof (*sent_marker) * num_procs);
     if (!sent_marker)
-	ERROR_RET (-1, "MALLOC failed");
+	ERROR_RET (-1, "Malloc failed");
 
     for (i = 0; i < num_procs; ++i)
     {
@@ -69,8 +69,8 @@ MPID_nem_ckpt_init (int ckpt_restart)
 void
 MPID_nem_ckpt_finalize()
 {
-    FREE (log_msg);
-    FREE (sent_marker);
+    MPIU_Free (log_msg);
+    MPIU_Free (sent_marker);
 }
 
 void
@@ -130,12 +130,12 @@ MPID_nem_ckpt_maybe_take_checkpoint()
 	    assert (newsize == num_procs);   
 	    printf_dd ("%d: _MPID_nem_init done\n", rank);
 
-	    per_rank_log = MALLOC (sizeof (struct cli_emitter_based_message_log) * num_procs);
+	    per_rank_log = MPIU_Malloc (sizeof (struct cli_emitter_based_message_log) * num_procs);
 	    if (!per_rank_log)
 		FATAL_ERROR ("malloc error");
 	    MPID_nem_ckpt_message_log = cli_get_network_state (per_rank_log);
 	    printf_dd ("%d: got %s message log\n", rank, MPID_nem_ckpt_message_log ? "non-empty" : "empty");
-	    FREE (per_rank_log); /* we don't need the log separated by rank */
+	    MPIU_Free (per_rank_log); /* we don't need the log separated by rank */
 	    break;
 	}
     case CLI_NOTHING:
@@ -234,12 +234,12 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	    assert (newsize == num_procs);
 	    printf_dd ("%d: _MPID_nem_init done\n", rank);
 
-	    per_rank_log = MALLOC (sizeof (struct cli_emitter_based_message_log) * num_procs);
+	    per_rank_log = MPIU_Malloc (sizeof (struct cli_emitter_based_message_log) * num_procs);
 	    if (!per_rank_log)
 		FATAL_ERROR ("malloc error");
 	    MPID_nem_ckpt_message_log = cli_get_network_state (per_rank_log);
 	    printf_dd ("%d: got %s message log\n", rank, MPID_nem_ckpt_message_log ? "non-empty" : "empty");
-	    FREE (per_rank_log); /* we don't need the log separated by rank */
+	    MPIU_Free (per_rank_log); /* we don't need the log separated by rank */
 	    break;
 	}
     default:

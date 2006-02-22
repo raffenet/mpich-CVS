@@ -13,19 +13,12 @@
 
 #include "mpidi_ch3_impl.h"
 
-/* borrowed this from Myricom */
-#define __GM_COMPILE_TIME_ASSERT(a) do {                                \
-  char (*__GM_COMPILE_TIME_ASSERT_var)[(a) ? 1 : -1] = 0;               \
-  (void) __GM_COMPILE_TIME_ASSERT_var; /* prevent unused var warning */ \
-} while (0)
-
-
-void *MPIDI_CH3_packet_buffer;
-int MPIDI_CH3I_my_rank;
+void *MPIDI_CH3_packet_buffer = NULL;
+int MPIDI_CH3I_my_rank = -1;
 
 static int nemesis_initialized = 0;
 
-
+/* MPIDI_CH3_Init():  Initialize the nemesis channel */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
@@ -89,6 +82,10 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
 }
 
 /* Perform the channel-specific vc initialization */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_VC_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
 {
     /* FIXME: Circular dependency.  Before calling MPIDI_CH3_Init,
@@ -117,6 +114,11 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     return MPID_nem_vc_init (vc);
 }
 
+/* MPIDI_CH3_Connect_to_root() create a new vc, and connect it to the process listening on port_name */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connect_to_root
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
 {
     int mpi_errno = MPI_SUCCESS;

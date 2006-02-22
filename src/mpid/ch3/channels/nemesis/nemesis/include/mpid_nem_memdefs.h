@@ -1,12 +1,7 @@
 #ifndef MPID_MEMDEFS_H
 #define MPID_MEMDEFS_H
-#include <mpid_nem_copy.h>
 #include <mpichconf.h>
 #include <mpimem.h>
-
-#define MALLOC(a) ({void *my_ptr___ = MPIU_Malloc(a); if (!my_ptr___) fprintf(stderr, "malloc failed %s:%d\n", __FILE__, __LINE__); my_ptr___;})
-#define CALLOC(a,b)   MPIU_Calloc((a),(b))
-#define FREE(a)       MPIU_Free((a)) 
 
 #if defined(HAVE_GCC_AND_PENTIUM_ASM)
 #define asm_memcpy(dst, src, n) ({					\
@@ -49,6 +44,9 @@
 static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t len)
 {
     void *orig_dst = (void *)dst;
+    void *dummy_dst;
+    void *dummy_src;
+    
     int n;
 
     /* copy in 8K chunks */
@@ -56,7 +54,8 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     if (n)
     {
 
-	asm volatile (".set PREFETCHBLOCK, 1024\n" /* prefetch PREFETCHBLOCK number of 8-byte words */
+	asm volatile ("mov %[n], %%ecx\n"
+		      ".set PREFETCHBLOCK, 1024\n" /* prefetch PREFETCHBLOCK number of 8-byte words */
 		      "lea (%%esi, %%ecx, 8), %%esi\n"
 		      "lea (%%edi, %%ecx, 8), %%edi\n"
 		  
@@ -110,9 +109,9 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 
 		      "sfence\n"
 		      "emms\n"
-		      : 
-		      : "D" (dst), "S" (src), "c" (n >> 3)
-		      : "eax", "ebx");
+		      : "=D" (dummy_dst), "=S" (dummy_src)
+		      : "0" (dst), "1" (src), [n] "g" (n >> 3)
+		      : "eax", "ebx", "ecx");
 
 	src = (char *)src + n;
 	dst = (char *)dst + n;
@@ -122,7 +121,9 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     n = len & (8*1024 - 1) & -128;
     if (n)
     {
-	asm volatile ("lea (%%esi, %%ecx, 8), %%esi\n"
+
+	asm volatile ("mov %[n], %%ecx\n"
+		      "lea (%%esi, %%ecx, 8), %%esi\n"
 		      "lea (%%edi, %%ecx, 8), %%edi\n"
 
 		      "push %%ecx\n"        /* save n */
@@ -174,9 +175,9 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 
 		      "sfence\n"
 		      "emms\n"
-		      : 
-		      : "D" (dst), "S" (src), "c" (n >> 3)
-		      : "eax", "ebx");
+		      : "=D" (dummy_dst), "=S" (dummy_src) 
+		      : "0" (dst), "1" (src), [n] "g" (n >> 3)
+		      : "eax", "ebx", "ecx");
 	src = (char *)src + n;
 	dst = (char *)dst + n;
     }
@@ -248,7 +249,6 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
 /* #define MPID_NEM_MEMCPY(a,b,c) memcpy (a, b, c) */
 
 #else
-#define asm_memcpy(dst, src, n) memcpy(dst, src, n)
 #define MPID_NEM_MEMCPY(a,b,c) memcpy(dst, src, n)
 #endif
 

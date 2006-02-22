@@ -15,7 +15,7 @@ _safe_malloc (size_t len, char* file, int line)
 {
     void *p;
 
-    p = MALLOC (len);
+    p = MPIU_Malloc (len);
     if (p)
 	return p;
     else

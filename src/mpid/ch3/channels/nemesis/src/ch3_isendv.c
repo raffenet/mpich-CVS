@@ -15,7 +15,7 @@ extern void *MPIDI_CH3_packet_buffer;
 int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int shmem_errno;
+    int ret;
     int j;
     int complete;
     
@@ -38,14 +38,14 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	int _n_iov = n_iov;
 
 	MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet\n"));
-	shmem_errno = MPID_nem_mpich2_sendv_header (&_iov, &_n_iov, vc);
-	while (shmem_errno != MPID_NEM_MPICH2_AGAIN && _n_iov > 0)
+	ret = MPID_nem_mpich2_sendv_header (&_iov, &_n_iov, vc);
+	while (ret != MPID_NEM_MPICH2_AGAIN && _n_iov > 0)
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet\n"));
-	    shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, vc);
+	    ret = MPID_nem_mpich2_sendv (&_iov, &_n_iov, vc);
 	}
 
-	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
+	if (ret == MPID_NEM_MPICH2_AGAIN)
 	{
 	    if (_iov == iov)
 	    {
@@ -105,7 +105,6 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
     }
     
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
 }

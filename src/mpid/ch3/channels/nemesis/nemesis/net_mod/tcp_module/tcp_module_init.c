@@ -13,7 +13,7 @@ _safe_malloc (size_t len, char* file, int line)
 {
     void *p;
 
-    p = MALLOC (len);
+    p = MPIU_Malloc (len);
     if (p)
 	return p;
     else
@@ -198,8 +198,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	if(grank != MPID_nem_mem_region.rank)
 	{
 
-	    nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MALLOC(sizeof(internal_queue_t));
-	    nodes[grank].internal_free_queue = (internal_queue_ptr_t)MALLOC(sizeof(internal_queue_t));
+	    nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
+	    nodes[grank].internal_free_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
 	    nodes[grank].internal_recv_queue->head = NULL;
 	    nodes[grank].internal_recv_queue->tail = NULL;
 	    nodes[grank].internal_free_queue->head = NULL;
@@ -288,7 +288,7 @@ tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
     int ret;
     int index;
     
-    n_pending_sends = (int *)MALLOC(MPID_nem_mem_region.num_procs*sizeof(int));    
+    n_pending_sends = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));    
     for(index = 0 ; index < MPID_nem_mem_region.num_procs ; index++)
     {
 	n_pending_sends[index] = 0;

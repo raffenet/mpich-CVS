@@ -23,9 +23,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 {
     int mpi_errno = MPI_SUCCESS;
     int shmem_errno;
-    int enqueue_it = 0;
     
-    MPID_Request * sreq = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
@@ -45,20 +43,27 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	shmem_errno = MPID_nem_mpich2_send_header (hdr, hdr_sz, vc);
 	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
 	{
-	    enqueue_it = 1;
+	    goto enqueue_it;
 	}
 	else
 	{
-	    enqueue_it = 0;
+	    *sreq_ptr = NULL;
 	}
     }
     else
     {
-	enqueue_it = 1;
+	goto enqueue_it;
     }
 
-    if (enqueue_it)
+ end_l:
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+    return mpi_errno;
+    
+ enqueue_it:
     {
+	MPID_Request * sreq = NULL;
+	
 	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
 	/* create a request */
@@ -75,13 +80,10 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	sreq->ch.vc = vc;
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
+	*sreq_ptr = sreq;
+	
+	goto end_l;
     }
-
-    *sreq_ptr = sreq;
-
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
-    return mpi_errno;
 }
 
 

@@ -54,8 +54,8 @@ MPID_nem_mpich2_init (int ckpt_restart)
     
     if (!ckpt_restart)
     {
-	send_seqno = MALLOC (sizeof(*send_seqno) * MPID_nem_mem_region.num_procs);
-	recv_seqno = MALLOC (sizeof(*recv_seqno) * MPID_nem_mem_region.num_procs);
+	send_seqno = MPIU_Malloc (sizeof(*send_seqno) * MPID_nem_mem_region.num_procs);
+	recv_seqno = MPIU_Malloc (sizeof(*recv_seqno) * MPID_nem_mem_region.num_procs);
 	if (!send_seqno || !recv_seqno)
 	    FATAL_ERROR ("malloc failed");
 
@@ -66,7 +66,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
 	}
     
 	/* set up fbox queue */
-	fboxq_elem_list = MALLOC (MPID_nem_mem_region.num_local * sizeof(MPID_nem_fboxq_elem_t));
+	fboxq_elem_list = MPIU_Malloc (MPID_nem_mem_region.num_local * sizeof(MPID_nem_fboxq_elem_t));
 	if (!fboxq_elem_list)
 	    FATAL_ERROR ("malloc failed");
     

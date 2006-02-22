@@ -15,13 +15,11 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
     int mpi_errno = MPI_SUCCESS;
     int shmem_errno;
     int complete;
-    int enqueue_it;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which
@@ -36,34 +34,34 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 	shmem_errno = MPID_nem_mpich2_send_header (hdr, hdr_sz, vc);
 	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
 	{
-	    enqueue_it = 1;
+	    goto enqueue_it;
 	}
 	else
 	{
-	    enqueue_it = 0;
 	    MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);
 	}
     }
     else
     {
-	enqueue_it = 1;
+	goto enqueue_it;
     }
 
-    if (enqueue_it)
-    {
-	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
-	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;
-	sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz;
-	sreq->dev.iov_count = 1;
-	sreq->ch.iov_offset = 0;
-	sreq->ch.vc = vc;
-	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
-    }
-
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
+ end_l:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return mpi_errno;
+
+ enqueue_it:
+    MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
+
+    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;
+    sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz;
+    sreq->dev.iov_count = 1;
+    sreq->ch.iov_offset = 0;
+    sreq->ch.vc = vc;
+    MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
+    
+    goto end_l;
 }
 

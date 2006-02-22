@@ -11,7 +11,7 @@ MPID_nem_mpich2_alloc_win (void **buf, int len, MPID_nem_mpich2_win_t **win)
     int ret;
     int fd;
     
-    *win = MALLOC (sizeof (MPID_nem_mpich2_win_t));
+    *win = MPIU_Malloc (sizeof (MPID_nem_mpich2_win_t));
     if (!*win)
 	goto err0_l;
 
@@ -61,7 +61,7 @@ MPID_nem_mpich2_alloc_win (void **buf, int len, MPID_nem_mpich2_win_t **win)
     if (ret == -1)
 	perror ("unlink failed");
  err1_l:
-    FREE (*win);
+    MPIU_Free (*win);
  err0_l:
     return MPID_NEM_MPICH2_FAILURE;
 }
@@ -81,7 +81,7 @@ MPID_nem_mpich2_free_win (MPID_nem_mpich2_win_t *win)
     if (ret == -1)
 	PERROR_RET (MPID_NEM_MPICH2_FAILURE, "unlink failed");
 
-    FREE (win);
+    MPIU_Free (win);
 
     return MPID_NEM_MPICH2_SUCCESS;
 }
@@ -315,7 +315,7 @@ MPID_nem_mpich2_deserialize_win (void *buf, int buf_len, MPID_nem_mpich2_win_t *
     if (buf_len < sizeof (MPID_nem_mpich2_win_t))
 	goto err_l;
 
-    *win = MALLOC (sizeof (MPID_nem_mpich2_win_t));
+    *win = MPIU_Malloc (sizeof (MPID_nem_mpich2_win_t));
     if (!*win)
 	goto err_l;
 

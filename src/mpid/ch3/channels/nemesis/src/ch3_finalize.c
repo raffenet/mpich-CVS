@@ -14,10 +14,7 @@ int MPIDI_CH3_Finalize()
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    
     MPID_nem_finalize();
     
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     return mpi_errno;
 }
