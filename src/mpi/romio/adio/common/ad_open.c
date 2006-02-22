@@ -172,13 +172,20 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
      * file system if we skip this optimization */
     if (access_mode & ADIO_CREATE && fd->file_system != ADIO_PVFS2) {
        if(rank == fd->hints->ranklist[0]) {
-    		fd->access_mode = access_mode;
-    		(*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
-		MPI_Bcast(error_code, 1, MPI_INT, \
-				fd->hints->ranklist[0], fd->comm);
-		/* if no error, close the file and reopen normally below */
-		if (*error_code == MPI_SUCCESS) 
-			(*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+	   /* remove delete_on_close flag if set */
+	   if (access_mode & ADIO_DELETE_ON_CLOSE)
+	       fd->access_mode = access_mode ^ ADIO_DELETE_ON_CLOSE;
+	   else 
+	       fd->access_mode = access_mode;
+	       
+	   (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
+	   MPI_Bcast(error_code, 1, MPI_INT, \
+		     fd->hints->ranklist[0], fd->comm);
+	   /* if no error, close the file and reopen normally below */
+	   if (*error_code == MPI_SUCCESS) 
+	       (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
+
+	   fd->access_mode = access_mode; /* back to original */
        }
        else MPI_Bcast(error_code, 1, MPI_INT, fd->hints->ranklist[0], fd->comm);
 
