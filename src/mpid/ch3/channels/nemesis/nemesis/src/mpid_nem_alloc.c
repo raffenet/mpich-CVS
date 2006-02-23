@@ -36,7 +36,7 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 	}
 	
 	/* post name of shared file */
-	assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
+	MPIU_Assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
 	snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.rank);
 	ret = PMI_KVS_Put (kvs_name, key, memory->file_name);
 	if (ret != MPI_SUCCESS)
@@ -123,7 +123,7 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
 
 void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg, int size)
 {
-   assert( memory->size_left >= size );
+   MPIU_Assert( memory->size_left >= size );
   
    seg->addr = memory->current_addr;
    seg->size = size ;
@@ -131,7 +131,7 @@ void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg,
    memory->size_left    -= size;
    memory->current_addr  = (char *)(memory->current_addr) + size;
    
-   assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );   
+   MPIU_Assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );   
 }
 
 void MPID_nem_check_alloc (int num_processes)

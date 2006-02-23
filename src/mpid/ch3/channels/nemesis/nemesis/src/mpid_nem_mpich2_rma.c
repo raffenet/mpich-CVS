@@ -71,7 +71,7 @@ MPID_nem_mpich2_free_win (MPID_nem_mpich2_win_t *win)
 {
     int ret;
 
-    assert (win->proc == MPID_nem_mem_region.rank);
+    MPIU_Assert (win->proc == MPID_nem_mem_region.rank);
     
     ret = munmap (win->home_address, win->len);
     if (ret == -1)

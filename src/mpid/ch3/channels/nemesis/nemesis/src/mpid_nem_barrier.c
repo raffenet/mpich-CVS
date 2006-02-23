@@ -17,7 +17,7 @@ void MPID_nem_barrier_init (MPID_nem_barrier_t *barrier_region)
 /* FIXME: this is not a scalable algorithm because everyone is polling on the same cacheline */
 void MPID_nem_barrier (int num_processes, int rank)
 {
-    assert (barrier_init);
+    MPIU_Assert (barrier_init);
     
     if (MPID_NEM_FETCH_AND_ADD (&MPID_nem_mem_region.barrier->val, 1) == MPID_nem_mem_region.num_local - 1)
     {

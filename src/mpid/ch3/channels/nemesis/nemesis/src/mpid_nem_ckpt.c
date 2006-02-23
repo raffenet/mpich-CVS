@@ -92,7 +92,7 @@ MPID_nem_ckpt_maybe_take_checkpoint()
     case CLI_CP_BEGIN:
 	printf_dd ("%d: cli_check_for_checkpoint_start: CLI_CP_BEGIN wave = %d\n", rank, marker.checkpoint_wave_number);
 	
-	assert (MPID_nem_ckpt_logging_messages == 0);
+	MPIU_Assert (MPID_nem_ckpt_logging_messages == 0);
 
 	/* initialize the state */
 	MPID_nem_ckpt_logging_messages = num_procs;
@@ -106,7 +106,7 @@ MPID_nem_ckpt_maybe_take_checkpoint()
 	/* we don't send messages to ourselves, so we pretend we sent and received a marker */
 	--MPID_nem_ckpt_sending_markers;
 	ret = cli_on_marker_receive (&marker, rank);
-	assert (ret == CLI_CP_MARKED);
+	MPIU_Assert (ret == CLI_CP_MARKED);
 	--MPID_nem_ckpt_logging_messages;
 	log_msg[rank] = 0;
 	sent_marker[rank] = 1;
@@ -126,8 +126,8 @@ MPID_nem_ckpt_maybe_take_checkpoint()
 	    printf_dd ("%d: before _MPID_nem_init\n", rank);
 	    _MPID_nem_init (0, NULL, &newrank, &newsize, 1);
 	    printf_dd ("%d: after _MPID_nem_init\n", rank);
-	    assert (newrank == rank);
-	    assert (newsize == num_procs);   
+	    MPIU_Assert (newrank == rank);
+	    MPIU_Assert (newsize == num_procs);   
 	    printf_dd ("%d: _MPID_nem_init done\n", rank);
 
 	    per_rank_log = MPIU_Malloc (sizeof (struct cli_emitter_based_message_log) * num_procs);
@@ -182,7 +182,7 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     {
     case CLI_CP_BEGIN:
 	printf_dd ("%d: cli_on_marker_recv: CLI_CP_BEGIN wave = %d\n", rank, marker.checkpoint_wave_number);
-	assert (MPID_nem_ckpt_logging_messages == 0);
+	MPIU_Assert (MPID_nem_ckpt_logging_messages == 0);
 
 	/* initialize the state */
 	MPID_nem_ckpt_logging_messages = num_procs;
@@ -200,7 +200,7 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	/* we don't send messages to ourselves, so we pretend we sent and received a marker */
 	--MPID_nem_ckpt_sending_markers;
 	ret = cli_on_marker_receive (&marker, rank);
-	assert (ret == CLI_CP_MARKED);
+	MPIU_Assert (ret == CLI_CP_MARKED);
 	--MPID_nem_ckpt_logging_messages;
 	log_msg[rank] = 0;
 	sent_marker[rank] = 1;
@@ -211,8 +211,8 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	break;
     case CLI_CP_MARKED:
 	printf_dd ("%d: cli_on_marker_recv: CLI_CP_MARKED wave = %d\n", rank, marker.checkpoint_wave_number);
-	assert (MPID_nem_ckpt_logging_messages);
-	assert (log_msg[source]);
+	MPIU_Assert (MPID_nem_ckpt_logging_messages);
+	MPIU_Assert (log_msg[source]);
 	    
 	--MPID_nem_ckpt_logging_messages;
 	log_msg[source] = 0;
@@ -230,8 +230,8 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	    printf_dd ("%d: before _MPID_nem_init\n", rank);
 	    _MPID_nem_init (0, NULL, &newrank, &newsize, 1);
 	    printf_dd ("%d: after _MPID_nem_init\n", rank);
-	    assert (newrank == rank);
-	    assert (newsize == num_procs);
+	    MPIU_Assert (newrank == rank);
+	    MPIU_Assert (newsize == num_procs);
 	    printf_dd ("%d: _MPID_nem_init done\n", rank);
 
 	    per_rank_log = MPIU_Malloc (sizeof (struct cli_emitter_based_message_log) * num_procs);
@@ -272,8 +272,8 @@ MPID_nem_ckpt_send_markers()
     int num_procs = MPID_nem_mem_region.num_procs;
     MPIDI_VC_t vc;
     
-    assert (MPID_nem_ckpt_sending_markers);
-    assert (next_marker_dest < num_procs);
+    MPIU_Assert (MPID_nem_ckpt_sending_markers);
+    MPIU_Assert (next_marker_dest < num_procs);
 
     while (next_marker_dest < num_procs)
     {
@@ -299,7 +299,7 @@ MPID_nem_ckpt_send_markers()
 int
 MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell)
 {
-    assert (MPID_nem_ckpt_message_log);
+    MPIU_Assert (MPID_nem_ckpt_message_log);
 
     *cell = (MPID_nem_cell_ptr_t)MPID_nem_ckpt_message_log->ptr;
     (*cell)->pkt.header.type = MPID_NEM_PKT_CKPT_REPLAY;
@@ -314,7 +314,7 @@ MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell)
 void
 MPID_nem_ckpt_free_msg_log()
 {
-    assert (!MPID_nem_ckpt_message_log);
+    MPIU_Assert (!MPID_nem_ckpt_message_log);
     cli_message_log_free();
 }
 

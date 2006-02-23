@@ -12,7 +12,7 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
     MPID_nem_pkt_t *pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell); /* cast away volatile */
     int    len    = MPID_NEM_PACKET_OPT_LEN(pkt);
     int    offset = 0;
-    assert (datalen <= MPID_NEM_MPICH2_DATA_LEN + MPID_NEM_MPICH2_HEAD_LEN);
+    MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN + MPID_NEM_MPICH2_HEAD_LEN);
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     offset = write(nodes[dest].desc, pkt,len);

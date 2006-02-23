@@ -39,7 +39,7 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 
     /*DO_PAPI (PAPI_reset (PAPI_EventSet)); */
 
-    assert (size <= MPID_NEM_MPICH2_DATA_LEN);
+    MPIU_Assert (size <= MPID_NEM_MPICH2_DATA_LEN);
     my_rank = MPID_nem_mem_region.rank;
     
 #ifdef PREFETCH_CELL
@@ -649,7 +649,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     if (MPID_nem_ckpt_message_log)
     {
 	MPID_nem_ckpt_replay_message (cell);
-	assert ((*cell)->pkt.mpich2.seqno == recv_seqno[(*cell)->pkt.mpich2.source]);
+	MPIU_Assert ((*cell)->pkt.mpich2.seqno == recv_seqno[(*cell)->pkt.mpich2.source]);
 	++recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
 	return MPID_NEM_MPICH2_SUCCESS;
@@ -766,7 +766,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     if (MPID_nem_ckpt_message_log)
     {
 	MPID_nem_ckpt_replay_message (cell);
-	assert ((*cell)->pkt.mpich2.seqno == recv_seqno[(*cell)->pkt.mpich2.source]);
+	MPIU_Assert ((*cell)->pkt.mpich2.seqno == recv_seqno[(*cell)->pkt.mpich2.source]);
 	++recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
 	return MPID_NEM_MPICH2_SUCCESS;

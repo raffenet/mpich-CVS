@@ -31,7 +31,7 @@ send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
 {
     MPID_nem_pkt_t *pkt = MPID_NEM_CELL_TO_PACKET (cell);
 
-    assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
+    MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     gm_send_with_callback (port, pkt, PACKET_SIZE, datalen + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,
@@ -44,7 +44,7 @@ send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
 #define send_cell(node_id, port_id, cell, datalen) do {									\
     MPID_nem_pkt_t *pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);						\
 															\
-    assert ((datalen) <= MPID_NEM_MPICH2_DATA_LEN);									\
+    MPIU_Assert ((datalen) <= MPID_NEM_MPICH2_DATA_LEN);									\
 															\
     DO_PAPI (PAPI_reset (PAPI_EventSet));										\
     gm_send_with_callback (port, pkt, PACKET_SIZE, (datalen) + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,	\

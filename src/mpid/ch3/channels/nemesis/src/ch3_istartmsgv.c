@@ -35,9 +35,8 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
-    assert (n_iov <= MPID_IOV_LIMIT);
-    assert (iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
+    MPIU_Assert (n_iov <= MPID_IOV_LIMIT);
+    MPIU_Assert (iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* The channel uses a fixed length header, the size of which is
      * the maximum of all possible packet headers */
@@ -47,15 +46,15 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
     if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE))
         /* MT */
     {
-	MPID_IOV *_iov = iov;
-	int _n_iov = n_iov;
+	MPID_IOV *remaining_iov = iov;
+	int remaining_n_iov = n_iov;
 
 	MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet with sendv_header\n"));
-	shmem_errno = MPID_nem_mpich2_sendv_header (&_iov, &_n_iov, vc);
-	while ((shmem_errno != MPID_NEM_MPICH2_AGAIN) && (_n_iov > 0))
+	shmem_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc);
+	while ((shmem_errno != MPID_NEM_MPICH2_AGAIN) && (remaining_n_iov > 0))
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet with sendv \n"));
-	    shmem_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, vc);
+	    shmem_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc);
 	}
 
 	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
@@ -63,18 +62,18 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
             /* Create a new request and save remaining portions of the
 	     * iov in it. */
  	    sreq = MPIDI_CH3_Request_create();
-	    assert(sreq != NULL);
+	    MPIU_Assert(sreq != NULL);
 	    MPIU_Object_set_ref(sreq, 2);
 	    sreq->kind = MPID_REQUEST_SEND;
-	    for (j = 0; j < _n_iov; ++j)
+	    for (j = 0; j < remaining_n_iov; ++j)
 	    {
-		sreq->dev.iov[j] = _iov[j];
+		sreq->dev.iov[j] = remaining_iov[j];
 	    }
 	    sreq->ch.iov_offset = 0;
-	    sreq->dev.iov_count = _n_iov;
+	    sreq->dev.iov_count = remaining_n_iov;
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    sreq->ch.vc = vc;
-	    if ( iov == _iov )
+	    if ( iov == remaining_iov )
 	    {
 		/* header was not sent, so iov[0] might point to something on the stack */
 		sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
@@ -82,7 +81,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 		sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
 	    }
 	    MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
-	    assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
+	    MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
 	    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
 	}
     }
@@ -93,7 +92,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	MPIDI_DBG_PRINTF((55, FCNAME, "request enqueued"));
 	/* create a request */
 	sreq = MPIDI_CH3_Request_create();
-	assert(sreq != NULL);
+	MPIU_Assert(sreq != NULL);
 	MPIU_Object_set_ref(sreq, 2);
 	sreq->kind = MPID_REQUEST_SEND;
 

@@ -89,7 +89,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
     {
 	for (i = 0; i < MPID_nem_mem_region.num_local; ++i)
 	{
-	    assert (fboxq_elem_list[i].grank == MPID_nem_mem_region.local_procs[i]);
+	    MPIU_Assert (fboxq_elem_list[i].grank == MPID_nem_mem_region.local_procs[i]);
 	    fboxq_elem_list[i].fbox = &MPID_nem_mem_region.mailboxes.in[i]->mpich2;
 	}
 

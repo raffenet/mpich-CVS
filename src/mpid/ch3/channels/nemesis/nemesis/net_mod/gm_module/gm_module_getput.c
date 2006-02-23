@@ -28,8 +28,8 @@ gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *source_vc, i
 {
     int ret;
     
-    assert (source_vc->ch.node_id >= 0 && source_vc->ch.node_id < MPID_nem_mem_region.num_procs);
-    assert (len >= 0);
+    MPIU_Assert (source_vc->ch.node_id >= 0 && source_vc->ch.node_id < MPID_nem_mem_region.num_procs);
+    MPIU_Assert (len >= 0);
     
     if (len == 0)
     {
@@ -85,8 +85,8 @@ gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *target_vc, i
 {
     int ret;
     
-    assert (target_vc->ch.node_id >= 0 && target_vc->ch.node_id < MPID_nem_mem_region.num_procs);
-    assert (len >= 0);
+    MPIU_Assert (target_vc->ch.node_id >= 0 && target_vc->ch.node_id < MPID_nem_mem_region.num_procs);
+    MPIU_Assert (len >= 0);
     
     if (len == 0)
     {

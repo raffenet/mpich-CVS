@@ -62,16 +62,6 @@ int MPIDI_CH3I_Progress (int is_blocking)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
-#if defined(MPICH_DBG_OUTPUT)
-    {
-	if (is_blocking)
-	{
-	    MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s",
-			      is_blocking ? "true" : "false"));
-	}
-    }
-#endif
-
     do
     {
 	MPID_Request *sreq;
@@ -239,14 +229,6 @@ int MPIDI_CH3I_Progress (int is_blocking)
     }
     while (completions == MPIDI_CH3I_progress_completions && is_blocking);
     
-#if defined(MPICH_DBG_OUTPUT)
-    {
-	if (is_blocking)
-	{
-	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
-	}
-    }
-#endif
 
  exit_fn:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
