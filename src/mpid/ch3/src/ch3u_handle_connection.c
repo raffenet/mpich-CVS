@@ -137,10 +137,10 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_SENDCLOSE);
 
+    /* FIXME: Remove this IFDEF */
+#ifdef MPIDI_CH3_USES_SSHM
     MPIU_Assert( vc->state == MPIDI_VC_STATE_ACTIVE || 
 		 vc->state == MPIDI_VC_STATE_REMOTE_CLOSE 
-#ifdef MPIDI_CH3_USES_SSHM
-		 /* FIXME: Remove this IFDEF */
 		 /* sshm queues are uni-directional.  A VC that is connected 
 		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
 		 * so that a connection will be formed on the first write.  
@@ -148,9 +148,11 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
 		 * writing 
 		 * we need to initiate the close protocol on the read side 
 		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
-		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected)
+		 || ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected);
+#else
+    MPIU_Assert( vc->state == MPIDI_VC_STATE_ACTIVE || 
+		 vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );
 #endif
-		 );
 
     MPIDI_Pkt_init(close_pkt, MPIDI_CH3_PKT_CLOSE);
     close_pkt->ack = (vc->state == MPIDI_VC_STATE_ACTIVE) ? FALSE : TRUE;
