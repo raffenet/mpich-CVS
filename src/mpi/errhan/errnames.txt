@@ -157,6 +157,8 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **f90typetoomany %s %d:Too many requests for unnamed, predefined f90 %s \
  types; no more than %d allowed.
 #
+**noConnInfoToString:No ConnInfoToString routine defined for this process group
+#
 #---- The messages below this line haven't been used yet.
 #
 **buffer:Invalid buffer pointer
