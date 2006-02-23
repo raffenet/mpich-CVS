@@ -9,8 +9,8 @@
     char *q = (char *)dst;						\
     size_t nl = (size_t)(n) >> 2;					\
     asm volatile ("cld ; rep ; movsl ; movl %3,%0 ; rep ; movsb"	\
- 	                  : "+c" (nl), "+S" (p), "+D" (q)		\
-	                  : "r" (n & 3));				\
+		  : "+c" (nl), "+S" (p), "+D" (q)			\
+		  : "r" (n & 3) /* : "memory" is this needed?*/);	\
     (void *)dst;							\
 })
 
@@ -54,7 +54,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     if (n)
     {
 
-	asm volatile ("mov %[n], %%ecx\n"
+	asm volatile ("mov %4, %%ecx\n"
 		      ".set PREFETCHBLOCK, 1024\n" /* prefetch PREFETCHBLOCK number of 8-byte words */
 		      "lea (%%esi, %%ecx, 8), %%esi\n"
 		      "lea (%%edi, %%ecx, 8), %%edi\n"
@@ -110,8 +110,8 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 		      "sfence\n"
 		      "emms\n"
 		      : "=D" (dummy_dst), "=S" (dummy_src)
-		      : "0" (dst), "1" (src), [n] "g" (n >> 3)
-		      : "eax", "ebx", "ecx");
+		      : "0" (dst), "1" (src), "g" (n >> 3)
+		      : "eax", "ebx", "ecx"/* , "memory" is this needed? */);
 
 	src = (char *)src + n;
 	dst = (char *)dst + n;
@@ -122,7 +122,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     if (n)
     {
 
-	asm volatile ("mov %[n], %%ecx\n"
+	asm volatile ("mov %4, %%ecx\n"
 		      "lea (%%esi, %%ecx, 8), %%esi\n"
 		      "lea (%%edi, %%ecx, 8), %%edi\n"
 
@@ -176,8 +176,8 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 		      "sfence\n"
 		      "emms\n"
 		      : "=D" (dummy_dst), "=S" (dummy_src) 
-		      : "0" (dst), "1" (src), [n] "g" (n >> 3)
-		      : "eax", "ebx", "ecx");
+		      : "0" (dst), "1" (src), "g" (n >> 3)
+		      : "eax", "ebx", "ecx" /* , "memory" is this needed? */);
 	src = (char *)src + n;
 	dst = (char *)dst + n;
     }
@@ -195,14 +195,14 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
                                  : asm_memcpy (a, b, c))
 
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
-#define asm_memcpy(dst, src, n) ({					\
-    const char *p = (char *)src;					\
-    char *q = (char *)dst;						\
-    size_t nq = n >> 3;							\
-    asm volatile ("cld ; rep ; movsq ; movl %3,%%ecx ; rep ; movsb"	\
-	                  : "+c" (nq), "+S" (p), "+D" (q)		\
-	                  : "r" ((uint32_t)(n & 7)));			\
-  (void *)dst;								\
+#define asm_memcpy(dst, src, n) ({						\
+    const char *p = (char *)src;						\
+    char *q = (char *)dst;							\
+    size_t nq = n >> 3;								\
+    asm volatile ("cld ; rep ; movsq ; movl %3,%%ecx ; rep ; movsb"		\
+		  : "+c" (nq), "+S" (p), "+D" (q)				\
+		  : "r" ((uint32_t)(n & 7)) /* : "memory" is this needed? */);	\
+  (void *)dst;									\
 })
 
 static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t n)
@@ -231,7 +231,7 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
 		      "sfence  \n"
 		      "mfence  \n"
 		      : "+a" (n32), "+S" (src), "+D" (dst)
-		      : : "r8", "r9");
+		      : : "r8", "r9" /*, "memory" is this needed? */);
     }
     
     //   printf ("2src = %p dst = %p nleft = %ld\n", dst, src, nleft);
