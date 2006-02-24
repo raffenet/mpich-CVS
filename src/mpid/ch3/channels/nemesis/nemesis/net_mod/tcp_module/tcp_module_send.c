@@ -4,7 +4,7 @@
 
 #define DO_PAPI3(x) /*x */
 
-/*#define TRACE */
+//#define TRACE 
 
 static inline void
 send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
@@ -23,15 +23,14 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 	nodes[dest].left2write = 0;
 #ifdef TRACE
 	{
-	    int index;
-	    fprintf(stderr,"[%i] -- TCP DIRECT SEND : sent ALL MSG (%i len, payload is %i , datalen %i)\n",
-		    MPID_nem_mem_region.rank, offset, pkt->mpich2.datalen,datalen);
-	    /*
-	      for(index = 0 ; index < ((pkt->mpich2.datalen)/sizeof(int)); index ++)
-	      {
-	      fprintf(stderr,"[%i] --- cell[%i] : %i\n",MPID_nem_mem_region.rank,index,((int *)&(cell->pkt.mpich2))[index] );
-	      }
-	    */
+	   int index;
+	   fprintf(stderr,"[%i] -- TCP DIRECT SEND : sent ALL MSG (%i len, offset %i, payload is %i , datalen %i)\n",
+		   MPID_nem_mem_region.rank, len, offset, pkt->mpich2.datalen,datalen);	    
+	   for(index = 0 ; index < ((pkt->mpich2.datalen)/sizeof(int)); index ++)
+	     {
+		fprintf(stderr,"[%i] --- cell[%i] : %i\n",MPID_nem_mem_region.rank,index,((int *)&(cell->pkt.mpich2))[index] );
+	     }
+	   
 	}
 #endif
 	MPID_nem_queue_enqueue (process_free_queue, cell);

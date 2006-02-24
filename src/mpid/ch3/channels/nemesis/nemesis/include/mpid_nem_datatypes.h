@@ -22,7 +22,6 @@
 #define MPID_NEM_NUM_CELLS          32
 #define MPID_NEM_CELL_LEN           (64*1024)
 #define MPID_NEM_CELL_PAYLOAD_LEN   (MPID_NEM_CELL_LEN - sizeof(void *)) 
-#define MPID_NEM_DATA_LEN           (MPID_NEM_CELL_PAYLOAD_LEN - sizeof(MPID_nem_pkt_header_t))
 
 #define MPID_NEM_ALIGNED(addr, bytes) ((((unsigned long)addr) & (((unsigned long)bytes)-1)) == 0)
 
@@ -44,9 +43,8 @@
     int source;					\
     int dest;					\
     int datalen;				\
-    unsigned short seqno;			\
+    unsigned short seqno;                       \
     unsigned short type /* currently used only with checkpointing */
-
 typedef struct MPID_nem_pkt_header
 {
     MPID_NEM_PKT_HEADER_FIELDS;
