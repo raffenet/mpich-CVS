@@ -253,9 +253,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 
 /*
    int  
-   tcp_module_init(MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, MPID_nem_cell_ptr_t proc_elements, int num_proc_elements,
-	          MPID_nem_cell_ptr_t module_elements, int num_module_elements, MPID_nem_queue_ptr_t *module_recv_queue,
-		  MPID_nem_queue_ptr_t *module_free_queue)
+   MPID_nem_tcp_module_init(MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, MPID_nem_cell_ptr_t proc_elements, int num_proc_elements,
+                            MPID_nem_cell_ptr_t module_elements, int num_module_elements, MPID_nem_queue_ptr_t *module_recv_queue,
+                            MPID_nem_queue_ptr_t *module_free_queue)
 
    IN
        proc_recv_queue -- main recv queue for the process
@@ -275,15 +275,15 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 */
 
 int
-tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue, 
-     		 MPID_nem_queue_ptr_t  proc_free_queue, 
-		 MPID_nem_cell_ptr_t    proc_elements,   
-		 int num_proc_elements,
-		 MPID_nem_cell_ptr_t    module_elements, 
-		 int num_module_elements, 
-		 MPID_nem_queue_ptr_t *module_recv_queue,
-		 MPID_nem_queue_ptr_t *module_free_queue,
-		 int ckpt_restart, MPIDI_PG_t *pg_p)
+MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue, 
+			  MPID_nem_queue_ptr_t  proc_free_queue, 
+			  MPID_nem_cell_ptr_t    proc_elements,   
+			  int num_proc_elements,
+			  MPID_nem_cell_ptr_t    module_elements, 
+			  int num_module_elements, 
+			  MPID_nem_queue_ptr_t *module_recv_queue,
+			  MPID_nem_queue_ptr_t *module_free_queue,
+			  int ckpt_restart, MPIDI_PG_t *pg_p)
 {
     int ret;
     int index;
@@ -332,7 +332,7 @@ tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-tcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
+MPID_nem_tcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
@@ -345,7 +345,7 @@ tcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-tcp_module_connect_to_root (const char *business_card, const int lpid)
+MPID_nem_tcp_module_connect_to_root (const char *business_card, const int lpid)
 {
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
@@ -357,7 +357,7 @@ tcp_module_connect_to_root (const char *business_card, const int lpid)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-tcp_module_vc_init (MPIDI_VC_t *vc)
+MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc)
 {
     return MPI_SUCCESS;
 }

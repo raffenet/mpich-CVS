@@ -71,7 +71,7 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 }
 
 void
-tcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
+MPID_nem_tcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 {
     int dest = vc->lpid;
     

@@ -3,7 +3,7 @@
 //#define TRACE 
 
 void
-tcp_module_poll_send( void )
+MPID_nem_tcp_module_poll_send( void )
 {
   MPID_nem_cell_ptr_t   cell;
   MPID_nem_pkt_t         *pkt;
@@ -141,7 +141,7 @@ tcp_module_poll_send( void )
 /*#define TRACE  */
 
 void
-tcp_module_poll_recv( void  )
+MPID_nem_tcp_module_poll_recv( void  )
 {
     MPID_nem_cell_ptr_t   cell     = NULL;
     fd_set         read_set = set;
@@ -439,7 +439,7 @@ tcp_module_poll_recv( void  )
 }
 
 void 
-tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
+MPID_nem_tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 {  
     if(poll_freq >= 0)
     {
@@ -491,7 +491,7 @@ tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 }
 
 void 
-alt_tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
+MPID_nem_alt_tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 {  
     if(poll_freq >= 0)
     {

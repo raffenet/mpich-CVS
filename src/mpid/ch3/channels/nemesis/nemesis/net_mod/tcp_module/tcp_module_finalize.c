@@ -2,7 +2,7 @@
 #include "tcp_module_impl.h"
 
 int
-tcp_module_finalize ()
+MPID_nem_tcp_module_finalize ()
 {
     long int toto = 1000;
     
@@ -11,23 +11,23 @@ tcp_module_finalize ()
 #endif
     while( n_pending_send > 0 )
     {
-	tcp_module_poll( 1 );
+	MPID_nem_tcp_module_poll( 1 );
     }
 
 #ifdef TRACE
     fprintf(stderr,"[%i] --- TCP END PENDING DONE  1\n",MPID_nem_mem_region.rank);
 #endif
     while(--toto)
-	tcp_module_poll( 1 );
+	MPID_nem_tcp_module_poll( 1 );
 #ifdef TRACE
     fprintf(stderr,"[%i] --- TCP END PENDING DONE  2\n",MPID_nem_mem_region.rank);
 #endif
 
-    return tcp_module_ckpt_shutdown ();    
+    return MPID_nem_tcp_module_ckpt_shutdown ();    
 }
 
 int
-tcp_module_ckpt_shutdown ()
+MPID_nem_tcp_module_ckpt_shutdown ()
 {
     int         index;
     int         grank;
