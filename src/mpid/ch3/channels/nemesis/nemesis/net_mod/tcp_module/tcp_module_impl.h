@@ -30,28 +30,28 @@ typedef struct nodes_struct
     internal_queue_ptr_t internal_free_queue;
 } node_t;
 
-extern fd_set MPID_nem_tcp_set;
-extern int    MPID_nem_tcp_max_fd;
+typedef struct tcp_internal
+{
+   fd_set  set;
+   int     max_fd;
+   int     ext_numnodes;
+   int    *ext_ranks;
+   node_t *nodes;
+   int     n_pending_send;
+   int    *n_pending_sends;
+   int     n_pending_recv;
+   int     outstanding;
+   int     poll_freq;
+   int     old_poll_freq;
+} mpid_nem_tcp_internal_t ;
 
-extern int     MPID_nem_tcp_ext_numnodes;
-extern int    *MPID_nem_tcp_ext_ranks;
-extern int     MPID_nem_tcp_numnodes;
-extern int     MPID_nem_tcp_rank;
-extern node_t *MPID_nem_tcp_nodes;
-
-extern int  MPID_nem_tcp_n_pending_send;
-extern int *MPID_nem_tcp_n_pending_sends;
-extern int  MPID_nem_tcp_n_pending_recv;
-extern int  MPID_nem_tcp_outstanding;
-
-extern int MPID_nem_tcp_poll_freq;
-extern int MPID_nem_tcp_old_poll_freq;
+extern mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars;
 
 extern MPID_nem_queue_ptr_t module_tcp_recv_queue;
 extern MPID_nem_queue_ptr_t module_tcp_free_queue;
-
 extern MPID_nem_queue_ptr_t process_recv_queue;
-extern MPID_nem_queue_ptr_t process_free_queue;
+extern MPID_nem_queue_ptr_t process_free_queue;   
+
 
 #undef MPID_NEM_USE_MACROS
 #ifndef MPID_NEM_USE_MACROS

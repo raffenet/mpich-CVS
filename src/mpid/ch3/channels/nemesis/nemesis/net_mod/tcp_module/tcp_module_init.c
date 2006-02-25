@@ -21,20 +21,6 @@ _safe_malloc (size_t len, char* file, int line)
 }
 
 
-
-/*****************************/
-fd_set  MPID_nem_tcp_set;
-node_t *MPID_nem_tcp_nodes;
-int     MPID_nem_tcp_max_fd;
-
-int  MPID_nem_tcp_n_pending_send  = 0;
-int *MPID_nem_tcp_n_pending_sends = NULL;
-int  MPID_nem_tcp_n_pending_recv  = 0;
-int  MPID_nem_tcp_outstanding     = 0;
-
-int MPID_nem_tcp_poll_freq      = TCP_POLL_FREQ_NO;
-int MPID_nem_tcp_old_poll_freq  = TCP_POLL_FREQ_NO;
-
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
 
@@ -44,26 +30,32 @@ MPID_nem_queue_ptr_t module_tcp_free_queue;
 MPID_nem_queue_ptr_t process_recv_queue;
 MPID_nem_queue_ptr_t process_free_queue;
 
+
+mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars ;
+
 static int init_tcp (MPIDI_PG_t *pg_p) 
 {
-    int    numprocs = MPID_nem_mem_region.ext_procs;
+    int             numprocs = MPID_nem_mem_region.ext_procs;
     unsigned int    len      = sizeof(struct sockaddr_in);
-    int    port     = 0 ;  
-    int    ret;
-    int    grank;
-    int    index;
-
+    int             port     = 0 ;  
+    int             ret;
+    int             grank;
+    int             index;
+    node_t         *MPID_nem_tcp_nodes;
+   
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     
     ret = MPIDI_PG_GetConnKVSname (&kvs_name);
     if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");    
 
+   
     /* Allocate more than used, but fill only the external ones */
-    MPID_nem_tcp_nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
-
+    MPID_nem_tcp_internal_vars.nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
+    MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
+   
     /* All Masters create their sockets and put their keys w/PMI */
     for(index = 0 ; index < numprocs ; index++)
     {
@@ -215,9 +207,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 		    MPID_nem_tcp_nodes[grank].desc);
 #endif
 
-	    FD_SET(MPID_nem_tcp_nodes[grank].desc, &MPID_nem_tcp_set);
-	    if(MPID_nem_tcp_nodes[grank].desc > MPID_nem_tcp_max_fd)
-		MPID_nem_tcp_max_fd = MPID_nem_tcp_nodes[grank].desc ;
+	    FD_SET(MPID_nem_tcp_nodes[grank].desc, &MPID_nem_tcp_internal_vars.set);
+	    if(MPID_nem_tcp_nodes[grank].desc > MPID_nem_tcp_internal_vars.max_fd)
+		MPID_nem_tcp_internal_vars.max_fd = MPID_nem_tcp_nodes[grank].desc ;
 	  
 	    fcntl(MPID_nem_tcp_nodes[grank].desc, F_SETFL, O_NONBLOCK);
 	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
@@ -245,7 +237,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    */
 	}
     }
-    MPID_nem_tcp_max_fd++;
+    (MPID_nem_tcp_internal_vars.max_fd)++;
     return 0;
 }
 
@@ -286,24 +278,30 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 {
     int ret;
     int index;
-    
-    MPID_nem_tcp_n_pending_sends = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));    
+   
+    MPID_nem_tcp_internal_vars.n_pending_send  = 0;
+    MPID_nem_tcp_internal_vars.n_pending_recv  = 0;
+    MPID_nem_tcp_internal_vars.outstanding     = 0;
+    MPID_nem_tcp_internal_vars.poll_freq       = TCP_POLL_FREQ_NO;
+    MPID_nem_tcp_internal_vars.old_poll_freq   = TCP_POLL_FREQ_NO;
+
+    MPID_nem_tcp_internal_vars.n_pending_sends = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));    
     for(index = 0 ; index < MPID_nem_mem_region.num_procs ; index++)
     {
-	MPID_nem_tcp_n_pending_sends[index] = 0;
+	MPID_nem_tcp_internal_vars.n_pending_sends[index] = 0;
     }
 
     if( MPID_nem_mem_region.ext_procs > 0)
     {
-	ret = init_tcp (pg_p);
-	if (ret != 0)
-	    ERROR_RET (-1, "init_tcp() failed");
-
-	if(MPID_nem_mem_region.num_local == 0)
-	   MPID_nem_tcp_poll_freq = TCP_POLL_FREQ_ALONE ;
-        else
-	   MPID_nem_tcp_poll_freq = TCP_POLL_FREQ_MULTI ;
-        MPID_nem_tcp_old_poll_freq = MPID_nem_tcp_poll_freq;	
+       ret = init_tcp (pg_p);
+       if (ret != 0)
+	 ERROR_RET (-1, "init_tcp() failed");
+       
+       if(MPID_nem_mem_region.num_local == 0)
+	 MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_ALONE ;
+       else
+	 MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_MULTI ;
+       MPID_nem_tcp_internal_vars.old_poll_freq = MPID_nem_tcp_internal_vars.poll_freq;	
     }
 
     process_recv_queue = proc_recv_queue;

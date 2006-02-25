@@ -1,19 +1,20 @@
 #include "tcp_module_impl.h"
 
 //#define TRACE 
-
+  
 void
 MPID_nem_tcp_module_poll_send( void )
 {
   MPID_nem_cell_ptr_t   cell;
-  MPID_nem_pkt_t         *pkt;
-  int            offset;
-  int            dest;
-  int            len;
-  int            index,grank;
-
+  MPID_nem_pkt_t       *pkt;
+  int                   offset;
+  int                   dest;
+  int                   len;
+  int                   index,grank;
+  node_t               *MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
+   
   /* first, handle pending sends */
-  if  (MPID_nem_tcp_n_pending_send > 0)
+  if  (MPID_nem_tcp_internal_vars.n_pending_send > 0)
     {
       for(index = 0 ; index < MPID_nem_mem_region.ext_procs ;index++)
 	{
@@ -55,8 +56,8 @@ MPID_nem_tcp_module_poll_send( void )
 		      MPID_nem_tcp_nodes[dest].left2write = 0;
 		      MPID_nem_tcp_internal_queue_dequeue (MPID_nem_tcp_nodes[dest].internal_recv_queue, &cell);
 		      MPID_nem_queue_enqueue (process_free_queue, cell); 
-		      MPID_nem_tcp_n_pending_send--;
-		      MPID_nem_tcp_n_pending_sends[dest]--;
+		      MPID_nem_tcp_internal_vars.n_pending_send--;
+		      MPID_nem_tcp_internal_vars.n_pending_sends[dest]--;
 		    }
 		}
 	      else 
@@ -100,8 +101,8 @@ MPID_nem_tcp_module_poll_send( void )
 	    {
 	      MPID_nem_tcp_nodes[dest].left2write = offset;
 	      MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[dest].internal_recv_queue, cell);
-	      MPID_nem_tcp_n_pending_send++;
-	      MPID_nem_tcp_n_pending_sends[dest]++;
+	      MPID_nem_tcp_internal_vars.n_pending_send++;
+              MPID_nem_tcp_internal_vars.n_pending_sends[dest]++;
 #ifdef TRACE
 	      fprintf(stderr,"[%i] -- TCP SEND : sent PARTIAL MSG 1 (%i len)\n",
 		      MPID_nem_mem_region.rank,
@@ -114,8 +115,8 @@ MPID_nem_tcp_module_poll_send( void )
 		{
 		  MPID_nem_tcp_nodes[dest].left2write = 0;
 		  MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[dest].internal_recv_queue, cell);
-		  MPID_nem_tcp_n_pending_send++;   
-		  MPID_nem_tcp_n_pending_sends[dest]++;   
+		  MPID_nem_tcp_internal_vars.n_pending_send++;   
+		  MPID_nem_tcp_internal_vars.n_pending_sends[dest]++;   
 #ifdef TRACE
 		  fprintf(stderr,"[%i] -- TCP SEND : sent NO bytes MSG \n",MPID_nem_mem_region.rank);
 #endif      
@@ -129,8 +130,8 @@ MPID_nem_tcp_module_poll_send( void )
       else
 	{
 	  MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[dest].internal_recv_queue, cell);
-	  MPID_nem_tcp_n_pending_send++;
-	  MPID_nem_tcp_n_pending_sends[dest]++;
+	  MPID_nem_tcp_internal_vars.n_pending_send++;
+	  MPID_nem_tcp_internal_vars.n_pending_sends[dest]++;
 #ifdef TRACE
 	  fprintf(stderr,"[%i] -- TCP SEND : sent NO MSG : direct EnQ \n",MPID_nem_mem_region.rank);
 #endif
@@ -145,16 +146,17 @@ void
 MPID_nem_tcp_module_poll_recv( void  )
 {
     MPID_nem_cell_ptr_t   cell     = NULL;
-    fd_set         read_set = MPID_nem_tcp_set;
+    fd_set         read_set = MPID_nem_tcp_internal_vars.set;
     int            ret      = 0;
     int            index,grank,outstanding2 = 0 ;   
     int            offset;
-    MPID_nem_pkt_t *pkt      = NULL;
+    MPID_nem_pkt_t *pkt = NULL;
     struct timeval time;
-
+    node_t        *MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
+   
     time.tv_sec  = 0;
     time.tv_usec = 0;
-    ret  = select( MPID_nem_tcp_max_fd, &read_set ,NULL,NULL,&time);
+    ret  = select(MPID_nem_tcp_internal_vars.max_fd, &read_set ,NULL,NULL,&time);
 
 #ifdef TRACE    
     if(ret)
@@ -164,7 +166,7 @@ MPID_nem_tcp_module_poll_recv( void  )
 		ret);
 #endif
  
-    while( (ret > 0) || (MPID_nem_tcp_outstanding > 0))
+    while( (ret > 0) || (MPID_nem_tcp_internal_vars.outstanding > 0))
     {
 	for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
 	{
@@ -173,8 +175,8 @@ MPID_nem_tcp_module_poll_recv( void  )
 	    {
 		FD_CLR(MPID_nem_tcp_nodes[grank].desc,&read_set);
 		ret--;
-		MPID_nem_tcp_nodes[grank].toread = 0;
-		MPID_nem_tcp_outstanding         = 0;
+		MPID_nem_tcp_nodes[grank].toread       = 0;
+		MPID_nem_tcp_internal_vars.outstanding = 0;
 
 #ifdef TRACE
 		fprintf(stderr,"[%i] -- RECV TCP READ : desc is %i (index %i)\n",
@@ -203,10 +205,9 @@ MPID_nem_tcp_module_poll_recv( void  )
 				    if (pkt->mpich2.datalen > 0)
 				    {
 					MPID_nem_tcp_nodes[grank].left2read = pkt->mpich2.datalen - MPID_NEM_OPT_SIZE; 
-					offset                 =  read(MPID_nem_tcp_nodes[grank].desc,
-								       (pkt->mpich2.payload + MPID_NEM_OPT_SIZE),
-								       MPID_nem_tcp_nodes[grank].left2read);
-				  
+					offset =  read(MPID_nem_tcp_nodes[grank].desc,
+						       (pkt->mpich2.payload + MPID_NEM_OPT_SIZE),
+						       MPID_nem_tcp_nodes[grank].left2read);				  
 				  
 					if(offset != -1)
 					{
@@ -215,7 +216,7 @@ MPID_nem_tcp_module_poll_recv( void  )
 					    {
 						MPID_nem_tcp_internal_queue_dequeue (MPID_nem_tcp_nodes[grank].internal_free_queue, &cell);
 						MPID_nem_queue_enqueue (process_recv_queue, cell);	      
-						MPID_nem_tcp_n_pending_recv--;
+						MPID_nem_tcp_internal_vars.n_pending_recv--;
 					    }
 					}
 					continue ;
@@ -269,7 +270,7 @@ MPID_nem_tcp_module_poll_recv( void  )
 				    MPID_nem_tcp_nodes[grank].left2read_head = 0;
 				    MPID_nem_tcp_internal_queue_dequeue (MPID_nem_tcp_nodes[grank].internal_free_queue, &cell);
 				    MPID_nem_queue_enqueue (process_recv_queue, cell);	      
-				    MPID_nem_tcp_n_pending_recv--;					  
+				    MPID_nem_tcp_internal_vars.n_pending_recv--;					  
 				}
 			    }
 			    else{ 
@@ -314,7 +315,7 @@ MPID_nem_tcp_module_poll_recv( void  )
 						MPID_NEM_OPT_HEAD_LEN);
 #endif
 					MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[grank].internal_free_queue, cell);
-					MPID_nem_tcp_n_pending_recv++;
+					MPID_nem_tcp_internal_vars.n_pending_recv++;
 				    }
 				    else
 				    {		    
@@ -367,7 +368,7 @@ MPID_nem_tcp_module_poll_recv( void  )
 						else				     
 						{
 						    MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[grank].internal_free_queue, cell);
-						    MPID_nem_tcp_n_pending_recv++;
+						    MPID_nem_tcp_internal_vars.n_pending_recv++;
 						}
 					    }
 					    else 
@@ -380,7 +381,7 @@ MPID_nem_tcp_module_poll_recv( void  )
 						else if (errno == EAGAIN)
 						{
 						    MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[grank].internal_free_queue, cell);
-						    MPID_nem_tcp_n_pending_recv++;
+						    MPID_nem_tcp_internal_vars.n_pending_recv++;
 						}
 					    }
 					}
@@ -429,63 +430,63 @@ MPID_nem_tcp_module_poll_recv( void  )
 		if (MPID_nem_tcp_nodes[grank].toread > 0 )
 		{
 		    MPID_nem_tcp_nodes[grank].toread--;
-		    MPID_nem_tcp_outstanding--;
+		    MPID_nem_tcp_internal_vars.outstanding--;
 		    goto  main_routine;
 		}
 	    }
 	}
     }
-    MPID_nem_tcp_outstanding  = outstanding2;
+    MPID_nem_tcp_internal_vars.outstanding  = outstanding2;
     outstanding2 = 0;
 }
 
 void 
 MPID_nem_tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 {  
-    if(MPID_nem_tcp_poll_freq >= 0)
+    if(MPID_nem_tcp_internal_vars.poll_freq >= 0)
     {
         if (in_or_out == MPID_NEM_POLL_OUT)
 	{
-	    if( MPID_nem_tcp_n_pending_send > 0 )
+	    if( MPID_nem_tcp_internal_vars.n_pending_send > 0 )
 	    {
 	        MPID_nem_tcp_module_poll_send();
-		if (MPID_nem_tcp_n_pending_recv > 0)
+		if (MPID_nem_tcp_internal_vars.n_pending_recv > 0)
 	        {
 		    MPID_nem_tcp_module_poll_recv();
 		} 
-		else if (--MPID_nem_tcp_poll_freq == 0) 
+		else if (--(MPID_nem_tcp_internal_vars.poll_freq) == 0) 
 		{
 		    MPID_nem_tcp_module_poll_recv();
-		    MPID_nem_tcp_poll_freq = MPID_nem_tcp_old_poll_freq;
+		    MPID_nem_tcp_internal_vars.poll_freq = MPID_nem_tcp_internal_vars.old_poll_freq;
 		}
 	    }
-	    else if (--MPID_nem_tcp_poll_freq == 0)
+	    else if (--(MPID_nem_tcp_internal_vars.poll_freq) == 0)
 	    {
 	        MPID_nem_tcp_module_poll_send();
 	        MPID_nem_tcp_module_poll_recv();
-	        MPID_nem_tcp_poll_freq = MPID_nem_tcp_old_poll_freq;
+	        MPID_nem_tcp_internal_vars.poll_freq = MPID_nem_tcp_internal_vars.old_poll_freq;
 	    }
 	}
 	else 
 	{
-	    if( MPID_nem_tcp_n_pending_recv > 0 )
+	    if( MPID_nem_tcp_internal_vars.n_pending_recv > 0 )
 	    {
 	      MPID_nem_tcp_module_poll_recv();
-	      if (MPID_nem_tcp_n_pending_send > 0)
+	      if (MPID_nem_tcp_internal_vars.n_pending_send > 0)
 	      {
 		  MPID_nem_tcp_module_poll_send();
 	      }
-	      else if (--MPID_nem_tcp_poll_freq == 0) 
+	      else if (--(MPID_nem_tcp_internal_vars.poll_freq) == 0) 
 	      {
 		  MPID_nem_tcp_module_poll_send();
-		  MPID_nem_tcp_poll_freq = MPID_nem_tcp_old_poll_freq;
+		  MPID_nem_tcp_internal_vars.poll_freq = MPID_nem_tcp_internal_vars.old_poll_freq;
 	      }
 	    }
-	    else if (--MPID_nem_tcp_poll_freq == 0)
+	    else if (--(MPID_nem_tcp_internal_vars.poll_freq) == 0)
 	    {
 	        MPID_nem_tcp_module_poll_recv();
 		MPID_nem_tcp_module_poll_send();
-		MPID_nem_tcp_poll_freq = MPID_nem_tcp_old_poll_freq;
+		MPID_nem_tcp_internal_vars.poll_freq = MPID_nem_tcp_internal_vars.old_poll_freq;
 	    }
 	}
     }
@@ -494,7 +495,7 @@ MPID_nem_tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 void 
 MPID_nem_alt_tcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 {  
-    if(MPID_nem_tcp_poll_freq >= 0)
+    if(MPID_nem_tcp_internal_vars.poll_freq >= 0)
     {
         if (in_or_out == MPID_NEM_POLL_OUT)
 	  {
