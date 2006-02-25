@@ -9,7 +9,7 @@ int MPID_nem_finalize()
     /* this test is not the right one */
     while (! MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[rank] ))
     {
-	MPID_nem_dump_queue( MPID_nem_mem_region.RecvQ[rank] );
+	//MPID_nem_dump_queue( MPID_nem_mem_region.RecvQ[rank] );
 	exit(0);
 	SKIP;
     }

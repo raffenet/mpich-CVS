@@ -19,11 +19,6 @@ extern int MPID_nem_ckpt_logging_messages; /* are we in logging-message-mode? */
 extern int MPID_nem_ckpt_sending_markers; /* are we in the process of sending markers? */
 extern struct cli_message_log_total *MPID_nem_ckpt_message_log; /* are we replaying messages? */
 
-/*static int gm_poll_count = 0; */
-/*#define GM_POLL_FREQ (!(gm_poll_count++ % 100)) */
-/*#define GM_POLL_FREQ (gm_poll_count == gm_poll_count) */
-/*#define GM_POLL_FREQ (gm_poll_count != gm_poll_count) */
-
 MPID_nem_cell_ptr_t prefetched_cell;
 
 unsigned short *send_seqno;
@@ -36,7 +31,6 @@ unsigned short *recv_seqno;
 /* here we include the non-inlined versions of the files in mpid_nem_inline.h */
 #define MPID_NEM_DONT_INLINE_FUNCTIONS 1
 #include <mpid_nem_inline.h>
-
 
 void
 MPID_nem_mpich2_init (int ckpt_restart)
@@ -139,8 +133,8 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
     el->pkt.ckpt.dest    = vc->lpid;
     el->pkt.ckpt.datalen = sizeof(el->pkt.ckpt.wave); /* FIXME: we need a way to handle packet types w/ different sizes */
     el->pkt.ckpt.seqno   = send_seqno[vc->lpid]++;
-    el->pkt.ckpt.type = MPID_NEM_PKT_CKPT;
-    el->pkt.ckpt.wave = wave;
+    el->pkt.ckpt.type    = MPID_NEM_PKT_CKPT;
+    el->pkt.ckpt.wave    = wave;
 
     if(MPID_NEM_IS_LOCAL (vc->lpid))
     {
@@ -163,6 +157,9 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
     return MPID_NEM_MPICH2_SUCCESS;
 }
 
+/* Any reference to gm should be taken out from this file */
+/* or generic routines should be implemented              */
+
 #if 0
 int
 MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iovec *cookie)
@@ -171,7 +168,7 @@ MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iov
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-	if (gm_module_lmt_send_pre (iov, n_iov, dest, cookie) != 0)
+	if (MPID_nem_gm_module_lmt_send_pre (iov, n_iov, dest, cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -186,7 +183,7 @@ MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, int src, struct iove
     
     if (!MPID_NEM_IS_LOCAL (src))
     {
-	if (gm_module_lmt_recv_pre (iov, n_iov, src, cookie) != 0)
+	if (MPID_nem_gm_module_lmt_recv_pre (iov, n_iov, src, cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -202,7 +199,7 @@ MPID_nem_mpich2_lmt_start_send (int dest, struct iovec s_cookie, struct iovec r_
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-	gm_module_lmt_start_send (dest, s_cookie, r_cookie, completion_ctr);
+	MPID_nem_gm_module_lmt_start_send (dest, s_cookie, r_cookie, completion_ctr);
     }
     
     return ret;
@@ -215,7 +212,7 @@ MPID_nem_mpich2_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_c
     
     if (!MPID_NEM_IS_LOCAL (src))
     {
-	gm_module_lmt_start_recv (src, s_cookie, r_cookie, completion_ctr);
+	MPID_nem_gm_module_lmt_start_recv (src, s_cookie, r_cookie, completion_ctr);
     }
     
     return ret;
@@ -228,7 +225,7 @@ MPID_nem_mpich2_lmt_send_post (int dest, struct iovec cookie)
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-	if (gm_module_lmt_send_post (cookie) != 0)
+	if (MPID_nem_gm_module_lmt_send_post (cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -244,7 +241,7 @@ MPID_nem_mpich2_lmt_recv_post (int src, struct iovec cookie)
 
     if (!MPID_NEM_IS_LOCAL (src))
     {
-	if (gm_module_lmt_send_post (cookie) != 0)
+	if (MPID_nem_gm_module_lmt_send_post (cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
