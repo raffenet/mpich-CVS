@@ -15,12 +15,12 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
     MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN + MPID_NEM_MPICH2_HEAD_LEN);
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    offset = write(nodes[dest].desc, pkt,len);
+    offset = write(MPID_nem_tcp_nodes[dest].desc, pkt,len);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));
 
     if( offset == len )
     {
-	nodes[dest].left2write = 0;
+	MPID_nem_tcp_nodes[dest].left2write = 0;
 #ifdef TRACE
 	{
 	   int index;
@@ -43,10 +43,10 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 
 	cell->pkt.mpich2.source = MPID_nem_mem_region.rank;
 	cell->pkt.mpich2.dest   = dest;
-	nodes[dest].left2write      = offset;
-	internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
-	n_pending_send++;
-	n_pending_sends[dest]++;
+	MPID_nem_tcp_nodes[dest].left2write  = offset;
+	MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[dest].internal_recv_queue, cell);
+	MPID_nem_tcp_n_pending_send++;
+	MPID_nem_tcp_n_pending_sends[dest]++;
     }
     else
     {
@@ -58,10 +58,10 @@ send_cell (int dest, MPID_nem_cell_ptr_t cell, int datalen)
 #endif
 	    cell->pkt.mpich2.source = MPID_nem_mem_region.rank;
 	    cell->pkt.mpich2.dest   = dest;
-	    nodes[dest].left2write      = 0;
-	    internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
-	    n_pending_send++;
-	    n_pending_sends[dest]++;
+	    MPID_nem_tcp_nodes[dest].left2write  = 0;
+	    MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[dest].internal_recv_queue, cell);
+	    MPID_nem_tcp_n_pending_send++;
+	    MPID_nem_tcp_n_pending_sends[dest]++;
 	}
 	else
 	{
@@ -77,7 +77,7 @@ MPID_nem_tcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
     
     DO_PAPI3 (PAPI_reset (PAPI_EventSet));
     cell->pkt.mpich2.datalen = datalen;
-    if ( n_pending_sends[dest] == 0 )
+    if ( MPID_nem_tcp_n_pending_sends[dest] == 0 )
     {
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
 	send_cell (dest, cell, datalen);
@@ -88,10 +88,10 @@ MPID_nem_tcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
 	cell->pkt.mpich2.source  = MPID_nem_mem_region.rank;
 	cell->pkt.mpich2.dest    = dest;
-	internal_queue_enqueue (nodes[dest].internal_recv_queue, cell);
-	n_pending_send++;
-	n_pending_sends[dest]++;
-	tcp_module_poll_send();
+	MPID_nem_tcp_internal_queue_enqueue (MPID_nem_tcp_nodes[dest].internal_recv_queue, cell);
+	MPID_nem_tcp_n_pending_send++;
+	MPID_nem_tcp_n_pending_sends[dest]++;
+	MPID_nem_tcp_module_poll_send();
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues17));
     }
 }

@@ -23,18 +23,17 @@ _safe_malloc (size_t len, char* file, int line)
 
 
 /*****************************/
-fd_set  set;
-node_t *nodes;
+fd_set  MPID_nem_tcp_set;
+node_t *MPID_nem_tcp_nodes;
+int     MPID_nem_tcp_max_fd;
 
-int     max_fd;
+int  MPID_nem_tcp_n_pending_send  = 0;
+int *MPID_nem_tcp_n_pending_sends = NULL;
+int  MPID_nem_tcp_n_pending_recv  = 0;
+int  MPID_nem_tcp_outstanding     = 0;
 
-int  n_pending_send  = 0;
-int *n_pending_sends = NULL;
-int  n_pending_recv  = 0;
-int  outstanding     = 0;
-
-int poll_freq      = TCP_POLL_FREQ_NO;
-int old_poll_freq  = TCP_POLL_FREQ_NO;
+int MPID_nem_tcp_poll_freq      = TCP_POLL_FREQ_NO;
+int MPID_nem_tcp_old_poll_freq  = TCP_POLL_FREQ_NO;
 
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
@@ -63,7 +62,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
 
     /* Allocate more than used, but fill only the external ones */
-    nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
+    MPID_nem_tcp_nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
 
     /* All Masters create their sockets and put their keys w/PMI */
     for(index = 0 ; index < numprocs ; index++)
@@ -75,22 +74,22 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    char              s[255];
 	    int               len2 = 255;
 
-	    nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);	  	    
+	    MPID_nem_tcp_nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);	  	    
 	    temp.sin_family      = AF_INET;
 	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
 	    temp.sin_port        = htons(port);	
 	  
-	    ret = bind(nodes[grank].desc, (struct sockaddr *)&temp, len);	  
+	    ret = bind(MPID_nem_tcp_nodes[grank].desc, (struct sockaddr *)&temp, len);	  
 	    if(ret == -1)
 		perror("bind");	      
 	  
-	    ret = getsockname(nodes[grank].desc, 
-			      (struct sockaddr *)&(nodes[grank].sock_id), 
+	    ret = getsockname(MPID_nem_tcp_nodes[grank].desc, 
+			      (struct sockaddr *)&(MPID_nem_tcp_nodes[grank].sock_id), 
 			      &len);	 
 	    if(ret == -1)
 		perror("getsockname");
 	  
-	    ret = listen(nodes[grank].desc, SOMAXCONN);	      
+	    ret = listen(MPID_nem_tcp_nodes[grank].desc, SOMAXCONN);	      
 	    if(ret == -1)
 		perror("listen");	      
 	  
@@ -98,9 +97,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    gethostname(s, len2);
 #ifdef TRACE
 	    fprintf(stderr,"[%i] ID :  %s_%d_%d_%d \n",MPID_nem_mem_region.rank,s,
-		    ntohs(nodes[grank].sock_id.sin_port),grank,MPID_nem_mem_region.rank);
+		    ntohs(MPID_nem_tcp_nodes[grank].sock_id.sin_port),grank,MPID_nem_mem_region.rank);
 #endif
-	    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%d:%s", ntohs(nodes[grank].sock_id.sin_port), s);
+	    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%d:%s", ntohs(MPID_nem_tcp_nodes[grank].sock_id.sin_port), s);
 	    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "TCPkey[%d:%d]", MPID_nem_mem_region.rank, grank);
 
 	    /* Put my unique id */
@@ -115,16 +114,16 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	else if (grank < MPID_nem_mem_region.rank)
 	{
 	    struct sockaddr_in temp;
-	    nodes[grank].desc   = socket(AF_INET, SOCK_STREAM, 0);
+	    MPID_nem_tcp_nodes[grank].desc   = socket(AF_INET, SOCK_STREAM, 0);
 	    temp.sin_family      = AF_INET;
 	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
 	    temp.sin_port        = htons(port);
-	    ret = bind(nodes[grank].desc, (struct sockaddr *)&temp, len);
+	    ret = bind(MPID_nem_tcp_nodes[grank].desc, (struct sockaddr *)&temp, len);
 	    if(ret == -1)
 		perror("bind");
 
-	    ret = getsockname(nodes[grank].desc,
-			      (struct sockaddr *)&(nodes[grank].sock_id),
+	    ret = getsockname(MPID_nem_tcp_nodes[grank].desc,
+			      (struct sockaddr *)&(MPID_nem_tcp_nodes[grank].sock_id),
 			      &len);
 	    if(ret == -1)
 		perror("getsockname");
@@ -149,9 +148,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 #ifdef TRACE  
 	    fprintf(stderr,"MASTER accepting sockets \n");
 #endif
-	    nodes[grank].desc = accept(nodes[grank].desc,
-				       (struct sockaddr *)&(nodes[grank].sock_id),
-				       &len);
+	    MPID_nem_tcp_nodes[grank].desc = accept(MPID_nem_tcp_nodes[grank].desc,
+						    (struct sockaddr *)&(MPID_nem_tcp_nodes[grank].sock_id),
+						    &len);
 #ifdef TRACE  
 	    fprintf(stderr,"[%i] ====> ACCEPT DONE for GRANK %i\n",MPID_nem_mem_region.rank,grank);    
 #endif
@@ -182,7 +181,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    master.sin_port        = htons(port_num);
 	    MPID_NEM_MEMCPY(&(master.sin_addr.s_addr), hp->h_addr, hp->h_length);
 
-	    ret = connect(nodes[grank].desc,(struct sockaddr *)&master, sizeof(master));
+	    ret = connect(MPID_nem_tcp_nodes[grank].desc,(struct sockaddr *)&master, sizeof(master));
 	    if(ret == -1)
 		perror("connect");
 #ifdef TRACE
@@ -198,41 +197,41 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	if(grank != MPID_nem_mem_region.rank)
 	{
 
-	    nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
-	    nodes[grank].internal_free_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
-	    nodes[grank].internal_recv_queue->head = NULL;
-	    nodes[grank].internal_recv_queue->tail = NULL;
-	    nodes[grank].internal_free_queue->head = NULL;
-	    nodes[grank].internal_free_queue->tail = NULL;
+	    MPID_nem_tcp_nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
+	    MPID_nem_tcp_nodes[grank].internal_free_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
+	    MPID_nem_tcp_nodes[grank].internal_recv_queue->head = NULL;
+	    MPID_nem_tcp_nodes[grank].internal_recv_queue->tail = NULL;
+	    MPID_nem_tcp_nodes[grank].internal_free_queue->head = NULL;
+	    MPID_nem_tcp_nodes[grank].internal_free_queue->tail = NULL;
 	  
-	    nodes[grank].left2write     = 0;
-	    nodes[grank].left2read_head = 0;
-	    nodes[grank].left2read      = 0;
-	    nodes[grank].toread         = 0;
+	    MPID_nem_tcp_nodes[grank].left2write     = 0;
+	    MPID_nem_tcp_nodes[grank].left2read_head = 0;
+	    MPID_nem_tcp_nodes[grank].left2read      = 0;
+	    MPID_nem_tcp_nodes[grank].toread         = 0;
 
 #ifdef TRACE
 	    fprintf(stderr,"[%i] ----- DESC %i is %i ------ \n",
 		    MPID_nem_mem_region.rank,grank,
-		    nodes[grank].desc);
+		    MPID_nem_tcp_nodes[grank].desc);
 #endif
 
-	    FD_SET(nodes[grank].desc, &set);
-	    if(nodes[grank].desc > max_fd)
-		max_fd = nodes[grank].desc ;
+	    FD_SET(MPID_nem_tcp_nodes[grank].desc, &MPID_nem_tcp_set);
+	    if(MPID_nem_tcp_nodes[grank].desc > MPID_nem_tcp_max_fd)
+		MPID_nem_tcp_max_fd = MPID_nem_tcp_nodes[grank].desc ;
 	  
-	    fcntl(nodes[grank].desc, F_SETFL, O_NONBLOCK);
-	    setsockopt( nodes[grank].desc, 
+	    fcntl(MPID_nem_tcp_nodes[grank].desc, F_SETFL, O_NONBLOCK);
+	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
 			IPPROTO_TCP,  
 			TCP_NODELAY,  
 			&option, 
 			sizeof(int));	  
 	    option = 2 * MPID_NEM_CELL_PAYLOAD_LEN ;
-	    setsockopt( nodes[grank].desc, 
+	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
 			SOL_SOCKET,  
 			SO_RCVBUF,  
 			&option, 
 			sizeof(int));	  
-	    setsockopt( nodes[grank].desc, 
+	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
 			SOL_SOCKET,  
 			SO_SNDBUF,  
 			&option, 
@@ -246,7 +245,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    */
 	}
     }
-    max_fd++;
+    MPID_nem_tcp_max_fd++;
     return 0;
 }
 
@@ -288,10 +287,10 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
     int ret;
     int index;
     
-    n_pending_sends = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));    
+    MPID_nem_tcp_n_pending_sends = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));    
     for(index = 0 ; index < MPID_nem_mem_region.num_procs ; index++)
     {
-	n_pending_sends[index] = 0;
+	MPID_nem_tcp_n_pending_sends[index] = 0;
     }
 
     if( MPID_nem_mem_region.ext_procs > 0)
@@ -301,10 +300,10 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 	    ERROR_RET (-1, "init_tcp() failed");
 
 	if(MPID_nem_mem_region.num_local == 0)
-	    poll_freq = TCP_POLL_FREQ_ALONE ;
-	else
-	    poll_freq = TCP_POLL_FREQ_MULTI ;
-	old_poll_freq = poll_freq;	
+	   MPID_nem_tcp_poll_freq = TCP_POLL_FREQ_ALONE ;
+        else
+	   MPID_nem_tcp_poll_freq = TCP_POLL_FREQ_MULTI ;
+        MPID_nem_tcp_old_poll_freq = MPID_nem_tcp_poll_freq;	
     }
 
     process_recv_queue = proc_recv_queue;
