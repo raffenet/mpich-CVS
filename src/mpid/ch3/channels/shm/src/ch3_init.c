@@ -115,7 +115,12 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     }
     
     /* save my vc_ptr for easy access */
-    MPIDI_PG_Get_vcr(pg, pg_rank, &MPIDI_CH3I_Process.vc);
+    /* MPIDI_PG_Get_vcr(pg, pg_rank, &MPIDI_CH3I_Process.vc); */
+    /* FIXME: Figure out whether this is a common feature of process 
+       groups (and thus make it part of the general PG_Init) or 
+       something else.  Avoid a "get" routine because of the danger in
+       using "get" where "dup" is required. */
+    MPIDI_CH3I_Process.vc = &pg->vct[pg_rank];
 
     /* Initialize Progress Engine */
     mpi_errno = MPIDI_CH3I_Progress_init();
@@ -296,7 +301,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     /* initialize each shared memory queue */
     for (i=0; i<pg_size; i++)
     {
-	MPIDI_PG_Get_vcr(pg, i, &vc);
+	/* MPIDI_PG_Get_vcr(pg, i, &vc); */
+	/* FIXME: Move this code to the general init pg for shared
+	   memory */
+	vc = &pg->vct[i];
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
 	if (pg->ch.pSharedProcessHandles)
@@ -433,3 +441,12 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
     return 0;
 }
 
+/* This routine is a hook for initializing information for a process
+   group before the MPIDI_CH3_VC_Init routine is called */
+int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
+{
+    /* FIXME: This should call a routine from the ch3/util/shm directory
+       to initialize the use of shared memory for processes WITHIN this 
+       process group */
+    return MPI_SUCCESS;
+}
