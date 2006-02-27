@@ -58,7 +58,8 @@ int MPIR_Topology_put( MPID_Comm *comm_ptr, MPIR_Topology *topo_ptr )
 	MPIR_Nest_decr();
 	/* Register the finalize handler */
 	if (mpi_errno) return mpi_errno;
-	MPIR_Add_finalize( MPIR_Topology_finalize, (void*)0, 9 );
+	MPIR_Add_finalize( MPIR_Topology_finalize, (void*)0, 
+			   MPIR_FINALIZE_CALLBACK_PRIO-1);
     }
     MPIR_Nest_incr();
     mpi_errno = NMPI_Comm_set_attr(comm_ptr->handle, MPIR_Topology_keyval, 

@@ -2275,8 +2275,17 @@ extern MPICH_PerProcess_t MPIR_Process;
 - priority - Indicates the priority of this callback and controls the order
   in which callbacks are executed.  Use a priority of zero for most handlers;
   higher priorities will be executed first.
+
+Notes:
+  The routine 'MPID_Finalize' is executed with priority 
+  'MPIR_FINALIZE_CALLBACK_PRIO' (currently defined as 5).  Handlers with
+  a higher priority execute before 'MPID_Finalize' is called; those with
+  a lower priority after 'MPID_Finalize' is called.  
 @*/
 void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
+
+#define MPIR_FINALIZE_CALLBACK_PRIO 5
+#define MPIR_FINALIZE_CALLBACK_MAX_PRIO 10
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
 void MPIR_Nest_incr(void);

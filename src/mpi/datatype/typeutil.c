@@ -156,7 +156,8 @@ int MPIR_Datatype_init(void)
 
     MPIU_Handle_obj_alloc_complete(&MPID_Datatype_mem, 1);
 
-    MPIR_Add_finalize(MPIR_Datatype_finalize, 0, 8);
+    MPIR_Add_finalize(MPIR_Datatype_finalize, 0, 
+		      MPIR_FINALIZE_CALLBACK_PRIO-1);
 
     return MPI_SUCCESS;
 }

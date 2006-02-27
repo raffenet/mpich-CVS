@@ -31,7 +31,7 @@
    have a callback calls MPIR_Add_finalize( routine, extra, priority ).
    
  */
-PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
+PMPI_LOCAL void MPIR_Call_finalize_callbacks( int, int );
 typedef struct Finalize_func_t {
     int (*f)( void * );      /* The function to call */
     void *extra_data;        /* Data for the function */
@@ -66,10 +66,10 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 	fstack_max_priority = priority;
 }
 
-PMPI_LOCAL void MPIR_Call_finalize_callbacks( void )
+PMPI_LOCAL void MPIR_Call_finalize_callbacks( int min_prio, int max_prio )
 {
     int i, j;
-    for (j=fstack_max_priority; j>=0; j--) {
+    for (j=fstack_max_priority; j>=min_prio; j--) {
 	for (i=fstack_sp-1; i>=0; i--) {
 	    if (fstack[i].f && fstack[i].priority == j) 
 		fstack[i].f( fstack[i].extra_data );
@@ -79,7 +79,7 @@ PMPI_LOCAL void MPIR_Call_finalize_callbacks( void )
 }
 #else
 #ifndef USE_WEAK_SYMBOLS
-PMPI_LOCAL void MPIR_Call_finalize_callbacks( void );
+PMPI_LOCAL void MPIR_Call_finalize_callbacks( int, int );
 #endif
 #endif
 
@@ -142,8 +142,14 @@ int MPI_Finalize( void )
        pre and post MPID_Finalize callbacks? */
     MPIU_Timer_finalize();
 
+    /* Call the high-priority callbacks */
+    MPIR_Call_finalize_callbacks( MPIR_FINALIZE_CALLBACK_PRIO+1, 
+				  MPIR_FINALIZE_CALLBACK_MAX_PRIO );
+
     mpi_errno = MPID_Finalize();
-    MPIU_ERR_CHKANDSTMT((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,;, "**fail");
+    if (mpi_errno) {
+	MPIU_ERR_POP(mpi_errno);
+    }
     
     /* delete local and remote groups on comm_world and comm_self if
        they had been created (should we use a function pointer here
@@ -157,7 +163,8 @@ int MPI_Finalize( void )
     if (MPIR_Process.comm_self->remote_group)
         MPIR_Group_release(MPIR_Process.comm_self->remote_group);
 
-    MPIR_Call_finalize_callbacks();
+    /* Call the low-priority (post Finalize) callbacks */
+    MPIR_Call_finalize_callbacks( 0, MPIR_FINALIZE_CALLBACK_PRIO-1 );
 
     /* FIXME: Both the memory tracing and debug nesting code blocks should
        be finalize callbacks */
@@ -220,7 +227,8 @@ int MPI_Finalize( void )
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_finalize", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
+			FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_finalize", 0);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
