@@ -151,7 +151,7 @@ void ADIOI_GRIDFTP_WriteContig(ADIO_File fd, void *buf, int count,
 					       GLOBUS_NULL))!=GLOBUS_SUCCESS )
 	{
 	    globus_err_handler("globus_ftp_client_partial_put",myname,result);
-	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -166,7 +166,7 @@ void ADIOI_GRIDFTP_WriteContig(ADIO_File fd, void *buf, int count,
 						  (void *)(&bytes_written)))!=GLOBUS_SUCCESS )
 	{
 	    globus_err_handler("globus_ftp_client_register_write",myname,result);
-	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -232,7 +232,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	    FPRINTF(stderr,"[%d/%d] %s called with discontigous memory buffer\n",
 		    myrank,nprocs,myname);
 	    fflush(stderr);
-	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -275,7 +275,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	    FPRINTF(stderr,"[%d/%d] %s error in computing extent -- extent %d is smaller than total bytes requested %d!\n",
 		    myrank,nprocs,myname,extent,count*btype_size);
 	    fflush(stderr);
-	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));
@@ -300,7 +300,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 					       GLOBUS_NULL))!=GLOBUS_SUCCESS )
 	{
 	    globus_err_handler("globus_ftp_client_partial_get",myname,result);
-	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));

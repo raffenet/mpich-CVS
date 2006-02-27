@@ -283,7 +283,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 		    myrank,nprocs,myname,extent,count*btype_size);
 	    fflush(stderr);
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
-			    MPIR_ERR_RECOVERABLE, myanem, __LINE__, 
+			    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 			    MPI_ERR_IO, "**io", 0);
 	    return;
 	}
@@ -305,7 +305,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 	{
 	    globus_err_handler("globus_ftp_client_partial_get",myname,result);
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
-			    MPIR_ERR_RECOVERABLE, myanem, __LINE__, 
+			    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 			    MPI_ERR_IO, "**io", "**io %s", 
 			    globus_object_printable_to_string(result));
 	    return;
@@ -326,7 +326,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 						 (void *)(&bytes_read)))!=GLOBUS_SUCCESS )
 	{
 	    globus_err_handler("globus_ftp_client_register_read",myname,result);
-	    *error_code = MPIO_Err_create_code(MPI_SUCESS, MPIR_ERR_RECOVERABLE,
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
 		    "**io %s", globus_object_printable_to_string(result));

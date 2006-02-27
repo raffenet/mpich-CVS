@@ -74,7 +74,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
        have to check themselves if the file is being accessed rdonly, rdwr,
        or wronly.
        */
-    result=globus_ftp_client_handleattr_init(&hattr)
+    result=globus_ftp_client_handleattr_init(&hattr);
     if ( result != GLOBUS_SUCCESS )
 	{
 	    
@@ -103,7 +103,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 
 
     /* Always use connection caching unless told otherwise */
-    result=globus_ftp_client_handleattr_set_cache_all(&hattr,GLOBUS_TRUE)
+    result=globus_ftp_client_handleattr_set_cache_all(&hattr,GLOBUS_TRUE);
     if ( result !=GLOBUS_SUCCESS )
 	globus_err_handler("globus_ftp_client_handleattr_set_cache_all",myname,result);
 
@@ -235,7 +235,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	FPRINTF(stderr,"no MPI_Info object associated with %s\n",fd->filename);
 
     /* Create the ftp handle */
-    result=globus_ftp_client_handle_init(&(gridftp_fh[fd->fd_sys]),&hattr)
+    result=globus_ftp_client_handle_init(&(gridftp_fh[fd->fd_sys]),&hattr);
     if ( result != GLOBUS_SUCCESS )
 	{
 	    globus_err_handler("globus_ftp_client_handle_init",myname,result);
