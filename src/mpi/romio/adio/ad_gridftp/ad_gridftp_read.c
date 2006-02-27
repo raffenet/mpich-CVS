@@ -162,7 +162,7 @@ void ADIOI_GRIDFTP_ReadContig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 			    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 			    MPI_ERR_IO, "**io", "**io %s", 
-			    globus_object_printable_to_string(result));
+			    globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}  
 
@@ -307,7 +307,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 			    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 			    MPI_ERR_IO, "**io", "**io %s", 
-			    globus_object_printable_to_string(result));
+			    globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
 
@@ -329,7 +329,7 @@ void ADIOI_GRIDFTP_ReadDiscontig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
     /* The ctl callback won't start till the data callbacks complete, so it's

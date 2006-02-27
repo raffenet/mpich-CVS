@@ -85,7 +85,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
     result = globus_ftp_client_operationattr_init(&(oattr[fd->fd_sys]));
@@ -97,7 +97,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
 
@@ -243,7 +243,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
 
@@ -265,7 +265,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 				    myname, __LINE__, MPI_ERR_IO,
 				    "**io", "**io %s", 
-				    globus_object_printable_to_string(result));
+				    globus_object_printable_to_string(globus_error_get(result)));
 		    return;
 		}
 	    /* wait till the callback completes */
@@ -299,7 +299,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 				MPIR_ERR_RECOVERABLE,
 				myname, __LINE__, MPI_ERR_IO,
 				"**io", "**io %s", 
-				globus_object_printable_to_string(result));
+				globus_object_printable_to_string(globus_error_get(result)));
 			    return;
 			}
 		    result=globus_ftp_client_register_write(&(gridftp_fh[fd->fd_sys]),
@@ -314,7 +314,7 @@ void ADIOI_GRIDFTP_Open(ADIO_File fd, int *error_code)
 				MPIR_ERR_RECOVERABLE,
 				myname, __LINE__, MPI_ERR_IO,
 				"**io", "**io %s", 
-				globus_object_printable_to_string(result));
+				globus_object_printable_to_string(globus_error_get(result)));
 			    return;
 			}
 		    globus_mutex_lock(&lock);

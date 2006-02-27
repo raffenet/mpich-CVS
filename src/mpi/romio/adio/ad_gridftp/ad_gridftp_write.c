@@ -154,7 +154,7 @@ void ADIOI_GRIDFTP_WriteContig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
     if ( (result=globus_ftp_client_register_write(&(gridftp_fh[fd->fd_sys]),
@@ -169,7 +169,7 @@ void ADIOI_GRIDFTP_WriteContig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
 
@@ -235,7 +235,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
     /* from here we can assume btype_extent==btype_size */
@@ -278,7 +278,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
     end=start+(globus_off_t)extent;
@@ -303,7 +303,7 @@ void ADIOI_GRIDFTP_WriteDiscontig(ADIO_File fd, void *buf, int count,
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
 

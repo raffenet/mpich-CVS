@@ -91,7 +91,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 		    myname, __LINE__, MPI_ERR_IO,
 		    "**io",
-		    "**io %s", globus_object_printable_to_string(result));
+		    "**io %s", globus_object_printable_to_string(globus_error_get(result)));
 	    return;
 	}
     globus_mutex_lock(&resize_lock);
@@ -116,7 +116,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 				    MPI_ERR_IO, "**io", "**io %s", 
-				    globus_object_printable_to_string(result));
+				    globus_object_printable_to_string(globus_error_get(result)));
 		    return;
 		}
 
@@ -132,7 +132,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 				    MPI_ERR_IO, "**io", "**io %s", 
-				    globus_object_printable_to_string(result));
+				    globus_object_printable_to_string(globus_error_get(result)));
 		    return;
 		}
 	    globus_mutex_lock(&resize_lock);
@@ -164,7 +164,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 				    MPI_ERR_IO, "**io", "**io %s", 
-				    globus_object_printable_to_string(result));
+				    globus_object_printable_to_string(globus_error_get(result)));
 		    return;
 		}
 	    globus_mutex_lock(&resize_lock);
@@ -192,7 +192,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 				    MPI_ERR_IO, "**io", "**io %s", 
-				    globus_object_printable_to_string(result));
+				    globus_object_printable_to_string(globus_error_get(result)));
 		    return;
 		}
 	    globus_mutex_lock(&resize_lock);
@@ -216,7 +216,7 @@ void ADIOI_GRIDFTP_Resize(ADIO_File fd, ADIO_Offset size, int *error_code)
 		    *error_code = MPIO_Err_create_code(MPI_SUCCESS, 
 				    MPIR_ERR_RECOVERABLE, myname, __LINE__, 
 				    MPI_ERR_IO, "**io", "**io %s", 
-				    globus_object_printable_to_string(result));
+				    globus_object_printable_to_string(globus_error_get(result)));
 		    return;
 		}
 	    globus_mutex_lock(&resize_lock);
