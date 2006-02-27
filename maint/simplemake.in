@@ -364,7 +364,7 @@ $globaldocdir  = 'ROOTDIR/$dockinddirval';
 		  "latex" => "latexdoc" );
 # doctext name to produce documentation
 %doctextOptionName = ( "html" => "-html",
-		       "man" => "",
+		       "man" => "-man",       # New version allows -man
 		      "latex" => "-latex" );
 $doc_namedefs   = "";
 $doc_attop = 1;
