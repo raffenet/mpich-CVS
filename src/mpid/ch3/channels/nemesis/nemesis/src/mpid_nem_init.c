@@ -258,8 +258,8 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     /* POboxes stuff */
     MPID_nem_mem_region.mailboxes.in  = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
     MPID_nem_mem_region.mailboxes.out = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
-
-    if (num_local > 1)
+    
+    if (num_local > 0)
     {
 
 #define MAILBOX_INDEX(sender, receiver) ( ((sender) > (receiver)) ? ((num_local-1) * (sender) + (receiver)) :		\
@@ -282,7 +282,6 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 	}
 #undef MAILBOX_INDEX
     }
-
 
     MPID_nem_barrier (num_local, local_rank);
     MPID_nem_mpich2_init (ckpt_restart);
