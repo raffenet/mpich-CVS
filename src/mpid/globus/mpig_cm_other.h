@@ -17,28 +17,19 @@ extern struct mpig_vc * mpig_cm_other_vc;
 /*
  * Add communication module types to be included in the enumeration of modules
  */
-#define MPIG_CM_TYPE_OTHER_LIST			\
-    ,MPIG_CM_TYPE_OTHER
+#define MPIG_CM_TYPE_OTHER_LIST	\
+    MPIG_CM_TYPE_OTHER
 
 /*
  * Define the communication module structure to be included in a VC
  */
-#define MPIG_VC_CM_OTHER_DECL			\
-struct mpig_vc_vm_other				\
-{						\
-    int dummy;					\
-}						\
-other;
+#define MPIG_VC_CM_OTHER_DECL
+
 
 /*
  * Define the communication module structure to be included in a request
  */
-#define MPIG_REQUEST_CM_OTHER_DECL		\
-struct mpig_request_cm_other			\
-{						\
-    int dummy;					\
-}						\
-other;
+#define MPIG_REQUEST_CM_OTHER_DECL
 
 
 /*
@@ -50,6 +41,6 @@ int mpig_cm_other_finalize(void);
 
 int mpig_cm_other_add_contact_info(struct mpig_bc * bc);
 
-int mpig_cm_other_select_module(struct mpig_bc * bc, struct mpig_vc * vc, int * flag);
+int mpig_cm_other_select_module(struct mpig_bc * bc, struct mpig_vc * vc, bool_t * selected);
 
 #endif /* !defined(MPICH2_MPIG_CM_OTHER_H_INCLUDED) */

@@ -26,6 +26,12 @@ multi-threaded:
 	@thr=$(GLOBUS_THREADS); if test "$${thr}" = "none" -o -z "$${thr}" ; then echo "no"; else echo "yes"; fi
 
 #
+# Are the Globus libraries built with debugging enabled?
+#
+debug:
+	@dbg=$(GLOBUS_DEBUG); if test "$${dbg}" = "yes" ; then echo "yes"; else echo "no"; fi
+
+#
 # Libraries and linking flags
 #
 ldflags:

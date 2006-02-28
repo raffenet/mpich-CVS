@@ -18,14 +18,14 @@
 #
 # Configure provided information
 #
-GC="@GC@"
-GCFLAGS="@GCFLAGS@"
+GFC="@GFC@"
+GFFLAGS="@GFFLAGS@"
 GLD="@GLD@"
 GLDFLAGS="@GLDFLAGS@"
 GLIBS="@GLIBS@"
 
-TC="@TC@"
-TCFLAGS="@TCFLAGS@"
+TFC="@TFC@"
+TFFLAGS="@TFFLAGS@"
 TLD="@TLD@"
 TLDFLAGS="@TLDFLAGS@"
 TLIBS="@TLIBS@"
@@ -118,7 +118,7 @@ while test $# -gt 0 ; do
             if [ "$ext" = ".f" -o "$ext" = ".F" -o "$ext" = ".f90" -o \
                  "$ext" = ".for" -o "$ext" = ".FOR" ] ; then
 	        fname=`basename $1 $ext`
-		if test $F77_SED -eq 0 ; then
+		if test $F77_SED == "no" ; then
 		    src="$1"
 		else
 		    srcdir=`echo "$1" | sed -e 's-[^/]*$--'`
@@ -162,17 +162,16 @@ done
 # Note: we may use different compilers when running configure than we do 
 # when compile a user application
 #
-if test -z "${MPIG_CONFIGURE_ACTIVE}" ; then
-    gc=$GC
-    gc_flags=$GCFLAGS
-    gld=$GLD
-    gld_flags=$GLDFLAGS
-    libs=$GLIBS
-else
-    gc=$TC
-    gc_flags=$TCFLAGS
-    gld=$TLD
-    gld_flags=$TLDFLAGS
+fc=$GFC
+fflags=$GFFLAGS
+ld=$GLD
+ldflags=$GLDFLAGS
+libs=$GLIBS
+if test -n "${MPIG_CONFIGURE_ACTIVE}" ; then
+    fc=$TFC
+    fflags=$TFFLAGS
+    ld=$TLD
+    ldflags=$TLDFLAGS
     libs=$TLIBS
 fi
 
@@ -181,7 +180,7 @@ fi
 # own set of optimization options.
 #
 if test $RemoveDefaultOpt -ne 0 ; then
-    gc_flags=`echo "$gc_flags" | \
+    fflags=`echo "$fflags" | \
 	sed -e 's/[ 	][ 	]*-g[ 	][ 	]*/ /g' \
             -e 's/^-g[ 	][ 	]*//' \
             -e 's/[ 	][ 	]*-g$//' \
@@ -198,16 +197,16 @@ if test $DoCompile -eq 1 ; then
         compile_args="-c $compile_args"
     fi
     if test $verbose -ne 0 ; then
-	echo $gc $compile_args $gc_flags
+	echo $fc $compile_args $fflags
     fi
-    eval $gc $compile_args $gc_flags
+    eval $fc $compile_args $fflags
     status=$?
     if test $status -ne 0 ; then 
 	exit $status
     fi
 fi
 
-if test $F77_SED -ne 0 ; then
+if test "$F77_SED" == "no" ; then
     for f in $vmpi_sfiles ; do
     	if test -f ${f} ; then
     	    rm -f ${f}
@@ -226,9 +225,9 @@ fi
 
 if test $DoLink -eq 1 ; then
     if test $verbose -ne 0 ; then
-	echo $gld $link_args $gld_flags $libs
+	echo $ld $link_args $ldflags $libs
     fi
-    eval $gld $link_args $gld_flags $libs
+    eval $ld $link_args $ldflags $libs
     status=$?
 fi
 exit $status

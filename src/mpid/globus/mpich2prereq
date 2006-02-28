@@ -126,12 +126,16 @@ fi
 with_ccache=no
 with_insure=no
 enable_gcc_strict=no
+MPIG_F77_SED=no
 
 for arg in ${ac_configure_args} ; do
   arg=`echo ${arg} | sed -e 's/^'"'"'\(.*\)'"'"'$/\1/'`
   case ${arg} in
     --with-globus-flavor=*)
     with_globus_flavor=`echo ${arg} | sed 's/^[^=]*=//'`
+    ;;
+    --with-f77-sed)
+    MPIG_F77_SED=yes
     ;;
     --with-ccache)
     echo "INFO: ccache enabled"
@@ -256,8 +260,22 @@ mpig_get_globus_setting()
 # Are the globus libraries multi-threaded?
 #
 echo ${ECHO_N} "checking if Globus is built with thread support... ${ECHO_C}"
-mpig_get_globus_setting MPIG_GLOBUS_MULTI_THREADED multi-threaded
-echo "${ECHO_T}${MPIG_GLOBUS_MULTI_THREADED}"
+mpig_get_globus_setting MPIG_GLOBUS_THREADED multi-threaded
+echo "${ECHO_T}${MPIG_GLOBUS_THREADED}"
+export MPIG_GLOBUS_THREADED
+
+#
+# Are the globus libraries built with debugging enabled?  If so, enable debugging for the MPICH2 globus device.
+#
+echo ${ECHO_N} "checking if Globus is built with debugging enabled... ${ECHO_C}"
+mpig_get_globus_setting mpig_debug debug
+if test "${mpig_debug}" = "yes" ; then
+    MPIG_DEBUG=yes
+else
+    MPIG_DEBUG=no
+fi
+echo "${ECHO_T}${mpig_debug}"
+export MPIG_DEBUG
 
 #
 # Determine whether or not we are using the vendor's MPI as one of our transport protocols. If we are, then we need to rename all
@@ -269,35 +287,35 @@ echo "${ECHO_T}${MPIG_GLOBUS_MULTI_THREADED}"
 echo ${ECHO_N} "checking if Globus is built for use with a vendor MPI... ${ECHO_C}"
 mpig_get_globus_setting mpig_vmpi vmpi
 if test "${mpig_vmpi}" = "yes" ; then
-    MPIG_VMPI=1
+    MPIG_VMPI=yes
 else
-    MPIG_VMPI=0
+    MPIG_VMPI=no
 fi
 echo "${ECHO_T}${mpig_vmpi}"
+export MPIG_VMPI
 
 echo "XXX: need to supply transformation header file (mpidvmpi.h???) and get mpi.h to include it"
-if test ${MPIG_VMPI} -ne 0 ; then
-    MPIG_F77_SED=1
-
+if test ${MPIG_VMPI} == "yes" ; then
     # XXX: what's the correct symbol to define here?
-    HAVE_MPID_DEFS_H=1
+    HAVE_MPID_DEFS_H=yes
+    export HAVE_MPID_DEFS_H
 
     # XXX: where should these really be copied from and to?
     # cp ${MPIG_SOURCE_DIR}/mpid_defs.h ${includebuild_dir}
     # cp ${MPIG_SOURCE_DIR}/global_c_symb.h ${includebuild_dir}
     # cp ${MPIG_SOURCE_DIR}/global_fort_symb.h ${includebuild_dir}
 else
-    MPIG_F77_SED=0
+    MPIG_F77_SED=no
 fi
 
 # Doing sed replacement on F90 modules can cause problems.  We may be able to fix this, but not before the first release.
-if test ${MPIG_F77_SED} -ne 0 ; then
+if test ${MPIG_F77_SED} == "yes" ; then
     echo "INFO: use of vendor MPI mode and F90 are incompatible.  Disabling F90 support."
     enable_f90=no
     ac_configure_args="${ac_configure_args} --disable-f90"
 
     # XXX: this needs to be something else for MPICH2
-    HAVE_MPID_FORTDEFS_H=1
+    HAVE_MPID_FORTDEFS_H=yes
     export HAVE_MPID_FORTDEFS_H
 
     # XXX: where should these really be copied from and to?
@@ -322,9 +340,9 @@ echo ${ECHO_N} "extacting C compiler information from Globus... ${ECHO_C}"
 mpig_get_globus_setting MPIG_CC cc
 mpig_get_globus_setting MPIG_CFLAGS cflags
 if test "${enable_gcc_strict}" = "yes" ; then
-    MPIG_CFLAGS=`echo $MPIG_CFLAGS | sed 's/-I/-isystem /'`
     MPIG_CC="${MPIG_CC} -ansi"
 fi
+MPIG_BUILD_CC=${MPIG_CC}
 MPIG_CLD=${MPIG_CC}
 MPIG_TEST_CC=${MPIG_CC}
 MPIG_TEST_CFLAGS=${MPIG_CFLAGS}
@@ -332,18 +350,21 @@ MPIG_TEST_CLD=${MPIG_CLD}
 echo "${ECHO_T}done"
 
 if test "${with_insure}" = "yes" ; then
-    MPIG_CC="insure"
-    MPIG_CLD="insure -Zsl"
+    MPIG_CC="insure ${MPIG_CC}"
+    MPIG_CLD="insure ${MPIG_CLD} -Zsl"
+    MPIG_BUILD_CC="insure ${MPIG_BUILD_CC}"
 fi
 
 if test "${with_ccache}" = "yes" ; then
-    MPIG_CC="ccache ${MPIG_CC}"
+    MPIG_BUILD_CC="ccache ${MPIG_BUILD_CC}"
 fi
 
 if test "${enable_gcc_strict}" = "yes" ; then
-    MPIG_CFLAGS="${MPIG_CFLAGS} -Wall -DGCC_WALL -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
-    MPIG_CFLAGS="${MPIG_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith -Wconversion"
-    MPIG_CFLAGS="${MPIG_CFLAGS} -Wsign-compare -Wwrite-strings"
+    CPPFLAGS="${CPPFLAGS} -DMPIG_BUILDING_MPICH2"
+    MPIG_BUILD_CFLAGS=`echo ${MPIG_CFLAGS} | sed 's/-I/-isystem /'`
+    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wall -DGCC_WALL -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
+    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith -Wconversion"
+    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wsign-compare -Wwrite-strings"
 fi
 
 #
@@ -353,19 +374,21 @@ if test "${enable_cxx}" != "no" ; then
     echo ${ECHO_N} "extacting C++ compiler information from Globus... ${ECHO_C}"
     mpig_get_globus_setting MPIG_CXX cxx
     mpig_get_globus_setting MPIG_CXXFLAGS cxxflags
-    MPIG_CXXLD=${MPIG_CXXLD}
+    MPIG_CXXLD=${MPIG_CXX}
     MPIG_TEST_CXX=${MPIG_CXX}
     MPIG_TEST_CXXFLAGS=${MPIG_CXXFLAGS}
     MPIG_TEST_CXXLD=${MPIG_CXXLD}
+    MPIG_BUILD_CXX=${MPIG_CXX}
     echo "${ECHO_T}done"
 
     if test "${with_insure}" = "yes" ; then
-	MPIG_CXX="insure"
-	MPIG_CXXLD="insure -Zsl"
+	MPIG_CXX="insure ${MPIG_CXX}"
+	MPIG_CXXLD="insure ${MPIG_CXXLD} -Zsl"
+	MPIG_BUILD_CXX="insure ${MPIG_BUILD_CXX}"
     fi
 
     if test "${with_ccache}" = "yes" ; then
-	MPIG_CXX="ccache ${MPIG_CXX}"
+	MPIG_BUILD_CXX="ccache ${MPIG_BUILD_CXX}"
     fi
 
     if test -z "${MPIG_CXX}" ; then
@@ -430,7 +453,7 @@ fi
 # For now, we assume that the code is being compiled on an identical platform.  Someday, this script will need to be updated to
 # allow the user to specify the parameters in a configuration file.
 #
-if test "${ARCH}" = "rs6000" -a ${MPIG_VMPI} -ne 0 ; then
+if test "${ARCH}" = "rs6000" -a ${MPIG_VMPI} == "yes" ; then
     if test "${globus_threads_enabled}" = "yes" ; then    
     	MPIG_TEST_CLD=xlc_r
     	MPIG_TEST_CXXLD=xlC_r
@@ -454,16 +477,18 @@ export MPIG_CONFIGURE_ACTIVE
 #
 # Create compiler scripts
 #
-sed -e "s!@GC@!${MPIG_CC}!" \
+sed -e "s!@GCC@!${MPIG_CC}!" \
     -e "s!@GCFLAGS@!${MPIG_CFLAGS}!" \
     -e "s!@GLD@!${MPIG_CLD}!" \
     -e "s!@GLDFLAGS@!${MPIG_LDFLAGS}!" \
     -e "s!@GLIBS@!${MPIG_LIBS}!" \
-    -e "s!@TC@!${MPIG_TEST_CC}!" \
+    -e "s!@TCC@!${MPIG_TEST_CC}!" \
     -e "s!@TCFLAGS@!${MPIG_TEST_CFLAGS}!" \
     -e "s!@TLD@!${MPIG_TEST_CLD}!" \
     -e "s!@TLDFLAGS@!${MPIG_TEST_LDFLAGS}!" \
     -e "s!@TLIBS@!${MPIG_TEST_LIBS}!" \
+    -e "s!@BCC@!${MPIG_BUILD_CC}!" \
+    -e "s!@BCFLAGS@!${MPIG_BUILD_CFLAGS}!" \
     ${MPIG_SOURCE_DIR}/mpich2-globus-cc.in >${MPIG_BUILD_DIR}/mpich2-globus-cc
 chmod +x ${MPIG_BUILD_DIR}/mpich2-globus-cc
 
@@ -474,16 +499,18 @@ fi
 CC=${MPIG_BUILD_DIR}/mpich2-globus-cc
 
 if test "${enable_cxx}" != "no" ; then
-    sed -e "s!@GC@!${MPIG_CXX}!" \
+    sed -e "s!@GCC@!${MPIG_CXX}!" \
     	-e "s!@GCFLAGS@!${MPIG_CXXFLAGS}!" \
     	-e "s!@GLD@!${MPIG_CXXLD}!" \
     	-e "s!@GLDFLAGS@!${MPIG_LDFLAGS}!" \
     	-e "s!@GLIBS@!${MPIG_LIBS}!" \
-    	-e "s!@TC@!${MPIG_TEST_CXX}!" \
+    	-e "s!@TCC@!${MPIG_TEST_CXX}!" \
     	-e "s!@TCFLAGS@!${MPIG_TEST_CXXFLAGS}!" \
     	-e "s!@TLD@!${MPIG_TEST_CXXLD}!" \
     	-e "s!@TLDFLAGS@!${MPIG_TEST_LDFLAGS}!" \
     	-e "s!@TLIBS@!${MPIG_TEST_LIBS}!" \
+	-e "s!@BCC@!${MPIG_BUILD_CXX}!" \
+	-e "s!@BCFLAGS@!${MPIG_CXXFLAGS}!" \
 	${MPIG_SOURCE_DIR}/mpich2-globus-cc.in >${MPIG_BUILD_DIR}/mpich2-globus-cxx
     chmod +x ${MPIG_BUILD_DIR}/mpich2-globus-cxx
 
@@ -495,13 +522,13 @@ if test "${enable_cxx}" != "no" ; then
 fi
 
 if test "${enable_f77}" != "no" ; then
-    sed -e "s!@GC@!${MPIG_F77}!" \
-    	-e "s!@GCFLAGS@!${MPIG_F77FLAGS}!" \
+    sed -e "s!@GFC@!${MPIG_F77}!" \
+    	-e "s!@GFFLAGS@!${MPIG_F77FLAGS}!" \
     	-e "s!@GLD@!${MPIG_F77LD}!" \
     	-e "s!@GLDFLAGS@!${MPIG_LDFLAGS}!" \
     	-e "s!@GLIBS@!${MPIG_LIBS}!" \
-    	-e "s!@TC@!${MPIG_TEST_F77}!" \
-    	-e "s!@TCFLAGS@!${MPIG_TEST_F77FLAGS}!" \
+    	-e "s!@TFC@!${MPIG_TEST_F77}!" \
+    	-e "s!@TFFLAGS@!${MPIG_TEST_F77FLAGS}!" \
     	-e "s!@TLD@!${MPIG_TEST_F77LD}!" \
     	-e "s!@TLDFLAGS@!${MPIG_TEST_LDFLAGS}!" \
     	-e "s!@TLIBS@!${MPIG_TEST_LIBS}!" \
@@ -517,13 +544,13 @@ if test "${enable_f77}" != "no" ; then
 fi
 
 if test "${enable_f90}" != "no" ; then
-    sed -e "s!@GC@!${MPIG_F90}!" \
-    	-e "s!@GCFLAGS@!${MPIG_F90FLAGS}!" \
+    sed -e "s!@GFC@!${MPIG_F90}!" \
+    	-e "s!@GFFLAGS@!${MPIG_F90FLAGS}!" \
     	-e "s!@GLD@!${MPIG_F90LD}!" \
     	-e "s!@GLDFLAGS@!${MPIG_LDFLAGS}!" \
     	-e "s!@GLIBS@!${MPIG_LIBS}!" \
-    	-e "s!@TC@!${MPIG_TEST_F90}!" \
-    	-e "s!@TCFLAGS@!${MPIG_TEST_F90FLAGS}!" \
+    	-e "s!@TFC@!${MPIG_TEST_F90}!" \
+    	-e "s!@TFFLAGS@!${MPIG_TEST_F90FLAGS}!" \
     	-e "s!@TLD@!${MPIG_TEST_F90LD}!" \
     	-e "s!@TLDFLAGS@!${MPIG_TEST_LDFLAGS}!" \
     	-e "s!@TLIBS@!${MPIG_TEST_LIBS}!" \
@@ -661,7 +688,9 @@ EOF
 }
 
 #
-# Determine maximum sized type for memory alignment purposes
+# Determine maximum sized type for memory alignment purposes.  The alignment information is used to construct the extract space
+# required in the MPI_Status structure.  Since that structure is created in the top-level configure before the globus device
+# localdefs file is run (which is generated by the globus device configure), the alighnment information must be gathered here.
 #
 MPIG_ALIGNED_T=""
 SIZEOF_MPIG_ALIGNED_T=0
@@ -689,7 +718,7 @@ export MEMALIGN_MPIG_ALIGNED_T
 # If the device is using a vendor implementation of MPI as one of its transport mechanisms, then we need to gather some information
 # and set some options.
 #
-if test "${MPIG_VMPI}" -ne 0 ; then
+if test "${MPIG_VMPI}" == "yes" ; then
     echo "Enabling VendorMPI option"
    
     #
@@ -746,22 +775,20 @@ else
     SIZEOF_VMPI_COMM=0
     SIZEOF_VMPI_DATATYPE=0
     SIZEOF_VMPI_REQUEST=0
-    HAVE_MPI_2COMPLEX=no
-    HAVE_MPI_2DOUBLE_COMPLEX=no
-    HAVE_MPI_LONG_LONG=no
-    HAVE_MPI_LONG_LONG_INT=no
+    HAVE_VMPI_2COMPLEX=no
+    HAVE_VMPI_2DOUBLE_COMPLEX=no
+    HAVE_VMPI_LONG_LONG=no
+    HAVE_VMPI_LONG_LONG_INT=no
 
     export SIZEOF_VMPI_COMM
     export SIZEOF_VMPI_DATATYPE
     export SIZEOF_VMPI_REQUEST
-    export VMPI_2COMPLEX
-    export VMPI_2DOUBLE_COMPLEX
-    export VMPI_LONG_LONG
-    export VMPI_LONG_LONG_INT
+    export HAVE_VMPI_2COMPLEX
+    export HAVE_VMPI_2DOUBLE_COMPLEX
+    export HAVE_VMPI_LONG_LONG
+    export HAVE_VMPI_LONG_LONG_INT
 fi
 EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} int mpig_dc_format;"
-
-
 
 #
 # XXX: The Globus data conversion library does not support long double.  Therefore, we need to disable support for that type (for

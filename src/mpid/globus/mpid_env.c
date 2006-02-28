@@ -11,257 +11,249 @@
 #include <unistd.h>
 #endif
 
-mpig_process_t mpig_process = {NULL, "(null)", -1, -1};
+mpig_process_t mpig_process = {NULL, "{null)", -1, -1, -1, -1};
 
 /*
  * MPID_Init()
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Init
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * has_args, int * has_env)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_bc_t bc;
-    mpig_bc_t * bcs;
-    mpig_pg_t * pg;
-    const char * pg_id;
+    mpig_bc_t * bcs = NULL;
+    mpig_pg_t * pg = NULL;
+    const char * pg_id = NULL;
+    bool_t pg_locked = FALSE;
     int pg_rank;
     int pg_size;
     MPID_Comm * comm;
     int p;
     int rc;
+    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_INIT);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_MPID_INIT);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-
-    /*
-     * Initialize the device's process information structure
-     */
-    mpig_process.my_pg = NULL;
-    mpig_process.my_pg_rank = 0;
-    mpig_process.my_pg_size = 0;
-    mpig_process.lpid_counter = 0;
-    mpig_process.lpid_counter = 0;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering: requested=%d", requested));
     
-#   if defined(HAVE_GETHOSTNAME)
+    /* initialize the device's process information structure */
+    mpig_process_mutex_create();
+    mpig_process_rc_acq(FALSE);
     {
-	if(gethostname(mpig_process.hostname, MPIG_PROCESSOR_NAME_SIZE) != 0)
+	/* get the operating system's process id for the local process */
+	mpig_process.my_pid = getpid();
+
+	/* get the name of the machine on which the local process is running */
+#       if defined(HAVE_GETHOSTNAME)
 	{
-	    mpig_process.hostname[0] = '\0';
+	    if(gethostname(mpig_process.my_hostname, MPIG_PROCESSOR_NAME_SIZE) != 0)
+	    {
+		mpig_process.my_hostname[0] = '\0';
+	    }
 	}
+#       else
+	{
+	    mpig_process.my_hostname[0] = '\0';
+	}
+#       endif
     }
-#   else
-    {
-	mpig_process.hostname[0] = '\0';
-    }
-#   endif
-
-    mpig_process.pid = getpid();
+    mpig_process_rc_rel(TRUE);
     
-    /*
-     * Initialize the receive queue
-     */
-    mpi_errno = mpig_recvq_init();
-    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_init");
-    
-    /*
-     * Create and populate the buiness card
-     */
-    mpi_errno = mpig_bc_create(&bc);
-    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|bc_init");
 
-    /*
-     * Initialize the process group tracking subsystem
-     */
-    mpi_errno = mpig_pg_init();
-    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**dev|pg_init");
-
-    /*
-     * Initialize Globus modules
-     */
+    /* activate globus modules */
     globus_module_set_args(argc, argv);
     
     rc = globus_module_activate(GLOBUS_COMMON_MODULE);
-    MPIU_ERR_CHKANDJUMP1((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
-			 "**globus|module_activate %s", "common");
+    MPIU_ERR_CHKANDJUMP1((rc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s", "common");
 
-    /*
-     * Initialize vendor MPI.  Get VMPI_COMM_WORLD, and the associated rank and size.  Add contact information to the business
-     * card.
-     */
-#   if defined(MPIG_VMPI)
-    {
-	rc = mpig_vmpi_init(argc, argv);
-	MPIU_ERR_CHKANDJUMP((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_init");
+    /* initialize the request allocator module */
+    mpig_request_alloc_init();
+    
+    /* initialize the receive queue */
+    mpig_recvq_init(&mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_init");
+    
+    /* create and populate the buiness card */
+    mpig_bc_create(&bc, &mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_init");
 
-	/* XXX: Set the VMPI_COMM_WORLD error handler to VMPI_ERRORS_RETURN */
-	
-	rc = mpig_vmpi_comm_get_world(&mpig_process.vmpi_cw);
-	MPIU_ERR_CHKANDJUMP((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_get_comm_world");
-	
-	rc = mpig_vmpi_comm_get_size(&mpig_process.vmpi_cw, &mpig_process.vmpi_cw_size);
-	MPIU_ERR_CHKANDJUMP((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_get_comm_size");
-	
-	rc = mpig_vmpi_comm_get_rank(&mpig_process.vmpi_cw, &mpig_process.vmpi_cw_rank);
-	MPIU_ERR_CHKANDJUMP((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_get_comm_rank");
-    }
-#   endif
+    /* initialize the process group tracking subsystem */
+    mpig_pg_init(&mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**dev|pg_init");
 
-    /*
-     * Initialize the non-VMPI communication modules, and populate the business card with contact information.
-     */
+    /* initialize the communication modules, and populate the business card with contact information */
     mpi_errno = mpig_cm_self_init(argc, argv);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "self");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "self");
     
     mpi_errno = mpig_cm_vmpi_init(argc, argv);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "vmpi");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "vmpi");
     
     mpi_errno = mpig_cm_xio_init(argc, argv);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "xio");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "xio");
     
     mpi_errno = mpig_cm_other_init(argc, argv);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "other");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "other");
     
     mpi_errno = mpig_cm_self_add_contact_info(&bc);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact",
-			 "**globus|cm_add_contact %s", "self");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s", "self");
 
     mpi_errno = mpig_cm_vmpi_add_contact_info(&bc);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact",
-			 "**globus|cm_add_contact %s", "vmpi");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s", "vmpi");
 
     mpi_errno = mpig_cm_xio_add_contact_info(&bc);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact",
-			 "**globus|cm_add_contact %s", "xio");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s", "xio");
 
     mpi_errno = mpig_cm_other_add_contact_info(&bc);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact",
-			 "**globus|cm_add_contact %s", "other");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s", "other");
 
-    /*
-     * Initialize the process management module which interfaces with Globus.  Use it to exchange the businesses cards and obtian
-     * information about the process group.
-     */
+    /*initialize the process management module which interfaces with Globus.  use it to exchange the businesses cards and obtian
+      information about the process group. */
     mpi_errno = mpig_pm_init();
-    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_init_failed");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_init");
 
     mpi_errno = mpig_pm_exchange_business_cards(&bc, &bcs);
-    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_xchg");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_xchg");
 
     mpig_pm_get_pg_id(&pg_id);
     mpig_pm_get_pg_size(&pg_size);
     mpig_pm_get_pg_rank(&pg_rank);
-    
-#   if defined(MPICH_DBG_OUTPUT)
-    {
-	MPIU_dbg_init(pg_rank);
-    }
-#   endif
-    
-    /*
-     * Create a new structure to track the process group and the VCs associated with it.
-     */
-    mpi_errno = mpig_pg_create(pg_size, &pg);
-    MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**dev|pg_create");
 
-    mpig_pg_id_set(pg, pg_id);
-
-    /*
-     * Stash away a pointer to my process group, and increment its reference count.  The count should be reduced again in
-     * MPID_Finalize().
-     */
-    mpig_process.my_pg = pg;
-    mpig_process.my_pg_id = pg->id;
+    /* place a copy of the process group information in the process structure */
+    mpig_process.my_pg_id = MPIU_Strdup(pg_id);
     mpig_process.my_pg_size = pg_size;
     mpig_process.my_pg_rank = pg_rank;
     
-    mpig_pg_add_ref(pg);
-
-    /*
-     * Select the protocol that will be used for each VC.
-     */
-    for (p = 0; p < pg_size; p++)
+    /* now that we know the process group rank, initialize the debugging output module */
+#   if defined(MPIG_DEBUG)
     {
+	mpig_debug_init();
+    }
+#   endif
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "pid=%lu", (unsigned long) mpig_process.my_pid));
+    
+    /* acquire, creating if necessary, a reference to the process group object used to manage the virtual connection objects.  if
+       creation was necessary, the virtual connection objects within the PG will be initialized at this time. */
+    mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg, &mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|pg_acquire_ref");
+    pg_locked = TRUE;
+    {    
 	mpig_vc_t * vc;
-	int flag;
+	bool_t vc_was_in_use;
+
+	/* stash away a pointer to my process group.  the PG reference count was already incremented by
+	   mpig_pg_acquire_ref_and_lock().  it should be reduced again in MPID_Finalize() using mpig_pg_release(). */
+	mpig_process.my_pg = pg;
 	
-#       if defined(MPICH_DBG_OUTPUT)	    
+	/* select the protocol that will be used for each VC */
+	for (p = 0; p < pg_size; p++)
 	{
-	    char * bc_str;
+	    bool_t selected;
+	
+#           if FALSE && defined(MPIG_DEBUG)
+	    {
+		char * bc_str;
 
-	    mpig_bc_serialize_object(&bcs[p], &bc_str);
-	    mpig_dbg_printf(30, FCNAME, "[%d]: BC for process %d - %s\n", pg_rank, p, bc_str);
-	    mpig_bc_free_serialized_object(bc_str);
+		mpig_bc_serialize_object(&bcs[p], &bc_str, &mpi_errno, &failed);
+		mpig_debug_printf(MPIG_DEBUG_LEVEL_BC, "BC for process %s:%d - %s\n", pg_id, p, bc_str);
+		mpig_bc_free_serialized_object(bc_str);
+	    }
+#           endif
+
+	    mpig_pg_get_vc(pg, p, &vc);
+
+	    /*
+	     * NOTE: since no barrier exists in the process management interface, some communication modules could be susceptible
+	     * to receiving connection requests from remote processes before the VCs have been initialized.  for such
+	     * communication modules, the cm->select_module() routine must take care not to blindly reinitialize internal fields
+	     * of the VC, causing the existing connection to be corrupted or lost.
+	     */
+	    mpig_vc_mutex_lock(vc);
+	    {
+		mpi_errno = mpig_cm_self_select_module(&bcs[p], vc, &selected);
+		MPIU_ERR_CHKANDSTMT3((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_select_module",
+				     "**globus|cm_select_module %s %s %d", "self", pg_id, pg_rank);
+		if (selected) goto vc_unlock;
+		
+		mpi_errno = mpig_cm_vmpi_select_module(&bcs[p], vc, &selected);
+		MPIU_ERR_CHKANDSTMT3((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_select_module",
+				     "**globus|cm_select_module %s %s %d", "vmpi", pg_id, pg_rank);
+		if (selected) goto vc_unlock;
+		
+		mpi_errno = mpig_cm_xio_select_module(&bcs[p], vc, &selected);
+		MPIU_ERR_CHKANDSTMT3((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_select_module",
+				     "**globus|cm_select_module %s %s %d", "xio", pg_id, pg_rank);
+		if (selected) goto vc_unlock;
+		
+		MPIU_ERR_CHKANDSTMT2((!selected), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_no_module",
+				     "**globus|cm_no_module %s %d", pg_id, pg_rank);
+
+	      vc_unlock: ;
+	    }
+	    mpig_vc_mutex_unlock(vc);
+
+	    if (mpi_errno) goto fn_fail;
 	}
-#       endif
+
+	/* initialize the MPI_COMM_WORLD object */
+	comm = MPIR_Process.comm_world;
+
+	mpig_comm_construct(comm);
+	comm->rank = pg_rank;
+	comm->remote_size = pg_size;
+	comm->local_size = pg_size;
+    
+	mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
+			     "**dev|vcrt_create %s", "MPI_COMM_WORLD");
+    
+	mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_get_ptr",
+			     "**dev|vcrt_get_ptr %s", "MPI_COMM_WORLD");
+
+	for (p = 0; p < pg_size; p++)
+	{
+	    mpig_pg_get_vc(pg, p, &vc);
+	    mpig_comm_set_vc(comm, p, vc);
+	    mpig_vc_mutex_lock(vc);
+	    {
+		mpig_vc_inc_ref_count(vc, &vc_was_in_use, &mpi_errno, &failed);
+	    }
+	    mpig_vc_mutex_unlock(vc);
+	}
+
+	mpig_comm_list_add(comm);
 	
-	mpig_pg_get_vc(pg, p, &vc);
+	/* initialize the MPI_COMM_SELF object */
+	comm = MPIR_Process.comm_self;
+
+	mpig_comm_construct(comm);
+	comm->rank = 0;
+	comm->remote_size = 1;
+	comm->local_size = 1;
 	
-	mpi_errno = mpig_cm_self_select_module(&bcs[p], vc, &flag);
-	MPIU_ERR_CHKANDJUMP3((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_select_module",
-			     "**globus|cm_select_module %s %s %d", "self", pg_id, pg_rank);
-	if (flag != FALSE) continue;
+	mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
+			     "**dev|vcrt_create %s", "MPI_COMM_SELF");
+    
+	mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_get_ptr",
+			     "**dev|vcrt_get_ptr %s", "MPI_COMM_SELF");
+    
+	mpig_pg_get_vc(pg, pg_rank, &vc);
+	mpig_comm_set_vc(comm, 0, vc);
+	MPID_VCR_Dup(MPIR_Process.comm_world->vcr[pg_rank], &comm->vcr[0]);
 
-	mpi_errno = mpig_cm_vmpi_select_module(&bcs[p], vc, &flag);
-	MPIU_ERR_CHKANDJUMP3((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_select_module",
-			     "**globus|cm_select_module %s %s %d", "vmpi", pg_id, pg_rank);
-	if (flag != FALSE) continue;
-
-	mpi_errno = mpig_cm_xio_select_module(&bcs[p], vc, &flag);
-	MPIU_ERR_CHKANDJUMP3((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|cm_select_module",
-			     "**globus|cm_select_module %s %s %d", "xio", pg_id, pg_rank);
-	if (flag != FALSE) continue;
-
-	MPIU_ERR_CHKANDJUMP2((flag == FALSE), mpi_errno, MPI_ERR_OTHER, "**globus|cm_no_module",
-			     "**globus|cm_no_module %s %d", pg_id, pg_rank);
+	mpig_comm_list_add(comm);
     }
+    mpig_pg_mutex_unlock(pg);
+    pg_locked = FALSE;
 
-    /*
-     * Initialize the MPI_COMM_WORLD object
-     */
-    comm = MPIR_Process.comm_world;
-
-    comm->rank = pg_rank;
-    comm->remote_size = pg_size;
-    comm->local_size = pg_size;
-    
-    mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
-			 "**dev|vcrt_create %s", "MPI_COMM_WORLD");
-    
-    mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_get_ptr",
-			 "**dev|vcrt_get_ptr %s", "MPI_COMM_WORLD");
-
-    for (p = 0; p < pg_size; p++)
-    {
-	MPID_VCR_Dup(&pg->vct[p], &comm->vcr[p]);
-    }
-    
-    /*
-     * Initialize the MPI_COMM_SELF object
-     */
-    comm = MPIR_Process.comm_self;
-    comm->rank = 0;
-    comm->remote_size = 1;
-    comm->local_size = 1;
-    
-    mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
-			 "**dev|vcrt_create %s", "MPI_COMM_SELF");
-    
-    mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_get_ptr",
-			 "**dev|vcrt_get_ptr %s", "MPI_COMM_SELF");
-    
-    MPID_VCR_Dup(&pg->vct[pg_rank], &comm->vcr[0]);
-    
-    /*
-     * If this process group was spawned by a MPI application, then form the MPI_COMM_PARENT inter-communicator.
-     */
+    /* if this process group was spawned by a MPI job, then form the MPI_COMM_PARENT inter-communicator */
 #   if XXX
     {
 	MPIU_Assert(has_parent == FALSE);
@@ -275,33 +267,57 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
 #   endif
     
-    /*
-     * Set global (static) process attributes.
-     */
+    /* set global (static) process attributes */
     MPIR_Process.attrs.tag_ub = MPIG_TAG_UB;
     /* XXX: appnum should be the subjob number */
     MPIR_Process.attrs.appnum = 0;
 
-    /*
-     * Set provided thread level
-     */
+    /* set provided thread level */
     if (provided != NULL)
     {
-	*provided = MPICH_THREAD_LEVEL;
+	*provided = MPI_THREAD_FUNNELED;
     }
-    
+
+    /* indicate if the process management system has made the arguments or environment variables available */
+    if (has_args != NULL)
+    {
+	*has_args = TRUE;
+    }
+    if (has_env != NULL)
+    {
+	*has_env = TRUE;
+    }
+
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    /* mark the process group as committed, indicating that it may safely be destroyed if mpig_pg_release_ref() is called */
+    if (pg != NULL)
+    {
+	mpig_pg_commit(pg);
+    }
+	
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: provided=%d, has_args=%s, has_env=%s, "
+		       "mpi_errno=0x%08x", MPI_THREAD_FUNNELED, "true", "true", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    MPIR_Process.initialized = MPICH_PRE_INIT;
+    {
+	MPIR_Process.initialized = MPICH_PRE_INIT;
 
-    /* XXX: track progress and clean up and allocated resources such as the process group and VCRTs */
+	/* clean up the process group structure */
+	if (pg != NULL)
+	{
+	    mpig_pg_mutex_unlock_conditional(pg, pg_locked);
+	    mpig_pg_release_ref(pg);
+	}
     
-    goto fn_return;
+	/* XXX: track progress and clean up and allocated resources such as the process group and VCRTs */
+
+	mpig_request_alloc_finalize();
+	
+	goto fn_return;
+    }
     /* --END ERROR HANDLING-- */
 }
 /* MPID_Init() */
@@ -312,122 +328,88 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Finalize()
 {
-#if XXX    
-    MPID_Progress_state progress_state;
-#endif
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int rc;
+    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering"));
 
+    /* detach any buffer the application may have attach to insure that all buffered sends have completed before we proceed with
+       shutdown.  MPI_Finalize() should really be doing this, but right now it does it *after* calling MPID_Finalize which is
+       problematic to say the least.  it's unfortunate that we have to do this since this unnecessarily links the bsend code into
+       the application even if the application doesn't use it (which most don't). */
+    {
+	void * prev_buf_ptr;
+	int prev_buf_size;
+
+	MPIR_Nest_incr();
+	NMPI_Buffer_detach(&prev_buf_ptr, &prev_buf_size);
+    }
+    
     /*
-     * Wait for all posted receives to complete.
+     * wait for all posted operations to complete on all communications
      *
-     * We really should wait for all receives to complete on MPI_COMM_WORLD, but if we do then incorrectly written programs that
-     * leave a receive outstanding will hang.  However, not waiting may result in posted "any source" receives erroneously
-     * blowing up.  For now, we are placing a warning at the end of MPID_Finalize() to inform the user if any outstanding posted
-     * receives exist.
+     * NOTE: applications that leave receive operation(s) unsatisfied will hang!  such an application is erroneous, and can be
+     * corrected by canceling any such operations before calling MPI_Finalize().
      */
+    mpig_comm_list_wait_empty(&mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s",
+			 "failed waiting for posted operations to complete");
     
-    /* FIXME: insert while loop here to wait for outstanding posted receives to complete */
-
-
-#if XXX
-    /*
-     * Release MPI_COMM_WORLD and MPI_COMM_SELF
-     */
-    MPID_VCRT_release(MPIR_Process.comm_self->vcrt);
-    MPID_VCRT_release(MPIR_Process.comm_world->vcrt);
+    /* release the virtual connection reference tables for MPI_COMM_WORLD and MPI_COMM_SELF */
+    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
+    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
+    mpig_comm_destruct(MPIR_Process.comm_world);
+    mpig_comm_destruct(MPIR_Process.comm_self);
+    MPIR_Process.comm_world->vcrt = NULL;
+    MPIR_Process.comm_self->vcrt = NULL;
     
-    /*
-     * Initiate close protocol for all active VCs
-     */
-
-    /*
-     * Wait for all VCs to finish the close protocol
-     */
-    MPID_Progress_start(&progress_state);
-    while(MPIDI_Outstanding_close_ops > 0)
-    {
-	mpi_errno = MPID_Progress_wait(&progress_state);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**ch3|close_progress", 0);
-	    break;
-	}
-    }
-    MPID_Progress_end(&progress_state);
-
-    if (mpig_process.warnings_enabled)
-    {
-	if (mpig_process.recvq_posted_head != NULL)
-	{
-	    /* XXX: insert code to print posted receive queue */
-	    MPIU_Msg_printf("Warning: program exiting with outstanding receive requests\n");
-	}
-    }
-
-#endif
-
-    /*
-     * Release our process group, and shutdown the process group management module.  NOTE: If an error occurs we add it to the
-     * error stack, but continue on with the shutdown process.
-     */
-    {
-	int inuse;
-	
-	mpig_pg_release_ref(mpig_process.my_pg, &inuse);
-	if (inuse == 0)
-	{
-	    rc = mpig_pg_destroy(mpig_process.my_pg);
-	    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**dev|pg_destroy_failed",
-				 "**dev|pg_destroy_failed %p", mpig_process.my_pg);
-	}
-    }
-    mpig_process.my_pg = NULL;
-    rc = mpig_pg_finalize();
-    MPIU_ERR_CHKANDSTMT((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,, "**dev|pg_finalize");
-
-    /*
-     * Shutdown the process management module
-     */
-    mpi_errno = mpig_pm_finalize();
-    
-    /*
-     * Shutdown communication (protocol) module(s)
-     */
+    /* shutdown the communication modules.  each module is responsible for insuring that any VCs managed by it are disconnected
+       before returning. */
     rc = mpig_cm_other_finalize();
-    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize",
-			 "**globus|cm_finalize %s", "other");
+    MPIU_ERR_CHKANDSTMT1((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize", "**globus|cm_finalize %s", "other");
     
     rc = mpig_cm_xio_finalize();
-    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize",
-			 "**globus|cm_finalize %s", "xio");
+    MPIU_ERR_CHKANDSTMT1((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize", "**globus|cm_finalize %s", "xio");
     
     rc = mpig_cm_vmpi_finalize();
-    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize",
-			 "**globus|cm_finalize %s", "vmpi");
+    MPIU_ERR_CHKANDSTMT1((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize", "**globus|cm_finalize %s", "vmpi");
 
     rc = mpig_cm_self_finalize();
-    MPIU_ERR_CHKANDSTMT1((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize",
-			 "**globus|cm_finalize %s", "self");
+    MPIU_ERR_CHKANDSTMT1((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize", "**globus|cm_finalize %s", "self");
 
-    /*
-     * Deactivate Globus modules
-     */
-    rc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
-    MPIU_ERR_CHKANDJUMP1((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate",
-			 "**globus|module_deactivate %s", "common");
+    /* release the reference to the process group associated with MPI_COMM_WORLD */
+    mpig_pg_release_ref(mpig_process.my_pg);
+    mpig_process.my_pg = NULL;
+    
+    /* shutdown the process group management module */
+    mpig_pg_finalize(&mpi_errno, &failed);
+    MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {;}, "**dev|pg_finalize");
 
+    /* shutdown the process management module */
+    rc = mpig_pm_finalize();
+    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|pm_finalize")
+    
+	/* deactivate globus modules */
+	rc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
+    MPIU_ERR_CHKANDJUMP1((rc), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate", "**globus|module_deactivate %s", "common");
+
+    /* shutdown the receive queue module */
+    mpig_recvq_finalize(&mpi_errno, &failed);
+    MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_finalize");
+    
+    /* shutdown the request allocator module */
+    mpig_request_alloc_finalize();
+    
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
 
@@ -444,56 +426,49 @@ int MPID_Finalize()
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Abort
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char * error_msg)
+int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code, const char * const error_msg)
 {
-    int rank;
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIG_STATE_DECL(MPID_STATE_MPID_ABORT);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_MPID_ABORT);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering: comm=" MPIG_PTR_FMT ",mpi_errno=0x%08x, "
+		       "exit_code=%d, error_msg=%s", (MPIG_PTR_CAST) comm, mpi_errno, exit_code, MPIG_STR_VAL(error_msg)));
 
-    if (comm)
+    if (mpi_errno)
     {
-	rank = comm->rank;
-    }
-    else
-    {
-	if (MPIR_Process.comm_world != NULL)
+	char * str;
+	
+	str = (char *) MPIU_Malloc(MPIG_ERR_STRING_SIZE);
+	if (str)
 	{
-	    rank = MPIR_Process.comm_world->rank;
-	}
-	else
-	{
-	    rank = -1;
+	    MPIR_Err_print_stack_string(mpi_errno, str, MPIG_ERR_STRING_SIZE);
+	    fprintf(stderr, "[%s:%d:%lu] %s", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), str);
+	    MPIU_Free(str);
 	}
     }
+    if (error_msg != NULL)
+    {
+	fflush(stdout);
+	fprintf(stderr, "[%s:%d:%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), error_msg);
+    }
 
-    printf("[%s:%d:%d] %s\n\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, 0, error_msg);
-    fflush(stdout);
-    exit(1);
-
-    /*
-     * TODO: contact GRAMs and cancel other subjobs, then cancel our own.  For now set an error stating that MPID_Abort() has not
-     * been implemented.
-     */
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    /* XXX: contact GRAMs and cancel other subjobs, then cancel our own */
     
-    /*
-     * MPI-2: what do we do with a job that was spawned by communicator containing one or more processes in the communicator
-     * being aborted.
-     */
+    /* XXX: MPI-2: what do we do with a job that was spawned by communicator containing one or more processes in the communicator
+     * being aborted? */
 
-  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    /* XXX: in an ideal universe, we would like a core file for the process initiating the abort, but there is a race condition
+       between GRAM killing the process and the process reaching the call to the abort() function.  I'm not sure how to resolve
+       this.  Perhaps there is a way to tell GRAM to send a SIGABRT to the job(s). */
+    abort();
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     return mpi_errno;
-
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
 }
 /* MPID_Abort() */
 
@@ -503,22 +478,23 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code, char * error_msg)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Comm_spawn_multiple
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Comm_spawn_multiple(int count, char * array_of_commands[], char ** array_of_argv[], int array_of_maxprocs[],
 			     MPID_Info * array_of_info_ptrs[], int root, MPID_Comm * comm_ptr, MPID_Comm ** intercomm,
 			     int array_of_errcodes[]) 
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
-    MPIG_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_DYNAMIC, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_DYNAMIC, "exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
 
@@ -533,25 +509,26 @@ int MPID_Comm_spawn_multiple(int count, char * array_of_commands[], char ** arra
 /*
  * MPID_Get_processor_name()
  *
- * Returns the processor name.  Uses mpig_process.hostname, which is set in MPID_Init().
+ * Returns the processor name.  Uses mpig_process.my_hostname, which is set in MPID_Init().
  */
 #undef FUNCNAME
-#define FUNCNAME MPID_Send
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
+#define FUNCNAME MPID_Get_processor_name
 int MPID_Get_processor_name(char * name, int * resultlen)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int len;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_GET_PROCESSOR_NAME);
 
-    MPIG_FUNC_ENTER(MPID_STATE_MPID_GET_PROCESSOR_NAME);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    len = (int) strlen(mpig_process.hostname);
+    MPIG_FUNC_ENTER(MPID_STATE_MPID_GET_PROCESSOR_NAME);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering"));
+
+    len = (int) strlen(mpig_process.my_hostname);
     if (len > 0 && len < MPI_MAX_PROCESSOR_NAME)
     {
-	MPIU_Strncpy(name, mpig_process.hostname, MPI_MAX_PROCESSOR_NAME);
+	MPIU_Strncpy(name, mpig_process.my_hostname, MPI_MAX_PROCESSOR_NAME);
 	*resultlen = len;
     }
     else
@@ -561,7 +538,7 @@ int MPID_Get_processor_name(char * name, int * resultlen)
     }
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_GET_PROCESSOR_NAME);
     return mpi_errno;
 
@@ -578,61 +555,56 @@ int MPID_Get_processor_name(char * name, int * resultlen)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Get_universe_size
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Get_universe_size(int  * universe_size)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_GET_UNIVERSE_SIZE);
 
-    MPIG_FUNC_ENTER(MPID_STATE_MPID_GET_UNIVERSE_SIZE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-#if XXX    
+    MPIG_FUNC_ENTER(MPID_STATE_MPID_GET_UNIVERSE_SIZE);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering"));
+
+    /* FIXME: someday we might want to allow the user to set an environment variable specifying the universe size, or have
+       mpiexec compute it from a known hosts file, but for now set the size to "unavailable". */
     *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
-#endif
     
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
-    
-  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_GET_UNIVERSE_SIZE);
     return mpi_errno;
 
+#if 0    
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    *universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	*universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+#endif
 }
 /* MPID_Get_universe_size() */
 
 
 /*
- * MPID_Parse_option()
+ * MPID_GPID_Get([IN] comm, [IN] rank, [OUT] gpid[2])
+ *
+ * FIXME: THIS IS NOT RIGHT FOR MPI-2 FUNCTIONALITY!!!
  */
 #undef FUNCNAME
-#define FUNCNAME MPID_Parse_option
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int MPID_Parse_option(int num_args, char * args[], int * num_parsed, MPI_Info * info)
+#define FUNCNAME MPID_GPID_Get
+int MPID_GPID_Get(MPID_Comm * comm, int rank, int gpid[])
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_vc_t * vc;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_MPID_PARSE_OPTION);
 
-    MPIG_FUNC_ENTER(MPID_STATE_MPID_PARSE_OPTION);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    mpig_comm_get_vc(comm, rank, &vc);
+    gpid[0] = 0;
+    gpid[1] = vc->pg_rank;
 
-  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
-    MPIG_FUNC_EXIT(MPID_STATE_MPID_PARSE_OPTION);
     return mpi_errno;
-
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
 }
-/* MPID_Parse_option() */
+/* MPID_GPID_Get() */

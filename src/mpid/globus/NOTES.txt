@@ -1,27 +1,172 @@
-TODO:
+===================================================================================================================================
+				   To do list for alpha release to friendly TeraGrid users
+===================================================================================================================================
 
-- Generate function renaming
+- FIX ENQUEUING A REQ TWICE ON THE RCQ!  this happens with cancel.  can it happen any other time?
 
-- Include definitions from device into mpi.h, allowing function renaming, etc.
+- XIO communication module bug fixes (threaded and nonthreaded)
 
-- Add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
+- integrate Nick's segment unpack code that uses globus_dc
 
-- update the outdated mpid compiler scripts to be more like those in src/env
+- MPI_PACKED support
 
-- Singleton init
+- vendor MPI communication module
 
+- allow application to call vendor MPI directly
 
-Open questions:
+* adjust tunable parameters to more sane values (currently set to maximize code coverage during testing)
 
-- ...
+- fix error reporting in XIO client-side connection establishment code (replace assert statement with real error messages)
 
-
-Things needed from Globus:
-
-- Support for long double and fixed sized integers (ex: uint32_t) in the Globus data conversion module
+- add UDT support to the XIO communication module
 
 
-Things needed from MPICH2:
+===================================================================================================================================
+							    Thoughts
+===================================================================================================================================
 
-- Allow long long and long double support to be explicitly disabled even if the compiler support those types.  The vendor MPI
+- vendor MPI thoughts
+
+  - can we use VMPI_Testsome/Waitsome() in the progress engine when an MPI_ANY_SOURCE receive is not posted?  this would avoid
+    the potential race condition where MPI_Probe/Iprobe() return a message that is subsequently canceled by the sender.  the
+    presence of a posted MPI_ANY_SOURCE receive still requires us to use VMPI_Probe/Iprobe().  a more detailed discussion of that
+    is include below.
+
+    - MPI-2 PROBLEM: include a special wakeup request in the request list passed to VMPI_Testsome/Waitsome() so that the other
+      communication module that can asynchronously complete requests, such as the XIO CM, or the completion of a generalized
+      request, can call mpig_progress_signal_completion() and wake up a blocking VMPI_Waitsome().
+
+    - the array outstanding VMPI requests passed to VMPI_Testsome/Waitsome() can be sparse, although it is best to keep it as
+      dense as possible
+
+    - a second array should mirror the request array and contain the associated MPICH2 request handle or pointer to the MPICH2
+      request object
+
+  - when an MPI_ANY_SOURCE request is posted, we need a list of communicators to probe instead of (or in addition to?) an array
+    of requests to complete.  since only the receive queue code knows when a posted MPI_ANY_SOURCE receive is dequeued, it will
+    need to either maintain the communicator list or notify the VMPI CM when such requests are dequeued.  if it is the receive
+    queue code is to maintain the list, then an interface for extracting the list needs to be created, and that interface needs
+    to be thread safe.
+
+  - we should consider adding two receive queue routines for the handling of MPI_ANY_SOURCE requests.  the first routine would be
+    called after VMPI_Probe/Iprobe() returns a potential match.  this routine would acquire the request queue mutex and return
+    the matching request, leaving the request on the posted queue and the request queue locked.  assuming a matching request is
+    found in the posted queue (i.e., another CM hadn't recently satisfied the request or it had been canceled), then the sequence
+    VMPI_Irecv()/VMPI_Cancel()/VMPI_Wait() would then be called in an attempt to receive the message.  after the sequence of
+    calls completed, a second receive queue routine would be called that deleted the request from the receive queue
+    if-and-only-if the VMPI request was not canceled.  the routine would then unconditionally release the receive queue mutex.
+    (think of these routines as get-posted-locked and dequeue-posted-conditional)
+
+  - can we have the user call VMPI_*() when wanting to access vendor MPI routines directly?  if not, then the request handles
+    returned by the nonblocking communication routines will still need to be MPICH2 handles so that they may be waited up by the
+    MPICH2 MPI_Wait routine.  (The MPICH2 routines have no way of detecting a MPICH2 handle from a VMPI handle.)  If it is
+    acceptable to force the user to call VMPI_{Test,Wait}*() when waiting on requests created by vendor routines on a special
+    vendor-only communicator, then MPICH2 can largely be removed from the path.
+
+
+- what if each CM kept its own recvq, and one global recvq for MPI_ANY_SOURCE requests (Rob R.'s technique)?  a request would
+  be queue on the CM queue, unless an any source request was queue for that context.  in that case, that request, and all
+  future requests for that context, would be queued on the global recvq.  once the last any source request for a context was
+  complete, the global recvq would be drained of all entries with that context and added to the appropriate CM queue
+  (preserving the same ordering).  -- this technique may improve performance slightly, but my gut feeling says that the receive
+  queue contention is not that high.  it is probably best that we save this until later.
+
+- finish failed case in mpig_cm_xio_send_enq_sreq() to set the error code in the send request (what was this???)
+
+
+===================================================================================================================================
+						      To Do Before Release
+===================================================================================================================================
+
+
+* FIX CM_XIO progress engine code so that it doesn't return every time an unexpected message is receive just so that MPI_Probe
+  works.  While doing this, roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in
+  a single call.
+
+* add vendor MPI bypass for calling the vendor MPI directly for special predefined communicators
+
+* change tunable parameters in mpig_cm_xio.c to something reasonable.  right now they are set to trigger maximal code coverage.
+
+* full visual inspection of error handling code, and fill in missing cases (particularly in CM XIO)
+
+- clean up wrapping debugging output lines
+
+- update MPIG compiler scripts.  the current ones result in a few oddities while configuring MPIG.  presently, these oddities
+  don't affect us because configure gives us what we need anyway, but that may not be true for all platforms.  here is one in
+  particular:
+
+  checking whether install breaks libraries... gcc: libconftest1.a: linker input file unused because linking not done
+  no
+
+- modify compiler scripts to the following quote function.  it _should_ work better than present handling in the case statement.
+
+      quote()
+      {
+          IFS=""
+          params="$*"
+          params="'`echo "$params" | sed -e "s/'/'"'"'"'"'"'"'/g"`'";
+          echo $params
+      }
+
+- add script to generate function renaming headers
+
+- include definitions from device into mpi.h, allowing function renaming, etc.
+
+- add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
+
+- singleton init
+
+
+===================================================================================================================================
+							   MPICH2 Issues
+===================================================================================================================================
+
+- a mechanism for disabling long long and long double support in MPICH2 even if the compiler support those types.  the vendor MPI
   may not support MPI_LONG_LONG or MPI_LONG_LONG_INT, and the Globus data conversion library doesn't support long double.
+
+- a mechanism for specifying the size of MPI_Aint so that it matches the size used by the vendor MPI.  alternatively, we may be
+  able to performs cast where appropriate, but this seems risky.  what if we renamed MPICH2's MPI_Aint to MPIG_Aint, and then let
+  the cast occur naturally in mpig_vmpi.c?
+
+- an interface is needed to tracking the creation and freeing of communicators so that MPIG may duplicate the operations in the
+  vendor MPI.
+
+- an interface is need for tracking creation and freeing of datatypes so that MPIG may duplicate the operations in the vendor
+  MPI.
+
+
+===================================================================================================================================
+							   Globus Issues
+===================================================================================================================================
+
+- support for long double and fixed sized integers (ex: uint32_t) in the Globus data conversion module.  this isn't critical
+  since MPIG provides its own routines for conversion of fixed types, but it would be nicer if all data conversion were provided
+  by globus_dc.  this is something worth adding when support for long double is added.
+
+
+===================================================================================================================================
+					     Discussion with Joe Link about XIO, etc.
+===================================================================================================================================
+
+- send and receive callbacks will occur before close callback
+
+- multiple sends and receives may NOT be posted at the same time
+
+- close can be called multiple times until close callback occurs
+
+- timeouts can be specified through attributes on the handle
+
+- iovec size is unlimited
+
+- globus_memory for memory pools (use for allocation in mpig_databuf, etc.)
+
+- use callback spaces
+  - globus callback space multiple
+  - set space on cond attr
+  - set space on xio attr
+
+- use globus_cond_timedwait() with vendor MPI; use a small timeout (1us?)
+
+- avoid linking against the vendor MPI when building an application/library against MPIG.  one option might be to build a library
+  for the vendor MPI interface functions, link it against the vendor MPI module, then strip the vendor symbols.  this might avoid
+  the need to rename the symbols in MPICH and the application.

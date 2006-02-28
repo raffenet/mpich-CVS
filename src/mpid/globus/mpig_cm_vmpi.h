@@ -14,7 +14,8 @@
 /*
  * Add communication module types to be included in the enumeration of modules
  */
-#define MPIG_CM_TYPE_VMPI_LIST
+#define MPIG_CM_TYPE_VMPI_LIST \
+    MPIG_CM_TYPE_VMPI
 
 /*
  * Define the communication module structure to be included in a VC

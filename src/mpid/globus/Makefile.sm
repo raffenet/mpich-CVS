@@ -10,17 +10,17 @@ MPIG_SOURCE_DIR=@MPIG_SOURCE_DIR@
 MPIG_BUILD_DIR=@MPIG_BUILD_DIR@
 
 #
-# Add top-level include directory
+# add top-level include directory
 #
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 #
-# List of header files that all sources depend upon
+# list of header files that all sources depend upon
 #
-HEADERS = mpidconf.h mpidimpl.h mpidpre.h mpidpost.h
+HEADERS = mpidconf.h mpidimpl.h mpidpre.h mpidpost.h mpig_sym_redefs.h
 
 #
-# List of file to compile and include in the MPICH2 library
+# list of file to compile and include in the MPICH2 library
 #
 lib${MPILIBNAME}_a_SOURCES =	\
     mpid_env.c			\
@@ -30,27 +30,27 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_vc.c			\
     mpid_win.c			\
     mpig_bc.c			\
-    mpig_cm_other.c		\
-    mpig_cm_self.c		\
-    mpig_cm_xio.c		\
-    mpig_cm_vmpi.c		\
+    mpig_comm.c			\
     mpig_pg.c			\
     mpig_misc.c			\
     mpig_pm_gk.c		\
     mpig_recvq.c		\
-    mpig_request.c
-
+    mpig_request.c		\
+    mpig_cm_other.c		\
+    mpig_cm_self.c		\
+    mpig_cm_vmpi.c		\
+    mpig_cm_xio.c		\
 
 #
-# Install device compiler scripts, and  modify the previously installed MPICH2 compiler scripts to use the installed
-#  device scripts
+# install device compiler scripts, and  modify the previously installed MPICH2 compiler scripts to use the installed
+# device scripts
 #
 install_BIN = mpich2-globus-cc mpiexec
 optinstall_BIN = mpich2-globus-cxx mpich2-globus-f77 mpich2-globus-f90
 
 install-local:
-	# XXX: The file permissions are assumed to be 755 for the compilers scripts and 644 for the configuration files.  This
-	#      seemed reasonable given that those are those are the values used by autoconf 2.59.
+	@# XXX: The file permissions are assumed to be 755 for the compilers scripts and 644 for the configuration files.  This
+	@#      seemed reasonable given that those are those are the values used by autoconf 2.59.
 	@echo "Updating the paths in the MPICH2 compiler scripts" ; \
 	for f in mpicc mpicxx mpif77 mpif90 ; do \
 	    ff=${bindir}/$${f} ; \
@@ -70,7 +70,7 @@ install-local:
 	done
 
 #
-# Clean up files created by configure
+# clean up files created by configure
 #
 distclean-local:
 	-rm -f globus-settings.mk
@@ -83,22 +83,58 @@ distclean-local:
 	-rm -f mpiexec
 
 #
-# Clean up files created by maint/updatefiles (autoheader, autoconf, etc.)
+# clean up files created by maint/updatefiles (autoheader, autoconf, etc.)
 #
 maintainer-clean-local:
 	-rm -f mpidconf.h.in
 
 #
-# echomaxprocname gives the maximum length of a processor name, as used
-# by MPI_GET_PROCESSOR_NAME.  This is initialized in MPID_Init().
+# echomaxprocname gives the maximum length of a processor name, as used by MPI_GET_PROCESSOR_NAME.
+# this is initialized in MPID_Init().
 #
 echomaxprocname:
 	@echo 128
 
 #
-# Update describe states files
+# targets for building state and error text translation files
 #
 describe_states.txt: FORCE_TARGET
 	grep -h MPID_STATE ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/.*(\([A-Za-z0-9_]*\)/\1/' -e 's/);.*$$//' | \
 	    sort -u | awk '{print $$1, $$1}' | sed -e 's/ MPID_STATE_/ /' -e 's/ MPID_\([A-Z]\)\([A-Z_]*\)/ MPID_\1\L\2/' \
 	    >${MPIG_SOURCE_DIR}/describe_states.txt
+
+errnames.txt: FORCE_TARGET
+	grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
+	    sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
+	    grep -h '\*\*globus|' ${master_top_srcdir}/src/mpi/errhan/errnames.txt - | sort -t ':' +0 -1 -u >errnames.txt
+
+#
+# add new symbols to the symbol renaming header file.
+#
+# NOTE: this should only be run on a linux platform.  the may or may not run on other platforms, and if it does run, it may or may
+# not corrupt the header file.
+#
+#
+# EXTREMELY IMPORTANT NOTE: this target should only be run when MPIG is configure with --disable-f77 --disable-f90 --disable-cxx
+# --without-mpe
+#
+mpig_sym_redefs.h: FORCE_TARGET
+	objects='Comm\|Datatype\|Errhandler\|Group\|File\|Info\|Keyval\|Op\|Request\|Win'; \
+	fields='mem\|builtin\|direct'; \
+	files="${top_builddir}/lib/libmpich.a" ; \
+	if test -f "${top_builddir}/lib/libpmpich.a" ; then \
+	    files="$files ${top_builddir}/lib/libpmpich.a" ; \
+	fi ; \
+	nm $${files} >.mpig-nm-$$$$.out ; \
+	if test $$? -eq 0 ; then \
+	    cat .mpig-nm-$$$$.out | \
+	        sed -e '/.*[ABCDGIRSTVW] \([A-Za-z0-9_]*\)$$/! d' -e 's/.*[ABCDGIRSTVW\] \([A-Za-z0-9_]*\)$$/\1/' \
+	        -e '/.*_$$/ d' -e '/^[Mm][Pp][Ii][Gg]_/ d' \
+	        -e 's/MPID_\('"$$objects"'\)_\('"$$fields"'\)/#define MPID_\1_\2 MPIG_\1_\2/' \
+	        -e '/^#/! s/\(^.*$$\)/#define \1 \1_g/' | cat ${MPIG_SOURCE_DIR}/mpig_sym_redefs.h ->.mpig-defines-$$$$.out ; \
+	    if test $$? -eq 0 ; then \
+	        sort .mpig-defines-$$$$.out +1 -2 -u >${MPIG_SOURCE_DIR}/mpig_sym_redefs.h ; \
+	    fi ; \
+	    rm .mpig-defines-$$$$.out ; \
+	fi ; \
+	rm .mpig-nm-$$$$.out

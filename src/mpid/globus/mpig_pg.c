@@ -8,99 +8,318 @@
 
 #include "mpidimpl.h"
 
+globus_mutex_t mpig_pg_global_mutex;
+
 MPIG_STATIC mpig_pg_t * mpig_pg_list_head = NULL;
 MPIG_STATIC mpig_pg_t * mpig_pg_list_tail = NULL;
-MPIG_STATIC mpig_pg_t * mpig_pg_iterator = NULL;
 
+/* Local process ID counter for assigning a local ID to each virtual connection.  A local ID is necessary for the MPI_Group
+   routines, implemented at the MPICH layer, to function properly.  MT: this requires a thread safe fetch-and-increment */
+MPIG_STATIC int mpig_pg_lpid_counter;
+
+
+/* internal function declarations */
+MPIG_STATIC void mpig_pg_create(const char * pg_id, int pg_rank, mpig_pg_t ** pgp, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * pg);
+
+
+/*
+ * mpig_pg_init([IN/OUT] mpi_errno, [OUT] failed)
+ */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_init
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_pg_init(void)
+void mpig_pg_init(int * const mpi_errno_p, bool_t * const failed_p)
 {
-    int mpi_errno = MPI_SUCCESS;
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_init);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_init);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-    
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+
+    *failed_p = FALSE;
+
+    mpig_pg_global_mutex_create();
     
     /*  fn_return: */
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_init);
-    return mpi_errno;
+    return;
 }
 /* mpig_pg_init() */
 
+/*
+ * mpig_pg_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_finalize
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_pg_finalize(void)
+void mpig_pg_finalize(int * const mpi_errno_p, bool_t * const failed_p)
 {
-    int mpi_errno = MPI_SUCCESS;
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_finalize);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_finalize);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_finalize);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+
+    *failed_p = FALSE;
+    
 #if XXX    
-    MPIU_ERR_CHKANDJUMP((mpig_pg_list_head != NULL), mpi_errno, MPI_ERR_INTERN, "**dev|pg_finalize|list_not_empty");
+    MPIU_ERR_CHKANDJUMP((mpig_pg_list_head != NULL), *mpi_errno_p, MPI_ERR_INTERN, "**dev|pg_finalize|list_not_empty");
 #endif
     
-#if 1
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    mpig_pg_global_mutex_destroy();
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_finalize);
-    return mpi_errno;
-#else    
-  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_finalize);
-    return mpi_errno;
-
-  fn_fail:
-    goto fn_return;
-#endif
+    return;
 }
 /* mpig_pg_finalize() */
 
 
+/*
+ * mpig_pg_acquire_ref_locked([IN] pg_id, [IN] pg_size, [OUT] pg, [IN/OUT] mpi_errno, [OUT] failed_p)
+ *
+ * MT-NOTE: to avoid deadlock, the mutex of a PG object should never be acquired while the mutex for a VC contained within that
+ * PG object is being held.  should the need arise to lock a VC followed by the PG containing that VC, lock the PG, increment its
+ * reference count and the unlock the PG.  the VC mutex may now be safely acquired without fear of deadlock, and the PG object is
+ * guaranteed to persist until the extra reference count is released.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_pg_acquire_ref_locked
+void mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p,
+				int * const mpi_errno_p, bool_t * const failed_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    bool_t pg_global_locked = FALSE;
+    bool_t failed;
+    mpig_pg_t * pg;
+    MPIG_STATE_DECL(MPID_STATE_mpig_pg_acquire_ref_locked);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_acquire_ref_locked);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: pg_id=%s, pg_size=%d, mpi_errno=0x%08x", pg_id, pg_size, *mpi_errno_p));
+
+    *failed_p = FALSE;
+    
+    mpig_pg_global_mutex_lock();
+    pg_global_locked = TRUE;
+    {
+	/* attempt to find PG in the list of active process groups */
+	*pg_p = NULL;
+	pg = mpig_pg_list_head;
+	while (pg != NULL)
+	{
+	    if (mpig_pg_compare_ids(pg_id, pg->id) == 0)
+	    {
+		*pg_p = pg;
+		break;
+	    }
+	    
+	    pg = pg->next;
+	}
+
+	if (pg == NULL)
+	{
+	    /* no matching process group was found, so create a new one */
+	    mpig_pg_create(pg_id, pg_size, pg_p, mpi_errno_p, &failed);
+	    MPIU_ERR_CHKANDJUMP2((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|pg_create", "**globus|pg_create %s %d",
+				 pg_id, pg_size);
+	}
+
+	/* increment the reference count to reflect reference being returned */
+	mpig_pg_inc_ref_count(*pg_p);
+    }
+    /* mpig_pg_global_mutex_unlock(); -- global mutex is left locked */
+    
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
+		       pg_id, pg_size, (MPIG_PTR_CAST) pg, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_acquire_ref_locked);
+    return;
+    
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    {
+	if (pg_global_locked) mpig_pg_global_mutex_unlock();
+	*failed_p = TRUE;
+	goto fn_return;
+    }
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_pg_acquire_ref_locked() */
+
+
+/*
+ * mpig_pg_commit([IN/MOD] pg)
+ *
+ * MT-NOTE: this routine assumes that the neither the global process group module's mutex nor the PG's mutex are held by the
+ * current context.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_pg_commit
+void mpig_pg_commit(mpig_pg_t * const pg)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_pg_commit);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_commit);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    
+    mpig_pg_global_mutex_lock();
+    {
+	pg->committed = TRUE;
+	if (pg->ref_count == 0)
+	{
+	    mpig_pg_destroy(pg);
+	}
+    }
+    mpig_pg_global_mutex_unlock();
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_commit);
+    return;
+}
+/* mpig_pg_commit() */
+
+
+/*
+ * mpig_pg_release_ref([IN/MOD] pg)
+ *
+ * MT-NOTE: this routine assumes that the neither the global process group module's mutex nor the PG's mutex are held by the
+ * current context.  futhermore, when the last reference to the PG is released, none of mutexes associated with the VCs in the PG
+ * may be held by any context.  this should occur naturally as long as a VC's mutex is unlocked before its reference is released.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_pg_release_ref
+void mpig_pg_release_ref(mpig_pg_t * const pg)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    bool_t pg_inuse;
+    MPIG_STATE_DECL(MPID_STATE_mpig_pg_release_ref);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_release_ref);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    
+    mpig_pg_global_mutex_lock();
+    {
+	/* mpig_pg_mutex_lock(pg); -- mpig_pg_global_mutex_lock() protects all PG objects */
+	{
+	    mpig_pg_dec_ref_count(pg, &pg_inuse);
+	    if (pg_inuse == FALSE)
+	    {
+		/*
+		 * if the process group has not been committed, then do not delete this process group because it still has not
+		 * been initialized by the MPI/MPID routines.  although the process group may exist as a result of asynchronous
+		 * communication in one of the communication modules, we need to avoid destroying it until the MPI/MPID routines
+		 * have had a chance to properly initialize it.  this feature is particularly important for the process group
+		 * associated with MPI_COMM_WORLD as it prevents the process group associated with the local process from being
+		 * created, destroyed and recreated again.  such an action would cause the local process id (lpid) values to be
+		 * something other than the ranks MPI_COMM_WORLD, which is prohibited.
+		 *
+		 * NOTE: care must be taken to avoid leaking process groups when errors occur prior to full initialization (ex:
+		 * during a MPID_Comm_connect/accept).  uncommitted process groups will remain allocated even if the reference
+		 * count reaches zero.  as a result, depending on the situation, synchronization may be necessary to prevent
+		 * communication before the process groups are committed.
+		 */
+		if (pg->committed)
+		{
+	    
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT,
+				       "destroying pg: pg=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) pg, pg->ref_count));
+		    mpig_pg_destroy(pg);
+		}
+		else
+		{
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT,
+				       "pg not committed; keeping pg alive: pg=" MPIG_PTR_FMT ", ref_count=%d",
+				       (MPIG_PTR_CAST) pg, pg->ref_count));
+		}
+	    }
+	    else
+	    {
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT,
+				   "pg still active: pg=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) pg, pg->ref_count));
+	    }
+	}
+	/* mpig_pg_mutex_lock(pg); -- mpig_pg_global_mutex_unlock() protects all PG objects */
+    }
+    mpig_pg_global_mutex_unlock();
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_release_ref);
+    return;
+}
+/* mpig_pg_release_ref() */
+
+
+/*
+ * mpig_pg_create([IN] pg_id, [IN] pg_size, [OUT] pg, [IN/OUT] mpi_errno, [OUT] failed_p)
+ */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_create
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_pg_create(int pg_size, mpig_pg_t ** pg_ptr)
+void mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p,
+		    int * const mpi_errno_p, bool_t * const failed_p)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_pg_t * pg = NULL;
     int p;
-    int mpi_errno = MPI_SUCCESS;
-    MPIU_CHKPMEM_DECL(2);
+    MPIU_CHKPMEM_DECL(1);
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_create);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_create);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: pg_id=%s, pg_size=%d, mpi_errno=0x%08x", pg_id, pg_size, *mpi_errno_p));
+    *failed_p = FALSE;
     
-    MPIU_CHKPMEM_MALLOC(pg, mpig_pg_t *, sizeof(mpig_pg_t), mpi_errno, "process group object");
-    MPIU_CHKPMEM_MALLOC(pg->vct, mpig_vc_t *, sizeof(mpig_vc_t) * pg_size, mpi_errno, "virtual connection table");
+    /* allocate space for the process group object */
+    MPIU_CHKPMEM_MALLOC(pg, mpig_pg_t *, sizeof(mpig_pg_t) + (pg_size - 1) * sizeof(mpig_vc_t), *mpi_errno_p,
+			"process group object");
 
+    /* initial PG fields */
+    mpig_pg_mutex_create(pg);
     pg->ref_count = 0;
+    pg->committed = FALSE;
     pg->size = pg_size;
-    pg->id = NULL;
+    pg->id = MPIU_Strdup(pg_id);
+    pg->next = NULL;
 
-    /*
-     * Initialize the VCs in PG
-     */
+    /* initialize the VCs in PG */
     for (p = 0; p < pg_size; p++)
     {
-	mpig_vc_construct(&pg->vct[p]);
-	pg->vct[p].pg = pg;
-	pg->vct[p].pg_rank = p;
-	mpig_lpid_get_next(&pg->vct[p].lpid);
+	mpig_vc_t * vc = &pg->vct[p];
+	
+	mpig_vc_construct(vc);
+	mpig_vc_set_pg_info(vc, pg, p);
+	mpig_vc_set_pg_id(vc, pg->id);
+	vc->lpid = mpig_pg_lpid_counter++;
+	MPIU_ERR_CHKANDJUMP((mpig_pg_lpid_counter < 0), *mpi_errno_p, MPI_ERR_INTERN, "**globus|pg|lpid_counter");
     }
 
-    /*
-     * Add the new process group into the list of outstanding process group structures
-     */
+    /* add the new process group into the list of outstanding process group structures */
     if (mpig_pg_list_head == NULL)
     {
 	mpig_pg_list_head = pg;
@@ -114,19 +333,26 @@ int mpig_pg_create(int pg_size, mpig_pg_t ** pg_ptr)
     { 
 	mpig_pg_list_head = pg;
     }
+
     mpig_pg_list_tail = pg;
     
-    *pg_ptr = pg;
+    *pg_p = pg;
     MPIU_CHKPMEM_COMMIT();
-    
+
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
+		       pg_id, pg_size, (MPIG_PTR_CAST) pg, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_create);
-    return mpi_errno;
+    return;
     
   fn_fail:
-    MPIU_CHKPMEM_REAP();
-    goto fn_return;
+    /* --BEGIN ERROR HANDLING-- */
+    {
+	MPIU_CHKPMEM_REAP();
+	*failed_p = TRUE;
+	goto fn_return;
+    }
     /* --END ERROR HANDLING-- */
 }
 /* mpig_pg_create() */
@@ -134,29 +360,29 @@ int mpig_pg_create(int pg_size, mpig_pg_t ** pg_ptr)
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_destroy
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_pg_destroy(mpig_pg_t * pg)
+MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * const pg)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_pg_t * pg_prev;
     mpig_pg_t * pg_cur;
-    int mpi_errno = MPI_SUCCESS;
+    int p;
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_destroy);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_destroy);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
     
+    /*
+     * remove the PG object from the process group list
+     */
     pg_prev = NULL;
     pg_cur = mpig_pg_list_head;
     while(pg_cur != NULL)
     {
 	if (pg_cur == pg)
 	{
-	    if (mpig_pg_iterator == pg)
-	    { 
-		mpig_pg_iterator = pg_prev;
-	    }
-
 	    if (pg_prev != NULL)
 	    {
 		pg_prev->next = pg->next;
@@ -171,94 +397,37 @@ int mpig_pg_destroy(mpig_pg_t * pg)
 		mpig_pg_list_tail = NULL;
 	    }
 	    
-	    mpig_pg_id_clear(pg);
-	    MPIU_Free(pg->vct);
-	    MPIU_Free(pg);
-
-	    goto fn_exit;
+	    break;
 	}
 
 	pg_prev = pg_cur;
 	pg_cur = pg_cur->next;
     }
 
-    MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**dev|pg_not_found", "**dev|pg_not_found %p", pg);
+    MPIU_Assertp(pg_cur != NULL);
 
-  fn_exit:
-  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    /*
+     * destroy the VC objects in the PG object
+     */
+    for (p = 0; p < pg->size; p++)
+    {
+	mpig_vc_destruct(&pg->vct[p]);
+    }
+
+    /*
+     * destroy the PG object
+     */
+    MPIU_Free(pg->id);
+    pg->id = NULL;
+    pg->size = 0;
+    pg->ref_count = 0;
+    mpig_pg_mutex_destroy(pg);
+    MPIU_Free(pg);
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
+		       "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_destroy);
-    return mpi_errno;
-
-  fn_fail:
-    goto fn_return;
+    return;
 }
 /* mpig_pg_destroy() */
-
-
-#undef FUNCNAME
-#define FUNCNAME mpig_pg_find
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_pg_find(char * id, mpig_pg_t ** pg_ptr)
-{
-    mpig_pg_t * pg;
-    int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_pg_find);
-
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_find);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-    
-    
-    pg = mpig_pg_list_head;
-    while (pg != NULL)
-    {
-	if (mpig_pg_compare_ids(id, pg->id) == 0)
-	{
-	    *pg_ptr = pg;
-	    goto fn_exit;
-	}
-
-	pg = pg->next;
-    }
-
-    *pg_ptr = NULL;
-
-  fn_exit:
-    /* fn_return: */
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_find);
-    return mpi_errno;
-}
-/* mpig_pg_find() */
-
-
-#undef FUNCNAME
-#define FUNCNAME mpig_pg_get_next
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_pg_get_next(mpig_pg_t ** pg_ptr)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_pg_get_next);
-
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_get_next);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
-    
-    if (mpig_pg_iterator == NULL)
-    {
-	mpig_pg_iterator = mpig_pg_list_head;
-    }
-    else
-    {
-	mpig_pg_iterator = mpig_pg_iterator->next;
-    }
-    
-    *pg_ptr = mpig_pg_iterator;
-
-    /* fn_return: */
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_get_next);
-    return mpi_errno;
-}
-/* mpig_pg_get_next() */

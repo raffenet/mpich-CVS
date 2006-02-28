@@ -2,11 +2,27 @@
 
 usage()
 {
-    echo "usage: $0 -n <nprocs> <pgm>"
+    echo "usage: $0 -n <nprocs> <pgm> [args...]"
     exit 1
 }
 
-if test $# -ne 3 -o "$1" != "-n" ; then
+quote()
+{
+    IFS=""
+    params="$*"
+    params="'`echo "$params" | sed -e "s/'/'"'"'"'"'"'"'/g"`'";
+    echo $params
+}
+
+globus_args_quote()
+{
+    IFS=""
+    params="$*"
+    params='"'`echo "$params" | sed -e 's/\"/\"\"/g'`'"';
+    echo $params
+}
+
+if test $# -lt 3 -o \( "$1" != "-n" -a "$1" != "-np" \) ; then
     usage
 fi
 
@@ -45,18 +61,54 @@ fi
 
 rsl=.mpich2-globus-rsl.$$
 curpath=`pwd`
+args=""
+for arg ; do
+    args="$args `globus_args_quote "$arg"`"
+done
+if test -n "$args" ; then
+    extras_line="(arguments=$args)"
+else
+    extras_line=""
+fi
+
+if test -n "$MPIEXEC_TIMEOUT" ; then
+    output=`test "$MPIEXEC_TIMEOUT" -gt 0 2>&1`
+    result=$?
+    if test -n "$output" ; then
+	echo "ERROR: MPIEXEC_TIMEOUT must contain a positive integer"
+	exit 1
+    fi
+    if test $result -ne 0 ; then
+	echo "ERROR: MPIEXEC_TIMEOUT must contain a positive integer"
+	exit 1
+    fi
+    maxwalltime=`expr \( $MPIEXEC_TIMEOUT + 59 \) / 60`
+    extras_line="(maxwalltime=$maxwalltime)"
+fi
+
+env_line=""
+if test -n "$MPIG_DEBUG_LEVELS" ; then
+    env_line="$env_line (MPIG_DEBUG_LEVELS "'"'"$MPIG_DEBUG_LEVELS"'")'
+    file_basename="DEBUG-`basename $pgm`"
+    env_line="$env_line (MPIG_DEBUG_FILE_BASENAME "'"'"$file_basename"'")'
+    if test -n "$MPIG_DEBUG_TIMED_LEVELS" ; then
+	env_line="$env_line (MPIG_DEBUG_TIMED_LEVELS "'"'"$MPIG_DEBUG_TIMED_LEVELS"'")'
+    fi
+fi
 
 cat >$rsl <<EOF
 +
-( &(resourceManagerContact="$GLOBUS_GRAM_CONTACT")
-   (count=$nprocs)
-   (label="subjob 0")
-   (environment=(GLOBUS_DUROC_SUBJOB_INDEX 0)
+(  &(resourceManagerContact="$GLOBUS_GRAM_CONTACT")
+    (count=$nprocs)
+    (label="subjob 0")
+    (environment=
+	(GLOBUS_DUROC_SUBJOB_INDEX 0)
 	(LD_LIBRARY_PATH $GLOBUS_LOCATION/lib)
-	(MPICH_DBG_OUTPUT file))
-   (directory=$curpath)
-   (executable=$pgm)
-   (arguments="$*")
+	$env_line
+    )
+    (directory="$curpath")
+    (executable="$pgm")
+    $extras_line
 )
 EOF
 

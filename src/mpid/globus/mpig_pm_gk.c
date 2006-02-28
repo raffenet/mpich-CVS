@@ -44,45 +44,49 @@ MPIG_STATIC int mpig_pm_sj_num;
 MPIG_STATIC int * mpig_pm_sj_addrs;
 
 #if FOO
-MPIG_STATIC int get_topology(int sj_rank, int sj_size, int * pg_size, int * pg_rank, int *sj_num, int ** sj_addrs);
+MPIG_STATIC int mpig_pm_gk_get_topology(int sj_rank, int sj_size, int * pg_size, int * pg_rank, int *sj_num, int ** sj_addrs);
 
-MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int sj_rank, int sj_num, int * sj_addrs,
-				      globus_byte_t * inbuf, int inbuf_len, globus_byte_t ** outbufs, int * outbufs_lens);
+MPIG_STATIC int mpig_pm_gk_distribute_byte_array(
+    int pg_size, int pg_rank, int sj_size, int sj_rank, int sj_num, int * sj_addrs, globus_byte_t * inbuf, int inbuf_len,
+    globus_byte_t ** outbufs, int * outbufs_lens);
 
 #if !defined(MPIG_VMPI)
-MPIG_STATIC void intra_subjob_send(int dest, char * tag_base, int nbytes,char * buf);
-MPIG_STATIC void intra_subjob_receive(char * tag_base, int * nbytes,char ** buf);
+MPIG_STATIC void mpig_pm_gk_intra_subjob_send(int dest, char * tag_base, int nbytes,char * buf);
+MPIG_STATIC void mpig_pm_gk_intra_subjob_receive(char * tag_base, int * nbytes,char ** buf);
 #endif
 
-MPIG_STATIC void extract_byte_arrays(char * rbuf, int * nbufs_p, globus_byte_t ** outbufs, int * outbufs_lens);
+MPIG_STATIC void mpig_pm_gk_extract_byte_arrays(char * rbuf, int * nbufs_p, globus_byte_t ** outbufs, int * outbufs_lens);
 
-MPIG_STATIC void intra_subjob_bcast(int sj_size,int sj_rank, char *tag_base, int * nbytes, char ** buf);
+MPIG_STATIC void mpig_pm_gk_intra_subjob_bcast(int sj_size,int sj_rank, char *tag_base, int * nbytes, char ** buf);
 
 /* nbytes and buf are relevant only on the subjob master */
-MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char * inbuf, int inbuf_len, char * tag_base,
+MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(int sj_size, int sj_rank, char * inbuf, int inbuf_len, char * tag_base,
 				     int * nbytes, char ** buf);
 
 #else /* !FOO */
 
-MPIG_STATIC void get_topology(int rank_in_my_subjob, int my_subjob_size, int **subjob_addresses, int *nprocs,
-			       int *nsubjobs, int *my_grank);
+MPIG_STATIC void mpig_pm_gk_get_topology(
+    int rank_in_my_subjob, int my_subjob_size, int **subjob_addresses, int *nprocs, int *nsubjobs, int *my_grank);
 
-MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff, int inbufflen, int rank_in_my_subjob, int my_subjob_size,
-				       int *subjob_addresses, int nprocs, int nsubjobs, int my_grank,
-				       globus_byte_t **outbuffs, int *outbufflens);
+MPIG_STATIC void mpig_pm_gk_distribute_byte_array(
+    globus_byte_t *inbuff, int inbufflen, int rank_in_my_subjob, int my_subjob_size, int *subjob_addresses, int nprocs,
+    int nsubjobs, int my_grank, globus_byte_t **outbuffs, int *outbufflens);
 
 #if !defined(MPIG_VMPI)
 #define HEADERLEN 20
-MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes,char *buff);
-MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes,char **buff);
+MPIG_STATIC void mpig_pm_gk_intra_subjob_send(int dest, char *tag_base, int nbytes,char *buff);
+
+MPIG_STATIC void mpig_pm_gk_intra_subjob_receive(char *tag_base, int *rcvd_nbytes,char **buff);
 #endif
 
-MPIG_STATIC void extract_byte_arrays(char *rbuff, int *nbuffs_p, globus_byte_t **outbuffs, int *outbufflens);
+MPIG_STATIC void mpig_pm_gk_extract_byte_arrays(char *rbuff, int *nbuffs_p, globus_byte_t **outbuffs, int *outbufflens);
 
 #if !defined(MPIG_VMPI)
-MPIG_STATIC void intra_subjob_bcast(int rank_in_my_subjob, int my_subjob_size, char *tag_base, int *rcvd_nbytes, char **buff);
-MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob, int my_subjob_size, char *inbuff, int inbufflen, char *tag_base, 
-				int *rcvd_nbytes, char **buff);
+MPIG_STATIC void mpig_pm_gk_intra_subjob_bcast(
+    int rank_in_my_subjob, int my_subjob_size, char *tag_base, int *rcvd_nbytes, char **buff);
+
+MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(
+    int rank_in_my_subjob, int my_subjob_size, char *inbuff, int inbufflen, char *tag_base, int *rcvd_nbytes, char **buff);
 #endif /* !defined(MPIG_VMPI) */
 
 #endif /* FOO */
@@ -93,10 +97,9 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob, int my_subjob_size, 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_init
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_init(void)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     enum
     {
 	FUNC_STATE_START,
@@ -108,8 +111,11 @@ int mpig_pm_init(void)
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_init);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_init);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
     
@@ -150,12 +156,12 @@ int mpig_pm_init(void)
     MPIU_ERR_CHKANDJUMP((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|duroc_sjrank");
 
 #if FOO
-    rc = get_topology(mpig_pm_my_sj_size, mpig_pm_my_sj_rank, &mpig_pm_my_pg_size, &mpig_pm_my_pg_rank,
-		      &mpig_pm_sj_num, &mpig_pm_sj_addrs);
+    rc = mpig_pm_gk_get_topology(mpig_pm_my_sj_size, mpig_pm_my_sj_rank, &mpig_pm_my_pg_size, &mpig_pm_my_pg_rank,
+				 &mpig_pm_sj_num, &mpig_pm_sj_addrs);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 #else
-    get_topology(mpig_pm_my_sj_rank, mpig_pm_my_sj_size, &mpig_pm_sj_addrs, &mpig_pm_my_pg_size, &mpig_pm_sj_num,
-		 &mpig_pm_my_pg_rank);
+    mpig_pm_gk_get_topology(mpig_pm_my_sj_rank, mpig_pm_my_sj_size, &mpig_pm_sj_addrs, &mpig_pm_my_pg_size, &mpig_pm_sj_num,
+			    &mpig_pm_my_pg_rank);
 #endif
     
     /* XXX: this needs to be set to some real before we implement MPI-2 functionality */
@@ -166,7 +172,8 @@ int mpig_pm_init(void)
     mpig_pm_state = MPIG_PM_STATE_INITIALIZED;
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_init);
     return mpi_errno;
 
@@ -197,16 +204,18 @@ int mpig_pm_init(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_finalize
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_finalize(void)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int rc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_finalize);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_finalize);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
@@ -226,7 +235,8 @@ int mpig_pm_finalize(void)
 			 "**globus|module_deactivate %s", "DUROC runtime");
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_finalize);
     return mpi_errno;
 
@@ -243,10 +253,9 @@ int mpig_pm_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_exchange_business_cards
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKLMEM_DECL(2);
     MPIU_CHKPMEM_DECL(1);
     char * bc_str;
@@ -254,38 +263,49 @@ int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
     int * bc_lens;
     mpig_bc_t * bcs;
     int p;
+    int errors = 0;
+    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_pm_distribute_byte_array);
+    MPIG_STATE_DECL(MPID_STATE_mpig_pm_exchange_business_cards);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_distribute_byte_array);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_exchange_business_cards);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
     
-    mpig_bc_serialize_object(bc, &bc_str);
+    mpig_bc_serialize_object(bc, &bc_str, &mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_serialize");
+    
     MPIU_CHKLMEM_MALLOC(bc_strs, globus_byte_t **, mpig_pm_my_pg_size * sizeof(globus_byte_t *), mpi_errno,
 			"array of serialized business cards");
     MPIU_CHKLMEM_MALLOC(bc_lens, int *, mpig_pm_my_pg_size * sizeof(int), mpi_errno, "array of business cards lengths");
     MPIU_CHKPMEM_MALLOC(bcs, mpig_bc_t *, mpig_pm_my_pg_size * sizeof(mpig_bc_t), mpi_errno, "array of business cards lengths");
     
 #if FOO
-    mpi_errno = distribute_byte_array(mpig_pm_my_pg_size, mpig_pm_my_pg_rank, mpig_pm_my_sj_size, mpig_pm_my_sj_rank,
-				      mpig_pm_sj_num, mpig_pm_sj_addrs, inbuf, inbuf_len, outbufs, outbufs_lens);
+    mpi_errno = mpig_pm_gk_distribute_byte_array(mpig_pm_my_pg_size, mpig_pm_my_pg_rank, mpig_pm_my_sj_size, mpig_pm_my_sj_rank,
+						 mpig_pm_sj_num, mpig_pm_sj_addrs, inbuf, inbuf_len, outbufs, outbufs_lens);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 #else
-    distribute_byte_array(bc_str, (int) strlen(bc_str) + 1, mpig_pm_my_sj_rank, mpig_pm_my_sj_size, mpig_pm_sj_addrs,
-			  mpig_pm_my_pg_size, mpig_pm_sj_num, mpig_pm_my_pg_rank, bc_strs, bc_lens);
+    mpig_pm_gk_distribute_byte_array((globus_byte_t *) bc_str, (int) strlen(bc_str) + 1, mpig_pm_my_sj_rank, mpig_pm_my_sj_size,
+				     mpig_pm_sj_addrs, mpig_pm_my_pg_size, mpig_pm_sj_num, mpig_pm_my_pg_rank, bc_strs, bc_lens);
 
 #endif    
 
     for (p = 0; p < mpig_pm_my_pg_size; p++)
     {
-	mpig_bc_deserialize_object((char *) bc_strs[p], &bcs[p]);
+	mpig_bc_deserialize_object((char *) bc_strs[p], &bcs[p], &mpi_errno, &failed);
+	MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_deserialize");
 	globus_libc_free(bc_strs[p]);
     }
 
     mpig_bc_free_serialized_object(bc_str);
+
+    if (errors > 0) goto fn_fail;
+    
     MPIU_CHKPMEM_COMMIT();
     *bcs_ptr = bcs;
     
@@ -293,8 +313,9 @@ int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
     
   fn_return:
     MPIU_CHKLMEM_FREEALL();
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_distribute_byte_array);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: bcs=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) *bcs_ptr, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_exchange_business_cards);
     return mpi_errno;
 
   fn_fail:
@@ -312,29 +333,35 @@ int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_free_business_cards
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_free_business_cards(mpig_bc_t * bcs)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int p;
+    int errors = 0;
+    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_free_business_cards);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_free_business_cards);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering: bcs=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bcs));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
     
     for (p = 0; p < mpig_pm_my_pg_size; p++)
     {
-	mpi_errno = mpig_bc_destroy(&bcs[p]);
-	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	mpig_bc_destroy(&bcs[p], &mpi_errno, &failed);
+	MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_destroy");
     }
     globus_libc_free(bcs);
 
+    if (errors > 0) goto fn_fail;
+
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_free_business_cards);
     return mpi_errno;
 
@@ -351,15 +378,17 @@ int mpig_pm_free_business_cards(mpig_bc_t * bcs)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_get_pg_size
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_get_pg_size(int * pg_size)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_get_pg_size);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_get_pg_size);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
@@ -368,7 +397,8 @@ int mpig_pm_get_pg_size(int * pg_size)
     *pg_size = mpig_pm_my_pg_size;
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_get_pg_size);
     return mpi_errno;
 
@@ -385,15 +415,17 @@ int mpig_pm_get_pg_size(int * pg_size)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_get_pg_rank
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_get_pg_rank(int * pg_rank)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_get_pg_rank);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_get_pg_rank);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
@@ -402,7 +434,8 @@ int mpig_pm_get_pg_rank(int * pg_rank)
     *pg_rank = mpig_pm_my_pg_rank;
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: pg_rank=%d, mpi_errno=0x%08x", (mpi_errno) ? -1 : *pg_rank, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_get_pg_rank);
     return mpi_errno;
 
@@ -419,15 +452,17 @@ int mpig_pm_get_pg_rank(int * pg_rank)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_get_pg_id
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_get_pg_id(const char ** pg_id)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_get_pg_id);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_get_pg_id);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_state == MPIG_PM_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
@@ -436,7 +471,8 @@ int mpig_pm_get_pg_id(const char ** pg_id)
     *pg_id = mpig_pm_my_pg_id;
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: pg_id=%s, mpi_errno=0x%08x", (mpi_errno) ? "" : *pg_id, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_get_pg_id);
     return mpi_errno;
 
@@ -454,18 +490,21 @@ int mpig_pm_get_pg_id(const char ** pg_id)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_template
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int mpig_pm_template(void)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_template);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_template);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "entering"));
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
+		       "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_template);
     return mpi_errno;
 
@@ -498,11 +537,10 @@ int mpig_pm_template(void)
 /* XXX: should return an mpi_errno ... not 'void' */
 
 #undef FUNCNAME
-#define FUNCNAME mpig_pm_i_get_topology
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
+#define FUNCNAME mpig_pm_gk_get_topology
 MPIG_STATIC int get_topology(int sj_size, int sj_rank, int * pg_size, int * pg_rank, int * sj_num, int ** sj_addrs)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char topology_buf[GRAM_MYJOB_MAX_BUFFER_LENGTH];
     char * buf;
     int buf_len;
@@ -515,10 +553,12 @@ MPIG_STATIC int get_topology(int sj_size, int sj_rank, int * pg_size, int * pg_r
     int rc;
 #endif    
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_pm_i_get_topology);
+    MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_topology);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_i_get_topology);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_topology);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
     call_idx ++;
 
@@ -556,9 +596,9 @@ MPIG_STATIC int get_topology(int sj_size, int sj_rank, int * pg_size, int * pg_r
 
 	    sprintf(tag, "%s:%d", SUBJOB_MASTER_TO_SLAVE_T, call_idx);
 
-	    intra_subjob_receive(tag,     /* tag */
-				&buf_len, /* nbytes received? */
-				&rbuf);  /* message */
+	    mpig_pm_gk_intra_subjob_receive(tag,      /* tag */
+					    &buf_len, /* nbytes received? */
+					    &rbuf);   /* message */
 
 	    sscanf(rbuf, "%d %d", pg_size, pg_rank);
 	    MPIU_Free(rbuf);
@@ -791,10 +831,10 @@ MPIG_STATIC int get_topology(int sj_size, int sj_rank, int * pg_size, int * pg_r
 		for (i = 1; i < sj_size; i ++)
 		{
 		    sprintf(topology_buf, "%d %d", *pg_size, (*pg_rank) + i);
-		    intra_subjob_send(i,                     /* dest */
-				    tag,                     /* tag */
-				    strlen(topology_buf)+1, /* nbytes */
-				    topology_buf);          /* data */
+		    mpig_pm_gk_intra_subjob_send(i,                      /* dest */
+						 tag,                    /* tag */
+						 strlen(topology_buf)+1, /* nbytes */
+						 topology_buf);          /* data */
 		} /* endfor */
 	    }
         }
@@ -802,8 +842,8 @@ MPIG_STATIC int get_topology(int sj_size, int sj_rank, int * pg_size, int * pg_r
     } /* endif */
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_i_get_topology);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_get_topology);
     return mpi_errno;
 
   fn_fail:
@@ -811,31 +851,34 @@ MPIG_STATIC int get_topology(int sj_size, int sj_rank, int * pg_size, int * pg_r
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
-/* end get_topology() */
+/* end mpig_pm_gk_get_topology() */
 
 
 /*
- * distribute_byte_array()
+ * mpig_pm_gk_distribute_byte_array()
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_pm_i_distribute_byte_array
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int sj_rank, int sj_num, int * sj_addrs,
-				      globus_byte_t * inbuf, int inbuf_len, globus_byte_t ** outbufs, int * outbufs_lens)
+#define FUNCNAME mpig_pm_gk_distribute_byte_array
+MPIG_STATIC int mpig_pm_gk_distribute_byte_array(
+    int pg_size, int pg_rank, int sj_size, int sj_rank, int sj_num, int * sj_addrs, globus_byte_t * inbuf, int inbuf_len,
+    globus_byte_t ** outbufs, int * outbufs_lens)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
 
     int i;
     char *buf;
     int buf_len;
     static unsigned int call_idx = 0;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_pm_i_distribute_byte_array);
+    MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_distribute_byte_array);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_i_distribute_byte_array);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_distribute_byte_array);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
     
-/* globus_libc_fprintf(stderr, "%d: enter distribute_byte_array: sj_rank %d %d bytes\n", MPID_MyWorldRank, sj_rank, inbuf_len); */
+/* globus_libc_fprintf(stderr, "%d: enter mpig_pm_gk_distribute_byte_array: sj_rank %d %d bytes\n", MPID_MyWorldRank,
+   sj_rank, inbuf_len); */
     call_idx ++;
 
     /* initialization */
@@ -847,7 +890,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 
     if (sj_rank)
     {
-/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: i am subjob slave\n", MPID_MyWorldRank); */
+/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: i am subjob slave\n", MPID_MyWorldRank); */
 	/* subjob slave */
 #       if defined(MPIG_VMPI)
         {
@@ -871,7 +914,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    if (rc != MPI_SUCCESS)
 	    {
 		globus_libc_fprintf(stderr, 
-		    "ERROR: distribute_byte_array(): erroneous rc = %d from "
+		    "ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d from "
 		    "mp_bootstrap_gather (non-root)\n",
 		    rc);
 		exit(1);
@@ -897,7 +940,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 					                at root only */
 	    if (rc != MPI_SUCCESS)
 	    {
-		globus_libc_fprintf(stderr, "ERROR: distribute_byte_array(): erroneous rc = %d from "
+		globus_libc_fprintf(stderr, "ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d from "
 		    "mp_bootstrap_gatherv (non-root)\n", rc);
 		exit(1);
 	    } /* endif */
@@ -933,7 +976,8 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		char tag[SUBJOB_MAX_TAG_SIZE];
 		sprintf(tag, "%s%d", SUBJOB_SLAVE_TO_MASTER_D, call_idx);
 		/* send my byte array to my master */
-		intra_subjob_gather(sj_size, sj_rank, t, (2*INT_MAX_STRLEN)+inbuf_len, tag, (int *) NULL, (char **) NULL);
+		mpig_pm_gk_intra_subjob_gather(sj_size, sj_rank, t, (2*INT_MAX_STRLEN)+inbuf_len, tag, (int *) NULL,
+					       (char **) NULL);
 	    }
 
 	    if (bigbuf)
@@ -947,8 +991,8 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	{
 	    char *rbuf;
 	    int nbufs;
-/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob slave: top of while loop i %d pg_size %d\n", MPID_MyWorldRank,
-   i, pg_size); */
+/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: top of while loop i %d pg_size %d\n",
+   MPID_MyWorldRank, i, pg_size); */
 
 #           if defined(MPIG_VMPI)
             {
@@ -964,7 +1008,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		if (rc != MPI_SUCCESS)
 		{
 		    globus_libc_fprintf(stderr, 
-			"ERROR: distribute_byte_array(): erroneous rc = %d "
+			"ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d "
 			"from mp_bootstrap_bcast (non-root, int)\n",
 			rc);
 		    exit(1);
@@ -973,7 +1017,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		if (!(rbuf = (char *) MPIU_Malloc(bsize)))
 		{
 		    globus_libc_fprintf(stderr, 
-			"ERROR: distribute_byte_array(): "
+			"ERROR: mpig_pm_gk_distribute_byte_array(): "
 			"failed malloc of %d bytes\n", 
 			bsize);
 		    exit(1);
@@ -987,7 +1031,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		if (rc != MPI_SUCCESS)
 		{
 		    globus_libc_fprintf(stderr, 
-			"ERROR: distribute_byte_array(): erroneous rc = %d "
+			"ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d "
 			"from mp_bootstrap_bcast (non-root, char)\n",
 			rc);
 		    exit(1);
@@ -998,15 +1042,15 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
             {
 		char tag[SUBJOB_MAX_TAG_SIZE];
 		sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_D, call_idx);
-		/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob slave: before intra_subjob_bcast\n",
+		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: before intra_subjob_bcast\n",
 		                       MPID_MyWorldRank); */
-		intra_subjob_bcast(sj_size, sj_rank, tag, &buf_len, &rbuf);
-		/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob slave: after intra_subjob_bcast\n",
+		mpig_pm_gk_intra_subjob_bcast(sj_size, sj_rank, tag, &buf_len, &rbuf);
+		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: after intra_subjob_bcast\n",
 		                       MPID_MyWorldRank); */
 	    }
 #           endif
 
-	    extract_byte_arrays(rbuf, &nbufs, outbufs, outbufs_lens);
+	    mpig_pm_gk_extract_byte_arrays(rbuf, &nbufs, outbufs, outbufs_lens);
 	    MPIU_Free(rbuf);
 	    i += nbufs;
 
@@ -1017,7 +1061,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	/* subjob master */
 	char *my_subjob_buf;
 	int my_subjob_bufsize;
-/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: i am subjob master\n", MPID_MyWorldRank); */
+/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: i am subjob master\n", MPID_MyWorldRank); */
 
 #       if defined(MPIG_VMPI)
         {
@@ -1061,7 +1105,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    if (rc != MPI_SUCCESS)
 	    {
 		globus_libc_fprintf(stderr, 
-		    "ERROR: distribute_byte_array(): erroneous rc = %d from "
+		    "ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d from "
 		    "mp_bootstrap_gather (root)\n",
 		    rc);
 		exit(1);
@@ -1100,7 +1144,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    if (rc != MPI_SUCCESS)
 	    {
 		globus_libc_fprintf(stderr, 
-		    "ERROR: distribute_byte_array(): erroneous rc = %d from "
+		    "ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d from "
 		    "mp_bootstrap_gatherv (root)\n",
 		    rc);
 		exit(1);
@@ -1161,13 +1205,13 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		char tag[SUBJOB_MAX_TAG_SIZE];
 		sprintf(tag, "%s%d", SUBJOB_SLAVE_TO_MASTER_D, call_idx);
 
-		intra_subjob_gather(sj_size, sj_rank, t, t_len, tag, &my_subjob_bufsize, &my_subjob_buf);
+		mpig_pm_gk_intra_subjob_gather(sj_size, sj_rank, t, t_len, tag, &my_subjob_bufsize, &my_subjob_buf);
 	    }
 	    MPIU_Free(t);
 	}
 #       endif
 
-	extract_byte_arrays(my_subjob_buf, (int *) NULL, outbufs,outbufs_lens);
+	mpig_pm_gk_extract_byte_arrays(my_subjob_buf, (int *) NULL, outbufs,outbufs_lens);
 
 #       if defined(MPIG_VMPI)
         {
@@ -1181,7 +1225,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    if (rc != MPI_SUCCESS)
 	    {
 		globus_libc_fprintf(stderr, 
-		    "ERROR: distribute_byte_array(): erroneous rc = %d "
+		    "ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d "
 		    "from mp_bootstrap_bcast (root, int)\n",
 		    rc);
 		exit(1);
@@ -1199,7 +1243,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	    if (rc != MPI_SUCCESS)
 	    {
 		globus_libc_fprintf(stderr, 
-		    "ERROR: distribute_byte_array(): erroneous rc = %d "
+		    "ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d "
 		    "from mp_bootstrap_bcast (root, char)\n",
 		    rc);
 		exit(1);
@@ -1212,10 +1256,10 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 
 	    /* sending inter-subjob message for MY subjob to all my slaves */
 	    sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_D, call_idx);
-	    /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: before intra_subjob_bcast our subjob\n",
+	    /* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: before intra_subjob_bcast our subjob\n",
 	                           MPID_MyWorldRank); */
-	    intra_subjob_bcast(sj_size, sj_rank, tag, &my_subjob_bufsize, &my_subjob_buf);
-	    /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: after intra_subjob_bcast our subjob\n",
+	    mpig_pm_gk_intra_subjob_bcast(sj_size, sj_rank, tag, &my_subjob_bufsize, &my_subjob_buf);
+	    /* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: after intra_subjob_bcast our subjob\n",
 	                           MPID_MyWorldRank); */
 	}
 #       endif
@@ -1243,7 +1287,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 	/* receiving subjob byte arrays from other subjob masters */
 	for (i = 0; i < sj_num-1; i ++)
 	{
-/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: top of for loop i %d sj_num-1 %d\n",
+/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: top of for loop i %d sj_num-1 %d\n",
    MPID_MyWorldRank, i, sj_num-1); */
 	    {
 		char tag[SUBJOB_MAX_TAG_SIZE];
@@ -1267,7 +1311,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		if (rc != MPI_SUCCESS)
 		{
 		    globus_libc_fprintf(stderr, 
-			"ERROR: distribute_byte_array(): erroneous rc = %d "
+			"ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d "
 			"from mp_bootstrap_bcast (root, int, 2)\n",
 			rc);
 		    exit(1);
@@ -1281,7 +1325,7 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		if (rc != MPI_SUCCESS)
 		{
 		    globus_libc_fprintf(stderr, 
-			"ERROR: distribute_byte_array(): erroneous rc = %d "
+			"ERROR: mpig_pm_gk_distribute_byte_array(): erroneous rc = %d "
 			"from mp_bootstrap_bcast (root, char, 2)\n",
 			rc);
 		    exit(1);
@@ -1293,24 +1337,24 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
 		/* bcasting inter-subjob message to all my slaves */
 		char tag[SUBJOB_MAX_TAG_SIZE];
 		sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_D, call_idx);
-		/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: before intra_subjob_bcast"
+		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: before intra_subjob_bcast"
 		   " other subjob\n", MPID_MyWorldRank); */
-		intra_subjob_bcast(sj_size, sj_rank, tag, &buf_len, &buf);
-		/* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: after intra_subjob_bcast"
+		mpig_pm_gk_intra_subjob_bcast(sj_size, sj_rank, tag, &buf_len, &buf);
+		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: after intra_subjob_bcast"
 		   " other subjob\n", MPID_MyWorldRank); */
 	    }
 #           endif
 
-	    extract_byte_arrays(buf, (int *) NULL, outbufs, outbufs_lens);
+	    mpig_pm_gk_extract_byte_arrays(buf, (int *) NULL, outbufs, outbufs_lens);
 	    MPIU_Free(buf);
 	} /* endfor */
     } /* endif */
 
-/* globus_libc_fprintf(stderr, "%d: exit distribute_byte_array: sj_rank %d %d bytes\n", MPID_MyWorldRank, sj_rank, inbuf_len); */
+/* globus_libc_fprintf(stderr, "%d: exit mpig_pm_gk_distribute_byte_array: sj_rank %d %d bytes\n", MPID_MyWorldRank, sj_rank, inbuf_len); */
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting (mpi_errno=%d)", mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_i_distribute_byte_array);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting (mpi_errno=%d)", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_distribute_byte_array);
     return mpi_errno;
 
   fn_fail:
@@ -1318,11 +1362,11 @@ MPIG_STATIC int distribute_byte_array(int pg_size, int pg_rank, int sj_size, int
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
-/* end distribute_byte_array() */
+/* end mpig_pm_gk_distribute_byte_array() */
 
 
 #if !defined(MPIG_VMPI)
-MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *buf)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_send(int dest, char *tag_base, int nbytes, char *buf)
 {
     char tag[SUBJOB_MAX_TAG_SIZE];
     char *bigtag;
@@ -1389,9 +1433,9 @@ MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *b
 	MPIU_Free(bigtag);
     }
 
-} /* end intra_subjob_send() */
+} /* end mpig_pm_gk_intra_subjob_send() */
 
-MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **buf)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **buf)
 {
     char tag[SUBJOB_MAX_TAG_SIZE];
     char *bigtag;
@@ -1455,13 +1499,13 @@ MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **b
     if (bigtag)
 	MPIU_Free(bigtag);
 
-} /* end intra_subjob_receive() */
+} /* end mpig_pm_gk_intra_subjob_receive() */
 #endif /* !defined(MPIG_VMPI) */
 
-MPIG_STATIC void extract_byte_arrays(char *rbuf, 
-				     int *nbufs_p,  /* optional */
-				     globus_byte_t **outbufs, 
-				     int *outbuflens)
+MPIG_STATIC void mpig_pm_gk_extract_byte_arrays(char *rbuf, 
+						int *nbufs_p,  /* optional */
+						globus_byte_t **outbufs, 
+						int *outbuflens)
 {
     char *src;
     int nbufs;
@@ -1477,7 +1521,7 @@ MPIG_STATIC void extract_byte_arrays(char *rbuf,
 	int id;
 
 	sscanf(src, "%d ", &id);
-	/* globus_libc_fprintf(stderr, "%d: extract_byte_arrays: FOO extracting rank %d\n", MPID_MyWorldRank, id); */
+	/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_extract_byte_arrays: FOO extracting rank %d\n", MPID_MyWorldRank, id); */
 
 	if (outbufs[id])
 	{
@@ -1499,7 +1543,7 @@ MPIG_STATIC void extract_byte_arrays(char *rbuf,
 	src += ((2*INT_MAX_STRLEN)+outbuflens[id]);
     } /* endfor */
 
-} /* end extract_byte_arrays() */
+} /* end mpig_pm_gk_extract_byte_arrays() */
 
 
 #if !defined(MPIG_VMPI)
@@ -1581,7 +1625,7 @@ MPIG_STATIC void extract_byte_arrays(char *rbuf,
  *   
  */
 
-MPIG_STATIC void intra_subjob_bcast(int sj_size, int sj_rank, char * tag_base, int * rcvd_nbytes, char ** buf)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_bcast(int sj_size, int sj_rank, char * tag_base, int * rcvd_nbytes, char ** buf)
 {
     int mask;
 
@@ -1607,9 +1651,9 @@ MPIG_STATIC void intra_subjob_bcast(int sj_size, int sj_rank, char * tag_base, i
     if (sj_rank & mask) 
     {
 	/* i am not root */
-	intra_subjob_receive(tag_base,    /* tag */
-			    rcvd_nbytes,  /* nbytes rcvd? */
-			    buf);        /* message */
+	mpig_pm_gk_intra_subjob_receive(tag_base,    /* tag */
+					rcvd_nbytes, /* nbytes rcvd? */
+					buf);        /* message */
     } /* endif */
 
     /*
@@ -1622,18 +1666,18 @@ MPIG_STATIC void intra_subjob_bcast(int sj_size, int sj_rank, char * tag_base, i
     {
 	if (sj_rank + mask < sj_size) 
 	{
-	    intra_subjob_send(sj_rank+mask, /* dest */
-			    tag_base,                 /* tag */
-			    *rcvd_nbytes,             /* nbytes */
-			    *buf);                   /* data */
+	    mpig_pm_gk_intra_subjob_send(sj_rank+mask, /* dest */
+					 tag_base,     /* tag */
+					 *rcvd_nbytes, /* nbytes */
+					 *buf);        /* data */
 	} /* endif */
 	mask >>= 1;
     } /* endwhile */
 
-} /* end intra_subjob_bcast() */
+} /* end mpig_pm_gk_intra_subjob_bcast() */
 
-MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int inbuflen, char *tag_base,
-				     int *rcvd_nbytes, char **buf)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int inbuflen, char *tag_base,
+						int *rcvd_nbytes, char **buf)
 {
     int mask;
     int my_subjob_bufsize;
@@ -1673,9 +1717,9 @@ MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int 
 	    char *rbuf;
 
 	    sprintf(tag, "%s%d", tag_base, sj_rank+mask);
-	    intra_subjob_receive(tag,      /* tag */
-				&buflen,  /* nbytes received? */
-				&rbuf);   /* message */
+	    mpig_pm_gk_intra_subjob_receive(tag,      /* tag */
+					    &buflen,  /* nbytes received? */
+					    &rbuf);   /* message */
 
 	    if (my_subjob_bufsize-(dest-my_subjob_buf) < buflen)
 	    {
@@ -1709,10 +1753,10 @@ MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int 
     {
 	/* subjob slave */
 	sprintf(tag, "%s%d", tag_base, sj_rank);
-	intra_subjob_send(sj_rank - mask, /* dest */
-			tag,                        /* tag */
-			dest-my_subjob_buf,        /* nbytes */
-			my_subjob_buf);            /* data */
+	mpig_pm_gk_intra_subjob_send(sj_rank - mask,      /* dest */
+				     tag,                 /* tag */
+				     dest-my_subjob_buf,  /* nbytes */
+				     my_subjob_buf);      /* data */
 	MPIU_Free(my_subjob_buf);
     } 
     else
@@ -1724,19 +1768,19 @@ MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int 
 
     MPIU_Free(tag);
 
-} /* end intra_subjob_gather() */
+} /* end mpig_pm_gk_intra_subjob_gather() */
 
 #endif /* !defined(MPIG_VMPI) */
 
 #else /* !FOO */
 
 /*
- * void get_topology(int rank_in_my_subjob, 
- *                   int my_subjob_size, 
- *                   int **subjob_addresses,
- *                   int *nprocs, 
- *                   int *nsubjobs, 
- *                   int *my_grank)
+ * void mpig_pm_gk_get_topology(int rank_in_my_subjob, 
+ *                              int my_subjob_size, 
+ *                              int **subjob_addresses,
+ *                              int *nprocs, 
+ *                              int *nsubjobs, 
+ *                              int *my_grank)
  *
  * MUST be called by EVERY proc, each supplying rank_in_my_subjob
  * rank_in_my_subjob==0 -> subjobmaster, else subjobslave
@@ -1755,12 +1799,12 @@ MPIG_STATIC void intra_subjob_gather(int sj_size, int sj_rank, char *inbuf, int 
 
 /* NICK: should return 'globus-like' rc ... not 'void' */
 
-MPIG_STATIC void get_topology(int rank_in_my_subjob, 
-			      int my_subjob_size, 
-			      int **subjob_addresses,
-			      int *nprocs, 
-			      int *nsubjobs, 
-			      int *my_grank)
+MPIG_STATIC void mpig_pm_gk_get_topology(int rank_in_my_subjob, 
+					 int my_subjob_size, 
+					 int **subjob_addresses,
+					 int *nprocs, 
+					 int *nsubjobs, 
+					 int *my_grank)
 {
     char topology_buff[GRAM_MYJOB_MAX_BUFFER_LENGTH];
     char *buff;
@@ -1820,9 +1864,9 @@ MPIG_STATIC void get_topology(int rank_in_my_subjob,
 
 	    sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_T, call_idx);
 
-	    intra_subjob_receive(tag,     /* tag */
-				&bufflen, /* nbytes received? */
-				&rbuff);  /* message */
+	    mpig_pm_gk_intra_subjob_receive(tag,      /* tag */
+					    &bufflen, /* nbytes received? */
+					    &rbuff);  /* message */
 
 	    sscanf(rbuff, "%d %d", nprocs, my_grank);
 	    globus_libc_free(rbuff);
@@ -2081,28 +2125,28 @@ MPIG_STATIC void get_topology(int rank_in_my_subjob,
 		for (i = 1; i < my_subjob_size; i ++)
 		{
 		    sprintf(topology_buff, "%d %d", *nprocs, (*my_grank) + i);
-		    intra_subjob_send(i,				/* dest */
-				    tag,				/* tag */
-				    (int) strlen(topology_buff)+1,	/* nbytes */
-				    topology_buff);			/* data */
+		    mpig_pm_gk_intra_subjob_send(i,				/* dest */
+						 tag,				/* tag */
+						 (int) strlen(topology_buff)+1,	/* nbytes */
+						 topology_buff);		/* data */
 		} /* endfor */
 	    }
         }
 #       endif
     } /* endif */
 
-} /* end get_topology() */
+} /* end mpig_pm_gk_get_topology() */
 
-MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
-				       int inbufflen,
-				       int rank_in_my_subjob,
-				       int my_subjob_size,
-				       int *subjob_addresses,
-				       int nprocs,
-				       int nsubjobs,
-				       int my_grank,
-				       globus_byte_t **outbuffs,
-				       int *outbufflens)
+MPIG_STATIC void mpig_pm_gk_distribute_byte_array(globus_byte_t *inbuff,
+						  int inbufflen,
+						  int rank_in_my_subjob,
+						  int my_subjob_size,
+						  int *subjob_addresses,
+						  int nprocs,
+						  int nsubjobs,
+						  int my_grank,
+						  globus_byte_t **outbuffs,
+						  int *outbufflens)
 {
 
     int i;
@@ -2214,13 +2258,13 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 		char tag[200];
 		sprintf(tag, "%s%d", SUBJOB_SLAVE_TO_MASTER_D, call_idx);
 		/* send my byte array to my master */
-		intra_subjob_gather(rank_in_my_subjob,
-				    my_subjob_size,
-				    t,                        /* data */
-				    (2*HEADERLEN)+inbufflen,  /* nbytes */
-				    tag,                      /* tag */
-				    (int *) NULL,         /* subjob mstr only */
-				    (char **) NULL);      /* subjob mstr only */
+		mpig_pm_gk_intra_subjob_gather(rank_in_my_subjob,
+					       my_subjob_size,
+					       t,                        /* data */
+					       (2*HEADERLEN)+inbufflen,  /* nbytes */
+					       tag,                      /* tag */
+					       (int *) NULL,             /* subjob mstr only */
+					       (char **) NULL);          /* subjob mstr only */
 	    }
 
 	    if (bigbuff)
@@ -2286,16 +2330,16 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 		char tag[200];
 		sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_D, call_idx);
 /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob slave: before intra_subjob_bcast\n", MPID_MyWorldRank); */
-		intra_subjob_bcast(rank_in_my_subjob,
-				    my_subjob_size,
-				    tag,              /* tag */
-				    &bufflen,         /* nbytes rcvd? */
-				    &rbuff);          /* message */
+		mpig_pm_gk_intra_subjob_bcast(rank_in_my_subjob,
+					      my_subjob_size,
+					      tag,              /* tag */
+					      &bufflen,         /* nbytes rcvd? */
+					      &rbuff);          /* message */
 /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob slave: after intra_subjob_bcast\n", MPID_MyWorldRank); */
 	    }
 #           endif
 
-	    extract_byte_arrays(rbuff, &nbuffs, outbuffs, outbufflens);
+	    mpig_pm_gk_extract_byte_arrays(rbuff, &nbuffs, outbuffs, outbufflens);
 	    globus_libc_free(rbuff);
 	    i += nbuffs;
 
@@ -2450,19 +2494,19 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 		char tag[200];
 		sprintf(tag, "%s%d", SUBJOB_SLAVE_TO_MASTER_D, call_idx);
 
-		intra_subjob_gather(rank_in_my_subjob,
-				    my_subjob_size,
-				    t,
-				    t_len,
-				    tag,                 /* tag */
-				    &my_subjob_buffsize, /* nbytes rcvd? */
-				    &my_subjob_buff);    /* message */
+		mpig_pm_gk_intra_subjob_gather(rank_in_my_subjob,
+					       my_subjob_size,
+					       t,
+					       t_len,
+					       tag,                 /* tag */
+					       &my_subjob_buffsize, /* nbytes rcvd? */
+					       &my_subjob_buff);    /* message */
 	    }
 	    globus_libc_free(t);
 	}
 #       endif
 
-	extract_byte_arrays(my_subjob_buff, (int *) NULL, outbuffs,outbufflens);
+	mpig_pm_gk_extract_byte_arrays(my_subjob_buff, (int *) NULL, outbuffs,outbufflens);
 
 #       if defined(MPIG_VMPI)
         {
@@ -2509,11 +2553,11 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 	    sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_D, call_idx);
 /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: before intra_subjob_bcast our subjob\n",
    MPID_MyWorldRank); */
-	    intra_subjob_bcast(rank_in_my_subjob,
-				my_subjob_size,
-				tag,                 /* tag */
-				&my_subjob_buffsize, /* nbytes bcast */
-				&my_subjob_buff);    /* message */
+	    mpig_pm_gk_intra_subjob_bcast(rank_in_my_subjob,
+					  my_subjob_size,
+					  tag,                 /* tag */
+					  &my_subjob_buffsize, /* nbytes bcast */
+					  &my_subjob_buff);    /* message */
 /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: after intra_subjob_bcast our subjob\n",
    MPID_MyWorldRank); */
 	}
@@ -2595,17 +2639,17 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 		sprintf(tag, "%s%d", SUBJOB_MASTER_TO_SLAVE_D, call_idx);
 /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: before intra_subjob_bcast other subjob\n",
    MPID_MyWorldRank); */
-		intra_subjob_bcast(rank_in_my_subjob,
-				    my_subjob_size,
-				    tag,              /* tag */
-				    &bufflen,         /* nbytes bcast */
-				    &buff);           /* message */
+		mpig_pm_gk_intra_subjob_bcast(rank_in_my_subjob,
+					      my_subjob_size,
+					      tag,              /* tag */
+					      &bufflen,         /* nbytes bcast */
+					      &buff);           /* message */
 /* globus_libc_fprintf(stderr, "%d: distribute_byte_array: subjob master: after intra_subjob_bcast other subjob\n",
    MPID_MyWorldRank); */
 	    }
 #           endif
 
-	    extract_byte_arrays(buff, (int *) NULL, outbuffs, outbufflens);
+	    mpig_pm_gk_extract_byte_arrays(buff, (int *) NULL, outbuffs, outbufflens);
 	    globus_libc_free(buff);
 	} /* endfor */
     } /* endif */
@@ -2616,7 +2660,7 @@ MPIG_STATIC void distribute_byte_array(globus_byte_t *inbuff,
 } /* end distribute_byte_array() */
 
 #if !defined(MPIG_VMPI)
-MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *buff)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_send(int dest, char *tag_base, int nbytes, char *buff)
 {
     char tag[100];
     char *bigtag;
@@ -2691,9 +2735,9 @@ MPIG_STATIC void intra_subjob_send(int dest, char *tag_base, int nbytes, char *b
     if (bigtag)
 	globus_libc_free(bigtag);
 
-} /* end intra_subjob_send() */
+} /* end mpig_pm_gk_intra_subjob_send() */
 
-MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **buff)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **buff)
 {
     char tag[100];
     char *bigtag;
@@ -2757,13 +2801,13 @@ MPIG_STATIC void intra_subjob_receive(char *tag_base, int *rcvd_nbytes, char **b
     if (bigtag)
 	globus_libc_free(bigtag);
 
-} /* end intra_subjob_receive() */
+} /* end mpig_pm_gk_intra_subjob_receive() */
 #endif /* !defined(MPIG_VMPI) */
 
-MPIG_STATIC void extract_byte_arrays(char *rbuff, 
-				     int *nbuffs_p,  /* optional */
-				     globus_byte_t **outbuffs, 
-				     int *outbufflens)
+MPIG_STATIC void mpig_pm_gk_extract_byte_arrays(char *rbuff, 
+						int *nbuffs_p,  /* optional */
+						globus_byte_t **outbuffs, 
+						int *outbufflens)
 {
     char *src;
     int nbuffs;
@@ -2779,7 +2823,7 @@ MPIG_STATIC void extract_byte_arrays(char *rbuff,
 	int id;
 
 	sscanf(src, "%d ", &id);
-/* globus_libc_fprintf(stderr, "%d: extract_byte_arrays: FOO extracting rank %d\n", MPID_MyWorldRank, id); */
+/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_extract_byte_arrays: FOO extracting rank %d\n", MPID_MyWorldRank, id); */
 
 	if (outbuffs[id])
 	{
@@ -2801,7 +2845,7 @@ MPIG_STATIC void extract_byte_arrays(char *rbuff,
 	src += ((2*HEADERLEN)+outbufflens[id]);
     } /* endfor */
 
-} /* end extract_byte_arrays() */
+} /* end mpig_pm_gk_extract_byte_arrays() */
 
 #if !defined(MPIG_VMPI)
 /*
@@ -2882,11 +2926,11 @@ MPIG_STATIC void extract_byte_arrays(char *rbuff,
  *   
  */
 
-MPIG_STATIC void intra_subjob_bcast(int rank_in_my_subjob, 
-				    int my_subjob_size, 
-				    char *tag_base, 
-				    int *rcvd_nbytes, 
-				    char **buff)
+MPIG_STATIC void mpig_pm_gk_intra_subjob_bcast(int rank_in_my_subjob, 
+					       int my_subjob_size, 
+					       char *tag_base, 
+					       int *rcvd_nbytes, 
+					       char **buff)
 {
     int mask;
 
@@ -2912,9 +2956,9 @@ MPIG_STATIC void intra_subjob_bcast(int rank_in_my_subjob,
     if (rank_in_my_subjob & mask) 
     {
 	/* i am not root */
-	intra_subjob_receive(tag_base,    /* tag */
-			    rcvd_nbytes,  /* nbytes rcvd? */
-			    buff);        /* message */
+	mpig_pm_gk_intra_subjob_receive(tag_base,     /* tag */
+					rcvd_nbytes,  /* nbytes rcvd? */
+					buff);        /* message */
     } /* endif */
 
     /*
@@ -2927,23 +2971,24 @@ MPIG_STATIC void intra_subjob_bcast(int rank_in_my_subjob,
     {
 	if (rank_in_my_subjob + mask < my_subjob_size) 
 	{
-	    intra_subjob_send(rank_in_my_subjob+mask, /* dest */
-			    tag_base,                 /* tag */
-			    *rcvd_nbytes,             /* nbytes */
-			    *buff);                   /* data */
+	    mpig_pm_gk_intra_subjob_send(
+		rank_in_my_subjob+mask,   /* dest */
+		tag_base,                 /* tag */
+		*rcvd_nbytes,             /* nbytes */
+		*buff);                   /* data */
 	} /* endif */
 	mask >>= 1;
     } /* endwhile */
 
-} /* end intra_subjob_bcast() */
+} /* end mpig_pm_gk_intra_subjob_bcast() */
 
-MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
-				     int my_subjob_size,
-				     char *inbuff,
-				     int inbufflen,
-				     char *tag_base, 
-				     int *rcvd_nbytes, /* subjob master only */
-				     char **buff)      /* subjob master only */
+MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(int rank_in_my_subjob,
+						int my_subjob_size,
+						char *inbuff,
+						int inbufflen,
+						char *tag_base, 
+						int *rcvd_nbytes, /* subjob master only */
+						char **buff)      /* subjob master only */
 {
 
     int mask;
@@ -2987,9 +3032,9 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
 	    char *rbuff;
 
 	    sprintf(tag, "%s%d", tag_base, rank_in_my_subjob+mask);
-	    intra_subjob_receive(tag,      /* tag */
-				&bufflen,  /* nbytes received? */
-				&rbuff);   /* message */
+	    mpig_pm_gk_intra_subjob_receive(tag,       /* tag */
+					    &bufflen,  /* nbytes received? */
+					    &rbuff);   /* message */
 
 	    if (my_subjob_buffsize-(dest-my_subjob_buff) < bufflen)
 	    {
@@ -3023,10 +3068,10 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
     {
 	/* subjob slave */
 	sprintf(tag, "%s%d", tag_base, rank_in_my_subjob);
-	intra_subjob_send(rank_in_my_subjob - mask, /* dest */
-			tag,                        /* tag */
-			dest-my_subjob_buff,        /* nbytes */
-			my_subjob_buff);            /* data */
+	mpig_pm_gk_intra_subjob_send(rank_in_my_subjob - mask, /* dest */
+				     tag,                      /* tag */
+				     dest-my_subjob_buff,      /* nbytes */
+				     my_subjob_buff);          /* data */
 	globus_libc_free(my_subjob_buff);
     } 
     else
@@ -3038,7 +3083,7 @@ MPIG_STATIC void intra_subjob_gather(int rank_in_my_subjob,
 
     globus_libc_free(tag);
 
-} /* end intra_subjob_gather() */
+} /* end mpig_pm_gk_intra_subjob_gather() */
 
 #endif /* !defined(MPIG_VMPI) */
 

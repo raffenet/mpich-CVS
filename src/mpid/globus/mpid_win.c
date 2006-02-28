@@ -13,20 +13,21 @@
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_create
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_create(void * base, MPI_Aint size, int disp_unit, MPID_Info * info, MPID_Comm * comm_ptr, MPID_Win ** win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_CREATE);
+
+    MPIG_UNUSED_VAR(fcname);
     
     MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
     return mpi_errno;
 
@@ -43,20 +44,21 @@ int MPID_Win_create(void * base, MPI_Aint size, int disp_unit, MPID_Info * info,
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_free
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_free(MPID_Win ** win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_FREE);
+
+    MPIG_UNUSED_VAR(fcname);
         
     MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FREE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
  
  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FREE);
     return mpi_errno;
 
@@ -73,20 +75,21 @@ int MPID_Win_free(MPID_Win ** win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_fence
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_fence(int assert, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_FENCE);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_FENCE);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
 
  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_FENCE);
     return mpi_errno;
 
@@ -103,20 +106,21 @@ int MPID_Win_fence(int assert, MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_start
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_start(MPID_Group * group_ptr, int assert, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_START);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_START);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_START);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_START);
     return mpi_errno;
 
@@ -134,20 +138,21 @@ int MPID_Win_start(MPID_Group * group_ptr, int assert, MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_complete
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_complete(MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_COMPLETE);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_COMPLETE);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_COMPLETE);
     return mpi_errno;
 
@@ -164,20 +169,21 @@ int MPID_Win_complete(MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_post
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_post(MPID_Group * group_ptr, int assert, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno=MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_POST);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_POST);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_POST);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_POST);
     return mpi_errno;
 
@@ -194,21 +200,22 @@ int MPID_Win_post(MPID_Group * group_ptr, int assert, MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_wait
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_wait(MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
 
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_WAIT);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_WAIT);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_WAIT);
     return mpi_errno;
 
@@ -225,21 +232,22 @@ int MPID_Win_wait(MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_test
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_test(MPID_Win * win_ptr, int * flag)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_TEST);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_TEST);
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_TEST);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     *flag = FALSE;
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_TEST);
     return mpi_errno;
 
@@ -256,20 +264,21 @@ int MPID_Win_test(MPID_Win * win_ptr, int * flag)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_lock
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_LOCK);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_LOCK);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_LOCK);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
 
  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_LOCK);
     return mpi_errno;
 
@@ -286,20 +295,21 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Win_unlock
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Win_unlock(int dest, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_WIN_UNLOCK);
 
-    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_UNUSED_VAR(fcname);
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_UNLOCK);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
+
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
  fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_WIN_UNLOCK);
     return mpi_errno;
 
@@ -316,22 +326,23 @@ int MPID_Win_unlock(int dest, MPID_Win * win_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Accumulate
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Accumulate(void * origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		    int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
 		    MPI_Op op, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_ACCUMULATE);
+
+    MPIG_UNUSED_VAR(fcname);
     
     MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_ACCUMULATE);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_ACCUMULATE);
     return mpi_errno;
 
@@ -348,21 +359,22 @@ int MPID_Accumulate(void * origin_addr, int origin_count, MPI_Datatype origin_da
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Get
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 	     int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_GET);
+
+    MPIG_UNUSED_VAR(fcname);
         
     MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_GET);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
     
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_GET);
     return mpi_errno;
 
@@ -376,21 +388,22 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Put
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Put(void * origin_addr, int origin_count, MPI_Datatype origin_datatype,
 	     int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype, MPID_Win * win_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_PUT);
+
+    MPIG_UNUSED_VAR(fcname);
         
     MPIG_RMA_FUNC_ENTER(MPID_STATE_MPID_PUT);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
-    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", FCNAME);
+    MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
 
   fn_return:
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_RMA_FUNC_EXIT(MPID_STATE_MPID_PUT);    
     return mpi_errno;
 
@@ -407,19 +420,20 @@ int MPID_Put(void * origin_addr, int origin_count, MPI_Datatype origin_datatype,
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Alloc_mem
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 void * MPID_Alloc_mem(size_t size, MPID_Info * info_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     void * mem_ptr;
     MPIG_STATE_DECL(MPID_STATE_MPID_ALLOC_MEM);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_MPID_ALLOC_MEM);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
     mem_ptr = MPIU_Malloc(size);
     
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_ALLOC_MEM);
     return mem_ptr;
 }
@@ -431,19 +445,20 @@ void * MPID_Alloc_mem(size_t size, MPID_Info * info_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_Free_mem
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
 int MPID_Free_mem(void * mem_ptr)
 {
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_FREE_MEM);
 
+    MPIG_UNUSED_VAR(fcname);
+
     MPIG_FUNC_ENTER(MPID_STATE_MPID_FREE_MEM);
-    MPIG_DBG_PRINTF((10, FCNAME, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "entering"));
 
     MPIU_Free(mem_ptr);
 
-    MPIG_DBG_PRINTF((10, FCNAME, "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_WIN, "exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_FREE_MEM);
     return mpi_errno;
 }
