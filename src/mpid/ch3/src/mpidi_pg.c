@@ -471,6 +471,7 @@ int MPIDI_PG_SetConnInfo( int rank, const char *connString )
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
+    int len;
     char key[128];
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_SetConnInfo);
 
@@ -478,8 +479,8 @@ int MPIDI_PG_SetConnInfo( int rank, const char *connString )
 
     MPIU_Assert(pg_world->connData);
     
-    mpi_errno = MPIU_Snprintf(key, sizeof(key), "P%d-businesscard", rank);
-    if (mpi_errno < 0 || mpi_errno > sizeof(key)) {
+    len = MPIU_Snprintf(key, sizeof(key), "P%d-businesscard", rank);
+    if (len < 0 || len > sizeof(key)) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**snprintf",
 			     "**snprintf %d", mpi_errno);
     }

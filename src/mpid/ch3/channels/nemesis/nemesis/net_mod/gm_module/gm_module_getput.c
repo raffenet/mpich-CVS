@@ -16,15 +16,15 @@ getput_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 
 
 void
-gm_module_do_get (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr)
+MPID_nem_gm_module_do_get (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr)
 {
-    gm_get (port, (long)source_p, target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
+    //    gm_get (port, (long)source_p, target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
     
     --num_send_tokens;
 }
 
 int
-gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *source_vc, int *completion_ctr)
+MPID_nem_gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *source_vc, int *completion_ctr)
 {
     int ret;
     
@@ -52,11 +52,11 @@ gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *source_vc, i
 #endif
     if (num_send_tokens)
     {
-	gm_module_do_get (target_p, source_p, len, source_vc->ch.node_id, source_vc->ch.port_id, completion_ctr);
+	MPID_nem_gm_module_do_get (target_p, source_p, len, source_vc->ch.node_id, source_vc->ch.port_id, completion_ctr);
     }
     else
     {
-	gm_module_send_queue_t *e = gm_module_queue_alloc (send);
+	MPID_nem_gm_module_send_queue_t *e = MPID_nem_gm_module_queue_alloc (send);
 
 	e->type = SEND_TYPE_RDMA;
 	e->u.rdma.type = RDMA_TYPE_GET;
@@ -66,22 +66,22 @@ gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *source_vc, i
 	e->node_id = source_vc->ch.node_id;
 	e->port_id = source_vc->ch.port_id;
 	e->u.rdma.completion_ctr = completion_ctr;
-	gm_module_queue_enqueue (send, e);
+	MPID_nem_gm_module_queue_enqueue (send, e);
     }
     
     return 0;
 }
 
 void
-gm_module_do_put (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr)
+MPID_nem_gm_module_do_put (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr)
 {
-    gm_put (port, source_p, (long)target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
+    //    gm_put (port, source_p, (long)target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
 
     --num_send_tokens;
 }
 
 int
-gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *target_vc, int *completion_ctr)
+MPID_nem_gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *target_vc, int *completion_ctr)
 {
     int ret;
     
@@ -96,11 +96,11 @@ gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *target_vc, i
     
     if (num_send_tokens)
     {
-	gm_module_do_put (target_p, source_p, len, target_vc->ch.node_id, target_vc->ch.port_id, completion_ctr);
+	MPID_nem_gm_module_do_put (target_p, source_p, len, target_vc->ch.node_id, target_vc->ch.port_id, completion_ctr);
     }
     else
     {
-	gm_module_send_queue_t *e = gm_module_queue_alloc (send);
+	MPID_nem_gm_module_send_queue_t *e = MPID_nem_gm_module_queue_alloc (send);
 
 	e->type = SEND_TYPE_RDMA;
 	e->u.rdma.type = RDMA_TYPE_PUT;
@@ -110,7 +110,7 @@ gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *target_vc, i
 	e->node_id = target_vc->ch.node_id;
 	e->port_id = target_vc->ch.port_id;
 	e->u.rdma.completion_ctr = completion_ctr;
-	gm_module_queue_enqueue (send, e);
+	MPID_nem_gm_module_queue_enqueue (send, e);
     }
     return 0;
 }

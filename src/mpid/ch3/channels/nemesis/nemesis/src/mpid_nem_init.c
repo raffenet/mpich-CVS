@@ -30,7 +30,7 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 }
 
 int
-_MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
+_MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 {
     int num_procs = pg_p->size;
     pid_t            my_pid;
@@ -41,11 +41,20 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int              global_size;
     int              index, index2, size;
     int i;
+    char *publish_bc_orig = NULL;
+    char *bc_val = NULL;
+    int val_max_remaining;
 
+    /* Initialize the business card */
+    ret = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );
+    if (ret)
+	FATAL_ERROR ("MPIDI_CH3I_BCInit failed \n");
+    publish_bc_orig = bc_val;
+    
     gethostname (MPID_nem_hostname, MAX_HOSTNAME_LEN);
     MPID_nem_hostname[MAX_HOSTNAME_LEN-1] = '\0';
 
-    ret = get_local_procs (rank, num_procs, &num_local, &local_procs, &local_rank);
+    ret = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank);
     if (ret != 0)
     	FATAL_ERROR ("get_local_procs() failed");
     
@@ -63,7 +72,7 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.pid            = (pid_t *)MPIU_Malloc (num_local * sizeof(pid_t));
     if (MPID_nem_mem_region.pid == NULL)
 	FATAL_ERROR ("malloc failed");
-    MPID_nem_mem_region.rank           = rank;
+    MPID_nem_mem_region.rank           = pg_rank;
     MPID_nem_mem_region.num_local      = num_local;
     MPID_nem_mem_region.num_procs      = num_procs;
     MPID_nem_mem_region.local_procs    = local_procs;
@@ -124,7 +133,7 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 				    MAP_SHARED ,
 				    descs,0);
     }
-    /*fprintf(stderr,"[%i] -- address shift ok \n",rank); */
+    /*fprintf(stderr,"[%i] -- address shift ok \n",pg_rank); */
 #endif  /*FORCE_ASYM */
 
     /*     if (num_local > 1) */
@@ -183,22 +192,22 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.net_elements =
 	(MPID_nem_cell_ptr_t) (MPID_nem_mem_region.seg[2].addr + (local_rank * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t)));
 
-    MPID_nem_mem_region.FreeQ[rank] =
+    MPID_nem_mem_region.FreeQ[pg_rank] =
 	(MPID_nem_queue_ptr_t)(((char *)MPID_nem_mem_region.seg[3].addr + local_rank * sizeof(MPID_nem_queue_t)));
     
-    MPID_nem_mem_region.RecvQ[rank] = 
+    MPID_nem_mem_region.RecvQ[pg_rank] = 
 	(MPID_nem_queue_ptr_t)(((char *)MPID_nem_mem_region.seg[3].addr + (num_local + local_rank) * sizeof(MPID_nem_queue_t)));
 
     /* Free Q init and building*/
-    MPID_nem_queue_init (MPID_nem_mem_region.FreeQ[rank] );
+    MPID_nem_queue_init (MPID_nem_mem_region.FreeQ[pg_rank] );
     for (index = 0; index < MPID_NEM_NUM_CELLS; ++index)
     {         
 	MPID_nem_cell_init (&(MPID_nem_mem_region.Elements[index]));       
-	MPID_nem_queue_enqueue (MPID_nem_mem_region.FreeQ[rank], &(MPID_nem_mem_region.Elements[index]));
+	MPID_nem_queue_enqueue (MPID_nem_mem_region.FreeQ[pg_rank], &(MPID_nem_mem_region.Elements[index]));
     }
 
     /* Recv Q init only*/
-    MPID_nem_queue_init (MPID_nem_mem_region.RecvQ[rank]);
+    MPID_nem_queue_init (MPID_nem_mem_region.RecvQ[pg_rank]);
     close (MPID_nem_mem_region.memory.base_descs);   
 
     /* Initialize generic net module pointers */
@@ -207,20 +216,21 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     /* network init */
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
     {
-	ret = MPID_nem_net_module_init (MPID_nem_mem_region.RecvQ[rank],
-					MPID_nem_mem_region.FreeQ[rank],
+	ret = MPID_nem_net_module_init (MPID_nem_mem_region.RecvQ[pg_rank],
+					MPID_nem_mem_region.FreeQ[pg_rank],
 					MPID_nem_mem_region.Elements, 
 					MPID_NEM_NUM_CELLS,
 					MPID_nem_mem_region.net_elements, 
 					MPID_NEM_NUM_CELLS, 
 					&MPID_nem_mem_region.net_recv_queue, 
 					&MPID_nem_mem_region.net_free_queue,
-					ckpt_restart, pg_p);
+					ckpt_restart, pg_p, pg_rank,
+					&bc_val, &val_max_remaining);
 	if (ret != 0)
 	    FATAL_ERROR ("net_module_init() failed");
     }
     else{
-	if (rank == 0)
+	if (pg_rank == 0)
 	{
 	    MPID_nem_mem_region.net_recv_queue = NULL;
 	    MPID_nem_mem_region.net_free_queue = NULL;
@@ -249,6 +259,7 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
     }
 
+    /* make pointers to our queues global so we don't have to dereference the array */
     MPID_nem_mem_region.my_freeQ = MPID_nem_mem_region.FreeQ[MPID_nem_mem_region.rank];
     MPID_nem_mem_region.my_recvQ = MPID_nem_mem_region.RecvQ[MPID_nem_mem_region.rank];
     
@@ -259,29 +270,31 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.mailboxes.in  = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
     MPID_nem_mem_region.mailboxes.out = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
     
-    if (num_local > 0)
-    {
+    MPIU_Assert (num_local > 0);
 
 #define MAILBOX_INDEX(sender, receiver) ( ((sender) > (receiver)) ? ((num_local-1) * (sender) + (receiver)) :		\
                                          (((sender) < (receiver)) ? ((num_local-1) * (sender) + ((receiver)-1)) : 0) )
 
-	for (i = 0; i < num_local; ++i)
+    for (i = 0; i < num_local; ++i)
+    {
+	if (i == local_rank)
 	{
-	    if (i == local_rank)
-	    {
-		MPID_nem_mem_region.mailboxes.in [i] = NULL ;
-		MPID_nem_mem_region.mailboxes.out[i] = NULL ;
-	    }
-	    else
-	    {
-		MPID_nem_mem_region.mailboxes.in [i] = ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (i, local_rank);
-		MPID_nem_mem_region.mailboxes.out[i] = ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (local_rank, i);
-		MPID_nem_mem_region.mailboxes.in [i]->common.flag.value  = 0;
-		MPID_nem_mem_region.mailboxes.out[i]->common.flag.value  = 0;	   
-	    }
+	    MPID_nem_mem_region.mailboxes.in [i] = NULL ;
+	    MPID_nem_mem_region.mailboxes.out[i] = NULL ;
 	}
-#undef MAILBOX_INDEX
+	else
+	{
+	    MPID_nem_mem_region.mailboxes.in [i] = ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (i, local_rank);
+	    MPID_nem_mem_region.mailboxes.out[i] = ((MPID_nem_fastbox_t *)MPID_nem_mem_region.seg[0].addr) + MAILBOX_INDEX (local_rank, i);
+	    MPID_nem_mem_region.mailboxes.in [i]->common.flag.value  = 0;
+	    MPID_nem_mem_region.mailboxes.out[i]->common.flag.value  = 0;	   
+	}
     }
+#undef MAILBOX_INDEX    
+
+    ret = MPIDI_PG_SetConnInfo (pg_rank, (const char *)publish_bc_orig);
+    if (ret != MPI_SUCCESS)
+	FATAL_ERROR ("MPIDI_PG_SetConnInfo failed\n");
 
     MPID_nem_barrier (num_local, local_rank);
     MPID_nem_mpich2_init (ckpt_restart);
@@ -293,7 +306,7 @@ _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     
 
 #ifdef PAPI_MONITOR
-    my_papi_start( rank );
+    my_papi_start( pg_rank );
 #endif /*PAPI_MONITOR   */ 
 
     return 0;
@@ -406,35 +419,63 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 #endif
 }
 
+/* MPID_nem_vc_init initialize nemesis' part of the vc */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_vc_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_vc_init (MPIDI_VC_t *vc)
+MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int ret = MPI_SUCCESS;
+    MPIDI_STATE_DECL (MPID_STATE_MPID_NEM_VC_INIT);
 
-    vc->ch.is_local = MPID_NEM_IS_LOCAL (vc->lpid);
+    MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
     vc->ch.send_seqno = 0;
-    vc->ch.free_queue = MPID_nem_mem_region.FreeQ[vc->lpid]; /* networks and local procs have free queues */
-
-    vc->ch.fbox_out = NULL;
-    vc->ch.fbox_in = NULL;
-    vc->ch.recv_queue = NULL;
+    
+    /* We do different things for vcs in the COMM_WORLD pg vs other pgs
+       COMM_WORLD vcs may use shared memory, and already have queues allocated
+    */
+    if (vc->lpid < MPID_nem_mem_region.num_procs) 
+    {
+	/* This vc is in COMM_WORLD */
+	vc->ch.is_local = MPID_NEM_IS_LOCAL (vc->lpid);
+	vc->ch.free_queue = MPID_nem_mem_region.FreeQ[vc->lpid]; /* networks and local procs have free queues */    
+    }
+    else
+    {
+	/* this vc is the result of a connect */
+	vc->ch.is_local = 0;
+	vc->ch.free_queue = MPID_nem_mem_region.net_free_queue;
+    }
     
     if (vc->ch.is_local)
     {
 	vc->ch.fbox_out = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
-	
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
     }
     else
-	ret = MPID_nem_net_module_vc_init (vc);
+    {
+	vc->ch.fbox_out = NULL;
+	vc->ch.fbox_in = NULL;
+	vc->ch.recv_queue = NULL;
+
+	ret = MPID_nem_net_module_vc_init (vc, business_card);
+	if (ret != MPI_SUCCESS)
+	    MPIU_ERR_POP(ret);
+    }
     
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
        portion of the vc.  This is unused in nemesis and should be set
        to NULL */
     vc->ch.sendq_head = NULL;
     
+ fn_exit:
+    MPIDI_FUNC_EXIT (MPID_STATE_MPID_NEM_VC_INIT);
     return ret;
+ fn_fail:
+    goto fn_exit;
 }
 
 
@@ -444,7 +485,7 @@ MPID_nem_get_business_card (char *value, int length)
     return MPID_nem_net_module_get_business_card (&value, &length);    
 }
 
-int MPID_nem_connect_to_root (const char *business_card, const int lpid)
+int MPID_nem_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 {
-    return MPID_nem_net_module_connect_to_root (business_card, lpid);
+    return MPID_nem_net_module_connect_to_root (business_card, new_vc);
 }

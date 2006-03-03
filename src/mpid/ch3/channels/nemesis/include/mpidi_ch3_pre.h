@@ -14,7 +14,7 @@
 /* #define MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS */
 #define MPIDI_DEV_IMPLEMENTS_KVS
 
-struct tcp_module_internal_queue;
+struct MPID_nem_tcp_module_internal_queue;
 typedef struct MPIDI_CH3I_VC
 {
     int port_name_tag;
@@ -40,8 +40,8 @@ typedef struct MPIDI_CH3I_VC
     int left2read_head; 
     int left2read;
     int toread;
-    struct tcp_module_internal_queue *internal_recv_queue;
-    struct tcp_module_internal_queue *internal_free_queue;
+    struct MPID_nem_tcp_module_internal_queue *internal_recv_queue;
+    struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
 #endif
 
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch

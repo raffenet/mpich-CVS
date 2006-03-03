@@ -48,7 +48,7 @@ static int encode_buffer(char *dest, int dest_length, const char *src, int src_l
     while (src_length && dest_length)
     {
 	ch = *src;
-	num_used = MPIU_Snprintf(dest, dest_length, "%02X", (int)*src);
+	num_used = MPIU_Snprintf(dest, dest_length, "%02X", (unsigned char)*src);
 	if (num_used < 0)
 	{
 	    *num_encoded = n;

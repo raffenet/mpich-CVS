@@ -88,6 +88,9 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
 {
+    int mpi_errno = MPI_SUCCESS;
+    char bc[MPID_NEM_MAX_KEY_VAL_LEN];
+
     /* FIXME: Circular dependency.  Before calling MPIDI_CH3_Init,
        MPID_Init calls InitPG which calls MPIDI_PG_Create which calls
        MPIDI_CH3_VC_Init.  But MPIDI_CH3_VC_Init needs nemesis to be
@@ -111,7 +114,15 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     vc->ch.recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
 
-    return MPID_nem_vc_init (vc);
+    mpi_errno = vc->pg->getConnInfo (vc->pg_rank, bc, MPID_NEM_MAX_KEY_VAL_LEN, vc->pg);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    mpi_errno = MPID_nem_vc_init (vc, bc);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+
+ fn_fail:
+    return mpi_errno;
 }
 
 /* MPIDI_CH3_Connect_to_root() create a new vc, and connect it to the process listening on port_name */
@@ -131,15 +142,24 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
 
     *new_vc = vc;
 
+    /* init ch3 portion of vc */
     MPIDI_VC_Init (vc, NULL, 0);
-    MPIDI_CH3_VC_Init (vc);
-    
-    ret = MPID_nem_connect_to_root (port_name, vc->lpid);
-    if (ret != 0)
+
+    /* init channel portion of vc */
+    if (!nemesis_initialized)
     {
-	mpi_errno =  MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0);
+	mpi_errno =  MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0);
         goto fn_fail;
     }
+    
+    vc->ch.recv_active = NULL;
+    vc->state = MPIDI_VC_STATE_ACTIVE;
+
+    mpi_errno = MPID_nem_vc_init (vc, port_name);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    mpi_errno = MPID_nem_connect_to_root (port_name, vc);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
  fn_exit:
     return mpi_errno;

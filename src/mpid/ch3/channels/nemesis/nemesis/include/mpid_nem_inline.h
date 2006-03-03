@@ -621,6 +621,7 @@ int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
   recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
   check whether the sequence number for the cell at the head of qhead is the one
   expected from the sender of that cell
+  We only check these for processes in COMM_WORLD (i.e. the ones initially allocated)
 */
 MPID_NEM_INLINE_DECL int
 recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
@@ -657,7 +658,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif
     
 #ifdef USE_FASTBOX
-    poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
+    poll_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -668,7 +669,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
 #ifdef USE_FASTBOX
-	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
+	poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 	*cell = NULL;
 	goto exit_l;
@@ -696,6 +697,10 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     });
     
     return MPID_NEM_MPICH2_SUCCESS;
+
+ fbox_l:
+    *in_fbox = 1;
+    goto exit_l;
 }
 
 /*
@@ -710,7 +715,7 @@ MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout)
 {
 #ifdef USE_FASTBOX
-    poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
+    poll_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -721,7 +726,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ)))
     {
 #ifdef USE_FASTBOX
-	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
+	poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 	*cell = NULL;
 	goto exit_l;
@@ -742,6 +747,10 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     });
     
     return MPID_NEM_MPICH2_SUCCESS;
+
+ fbox_l:
+    *in_fbox = 1;
+    goto exit_l;
 }
 
 /*
@@ -775,7 +784,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     
     
 #ifdef USE_FASTBOX
-    poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
+    poll_fboxes (cell, goto fbox_l);
 #endif /*USE_FASTBOX */
    
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -788,8 +797,8 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
 
 #ifdef USE_FASTBOX	
-	poll_all_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
-	poll_fboxes (cell, {*in_fbox = 1; goto exit_l;} );
+	poll_all_fboxes (cell, goto fbox_l);
+	poll_fboxes (cell, goto fbox_l);
 #endif /*USE_FASTBOX */
 
 	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -809,9 +818,10 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++recv_seqno[(*cell)->pkt.mpich2.source];
-    *in_fbox = 0;    
+    *in_fbox = 0;
 
- exit_l:
+ exit_l:    
+
 #ifdef ENABLED_CHECKPOINTING
     if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
     {
@@ -828,6 +838,10 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 
     return MPID_NEM_MPICH2_SUCCESS;
+
+ fbox_l:
+    *in_fbox = 1;
+    goto exit_l;
 }
 
 /*

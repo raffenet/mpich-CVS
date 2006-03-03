@@ -25,9 +25,9 @@ void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
 void MPID_nem_check_alloc(int);
 static inline void MPID_nem_waitforlock(MPID_nem_fbox_common_ptr_t pbox, int value, int count);
 static inline int MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count);
-int MPID_nem_vc_init (MPIDI_VC_t *vc);
+int MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card);
 int MPID_nem_get_business_card (char *value, int length);
-int MPID_nem_connect_to_root (const char *port_name, const int lpid);
+int MPID_nem_connect_to_root (const char *port_name, MPIDI_VC_t *new_vc);
 
 #define MPID_NEM__MPICH2_HEADER_LEN sizeof(MPIDI_CH3_Pkt_t)
 #define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (MPID_NEM__MPICH2_HEADER_LEN))

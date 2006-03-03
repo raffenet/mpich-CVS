@@ -332,7 +332,7 @@ MPID_nem_mpich2_register_memory (void *buf, int len)
 {
     if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     {
-      //return gm_module_register_mem (buf, len);
+      //return MPID_nem_gm_module_register_mem (buf, len);
     }
     
     return MPID_NEM_MPICH2_SUCCESS;
@@ -343,7 +343,7 @@ MPID_nem_mpich2_deregister_memory (void *buf, int len)
 {
     if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     {
-      //return gm_module_deregister_mem (buf, len);
+      //return MPID_nem_gm_module_deregister_mem (buf, len);
     }
 
     return MPID_NEM_MPICH2_SUCCESS;
@@ -363,7 +363,7 @@ MPID_nem_mpich2_put (void *s_buf, void *d_buf, int len, int proc, int *completio
 	{
 	case MPID_NEM_GM_MODULE:
 	    MPID_NEM_ATOMIC_INC (completion_ctr);
-	    return gm_module_put (d_buf, s_buf, len, proc, completion_ctr);
+	    return MPID_nem_gm_module_put (d_buf, s_buf, len, proc, completion_ctr);
 	    break;
 	default:
 	    ERROR_RET (MPID_NEM_MPICH2_FAILURE, "not implemented");
@@ -396,7 +396,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		{
 		    len = (*s_iov)->iov_len;
 		    MPID_NEM_ATOMIC_INC (completion_ctr);
-		    gm_module_put ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
+		    MPID_nem_gm_module_put ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
 
 		    (*d_iov)->iov_base = (char *)(*d_iov)->iov_base + len;
 		    (*d_iov)->iov_len =- len;	    
@@ -408,7 +408,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		{
 		    len = (*d_iov)->iov_len;	    
 		    MPID_NEM_ATOMIC_INC (completion_ctr);
-		    gm_module_put ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
+		    MPID_nem_gm_module_put ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
 
 		    ++(*d_iov);
 		    --(*d_niov);
@@ -420,7 +420,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		{
 		    len = (*d_iov)->iov_len;	    
 		    MPID_NEM_ATOMIC_INC (completion_ctr);
-		    gm_module_put ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
+		    MPID_nem_gm_module_put ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
 
 		    ++(*d_iov);
 		    --(*d_niov);
@@ -453,7 +453,7 @@ MPID_nem_mpich2_get (void *s_buf, void *d_buf, int len, int proc, int *completio
 	{
 	case MPID_NEM_GM_MODULE:
 	    MPID_NEM_ATOMIC_INC (completion_ctr);
-	    return gm_module_get (d_buf, s_buf, len, proc, completion_ctr);
+	    return MPID_nem_gm_module_get (d_buf, s_buf, len, proc, completion_ctr);
 	    break;
 	default:
 	    ERROR_RET (MPID_NEM_MPICH2_FAILURE, "not implemented");
@@ -486,7 +486,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		{
 		    len = (*s_iov)->iov_len;
 		    MPID_NEM_ATOMIC_INC (completion_ctr);
-		    gm_module_get ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
+		    MPID_nem_gm_module_get ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
 
 		    (*d_iov)->iov_base = (char *)(*d_iov)->iov_base + len;
 		    (*d_iov)->iov_len =- len;	    
@@ -498,7 +498,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		{
 		    len = (*d_iov)->iov_len;	    
 		    MPID_NEM_ATOMIC_INC (completion_ctr);
-		    gm_module_get ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
+		    MPID_nem_gm_module_get ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
 
 		    ++(*d_iov);
 		    --(*d_niov);
@@ -510,7 +510,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		{
 		    len = (*d_iov)->iov_len;	    
 		    MPID_NEM_ATOMIC_INC (completion_ctr);
-		    gm_module_get ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
+		    MPID_nem_gm_module_get ((*d_iov)->iov_base, (*s_iov)->iov_base, len, proc, completion_ctr);
 
 		    ++(*d_iov);
 		    --(*d_niov);

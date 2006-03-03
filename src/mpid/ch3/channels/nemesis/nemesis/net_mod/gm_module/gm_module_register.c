@@ -2,7 +2,7 @@
 #include "gm.h"
 
 int
-gm_module_register_mem (void *p, int len)
+MPID_nem_gm_module_register_mem (void *p, int len)
 {
     if (gm_register_memory (port, p, len) == GM_SUCCESS)
 	return 0;
@@ -11,7 +11,7 @@ gm_module_register_mem (void *p, int len)
 }
 
 int
-gm_module_deregister_mem (void *p, int len)
+MPID_nem_gm_module_deregister_mem (void *p, int len)
 {
     if (gm_deregister_memory (port, p, len) == GM_SUCCESS)
 	return 0;

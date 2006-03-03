@@ -2,6 +2,7 @@
 #include "mpidimpl.h"
 #include "gm_module_impl.h"
 #include "mpid_nem.h"
+#include "gm_module.h"
 
 #define MAX_GM_BOARDS 16
 #define UNIQUE_ID_LEN 6
@@ -66,8 +67,8 @@ MPID_nem_queue_ptr_t process_recv_queue;
 MPID_nem_queue_ptr_t process_free_queue;
 
 #define FREE_SEND_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS
-gm_module_send_queue_head_t gm_module_send_queue;
-gm_module_send_queue_t *gm_module_send_free_queue;
+MPID_nem_gm_module_send_queue_head_t MPID_nem_gm_module_send_queue;
+MPID_nem_gm_module_send_queue_t *MPID_nem_gm_module_send_free_queue;
 
 static int
 init_gm (int *boardId, int *portId, unsigned char unique_id[])
@@ -117,38 +118,6 @@ init_gm (int *boardId, int *portId, unsigned char unique_id[])
 
     ERROR_RET (-1, "unable to allocate a GM port\n");
 }
-
-static int
-post_businesscard()
-{
-    int ret;
-    char key[MPID_NEM_MAX_KEY_VAL_LEN];
-    char val[MPID_NEM_MAX_KEY_VAL_LEN];
-    char *kvs_name;
-
-    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
-    if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
-
-    /* Put my unique id */
-    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "{%u:%Lu}", port_id, UNIQUE_TO_UINT64 (unique_id));
-    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "portUnique[%d]", MPID_nem_mem_region.rank);
-
-    ret = PMI_KVS_Put (kvs_name, key, val);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
-    
-    ret = PMI_KVS_Commit (kvs_name);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
-
-    ret = PMI_Barrier();
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
-
-    return 0;
-}
-
 
 #if 0
 static int
@@ -212,7 +181,7 @@ distribute_mac_ids ()
 
 /*
    int  
-   gm_module_init(MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, MPID_nem_cell_ptr_t proc_elements, int num_proc_elements,
+   MPID_nem_gm_module_init(MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, MPID_nem_cell_ptr_t proc_elements, int num_proc_elements,
 	          MPID_nem_cell_ptr_t module_elements, int num_module_elements, MPID_nem_queue_ptr_t *module_recv_queue,
 		  MPID_nem_queue_ptr_t *module_free_queue)
 
@@ -234,12 +203,14 @@ distribute_mac_ids ()
 */
 
 int
-gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue, 
+MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue, 
 		MPID_nem_queue_ptr_t proc_free_queue, 
 		MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
 		MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
 		MPID_nem_queue_ptr_t *module_recv_queue,
-		MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart, MPIDI_PG_t *pg_p)
+		MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart,
+		MPIDI_PG_t *pg_p, int pg_rank,
+		char **bc_val_p, int *val_max_sz_p)
 {
     int board_id;
     int ret;
@@ -254,9 +225,9 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 /*     ret = distribute_mac_ids (); */
 /*     if (ret != 0) */
 /* 	ERROR_RET (-1, "distribute_mac_ids() failed"); */
-    ret = post_businesscard();
+    ret = MPID_nem_gm_module_get_business_card (bc_val_p, val_max_sz_p);
     if (ret != 0)
-	ERROR_RET (-1, "post_businesscard() failed");
+	ERROR_RET (-1, "get_businesscard() failed");
 
     process_recv_queue = proc_recv_queue;
     process_free_queue = proc_free_queue;
@@ -294,33 +265,33 @@ gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     *module_recv_queue = module_gm_recv_queue;
     *module_free_queue = module_gm_free_queue;
 
-    gm_module_send_queue.head = NULL;
-    gm_module_send_queue.tail = NULL;
+    MPID_nem_gm_module_send_queue.head = NULL;
+    MPID_nem_gm_module_send_queue.tail = NULL;
 
-    gm_module_send_free_queue = NULL;
+    MPID_nem_gm_module_send_free_queue = NULL;
     
     for (i = 0; i < FREE_SEND_QUEUE_ELEMENTS; ++i)
     {
-	gm_module_send_queue_t *e;
+	MPID_nem_gm_module_send_queue_t *e;
 	
-	e = safe_malloc (sizeof (gm_module_send_queue_t));
-	e->next = gm_module_send_free_queue;
-	gm_module_send_free_queue = e;
+	e = safe_malloc (sizeof (MPID_nem_gm_module_send_queue_t));
+	e->next = MPID_nem_gm_module_send_free_queue;
+	MPID_nem_gm_module_send_free_queue = e;
     }
     
-    ret = gm_module_lmt_init();
+    ret = MPID_nem_gm_module_lmt_init();
     if (ret)
-	ERROR_RET (-1, "gm_module_lmt_init failed");
+	ERROR_RET (-1, "MPID_nem_gm_module_lmt_init failed");
 
     return 0;
 }
 
 #undef FUNCNAME
-#define FUNCNAME gm_module_get_business_card
+#define FUNCNAME MPID_nem_gm_module_get_business_card
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
+MPID_nem_gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -352,7 +323,7 @@ gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 }
 
 int
-gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, unsigned char *unique_id)
+MPID_nem_gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, unsigned char *unique_id)
 {
     int mpi_errno = MPI_SUCCESS;
     int len;
@@ -376,26 +347,27 @@ gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, unsi
 }
 
 int
-gm_module_connect_to_root (const char *business_card, const int lpid)
+MPID_nem_gm_module_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 {
-    
+    /* In GM, once the VC is initialized there's nothing extra that we need to do to establish a connection */
+    return MPI_SUCCESS;
 }
 
 int
-gm_module_vc_init (MPIDI_VC_t *vc)
+MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
+#if 0 /* old PMI version */ 
     int ret;
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     
+    unsigned p;
+    gm_u64_t u;
+    
     ret = MPIDI_PG_GetConnKVSname (&kvs_name);
     if (ret != MPI_SUCCESS)
 	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
-
-    
-    unsigned p;
-    gm_u64_t u;
 
     snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "portUnique[%d]", vc->pg_rank);
     memset (val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
@@ -414,35 +386,12 @@ gm_module_vc_init (MPIDI_VC_t *vc)
 	ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id));
 	
     printf_d ("gm info for %d: %s node = %d port = %d\n", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id), vc->ch.node_id, vc->ch.port_id);
+#endif
     
-#if 0 /* not using CH3 bc method yet */ 
     int mpi_errno = MPI_SUCCESS;
-    char key[MPID_NEM_MAX_KEY_VAL_LEN];
-    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     int ret;
-    char *kvs_name;
-    
-    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
-    if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
 
-    ret = MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "P%d-businesscard", vc->pg_rank);
-    /* --BEGIN ERROR HANDLING-- */
-    if (ret < 0 || ret > MPID_NEM_MAX_KEY_VAL_LEN)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
-
-    mpi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    /* --END ERROR HANDLING-- */
-
-    mpi_errno = gm_module_get_port_unique_from_bc (val, &vc->ch.port_id, vc->ch.unique_id);
+    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &vc->ch.port_id, vc->ch.unique_id);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno) {
 	MPIU_ERR_POP (mpi_errno);
@@ -460,5 +409,4 @@ gm_module_vc_init (MPIDI_VC_t *vc)
 
  fn_fail:
     return mpi_errno;
-#endif
 }

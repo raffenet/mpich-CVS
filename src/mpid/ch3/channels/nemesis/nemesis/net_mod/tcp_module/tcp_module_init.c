@@ -265,6 +265,10 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                      this queue
 */
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_tcp_module_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue, 
 			  MPID_nem_queue_ptr_t  proc_free_queue, 
@@ -274,7 +278,8 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 			  int num_module_elements, 
 			  MPID_nem_queue_ptr_t *module_recv_queue,
 			  MPID_nem_queue_ptr_t *module_free_queue,
-			  int ckpt_restart, MPIDI_PG_t *pg_p)
+			  int ckpt_restart, MPIDI_PG_t *pg_p, int pg_rank,
+			  char **bc_val_p, int *val_max_sz_p)
 {
     int ret;
     int index;
@@ -293,15 +298,15 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 
     if( MPID_nem_mem_region.ext_procs > 0)
     {
-       ret = init_tcp (pg_p);
-       if (ret != 0)
-	 ERROR_RET (-1, "init_tcp() failed");
+	ret = init_tcp (pg_p);
+	if (ret != 0)
+	    ERROR_RET (-1, "init_tcp() failed");
        
-       if(MPID_nem_mem_region.num_local == 0)
-	 MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_ALONE ;
-       else
-	 MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_MULTI ;
-       MPID_nem_tcp_internal_vars.old_poll_freq = MPID_nem_tcp_internal_vars.poll_freq;	
+	if(MPID_nem_mem_region.num_local == 0)
+	    MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_ALONE ;
+	else
+	    MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_MULTI ;
+	MPID_nem_tcp_internal_vars.old_poll_freq = MPID_nem_tcp_internal_vars.poll_freq;	
     }
 
     process_recv_queue = proc_recv_queue;
@@ -325,7 +330,7 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 }
 
 #undef FUNCNAME
-#define FUNCNAME tcp_module_get_business_card
+#define FUNCNAME MPID_nem_tcp_module_get_business_card
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
@@ -338,11 +343,11 @@ MPID_nem_tcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 
 
 #undef FUNCNAME
-#define FUNCNAME tcp_module_connect_to_root
+#define FUNCNAME MPID_nem_tcp_module_connect_to_root
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_tcp_module_connect_to_root (const char *business_card, const int lpid)
+MPID_nem_tcp_module_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
@@ -350,7 +355,7 @@ MPID_nem_tcp_module_connect_to_root (const char *business_card, const int lpid)
 }
 
 #undef FUNCNAME
-#define FUNCNAME tcp_module_vc_init
+#define FUNCNAME MPID_nem_tcp_module_vc_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int

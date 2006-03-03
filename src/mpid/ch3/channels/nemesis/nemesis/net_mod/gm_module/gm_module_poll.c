@@ -5,12 +5,12 @@
 
 
 inline void
-gm_module_recv()
+MPID_nem_gm_module_recv()
 {
     gm_recv_event_t *e;
     MPID_nem_cell_ptr_t c;
 
-    /*    printf_d ("gm_module_recv()\n"); */
+    /*    printf_d ("MPID_nem_gm_module_recv()\n"); */
     
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     while (num_recv_tokens && !MPID_nem_queue_empty (module_gm_free_queue))
@@ -85,54 +85,54 @@ static inline void
 lmt_poll()
 {
     int ret;
-    gm_module_lmt_queue_t *e;
+    MPID_nem_gm_module_lmt_queue_t *e;
     
-    gm_module_queue_dequeue (lmt, &e);
+    MPID_nem_gm_module_queue_dequeue (lmt, &e);
     
     while (e && num_send_tokens)
     {
-	ret = gm_module_lmt_do_get (e->node_id, e->port_id, &e->r_iov, &e->r_n_iov, &e->r_offset, &e->s_iov, &e->s_n_iov, &e->s_offset,
+	ret = MPID_nem_gm_module_lmt_do_get (e->node_id, e->port_id, &e->r_iov, &e->r_n_iov, &e->r_offset, &e->s_iov, &e->s_n_iov, &e->s_offset,
 				    e->compl_ctr);
 	if (ret == LMT_AGAIN)
 	{
-	    gm_module_queue_free (lmt, e);
-	    gm_module_queue_dequeue (lmt, &e);
+	    MPID_nem_gm_module_queue_free (lmt, e);
+	    MPID_nem_gm_module_queue_dequeue (lmt, &e);
 	}
 	else if (ret == LMT_FAILURE)
 	{
-	    printf ("error: gm_module_lmt_do_get failed.  Dequeuing.\n");
-	    gm_module_queue_free (lmt, e);
-	    gm_module_queue_dequeue (lmt, &e);
+	    printf ("error: MPID_nem_gm_module_lmt_do_get failed.  Dequeuing.\n");
+	    MPID_nem_gm_module_queue_free (lmt, e);
+	    MPID_nem_gm_module_queue_dequeue (lmt, &e);
 	}
     }
 }
 
 
 inline void
-gm_module_send_poll( void )
+MPID_nem_gm_module_send_poll( void )
 {
     send_from_queue();
     /*lmt_poll(); */
-    gm_module_recv();
+    MPID_nem_gm_module_recv();
 }
 
 inline void
-gm_module_recv_poll( void )
+MPID_nem_gm_module_recv_poll( void )
 {
-    gm_module_recv();
+    MPID_nem_gm_module_recv();
     send_from_queue();
     /*lmt_poll(); */
 }
 
 void
-gm_module_poll(MPID_nem_poll_dir_t in_or_out)
+MPID_nem_gm_module_poll(MPID_nem_poll_dir_t in_or_out)
 {
     if (in_or_out == MPID_NEM_POLL_OUT)
     {
-	gm_module_send_poll();
+	MPID_nem_gm_module_send_poll();
     }
     else
     {
-	gm_module_recv_poll();
+	MPID_nem_gm_module_recv_poll();
     }
 }

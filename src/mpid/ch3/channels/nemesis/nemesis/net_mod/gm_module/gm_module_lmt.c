@@ -5,41 +5,41 @@
 
 #define FREE_LMT_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS
 
-gm_module_lmt_queue_head_t gm_module_lmt_queue;
-gm_module_lmt_queue_t *gm_module_lmt_free_queue;
+MPID_nem_gm_module_lmt_queue_head_t MPID_nem_gm_module_lmt_queue;
+MPID_nem_gm_module_lmt_queue_t *MPID_nem_gm_module_lmt_free_queue;
 
 int
-gm_module_lmt_init()
+MPID_nem_gm_module_lmt_init()
 {
     int i;
     
-    gm_module_lmt_queue.head = NULL;
-    gm_module_lmt_queue.tail = NULL;
+    MPID_nem_gm_module_lmt_queue.head = NULL;
+    MPID_nem_gm_module_lmt_queue.tail = NULL;
 
-    gm_module_lmt_free_queue = NULL;
+    MPID_nem_gm_module_lmt_free_queue = NULL;
     
     for (i = 0; i < FREE_LMT_QUEUE_ELEMENTS; ++i)
     {
-	gm_module_lmt_queue_t *e;
+	MPID_nem_gm_module_lmt_queue_t *e;
 	
-	e = MPIU_Malloc (sizeof (gm_module_lmt_queue_t));
+	e = MPIU_Malloc (sizeof (MPID_nem_gm_module_lmt_queue_t));
 	if (!e)
 	    ERROR_RET (-1, "malloc failed");
-	e->next = gm_module_lmt_free_queue;
-	gm_module_lmt_free_queue = e;
+	e->next = MPID_nem_gm_module_lmt_free_queue;
+	MPID_nem_gm_module_lmt_free_queue = e;
     }
     return 0;
 }
 
 void
-gm_module_lmt_finalize()
+MPID_nem_gm_module_lmt_finalize()
 {
-    gm_module_lmt_queue_t *e;
+    MPID_nem_gm_module_lmt_queue_t *e;
 
-    while (gm_module_lmt_free_queue)
+    while (MPID_nem_gm_module_lmt_free_queue)
     {
-	e = gm_module_lmt_free_queue;
-	gm_module_lmt_free_queue = e->next;
+	e = MPID_nem_gm_module_lmt_free_queue;
+	MPID_nem_gm_module_lmt_free_queue = e->next;
 	MPIU_Free (e);
     }
 
@@ -47,7 +47,7 @@ gm_module_lmt_finalize()
 
 
 static inline int
-gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_vc, struct iovec *cookie)
+MPID_nem_gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_vc, struct iovec *cookie)
 {
     int ret = 0;
     int i, j;
@@ -55,7 +55,7 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_vc, struc
     
     for (i = 0; i < n_iov; ++i)
     {
-	ret = gm_module_register_mem (iov[i].iov_base, iov[i].iov_len);
+	ret = MPID_nem_gm_module_register_mem (iov[i].iov_base, iov[i].iov_len);
 	if (ret != 0)
 	{
 	    ret = -1;
@@ -77,33 +77,33 @@ gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_vc, struc
  error_exit:
     for (j = i-1; j <= 0; --j)
     {
-	gm_module_deregister_mem (iov[j].iov_base, iov[j].iov_len);
+	MPID_nem_gm_module_deregister_mem (iov[j].iov_base, iov[j].iov_len);
     }
 
     return ret;
 }
 
 int
-gm_module_lmt_send_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie)
+MPID_nem_gm_module_lmt_send_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie)
 {
-    return gm_module_lmt_pre (iov, n_iov, dest, cookie);
+    return MPID_nem_gm_module_lmt_pre (iov, n_iov, dest, cookie);
 }
 
 int
-gm_module_lmt_recv_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie)
+MPID_nem_gm_module_lmt_recv_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie)
 {
-    return gm_module_lmt_pre (iov, n_iov, src, cookie);
+    return MPID_nem_gm_module_lmt_pre (iov, n_iov, src, cookie);
 }
 
 int
-gm_module_lmt_start_send (MPIDI_VC_t *dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
+MPID_nem_gm_module_lmt_start_send (MPIDI_VC_t *dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
 {
     /* We're using gets to transfer the data so, this should not be called */
     return -1;
 }
 
 int
-gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
+MPID_nem_gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr)
 {
     int ret;
     struct iovec *s_iov;
@@ -120,11 +120,11 @@ gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iove
     r_offset = 0;
     s_offset = 0;
     
-    ret = gm_module_lmt_do_get (src_vc->ch.node_id, src_vc->ch.port_id, &r_iov, &r_n_iov, &r_offset, &s_iov, &s_n_iov, &s_offset,
+    ret = MPID_nem_gm_module_lmt_do_get (src_vc->ch.node_id, src_vc->ch.port_id, &r_iov, &r_n_iov, &r_offset, &s_iov, &s_n_iov, &s_offset,
 				completion_ctr);
     if (ret == LMT_AGAIN)
     {
-	gm_module_lmt_queue_t *e = gm_module_queue_alloc (lmt);
+	MPID_nem_gm_module_lmt_queue_t *e = MPID_nem_gm_module_queue_alloc (lmt);
 	if (!e)
 	{
 	    printf ("error: malloc failed\n");
@@ -139,18 +139,18 @@ gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iove
 	e->s_n_iov = s_n_iov;
 	e->s_offset = s_offset;
 	e->compl_ctr = completion_ctr;
-	gm_module_queue_enqueue (lmt, e);
+	MPID_nem_gm_module_queue_enqueue (lmt, e);
     }
     else if (ret == LMT_FAILURE)
     {
-	printf ("error: gm_module_lmt_do_get() failed \n");
+	printf ("error: MPID_nem_gm_module_lmt_do_get() failed \n");
 	return -1;	
     }
     return 0;
 }
 
 static inline int
-gm_module_lmt_post (struct iovec cookie)
+MPID_nem_gm_module_lmt_post (struct iovec cookie)
 {
     int ret = 0;
     int i;
@@ -162,7 +162,7 @@ gm_module_lmt_post (struct iovec cookie)
     
     for (i = 0; i < n_iov; ++i)
     {
-	gm_module_deregister_mem (iov[i].iov_base, iov[i].iov_len);
+	MPID_nem_gm_module_deregister_mem (iov[i].iov_base, iov[i].iov_len);
     }
     
     MPIU_Free (iov);
@@ -171,15 +171,15 @@ gm_module_lmt_post (struct iovec cookie)
 }
 
 int
-gm_module_lmt_send_post (struct iovec cookie)
+MPID_nem_gm_module_lmt_send_post (struct iovec cookie)
 {
-    return gm_module_lmt_post (cookie);
+    return MPID_nem_gm_module_lmt_post (cookie);
 }
 
 int
-gm_module_lmt_recv_post (struct iovec cookie)
+MPID_nem_gm_module_lmt_recv_post (struct iovec cookie)
 {
-    return gm_module_lmt_post (cookie);
+    return MPID_nem_gm_module_lmt_post (cookie);
 }
 
 static void
@@ -197,7 +197,7 @@ get_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 
 
 int
-gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, int *r_n_iov, int *r_offset, struct iovec **s_iov, int *s_n_iov,
+MPID_nem_gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, int *r_n_iov, int *r_offset, struct iovec **s_iov, int *s_n_iov,
 		      int *s_offset, int *compl_ctr)
 {
     int s_i, r_i;
@@ -234,7 +234,7 @@ gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, int *r_n_i
 	if (len > 0)
 	{
 	    MPID_NEM_ATOMIC_INC (compl_ctr);
-	    gm_get (port, (long)s_buf, r_buf, len, GM_LOW_PRIORITY, node_id, port_id, get_callback, compl_ctr);
+	    //	    gm_get (port, (long)s_buf, r_buf, len, GM_LOW_PRIORITY, node_id, port_id, get_callback, compl_ctr);
 	    
 	    --num_send_tokens;
 	    
@@ -264,7 +264,7 @@ gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, int *r_n_i
 
     if (s_i != *s_n_iov || r_i != *r_n_iov)
     {
-	printf ("error: iov mismatch in gm_module_lmt_start_recv\n");
+	printf ("error: iov mismatch in MPID_nem_gm_module_lmt_start_recv\n");
 	return LMT_FAILURE;
     }
     return LMT_COMPLETE;
