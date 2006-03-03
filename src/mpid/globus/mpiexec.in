@@ -39,8 +39,8 @@ fi
 
 shift 3
 
-if test -z "$GLOBUS_GRAM_CONTACT" ; then
-    echo "ERROR: the environment variable GLOBUS_GRAM_CONTACT is not set"
+if test -z "$MPIEXEC_GRAM_CONTACT" ; then
+    echo "ERROR: the environment variable MPIEXEC_GRAM_CONTACT is not set"
     exit 1
 fi
 
@@ -62,13 +62,12 @@ fi
 rsl=.mpich2-globus-rsl.$$
 curpath=`pwd`
 args=""
+extra_line=""
 for arg ; do
     args="$args `globus_args_quote "$arg"`"
 done
 if test -n "$args" ; then
-    extras_line="(arguments=$args)"
-else
-    extras_line=""
+     extras_line="${extras_line}(arguments=$args)"
 fi
 
 if test -n "$MPIEXEC_TIMEOUT" ; then
@@ -83,7 +82,7 @@ if test -n "$MPIEXEC_TIMEOUT" ; then
 	exit 1
     fi
     maxwalltime=`expr \( $MPIEXEC_TIMEOUT + 59 \) / 60`
-    extras_line="(maxwalltime=$maxwalltime)"
+    extras_line="${extras_line}(maxwalltime=$maxwalltime)"
 fi
 
 env_line=""
@@ -98,12 +97,12 @@ fi
 
 cat >$rsl <<EOF
 +
-(  &(resourceManagerContact="$GLOBUS_GRAM_CONTACT")
+(  &(resourceManagerContact="$MPIEXEC_GRAM_CONTACT")
     (count=$nprocs)
     (label="subjob 0")
     (environment=
 	(GLOBUS_DUROC_SUBJOB_INDEX 0)
-	(LD_LIBRARY_PATH $GLOBUS_LOCATION/lib)
+	(LD_LIBRARY_PATH "$LD_LIBRARY_PATH")
 	$env_line
     )
     (directory="$curpath")
