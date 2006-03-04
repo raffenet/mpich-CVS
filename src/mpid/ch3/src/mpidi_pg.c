@@ -482,7 +482,7 @@ int MPIDI_PG_SetConnInfo( int rank, const char *connString )
     len = MPIU_Snprintf(key, sizeof(key), "P%d-businesscard", rank);
     if (len < 0 || len > sizeof(key)) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**snprintf",
-			     "**snprintf %d", mpi_errno);
+			     "**snprintf %d", len);
     }
     pmi_errno = PMI_KVS_Put(pg_world->connData, key, connString );
     if (pmi_errno != PMI_SUCCESS) {
