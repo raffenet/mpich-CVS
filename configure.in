@@ -1895,8 +1895,6 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
         # Reset since no directory was set.
 	basedir='"."';
     fi
-    # We would like to use strerror in the file namepublisher
-    AC_CHECK_FUNCS(strerror)
     AC_DEFINE_UNQUOTED(FILE_NAMEPUB_BASEDIR,$basedir,[Directory to use in namepub])
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
     ;;
@@ -3487,6 +3485,10 @@ AC_CHECK_FUNCS(vsnprintf vsprintf)
 if test "$ac_cv_func_vsnprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdarg.h>],vsnprintf)
 fi
+# We would like to use strerror in the file namepublisher; it is also used
+# in MPIU_Strerror (whose implementation is broken if strerror is not found)
+AC_CHECK_FUNCS(strerror)
+
 # Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
