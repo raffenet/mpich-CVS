@@ -39,6 +39,9 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int pg_size;
     int p;
 
+    MPIU_UNREFERENCED_ARG(has_parent);
+    MPIU_UNREFERENCED_ARG(pg_rank);
+
     /*
      * Initialize the VCs associated with this process group (and thus 
      * MPI_COMM_WORLD)
