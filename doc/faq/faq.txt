@@ -292,3 +292,11 @@ arguments to \texttt{mpiexec}.  See the
 A: On Windows, you need to start the program with \texttt{mpiexec} for
 any of the MPI-2 dynamic process functions to work.
 
+%% Heading: Q: How do I run MPI programs in the background when using the default MPD process manager? 
+%% Filename: background
+%% End
+A: To run MPI programs in the background when using MPD, you need to
+redirect stdin from /dev/null. For example, 
+mpiexec -n 4 a.out < /dev/null \& 
+
+
