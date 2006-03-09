@@ -1029,6 +1029,7 @@ def handle_stdin_input(stdin_stream,parmdb,streamHandler,manSock):
         sys.stdin.flush()  # probably does nothing
         # print "I/O err on stdin:", errinfo
         mpd_print(1,'stdin problem; if pgm is run in background, redirect from /dev/null')
+        mpd_print(1,'    e.g.: mpiexec -n 4 a.out < /dev/null &')
     else:
         gdbFlag = parmdb['MPIEXEC_GDB']
         if line:    # not EOF
