@@ -1,4 +1,5 @@
 stdiotest_SOURCES = stdiotest.c
+stdintest_SOURCES = stdintest.c
 rtest_SOURCES     = rtest.c
 rtestf_SOURCES    = rtestf.f
 rtestx_SOURCES    = rtestx.cxx
