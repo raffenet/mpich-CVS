@@ -507,7 +507,8 @@ EOF
     # FIXME: if we can't figure out how to get iargc/getarg, then 
     # we should really turn off those spawn tests
     AC_MSG_CHECKING([for Fortran libraries needed for getarg])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM(,[character*64 s
+    AC_LINK_IFELSE([AC_LANG_PROGRAM(,[
+        character*64 s
         integer i
         i = iargc()
         call getarg(i,s)])],
@@ -517,7 +518,8 @@ EOF
         # Try again with -lU77
         saveLIBS="$LIBS"
         LIBS="$LIBS -lU77"
-        AC_LINK_IFELSE([AC_LANG_PROGRAM(,[character*64 s
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(,[
+        character*64 s
         integer i
         i = iargc()
         call getarg(i,s)])],
