@@ -691,7 +691,6 @@ for option in $enable_g ; do
 	perform_memtracing=yes
 	perform_nesttesting=yes
 	perform_dbglog=yes
-	AC_DEFINE(MPICH_DEBUG_INTERNAL,1,[Define to compile in optional debugging tests and output])
 	CFLAGS="$CFLAGS -g"
 	perform_meminit=yes
 	;;
@@ -1071,7 +1070,11 @@ AC_SUBST(PROFILE_DEF_MPI)
 #
 # Handle the case that the user set FC but not F77 before we run the
 # PROG_F77 command
+if test -n "$F77" -a -n "$FC" -a "$F77" != "$FC" ; then
+    AC_MSG_ERROR([The values of the environment variables F77 (=$F77) and FC (=$FC) are not the same.  Unset one or both and rerun configure])
+fi
 if test -z "$F77" -a -n "$FC" ; then F77="$FC" ; fi
+if test -z "$FC" -a -n "$F77" ; then FC="$F77" ; fi
 # Handle default choices for the Fortran compilers
 if test "$enable_f77" = "default" ; then
     enable_f77=no
