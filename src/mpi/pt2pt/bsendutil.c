@@ -63,11 +63,8 @@
  *                information in the bsend buffer (the BsendData_t entries)
  */
 
-/* FIXME: Make this part of the MPIU_DBG calls, probably at VERBOSE level
-   of detail */
-#if 0
-#define DBG_PRINT_AVAIL
-#define DBG_PRINT_ARENA
+#ifdef USE_DBG_LOGGING
+static void MPIR_Bsend_dump( void );
 #endif
 
 /* Private structures for the bsend buffers */
@@ -286,7 +283,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	
 	p = MPIR_Bsend_find_buffer( packsize );
 	if (p) {
-	    MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,"found buffer of size %d with address %x",packsize,p));
+	    MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,
+                     "found buffer of size %d with address %p",packsize,p));
 	    /* Found a segment */
 	    
 	    /* Pack the data into the buffer */
@@ -303,7 +301,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
 	    if (p->request) {
 		MPIU_DBG_MSG_FMT(BSEND,TYPICAL,
-		    (MPIU_DBG_FDEST,"saving request %x in %x",p->request,p));
+		    (MPIU_DBG_FDEST,"saving request %p in %p",p->request,p));
 		/* An optimization is to check to see if the 
 		   data has already been sent.  The original code
 		   to do this was commented out and probably did not match
@@ -337,12 +335,11 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
     
     if (!p) {
 	/* Return error for no buffer space found */
-#ifdef DBG_PRINT_ARENA
 	/* Generate a traceback of the allocated space, explaining why
 	   packsize could not be found */
-	DBG_PRINTF( "Could not find space; dumping arena\n" );
-	MPIR_Bsend_dump();
-#endif
+	MPIU_DBG_MSG(BSEND,TYPICAL,"Could not find space; dumping arena" );
+	MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
+
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", __LINE__, MPI_ERR_BUFFER, "**bufbsend", 
 				     "**bufbsend %d %d", packsize, 
 				     BsendBuffer.buffer_size );
@@ -367,13 +364,12 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
     BsendData_t *prev = p->prev, *avail = BsendBuffer.avail, *avail_prev;
 
     MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,
-                 "Freeing bsend segment at %x of size %d, next at %x",
+                 "Freeing bsend segment at %p of size %d, next at %p",
 		 p,p->size, ((char *)p)+p->total_size));
 
-#ifdef DBG_PRINT_ARENA
-    DBG_PRINTF( "At the begining of free_segment with size %d:\n", p->total_size );
-    MPIR_Bsend_dump();
-#endif    
+    MPIU_DBG_MSG_D(BSEND,TYPICAL,
+	     "At the begining of free_segment with size %d:", p->total_size );
+    MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
 
     /* Remove the segment from the free list */
     if (prev) {
@@ -390,17 +386,8 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	p->next->prev = prev;
     }
 
-#ifdef DBG_PRINT_AVAIL_LIST
-    {
-	BsendData_t *a = BsendBuffer.avail;
-	DBG_PRINTF( "Avail list is:\n" );
-	while (a) {
-	    DBG_PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
-		   a->total_size );
-	    a = a->next;
-	}
-    }
-#endif
+    MPIU_DBG_STMT(BSEND,VERBOSE,MPIR_Bsend_dump());
+
     /* Merge into the avail list */
     /* Find avail_prev, avail, such that p is between them.
        either may be null if p is at either end of the list */
@@ -448,10 +435,9 @@ static void MPIR_Bsend_free_segment( BsendData_t *p )
 	BsendBuffer.avail = p;
 	p->prev           = 0;
     }
-#ifdef DBG_PRINT_ARENA
-    DBG_PRINTF( "At the end of free_segment:\n" );
-    MPIR_Bsend_dump();
-#endif    
+
+    MPIU_DBG_MSG(BSEND,TYPICAL,"At the end of free_segment:" );
+    MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
 }
 /* end:nested */
 /* 
@@ -466,7 +452,7 @@ static void MPIR_Bsend_check_active( void )
 {
     BsendData_t *active = BsendBuffer.active, *next_active;
 
-    MPIU_DBG_MSG_P(BSEND,TYPICAL,"Checking active starting at %x", active);
+    MPIU_DBG_MSG_P(BSEND,TYPICAL,"Checking active starting at %p", active);
     while (active) {
 	MPI_Request r = active->request->handle;
 	int         flag;
@@ -490,11 +476,11 @@ static void MPIR_Bsend_check_active( void )
 	}
 	if (flag) {
 	    /* We're done.  Remove this segment */
-	    MPIU_DBG_MSG_P(BSEND,TYPICAL,"Removing segment %x", active);
+	    MPIU_DBG_MSG_P(BSEND,TYPICAL,"Removing segment %p", active);
 	    MPIR_Bsend_free_segment( active );
 	}
 	active = next_active;
-	MPIU_DBG_MSG_P(BSEND,TYPICAL,"Next active is %x",active);
+	MPIU_DBG_MSG_P(BSEND,TYPICAL,"Next active is %p",active);
     }
 }
 
@@ -553,10 +539,9 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     /* alloc_size is the amount of space (out of size) that we will 
        allocate for this buffer. */
 
-#ifdef DBG_PRINT_ARENA
-    DBG_PRINTF( "Taking %d bytes from a block with %d bytes\n", alloc_size, 
-		p->total_size );
-#endif
+    MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,
+			    "Taking %d bytes from a block with %d bytes\n", 
+				    alloc_size, p->total_size ));
 
     /* Is there enough space left to create a new block? */
     if (alloc_size + (int)BSENDDATA_HEADER_TRUE_SIZE + MIN_BUFFER_BLOCK <= p->size) {
@@ -564,7 +549,7 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	   carve out a new block */
 	BsendData_t *newp;
 	
-	MPIU_DBG_MSG_P(BSEND,TYPICAL,"Breaking block into used and allocated at %x", p );
+	MPIU_DBG_MSG_P(BSEND,TYPICAL,"Breaking block into used and allocated at %p", p );
 	newp = (BsendData_t *)( (char *)p + BSENDDATA_HEADER_TRUE_SIZE + 
 				alloc_size );
 	newp->total_size = p->total_size - alloc_size - 
@@ -583,10 +568,9 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
 	p->total_size = (char *)newp - (char*)p;
 	p->size       = p->total_size - BSENDDATA_HEADER_TRUE_SIZE;
 
-#ifdef DBG_PRINT_ARENA
-	DBG_PRINTF( "broken blocks p (%d) and new (%d)\n",
-		    p->total_size, newp->total_size ); fflush(stdout);
-#endif
+	MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,
+		   "broken blocks p (%d) and new (%d)\n",
+		    p->total_size, newp->total_size ));
     }
 
     /* Remove p from the avail list and add it to the active list */
@@ -609,11 +593,9 @@ static void MPIR_Bsend_take_buffer( BsendData_t *p, int size  )
     p->prev	       = 0;
     BsendBuffer.active = p;
 
-#ifdef DBG_PRINT_ARENA
-    DBG_PRINTF( "At end of take buffer\n" );
-    MPIR_Bsend_dump();
-#endif
-    MPIU_DBG_PRINTF(("segment %x now head of active", p ));
+    MPIU_DBG_MSG_P(BSEND,VERBOSE,"segment %p now head of active",p); 
+    MPIU_DBG_MSG(BSEND,TYPICAL,"At end of take buffer" );
+    MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
 }
 
 /* Ignore p */
@@ -631,35 +613,41 @@ static int MPIR_Bsend_finalize( void *p )
     return 0;
 }
 
-#ifdef DBG_PRINT_ARENA
-void MPIR_Bsend_dump( void )
+/* 
+ * These routines are defined only if debug logging is enabled
+ */
+#ifdef USE_DBG_LOGGING
+static void MPIR_Bsend_dump( void )
 {
     BsendData_t *a = BsendBuffer.avail;
 
-    DBG_PRINTF( "Total size is %d\n", BsendBuffer.buffer_size );
-    DBG_PRINTF( "Avail list is:\n" );
+    MPIU_DBG_MSG_D(BSEND,TYPICAL,"Total size is %d",BsendBuffer.buffer_size );
+    MPIU_DBG_MSG(BSEND,TYPICAL,"Avail list is:" );
     while (a) {
-	DBG_PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
-		    a->total_size );
+	MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,
+				"[%p] totalsize = %d(%x)", a, a->total_size, 
+					a->total_size ));
 	if (a == a->next) {
-	    DBG_PRINTF( "@@@Corrupt list; avail block points at itself\n" );
+	    MPIU_DBG_MSG(BSEND,TYPICAL,
+			 "@@@Corrupt list; avail block points at itself" );
 	    break;
 	}
 	a = a->next;
     }
-
-    DBG_PRINTF( "Active list is:\n" );
+    
+    MPIU_DBG_MSG(BSEND,TYPICAL,"Active list is:" );
     a = BsendBuffer.active;
     while (a) {
-	DBG_PRINTF( "[%x] totalsize = %d(%x)\n", a, a->total_size, 
-		    a->total_size );
+	MPIU_DBG_MSG_FMT(BSEND,TYPICAL,(MPIU_DBG_FDEST,
+				"[%p] totalsize = %d(%x)", a, a->total_size, 
+					a->total_size ));
 	if (a == a->next) {
-	    DBG_PRINTF( "@@@Corrupt list; active block points at itself\n" );
+	    MPIU_DBG_MSG(BSEND,TYPICAL,
+			 "@@@Corrupt list; active block points at itself" );
 	    break;
 	}
 	a = a->next;
     }
-    DBG_PRINTF( "end of list\n" );
-    fflush( stdout );
+    MPIU_DBG_MSG(BSEND,TYPICAL,"end of list" );
 }
 #endif
