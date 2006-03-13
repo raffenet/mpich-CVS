@@ -226,4 +226,41 @@ void MPIR_Sendq_forget( MPID_Request *req )
     }
     /* If we don't find the request, just ignore it */
 }
-   
+
+/* Manage the known communicators */
+/* Provide a list of all active communicators.  This is used only by the
+   debugger message queue interface */
+typedef struct MPIR_Comm_list {
+    int sequence_number;   /* Used to detect changes in the list */
+    MPID_Comm *head;       /* Head of the list */
+} MPIR_Comm_list;
+
+MPIR_Comm_list MPIR_All_communicators = { 0, 0 };
+
+void MPIR_CommL_remember( MPID_Comm *comm_ptr )
+{   
+    /* FIXME: (MT) Ensure thread-safe */
+    comm_ptr->comm_next = MPIR_All_communicators.head;
+    MPIR_All_communicators.head = comm_ptr;
+    MPIR_All_communicators.sequence_number++;
+}
+
+void MPIR_CommL_forget( MPID_Comm *comm_ptr )
+{
+    MPID_Comm *p, *prev;
+    /* FIXME: (MT) Ensure thread-safe */
+    p = MPIR_All_communicators.head;
+    prev = 0;
+    while (p) {
+	if (p == comm_ptr) {
+	    if (prev) prev->comm_next = p->comm_next;
+	    else MPIR_All_communicators.head = p;
+	    break;
+	}
+	prev = p;
+	p = p->comm_next;
+    }
+    /* Record a change to the list */
+    MPIR_All_communicators.sequence_number++;
+}
+

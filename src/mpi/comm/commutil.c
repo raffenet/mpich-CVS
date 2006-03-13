@@ -21,9 +21,6 @@ MPIU_Object_alloc_t MPID_Comm_mem = { 0, 0, 0, 0, MPID_COMM,
 				      sizeof(MPID_Comm), MPID_Comm_direct,
                                       MPID_COMM_PREALLOC};
 
-/* To help the debugger, we provide a list of all active communicators */
-MPIR_Comm_list MPIR_All_communicators = { 0, 0 };
-
 /* FIXME :
    Reusing context ids can lead to a race condition if (as is desirable)
    MPI_Comm_free does not include a barrier.  Consider the following:
@@ -86,12 +83,7 @@ int MPIR_Comm_create( MPID_Comm **newcomm_ptr )
     /* Insert this new communicator into the list of known communicators.
        Make this conditional on debugger support to match the test in 
        MPIR_Comm_release . */
-    /* FIXME: Ensure thread-safe */
-#ifdef HAVE_DEBUGGER_SUPPORT
-    newptr->comm_next = MPIR_All_communicators.head;
-    MPIR_All_communicators.head = newptr;
-    MPIR_All_communicators.sequence_number++;
-#endif
+    MPIR_COMML_REMEMBER( newptr );
 
     return 0;
 }
@@ -174,20 +166,24 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
 static unsigned int context_mask[MAX_CONTEXT_MASK];
 static int initialize_context_mask = 1;
 
-#ifdef MPICH_DEBUG_INTERNAL
-static void MPIR_PrintContextMask( FILE *fp )
+#ifdef USE_DBG_LOGGING
+/* Create a string that contains the context mask.  This is
+ used only with the logging interface, and must be used by one thread at 
+ a time (should this be enforced by the logging interface?).
+ Converts the mask to hex and returns a pointer to that string */
+static char *MPIR_ContextMaskToStr( void )
 {
+    static char bufstr[MAX_CONTEXT_MASK*8+1];
     int i;
     int maxset=0;
-    for (i=MAX_CONTEXT_MASK-1; i>=0; i--) {
-	if (context_mask[i] != 0) break;
+    for (maxset=MAX_CONTEXT_MASK-1; maxset>=0; maxset--) {
+	if (context_mask[maxset] != 0) break;
     }
-    maxset = i;
-    DBG_FPRINTF( fp, "Context mask: " );
+
     for (i=0; i<maxset; i++) {
-	DBG_FPRINTF( fp, "%.8x ", context_mask[i] );
+	MPIU_Snprintf( &bufstr[i*8], 9, "%.8x", context_mask[i] );
     }
-    DBG_FPRINTF( fp, "\n" );
+    return bufstr;
 }
 #endif
 
@@ -241,12 +237,9 @@ static int MPIR_Find_context_bit( unsigned int local_mask[] ) {
 	    }
 	    context_mask[i] &= ~(1<<j);
 	    context_id = 4 * (32 * i + j);
-#ifdef MPICH_DEBUG_INTERNAL
-	    if (MPIR_IDebug("context")) {
-		DBG_FPRINTF( stderr, "allocating contextid = %d\n", context_id ); 
-		DBG_FPRINTF( stderr, "(mask[%d], bit %d\n", i, j );
-	    }
-#endif
+	    MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
+                    "allocating contextid = %d, (mask[%d], bit %d\n", 
+		    context_id, i, j ) ); 
 	    return context_id;
 	}
     }
@@ -275,12 +268,10 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 
     context_id = MPIR_Find_context_bit( local_mask );
 
+    MPIU_DBG_MSG_S(COMM,VERBOSE,"Context mask = %s",MPIR_ContextMaskToStr());
+
     /* return 0 if no context id found.  The calling routine should 
        check for this and generate the appropriate error code */
-#ifdef MPICH_DEBUG_INTERNAL
-    if (MPIR_IDebug("context"))
-	MPIR_PrintContextMask( stderr );
-#endif
     return context_id;
 }
 
@@ -463,12 +454,9 @@ void MPIR_Free_contextid( int context_id )
     MPID_Common_thread_unlock();
 #endif
 
-#ifdef MPICH_DEBUG_INTERNAL
-    if (MPIR_IDebug("context")) {
-	DBG_FPRINTF( stderr, "Freed context %d\n", context_id );
-	DBG_FPRINTF( stderr, "mask[%d] bit %d\n", idx, bitpos );
-    }
-#endif
+    MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
+			"Freed context %d, mask[%d] bit %d\n", 
+			context_id, idx, bitpos ) );
 }
 
 /*
@@ -614,25 +602,7 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	       we are supporting message-queue debugging.  We make this
 	       conditional on having debugger support since the
 	       operation is not constant-time */
-#ifdef HAVE_DEBUGGER_SUPPORT
-	    /* FIXME: Ensure thread-safe */
-	    {
-		MPID_Comm *p, *prev;
-		p = MPIR_All_communicators.head;
-		prev = 0;
-		while (p) {
-		    if (p == comm_ptr) {
-			if (prev) prev->comm_next = p->comm_next;
-			else MPIR_All_communicators.head = p;
-			break;
-		    }
-		    prev = p;
-		    p = p->comm_next;
-		}
-		/* Record a change to the list */
-		MPIR_All_communicators.sequence_number++;
-	    }
-#endif
+	    MPIR_COMML_FORGET( comm_ptr );
 	}
 	else {
 	    /* If the user attribute free function returns an error,

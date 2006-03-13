@@ -207,10 +207,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
     /* Setup the initial communicator list in case we have 
        enabled the debugger message-queue interface */
-    MPIR_All_communicators.head = MPIR_Process.comm_world;
-    MPIR_All_communicators.sequence_number++;
-    MPIR_Process.comm_world->comm_next = MPIR_Process.comm_self;
-    MPIR_Process.comm_self->comm_next  = 0;
+    MPIR_COMML_REMEMBER( MPIR_Process.comm_world );
+    MPIR_COMML_REMEMBER( MPIR_Process.comm_self );
 
     /* Call any and all MPID_Init type functions */
     /* FIXME: The call to err init should be within an ifdef

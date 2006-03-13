@@ -169,30 +169,12 @@ void MPIU_dump_dbg_memlog(FILE * fp);
    using dbg_printf should be updated to use MPIU_DBG_PRINTF. */
 #define dbg_printf MPIU_dbg_printf
 
-/* For unconditional debug output, use the following */
-#define DBG_PRINTF printf
-#define DBG_FPRINTF fprintf
-
-/* Define MPICH_DEBUG_INTERNAL to compile in optional debugging
-   tests and routines.  These are enabled with the appropriate 
-   value for MPICH_DEBUG_ITEM, an environment variable that contains
-   a string.  This string is matched in the routine
-   MPIR_IDebug .
-
-   MPICH_DEBUG_INTERNAL is selected with a suitably high level choice of the
-   --enable-g option to configure.
- */
-#ifdef MPICH_DEBUG_INTERNAL
-extern int MPIR_IDebug( const char * );
-#endif
+/* MPIR_IDebug withdrawn because the MPIU_DBG_MSG interface provides 
+   a more flexible, integrated, and documented mechanism */
 
 /* ------------------------------------------------------------------------- */
 /* end of mpidebug.h */
 /* ------------------------------------------------------------------------- */
-
-/* Provisional routine (src/util/dbg/dbg_control.c) to test that the
-   environment value of "MPICH_DEBUG_ITEM" matches the input argument */
-int MPIR_IDebug( const char * );
 
 /* Routines for memory management */
 #include "mpimem.h"
@@ -1245,15 +1227,6 @@ extern MPIU_Object_alloc_t MPID_Comm_mem;
 void MPIR_Comm_add_ref(MPID_Comm *);
 int MPIR_Comm_release(MPID_Comm *);
 
-/* Provide a list of all active communicators.  This is used only by the
-   debugger message queue interface */
-typedef struct MPIR_Comm_list {
-    int sequence_number;   /* Used to detect changes in the list */
-    MPID_Comm *head;       /* Head of the list */
-} MPIR_Comm_list;
-/* The home for MPIR_All_communicators is src/mpi/comm/commutil.c */
-extern MPIR_Comm_list MPIR_All_communicators;
-
 #define MPIR_Comm_add_ref(_comm) MPIU_Object_add_ref((_comm))
 /* Preallocated comm objects */
 #define MPID_COMM_N_BUILTIN 2
@@ -1369,15 +1342,24 @@ extern MPID_Request MPID_Request_direct[];
 
 /* These macros allow us to implement a sendq when debugger support is
    selected.  As there is extra overhead for this, we only do this
-   when specifically requested */
+   when specifically requested 
+*/
 #ifdef HAVE_DEBUGGER_SUPPORT
-void MPIR_Sendq_forget(MPID_Request *);
+void MPIR_WaitForDebugger( void );
 void MPIR_Sendq_remember(MPID_Request *, int, int, int );
-#define MPIR_SENDQ_FORGET(_a) MPIR_Sendq_forget(_a)
+void MPIR_Sendq_forget(MPID_Request *);
+void MPIR_CommL_remember( MPID_Comm * );
+void MPIR_CommL_forget( MPID_Comm * );
+
 #define MPIR_SENDQ_REMEMBER(_a,_b,_c,_d) MPIR_Sendq_remember(_a,_b,_c,_d)
+#define MPIR_SENDQ_FORGET(_a) MPIR_Sendq_forget(_a)
+#define MPIR_COMML_REMEMBER(_a) MPIR_CommL_remember( _a )
+#define MPIR_COMML_FORGET(_a) MPIR_CommL_forget( _a )
 #else
-#define MPIR_SENDQ_FORGET(a)
 #define MPIR_SENDQ_REMEMBER(a,b,c,d)
+#define MPIR_SENDQ_FORGET(a)
+#define MPIR_COMML_REMEMBER(_a) 
+#define MPIR_COMML_FORGET(_a) 
 #endif
 
 
@@ -3387,10 +3369,6 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
   @*/
 int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 
-/* Debugger support */
-#ifdef HAVE_DEBUGGER_SUPPORT
-void MPIR_WaitForDebugger( void );
-#endif
 
 /* Include definitions from the device which require items defined by this file (mpiimpl.h). */
 #include "mpidpost.h"
