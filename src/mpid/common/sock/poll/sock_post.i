@@ -138,6 +138,9 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
 	bufsz_len = sizeof(bufsz);
 	/* FIXME: This should not be an error or even a warning if
 	 we don't get the requested socket size */
+	/* FIXME: There are other places that the code checks
+	   for the socket buffer size.  These tests (and the messaging,
+	   which is itself problematic), should be in one place. */
 	rc = getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, &bufsz_len);
 	/* --BEGIN ERROR HANDLING-- */
 	if (rc == 0)
