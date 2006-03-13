@@ -40,6 +40,28 @@
     Output Parameter:
 . newtype - new datatype (handle) 
 
+Notes:
+The indices are displacements, and are based on a zero origin.  A common error
+is to do something like to following
+.vb
+    integer a(100)
+    integer blens(10), indices(10)
+    do i=1,10
+10       indices(i) = 1 + (i-1)*10
+    call MPI_TYPE_CREATE_INDEXED_BLOCK(10,1,indices,MPI_INTEGER,newtype,ierr)
+    call MPI_TYPE_COMMIT(newtype,ierr)
+    call MPI_SEND(a,1,newtype,...)
+.ve
+expecting this to send 'a(1),a(11),...' because the indices have values 
+'1,11,...'.   Because these are `displacements` from the beginning of 'a',
+it actually sends 'a(1+1),a(1+11),...'.
+
+If you wish to consider the displacements as indices into a Fortran array,
+consider declaring the Fortran array with a zero origin
+.vb
+    integer a(0:99)
+.ve
+
 .N ThreadSafe
 
 .N Fortran
