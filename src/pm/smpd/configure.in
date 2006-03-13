@@ -97,6 +97,7 @@ AC_SUBST(MPILIBNAME)
 
 AC_CHECK_HEADERS( sys/types.h sys/wait.h signal.h unistd.h stdlib.h errno.h stdarg.h pthread.h sys/socket.h sys/stat.h ctype.h )
 AC_CHECK_HEADERS( math.h stdio.h termios.h string.h sys/stat.h malloc.h uuid/uuid.h )
+AC_CHECK_HEADERS( md5.h openssl/md5.h )
 AC_CHECK_FUNCS( sigaction usleep CFUUIDCreate uuid_generate setenv md5_calc )
 AC_SEARCH_LIBS( uuid_generate, uuid )
 AC_MSG_CHECKING([for poll stdin capability])
@@ -159,7 +160,17 @@ else
     AC_MSG_RESULT(no)
 fi
 
-#AC_SEARCH_LIBS( MD5, crypto, SMPD_LIBS="$SMPD_LIBS -lcrypto" )
+# md5 appears to be required for SMPD.  Test that we have either mp5_calc
+# or MP5 (may be part of openssl/md5.h)
+if test "$ac_cv_have_md5_calc" != yes -a \
+  \( "$ac_cv_header_openssl_md5_h" != yes -o "$ac_cv_func_MD5" != yes \) ; then
+    AC_MSG_ERROR([SMPD requires MD5 support, and configure could not find either md5_calc in md5.h or MD5 in openssl/md5.h])
+fi
+
+dnl Note that # does not comment out lines that are passed to autoconf,
+dnl and thus # MUST NEVER be used to comment out AC_xxx commands
+dnl AC_SEARCH_LIBS( MD5, crypto, SMPD_LIBS="$SMPD_LIBS -lcrypto" )
+
 SMPD_LIBS="$SMPD_LIBS $LIBS"
 AC_SUBST(SMPD_LIBS)
 AC_SUBST(AR)
