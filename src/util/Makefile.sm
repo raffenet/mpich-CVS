@@ -1,2 +1,3 @@
 SUBDIRS = mem info msgs instrm thread dbg param @logging_dir@ .
 SUBDIRS_logging_dir = logging
+# Note info requires the PMPILIBNAME definition
