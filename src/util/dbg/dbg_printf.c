@@ -74,7 +74,8 @@ int MPIU_dbg_init(int rank)
     {
 	char fn[128];
 
-	/* Only open the file only once in case MPIU_dbg_init is called more than once */
+	/* Only open the file only once in case MPIU_dbg_init is called more 
+	   than once */
 	if (MPIUI_dbg_fp == NULL)
 	{
 	    MPIU_Snprintf(fn, 128, "mpich2-dbg-%d.log", dbg_rank);
@@ -125,14 +126,16 @@ static void dbg_init(void)
     /* If memlog is enabled, the we need to allocate some memory for it */
     if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
-	dbg_memlog = MPIU_Malloc(dbg_memlog_num_lines * sizeof(char *) + dbg_memlog_num_lines * dbg_memlog_line_size);
+	dbg_memlog = MPIU_Malloc(dbg_memlog_num_lines * sizeof(char *) +
+				 dbg_memlog_num_lines * dbg_memlog_line_size);
 	if (dbg_memlog != NULL)
 	{
 	    int i;
 	    
 	    for (i = 0; i < dbg_memlog_num_lines ; i++)
 	    {
-		dbg_memlog[i] = ((char *) &dbg_memlog[dbg_memlog_num_lines]) + i * dbg_memlog_line_size;
+		dbg_memlog[i] = ((char *) &dbg_memlog[dbg_memlog_num_lines]) + 
+		    i * dbg_memlog_line_size;
 	    }
 	}
 	else
@@ -158,7 +161,8 @@ int MPIU_dbglog_printf(const char *str, ...)
 	
 	dbg_memlog[dbg_memlog_next][0] = '\0';
 	va_start(list, str);
-	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size, str, list);
+	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size, str, 
+		      list);
 	va_end(list);
 
 	/* if the output was truncated, we null terminate the end of the
@@ -214,7 +218,8 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap)
     {
 	va_copy(list,ap);
 	dbg_memlog[dbg_memlog_next][0] = '\0';
-	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size, str, list);
+	n = vsnprintf(dbg_memlog[dbg_memlog_next], dbg_memlog_line_size, str, 
+		      list);
         va_copy_end(list);
 
 	/* if the output was truncated, we null terminate the end of the
