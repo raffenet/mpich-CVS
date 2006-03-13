@@ -41,10 +41,8 @@
 /* Temporary debug definitions */
 #if 0
 #define DBG_PRINTF(args) printf args ; fflush(stdout)
-#define DBG_FPRINTF(args) fprintf args 
 #else
 #define DBG_PRINTF(args)
-#define DBG_FPRINTF(args)
 #endif
 
 #include "pmi.h"
