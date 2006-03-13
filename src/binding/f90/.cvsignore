@@ -8,3 +8,4 @@ mpimod.pcl
 *.MOD
 .libs
 .state-cache
+mpifnoext.h

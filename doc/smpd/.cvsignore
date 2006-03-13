@@ -6,5 +6,6 @@
 *.toc
 *.ind
 *.idx
+*.out
 Makefile
 smpd_pmi.pdf
