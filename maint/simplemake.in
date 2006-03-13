@@ -22,6 +22,10 @@ $makeInclude = "include";     # set to the include command to use.
                               # (e.g., the gnumake "-include")
 $gCheckForTargets = 0;        # Set to 1 to look for files not included
                               # in the Makefile.sm
+$gSubdirSMVarsSeen = "";      # Set to contain the names of variables in
+                              # Makefile.sm that override variables for 
+                              # a subdirectory
+@subdirsSMVars = ();          # Stack used with gSubdirSMVarsSeen
 
 # makeBlockSep is used to deliniate blocks of code in the generated makefile
 # to enhance readability
@@ -126,11 +130,13 @@ $debug_confdir = 0;         # Track the directory containing the controlling
                             # configure.in
 $gDebugWhy = 0;             # Provide an explanation of why certain
                             # targets are created
-
+$gDebugSubdirVar = 0;       # Track changes to internal variables that 
+                            # apply to a subdirectory
 # Allow us to set the debug variables from the environment:
 if (defined($ENV{"DEBUG"})) { $debug = 1; }
 if (defined($ENV{"DEBUG_DIRS"})) { $debug_dirs = 1; }
 if (defined($ENV{"DEBUG_CONFDIR"})) { $debug_confdir = 1; }
+if (defined($ENV{"DEBUG_SUBDIRVAR"})) { $gDebugSubdirVar = 1; }
 
 # Initialize global variables used in informal modules
 &printInit();
@@ -772,6 +778,29 @@ sub ReadMfile {
 	    $$varname = $value;
 	    print STDERR "setting $varname to $value\n" if $debug;
 	}
+	elsif (/^smvarSubdir_(\w+)\s*=\s*(.*)/) {
+	    my $varname = $1;
+	    my $varvalue = $2;
+	    if ($varname =~ /;/ || $varvalue =~ /;/) {
+		print STDERR "smvarSubdir_$varname=$varvalue must not contain a semicolon\n";
+		print STDERR "This command will be ignored\n";
+	    }
+	    else {
+		# Save the name with the CURRENT value, then update the
+		# value
+		my $oldvalue = "";
+		if (defined($$varname)) {
+		    $oldvalue = $$varname;
+		}
+		if ($oldvalue =~ /;/) {
+		    print STDERR "Cannot use smvarSubdir_$varname to replace a value that includes a semicolon (current value is $oldvalue)\n";
+		}
+		else {
+		    $gSubdirSMVarsSeen .= "$varname=$oldvalue;";
+		    $$varname = $varvalue;
+		}
+	    }
+	}	    
 	elsif (/^noinst/) {
 	    # Automake target to identify some programs/libraries as
 	    # not to be installed.
@@ -1150,7 +1179,10 @@ sub DefaultVariables {
 		# Only add the libtool definition if there are targets that
 		# may need it.
 		printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
-		printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
+		# We only need CREATESHLIB to finish off the library
+		if (%shared_libraries) {
+		    printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
+		}
 	    }
 	    $extkey = "$ext:lo";
 	    if (defined($extdef{$extkey})) {
@@ -1552,6 +1584,8 @@ sub ClearVars {
     %pgm_depadd = ();
     $depadd_all = "";
 
+    $gSubdirSMVarsSeen = "";
+
     # Variables
     # makevars are variables seen in the Makefile.sm
     # addedMakeVars are variables that have been added to the output
@@ -1655,6 +1689,8 @@ sub ShowFileName {
 sub ProcessFile {
     $file = $_[0];
 
+    $gSubdirSMVarsSeen = "";
+
     # FIXME: curdir?
     if (!$curdir) { $curdir = ""; }
     &ResetFileName( "$curdir$file" );
@@ -1678,11 +1714,15 @@ sub ProcessFile {
     }
 
     # Process any subdirectories
-
+    # The list of directories to process comes from the variables
+    # defined in the Makefile.sm.  The following is the list
     my @dirs = (@subdirs,@other_dirs,@doc_subdirs,@tags_dirs);
     # Get a local copy of the "notsimplemake" hash
     my %notSimplemake = %notSimplemakeDirs;
     # First, check for names that are replaced by autoconf (e.g., @name@)
+    # in the names of the directories.  For those variables, there should
+    # be a corresponding SUBDIRS_name variable in the makefile that lists
+    # *all* directories to which @name@ may be expanded by configure.
     my @actdirs = ();
     foreach my $dir (@dirs) {
 	$sdir = $dir;
@@ -1704,6 +1744,12 @@ sub ProcessFile {
             $actdirs[$#actdirs+1] = $dir;
         }
     }
+
+    # Push the saved subdir vars onto a stack, to be popped at the end.
+    print "Saving $gSubdirSMVarsSeen\n" if $gDebugSubdirVar && ($gSubdirSMVarsSeen ne "");
+    $subdirsSMVars[$#subdirsSMVars+1] = $gSubdirSMVarsSeen;
+    
+    # For each of the directories, process it.
     M: foreach my $dir (@actdirs) {
 	if ($dir eq ".") { next M; }
 	if ($dir =~ /\.\./ || $dir =~ /.\/./) {
@@ -1765,6 +1811,26 @@ sub ProcessFile {
 	$curdir =~ s/[^\/]*\/$//;
 	$curdir = &CleanCurDir( $curdir );
     }
+    # End of processing directories
+
+    # Restore any variables that were changed for the scope of this directory
+    # subtree (emulate a stack; don't trust perls dynamic scoped local)
+    my $subdirvars = $subdirsSMVars[$#subdirsSMVars]; $#subdirsSMVars--;
+    if (!defined($subdirvars)) {
+	print STDERR "subdirsSMVars stack count = $#subdirsSMVars in $curdir\n";
+	print STDERR "previous value is $subdirsSMVars[$#subdirsSMVars]\n";
+    }
+    foreach my $varstring (split(/;/,$subdirvars)) {
+	if ($varstring =~ /(\w+)=(.*)/s) {
+	    my $varname = $1;
+	    my $varvalue = $2;
+	    print "Restoring $$varname to $varvalue in $curdir\n" if $gDebugSubdirVar;
+	    $$varname = $varvalue;
+	}
+	elsif ($varstring ne "") {
+	    print STDERR "Internal Error: varstring = $varstring\n";
+	}
+    }			       
 }
 
 sub ListTargets {
