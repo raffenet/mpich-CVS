@@ -199,18 +199,16 @@ int MPIR_Allgatherv (
                     send_offset = 0;
                     for (j=0; j<my_tree_root; j++)
                         send_offset += recvcounts[j];
-                    send_offset *= recvtype_extent;
                     
                     recv_offset = 0;
                     for (j=0; j<dst_tree_root; j++)
                         recv_offset += recvcounts[j];
-                    recv_offset *= recvtype_extent;
 
-                    mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
+                    mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset * recvtype_extent),
                                               curr_cnt, recvtype, dst,
                                               MPIR_ALLGATHERV_TAG,  
-                                              ((char *)tmp_buf + recv_offset),
-                                              total_count, recvtype, dst,
+                                              ((char *)tmp_buf + recv_offset * recvtype_extent),
+                                              total_count - recv_offset, recvtype, dst,
                                               MPIR_ALLGATHERV_TAG,
                                               comm, &status); 
                     /* for convenience, recv is posted for a bigger amount
@@ -302,10 +300,9 @@ int MPIR_Allgatherv (
                             offset = 0;
                             for (j=0; j<(my_tree_root+mask); j++)
                                 offset += recvcounts[j];
-                            offset *= recvtype_extent;
 
-                            mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
-                                                  total_count, recvtype,
+                            mpi_errno = MPIC_Recv(((char *)tmp_buf + offset * recvtype_extent),
+                                                  total_count - offset, recvtype,
                                                   dst, MPIR_ALLGATHERV_TAG,
                                                   comm, &status);
 			    /* --BEGIN ERROR HANDLING-- */
