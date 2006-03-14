@@ -436,7 +436,11 @@ int MPIDI_CH3I_BootstrapQ_create(MPIDI_CH3I_BootstrapQ *queue_ptr)
 
     *queue_ptr = queue;
 
-    MPIU_DBG_PRINTF(("Created bootstrap queue, %d -> %d:%s\n", key, queue->id, queue->name));
+#ifndef USE_MQSHM
+     MPIU_DBG_PRINTF(("Created bootstrap queue, %d -> %d:%s\n", key, queue->id, queue->name));
+#else
+    MPIU_DBG_PRINTF(("Created bootstrap queue, %d:%s\n", queue->id, queue->name));
+#endif
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_BOOTSTRAPQ_CREATE);
     return MPI_SUCCESS;
