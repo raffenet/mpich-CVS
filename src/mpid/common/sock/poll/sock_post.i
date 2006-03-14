@@ -5,6 +5,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* FIXME: Provide an overview for the functions in this file */
+
 #undef FUNCNAME 
 #define FUNCNAME MPIDU_Sock_post_connect_ifaddr
 #undef FCNAME
@@ -29,7 +31,7 @@
  */
 int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set, 
 				    void * user_ptr, 
-				    unsigned char ifaddr[], int port,
+				    MPIDU_Sock_ifaddr_t *ifaddr, int port,
 				    struct MPIDU_Sock ** sockp)
 {
     struct MPIDU_Sock * sock = NULL;
@@ -52,6 +54,10 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
      */
     fd = socket(PF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
+	/* FIXME: It would be better to include a special formatting
+	   clue for system error messages (e.g., %dSE; in the recommended
+	   revision for error reporting (that is, value (errno) is an int, 
+	   but should be interpreted as an System Error string) */
 	MPIU_ERR_SETANDJUMP2(mpi_errno,MPIDU_SOCK_ERR_FAIL,
 			     "**sock|poll|socket", 
 		    "**sock|poll|socket %d %s", errno, MPIU_Strerror(errno));
@@ -106,7 +112,8 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    memcpy(&addr.sin_addr.s_addr, ifaddr, sizeof(addr.sin_addr.s_addr));
+    memcpy(&addr.sin_addr.s_addr, ifaddr->ifaddr, 
+	   sizeof(addr.sin_addr.s_addr));
     addr.sin_port = htons(port);
 
     /*
@@ -249,6 +256,7 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr,
 			    struct MPIDU_Sock ** sockp)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDU_Sock_ifaddr_t ifaddr;
     struct hostent * hostent;
 
     /*
@@ -270,9 +278,12 @@ int MPIDU_Sock_post_connect(struct MPIDU_Sock_set * sock_set, void * user_ptr,
 	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
+    /* These are correct for IPv4 */
+    memcpy( ifaddr.ifaddr, (unsigned char *)hostent->h_addr_list[0], 4 );
+    ifaddr.len  = 4;
+    ifaddr.type = AF_INET;
     mpi_errno = MPIDU_Sock_post_connect_ifaddr( sock_set, user_ptr, 
-			(unsigned char *)hostent->h_addr_list[0], port, 
-			sockp );
+						&ifaddr, port, sockp );
  fn_exit:
     return mpi_errno;
 }
@@ -372,6 +383,7 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr,
 	low_port = high_port = 0;
 	/* Get range here.  These leave low_port, high_port unchanged
 	   if the env variable is not set */
+	/* FIXME: Use the parameter interface and document this */
 	MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
 
 	for (portnum=low_port; portnum<=high_port; portnum++) {
@@ -499,7 +511,8 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr,
     *port = (unsigned int) ntohs(addr.sin_port);
 
     /*
-     * Allocate and initialize sock and poll structures.  If another thread is blocking in poll(), that thread must be woke up
+     * Allocate and initialize sock and poll structures.  If another thread is
+     * blocking in poll(), that thread must be woke up
      * long enough to pick up the addition of the listener socket.
      */
     mpi_errno = MPIDU_Socki_sock_alloc(sock_set, &sock);

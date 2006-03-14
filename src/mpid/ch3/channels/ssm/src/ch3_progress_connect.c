@@ -7,7 +7,9 @@
 #include "ch3i_progress.h"
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
+#if 0
 MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
+#endif
 
 /* local prototypes */
 /* static int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag); */
@@ -451,7 +453,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     char val[MPIDI_MAX_KVS_VALUE_LEN];
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
-    unsigned char ifaddr[4];
+    MPIDU_Sock_ifaddr_t ifaddr;
     int hasIfaddr = 0;
     int rc;
     MPIDI_CH3I_Connection_t * conn;
@@ -522,7 +524,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     /* attempt to connect through sockets */
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
-						 &port, ifaddr, &hasIfaddr );
+						 &port, &ifaddr, &hasIfaddr );
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -540,7 +542,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 #ifndef HAVE_WINDOWS_H
 	if (hasIfaddr) {
 	    mpi_errno = MPIDU_Sock_post_connect_ifaddr(MPIDI_CH3I_sock_set, 
-						       conn, ifaddr, port, 
+						       conn, &ifaddr, port, 
 						       &conn->sock);
 	}
 	else 

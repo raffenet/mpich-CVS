@@ -403,7 +403,8 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *);
-int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag);
+int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr, 
+				int *flag);
 #endif
 /*-------------------------
   END PROCESS GROUP SECTION
@@ -748,9 +749,15 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root );
 int MPIDI_CH3I_Connect_to_root_sshm(const char *, MPIDI_VC_t **);
 int MPIDI_VC_InitShm( MPIDI_VC_t *vc );
 
-
+/* from util/sock */
 int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 
 				     char *host_description, int maxlen,
-				     int *port, void *ifaddr, int *hasIfaddr );
+				     int *port, MPIDU_Sock_ifaddr_t *ifaddr, 
+				     int *hasIfaddr );
+
+/* These two routines from util/sock initialize and shutdown the 
+   socket used to establish connections.  */
+int MPIDU_CH3I_SetupListener( MPIDU_Sock_set_t );
+int MPIDU_CH3I_ShutdownListener( void );
 
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

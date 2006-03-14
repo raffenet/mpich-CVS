@@ -51,9 +51,58 @@
    engines also set the port to 0 when shutting down the progress engine,
    though it doesn't look like the port is closed. */
 
-int MPIDI_CH3I_listener_port = 0;
+static int MPIDI_CH3I_listener_port = 0;
+static MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
+
 /* Required for (socket version) upcall to Connect_to_root (see FIXME) */
 extern MPIDU_Sock_set_t MPIDI_CH3I_sock_set;
+
+int MPIDU_CH3I_SetupListener( MPIDU_Sock_set_t sock_set )
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDU_Sock_t sock;
+
+    mpi_errno = MPIDI_CH3I_Connection_alloc(&MPIDI_CH3I_listener_conn);
+    if (mpi_errno != MPI_SUCCESS) {
+	return mpi_errno;
+    }
+
+    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting listener connect state to CONN_STATE_LISTENING");
+    MPIDI_CH3I_listener_conn->sock	  = NULL;
+    MPIDI_CH3I_listener_conn->vc	  = NULL;
+    MPIDI_CH3I_listener_conn->state	  = CONN_STATE_LISTENING;
+    MPIDI_CH3I_listener_conn->send_active = NULL;
+    MPIDI_CH3I_listener_conn->recv_active = NULL;
+    
+    mpi_errno = MPIDU_Sock_listen(sock_set, MPIDI_CH3I_listener_conn,
+				  &MPIDI_CH3I_listener_port, &sock);
+    if (mpi_errno) return mpi_errno;
+
+    MPIDI_CH3I_listener_conn->sock = sock;
+
+    return mpi_errno;
+}
+
+int MPIDU_CH3I_ShutdownListener( void )
+{
+    int mpi_errno;
+    MPID_Progress_state progress_state;
+
+    mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
+    if (mpi_errno != MPI_SUCCESS) {
+	return mpi_errno;
+    }
+    
+    MPID_Progress_start(&progress_state);
+    while(MPIDI_CH3I_listener_conn != NULL)
+    {
+	mpi_errno = MPID_Progress_wait(&progress_state);
+	
+    }
+    MPID_Progress_end(&progress_state);
+
+    return mpi_errno;
+}
 
 /* Allocates a connection and the pg_id field for a connection only.
    Does not initialize any connection fields other than pg_id.
@@ -114,7 +163,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
     MPIU_CHKPMEM_DECL(1);
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port, port_name_tag;
-    unsigned char ifaddr[4];
+    MPIDU_Sock_ifaddr_t ifaddr;
     int hasIfaddr = 0;
     MPIDI_CH3I_Connection_t * conn;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SOCK);
@@ -126,7 +175,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
 
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( port_name, host_description,
 						 sizeof(host_description),
-						 &port, ifaddr, &hasIfaddr );
+						 &port, &ifaddr, &hasIfaddr );
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -235,7 +284,8 @@ int MPIDI_CH3I_Connection_with_sock( const char *bc,
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 
 				     char *host_description, int maxlen,
-				     int *port, void *ifaddr, int *hasIfaddr )
+				     int *port, MPIDU_Sock_ifaddr_t *ifaddr, 
+				     int *hasIfaddr )
 {
     int mpi_errno = MPI_SUCCESS;
 #if !defined(HAVE_WINDOWS_H) && defined(HAVE_INET_PTON)
@@ -269,7 +319,10 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 					ifname, sizeof(ifname) );
     if (mpi_errno == MPIU_STR_SUCCESS) {
 	/* Convert ifname into 4-byte ip address */
-	int rc = inet_pton( AF_INET, (const char *)ifname, ifaddr );
+	/* Use AF_INET6 for IPv6 (inet_pton may still be used).
+	   An address with more than 3 :'s is an IPv6 address */
+	
+	int rc = inet_pton( AF_INET, (const char *)ifname, ifaddr->ifaddr );
 	if (rc == 0) {
 	    ;/* ifname was not valid */
 	}
@@ -279,6 +332,8 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 	else {
 	    /* Success */
 	    *hasIfaddr = 1;
+	    ifaddr->len = 4;  /* IPv4 address */
+	    ifaddr->type = AF_INET;
 	}
     }
 #endif
@@ -858,7 +913,7 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
     char val[MPIDI_MAX_KVS_VALUE_LEN];
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
-    unsigned char ifaddr[4];
+    MPIDU_Sock_ifaddr_t ifaddr;
     int hasIfaddr = 0;
     MPIDI_CH3I_Connection_t * conn = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
@@ -876,7 +931,7 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
     }
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
-						 &port, ifaddr, &hasIfaddr );
+						 &port, &ifaddr, &hasIfaddr );
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -892,7 +947,7 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 #ifndef HAVE_WINDOWS_H
 	if (hasIfaddr) {
 	    mpi_errno = MPIDU_Sock_post_connect_ifaddr(MPIDI_CH3I_sock_set, 
-						       conn, ifaddr, port, 
+						       conn, &ifaddr, port, 
 						       &conn->sock);
 	}
 	else 

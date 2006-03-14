@@ -51,7 +51,12 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
     }														\
 }
 
-
+/* FIXME: These need to separate the operations from the thread-related
+   synchronization to ensure that the code that is indepent of 
+   threads is always the same.  Also, the thread-level check needs 
+   to be identical to all others, and there should be an option,
+   possibly embedded within special thread macros, to allow
+   runtime control of the thread level */
 
 #if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
 #   define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)	\
@@ -108,215 +113,215 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 /* FIXME: Low usage operations like this should be a function for
    better readability, modularity, and code size */
 #define MPIDU_SOCKI_GET_SOCKET_ERROR(pollinfo_, os_errno_, mpi_errno_, fail_label_)				\
-{														\
-    int rc__;													\
-    socklen_t sz__;												\
-														\
-    sz__ = sizeof(os_errno_);											\
+{								\
+    int rc__;							\
+    socklen_t sz__;						\
+								\
+    sz__ = sizeof(os_errno_);					\
     rc__ = getsockopt((pollinfo_)->fd, SOL_SOCKET, SO_ERROR, &(os_errno_), &sz__);				\
-    if (rc__ != 0)												\
-    {														\
-	if (errno == ENOMEM || errno == ENOBUFS)								\
-	{													\
-	    mpi_errno_ = MPIR_Err_create_code(									\
+    if (rc__ != 0)						\
+    {								\
+	if (errno == ENOMEM || errno == ENOBUFS)		\
+	{							\
+	    mpi_errno_ = MPIR_Err_create_code(			\
 		MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_NOMEM, "**sock|osnomem",	\
 		"**sock|osnomem %s %d %d", "getsockopt", pollinfo->sock_set->id, pollinfo->sock_id);		\
-	}													\
-	else													\
-	{													\
-	    mpi_errno = MPIR_Err_create_code(									\
+	}							\
+	else							\
+	{							\
+	    mpi_errno = MPIR_Err_create_code(			\
 		MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**sock|oserror",		\
 		"**sock|poll|oserror %s %d %d %d %s", "getsockopt", pollinfo->sock_set->id, pollinfo->sock_id,	\
-		 (os_errno_), MPIU_Strerror(os_errno_));							\
-	}													\
-														\
-        goto fail_label_;											\
-    }														\
+		 (os_errno_), MPIU_Strerror(os_errno_));	\
+	}							\
+								\
+        goto fail_label_;					\
+    }								\
 }
 
 
 /*
  * Validation tests
  */
-#define MPIDU_SOCKI_VERIFY_INIT(mpi_errno_, fail_label_)								\
-{															\
-    if (MPIDU_Socki_initialized <= 0)											\
-    {															\
+#define MPIDU_SOCKI_VERIFY_INIT(mpi_errno_, fail_label_)		\
+{								        \
+    if (MPIDU_Socki_initialized <= 0)					\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INIT,	\
-					 "**sock|uninit", NULL);							\
-	goto fail_label_;												\
-    }															\
+					 "**sock|uninit", NULL);	\
+	goto fail_label_;						\
+    }									\
 }
 
 
 #define MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_set_, mpi_errno_, fail_label_)
 
 
-#define MPIDU_SOCKI_VALIDATE_SOCK(sock_, mpi_errno_, fail_label_)								\
-{																\
-    struct pollinfo * pollinfo__;												\
-																\
+#define MPIDU_SOCKI_VALIDATE_SOCK(sock_, mpi_errno_, fail_label_)	\
+{									\
+    struct pollinfo * pollinfo__;					\
+									\
     if ((sock_) == NULL || (sock_)->sock_set == NULL || (sock_)->elem < 0 ||							\
-	(sock_)->elem >= (sock_)->sock_set->poll_array_elems)									\
-    {																\
+	(sock_)->elem >= (sock_)->sock_set->poll_array_elems)		\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	\
-					    "**sock|badsock", NULL);								\
-	goto fail_label_;													\
-    }																\
-																\
-    pollinfo__ = MPIDU_Socki_sock_get_pollinfo(sock_);										\
-																\
+					    "**sock|badsock", NULL);	\
+	goto fail_label_;						\
+    }									\
+									\
+    pollinfo__ = MPIDU_Socki_sock_get_pollinfo(sock_);			\
+									\
     if (pollinfo__->type <= MPIDU_SOCKI_TYPE_FIRST || pollinfo__->type >= MPIDU_SOCKI_TYPE_INTERRUPTER ||			\
 	pollinfo__->state <= MPIDU_SOCKI_STATE_FIRST || pollinfo__->state >= MPIDU_SOCKI_STATE_LAST)				\
-    {																\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	\
-					    "**sock|badsock", NULL);								\
-	goto fail_label_;													\
-    }																\
+					    "**sock|badsock", NULL);	\
+	goto fail_label_;						\
+    }									\
 }
 
 
 #define MPIDU_SOCKI_VERIFY_CONNECTED_READABLE(pollinfo_, mpi_errno_, fail_label_)						\
-{																\
-    if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_COMMUNICATION)									\
-    {																\
-	if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CONNECTING)									\
-	{															\
-	    (mpi_errno_) = MPIR_Err_create_code(										\
+{									\
+    if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_COMMUNICATION)		\
+    {									\
+	if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CONNECTING)		\
+	{								\
+	    (mpi_errno_) = MPIR_Err_create_code(			\
 		(mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**sock|notconnected",		\
 		"**sock|notconnected %d %d", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);					\
-	    goto fail_label_;													\
-	}															\
-	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_DISCONNECTED)								\
-	{															\
-	    if ((pollinfo_)->os_errno == 0)											\
-	    {															\
-		(mpi_errno_) = MPIR_Err_create_code(										\
+	    goto fail_label_;						\
+	}								\
+	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_DISCONNECTED)	\
+	{								\
+	    if ((pollinfo_)->os_errno == 0)				\
+	    {								\
+		(mpi_errno_) = MPIR_Err_create_code(			\
 		    (mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED, "**sock|connclosed",	\
 		    "**sock|connclosed %d %d", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);				\
-	    }															\
-	    else														\
-	    {															\
-		(mpi_errno_) = MPIR_Err_create_code(										\
+	    }								\
+	    else							\
+	    {								\
+		(mpi_errno_) = MPIR_Err_create_code(			\
 		    (mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|connfailed",	\
 		    "**sock|poll|connfailed %d %d %d %s", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id,			\
 		    (pollinfo_)->os_errno, MPIU_Strerror((pollinfo_)->os_errno));						\
-	    }															\
-	    goto fail_label_;													\
-	}															\
-	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CLOSING)								\
-	{															\
-	    (mpi_errno_) = MPIR_Err_create_code(										\
+	    }								\
+	    goto fail_label_;						\
+	}								\
+	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CLOSING)	\
+	{								\
+	    (mpi_errno_) = MPIR_Err_create_code(			\
 		(mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INPROGRESS, "**sock|closing",		\
 		"**sock|closing %d %d", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);					\
-																\
-	    goto fail_label_;													\
-	}															\
+									\
+	    goto fail_label_;						\
+	}								\
 	else if ((pollinfo_)->state != MPIDU_SOCKI_STATE_CONNECTED_RW && (pollinfo_)->state != MPIDU_SOCKI_STATE_CONNECTED_RO)	\
-	{															\
+	{								\
 	    (mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	\
 						"**sock|badsock", NULL);							\
-	    goto fail_label_;													\
-	}															\
-    }																\
-    else if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_LISTENER)									\
-    {																\
-	(mpi_errno_) = MPIR_Err_create_code(											\
+	    goto fail_label_;						\
+	}								\
+    }									\
+    else if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_LISTENER)		\
+    {									\
+	(mpi_errno_) = MPIR_Err_create_code(				\
 	    (mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK, "**sock|listener_read",		\
 	    "**sock|listener_read %d %d", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);					\
-																\
-	goto fail_label_;													\
-    }																\
+									\
+	goto fail_label_;						\
+    }									\
 }
 
 
 #define MPIDU_SOCKI_VERIFY_CONNECTED_WRITABLE(pollinfo_, mpi_errno_, fail_label_)						 \
-{																 \
-    if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_COMMUNICATION)									 \
-    {																 \
-	if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CONNECTING)									 \
-	{															 \
+{									\
+    if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_COMMUNICATION)		\
+    {									\
+	if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CONNECTING)		\
+	{								\
 	    (mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	 \
 						"**sock|notconnected", "**sock|notconnected %d %d",				 \
 						(pollinfo_)->sock_set->id, (pollinfo_)->sock_id);				 \
-	    goto fail_label_;													 \
-	}															 \
+	    goto fail_label_;						\
+	}								\
 	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_DISCONNECTED || (pollinfo_)->state == MPIDU_SOCKI_STATE_CONNECTED_RO)	 \
-	{															 \
-	    if ((pollinfo_)->os_errno == 0)											 \
-	    {															 \
-		(mpi_errno_) = MPIR_Err_create_code(										 \
+	{								\
+	    if ((pollinfo_)->os_errno == 0)				\
+	    {								\
+		(mpi_errno_) = MPIR_Err_create_code(			\
 		    (mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_CLOSED, "**sock|connclosed",	 \
 		    "**sock|connclosed %d %d", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);				 \
-	    }															 \
-	    else														 \
-	    {															 \
+	    }								\
+	    else							\
+	    {								\
 		(mpi_errno_) = MPIR_Err_create_code(										 \
 		    (mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_CONN_FAILED, "**sock|connfailed",	 \
 		    "**sock|poll|connfailed %d %d %d %s", (pollinfo_)->sock_set->id, (pollinfo_)->sock_id,			 \
 		    (pollinfo_)->os_errno, MPIU_Strerror((pollinfo_)->os_errno));						 \
-	    }															 \
-	    goto fail_label_;													 \
-	}															 \
-	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CLOSING)								 \
-	{															 \
+	    }								\
+	    goto fail_label_;						\
+	}								\
+	else if ((pollinfo_)->state == MPIDU_SOCKI_STATE_CLOSING)	\
+	{								\
 	    (mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INPROGRESS, \
 						"**sock|closing", "**sock|closing %d %d",					 \
 						(pollinfo_)->sock_set->id, (pollinfo_)->sock_id);				 \
-																 \
-	    goto fail_label_;													 \
-	}															 \
-	else if ((pollinfo_)->state != MPIDU_SOCKI_STATE_CONNECTED_RW)								 \
-	{															 \
+									\
+	    goto fail_label_;						\
+	}								\
+	else if ((pollinfo_)->state != MPIDU_SOCKI_STATE_CONNECTED_RW)	\
+	{								\
 	    (mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	 \
 						"**sock|badsock", NULL);							 \
-	    goto fail_label_;													 \
-	}															 \
-    }																 \
-    else if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_LISTENER)									 \
-    {																 \
+	    goto fail_label_;						\
+	}								\
+    }									\
+    else if ((pollinfo_)->type == MPIDU_SOCKI_TYPE_LISTENER)		\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	 \
 					    "**sock|listener_write", "**sock|listener_write %d %d",				 \
 					    (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);					 \
-																 \
-	goto fail_label_;													 \
-    }																 \
+									\
+	goto fail_label_;						\
+    }									\
 }
 
 
-#define MPIDU_SOCKI_VALIDATE_FD(pollinfo_, mpi_errno_, fail_label_)								\
-{																\
-    if ((pollinfo_)->fd < 0)													\
-    {																\
+#define MPIDU_SOCKI_VALIDATE_FD(pollinfo_, mpi_errno_, fail_label_)	\
+{									\
+    if ((pollinfo_)->fd < 0)						\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_SOCK,	\
 					    "**sock|badhandle", "**sock|poll|badhandle %d %d %d",				\
 					    (pollinfo_)->sock_set->id, (pollinfo_)->sock_id, (pollinfo_)->fd);			\
-	goto fail_label_;													\
-    }																\
+	goto fail_label_;						\
+    }									\
 }
 
 
 #define MPIDU_SOCKI_VERIFY_NO_POSTED_READ(pollfd_, pollinfo_, mpi_errno_, fail_label_)						\
-{																\
-    if (MPIDU_SOCKI_POLLFD_OP_ISSET((pollfd_), (pollinfo_), POLLIN))								\
-    {																\
+{									\
+    if (MPIDU_SOCKI_POLLFD_OP_ISSET((pollfd_), (pollinfo_), POLLIN))	\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INPROGRESS,	\
 					    "**sock|reads", "**sock|reads %d %d",						\
 					    (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);					\
-	goto fail_label_;													\
-    }																\
+	goto fail_label_;						\
+    }									\
 }
 
 
 #define MPIDU_SOCKI_VERIFY_NO_POSTED_WRITE(pollfd_, pollinfo_, mpi_errno_, fail_label_)						\
-{																\
-    if (MPIDU_SOCKI_POLLFD_OP_ISSET((pollfd_), (pollinfo_), POLLOUT))							\
-    {																\
+{									\
+    if (MPIDU_SOCKI_POLLFD_OP_ISSET((pollfd_), (pollinfo_), POLLOUT))	\
+    {									\
 	(mpi_errno_) = MPIR_Err_create_code((mpi_errno_), MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_INPROGRESS,	\
 					    "**sock|writes", "**sock|writes %d %d",						\
 					    (pollinfo_)->sock_set->id, (pollinfo_)->sock_id);					\
-	goto fail_label_;													\
-    }																\
+	goto fail_label_;						\
+    }									\
 }
 
 
@@ -418,8 +423,10 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
 	/*
 	 * Unexpected OS error.
 	 *
-	 * FIXME: technically we should never reach this section of code.  What's the right way to handle this situation?  Should
-	 * we print an immediate message asking the user to report the errno so that we can plug the hole?
+	 * FIXME: technically we should never reach this section of code.  
+	 * What's the right way to handle this situation?  Should
+	 * we print an immediate message asking the user to report the errno 
+	 * so that we can plug the hole?
 	 */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, fcname, line, MPIDU_SOCK_ERR_CONN_FAILED,
 					 "**sock|oserror", "**sock|poll|oserror %d %d %d %s",
@@ -437,8 +444,15 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
 /*
  * MPIDU_Socki_adjust_iov()
  *
- * Use the specified number of bytes (nb) to adjust the iovec and associated values.  If the iovec has been consumed, return
+ * Use the specified number of bytes (nb) to adjust the iovec and associated
+ * values.  If the iovec has been consumed, return
  * true; otherwise return false.
+ *
+ * The input is an iov (MPID_IOV is just an iov) and the offset into which 
+ * to start (start with entry iov[*offsetp]) and remove nb bytes from the iov.
+ * The use of the offsetp term allows use to remove values from the iov without
+ * making a copy to shift down elements when only part of the iov is
+ * consumed.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_adjust_iov
@@ -485,6 +499,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCKI_SOCK_ALLOC);
     
+    /* FIXME: Should this use the CHKPMEM macros (perm malloc)? */
     sock = MPIU_Malloc(sizeof(struct MPIDU_Sock));
     /* --BEGIN ERROR HANDLING-- */
     if (sock == NULL)
@@ -511,8 +526,8 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     }
 
     /*
-     * No free elements were found.  Larger pollfd and pollinfo arrays need to be allocated and the existing data transfered
-     * over.
+     * No free elements were found.  Larger pollfd and pollinfo arrays need to 
+     * be allocated and the existing data transfered over.
      */
     if (avail_elem == sock_set->poll_array_sz)
     {
@@ -542,8 +557,10 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	    /*
 	     * Copy information from the old arrays and then free them.  
 	     *
-	     * In the multi-threaded case, the pollfd array can only be copied if another thread is not already blocking in poll()
-	     * and thus potentially modifying the array.  Furthermore, the pollfd array must not be freed if it is the one
+	     * In the multi-threaded case, the pollfd array can only be copied
+	     * if another thread is not already blocking in poll()
+	     * and thus potentially modifying the array.  Furthermore, the 
+	     * pollfd array must not be freed if it is the one
 	     * actively being used by pol().
 	     */
 #	    if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
@@ -678,6 +695,7 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCKI_SOCK_FREE);
 
+    /* FIXME: We need an abstraction for the thread sync operations */
 #   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
     {
 	/*
@@ -689,8 +707,8 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
 
     /*
      * Compress poll array
-     *
-     * TODO: move last element into current position and update sock associated with last element.
+     */
+     /* FIXME: move last element into current position and update sock associated with last element.
      */
     if (sock->elem + 1 == sock_set->poll_array_elems)
     { 
@@ -836,6 +854,7 @@ static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
     /* --BEGIN ERROR HANDLING-- */
     else
     {
+	/* FIXME: Shouldn't this be an mpi error code? */
 	mpi_errno = MPIDU_SOCK_ERR_FAIL;
     }
     /* --END ERROR HANDLING-- */
@@ -846,6 +865,8 @@ static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 /* end MPIDU_Socki_event_dequeue() */
 
 
+/* FIXME: Who allocates eventq tables?  Should there be a check that these
+   tables are empty first? */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_free_eventq_mem
 #undef FCNAME

@@ -87,6 +87,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
                                 *         for getting the business card
                                 */
     MPIDI_Process.my_pg_rank = pg_rank;
+    /* FIXME: Why do we add a ref to pg here? */
     MPIDI_PG_Add_ref(pg);
 
     /*
@@ -205,6 +206,8 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 	/* FIXME: It should be possible to select a thread-safety level 
 	   lower than the configure level, avoiding the locks with a
 	   simple if test */
+	/* This should be min(requested,MPICH_THREAD_LEVEL) if runtime
+	   control of thread level is available */
 	*provided = MPICH_THREAD_LEVEL;
     }
 
@@ -237,6 +240,7 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
     /* See if the channel will provide the PMI values.  The channel
      is responsible for defining HAVE_CH3_PRE_INIT and providing 
     the MPIDI_CH3_Pre_init function.  */
+    /* FIXME: Document this */
 #ifdef HAVE_CH3_PRE_INIT
     {
 	int setvals;
@@ -418,6 +422,8 @@ int MPIDI_CH3I_BCFree( char *bc_val )
     return 0;
 }
 
+/* FIXME: The PG code should supply these, since it knows how the 
+   pg_ids and other data are represented */
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
 {
     return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;

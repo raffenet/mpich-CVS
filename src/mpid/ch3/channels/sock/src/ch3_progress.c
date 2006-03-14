@@ -47,8 +47,9 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 
 MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL; 
 /* FIXME: We'll move the listener info out of this file soon */
+#if 0
 MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
-
+#endif 
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
 /* FIXME: move this prototype */
@@ -294,6 +295,7 @@ int MPIDI_CH3I_Progress_init(void)
     
     /* establish non-blocking listener */
     /* FIXME: Move into socket connection code */
+#if 0
     mpi_errno = MPIDI_CH3I_Connection_alloc(&MPIDI_CH3I_listener_conn);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -312,6 +314,10 @@ int MPIDI_CH3I_Progress_init(void)
     }
     
     MPIDI_CH3I_listener_conn->sock = sock;
+#else
+    mpi_errno = MPIDU_CH3I_SetupListener( MPIDI_CH3I_sock_set );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#endif
     
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
@@ -335,6 +341,7 @@ int MPIDI_CH3I_Progress_finalize(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
     /* Shut down the listener */
+#if 0
     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -347,6 +354,9 @@ int MPIDI_CH3I_Progress_finalize(void)
 	
     }
     MPID_Progress_end(&progress_state);
+#else
+    MPIDU_CH3I_ShutdownListener();
+#endif
     
     /* FIXME: Cleanly shutdown other socks and free connection structures. 
        (close protocol?) */

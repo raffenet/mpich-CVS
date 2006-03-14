@@ -405,6 +405,18 @@ Utility-Sock
 @*/
 int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_description, int port, MPIDU_Sock_t * sock);
 
+/*S
+  MPIDU_Sock_ifaddr_t - Structure to hold an Internet address.
+
++ len - Length of the address.  4 for IPv4, 16 for IPv6.
+- ifaddr - Address bytes (as bytes, not characters)
+
+S*/
+typedef struct MPIDU_Sock_ifaddr_t {
+    int len, type;
+    unsigned char ifaddr[16];
+} MPIDU_Sock_ifaddr_t;
+
 /*@ MPIDU_Sock_post_connect_ifaddr - Post a connection given an interface
   address (bytes, not string).
 
@@ -413,7 +425,7 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
   @*/
 int MPIDU_Sock_post_connect_ifaddr( MPIDU_Sock_set_t sock_set, 
 				    void * user_ptr, 
-				    unsigned char ifaddr[], int port,
+				    MPIDU_Sock_ifaddr_t *ifaddr, int port,
 				    MPIDU_Sock_t * sockp);
 
 

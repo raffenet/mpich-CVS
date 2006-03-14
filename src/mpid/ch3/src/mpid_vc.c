@@ -264,8 +264,8 @@ int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] )
     /* Get the process group id as an int */
     MPIDI_PG_IdToNum( vc->pg, &pgid );
     
-    *gpid++ = pgid;
-    *gpid++ = vc->pg_rank;
+    gpid[0] = pgid;
+    gpid[1] = vc->pg_rank;
     
     return 0;
 }
@@ -409,7 +409,7 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr, 
-			   int nPGids, int gpids[], 
+			   int nPGids, const int gpids[], 
 			   int root )
 {
     int i, allfound = 1, pgid, pgidWorld;

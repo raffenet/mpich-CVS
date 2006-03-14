@@ -1254,6 +1254,7 @@ int MPIDI_CH3I_Progress_init()
     /* --END ERROR HANDLING-- */
 
     /* establish non-blocking listener */
+#if 0
     mpi_errno = MPIDI_CH3I_Connection_alloc(&MPIDI_CH3I_listener_conn);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -1278,6 +1279,10 @@ int MPIDI_CH3I_Progress_init()
     /* --END ERROR HANDLING-- */
  
     MPIDI_CH3I_listener_conn->sock = sock;
+#else
+    mpi_errno = MPIDU_CH3I_SetupListener( MPIDI_CH3I_sock_set );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#endif
 
 fn_exit:
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -1299,6 +1304,7 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
     /* Shut down the listener */
+#if 0
     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -1315,6 +1321,9 @@ int MPIDI_CH3I_Progress_finalize()
 	
     }
     MPID_Progress_end(&progress_state);
+#else
+    MPIDU_CH3I_ShutdownListener();
+#endif
 
     /* FIXME: Cleanly shutdown other socks and MPIU_Free connection structures. (close protocol?) */
 

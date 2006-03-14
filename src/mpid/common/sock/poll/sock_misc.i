@@ -5,6 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#if 0
 /* FIXME: Who uses this and why? */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_hostname_to_host_description
@@ -30,12 +31,15 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_HOSTNAME_TO_HOST_DESCRIPTION);
     return mpi_errno;
 }
+#endif
 
 /* This routine is called in mpid/ch3/util/sock/ch3u_connect_sock.c */
 /* FIXME: This routine is misnamed; it is really get_interface_name (in the 
    case where there are several networks available to the calling process,
    this picks one but even in the current code can pick a different
-   interface if a particular environment variable is set) */
+   interface if a particular environment variable is set) .  
+
+   This routine is used in smpd so we should not change its name yet. */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_host_description
 #undef FCNAME
@@ -53,8 +57,9 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     /* --BEGIN ERROR HANDLING-- */
     if (len < 0)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
-					 "**sock|badhdmax", NULL);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				     FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_LEN,
+				     "**sock|badhdmax", NULL);
 	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
@@ -64,6 +69,13 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
        name?  What if a different interface is needed? */
     /* Use hostname supplied in environment variable, if it exists */
     env_hostname = getenv("MPICH_INTERFACE_HOSTNAME");
+#if 0
+    if (!env_hostname) {
+	/* FIXME: Try to get the environment variable that uses the rank 
+	   in comm world, i.e., MPICH_INTERFACE_HOSTNAME_R_%d.  For 
+	   this, we'll need to know the rank for this process. */
+    }
+#endif
     if (env_hostname != NULL)
     {
 	rc = MPIU_Strncpy(host_description, env_hostname, len);
@@ -74,31 +86,30 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
 					     "**sock|badhdlen", NULL);
 	}
 	/* --END ERROR HANDLING-- */
-
-	goto fn_exit;
     }
-
-    rc = gethostname(host_description, len);
-    /* --BEGIN ERROR HANDLING-- */
-    if (rc == -1)
-    {
-	if (errno == EINVAL)
+    else {
+	rc = gethostname(host_description, len);
+	/* --BEGIN ERROR HANDLING-- */
+	if (rc == -1)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_HOST,
-					     "**sock|badhdlen", NULL);
+	    if (errno == EINVAL)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_HOST,
+						 "**sock|badhdlen", NULL);
+	    }
+	    else if (errno == EFAULT)
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_HOST,
+						 "**sock|badhdbuf", NULL);
+	    }
+	    else
+	    {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
+						 "**sock|oserror", "**sock|poll|oserror %d %s", errno, MPIU_Strerror(errno));
+	    }
 	}
-	else if (errno == EFAULT)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_BAD_HOST,
-					     "**sock|badhdbuf", NULL);
-	}
-	else
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL,
-					     "**sock|oserror", "**sock|poll|oserror %d %s", errno, MPIU_Strerror(errno));
-	}
+	/* --END ERROR HANDLING-- */
     }
-    /* --END ERROR HANDLING-- */
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
@@ -219,6 +230,8 @@ int MPIDU_Sock_set_user_ptr(struct MPIDU_Sock * sock, void * user_ptr)
 }
 
 
+/* FIXME: What is this for?  It appears to be used in debug printing and
+   in smpd */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_sock_id
 #undef FCNAME
@@ -280,6 +293,7 @@ int MPIDU_Sock_get_sock_set_id(struct MPIDU_Sock_set * sock_set)
    Read the design documentation and if there is a problem, raise it rather 
    than ignoring it.  
 */
+/* FIXME: This appears to only be used in smpd */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_error_class_string
 #undef FCNAME

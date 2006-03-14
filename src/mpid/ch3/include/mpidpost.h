@@ -716,7 +716,7 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] );
 int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
 			    int size, const int lpids[] );
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr, 
-			   int nPGids, int gpids[], 
+			   int nPGids, const int gpids[], 
 			   int root );
 /* PG_ForwardPGInfo is used as the implementation of the intercomm-create
    hook that is needed with dynamic processes because of limitations

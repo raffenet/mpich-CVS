@@ -357,7 +357,8 @@ fn_fail:
 #define FUNCNAME MPIDI_PG_Create_from_string
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_PG_Create_from_string(char * str, MPIDI_PG_t ** pg_pptr, int *flag)
+int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr, 
+				int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
     char *p;

@@ -17,15 +17,18 @@ static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, struct polli
  *
  * NOTES:
  *
- * For fatal errors, the state of the connection progresses directly to the failed state and the connection is marked inactive in
- * the poll array.  Under normal conditions, the fatal error should result in the termination of the process; but, if that
+ * For fatal errors, the state of the connection progresses directly to the 
+ * failed state and the connection is marked inactive in
+ * the poll array.  Under normal conditions, the fatal error should result in 
+ * the termination of the process; but, if that
  * doesn't happen, we try to leave the implementation in a somewhat sane state.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_wait
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, struct MPIDU_Sock_event * eventp)
+int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
+		    struct MPIDU_Sock_event * eventp)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WAIT);
@@ -53,13 +56,19 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout, s
 	    pollinfo = &sock_set->pollinfos[elem];
 
 	    /*
-	     * Attempt to set socket back to blocking.  This *should* prevent any data in the socket send buffer from being
-	     * discarded.  Instead close() will block until the buffer is flushed or the connection timeouts and is considered
-	     * lost.  Theoretically, this could cause the MPIDU_Sock_wait() to hang indefinitely; however, the calling code
-	     * should ensure this will not happen by going through a shutdown protocol before posting a close operation.
+	     * Attempt to set socket back to blocking.  This *should* prevent 
+	     * any data in the socket send buffer from being
+	     * discarded.  Instead close() will block until the buffer is 
+	     * flushed or the connection timeouts and is considered
+	     * lost.  Theoretically, this could cause the MPIDU_Sock_wait() to
+	     * hang indefinitely; however, the calling code
+	     * should ensure this will not happen by going through a shutdown 
+	     * protocol before posting a close operation.
 	     *
-	     * FIXME: If the attempt to set the socket back to blocking fails, we presently ignore it.  Should we return an
-	     * error?  We need to define acceptible data loss at close time.  MS Windows has worse problems with this, so it
+	     * FIXME: If the attempt to set the socket back to blocking fails, 
+	     * we presently ignore it.  Should we return an
+	     * error?  We need to define acceptible data loss at close time.  
+	     * MS Windows has worse problems with this, so it
 	     * may not be possible to make any guarantees.
 	     */
 	    flags = fcntl(pollinfo->fd, F_GETFL, 0);

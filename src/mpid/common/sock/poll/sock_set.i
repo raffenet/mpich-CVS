@@ -40,6 +40,9 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     sock_set->pollinfos = NULL;
     sock_set->eventq_head = NULL;
     sock_set->eventq_tail = NULL;
+    /* FIXME: Move the thread-specific operations into thread-specific
+       routines (to allow for alternative thread sync models and
+       for runtime control of thread level) */
 #   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
     {
 	sock_set->pollfds_active = NULL;
@@ -60,11 +63,15 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 	int rc;
 	
 	/*
-	 * Acquire a pipe (the interrupter) to wake up a blocking poll should it become necessary.
+	 * Acquire a pipe (the interrupter) to wake up a blocking poll should 
+	 * it become necessary.
 	 *
-	 * Make the read descriptor nonblocking.  The write descriptor is left as a blocking descriptor.  The write has to
-	 * succeed or the system will lock up.  Should the blocking descriptor prove to be a problem, then (1) copy the above
-	 * code, applying it to the write descriptor, and (2) update MPIDU_Socki_wakeup() so that it loops while write returns 0,
+	 * Make the read descriptor nonblocking.  The write descriptor is left
+	 * as a blocking descriptor.  The write has to
+	 * succeed or the system will lock up.  Should the blocking descriptor
+	 * prove to be a problem, then (1) copy the above
+	 * code, applying it to the write descriptor, and (2) update 
+	 * MPIDU_Socki_wakeup() so that it loops while write returns 0,
 	 * performing a thread yield between iterations.
 	 */
 	rc = pipe(sock_set->intr_fds);

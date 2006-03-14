@@ -23,48 +23,6 @@
 #include <netdb.h>
 #include <errno.h>
 
-/* FIXME: Why are these commented out?  Should this instead be a big
-   test on if-not-all-defined, error missing features? */
-/*
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_SYS_UIO_H
-#include <sys/uio.h>
-#endif
-#ifdef HAVE_NETINET_TCP_H
-#include <netinet/tcp.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif
-#ifdef HAVE_SYS_POLL_H
-#include <sys/poll.h>
-#endif
-#ifdef HAVE_NETDB_H
-#include <netdb.h>
-#endif
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-*/
-
-
-/* FIXME: Who sets USE_SELECT_FOR_POLL?  I don't see any place in mpich2 
-   where this might be defined */
-#ifdef USE_SELECT_FOR_POLL
-#include "mpidu_sock_poll.h"
-#endif
-
 /* FIXME: What do these mean?  Why is 32 a good size (e.g., is it because
    32*32 = 1024 if these are bits in a 4-byte int?  In that case, should
    these be related to a maximum processor count or an OS-defined fd limit? */
