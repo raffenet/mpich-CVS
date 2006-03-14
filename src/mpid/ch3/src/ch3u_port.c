@@ -50,6 +50,8 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 			      pg_translation remote_translation[],
 			      MPIDI_PG_t **remote_pg, 
 			      MPID_Comm *intercomm );
+static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
+					  MPIDI_VC_t *vc_ptr, int is_low_group);
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Create_inter_root_communicator_connect
@@ -80,6 +82,7 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
 	MPIU_ERR_POP(mpi_errno);
     }
 
+    /* FIXME: Who sets?  Why? Where is this defined? */
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
     /* If the VC creates non-duplex connections then the acceptor will
      * need to connect back to form the other half of the connection. */
@@ -584,6 +587,7 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
  fn_fail:
     goto fn_exit;
 }
+
 /* Sends the process group information to the peer and frees the 
    pg_list */
 #undef FUNCNAME
@@ -632,6 +636,9 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
 }
 
 /* ---------------------------------------------------------------------- */
+/* Creates a communicator for the purpose of communicating with one other 
+   process (the root of the other group).  It also returns the virtual
+   connection */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Create_inter_root_communicator_accept
 #undef FCNAME
@@ -657,6 +664,8 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
 	MPIU_ERR_POP(mpi_errno);
     }
 
+    /* FIXME: Describe the algorithm used here, and what routine 
+       is user on the other side of this connection */
     /* dequeue the accept queue to see if a connection with the
        root on the connect side has been formed in the progress
        engine (the connection is returned in the form of a vc). If
@@ -755,7 +764,8 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     
     if (rank == root)
     {
-	/* Establish a communicator to communicate with the root on the other side. */
+	/* Establish a communicator to communicate with the root on the 
+	   other side. */
 	mpi_errno = MPIDI_Create_inter_root_communicator_accept(port_name, 
 						&tmp_comm, &new_vc);
 	if (mpi_errno != MPI_SUCCESS) {
@@ -909,8 +919,8 @@ fn_fail:
 #define FUNCNAME  MPIDI_CH3I_Initialize_tmp_comm
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, MPIDI_VC_t *vc_ptr,
-				   int is_low_group)
+static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
+					  MPIDI_VC_t *vc_ptr, int is_low_group)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *tmp_comm, *commself_ptr;
@@ -1001,6 +1011,10 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 {
     int mpi_errno = MPI_SUCCESS, i;
 
+    /* FIXME: How much of this could/should be common with the
+       upper level (src/mpi/comm/ *.c) code? For best robustness, 
+       this should use the same routine (not copy/paste code) as
+       in the upper level code. */
     intercomm->attributes   = NULL;
     intercomm->remote_size  = remote_comm_size;
     intercomm->local_size   = comm_ptr->local_size;

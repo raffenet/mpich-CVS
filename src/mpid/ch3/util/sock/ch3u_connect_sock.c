@@ -46,7 +46,7 @@
 
 /* FIXME: All of the listener port routines should be in one place.
    It looks like this should be a socket utility function called by
-   ch3_progress.c in sock and ssm (and essm if that is still valid), 
+   ch3_progress.c in sock and ssm, 
    as part of the progress init function.  Note that those progress
    engines also set the port to 0 when shutting down the progress engine,
    though it doesn't look like the port is closed. */
@@ -158,7 +158,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
     /* conn->pg_id is not used for this conection */
 
     /* FIXME: To avoid this global (MPIDI_CH3I_sock_set) which is 
-       used only ch3_progress.c and ch3_progress_connect.c in the channels,
+       used only in ch3_progress.c and ch3_progress_connect.c in the channels,
        this should be a call into the channel, asking it to setup the
        socket for a connection and return the connection.  That will
        keep the socket set out of the general ch3 code, even if this

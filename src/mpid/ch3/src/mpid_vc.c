@@ -6,9 +6,19 @@
 
 #include "mpidimpl.h"
 
-/* FIXME: What is the arrangement of VCRT and VCR and VC?  */
+/* What is the arrangement of VCRT and VCR and VC? 
+   
+   Each VC (the virtual connection itself) is refered to by a reference 
+   (pointer) or VCR.  
+   Each communicator has a VCRT, which is nothing more than a 
+   structure containing a count (size) and an array of pointers to 
+   virtual connections (as an abstraction, this could be a sparse
+   array, allowing a more scalable representation on massively 
+   parallel systems).
 
-/*
+ */
+
+/*S
  * MPIDI_VCRT - virtual connection reference table
  *
  * handle - this element is not used, but exists so that we may use the 
@@ -17,7 +27,7 @@
  * ref_count - number of references to this table
  *
  * vcr_table - array of virtual connection references
- */
+ S*/
 typedef struct MPIDI_VCRT
 {
     int handle;
@@ -80,6 +90,7 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
     return MPI_SUCCESS;
 }
 
+/* FIXME: What should this do?  See proc group and vc discussion */
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Release
 #undef FCNAME
@@ -113,7 +124,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	    if (!in_use)
 	    {
 		/* If the VC is myself then skip the close message */
-		if (vc->pg == MPIDI_Process.my_pg && vc->pg_rank == MPIDI_Process.my_pg_rank)
+		if (vc->pg == MPIDI_Process.my_pg && 
+		    vc->pg_rank == MPIDI_Process.my_pg_rank)
 		{
                     MPIDI_PG_Release_ref(vc->pg, &inuse);
                     if (inuse == 0)
@@ -201,7 +213,7 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
  * represented as pairs of ints (process group id, rank in that process group)
  */
 
-/* FIXME: These routines probably belong in a different place */
+/* FIXME: These routines belong in a different place */
 #undef FUNCNAME
 #define FUNCNAME MPID_GPID_GetAllInComm
 #undef FCNAME
