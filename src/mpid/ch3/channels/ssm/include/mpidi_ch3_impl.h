@@ -12,6 +12,7 @@
 #include "mpidimpl.h"
 #include "mpidu_process_locks.h"
 #include "ch3i_progress.h"
+#include "ch3usock.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

@@ -60,6 +60,9 @@ if test "$ac_cv_header_netinet_in_h" = yes ; then
     AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
 fi
 
+# We need the util/sock/ch3usock.h header file
+CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
+
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
 

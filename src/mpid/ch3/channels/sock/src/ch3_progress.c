@@ -12,9 +12,11 @@
 #include <string.h>
 #endif
 
+/* FIXME: No-one defines this.  Should we remove it and all uses? */
 #undef USE_CH3I_PROGRESS_DELAY_QUEUE
 
-
+/* FIXME: Move thread stuff into some set of abstractions in order to remove
+   ifdefs */
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
     volatile int MPIDI_CH3I_progress_blocked = FALSE;
@@ -46,14 +48,7 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 
 
 MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL; 
-/* FIXME: We'll move the listener info out of this file soon */
-#if 0
-MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
-#endif 
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
-
-/* FIXME: move this prototype */
-int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 
 static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
@@ -294,30 +289,8 @@ int MPIDI_CH3I_Progress_init(void)
     }
     
     /* establish non-blocking listener */
-    /* FIXME: Move into socket connection code */
-#if 0
-    mpi_errno = MPIDI_CH3I_Connection_alloc(&MPIDI_CH3I_listener_conn);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-
-    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting listener connect state to CONN_STATE_LISTENING");
-    MPIDI_CH3I_listener_conn->sock = NULL;
-    MPIDI_CH3I_listener_conn->vc = NULL;
-    MPIDI_CH3I_listener_conn->state = CONN_STATE_LISTENING;
-    MPIDI_CH3I_listener_conn->send_active = NULL;
-    MPIDI_CH3I_listener_conn->recv_active = NULL;
-    
-    mpi_errno = MPIDU_Sock_listen(MPIDI_CH3I_sock_set, MPIDI_CH3I_listener_conn, &MPIDI_CH3I_listener_port, &sock);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    
-    MPIDI_CH3I_listener_conn->sock = sock;
-#else
     mpi_errno = MPIDU_CH3I_SetupListener( MPIDI_CH3I_sock_set );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-#endif
     
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
@@ -341,23 +314,8 @@ int MPIDI_CH3I_Progress_finalize(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
     /* Shut down the listener */
-#if 0
-    mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    
-    MPID_Progress_start(&progress_state);
-    while(MPIDI_CH3I_listener_conn != NULL)
-    {
-	mpi_errno = MPID_Progress_wait(&progress_state);
-	
-    }
-    MPID_Progress_end(&progress_state);
-#else
     mpi_errno = MPIDU_CH3I_ShutdownListener();
     if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
-#endif
     
     /* FIXME: Cleanly shutdown other socks and free connection structures. 
        (close protocol?) */

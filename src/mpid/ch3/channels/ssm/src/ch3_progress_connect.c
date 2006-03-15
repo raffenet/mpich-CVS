@@ -7,12 +7,8 @@
 #include "ch3i_progress.h"
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
-#if 0
-MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
-#endif
 
 /* local prototypes */
-/* static int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, char *business_card, int *flag); */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Connection_terminate

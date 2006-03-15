@@ -320,6 +320,9 @@ fi
 SSM_LIBS=$LIBS
 LIBS=$save_libs
 
+# We need the util/sock/ch3usock.h header file
+CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
+
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
 AC_SUBST(SSM_LIBS)

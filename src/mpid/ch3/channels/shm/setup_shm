@@ -3,3 +3,4 @@
 # (in ch3/util/<directory>, in this case, ch3/util/sock and shm because
 # this channel uses only shared memory)
 #ch3subsystems="$ch3subsystems shm"
+#needs_shm=yes

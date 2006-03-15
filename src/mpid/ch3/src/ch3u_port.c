@@ -27,7 +27,7 @@
 
 typedef struct pg_translation {
     int pg_index;    /* index of a process group (index in pg_node) */
-    int pg_rank;
+    int pg_rank;     /* rank in that process group */
 } pg_translation;
 
 typedef struct pg_node {
@@ -82,10 +82,14 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    /* FIXME: Who sets?  Why? Where is this defined? */
+    /* FIXME: Who sets?  Why? Where is this defined? Document */
+    /* channels/sshm/include/mpidi_ch3_pre.h defines this */
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
     /* If the VC creates non-duplex connections then the acceptor will
      * need to connect back to form the other half of the connection. */
+    /* FIXME: A hook should not be such a specific function; instead,
+       it should invoke a function pointer defined in the channel 
+       interface structure */
     mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( connect_vc );
 #endif
 
@@ -302,7 +306,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 
 /*
  * Extract all of the process groups from the given communicator and 
- * form a list (returned in pg_list) that contains that information.
+ * form a list (returned in pg_list) of those process groups.
  * Also returned is an array (local_translation) that contains tuples mapping
  * rank in process group to rank in that communicator (local translation
  * must be allocated before this routine is called).  The number of 
@@ -478,6 +482,8 @@ static int ReceivePGAndDistribute( MPID_Comm *tmp_comm, MPID_Comm *comm_ptr,
 	
 	MPIU_Free(pg_str);
 	if (flag) {
+	    /* FIXME: If this is really needed, make it a destroy callback
+	       on the process group rather than an SSHM-specific item */
 #ifdef MPIDI_CH3_USES_SSHM
 	    /* extra pg ref needed for shared memory modules because the 
 	     * shm_XXXXing_list's
@@ -695,6 +701,7 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
 
     /* If the VC creates non-duplex connections then the acceptor will
      * need to connect back to form the other half of the connection. */
+    /* FIXME: See other HOOK fixme */
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
     mpi_errno = MPIDI_CH3_Complete_unidirectional_connection2( new_vc );
 #endif
@@ -715,7 +722,8 @@ fn_fail:
 
    Algorithm: First dequeue the vc from the accept queue (it was
    enqueued by the progress engine in response to a connect request
-   from the root on the connect side). Use this vc to create an
+   from the root process that is attempting the connection on 
+   the connect side). Use this vc to create an
    intercommunicator between this root and the root on the connect
    side. Use this intercomm. to communicate the other information
    needed to create the real intercommunicator between the processes
@@ -1134,6 +1142,7 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
 
+    /* FIXME: Use CHKPMEM */
     q_item = (MPIDI_CH3I_Acceptq_t *)
         MPIU_Malloc(sizeof(MPIDI_CH3I_Acceptq_t)); 
     /* --BEGIN ERROR HANDLING-- */
@@ -1208,6 +1217,10 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
     return mpi_errno;
 }
 
+/* This routine is called by the ch3_init.c files in various channels */
+/* FIXME: We might want to make this part of a larger init step.  For 
+   example, should this be part of the listener setup? A connect/accept
+   init?  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Acceptq_init
 #undef FCNAME

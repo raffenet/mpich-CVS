@@ -10,42 +10,13 @@
 #include "mpidi_ch3i_sock_conf.h"
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
+#include "ch3usock.h"
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 256
 #endif
 
 /* This is all socket connection definitions */
-
-/* FIXME: This should be part of the shared socket support, not socket channel */
-enum MPIDI_CH3I_Conn_state
-{
-    CONN_STATE_UNCONNECTED,
-    CONN_STATE_LISTENING,
-    CONN_STATE_CONNECTING,
-    CONN_STATE_CONNECT_ACCEPT, 
-    CONN_STATE_OPEN_CSEND,
-    CONN_STATE_OPEN_CRECV,
-    CONN_STATE_OPEN_LRECV_PKT,
-    CONN_STATE_OPEN_LRECV_DATA,
-    CONN_STATE_OPEN_LSEND,
-    CONN_STATE_CONNECTED,
-    CONN_STATE_CLOSING,
-    CONN_STATE_CLOSED,
-    CONN_STATE_FAILED
-};
-
-typedef struct MPIDI_CH3I_Connection
-{
-    MPIDI_VC_t * vc;
-    MPIDU_Sock_t sock;
-    enum MPIDI_CH3I_Conn_state state;
-    MPID_Request * send_active;
-    MPID_Request * recv_active;
-    MPIDI_CH3_Pkt_t pkt;
-    char * pg_id;
-    MPID_IOV iov[2];
-} MPIDI_CH3I_Connection_t;
 
     /* MT - not thread safe! */
 #define MPIDI_CH3I_SendQ_enqueue(vc, req)				\

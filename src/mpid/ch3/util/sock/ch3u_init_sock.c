@@ -39,6 +39,7 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int pg_size;
     int p;
 
+    /* FIXME: Why are these unused? */
     MPIU_UNREFERENCED_ARG(has_parent);
     MPIU_UNREFERENCED_ARG(pg_rank);
 
@@ -56,6 +57,10 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
     /* FIXME: This should probably be the same as MPIDI_VC_InitSock.  If
        not, why not? */
+    /* FIXME: Note that MPIDI_CH3_VC_Init sets state, sendq_head and tail.
+       so this should be MPIDI_CH3_VC_Init( &pg_p->vct[p] );
+       followed by MPIDI_VC_InitSock( ditto );  
+       In fact, there should be a single VC_Init call here */
     for (p = 0; p < pg_size; p++)
     {
 	pg_p->vct[p].ch.sendq_head = NULL;

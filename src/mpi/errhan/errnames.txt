@@ -598,7 +598,9 @@ with MPI_Alloc_mem.
 **ch3|sock|pgrank:rank must be less than process group size
 **ch3|sock|pgrank %d %d:pg size %d, rank passed %d
 **ch3|sock|pg_finalize:process group finalization failed
-
+#
+**ifnameinvalid:Interface name was invalid in call to inet_pton
+**afinetinvalid:Network type AF_INET invalid in call to inet_pton
 #
 # CH3:ssm
 #

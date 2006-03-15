@@ -769,43 +769,8 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 	case MPIDU_SOCK_OP_ACCEPT:
 	{
-	    MPIDI_CH3I_Connection_t * conn;
-
-	    mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    { 
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**ch3|sock|accept", NULL);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-	    mpi_errno = MPIDU_Sock_accept(MPIDI_CH3I_listener_conn->sock, MPIDI_CH3I_sock_set, conn, &conn->sock);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**ch3|sock|accept", NULL);
-		MPIDI_CH3I_Connection_free(conn);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-
-	    conn->vc = NULL;
-	    conn->state = CONN_STATE_OPEN_LRECV_PKT;
-	    conn->send_active = NULL;
-	    conn->recv_active = NULL;
-
-	    mpi_errno = connection_post_recv_pkt(conn);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
-						 "**fail", NULL);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-
+	    mpi_errno = MPIDI_CH3_Sockconn_handle_accept_event();
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	    break;
 	}
 
@@ -863,37 +828,9 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 	case MPIDU_SOCK_OP_CLOSE:
 	{
-	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event->user_ptr;
-		
-	    /* If the conn pointer is NULL then the close was intentional */
-	    if (conn != NULL)
-	    {
-		if (conn->state == CONN_STATE_CLOSING)
-		{
-		    MPIU_Assert(conn->send_active == NULL);
-		    MPIU_Assert(conn->recv_active == NULL);
-		    if (conn->vc != NULL)
-		    {
-			conn->vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-			conn->vc->ch.sock = MPIDU_SOCK_INVALID_SOCK;
-			MPIDI_CH3U_Handle_connection(conn->vc, MPIDI_VC_EVENT_TERMINATED);
-		    }
-		}
-		else
-		{
-		    MPIU_Assert(conn->state == CONN_STATE_LISTENING);
-		    MPIDI_CH3I_listener_conn = NULL;
-		    MPIDI_CH3I_listener_port = 0;
-
-		    MPIDI_CH3_Progress_signal_completion();
-		    /* MPIDI_CH3I_progress_completion_count++; */
-		}
-
-		conn->sock = MPIDU_SOCK_INVALID_SOCK;
-		conn->state = CONN_STATE_CLOSED;
-		MPIDI_CH3I_Connection_free(conn);
-	    }
-
+	    mpi_errno = MPIDI_CH3_Sockconn_handle_close_event( 
+			      (MPIDI_CH3I_Connection_t *) event->user_ptr );
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	    break;
 	}
 

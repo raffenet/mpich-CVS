@@ -33,7 +33,7 @@
    ToDo: change the "host description" to an "interface address" so that
    socket connections are targeted at particularly interfaces, not
    compute nodes, and that the address is in ready-to-use IP address format, 
-   and does not require a gethostbyname lookup.
+   and does not require a gethostbyname lookup.  - Partially done
  */
 
 /*
@@ -44,13 +44,11 @@
 #define MPIDI_CH3I_PORT_KEY              "port"
 #define MPIDI_CH3I_IFNAME_KEY            "ifname"
 
-/* FIXME: All of the listener port routines should be in one place.
-   It looks like this should be a socket utility function called by
-   ch3_progress.c in sock and ssm, 
-   as part of the progress init function.  Note that those progress
-   engines also set the port to 0 when shutting down the progress engine,
-   though it doesn't look like the port is closed. */
-
+/*
+ * Routines for establishing a listener socket on the socket set that
+ * is used for all communication.  These should be called from the
+ * channel init and finalize routines.
+ */
 static int MPIDI_CH3I_listener_port = 0;
 static MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn = NULL;
 
@@ -151,6 +149,7 @@ int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 
 /* FIXME: Why does the name include "to_root"?  */
 
+/* FIXME: Describe the algorithm for the connection logic */
 #undef FUNCNAME
 #define FUNCNAME  MPIDI_CH3I_Connect_to_root_sock
 #undef FCNAME
@@ -227,7 +226,8 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
         conn->send_active = NULL;
         conn->recv_active = NULL;
 
-        /* place the port name tag in the pkt that will eventually be sent to the other side */
+        /* place the port name tag in the pkt that will eventually be sent to 
+	   the other side */
         conn->pkt.sc_conn_accept.port_name_tag = port_name_tag;
     }
     /* --BEGIN ERROR HANDLING-- */
@@ -247,7 +247,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
         }
         else
         {
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
+	    MPIU_ERR_POP(mpi_errno);
 	}
         vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
         MPIU_Free(conn);
@@ -256,7 +256,6 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
     /* --END ERROR HANDLING-- */
 
  fn_exit:
-    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Exiting connect_to_root_sock");
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SOCK);
     return mpi_errno;
  fn_fail:
@@ -271,10 +270,6 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
 
 /* FIXME: These are small routines; we may want to bring them together 
    into a more specific post-connection-for-sock */
-/*
-int MPIDI_CH3I_Connection_with_sock( const char *bc, 
-				     MPIDI_CH3I_Connection_t **conn )
-*/
 
 /* The host_description should be of length MAX_HOST_DESCRIPTION_LEN */
 
@@ -324,10 +319,11 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 	
 	int rc = inet_pton( AF_INET, (const char *)ifname, ifaddr->ifaddr );
 	if (rc == 0) {
-	    ;/* ifname was not valid */
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ifnameinvalid");
 	}
 	else if (rc < 0) {
-	    ;/* af_inet not supported */
+	    /* af_inet not supported */
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**afinetinvalid");
 	}
 	else {
 	    /* Success */
@@ -411,7 +407,11 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
        description string used by the socket connection routine 
        MPIDU_Sock_post_connect.  We need to change to an interface-address
        (already resolved) based description for better scalability and
-       to eliminate reliance on fragile DNS services */
+       to eliminate reliance on fragile DNS services. Note that this is
+       also more scalable, since the DNS server may serialize address 
+       requests.  On most systems, asking for the host info of yourself
+       is resolved locally (i.e., perfectly parallel).
+    */
 #ifndef HAVE_WINDOWS_H
     {
 	struct hostent *info;
@@ -450,14 +450,14 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
  * to handle changes to the state of a connection.  
  */
 /* ------------------------------------------------------------------------- */
-extern MPIDI_CH3I_Connection_t * MPIDI_CH3I_listener_conn; 
 static int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
 static int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
-static void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
+static int connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
 static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
-static void connection_free(MPIDI_CH3I_Connection_t * conn);
+static void connection_destroy(MPIDI_CH3I_Connection_t * conn);
 
-/* */
+/* This routine is called in response to an MPIDU_SOCK_OP_ACCEPT event 
+   in ch3_progress */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Sockconn_handle_accept_event
 #undef FCNAME
@@ -529,7 +529,8 @@ int MPIDI_CH3_Sockconn_handle_connect_event( MPIDI_CH3I_Connection_t *conn,
 	conn->pkt.sc_open_req.pg_id_len = (int) strlen(MPIDI_Process.my_pg->id) + 1;
 	conn->pkt.sc_open_req.pg_rank = MPIR_Process.comm_world->rank;
 	
-	connection_post_send_pkt_and_pgid(conn);
+	mpi_errno = connection_post_send_pkt_and_pgid(conn);
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     }
     else {
 	/* CONN_STATE_CONNECT_ACCEPT */
@@ -605,7 +606,7 @@ int MPIDI_CH3_Sockconn_handle_close_event( MPIDI_CH3I_Connection_t * conn )
 	conn->sock = MPIDU_SOCK_INVALID_SOCK;
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSED (conn=%p)",conn);
 	conn->state = CONN_STATE_CLOSED;
-	connection_free(conn); 
+	connection_destroy(conn); 
     }
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_SOCKCONN_HANDLE_CLOSE_EVENT);
@@ -656,6 +657,9 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	/* FIXME - where does this vc get freed? */
 	
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CONNECTING vc=%p", vc);
+	/* FIXME: There should be a single VC init function; this should
+	   invoke a channel-specific function to initialize channel-specific
+	   items */
 	MPIDI_VC_Init(vc, NULL, 0);
 	vc->ch.sendq_head = NULL;
 	vc->ch.sendq_tail = NULL;
@@ -664,6 +668,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	vc->ch.conn = conn;
 	conn->vc = vc;
 	
+	/* FIXME: What is the tag for? */
 	vc->ch.port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
 	
 	MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
@@ -988,7 +993,7 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     if (conn) {
-	connection_free(conn);
+	connection_destroy(conn);
     }
     goto fn_exit;
     /* --END ERROR HANDLING-- */
@@ -1046,7 +1051,7 @@ static int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn)
 #define FUNCNAME connection_post_send_pkt_and_pgid
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
+static int connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
 {
     int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
@@ -1065,6 +1070,7 @@ static void connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
     }
     
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -1083,9 +1089,8 @@ static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     {
 	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
 	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
 	}
 	/* --END ERROR HANDLING-- */
     }
@@ -1095,18 +1100,22 @@ static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
 }
 
 
+/* This routine frees all of the memory associated with a connection.
+   It is named destroy instead of free because routines with name "free" 
+   should have MPI semantics - free means to 
+   decrement reference count and free if reference count is zero */
 #undef FUNCNAME
-#define FUNCNAME connection_free
+#define FUNCNAME connection_destroy
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void connection_free(MPIDI_CH3I_Connection_t * conn)
+static void connection_destroy(MPIDI_CH3I_Connection_t * conn)
 {
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_FREE);
+    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_DESTROY);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_FREE);
+    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_DESTROY);
 
     MPIU_Free(conn->pg_id);
     MPIU_Free(conn);
     
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_FREE);
+    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_DESTROY);
 }
