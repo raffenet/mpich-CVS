@@ -146,6 +146,9 @@ int main(int argc, char *argv[])
    AC_MSG_RESULT(yes),
    AC_MSG_RESULT(not checking when cross compiling))
 AC_SEARCH_LIBS( MD5, ssl crypto )
+# Make configure check for MD5 so that the variable will be set
+AC_CHECK_FUNCS(MD5)
+#
 AC_SEARCH_LIBS( md5_calc, md5 )
 AC_MSG_CHECKING([for md5_calc function])
 AC_TRY_COMPILE([
