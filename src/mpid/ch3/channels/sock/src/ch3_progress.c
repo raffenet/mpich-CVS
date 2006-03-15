@@ -355,7 +355,8 @@ int MPIDI_CH3I_Progress_finalize(void)
     }
     MPID_Progress_end(&progress_state);
 #else
-    MPIDU_CH3I_ShutdownListener();
+    mpi_errno = MPIDU_CH3I_ShutdownListener();
+    if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
 #endif
     
     /* FIXME: Cleanly shutdown other socks and free connection structures. 
