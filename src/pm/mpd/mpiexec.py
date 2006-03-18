@@ -535,7 +535,7 @@ def collect_args(args,localArgSets):
             print "missing sub-arg to %s" % (garg)
             usage()
         if garg == '-genv':
-            parmdb['genv'][args[argidx+1]] = args[argidx+2]
+            parmdb['-genv'][args[argidx+1]] = args[argidx+2]
             argidx += 3
         elif garg == '-gn'  or  garg == '-gnp':
             if args[argidx+1].isdigit():
