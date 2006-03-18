@@ -1964,6 +1964,10 @@ typedef struct MPICH_PerProcess_t {
     MPID_Thread_mutex_t allocation_lock; /* Used to lock around list-allocations */
     MPID_Thread_mutex_t common_lock;     /* General purpose common lock */
 #endif
+#ifdef HAVE_RUNTIME_THREADCHECK
+    int isThreaded;                      /* Set to true if user requested
+					    THREAD_MULTIPLE */
+#endif
     int               do_error_checks;  /* runtime error check control */
     MPID_Comm         *comm_world;      /* Easy access to comm_world for
                                            error handler */

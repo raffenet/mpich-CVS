@@ -61,7 +61,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 			 "send queue empty, attempting to write");
-	    
+	    MPIU_DBG_PKT(vc->ch.conn,hdr,"isend");
 	    /* MT: need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
 	    rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb);
@@ -125,8 +125,8 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 		MPIU_DBG_MSG_D(CH3_CHANNEL,TYPICAL,
 			       "MPIDU_Sock_write failed, rc=%d", rc);
 		/* Connection just failed. Mark the request complete and return an error. */
-		MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,
-			     "Setting state to VC_STATE_FAILED");
+		MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_FAILED);
+		/* FIXME: Shouldn't the vc->state also change? */
 		vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 		/* TODO: Create an appropriate error message based on the return value (rc) */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
@@ -145,7 +145,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"unconnected.  enqueuing request");
+	MPIU_DBG_VCUSE(vc,"unconnected.  enqueuing request");
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
@@ -159,7 +159,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"still connecting. Enqueuing request");
+	MPIU_DBG_VCUSE(vc,"still connecting. Enqueuing request");
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }

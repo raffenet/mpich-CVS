@@ -366,16 +366,21 @@ void MPID_Wtime_acc( MPID_Time_t *t1, MPID_Time_t *t2, MPID_Time_t *t3 )
 /*
  * For timers that do not have defined resolutions, compute the resolution
  * by sampling the clock itself.
+ *
+ * Note that this uses a thread-safe initialization procedure in the
+ * event that multiple threads invoke this routine
  */
 double MPID_Wtick( void )
 {
+    MPIU_THREADSAFE_INIT_DECL(initTick);
     static double tickval = -1.0;
     double timediff;
     MPID_Time_t t1, t2;
     int    cnt;
     int    icnt;
 
-    if (tickval < 0.0) {
+    if (initTick) {
+	MPIU_THREADSAFE_INIT_BLOCK_BEGIN(initTick);
 	tickval = 1.0e6;
 	for (icnt=0; icnt<10; icnt++) {
 	    cnt = 1000;
@@ -389,6 +394,8 @@ double MPID_Wtick( void )
 		MPID_Wtime_diff( &t1, &t2, &tickval );
 	    }
 	}
+	MPIU_THREADSAFE_INIT_CLEAR(initTick);
+	MPIU_THREADSAFE_INIT_BLOCK_END(initTick);
     }
     return tickval;
 }

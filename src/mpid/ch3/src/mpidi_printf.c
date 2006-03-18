@@ -317,7 +317,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 #endif
 
 
-const char * MPIDI_VC_Get_state_description(int state)
+const char * MPIDI_VC_GetStateString(int state)
 {
     switch (state)
     {
@@ -334,4 +334,189 @@ const char * MPIDI_VC_Get_state_description(int state)
 	default:
 	    return "unknown";
     }
+}
+
+/* This routine is not thread safe and should only be used while
+   debugging.  It is used to encode a brief description of a message
+   packet into a string to make it easy to include in the message log
+   output (with no newlines to simplify extracting info from the log file) 
+*/
+const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt ) 
+{
+    static char pktmsg[256];
+
+    /* For data messages, the string (...) is (context,tag,rank,size) */
+    switch(pkt->type) {
+    case MPIDI_CH3_PKT_EAGER_SEND:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "EAGER_SEND - (%d,%d,%d,%d)", 
+		       pkt->eager_send.match.context_id,
+		       pkt->eager_send.match.tag, 
+		       pkt->eager_send.match.rank, 
+		       pkt->eager_send.data_sz );
+	break;
+    case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "EAGER_SYNC_SEND - (%d,%d,%d,%d) req=%d", 
+		       pkt->eager_sync_send.match.context_id,
+		       pkt->eager_sync_send.match.tag, 
+		       pkt->eager_sync_send.match.rank, 
+		       pkt->eager_sync_send.data_sz,
+		       pkt->eager_sync_send.sender_req_id );
+		break;
+    case MPIDI_CH3_PKT_EAGER_SYNC_ACK:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "EAGER_SYNC_ACK - req=%d", 
+		       pkt->eager_sync_ack.sender_req_id );
+	break;
+    case MPIDI_CH3_PKT_READY_SEND:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "READY_SEND - (%d,%d,%d,%d)", 
+		       pkt->ready_send.match.context_id,
+		       pkt->ready_send.match.tag, 
+		       pkt->ready_send.match.rank, 
+		       pkt->ready_send.data_sz );
+	break;
+    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "RNDV_REQ_TO_SEND - (%d,%d,%d,%d) req=%d", 
+		       pkt->rndv_req_to_send.match.context_id,
+		       pkt->rndv_req_to_send.match.tag, 
+		       pkt->rndv_req_to_send.match.rank, 
+		       pkt->rndv_req_to_send.data_sz,
+		       pkt->rndv_req_to_send.sender_req_id );
+	break;
+    case MPIDI_CH3_PKT_RNDV_CLR_TO_SEND:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "RNDV_CLRTO_SEND - req=%d, recv req=%d", 
+		       pkt->rndv_clr_to_send.sender_req_id,
+		       pkt->rndv_clr_to_send.receiver_req_id );
+		break;
+    case MPIDI_CH3_PKT_RNDV_SEND:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "RNDV_SEND - recv req=%d", 
+		       pkt->rndv_send.receiver_req_id );
+	break;
+    case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "CANCEL_SEND_REQ - req=%d", 
+		       pkt->cancel_send_req.sender_req_id );
+	break;
+    case MPIDI_CH3_PKT_CANCEL_SEND_RESP:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "CANCEL_SEND_RESP - req=%d ack=%d", 
+		       pkt->cancel_send_resp.sender_req_id, 
+		       pkt->cancel_send_resp.ack );
+	break;
+    case MPIDI_CH3_PKT_PUT:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "PUT - (%p,%d,0x%08X)", 
+		       pkt->put.addr, 
+		       pkt->put.count,
+		       pkt->put.target_win_handle );
+		break;
+    case MPIDI_CH3_PKT_GET:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "GET - (%p,%d,0x%08X) req=%d", 
+		       pkt->get.addr, 
+		       pkt->get.count,
+		       pkt->get.target_win_handle,
+		       pkt->get.request_handle );
+	break;
+    case MPIDI_CH3_PKT_GET_RESP:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "GET_RESP - req=%d", 
+		       pkt->get_resp.request_handle );
+	break;
+    case MPIDI_CH3_PKT_ACCUMULATE:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "ACCUMULATE - (%p,%d,0x%08X)", 
+		       pkt->accum.addr,
+		       pkt->accum.count, 
+		       pkt->accum.target_win_handle );
+	break;
+    case MPIDI_CH3_PKT_LOCK:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "LOCK - %d", 
+		       pkt->lock.target_win_handle );
+	break;
+    case MPIDI_CH3_PKT_LOCK_PUT_UNLOCK:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "PUT_UNLOCK - (%p,%d,0x%08X)", 
+		       pkt->lock_put_unlock.addr,
+		       pkt->lock_put_unlock.count,
+		       pkt->lock_put_unlock.target_win_handle );
+	break;
+    case MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "LOCK_ACCUM_UNLOCK - (%p,%d,0x%08X)", 
+		       pkt->lock_accum_unlock.addr,
+		       pkt->lock_accum_unlock.count,
+		       pkt->lock_accum_unlock.target_win_handle );
+	break;
+    case MPIDI_CH3_PKT_LOCK_GET_UNLOCK:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "LOCK_GET_UNLOCK - (%p,%d,0x%08X) req=%d", 
+		       pkt->lock_get_unlock.addr,
+		       pkt->lock_get_unlock.count,
+		       pkt->lock_get_unlock.target_win_handle, 
+		       pkt->lock_get_unlock.request_handle );
+	break;
+    case MPIDI_CH3_PKT_PT_RMA_DONE:
+	/* There is no rma_done packet type */
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "RMA_DONE - 0x%08X", 
+		       pkt->lock_accum_unlock.source_win_handle );
+	break;
+    case MPIDI_CH3_PKT_LOCK_GRANTED:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "LOCK_GRANTED - 0x%08X", 
+		       pkt->lock_granted.source_win_handle );
+		break;
+    case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "FLOW_CNTL_UPDATE" );
+	break;
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+    case MPIDI_CH3_PKT_RTS_IOV:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "RTS_IOV - sreq=0x%08X, len=%d", 
+		       pkt->rts_iov.sreq, 
+		       pkt->rts_iov.iov_len );
+	break;
+    case MPIDI_CH3_PKT_CTS_IOV:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "CTS_IOV - sreq=0x%08X, rreq=0x%08X, len=%d", 
+		       pkt->cts_iov.sreq,
+		       pkt->cts_iov.rreq,
+		       pkt->cts_iov.iov_len );
+	break;
+    case MPIDI_CH3_PKT_RELOAD:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "RELOAD  - sreq=0x%08X, rreq=0x%08X, sendrecv=%d", 
+		       pkt->reload.sreq,
+		       pkt->reload.rreq,
+		       pkt->reload.send_recv );
+	break;
+    case MPIDI_CH3_PKT_IOV:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "IOV - req=%d, sendrecv=%d, len=%d",
+		       pkt->iov.req,
+		       pkt->iov.send_recv,
+		       pkt->iov.iov_len );
+	break;
+#endif
+    case MPIDI_CH3_PKT_CLOSE:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "CLOSE ack=%d", 
+		       pkt->close.ack );
+	break;
+	    
+    default:
+	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
+		       "INVALID PACKET type=%d", pkt->type );
+	break;
+    }
+
+    return pktmsg;
 }

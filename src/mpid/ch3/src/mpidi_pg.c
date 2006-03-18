@@ -929,8 +929,8 @@ int MPIDI_PG_Close_VCs( void )
                 }
 
 		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
-		     "not sending a close to %d, vc in state %s", i,
-		     MPIDI_VC_Get_state_description(vc->state)));
+		     "vc=%p: not sending a close to %d, vc in state %s", vc,i,
+		     MPIDI_VC_GetStateString(vc->state)));
 	    }
 	}
 	pg = pg->next;

@@ -49,8 +49,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 	    {
 		case MPIDI_VC_STATE_CLOSE_ACKED:
 		{
-		    MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_INACTIVE);
-		    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_INACTIVE");
+		    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_INACTIVE);
 		    vc->state = MPIDI_VC_STATE_INACTIVE;
 		    /* FIXME: Decrement the reference count?  Who increments? */
 		    /* FIXME: The reference count is often already 0.  But
@@ -171,14 +170,12 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
      * be changed before the close packet is sent.
      */
     if (vc->state == MPIDI_VC_STATE_ACTIVE) {
-	MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_LOCAL_CLOSE);
-	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_LOCAL_CLOSE (%p)", vc);
+	MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_LOCAL_CLOSE);
 	vc->state = MPIDI_VC_STATE_LOCAL_CLOSE;
     }
     else {
 	MPIU_Assert( vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );
-	MPIU_DBG_PrintVCState2(vc, MPIDI_VC_STATE_CLOSE_ACKED);
-	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_CLOSE_ACKED (%p)",vc);
+	MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
 	vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
     }
 		

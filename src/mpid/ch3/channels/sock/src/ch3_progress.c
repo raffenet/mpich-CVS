@@ -243,8 +243,8 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING");
+
+    MPIU_DBG_CONNSTATECHANGE(vc,vc->ch.conn,CONN_STATE_CLOSING);
     vc->ch.conn->state = CONN_STATE_CLOSING;
     mpi_errno = MPIDU_Sock_post_close(vc->ch.sock);
     if (mpi_errno != MPI_SUCCESS) {
@@ -265,7 +265,6 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress_init(void)
 {
-    MPIDU_Sock_t sock;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
@@ -654,8 +653,8 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			else
 			{
 			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-       (MPIU_DBG_FDEST,"posting writev, vc=%p, sreq=0x%08x", 
-	conn->vc, sreq->handle));
+       (MPIU_DBG_FDEST,"posting writev, vc=%p, conn=%p, sreq=0x%08x", 
+	conn->vc, conn, sreq->handle));
 			    mpi_errno = MPIDU_Sock_post_writev(conn->sock, iovp, sreq->dev.iov_count, NULL);
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
@@ -869,6 +868,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 }
 /* end MPIDI_CH3I_VC_post_connect() */
 
+/* FIXME: This function also used in ch3u_connect_sock.c */
 #undef FUNCNAME
 #define FUNCNAME connection_post_sendq_req
 #undef FCNAME
@@ -883,6 +883,7 @@ static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     conn->send_active = MPIDI_CH3I_SendQ_head(conn->vc); /* MT */
     if (conn->send_active != NULL)
     {
+	MPIU_DBG_MSG_P(CH3,TYPICAL,"conn=%p: Posting message from connection send queue", conn );
 	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)

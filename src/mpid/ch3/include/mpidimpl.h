@@ -529,6 +529,61 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 /*----------------------------
   BEGIN DEBUGGING TOOL SECTION
   ----------------------------*/
+/* These macros simplify and unify the debugging of changes in the
+   connection state 
+
+   MPIU_DBG_VCSTATECHANGE(vc,newstate) - use when changing the state
+   of a VC
+
+   MPIU_DBG_VCCHSTATECHANGE(vc,newstate) - use when changing the state
+   of the channel-specific part of the vc (e.g., vc->ch.state)
+
+   MPIU_DBG_CONNSTATECHANGE(vc,conn,newstate ) - use when changing the
+   state of a conn.  vc may be null
+
+   MPIU_DBG_CONNSTATECHANGEMSG(vc,conn,newstate,msg ) - use when changing the
+   state of a conn.  vc may be null.  Like CONNSTATECHANGE, but allows
+   an additional message
+
+   MPIU_DBG_PKT(conn,pkt,msg) - print out a short description of an
+   packet being sent/received on the designated connection, prefixed with
+   msg.
+
+*/
+#define MPIU_DBG_VCSTATECHANGE(_vc,_newstate) \
+     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
+     "vc=%p: Setting state (vc) from %s to %s, vcchstate is %s", \
+                  _vc, MPIDI_VC_GetStateString((_vc)->state), \
+                  #_newstate, MPIDI_CH3_VC_GetStateString( (_vc)->ch.state )) )
+
+#define MPIU_DBG_VCCHSTATECHANGE(_vc,_newstate) \
+     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
+     "vc=%p: Setting state (ch) from %s to %s, vc state is %s", \
+                   _vc, MPIDI_CH3_VC_GetStateString((_vc)->ch.state), \
+                   #_newstate, MPIDI_VC_GetStateString( (_vc)->state )) )
+
+#define MPIU_DBG_CONNSTATECHANGE(_vc,_conn,_newstate) \
+     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
+     "vc=%p,conn=%p: Setting state (conn) from %s to %s, vcstate = %s", \
+             _vc, _conn, \
+             MPIDI_Conn_GetStateString((_conn)->state), #_newstate, \
+             _vc ? MPIDI_VC_GetStateString((_vc)->state) : "<no vc>" ))
+
+#define MPIU_DBG_CONNSTATECHANGE_MSG(_vc,_conn,_newstate,_msg) \
+     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
+     "vc=%p,conn=%p: Setting conn state from %s to %s, vcstate = %s %s", \
+             _vc, _conn, \
+             MPIDI_Conn_GetStateString((_conn)->state), #_newstate, \
+             _vc ? MPIDI_VC_GetStateString((_vc)->state) : "<no vc>", _msg ))
+#define MPIU_DBG_VCUSE(_vc,_msg) \
+     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,\
+      "vc=%p,conn=%p: Using vc for %s", _vc, (_vc)->ch.conn, _msg ))
+#define MPIU_DBG_PKT(_conn,_pkt,_msg) \
+     MPIU_DBG_MSG_FMT(CH3,TYPICAL,(MPIU_DBG_FDEST,\
+     "conn=%p: %s %s", _conn, _msg, MPIDI_Pkt_GetDescString( _pkt ) ))
+
+const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt );
+
 /* FIXME: Switch this to use the common debug code */
 void MPIDI_dbg_printf(int, char *, char *, ...);
 void MPIDI_err_printf(char *, char *, ...);
@@ -574,14 +629,16 @@ extern char *MPIU_DBG_parent_str;
 #   define MPIDI_DBG_Print_packet(a)
 #endif
 
-const char * MPIDI_VC_Get_state_description(int state);
+/* Given a state, return the string for this state (VC's and connections) */
+const char * MPIDI_VC_GetStateString(int);
 /*--------------------------
   END DEBUGGING TOOL SECTION
   --------------------------*/
 
 
 /* Prototypes for internal device routines */
-int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, int, int, MPID_Request **);
+int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, 
+		     int, int, MPID_Request **);
 
 /*--------------------------
   BEGIN MPI PORT SECTION 

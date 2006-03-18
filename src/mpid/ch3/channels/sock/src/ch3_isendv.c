@@ -79,6 +79,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 			 "send queue empty, attempting to write");
 	    
+	    MPIU_DBG_PKT(vc->ch.conn,(MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF,
+			 "isendv");
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                also try to write */
 
@@ -159,7 +161,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 			       "MPIDU_Sock_writev failed, rc=%d", rc);
 		/* Connection just failed.  Mark the request complete and 
 		   return an error. */
-		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_FAILED");
+		MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_FAILED);
+		/* FIXME: Shouldn't the vc->state also change? */
+
 		vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
 		/* TODO: Create an appropriate error message based on the return value (rc) */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
@@ -178,7 +182,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
 	/* Form a new connection, queuing the data so it can be sent later. */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"unconnected.  Enqueuing request");
+	MPIU_DBG_VCUSE(vc,"unconnected.  Enqueuing request");
 	update_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
@@ -192,15 +196,14 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
-		     "still connecting.  enqueuing request");
+	MPIU_DBG_VCUSE(vc,"still connecting.  enqueuing request");
 	update_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     /* --BEGIN ERROR HANDLING-- */
     else
     {
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"connection failed");
+	MPIU_DBG_VCUSE(vc,"connection failed");
 	/* Connection failed.  Mark the request complete and return an error. */
 	/* TODO: Create an appropriate error message */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;

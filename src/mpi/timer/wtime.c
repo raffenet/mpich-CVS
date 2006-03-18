@@ -50,11 +50,10 @@ double MPI_Wtime( void )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WTIME);
     MPID_Wtime( &t );
     MPID_Wtime_todouble( &t, &d );
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WTIME);
-    MPID_CS_EXIT();
+
     return d;
 }

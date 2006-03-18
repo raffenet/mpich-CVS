@@ -609,12 +609,20 @@ AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging l
 #
 # threads
 #
+# Runtime is an alias for multiple with an additional value
+if test "$enable_threads" = "runtime" ; then
+    AC_DEFINE(HAVE_RUNTIME_THREADCHECK,1,[Define if MPI supports MPI_THREAD_MULTIPLE with a runtime check for thread level])
+    enable_threads=multiple
+    # FIXME: This doesn't support runtime:thread-impl (as in multiple:thread-impl)
+fi
+
 case "$enable_threads" in 
     single|funneled)
     thread_pkg_required=no
     thread_impl=none
     ;;
     serialized)
+    # FIXME: Why does serialized require a thread package?
     thread_pkg_required=yes
     thread_impl=none
     ;;
@@ -634,9 +642,6 @@ case "$enable_threads" in
 	AC_MSG_ERROR(["$thread_impl" is not a valid multi-thread implementation for MPICH2])     
 	;;
     esac
-    ;;
-    runtime)
-    AC_MSG_ERROR([Runtime selection of the MPI thread level supported by the MPICH2 library is not implemented yet.])
     ;;
     *)
     AC_MSG_ERROR(["$enable_threads" is not a valid value for --enable-threads])     

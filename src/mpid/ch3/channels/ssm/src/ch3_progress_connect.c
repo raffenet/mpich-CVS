@@ -516,7 +516,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 
 /*    printf( "Attempting to connect through socket\n" );fflush(stdout); */
     MPIU_DBG_MSG_S(CH3_CONNECT,TYPICAL,
-		   "Attempting to connect with business card %s", val );
+	   "vc=%p: Attempting to connect with business card %s", vc, val );
     /* attempt to connect through sockets */
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
@@ -563,6 +563,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 		"**ch3|sock|postconnect %d %d %s", MPIR_Process.comm_world->rank, vc->pg_rank, val);
 
 	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    if (vc->ch.conn == conn) vc->ch.conn = 0;
 	    MPIDI_CH3I_Connection_free(conn);
 	}
     }

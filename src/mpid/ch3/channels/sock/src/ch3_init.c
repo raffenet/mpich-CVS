@@ -84,6 +84,7 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.sendq_tail         = NULL;
     vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     MPIDI_VC_InitSock( vc );
+    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=%p: Setting state (ch) to VC_STATE_UNCONNECTED (Initialization)", vc );
     return 0;
 }
 

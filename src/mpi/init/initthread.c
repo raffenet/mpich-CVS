@@ -244,7 +244,13 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* Capture the level of thread support provided */
     MPIR_Process.thread_provided = thread_provided;
     if (provided) *provided = thread_provided;
+    /* FIXME: Rationalize this with the above */
+#ifdef HAVE_RUNTIME_THREADCHECK
+    MPIR_Process.isThreaded = required == MPI_THREAD_MULTIPLE;
+    if (provided) *provided = required;
+#endif
 
+    /* FIXME: Define these in the interface.  Does Timer init belong here? */
     MPIU_dbg_init(MPIR_Process.comm_world->rank);
     MPIU_Timer_init(MPIR_Process.comm_world->rank,
 		    MPIR_Process.comm_world->local_size);

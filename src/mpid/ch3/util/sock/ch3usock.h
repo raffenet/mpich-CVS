@@ -49,4 +49,10 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * );
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn);
 
+/* Return a string for the connection state */
+#ifdef USE_DBG_LOGGING
+const char * MPIDI_Conn_GetStateString(int);
+const char * MPIDI_CH3_VC_GetStateString( int );
+#endif
+
 #endif

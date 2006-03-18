@@ -1156,7 +1156,7 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
     q_item->vc = vc;
 
     MPIDI_Acceptq_lock();
-    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Enqueuing accept connection %p",vc);
+    MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=%p:Enqueuing accept connection",vc);
     q_item->next = acceptq_head;
     acceptq_head = q_item;
     
@@ -1209,7 +1209,7 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
     }
 
     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,
-	      (MPIU_DBG_FDEST,"Dequeuing accept connection %p with tag %d",
+	      (MPIU_DBG_FDEST,"vc=%p:Dequeuing accept connection with tag %d",
 	       *vc,port_name_tag));
     MPIDI_Acceptq_unlock();
 

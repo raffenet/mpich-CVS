@@ -99,3 +99,29 @@ int MPIDI_VC_InitSock( MPIDI_VC_t *vc )
     vc->ch.conn               = NULL;
     return 0;
 }
+
+#ifdef USE_DBG_LOGGING
+const char * MPIDI_Conn_GetStateString(int state) 
+{
+    const char *name = "unknown";
+
+    switch (state) {
+    case CONN_STATE_UNCONNECTED:     name = "CONN_STATE_UNCONNECTED"; break;
+    case CONN_STATE_LISTENING:       name = "CONN_STATE_LISTENING"; break;
+    case CONN_STATE_CONNECTING:      name = "CONN_STATE_CONNECTING"; break;
+    case CONN_STATE_CONNECT_ACCEPT:  name = "CONN_STATE_CONNECT_ACCEPT"; break; 
+    case CONN_STATE_OPEN_CSEND:      name = "CONN_STATE_OPEN_CSEND"; break;
+    case CONN_STATE_OPEN_CRECV:      name = "CONN_STATE_OPEN_CRECV"; break;
+    case CONN_STATE_OPEN_LRECV_PKT:  name = "CONN_STATE_OPEN_LRECV_PKT"; break;
+    case CONN_STATE_OPEN_LRECV_DATA: name = "CONN_STATE_OPEN_LRECV_DATA"; break;
+    case CONN_STATE_OPEN_LSEND:      name = "CONN_STATE_OPEN_LSEND"; break;
+    case CONN_STATE_CONNECTED:       name = "CONN_STATE_CONNECTED"; break;
+    case CONN_STATE_CLOSING:         name = "CONN_STATE_CLOSING"; break;
+    case CONN_STATE_CLOSED:          name = "CONN_STATE_CLOSED"; break;
+    case CONN_STATE_FAILED:          name = "CONN_STATE_FAILE"; break;
+    }
+
+    return name;
+}
+
+#endif

@@ -79,6 +79,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 			 "send queue empty, attempting to write");
 	    
+	    MPIU_DBG_PKT(vc->ch.conn,hdr,"istartmsg");
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
 	    rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb);
@@ -158,8 +159,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     }
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
-		     "unconnected.  posting connect and enqueuing request");
+	MPIU_DBG_VCUSE(vc,
+		       "unconnected.  posting connect and enqueuing request");
 	
 	/* queue the data so it can be sent after the connection is formed */
 	sreq = create_request(hdr, hdr_sz, 0);
@@ -178,8 +179,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
-		     "forming connection, request enqueued");
+	MPIU_DBG_VCUSE(vc,"forming connection, request enqueued");
 	sreq = create_request(hdr, hdr_sz, 0);
 	/* --BEGIN ERROR HANDLING-- */
 	if (sreq == NULL)
@@ -194,7 +194,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     else
     {
 	/* Connection failed, so allocate a request and return an error. */
-	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"ERROR - connection failed");
+	MPIU_DBG_VCUSE(vc,"ERROR - connection failed");
 	sreq = MPIDI_CH3_Request_create();
 	if (sreq == NULL)
 	{

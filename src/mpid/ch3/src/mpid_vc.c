@@ -148,9 +148,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
                     }
 
 		    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-                             "not sending a close to %d, vc (%p) in state %s",
-							i, vc, 
-			     MPIDI_VC_Get_state_description(vc->state)));
+                            "vc=%p: not sending a close to %d, vc in state %s",
+			     vc, i, MPIDI_VC_GetStateString(vc->state)));
 		}
 	    }
 	}
