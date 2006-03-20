@@ -437,6 +437,8 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering: comm=" MPIG_PTR_FMT ",mpi_errno=0x%08x, "
 		       "exit_code=%d, error_msg=%s", (MPIG_PTR_CAST) comm, mpi_errno, exit_code, MPIG_STR_VAL(error_msg)));
 
+    fflush(stdout);
+    
     if (mpi_errno)
     {
 	char * str;
@@ -446,19 +448,25 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
 	{
 	    MPIR_Err_print_stack_string(mpi_errno, str, MPIG_ERR_STRING_SIZE);
 	    fprintf(stderr, "[%s:%d:%lu] %s", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), str);
+	    fflush(stderr);
 	    MPIU_Free(str);
 	}
     }
     if (error_msg != NULL)
     {
-	fflush(stdout);
 	fprintf(stderr, "[%s:%d:%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), error_msg);
+	fflush(stderr);
     }
 
     /* XXX: contact GRAMs and cancel other subjobs, then cancel our own */
     
-    /* XXX: MPI-2: what do we do with a job that was spawned by communicator containing one or more processes in the communicator
-     * being aborted? */
+    /* MPI-2-XXX: what do we do with jobs spawned by a communicator containing one or more processes in the aborting
+       communicator?  do we abort those job as well or leave them running?  should we follow the unix model and terminate any
+       child jobs if they are connected directly or indirectly to the processes in the aborting communicator (see the definition
+       of connected in the MPI standard)?  conversely, should we permit jobs that are no longer connected to the processes in the
+       aborting communicator to continue to run, much as unix would lets a daemon process continue to run even when the invoking
+       program terminats?  if it is desirable to leave disconnected child jobs running, how do we determine that no process in
+       the child job is (indirectly) connected to the processes in the aborting communicator? */
 
     /* XXX: in an ideal universe, we would like a core file for the process initiating the abort, but there is a race condition
        between GRAM killing the process and the process reaching the call to the abort() function.  I'm not sure how to resolve
@@ -589,7 +597,12 @@ int MPID_Get_universe_size(int  * universe_size)
 /*
  * MPID_GPID_Get([IN] comm, [IN] rank, [OUT] gpid[2])
  *
- * FIXME: THIS IS NOT RIGHT FOR MPI-2 FUNCTIONALITY!!!
+ * MPI-2-FIXME: THIS IS NOT RIGHT FOR MPI-2 FUNCTIONALITY!!!  gpid[0] needs to be unique to a process group.
+ *
+ * NOTE: for MPI-2 functionality, the global id needs to be bigger than an int.  We could hash the (host, pid(p0), etc.) tuple
+ * into an int if necessary, but it would be better if the if were guaranteed to be unique.  for this, it seems best if the
+ * device defined the data format.  the device could also define a matching MPI datatype that the upper layer could use for
+ * communicating the ids.
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_GPID_Get

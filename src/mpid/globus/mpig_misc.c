@@ -56,38 +56,45 @@ void mpig_debug_init(void)
     char * levels_uc;
     const char * timed_levels;
     char * timed_levels_uc;
-    char globus_settings[MPIG_DEBUG_TMPSTR_SIZE];
+    char settings[MPIG_DEBUG_TMPSTR_SIZE];
     const char * file_basename;
     struct timeval tv;
 
     levels = getenv("MPIG_DEBUG_LEVELS");
-    if (levels == NULL) goto fn_return;
+    if (levels == NULL || strlen(levels) == 0) goto fn_return;
     levels_uc = MPIU_Strdup(levels);
     MPIG_UPPERCASE_STR(levels_uc);
     
     file_basename = getenv("MPIG_DEBUG_FILE_BASENAME");
     if (file_basename != NULL)
     {
-	MPIU_Snprintf(globus_settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,#%s-%s-%d.log,0",
+	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "%s-%s-%d.log",
+		      file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
+	setenv("MPICH_DBG_FILENAME", settings);
+	
+	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,#%s-%s-%d.log,0",
 		      levels_uc, file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
     }
     else
     {
 	/* send debugging output to stderr */
-	MPIU_Snprintf(globus_settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,,0", levels_uc);
+	setenv("MPICH_DBG_FILENAME", "-stderr-");
+	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,,0", levels_uc);
     }
     
     timed_levels = getenv("MPIG_DEBUG_TIMED_LEVELS");
     if (timed_levels != NULL)
     {
-	const int len = strlen(globus_settings);
+	const int len = strlen(settings);
 	
 	timed_levels_uc = MPIU_Strdup(timed_levels);
 	MPIG_UPPERCASE_STR(timed_levels_uc);
-	MPIU_Snprintf(globus_settings + len, MPIG_DEBUG_TMPSTR_SIZE - len, ",%s", timed_levels_uc);
+	MPIU_Snprintf(settings + len, MPIG_DEBUG_TMPSTR_SIZE - len, ",%s", timed_levels_uc);
     }
 
-    globus_module_setenv("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", globus_settings);
+    MPIU_DBG_Init(NULL, NULL, mpig_process.my_pg_rank);
+
+    globus_module_setenv("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", settings);
     globus_debug_init("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", MPIG_DEBUG_LEVEL_NAMES, &mpig_debug_handle);
 
     MPIU_Free(levels_uc);

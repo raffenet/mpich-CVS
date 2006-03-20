@@ -43,7 +43,7 @@ MPIG_STATIC int mpig_pm_my_sj_rank;
 MPIG_STATIC int mpig_pm_sj_num;
 MPIG_STATIC int * mpig_pm_sj_addrs;
 
-#if FOO
+#if XXX
 MPIG_STATIC int mpig_pm_gk_get_topology(int sj_rank, int sj_size, int * pg_size, int * pg_rank, int *sj_num, int ** sj_addrs);
 
 MPIG_STATIC int mpig_pm_gk_distribute_byte_array(
@@ -63,7 +63,7 @@ MPIG_STATIC void mpig_pm_gk_intra_subjob_bcast(int sj_size,int sj_rank, char *ta
 MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(int sj_size, int sj_rank, char * inbuf, int inbuf_len, char * tag_base,
 				     int * nbytes, char ** buf);
 
-#else /* !FOO */
+#else /* !XXX */
 
 MPIG_STATIC void mpig_pm_gk_get_topology(
     int rank_in_my_subjob, int my_subjob_size, int **subjob_addresses, int *nprocs, int *nsubjobs, int *my_grank);
@@ -89,7 +89,7 @@ MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(
     int rank_in_my_subjob, int my_subjob_size, char *inbuff, int inbufflen, char *tag_base, int *rcvd_nbytes, char **buff);
 #endif /* !defined(MPIG_VMPI) */
 
-#endif /* FOO */
+#endif /* XXX */
 
 
 /*
@@ -155,7 +155,7 @@ int mpig_pm_init(void)
     rc = globus_duroc_runtime_intra_subjob_rank(&mpig_pm_my_sj_rank);
     MPIU_ERR_CHKANDJUMP((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|duroc_sjrank");
 
-#if FOO
+#if XXX
     rc = mpig_pm_gk_get_topology(mpig_pm_my_sj_size, mpig_pm_my_sj_rank, &mpig_pm_my_pg_size, &mpig_pm_my_pg_rank,
 				 &mpig_pm_sj_num, &mpig_pm_sj_addrs);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -164,7 +164,7 @@ int mpig_pm_init(void)
 			    &mpig_pm_my_pg_rank);
 #endif
     
-    /* XXX: this needs to be set to some real before we implement MPI-2 functionality */
+    /* MPI-2-FIXME: this needs to be set to some real before we implement MPI-2 functionality */
     mpig_pm_my_pg_id = "XXX";
 
     /* We already have all of the PG information, but since implemenations are not required to have the info until after
@@ -285,7 +285,7 @@ int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
     MPIU_CHKLMEM_MALLOC(bc_lens, int *, mpig_pm_my_pg_size * sizeof(int), mpi_errno, "array of business cards lengths");
     MPIU_CHKPMEM_MALLOC(bcs, mpig_bc_t *, mpig_pm_my_pg_size * sizeof(mpig_bc_t), mpi_errno, "array of business cards lengths");
     
-#if FOO
+#if XXX
     mpi_errno = mpig_pm_gk_distribute_byte_array(mpig_pm_my_pg_size, mpig_pm_my_pg_rank, mpig_pm_my_sj_size, mpig_pm_my_sj_rank,
 						 mpig_pm_sj_num, mpig_pm_sj_addrs, inbuf, inbuf_len, outbufs, outbufs_lens);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -516,7 +516,7 @@ int mpig_pm_template(void)
 /* mpig_pm_template() */
 #endif
 
-#if FOO
+#if XXX
 /*
  * get_topology(sj_size, sj_rank, pg_size, pg_rank, sj_num, sj_addrs)
  *
@@ -1772,7 +1772,7 @@ MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(int sj_size, int sj_rank, char *
 
 #endif /* !defined(MPIG_VMPI) */
 
-#else /* !FOO */
+#else /* !XXX */
 
 /*
  * void mpig_pm_gk_get_topology(int rank_in_my_subjob, 
@@ -3087,5 +3087,5 @@ MPIG_STATIC void mpig_pm_gk_intra_subjob_gather(int rank_in_my_subjob,
 
 #endif /* !defined(MPIG_VMPI) */
 
-#endif /*FOO */
+#endif /* XXX */
 

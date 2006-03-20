@@ -426,7 +426,7 @@ mpig_pg_t;
  * MPID_VCRT is the virtual connection reference table object.  MPID_VCR is an array of virtual connection references, allowing
  * the MPICH and device layers fast access to the items in the table.
  *
- * XXX: These structures should not be exposed as fields in the MPICH layer of MPID_Comm object.  A better technique would be to
+ * FIXME: These structures should not be exposed as fields in the MPICH layer of MPID_Comm object.  A better technique would be to
  * define an interface that allows the MPICH layer to access the information without having any exposure to to the data
  * structures themselves.  We should work with the MPICH folks to define such an interface.
  */
@@ -590,11 +590,18 @@ typedef globus_mutex_t MPID_Thread_mutex_t;
 						 BEGIN DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/
 #if defined(MPIG_DEBUG)
-/* MPIG debug logging tools are currently incompatible with the newer MPICH2 debugg logging tools, so we must prevent definition
-   of the MPICH2 macros and the compilation of the functions. */
-#undef USE_DBG_LOGGING
-/* Include the macros that set the enter/exit macros to call MPIR_ENTER/EXIT_FUNC */
+
+/* enable MPICH layer debugging as well */
+#if !defined(USE_DBG_LOGGING)
+#define USE_DBG_LOGGING
+#endif
+
+/* include the macros that set the enter/exit macros to call MPIR_ENTER/EXIT_FUNC */
 #include "mpifunclog.h"
+
+#elif defined(USE_DEBUG_LOGING)
+/* if the MPICH layer debugging has been enabled, then enable the device layer debugging as well */
+#define MPIG_DEBUG
 #endif
 /**********************************************************************************************************************************
 						  END DEBUGGING OUTPUT SECTION
