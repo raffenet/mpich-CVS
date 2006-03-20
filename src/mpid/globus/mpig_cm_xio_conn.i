@@ -67,7 +67,7 @@ MPIG_STATIC void mpig_cm_xio_conn_init(int * mpi_errno_p, bool_t * failed_p)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_conn_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+	"entering: mpi_errno=0x%08x", *mpi_errno_p));
     *failed_p = FALSE;
 
     /* initialize the vc tracking list */
@@ -76,15 +76,15 @@ MPIG_STATIC void mpig_cm_xio_conn_init(int * mpi_errno_p, bool_t * failed_p)
     /* build stack of communication drivers */
     grc = globus_xio_stack_init(&mpig_cm_xio_conn_stack, NULL);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			 "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
     grc = globus_xio_driver_load("tcp", &tcp_driver);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			 "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
     grc = globus_xio_stack_push_driver(mpig_cm_xio_conn_stack, tcp_driver);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			 "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
 #   if XXX_SECURE
     {
@@ -92,11 +92,11 @@ MPIG_STATIC void mpig_cm_xio_conn_init(int * mpi_errno_p, bool_t * failed_p)
 	
         grc = globus_xio_driver_load("gsi", &gsi_driver);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			     "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
         grc = globus_xio_stack_push_driver(mpig_cm_xio_conn_stack, gsi_driver);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			     "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
     }
 #   endif
 
@@ -104,39 +104,39 @@ MPIG_STATIC void mpig_cm_xio_conn_init(int * mpi_errno_p, bool_t * failed_p)
     /* set TCP options and parameters */
     grc = globus_xio_attr_init(&mpig_cm_xio_conn_attrs);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			 "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
     grc = globus_xio_attr_cntl(mpig_cm_xio_conn_attrs, tcp_driver, GLOBUS_XIO_TCP_SET_NODELAY, GLOBUS_TRUE);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			 "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
 #   if XXX
     {
 	grc = globus_xio_attr_cntl(mpig_cm_xio_conn_attrs, tcp_driver, GLOBUS_XIO_TCP_SET_SNDBUF, buf_size);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			     "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
 	grc = globus_xio_attr_cntl(mpig_cm_xio_conn_attrs, tcp_driver, GLOBUS_XIO_TCP_SET_RCVBUF, buf_size);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_create",
-			     "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|xio_stack_create %s", globus_error_print_chain(globus_error_peek(grc)));
     }
 #    endif
     
     /* establish server to start listening for new connections */
     grc = globus_xio_server_create(&mpig_cm_xio_server_handle, mpig_cm_xio_conn_attrs, mpig_cm_xio_conn_stack);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_server_create",
-			 "**globus|cm_xio|xio_server_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_server_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
     grc = globus_xio_server_get_contact_string(mpig_cm_xio_server_handle, &mpig_cm_xio_server_cs);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_server_create",
-			 "**globus|cm_xio|xio_server_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_server_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
     mpig_cm_xio_server_listen(mpi_errno_p, &failed);
     MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_server_listen");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_conn_init);
     return;
 
@@ -166,13 +166,13 @@ MPIG_STATIC void mpig_cm_xio_conn_finalize(int * mpi_errno_p, bool_t * failed_p)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_conn_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+	"entering: mpi_errno=0x%08x", *mpi_errno_p));
     *failed_p = FALSE;
 
     /* disable the connection server and free any resources used by it */
     grc = globus_xio_server_close(mpig_cm_xio_server_handle);
     MPIU_ERR_CHKANDSTMT1((grc), *mpi_errno_p, MPI_ERR_OTHER, {;}, "**globus|cm_xio|xio_close_server",
-			 "**globus|cm_xio|xio_close_server %s", globus_error_print_chain(globus_error_peek(grc)));
+	"**globus|cm_xio|xio_close_server %s", globus_error_print_chain(globus_error_peek(grc)));
     
     if (mpig_cm_xio_server_cs != NULL)
     { 
@@ -195,7 +195,7 @@ MPIG_STATIC void mpig_cm_xio_conn_finalize(int * mpi_errno_p, bool_t * failed_p)
     /* XXX: unload globus XIO drivers? */
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_conn_finalize);
     return;
 }
@@ -222,7 +222,7 @@ MPIG_STATIC void mpig_cm_xio_tmp_vc_destroy(mpig_vc_t * const tmp_vc, int * cons
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_tmp_vc_destroy);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, *mpi_errno_p));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, *mpi_errno_p));
     *failed_p = FALSE;
     
     /* get infromation about the PG and the XIO handle from the temp VC */
@@ -246,15 +246,14 @@ MPIG_STATIC void mpig_cm_xio_tmp_vc_destroy(mpig_vc_t * const tmp_vc, int * cons
     if (tmp_vc_handle)
     {
 	grc = globus_xio_register_close(tmp_vc_handle, NULL, mpig_cm_xio_null_vc_handle_close, NULL);
-	MPIU_ERR_CHKANDSTMT1(
-	    (grc), *mpi_errno_p, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|xio_reg_close",
+	MPIU_ERR_CHKANDSTMT1((grc), *mpi_errno_p, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|xio_reg_close",
 	    "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
     }
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) tmp_vc,
-		       *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) tmp_vc, *mpi_errno_p,
+	MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_tmp_vc_destroy);
     return;
 
@@ -292,14 +291,14 @@ MPIG_STATIC void mpig_cm_xio_null_vc_handle_close(globus_xio_handle_t handle, gl
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_null_vc_handle_close);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: op_grc=%d", op_grc));
+	"entering: op_grc=%d", op_grc));
 
     MPIU_ERR_CHKANDJUMP1((op_grc), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|null_vc_handle_close",
-			 "**globus|cm_xio|null_vc_handle_close %s", globus_error_print_chain(globus_error_peek(op_grc)));
+	"**globus|cm_xio|null_vc_handle_close %s", globus_error_print_chain(globus_error_peek(op_grc)));
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting"));
+	"exiting"));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_null_vc_handle_close);
     return;
 
@@ -420,7 +419,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_error(
 
 #define MPIG_CM_XIO_CONN_VOTE(pg_id_, pg_rank_)									\
     (mpig_pg_compare_ids(mpig_process.my_pg->id, (pg_id_)) < 0 ||						\
-     (mpig_pg_compare_ids(mpig_process.my_pg->id, (pg_id_)) == 0 && mpig_process.my_pg_rank < (pg_rank_)))
+	(mpig_pg_compare_ids(mpig_process.my_pg->id, (pg_id_)) == 0 && mpig_process.my_pg_rank < (pg_rank_)))
 
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
@@ -439,7 +438,7 @@ MPIG_STATIC void mpig_cm_xio_server_listen(int * const mpi_errno_p, bool_t * con
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_listen);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+	"entering: mpi_errno=0x%08x", *mpi_errno_p));
     *failed_p = FALSE;
 
     MPIG_UNUSED_VAR(fcname);
@@ -449,13 +448,13 @@ MPIG_STATIC void mpig_cm_xio_server_listen(int * const mpi_errno_p, bool_t * con
     {
 	/* --BEGIN ERROR HANDLING-- */
 	MPIU_ERR_SETFATALANDSTMT1(*mpi_errno_p, MPI_ERR_INTERN, {goto fn_fail;}, "**globus|cm_xio|xio_server_reg_accept",
-				  "**globus|cm_xio|xio_server_reg_accept %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|xio_server_reg_accept %s", globus_error_print_chain(globus_error_peek(grc)));
 	/* --END ERROR HANDLING-- */
     }
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+	"exiting: mpi_errno=0x%08x", *mpi_errno_p));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_listen);
     return;
     
@@ -492,13 +491,13 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_handle_connection);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: handle=" MPIG_PTR_FMT ", op_grc=%d", (MPIG_PTR_CAST) handle, op_grc));
+	"entering: handle=" MPIG_PTR_FMT ", op_grc=%d", (MPIG_PTR_CAST) handle, op_grc));
 
     /* if the accept was cancelled, then we are likely shutting down.  XXX: add code to verify this? */
     if (globus_xio_error_is_canceled(op_grc))
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "register accept cancelled.  the XIO communication module must be shutting down."));
+	    "register accept cancelled.  the XIO communication module must be shutting down."));
 	goto fn_return;
     }
     
@@ -512,15 +511,13 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
 	    if (grc)
 	    {
 		/* --END ERROR HANDLING-- */
-		MPIU_ERR_SETANDSTMT1(
-		    mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_handle_connection",
+		MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_handle_connection",
 		    "**globus|cm_xio|server_handle_connection %s", globus_error_print_chain(globus_error_peek(grc)));
 
 		mpig_cm_xio_server_accept_errcnt += 1;
 		
 		grc = globus_xio_register_close(handle, NULL, mpig_cm_xio_null_vc_handle_close, NULL);
-		MPIU_ERR_CHKANDSTMT1(
-		    (grc), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|xio_reg_close",
+		MPIU_ERR_CHKANDSTMT1((grc), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|xio_reg_close",
 		    "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
 
 		goto fn_fail;
@@ -537,10 +534,9 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
 	    mpig_cm_xio_server_accept_errcnt += 1;
 	    
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "server failed to accept incoming connection: errcnt=%d",
-			       mpig_cm_xio_server_accept_errcnt));
+		"server failed to accept incoming connection: errcnt=%d", mpig_cm_xio_server_accept_errcnt));
 	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {warn++;}, "**globus|cm_xio|server_handle_connection",
-				 "**globus|cm_xio|server_handle_connection %s", globus_error_print_chain(globus_error_peek(grc)));
+		"**globus|cm_xio|server_handle_connection %s", globus_error_print_chain(globus_error_peek(grc)));
 	    /* --END ERROR HANDLING-- */
 	}
 	
@@ -549,8 +545,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR,
-			       "FATAL ERROR: server has repeatedly failed to establish new connections; "
-			       "reporting error: errcnt=%d", mpig_cm_xio_server_accept_errcnt));
+		"FATAL ERROR: server has repeatedly failed to establish new connections; reporting error: errcnt=%d",
+		mpig_cm_xio_server_accept_errcnt));
 	    MPIU_ERR_SETFATALANDSTMT(mpi_errno, MPI_ERR_OTHER, {err++; goto fn_fail;}, "**globus|cm_xio|server_multiple_failures");
 
 	    /* --END ERROR HANDLING-- */
@@ -564,7 +560,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
     if (failed)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR,
-			   "FATAL ERROR: the server failed to register a new accept operation"));
+	    "FATAL ERROR: the server failed to register a new accept operation"));
 	MPIU_ERR_SETFATALANDSTMT(mpi_errno, MPI_ERR_OTHER, {err++; goto fn_fail;}, "**globus|cm_xio|listen");
     }	/* --END ERROR HANDLING-- */
 
@@ -572,7 +568,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: mpi_errno=0x%08x", mpi_errno));
+	"exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_connection);
     return;
 
@@ -613,16 +609,15 @@ MPIG_STATIC void mpig_cm_xio_server_handle_open(const globus_xio_handle_t handle
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_handle_open);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: handle=" MPIG_PTR_FMT ", op_grc=%d", (MPIG_PTR_CAST) handle, op_grc));
+	"entering: handle=" MPIG_PTR_FMT ", op_grc=%d", (MPIG_PTR_CAST) handle, op_grc));
 
-    MPIU_ERR_CHKANDSTMT1(
-	(op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|server_handle_open",
+    MPIU_ERR_CHKANDSTMT1((op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|server_handle_open",
 	"**globus|server_handle_open %s", globus_error_print_chain(globus_error_peek(op_grc)));
     
     /* allocate a temporary VC for use during connection establishment */
     tmp_vc = (mpig_vc_t *) MPIU_Malloc(sizeof(mpig_vc_t));
     MPIU_ERR_CHKANDSTMT1((tmp_vc == NULL), mpi_errno, MPI_ERR_OTHER, {err++; goto fn_fail;}, "**nomem",
-			 "**nomem %s", "temp VC for an incoming connection");
+	"**nomem %s", "temp VC for an incoming connection");
 
     /* initialize the temp VC object */
     tmp_vc_cm = &tmp_vc->cm.xio;
@@ -641,7 +636,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_open(const globus_xio_handle_t handle
 	/* Register a receive for the magic string.  The magic string exchange is used just to verify that an incoming connection
 	   is most probably a MPIG process, and not a port scanner.  The exchange does not prevent malicious attacks. */
 	mpig_cm_xio_register_read_vc_msgbuf(tmp_vc, magic_size, magic_size, mpig_cm_xio_server_handle_recv_magic,
-					    &mpi_errno, &failed);
+	    &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_reg_recv_magic");
 	
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_RECEIVING_MAGIC);
@@ -651,7 +646,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_open(const globus_xio_handle_t handle
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_open);
     return;
     
@@ -665,7 +660,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_open(const globus_xio_handle_t handle
 	    /* close the accepted connection */
 	    grc = globus_xio_register_close(handle, NULL, mpig_cm_xio_null_vc_handle_close, NULL);
 	    MPIU_ERR_CHKANDSTMT1((grc), mpi_errno, MPI_ERR_INTERN, {err++;}, "**globus|cm_xio|xio_reg_close",
-				 "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
+		"**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
 	}
 	else
 	{
@@ -675,7 +670,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_open(const globus_xio_handle_t handle
 	    /* close the connection and destroy the temp VC object */
 	    mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-				 "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+		"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 	}
 	
 	/* report any errors through MPID_Progress_{poke,test,wait}() */
@@ -712,9 +707,9 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_magic(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_handle_recv_magic);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT
-		       ", rbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT ", rbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len,
+	nbytes));
 
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
@@ -722,8 +717,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_magic(
 	int rc;
 	
 	MPIU_Assert(mpig_cm_xio_vc_get_state(tmp_vc) == MPIG_CM_XIO_VC_STATE_ACCEPT_RECEIVING_MAGIC);
-	MPIU_ERR_CHKANDSTMT2(
-	    (op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;},
+	MPIU_ERR_CHKANDSTMT2((op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;},
 	    "**globus|cm_xio|server_handle_recv_magic", "**globus|cm_xio|server_handle_recv_magic %p %s",
 	    tmp_vc, globus_error_print_chain(globus_error_peek(op_grc)));
 	MPIU_Assert(nbytes == strlen(MPIG_CM_XIO_PROTO_CONNECT_MAGIC));
@@ -733,25 +727,23 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_magic(
 
 	/* compare the string to make sure the expect value was received. */
 	rc = strncmp(mpig_databuf_get_ptr(tmp_vc_cm->msgbuf), MPIG_CM_XIO_PROTO_CONNECT_MAGIC,
-		     strlen(MPIG_CM_XIO_PROTO_CONNECT_MAGIC));
-	MPIU_ERR_CHKANDSTMT1(
-	    (rc != 0), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|cm_xio|server_magic_mismatch",
+	    strlen(MPIG_CM_XIO_PROTO_CONNECT_MAGIC));
+	MPIU_ERR_CHKANDSTMT1((rc != 0), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|cm_xio|server_magic_mismatch",
 	    "**globus|cm_xio|server_magic_mismatch %p", tmp_vc);
 
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "magic string matched.  sending magic string to the connector."));
+	    "magic string matched.  sending magic string to the connector."));
 	
 	/* copy magic string into the VC message buffer */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
 	rc = MPIU_Strncpy(mpig_databuf_get_ptr(tmp_vc_cm->msgbuf), MPIG_CM_XIO_PROTO_ACCEPT_MAGIC,
-			  mpig_databuf_get_size(tmp_vc_cm->msgbuf));
+	    mpig_databuf_get_size(tmp_vc_cm->msgbuf));
 	MPIU_Assert(rc == 0);
 	mpig_databuf_inc_eod(tmp_vc_cm->msgbuf, strlen(MPIG_CM_XIO_PROTO_ACCEPT_MAGIC));
 
 	/* Send the magic string */
 	mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, mpig_cm_xio_server_handle_send_magic, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDSTMT1(
-	    (failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_reg_send_magic",
+	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_reg_send_magic",
 	    "**globus|cm_xio|server_reg_send_magic %p", tmp_vc);
 
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_MAGIC);
@@ -761,7 +753,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_magic(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_recv_magic);
     return;
     
@@ -774,7 +766,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_magic(
 	/* close the connection and destroy the temporary VC object */
 	mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-			     "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	    "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
     
 	/* report the error through MPID_Progress_{poke,test,wait}() */
 	if (err > 0) mpig_cm_xio_fault_handle_async_error(&mpi_errno);
@@ -810,14 +802,11 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_magic(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_handle_send_magic);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT
-		       ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT ", sbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len,
+	nbytes));
 
-    MPIU_ERR_CHKANDSTMT2(
-	(op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|cm_xio|server_handle_send_magic",
+    MPIU_ERR_CHKANDSTMT2((op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|cm_xio|server_handle_send_magic",
 	"**globus|cm_xio|server_handle_send_magic %p %s", tmp_vc, globus_error_print_chain(globus_error_peek(op_grc)));
     
     mpig_vc_mutex_lock(tmp_vc);
@@ -832,9 +821,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_magic(
 	mpig_cm_xio_register_read_vc_msgbuf(
 	    tmp_vc, mpig_cm_xio_msg_hdr_sizeof_msg_size, mpig_databuf_get_size(tmp_vc_cm->msgbuf),
 	    mpig_cm_xio_server_handle_recv_open_req, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDSTMT1(
-	    (failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_reg_recv_open_req",
-	    "**globus|cm_xio|server_reg_recv_open_req %p", tmp_vc);
+	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;},
+	    "**globus|cm_xio|server_reg_recv_open_req", "**globus|cm_xio|server_reg_recv_open_req %p", tmp_vc);
 	
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_RECEIVING_OPEN_REQ);
     }
@@ -843,7 +831,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_magic(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_send_magic);
     return;
     
@@ -856,7 +844,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_magic(
 	/* close the connection and destroy the temp VC object */
 	mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-			     "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	    "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 
 	/* report the error through MPID_Progress_{poke,test,wait}() */
 	if (err > 0) mpig_cm_xio_fault_handle_async_error(&mpi_errno);
@@ -895,16 +883,16 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_handle_recv_open_req);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT
-		       ", rbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT ", rbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len,
+	nbytes));
 
     MPIG_UNUSED_VAR(fcname);
 
     /* if the receive failed, then the connection is probably toast.  close the handle and free the temp VC. */
     MPIU_ERR_CHKANDSTMT2((op_grc), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;},
-			 "**globus|cm_xio|server_handle_recv_open_req", "**globus|cm_xio|server_handle_recv_open_req %p %s",
-			 tmp_vc, globus_error_print_chain(globus_error_peek(op_grc)));
+	"**globus|cm_xio|server_handle_recv_open_req", "**globus|cm_xio|server_handle_recv_open_req %p %s",
+	tmp_vc, globus_error_print_chain(globus_error_peek(op_grc)));
 	
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
@@ -939,14 +927,13 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		
 		/* not all of the open request header was received.  try to get the remainder of it. */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "not all of the open request message was received; posting a read for the remaining"
-				   " bytes, tmp_vc=" MPIG_PTR_FMT  ", nbytes=%u", (MPIG_PTR_CAST) tmp_vc,
-				   (unsigned) bytes_needed));
+		    "not all of the open request message was received; posting a read for the remaining bytes, tmp_vc="
+		    MPIG_PTR_FMT  ", nbytes=%u", (MPIG_PTR_CAST) tmp_vc, (unsigned) bytes_needed));
 	    
 		mpig_cm_xio_register_read_vc_msgbuf(tmp_vc, bytes_needed, bytes_needed, mpig_cm_xio_server_handle_recv_open_req,
-						    &mpi_errno, &failed);
-		MPIU_ERR_CHKANDSTMT(
-		    (failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|server_reg_recv_open_req");
+		    &mpi_errno, &failed);
+		MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;},
+		    "**globus|cm_xio|server_reg_recv_open_req");
 
 		mpig_vc_mutex_unlock(tmp_vc);
 		tmp_vc_locked = FALSE;
@@ -958,10 +945,9 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	if (mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf) != tmp_vc_cm->msg_hdr_size)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF(
-		(MPIG_DEBUG_LEVEL_VCCM,
-		 "message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=%d",
-		 (MPIG_PTR_CAST) tmp_vc, tmp_vc_cm->msg_hdr_size, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		"message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=%d",
+		(MPIG_PTR_CAST) tmp_vc, tmp_vc_cm->msg_hdr_size, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
 	    
 	    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
 	    open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_MSG_INCOMPLETE;
@@ -976,8 +962,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "message received is not an open request: tmp_vc=" MPIG_PTR_FMT ", msg_type=%d",
-			       (MPIG_PTR_CAST) tmp_vc, (int) req_msg_type));
+		"message received is not an open request: tmp_vc=" MPIG_PTR_FMT ", msg_type=%d",
+		(MPIG_PTR_CAST) tmp_vc, (int) req_msg_type));
 	    
 	    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
 	    open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_MSG_TYPE_BAD;
@@ -1002,8 +988,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "message received contains extra data: tmp_vc=" MPIG_PTR_FMT ", bytes=%d",
-			       (MPIG_PTR_CAST) tmp_vc, (int) mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
+		"message received contains extra data: tmp_vc=" MPIG_PTR_FMT ", bytes=%d",
+		(MPIG_PTR_CAST) tmp_vc, (int) mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
 	    
 	    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
 	    open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_MSG_TOO_LONG;
@@ -1016,7 +1002,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	   reference is associated with the temp VC. */
 	mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT2((failed), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|pg_acquire_ref",
-			     "**globus|pg_acquire_ref %s %d", pg_id, pg_size);
+	    "**globus|pg_acquire_ref %s %d", pg_id, pg_size);
 	{
 	    /* set the PG information fields in the temp VC */
 	    mpig_vc_set_pg_info(tmp_vc, pg, pg_rank);
@@ -1026,8 +1012,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	    real_vc_cm = &real_vc->cm.xio;
 	    
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "open request received: pg_id=%s, pg_rank=%d, tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
-			       pg_id, pg_rank, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+		"open request received: pg_id=%s, pg_rank=%d, tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+		pg_id, pg_rank, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 	    
 	    mpig_vc_mutex_lock(real_vc);
 	    real_vc_locked = TRUE;
@@ -1074,8 +1060,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		 * sends are enqueued in the real VC, they will be started at that time.
 		 */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "real VC unconnected; ACKing open req: tmp_vc=" MPIG_PTR_FMT ", real_vc="
-				   MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+		    "real VC unconnected; ACKing open req: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+		    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		
 		mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_ACCEPTING);
 		
@@ -1097,8 +1083,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		{
 		    /* see the unconnected case above for the process */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				       "real VC connecting; remote process wins; ACKing open req: tmp_vc="
-				       MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+			"real VC connecting; remote process wins; ACKing open req: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+			(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		    
 		    mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_ACCEPTING);
 		    
@@ -1113,8 +1099,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		       outgoing connection.  the callback will close specified below will close the local process' side of the
 		       connection and dstroy the temp VC associated with it. */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				       "real VC connecting; local process wins; NAKing open req: tmp_vc="
-				       MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+			"real VC connecting; local process wins; NAKing open req: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+			(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_NAK);
 		    open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_NAK;
 		    resp_callback_fn = mpig_cm_xio_server_handle_send_open_resp_nak;
@@ -1125,8 +1111,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		if (!MPIG_CM_XIO_CONN_VOTE(pg_id, pg_rank))
 		{
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				       "real VC connected; local process won; NAKing open req: tmp_vc="
-				       MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+			"real VC connected; local process won; NAKing open req: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+			(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_NAK);
 		    open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_NAK;
 		    resp_callback_fn = mpig_cm_xio_server_handle_send_open_resp_nak;
@@ -1134,8 +1120,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		else
 		{   /* --BEGIN ERROR HANDLING-- */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				       "ERROR: real VC connected; winner connecting again: tmp_vc=" MPIG_PTR_FMT ", real_vc="
-				       MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+			"ERROR: real VC connected; winner connecting again: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+			(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
 		    open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_VC_CONNECTED;
 		    resp_callback_fn = mpig_cm_xio_server_handle_send_open_resp_error;
@@ -1145,13 +1131,13 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	    {
 		/* --BEGIN ERROR HANDLING-- */
 		/*
-		 * XXX: MPI-2: it may be possible for a disconnect followed by a reconnect to cause a new connection to be
+		 * MPI-2-FIXME: it may be possible for a disconnect followed by a reconnect to cause a new connection to be
 		 * requested from the remote process while the current connection is executing the close protocol.  this require
 		 * further thought.  should it prove to be a problem, it may be solvable by using a temp VC during the close.
 		 */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "ERROR: real VC is disconnecting: tmp_vc=" MPIG_PTR_FMT ", real_vc="
-				   MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+		    "ERROR: real VC is disconnecting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+		    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
 		open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_VC_DISCONNECTING;
 		resp_callback_fn = mpig_cm_xio_server_handle_send_open_resp_error;
@@ -1167,8 +1153,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		 * state.  therefore, we reply with a failure response to make the state of the two objects consistent.
 		 */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "real VC has already failed; sending failure message: tmp_vc=" MPIG_PTR_FMT
-				   ", real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+		    "real VC has already failed; sending failure message: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+		    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
 		open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_VC_FAILED;
 		resp_callback_fn = mpig_cm_xio_server_handle_send_open_resp_error;
@@ -1178,9 +1164,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	    {
 		/* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "ERROR: real VC is in an unknown state: tmp_vc=" MPIG_PTR_FMT ", real_vc="
-				   MPIG_PTR_FMT "state=%d", (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc,
-				   (int) mpig_cm_xio_vc_get_state(real_vc)));
+		    "ERROR: real VC is in an unknown state: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT "state=%d",
+		    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, (int) mpig_cm_xio_vc_get_state(real_vc)));
 		MPIU_Assertp(FALSE && "VC is in state is corrupt!")
 		    /* --END ERROR HANDLING-- */
 		    }
@@ -1201,7 +1186,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	    /* send the open respoinse message */
 	    mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, resp_callback_fn, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT3((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|reg_send_open_resp",
-				 "**globus|cm_xio|reg_send_open_resp %p %s %d", tmp_vc, pg_id, pg_rank);
+		"**globus|cm_xio|reg_send_open_resp %p %s %d", tmp_vc, pg_id, pg_rank);
 	}
     }
     mpig_vc_mutex_unlock(tmp_vc);
@@ -1209,8 +1194,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT "real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT "real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_recv_open_req);
     return;
     
@@ -1223,7 +1208,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	/* close the connection and destroy the temp VC object, releasing the associated PG reference */
 	mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-			     "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	    "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 
 	/* set the state of the real VC back to unconnected; release the reference to the VC (and the reference to the PG if the
 	   VC reference count reaches zero) */
@@ -1245,7 +1230,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 
 	    mpig_vc_release_ref(real_vc, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|vc_release_ref",
-				 "**globus|vc_release_ref %p", real_vc);
+		"**globus|vc_release_ref %p", real_vc);
 	}
 
 	/* report the error(s) through MPID_Progress_{poke,test,wait}() */
@@ -1289,9 +1274,9 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_server_handle_send_open_resp_ack);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT
-		       ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT ", sbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len,
+	nbytes));
 
     /* if send operation completed successfully, clear the handle field in temp VC so that the handle is not closed when the temp
        VC is destroyed.  in addition, extract the the the pg and pg_rank fields from the temp VC so that we can get a pointer to
@@ -1309,10 +1294,10 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
     /* now that all useful information has been extracted from the temp VC, close the connection and destroy the temp VC object,
        releasing the reference to the PG */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-		       "destroying the temp VC: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
+	"destroying the temp VC: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
     mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
     MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-			 "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 
     /* using the pg and pg rank acquired above, get the real VC */
     mpig_pg_rc_acq(pg, TRUE);
@@ -1330,8 +1315,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
 	if (op_grc)
 	{
 	    MPIU_ERR_SETANDSTMT2(mpi_errno, MPI_ERR_OTHER, {warn++;}, "**globus|cm_xio|send_handle_open_resp_ack_msg",
-				 "**globus|cm_xio|send_handle_open_resp_ack_msg %p %s",
-				 tmp_vc, globus_error_print_chain(globus_error_peek(op_grc)));
+		"**globus|cm_xio|send_handle_open_resp_ack_msg %p %s",
+		tmp_vc, globus_error_print_chain(globus_error_peek(op_grc)));
 
 	    if (!mpig_cm_xio_sendq_empty(real_vc))
 	    {
@@ -1350,8 +1335,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
 
 	/* set the handle on the real VC, and change the state to connected */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "change state of real VC to connected; starting communication: real_vc=" MPIG_PTR_FMT,
-			   (MPIG_PTR_CAST) real_vc));
+	    "change state of real VC to connected; starting communication: real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) real_vc));
 	real_vc_cm->handle = handle;
 	mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_CONNECTED);
 	mpig_cm_xio_vc_list_add(real_vc);
@@ -1359,7 +1343,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
 	/* start receiving messages on the real VC.  note: it was not necesary to transfer the receive buffer from the temp VC to
 	   the real VC since we know that the buffer was depleted by mpig_cm_xio_server_handle_recv_open_req(). */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_VCCM,
-			   "connection established; starting communication engines: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) real_vc));
+	    "connection established; starting communication engines: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) real_vc));
 		
 	mpig_cm_xio_recv_next_msg(real_vc, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|xio_cm|recv_next_msg");
@@ -1372,7 +1356,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
 	   referencing it yet, we do not want to release the VC's reference to the PG or cause the connection to close before the
 	   remote process can perform whatever actions it intends to perform.  therefore, we use mpig_cm_xio_vc_dec_ref_count()
 	   instead of mpig_vc_release_ref() or mpig_vc_dec_ref_count().  a correct MPI will eventually result in a communicator
-	   referencing the VC, so it is not necessary to detect this situation in the disconnect code. */
+	   referencing the VC, so it is not necessary to detect this situation in the disconnect code. FT-FIXME: however, an
+	   incorrect program, or a failure during the formation of a communicator, will cause the program to hang in finalize. */
 	{
 	    bool_t inuse;
 	    
@@ -1386,8 +1371,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_send_open_resp_ack);
     return;
     
@@ -1410,7 +1395,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_ack(
 	    /* release the internal reference to the VC, and the PG if the VC reference count reaches zero */
 	    mpig_vc_release_ref(real_vc, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|vc_release_ref",
-				 "**globus|vc_release_ref %p", real_vc);
+		"**globus|vc_release_ref %p", real_vc);
     
 	    /* report the error through MPID_Progress_{poke,test,wait}() */
 	    mpig_cm_xio_fault_handle_async_vc_error(real_vc, &mpi_errno);
@@ -1455,12 +1440,11 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_nak(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_handle_send_open_resp_nak);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT
-		       ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT ", sbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len,
+	nbytes));
 
-    MPIU_ERR_CHKANDSTMT1(
-	(op_grc), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|cm_xio|server_handle_send_open_resp_nak",
+    MPIU_ERR_CHKANDSTMT1((op_grc), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|cm_xio|server_handle_send_open_resp_nak",
 	"**globus|cm_xio|server_handle_send_open_resp_nak %s", globus_error_print_chain(globus_error_peek(op_grc)));
     
     /* extract the the the pg and pg_rank fields from the temp VC so that we can get a pointer to the VC */
@@ -1474,10 +1458,10 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_nak(
 
     /* close the connection and destroy the temp VC object, releasing the reference to the PG */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-		       "closing and destroying the temp VC: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
+	"closing and destroying the temp VC: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
     mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
     MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-			 "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
     
     /* using the pg and pg rank acquired above, get the real VC */
     mpig_pg_rc_acq(pg, TRUE);
@@ -1488,18 +1472,18 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_nak(
 
     /* release the internal reference to the real VC, and the PG if the VC reference count reaches zero */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-		       "releasing the internal reference to the real VC: tmp_vc=" MPIG_PTR_FMT ",real_vc=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+	"releasing the internal reference to the real VC: tmp_vc=" MPIG_PTR_FMT ",real_vc=" MPIG_PTR_FMT,
+	(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
     mpig_vc_release_ref(real_vc, &mpi_errno, &failed);
     MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|vc_release_ref",
-			 "**globus|vc_release_ref %p", real_vc);
+	"**globus|vc_release_ref %p", real_vc);
 
     if (err > 0) goto fn_fail;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_handle_send_open_resp_nak);
     return;
 
@@ -1542,12 +1526,11 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_error(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_handle_send_open_resp_error);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT
-		       ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT ", sbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len,
+	nbytes));
 
-    MPIU_ERR_CHKANDSTMT1(
-	(op_grc), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|cm_xio|server_handle_send_open_resp_error",
+    MPIU_ERR_CHKANDSTMT1((op_grc), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|cm_xio|server_handle_send_open_resp_error",
 	"**globus|cm_xio|server_handle_send_open_resp_error %s", globus_error_print_chain(globus_error_peek(op_grc)));
     
     /* extract the the the pg and pg_rank fields from the temp VC so that we can get a pointer to the VC */
@@ -1561,10 +1544,10 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_error(
 
     /* close the connection and destroy the temp VC object, releasing the reference to the PG */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-		       "closing and destroying the temp VC: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
+	"closing and destroying the temp VC: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
     mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
     MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|cm_xio|tmp_vc_destroy",
-			 "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 
     if (pg != NULL)
     {
@@ -1577,19 +1560,19 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_open_resp_error(
 
 	/* release the internal reference to the real VC, and the PG if the VC reference count reaches zero */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "releasing the internal reference to the real VC: tmp_vc=" MPIG_PTR_FMT
-			   ",real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+	    "releasing the internal reference to the real VC: tmp_vc=" MPIG_PTR_FMT ",real_vc=" MPIG_PTR_FMT,
+	    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 	mpig_vc_release_ref(real_vc, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {err++;}, "**globus|vc_release_ref",
-			     "**globus|vc_release_ref %p", real_vc);
+	    "**globus|vc_release_ref %p", real_vc);
     }
     
     if (err > 0) goto fn_fail;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_handle_send_open_resp_error);
     return;
 
@@ -1661,7 +1644,7 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_client_connect);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) real_vc, *mpi_errno_p));
+	"entering: real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) real_vc, *mpi_errno_p));
     *failed_p = FALSE;
 
     MPIG_UNUSED_VAR(fcname);
@@ -1669,7 +1652,7 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
     /* allocate and initialize a temporary VC for use during connection establishment. */
     tmp_vc = (mpig_vc_t *) MPIU_Malloc(sizeof(mpig_vc_t));
     MPIU_ERR_CHKANDJUMP1((tmp_vc == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
-			 "temp VC for an outgoing connection");
+	"temp VC for an outgoing connection");
     tmp_vc_cm = &tmp_vc->cm.xio;
     mpig_vc_construct(tmp_vc);
 
@@ -1682,7 +1665,7 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 	/* create an XIO handle and initiate the connection */
 	grc = globus_xio_handle_create(&tmp_vc_cm->handle, mpig_cm_xio_conn_stack);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|xio_handle_create",
-			     "**globus|xio_handle_create %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|xio_handle_create %s", globus_error_print_chain(globus_error_peek(grc)));
 
 	/* pg and pg_rank are stored in the temp VC so the real VC can be located again later */
 	mpig_pg_mutex_lock(pg);
@@ -1693,13 +1676,13 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 	mpig_vc_set_pg_info(tmp_vc, pg, pg_rank);
 
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "temp VC constructed for open messages: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
+	    "temp VC constructed for open messages: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
 
 	/* register an ansychronous connect to the process specified in the contact string field located in the real VC */
 	grc = globus_xio_register_open(tmp_vc_cm->handle, real_vc_cm->cs, mpig_cm_xio_conn_attrs, mpig_cm_xio_client_handle_open,
-				       (void *) tmp_vc);
+	    (void *) tmp_vc);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_open",
-			     "**globus|cm_xio|xio_reg_open %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|xio_reg_open %s", globus_error_print_chain(globus_error_peek(grc)));
 
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_CONNECT_OPENING);
     }
@@ -1715,8 +1698,8 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 	if (was_inuse == FALSE)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT,
-			       "ERROR: attempt to connect a VC with no references; likely a dangling pointer, vc=" MPIG_PTR_FMT,
-			       (MPIG_PTR_CAST) real_vc));
+		"ERROR: attempt to connect a VC with no references; likely a dangling pointer, vc=" MPIG_PTR_FMT,
+		(MPIG_PTR_CAST) real_vc));
 	    MPIU_ERR_SET1(*mpi_errno_p, MPI_ERR_OTHER, "**globus|vc_ptr_bad", "**globus|vc_ptr_bad %p", real_vc);
 	    MPID_Abort(NULL, *mpi_errno_p, 13, NULL);
 	}   /* --END ERROR HANDLING-- */
@@ -1729,9 +1712,8 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: real_vc=" MPIG_PTR_FMT ", tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT
-		       ", mpi_errno=0x%08x", (MPIG_PTR_CAST) real_vc, (MPIG_PTR_CAST) tmp_vc,
-		       (MPIG_PTR_CAST) (tmp_vc_cm ? tmp_vc_cm->handle : NULL), *mpi_errno_p));
+	"exiting: real_vc=" MPIG_PTR_FMT ", tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) real_vc, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) (tmp_vc_cm ? tmp_vc_cm->handle : NULL), *mpi_errno_p));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_client_connect);
     return;
     
@@ -1746,7 +1728,7 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 	{
 	    mpig_cm_xio_tmp_vc_destroy(tmp_vc, mpi_errno_p, &failed);
 	    MPIU_ERR_CHKANDSTMT1((failed), *mpi_errno_p, MPI_ERR_INTERN, {;}, "**globus|cm_xio|tmp_vc_destroy",
-				 "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+		"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 	}
 
 	/* change the state of the real VC to the failed state */
@@ -1786,8 +1768,8 @@ MPIG_STATIC void mpig_cm_xio_client_handle_open(const globus_xio_handle_t handle
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_client_handle_open);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT", op_grc=%d", (MPIG_PTR_CAST) tmp_vc,
-		       (MPIG_PTR_CAST) handle, op_grc));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT", op_grc=%d",
+	(MPIG_PTR_CAST) tmp_vc,	(MPIG_PTR_CAST) handle, op_grc));
 
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
@@ -1795,22 +1777,21 @@ MPIG_STATIC void mpig_cm_xio_client_handle_open(const globus_xio_handle_t handle
 	int rc;
 
 	MPIU_Assert(mpig_cm_xio_vc_get_state(tmp_vc) == MPIG_CM_XIO_VC_STATE_CONNECT_OPENING);
-	MPIU_ERR_CHKANDJUMP4(
-	    (op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_open",
+	MPIU_ERR_CHKANDJUMP4((op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_open",
 	    "**globus|cm_xio|client_handle_open %p %s %d %s", tmp_vc, mpig_vc_get_pg_id(tmp_vc), mpig_vc_get_pg_rank(tmp_vc),
 	    globus_error_print_chain(globus_error_peek(op_grc)));
 
 	/* Copy magic string into the VC message buffer */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
 	rc = MPIU_Strncpy(mpig_databuf_get_ptr(tmp_vc_cm->msgbuf), MPIG_CM_XIO_PROTO_CONNECT_MAGIC,
-			  mpig_databuf_get_size(tmp_vc_cm->msgbuf));
+	    mpig_databuf_get_size(tmp_vc_cm->msgbuf));
 	MPIU_Assert(rc == 0 && "Connect magic string did not fit in the VC message buffer");
 	mpig_databuf_inc_eod(tmp_vc_cm->msgbuf, strlen(MPIG_CM_XIO_PROTO_CONNECT_MAGIC));
 
 	/* Send the magic string */
 	mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, mpig_cm_xio_client_handle_send_magic, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|client_reg_send_magic",
-			     "**globus|cm_xio|client_reg_send_magic %p", tmp_vc);
+	    "**globus|cm_xio|client_reg_send_magic %p", tmp_vc);
 
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_CONNECT_SENDING_MAGIC);
     }
@@ -1819,7 +1800,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_open(const globus_xio_handle_t handle
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_client_handle_open);
     return;
     
@@ -1859,31 +1840,30 @@ MPIG_STATIC void mpig_cm_xio_client_handle_send_magic(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_client_handle_send_magic);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT
-		       ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT ", sbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len,
+	nbytes));
 
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
     {
 	MPIU_Assert(mpig_cm_xio_vc_get_state(tmp_vc) == MPIG_CM_XIO_VC_STATE_CONNECT_SENDING_MAGIC);
-	MPIU_ERR_CHKANDJUMP4(
-	    (op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_send_magic",
+	MPIU_ERR_CHKANDJUMP4((op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_send_magic",
 	    "**globus|cm_xio|client_handle_send_magic %p %s %d %s", tmp_vc, mpig_vc_get_pg_id(tmp_vc),
 	    mpig_vc_get_pg_rank(tmp_vc), globus_error_print_chain(globus_error_peek(op_grc)));
 	MPIU_Assert(nbytes == strlen(MPIG_CM_XIO_PROTO_CONNECT_MAGIC) && "not all of the connect magic string was sent");
 	
 	/* register a read operation to receive the magic string from the accepting side */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "registering receive for magic string"));
+	    "registering receive for magic string"));
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
 	tmp_vc_cm->msg_hdr_size = 0;
 	/* FIXME: [BRT] this should read minimally one byte and maximally the length of the magic string.  A timeout should be
 	   associated with the receive in case the sender is not a valid MPIG process and never sends us anything. */
 	mpig_cm_xio_register_read_vc_msgbuf(tmp_vc, strlen(MPIG_CM_XIO_PROTO_ACCEPT_MAGIC), strlen(MPIG_CM_XIO_PROTO_ACCEPT_MAGIC),
-					    mpig_cm_xio_client_handle_recv_magic, &mpi_errno, &failed);
+	    mpig_cm_xio_client_handle_recv_magic, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|client_reg_recv_magic",
-			     "**globus|cm_xio|client_reg_recv_magic %p", tmp_vc);
+	    "**globus|cm_xio|client_reg_recv_magic %p", tmp_vc);
 	
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_CONNECT_RECEIVING_MAGIC);
     }
@@ -1892,7 +1872,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_send_magic(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_client_handle_send_magic);
     return;
     
@@ -1931,10 +1911,9 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_client_handle_recv_magic);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT
-		       ", rbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len, nbytes));
-
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT ", rbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len,
+	nbytes));
 
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
@@ -1943,8 +1922,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
 	int rc;
 	
 	MPIU_Assert(mpig_cm_xio_vc_get_state(tmp_vc) == MPIG_CM_XIO_VC_STATE_CONNECT_RECEIVING_MAGIC);
-	MPIU_ERR_CHKANDJUMP4(
-	    (op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_recv_magic",
+	MPIU_ERR_CHKANDJUMP4((op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_recv_magic",
 	    "**globus|cm_xio|client_handle_recv_magic %p %s %d %s", tmp_vc,  mpig_vc_get_pg_id(tmp_vc),
 	    mpig_vc_get_pg_rank(tmp_vc), globus_error_print_chain(globus_error_peek(op_grc)));
 
@@ -1956,13 +1934,12 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
 
 	/* compare the string to make sure the expect value was received. */
 	rc = strncmp(mpig_databuf_get_ptr(tmp_vc_cm->msgbuf), MPIG_CM_XIO_PROTO_ACCEPT_MAGIC,
-		     strlen(MPIG_CM_XIO_PROTO_ACCEPT_MAGIC));
-	MPIU_ERR_CHKANDJUMP3(
-	    (rc != 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_magic_mismatch",
+	    strlen(MPIG_CM_XIO_PROTO_ACCEPT_MAGIC));
+	MPIU_ERR_CHKANDJUMP3((rc != 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_magic_mismatch",
 	    "**globus|cm_xio|client_magic_mismatch %p %s %d", tmp_vc, mpig_vc_get_pg_id(tmp_vc), mpig_vc_get_pg_rank(tmp_vc));
 
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "magic string matched.  sending the open request to the remote process."));
+	    "magic string matched.  sending the open request to the remote process."));
 	
 	/* send the open request message */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
@@ -1980,7 +1957,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
 	/* send the open request message */
 	mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, mpig_cm_xio_client_handle_send_open_req, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP3((failed), mpi_errno, MPI_ERR_INTERN,"**globus|cm_xio|reg_send_open_resp",
-			     "**globus|cm_xio|reg_send_open_resp %p %s %d", tmp_vc, tmp_vc->pg_id, tmp_vc->pg_rank);
+	    "**globus|cm_xio|reg_send_open_resp %p %s %d", tmp_vc, tmp_vc->pg_id, tmp_vc->pg_rank);
 
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_CONNECT_SENDING_OPEN_REQ);
     }
@@ -1989,7 +1966,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_client_handle_recv_magic);
     return;
     
@@ -2002,7 +1979,6 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
     /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_xio_client_handle_recv_magic() */
-
 
 
 /*
@@ -2031,21 +2007,19 @@ MPIG_STATIC void mpig_cm_xio_client_handle_send_open_req(
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_client_handle_send_open_req);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, sbuf=" MPIG_PTR_FMT
-		       ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM, "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT
+	", op_grc=%d, sbuf=" MPIG_PTR_FMT ", sbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc,
+	(MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) sbuf, sbuf_len, nbytes));
 
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
     {
 	MPIU_Assert(mpig_cm_xio_vc_get_state(tmp_vc) == MPIG_CM_XIO_VC_STATE_CONNECT_SENDING_OPEN_REQ);
-	MPIU_ERR_CHKANDJUMP4(
-	    (op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_recv_magic",
+	MPIU_ERR_CHKANDJUMP4((op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_recv_magic",
 	    "**globus|cm_xio|client_handle_recv_magic %p %s %d %s", tmp_vc,  mpig_vc_get_pg_id(tmp_vc),
 	    mpig_vc_get_pg_rank(tmp_vc), globus_error_print_chain(globus_error_peek(op_grc)));
 	MPIU_Assert(nbytes == mpig_databuf_get_eod(tmp_vc_cm->msgbuf) &&
-		    "open request sent to accepting side of connection");
+	    "open request sent to accepting side of connection");
 
 	/* register a read operation to receive the open response control message */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
@@ -2053,8 +2027,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_send_open_req(
 	mpig_cm_xio_register_read_vc_msgbuf(
 	    tmp_vc, mpig_cm_xio_msg_hdr_sizeof_msg_size, mpig_databuf_get_size(tmp_vc_cm->msgbuf),
 	    mpig_cm_xio_client_handle_recv_open_resp, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP3(
-	    (failed), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|client_reg_recv_open_req",
+	MPIU_ERR_CHKANDJUMP3((failed), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|client_reg_recv_open_req",
 	    "**globus|cm_xio|client_reg_recv_open_req %p %s %d", tmp_vc, mpig_vc_get_pg_id(tmp_vc), mpig_vc_get_pg_rank(tmp_vc));
 	
 	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_CONNECT_RECEIVING_OPEN_RESP);
@@ -2064,7 +2037,7 @@ MPIG_STATIC void mpig_cm_xio_client_handle_send_open_req(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) tmp_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_client_handle_send_open_req);
     return;
     
@@ -2108,9 +2081,9 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_client_handle_recv_open_resp);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT
-		       ", rbuf_len=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len, nbytes));
+	"entering: tmp_vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, rbuf=" MPIG_PTR_FMT ", rbuf_len=" MPIG_SIZE_FMT
+	", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) rbuf, rbuf_len,
+	nbytes));
 
     MPIG_UNUSED_VAR(fcname);
 
@@ -2118,8 +2091,7 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     tmp_vc_locked = TRUE;
     {
 	MPIU_Assert(mpig_cm_xio_vc_get_state(tmp_vc) == MPIG_CM_XIO_VC_STATE_CONNECT_RECEIVING_OPEN_RESP);
-	MPIU_ERR_CHKANDJUMP4(
-	    (op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_recv_magic",
+	MPIU_ERR_CHKANDJUMP4((op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_recv_magic",
 	    "**globus|cm_xio|client_handle_recv_magic %p %s %d %s", tmp_vc,  mpig_vc_get_pg_id(tmp_vc),
 	    mpig_vc_get_pg_rank(tmp_vc), globus_error_print_chain(globus_error_peek(op_grc)));
 
@@ -2141,12 +2113,11 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 		MPIU_Size_t bytes_needed = tmp_vc_cm->msg_hdr_size - mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf);
 		
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "not all of the open response message was received; posting a read for the remaining"
-				   " bytes, tmp_vc=" MPIG_PTR_FMT  ", nbytes=%u", (MPIG_PTR_CAST) tmp_vc,
-				   (unsigned) bytes_needed));
+		    "not all of the open response message was received; posting a read for the remaining bytes, tmp_vc="
+		    MPIG_PTR_FMT ", nbytes=%u", (MPIG_PTR_CAST) tmp_vc, (unsigned) bytes_needed));
 	    
 		mpig_cm_xio_register_read_vc_msgbuf(tmp_vc, bytes_needed, bytes_needed, mpig_cm_xio_client_handle_recv_open_resp,
-						    &mpi_errno, &failed);
+		    &mpi_errno, &failed);
 		MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|client_reg_recv_open_req");
 
 		mpig_vc_mutex_unlock(tmp_vc);
@@ -2159,10 +2130,9 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	if (mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf) < tmp_vc_cm->msg_hdr_size)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF(
-		(MPIG_DEBUG_LEVEL_VCCM,
-		 "message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=%d",
-		 (MPIG_PTR_CAST) tmp_vc, tmp_vc_cm->msg_hdr_size, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		"message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=%d",
+		(MPIG_PTR_CAST) tmp_vc, tmp_vc_cm->msg_hdr_size, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
 	    MPIU_Assertp(FALSE && "not all of open response message was received"); /* [BRT] */
 	    /* --END ERROR HANDLING-- */
 	}
@@ -2197,8 +2167,8 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	    {
 		/* set the handle on the real VC, and change the state to connected */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "connection ACKed; change state of real VC to connected: tmp_vc=" MPIG_PTR_FMT ", real_vc="
-				   MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+		    "connection ACKed; change state of real VC to connected: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+		    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 		real_vc_cm->handle = handle;
 		mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_CONNECTED);
 		mpig_cm_xio_vc_list_add(real_vc);
@@ -2207,15 +2177,14 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 		if (mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf) > 0)
 		{
 		    memcpy(mpig_databuf_get_ptr(real_vc_cm->msgbuf), mpig_databuf_get_pos_ptr(tmp_vc_cm->msgbuf),
-			   mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf));
+			mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf));
 		    mpig_databuf_set_eod(real_vc_cm->msgbuf, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf));
 		}
 		
 		/* start receiving messages on the real VC.  note: it was not necesary to transfer the receive buffer from the
 		   temp VC to the real VC since we know that the buffer was depleted earlier in this routine */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_VCCM,
-				   "connection established; starting communication engines: vc=" MPIG_PTR_FMT,
-				   (MPIG_PTR_CAST) real_vc));
+		    "connection established; starting communication engines: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) real_vc));
 		
 		mpig_cm_xio_recv_next_msg(real_vc, &mpi_errno, &failed);
 		MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_INTERN, "**globus|xio_cm|recv_next_msg");
@@ -2230,8 +2199,8 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	    case MPIG_CM_XIO_CONN_OPEN_RESP_NAK:
 	    {
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-				   "connection NAKed; waiting for remote connect to finish: tmp_vc=" MPIG_PTR_FMT
-				   ", real_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
+		    "connection NAKed; waiting for remote connect to finish: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT,
+		    (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc));
 
 		break;
 	    }
@@ -2266,7 +2235,7 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     }
     mpig_cm_xio_tmp_vc_destroy(tmp_vc, &mpi_errno, &failed);
     MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {;}, "**globus|cm_xio|tmp_vc_destroy",
-			 "**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
+	"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 
     /* the internal reference to the VC established in mpig_cm_xio_client_connect() needs to be release */
     mpig_vc_mutex_unlock_conditional(real_vc, (real_vc_locked));
@@ -2276,8 +2245,8 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
+	"exiting: tmp_vc=" MPIG_PTR_FMT ", real_vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) real_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_client_handle_recv_open_resp);
     return;
     
@@ -2306,7 +2275,7 @@ MPIG_STATIC void mpig_cm_xio_disconnect(mpig_vc_t * vc, int * mpi_errno_p, bool_
 
 MPIG_STATIC void mpig_cm_xio_disconnect_handle_recv_close_msg(mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
 
-MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(mpig_vc_t * vc, bool_t ack, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(mpig_vc_t * vc, bool_t cr, bool_t ack, int * mpi_errno_p, bool_t * failed_p);
 
 MPIG_STATIC void mpig_cm_xio_disconnect_handle_send_close_msg(
     globus_xio_handle_t handle, globus_result_t op_grc, globus_xio_iovec_t * iov, int iov_cnt, globus_size_t nbytes,
@@ -2333,74 +2302,79 @@ MPIG_STATIC void mpig_cm_xio_disconnect(mpig_vc_t * const vc, int * const mpi_er
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_disconnect);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, *mpi_errno_p));
+	"entering: vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, *mpi_errno_p));
     *failed_p = FALSE;
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIU_Assertp(vc_cm->handle != NULL);
 
-    switch(mpig_cm_xio_vc_get_state(vc))
+    if (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_CONNECTED)
     {
-	/* if the VC is in the connected state, then send a close request message */
-	case MPIG_CM_XIO_VC_STATE_CONNECTED:
-	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "VC connected; sending close request: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
-	    mpig_cm_xio_disconnect_enq_close_msg(vc, FALSE, mpi_errno_p, failed_p);
-	    MPIU_ERR_CHKANDJUMP((*failed_p), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
-	    break;
+	/* if the VC is in the connected state, then send a close request (CR) message */
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	    "VC connected; sending CR: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+	    
+	MPIU_Assert(vc->ref_count == 0);
+	mpig_cm_xio_disconnect_enq_close_msg(vc, TRUE, FALSE, mpi_errno_p, failed_p);
+	MPIU_ERR_CHKANDJUMP((*failed_p), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
+	mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ);
 
-	}
-
-	/* if the VC has already received a close request from the remote process, then send a close request and acknowledge the
-	   reception of the remote process' close request */
-	case MPIG_CM_XIO_VC_STATE_CONNECTED_RECEIVED_CLOSE_REQ:
-	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "VC connected, but close request received; sending close request with ACK: vc=" MPIG_PTR_FMT,
-			       (MPIG_PTR_CAST) vc));
-	    mpig_cm_xio_disconnect_enq_close_msg(vc, TRUE, mpi_errno_p, failed_p);
-	    MPIU_ERR_CHKANDJUMP((*failed_p), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
-	    break;
-	}
-
-	/* during a head-to-head connection the server bumps reference count of the real VC to insure that it doesn't disappear
-	   before the fate of the connection can be determined.  in the case where the incoming connection is determined to be
-	   the loser, it is possible for the outgoing connection to complete all outstanding requests associated with the VC and
-	   decrement the VC reference count to zero before the server bumps the reference count.  the result is that
-	   mpig_cm_xio_disconnect() has already been called and the disconnect message sent, but will be called again once the
-	   server finishes sending the NAK and releases the reference count.  this second call is ignored.*/
-	case MPIG_CM_XIO_VC_STATE_CONNECTED_SENT_CLOSE_REQ:
-	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			       "VC close request already sent; ignoring additional disconnect request: vc=" MPIG_PTR_FMT,
-			       (MPIG_PTR_CAST) vc));
-	    break;
-	}
-	
-	default:
-	{
-	    MPIU_Assert(FALSE && "close encountered bad VC state");
-	}
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	    "CR message enqueued; VC status updated: vc=" MPIG_PTR_FMT ", new_vc_state=%s",
+	    (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
     }
+    else if (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_CONNECTED_RECEIVED_CLOSE_REQ)
+    {
+	/* if the VC has already received a close request (CR) from the remote process, then send a close request and acknowledge
+	   the reception of the CR from the close request */
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	    "VC connected, but received CR; sending CR/ACK: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+	    
+	MPIU_Assert(vc->ref_count == 0);
+	mpig_cm_xio_disconnect_enq_close_msg(vc, TRUE, TRUE, mpi_errno_p, failed_p);
+	MPIU_ERR_CHKANDJUMP((*failed_p), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
+	mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK);
+
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	    "CR/ACK message enqueued; VC status updated: vc=" MPIG_PTR_FMT ", new_vc_state=%s",
+	    (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+    }
+    else if (mpig_cm_xio_vc_is_undefined(vc))
+    {   /* --BEGIN ERROR HANDLING-- */
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	    "ERROR: VC state is undefined: vc=" MPIG_PTR_FMT ", vc_state=%s",
+	    (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	MPIU_Assertp(FALSE && "VC state is undefined during the initiation of the disconnect protocol");
+    }   /* --END ERROR HANDLING-- */
+    else if (mpig_cm_xio_vc_state_is_valid(vc))
+    {
+	/* if the VC state is valid, but not one of the above, the assume the disconnect is caused by an increment-decrement from
+	   an incoming connection for this VC that was NAKed by the server. */
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	    "VC is not in a state where it make sense to disconnect; ignoring disconnect request: vc=" MPIG_PTR_FMT
+	    ", vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+    }
+    else
+    {   /* --BEGIN ERROR HANDLING-- */
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM,
+	    "encountered unexpected state: vc_state_value=%d", mpig_cm_xio_vc_get_state(vc)));
+	MPIU_Assertp(FALSE && "encountered unexpected VC state during the initiation of the disconnect protocol");
+    }   /* --END ERROR HANDLING-- */
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) vc,
-		       *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"exiting: vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_disconnect);
     return;
     
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
+    {   /* --BEGIN ERROR HANDLING-- */
 	mpig_cm_xio_fault_handle_sync_vc_error(vc, mpi_errno_p);
 
 	*failed_p = TRUE;
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_xio_disconnect() */
 
@@ -2409,6 +2383,7 @@ MPIG_STATIC void mpig_cm_xio_disconnect(mpig_vc_t * const vc, int * const mpi_er
  * void mpig_cm_xio_disconnect_enq_close_msg([IN/MOD] vc, [IN] ack, [IN/OUT] mpi_errno, [OUT] failed)
  *
  * vc [IN/MOD] - connection over which to send the synchronous send acknowledgement
+ * ack [IN] - close request flag
  * ack [IN] - close ack flag
  * mpi_errno [IN/OUT] - MPI error code
  * failed [OUT] - TRUE if the routine failed; FALSE otherwise
@@ -2418,7 +2393,7 @@ MPIG_STATIC void mpig_cm_xio_disconnect(mpig_vc_t * const vc, int * const mpi_er
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_disconnect_enq_close_msg
 MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(
-    mpig_vc_t * const vc, const bool_t ack, int * const mpi_errno_p, bool_t * const failed_p)
+    mpig_vc_t * const vc, const bool_t cr, const bool_t ack, int * const mpi_errno_p, bool_t * const failed_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq = NULL;
@@ -2430,8 +2405,8 @@ MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_disconnect_enq_close_msg);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: vc=" MPIG_PTR_FMT ", ack=%s, mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(ack), *mpi_errno_p));
+	"entering: vc=" MPIG_PTR_FMT ", cr=%s, ack=%s, mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(cr),
+	MPIG_BOOL_STR(ack), *mpi_errno_p));
     *failed_p = FALSE;
 
     /* allocate a new send request */
@@ -2442,7 +2417,7 @@ MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(
     mpig_request_construct(sreq);
     mpig_cm_xio_request_construct(sreq);
     mpig_request_set_params(sreq, MPID_REQUEST_UNDEFINED, MPIG_REQUEST_TYPE_INTERNAL, 0, 0, NULL, 0, MPI_DATATYPE_NULL,
-			    MPI_PROC_NULL, MPI_ANY_TAG, 0, vc);
+	MPI_PROC_NULL, MPI_ANY_TAG, 0, vc);
     mpig_cm_xio_request_set_state(sreq, MPIG_CM_XIO_REQ_STATE_SEND_CTRL_MSG);
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_CLOSE);
     sreq_cm->gcb = mpig_cm_xio_disconnect_handle_send_close_msg;
@@ -2450,6 +2425,7 @@ MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(
     /* pack message header */
     mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
     mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_bool(sreq_cm->msgbuf, cr);
     mpig_cm_xio_msg_hdr_put_bool(sreq_cm->msgbuf, ack);
     mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
 
@@ -2462,18 +2438,16 @@ MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: ack=%s , sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_BOOL_STR(ack), sreq ? sreq->handle : 0, (MPIG_PTR_CAST) sreq, *mpi_errno_p));
+	"exiting: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+	(MPIG_PTR_CAST) vc, MPIG_HANDLE_VAL(sreq), (MPIG_PTR_CAST) sreq, *mpi_errno_p));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_disconnect_enq_close_msg);
     return;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
+    {   /* --BEGIN ERROR HANDLING-- */
 	*failed_p = TRUE;
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_xio_disconnect_enq_close_msg() */
 
@@ -2496,6 +2470,7 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_send_close_msg(
     bool_t vc_locked = FALSE;
     MPID_Request * sreq;
     bool_t failed;
+    globus_result_t grc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_disconnect_handle_send_close_msg);
 
@@ -2503,13 +2478,11 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_send_close_msg(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_disconnect_handle_send_close_msg);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT
-		       ", iov_cnt=%d, nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle, op_grc,
-		       (MPIG_PTR_CAST) iov, iov_cnt, nbytes));
+	"entering: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT ", iov_cnt=%d, nbytes="
+	MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes));
 
     MPIU_ERR_CHKANDJUMP1((op_grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_handle_send_close_msg",
-			 "**globus|cm_xio|disconnect_handle_send_close_msg %s",
-			 globus_error_print_chain(globus_error_peek(op_grc)));
+	"**globus|cm_xio|disconnect_handle_send_close_msg %s", globus_error_print_chain(globus_error_peek(op_grc)));
 
     mpig_vc_mutex_lock(vc);
     vc_locked = TRUE;
@@ -2520,58 +2493,126 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_send_close_msg(
 	MPIU_Assert(mpig_cm_xio_request_get_msg_type(sreq) == MPIG_CM_XIO_MSG_TYPE_CLOSE);
 	mpig_request_destroy(sreq);
 
-	/* start sending the next message in the send queue, if one exists */
-	vc_cm->active_sreq = NULL;
-	mpig_cm_xio_send_next_sreq(vc, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
-	
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-			   "finished sending the close message: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
-			   ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc, sreq ? sreq->handle : 0, (MPIG_PTR_CAST) sreq));
-	
-
 	switch(mpig_cm_xio_vc_get_state(vc))
 	{
-	    case MPIG_CM_XIO_VC_STATE_CONNECTED:
+	    case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ:
 	    {
-		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_CONNECTED_SENT_CLOSE_REQ);
+		/* finished sending our CR.  waiting for remote process to send a CR or CR/ACK */
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "finished sending CR; VC state updated; waiting for CR from the remote process: vc=" MPIG_PTR_FMT
+		    ", new_vc_state=%s, sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc,
+		    mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc)), MPIG_HANDLE_VAL(sreq), (MPIG_PTR_CAST) sreq));
+		
+		break;
+	    }
+	    case  MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ:
+	    {
+		/* finished sending our CR, and we have received a CR from the remote proess.  send an ACK to the
+		   remote process */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "finished sending CR message; already received a CR from the remote process; sending ACK: vc="
+		    MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc,
+		    MPIG_HANDLE_VAL(sreq), (MPIG_PTR_CAST) sreq));
+		
+		mpig_cm_xio_disconnect_enq_close_msg(vc, FALSE, TRUE, &mpi_errno, &failed);
+		MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "ACK message enqueued; VC status updated: vc=" MPIG_PTR_FMT ", new_vc_state=%s",
+		    (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+		
 		break;
 	    }
 
-	    case MPIG_CM_XIO_VC_STATE_CONNECTED_RECEIVED_CLOSE_REQ:
+	    case  MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK:
 	    {
-		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECTING_RECEIVING_ACK);
+		/* finished sending our CR, and we have received an ACK or CR/ACK from the remote proess.  send an ACK to the
+		   remote process */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "finished sending the CR; already received ACK or CR/ACK from the remote process; sending ACK:"
+		    " vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc,
+		    MPIG_HANDLE_VAL(sreq), (MPIG_PTR_CAST) sreq));
+
+		mpig_cm_xio_disconnect_enq_close_msg(vc, FALSE, TRUE, &mpi_errno, &failed);
+		MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK);
+
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "ACK message enqueued; VC status updated: vc=" MPIG_PTR_FMT ", new_vc_state=%s",
+		    (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+		
 		break;
 	    }
-	    case  MPIG_CM_XIO_VC_STATE_DISCONNECTING_SENDING_ACK:
+
+	    case  MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK:
 	    {
-		globus_result_t grc;
+		/* finished sending our CR/ACK or ACK, and we have received a CR but not an ACK from the remote proess.  wait for
+		   the ACK from the remote process */
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK);
 		
-		/* received ACK to our close/ACK, close the XIO handle and reset the VC to the unconnected state */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "finished sending the CR or CR/ACK; VC state updated; awaiting ACK from the remote process: vc=" MPIG_PTR_FMT
+		    ", new_vc_state=%s, sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc,
+		    mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc)), MPIG_HANDLE_VAL(sreq), (MPIG_PTR_CAST) sreq));
+		
+		break;
+	    }
+
+	    case  MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK:
+	    {
+		/* finished sending our CR/ACK or ACK, and we have received an ACK or CR/ACK from the remote proess.  close the
+		   VC */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "finished sending the CR/ACK or ACK; already received ACK or CR/ACK from the remote process; "
+		    " closing VC: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
+		    (MPIG_PTR_CAST) vc, MPIG_HANDLE_VAL(sreq), (MPIG_PTR_CAST) sreq));
+		
 		grc = globus_xio_register_close(vc_cm->handle, NULL, mpig_cm_xio_disconnect_handle_close, vc);
 		MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|xio_reg_close",
-				     "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
+		    "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "close registered; VC state updated; vc=" MPIG_PTR_FMT ", new_vc_state=%s",
+		    (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+		
 		break;
 	    }
 
 	    default:
-	    {
-		MPIU_Assertp(FALSE && "close encountered bad VC state");
-	    }
+	    {   /* --BEGIN ERROR HANDLING-- */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM | MPIG_DEBUG_LEVEL_VC,
+		    "encountered unexpected state: %s (%d)",
+		    mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc)), mpig_cm_xio_vc_get_state(vc)));
+		MPIU_Assertp(FALSE && "encountered unexpected VC state after sending close message");
+		
+		break;
+	    }   /* --END ERROR HANDLING-- */
 	}
+	
+	/* send the next message in the send queue, if one exists, and if the VC is still in the connected state */
+	vc_cm->active_sreq = NULL;
+	if (mpig_cm_xio_vc_is_connected(vc))
+	{
+	    mpig_cm_xio_send_next_sreq(vc, &mpi_errno, &failed);
+	    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
+	}
+
     }
     mpig_vc_mutex_unlock(vc);
     vc_locked = FALSE;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+	"exiting: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_disconnect_handle_send_close_msg);
     return;
     
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
+    {   /* --BEGIN ERROR HANDLING-- */
 	mpig_vc_mutex_lock_conditional(vc, (!vc_locked));
 	{
 	    mpig_cm_xio_fault_handle_async_vc_error(vc, &mpi_errno);
@@ -2579,10 +2620,10 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_send_close_msg(
 	mpig_vc_mutex_unlock(vc);
 
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_xio_disconnect_handle_send_close_msg() */
+
 
 /*
  * void mpig_cm_xio_disconnect_handle_recv_close_msg([IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
@@ -2596,63 +2637,155 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_recv_close_msg(
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_vc * const vc_cm = &vc->cm.xio;
+    bool_t cr;
     bool_t ack;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_disconnect_handle_recv_close_msg);
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_disconnect_handle_recv_close_msg);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering; vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, *mpi_errno_p));
+	"entering; vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, *mpi_errno_p));
     *failed_p = FALSE;
     
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_bool);
+    MPIU_Assert(vc_cm->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_sizeof_bool);
+    mpig_cm_xio_msg_hdr_get_bool(mpig_vm_xio_vc_get_endian(vc), vc_cm->msgbuf, &cr);
     mpig_cm_xio_msg_hdr_get_bool(mpig_vm_xio_vc_get_endian(vc), vc_cm->msgbuf, &ack);
 
     MPIG_UNUSED_VAR(fcname);
 
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	"received close message: vc=" MPIG_PTR_FMT ", vc_state=%s, CR=%s, ACK=%s", (MPIG_PTR_CAST) vc,
+	mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc)), MPIG_BOOL_STR(cr), MPIG_BOOL_STR(ack)));
     switch(mpig_cm_xio_vc_get_state(vc))
     {
 	case MPIG_CM_XIO_VC_STATE_CONNECTED:
 	{
-	    /* received close message; change to received close but still connected state.  waiting for VC reference count to
-	       reach zero before sending close/ACK response. */
-	    MPIU_Assert(ack == FALSE);
+	    /* received close request (CR) from the remote process; change the state to received close but still connected.
+	       wait for VC reference count to reach zero before sending CR/ACK response. */
+	    MPIU_Assert(cr == TRUE && ack == FALSE);
 	    mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_CONNECTED_RECEIVED_CLOSE_REQ);
-
+	    
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		"VC is still referenced; VC state updated; wait for VC reference count to reach zero: vc=" MPIG_PTR_FMT
+		", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    
 	    break;
 	}
 
-	case MPIG_CM_XIO_VC_STATE_CONNECTED_SENT_CLOSE_REQ:
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ:
 	{
-	    /* sent close; received close or close/ACK; send ACK; wait for ACK from remote process before closing handle */
-	    mpig_cm_xio_disconnect_enq_close_msg(vc, TRUE, mpi_errno_p, failed_p);
-	    MPIU_ERR_CHKANDJUMP((*failed_p), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
-	    mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECTING_SENDING_ACK);
-
+	    MPIU_Assert(cr == TRUE);
+	    if (ack == FALSE)
+	    {
+		/* received a CR but still sending a CR.  this is a head-to-head disconnect scenario.  wait for send to complete
+		   or an ACK to received from remote process. */
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "still sending CR; VC state updated; awaiting CR from the remote process: vc=" MPIG_PTR_FMT
+		    ", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    }
+	    else
+	    {
+		/* received the CR/ACK for the CR still being sent.  this can happen if the read callback occurs before the
+		   callback for the write.  wait for send to complete. */
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "still sending CR; VC state updated; wait for send (CR) to complete: vc=" MPIG_PTR_FMT
+		    ", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    }
+	    
 	    break;
 	}
 	
-	case MPIG_CM_XIO_VC_STATE_DISCONNECTING_RECEIVING_ACK:
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ:
 	{
-	    globus_result_t grc;
+	    /* received the ACK for the CR still being sent.  this can happen if the read callback occurs before the callback for
+	       the write.  wait for send to complete. */
+	    MPIU_Assert(cr == FALSE && ack == TRUE);
+	    mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK);
 	    
-	    /* received ACK to our close/ACK, close the XIO handle and reset the VC to the unconnected state */
-	    grc = globus_xio_register_close(vc_cm->handle, NULL, mpig_cm_xio_disconnect_handle_close, vc);
-	    MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_INTERN, "**globus|cm_xio|xio_reg_close",
-				 "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		"still sending CR; VC state updated; wait for send (CR) to complete: vc=" MPIG_PTR_FMT
+		", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    
 	    break;
 	}
-
-	default:
+	
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ:
 	{
-	    MPIU_Assertp(FALSE && "close encountered bad VC state");
+	    /* CR has been sent, and a CR or CR/ACK has been received.  send an ACK to the remote process. */
+	    MPIU_Assert(cr == TRUE);
+
+	    mpig_cm_xio_disconnect_enq_close_msg(vc, FALSE, TRUE, mpi_errno_p, failed_p);
+	    MPIU_ERR_CHKANDJUMP((*failed_p), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_enq_close_msg");
+	    if (ack == FALSE)
+	    {
+		/* received a CR after sending a CR.  this is a head-to-head disconnect scenario. */
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "ACK message enqueued; VC state updated; wait for ACK to arrive or send (ACK) to complete: vc=" MPIG_PTR_FMT
+		    ", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    }
+	    else
+	    {
+		/* received the CR/ACK after sending a CR */
+		mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK);
+		
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		    "ACK message enqueued; VC state updated; wait for send (ACK) to complete: vc=" MPIG_PTR_FMT
+		    ", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    }
+	    
+	    break;
 	}
+	
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK:
+	{
+	    /* received an ACK, but still sending an ACK */
+	    MPIU_Assert(cr == FALSE && ack == TRUE);
+	    mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK);
+	    
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		"still sending ACK; VC state updated; wait for send (ACK) to complete: vc=" MPIG_PTR_FMT
+		", new_vc_state=%s", (MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    
+	    break;
+	}
+	
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK:
+	{
+	    /* received ACK from remote processs.  time to close the connection */
+	    globus_result_t grc;
+	    
+	    grc = globus_xio_register_close(vc_cm->handle, NULL, mpig_cm_xio_disconnect_handle_close, vc);
+	    MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_INTERN, "**globus|cm_xio|xio_reg_close",
+		"**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
+	    mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC);
+		
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+		"close registered; VC state updated; vc=" MPIG_PTR_FMT ", new_vc_state=%s",
+		(MPIG_PTR_CAST) vc, mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc))));
+	    
+	    break;
+	}
+	
+	default:
+	{   /* --BEGIN ERROR HANDLING-- */
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM | MPIG_DEBUG_LEVEL_VC,
+		"encountered unexpected state: %s (%d)",
+		mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc)), mpig_cm_xio_vc_get_state(vc)));
+	    MPIU_Assertp(FALSE && "encountered unexpected VC state after sending close message");
+	    break;
+	}   /* --END ERROR HANDLING-- */
     }
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) vc,
-		       *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"exiting: vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) vc,
+	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_disconnect_handle_recv_close_msg);
     return;
     
@@ -2693,41 +2826,54 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_close(globus_xio_handle_t handle,
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_disconnect_handle_close);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "entering: vc= " MPIG_PTR_FMT ", op_grc=%d", (MPIG_PTR_CAST) vc, op_grc));
+	"entering: vc= " MPIG_PTR_FMT ", op_grc=%d", (MPIG_PTR_CAST) vc, op_grc));
 
     MPIU_ERR_CHKANDJUMP1((op_grc), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|disconnect_handle_close",
-			 "**globus|cm_xio|disconnect_handle_close %s", globus_error_print_chain(globus_error_peek(op_grc)));
+	"**globus|cm_xio|disconnect_handle_close %s", globus_error_print_chain(globus_error_peek(op_grc)));
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_VCCM,
-		       "VC disconnected: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM | MPIG_DEBUG_LEVEL_VC,
+	"VC disconnected: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
     mpig_vc_mutex_lock(vc);
     {
+	MPIU_Assert(mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC);
+	
 	pg = mpig_vc_get_pg(vc);
 	vc_cm->handle = NULL;
 	mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_UNCONNECTED);
+
 #if 0
-	/* XXX: the following will be needed for MPI-2 disconnect/reconnect.  however, there is a race condition that must be
-	   solved first.  the remote process may still be in the disconnect phase when its connection server receives the new
+	/* MPI-2-XXX: the following will be needed for MPI-2 disconnect/reconnect.  however, there is a race condition that must
+	   be solved first.  the remote process may still be in the disconnect phase when its connection server receives the new
 	   connection request.  in this case, the connection must be delayed, probably by having the connection server enqueue it
 	   in a pending connections queue and the disconnect engine complete the connection if the VC is found in the queue. */
 	if (mpig_cm_xio_sendq_empty(vc) == FALSE)
 	{
 	    bool_t failed;
 	    
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_VCCM,
-			       "VC send queue not empty; initiating reconnect: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM | MPIG_DEBUG_LEVEL_VC,
+		"VC send queue not empty; initiating reconnect: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 	    mpig_cm_xio_client_connect(vc, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|connect");
 	}
+#else
+	/* MPI-2-XXX: these assertions are only true for MPI-1 code.  they should be removed when MPI-2 support is added. */
+	MPIU_Assert(mpig_cm_xio_sendq_empty(vc) == TRUE);
+	MPIU_Assert(vc->ref_count == 0);
 #endif
-	mpig_cm_xio_vc_list_remove(vc);
+
+	/* the only reason that the VC reference count would not be zero is if the code above initiated a connect.  in that case,
+	   we don't want to remove the VC from the list of active VCs. */
+	if (vc->ref_count == 0)
+	{
+	    mpig_cm_xio_vc_list_remove(vc);
+	}
     }
     mpig_vc_mutex_unlock(vc);
     mpig_pg_release_ref(pg);
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
-		       "exiting: vc= " MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, mpi_errno));
+	"exiting: vc= " MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_disconnect_handle_close);
     return;
 

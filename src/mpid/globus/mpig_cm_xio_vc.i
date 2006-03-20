@@ -98,49 +98,36 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
 
 #define mpig_cm_xio_vc_get_state_class(vc_)								\
     ((mpig_cm_xio_vc_state_classes_t)									\
-     (((vc_)->cm.xio.state & MPIG_CM_XIO_VC_STATE_CLASS_MASK) >> MPIG_CM_XIO_VC_STATE_CLASS_SHIFT))
+    (((vc_)->cm.xio.state & MPIG_CM_XIO_VC_STATE_CLASS_MASK) >> MPIG_CM_XIO_VC_STATE_CLASS_SHIFT))
 
 #define mpig_cm_xio_vc_is_undefined(vc_)						\
     ((mpig_cm_xio_vc_get_state(vc_) == MPIG_CM_XIO_VC_STATE_UNDEFINED) ? TRUE : FALSE)
 
-#define mpig_cm_xio_vc_validate_undefined_state(vc_)					\
-    ((mpig_cm_xio_vc_get_state(vc_) == MPIG_CM_XIO_VC_STATE_UNDEFINED) ? TRUE : FALSE)
-
 #define mpig_cm_xio_vc_is_unconnected(vc_)							\
-    ((mpig_cm_xio_vc_get_state(vc_) == MPIG_CM_XIO_VC_STATE_UNCONNECTED) ? TRUE : FALSE)
-
-#define mpig_cm_xio_vc_validate_unconnected_state(vc_)						\
-    ((mpig_cm_xio_vc_get_state(vc_) == MPIG_CM_XIO_VC_STATE_UNCONNECTED) ? TRUE : FALSE)
-
-#define mpig_cm_xio_vc_is_connecting(vc_)								\
-    ((mpig_cm_xio_vc_get_state_class(vc_) == MPIG_CM_XIO_VC_STATE_CLASS_CONNECTING) ? TRUE : FALSE)
-
-#define mpig_cm_xio_vc_validate_connecting_state(vc_)						\
-    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_CONNECTING_FIRST &&			\
-      mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_CONNECTING_LAST) ? TRUE : FALSE)
+    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_UNCONNECTED_FIRST &&			\
+	mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_UNCONNECTED_LAST) ? TRUE : FALSE)
     
-#define mpig_cm_xio_vc_is_connected(vc_)								\
-    ((mpig_cm_xio_vc_get_state_class(vc_) == MPIG_CM_XIO_VC_STATE_CLASS_CONNECTED) ? TRUE : FALSE)
-
-#define mpig_cm_xio_vc_validate_connected_state(vc_)						\
+#define mpig_cm_xio_vc_is_connecting(vc_)							\
+    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_CONNECTING_FIRST &&			\
+	mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_CONNECTING_LAST) ? TRUE : FALSE)
+    
+#define mpig_cm_xio_vc_is_connected(vc_)							\
     ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_CONNECTED_FIRST &&			\
-      mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_CONNECTED_LAST) ? TRUE : FALSE)
+	mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_CONNECTED_LAST) ? TRUE : FALSE)
     
 #define mpig_cm_xio_vc_is_disconnecting(vc_)								\
-    ((mpig_cm_xio_vc_get_state_class(vc_) == MPIG_CM_XIO_VC_STATE_CLASS_DISCONNECTING) ? TRUE : FALSE)
-
-#define mpig_cm_xio_vc_validate_disconnecting_state(vc_)				\
-    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_DISCONNECTING_FIRST &&		\
-      mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_DISCONNECTING_LAST) ? TRUE : FALSE)
+    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_DISCONNECTING_FIRST &&			\
+	mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_DISCONNECTING_LAST) ? TRUE : FALSE)
     
 #define mpig_cm_xio_vc_has_failed(vc_)								\
-    ((mpig_cm_xio_vc_get_state_class(vc_) == MPIG_CM_XIO_VC_STATE_CLASS_FAILED) ? TRUE : FALSE)
-
-#define mpig_cm_xio_vc_validate_failed_state(vc_)					\
-    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_FAILED_FIRST &&		\
-      mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_FAILED_LAST) ? TRUE : FALSE)
+    ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_FAILED_FIRST &&			\
+	mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_FAILED_LAST) ? TRUE : FALSE)
 
 #define mpig_cm_xio_vc_is_temporary(vc_) (((vc_)->cm.xio.cs == NULL) ? TRUE : FALSE)
+
+#define mpig_cm_xio_vc_state_is_valid(vc_)										\
+    (mpig_cm_xio_vc_is_undefined(vc_) || mpig_cm_xio_vc_is_unconnected(vc_) || mpig_cm_xio_vc_is_connecting(vc_) ||	\
+    mpig_cm_xio_vc_is_connected(vc_) || mpig_cm_xio_vc_is_disconnecting(vc_) || mpig_cm_xio_vc_has_failed(vc_))
 
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
@@ -233,17 +220,29 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
 	case MPIG_CM_XIO_VC_STATE_CONNECTED_RECEIVED_CLOSE_REQ:
 	    str = "MPIG_CM_XIO_VC_STATE_CONNECTED_RECEIVED_CLOSE_REQ";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_CONNECTED_SENT_CLOSE_REQ:
-	    str = "MPIG_CM_XIO_VC_STATE_CONNECTED_SENT_CLOSE_REQ";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECTING_SENDING_ACK:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECTING_SENDING_ACK";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECTING_RECEIVING_ACK:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECTING_RECEIVING_ACK";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECTING_LAST:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECTING_LAST";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC";
 	    break;
 	case MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING:
 	    str = "MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING";
@@ -942,6 +941,7 @@ MPIG_STATIC void mpig_cm_xio_vc_dec_ref_count_and_close(
 
     MPIG_UNUSED_VAR(fcname);
 
+    /* NOTE: the CM version of the decrement reference count routine is used to prevent infinite recursion */
     mpig_cm_xio_vc_dec_ref_count(vc, is_inuse_p);
     if (*is_inuse_p == FALSE && vc_cm->handle != NULL)
     {
