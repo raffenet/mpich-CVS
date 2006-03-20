@@ -515,8 +515,8 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     }
 
 /*    printf( "Attempting to connect through socket\n" );fflush(stdout); */
-    MPIU_DBG_MSG_S(CH3_CONNECT,TYPICAL,
-	   "vc=%p: Attempting to connect with business card %s", vc, val );
+    MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,
+	   "vc=%p: Attempting to connect with business card %s", vc, val ));
     /* attempt to connect through sockets */
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
