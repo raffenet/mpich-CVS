@@ -939,12 +939,12 @@ int MPIDI_Win_complete(MPID_Win *win_ptr)
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         
         
+    NMPI_Comm_rank(win_ptr->comm, &rank);
     /* If MPI_MODE_NOCHECK was not specified, we need to check if
        Win_post was called on the target processes. Wait for a 0-byte sync
        message from each target process */
     if ((win_ptr->start_assert & MPI_MODE_NOCHECK) == 0)
     {
-	NMPI_Comm_rank(win_ptr->comm, &rank);
 	for (i=0; i<start_grp_size; i++)
 	{
 	    src = ranks_in_win_grp[i];
@@ -1047,7 +1047,11 @@ int MPIDI_Win_complete(MPID_Win *win_ptr)
     for (i=0; i<start_grp_size; i++)
     {
 	dst = ranks_in_win_grp[i];
-	if (nops_to_proc[dst] == 0)
+	if (dst == rank) {
+	    /* FIXME: MT: this has to be done atomically */
+	    win_ptr->my_counter -= 1;
+	}
+	else if (nops_to_proc[dst] == 0)
 	{
 	    MPIDI_CH3_Pkt_t upkt;
 	    MPIDI_CH3_Pkt_put_t *put_pkt = &upkt.put;
