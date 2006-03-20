@@ -43,5 +43,7 @@ fetchandadd_am_SOURCES = fetchandadd_am.c
 fetchandadd_tree_am_SOURCES = fetchandadd_tree_am.c
 accfence2_am_SOURCES = accfence2_am.c
 
+nullpscw_SOURCES = nullpscw.c
+
 ../util/mtest.o:
 	(cd ../util && $(MAKE) )
