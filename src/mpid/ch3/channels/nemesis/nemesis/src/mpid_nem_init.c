@@ -328,6 +328,7 @@ int
 get_local_procs (int global_rank, int num_global, int *num_local, int **local_procs, int *local_rank)
 {
 #if 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
+#warning PMI_Get_clique doesnt work with mpd
     int ret;
     int *lrank_p;
 

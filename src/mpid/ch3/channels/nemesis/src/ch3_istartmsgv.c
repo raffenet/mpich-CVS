@@ -49,13 +49,35 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	MPID_IOV *remaining_iov = iov;
 	int remaining_n_iov = n_iov;
 
-	MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet with sendv_header\n"));
+        MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "iStartMsgv");
+        MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+            int total = 0;
+            int i;
+            for (i = 0; i < n_iov; ++i)
+                total += iov[i].MPID_IOV_LEN;
+                    
+            MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
+        });
 	shmem_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc);
 	while ((shmem_errno != MPID_NEM_MPICH2_AGAIN) && (remaining_n_iov > 0))
 	{
-	    MPIDI_DBG_PRINTF((55, FCNAME, "  sending packet with sendv \n"));
+            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+                int total = 0;
+                int i;
+                for (i = 0; i < remaining_n_iov; ++i)
+                    total += remaining_iov[i].MPID_IOV_LEN;
+                MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
+            });
+
 	    shmem_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc);
 	}
+        MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+            int total = 0;
+            int i;
+            for (i = 0; i < remaining_n_iov; ++i)
+                total += remaining_iov[i].MPID_IOV_LEN;
+            MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   - len=%d ", total);
+        });
 
 	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
 	{

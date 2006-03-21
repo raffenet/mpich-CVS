@@ -93,29 +93,29 @@ typedef struct MPID_nem_seg_info
 
 typedef struct MPID_nem_mem_region
 {
-    MPID_nem_seg_t          memory;
+    MPID_nem_seg_t              memory;
     MPID_nem_seg_info_t        *seg;
-    int                num_seg;
-    int                map_lock;
-    pid_t             *pid;
-    int                num_local;
-    int                num_procs;
-    int               *local_procs; /* local_procs[lrank] gives the global rank of proc with local rank lrank */
-    int                local_rank;    
-    int               *local_ranks; /* local_ranks[grank] gives the local rank of proc with global rank grank or MPID_NEM_NON_LOCAL */
-    int                ext_procs;  /* Number of non-local processes */
-    int               *ext_ranks;  /* Ranks of non-local processes */ 
-    MPID_nem_fbox_arrays_t         mailboxes;
-    MPID_nem_cell_ptr_t       Elements;
-    MPID_nem_queue_ptr_t    *FreeQ;
-    MPID_nem_queue_ptr_t    *RecvQ;
-    MPID_nem_cell_ptr_t       net_elements;
-    MPID_nem_queue_ptr_t     net_free_queue;
-    MPID_nem_queue_ptr_t     net_recv_queue;
-    MPID_nem_barrier_t *barrier;
-    MPID_nem_queue_ptr_t    my_freeQ;
-    MPID_nem_queue_ptr_t    my_recvQ;
-    int                rank;
+    int                         num_seg;
+    int                         map_lock;
+    pid_t                      *pid;
+    int                         num_local;
+    int                         num_procs;
+    int                        *local_procs; /* local_procs[lrank] gives the global rank of proc with local rank lrank */
+    int                         local_rank;    
+    int                        *local_ranks; /* local_ranks[grank] gives the local rank of proc with global rank grank or MPID_NEM_NON_LOCAL */
+    int                         ext_procs; /* Number of non-local processes */
+    int                        *ext_ranks; /* Ranks of non-local processes */ 
+    MPID_nem_fbox_arrays_t      mailboxes;
+    MPID_nem_cell_ptr_t         Elements;
+    MPID_nem_queue_ptr_t       *FreeQ;
+    MPID_nem_queue_ptr_t       *RecvQ;
+    MPID_nem_cell_ptr_t         net_elements;
+    MPID_nem_queue_ptr_t        net_free_queue;
+    MPID_nem_queue_ptr_t        net_recv_queue;
+    MPID_nem_barrier_t         *barrier;
+    MPID_nem_queue_ptr_t        my_freeQ;
+    MPID_nem_queue_ptr_t        my_recvQ;
+    int                         rank;
     struct MPID_nem_mem_region *next;
 } MPID_nem_mem_region_t, *MPID_nem_mem_region_ptr_t;
 

@@ -29,6 +29,8 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     MPID_nem_cell_ptr_t el;
     int my_rank;
 
+    MPIU_Assert (size > 0 && size <= MPID_NEM_MPICH2_DATA_LEN);
+
 #ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
     {
@@ -39,7 +41,6 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 
     /*DO_PAPI (PAPI_reset (PAPI_EventSet)); */
 
-    MPIU_Assert (size <= MPID_NEM_MPICH2_DATA_LEN);
     my_rank = MPID_nem_mem_region.rank;
     
 #ifdef PREFETCH_CELL
@@ -74,10 +75,11 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2);
     MPID_NEM_MEMCPY (el->pkt.mpich2.payload, buf, size);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
-    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
@@ -151,6 +153,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 	    pbox->cell.pkt.mpich2.datalen = size;
 	    pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif /* ENABLED_CHECKPOINTING */
+            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2_HEAD);
+            
 	    payload_32[0] = buf_32[0];
 	    payload_32[1] = buf_32[1];
 	    payload_32[2] = buf_32[2];
@@ -168,7 +172,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
 
-	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via fbox");
+	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
 	    return MPID_NEM_MPICH2_SUCCESS;
@@ -210,6 +214,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2_HEAD);
+    
 #if 1
     ((u_int32_t *)(el->pkt.mpich2.payload))[0] = ((u_int32_t *)buf)[0];
     ((u_int32_t *)(el->pkt.mpich2.payload))[1] = ((u_int32_t *)buf)[1];
@@ -229,7 +235,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 #endif /*1 */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11));
 
-    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
@@ -277,6 +283,8 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     int payload_len;    
     int my_rank;
 
+    MPIU_Assert (n_iov > 0 && (*iov)->iov_len > 0);
+    
 #ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
     {
@@ -340,8 +348,9 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2);
 
-    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
     if(vc->ch.is_local)
@@ -384,7 +393,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 #endif
     
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    MPIU_Assert (*n_iov >= 1 && (*iov)->iov_len == MPID_NEM__MPICH2_HEADER_LEN);
+    MPIU_Assert (*n_iov > 0 && (*iov)->iov_len == MPID_NEM__MPICH2_HEADER_LEN);
 
     my_rank = MPID_nem_mem_region.rank;
 
@@ -411,6 +420,8 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	    pbox->cell.pkt.mpich2.datalen = (*iov)[1].iov_len + MPID_NEM__MPICH2_HEADER_LEN;
 	    pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
+            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, pbox->cell.pkt.mpich2.type = MPID_NEM_PKT_MPICH2_HEAD);
+            
 	    payload_32[0] = buf_32[0];
 	    payload_32[1] = buf_32[1];
 	    payload_32[2] = buf_32[2];
@@ -430,7 +441,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	    pbox->flag.value = 1;
 	    *n_iov = 0;
 
-	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via fbox");
+	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
 	    return MPID_NEM_MPICH2_SUCCESS;
@@ -507,8 +518,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 #ifdef ENABLED_CHECKPOINTING
     el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2;
 #endif
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, el->pkt.mpich2.type = MPID_NEM_PKT_MPICH2_HEAD);
 
-    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent cell via queue");
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
     if (vc->ch.is_local)
@@ -691,7 +703,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
 	if (*cell)
 	{
-	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Received cell via %s", (*in_fbox) ? "fbox" : "queue");
+	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 	}
     });
@@ -741,7 +753,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
 	if (*cell)
 	{
-	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Received cell via %s", (*in_fbox) ? "fbox" : "queue");
+	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 	}
     });
@@ -834,7 +846,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues8));
     
-    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Received cell via %s", (*in_fbox) ? "fbox" : "queue");
+    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 
     return MPID_NEM_MPICH2_SUCCESS;

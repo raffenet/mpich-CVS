@@ -37,6 +37,7 @@ MPID_Request *MPIDI_CH3_Request_create()
     }
 
     req->ch.iov_offset = 0;
+    MPIU_DBG_MSG_p (CH3_CHANNEL, VERBOSE, "req create %p");
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
     return req;

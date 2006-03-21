@@ -29,6 +29,7 @@
 #define MPID_NEM_PKT_CKPT 1
 #define MPID_NEM_PKT_CKPT_REPLAY 2
 #define MPID_NEM_PKT_MPICH2 3
+#define MPID_NEM_PKT_MPICH2_HEAD 4
 
 #define MPID_NEM_FBOX_SOURCE(cell) (MPID_nem_mem_region.local_procs[(cell)->pkt.mpich2.source])
 #define MPID_NEM_CELL_SOURCE(cell) ((cell)->pkt.mpich2.source)
