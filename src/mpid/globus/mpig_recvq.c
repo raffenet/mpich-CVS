@@ -469,7 +469,8 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, in
 	   attempt to use it before the calling routine has a chance to initialized it */
 	mpig_request_mutex_lock(rreq);
 	mpig_request_construct(rreq);
-	
+	mpig_request_set_envelope(rreq, rank, tag, ctx);
+
 	if (mpig_recvq_posted_tail != NULL)
 	{
 	    mpig_recvq_posted_tail->dev.next = rreq;
@@ -601,6 +602,7 @@ MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, in
 	   attempt to use it before the calling routine has a chance to initialized it */
 	mpig_request_mutex_lock(rreq);
 	mpig_request_construct(rreq);
+	mpig_request_set_envelope(rreq, rank, tag, ctx);
 	
 	if (mpig_recvq_unexp_tail != NULL)
 	{
