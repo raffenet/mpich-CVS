@@ -1119,6 +1119,7 @@ class MPDParmDB(dict):
             withoutComments = line.split('#')[0]    # will at least be ''
             splitLine = withoutComments.rstrip().split('=')
             if splitLine  and  not splitLine[0]:    # ['']
+                print 'warning: unrecognized (null) key in %s' % (parmsRCFilename)
                 continue
             if len(splitLine) == 2:
                 (k,v) = splitLine
