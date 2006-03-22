@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /*
   Check that MPI_xxxx_c2f, applied to the same object several times,
   yields the same handle.  We do this because when MPI handles in 
