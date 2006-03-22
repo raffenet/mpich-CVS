@@ -94,3 +94,23 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
+
+#ifdef USE_DBG_LOGGING
+const char * MPIDI_CH3_VC_GetStateString( int state )
+{
+    const char *name = "unknown";
+    static char asdigits[20];
+    
+    switch (state) {
+    case MPIDI_CH3I_VC_STATE_UNCONNECTED: name = "CH3I_VC_STATE_UNCONNECTED"; break;
+    case MPIDI_CH3I_VC_STATE_CONNECTING:  name = "CH3I_VC_STATE_CONNECTING"; break;
+    case MPIDI_CH3I_VC_STATE_CONNECTED:   name = "CH3I_VC_STATE_CONNECTED"; break;
+    case MPIDI_CH3I_VC_STATE_FAILED:      name = "CH3I_VC_STATE_FAILED"; break;
+    default:
+	MPIU_Snprintf( asdigits, sizeof(asdigits), "%d", state );
+	asdigits[20-1] = 0;
+	name = (const char *)asdigits;
+    }
+    return name;
+}
+#endif
