@@ -93,9 +93,9 @@ static MPIR_Err_msg_t ErrorRing[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc = 0;
 
 #ifdef MPICH_IS_THREADED
-static MPID_Thread_lock_t error_ring_mutex;
-#define error_ring_mutex_create() MPID_Thread_mutex_create(&error_ring_mutex)
-#define error_ring_mutex_destroy() MPID_Thread_mutex_destroy(&error_ring_mutex)
+static MPID_Thread_mutex_t error_ring_mutex;
+#define error_ring_mutex_create() MPID_Thread_mutex_create(&error_ring_mutex,NULL)
+#define error_ring_mutex_destroy() MPID_Thread_mutex_destroy(&error_ring_mutex,NULL)
 #define error_ring_mutex_lock() \
     MPIU_THREAD_CHECK_BEGIN \
      MPID_Thread_mutex_lock(&error_ring_mutex) \
@@ -224,7 +224,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     int rc;
     MPIU_THREADPRIV_DECL;
 
-    MPIU_THREADPRIV_GET;
+    MPIU_THREADPRIV_GET; 
 
     rc = checkValidErrcode( error_class, fcname, &errcode );
     

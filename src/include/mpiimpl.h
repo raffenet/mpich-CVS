@@ -1796,7 +1796,7 @@ extern MPICH_PerThread_t MPIR_Thread;
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
         }
 #define MPIU_THREADPRIV_DECL MPICH_PerThread_t *MPIR_Thread
-#define MPIU_THREADPRIV_GET  MPIR_GetPerThread(&MPIR_Thread )
+#define MPIU_THREADPRIV_GET  MPIR_GetPerThread( &MPIR_Thread )
 #define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread->_a)
 #endif
 

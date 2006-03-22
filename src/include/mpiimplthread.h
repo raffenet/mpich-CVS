@@ -29,14 +29,14 @@
     *(pt_) = &MPIR_Thread;			\
 }
 #else
-#define MPIR_GetPerThread(pt_)								\
-{											\
-    MPID_Thread_tls_get(&MPIR_Process.thread_storage, (void **) (pt_));			\
-    if (*(pt_) == NULL)									\
-    {											\
+#define MPIR_GetPerThread(pt_)						\
+{									\
+    MPID_Thread_tls_get(&MPIR_Process.thread_storage, (pt_));		\
+    if (*(pt_) == NULL)							\
+    {									\
 	*(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
-	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) *(pt_));		\
-    }											\
+	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) *(pt_));\
+    }									\
 /*printf( "perthread storage (key = %x) is %p\n", MPIR_Process.thread_storage,*pt_); fflush(stdout);*/\
 }
 #endif
