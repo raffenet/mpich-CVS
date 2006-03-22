@@ -94,10 +94,10 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	    {
                 /* This packet must be the first packet of a new message */
                 MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
-                MPIU_Assert (vc->ch.recv_active == NULL);
                 MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 
 		MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
+                MPIU_Assert (vc->ch.recv_active == NULL);
 
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
 		if (mpi_errno != MPI_SUCCESS)
