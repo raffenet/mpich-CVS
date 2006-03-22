@@ -33,7 +33,7 @@
  */
 extern volatile unsigned int MPIDI_CH3I_progress_completions;
 
-#if defined(MPICH_SINGLE_THREADED)
+#if !defined(MPICH_IS_THREADED)
 #define MPIDI_CH3_Progress_signal_completion()	\
 {						\
     MPIDI_CH3I_progress_completions++;		\
@@ -44,7 +44,7 @@ extern volatile unsigned int MPIDI_CH3I_progress_completions;
    engine */
 #endif
 
-#if defined(MPICH_SINGLE_THREADED)
+#if !defined(MPICH_IS_THREADED)
 #define MPIDI_CH3_Progress_start(state)
 #define MPIDI_CH3_Progress_end(state)
 #endif
