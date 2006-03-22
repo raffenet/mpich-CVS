@@ -294,6 +294,9 @@ int MPIDU_Sock_get_sock_set_id(struct MPIDU_Sock_set * sock_set)
    than ignoring it.  
 */
 /* FIXME: This appears to only be used in smpd */
+/* FIXME: It appears that this function was used instead of making use of the
+   existing MPI-2 features to extend MPI error classes and code, of to export
+   messages to non-MPI application (smpd?) */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_error_class_string
 #undef FCNAME
