@@ -155,8 +155,10 @@ int parse_arguments(int *argcp, char **argvp[],
     cmd_struct *cmd_node, *cmd_iter, *cmd_list = NULL;
     int error_length;
     char error_string[1024];
+#ifdef HAVE_MPID_PARSE_OPTION
     int num_args_parsed;
     MPI_Info info;
+#endif
 
     /* check for mpi options */
     /*
