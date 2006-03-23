@@ -395,10 +395,10 @@ int MPID_Finalize()
 
     /* shutdown the process management module */
     rc = mpig_pm_finalize();
-    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|pm_finalize")
+    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|pm_finalize");
     
-	/* deactivate globus modules */
-	rc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
+    /* deactivate globus modules */
+    rc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
     MPIU_ERR_CHKANDJUMP1((rc), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate", "**globus|module_deactivate %s", "common");
 
     /* shutdown the receive queue module */
