@@ -1115,10 +1115,12 @@ class MPDParmDB(dict):
             sys.exit(-1)
         parmsRCFile = open(parmsRCFilename)
         for line in parmsRCFile:
-            line = line.strip()
-            withoutComments = line.split('#')[0]    # will at least be ''
-            splitLine = withoutComments.rstrip().split('=')
-            if splitLine  and  not splitLine[0]:    # ['']
+            lineWithoutComments = line.split('#')[0]    # will at least be ''
+            lineWithoutComments = lineWithoutComments.strip()
+            if not lineWithoutComments:
+                continue
+            splitLine = lineWithoutComments.split('=')
+            if not splitLine[0]:    # ['']
                 print 'warning: unrecognized (null) key in %s' % (parmsRCFilename)
                 continue
             if len(splitLine) == 2:
