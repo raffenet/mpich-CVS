@@ -1655,30 +1655,33 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 	"temp VC for an outgoing connection");
     tmp_vc_cm = &tmp_vc->cm.xio;
     mpig_vc_construct(tmp_vc);
+    mpig_cm_xio_vc_construct(tmp_vc);
 
+    /* add the temp VC to the list of active VCs */
+    mpig_cm_xio_vc_list_add(tmp_vc);
+
+    /* pg and pg_rank are stored in the temp VC so the real VC can be located again later, adjusting the PG reference count
+       accordingly */
+    mpig_pg_mutex_lock(pg);
+    {
+	mpig_pg_inc_ref_count(pg);
+    }
+    mpig_pg_mutex_unlock(pg);
+    mpig_vc_set_pg_info(tmp_vc, pg, pg_rank);
+
+    /* create an XIO handle and initiate the connection */
+    grc = globus_xio_handle_create(&tmp_vc_cm->handle, mpig_cm_xio_conn_stack);
+    MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|xio_handle_create",
+	"**globus|xio_handle_create %s", globus_error_print_chain(globus_error_peek(grc)));
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
+	"temp VC constructed; registering open operation to form connection: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
+
+    /* register an ansychronous connect to the process specified in the contact string field located in the real VC.  if the
+       registration is successful, update the temp VC state. */
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
     {
-	mpig_cm_xio_vc_construct(tmp_vc);
-	mpig_cm_xio_vc_list_add(tmp_vc);
-	
-	/* create an XIO handle and initiate the connection */
-	grc = globus_xio_handle_create(&tmp_vc_cm->handle, mpig_cm_xio_conn_stack);
-	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|xio_handle_create",
-	    "**globus|xio_handle_create %s", globus_error_print_chain(globus_error_peek(grc)));
-
-	/* pg and pg_rank are stored in the temp VC so the real VC can be located again later */
-	mpig_pg_mutex_lock(pg);
-	{
-	    mpig_pg_inc_ref_count(pg);
-	}
-	mpig_pg_mutex_unlock(pg);
-	mpig_vc_set_pg_info(tmp_vc, pg, pg_rank);
-
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-	    "temp VC constructed for open messages: tmp_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) tmp_vc));
-
-	/* register an ansychronous connect to the process specified in the contact string field located in the real VC */
 	grc = globus_xio_register_open(tmp_vc_cm->handle, real_vc_cm->cs, mpig_cm_xio_conn_attrs, mpig_cm_xio_client_handle_open,
 	    (void *) tmp_vc);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_open",
@@ -1723,7 +1726,8 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 	/* release the temp VC mutex if it is being held by the current context */
 	mpig_vc_mutex_unlock_conditional(tmp_vc, (tmp_vc_locked));
     
-	/* close the handle and destroy the temp VC object, releasing the associated PG reference */
+	/* close the handle and destroy the temp VC object, releasing the associated PG reference and remove the temp VC from
+	   active VC list */
 	if (tmp_vc != NULL)
 	{
 	    mpig_cm_xio_tmp_vc_destroy(tmp_vc, mpi_errno_p, &failed);
@@ -2141,14 +2145,6 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	pg = mpig_vc_get_pg(tmp_vc);
 	pg_rank = mpig_vc_get_pg_rank(tmp_vc);
 
-	/* get the real VC using the PG and the PG rank from the temp VC */
-	mpig_pg_rc_acq(pg, TRUE);
-	{
-	    mpig_pg_get_vc(pg, pg_rank, &real_vc);
-	    real_vc_cm = &real_vc->cm.xio;
-	}
-	mpig_pg_rc_rel(pg, FALSE);
-    
 	/* get the message type and and open resp */
 	mpig_cm_xio_msg_hdr_get_msg_type(tmp_vc_cm->msgbuf, &msg_type);
 	MPIU_Assert(msg_type == MPIG_CM_XIO_MSG_TYPE_OPEN_RESP);
@@ -2157,6 +2153,14 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     mpig_vc_mutex_unlock(tmp_vc);
     tmp_vc_locked = FALSE;
 
+    /* get the real VC using the PG and the PG rank from the temp VC */
+    mpig_pg_rc_acq(pg, TRUE);
+    {
+	mpig_pg_get_vc(pg, pg_rank, &real_vc);
+	real_vc_cm = &real_vc->cm.xio;
+    }
+    mpig_pg_rc_rel(pg, FALSE);
+    
     /* the connection has been established; update the real update the real VC and get the data flowing */
     mpig_vc_mutex_lock(real_vc);
     real_vc_locked = TRUE;
