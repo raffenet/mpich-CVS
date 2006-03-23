@@ -132,6 +132,8 @@
 #define MPIU_THREAD_CHECK_END
 #endif
 
+/* SINGLE_CS_DECL needs to take over the decl used by MPID_CS_xxx when that
+   is removed */
 #define MPIU_THREAD_SINGLE_CS_DECL
 #define MPIU_THREAD_SINGLE_CS_INITIALIZE MPID_CS_INITIALIZE()
 #define MPIU_THREAD_SINGLE_CS_FINALIZE   MPID_CS_FINALIZE()
