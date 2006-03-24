@@ -580,10 +580,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **bc_val_p, int *val_max_sz_p);
 
 /* added by brad.  business card related global and functions */
+/* FIXME: Make these part of the channel support headers */
 #define MAX_HOST_DESCRIPTION_LEN 256
-/* FIXME: keep the listener port in one file and provide a method to
-   set/retrieve it as needed */
-extern int MPIDI_CH3I_listener_port;
 int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3I_Get_business_card(char *value, int length);
