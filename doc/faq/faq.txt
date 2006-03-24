@@ -159,6 +159,16 @@ also conform to the Fortran standard.  However, such a compiler would need to
 use 128 bits for DOUBLE PRECISION quantities).
 
 % ----------------------------------------------------------------------------
+%% Section: Windows version of MPICH2
+%% Heading: I am having trouble installing and using the Windows version of MPICH2
+%% Filename: windows
+%% End
+See the
+\href{http://www.mcs.anl.gov/mpi/mpich/downloads/windows-mpich2-tips.doc}{tips for installing and running MPICH2 on Windows} provided by a user, Brent Paul. Or see the
+\href{http://www.mcs.anl.gov/mpi/mpich/downloads/mpich2-doc-windev.pdf}{MPICH2 Windows Development Guide}.
+
+
+% ----------------------------------------------------------------------------
 %% Section: Compiling MPI Programs
 %% Heading: C++ and \texttt{SEEK\_SET}
 %% Filename: cxxseek
