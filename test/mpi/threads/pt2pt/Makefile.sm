@@ -1,7 +1,7 @@
 INCLUDES = -I../../include -I${srcdir}/../../include
 LDADD = ../../util/mtest.o
 threaded_sr_LDADD = -lpthread 
-DEPADD = @MPILIBLOC@
+DEPADD = @MPILIBLOC@ ../../util/mtest.o
 smvar_do_sharedlibs = 0
 
 # Use extra programs to list programs that should not be built by default.
