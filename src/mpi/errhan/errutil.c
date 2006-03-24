@@ -467,7 +467,9 @@ static int checkForUserErrcode( int errcode )
 		}
 		else {
 		    /* Can we get a more specific error message */
-		    if (generic_idx >= 0 && ErrorRing[ring_idx].id == ring_id && ErrorRing[ring_idx].use_user_error_code)
+		    if (generic_idx >= 0 && 
+			ErrorRing[ring_idx].id == ring_id && 
+			ErrorRing[ring_idx].use_user_error_code)
 			{
 			    errcode = ErrorRing[ring_idx].user_error_code;
 			}
@@ -981,8 +983,6 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	abort();
     }
 
-    /* va_start(Argp, specific_msg); */
-
     if (error_class == MPI_ERR_OTHER)
     {
         if (MPIR_ERR_GET_CLASS(lastcode) > MPI_SUCCESS && MPIR_ERR_GET_CLASS(lastcode) <= MPICH_ERR_LAST_CLASS)
@@ -1096,6 +1096,12 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	    if (use_user_error_code)
 	    {
 		ErrorRing[ring_idx].use_user_error_code = 1;
+		/* FIXME: You cannot use va_arg after passing Argp to another 
+		   function (the call to vsnprintf_mpi above).  The 
+		   behavior of va_arg is undefined if it is used on 
+		   the same Argp in a different routine (i.e., while 
+		   this may work by accident on some systems, it isn't 
+		   portable) */
 		ErrorRing[ring_idx].user_error_code = va_arg(Argp, int);
 	    }
 	    else if (lastcode != MPI_SUCCESS)
@@ -1146,8 +1152,6 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	err_code |= ERROR_FATAL_MASK;
     }
     
-    /* va_end( Argp ); */
-
     return err_code;
 }
 
