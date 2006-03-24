@@ -1415,10 +1415,13 @@ if test "$enable_f90" = "yes" ; then
     AC_SUBST(F90MODINCSPEC)
     if test "$pac_cv_f90_module_case" = "upper" ; then
         MPIMODNAME=MPI
+        MPICONSTMODNAME=MPI_CONSTANTS
     else
         MPIMODNAME=mpi
+        MPICONSTMODNAME=mpi_constants
     fi
     AC_SUBST(MPIMODNAME)
+    AC_SUBST(MPICONSTMODNAME)
     if test -z "$modincdir" ; then
         # The default module include dir is the same as the include dir
         modincdir=$includedir
