@@ -125,7 +125,8 @@ open MOUT, "$mpiexec -genvnone -genvlist PATH printenv : -envlist TestEnvVar,PAT
 while (<MOUT>) {
     # We check for the error output from gforker mpiexec; we can
     # add others here as well
-    if (/([^=]+)=(.*)/ && ! /Return code/) {
+    if (/Return code/) { next; }
+    if (/([^=]+)=(.*)/) {
 	$EnvSeen{$1} = $2;
     }
     else {
@@ -141,9 +142,42 @@ if ($rc != 0) {
 }
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
+
+# This test creates long env variables
+my $varvalue = "a";
+for (my $i=0; $i<11; $i++) {
+    $varvalue .= $varvalue;
+}
+
+$ENV{TESTVAR} = $varvalue;
+%EnvSeen = ();
+%EnvExpected = ( 'PATH' => $ENV{PATH},
+		 'TESTVAR' => $ENV{TESTVAR},
+		 );
+&Announce( "$mpiexec -envnone -envlist PATH,TESTVAR printenv" );
+open MOUT, "$mpiexec -envnone -envlist PATH,TESTVAR printenv 2>&1 |" || die "Could not run $mpiexec";
+while (<MOUT>) {
+    # We check for the error output from gforker mpiexec; we can
+    # add others here as well
+    if (/([^=]+)=(.*)/ && ! /Return code/) {
+	$EnvSeen{$1} = $2;
+    }
+    else {
+	print STDERR "Unexpected output from mpiexec: $_";
+	$errors ++;
+    }
+}
+close MOUT;
+# Check that only PATH, TESTVAR, and the PMI variables are set, and
+# that they have the correct values
+$errors += &CheckEnvVars;
+
+delete $ENV{TESTVAR};
+
+
 # -------------------------------------------------------------------------
 # mpiexec stdout/stderr handling
-&Announce( "$mpiexec stdiotest 2>err.txt 1>out.txt" );
+&Announce( "$mpiexec ./stdiotest 2>err.txt 1>out.txt" );
 if (! -x "stdiotest" ) {
     system "make stdiotest";
     if (! -x "stdiotest") {
@@ -154,7 +188,7 @@ if (! -x "stdiotest" ) {
 if (-x "stdiotest") {
     unlink "err.txt";
     unlink "out.txt";
-    system "$mpiexec stdiotest 2>err.txt 1>out.txt";
+    system "$mpiexec ./stdiotest 2>err.txt 1>out.txt";
     # Compare the expected output
     if (-s "err.txt" && -s "out.txt") {
 	# We check for the expected output line.  We allow (but warn about)
@@ -223,7 +257,7 @@ if (-x "stdiotest") {
 }
 # -------------------------------------------------------------------------
 # mpiexec stdin handling
-&Announce( "$mpiexec stdintest <in.txt 2>err.txt 1>out.txt" );
+&Announce( "$mpiexec ./stdintest <in.txt 2>err.txt 1>out.txt" );
 if (! -x "stdintest" ) {
     system "make stdintest";
     if (! -x "stdintest") {
@@ -241,7 +275,7 @@ if (-x "stdintest") {
 	print TFD "This is line $i\n";
     }
     close TFD;
-    system "$mpiexec stdintest <in.txt 2>err.txt 1>out.txt";
+    system "$mpiexec ./stdintest <in.txt 2>err.txt 1>out.txt";
     # Compare the expected output
     if (-s "out.txt") {
 	# We check for the expected output line.  We allow (but warn about)
@@ -386,10 +420,18 @@ sub CheckEnvVars {
     my $errcount = 0;
     foreach my $key (keys(%EnvSeen)) {
 	if (defined($EnvBase{$key})) { next; }
-	if (defined($EnvExpected{$key})) { next; }
+	if (defined($EnvExpected{$key})) { 
+	    my $expectedValue = $EnvExpected{$key};
+	    my $observedValue = $EnvSeen{$key};
+	    if ($expectedValue ne $observedValue) {
+		$errcount++;
+		print STDERR "Environment variable $key has value $observedValue but $expectedValue expected\n";
+	    }
+	    next; 
+	}
 	if (defined($EnvForced{$key})) { next; }
 	$value = $EnvSeen{$key};
-	print "Unexpected environment variable $key with $value\n";
+	print STDERR "Unexpected environment variable $key with $value\n";
 	$errcount ++;
     }
     return $errcount;
