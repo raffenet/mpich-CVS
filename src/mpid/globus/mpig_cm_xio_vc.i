@@ -369,6 +369,8 @@ MPIG_STATIC int mpig_cm_xio_adi3_isend(
     /* --BEGIN ERROR HANDLING-- */
     if (sreq != NULL)
     {
+	mpig_request_set_cc(sreq, 0);
+	mpig_request_set_ref_count(sreq, 0);
 	mpig_request_destroy(sreq);
     }
     goto fn_return;
@@ -424,6 +426,8 @@ MPIG_STATIC int mpig_cm_xio_adi3_irsend(
     /* --BEGIN ERROR HANDLING-- */
     if (sreq != NULL)
     {
+	mpig_request_set_cc(sreq, 0);
+	mpig_request_set_ref_count(sreq, 0);
 	mpig_request_destroy(sreq);
     }
     goto fn_return;
@@ -479,6 +483,8 @@ MPIG_STATIC int mpig_cm_xio_adi3_issend(
     /* --BEGIN ERROR HANDLING-- */
     if (sreq != NULL)
     {
+	mpig_request_set_cc(sreq, 0);
+	mpig_request_set_ref_count(sreq, 0);
 	mpig_request_destroy(sreq);
     }
     goto fn_return;
