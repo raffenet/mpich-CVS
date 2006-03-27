@@ -439,19 +439,21 @@ class MPD(object):
                     (kv1,kv2) = line.split(' ',1)  # 'realusername=xxx secretword=yyy'
                 except:
                     errorMsg = 'failed to split this msg on " ": %s' % line
-                try:
-                    (k1,self.conSock.realUsername) = kv1.split('=',1)
-                except:
-                    errorMsg = 'failed to split first kv pair on "=": %s' % line
-                try:
-                    (k2,secretword) = kv2.split('=',1)
-                except:
-                    errorMsg = 'failed to split second kv pair on "=": %s' % line
-                if k1 != 'realusername':
+                if not errorMsg:
+                    try:
+                        (k1,self.conSock.realUsername) = kv1.split('=',1)
+                    except:
+                        errorMsg = 'failed to split first kv pair on "=": %s' % line
+                if not errorMsg:
+                    try:
+                        (k2,secretword) = kv2.split('=',1)
+                    except:
+                        errorMsg = 'failed to split second kv pair on "=": %s' % line
+                if not errorMsg  and  k1 != 'realusername':
                     errorMsg = 'first key is not realusername'
-                if k2 != 'secretword':
+                if not errorMsg  and  k2 != 'secretword':
                     errorMsg = 'second key is not secretword'
-                if os.getuid() == 0  and  secretword != self.parmdb['MPD_SECRETWORD']:
+                if not errorMsg  and  os.getuid() == 0  and  secretword != self.parmdb['MPD_SECRETWORD']:
                     errorMsg = 'invalid secretword to root mpd'
                 if errorMsg:
                     try:
