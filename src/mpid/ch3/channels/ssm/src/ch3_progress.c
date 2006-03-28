@@ -1168,6 +1168,7 @@ fn_exit:
 
 #endif /* USE_FIXED_ACTIVE_PROGRESS */
 
+#if !defined(MPIDI_CH3_Progress_poke)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke
 #undef FCNAME
@@ -1181,6 +1182,7 @@ int MPIDI_CH3_Progress_poke()
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
     return mpi_errno;
 }
+#endif
 
 #if !defined(MPIDI_CH3_Progress_start)
 #undef FUNCNAME
