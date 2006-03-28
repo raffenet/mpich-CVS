@@ -648,7 +648,7 @@ case "$enable_threads" in
     ;;
 esac
 
-AC_DEFINE(MPICH_SINGLE_THREADED,1,[FIXME: for now always defined regardless of thread support])
+# AC_DEFINE(MPICH_SINGLE_THREADED,1,[FIXME: for now always defined regardless of thread support])
 
 MPICH_THREAD_LEVEL="MPI_THREAD_`echo $enable_threads | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
 export MPICH_THREAD_LEVEL

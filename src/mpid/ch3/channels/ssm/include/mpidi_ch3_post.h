@@ -63,17 +63,12 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
  * CH3 Progress routines (implemented as macros for performanace)
  */
 
-#if defined(MPICH_SINGLE_THREADED)
-#define MPIDI_CH3_Progress_start(state)
-#define MPIDI_CH3_Progress_end(state)
-#else
 #define MPIDI_CH3_Progress_start(progress_state_)			\
 {									\
     (progress_state_)->ch.completion_count = MPIDI_CH3I_progress_completion_count;\
 }
 #define MPIDI_CH3_Progress_end(progress_state_)
 #define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
-#endif
 
 /* FIXME: Are these the same definitions used by all channels? If so, they
  should be defined in the same place (and it would make sense for the 

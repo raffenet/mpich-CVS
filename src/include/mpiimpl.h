@@ -503,7 +503,8 @@ M*/
 
 #endif
 
-#else
+#else      /*  (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+               This currently never happens, so the code never reaches here. */
 #if defined(USE_ATOMIC_UPDATES)
 #define MPIU_Object_set_ref(objptr,val) \
     {((MPIU_Handle_head*)(objptr))->ref_count = val;}
@@ -516,7 +517,8 @@ M*/
     *inuse_ptr = nzflag__;					\
 }
 
-#else
+#else     /* (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED) && !defined(USE_ATOMIC_UPDATES)
+             the code currently never reaches here. */
 #define MPIU_Object_set_ref(objptr,val) \
     {((MPIU_Handle_head*)(objptr))->ref_count = val;}
 #define MPIU_Object_add_ref(objptr)		\

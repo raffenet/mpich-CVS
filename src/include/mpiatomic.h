@@ -7,7 +7,12 @@
 #ifndef MPIIMPLATOMIC_H_INCLUDED
 #define MPIIMPLATOMIC_H_INCLUDED
 
-#if !defined(MPICH_SINGLE_THREADED) && defined(USE_ATOMIC_UPDATES)
+/* These macros currently never get called because USE_THREAD_IMPL is
+ * never set to MPICH_THREAD_IMPL_NOT_IMPLEMENTED, and therefore the
+ * MPIU_Object_add_ref etc macros never get set to use
+ * MPID_Atomic_incr etc in mpiimpl.h.
+ */
+#if defined(MPICH_IS_THREADED) && defined(USE_ATOMIC_UPDATES)
 
 /* These can be implemented using special assembly language operations
    on most processors.  If no such operation is available, then each
