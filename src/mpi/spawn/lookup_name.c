@@ -69,7 +69,6 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_LOOKUP_NAME);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -133,7 +132,6 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_LOOKUP_NAME);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

@@ -64,7 +64,6 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_NEIGHBORS);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -118,7 +117,6 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_NEIGHBORS);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

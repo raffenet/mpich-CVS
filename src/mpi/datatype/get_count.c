@@ -56,7 +56,6 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_COUNT);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -117,7 +116,6 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_COUNT);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:

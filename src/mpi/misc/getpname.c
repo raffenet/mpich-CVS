@@ -74,7 +74,6 @@ int MPI_Get_processor_name( char *name, int *resultlen )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_PROCESSOR_NAME);
 
     /* Validate parameters and objects (post conversion) */
@@ -100,7 +99,6 @@ int MPI_Get_processor_name( char *name, int *resultlen )
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_PROCESSOR_NAME);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

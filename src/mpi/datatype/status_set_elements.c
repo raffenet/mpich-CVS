@@ -54,7 +54,6 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
     
     /* Validate parameters and objects (post conversion) */
@@ -89,7 +88,6 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:

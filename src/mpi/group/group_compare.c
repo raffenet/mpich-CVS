@@ -61,7 +61,6 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_COMPARE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -145,7 +144,6 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

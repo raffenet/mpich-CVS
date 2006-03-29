@@ -58,7 +58,6 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_STRING);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -83,7 +82,6 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_STRING);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

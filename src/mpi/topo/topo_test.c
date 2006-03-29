@@ -61,7 +61,6 @@ int MPI_Topo_test(MPI_Comm comm, int *topo_type)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TOPO_TEST);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -110,7 +109,6 @@ int MPI_Topo_test(MPI_Comm comm, int *topo_type)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TOPO_TEST);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

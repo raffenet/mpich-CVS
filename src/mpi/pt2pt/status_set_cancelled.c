@@ -51,7 +51,6 @@ int MPI_Status_set_cancelled(MPI_Status *status, int flag)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_STATUS_SET_CANCELLED);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -73,7 +72,6 @@ int MPI_Status_set_cancelled(MPI_Status *status, int flag)
     
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_CANCELLED);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

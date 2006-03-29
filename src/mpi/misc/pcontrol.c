@@ -53,7 +53,6 @@ int MPI_Pcontrol(const int level, ...)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PCONTROL);
 
     /* ... body of routine ...  */
@@ -64,7 +63,6 @@ int MPI_Pcontrol(const int level, ...)
 
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
-    MPID_CS_EXIT();
     return mpi_errno;
     /* There should never be any fn_fail case; this suppresses warnings from
        compilers that object to unused labels */

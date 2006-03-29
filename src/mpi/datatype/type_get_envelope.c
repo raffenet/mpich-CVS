@@ -57,7 +57,6 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -117,7 +116,6 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

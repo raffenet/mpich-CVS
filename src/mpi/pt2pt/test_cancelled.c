@@ -52,7 +52,6 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_TEST_CANCELLED);
     
     /* Validate parameters if error checking is enabled */
@@ -76,7 +75,6 @@ int MPI_Test_cancelled(MPI_Status *status, int *flag)
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_TEST_CANCELLED);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:

@@ -52,7 +52,6 @@ int MPI_Error_class(int errorcode, int *errorclass)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERROR_CLASS);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -77,7 +76,6 @@ int MPI_Error_class(int errorcode, int *errorclass)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERROR_CLASS);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

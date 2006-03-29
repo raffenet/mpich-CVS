@@ -58,7 +58,6 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
 
     MPIU_THREADPRIV_GET;
@@ -119,7 +118,6 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
-    MPID_CS_EXIT();
     return mpi_errno;
 
     /* ifdef out until we need it */

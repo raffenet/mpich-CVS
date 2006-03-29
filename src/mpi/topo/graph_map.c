@@ -75,7 +75,6 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GRAPH_MAP);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -131,7 +130,6 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GRAPH_MAP);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

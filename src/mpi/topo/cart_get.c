@@ -67,7 +67,6 @@ int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CART_GET);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -133,7 +132,6 @@ int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_GET);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

@@ -56,7 +56,6 @@ int MPI_Group_rank(MPI_Group group, int *rank)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_RANK);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -96,7 +95,6 @@ int MPI_Group_rank(MPI_Group group, int *rank)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANK);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

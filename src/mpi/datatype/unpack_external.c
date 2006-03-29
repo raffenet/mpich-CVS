@@ -69,7 +69,6 @@ int MPI_Unpack_external(char *datarep,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK_EXTERNAL);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -127,7 +126,6 @@ int MPI_Unpack_external(char *datarep,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_UNPACK_EXTERNAL);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

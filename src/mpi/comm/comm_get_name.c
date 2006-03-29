@@ -59,7 +59,6 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GET_NAME);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -104,7 +103,6 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GET_NAME);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

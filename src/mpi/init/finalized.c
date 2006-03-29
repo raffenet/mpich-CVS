@@ -77,7 +77,6 @@ int MPI_Finalized( int *flag )
     /* --BEGIN ERROR HANDLING-- */
     if (MPIR_Process.initialized == MPICH_WITHIN_MPI)
     { 
-	MPID_CS_ENTER();
 #       ifdef HAVE_ERROR_CHECKING
 	{
 	    mpi_errno = MPIR_Err_create_code(
@@ -87,7 +86,6 @@ int MPI_Finalized( int *flag )
 #       endif
 	
 	mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-	MPID_CS_EXIT();
     }
     goto fn_exit;
     /* --END ERROR HANDLING-- */

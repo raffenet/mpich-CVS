@@ -61,7 +61,6 @@ int MPI_Get_address(void *location, MPI_Aint *address)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_ADDRESS);
     
     /* Validate parameters and objects (post conversion) */
@@ -101,7 +100,6 @@ int MPI_Get_address(void *location, MPI_Aint *address)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ADDRESS);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:

@@ -55,7 +55,6 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_TEST_INTER);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -97,7 +96,6 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_TEST_INTER);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

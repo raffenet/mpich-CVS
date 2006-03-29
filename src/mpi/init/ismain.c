@@ -59,7 +59,6 @@ int MPI_Is_thread_main( int *flag )
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IS_THREAD_MAIN);
     
     /* ... body of routine ...  */
@@ -79,7 +78,6 @@ int MPI_Is_thread_main( int *flag )
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IS_THREAD_MAIN);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:

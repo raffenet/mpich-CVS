@@ -74,7 +74,6 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_COMPARE);
 
     MPIU_THREADPRIV_GET;
@@ -169,7 +168,6 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:

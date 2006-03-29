@@ -53,7 +53,6 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_SET_NAME);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -109,7 +108,6 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_SET_NAME);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

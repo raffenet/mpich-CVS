@@ -53,7 +53,6 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_NAME);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -95,7 +94,6 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_NAME);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

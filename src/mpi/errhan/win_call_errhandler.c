@@ -57,7 +57,6 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
 
     MPIU_THREADPRIV_GET;
@@ -131,7 +130,6 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CALL_ERRHANDLER);
-    MPID_CS_EXIT();
     return mpi_errno;
 
   fn_fail:

@@ -66,7 +66,6 @@ int MPI_Query_thread( int *provided )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_QUERY_THREAD);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -86,7 +85,6 @@ int MPI_Query_thread( int *provided )
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_QUERY_THREAD);
-    MPID_CS_EXIT();
     return mpi_errno;
     
   fn_fail:
