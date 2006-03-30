@@ -187,14 +187,26 @@ fi
 AC_DEFINE_UNQUOTED(MPIG_MY_ENDIAN,${MPIG_MY_ENDIAN},[endianess of the system])
 
 #
+# determine the size of MPICH2's MPI_AINT
+#
+AC_MSG_CHECKING([size of MPICH2 MPI_AINT])
+eval SIZEOF_MPICH2_AINT="\${SIZEOF_`echo ${MPI_AINT} | tr '[a-z]' '[A-Z]'`}"
+AC_MSG_RESULT([$SIZEOF_MPICH2_AINT])
+
+#
 # Settings from mpich2prereq
 #
 AC_DEFINE_UNQUOTED(MPIG_ALIGNED_T,${MPIG_ALIGNED_T},[type to use insure proper memory alignment for all types])
-AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T},[size of type used for aligning memory accesses])
+AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T},[size of the type used for aligning memory accesses])
 AC_DEFINE_UNQUOTED(MEMALIGN_MPIG_ALIGNED_T,${MEMALIGN_MPIG_ALIGNED_T},[memory alignment of MPIG_ALIGNED_T])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_COMM,${SIZEOF_VMPI_COMM},[size of vendor MPI_COMM])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_DATATYPE,${SIZEOF_VMPI_DATATYPE},[size of vendor MPI_DATATYPE])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_REQUEST,${SIZEOF_VMPI_REQUEST},[size of vendor MPI_REQUEST type])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_COMM,${SIZEOF_VMPI_COMM},[size of the vendor MPI_COMM handle])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_DATATYPE,${SIZEOF_VMPI_DATATYPE},[size of the vendor MPI_DATATYPE handle])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_REQUEST,${SIZEOF_VMPI_REQUEST},[size of the vendor MPI_REQUEST handle])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_STATUS,${SIZEOF_VMPI_STATUS},[size of the vendor MPI_REQUEST object])
+AC_DEFINE_UNQUOTED(TYPE_VMPI_AINT,${TYPE_VMPI_AINT},[integer type of the same size as the vendor MPI_AINT type])
+AC_DEFINE_UNQUOTED(SIZEOF_VMPI_AINT,${SIZEOF_VMPI_AINT},[size of the vendor MPI_AINT type])
+AC_DEFINE_UNQUOTED(TYPE_MPICH2_AINT,${MPI_AINT},[integer type of the same size as the MPICH2 MPI_AINT type])
+AC_DEFINE_UNQUOTED(SIZEOF_MPICH2_AINT,${SIZEOF_MPICH2_AINT},[size of the MPICH2 MPI_AINT type])
 if test "${MPIG_VMPI}" != "no" ; then
     AC_DEFINE(MPIG_VMPI,1,[define if we are building on top of a vendor MPI])
 fi 

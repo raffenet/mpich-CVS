@@ -6,6 +6,9 @@
 # XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
 # 
 
+# FIXME: this script assumes the build and target platforms are the same.  cross compilation support needs to be added for
+# machines like IBM BG/L.
+
 #
 # NOTE: This file is sourced from the top-level configure script with the current working directory set to the top-level
 # build directory.
@@ -134,9 +137,11 @@ for arg in ${ac_configure_args} ; do
     --with-globus-flavor=*)
     with_globus_flavor=`echo ${arg} | sed 's/^[^=]*=//'`
     ;;
-    --with-f77-sed)
-    MPIG_F77_SED=yes
-    ;;
+    # NOTE: Doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
+    # sed replacement mechanism, and instead can rely on library link order.  for now, we are disabling sed substition.
+    # --with-f77-sed)
+    # MPIG_F77_SED=yes
+    # ;;
     --with-ccache)
     echo "INFO: ccache enabled"
     with_ccache=yes
@@ -226,9 +231,9 @@ if test $? -ne 0 ; then
     cat ${MPIG_GLOBUS_HEADER_ERR}
     echo ""
     if test ! -d ${GLOBUS_LOCATION}/etc/globus_core ; then
-	echo "INFO: MPI-G requires the globus_core module which is not included in the"
-	echo "      binary distribution of Globus.  Please install globus_core using the"
-	echo "      globus_core may need to be installed using the source package."
+	echo "ERROR: MPI-G requires the globus_core module which is not included in the"
+	echo "       binary distribution of Globus.  Please install globus_core using the"
+	echo "       globus_core may need to be installed using the source package."
 	echo ""
     fi
     echo ""
@@ -278,11 +283,17 @@ echo "${ECHO_T}${mpig_debug}"
 export MPIG_DEBUG
 
 #
-# Determine whether or not we are using the vendor's MPI as one of our transport protocols. If we are, then we need to rename all
-# of the MPICH MPI_ and PMPI_ prefixes to MPG_ and PMPG_ respectively.  This can be accomplished easily in C/C++ using a header
-# file with the appropriate #defines.  However, Fortran 77/90 requires that we preprocess the code with a sed script that does the
-# necessary replacement.  To make this preprocessing step as transparent as possible, we use compiler scripts (created below) which
-# do all of the dirty work.
+# determine whether or not we are using the vendor's MPI as one of our communication modules.  if we are, then we need to rename
+# all of the publicly exposed symbols in MPICH2/MPI-G.  furthermore, we need to rename the MPI/PMPI symbols in the application
+# code to match the symbols defined during the compilation of MPI-G.  for C/C++, this renaming process can be accomplished with a
+# set of cpp macros in a header file included by mpi.h; however, fortran 77/90 can be more tricky.  in most cases, we can rely on
+# order of the libraries supplied to the linker to insure that the fortran application links against the routines in the MPI-G
+# library and not the routines supplied by the vendor MPI library.  however, while writing MPICH-G2, we discovered at least one
+# system refused to link when the same symbols were defined by different two libraries.  because of this, we added a code to the
+# fortran compiler scripts that ran the application code through a sed script, renaming all of the MPI/PMPI calls.  since this 
+# substition process makes it harder for the application programmer to debug their code, not to mention that it causes problem
+# with fortran 90 programs, it is our hope that this is no longer necessary.  we will readd the renaming of fortran symbols if
+# necessary, but for now we only rename the C symbols since those are the only ones we use in the vendor MPI.
 #
 echo ${ECHO_N} "checking if Globus is built for use with a vendor MPI... ${ECHO_C}"
 mpig_get_globus_setting mpig_vmpi vmpi
@@ -294,7 +305,10 @@ fi
 echo "${ECHO_T}${mpig_vmpi}"
 export MPIG_VMPI
 
-echo "XXX: need to supply transformation header file (mpidvmpi.h???) and get mpi.h to include it"
+echo ""
+echo "FIXME: we need to supply transformation header file for the MPI/PMPI functions"
+echo "      and get mpi.h to include it"
+echo ""
 if test ${MPIG_VMPI} == "yes" ; then
     # XXX: what's the correct symbol to define here?
     HAVE_MPID_DEFS_H=yes
@@ -308,20 +322,21 @@ else
     MPIG_F77_SED=no
 fi
 
-# Doing sed replacement on F90 modules can cause problems.  We may be able to fix this, but not before the first release.
-if test ${MPIG_F77_SED} == "yes" ; then
-    echo "INFO: use of vendor MPI mode and F90 are incompatible.  Disabling F90 support."
-    enable_f90=no
-    ac_configure_args="${ac_configure_args} --disable-f90"
-
-    # XXX: this needs to be something else for MPICH2
-    HAVE_MPID_FORTDEFS_H=yes
-    export HAVE_MPID_FORTDEFS_H
-
-    # XXX: where should these really be copied from and to?
-    # cp ${MPIG_SOURCE_DIR}/mpid_fortdefs.h ${builddir}/src/fortran/include
-    # cp ${MPIG_SOURCE_DIR}/mpid_fortdefs.h ${includebuild_dir}
-fi
+# NOTE: Doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
+# sed replacement mechanism, and instead can rely on library link order.  for now, we are disabling sed substition.
+# if test ${MPIG_F77_SED} == "yes" ; then
+#     echo "INFO: use of vendor MPI mode and F90 are incompatible.  Disabling F90 support."
+#     enable_f90=no
+#     ac_configure_args="${ac_configure_args} --disable-f90"
+# 
+#     # XXX: What is required by MPICH2 in order to rename f77/f90 symbols
+#     HAVE_MPID_FORTDEFS_H=yes
+#     export HAVE_MPID_FORTDEFS_H
+# 
+#     # XXX: where should these really be copied from and to?
+#     # cp ${MPIG_SOURCE_DIR}/mpid_fortdefs.h ${builddir}/src/fortran/include
+#     # cp ${MPIG_SOURCE_DIR}/mpid_fortdefs.h ${includebuild_dir}
+# fi
 
 #
 # Gather information about the libraries and linker flags
@@ -340,7 +355,7 @@ echo ${ECHO_N} "extacting C compiler information from Globus... ${ECHO_C}"
 mpig_get_globus_setting MPIG_CC cc
 mpig_get_globus_setting MPIG_CFLAGS cflags
 if test "${enable_gcc_strict}" = "yes" ; then
-    MPIG_CC="${MPIG_CC} -ansi"
+    MPIG_CC="${MPIG_CC} -ansi -D_XOPEN_SOURCE=500"
 fi
 MPIG_BUILD_CC=${MPIG_CC}
 MPIG_CLD=${MPIG_CC}
@@ -362,9 +377,9 @@ fi
 if test "${enable_gcc_strict}" = "yes" ; then
     CPPFLAGS="${CPPFLAGS} -DMPIG_BUILDING_MPICH2"
     MPIG_BUILD_CFLAGS=`echo ${MPIG_CFLAGS} | sed 's/-I/-isystem /'`
-    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wall -DGCC_WALL -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
-    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith -Wconversion"
-    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wsign-compare -Wwrite-strings"
+    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
+    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith"
+    MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wconversion -Wsign-compare -Wwrite-strings"
 fi
 
 #
@@ -493,7 +508,7 @@ sed -e "s!@GCC@!${MPIG_CC}!" \
 chmod +x ${MPIG_BUILD_DIR}/mpich2-globus-cc
 
 if test -n "${CC}" ; then
-    echo "INFO: the Globus device provided a C compiler that differes with the one"
+    echo "INFO: the Globus device provided a C compiler that differs with the one"
     echo "      specified in the CC envirnoment variable."
 fi
 CC=${MPIG_BUILD_DIR}/mpich2-globus-cc
@@ -515,7 +530,7 @@ if test "${enable_cxx}" != "no" ; then
     chmod +x ${MPIG_BUILD_DIR}/mpich2-globus-cxx
 
     if test -n "${CXX}" ; then
-	echo "INFO: the Globus device provided a C++ compiler that differes with the one"
+	echo "INFO: the Globus device provided a C++ compiler that differs with the one"
 	echo "      specified in the CXX envirnoment variable."
     fi
     CXX=${MPIG_BUILD_DIR}/mpich2-globus-cxx
@@ -537,7 +552,7 @@ if test "${enable_f77}" != "no" ; then
     chmod +x ${MPIG_BUILD_DIR}/mpich2-globus-f77
 
     if test -n "${F77}" ; then
-	echo "INFO: the Globus device provided a F77 compiler that differes with the one"
+	echo "INFO: the Globus device provided a F77 compiler that differs with the one"
 	echo "      specified in the F77 envirnoment variable."
     fi
     F77=${MPIG_BUILD_DIR}/mpich2-globus-f77
@@ -559,14 +574,14 @@ if test "${enable_f90}" != "no" ; then
     chmod +x ${MPIG_BUILD_DIR}/mpich2-globus-f90
 
     if test -n "${F90}" ; then
-	echo "INFO: the Globus device provided a F90 compiler that differes with the one"
+	echo "INFO: the Globus device provided a F90 compiler that differs with the one"
 	echo "      specified in the F90 envirnoment variable."
     fi
     F90=${MPIG_BUILD_DIR}/mpich2-globus-f90
 fi
 
 #
-# See if a type is defined
+# see if a type is defined
 #
 # mpig_check_type type
 #
@@ -589,7 +604,7 @@ int main(int argc, char ** argv)
     return 0;
 }
 EOF
-    # XXX: output details to config.log
+    # FIXME: output details to config.log
     echo ${ECHO_N} "checking for definition of ${mpig_type_name}""... ${ECHO_C}"
     mpig_var=`echo HAVE_${mpig_type_name} | tr "[a-z] " "[A-Z]_"`
     if ${CC} -c conftest.c >/dev/null 2>&1; then
@@ -605,7 +620,7 @@ EOF
 }
 
 #
-# Determine the size of a type
+# determine the size of a type
 #
 # usage: mpig_get_type_size type
 #
@@ -628,8 +643,8 @@ int main(int argc, char ** argv)
     return 0;
 }
 EOF
-    echo ${ECHO_N} "getting size of ${mpig_type_name}""... ${ECHO_C}"
-    # XXX: output details to config.log
+    echo ${ECHO_N} "checking size of ${mpig_type_name}""... ${ECHO_C}"
+    # FIXME: output details to config.log
     if ${CC} -o conftest conftest.c >/dev/null 2>&1; then
         mpig_result=`./conftest`
 	echo "${ECHO_T}""${mpig_result}"
@@ -644,7 +659,7 @@ EOF
 }
 
 #
-# Get the memory alignment for a type
+# get the memory alignment for a type
 #
 # mpig_get_type_memalign type
 #
@@ -672,8 +687,8 @@ int main(int argc, char ** argv)
     return 0;
 }
 EOF
-    # XXX: output details to config.log
-    echo ${ECHO_N} "getting memory alignment for ${mpig_type_name}""... ${ECHO_C}"
+    # FIXME: output details to config.log
+    echo ${ECHO_N} "checking memory alignment for ${mpig_type_name}""... ${ECHO_C}"
     if ${CC} -o conftest conftest.c >/dev/null 2>&1; then
         mpig_result=`./conftest`
 	echo "${ECHO_T}""${mpig_result}"
@@ -688,42 +703,15 @@ EOF
 }
 
 #
-# Determine maximum sized type for memory alignment purposes.  The alignment information is used to construct the extract space
-# required in the MPI_Status structure.  Since that structure is created in the top-level configure before the globus device
-# localdefs file is run (which is generated by the globus device configure), the alighnment information must be gathered here.
-#
-MPIG_ALIGNED_T=""
-SIZEOF_MPIG_ALIGNED_T=0
-MEMALIGN_MPIG_ALIGNED_T=0
-for mpig_type in "char" "short" "int" "long" "long long" "float" "double" "long double" ; do
-    mpig_get_type_size "$mpig_type"
-    mpig_get_type_memalign "$mpig_type"
-    mpig_utype=`echo ${mpig_type} | tr "[a-z] " "[A-Z]_"`
-    eval mpig_memalign="\$MEMALIGN_${mpig_utype}"
-    if test ${mpig_memalign} -gt ${MEMALIGN_MPIG_ALIGNED_T} ; then
-        MPIG_ALIGNED_T=${mpig_type}
-        eval SIZEOF_MPIG_ALIGNED_T="\$SIZEOF_${mpig_utype}"
-        eval MEMALIGN_MPIG_ALIGNED_T="\$MEMALIGN_${mpig_utype}"
-        mpig_memalign_max=${mpig_memalign}
-    fi
-done
-echo "setting MPIG_ALIGNED_T to ${MPIG_ALIGNED_T}"
-echo "setting SIZEOF_MPIG_ALIGNED_T to ${SIZEOF_MPIG_ALIGNED_T}"
-echo "setting MEMALIGN_MPIG_ALIGNED_T to ${MEMALIGN_MPIG_ALIGNED_T}"
-export MPIG_ALIGNED_T
-export SIZEOF_MPIG_ALIGNED_T
-export MEMALIGN_MPIG_ALIGNED_T
-
-#
-# If the device is using a vendor implementation of MPI as one of its transport mechanisms, then we need to gather some information
+# if the device is using a vendor implementation of MPI as one of its transport mechanisms, then we need to gather some information
 # and set some options.
 #
 if test "${MPIG_VMPI}" == "yes" ; then
     echo "Enabling VendorMPI option"
    
     #
-    # We can't use weak symbols with vendor MPI because the symbols names in the pragma directives aren't affected by the name
-    # change definitions in mpidvmpi.h
+    # we can't use weak symbols with vendor MPI because the symbols names in the pragma directives aren't affected by the name
+    # change definitions in mpig_sym_refs.h.
     #
     echo "Disabling weak symbols (not compatible with VendorMPI option)"
     enable_weak_symbols=no
@@ -737,31 +725,63 @@ if test "${MPIG_VMPI}" == "yes" ; then
     mpig_check_type MPI_LONG_LONG
     mpig_check_type MPI_LONG_LONG_INT
 
-    #
-    # XXX: This requires fixes to the top-level configure.  Saving for later...
-    #
-    # The vendor MPI_Aint and the MPICH2 MPI_Aint must be the same length.  We must get the size of vMPI MPI_Aint and pass it back
-    # up to the top-level configure in the variable MPI_SIZEOF_AINT, allowing MPICH2 to can pick a C datatype to that is exactly
-    # the same size as the vMPI's MPI_Aint.
-    #
-    # NOTE: MPI_Aint must be large enough to hold (void *), but it may be larger.
-    #
-    echo "XXX: make MPICH2 MPI_AINT and vendor MPI_AINT consistent.  Requires changes to top-level configure."
+    # originally I [BRT] beleived that the vendor MPI_Aint and the MPICH2 MPI_Aint had to be the same length.  however, since
+    # both the vendor and MPICH2 MPI_Aint must be large enough to hold void *, it should suffice to perform a type cast if the
+    # sizes don't match.  this type cast is really on an issue when handling an array of MPI_Aints since an intermediate array
+    # will have to be created.
     mpig_get_type_size MPI_Aint
-    MPI_SIZEOF_AINT=${SIZEOF_VMPI_AINT}
+    # MPI_SIZEOF_AINT=${SIZEOF_VMPI_AINT}
 
     #
-    # XXX: Not sure how to make this mesh with the top-level configure
-    # XXX: Why did we need to disable ROMIO if MPI_LONG_LONG wasn't supported?  If this is still the case, document reason.
+    # determine maximum sized type for memory alignment purposes.  the alignment information is used to construct the extract
+    # space required in the MPI_Status structure.  since that structure is created in the top-level configure before the globus
+    # device localdefs file is run (which is generated by the globus device configure), the alighnment information must be
+    # gathered here.
     #
-    # If the vendor's MPI doesn't support MPI_LONG_LONG or MPI_LONG_LONG_INT then we need to disable long long support.
+    MPIG_ALIGNED_T=""
+    SIZEOF_MPIG_ALIGNED_T=0
+    MEMALIGN_MPIG_ALIGNED_T=0
+    for mpig_type in "char" "short" "int" "long" "long long" "float" "double" "long double" ; do
+        mpig_get_type_size "$mpig_type"
+        mpig_get_type_memalign "$mpig_type"
+        mpig_utype=`echo ${mpig_type} | tr "[a-z] " "[A-Z]_"`
+        eval mpig_memalign="\$MEMALIGN_${mpig_utype}"
+        if test ${mpig_memalign} -gt ${MEMALIGN_MPIG_ALIGNED_T} ; then
+            MPIG_ALIGNED_T=${mpig_type}
+            eval SIZEOF_MPIG_ALIGNED_T="\$SIZEOF_${mpig_utype}"
+            eval MEMALIGN_MPIG_ALIGNED_T="\$MEMALIGN_${mpig_utype}"
+            mpig_memalign_max=${mpig_memalign}
+        fi
+    done
+    echo "setting MPIG_ALIGNED_T to ${MPIG_ALIGNED_T}"
+    echo "setting SIZEOF_MPIG_ALIGNED_T to ${SIZEOF_MPIG_ALIGNED_T}"
+    echo "setting MEMALIGN_MPIG_ALIGNED_T to ${MEMALIGN_MPIG_ALIGNED_T}"
+    export MPIG_ALIGNED_T
+    export SIZEOF_MPIG_ALIGNED_T
+    export MEMALIGN_MPIG_ALIGNED_T
+
     #
-    echo "XXX: handle case where vendor MPI does not support MPI_LONG_LONG.  Requires changes to top-level configure."
+    # if the vendor's MPI doesn't support MPI_LONG_LONG or MPI_LONG_LONG_INT then we need to disable long long support
+    #
+    # XXX: how do we communicate the equivalent of --disable-long-long to the top-level configure script?
+    #
+    # XXX: in MPICH-G2, why did we need to disable ROMIO if MPI_LONG_LONG wasn't supported?
+    #
     if test "${HAVE_VMPI_LONG_LONG}" = "no" -a "${HAVE_VMPI_LONG_LONG_INT}" = "no" ; then
-	echo "Disabling long long and ROMIO support (requires long long)"
-	ac_configure_args="${ac_configure_args} --disable-long-long"
-	enable_romio=no
-	ac_configure_args="${ac_configure_args} --disable-romio"
+	echo ""
+	echo "ERROR: MPI-G currently requires that the vendor MPI support MPI_LONG_LONG and"
+	echo "       MPI_LONG_LONG_INT.  Please send mail to mpi@globus.org if you receive"
+	echo "       this message."
+	echo ""
+	exit 1
+	# echo "INFO: MPI_LONG_LONG and/or MPI_LONG_LONG is not supported by the vendor MPI."
+	# echo "      Disabling long long suport in MPI-G."
+	# ac_configure_args="${ac_configure_args} --disable-long-long"
+	# if test "$enable_romio" != "no" ; then
+	#     echo "INFO: ROMIO requires MPI_LONG_LONG.  Disabling ROMIO."
+	#     enable_romio=no
+	#     ac_configure_args="${ac_configure_args} --disable-romio"
+	# fi
     fi
 
     #
@@ -770,15 +790,19 @@ if test "${MPIG_VMPI}" == "yes" ; then
     mpig_get_type_size MPI_Status
     mpig_num=`expr ${SIZEOF_VMPI_STATUS} + ${SIZEOF_MPIG_ALIGNED_T} - 1`
     mpig_num=`expr ${mpig_num} / ${SIZEOF_MPIG_ALIGNED_T}`
-    EXTRA_STATUS_DECL="${MPIG_ALIGNED_T} vmpi_status[${mpig_num}];"
+    EXTRA_STATUS_DECL="${MPIG_ALIGNED_T} mpig_vmpi_status[${mpig_num}];"
 else
     SIZEOF_VMPI_COMM=0
     SIZEOF_VMPI_DATATYPE=0
     SIZEOF_VMPI_REQUEST=0
+    SIZEOF_VMPI_STATUS=0
     HAVE_VMPI_2COMPLEX=no
     HAVE_VMPI_2DOUBLE_COMPLEX=no
     HAVE_VMPI_LONG_LONG=no
     HAVE_VMPI_LONG_LONG_INT=no
+    MPIG_ALIGNED_T=""
+    SIZEOF_MPIG_ALIGNED_T=0
+    MEMALIGN_MPIG_ALIGNED_T=0
 
     export SIZEOF_VMPI_COMM
     export SIZEOF_VMPI_DATATYPE
@@ -787,36 +811,39 @@ else
     export HAVE_VMPI_2DOUBLE_COMPLEX
     export HAVE_VMPI_LONG_LONG
     export HAVE_VMPI_LONG_LONG_INT
+    export MPIG_ALIGNED_T
+    export SIZEOF_MPIG_ALIGNED_T
+    export MEMALIGN_MPIG_ALIGNED_T
 fi
+
+# store the format of the received message in the status so that the value of the count field can be evaluated int the context
+# the of the source data format
 EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} int mpig_dc_format;"
 
+# force the top-level configure script to export the value of MPI_AINT to the device configure script
+export MPI_AINT
+
 #
-# XXX: The Globus data conversion library does not support long double.  Therefore, we need to disable support for that type (for
-# now).  IS THIS STILL TRUE???
+# FIXME: the Globus data conversion library does not support long double.  we need to disable support for that type in MPICH2.
 #
-echo "XXX: disable long double support in the top-level configure"
+echo ""
+echo "FIXME: disable long double support in the top-level configure"
+echo ""
 # echo "Disabling long double (not supported by Globus data conversion library)"
 # NO_LONG_DOUBLE="yes"
 # enable_args="${enable_args} --disable-long-double"
 
 #
-# XXX: STILL NECESSARY???  Create a device specific settings script
+# Create a device specific settings script
 #
-sed -e "s!@MPIG_VMPI@!${MPIG_VMPI}!" \
-    -e "s!@MPIG_F77_SED@!${MPIG_F77_SED}!" \
-    ${MPIG_SOURCE_DIR}/mpich2-globus-settings.in >${MPIG_BUILD_DIR}/mpich2-globus-settings
+# XXX: IS THIS STILL NECESSARY???  WHERE IS IT USED?
+#
+# sed -e "s!@MPIG_VMPI@!${MPIG_VMPI}!" \
+#     -e "s!@MPIG_F77_SED@!${MPIG_F77_SED}!" \
+#     ${MPIG_SOURCE_DIR}/mpich2-globus-settings.in >${MPIG_BUILD_DIR}/mpich2-globus-settings
 
 #
-# XXX: Create the device specific mpirun script
-#
-echo "XXX: create mpiexec program/script"
-# sed -e "s!@VMPI@!${MPIG_VMPI}!" \
-#     -e "s!@GLOBUSBINDIR@!${GLOBUS_LOCATION}/bin!" \
-#     ${top_srcdir}/mpid/${DEVICE}/mpirun.globus2.in \
-#     >${builddir}/mpid/${DEVICE}/mpirun.globus2
-
-#
-# XXX: Add a default machines file if one does not exist
+# FIXME: Add a default machines file if one does not exist
 #
 # if test ! -f ${binbuild_dir}/machines ; then
 #     echo "Creating a default machines file in ${binbuild_dir}.  This will"
