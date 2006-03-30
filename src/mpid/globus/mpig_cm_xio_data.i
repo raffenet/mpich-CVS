@@ -492,21 +492,29 @@ MPIG_STATIC void mpig_cm_xio_stream_sreq_pack(
 	MPIU_Assert(iov_count > 0);
 
 	last = sreq_cm->stream_max_pos;
+	
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
+	    "dense user buffer; reloading IOV: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT
+	    ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT ", iov_count=%d", sreq->handle, (MPIG_PTR_CAST) sreq,
+	    sreq_cm->stream_pos, last, sreq_cm->stream_size, iov_count));
+	
 	MPID_Segment_pack_vector(&sreq_cm->seg, (MPI_Aint) sreq_cm->stream_pos, (MPI_Aint *) &last, iov, &iov_count);
 	if (last == sreq_cm->stream_pos)
 	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "MPID_Segment_pack_vector() failed to advance the stream position: sreq="
-			       MPIG_HANDLE_FMT ", sreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT,
-			       sreq->handle, (MPIG_PTR_CAST) sreq, sreq_cm->stream_pos, sreq_cm->stream_size));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR,
+		"MPID_Segment_pack_vector() failed to advance the stream position: sreq=" MPIG_HANDLE_FMT ", sreq_p=" MPIG_PTR_FMT
+		", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", iov_count=%d", sreq->handle,
+		(MPIG_PTR_CAST) sreq, sreq_cm->stream_pos, sreq_cm->stream_max_pos, sreq_cm->stream_size, iov_count));
 	    MPIU_ERR_SETFATALANDSTMT(*mpi_errno_p, MPI_ERR_INTERN, {goto fn_fail;}, "**globus|cm_xio|seg_pack_iov");
 	}   /* --END ERROR HANDLING-- */
 	
 	mpig_iov_inc_num_inuse_entries(sreq_cm->iov, iov_count);
 	mpig_iov_inc_num_bytes(sreq_cm->iov, last - sreq_cm->stream_pos);
 	
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "dense user buffer; IOV loaded: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT
-			   ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, sreq->handle,
-			   (MPIG_PTR_CAST) sreq, sreq_cm->stream_pos, last, sreq_cm->stream_size));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
+	    "dense user buffer; IOV loaded: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT
+	    ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, sreq->handle, (MPIG_PTR_CAST) sreq, sreq_cm->stream_pos,
+	    last, sreq_cm->stream_size));
 	
 	sreq_cm->stream_pos = last;
     }
@@ -521,24 +529,30 @@ MPIG_STATIC void mpig_cm_xio_stream_sreq_pack(
 	    last = sreq_cm->stream_max_pos;
 	}
 	
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
+	    "sparse user buffer; packing intermediate buffer and loading IOV: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT
+	    ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, sreq->handle, (MPIG_PTR_CAST) sreq,
+	    sreq_cm->stream_pos, last, sreq_cm->stream_size));
+	
 	MPID_Segment_pack(&sreq_cm->seg, (MPI_Aint) sreq_cm->stream_pos, (MPI_Aint *) &last,
 			  mpig_databuf_get_ptr(sreq_cm->databuf));
 	if (last == sreq_cm->stream_pos)
 	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "MPID_Segment_pack() failed to advance the stream position: sreq="
-			       MPIG_HANDLE_FMT ", sreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT,
-			       sreq->handle, (MPIG_PTR_CAST) sreq, sreq_cm->stream_pos, sreq_cm->stream_size));
-	    MPIU_ERR_SETFATALANDSTMT(*mpi_errno_p, MPI_ERR_INTERN, {goto fn_fail;}, "**globus|cm_xio|seg_pack");
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR,
+		"MPID_Segment_pack() failed to advance the stream position: sreq=" MPIG_HANDLE_FMT ", sreq_p=" MPIG_PTR_FMT
+		", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT, sreq->handle, (MPIG_PTR_CAST) sreq,
+		sreq_cm->stream_pos, sreq_cm->stream_max_pos, sreq_cm->stream_size));
+	    MPIU_ERR_SETFATALANDSTMT(*mpi_errno_p, MPI_ERR_INTERN, {goto fn_fail;}, "**globus|cm_xio|seg_pack_iov");
 	}   /* --END ERROR HANDLING-- */
 
 	mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->databuf), last - sreq_cm->stream_pos);
 	mpig_databuf_set_eod(sreq_cm->databuf, last - sreq_cm->stream_pos);
 	
-	MPIG_DEBUG_PRINTF(
-	    (MPIG_DEBUG_LEVEL_DATA, "sparse user buffer; intermediate buffer packed; IOV loaded: sreq=" MPIG_HANDLE_FMT ", sreqp="
-	     MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, sreq->handle,
-	     (MPIG_PTR_CAST) sreq, sreq_cm->stream_pos, last, sreq_cm->stream_size));
-
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
+	    "sparse user buffer; intermediate buffer packed; IOV loaded: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT
+	    ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, sreq->handle, (MPIG_PTR_CAST) sreq,
+	    sreq_cm->stream_pos, last, sreq_cm->stream_size));
+	
 	sreq_cm->stream_pos = last;
     }
     

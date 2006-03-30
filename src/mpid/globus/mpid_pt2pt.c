@@ -448,17 +448,20 @@ int MPID_Bsend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int ta
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_BSEND_INIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
+    MPIU_Assertp(ctxoff == 0 &&
+	"persistent Bsend operations do not support context offsets other than zero");
+    
     mpig_request_create_psreq(MPIG_REQUEST_TYPE_BSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Bsend request allocated, handle=0x%08x, ptr=%p",
-		       (*sreqp)->handle, *sreqp));
+	(*sreqp)->handle, *sreqp));
     
   fn_return:    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
-		       ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_BSEND_INIT);
     return mpi_errno;
 
