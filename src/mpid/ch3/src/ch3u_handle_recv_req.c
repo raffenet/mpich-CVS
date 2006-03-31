@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include "mpid_nem.h"
 
 static int create_derived_datatype(MPID_Request * rreq, MPID_Datatype ** dtp);
 static int do_accumulate_op(MPID_Request * rreq);
@@ -451,6 +452,77 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * compl
 	    *complete = FALSE;
 	    break;
 	}
+
+        case MPIDI_CH3_CA_LMT_DO_CTS:
+        {
+            MPID_Request * cts_req;
+            MPIDI_CH3_Pkt_t upkt;
+            MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
+            MPID_IOV r_cookie;
+            MPID_IOV s_cookie;
+            int send_cts;
+            
+            MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"posted request found");
+
+            s_cookie.MPID_IOV_BUF = rreq->dev.tmpbuf;
+            s_cookie.MPID_IOV_LEN = rreq->dev.tmpbuf_sz;
+
+            mpi_errno = MPID_nem_lmt_pre_recv (vc, rreq, s_cookie, &r_cookie, &send_cts);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+            if (send_cts)
+            {
+                
+                MPID_IOV iov[2];
+
+                MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv CTS packet");
+                MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
+                cts_pkt->sender_req_id = rreq->dev.sender_req_id;
+                cts_pkt->receiver_req_id = rreq->handle;
+                cts_pkt->cookie_len = r_cookie.MPID_IOV_LEN;
+                
+                iov[0].MPID_IOV_BUF = cts_pkt;
+                iov[0].MPID_IOV_LEN = sizeof(*cts_pkt);
+                iov[1] = r_cookie;
+                
+                mpi_errno = MPIDI_CH3_iStartMsgv (vc, iov, 2, &cts_req);
+                if (mpi_errno != MPI_SUCCESS) {
+                    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+                                        "**ch3|ctspkt");
+                }
+                if (cts_req != NULL) {
+                    MPID_Request_release(cts_req);
+                }
+            }
+            
+            mpi_errno = MPID_nem_lmt_start_recv (vc, rreq);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+ 	    *complete = TRUE;
+            break;
+        }
+        
+        case MPIDI_CH3_CA_LMT_DO_CTS_NOTFOUND:
+        {
+            /* do nothing */
+ 	    *complete = TRUE;
+            break;
+        }
+            
+        case MPIDI_CH3_CA_LMT_DO_SEND:
+        {
+            /* the rreq is really the sreq for the rendezvous send */
+            MPID_IOV r_cookie;
+            r_cookie.MPID_IOV_BUF = rreq->dev.tmpbuf;
+            r_cookie.MPID_IOV_LEN = rreq->dev.tmpbuf_sz;
+
+            mpi_errno = MPID_nem_lmt_start_send (vc, rreq, r_cookie);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+  
+ 	    *complete = TRUE;
+            break;
+        }
+            
 
 	/* --BEGIN ERROR HANDLING-- */
 	default:

@@ -116,38 +116,38 @@ static inline void MPID_NEM_ATOMIC_DEC (int *ptr)
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 
 #ifdef HAVE_GCC_ASM_AND_X86_SFENCE
-#define MPID_NEM_WRITE_BARRIER() asm volatile  ( "sfence" ::: "memory" )
+#define MPID_NEM_WRITE_FENCE() asm volatile  ( "sfence" ::: "memory" )
 #else /* HAVE_GCC_ASM_AND_X86_SFENCE */
-#define MPID_NEM_WRITE_BARRIER()
+#define MPID_NEM_WRITE_FENCE()
 #endif /* HAVE_GCC_ASM_AND_X86_SFENCE */
 
 #ifdef HAVE_GCC_ASM_AND_X86_LFENCE
 /*
   #define MPID_NEM_READ_BARRIER() asm volatile  ( ".byte 0x0f, 0xae, 0xe8" ::: "memory" ) */
-#define MPID_NEM_READ_BARRIER() asm volatile  ( "lfence" ::: "memory" )
+#define MPID_NEM_READ_FENCE() asm volatile  ( "lfence" ::: "memory" )
 #else /* HAVE_GCC_ASM_AND_X86_LFENCE */
-#define MPID_NEM_READ_BARRIER()
+#define MPID_NEM_READ_FENCE()
 #endif /* HAVE_GCC_ASM_AND_X86_LFENCE */
 
 
 #ifdef HAVE_GCC_ASM_AND_X86_MFENCE
 /*
-  #define MPID_NEM_READ_WRITE_BARRIER() asm volatile  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )
+  #define MPID_NEM_READ_WRITE_FENCE() asm volatile  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )
 */
-#define MPID_NEM_READ_WRITE_BARRIER() asm volatile  ( "mfence" ::: "memory" )
+#define MPID_NEM_READ_WRITE_FENCE() asm volatile  ( "mfence" ::: "memory" )
 #else /* HAVE_GCC_ASM_AND_X86_MFENCE */
-#define MPID_NEM_READ_WRITE_BARRIER()
+#define MPID_NEM_READ_WRITE_FENCE()
 #endif /* HAVE_GCC_ASM_AND_X86_MFENCE */
 
 #elif defined(HAVE_MASM_AND_X86)
-#define MPID_NEM_WRITE_BARRIER()
-#define MPID_NEM_READ_BARRIER() __asm { __asm _emit 0x0f __asm _emit 0xae __asm _emit 0xe8 }
-#define MPID_NEM_READ_WRITE_BARRIER()
+#define MPID_NEM_WRITE_FENCE()
+#define MPID_NEM_READ_FENCE() __asm { __asm _emit 0x0f __asm _emit 0xae __asm _emit 0xe8 }
+#define MPID_NEM_READ_WRITE_FENCE()
 
 #else
-#define MPID_NEM_WRITE_BARRIER()
-#define MPID_NEM_READ_BARRIER()
-#define MPID_NEM_READ_WRITE_BARRIER()
+#define MPID_NEM_WRITE_FENCE()
+#define MPID_NEM_READ_FENCE()
+#define MPID_NEM_READ_WRITE_FENCE()
 #endif /* HAVE_GCC_AND_PENTIUM_ASM */
 
 

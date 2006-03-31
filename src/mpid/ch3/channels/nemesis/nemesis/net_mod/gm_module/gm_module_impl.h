@@ -109,42 +109,42 @@ extern MPID_nem_gm_module_send_queue_t *MPID_nem_gm_module_send_free_queue;
 
 #define MPID_nem_gm_module_queue_empty(queue) (MPID_nem_gm_module_##queue##_queue.head == NULL)
 #define MPID_nem_gm_module_queue_head(queue) (MPID_nem_gm_module_##queue##_queue.head)
-#define MPID_nem_gm_module_queue_dequeue(queue, e) do {					\
-    *(e) = MPID_nem_gm_module_##queue##_queue.head;					\
-    if (*(e))									\
-    {										\
+#define MPID_nem_gm_module_queue_dequeue(queue, e) do {                                                 \
+    *(e) = MPID_nem_gm_module_##queue##_queue.head;                                                     \
+    if (*(e))                                                                                           \
+    {                                                                                                   \
 	MPID_nem_gm_module_##queue##_queue.head = MPID_nem_gm_module_##queue##_queue.head->next;	\
-	if (MPID_nem_gm_module_##queue##_queue.head == NULL)				\
-	    MPID_nem_gm_module_##queue##_queue.tail = NULL;				\
-    }										\
+	if (MPID_nem_gm_module_##queue##_queue.head == NULL)                                            \
+	    MPID_nem_gm_module_##queue##_queue.tail = NULL;                                             \
+    }                                                                                                   \
 } while (0)
 
 #define MPID_nem_gm_module_queue_enqueue(queue, e) do {		\
-    if (MPID_nem_gm_module_##queue##_queue.tail == NULL)		\
+    if (MPID_nem_gm_module_##queue##_queue.tail == NULL)        \
 	MPID_nem_gm_module_##queue##_queue.head = e;		\
-    else						\
+    else                                                        \
 	MPID_nem_gm_module_##queue##_queue.tail->next = e;	\
-    MPID_nem_gm_module_##queue##_queue.tail = e;			\
-    (e)->next = NULL;					\
+    MPID_nem_gm_module_##queue##_queue.tail = e;                \
+    (e)->next = NULL;                                           \
 } while (0)
 
 #define MPID_nem_gm_module_queue_free(queue, e) /*free (e)*/ do {	\
-    (e)->next = MPID_nem_gm_module_##queue##_free_queue;			\
-    MPID_nem_gm_module_##queue##_free_queue = e;				\
+    (e)->next = MPID_nem_gm_module_##queue##_free_queue;                \
+    MPID_nem_gm_module_##queue##_free_queue = e;                        \
 } while (0)
 
-#define MPID_nem_gm_module_queue_alloc(queue) ({								\
-    MPID_nem_gm_module_##queue##_queue_t *e; 								\
-    if (MPID_nem_gm_module_##queue##_free_queue)								\
-    {												\
-	e = MPID_nem_gm_module_##queue##_free_queue;							\
+#define MPID_nem_gm_module_queue_alloc(queue) ({                                                                        \
+    MPID_nem_gm_module_##queue##_queue_t *e;                                                                            \
+    if (MPID_nem_gm_module_##queue##_free_queue)                                                                        \
+    {                                                                                                                   \
+	e = MPID_nem_gm_module_##queue##_free_queue;                                                                    \
 	MPID_nem_gm_module_##queue##_free_queue = MPID_nem_gm_module_##queue##_free_queue->next;			\
-    }												\
-    else											\
-    {												\
+    }                                                                                                                   \
+    else                                                                                                                \
+    {                                                                                                                   \
 	e = (MPID_nem_gm_module_##queue##_queue_t *)MPIU_Malloc (sizeof (MPID_nem_gm_module_##queue##_queue_t));	\
-    }												\
-    e;												\
+    }                                                                                                                   \
+    e;                                                                                                                  \
 })
 
 

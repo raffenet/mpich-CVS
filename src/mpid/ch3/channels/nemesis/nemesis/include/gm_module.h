@@ -23,12 +23,12 @@ int  MPID_nem_gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t
 int  MPID_nem_gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *target_vc, int *completion_ctr);
 
 /* large message transfer functions */
-int  MPID_nem_gm_module_lmt_send_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie);
-int  MPID_nem_gm_module_lmt_recv_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie);
+int  MPID_nem_gm_module_lmt_pre_send (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie);
+int  MPID_nem_gm_module_lmt_pre_recv (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie);
 int  MPID_nem_gm_module_lmt_start_send (MPIDI_VC_t *dest, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
 int  MPID_nem_gm_module_lmt_start_recv (MPIDI_VC_t *src, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int  MPID_nem_gm_module_lmt_send_post (struct iovec cookie);
-int  MPID_nem_gm_module_lmt_recv_post (struct iovec cookie);
+int  MPID_nem_gm_module_lmt_post_send (struct iovec cookie);
+int  MPID_nem_gm_module_lmt_post_recv (struct iovec cookie);
 
 
 

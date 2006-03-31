@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include "mpid_nem.h"
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Recv
@@ -147,53 +148,73 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, M
 	       the most sense for the channel to do this, since it may want to
 	       optimize the particular handling of the operation.  Common
 	       code can be made available to the channels separately */
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-		/* The channel will be performing the rendezvous */
-
-		mpi_errno = MPIDI_CH3U_Post_data_receive(found, &rreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS) {
-		    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-					 "**ch3|postrecv",
-					 "**ch3|postrecv %s",
-					 "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
-		}
-		/* --END ERROR HANDLING-- */
-		mpi_errno = MPIDI_CH3_iStartRndvTransfer (vc, rreq);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS) {
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-					"**ch3|ctspkt");
-		}
-		/* --END ERROR HANDLING-- */
-
-#else
-	    MPID_Request * cts_req;
-	    MPIDI_CH3_Pkt_t upkt;
-	    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
-		
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
-			 "rndv RTS in the request, sending rndv CTS");
-	    
-	    MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
-	    cts_pkt->sender_req_id = rreq->dev.sender_req_id;
-	    cts_pkt->receiver_req_id = rreq->handle;
-	    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ctspkt");
-	    }
-	    if (cts_req != NULL)
-	    {
-		/* FIXME: Ideally we could specify that a req not be returned.  This would avoid our having to decrement the
-		   reference count on a req we don't want/need. */
-		MPID_Request_release(cts_req);
-	    }
-#endif
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	    {
 		MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
 		MPID_Datatype_add_ref(rreq->dev.datatype_ptr);
 	    }
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+            /* The channel will be performing the rendezvous */
+
+            mpi_errno = MPIDI_CH3U_Post_data_receive(found, &rreq);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+                                     "**ch3|postrecv",
+                                     "**ch3|postrecv %s",
+                                     "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+            }
+            /* --END ERROR HANDLING-- */
+            mpi_errno = MPIDI_CH3_iStartRndvTransfer (vc, rreq);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+                                    "**ch3|ctspkt");
+            }
+            /* --END ERROR HANDLING-- */
+
+#else
+            {
+                MPID_Request * cts_req;
+                MPIDI_CH3_Pkt_t upkt;
+                MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
+                MPID_IOV r_cookie;
+                MPID_IOV s_cookie;
+                int send_cts;
+		
+                s_cookie.MPID_IOV_BUF = rreq->dev.tmpbuf;
+                s_cookie.MPID_IOV_LEN = rreq->dev.tmpbuf_sz;
+
+                mpi_errno = MPID_nem_lmt_pre_recv (vc, rreq, s_cookie, &r_cookie, &send_cts);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+                if (send_cts)
+                {
+                    MPID_IOV iov[2];
+
+                    MPIU_DBG_MSG (CH3_OTHER, VERBOSE, "rndv RTS in the request, sending rndv CTS");
+                    MPIDI_Pkt_init (cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
+                    cts_pkt->sender_req_id = rreq->dev.sender_req_id;
+                    cts_pkt->receiver_req_id = rreq->handle;
+                    cts_pkt->cookie_len = r_cookie.MPID_IOV_LEN;
+                    
+                    iov[0].MPID_IOV_BUF = cts_pkt;
+                    iov[0].MPID_IOV_LEN = sizeof (*cts_pkt);
+                    iov[1] = r_cookie;
+                
+                    mpi_errno = MPIDI_CH3_iStartMsgv (vc, iov, 2, &cts_req);
+                    if (mpi_errno != MPI_SUCCESS) {
+                        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt");
+                    }
+                    if (cts_req != NULL) {
+                        MPID_Request_release (cts_req);
+                    }
+                }
+            
+                mpi_errno = MPID_nem_lmt_start_recv (vc, rreq);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            }	    MPID_Request * cts_req;
+#endif
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_SELF_MSG)
 	{

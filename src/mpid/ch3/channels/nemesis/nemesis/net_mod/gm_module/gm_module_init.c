@@ -379,26 +379,26 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     if (sscanf (val, "{%u:%Lu}", &p, &u) != 2)
 	ERROR_RET (-1, "unable to parse data from PMI_KVS_Get %s", val);
 
-    vc->ch.port_id = p;
-    UINT64_TO_UNIQUE (u, vc->ch.unique_id);
-    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    vc->ch.net.gm.port_id = p;
+    UINT64_TO_UNIQUE (u, vc->ch.net.gm.unique_id);
+    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.net.gm.unique_id, &vc->ch.net.gm.node_id);
     if (ret != GM_SUCCESS)
-	ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id));
+	ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", vc->pg_rank, UNIQUE_TO_STR (vc->ch.net.gm.unique_id));
 	
-    printf_d ("gm info for %d: %s node = %d port = %d\n", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id), vc->ch.node_id, vc->ch.port_id);
+    printf_d ("gm info for %d: %s node = %d port = %d\n", vc->pg_rank, UNIQUE_TO_STR (vc->ch.net.gm.unique_id), vc->ch.net.gm.node_id, vc->ch.net.gm.port_id);
 #endif
     
     int mpi_errno = MPI_SUCCESS;
     int ret;
 
-    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &vc->ch.port_id, vc->ch.unique_id);
+    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &vc->ch.net.gm.port_id, vc->ch.net.gm.unique_id);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno) {
 	MPIU_ERR_POP (mpi_errno);
     }
     /* --END ERROR HANDLING-- */
 
-    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.net.gm.unique_id, &vc->ch.net.gm.node_id);
     /* --BEGIN ERROR HANDLING-- */
     if (ret != GM_SUCCESS)
     {

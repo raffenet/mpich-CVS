@@ -10,6 +10,9 @@
 
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
+#include "mpid_nem_memdefs.h"
+
+#define memcpy MPID_NEM_MEMCPY
 
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE

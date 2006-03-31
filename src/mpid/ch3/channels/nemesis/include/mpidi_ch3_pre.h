@@ -15,6 +15,7 @@
 #define MPIDI_DEV_IMPLEMENTS_KVS
 
 struct MPID_nem_tcp_module_internal_queue;
+struct MPIDI_VC;
 typedef struct MPIDI_CH3I_VC
 {
     int port_name_tag;
@@ -27,22 +28,43 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_fbox_mpich2_t *fbox_in;
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
+    
+    volatile MPID_nem_copy_buf_t *copy_buf;
+    int copy_buf_handle;
+    
+    int (*lmt_pre_send) (struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV *cookie);
+    int (*lmt_pre_recv) (struct MPIDI_VC *vc, struct MPID_Request *req, struct iovec s_cookie, struct iovec *r_cookie, int *send_cts);
+    int (*lmt_start_send) (struct MPIDI_VC *vc, struct MPID_Request *req, struct iovec r_cookie);
+    int (*lmt_start_recv) (struct MPIDI_VC *vc, struct MPID_Request *req);
+    int (*lmt_post_send) (struct MPIDI_VC *vc, struct MPID_Request *req);
+    int (*lmt_post_recv) (struct MPIDI_VC *vc, struct MPID_Request *req);
 
-#if MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE
-    unsigned port_id;
-    unsigned node_id;
-    unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
-#elif MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE
-    int node_id; 
-    int desc;
-    struct sockaddr_in sock_id;
-    int left2write;
-    int left2read_head; 
-    int left2read;
-    int toread;
-    struct MPID_nem_tcp_module_internal_queue *internal_recv_queue;
-    struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
-#endif
+    union 
+    {
+        struct MPIDI_CH3_VC_GM
+        {
+            unsigned port_id;
+            unsigned node_id;
+            unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
+        } gm;
+        struct MPIDI_CH3_VC_TCP
+        {
+            int lmt_desc;
+            char *lmt_cookie;
+            int lmt_s_len;
+            int lmt_connected;
+            
+/*             int node_id;  */
+/*             int desc; */
+/*             struct sockaddr_in sock_id; */
+/*             int left2write; */
+/*             int left2read_head;  */
+/*             int left2read; */
+/*             int toread; */
+/*             struct MPID_nem_tcp_module_internal_queue *internal_recv_queue; */
+/*             struct MPID_nem_tcp_module_internal_queue *internal_free_queue; */
+        } tcp;
+    } net;
 
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
        portion of the vc.  This is unused in nemesis and should be set
@@ -69,13 +91,16 @@ MPIDI_CH3I_CA_END_NEMESIS_CHANNEL
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL			\
-struct MPIDI_CH3I_Request			\
-{						\
-    MPIDI_VC_t *vc;				\
-    int iov_offset;				\
-    MPIDI_CH3_Pkt_t pkt;			\
+#define MPIDI_CH3_REQUEST_DECL                  \
+struct MPIDI_CH3I_Request                       \
+{                                               \
+    MPIDI_VC_t *vc;                             \
+    int iov_offset;                             \
+    MPIDI_CH3_Pkt_t pkt;                        \
+    MPID_IOV s_cookie;                          \
+    MPID_IOV r_cookie;                          \
 } ch;
+    
 
 #if 0
 #define DUMP_REQUEST(req) do {							\

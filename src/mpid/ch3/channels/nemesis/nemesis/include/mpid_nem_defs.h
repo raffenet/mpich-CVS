@@ -127,4 +127,12 @@ extern MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
 extern MPID_nem_mem_region_t MPID_nem_mem_region;
 #endif /* MEM_REGION_IN_HEAP */
 
+/* large memory transfer functions for shared memory */
+int MPID_nem_lmt_shm_pre_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV *cookie);
+int MPID_nem_lmt_shm_pre_recv (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts);
+int MPID_nem_lmt_shm_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_cookie);
+int MPID_nem_lmt_shm_start_recv (MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_shm_post_send (MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_shm_post_recv (MPIDI_VC_t *vc, MPID_Request *req);
+
 #endif /* MPID_NEM_DEFS_H */

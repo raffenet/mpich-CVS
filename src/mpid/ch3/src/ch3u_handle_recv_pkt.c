@@ -412,35 +412,36 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 
 	    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 
-	    if (found)
-	    {
-		MPID_Request * cts_req;
-		MPIDI_CH3_Pkt_t upkt;
-		MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
+            rreq->dev.tmpbuf = MPIU_Malloc (rts_pkt->cookie_len);
+            if (rreq->dev.tmpbuf == NULL) MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**nomem");
+            rreq->dev.tmpbuf_sz = rts_pkt->cookie_len;
+            
+            rreq->dev.sender_req_id = rts_pkt->sender_req_id;
+            rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.tmpbuf;
+            rreq->dev.iov[0].MPID_IOV_LEN = rts_pkt->cookie_len;
+            rreq->dev.iov_count = 1;
+            
+            MPID_Request_initialized_set (rreq);
 
+            if (found)
+	    {
 		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"posted request found");
 
-		/* FIXME: What if the receive user buffer is not big enough to
-		   hold the data about to be cleared for sending? */
-
-		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv CTS packet");
-		MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
-		cts_pkt->sender_req_id = rts_pkt->sender_req_id;
-		cts_pkt->receiver_req_id = rreq->handle;
-		mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-		if (mpi_errno != MPI_SUCCESS) {
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-					"**ch3|ctspkt");
-		}
-		if (cts_req != NULL) {
-		    MPID_Request_release(cts_req);
-		}
+                rreq->dev.ca = MPIDI_CH3_CA_LMT_DO_CTS;
+                if (rts_pkt->cookie_len == 0)
+                {
+                    int complete;
+                    mpi_errno = MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
+                    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                    MPIU_Assert (complete);
+                }
 	    }
 	    else
 	    {
 		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unexpected request allocated");
-		MPID_Request_initialized_set(rreq);
 
+                rreq->dev.ca = MPIDI_CH3_CA_LMT_DO_CTS_NOTFOUND;
+                
 		/*
 		* A MPID_Probe() may be waiting for the request we just inserted, so we need to tell the progress engine to exit.
 		*
@@ -451,7 +452,10 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 		MPIDI_CH3_Progress_signal_completion();
 	    }
 
-	    *rreqp = NULL;
+            if (rts_pkt->cookie_len == 0)
+                *rreqp = NULL;
+            else
+                *rreqp = rreq;
 	    break;
 	}
 	
@@ -488,45 +492,25 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 		MPID_Request_release(rts_sreq);
 	    }
 	    
-	    MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
-	    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
-	    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rs_pkt;
-	    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
+            sreq->dev.tmpbuf = MPIU_Malloc(cts_pkt->cookie_len);
+            if (sreq->dev.tmpbuf == NULL) MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**nomem");
+            sreq->dev.tmpbuf_sz = cts_pkt->cookie_len;
 
-	    MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
-	
-	    if (dt_contig) 
-	    {
-		MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-                   "sending contiguous rndv data, data_sz=" MPIDI_MSG_SZ_FMT, 
-						    data_sz));
-		
-		sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-		
-		iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);
-		iov[1].MPID_IOV_LEN = data_sz;
-		iov_n = 2;
-	    }
-	    else
-	    {
-		MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment, 0);
-		iov_n = MPID_IOV_LIMIT - 1;
-		sreq->dev.segment_first = 0;
-		sreq->dev.segment_size = data_sz;
-		mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-		if (mpi_errno != MPI_SUCCESS)  {
-                    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
-                                        "**ch3|loadsendiov");
-		}
-		iov_n += 1;
-	    }
-	    
-	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|senddata");
-	    }
-	    
-	    *rreqp = NULL;
+            sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.tmpbuf;
+            sreq->dev.iov[0].MPID_IOV_LEN = cts_pkt->cookie_len;
+            sreq->dev.iov_count = 1;
+            sreq->dev.ca = MPIDI_CH3_CA_LMT_DO_SEND;
+
+            if (cts_pkt->cookie_len == 0)
+            {
+                int complete;
+                mpi_errno = MPIDI_CH3U_Handle_recv_req (vc, sreq, &complete);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                MPIU_Assert (complete);
+                *rreqp = NULL;
+            }
+            else
+                *rreqp = sreq;
 	    break;
 	}
 	

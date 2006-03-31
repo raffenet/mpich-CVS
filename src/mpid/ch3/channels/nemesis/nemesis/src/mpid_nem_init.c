@@ -32,18 +32,18 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 int
 _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 {
-    int num_procs = pg_p->size;
-    pid_t            my_pid;
-    int              ret;
-    int              num_local;
-    int             *local_procs;
-    int              local_rank;
-    int              global_size;
-    int              index, index2, size;
-    int i;
-    char *publish_bc_orig = NULL;
-    char *bc_val = NULL;
-    int val_max_remaining;
+    int    num_procs       = pg_p->size;
+    pid_t  my_pid;
+    int    ret;
+    int    num_local;
+    int   *local_procs;
+    int    local_rank;
+    int    global_size;
+    int    index, index2, size;
+    int    i;
+    char  *publish_bc_orig = NULL;
+    char  *bc_val          = NULL;
+    int    val_max_remaining;
 
     /* Initialize the business card */
     ret = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );
@@ -434,6 +434,13 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
     vc->ch.send_seqno = 0;
     
+    vc->ch.lmt_pre_send = 0;
+    vc->ch.lmt_pre_recv = 0;
+    vc->ch.lmt_start_send = 0;
+    vc->ch.lmt_start_recv = 0;
+    vc->ch.lmt_post_send = 0;
+    vc->ch.lmt_post_recv = 0;
+    
     /* We do different things for vcs in the COMM_WORLD pg vs other pgs
        COMM_WORLD vcs may use shared memory, and already have queues allocated
     */
@@ -455,6 +462,16 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_out = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
+
+        vc->ch.lmt_pre_send = MPID_nem_lmt_shm_pre_send;
+        vc->ch.lmt_pre_recv = MPID_nem_lmt_shm_pre_recv;
+        vc->ch.lmt_start_send = MPID_nem_lmt_shm_start_send;
+        vc->ch.lmt_start_recv = MPID_nem_lmt_shm_start_recv;
+        vc->ch.lmt_post_send = MPID_nem_lmt_shm_post_send;
+        vc->ch.lmt_post_recv = MPID_nem_lmt_shm_post_recv;
+
+        vc->ch.copy_buf = NULL;
+        vc->ch.copy_buf_handle = 0;
     }
     else
     {

@@ -1,3 +1,4 @@
+#include "tcp_module.h"
 #include "tcp_module_impl.h"
 #include "mpidimpl.h"
 #include "mpid_nem.h"
@@ -359,8 +360,22 @@ MPID_nem_tcp_module_connect_to_root (const char *business_card, MPIDI_VC_t *new_
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc)
+MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
+    struct MPIDI_CH3_VC_TCP *t = &vc->ch.net.tcp;
+
+    t->lmt_desc = -1;
+    t->lmt_cookie = NULL;
+    t->lmt_s_len = 0;
+    t->lmt_connected = 0;
+    
+    vc->ch.lmt_pre_send = MPID_nem_tcp_module_lmt_pre_send;
+    vc->ch.lmt_pre_recv = MPID_nem_tcp_module_lmt_pre_recv;
+    vc->ch.lmt_start_send = MPID_nem_tcp_module_lmt_start_send;
+    vc->ch.lmt_start_recv = MPID_nem_tcp_module_lmt_start_recv;
+    vc->ch.lmt_post_send = MPID_nem_tcp_module_lmt_post_send;
+    vc->ch.lmt_post_recv = MPID_nem_tcp_module_lmt_post_recv;
+
     return MPI_SUCCESS;
 }
 

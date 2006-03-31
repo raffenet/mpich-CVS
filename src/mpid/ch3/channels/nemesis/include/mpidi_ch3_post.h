@@ -8,7 +8,7 @@
 #define MPICH_MPIDI_CH3_POST_H_INCLUDED
 
 /* #define MPIDI_CH3_EAGER_MAX_MSG_SIZE (1500 - sizeof(MPIDI_CH3_Pkt_t)) */
-#define MPIDI_CH3_EAGER_MAX_MSG_SIZE   (128*1024)
+#define MPIDI_CH3_EAGER_MAX_MSG_SIZE   (16*1024)//(128*1024)
 
 /*
  * Channel level request management macros

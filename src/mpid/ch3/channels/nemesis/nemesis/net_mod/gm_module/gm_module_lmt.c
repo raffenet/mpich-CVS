@@ -84,13 +84,13 @@ MPID_nem_gm_module_lmt_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *remote_
 }
 
 int
-MPID_nem_gm_module_lmt_send_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie)
+MPID_nem_gm_module_lmt_pre_send (struct iovec *iov, size_t n_iov, MPIDI_VC_t *dest, struct iovec *cookie)
 {
     return MPID_nem_gm_module_lmt_pre (iov, n_iov, dest, cookie);
 }
 
 int
-MPID_nem_gm_module_lmt_recv_pre (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie)
+MPID_nem_gm_module_lmt_pre_recv (struct iovec *iov, size_t n_iov, MPIDI_VC_t *src, struct iovec *cookie)
 {
     return MPID_nem_gm_module_lmt_pre (iov, n_iov, src, cookie);
 }
@@ -120,7 +120,7 @@ MPID_nem_gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, st
     r_offset = 0;
     s_offset = 0;
     
-    ret = MPID_nem_gm_module_lmt_do_get (src_vc->ch.node_id, src_vc->ch.port_id, &r_iov, &r_n_iov, &r_offset, &s_iov, &s_n_iov, &s_offset,
+    ret = MPID_nem_gm_module_lmt_do_get (src_vc->ch.net.gm.node_id, src_vc->ch.net.gm.port_id, &r_iov, &r_n_iov, &r_offset, &s_iov, &s_n_iov, &s_offset,
 				completion_ctr);
     if (ret == LMT_AGAIN)
     {
@@ -130,8 +130,8 @@ MPID_nem_gm_module_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, st
 	    printf ("error: malloc failed\n");
 	    return -1;
 	}
-	e->node_id = src_vc->ch.node_id;
-	e->port_id = src_vc->ch.port_id;
+	e->node_id = src_vc->ch.net.gm.node_id;
+	e->port_id = src_vc->ch.net.gm.port_id;
 	e->r_iov = r_iov;
 	e->r_n_iov = r_n_iov;
 	e->r_offset = r_offset;
@@ -171,13 +171,13 @@ MPID_nem_gm_module_lmt_post (struct iovec cookie)
 }
 
 int
-MPID_nem_gm_module_lmt_send_post (struct iovec cookie)
+MPID_nem_gm_module_lmt_post_send (struct iovec cookie)
 {
     return MPID_nem_gm_module_lmt_post (cookie);
 }
 
 int
-MPID_nem_gm_module_lmt_recv_post (struct iovec cookie)
+MPID_nem_gm_module_lmt_post_recv (struct iovec cookie)
 {
     return MPID_nem_gm_module_lmt_post (cookie);
 }

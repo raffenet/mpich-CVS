@@ -41,6 +41,16 @@ void MPID_nem_mpich2_init (int ckpt_restart);
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPID_NEM_MPICH2_SUCCESS)
 
+/* large message transfer functions */
+int MPID_nem_lmt_pre_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV *cookie);
+int MPID_nem_lmt_pre_recv (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts);
+int MPID_nem_lmt_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_cookie);
+int MPID_nem_lmt_start_recv (MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_post_send (MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_post_recv (MPIDI_VC_t *vc, MPID_Request *req);
+
+
+/* checkpointing functions */
 int MPID_nem_ckpt_init (int ckpt_restart);
 void MPID_nem_ckpt_finalize (void);
 void MPID_nem_ckpt_maybe_take_checkpoint (void);
@@ -104,15 +114,6 @@ int MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 
 
 
-#if 0
-/* large message transfer functions */
-int MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, MPIDI_VC_t *dest_vc, struct iovec *cookie);
-int MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, MPIDI_VC_t *src_vc, struct iovec *cookie);
-int MPID_nem_mpich2_lmt_start_send (MPIDI_VC_t *dest_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int MPID_nem_mpich2_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int MPID_nem_mpich2_lmt_send_post (MPIDI_VC_t *dest_vc, struct iovec cookie);
-int MPID_nem_mpich2_lmt_recv_post (MPIDI_VC_t *src_vc, struct iovec cookie);
-#endif
 
 /* #define DO_PAPI2(x) x */
 static inline void

@@ -41,6 +41,7 @@
    The last step just copies whatever's left.
    
  */
+void m (void *a, void *b, size_t c);
 
 static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t len)
 {

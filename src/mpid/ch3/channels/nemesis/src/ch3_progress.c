@@ -202,7 +202,8 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		    }
 		    else
 		    {				       
-			MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
+			mpi_errno = MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
+                        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 			if (!complete)
 			{
                             rreq->ch.iov_offset = 0;
@@ -579,8 +580,9 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 		break;
 	    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
 		{
-		    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
 		    MPIDI_CH3_Pkt_rndv_req_to_send_t *rts_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->rndv_req_to_send;
+		    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
+                    MPIU_Assert (0);
 		    rreq  = MPID_Request_create();
 		    if (rreq != NULL)
 		    {
@@ -640,6 +642,9 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 		    MPID_IOV        iov[MPID_IOV_LIMIT];
 		    int             iov_n;
 		    MPIDI_VC_t     *vc;
+
+ 		    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
+                    MPIU_Assert (0);
 
 		    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
 		    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);
@@ -1148,9 +1153,10 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 			break;
 		    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
 			{
-			    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
 			    MPIDI_CH3_Pkt_rndv_req_to_send_t *rts_pkt = &((MPIDI_CH3_Pkt_t *)cell_buf)->rndv_req_to_send;
-			    rreq  = MPID_Request_create();
+			    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
+			    MPIU_Assert (0);
+                            rreq  = MPID_Request_create();
 			    if (rreq != NULL)
 				{
 				    MPIU_Object_set_ref(rreq, 2);
@@ -1209,6 +1215,9 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 			    MPID_IOV        iov[MPID_IOV_LIMIT];
 			    int             iov_n;
 			    MPIDI_VC_t     *vc;
+
+			    /* this case in currently disabled since cells are smaller than eager msgs, but ... */
+			    MPIU_Assert (0);
 
 			    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
 			    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);

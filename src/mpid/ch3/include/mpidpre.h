@@ -55,7 +55,8 @@ MPIDI_Message_match;
  */
 typedef enum MPIDI_CH3_Pkt_type
 {
-    MPIDI_CH3_PKT_EAGER_SEND = 0,
+    MPIDI_CH3_PKT_INVALID = 0,
+    MPIDI_CH3_PKT_EAGER_SEND,
     MPIDI_CH3_PKT_EAGER_SYNC_SEND,    /* FIXME: no sync eager */
     MPIDI_CH3_PKT_EAGER_SYNC_ACK,
     MPIDI_CH3_PKT_READY_SEND,
@@ -108,13 +109,25 @@ typedef struct MPIDI_CH3_Pkt_eager_sync_ack
 }
 MPIDI_CH3_Pkt_eager_sync_ack_t;
 
-typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_rndv_req_to_send_t;
+typedef struct MPIDI_CH3_Pkt_rndv_req_to_send
+{
+    MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
+    MPIDI_Message_match match;
+    MPI_Request sender_req_id;	/* needed for ssend and send cancel */
+    MPIDI_msg_sz_t data_sz;
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+    MPID_Seqnum_t seqnum;
+#endif
+    MPIDI_msg_sz_t cookie_len;
+}
+MPIDI_CH3_Pkt_rndv_req_to_send_t;
 
 typedef struct MPIDI_CH3_Pkt_rndv_clr_to_send
 {
     MPIDI_CH3_Pkt_type_t type;
     MPI_Request sender_req_id;
     MPI_Request receiver_req_id;
+    MPIDI_msg_sz_t cookie_len;
 }
 MPIDI_CH3_Pkt_rndv_clr_to_send_t;
 
@@ -341,6 +354,18 @@ MPIDI_CH3_Pkt_send_container_t;
  * buffer and needs to be copied/unpacked into the user
  * buffer before the IOV is reloaded.
  *
+ * MPIDI_CH3_CA_LMT_DO_CTS - This request has the LMT cookie in its
+ * tmpbuf.  The RTS packet has been received, and matched.
+ * lmt_pre_recv() should now be called and a CTS packet should be sent
+ * out, if necessary.
+ *
+ * MPIDI_CH3_CA_LMT_DO_CTS_NOTFOUND - This request has the LMT cookie
+ * in its tmpbuf.  The RTS packet has been received but not matched.
+ * Nothing needs to be done now.
+ *
+ * MPIDI_CH3_CA_LMT_DO_SEND - This request has the LMT cookie in its
+ * tmpbuf.  CTS has been received, start sending.
+ *
  * MPIDI_CH3_CA_END_CH3 - This not a real action, but rather a marker.  
  * All actions numerically less than MPID_CA_END are defined
  * by channel device.  Any actions numerically greater than MPIDI_CA_END are 
@@ -354,6 +379,9 @@ typedef enum MPIDI_CA
     MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE,
     MPIDI_CH3_CA_RELOAD_IOV,
     MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV,
+    MPIDI_CH3_CA_LMT_DO_CTS,
+    MPIDI_CH3_CA_LMT_DO_CTS_NOTFOUND,
+    MPIDI_CH3_CA_LMT_DO_SEND,
     MPIDI_CH3_CA_END_CH3
 # if defined(MPIDI_CH3_CA_ENUM)
     , MPIDI_CH3_CA_ENUM

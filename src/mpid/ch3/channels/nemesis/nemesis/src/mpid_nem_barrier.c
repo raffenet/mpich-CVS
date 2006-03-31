@@ -11,7 +11,7 @@ void MPID_nem_barrier_init (MPID_nem_barrier_t *barrier_region)
     MPID_nem_mem_region.barrier->wait = 0;
     sense = 0;
     barrier_init = 1;
-    MPID_NEM_WRITE_BARRIER();
+    MPID_NEM_WRITE_FENCE();
 }
 
 /* FIXME: this is not a scalable algorithm because everyone is polling on the same cacheline */
@@ -23,7 +23,7 @@ void MPID_nem_barrier (int num_processes, int rank)
     {
 	MPID_nem_mem_region.barrier->val = 0;
 	MPID_nem_mem_region.barrier->wait = 1 - sense;
-	MPID_NEM_WRITE_BARRIER();
+	MPID_NEM_WRITE_FENCE();
     }
     else
     {

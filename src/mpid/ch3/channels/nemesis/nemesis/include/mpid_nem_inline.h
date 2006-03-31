@@ -169,7 +169,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 		payload_32[9] = buf_32[9];
 	    }
 	    
-	    MPID_NEM_WRITE_BARRIER();
+	    MPID_NEM_WRITE_FENCE();
 	    pbox->flag.value = 1;
 
 	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
@@ -437,7 +437,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	    }
 	    MPID_NEM_MEMCPY (((char *)(pbox->cell.pkt.mpich2.payload)) + MPID_NEM__MPICH2_HEADER_LEN, (*iov)[1].iov_base,
 			     (*iov)[1].iov_len);
-	    MPID_NEM_WRITE_BARRIER();
+	    MPID_NEM_WRITE_FENCE();
 	    pbox->flag.value = 1;
 	    *n_iov = 0;
 

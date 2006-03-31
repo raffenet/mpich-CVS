@@ -5,7 +5,7 @@
  */
 
 #include "mpidimpl.h"
-
+#include "mpid_nem.h"
 /* FIXME: HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
 /*
@@ -211,6 +211,8 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 #ifndef MPIDI_CH3_CHANNEL_RNDV
 	MPID_Request * rts_sreq;
 #endif
+        MPID_IOV cookie;
+        MPID_IOV iov[2];
 	
 	MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,
 		"sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz);
@@ -277,7 +279,24 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	/* --END ERROR HANDLING-- */
 	
 #else
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
+        mpi_errno = MPID_nem_lmt_pre_send (vc, sreq, &cookie);
+        /* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS)
+	{
+	    MPIU_Object_set_ref(sreq, 0);
+	    MPIDI_CH3_Request_destroy(sreq);
+	    sreq = NULL;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
+	    goto fn_exit;
+	}
+	/* --END ERROR HANDLING-- */
+        rts_pkt->cookie_len = cookie.MPID_IOV_LEN;
+        
+        iov[0].MPID_IOV_BUF = rts_pkt;
+        iov[0].MPID_IOV_LEN = sizeof(*rts_pkt);
+        iov[1] = cookie;
+        
+	mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, &rts_sreq);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{

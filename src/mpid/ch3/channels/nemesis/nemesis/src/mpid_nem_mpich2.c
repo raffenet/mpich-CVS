@@ -162,13 +162,13 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
 
 #if 0
 int
-MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iovec *cookie)
+MPID_nem_mpich2_lmt_pre_send (struct iovec *iov, int n_iov, int dest, struct iovec *cookie)
 {
     int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-	if (MPID_nem_gm_module_lmt_send_pre (iov, n_iov, dest, cookie) != 0)
+	if (MPID_nem_gm_module_lmt_pre_send (iov, n_iov, dest, cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -177,13 +177,13 @@ MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, int dest, struct iov
 }
 
 int
-MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, int src, struct iovec *cookie)
+MPID_nem_mpich2_lmt_pre_recv (struct iovec *iov, int n_iov, int src, struct iovec *cookie)
 {
     int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (src))
     {
-	if (MPID_nem_gm_module_lmt_recv_pre (iov, n_iov, src, cookie) != 0)
+	if (MPID_nem_gm_module_lmt_pre_recv (iov, n_iov, src, cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -219,13 +219,13 @@ MPID_nem_mpich2_lmt_start_recv (int src, struct iovec s_cookie, struct iovec r_c
 }
 
 int
-MPID_nem_mpich2_lmt_send_post (int dest, struct iovec cookie)
+MPID_nem_mpich2_lmt_post_send (int dest, struct iovec cookie)
 {
     int ret = MPID_NEM_MPICH2_SUCCESS;
     
     if (!MPID_NEM_IS_LOCAL (dest))
     {
-	if (MPID_nem_gm_module_lmt_send_post (cookie) != 0)
+	if (MPID_nem_gm_module_lmt_post_send (cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}
@@ -235,13 +235,13 @@ MPID_nem_mpich2_lmt_send_post (int dest, struct iovec cookie)
 }
 
 int
-MPID_nem_mpich2_lmt_recv_post (int src, struct iovec cookie)
+MPID_nem_mpich2_lmt_post_recv (int src, struct iovec cookie)
 {
     int ret = MPID_NEM_MPICH2_SUCCESS;
 
     if (!MPID_NEM_IS_LOCAL (src))
     {
-	if (MPID_nem_gm_module_lmt_send_post (cookie) != 0)
+	if (MPID_nem_gm_module_lmt_post_send (cookie) != 0)
 	{
 	    ret = MPID_NEM_MPICH2_FAILURE;
 	}

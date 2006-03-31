@@ -166,4 +166,18 @@ typedef struct MPID_nem_fbox_arrays
     MPID_nem_fastbox_t **out;
 } MPID_nem_fbox_arrays_t;
 
+
+#define MPID_NEM_COPY_BUF_LEN (64 * 1024)
+
+typedef struct MPID_nem_copy_buf
+{
+    int s_len;
+    int r_len;
+    int flag[2];
+    char padding[MPID_NEM_CACHE_LINE_LEN - 4 * sizeof (int)];
+    char buf[2][MPID_NEM_COPY_BUF_LEN];
+} MPID_nem_copy_buf_t;
+
+
+
 #endif /* MPID_NEM_DATATYPES_H */

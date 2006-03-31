@@ -24,4 +24,12 @@ int  MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card);
 int  MPID_nem_tcp_module_get (void *target_p, void *source_p, int source_node, int len, int *completion_ctr);
 int  MPID_nem_tcp_module_put (void *target_p, int target_node, void *source_p, int len, int *completion_ctr);
 
+/* large message transfer functions */
+int MPID_nem_tcp_module_lmt_pre_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV *cookie);
+int MPID_nem_tcp_module_lmt_pre_recv (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts);
+int MPID_nem_tcp_module_lmt_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_cookie);
+int MPID_nem_tcp_module_lmt_start_recv (MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_tcp_module_lmt_post_send (MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_tcp_module_lmt_post_recv (MPIDI_VC_t *vc, MPID_Request *req);
+
 #endif /*TCP_MODULE.H */
