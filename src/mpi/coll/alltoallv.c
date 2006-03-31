@@ -288,7 +288,7 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("coll");
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLTOALLV);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -398,7 +398,7 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls,
 
   fn_exit:
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLTOALLV);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("coll");
     return mpi_errno;
 
   fn_fail:

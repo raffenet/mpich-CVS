@@ -116,7 +116,7 @@ int MPI_Finalize( void )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("init");
     MPID_MPI_FINALIZE_FUNC_ENTER(MPID_STATE_MPI_FINALIZE);
     
     /* ... body of routine ... */
@@ -219,7 +219,7 @@ int MPI_Finalize( void )
 
   fn_exit:
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("init");
     MPID_CS_FINALIZE();
     return mpi_errno;
 

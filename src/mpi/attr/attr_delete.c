@@ -58,7 +58,7 @@ int MPI_Attr_delete(MPI_Comm comm, int keyval)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("attr");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ATTR_DELETE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -102,7 +102,7 @@ int MPI_Attr_delete(MPI_Comm comm, int keyval)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_DELETE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("attr");
     return mpi_errno;
 
   fn_fail:

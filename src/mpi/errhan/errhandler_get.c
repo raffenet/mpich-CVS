@@ -67,7 +67,7 @@ int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("errhan");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ERRHANDLER_GET);
 
     MPIU_THREADPRIV_GET;
@@ -112,7 +112,7 @@ int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ERRHANDLER_GET);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("errhan");
     return mpi_errno;
 
   fn_fail:

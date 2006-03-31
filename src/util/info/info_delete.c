@@ -51,7 +51,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("info");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_DELETE);
     
 
@@ -115,7 +115,7 @@ int MPI_Info_delete( MPI_Info info, char *key )
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_DELETE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("info");
     return mpi_errno;
     
   fn_fail:

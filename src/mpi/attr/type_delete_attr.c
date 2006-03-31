@@ -56,7 +56,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("attr");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_DELETE_ATTR);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -145,7 +145,7 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DELETE_ATTR);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("attr");
     return mpi_errno;
 
   fn_fail:

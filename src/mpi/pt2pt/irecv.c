@@ -65,7 +65,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
     MPID_MPI_PT2PT_FUNC_ENTER_BACK(MPID_STATE_MPI_IRECV);
 
     /* Validate handle parameters needing to be converted */
@@ -132,7 +132,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_IRECV);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
     return mpi_errno;
 
   fn_fail:

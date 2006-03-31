@@ -75,7 +75,7 @@ int MPIOI_File_read_all(MPI_File mpi_fh,
     int error_code, datatype_size;
     ADIO_File fh;
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);

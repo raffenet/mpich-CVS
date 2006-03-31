@@ -78,7 +78,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("rma");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_LOCK);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -133,7 +133,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("rma");
     return mpi_errno;
 
   fn_fail:

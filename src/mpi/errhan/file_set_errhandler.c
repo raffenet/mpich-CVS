@@ -56,7 +56,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("errhan");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
 
 #ifdef MPI_MODE_RDONLY
@@ -126,7 +126,7 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("errhan");
     return mpi_errno;
 
   fn_fail:

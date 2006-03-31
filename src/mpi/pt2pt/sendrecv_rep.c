@@ -77,7 +77,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
     MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
 
     MPIU_THREADPRIV_GET;
@@ -222,7 +222,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     MPIU_CHKLMEM_FREEALL();
     MPIR_Nest_decr();
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
     return mpi_errno;
     
   fn_fail:

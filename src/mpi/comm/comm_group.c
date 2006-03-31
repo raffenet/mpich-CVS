@@ -61,7 +61,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("comm");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GROUP);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -137,7 +137,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("comm");
     return mpi_errno;
 
   fn_fail:

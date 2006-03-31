@@ -69,7 +69,7 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("rma");
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_ACCUMULATE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -146,7 +146,7 @@ int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_ACCUMULATE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("rma");
     return mpi_errno;
 
   fn_fail:

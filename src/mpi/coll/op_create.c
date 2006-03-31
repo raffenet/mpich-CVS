@@ -91,7 +91,7 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("coll");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_CREATE);
 
     /* ... body of routine ...  */
@@ -116,7 +116,7 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_CREATE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("coll");
     return mpi_errno;
     
   fn_fail:

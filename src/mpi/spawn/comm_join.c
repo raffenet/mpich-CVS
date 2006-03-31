@@ -137,7 +137,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("spawn");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_JOIN);
 
     /* ... body of routine ...  */
@@ -179,7 +179,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     MPIU_CHKLMEM_FREEALL();
     MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("spawn");
     return mpi_errno;
 
   fn_fail:

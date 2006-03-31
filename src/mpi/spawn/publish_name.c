@@ -59,7 +59,7 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("spawn");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_PUBLISH_NAME);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -121,7 +121,7 @@ int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PUBLISH_NAME);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("spawn");
     return mpi_errno;
     
   fn_fail:

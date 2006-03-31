@@ -77,7 +77,7 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("attr");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_ATTR_PUT);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -121,7 +121,7 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ATTR_PUT);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("attr");
     return mpi_errno;
 
   fn_fail:

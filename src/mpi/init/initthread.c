@@ -335,7 +335,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
     MPID_CS_INITIALIZE();
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("init");
 
     /* Create the thread-private region if necessary and go ahead 
        and initialize it */
@@ -366,7 +366,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     /* ... end of body of routine ... */
     
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("init");
     return mpi_errno;
     
   fn_fail:
@@ -380,7 +380,7 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 #   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("init");
     MPID_CS_FINALIZE();
     return mpi_errno;
     /* --END ERROR HANDLING-- */

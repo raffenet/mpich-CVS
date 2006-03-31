@@ -50,7 +50,7 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("errhan"); 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_ERRHANDLER);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -113,7 +113,7 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_ERRHANDLER);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("errhan");
     return mpi_errno;
 
   fn_fail:

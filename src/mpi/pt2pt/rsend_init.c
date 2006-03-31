@@ -67,7 +67,7 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_RSEND_INIT);
     
     /* Validate handle parameters needing to be converted */
@@ -134,7 +134,7 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_RSEND_INIT);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
     return mpi_errno;
 
   fn_fail:

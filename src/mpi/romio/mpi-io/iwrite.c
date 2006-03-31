@@ -76,7 +76,7 @@ int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count,
     HANDLE hThread;
 #endif
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
@@ -124,7 +124,7 @@ int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count,
     /* FIXME: Shouldn't status be freed before leaving this function */
 
     MPIR_Nest_decr();
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     /* passed the buck to the blocking version...*/
     return MPI_SUCCESS;
@@ -173,7 +173,7 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
     ADIO_Offset off;
     ADIO_File fh;
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
@@ -259,7 +259,7 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
     }
 fn_exit:
     MPIR_Nest_decr();
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     return error_code;
 }

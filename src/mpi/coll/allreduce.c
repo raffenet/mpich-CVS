@@ -596,7 +596,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("coll");
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_ALLREDUCE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -689,7 +689,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
     
   fn_exit:
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_ALLREDUCE);
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("coll");
     return mpi_errno;
 
   fn_fail:

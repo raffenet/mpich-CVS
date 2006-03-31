@@ -62,7 +62,7 @@ int MPIOI_File_read_all_begin(MPI_File mpi_fh,
     int error_code, datatype_size;
     ADIO_File fh;
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
@@ -104,7 +104,7 @@ int MPIOI_File_read_all_begin(MPI_File mpi_fh,
 			 offset, &fh->split_status, &error_code);
 fn_exit:
     MPIR_Nest_decr();
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     return error_code;
 }

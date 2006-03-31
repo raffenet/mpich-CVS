@@ -174,7 +174,7 @@ int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
     
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT_BACK(MPID_STATE_MPI_RECV);
-    MPIU_THREAD_SINGLE_CS_EXIT("");
+    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
     return mpi_errno;
 
   fn_fail:

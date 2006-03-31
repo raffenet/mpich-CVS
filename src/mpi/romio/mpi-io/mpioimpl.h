@@ -29,8 +29,8 @@
    error reporting features provided by MPICH2 must implement these 
    four functions.  Defining these as empty should not change the behavior 
    of correct programs */
-#define MPID_CS_EXIT()
-#define MPID_CS_ENTER()
+#define MPIU_THREAD_SINGLE_CS_ENTER(_msg)
+#define MPIU_THREAD_SINGLE_CS_EXIT(_msg)
 #define MPIR_Nest_incr()
 #define MPIR_Nest_decr()
 #ifdef HAVE_WINDOWS_H
