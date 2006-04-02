@@ -90,7 +90,7 @@ Designs/Discussions/Decissions (to be made):
 
 * threads: user vs. device.  how do we separate them but reuse code and make
   them peacefully coexist?  (the device may use threads even if
-  MPICH_SINGLE_THREADED is defined)
+  the MPI thread level is not MPI_THREAD_MULTIPLE)
 
 * fault tolerance: required for master/slave (Rusty) and dynamic process
   support.  we need a design that defines appropriate actions for fault

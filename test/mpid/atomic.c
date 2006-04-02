@@ -11,6 +11,7 @@
 
 #include "mpiimpl.h"
 
+/* FIXME: MPICH_SINGLE_THREADED is obsolete and no longer defined */
 #if defined(MPICH_SINGLE_THREADED) || !defined(USE_ATOMIC_UPDATES)
 #define MPID_Atomic_incr( count_ptr ) \
    __asm__ __volatile__ ( "lock; incl %0" \
