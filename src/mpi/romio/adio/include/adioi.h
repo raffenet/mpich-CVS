@@ -77,6 +77,10 @@ struct ADIOI_Hints_struct {
 	    } pvfs;
 	    struct {
 		    int debugmask;
+		    int posix_read;
+		    int dtype_read;
+		    int posix_write;
+		    int dtype_write;
 	    } pvfs2;
     } fs_hints;
 
