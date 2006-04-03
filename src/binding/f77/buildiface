@@ -341,8 +341,9 @@ foreach $_ (@ARGV) {
 #             the third term give the array size.
 #    addnull: Add a null character to a *copy* of the input string,
 #             after trimming any blanks.
-#    blankpad: Add blanks and remove nulls.  Use a copy of the string
-#             for the call to the C routine.
+#    blankpad: Add blanks and remove nulls.  Only used for out args;
+#             must use an allocated space to provide room for the null
+#             that the C routines may require
 #    bufptr:  Detect MPI_BOTTOM.  Note that a better alternative is to
 #             use MPI_Address and MPI_Get_address to make addresses
 #             relative to the Fortran MPI_BOTTOM.  The lines that
@@ -1584,11 +1585,25 @@ sub print_post_call {
 # ---------------------------------------------------------------------------
 #
 # Blankpad strings
+# This is complicated by the fact that the Fortran strings do not contain
+# null terminators and the MPI definitions of string lengths, such as
+# MPI_MAX_PORT_NAME, are one smaller in Fortran than in C (see 4.12.9
+# in the MPI-2 specification).  Because of this, we need to allocate a 
+# temporary that is one longer on 
 sub blankpad_out_decl {
+    my $count = $_[0];
+    print $OUTFD "    char *p$count;\n";
 }
 sub blankpad_out_arg {
     my $count = $_[0];
-    print $OUTFD "v$count";
+    print $OUTFD "p$count";
+}
+sub blankpad_out_ftoc {
+    my $count = $_[0];
+
+    # Allocate space to hold the C version of the output
+    $strlen = "d$count";
+    print $OUTFD "    p$count = (char *)$malloc( $strlen + 1 );\n";
 }
 sub blankpad_ctof {
     my $coutvar = $_[0];
@@ -1599,12 +1614,15 @@ sub blankpad_ctof {
     # whose name is derived from outvar
     $strlen = $outvar;
     $strlen =~ s/^v/d/;
+    my $cvar = $outvar; 
+    $cvar =~ s/^v/p/;
     print $OUTFD "\
-    {char *p = $outvar;
-        while (*p) p++;
+    {char *p = $outvar, *pc=$cvar;
+        while (*pc) {*p++ = *pc++;}
         while ((p-$outvar) < $strlen) { *p++ = ' '; }
     }
 ";
+    $clean_up .= "    $free( $cvar );\n";
 }
 
 # ---------------------------------------------------------------------------
