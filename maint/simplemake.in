@@ -1849,22 +1849,31 @@ sub ListTargets {
 
 #
 # Add to a target the designate operation in all subdirs (except for .)
-#     &RecursiveOp( "target" [, optional array of directories ] );
+#     &RecursiveOp( "target" [, optional array of directories, [checkMakefile] ] );
 # If the array of directories is not included, (@extra_dirs,@subdirs) 
 # is used.  These are the arrays maintined by simplemake of the 
 # directories set by EXTRA_DIRS and SUB_DIRS.  The "optional array"
 # is passed by name (i.e., the name of the array is passed, not the array
 # itself).
+#
+# The third argument allows you to only execute the test if the
+# Makefile is present.  This is used in the distclean targets and 
+# may be useful elsewhere.
+#
 # Special notes:
 #    For a small number of directories, use a simpler (non loop) approach
 #    
 sub RecursiveOp {
     my $target = $_[0];
     my $subdirname = $_[1];
+    my $checkForMakefile = $_[2];
     my $forThreashold = 3;
 
+    if (!defined($checkForMakefile) || $checkForMakefile eq "") {
+	$checkForMakefile = 0;
+    }
     # Get the optional arrays
-    if ($subdirname && $subdirname ne "") {
+    if (defined($subdirname) && $subdirname ne "") {
 	@dirs = @$subdirname;
     }
     else {
@@ -1900,10 +1909,17 @@ sub RecursiveOp {
 	    # Add a - incase there is a problem
           print FD " - ; do \\$newline";
 	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
+	  if ($checkForMakefile) {
+	      print FD "\t\tif [ ! -s \$\$dir/Makefile ] ; then continue ; fi ;\\$newline";
+	  }
 	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; done$newline";
         }	
 	else {
-          print FD " ; do \\$newline\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
+          print FD " ; do \\$newline";
+	  if ($checkForMakefile) {
+	      print FD "\t\tif [ ! -s \$\$dir/Makefile ] ; then continue ; fi ;\\$newline";
+	  }
+	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
 	    "done$newline";
         }
     }
@@ -1911,7 +1927,12 @@ sub RecursiveOp {
 	foreach $dir (@dirs) {
 	    # Skip . and any empty names
 	    if ($dir ne "." && $dir =~ /\S/) {
-		print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+		if ($checkForMakefile) {
+		    print FD "\t\tif [ -s \$\$dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
+		}
+		else {
+		    print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+		}
 	    }
 	}
     }
@@ -1919,10 +1940,12 @@ sub RecursiveOp {
 
 # A version of RecuriveOps for optional directories; this is careful
 # to check for existence of both the directory and the Makefile
-# RecursiveOpForOptionalDirs( dirs, target )
+# RecursiveOpForOptionalDirs( dirs, target, checkmake )
 sub RecursiveOpForOptionalDirs {
     my $subdirs = $_[0];
     my $target = $_[1];
+    my $checkForMakefile = $_[2];
+
     my $forThreshold = 3;
 
     if ($subdirs ne "") {
@@ -1937,7 +1960,12 @@ sub RecursiveOpForOptionalDirs {
 	else {
 	    foreach my $dir (@sdirs) {
 		if ($dir ne "." && $dir =~ /\S/) {
-		    print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+		    if ($checkForMakefile) {
+			print FD "\tif [ -s \$\$dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
+		    }
+		    else {
+			print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+		    }
 		}
 	    }
 	}
@@ -2280,7 +2308,7 @@ sub TargetClean {
     print FD "$newline";
     
     print FD "distclean-xxx:$newline";
-    &RecursiveOp( "distclean" );
+    &RecursiveOp( "distclean", "", 1 );
     # Remove any local files last (in case this file is one of them)
     $rmfile = "";
     if (!$curdir) { $curdir = ""; }
@@ -2318,7 +2346,7 @@ sub TargetClean {
     # a SUBDIRS = foo \@bar\@ 
     # line (without the \, included since the simplemake.in file is
     # itself processed with autoconf)
-    &RecursiveOpForOptionalDirs( $subdir_optionals, "distclean" );
+    &RecursiveOpForOptionalDirs( $subdir_optionals, "distclean", 1 );
 
     &DistCleanDependencies;
 
