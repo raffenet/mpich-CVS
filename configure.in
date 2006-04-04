@@ -848,6 +848,13 @@ if test "$with_pmi" != "no" ; then
     fi
     pmi_name=$with_pmi
     
+    # Test for compatibility between pm and pmi choices
+    # FIXME: This should be handled by the pm or pmi configures, since
+    # they're in a better position to understand what is needed
+    if test "$with_pmi" = smpd -a "$with_pm" != "smpd" ; then
+    AC_MSG_ERROR([The smpd PMI interface may only be used with the smpd process manager interface (e.g., --with-pmi=smpd --with-pm=smpd)])
+    fi
+
     # FIXME: Details like this should not be in the top-level configure
     if test "$with_pmi" = "smpd" ; then
         AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
