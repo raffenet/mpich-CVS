@@ -6,6 +6,9 @@
 
 #include "mpichconf.h"
 #include <stdlib.h>
+/* stdio.h is needed for mpimem, which prototypes a few routines that 
+   take FILE * arguments */
+#include <stdio.h>
 #include "mpibase.h"
 #include "mpimem.h"
 #include "mpe_thread.h"
