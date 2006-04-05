@@ -16,6 +16,7 @@ void ADIOI_PVFS2_Close(ADIO_File fd, int *error_code)
     if (!is_contig) ADIOI_Delete_flattened(fd->filetype);
 
     ADIOI_Free(fd->fs_ptr);
+    fd->fs_ptr = NULL;
     /* PVFS2 doesn't have a 'close', but MPI-IO semantics dictate that we
      * ensure all data has been flushed.
      */

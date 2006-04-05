@@ -48,7 +48,7 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
     ADIO_Offset shared_fp=0;
     ADIO_File fh;
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
@@ -95,7 +95,7 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
 
 fn_exit:
     MPIR_Nest_decr();
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     /* FIXME: Check for error code from ReadStridedColl? */
     return error_code;

@@ -54,7 +54,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     HPMP_IO_OPEN_START(fl_xmpi, comm);
 #endif /* MPI_hpux */
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     /* --BEGIN ERROR HANDLING-- */
@@ -201,7 +201,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 /* use default values for disp, etype, filetype */    
 
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, fsops, amode, 0,
-		    MPI_BYTE, MPI_BYTE, 0, info, ADIO_PERM_NULL, &error_code);
+		    MPI_BYTE, MPI_BYTE, info, ADIO_PERM_NULL, &error_code);
 
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS) {
@@ -223,7 +223,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
            indiv. file pointer already set to end of file in ADIO_Open. 
            Here file view is just bytes. */
 	if ((*fh)->access_mode & MPI_MODE_APPEND) {
-	    if ((*fh)->io_worker)  /* only one person need set the sharedfp */
+	    if (rank == (*fh)->hints->ranklist[0])  /* only one person need set the sharedfp */
 		    ADIO_Set_shared_fp(*fh, (*fh)->fp_ind, &error_code);
 	    MPI_Barrier(dupcomm);
 	}
@@ -235,6 +235,6 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 
 fn_exit:
     MPIR_Nest_decr();
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
     return error_code;
 }

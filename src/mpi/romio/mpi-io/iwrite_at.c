@@ -79,7 +79,7 @@ int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
     HANDLE hThread;
 #endif
 
-    MPID_CS_ENTER();
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     status = (MPI_Status *) ADIOI_Malloc(sizeof(MPI_Status));
@@ -127,7 +127,7 @@ int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
 #endif
 
     MPIR_Nest_decr();
-    MPID_CS_EXIT();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     /* passed the buck to the blocking version...*/
     return MPI_SUCCESS;

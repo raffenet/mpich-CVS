@@ -15,16 +15,22 @@
 #include "adio.h"
 #include "mpio.h"
 
+/* FIXME: We should be more restricted in what we include from MPICH2
+   into ROMIO */
 #ifdef ROMIO_INSIDE_MPICH2
 #include "mpiimpl.h"
 #include "mpiimplthread.h"
+/* Use the routine versions of the nest macros, to avoid requiring 
+   access to the MPIR_Process and MPIR_Thread structures */
+#undef MPIR_Nest_incr
+#undef MPIR_Nest_decr
 #else
 /* Any MPI implementation that wishes to follow the thread-safety and
    error reporting features provided by MPICH2 must implement these 
    four functions.  Defining these as empty should not change the behavior 
    of correct programs */
-#define MPID_CS_EXIT()
-#define MPID_CS_ENTER()
+#define MPIU_THREAD_SINGLE_CS_ENTER(_msg)
+#define MPIU_THREAD_SINGLE_CS_EXIT(_msg)
 #define MPIR_Nest_incr()
 #define MPIR_Nest_decr()
 #ifdef HAVE_WINDOWS_H
