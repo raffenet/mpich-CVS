@@ -156,6 +156,11 @@ void InitMPINames (void) {
 	{ MPI::INTEGER4, "MPI_INTEGER4" },
 	{ MPI::INTEGER8, "MPI_INTEGER8" },
 	{ MPI::INTEGER16, "MPI_INTEGER16" },
+	/* C++ only types */
+	{ MPI::BOOL, "MPI::BOOL" },
+	{ MPI::COMPLEX, "MPI::COMPLEX" },
+	{ MPI::DOUBLE_COMPLEX, "MPI::DOUBLE_COMPLEX" },
+	{ MPI::LONG_DOUBLE_COMPLEX, "MPI::LONG_DOUBLE_COMPLEX" },
 	{ 0, (char *)0 },  /* Sentinal used to indicate the last element */
     };
 

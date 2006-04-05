@@ -1700,6 +1700,19 @@ if test "$enable_cxx" = "yes" ; then
     # so that it may be used in #if statements without adding to 
     # the CPP name space
     AC_SUBST(FORTRAN_BINDING)
+
+    # Special C++ datatypes.  Set to DATATYPE NULL first; we'll 
+    # replace the ones that we have later, after we have determined
+    # the C datatypes
+    MPIR_CXX_BOOL=0x0c000000
+    MPIR_CXX_COMPLEX=0x0c000000
+    MPIR_CXX_DOUBLE_COMPLEX=0x0c000000
+    MPIR_CXX_LONG_DOUBLE_COMPLEX=0x0c000000
+    AC_SUBST(MPIR_CXX_BOOL)
+    AC_SUBST(MPIR_CXX_COMPLEX)
+    AC_SUBST(MPIR_CXX_DOUBLE_COMPLEX)
+    AC_SUBST(MPIR_CXX_LONG_DOUBLE_COMPLEX)
+
 fi
 # Copy the mpicxx.h file to the main include directory
 AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
@@ -3324,6 +3337,61 @@ EOF
 
     AC_LANG_C
 fi
+# ----------------------------------------------------------------------------
+# C++ types
+AC_LANG_CPLUSPLUS
+AC_CHECK_SIZEOF(bool)
+AC_CHECK_HEADER(complex)
+if test "$ac_cv_header_complex" = "yes" ; then 
+    # The C++ complex types are all templated.  We finagle this by 
+    # defining a standin name
+    AC_CHECK_SIZEOF(Complex,0,[#include <stdio.h>
+#include <complex>
+using namespace std;
+#define Complex complex<float>
+])
+    AC_CHECK_SIZEOF(DoubleComplex,0,[#include <stdio.h>
+#include <complex>
+using namespace std;
+#define DoubleComplex complex<double>
+])
+    AC_CHECK_SIZEOF(LongDoubleComplex,0,[#include <stdio.h>
+#include <complex>
+using namespace std;
+#define LongDoubleComplex complex<long double>
+])
+    # Datatypes are given by
+    # 0x4c00 <length in bytes> (1 byte) <unique num> (1 byte)    
+    # where the unique nums are
+    # 33,34,35,36
+    case "$ac_cv_sizeof_bool" in 
+       1)    MPIR_CXX_BOOL=0x4c000133 ;;
+       2)    MPIR_CXX_BOOL=0x4c000233 ;;
+       4)    MPIR_CXX_BOOL=0x4c000433 ;;
+       8)    MPIR_CXX_BOOL=0x4c000833 ;;
+       *) ;;
+    esac
+    case "$ac_cv_sizeof_Complex" in 
+       8)    MPIR_CXX_COMPLEX=0x4c000834 ;;
+       16)   MPIR_CXX_COMPLEX=0x4c001034 ;;
+       *) ;;
+    esac
+    case "$ac_cv_sizeof_DoubleComplex" in 
+       8)    MPIR_CXX_DOUBLE_COMPLEX=0x4c000835 ;;
+       16)   MPIR_CXX_DOUBLE_COMPLEX=0x4c001035 ;;
+       32)   MPIR_CXX_DOUBLE_COMPLEX=0x4c002035 ;;
+       *) ;;
+    esac
+    case "$ac_cv_sizeof_LongDoubleComplex" in 
+       8)    MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c000836 ;;
+       16)   MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c001036 ;;
+       24)   MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c001836 ;;
+       32)   MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c002036 ;;
+       *) ;;
+    esac
+fi
+
+AC_LANG_C
 # ----------------------------------------------------------------------------
 
 # Is char * the byte address?
