@@ -4,7 +4,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpichconf.h"
 #include <stdlib.h>
+#include "mpibase.h"
+#include "mpimem.h"
 #include "mpe_thread.h"
 
 /*
