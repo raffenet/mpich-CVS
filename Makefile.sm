@@ -22,7 +22,7 @@ DOC_SUBDIRS = doc
 #          then mv lib/pkglist.new lib/pkglist
 #          
 all-local:
-	@if [ ! -d lib ] ; then mkdir lib ; \
+	@if [ ! -d lib ] ; then mkdir lib ; date > lib/.mpich2created ; \
 	else \
 	    echo "@subsystems@" > lib/pkglist.new ; \
 	    echo "@CC@ @CFLAGS@" >>lib/pkglist.new ;\
@@ -70,9 +70,12 @@ all-postamble:
 	@if [ -s lib/pkglist.new ] ; then mv -f lib/pkglist.new lib/pkglist ; fi
 	@echo "Make completed"
 
+# The test on lib/.mpich2created lets us delete the local lib directory
+# if we created it, and not otherwise
 distclean-local:
 	-@rm -f lib/lib${MPILIBNAME}.a lib/pkglist lib/pkglist.new
 	-@rm -f lib/lib${MPILIBNAME}.@SHLIB_EXT@* lib/lib${MPILIBNAME}.la
+	-@if [ -s lib/.mpich2created ] ; then rm -rf lib ; fi
 	-@rm -f src/include/${MPILIBNAME}conf.h
 	-@rm -f src/include/mpio.h
 	-@rm -f bin/mpicc
