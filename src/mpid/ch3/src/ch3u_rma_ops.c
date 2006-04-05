@@ -565,7 +565,7 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 
  fn_exit:
     MPIU_CHKLMEM_FREEALL();
-    if (nest_level_inc);
+    if (nest_level_inc)
     { 
 	MPIR_Nest_decr();
     }
