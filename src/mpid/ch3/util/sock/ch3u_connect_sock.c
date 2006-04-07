@@ -288,7 +288,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_CONNINFO_FROM_BC);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDDU_SOCK_GET_CONNINFO_FROM_BC);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_CONNINFO_FROM_BC);
 
     mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_HOST_DESCRIPTION_KEY, 
 				 host_description, maxlen);
