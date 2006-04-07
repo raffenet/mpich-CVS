@@ -113,8 +113,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    {
 			/* Release the lock so that other threads may make progress while this thread waits for something to do */
 			MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
-			MPIU_THREAD_SINGLE_CS_EXIT("sock-poll");
-			/* MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);*/
+			MPIU_THREAD_CHECK_BEGIN 
+			MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+			MPIU_THREAD_CHECK_END
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {
@@ -140,8 +141,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    {
 			/* Reaquire the lock before processing any of the information returned from poll */
 			MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
-			/* MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);*/
-			MPIU_THREAD_SINGLE_CS_ENTER("sock-poll");
+			MPIU_THREAD_CHECK_BEGIN 
+			MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+			MPIU_THREAD_CHECK_END
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {
