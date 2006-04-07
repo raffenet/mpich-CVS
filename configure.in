@@ -3125,15 +3125,17 @@ int main( int argc, char *argv[] ){
     AC_SUBST(MPI_STATUS_SIZE)
 
     # Try and compute the values of .true. and .false. in Fortran
-    AC_ARG_ENABLE(runtimevalues,
-[--enable-runtimevalues - Determine various parameters of the Fortran 
-                         environment at run time, such as the values for
-                         .TRUE. and .FALSE. .  This allows a single MPICH
-                         library to be used with multiple Fortran compilers],
-use_runtimevalues=$enableval,use_runtimevalues=false)
-    if test "$use_runtimevalues" = "yes" ; then
-        AC_DEFINE(F77_RUNTIME_VALUES,1,[Define if Fortran environment should be determined at runtime])
-    fi
+    # This code has been removed because the Fortran binding code does
+    # not yet support it.  
+dnl    AC_ARG_ENABLE(runtimevalues,
+dnl [--enable-runtimevalues - Determine various parameters of the Fortran 
+dnl                          environment at run time, such as the values for
+dnl                          .TRUE. and .FALSE. .  This allows a single MPICH
+dnl                          library to be used with multiple Fortran compilers],
+dnl use_runtimevalues=$enableval,use_runtimevalues=false)
+dnl     if test "$use_runtimevalues" = "yes" ; then
+dnl         AC_DEFINE(F77_RUNTIME_VALUES,1,[Define if Fortran environment should be determined at runtime])
+dnl     fi
 
     if test "$cross_compiling" = "no" ; then
         AC_MSG_CHECKING([for values of Fortran logicals])
