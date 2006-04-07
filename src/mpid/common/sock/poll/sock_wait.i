@@ -111,7 +111,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 		    {
-			/* Release the lock so that other threads may make progress while this thread waits for something to do */
+			/* Release the lock so that other threads may make 
+			   progress while this thread waits for something to 
+			   do */
 			MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
 			MPIU_THREAD_CHECK_BEGIN 
 			MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
@@ -139,7 +141,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    
 #                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
 		    {
-			/* Reaquire the lock before processing any of the information returned from poll */
+			/* Reaquire the lock before processing any of the 
+			   information returned from poll */
 			MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
 			MPIU_THREAD_CHECK_BEGIN 
 			MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
@@ -154,7 +157,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 #                   endif
 
 		    /*
-		     * Update pollfds array if changes were posted while we were blocked in poll
+		     * Update pollfds array if changes were posted while we 
+		     * were blocked in poll
 		     */
 		    if (sock_set->pollfds_updated)
 		    { 
