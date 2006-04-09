@@ -1129,7 +1129,7 @@ class MPDParmDB(dict):
                 if k == 'secretword':    # for bkwd-compat
                     k = 'MPD_SECRETWORD'
                 if k in parmsToOverride.keys():
-                    if v.isdigit():
+                    if k != 'MPD_SECRETWORD'  and  v.isdigit():
                         v = int(v)
                     self[('rcfile',k)] = v
             else:
