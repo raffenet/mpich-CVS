@@ -6,5 +6,7 @@ distclean-local:
 
 # Test both the MPI routines and the MPICH2 command scripts
 testing:
-	(cd mpi && $(MAKE) testing)
-	(cd commands && $(MAKE) testing)
+	(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && $(MAKE) testing)
+	(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+	export XMLFILE && export XMLCONTINUE && \
+	cd commands && $(MAKE) testing)

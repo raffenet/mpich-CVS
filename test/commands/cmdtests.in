@@ -17,13 +17,41 @@ my $srcdir      = "@srcdir@";
 my $errors = 0;
 
 $gVerbose = 0;
+
+$xmlOutput = 0;
+$xmlFile = "";
+$xmlOutputContinue = 0;
+# testoutput is used to keep a copy of all output in case there is an
+# error and XML output containing the messages is desired.
+$testoutput = "";
 # -------------------------------------------------------------------------
+if (defined($ENV{'XMLFILE'})) {
+    $xmlOutput = 1;
+    $xmlFile   = $ENV{'XMLFILE'};
+}
+if (defined($ENV{'XMLCONTINUE'}) && $ENV{'XMLCONTINUE'} eq "YES") {
+    $xmlOutputContinue = 1;
+}
+
 foreach $_ (@ARGV) {
     if (/-debug/ || /-verbose/) { 
 	$gVerbose = 1;
     }
+    if (/-xmlfile=(.*)/) {
+	$xmlFile = $1;
+	$xmlOutput = 1;
+    }
     else {
 	print STDERR "Unrecognized argument $_\n";
+    }
+}
+# -------------------------------------------------------------------------
+if ($xmlOutput) {
+    if ($xmlOutputContinue) {
+	open XMLFD, ">>$xmlFile" || die "Cannot append to $xmlFile";
+    }
+    else {
+	open XMLFD, ">$xmlFile" || die "Cannot open $xmlFile for writing";
     }
 }
 # -------------------------------------------------------------------------
@@ -63,7 +91,7 @@ while (<MOUT>) {
 	$EnvSeen{$1} = $2;
     }
     else {
-	print STDERR "Unexpected output from mpiexec: $_";
+	&ReportError( "Unexpected output from mpiexec: $_" );
 	$errors ++;
     }
 }
@@ -90,7 +118,7 @@ while (<MOUT>) {
 	$EnvSeen{$1} = $2;
     }
     else {
-	print STDERR "Unexpected output from mpiexec: $_";
+	&ReportError( "Unexpected output from mpiexec: $_" );
 	$errors ++;
     }
 }
@@ -109,7 +137,7 @@ while (<MOUT>) {
 	$EnvSeen{$1} = $2;
     }
     else {
-	print STDERR "Unexpected output from mpiexec: $_";
+	&ReportError( "Unexpected output from mpiexec: $_" );
 	$errors ++;
     }
 }
@@ -130,7 +158,7 @@ while (<MOUT>) {
 	$EnvSeen{$1} = $2;
     }
     else {
-	print STDERR "Unexpected output from mpiexec: $_";
+	&ReportError( "Unexpected output from mpiexec: $_" );
 	$errors ++;
     }
 }
@@ -138,7 +166,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    print STDERR "Non-zero return from mpiexec\n";
+    &ReportError( "Non-zero return from mpiexec\n" );
 }
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
@@ -163,7 +191,7 @@ while (<MOUT>) {
 	$EnvSeen{$1} = $2;
     }
     else {
-	print STDERR "Unexpected output from mpiexec: $_";
+	&ReportError( "Unexpected output from mpiexec: $_" );
 	$errors ++;
     }
 }
@@ -181,7 +209,7 @@ delete $ENV{TESTVAR};
 if (! -x "stdiotest" ) {
     system "make stdiotest";
     if (! -x "stdiotest") {
-	print STDERR "Unable to build stdiotest program\n";
+	&ReportError( "Unable to build stdiotest program\n" );
 	$errors ++;
     }
 }
@@ -213,7 +241,7 @@ if (-x "stdiotest") {
 	}
 	close TFD;
 	if ($sawOutput != 1) {
-	    print STDERR "Saw expected stderr line $sawOutput times\n";
+	    &ReportError( "Saw expected stderr line $sawOutput times\n" );
 	    $errors ++;
 	}
 	open TFD, "<out.txt";
@@ -229,7 +257,7 @@ if (-x "stdiotest") {
 	    }
 	    else {
 		if (/This is stderr/) {
-		    print STDERR "stderr output in stdout file\n";
+		    &ReportError( "stderr output in stdout file\n" );
 		    $errors++;
 		}
 		print STDERR "Unexpected text in stderr: $_" if $showWarnings;
@@ -238,17 +266,17 @@ if (-x "stdiotest") {
 	}
 	close TFD;
 	if ($sawOutput != 1) {
-	    print STDERR "Saw expected stdout line $sawOutput times\n";
+	    &ReportError( "Saw expected stdout line $sawOutput times\n" );
 	    $errors ++;
 	}
     }
     else {
 	if (! -s "out.txt") {
-	    print STDERR "Program stdiotest did not create stdout file\n";
+	    &ReportError( "Program stdiotest did not create stdout file\n" );
 	    $errors ++;
 	}
 	if (! -s "err.txt") {
-	    print STDERR "Program stdiotest did not create stderr file\n";
+	    &ReportError( "Program stdiotest did not create stderr file\n" );
 	    $errors ++;
 	}
     }
@@ -261,7 +289,7 @@ if (-x "stdiotest") {
 if (! -x "stdintest" ) {
     system "make stdintest";
     if (! -x "stdintest") {
-	print STDERR "Unable to build stdintest program\n";
+	&ReportError( "Unable to build stdintest program\n" );
 	$errors ++;
     }
 }
@@ -297,7 +325,7 @@ if (-x "stdintest") {
 		$linesSeen++;
 		if ($pre ne "" || $post ne "") { $sawExtraChars++; }
 		if ($linenum != $expectedLinenum) {
-		    print STDERR "Unexpected linenumber in output; expected $expectedLinenum but say $linenum\n";
+		    &ReportError( "Unexpected linenumber in output; expected $expectedLinenum but say $linenum\n" );
 		    $errors++;
 		}
 		$expectedLinenum++;
@@ -309,16 +337,16 @@ if (-x "stdintest") {
 	}
 	close TFD;
 	if ($linesSeen != 1024) {
-	    print STDERR "Did not see entire input file (only $linesSeen lines)\n";
+	    &ReportError( "Did not see entire input file (only $linesSeen lines)\n" );
 	    $errors++;
 	}
     }
     else {
-	print STDERR "Program stdintest did not create stdout file\n";
+	&ReportError( "Program stdintest did not create stdout file\n" );
 	$errors ++;
     }
     if (-s "err.txt") {
-	print STDERR "Program stdintest created a non-empty stderr file\n";
+	&ReportError( "Program stdintest created a non-empty stderr file\n" );
 	$errors ++;
 	system "cat err.txt";
     }
@@ -335,7 +363,7 @@ unlink $outlog;
 system "$bindir/mpicc -Dtestname=\\\"foo\\\" $srcdir/rtest.c > $outlog 2>&1";
 $rc = $?;
 if ($rc != 0) {
-    print STDERR "Error with escaped double quotes in $cmd\n";
+    &ReportError( "Error with escaped double quotes in $cmd\n" );
     system( "cat $outlog" );
     $errors ++;
 }
@@ -345,7 +373,7 @@ unlink $outlog;
 system "$bindir/mpicc -Dtestname='\"foo bar\"' $srcdir/rtest.c  > $outlog 2>&1";
 $rc = $?;
 if ($rc != 0) {
-    print STDERR "Error with double inside of single quotes in $cmd\n";
+    &ReportError( "Error with double inside of single quotes in $cmd\n" );
     system( "cat $outlog" );
     $errors ++;
 }
@@ -358,7 +386,7 @@ if ("@bindings@" =~ /cxx/) {
     system "$bindir/mpicxx -Dtestname=\\\"foo\\\" $srcdir/rtestx.cxx  > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
-	print STDERR "Error with escaped double quotes in $cmd\n";
+	&ReportError( "Error with escaped double quotes in $cmd\n" );
 	system( "cat $outlog" );
 	$errors ++;
     }
@@ -367,7 +395,7 @@ if ("@bindings@" =~ /cxx/) {
     system "$bindir/mpicxx -Dtestname='\"foo bar\"' $srcdir/rtestx.cxx > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
-	print STDERR "Error with double inside of single quotes in $cmd\n";
+	&ReportError( "Error with double inside of single quotes in $cmd\n" );
 	system( "cat $outlog" );
 	$errors ++;
     }
@@ -380,7 +408,7 @@ if ("@bindings@" =~ /f77/) {
     system "$bindir/mpif77 -Dtestname=\\\"foo\\\" $srcdir/rtestf.F  > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
-	print STDERR "Error with escaped double quotes in $cmd\n";
+	&ReportError( "Error with escaped double quotes in $cmd\n" );
 	system( "cat $outlog" );
 	$errors ++;
     }
@@ -389,7 +417,7 @@ if ("@bindings@" =~ /f77/) {
     system "$bindir/mpif77 -Dtestname='\"foo bar\"' $srcdir/rtestf.F > $outlog 2>&1";
     $rc = $?;
     if ($rc != 0) {
-	print STDERR "Error with double inside of single quotes in $cmd\n";
+	&ReportError( "Error with double inside of single quotes in $cmd\n" );
 	system( "cat $outlog" );
 	$errors ++;
     }
@@ -408,6 +436,26 @@ if ($errors != 0) {
 else {
     print " No Errors\n";
 }
+if ($xmlOutput) {
+    $newline = "\r\n";
+    my $workdir = `pwd`;
+    $workdir =~ s/\r?\n//;
+    print XMLFD "<MPITEST>$newline<NAME>cmdtest</NAME>$newline";
+    print XMLFD "<WORKDIR>$workdir</WORKDIR>$newline";
+    if ($errors != 0) {
+	print XMLFD "<STATUS>fail</STATUS>$newline";
+	$testoutput =~ s/</\*AMP\*lt;/g;
+	$testoutput =~ s/>/\*AMP\*gt;/g;
+	$testoutput =~ s/&/\*AMP\*amp;/g;
+	$testoutput =~ s/\*AMP\*/&/g;
+	print XMLFD "<TESTDIFF>$newline$testoutput</TESTDIFF>$newline";
+    }
+    else {
+	print XMLFD "<STATUS>pass</STATUS>$newline";
+    }
+    print XMLFD "</MPITEST>$newline</MPITESTRESULTS>$newline";
+    close XMLFD;
+}
 exit 0;
 # ------------------------------------------------------------------------
 # Testing routines
@@ -425,13 +473,13 @@ sub CheckEnvVars {
 	    my $observedValue = $EnvSeen{$key};
 	    if ($expectedValue ne $observedValue) {
 		$errcount++;
-		print STDERR "Environment variable $key has value $observedValue but $expectedValue expected\n";
+		&ReportError( "Environment variable $key has value $observedValue but $expectedValue expected\n" );
 	    }
 	    next; 
 	}
 	if (defined($EnvForced{$key})) { next; }
 	$value = $EnvSeen{$key};
-	print STDERR "Unexpected environment variable $key with $value\n";
+	&ReportError( "Unexpected environment variable $key with $value\n" );
 	$errcount ++;
     }
     return $errcount;
@@ -441,4 +489,12 @@ sub Announce {
     my $msg = $_[0];
 
     print STDOUT $msg . "\n";
+    $testoutput .= $msg . "\n";
+}
+
+sub ReportError {
+    my $msg = $_[0];
+    if ( !($msg =~ /\n/) ) { $msg .= "\n"; }
+    print STDERR $msg;
+    $testoutput .= $msg;
 }

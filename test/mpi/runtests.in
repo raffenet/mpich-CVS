@@ -52,6 +52,8 @@ $curdir = ".";           # used to track the relative current directory
 
 # Output forms
 $xmloutput = 0;          # Set to true to get xml output (also specify file)
+$closeXMLOutput = 1;     # Set to false to leave XML output file open to
+                         # accept additional data
 $verbose = 0;            # Set to true to get more output
 $newline = "\r\n";       # Set to \r\n for Windows-friendly, \n for Unix only
 
@@ -80,6 +82,11 @@ if (defined($ENV{"MPITEST_STOPTEST"})) {
 else {
     $stopfile = `pwd` . "/.stoptest";
     $stopfile =~ s/\r*\n*//g;    # Remove any newlines (from pwd)
+}
+ 
+# Define this to leave the XML output file open to receive additional data
+if (defined($ENV{'NOXMLCLOSE'}) && $ENV{'NOXMLCLOSE'} eq 'YES') {
+    $closeXMLOutput = 0;
 }
 
 
@@ -124,17 +131,20 @@ foreach $_ (@ARGV) {
 	$date =~ s/\r?\n//;
 	# MPISOURCE can be used to describe the source of MPI for this
 	# test.
-	print XMLOUT "<?xml version='1.0' ?>
-<?xml-stylesheet href=\"TestResults.xsl\" type=\"text/xsl\" ?>
-<MPITESTRESULTS>
-<DATE>$date</DATE>
-<MPISOURCE></MPISOURCE>\n";
+	print XMLOUT "<?xml version='1.0' ?>$newline";
+	print XMLOUT "<?xml-stylesheet href=\"TestResults.xsl\" type=\"text/xsl\" ?>$newline";
+	print XMLOUT "<MPITESTRESULTS>$newline";
+	print XMLOUT "<DATE>$date</DATE>$newline";
+	print XMLOUT "<MPISOURCE>@MPI_SOURCE@</MPISOURCE>$newline";
+    }
+    elsif (/-noxmlclose/) {
+	$closeXMLOutput = 0;
     }
     else {
 	print STDERR "Unrecognized argument $_\n";
 	print STDERR "runtests [-tests=testfile] [-np=nprocesses] \
         [-maxnp=max-nprocesses] [-srcdir=location-of-tests] \
-        [-xmlfile=filename ] \
+        [-xmlfile=filename ] [-noxmlclose] \
         [-verbose] [-debug]\n";
     }
 }
@@ -151,8 +161,8 @@ else {
     &RunList( $listfiles );
 }
 
-if ($xmloutput) { 
-    print XMLOUT "</MPITESTRESULTS>\n";
+if ($xmloutput && $closeXMLOutput) { 
+    print XMLOUT "</MPITESTRESULTS>$newline";
     close XMLOUT; 
 }
 

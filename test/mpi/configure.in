@@ -743,6 +743,11 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
+dnl MPI_SOURCE may be set as an environment variable giving the location
+dnl of the MPI implementation.  This is used only in runtests to include
+dnl the location of the source of the MPI implementation into the XML
+dnl summary file
+AC_SUBST(MPI_SOURCE)
 
 dnl
 dnl Etags
