@@ -94,12 +94,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 						attr_p->value,
 						attr_p->keyval->extra_state, 
 				(void (*)(void)) delfn.C_DeleteFunction );
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != 0)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+	    if (mpi_errno != 0) {
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+                              MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+			      MPI_ERR_OTHER, "**user", "**userdel %d", 
+                              mpi_errno);
 	    }
-	    /* --END ERROR HANDLING-- */
 	}
 	break;
 #endif
@@ -125,12 +125,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 		else      mpi_errno = MPI_SUCCESS;
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != 0)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+		if (mpi_errno != 0) {
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+				   MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                                   MPI_ERR_OTHER, "**user", "**userdel %d", 
+				   mpi_errno);
 		}
-		/* --END ERROR HANDLING-- */
 	    }
 	}
 	break;
@@ -147,12 +147,12 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 					  fextra, &ierr );
 		if (ierr) mpi_errno = (int)ierr;
 		else      mpi_errno = MPI_SUCCESS;
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != 0)
-		{
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", mpi_errno);
+		if (mpi_errno != 0) {
+		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
+                                  MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+                                  MPI_ERR_OTHER, "**user", "**userdel %d", 
+                                  mpi_errno);
 		}
-		/* --END ERROR HANDLING-- */
 	    }
 	}
 	break;
