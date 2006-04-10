@@ -46,6 +46,7 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 		  fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
 
+    MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
@@ -93,6 +94,7 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 
 fn_exit:
     MPIR_Nest_decr();
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     /* TODO: bcast result? */
     if (!mynod) return error_code;
