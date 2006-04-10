@@ -214,6 +214,12 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
     return 0;
 }
 
+/* FIXME: The alloc_start and alloc_complete routines should be removed.
+   They are used only in typeutil.c (in MPIR_Datatype_init, which is only 
+   executed from within the MPI_Init/MPI_Init_thread startup and hence is
+   guaranteed to be single threaded).  When used by the obj_alloc, they
+   add unnecessary overhead, particularly when MPI is single threaded */
+
 void MPIU_Handle_obj_alloc_start(MPIU_Object_alloc_t *objmem)
 {
     MPIU_UNREFERENCED_ARG(objmem);
@@ -268,6 +274,8 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
     if (objmem->avail) {
 	ptr	      = objmem->avail;
 	objmem->avail = objmem->avail->next;
+	/* FIXME: Clearing ptr->next is not necessary and is
+	   really a defensive move.  */
 	ptr->next     = 0;
 
 	/* ptr points to object to allocate */
