@@ -94,8 +94,16 @@ int PMIServGetPort( int *fdout, char *portString, int portLen )
        the port value */
     
     /* Get the low and high portnumber range.  zero may be used to allow
-       the system to choose */
+       the system to choose.  There is a priority to these values, 
+       we keep going until we get one (and skip if none is found) */
+    
     range_ptr = getenv( "MPIEXEC_PORTRANGE" );
+    if (!range_ptr) {
+	range_ptr = getenv( "MPIEXEC_PORT_RANGE" );
+    }
+    if (!range_ptr) {
+	range_ptr = getenv( "MPICH_PORT_RANGE" );
+    }
     if (range_ptr) {
 	char *p;
 	/* Look for n:m format */
