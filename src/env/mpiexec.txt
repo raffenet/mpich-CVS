@@ -86,10 +86,12 @@ The MPI standard specifies the following arguments and their meanings\:
   terminate MPI programs that take longer than the value specified by
   'MPIEXEC_TIMEOUT'.  
 . MPIEXEC_UNIVERSE_SIZE - Set the universe size
-. MPIEXEC_PORTRANGE - Set the range of ports that 'mpiexec' will use 
+. MPIEXEC_PORT_RANGE - Set the range of ports that 'mpiexec' will use 
   in communicating with the processes that it starts.  The format of 
   this is '<low>:<high>'.  For example, to specify any port between
-  10000 and 10100, use '10000:10100'.
+  10000 and 10100, use '10000:10100'.  
+. MPICH_PORT_RANGE - Has the same meaning as 'MPIEXEC_PORT_RANGE' and 
+  is used if 'MPIEXEC_PORT_RANGE' is not set.
 . MPIEXEC_PREFIX_DEFAULT - If this environment variable is set, output
   to standard output is prefixed by the rank in 'MPI_COMM_WORLD' of the 
   process and output to standard error is prefixed by the rank and the 
