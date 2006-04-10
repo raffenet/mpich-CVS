@@ -300,18 +300,25 @@ Event errors:
 - MPIDU_SOCK_ERR_FAIL - other failure?
 
 Notes:
-While not a post routine, this routine can generate events.  In fact, unlike the post routine, many MPIDU_SOCK_OP_ACCEPT events can
+While not a post routine, this routine can generate events.  In fact,
+unlike the post routine, many MPIDU_SOCK_OP_ACCEPT events can 
 be generated from a listener (typically one per incoming connection attempt).
 
-The implementation may generate an event as soon it is notified that a new connection is forming.  In such an implementation,
-MPIDU_Sock_accept() may be responsible for finalizing the connection.  It is also possible that the connection may fail to
-complete, causing MPIDU_Sock_accept() to be unable to obtain a sock despite the event notification.
+The implementation may generate an event as soon it is notified that a
+new connection is forming.  In such an implementation, 
+MPIDU_Sock_accept() may be responsible for finalizing the connection.
+It is also possible that the connection may fail to 
+complete, causing MPIDU_Sock_accept() to be unable to obtain a sock
+despite the event notification. 
 
-The environment variable MPICH_PORTRANGE=min,max may be used to restrict the ports mpich processes listen on.
+The environment variable MPICH_PORT_RANGE=min:max may be used to
+restrict the ports mpich processes listen on. 
 
 Thread safety:
-The addition of the listener sock object to the sock set may occur while other threads are performing operations on the same sock
-set.  Thread safety of simultaneously operations on the same sock set must be guaranteed by the Sock implementation.
+The addition of the listener sock object to the sock set may occur
+while other threads are performing operations on the same sock 
+set.  Thread safety of simultaneously operations on the same sock set
+must be guaranteed by the Sock implementation. 
 
 Module:
 Utility-Sock
