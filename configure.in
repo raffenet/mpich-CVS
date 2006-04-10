@@ -4429,6 +4429,10 @@ MPICH2_BASEF90=$F90
 export MPICH2_BASE_F77
 export MPICH2_BASE_F90
 export MPICH2_BASE_CXX
+# MPI_SRCDIR gives the test/mpi configure the location of the source
+# files for an MPI implementation
+MPI_SRCDIR=$ac_abs_srcdir
+export MPI_SRCDIR
 AC_CONFIG_SUBDIRS(test/mpi)
 dnl
 dnl Generate the Makefiles from Makefile.in
