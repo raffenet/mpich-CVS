@@ -27,6 +27,8 @@ try {
 <checkErrStart/>
 fh = MPI::File::Open( comm, filename, MPI::MODE_RDWR + MPI::MODE_CREATE, MPI::INFO_NULL );
 <checkErrEnd/>
+// If the file open failed, skip the rest of this test
+if (fh == MPI::FILE_NULL) { continue; }
 </openfile>
 <closefile>
 <checkErrStart/>
