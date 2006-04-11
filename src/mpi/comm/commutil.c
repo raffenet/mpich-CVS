@@ -304,6 +304,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	}
 	if (mask_in_use || comm_ptr->context_id > lowestContextId) {
 	    memset( local_mask, 0, MAX_CONTEXT_MASK * sizeof(int) );
+	    own_mask        = 0;
 	    if (comm_ptr->context_id < lowestContextId) {
 		lowestContextId = comm_ptr->context_id;
 	    }
