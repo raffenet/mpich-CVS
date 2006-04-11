@@ -298,7 +298,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
     MPIU_DBG_MSG_FMT( COMM, VERBOSE, (MPIU_DBG_FDEST,
          "Entering; shared state is %d:%d", mask_in_use, lowestContextId ) );
     while (context_id == 0) {
-	MPID_Common_thread_lock();
+	MPIU_THREAD_SINGLE_CS_ENTER("context_id");
 	if (initialize_context_mask) {
 	    MPIR_Init_contextid();
 	}
@@ -317,7 +317,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	    lowestContextId = comm_ptr->context_id;
 	    MPIU_DBG_MSG( COMM, VERBOSE, "Copied local_mask" );
 	}
-	MPID_Common_thread_unlock();
+	MPIU_THREAD_SINGLE_CS_EXIT("context_id");
 	
 	/* Now, try to get a context id */
 	MPIR_Nest_incr();
@@ -328,7 +328,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 
 	if (own_mask) {
 	    /* There is a chance that we've found a context id */
-	    MPID_Common_thread_lock();
+	    MPIU_THREAD_SINGLE_CS_ENTER("context_id");
 	    /* Find_context_bit updates the context array if it finds a match */
 	    context_id = MPIR_Find_context_bit( local_mask );
 	    MPIU_DBG_MSG_D( COMM, VERBOSE, 
@@ -345,7 +345,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	       there is another thread (with a lower context id) waiting for
 	       it */
 	    mask_in_use = 0;
-	    MPID_Common_thread_unlock();
+	    MPIU_THREAD_SINGLE_CS_EXIT("context_id");
 	}
     }
 
@@ -449,9 +449,9 @@ void MPIR_Free_contextid( int context_id )
 #if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED
     context_mask[idx] |= (0x1 << bitpos);
 #else
-    MPID_Common_thread_lock();
+    MPIU_THREAD_SINGLE_CS_ENTER("context_id");
     context_mask[idx] |= (0x1 << bitpos);
-    MPID_Common_thread_unlock();
+    MPIU_THREAD_SINGLE_CS_EXIT("context_id");
 #endif
 
     MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
