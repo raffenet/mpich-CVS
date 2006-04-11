@@ -830,6 +830,8 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/spawn/Makefile \
 	  threads/Makefile \
 	  threads/pt2pt/Makefile \
+	  threads/util/Makefile \
+	  threads/comm/Makefile \
 	  errors/Makefile \
 	  errors/coll/Makefile \
 	  errors/pt2pt/Makefile \

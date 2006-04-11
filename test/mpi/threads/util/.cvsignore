@@ -1,0 +1,11 @@
+*.vcproj
+*.o
+*.bb
+*.bbg
+*.da
+*.gcov
+Makefile.in
+Makefile
+.deps
+*ebug
+*elease
