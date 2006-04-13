@@ -860,8 +860,8 @@ class MPDMan(object):
             self.streamHandler.del_handler(self.pmiSock)
             self.pmiSock.close()
             self.pmiSock = 0
-            errmsg = "mpdman: invalid attempt by client (%s) " % (self.clientPgm)  + \
-                     "to open 2 simultaneous pmi connections"
+            errmsg = "mpdman: invalid attempt to open 2 simultaneous pmi connections\n" + \
+                     "  client=%s  cwd=%s" % (self.clientPgm,os.environ['MPDMAN_CWD'])
             print errmsg ; sys.stdout.flush()
             clientExitStatus = 137  # assume kill -9 below
             msgToSend = { 'cmd' : 'collective_abort',
