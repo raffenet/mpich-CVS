@@ -52,10 +52,9 @@ if __name__ == '__main__':    # so I can be imported by pydoc
     
     # print "RMB:GDBDRV: ARGS=", argv
     if len(argv) > 2:
-        args = ' '.join(argv[2:])
-    else:
-        args = ''
-    gdb_info = Popen4('gdb -q %s %s' % (argv[1],args), 0 )
+        mpd_print(1, "when using gdb, pass cmd-line args to user pgms via the 'run' cmd")
+        exit(-1)
+    gdb_info = Popen4('gdb -q %s' % (argv[1]), 0 )
     gdbPid = gdb_info.pid
     # print "PID=%d GDBPID=%d" % (getpid(),gdbPid) ; stdout.flush()
     gdb_sin = gdb_info.tochild
