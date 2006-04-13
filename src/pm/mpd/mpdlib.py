@@ -439,12 +439,16 @@ class MPDListenSock(MPDSock):
             self.sock.bind(filename)
             self.sock.listen(listen)
             return
-        # see if we have an MPICH_PORT_RANGE environment variable
+        # see if we have a PORT_RANGE environment variable
         try:
-            port_range = os.environ['MPICH_PORT_RANGE']
+            port_range = os.environ['MPIEXEC_PORT_RANGE']
             (low_port, high_port) = map(int, port_range.split(':'))
         except:
-            (low_port,high_port) = (0,0)
+            try:
+                port_range = os.environ['MPICH_PORT_RANGE']
+                (low_port, high_port) = map(int, port_range.split(':'))
+            except:
+                (low_port,high_port) = (0,0)
         if low_port < 0  or  high_port < low_port:
             (low_port,high_port) = (0,0)
         if low_port != 0  and  high_port != 0:
