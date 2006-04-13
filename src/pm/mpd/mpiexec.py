@@ -124,7 +124,7 @@ def mpiexec():
     parmdb[('thispgm','userpgm')] = ''
     parmdb[('thispgm','nprocs')] = 0
     parmdb[('thispgm','ecfn_format')] = ''
-    parmdb[('thispgm','gdb_attach_jobid')] = ''
+    parmdb[('thispgm','-gdba')] = ''
     parmdb[('thispgm','singinitpid')] = 0
     parmdb[('thispgm','singinitport')] = 0
     parmdb[('thispgm','ignore_rcfile')] = 0
@@ -141,6 +141,7 @@ def mpiexec():
 	if len(sys.argv) != 3:
             print '-gdba arg must appear only with jobid'
 	    usage()
+        parmdb[('cmdline','-gdba')] = sys.argv[2]
     elif sys.argv[1] == '-file'  or  sys.argv[1] == '-f':
 	if len(sys.argv) != 3:
             print '-file (-f) arg must appear alone'
@@ -262,7 +263,7 @@ def mpiexec():
     elif not parmdb['MPIEXEC_IFHN']:    # if user did not specify one, use mpd's
         parmdb[('thispgm','MPIEXEC_IFHN')] = msg['mpd_ifhn']    # not really thispgm here
 
-    if parmdb['gdb_attach_jobid']:
+    if parmdb['-gdba']:
         get_vals_for_attach(parmdb,conSock,msgToMPD)
     elif not parmdb['inXmlFilename']:
         parmdb[('cmdline','nprocs')] = 0  # for incr later
@@ -1364,6 +1365,8 @@ def get_vals_for_attach(parmdb,conSock,msgToMPD):
                 msgToMPD['args'][(rank,rank)]    = [msg['clipid']]
                 msgToMPD['envvars'][(rank,rank)] = {}
                 msgToMPD['limits'][(rank,rank)]  = {}
+                currumask = os.umask(0) ; os.umask(currumask)  # grab it and set it back
+                msgToMPD['umasks'][(rank,rank)]  = str(currumask)
         elif  msg['cmd'] == 'mpdlistjobs_trailer':
             if not got_info:
                 print 'no info on this jobid; probably invalid'
