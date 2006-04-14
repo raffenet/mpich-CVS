@@ -1216,6 +1216,7 @@ class MPD(object):
         man_env['MPDMAN_STDIN_DEST'] = msg['stdin_dest']
         man_env['MPDMAN_TOTALVIEW'] = str(msg['totalview'])
         man_env['MPDMAN_GDB'] = str(msg['gdb'])
+        man_env['MPDMAN_GDBA'] = str(msg['gdba'])  # for attach to running pgm
         fullDirName = os.path.abspath(os.path.split(sys.argv[0])[0])  # normalize
         man_env['MPDMAN_FULLPATHDIR'] = fullDirName    # used to find gdbdrv
         man_env['MPDMAN_SINGINIT_PID']  = str(msg['singinitpid'])

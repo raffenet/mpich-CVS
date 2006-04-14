@@ -142,6 +142,7 @@ def mpiexec():
             print '-gdba arg must appear only with jobid'
 	    usage()
         parmdb[('cmdline','-gdba')] = sys.argv[2]
+        parmdb[('cmdline','MPIEXEC_GDB')] = 1
     elif sys.argv[1] == '-file'  or  sys.argv[1] == '-f':
 	if len(sys.argv) != 3:
             print '-file (-f) arg must appear alone'
@@ -345,6 +346,7 @@ def mpiexec():
         msgToMPD['line_labels'] = ''
     msgToMPD['stdin_dest'] = stdinDest
     msgToMPD['gdb'] = parmdb['MPIEXEC_GDB']
+    msgToMPD['gdba'] = parmdb['-gdba']
     msgToMPD['totalview'] = parmdb['MPIEXEC_TOTALVIEW']
     msgToMPD['singinitpid'] = parmdb['singinitpid']
     msgToMPD['singinitport'] = parmdb['singinitport']

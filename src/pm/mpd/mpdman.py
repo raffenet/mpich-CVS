@@ -123,6 +123,7 @@ class MPDMan(object):
         self.stdinDest = os.environ['MPDMAN_STDIN_DEST']
         self.totalview = int(os.environ['MPDMAN_TOTALVIEW'])
         self.gdb = int(os.environ['MPDMAN_GDB'])
+        self.gdba = os.environ['MPDMAN_GDBA']
         self.lineLabelFmt = os.environ['MPDMAN_LINE_LABELS_FMT']
         self.startStdoutLineLabel = 1
         self.startStderrLineLabel = 1
@@ -1388,6 +1389,8 @@ class MPDMan(object):
                     if not os.access(gdbdrv,os.X_OK):
                         print 'mpdman: cannot execute mpdgdbdrv %s' % gdbdrv
                         sys.exit(0);
+                    if self.gdba:
+                        self.clientPgmArgs.insert(0,'-attach')
                     self.clientPgmArgs.insert(0,self.clientPgm)
                     os.execvpe(gdbdrv,self.clientPgmArgs,cli_env)    # client
                 else:

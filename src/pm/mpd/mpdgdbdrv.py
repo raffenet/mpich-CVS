@@ -50,11 +50,15 @@ if __name__ == '__main__':    # so I can be imported by pydoc
     signal(SIGUSR1,sig_handler)
     mpd_set_my_id('mpdgdbdrv')
     
-    # print "RMB:GDBDRV: ARGS=", argv
-    if len(argv) > 2:
-        mpd_print(1, "when using gdb, pass cmd-line args to user pgms via the 'run' cmd")
-        exit(-1)
-    gdb_info = Popen4('gdb -q %s' % (argv[1]), 0 )
+    ## mpd_print(1,"RMB:GDBDRV: ARGS=%s" % argv)
+    if argv[1] == '-attach':
+        gdb_args = '%s %s' % (argv[2],argv[3])  # userpgm and userpid
+    else:
+        if len(argv) > 2:
+            mpd_print(1, "when using gdb, pass cmd-line args to user pgms via the 'run' cmd")
+            exit(-1)
+        gdb_args = argv[1]
+    gdb_info = Popen4('gdb -q %s' % (gdb_args), 0 )
     gdbPid = gdb_info.pid
     # print "PID=%d GDBPID=%d" % (getpid(),gdbPid) ; stdout.flush()
     gdb_sin = gdb_info.tochild
@@ -83,30 +87,31 @@ if __name__ == '__main__':    # so I can be imported by pydoc
     while not gdb_line.startswith('hi1'):
         gdb_line = gdb_sout_serr.readline() 
         mpd_print(0000, "LINEx=|%s|" % (gdb_line.rstrip()))
-    
-    write(gdb_sin_fileno,'b main\n')
-    gdb_line = ''
-    while not gdb_line.startswith('Breakpoint'):
-        try:
-            (readyFDs,unused1,unused2) = select([gdb_sout_serr_fileno],[],[],3)
-        except error, data:
-            if data[0] == EINTR:    # interrupted by timeout for example
-                continue
-            else:
-                print 'mpdgdb_drv: main loop: select error: %s' % strerror(data[0])
-        if not readyFDs:
-            mpd_print(1, 'timed out waiting for initial Breakpoint response')
+
+    if argv[1] != '-attach':
+        write(gdb_sin_fileno,'b main\n')
+        gdb_line = ''
+        while not gdb_line.startswith('Breakpoint'):
+            try:
+                (readyFDs,unused1,unused2) = select([gdb_sout_serr_fileno],[],[],3)
+            except error, data:
+                if data[0] == EINTR:    # interrupted by timeout for example
+                    continue
+                else:
+                    print 'mpdgdb_drv: main loop: select error: %s' % strerror(data[0])
+            if not readyFDs:
+                mpd_print(1, 'timed out waiting for initial Breakpoint response')
+                exit(-1)
+            gdb_line = gdb_sout_serr.readline()  # drain breakpoint response
+            mpd_print(0000, "gdb_line=|%s|" % (gdb_line.rstrip()))
+        if not gdb_line.startswith('Breakpoint'):
+            mpd_print(1, 'expecting "Breakpoint", got :%s:' % (gdb_line) )
             exit(-1)
-        gdb_line = gdb_sout_serr.readline()  # drain breakpoint response
+        gdb_line = gdb_sout_serr.readline()  # drain prompt
         mpd_print(0000, "gdb_line=|%s|" % (gdb_line.rstrip()))
-    if not gdb_line.startswith('Breakpoint'):
-        mpd_print(1, 'expecting "Breakpoint", got :%s:' % (gdb_line) )
-        exit(-1)
-    gdb_line = gdb_sout_serr.readline()  # drain prompt
-    mpd_print(0000, "gdb_line=|%s|" % (gdb_line.rstrip()))
-    if not gdb_line.startswith('(gdb)'):
-        mpd_print(1, 'expecting "(gdb)", got :%s:' % (gdb_line) )
-        exit(-1)
+        if not gdb_line.startswith('(gdb)'):
+            mpd_print(1, 'expecting "(gdb)", got :%s:' % (gdb_line) )
+            exit(-1)
     
     print '(gdb)\n', ; stdout.flush()    # initial prompt to user
     
