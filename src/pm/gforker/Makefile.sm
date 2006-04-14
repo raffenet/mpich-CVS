@@ -1,7 +1,7 @@
 mpiexec_SOURCES = mpiexec.c 
 # Some C compilers won't take ../libfoo.a as a library, so we use
 # -Ldir -llib for each of the libraries instead.
-# Force the use of the static, not shared library for mpich
+# Force the use of the static, not shared library for mpich and for mpiexec
 mpiexec_LDADD = ../util/libmpiexec.a ../../../lib/libmpich.a
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple \
