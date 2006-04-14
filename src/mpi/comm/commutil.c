@@ -293,6 +293,10 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 
     MPIU_THREADPRIV_GET;
 
+    /* We increment the nest level now because we need to know that we're
+     within another MPI routine before calling the CS_ENTER macro */
+    MPIR_Nest_incr();
+
     /* We lock only around access to the mask.  If another thread is
        using the mask, we take a mask of zero */
     MPIU_DBG_MSG_FMT( COMM, VERBOSE, (MPIU_DBG_FDEST,
@@ -321,11 +325,9 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	MPIU_THREAD_SINGLE_CS_EXIT("context_id");
 	
 	/* Now, try to get a context id */
-	MPIR_Nest_incr();
 	/* Comm must be an intracommunicator */
 	NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
 			MPI_BAND, comm_ptr->handle );
-	MPIR_Nest_decr();
 
 	if (own_mask) {
 	    /* There is a chance that we've found a context id */
@@ -350,6 +352,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	}
     }
 
+    MPIR_Nest_decr();
     return context_id;
 }
 #endif
@@ -450,9 +453,11 @@ void MPIR_Free_contextid( int context_id )
 #if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED
     context_mask[idx] |= (0x1 << bitpos);
 #else
-    MPIU_THREAD_SINGLE_CS_ENTER("context_id");
+    /* FIXME: We assume that we hold the single cs lock already
+       whenever we enter this routine */
+/*    MPIU_THREAD_SINGLE_CS_ENTER("context_id"); */
     context_mask[idx] |= (0x1 << bitpos);
-    MPIU_THREAD_SINGLE_CS_EXIT("context_id");
+/*     MPIU_THREAD_SINGLE_CS_EXIT("context_id"); */
 #endif
 
     MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
