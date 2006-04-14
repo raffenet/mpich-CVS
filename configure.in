@@ -900,7 +900,12 @@ for pm_name in $pm_names ; do
     if test -z "$first_pm_name" ; then
        first_pm_name=$pm_name
     else 
-       other_pm_names="$other_pm_names $pm_name"
+       # Only add to other_pm_names if the directory exists,
+       # since the Makefile in src/pm/Makefile will try to cd to
+       # that directory
+       if test -d $use_top_srcdir/src/pm/$pm_name ; then
+           other_pm_names="$other_pm_names $pm_name"
+       fi
     fi
     if test "$pm_name" = smpd ; then
          hasSMPD=yes
