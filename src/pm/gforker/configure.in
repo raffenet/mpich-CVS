@@ -113,7 +113,8 @@ case "$ENABLE_SHLIB" in
     # We need to panic; -static won't work on OS/X.
     ;;
     gcc) 
-    LDFLAGS="$LDFLAGS -static"    
+    # Gahh.  Gcc even complains about this now.  
+    #LDFLAGS="$LDFLAGS -static"    
     ;;
     solaris)
     # Gahh.  We'd like to use -Bstatic, but on some of our Solaris systems,
