@@ -143,6 +143,9 @@ def mpiexec():
 	    usage()
         parmdb[('cmdline','-gdba')] = sys.argv[2]
         parmdb[('cmdline','MPIEXEC_GDB')] = 1
+        parmdb[('cmdline','MPIEXEC_MERGE_OUTPUT')] = 1       # implied
+        parmdb[('cmdline','MPIEXEC_SHOW_LINE_LABELS')] = 1   # implied
+        parmdb[('cmdline','MPIEXEC_STDIN_DEST')]   = 'all'   # implied
     elif sys.argv[1] == '-file'  or  sys.argv[1] == '-f':
 	if len(sys.argv) != 3:
             print '-file (-f) arg must appear alone'
