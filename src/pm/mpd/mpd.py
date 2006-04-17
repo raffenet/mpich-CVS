@@ -705,6 +705,7 @@ class MPD(object):
             msg['ringsize'] = 0
             msg['ring_ncpus'] = 0
             msg['gdb'] = 0
+            msg['gdba'] = ''
             msg['totalview'] = 0
             self.spawnQ.append(msg)
         elif msg['cmd'] == 'publish_name':
