@@ -708,9 +708,9 @@ AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
 AC_CACHE_CHECK([for int large enough for pointers],
 pac_cv_int_hold_pointer,[
 if test "$ac_cv_sizeof_int" = "0" -o \
-	"$ac_cv_sizeof_voidp" = "0" ; then
+	"$ac_cv_sizeof_void_p" = "0" ; then
     pac_cv_int_hold_pointer=unknown
-elif test "$ac_cv_sizeof_int" -lt "$ac_cv_sizeof_voidp" ; then
+elif test "$ac_cv_sizeof_int" -lt "$ac_cv_sizeof_void_p" ; then
     pac_cv_int_hold_pointer=no
 else
     pac_cv_int_hold_pointer=yes
