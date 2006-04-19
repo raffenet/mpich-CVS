@@ -12,7 +12,9 @@
 #include <mpid_dataloop.h>
 #include "mpid_nem_memdefs.h"
 
-#define memcpy MPID_NEM_MEMCPY
+static inline void my_memcpy (void *src, void *dst, size_t len) {MPID_NEM_MEMCPY (src, dst, len); }
+
+#define memcpy my_memcpy
 
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
