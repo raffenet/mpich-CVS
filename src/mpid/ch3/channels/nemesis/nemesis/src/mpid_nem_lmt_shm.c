@@ -98,9 +98,9 @@ int MPID_nem_lmt_shm_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_c
         /* message will be truncated */
         s_len = data_sz;
         data_sz = r_len;
-        req->status.MPI_ERROR = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
-                                                      "**truncate", "**truncate %d %d %d %d", req->status.MPI_SOURCE,
-                                                      req->status.MPI_TAG, s_len, r_len);
+ 	req->status.MPI_ERROR = MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE, "**truncate",
+                                                      "**truncate %d %d %d %d", req->status.MPI_SOURCE, req->status.MPI_TAG, s_len,
+                                                      r_len);
     }    
     
     MPID_Segment_init (req->dev.user_buf, req->dev.user_count, req->dev.datatype, &segment, 0);

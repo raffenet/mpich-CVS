@@ -41,7 +41,6 @@
    The last step just copies whatever's left.
    
  */
-void m (void *a, void *b, size_t c);
 
 static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t len)
 {
@@ -251,7 +250,7 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
 /* #define MPID_NEM_MEMCPY(a,b,c) memcpy (a, b, c) */
 
 #else
-#define MPID_NEM_MEMCPY(a,b,c) memcpy(dst, src, n)
+#define MPID_NEM_MEMCPY(dst, src, n) do { volatile void *d = dst; volatile void *s = src; memcpy((void *)d, (void *)s, n); }while (0)
 #endif
 
 #endif /* MPID_MEMDEFS_H */
