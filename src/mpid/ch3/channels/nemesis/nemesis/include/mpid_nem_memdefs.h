@@ -250,7 +250,7 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
 /* #define MPID_NEM_MEMCPY(a,b,c) memcpy (a, b, c) */
 
 #else
-#define MPID_NEM_MEMCPY(a,b,c) memcpy(dst, src, n)
+#define MPID_NEM_MEMCPY(dst, src, n) do { volatile void *d = dst; volatile void *s = src; memcpy((void *)d, (void *)s, n); }while (0)
 #endif
 
 #endif /* MPID_MEMDEFS_H */

@@ -19,7 +19,7 @@ void MPID_nem_barrier (int num_processes, int rank)
 {
     MPIU_Assert (barrier_init);
     
-    if (MPID_NEM_FETCH_AND_ADD (&MPID_nem_mem_region.barrier->val, 1) == MPID_nem_mem_region.num_local - 1)
+    if (MPID_NEM_FETCH_AND_INC (&MPID_nem_mem_region.barrier->val) == MPID_nem_mem_region.num_local - 1)
     {
 	MPID_nem_mem_region.barrier->val = 0;
 	MPID_nem_mem_region.barrier->wait = 1 - sense;
