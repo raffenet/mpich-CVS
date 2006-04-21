@@ -202,7 +202,18 @@ $errors += &CheckEnvVars;
 
 delete $ENV{TESTVAR};
 
-
+# TODO:
+# Intel reports problems with
+# export TMP_ENV_VAR=1
+# mpiexec -genvlist TMP_ENV_VAR -n 1 -host host1 ./a.out : -n 1 -host host2 \
+#   ./a.out
+# or using the equivalent config file:
+# mpiexec -configfile a.out.cfgfile
+# where a.out.cfgfile contains
+#   -genvlist TMP_ENV_VAR
+#   -n 1 -host host1 ./a.out
+#   -n 1 -host host2 ./a.out
+#
 # -------------------------------------------------------------------------
 # mpiexec stdout/stderr handling
 &Announce( "$mpiexec ./stdiotest 2>err.txt 1>out.txt" );
