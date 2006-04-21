@@ -1004,6 +1004,11 @@ class MPDConClientSock(MPDSock):
                           (mpd_my_id,self.conFilename)
                     print '  1. no mpd is running on this host'
                     print '  2. an mpd is running but was started without a "console" (-n option)'
+                    print 'In case 1, you can start an mpd on this host with:'
+                    print '    mpd &'
+                    print 'and you will be able to run jobs just on this host.'
+                    print 'For more details on starting mpds on a set of hosts, see'
+                    print 'the MPICH2 Installation Guide.'
                     sys.exit(-1)
                 msgToSend = { 'cmd' : 'con_init' }
                 self.sock.send_dict_msg(msgToSend)
@@ -1028,6 +1033,11 @@ class MPDConClientSock(MPDSock):
                   (mpd_my_id,self.conFilename)
             print '  1. no mpd is running on this host'
             print '  2. an mpd is running but was started without a "console" (-n option)'
+            print 'In case 1, you can start an mpd on this host with:'
+            print '    mpd &'
+            print 'and you will be able to run jobs just on this host.'
+            print 'For more details on starting mpds on a set of hosts, see'
+            print 'the MPICH2 Installation Guide.'
             sys.exit(-1)
 
 class MPDParmDB(dict):
