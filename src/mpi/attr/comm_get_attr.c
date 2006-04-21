@@ -257,7 +257,15 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 	    *attr_int = attr_copy.lastusedcode;
 	    break;
 	case 14: /* APPNUM */
-	    *attr_int = attr_copy.appnum;
+	    /* This is another special case.  If appnum is negative,
+	       we take that as indicating no value of APPNUM, and set
+	       the flag accordingly */
+	    if (attr_copy.appnum < 0) {
+		*flag = 0;
+	    }
+	    else {
+		*attr_int = attr_copy.appnum;
+	    }
 	    break;
 #endif
 	}
