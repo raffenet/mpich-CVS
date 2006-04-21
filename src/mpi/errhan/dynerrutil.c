@@ -48,9 +48,6 @@ static const char *(user_class_msgs[ERROR_MAX_NCLASS]) = { 0 };
 static const char *(user_code_msgs[ERROR_MAX_NCODE]) = { 0 };
 static int  first_free_class = 0;
 static int  first_free_code  = 1;  /* code 0 is reserved */
-#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-volatile static int ready = 0;
-#endif
 
 /* Forward reference */
 const char *MPIR_Err_get_dynerr_string( int code );
@@ -66,29 +63,18 @@ static int MPIR_Dynerrcodes_finalize( void * );
 /* Local routine to initialize the data structures for the dynamic
    error classes and codes.
 
-   MPIR_Init_err_dyncodes is called if initialized is false.  In
-   a multithreaded case, it must check *again* in case two threads
-   are in a race to call this routine
+   MPIR_Init_err_dyncodes is called if not_initialized is true.  
+   Because all of the routines in this file are called by the 
+   MPI_Add_error_xxx routines, and those routines use the SINGLE_CS
+   when the implementation is multithreaded, these routines (until 
+   we implement finer-grain thread-synchronization) need not worry about
+   multiple threads
  */
 static void MPIR_Init_err_dyncodes( void )
 {
     int i;
-#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-    { 
-	int nzflag;
 
-	MPID_Atomic_decr_flag( &not_initialized, nzflag );
-	if (nzflag) {
-	    /* Some other thread is initializing the data.  Wait
-	       until that thread completes */
-	    while (!ready) {
-		MPID_Thread_yield();
-	    }
-	}
-    }
-#else
     not_initialized = 0;
-#endif
     
     for (i=0; i<ERROR_MAX_NCLASS; i++) {
 	user_class_msgs[i] = 0;
@@ -102,13 +88,6 @@ static void MPIR_Init_err_dyncodes( void )
 
     /* Add a finalize handler to free any allocated space */
     MPIR_Add_finalize( MPIR_Dynerrcodes_finalize, (void*)0, 9 );
-
-#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-    /* Release the other threads */
-    /* FIXME - Add MPID_Write_barrier for thread-safe operation,
-       or consider using a flag incr that contains a write barrier */
-    ready = 1;
-#endif
 }
 
 /*
@@ -211,6 +190,8 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
   Predefined classes are handled directly; this routine is not used to 
   initialize the predefined MPI error classes.  This is done to reduce the
   number of steps that must be executed when starting an MPI program.
+
+  This routine should be run within a SINGLE_CS in the multithreaded case.
 */
 int MPIR_Err_add_class()
 {

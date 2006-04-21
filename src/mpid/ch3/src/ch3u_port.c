@@ -1121,14 +1121,6 @@ typedef struct MPIDI_CH3I_Acceptq_s
 MPIDI_CH3I_Acceptq_t;
 
 static MPIDI_CH3I_Acceptq_t * acceptq_head=0;
-#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-static MPID_Thread_lock_t acceptq_mutex;
-#define MPIDI_Acceptq_lock() MPID_Thread_lock(&acceptq_mutex)
-#define MPIDI_Acceptq_unlock() MPID_Thread_unlock(&acceptq_mutex)
-#else
-#define MPIDI_Acceptq_lock()
-#define MPIDI_Acceptq_unlock()
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Acceptq_enqueue
@@ -1155,13 +1147,10 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
 
     q_item->vc = vc;
 
-    MPIDI_Acceptq_lock();
     MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=%p:Enqueuing accept connection",vc);
     q_item->next = acceptq_head;
     acceptq_head = q_item;
     
-    MPIDI_Acceptq_unlock();
-
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_ENQUEUE);
     return mpi_errno;
@@ -1181,8 +1170,6 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
-
-    MPIDI_Acceptq_lock();
 
     *vc = NULL;
     q_item = acceptq_head;
@@ -1211,7 +1198,6 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,
 	      (MPIU_DBG_FDEST,"vc=%p:Dequeuing accept connection with tag %d",
 	       *vc,port_name_tag));
-    MPIDI_Acceptq_unlock();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
     return mpi_errno;
@@ -1230,11 +1216,6 @@ int MPIDI_CH3I_Acceptq_init(void)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-    {
-	MPID_Thread_lock_init(&acceptq_mutex);
-    }
-#   endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
     return MPI_SUCCESS;
 }

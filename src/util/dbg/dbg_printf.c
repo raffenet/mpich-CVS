@@ -261,11 +261,12 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap)
     return n;
 }
 
+/* FIXME: */
 int MPIU_dbg_printf(const char * str, ...)
 {
     int n;
     
-    MPID_Common_thread_lock();
+    /* MPID_Common_thread_lock(); */
     {
 	va_list list;
 
@@ -275,7 +276,7 @@ int MPIU_dbg_printf(const char * str, ...)
 	va_end(list);
 	MPIU_dbglog_flush();
     }
-    MPID_Common_thread_unlock();
+    /* MPID_Common_thread_unlock(); */
     
     return n;
 }

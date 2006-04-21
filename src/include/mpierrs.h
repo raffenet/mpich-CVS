@@ -274,36 +274,36 @@
     }											\
 }
 
-#define MPIR_ERRTEST_WIN(win_, err_)							\
-{											\
-    if ((win_) == MPI_WIN_NULL)								\
-    {											\
-	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_WIN,;, "**winnull");			\
-    }											\
-    else										\
-    {											\
+#define MPIR_ERRTEST_WIN(win_, err_)					\
+{									\
+    if ((win_) == MPI_WIN_NULL)						\
+    {									\
+	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_WIN,;, "**winnull");	\
+    }									\
+    else								\
+    {									\
 	MPIR_ERRTEST_VALID_HANDLE((win_), MPID_WIN, (err_), MPI_ERR_WIN, "**win");	\
-    }											\
+    }									\
 }
 
-#define MPIR_ERRTEST_REQUEST(request_, err_)								\
-{													\
-    if ((request_) == MPI_REQUEST_NULL)									\
-    {													\
-	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_REQUEST,;, "**requestnull");				\
-    }													\
-    else												\
-    {													\
+#define MPIR_ERRTEST_REQUEST(request_, err_)				\
+{									\
+    if ((request_) == MPI_REQUEST_NULL)					\
+    {									\
+	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_REQUEST,;, "**requestnull");\
+    }									\
+    else								\
+    {									\
 	MPIR_ERRTEST_VALID_HANDLE((request_), MPID_REQUEST, (err_), MPI_ERR_REQUEST, "**request");	\
-    }													\
+    }									\
 }
 
-#define MPIR_ERRTEST_REQUEST_OR_NULL(request_, err_)							\
-{													\
-    if ((request_) != MPI_REQUEST_NULL)									\
-    {													\
+#define MPIR_ERRTEST_REQUEST_OR_NULL(request_, err_)			\
+{									\
+    if ((request_) != MPI_REQUEST_NULL)					\
+    {									\
         MPIR_ERRTEST_VALID_HANDLE((request_), MPID_REQUEST, (err_), MPI_ERR_REQUEST, "**request");	\
-    }													\
+    }									\
 }
 
 #define MPIR_ERRTEST_ERRHANDLER(errhandler_,err_)			\
@@ -315,24 +315,24 @@
 				  err_,MPI_ERR_ARG,"**errhandler");	\
     }
 
-#define MPIR_ERRTEST_INFO(info_, err_)							\
-{											\
-    if ((info_) == MPI_INFO_NULL)							\
-    {											\
-	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_ARG,;, "**infonull");				\
-    }											\
-    else										\
-    {											\
+#define MPIR_ERRTEST_INFO(info_, err_)					\
+{									\
+    if ((info_) == MPI_INFO_NULL)					\
+    {									\
+	MPIU_ERR_SETANDSTMT(err_, MPI_ERR_ARG,;, "**infonull");		\
+    }									\
+    else								\
+    {									\
 	MPIR_ERRTEST_VALID_HANDLE((info_), MPID_INFO, (err_), MPI_ERR_ARG, "**info");	\
-    }											\
+    }									\
 }
 
-#define MPIR_ERRTEST_INFO_OR_NULL(info_, err_)						\
-{											\
-    if ((info_) != MPI_INFO_NULL)							\
-    {											\
+#define MPIR_ERRTEST_INFO_OR_NULL(info_, err_)				\
+{									\
+    if ((info_) != MPI_INFO_NULL)					\
+    {									\
         MPIR_ERRTEST_VALID_HANDLE((info_), MPID_INFO, (err_), MPI_ERR_ARG, "**info");	\
-    }											\
+    }									\
 }
 
 #define MPIR_ERRTEST_KEYVAL(keyval_, object_, objectdesc_, err_)	\
@@ -449,6 +449,8 @@
 
 #define MPIU_ERR_SETANDJUMP1(err_,class_,gmsg_,smsg_,arg1_) \
      MPIU_ERR_SETANDSTMT1(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_)
+#define MPIU_ERR_SETFATALANDJUMP1(err_,class_,gmsg_,smsg_,arg1_) \
+     MPIU_ERR_SETFATALANDSTMT1(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_)
 #define MPIU_ERR_CHKANDSTMT1(cond_,err_,class_,stmt_,gmsg_,smsg_,arg1_) \
     {if (cond_) { MPIU_ERR_SETANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_); }}
 #define MPIU_ERR_CHKANDJUMP1(cond_,err_,class_,gmsg_,smsg_,arg1_) \

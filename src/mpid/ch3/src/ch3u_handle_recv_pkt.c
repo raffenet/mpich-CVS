@@ -38,7 +38,6 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID
     if (!*foundp)
     {
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unexpected request allocated");
-	MPID_Request_initialized_set(rreq);
 
 	/*
 	 * An MPID_Probe() may be waiting for the request we just inserted, 
@@ -295,13 +294,15 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 	    }
 	    else
 	    {
-		/* FIXME: an error packet should be sent back to the sender indicating that the ready-send failed.  On the send
-                   side, the error handler for the communicator can be invoked even if the ready-send request has already
+		/* FIXME: an error packet should be sent back to the sender 
+		   indicating that the ready-send failed.  On the send
+                   side, the error handler for the communicator can be invoked
+		   even if the ready-send request has already
                    completed. */
 
-		/* We need to consume any outstanding associated data and mark the request with an error. */
+		/* We need to consume any outstanding associated data and 
+		   mark the request with an error. */
 
-		MPID_Request_initialized_set(rreq);
 		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 							      "**rsendnomatch", "**rsendnomatch %d %d", ready_pkt->match.rank,
 							      ready_pkt->match.tag);
@@ -439,13 +440,15 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 	    else
 	    {
 		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unexpected request allocated");
-		MPID_Request_initialized_set(rreq);
 
 		/*
-		* A MPID_Probe() may be waiting for the request we just inserted, so we need to tell the progress engine to exit.
+		* A MPID_Probe() may be waiting for the request we just 
+		* inserted, so we need to tell the progress engine to exit.
 		*
-		* FIXME: This will cause MPID_Progress_wait() to return to the MPI layer each time an unexpected RTS packet is
-		* received.  MPID_Probe() should atomically increment a counter and MPIDI_CH3_Progress_signal_completion()
+		* FIXME: This will cause MPID_Progress_wait() to return to the
+		* MPI layer each time an unexpected RTS packet is
+		* received.  MPID_Probe() should atomically increment a
+		* counter and MPIDI_CH3_Progress_signal_completion()
 		* should only be called if that counter is greater than zero.
 		*/
 		MPIDI_CH3_Progress_signal_completion();
@@ -1458,7 +1461,6 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 	rreq->dev.iov_count = 1;
 	rreq->dev.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
 	rreq->dev.recv_pending_count = 2;
-	MPID_Request_initialized_set(rreq);
     }
 
 fn_exit:

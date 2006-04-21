@@ -56,6 +56,8 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    /* The thread lock prevents a valid attr delete on the same datatype
+       but in a different thread from causing problems */
     MPIU_THREAD_SINGLE_CS_ENTER("attr");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_DELETE_ATTR);
     
@@ -96,9 +98,6 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
     
     /* Look for attribute.  They are ordered by keyval handle */
 
-    /* The thread lock prevents a valid attr delete on the same datatype
-       but in a different thread from causing problems */
-    MPID_Common_thread_lock();
     old_p = &type_ptr->attributes;
     p     = type_ptr->attributes;
     while (p)
@@ -138,7 +137,6 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 	/* --END ERROR HANDLING-- */
     }
 
-    MPID_Common_thread_unlock( );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     /* ... end of body of routine ... */
@@ -153,7 +151,8 @@ int MPI_Type_delete_attr(MPI_Datatype type, int type_keyval)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_delete_attr",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_type_delete_attr",
 	    "**mpi_type_delete_attr %D %d", type, type_keyval);
     }
 #   endif

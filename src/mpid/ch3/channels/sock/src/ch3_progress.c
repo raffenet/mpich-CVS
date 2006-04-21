@@ -139,7 +139,11 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
      *
      * This is presently not possible, and thus the code is commented out.
      */
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+#   if 0
+    /* FIXME: Was (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED),
+       which really meant not-using-global-mutex-thread model .  This
+       was true for the single threaded case, but was probably not intended
+       for that case*/
     {
 	if (progress_state->ch.completion_count != MPIDI_CH3I_progress_completion_count)
 	{
@@ -149,6 +153,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 #   endif
 	
 #   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    MPIU_THREAD_CHECK_BEGIN;
     {
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
 	{
@@ -168,23 +173,27 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 	    goto fn_exit;
 	}
     }
+    MPIU_THREAD_CHECK_END;
 #   endif
     
     do
     {
 #       if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+	MPIU_THREAD_CHECK_BEGIN;
 	{
 	    MPIDI_CH3I_progress_blocked = TRUE;
 	}
-#	endif
-	
-	mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, MPIDU_SOCK_INFINITE_TIME, &event);
-
-#       if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+	MPIU_THREAD_CHECK_END;
+	mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
+				    MPIDU_SOCK_INFINITE_TIME, &event);
+	MPIU_THREAD_CHECK_BEGIN;
 	{
 	    MPIDI_CH3I_progress_blocked = FALSE;
 	    MPIDI_CH3I_progress_wakeup_signalled = FALSE;
 	}
+#       else
+	mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
+				    MPIDU_SOCK_INFINITE_TIME, &event);
 #	endif
 
 	/* --BEGIN ERROR HANDLING-- */

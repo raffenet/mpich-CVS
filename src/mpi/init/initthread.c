@@ -114,20 +114,13 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #endif
 #endif
 
+    /* We need this inorder to implement IS_THREAD_MAIN */
 #   if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)
     {
 	MPID_Thread_self(&MPIR_Process.master_thread);
     }
 #   endif
     
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-    {
-	MPID_Thread_lock_init(&MPIR_Process.common_lock);
-	MPID_Thread_lock_init(&MPIR_Process.allocation_lock);
-    }
-#   endif    
-    
-
 #ifdef HAVE_ERROR_CHECKING
     /* Eventually this will support commandline and environment options
      for controlling error checks.  It will use the routine 

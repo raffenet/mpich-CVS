@@ -63,6 +63,10 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    /* The routines that setup the group data structures must be executed
+       within a mutex.  As most of the group routines are not performance
+       critical, we simple run these routines within the SINGLE_CS */
+    MPIU_THREAD_SINGLE_CS_ENTER("group");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -161,6 +165,7 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, MPI_Group gr
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
+    MPIU_THREAD_SINGLE_CS_EXIT("group");
     return mpi_errno;
 
   fn_fail:

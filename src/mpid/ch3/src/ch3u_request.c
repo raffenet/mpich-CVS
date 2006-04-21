@@ -194,8 +194,6 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
 	MPIDI_CH3U_SRBuf_free(req);
     }
 
-    MPID_Request_destruct(req);
-
     MPIU_Handle_obj_free(&MPID_Request_mem, req);
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);

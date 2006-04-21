@@ -259,7 +259,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag, 
 	}
 
 	rreq->dev.recv_pending_count = 1;
-        MPID_Request_initialized_set(rreq);
     }
 
   fn_exit:

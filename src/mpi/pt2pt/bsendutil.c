@@ -32,7 +32,6 @@
  *                as no more MPID requests available).
  *  BsendBuffer - This global structure contains pointers to the user buffer
  *                and the three lists, along with the size of the user buffer.
- *                Multithreaded versions contain a thread lock as well.
  *
  * Miscellaneous comments
  * By storing total_size along with "size available for messages", we avoid
@@ -122,8 +121,6 @@ static struct BsendBuffer {
 					  available) */
     BsendData_t        *active;        /* Pointer to the first active (sending)
 					  message */
-    MPIU_IFTHREADED(
-    MPID_Thread_mutex_t bsend_lock;)    /* Thread lock for bsend access */
 } BsendBuffer = { 0, 0, 0, 0, 0, 0, 0 };
 
 static int initialized = 0;   /* keep track of the first call to any
@@ -188,7 +185,6 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
     BsendBuffer.avail		= buffer;
     BsendBuffer.pending		= 0;
     BsendBuffer.active		= 0;
-    MPIU_IFTHREADED(MPID_Thread_mutex_create( BsendBuffer.bsend_lock ));
 
     /* Set the first block */
     p		  = (BsendData_t *)buffer;
@@ -276,9 +272,6 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
      * ones.  If the message can be initiated in the first pass,
      * do not perform the second pass.
      */
-    MPIU_IFTHREADED(
-       MPIU_DBG_MSG(THREAD,TYPICAL,"Enter bsend critical section");
-       MPID_Thread_mutex_lock( &BsendBuffer.bsend_lock ));
     for (pass = 0; pass < 2; pass++) {
 	
 	p = MPIR_Bsend_find_buffer( packsize );
@@ -329,8 +322,6 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	/* Give priority to any pending operations */
 	MPIR_Bsend_retry_pending( );
     }
-    MPIU_IFTHREADED(MPIU_DBG_MSG(THREAD,TYPICAL,"Exit bsend critical section");
-                    MPID_Thread_mutex_unlock( &BsendBuffer.bsend_lock ));
     MPIR_Nest_decr();
     
     if (!p) {

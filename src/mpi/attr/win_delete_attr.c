@@ -57,6 +57,8 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    /* The thread lock prevents a valid attr delete on the same window
+       but in a different thread from causing problems */
     MPIU_THREAD_SINGLE_CS_ENTER("attr");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_DELETE_ATTR);
 
@@ -97,9 +99,6 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
     
     /* Look for attribute.  They are ordered by keyval handle */
 
-    /* The thread lock prevents a valid attr delete on the same window
-       but in a different thread from causing problems */
-    MPID_Common_thread_lock();
     old_p = &win_ptr->attributes;
     p     = win_ptr->attributes;
     while (p) {
@@ -137,7 +136,6 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 	/* --END ERROR HANDLING-- */
     }
 
-    MPID_Common_thread_unlock( );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     /* ... end of body of routine ... */

@@ -723,9 +723,10 @@ int MPIDI_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_POST);
 
     MPIU_THREADPRIV_GET;
-    /* Reset the fence counter so that in case the user has switched from fence to 
-       post-wait synchronization, he cannot use the previous fence to mark the beginning 
-       of a fence epoch.  */
+    /* Reset the fence counter so that in case the user has switched from 
+       fence to 
+       post-wait synchronization, he cannot use the previous fence to mark 
+       the beginning of a fence epoch.  */
     win_ptr->fence_cnt = 0;
 
     /* In case this process was previously the target of passive target rma
@@ -790,7 +791,8 @@ int MPIDI_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 	post_grp = group_ptr->handle;
 	
 	mpi_errno = NMPI_Group_translate_ranks(post_grp, post_grp_size,
-					       ranks_in_post_grp, win_grp, ranks_in_win_grp);
+					       ranks_in_post_grp, win_grp, 
+					       ranks_in_win_grp);
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	
 	NMPI_Comm_rank(win_ptr->comm, &rank);
@@ -935,7 +937,8 @@ int MPIDI_Win_complete(MPID_Win *win_ptr)
     start_grp = win_ptr->start_group_ptr->handle;
 
     mpi_errno = NMPI_Group_translate_ranks(start_grp, start_grp_size,
-					   ranks_in_start_grp, win_grp, ranks_in_win_grp);
+					   ranks_in_start_grp, win_grp, 
+					   ranks_in_win_grp);
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         
         

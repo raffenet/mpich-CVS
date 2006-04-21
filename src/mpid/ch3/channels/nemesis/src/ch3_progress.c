@@ -15,14 +15,6 @@
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) do {} while (0)
 #endif
 
-#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#define MPIDI_Recvq_lock() MPID_Thread_lock(&MPIDI_Process.recvq_mutex)
-#define MPIDI_Recvq_unlock() MPID_Thread_unlock(&MPIDI_Process.recvq_mutex)
-#else
-#define MPIDI_Recvq_lock()
-#define MPIDI_Recvq_unlock()
-#endif
-
 MPID_Request ** const MPID_Recvq_posted_head_ptr;     
 MPID_Request ** const MPID_Recvq_unexpected_head_ptr; 
 MPID_Request ** const MPID_Recvq_posted_tail_ptr;     
@@ -455,7 +447,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 			    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
 			    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
 			    rreq->dev.next             = NULL;
-			    MPIDI_Recvq_lock();
 			    if (*MPID_Recvq_unexpected_tail_ptr != NULL)
 			    {
 				(*MPID_Recvq_unexpected_tail_ptr)->dev.next = rreq;
@@ -465,8 +456,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 				*MPID_Recvq_unexpected_head_ptr = rreq;
 			    }
 			    *MPID_Recvq_unexpected_tail_ptr = rreq;     
-			    MPIDI_Recvq_unlock();       
-			    MPID_Request_initialized_clear(rreq);
 			}
 		    }
 		}
@@ -552,7 +541,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 			    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
 			    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
 			    rreq->dev.next             = NULL;
-			    MPIDI_Recvq_lock();
 			    if (*MPID_Recvq_unexpected_tail_ptr != NULL)
 			    {
 				(*MPID_Recvq_unexpected_tail_ptr)->dev.next = rreq; 
@@ -562,8 +550,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 				*MPID_Recvq_unexpected_head_ptr = rreq; 
 			    }
 			    *MPID_Recvq_unexpected_tail_ptr = rreq; 
-			    MPIDI_Recvq_unlock();       
-			    MPID_Request_initialized_clear(rreq);
 			    MPIDI_Request_set_sync_send_flag(rreq,TRUE);
 			}
 		    }
@@ -602,7 +588,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 			rreq->dev.user_buf         = buf;
 			rreq->dev.user_count       = count;
 			rreq->dev.datatype         = datatype;
-			MPID_Request_initialized_wait(rreq);
 			set_request_info(rreq,rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 		    }
 		    else
@@ -611,7 +596,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 			rreq->dev.match.tag        = rts_pkt->match.tag;
 			rreq->dev.match.rank       = rts_pkt->match.rank;
 			rreq->dev.match.context_id = rts_pkt->match.context_id;
-			MPIDI_Recvq_lock();
 			if (*MPID_Recvq_unexpected_tail_ptr != NULL)
 			{
 			    (*MPID_Recvq_unexpected_tail_ptr)->dev.next = rreq;
@@ -621,8 +605,6 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 			    *MPID_Recvq_unexpected_head_ptr  = rreq;
 			}
 			*MPID_Recvq_unexpected_tail_ptr  = rreq;
-			MPIDI_Recvq_unlock();       
-			MPID_Request_initialized_clear(rreq);
 		    }
 		}
 		break;
@@ -923,7 +905,6 @@ ch3|cancelresp", 0);
 		rreq->dev.match.rank       = source;
 		rreq->dev.match.context_id = context_id;
 		rreq->dev.next             = NULL;			  
-		MPIDI_Recvq_lock();
 		if (*MPID_Recvq_posted_tail_ptr != NULL)
 		{
 		    (*MPID_Recvq_posted_tail_ptr)->dev.next = rreq;
@@ -934,8 +915,6 @@ ch3|cancelresp", 0);
 		}
 		*MPID_Recvq_posted_tail_ptr = rreq;
 		MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
-		MPIDI_Recvq_unlock();       
-		MPID_Request_initialized_clear(rreq);
 	    }
 	}	
     }
@@ -1024,7 +1003,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 					    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
 					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
 					    rreq->dev.next             = NULL;
-					    MPIDI_Recvq_lock();
 					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
 						{
 						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
@@ -1034,8 +1012,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 						    MPIDI_Process.recvq_unexpected_head = rreq;
 						}
 					    MPIDI_Process.recvq_unexpected_tail = rreq;
-					    MPIDI_Recvq_unlock();       
-					    MPID_Request_initialized_clear(rreq);
 					}
 				}
 			}
@@ -1121,7 +1097,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 					    rreq->dev.tmpbuf           = MPIU_Malloc(userbuf_sz);
 					    MPID_NEM_MEMCPY((char *)(rreq->dev.tmpbuf),cell_buf, userbuf_sz);
 					    rreq->dev.next             = NULL;
-					    MPIDI_Recvq_lock();
 					    if (MPIDI_Process.recvq_unexpected_tail != NULL)
 						{
 						    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
@@ -1131,8 +1106,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 						    MPIDI_Process.recvq_unexpected_head = rreq;
 						}
 					    MPIDI_Process.recvq_unexpected_tail = rreq;
-					    MPIDI_Recvq_unlock();       
-					    MPID_Request_initialized_clear(rreq);
 					    MPIDI_Request_set_sync_send_flag(rreq,TRUE);
 					}
 				}
@@ -1171,7 +1144,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 				    rreq->dev.user_buf         = buf;
 				    rreq->dev.user_count       = count;
 				    rreq->dev.datatype         = datatype;
-				    MPID_Request_initialized_wait(rreq);
 				    set_request_info(rreq,rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 				}
 			    else
@@ -1180,7 +1152,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 				    rreq->dev.match.tag        = rts_pkt->match.tag;
 				    rreq->dev.match.rank       = rts_pkt->match.rank;
 				    rreq->dev.match.context_id = rts_pkt->match.context_id;
-				    MPIDI_Recvq_lock();
 				    if (MPIDI_Process.recvq_unexpected_tail != NULL)
 					{
 					    MPIDI_Process.recvq_unexpected_tail->dev.next = rreq;
@@ -1190,8 +1161,6 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 					    MPIDI_Process.recvq_unexpected_head = rreq;
 					}
 				    MPIDI_Process.recvq_unexpected_tail = rreq;
-				    MPIDI_Recvq_unlock();       
-				    MPID_Request_initialized_clear(rreq);
 				}
 			}
 			break;
@@ -1492,7 +1461,6 @@ ch3|cancelresp", 0);
 			rreq->dev.match.rank       = source;
 			rreq->dev.match.context_id = context_id;
 			rreq->dev.next             = NULL;			  
-			MPIDI_Recvq_lock();
 			if (MPIDI_Process.recvq_posted_tail != NULL)
 			    {
 				MPIDI_Process.recvq_posted_tail->dev.next = rreq;
@@ -1503,8 +1471,6 @@ ch3|cancelresp", 0);
 			    }
 			MPIDI_Process.recvq_posted_tail = rreq;
 			MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
-			MPIDI_Recvq_unlock();       
-			MPID_Request_initialized_clear(rreq);
 		    }
 	    }	
     }
@@ -1519,7 +1485,7 @@ ch3|cancelresp", 0);
 #define FUNCNAME MPIDI_CH3_Progress_poke
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_poke()
+int MPIDI_CH3_Progress_poke(void)
 {
     int mpi_errno;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
@@ -1551,7 +1517,7 @@ void MPIDI_CH3_Progress_end(MPID_Progress_state * state)
 #define FUNCNAME MPIDI_CH3I_Progress_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_init()
+int MPIDI_CH3I_Progress_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -1572,7 +1538,7 @@ int MPIDI_CH3I_Progress_init()
 #define FUNCNAME MPIDI_CH3I_Progress_finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress_finalize()
+int MPIDI_CH3I_Progress_finalize(void)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 

@@ -97,9 +97,13 @@ extern MPIDI_Process_t MPIDI_Process;
 /*---------------------
   BEGIN REQUEST SECTION
   ---------------------*/
+/* FIXME: This makes request creation expensive.  We need to trim
+   this to the basics, with additional setup for special-purpose requests 
+   (think base class and inheritance).  For example, do we *really*
+   want to set the kind to UNDEFINED? And should the RMA values 
+   be set only for RMA requests? */
 #define MPIDI_CH3U_Request_create(req_)				\
 {								\
-    MPID_Request_construct(req_);				\
     MPIU_Object_set_ref((req_), 1);				\
     (req_)->kind = MPID_REQUEST_UNDEFINED;			\
     (req_)->cc = 1;						\
@@ -230,69 +234,26 @@ extern MPIDI_Process_t MPIDI_Process;
     (req_)->dev.state |= ((type_) << MPIDI_REQUEST_TYPE_SHIFT) & MPIDI_REQUEST_TYPE_MASK;\
 }
 
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+/* NOTE: Request updates may require atomic ops (critical sections) if
+   a fine-grain thread-sync model is used. */
 #define MPIDI_Request_cancel_pending(req_, flag_)	\
 {							\
     *(flag_) = (req_)->dev.cancel_pending;		\
     (req_)->dev.cancel_pending = TRUE;			\
 }
-#else
-/* MT: to make this code lock free, an atomic exchange can be used. */ 
-#define MPIDI_Request_cancel_pending(req_, flag_)	\
-{							\
-    MPID_Request_thread_lock(req_);			\
-    {							\
-	*(flag_) = (req_)->dev.cancel_pending;		\
-	(req_)->dev.cancel_pending = TRUE;		\
-    }							\
-    MPID_Request_thread_unlock(req_);			\
-}
-#endif
 
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#   define MPIDI_Request_recv_pending(req_, recv_pending_)	\
+#define MPIDI_Request_recv_pending(req_, recv_pending_)	\
     {								\
  	*(recv_pending_) = --(req_)->dev.recv_pending_count;	\
     }
-#elif defined(USE_ATOMIC_UPDATES)
-#   define MPIDI_Request_recv_pending(req_, recv_pending_)		\
-    {									\
-    	int recv_pending__;						\
-									\
-    	MPID_Atomic_decr_flag(&(req_)->dev.recv_pending_count, recv_pending__);\
-    	*(recv_pending_) = recv_pending__;				\
-    }
-#else
-#   define MPIDI_Request_recv_pending(req_, recv_pending_)		\
-    {									\
-    	MPID_Request_thread_lock(req_);					\
-    	{								\
-    	    *(recv_pending_) = --(req_)->dev.recv_pending_count;	\
-    	}								\
-    	MPID_Request_thread_unlock(req_);				\
-    }
-#endif
 
 /* MPIDI_Request_fetch_and_clear_rts_sreq() - atomically fetch current 
    partner RTS sreq and nullify partner request */
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#   define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
+#define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
     {									\
     	*(rts_sreq_) = (sreq_)->partner_request;			\
     	(sreq_)->partner_request = NULL;				\
     }
-#else
-    /* MT: to make this code lock free, an atomic exchange can be used. */
-#   define MPIDI_Request_fetch_and_clear_rts_sreq(sreq_, rts_sreq_)	\
-    {									\
-    	MPID_Request_thread_lock(sreq_);				\
-    	{								\
-    	    *(rts_sreq_) = (sreq_)->partner_request;			\
-    	    (sreq_)->partner_request = NULL;				\
-    	}								\
-    	MPID_Request_thread_unlock(sreq_);				\
-    }
-#endif
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_Request_set_seqnum(req_, seqnum_)	\
@@ -414,14 +375,10 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 /*--------------------------------
   BEGIN VIRTUAL CONNECTION SECTION
   --------------------------------*/
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#   define MPIDI_VC_Get_next_lpid(lpid_ptr_)		\
+#define MPIDI_VC_Get_next_lpid(lpid_ptr_)		\
     {							\
     	*(lpid_ptr_) = MPIDI_Process.lpid_counter++;	\
     }
-#else
-#   error thread safe MPIDI_CH3U_Get_next_lpid() not implemented
-#endif
 
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_VC_Init_seqnum_send(vc_)	\
@@ -460,28 +417,17 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
     MPIU_DBG_PrintVCState(vc_);                 \
 }
 
+/* Note: In the current implementation, the mpid_xsend.c routines that
+   make use of MPIDI_VC_FAI_send_seqnum are all protected by the 
+   SINGLE_CS_ENTER/EXIT macros, so all uses of this macro are 
+   alreay within a critical section when needed.  If/when we move to
+   a finer-grain model, we'll need to examine whether this requires
+   a separate lock. */
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
-#   if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #       define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)	\
         {							\
 	    (seqnum_out_) = (vc_)->seqnum_send++;		\
 	}
-#   elif defined(USE_ATOMIC_UPDATES)
-#       define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)			\
-	{									\
-	    MPID_Atomic_fetch_and_incr(&(vc_)->seqnum_send, (seqnum_out_));	\
-	}
-#   else
-        /* FIXME: a VC specific mutex could be used if contention is a problem. */
-#	define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)	\
-	{							\
-	    MPID_Common_thread_lock();				\
-	    {							\
-		(seqnum_out_) = (vc_)->seqnum_send++;		\
-	    }							\
-	    MPID_Common_thread_unlock();			\
-	}
-#    endif
 #else
 #    define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)
 #endif

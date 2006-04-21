@@ -351,11 +351,14 @@ int MPIDI_CH3_Progress_poke(void);
 
 
 /*E
-  MPIDI_CH3_Progress_signal_completion - Inform the progress engine that a pending request has completed.
+  MPIDI_CH3_Progress_signal_completion - Inform the progress engine that a 
+  pending request has completed.
 
   IMPLEMENTORS:
-  In a single-threaded environment, this routine can be implemented by incrementing a request completion counter.  In a
-  multi-threaded environment, the request completion counter must be atomically incremented, and any threaded blocking in the
+  In a single-threaded environment, this routine can be implemented by
+  incrementing a request completion counter.  In a
+  multi-threaded environment, the request completion counter must be atomically
+  incremented, and any threaded blocking in the
   progress engine must be woken up when a request is completed.
 E*/
 void MPIDI_CH3_Progress_signal_completion(void);
@@ -417,9 +420,12 @@ int MPIDI_CH3_Abort(int exit_code, char * error_msg);
 . rreqp - receive request defining data to be received; may be NULL
 
   NOTE:
-  Multiple threads may not simultaneously call this routine with the same virtual connection.  This constraint eliminates the
-  need to lock the VC and thus improves performance.  If simultaneous upcalls for a single VC are a possible, then the calling
-  routine must serialize the calls (perhaps by locking the VC).  Special consideration may need to be given to packet ordering
+  Multiple threads may not simultaneously call this routine with the same 
+  virtual connection.  This constraint eliminates the
+  need to lock the VC and thus improves performance.  If simultaneous upcalls 
+  for a single VC are a possible, then the calling
+  routine must serialize the calls (perhaps by locking the VC).  Special 
+  consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
 int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
@@ -600,62 +606,29 @@ int MPIDI_CH3U_Finalize_sshm(void);
 /*
  * Request utility macros (public - can be used in MPID macros)
  *
- * MT: The inc/dec of the completion counter must be atomic since the progress engine could be completing the request in one
+ * MT: The inc/dec of the completion counter must be atomic since the progress
+ * engine could be completing the request in one
  * thread and the application could be cancelling the request in another thread.
  */
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-/* SHMEM: In the case of a single-threaded shmem channel sharing requests between processes, a write barrier must be performed
-   before decrementing the completion counter.  This insures that other fields in the req structure are updated before the
-   completion is signalled.  How should that be incorporated into this code from the channel level? */
+/* NOTE: If a fine-grain thread sync model is used, this macro will need 
+   to ensure that it is thread-atomic */
+
+/* SHMEM: In the case of a single-threaded shmem channel sharing requests 
+   between processes, a write barrier must be performed
+   before decrementing the completion counter.  This insures that other fields
+   in the req structure are updated before the
+   completion is signalled.  How should that be incorporated into this code 
+   from the channel level? */
 #define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
 {								\
     *(incomplete_) = --(*(req_)->cc_ptr);			\
 }
-#elif defined(USE_ATOMIC_UPDATES)
-/* If locks are not used, a write barrier must be performed if *before* the completion counter reaches zero.  This insures that
-   other fields in the req structure are updated before the completion is signalled. */
-#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
-{								\
-    int new_cc__;						\
-    								\
-    MPID_Atomic_write_barrier();				\
-    MPID_Atomic_decr_flag((req_)->cc_ptr, new_cc__);		\
-    *(incomplete_) = new_cc__;					\
-}
-#else
-#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
-{								\
-    MPID_Request_thread_lock(req_);				\
-    {								\
-	*(incomplete_) = --(*(req_)->cc_ptr);			\
-    }								\
-    MPID_Request_thread_unlock(req_);				\
-}
-#endif
 
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+
 #define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
 {								\
     *(was_incomplete_) = (*(req_)->cc_ptr)++;			\
 }
-#elif defined(USE_ATOMIC_UPDATES)
-#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
-{								\
-    int old_cc__;						\
-								\
-    MPID_Atomic_fetch_and_incr((req_)->cc_ptr, old_cc__);	\
-    *(was_incomplete_) = old_cc__;				\
-}
-#else
-#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
-{								\
-    MPID_Request_thread_lock(req_);				\
-    {								\
-	*(was_incomplete_) = (*(req_)->cc_ptr)++;		\
-    }								\
-    MPID_Request_thread_unlock(req_);				\
-}
-#endif
 
 /*
  * Device level request management macros
@@ -675,26 +648,11 @@ int MPIDI_CH3U_Finalize_sshm(void);
     }							\
 }
 
-#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
 #define MPID_Request_set_completed(req_)	\
 {						\
     *(req_)->cc_ptr = 0;			\
     MPIDI_CH3_Progress_signal_completion();	\
 }
-#else
-/* MT - If locks are not used, a write barrier must be performed before zeroing the completion counter.  This insures that other
-   fields in the req structure are updated before the completion is signaled. */
-#define MPID_Request_set_completed(req_)	\
-{						\
-    MPID_Request_thread_lock(req_);		\
-    {						\
-	*(req_)->cc_ptr = 0;			\
-    }						\
-    MPID_Request_thread_unlock(req_);		\
-    						\
-    MPIDI_CH3_Progress_signal_completion();	\
-}
-#endif
 
 
 /*

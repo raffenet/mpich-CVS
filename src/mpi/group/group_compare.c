@@ -60,7 +60,11 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_COMPARE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
+    /* The routines that setup the group data structures must be executed
+       within a mutex.  As most of the group routines are not performance
+       critical, we simple run these routines within the SINGLE_CS */
+    MPIU_THREAD_SINGLE_CS_ENTER("group");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_COMPARE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -68,6 +72,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+	    MPIR_ERRTEST_ARGNULL( result, "result", mpi_errno );
 	    MPIR_ERRTEST_GROUP(group1, mpi_errno);
 	    MPIR_ERRTEST_GROUP(group2, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -88,7 +93,6 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
             /* Validate group_ptr */
             MPID_Group_valid_ptr( group_ptr1, mpi_errno );
             MPID_Group_valid_ptr( group_ptr2, mpi_errno );
-	    /* MPID_ERRTEST_ARGNULL( result, "result", mpi_errno );*/
 	    /* If group_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
         }
@@ -144,6 +148,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
+    MPIU_THREAD_SINGLE_CS_ENTER("group");
     return mpi_errno;
 
   fn_fail:

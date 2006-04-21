@@ -220,15 +220,6 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
    guaranteed to be single threaded).  When used by the obj_alloc, they
    add unnecessary overhead, particularly when MPI is single threaded */
 
-void MPIU_Handle_obj_alloc_start(MPIU_Object_alloc_t *objmem)
-{
-    MPIU_UNREFERENCED_ARG(objmem);
-    /* FIXME: we should use memory atomic routines to acquire an item from
-       the list without the lock (see 3.12.5 in the MPICH2 coding document) */
-    /* Lock if necessary */
-    MPID_Allocation_lock();
-}
-
 void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
 				    int initialized)
 {
@@ -244,8 +235,6 @@ void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
 	 */
 	MPIR_Add_finalize(MPIU_Handle_finalize, objmem, 0);
     }
-
-    MPID_Allocation_unlock();
 }
 
 /*+
@@ -263,13 +252,15 @@ void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
   allocate additional space for more objects.
 
   This routine is thread-safe.
+
+  This routine is performance-critical (it may be used to allocate 
+  MPI_Requests) and should not call any other routines in the common
+  case.
   +*/
 void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 {
     MPIU_Handle_common *ptr;
     int performed_initialize = 0;
-
-    MPIU_Handle_obj_alloc_start(objmem);
 
     if (objmem->avail) {
 	ptr	      = objmem->avail;
@@ -337,17 +328,15 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 - object - Object to delete
 
   Notes: 
-  This routine is thread-safe.
+  This routine assumes that only a single thread calls it at a time; this
+  is true for the SINGLE_CS approach to thread safety
   +*/
 void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
 {
     MPIU_Handle_common *obj = (MPIU_Handle_common *)object;
-    /* Lock */
-    MPID_Allocation_lock();
+
     obj->next	        = objmem->avail;
     objmem->avail	= obj;
-    /* Unlock */
-    MPID_Allocation_unlock();
 }
 
 /* 

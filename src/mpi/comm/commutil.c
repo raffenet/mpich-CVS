@@ -245,7 +245,7 @@ static int MPIR_Find_context_bit( unsigned int local_mask[] ) {
     }
     return 0;
 }
-#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED
+#ifndef MPICH_IS_THREADED
 /* Unthreaded (only one MPI call active at any time) */
 
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
@@ -450,7 +450,7 @@ void MPIR_Free_contextid( int context_id )
     }
     /* --END ERROR HANDLING-- */
     /* This update must be done atomically in the multithreaded case */
-#if MPID_MAX_THREAD_LEVEL <= MPI_THREAD_SERIALIZED
+#ifndef MPICH_IS_THREADED
     context_mask[idx] |= (0x1 << bitpos);
 #else
     /* FIXME: We assume that we hold the single cs lock already

@@ -99,9 +99,6 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
     
     /* Look for attribute.  They are ordered by keyval handle */
 
-    /* The thread lock prevents a valid attr delete on the same communicator
-       but in a different thread from causing problems */
-    MPID_Comm_thread_lock( comm_ptr );
     old_p = &comm_ptr->attributes;
     p     = comm_ptr->attributes;
     while (p) {
@@ -134,8 +131,6 @@ int MPI_Comm_delete_attr(MPI_Comm comm, int comm_keyval)
 	}
     }
 
-    MPID_Comm_thread_unlock( comm_ptr );
-    
     /* ... end of body of routine ... */
 
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;

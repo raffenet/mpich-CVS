@@ -66,6 +66,8 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    /* The thread lock prevents a valid attr delete on the same window
+       but in a different thread from causing problems */
     MPIU_THREAD_SINGLE_CS_ENTER("attr");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_ATTR);
 
@@ -109,9 +111,6 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
        a simple linear list algorithm because few applications use more than a 
        handful of attributes */
     
-    /* The thread lock prevents a valid attr delete on the same window
-       but in a different thread from causing problems */
-    MPID_Common_thread_lock( );
     old_p = &win_ptr->attributes;
     p = win_ptr->attributes;
     while (p)
@@ -124,7 +123,6 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (mpi_errno)
 	    {
-		MPID_Common_thread_unlock( );
 		/* FIXME : communicator of window? */
 		goto fn_fail;
 	    }
@@ -170,7 +168,6 @@ int MPI_Win_set_attr(MPI_Win win, int win_keyval, void *attribute_val)
        value changes, using something like
        MPID_Dev_win_attr_hook( win_ptr, keyval, attribute_val );
     */
-    MPID_Common_thread_unlock(  );
     
     /* ... end of body of routine ... */
 

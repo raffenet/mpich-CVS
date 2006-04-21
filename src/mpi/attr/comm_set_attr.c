@@ -115,9 +115,6 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
        a simple linear list algorithm because few applications use more than a 
        handful of attributes */
     
-    /* The thread lock prevents a valid attr delete on the same communicator
-       but in a different thread from causing problems */
-    MPID_Comm_thread_lock( comm_ptr );
     old_p = &comm_ptr->attributes;
     p = comm_ptr->attributes;
     while (p) {
@@ -126,7 +123,6 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	       attribute */
 	    mpi_errno = MPIR_Call_attr_delete( comm, p );
 	    if (mpi_errno) {
-		MPID_Comm_thread_unlock( comm_ptr );
 		goto fn_fail;
 	    }
 	    p->value = attribute_val;
@@ -165,7 +161,6 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
        value changes, using something like
        MPID_Dev_comm_attr_hook( comm_ptr, keyval, attribute_val );
     */
-    MPID_Comm_thread_unlock( comm_ptr );
     
     /* ... end of body of routine ... */
 

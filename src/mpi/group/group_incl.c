@@ -75,6 +75,7 @@ int MPI_Group_incl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_GROUP(group, mpi_errno);
+	    MPIR_ERRTEST_ARGNEG(n,"n",mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

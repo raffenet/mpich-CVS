@@ -39,8 +39,6 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
-    MPID_Comm_thread_lock( comm_ptr );
-
     PMPI_Info_create(&info);
     if (comm_ptr->rank == root)
     {
@@ -65,8 +63,6 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[], char* *array_
 	PMPI_Close_port(pszPortName);
     }
     PMPI_Info_free(&info);
-
-    MPID_Comm_thread_unlock( comm_ptr );
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
     return MPI_SUCCESS;

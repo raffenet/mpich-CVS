@@ -109,80 +109,63 @@ int MPIR_Datatype_init_names( void )
     int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Datatype *datatype_ptr = NULL;
-    static int setup = 0;
     char error_msg[1024];
-    
-    if (setup)
-    {
-	return MPI_SUCCESS;
-    }
+    MPIU_THREADSAFE_INIT_DECL(needsInit);
 
-    MPID_Common_thread_lock();
-    {
-	if (!setup) {
-
-	    /* Make sure that the basics have datatype structures allocated
-	     * and filled in for them.  They are just integers prior to this
-	     * call.
-             */
-	    mpi_errno = MPIR_Datatype_builtin_fillin();
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, 
-				 FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		return mpi_errno;
-	    }
-	    /* --END ERROR HANDLING-- */
-
-	    /* For each predefined type, ensure that there is a corresponding
-	       object and that the object's name is set */
-	    for (i=0; mpi_names[i].name != 0; i++) {
-		/* The size-specific types may be DATATYPE_NULL */
-		if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
-
-		MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
-
-		/* --BEGIN ERROR HANDLING-- */
-		if (datatype_ptr < MPID_Datatype_builtin || 
-		    datatype_ptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
-		{
-		    MPIU_Snprintf(error_msg, 1024, 
-		  "%dth builtin datatype handle references invalid memory", i);
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
-		            MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, 
-			    "**fail", "**fail %s", error_msg);
-		    return mpi_errno;
-		}
-		if (!datatype_ptr) {
-		    MPIU_Snprintf(error_msg, 1024, "Did not initialize name for all of the predefined datatypes (only did first %d)\n", i-1 );
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", "**fail %s", error_msg);
-		    return mpi_errno;
-		}
-		/* --END ERROR HANDLING-- */
-		/* MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name ); */
-		MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
-			      MPI_MAX_OBJECT_NAME );
-	    }
-	    /* Handle the minloc/maxloc types */
-	    for (i=0; mpi_maxloc_names[i].name != 0; i++) {
-		MPID_Datatype_get_ptr( mpi_maxloc_names[i].dtype, 
-				       datatype_ptr );
-		/* --BEGIN ERROR HANDLING-- */
-		if (!datatype_ptr) {
-		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
-					MPIR_ERR_FATAL, FCNAME, __LINE__, 
-					MPI_ERR_INTERN, "**fail", 0 );
-		    return mpi_errno;
-		}
-		/* --END ERROR HANDLING-- */
-		MPIU_Strncpy( datatype_ptr->name, mpi_maxloc_names[i].name, 
-			      MPI_MAX_OBJECT_NAME );
-	    }
-	    setup = 1;
+    if (needsInit) {
+	MPIU_THREADSAFE_INIT_BLOCK_BEGIN(needsInit);
+	/* Make sure that the basics have datatype structures allocated
+	 * and filled in for them.  They are just integers prior to this
+	 * call.
+	 */
+	mpi_errno = MPIR_Datatype_builtin_fillin();
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**fail");
 	}
-	MPID_Common_thread_unlock();
+	
+	/* For each predefined type, ensure that there is a corresponding
+	   object and that the object's name is set */
+	for (i=0; mpi_names[i].name != 0; i++) {
+	    /* The size-specific types may be DATATYPE_NULL */
+	    if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
+	    
+	    MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
+	    
+	    if (datatype_ptr < MPID_Datatype_builtin || 
+		datatype_ptr > MPID_Datatype_builtin + MPID_DATATYPE_N_BUILTIN)
+		{
+		    /* FIXME: Internationalize */
+		    MPIU_Snprintf(error_msg, sizeof(error_msg),
+				  "%dth builtin datatype handle references invalid memory", i);
+		    MPIU_ERR_SETFATALANDJUMP1(mpi_errno,MPI_ERR_INTERN,
+					    "**fail", "**fail %s", error_msg);
+		}
+	    if (!datatype_ptr) {
+		/* FIXME: Internationalize */
+		MPIU_Snprintf(error_msg, sizeof(error_msg), "Did not initialize name for all of the predefined datatypes (only did first %d)\n", i-1 );
+		    MPIU_ERR_SETFATALANDJUMP1(mpi_errno,MPI_ERR_INTERN,
+					    "**fail", "**fail %s", error_msg);
+	    }
+
+	    /* MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name ); */
+	    MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
+			  MPI_MAX_OBJECT_NAME );
+	}
+	/* Handle the minloc/maxloc types */
+	for (i=0; mpi_maxloc_names[i].name != 0; i++) {
+	    MPID_Datatype_get_ptr( mpi_maxloc_names[i].dtype, 
+				   datatype_ptr );
+	    if (!datatype_ptr) {
+		MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_INTERN, "**fail");
+	    }
+	    MPIU_Strncpy( datatype_ptr->name, mpi_maxloc_names[i].name, 
+			  MPI_MAX_OBJECT_NAME );
+	}
+	MPIU_THREADSAFE_INIT_CLEAR(needsInit);
+    fn_fail:;
+    MPIU_THREADSAFE_INIT_BLOCK_END(needsInit);
     }
+
     return mpi_errno;
 }
 #endif

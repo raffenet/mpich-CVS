@@ -14,6 +14,15 @@
 /* FIXME: What are these routines for?  Who uses them?  Why are they different 
    from the src/util/dbg routines? */
 
+/*
+ * Note on thread safety.  These routines originally used 
+ * MPID_Common_thread_lock/unlock, but that lock was not defined or used
+ * consistently with the global mutex approach (now defined as
+ * SINGLE_CS_ENTER/EXIT).  As these debugging routines should also
+ * be withdrawn in favor of the general messaging utility, the
+ * Common_thread_lock/unlock has been removed.
+ */
+
 #undef MPIDI_dbg_printf
 void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
 {
@@ -23,7 +32,6 @@ void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
        suggests that the code is correct with this ununsed argument, and thus
        commits the grave harm of obscuring a real problem */
     MPIU_UNREFERENCED_ARG(level);
-    MPID_Common_thread_lock();
     {
 	va_list list;
 
@@ -41,13 +49,11 @@ void MPIDI_dbg_printf(int level, char * func, char * fmt, ...)
 	MPIU_dbglog_printf("\n");
 	fflush(stdout);
     }
-    MPID_Common_thread_unlock();
 }
 
 #undef MPIDI_err_printf
 void MPIDI_err_printf(char * func, char * fmt, ...)
 {
-    MPID_Common_thread_lock();
     {
 	va_list list;
 
@@ -65,7 +71,6 @@ void MPIDI_err_printf(char * func, char * fmt, ...)
 	printf("\n");
 	fflush(stdout);
     }
-    MPID_Common_thread_unlock();
 }
 
 /* FIXME: It would be much better if the routine to print packets used
@@ -80,7 +85,6 @@ void MPIDI_err_printf(char * func, char * fmt, ...)
 #ifdef MPICH_DBG_OUTPUT
 void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 {
-    MPID_Common_thread_lock();
     {
 	MPIU_DBG_PRINTF(("MPIDI_CH3_Pkt_t:\n"));
 	switch(pkt->type)
@@ -312,7 +316,6 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		break;
 	}
     }
-    MPID_Common_thread_unlock();
 }
 #endif
 

@@ -15,8 +15,10 @@
 #endif
 
 /* FIXME: 
- * Are locks required here?  Not when the current code uses the "one big lock"
- * approach.  In addition, some routines can be implemented in a lock-free
+ * Recvq_lock/unlock removed because it is not needed for the SINGLE_CS
+ * approach and we might want a different, non-lock-based approach in 
+ * a finer-grained thread-sync version.  For example, 
+ * some routines can be implemented in a lock-free
  * fashion (because the user is required to guarantee non-conflicting 
  * accesses, such as doing a probe and a receive that matches in different 
  * threads).  
@@ -30,14 +32,6 @@
  * naturally aligned, 64-bit word.
  * 
  */
-
-#if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
-#define MPIDI_Recvq_lock() MPID_Thread_lock(&MPIDI_Process.recvq_mutex)
-#define MPIDI_Recvq_unlock() MPID_Thread_unlock(&MPIDI_Process.recvq_mutex)
-#else
-#define MPIDI_Recvq_lock()
-#define MPIDI_Recvq_unlock()
-#endif
 
 static MPID_Request * recvq_posted_head = 0;
 static MPID_Request * recvq_posted_tail = 0;
@@ -74,8 +68,6 @@ int MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id, MPI_Status *s)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_RECVQ_FU);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_RECVQ_FU);
-
-    MPIDI_Recvq_lock();
 
     if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE)
     {
@@ -146,8 +138,6 @@ int MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id, MPI_Status *s)
 	found = 1;
     }
 
-    MPIDI_Recvq_unlock();
-
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECVQ_FU);
     return found;
 }
@@ -176,48 +166,38 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request sreq_id, MPIDI_Message_match * m
     matching_cur_rreq = NULL;
     prev_rreq = NULL;
     
-    MPIDI_Recvq_lock();
-    {
-	cur_rreq = recvq_unexpected_head;
-	while(cur_rreq != NULL)
-	{
-	    if (cur_rreq->dev.sender_req_id == sreq_id && 
-		cur_rreq->dev.match.context_id == match->context_id &&
-		cur_rreq->dev.match.rank == match->rank && 
-		cur_rreq->dev.match.tag == match->tag)
+    cur_rreq = recvq_unexpected_head;
+    while(cur_rreq != NULL) {
+	if (cur_rreq->dev.sender_req_id == sreq_id && 
+	    cur_rreq->dev.match.context_id == match->context_id &&
+	    cur_rreq->dev.match.rank == match->rank && 
+	    cur_rreq->dev.match.tag == match->tag)
 	    {
 		matching_prev_rreq = prev_rreq;
 		matching_cur_rreq = cur_rreq;
 	    }
-	    
-	    prev_rreq = cur_rreq;
-	    cur_rreq = cur_rreq->dev.next;
-	}
-
-	if (matching_cur_rreq != NULL)
-	{
-	    if (matching_prev_rreq != NULL)
-	    {
-		matching_prev_rreq->dev.next = matching_cur_rreq->dev.next;
-	    }
-	    else
-	    {
-		recvq_unexpected_head = matching_cur_rreq->dev.next;
-	    }
 	
-	    if (matching_cur_rreq->dev.next == NULL)
-	    {
-		recvq_unexpected_tail = matching_prev_rreq;
-	    }
-
-	    rreq = matching_cur_rreq;
-	}
-	else
-	{
-	    rreq = NULL;
-	}
+	prev_rreq = cur_rreq;
+	cur_rreq = cur_rreq->dev.next;
     }
-    MPIDI_Recvq_unlock();
+    
+    if (matching_cur_rreq != NULL) {
+	if (matching_prev_rreq != NULL) {
+	    matching_prev_rreq->dev.next = matching_cur_rreq->dev.next;
+	}
+	else {
+	    recvq_unexpected_head = matching_cur_rreq->dev.next;
+	}
+	
+	if (matching_cur_rreq->dev.next == NULL) {
+	    recvq_unexpected_tail = matching_prev_rreq;
+	}
+
+	rreq = matching_cur_rreq;
+    }
+    else {
+	rreq = NULL;
+    }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECVQ_FDU);
     return rreq;
@@ -243,119 +223,103 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_RECVQ_FDU_OR_AEP);
 
-    MPIDI_Recvq_lock();
-    {
-	/* Optimize this loop for an empty unexpected receive queue */
-	rreq = recvq_unexpected_head;
-	if (rreq) {
-	    prev_rreq = NULL;
-	    if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE) {
-		do { 
-		    if (rreq->dev.match.context_id == context_id && 
-			rreq->dev.match.rank == source && 
-			rreq->dev.match.tag == tag) {
-			if (prev_rreq != NULL) {
-			    prev_rreq->dev.next = rreq->dev.next;
-			}
-			else {
-			    recvq_unexpected_head = rreq->dev.next;
-			}
-			if (rreq->dev.next == NULL) {
-			    recvq_unexpected_tail = prev_rreq;
-			}
-			found = TRUE;
-			goto lock_exit;
-		    } 
-	    
+    /* Optimize this loop for an empty unexpected receive queue */
+    rreq = recvq_unexpected_head;
+    if (rreq) {
+	prev_rreq = NULL;
+	if (tag != MPI_ANY_TAG && source != MPI_ANY_SOURCE) {
+	    do { 
+		if (rreq->dev.match.context_id == context_id && 
+		    rreq->dev.match.rank == source && 
+		    rreq->dev.match.tag == tag) {
+		    if (prev_rreq != NULL) {
+			prev_rreq->dev.next = rreq->dev.next;
+		    }
+		    else {
+			recvq_unexpected_head = rreq->dev.next;
+		    }
+		    if (rreq->dev.next == NULL) {
+			recvq_unexpected_tail = prev_rreq;
+		    }
+		    found = TRUE;
+		    goto lock_exit;
+		} 
+		
 		prev_rreq = rreq;
 		rreq      = rreq->dev.next;
-		} while (rreq);
+	    } while (rreq);
+	}
+	else {
+	    MPIDI_Message_match match;
+	    MPIDI_Message_match mask;
+	    
+	    match.context_id = context_id;
+	    mask.context_id = ~0;
+	    if (tag == MPI_ANY_TAG) {
+		match.tag = 0;
+		mask.tag = 0;
 	    }
 	    else {
-		MPIDI_Message_match match;
-		MPIDI_Message_match mask;
-
-		match.context_id = context_id;
-		mask.context_id = ~0;
-		if (tag == MPI_ANY_TAG) {
-		    match.tag = 0;
-		    mask.tag = 0;
-		}
-		else {
-		    match.tag = tag;
-		    mask.tag = ~0;
-		}
-		if (source == MPI_ANY_SOURCE) {
-		    match.rank = 0;
-		    mask.rank = 0;
-		}
-		else {
-		    match.rank = source;
-		    mask.rank = ~0;
-		}
-	
-		do {
-		    if (rreq->dev.match.context_id == match.context_id && 
-			(rreq->dev.match.rank & mask.rank) == match.rank &&
-			(rreq->dev.match.tag & mask.tag) == match.tag) {
-			if (prev_rreq != NULL) {
-			    prev_rreq->dev.next = rreq->dev.next;
-			}
-			else {
-			    recvq_unexpected_head = rreq->dev.next;
-			}
-			if (rreq->dev.next == NULL) {
-			    recvq_unexpected_tail = prev_rreq;
-			}
-			found = TRUE;
-			goto lock_exit;
-		    }
+		match.tag = tag;
+		mask.tag = ~0;
+	    }
+	    if (source == MPI_ANY_SOURCE) {
+		match.rank = 0;
+		mask.rank = 0;
+	    }
+	    else {
+		match.rank = source;
+		mask.rank = ~0;
+	    }
 	    
-		    prev_rreq = rreq;
-		    rreq = rreq->dev.next;
-		} while (rreq);
-	    }
+	    do {
+		if (rreq->dev.match.context_id == match.context_id && 
+		    (rreq->dev.match.rank & mask.rank) == match.rank &&
+		    (rreq->dev.match.tag & mask.tag) == match.tag) {
+		    if (prev_rreq != NULL) {
+			prev_rreq->dev.next = rreq->dev.next;
+		    }
+		    else {
+			recvq_unexpected_head = rreq->dev.next;
+		    }
+		    if (rreq->dev.next == NULL) {
+			recvq_unexpected_tail = prev_rreq;
+		    }
+		    found = TRUE;
+		    goto lock_exit;
+		}
+		
+		prev_rreq = rreq;
+		rreq = rreq->dev.next;
+	    } while (rreq);
 	}
-
-	/* A matching request was not found in the unexpected queue, so we 
-	   need to allocate a new request and add it to the posted queue */
-	rreq = MPID_Request_create();
-	if (rreq != NULL)
-	{
-	    MPIU_Object_set_ref(rreq, 2);
-	    rreq->kind = MPID_REQUEST_RECV;
-	    rreq->dev.match.tag = tag;
-	    rreq->dev.match.rank = source;
-	    rreq->dev.match.context_id = context_id;
-	    rreq->dev.next = NULL;
-	
-	    if (recvq_posted_tail != NULL)
-	    {
-		recvq_posted_tail->dev.next = rreq;
-	    }
-	    else
-	    {
-		recvq_posted_head = rreq;
-	    }
-	    recvq_posted_tail = rreq;
-	    /* This is for nemesis to know from where to expect a message */
-	    MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
-	}
+    }
     
-	found = FALSE;
+    /* A matching request was not found in the unexpected queue, so we 
+       need to allocate a new request and add it to the posted queue */
+    rreq = MPID_Request_create();
+    if (rreq != NULL) {
+	MPIU_Object_set_ref(rreq, 2);
+	rreq->kind = MPID_REQUEST_RECV;
+	rreq->dev.match.tag = tag;
+	rreq->dev.match.rank = source;
+	rreq->dev.match.context_id = context_id;
+	rreq->dev.next = NULL;
+	
+	if (recvq_posted_tail != NULL) {
+	    recvq_posted_tail->dev.next = rreq;
+	}
+	else {
+	    recvq_posted_head = rreq;
+	}
+	recvq_posted_tail = rreq;
+	/* This is for nemesis to know from where to expect a message */
+	MPIDI_POSTED_RECV_ENQUEUE_HOOK (rreq);
     }
-  lock_exit:
-    MPIDI_Recvq_unlock();
+    
+    found = FALSE;
 
-    /* FIXME: Do we need this in the single threaded case? */
-    if (!found)
-    { 
-	MPID_Request_initialized_clear(rreq);
-    }
-    else
-    {
-	MPID_Request_initialized_wait(rreq);
-    }
+  lock_exit:
 
     *foundp = found;
     
@@ -386,36 +350,27 @@ int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq)
     found = FALSE;
     prev_rreq = NULL;
     
-    MPIDI_Recvq_lock();
-    {
-	cur_rreq = recvq_posted_head;
-	while (cur_rreq != NULL)
-	{
-	    if (cur_rreq == rreq)
-	    {
-		if (prev_rreq != NULL)
-		{
-		    prev_rreq->dev.next = cur_rreq->dev.next;
-		}
-		else
-		{
-		    recvq_posted_head = cur_rreq->dev.next;
-		}
-		if (cur_rreq->dev.next == NULL)
-		{
-		    recvq_posted_tail = prev_rreq;
-		}
-		/* This is for nemesis to know from where to expect a message */
-		MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
-		found = TRUE;
-		break;
+    cur_rreq = recvq_posted_head;
+    while (cur_rreq != NULL) {
+	if (cur_rreq == rreq) {
+	    if (prev_rreq != NULL) {
+		prev_rreq->dev.next = cur_rreq->dev.next;
 	    }
-	    
-	    prev_rreq = cur_rreq;
-	    cur_rreq = cur_rreq->dev.next;
+	    else {
+		recvq_posted_head = cur_rreq->dev.next;
+	    }
+	    if (cur_rreq->dev.next == NULL) {
+		recvq_posted_tail = prev_rreq;
+	    }
+	    /* This is for nemesis to know from where to expect a message */
+	    MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
+	    found = TRUE;
+	    break;
 	}
+	
+	prev_rreq = cur_rreq;
+	cur_rreq = cur_rreq->dev.next;
     }
-    MPIDI_Recvq_unlock();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECVQ_DP);
     return found;
@@ -442,40 +397,31 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match)
     
     prev_rreq = NULL;
 
-    MPIDI_Recvq_lock();
-    {
-	rreq = recvq_posted_head;
-	while (rreq != NULL)
-	{
-	    if ((rreq->dev.match.context_id == match->context_id) &&
-		(rreq->dev.match.rank == match->rank || 
-		 rreq->dev.match.rank == MPI_ANY_SOURCE) &&
-		(rreq->dev.match.tag == match->tag || 
-		 rreq->dev.match.tag == MPI_ANY_TAG))
-	    {
-		if (prev_rreq != NULL)
-		{
-		    prev_rreq->dev.next = rreq->dev.next;
-		}
-		else
-		{
-		    recvq_posted_head = rreq->dev.next;
-		}
-		if (rreq->dev.next == NULL)
-		{
-		    recvq_posted_tail = prev_rreq;
-		}
-
-		/* This is for nemesis to know from where to expect a message */
-		MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
-		break;
+    rreq = recvq_posted_head;
+    while (rreq != NULL) {
+	if ((rreq->dev.match.context_id == match->context_id) &&
+	    (rreq->dev.match.rank == match->rank || 
+	     rreq->dev.match.rank == MPI_ANY_SOURCE) &&
+	    (rreq->dev.match.tag == match->tag || 
+	     rreq->dev.match.tag == MPI_ANY_TAG)) {
+	    if (prev_rreq != NULL) {
+		prev_rreq->dev.next = rreq->dev.next;
 	    }
-	    
-	    prev_rreq = rreq;
-	    rreq = rreq->dev.next;
+	    else {
+		recvq_posted_head = rreq->dev.next;
+	    }
+	    if (rreq->dev.next == NULL) {
+		recvq_posted_tail = prev_rreq;
+	    }
+
+	    /* This is for nemesis to know from where to expect a message */
+	    MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
+	    break;
 	}
+	
+	prev_rreq = rreq;
+	rreq = rreq->dev.next;
     }
-    MPIDI_Recvq_unlock();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECVQ_FDP);
     return rreq;
@@ -504,73 +450,53 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match,
     
     prev_rreq = NULL;
 
-    MPIDI_Recvq_lock();
-    {
-	rreq = recvq_posted_head;
-	while (rreq != NULL)
-	{
-	    if ((rreq->dev.match.context_id == match->context_id) &&
-		(rreq->dev.match.rank == match->rank || 
-		 rreq->dev.match.rank == MPI_ANY_SOURCE) &&
-		(rreq->dev.match.tag == match->tag || 
-		 rreq->dev.match.tag == MPI_ANY_TAG))
-	    {
-		if (prev_rreq != NULL)
-		{
-		    prev_rreq->dev.next = rreq->dev.next;
-		}
-		else
-		{
-		    recvq_posted_head = rreq->dev.next;
-		}
-		if (rreq->dev.next == NULL)
-		{
-		    recvq_posted_tail = prev_rreq;
-		}
-		found = TRUE;
-		/* This is for nemesis to know from where to expect a message */
-		MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
-		goto lock_exit;
+    rreq = recvq_posted_head;
+    while (rreq != NULL) {
+	if ((rreq->dev.match.context_id == match->context_id) &&
+	    (rreq->dev.match.rank == match->rank || 
+	     rreq->dev.match.rank == MPI_ANY_SOURCE) &&
+	    (rreq->dev.match.tag == match->tag || 
+	     rreq->dev.match.tag == MPI_ANY_TAG)) {
+	    if (prev_rreq != NULL) {
+		prev_rreq->dev.next = rreq->dev.next;
 	    }
-	    
-	    prev_rreq = rreq;
-	    rreq = rreq->dev.next;
+	    else {
+		recvq_posted_head = rreq->dev.next;
+	    }
+	    if (rreq->dev.next == NULL) {
+		recvq_posted_tail = prev_rreq;
+	    }
+	    found = TRUE;
+	    /* This is for nemesis to know from where to expect a message */
+	    MPIDI_POSTED_RECV_DEQUEUE_HOOK (rreq);
+	    goto lock_exit;
 	}
-
-	/* A matching request was not found in the posted queue, so we 
-	   need to allocate a new request and add it to the unexpected queue */
-	rreq = MPID_Request_create();
-	if (rreq != NULL)
-	{
-	    MPIU_Object_set_ref(rreq, 2);
-	    rreq->kind = MPID_REQUEST_RECV;
-	    rreq->dev.match = *match;
-	    rreq->dev.next = NULL;
 	
-	    if (recvq_unexpected_tail != NULL)
-	    {
-		recvq_unexpected_tail->dev.next = rreq;
-	    }
-	    else
-	    {
-		recvq_unexpected_head = rreq;
-	    }
-	    recvq_unexpected_tail = rreq;
-	}
-    
-	found = FALSE;
+	prev_rreq = rreq;
+	rreq = rreq->dev.next;
     }
-  lock_exit:
-    MPIDI_Recvq_unlock();
 
-    if (!found)
-    { 
-	MPID_Request_initialized_clear(rreq);
+    /* A matching request was not found in the posted queue, so we 
+       need to allocate a new request and add it to the unexpected queue */
+    rreq = MPID_Request_create();
+    if (rreq != NULL) {
+	MPIU_Object_set_ref(rreq, 2);
+	rreq->kind = MPID_REQUEST_RECV;
+	rreq->dev.match = *match;
+	rreq->dev.next = NULL;
+	
+	if (recvq_unexpected_tail != NULL) {
+	    recvq_unexpected_tail->dev.next = rreq;
+	}
+	else {
+	    recvq_unexpected_head = rreq;
+	}
+	recvq_unexpected_tail = rreq;
     }
-    else
-    {
-	MPID_Request_initialized_wait(rreq);
-    }
+    
+    found = FALSE;
+
+  lock_exit:
 
     *foundp = found;
 

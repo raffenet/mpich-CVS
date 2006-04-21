@@ -21,7 +21,8 @@ MPIU_Object_alloc_t MPID_Info_mem = { 0, 0, 0, 0, MPID_INFO,
 				      sizeof(MPID_Info), MPID_Info_direct,
                                       MPID_INFO_PREALLOC, };
 
-/* Free an info structure */
+/* Free an info structure.  In the multithreaded case, this routine
+   relies on the SINGLE_CS in the info routines (particularly MPI_Info_free) */
 void MPIU_Info_free( MPID_Info *info_ptr )
 {
     MPID_Info *curr_ptr, *last_ptr;
@@ -38,12 +39,7 @@ void MPIU_Info_free( MPID_Info *info_ptr )
 	curr_ptr = curr_ptr->next;
     }
 
-    /* Lock because updating avail list */
-    MPID_Allocation_lock();
-
     /* Return info to the avail list */
     last_ptr->next	= (MPID_Info *)MPID_Info_mem.avail;
     MPID_Info_mem.avail	= (void *)info_ptr;
-    /* Unlock */
-    MPID_Allocation_unlock();
 }

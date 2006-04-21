@@ -124,6 +124,7 @@
 #endif
 
 #ifdef MPICH_IS_THREADED
+
 #ifdef HAVE_RUNTIME_THREADCHECK
 #define MPIU_THREAD_CHECK_BEGIN if (MPIR_Process.isThreaded) {
 #define MPIU_THREAD_CHECK_END   }  
@@ -131,6 +132,8 @@
 #define MPIU_THREAD_CHECK_BEGIN
 #define MPIU_THREAD_CHECK_END
 #endif
+
+#define MPIU_ISTHREADED(_s) { MPIU_THREAD_CHECK_BEGIN _s MPIU_THREAD_CHECK_END }
 
 /* SINGLE_CS_DECL needs to take over the decl used by MPID_CS_xxx when that
    is removed */
@@ -160,6 +163,7 @@
 
 #else
 /* MPICH user routines are single-threaded */
+#define MPIU_ISTHREADED(_s) 
 #define MPIU_THREAD_SINGLE_CS_DECL
 #define MPIU_THREAD_SINGLE_CS_INITIALIZE
 #define MPIU_THREAD_SINGLE_CS_FINALIZE
@@ -174,9 +178,9 @@
    wtick */
 #define MPIU_THREADSAFE_INIT_DECL(_var) static int _var=1
 #define MPIU_THREADSAFE_INIT_STMT(_var,_stmt) if (_var) { _stmt; _var = 0; }
-#define MPIU_THREADSAFE_INIT_BLOCK_BEGIN(_var)
+#define MPIU_THREADSAFE_INIT_BLOCK_BEGIN(_var) 
 #define MPIU_THREADSAFE_INIT_CLEAR(_var) _var=0
-#define MPIU_THREADSAFE_INIT_BLOCK_END(_var)
+#define MPIU_THREADSAFE_INIT_BLOCK_END(_var) 
 #endif
 
 #endif /* !defined(MPIIMPLTHREAD_H_INCLUDED) */
