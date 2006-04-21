@@ -44,11 +44,11 @@ int MPID_nem_lmt_shm_pre_recv (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_coo
     mpi_errno = MPID_nem_allocate_shm_region (&vc->ch.copy_buf, &vc->ch.copy_buf_handle);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
-    vc->ch.copy_buf->s_len = 0;
-    vc->ch.copy_buf->r_len = 0;
+    vc->ch.copy_buf->s_len.val = 0;
+    vc->ch.copy_buf->r_len.val = 0;
     
-    vc->ch.copy_buf->flag[0] = BUF_EMPTY;
-    vc->ch.copy_buf->flag[1] = BUF_EMPTY;
+    vc->ch.copy_buf->flag[0].val = BUF_EMPTY;
+    vc->ch.copy_buf->flag[1].val = BUF_EMPTY;
 
     r_cookie->MPID_IOV_BUF = &vc->ch.copy_buf_handle;
     r_cookie->MPID_IOV_LEN = sizeof (vc->ch.copy_buf_handle);
@@ -88,8 +88,8 @@ int MPID_nem_lmt_shm_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_c
     
     MPIDI_Datatype_get_info (req->dev.user_count, req->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 
-    copy_buf->s_len = data_sz;
-    while ((r_len = copy_buf->r_len) == 0)
+    copy_buf->s_len.val = data_sz;
+    while ((r_len = copy_buf->r_len.val) == 0)
         /* FIXME: add occasional yields */
         sched_yield();
     
@@ -110,13 +110,13 @@ int MPID_nem_lmt_shm_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_c
     
     do
     {
-        while (copy_buf->flag[buf_num] != BUF_EMPTY)
+        while (copy_buf->flag[buf_num].val != BUF_EMPTY)
             /* FIXME: add occasional yields */
          sched_yield();
         
         last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
 	MPID_Segment_pack (&segment, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
-        copy_buf->flag[buf_num] = BUF_FULL;
+        copy_buf->flag[buf_num].val = BUF_FULL;
         MPID_NEM_WRITE_FENCE();
         first = last;
         buf_num = 1 - buf_num;
@@ -159,8 +159,8 @@ int MPID_nem_lmt_shm_start_recv (MPIDI_VC_t *vc, MPID_Request *req)
     
     MPIDI_Datatype_get_info (req->dev.user_count, req->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 
-    copy_buf->r_len = data_sz;
-    while ((s_len = copy_buf->s_len) == 0)
+    copy_buf->r_len.val = data_sz;
+    while ((s_len = copy_buf->s_len.val) == 0)
         /* FIXME: add occasional yields */
         sched_yield();
 
@@ -184,13 +184,13 @@ int MPID_nem_lmt_shm_start_recv (MPIDI_VC_t *vc, MPID_Request *req)
 
     do
     {
-        while ((buf_len = copy_buf->flag[buf_num]) != BUF_FULL)
+        while ((buf_len = copy_buf->flag[buf_num].val) != BUF_FULL)
             /* FIXME: add occasional yields */
             sched_yield();
 
         last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
 	MPID_Segment_unpack (&segment, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
-        copy_buf->flag[buf_num] = BUF_EMPTY;
+        copy_buf->flag[buf_num].val = BUF_EMPTY;
         MPID_NEM_WRITE_FENCE();
         first = last;
         buf_num = 1 - buf_num;

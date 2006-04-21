@@ -169,12 +169,19 @@ typedef struct MPID_nem_fbox_arrays
 
 #define MPID_NEM_COPY_BUF_LEN (64 * 1024)
 
+typedef union
+{
+    int val;
+    char padding[MPID_NEM_CACHE_LINE_LEN];
+}
+MPID_nem_cacheline_int;
+
 typedef struct MPID_nem_copy_buf
 {
-    int s_len;
-    int r_len;
-    int flag[2];
-    char padding[MPID_NEM_CACHE_LINE_LEN - 4 * sizeof (int)];
+    MPID_nem_cacheline_int s_len;
+    MPID_nem_cacheline_int r_len;
+    MPID_nem_cacheline_int flag[2];
+    //    char padding[MPID_NEM_CACHE_LINE_LEN - 4 * sizeof (int)];
     char buf[2][MPID_NEM_COPY_BUF_LEN];
 } MPID_nem_copy_buf_t;
 
