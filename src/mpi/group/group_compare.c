@@ -148,7 +148,7 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_COMPARE);
-    MPIU_THREAD_SINGLE_CS_ENTER("group");
+    MPIU_THREAD_SINGLE_CS_EXIT("group");
     return mpi_errno;
 
   fn_fail:
