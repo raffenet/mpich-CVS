@@ -429,7 +429,7 @@ and
 \end{verbatim}
 
 
-\subsubsection{Other Command-Line Arguments to \texttt{mpiexec}}
+\subsubsection{Other Command-Line Arguments to \texttt{mpiexec} for MPD}
 \label{sec:environment}
 
 The MPI-2 standard specifies the syntax and semantics of the arguments
@@ -575,18 +575,19 @@ sends \texttt{stdin} to processes 0,1,2, and 3.
 The default, if \texttt{-s} is not specified, is to send
 \texttt{mpiexec}'s \texttt{stdin} to process 0 only.
 
-\item[\texttt{-kx}] is used only for debugging.  The \texttt{mpd}
-  process manager encapsulates the command-line arguments, the contents
-  of the \texttt{-machinefile} argment, \texttt{-configfile}, and in
-  some cases the environment, into an XML file for delivery to the
-  internals of the process manager.  Under ordinary circumstances, this
-  file, created in \texttt{/tmp}, is not seen by the user, and is
-  deleted after use.  In some cases it may be desirable to examine the
-  contents of this file after it is used, in order to debug difficulties
-  with the installation and functioning of \texttt{mpd}.  In this case,
-  the \texttt{-kx} argument causes \texttt{mpiexec} to keep the file,
-  which you will be able to find in \texttt{/tmp} with a name like
-  \texttt{smith\_tempxml\_1234}.
+% the following is obsolete
+% \item[\texttt{-kx}] is used only for debugging.  The \texttt{mpd}
+%   process manager encapsulates the command-line arguments, the contents
+%   of the \texttt{-machinefile} argment, \texttt{-configfile}, and in
+%   some cases the environment, into an XML file for delivery to the
+%   internals of the process manager.  Under ordinary circumstances, this
+%   file, created in \texttt{/tmp}, is not seen by the user, and is
+%   deleted after use.  In some cases it may be desirable to examine the
+%   contents of this file after it is used, in order to debug difficulties
+%   with the installation and functioning of \texttt{mpd}.  In this case,
+%   the \texttt{-kx} argument causes \texttt{mpiexec} to keep the file,
+%   which you will be able to find in \texttt{/tmp} with a name like
+%   \texttt{smith\_tempxml\_1234}.
 
 \end{description}
 
@@ -603,7 +604,7 @@ This option implies that the global arguments can occur on a separate
 line in the file specified by \texttt{-configfile} when it is used to 
 replace a long command line.
 
-\subsubsection{Environment Variables Affecting \texttt{mpiexec}}
+\subsubsection{Environment Variables Affecting \texttt{mpiexec} for MPD}
 \label{sec:mpd-mpiexec-env}
 
 A small number of environment variables affect the behavior of
@@ -612,7 +613,15 @@ A small number of environment variables affect the behavior of
 \begin{description}
 \item[\texttt{MPIEXEC\_TIMEOUT}] The value of this environment variable is the
   maximum number of seconds this job will be permitted to run.  When
-  time is up, the job is aborted. 
+  time is up, the job is aborted.
+\item[\texttt{MPIEXEC\_PORT\_RANGE}] If this environment variable is
+  defined then the MPD system will restrict its usage of ports for
+  connecting its various processes to ports in this range.  If this
+  variable is not assigned, but \texttt{MPICH\_PORT\_RANGE} \emph{is}
+  assigned, then it will use the range specified by
+  \texttt{MPICH\_PORT\_RANGE} for its ports.  Otherwise, it will use
+  whatever paorts are assigned to it by the system.  Port ranges are
+  given as a pair of integers separated by a colon.
 \item[\texttt{MPIEXEC\_BNR}] If this environment variable is defined
   (its value, if any, is currently insignificant), then MPD will act in
   backward-compatibility mode, supporting the BNR interface from the
