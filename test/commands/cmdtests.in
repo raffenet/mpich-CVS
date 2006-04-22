@@ -64,6 +64,11 @@ $ENV{TestEnvVar} = "test var name";
 	    'PMI_DEBUG' => 0, 
 	    'MPI_APPNUM' => 0, 'MPI_UNIVERSE_SIZE' => 1, 
 	    'PMI_PORT' => 1, 
+	    'MPICH_INTERFACE_NAME' => 1,
+	    'MPICH_INTERFACE_NAME_R0' => 1,
+	    'MPICH_INTERFACE_NAME_R1' => 1,
+	    'MPICH_INTERFACE_NAME_R2' => 1,
+	    'MPICH_INTERFACE_NAME_R3' => 1,
 	    # These are suspicious
 	    'PMI_SPAWNED' => 0, 
 	    );
@@ -96,6 +101,11 @@ while (<MOUT>) {
     }
 }
 close MOUT;
+$rc = $?;
+if ($rc != 0) {
+    $errors ++;
+    &ReportError( "Non-zero return from mpiexec\n" );
+}
 # Check that all vars in save are seen
 %copyEnv = %SaveENV;
 foreach my $key (keys(%EnvSeen)) {
@@ -123,6 +133,11 @@ while (<MOUT>) {
     }
 }
 close MOUT;
+$rc = $?;
+if ($rc != 0) {
+    $errors ++;
+    &ReportError( "Non-zero return from mpiexec\n" );
+}
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
 
@@ -142,6 +157,11 @@ while (<MOUT>) {
     }
 }
 close MOUT;
+$rc = $?;
+if ($rc != 0) {
+    $errors ++;
+    &ReportError( "Non-zero return from mpiexec\n" );
+}
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
 
@@ -196,13 +216,17 @@ while (<MOUT>) {
     }
 }
 close MOUT;
+$rc = $?;
+if ($rc != 0) {
+    $errors ++;
+    &ReportError( "Non-zero return from mpiexec\n" );
+}
 # Check that only PATH, TESTVAR, and the PMI variables are set, and
 # that they have the correct values
 $errors += &CheckEnvVars;
 
 delete $ENV{TESTVAR};
 
-# TODO:
 # Intel reports problems with
 # export TMP_ENV_VAR=1
 # mpiexec -genvlist TMP_ENV_VAR -n 1 -host host1 ./a.out : -n 1 -host host2 \
@@ -214,6 +238,40 @@ delete $ENV{TESTVAR};
 #   -n 1 -host host1 ./a.out
 #   -n 1 -host host2 ./a.out
 #
+$ENV{'TMP_ENV_VAR'} = 1;
+$myhost = `hostname`;
+$myhost =~ s/\r?\n//;
+&Announce( "$mpiexec -genvlist TMP_ENV_VAR -n 1 -host $myhost ./checkenv1 : -n 1 -host $myhost ./checkenv1" );
+if (! -x "checkenv1" ) {
+    system "make checkenv1";
+    if (! -x "checkenv1") {
+	&ReportError( "Unable to build checkenv1 program\n" );
+	$errors ++;
+    }
+}
+open MOUT, "$mpiexec -genvlist TMP_ENV_VAR -n 1 -host $myhost ./checkenv1 : -n 1 -host $myhost ./checkenv1 |" || die "Could not run $mpiexec";
+$foundNoErrors = 0;
+while (<MOUT>) {
+    if (/ No Errors/) {
+	$foundNoErrors = 1;
+    }
+    else {
+	&ReportError( "Unexpected output from mpiexec: $_" );
+	$errors ++;
+    }
+}
+close MOUT;
+$rc = $?;
+if ($rc != 0) {
+    $errors ++;
+    &ReportError( "Non-zero return from mpiexec\n" );
+}
+if (! $foundNoErrors) {
+    $errors ++;
+    &ReportError( "checkenv1 did not return No Errors\n" );
+}
+delete $ENV{'TMP_ENV_VAR'};
+
 # -------------------------------------------------------------------------
 # mpiexec stdout/stderr handling
 &Announce( "$mpiexec ./stdiotest 2>err.txt 1>out.txt" );
