@@ -45,9 +45,9 @@ AH_BOTTOM([
 ])
 AC_INIT()
 AC_PREREQ(2.52)
-AC_CONFIG_HEADER(mpe_logging_conf.h)
+AC_CONFIG_HEADER( mpe_logging_conf.h )
 dnl
-echo "Configuring MPE Logging Library with $ac_configure_args"
+echo "Configuring MPE Logging Library and Tools with $ac_configure_args"
 dnl
 dnl Set top_srcdir_abs to be the ABSOLUTE path to the home directory of MPE
 dnl top_srcdir is in relative path.
@@ -158,7 +158,11 @@ if test "$CPP" = "/lib/cpp" -a ! -x /lib/cpp ; then
 fi
 
 AC_HEADER_STDC
+
 AC_C_CONST
+
+AC_DEFINE( CLOG_IMPL, 1,
+           [The configuration header enables CLOG2 implementation related API] )
 
 dnl   -- Check if byteswapping needs to be done.
 if test "$cross_compiling" = "yes" -o "$cross_compiling" = 1 ; then
@@ -185,6 +189,64 @@ if test "$cross_compiling" = "yes" -o "$cross_compiling" = 1 ; then
 else
     AC_C_BIGENDIAN
 fi
+
+AC_CHECK_HEADERS(stdio.h stdlib.h string.h sys/time.h sys/types.h sys/bitypes.h)
+
+
+dnl
+dnl Check system headers for C99 intXX_t.
+dnl
+PAC_GET_STDINT_HEADER([mpe_c99_stdint_h])
+
+if test "X$mpe_c99_stdint_h" != "X" ; then
+    mpe_int8_t="int8_t"
+    mpe_int16_t="int16_t"
+    mpe_int32_t="int32_t"
+    mpe_int64_t="int64_t"
+else
+dnl Since there isn't any intXX_t defined in the system headers.
+dnl Define intXX_t based on basic integer types, char, short, int, long...
+    PAC_GET_BASIC_INT_TYPES([mpe_int8_t], [mpe_int16_t],
+                            [mpe_int32_t], [mpe_int64_t])
+fi
+
+dnl
+dnl Check for PRIdXX
+dnl
+PAC_GET_STDINT_FORMATS([$mpe_int8_t], [$mpe_int16_t],
+                        [$mpe_int32_t], [$mpe_int64_t],
+                        [mpe_int8_fmt], [mpe_int16_fmt],
+                        [mpe_int32_fmt], [mpe_int64_fmt],
+                        [mpe_c99_pridxx_h])
+
+dnl Create the output stdint.h for MPE logging
+dnl PAC_OUTPUT_STDINT_HEADER([include/clog_stdint.h],
+dnl                          [$mpe_c99_stdint_h], [$mpe_c99_pridxx_h],
+dnl                          [$mpe_int8_t], [$mpe_int16_t],
+dnl                          [$mpe_int32_t], [$mpe_int64_t],
+dnl                          [$mpe_int8_fmt], [$mpe_int16_fmt],
+dnl                          [$mpe_int32_fmt], [$mpe_int64_fmt])
+mpe_c99_stdint_inc=""
+mpe_c99_pridxx_inc=""
+if test "X$mpe_c99_stdint_h" != "X" ; then
+    mpe_c99_stdint_inc="#include <$mpe_c99_stdint_h>"
+    if test "X$mpe_c99_pridxx_h" != "X" ; then
+        if test "$mpe_c99_pridxx_h" != "$mpe_c99_stdint_h" ; then
+            mpe_c99_pridxx_inc="#include <$mpe_c99_pridxx_h>"
+        fi
+    fi
+fi
+AC_SUBST(mpe_c99_stdint_inc)
+AC_SUBST(mpe_c99_pridxx_inc)
+AC_SUBST(mpe_int8_t)
+AC_SUBST(mpe_int16_t)
+AC_SUBST(mpe_int32_t)
+AC_SUBST(mpe_int64_t)
+AC_SUBST(mpe_int8_fmt)
+AC_SUBST(mpe_int16_fmt)
+AC_SUBST(mpe_int32_fmt)
+AC_SUBST(mpe_int64_fmt)
+
 
 dnl ****   Checking for specific functions needed for the package.
  
@@ -300,8 +362,6 @@ AC_CHECK_HEADERS( fcntl.h,
     )
 )
 
-AC_CHECK_HEADERS( stdio.h stdlib.h string.h sys/time.h )
-
 dnl   Determine if PMPI_Comm_create_keyval exists
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_CHECKING( [for PMPI_Comm_create_keyval()] )
@@ -404,5 +464,5 @@ AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(PROF_LIBNAME)
 
-AC_OUTPUT( Makefile src/Makefile \
+AC_OUTPUT( Makefile src/Makefile include/clog_inttypes.h \
            etc/mpe_log.conf etc/mpe_nolog.conf )
