@@ -744,13 +744,13 @@ int MPE_Log_pack( MPE_LOG_BYTES bytebuf, int *position,
      */
     switch (tokentype) {
         case 's':  /* STR */
-            tot_sz = sizeof( short ) + count;
+            tot_sz = sizeof( CLOG_int16_t ) + count;
             if ( *position + tot_sz <= sizeof( MPE_LOG_BYTES ) ) {
-                *((short *) vptr) = (short) count;
+                *((CLOG_int16_t *) vptr) = (CLOG_int16_t) count;
 #if !defined( WORDS_BIGENDIAN )
-                CLOG_Util_swap_bytes( vptr, sizeof( short ) , 1 );
+                CLOG_Util_swap_bytes( vptr, sizeof( CLOG_int16_t ) , 1 );
 #endif
-                vptr = (void *)( (char *) vptr + sizeof( short ) );
+                vptr = (void *)( (char *) vptr + sizeof( CLOG_int16_t ) );
                 memcpy( vptr, data, count );
                 *position += tot_sz;
                 return MPE_LOG_OK;
