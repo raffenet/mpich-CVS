@@ -26,15 +26,18 @@ public class Preamble
     //  this correspond to CLOG_Premable_t.is_big_endian
     private              String   is_big_endian_title;
     private              boolean  is_big_endian;
+    //  this correspond to CLOG_Premable_t.is_finalized_
+    private              String   is_finalized_title;
+    private              boolean  is_finalized;
     //  this correspond to CLOG_Premable_t.block_size
     private              String   block_size_title;
     private              int      block_size;
     //  this correspond to CLOG_Premable_t.num_buffered_blocks
     private              String   num_blocks_title;
     private              int      num_blocks;
-    //  this correspond to CLOG_Premable_t.comm_world_size
-    private              String   world_size_title;
-    private              int      world_size;
+    //  this correspond to CLOG_Premable_t.max_comm_world_size
+    private              String   max_world_size_title;
+    private              int      max_world_size;
     //  this correspond to CLOG_Premable_t.known_eventID_start
     private              String   known_eventID_start_title;
     private              int      known_eventID_start;
@@ -59,6 +62,9 @@ public class Preamble
     //  this correspond to CLOG_Premable_t.user_solo_eventID_count
     private              String   user_solo_eventID_count_title;
     private              int      user_solo_eventID_count;
+    //  this correspond to CLOG_Premable_t.commtable_fptr
+    private              String   commtable_fptr_title;
+    private              long     commtable_fptr;
 
     public boolean readFromDataStream( DataInputStream in )
     {
@@ -81,12 +87,17 @@ public class Preamble
             str                 = tokens.nextToken().trim();
             is_big_endian       =  str.equalsIgnoreCase( "true" )
                                 || str.equalsIgnoreCase( "yes" );
+            is_finalized_title  = tokens.nextToken().trim();
+            str                 = tokens.nextToken().trim();
+            is_finalized        =  str.equalsIgnoreCase( "true" )
+                                || str.equalsIgnoreCase( "yes" );
             block_size_title    = tokens.nextToken().trim();
             block_size          = Integer.parseInt( tokens.nextToken().trim() );
             num_blocks_title    = tokens.nextToken().trim();
             num_blocks          = Integer.parseInt( tokens.nextToken().trim() );
-            world_size_title    = tokens.nextToken().trim();
-            world_size          = Integer.parseInt( tokens.nextToken().trim() );
+            max_world_size_title            = tokens.nextToken().trim();
+            max_world_size                  = Integer.parseInt(
+                                              tokens.nextToken().trim() );
             known_eventID_start_title       = tokens.nextToken().trim();
             known_eventID_start             = Integer.parseInt(
                                               tokens.nextToken().trim() );
@@ -111,6 +122,13 @@ public class Preamble
             user_solo_eventID_count_title   = tokens.nextToken().trim();
             user_solo_eventID_count         = Integer.parseInt(
                                               tokens.nextToken().trim() );
+            commtable_fptr_title            = tokens.nextToken().trim();
+            commtable_fptr                  = Long.parseLong(
+                                              tokens.nextToken().trim() )
+                                            * Long.parseLong(
+                                              tokens.nextToken().trim() )
+                                            + Long.parseLong(
+                                              tokens.nextToken().trim() );
         } catch ( NoSuchElementException err ) {
             err.printStackTrace();
             return false;
@@ -120,7 +138,7 @@ public class Preamble
         }
 
         /* Set the const in (comm,rank) -> lineID transformation */
-        LineID.setCommRank2LineIDxForm( world_size );
+        LineID.setCommRank2LineIDxForm( max_world_size );
 
         return true;
     }
@@ -150,11 +168,14 @@ public class Preamble
     public boolean isBigEndian()
     { return is_big_endian; }
 
+    public boolean isFinalized()
+    { return is_finalized; }
+
     public int getBlockSize()
     { return block_size; }
 
-    public int getCommWorldSize()
-    { return world_size; }
+    public int getMaxCommWorldSize()
+    { return max_world_size; }
 
     public int getKnownEventIDStart()
     { return known_eventID_start; }
@@ -180,13 +201,17 @@ public class Preamble
     public int getUserSoloEventIDCount()
     { return user_solo_eventID_count; }
 
+    public long getCommTableFptr()
+    { return commtable_fptr; }
+
     public String toString()
     {
          return ( version + "\n"
                 + is_big_endian_title + is_big_endian + "\n"
+                + is_finalized_title + is_finalized + "\n"
                 + block_size_title + block_size + "\n"
                 + num_blocks_title + num_blocks + "\n"
-                + world_size_title + world_size + "\n"
+                + max_world_size_title + max_world_size + "\n"
                 + known_eventID_start_title + known_eventID_start + "\n"
                 + user_eventID_start_title + user_eventID_start + "\n"
                 + known_solo_eventID_start_title + known_solo_eventID_start+"\n"
@@ -195,6 +220,7 @@ public class Preamble
                 + user_stateID_count_title + user_stateID_count + "\n"
                 + known_solo_eventID_count_title + known_solo_eventID_count+"\n"
                 + user_solo_eventID_count_title + user_solo_eventID_count + "\n"
+                + commtable_fptr_title + commtable_fptr + "\n"
                 );
     }
 }
