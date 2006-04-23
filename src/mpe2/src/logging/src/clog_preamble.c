@@ -25,6 +25,7 @@
 
 #include "clog.h"
 #include "clog_const.h"
+#include "clog_mem.h"
 #include "clog_util.h"
 #include "clog_preamble.h"
 
@@ -52,10 +53,11 @@ CLOG_Preamble_t *CLOG_Preamble_create( void )
     }
 
     strcpy( preamble->version, "" );
+    preamble->is_big_endian             = CLOG_BOOL_NULL;
+    preamble->is_finalized              = CLOG_BOOL_NULL;
     preamble->block_size                = 0;
     preamble->num_buffered_blocks       = 0;
-    preamble->is_big_endian             = CLOG_BOOL_NULL;
-    preamble->comm_world_size           = 0;
+    preamble->max_comm_world_size       = 0;
     preamble->known_eventID_start       = 0;
     preamble->user_eventID_start        = 0;
     preamble->known_solo_eventID_start  = 0;
@@ -64,6 +66,7 @@ CLOG_Preamble_t *CLOG_Preamble_create( void )
     preamble->user_stateID_count        = 0;
     preamble->known_solo_eventID_count  = 0;
     preamble->user_solo_eventID_count   = 0;
+    preamble->commtable_fptr            = 0;
 
     return preamble;
 }
@@ -78,6 +81,7 @@ void CLOG_Preamble_free( CLOG_Preamble_t **preamble_handle )
     *preamble_handle = NULL;
 }
 
+/* The input CLOG_Preamble_t is assumed to be CLOG_Buffer_t's */
 void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
 {
     char *env_block_size;
@@ -95,7 +99,7 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
     my_rank   = 0;
     num_procs = 1;
 #endif
-    preamble->comm_world_size  = num_procs;
+    preamble->max_comm_world_size  = num_procs;
 
     strcpy( preamble->version, CLOG_VERSION );
 
@@ -105,6 +109,12 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
 #else
     preamble->is_big_endian = CLOG_BOOL_FALSE;
 #endif
+
+    /*
+       Since CLOG_Buffer_t is for local temporary file
+       <=> is_finalized = false
+    */
+    preamble->is_finalized  = CLOG_BOOL_FALSE;
 
     if ( my_rank == 0 ) {
         env_block_size = (char *) getenv( "CLOG_BLOCK_SIZE" );
@@ -171,16 +181,18 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
 #define CLOG_PREAMBLE_STRLEN  32
 
 /*
-    is_always_big_endian != CLOG_BOOL_TRUE
-    => saving the OS native byte ordering determined by configure.
+    is_big_endian == CLOG_BOOL_NULL_
+    => saving the byte ordering as stated in CLOG_Preamble.
 */
 void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
-                                int              is_always_big_endian,
+                                CLOG_BOOL_T      is_big_endian,
+                                CLOG_BOOL_T      is_finalized,
                                 int              fd )
 {
     char  buffer[ CLOG_PREAMBLE_SIZE ];
     char  value_str[ CLOG_PREAMBLE_STRLEN ];
     char *buf_ptr, *buf_tail;
+    int   fptr_giga, fptr_rmdr, fptr_unit;
     int   ierr;
 
     buf_ptr  = (char *) buffer;
@@ -195,9 +207,11 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
                                     "is_big_endian=",
                                     "CLOG Endianess Title" );
-    if ( is_always_big_endian == CLOG_BOOL_TRUE )
+    if ( is_big_endian == CLOG_BOOL_TRUE )
         strcpy( value_str, "TRUE " );  /* Always BIG_ENDIAN (Java byteorder) */
-    else {  /* This is OS native byte ordering */
+    else if ( is_big_endian == CLOG_BOOL_FALSE )
+        strcpy( value_str, "FALSE" );
+    else {  /* is_big_endian == CLOG_BOOL_NULL */
         if ( preamble->is_big_endian == CLOG_BOOL_TRUE )
             strcpy( value_str, "TRUE " );
         else
@@ -205,6 +219,23 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     }
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "CLOG Endianess Value" );
+
+    /* Write the CLOG Finalized State */
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
+                                    "is_finalzed=",
+                                    "CLOG Finalized State Title" );
+    if ( is_finalized == CLOG_BOOL_TRUE )
+        strcpy( value_str, "TRUE " );
+    else if ( is_finalized == CLOG_BOOL_FALSE )
+        strcpy( value_str, "FALSE" );
+    else {  /* is_finalized == CLOG_BOOL_NULL */
+        if ( preamble->is_finalized == CLOG_BOOL_TRUE )
+            strcpy( value_str, "TRUE " );
+        else
+            strcpy( value_str, "FALSE" );
+    }
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "CLOG Finalized State Value" );
 
     /* Write the CLOG Block Size */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
@@ -230,14 +261,14 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
 
     /* Write the MPI_COMM_WORLD's size */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
-                                    "comm_world_size=",
-                                    "MPI_COMM_WORLD Size Title" );
+                                    "max_comm_world_size=",
+                                    "Max MPI_COMM_WORLD Size Title" );
     snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
-              preamble->comm_world_size );
+              preamble->max_comm_world_size );
     /* just in case, there isn't \0 in value_str  */
     value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
-                                    "MPI_COMM_WORLD Size Value" );
+                                    "Max MPI_COMM_WORLD Size Value" );
 
     /* Write the CLOG_KNOWN_EVENTID_START */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
@@ -328,6 +359,31 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "CLOG user_solo_eventID_count Value" );
 
+
+    /* Write the file offset to the CLOG communicator IDs table */
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
+                                    "commtable_fptr=",
+                                    "CLOG commIDs_table_file_offset Title" );
+    /* Actual value = Main * Unit + Sub */
+    fptr_giga = (int) (preamble->commtable_fptr / ONE_GIGA);
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d", fptr_giga );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "CLOG commIDs_table_file_offset Main" );
+    fptr_unit = ONE_GIGA;
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d", fptr_unit );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "CLOG commIDs_table_file_offset Unit" );
+    fptr_rmdr = (int) (preamble->commtable_fptr % ONE_GIGA);
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d", fptr_rmdr );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "CLOG commIDs_table_file_offset Sub" );
+
     if ( buf_ptr > buf_tail ) {
         fprintf( stderr, __FILE__":CLOG_Preamble_write() - Error \n"
                          "\t""Internal buffer overflows!.\n" );
@@ -355,6 +411,7 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
     char  buffer[ CLOG_PREAMBLE_SIZE ];
     char  value_str[ CLOG_PREAMBLE_STRLEN ];
     char *buf_ptr, *buf_tail;
+    int   fptr_giga, fptr_rmdr, fptr_unit;
     int   ierr;
 
     ierr = read( fd, buffer, CLOG_PREAMBLE_SIZE );
@@ -397,6 +454,17 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr, "CLOG Finalized State Title" );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr, "CLOG Finalized State Value" );
+    if ( strcmp( value_str, "TRUE " ) == 0 )
+        preamble->is_finalized = CLOG_BOOL_TRUE;
+    else
+        preamble->is_finalized = CLOG_BOOL_FALSE;
+
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG Block Size Title" );
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -413,11 +481,11 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
-                                    buf_ptr, "MPI_COMM_WORLD Size Title" );
+                                    buf_ptr, "Max MPI_COMM_WORLD Size Title" );
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
-                                    buf_ptr, "MPI_COMM_WORLD Size Value" );
-    preamble->comm_world_size     = (unsigned int) atoi( value_str );
+                                    buf_ptr, "Max MPI_COMM_WORLD Size Value" );
+    preamble->max_comm_world_size = (unsigned int) atoi( value_str );
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -490,6 +558,30 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
                                     buf_ptr,
                                     "CLOG user_solo_eventID_count Value" );
     preamble->user_solo_eventID_count = (unsigned int) atoi( value_str );
+
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG commIDs_table_file_offset Title" );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG commIDs_table_file_offset Main" );
+    fptr_giga = (unsigned int) atoi( value_str );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG commIDs_table_file_offset Unit" );
+    fptr_unit = (unsigned int) atoi( value_str );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr,
+                                    "CLOG commIDs_table_file_offset Sub" );
+    fptr_rmdr = (unsigned int) atoi( value_str );
+    if ( fptr_giga > 0 )
+        preamble->commtable_fptr = fptr_giga * fptr_unit + fptr_rmdr;
+    else
+        preamble->commtable_fptr = fptr_rmdr;
 }
 
 void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
@@ -501,12 +593,17 @@ void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
     else
         fprintf( stream, "is_big_endian = FALSE\n" );
 
+    if ( preamble->is_finalized == CLOG_BOOL_TRUE )
+        fprintf( stream, "is_finalized = TRUE\n" );
+    else
+        fprintf( stream, "is_finalized = FALSE\n" );
+
     fprintf( stream, "num_buffered_blocks = %d\n",
                      preamble->num_buffered_blocks );
     fprintf( stream, "block_size = %d\n",
                      preamble->block_size );
-    fprintf( stream, "comm_world_size = %d\n",
-                     preamble->comm_world_size );
+    fprintf( stream, "max_comm_world_size = %d\n",
+                     preamble->max_comm_world_size );
     fprintf( stream, "known_eventID_start = %d\n",
                      preamble->known_eventID_start );
     fprintf( stream, "user_eventID_start = %d\n",
@@ -523,4 +620,36 @@ void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
                      preamble->known_solo_eventID_count );
     fprintf( stream, "user_solo_eventID_count = %d\n",
                      preamble->user_solo_eventID_count );
+    fprintf( stream, "commIDs_table_file_offset = %lld\n",
+                     (long long) preamble->commtable_fptr );
+}
+
+void CLOG_Preamble_copy( const CLOG_Preamble_t *src, CLOG_Preamble_t *dest )
+{
+    strcpy( dest->version, src->version );
+    dest->is_big_endian             = src->is_big_endian;
+    dest->is_finalized              = src->is_finalized;
+    dest->num_buffered_blocks       = src->num_buffered_blocks;
+    dest->block_size                = src->block_size;
+    dest->max_comm_world_size       = src->max_comm_world_size;
+    dest->known_eventID_start       = src->known_eventID_start;
+    dest->user_eventID_start        = src->user_eventID_start;
+    dest->known_solo_eventID_start  = src->known_solo_eventID_start;
+    dest->user_solo_eventID_start   = src->user_solo_eventID_start;
+    dest->known_stateID_count       = src->known_stateID_count;
+    dest->user_stateID_count        = src->user_stateID_count;
+    dest->known_solo_eventID_count  = src->known_solo_eventID_count;
+    dest->user_solo_eventID_count   = src->user_solo_eventID_count;
+    dest->commtable_fptr            = src->commtable_fptr;
+}
+
+void CLOG_Preamble_sync(       CLOG_Preamble_t *parent,
+                         const CLOG_Preamble_t *child )
+{
+     /* Determine max_comm_world_size for out_cache's preamble */
+     if ( child->max_comm_world_size > parent->max_comm_world_size )
+         parent->max_comm_world_size = child->max_comm_world_size;
+     /* Determine maximum block_size */
+     if ( child->block_size > parent->block_size )
+         parent->block_size  = child->block_size;
 }
