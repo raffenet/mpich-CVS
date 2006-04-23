@@ -15,6 +15,7 @@
 #endif
 
 #include "clog_const.h"
+#include "clog_mem.h"
 #include "clog_timer.h"
 #include "clog_util.h"
 #include "clog_sync.h"
@@ -68,8 +69,8 @@ void CLOG_Sync_free( CLOG_Sync_t **sync_handle )
             sync->timediffs = NULL;
         }
         FREE( sync );
-        *sync_handle  = NULL;
     }
+    *sync_handle  = NULL;
 }
 
 void CLOG_Sync_init( CLOG_Sync_t *sync )
