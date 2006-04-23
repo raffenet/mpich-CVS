@@ -9,7 +9,6 @@
 #include "mpi.h"
 #include "mpe_log.h"
 
- 	
 
 /* AIX requires this to be the first thing in the file.  */
 #ifndef __GNUC__
@@ -452,8 +451,10 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 #define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
     if (is_mylog_on) { \
         if ( new_comm != MPI_COMM_NULL ) { \
+            is_mpelog_on = 0; \
             new_commIDs = CLOG_CommSet_add_intracomm( CLOG_CommSet, \
                                                       new_comm ); \
+            is_mpelog_on = 1; \
             MPE_Log_commIDs_intracomm( commIDs, 0, comm_etype, new_commIDs ); \
             MPE_LOG_SOLO_EVENT( new_commIDs,MPE_COMM_INIT_ID ) \
         } \
@@ -467,8 +468,10 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
 #define MPE_LOG_INTERCOMM(comm,new_comm,comm_etype) \
     if (is_mylog_on) { \
         if ( new_comm != MPI_COMM_NULL ) { \
+            is_mpelog_on = 0; \
             new_commIDs = CLOG_CommSet_add_intercomm( CLOG_CommSet, \
                                                       new_comm, commIDs ); \
+            is_mpelog_on = 1; \
             MPE_Log_commIDs_intercomm( commIDs, 0, comm_etype, new_commIDs ); \
             MPE_LOG_SOLO_EVENT( new_commIDs, MPE_COMM_INIT_ID ) \
         } \
