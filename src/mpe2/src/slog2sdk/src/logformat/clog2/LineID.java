@@ -15,11 +15,11 @@ import java.util.*;
 
 public class LineID
 {
-    private static int CommWorldSize = 0;
+    private static int MaxCommWorldSize = 0;
 
-    public static void setCommRank2LineIDxForm( int comm_world_size )
+    public static void setCommRank2LineIDxForm( int max_comm_world_size )
     {
-        CommWorldSize  = comm_world_size;
+        MaxCommWorldSize  = max_comm_world_size;
     }
 
     /*
@@ -29,6 +29,6 @@ public class LineID
     */
     public static int compute( int icomm, int rank )
     {
-        return icomm * CommWorldSize + rank;
+        return icomm * MaxCommWorldSize + rank;
     }
 }
