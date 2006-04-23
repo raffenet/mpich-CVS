@@ -489,7 +489,10 @@ For Cray X1E MPI implementation: cross-compilation at a linux front-end
     ${MPE_SRC_DIR}/configure                                              \
     MPI_F77="ftn -s real64 -dp"                                           \
     F77="ftn -s real64 -dp"                                               \
+    MPI_CC=cc                                                             \
+    CC=$HOME/phoenix/bin/gcc-robin                                        \
     --host=craynv-cray-unicosmp3.0.X                                      \
+    --build=i686-pc-linux-gnu                                             \
     CROSS_SIZEOF_CHAR=1                                                   \
     CROSS_SIZEOF_SHORT=2                                                  \
     CROSS_SIZEOF_INT=4                                                    \
