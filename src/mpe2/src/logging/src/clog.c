@@ -15,6 +15,7 @@
 #endif
 
 #include "clog.h"
+#include "clog_mem.h"
 #include "clog_util.h"
 #include "clog_record.h"
 #include "clog_preamble.h"
@@ -78,7 +79,7 @@ void CLOG_Local_init( CLOG_Stream_t *stream, const char *local_tmpfile_name )
 
     CLOG_Rec_sizes_init();
     buffer  = stream->buffer;
-    CLOG_Buffer_init( buffer, local_tmpfile_name );
+    CLOG_Buffer_init4write( buffer, local_tmpfile_name );
 
     /* Initialize the synchronizer */
     stream->syncer = CLOG_Sync_create( buffer->world_size, buffer->world_rank );
@@ -228,7 +229,7 @@ void CLOG_Converge_init(       CLOG_Stream_t *stream,
 
 void CLOG_Converge_finalize( CLOG_Stream_t *stream )
 {
-    CLOG_Merger_finalize( stream->merger );
+    CLOG_Merger_finalize( stream->merger, stream->buffer );
     CLOG_Merger_free( &(stream->merger) );
 }
 
