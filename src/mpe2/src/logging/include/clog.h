@@ -15,8 +15,19 @@
                  Updated CLOG_Preamble with MPE eventID and stateID info.
    Version 2.41: Added known MPE event drawables(internal solo events)
                  Updated CLOG_Preamble with MPE known solo events.
+   Version 2.42: Added a Communicator Table at the end of CLOG2.
+                 Updated CLOG_Preamble with a pointer that points to the
+                 communicator table.
+   Version 2.43: Added a boolean value in CLOG_Preamble to indicate if
+                 the file is a finalized file so 1) clog2TOslog2 can
+                 refuse to process a local file, 2) clog2_join can "patch"
+                 the timestamps by using the timeshift events, 3) a repair
+                 program can fixup the broken/unfinish local clog2 file 
+                 (for debugging). 
+                 Changed CLOG_Preamble_t's comm_world_size to
+                 max_comm_world_size.
 */
-#define CLOG_VERSION          "CLOG-02.41"
+#define CLOG_VERSION          "CLOG-02.43"
 
 #include "clog_buffer.h"
 #include "clog_sync.h"
