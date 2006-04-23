@@ -18,6 +18,7 @@ MAKE                 = @MAKE@
 MPI_INC              = @MPI_INC@
 MPI_LIBS             = @MPI_LIBS@
 INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
+                       -I${includebuild_dir} \
                        -I../../.. -I${top_srcdir}/../../include \
                        $(MPI_INC)
 PROF_LIBNAME         = @PROF_LIBNAME@
@@ -42,20 +43,23 @@ bindir           = @bindir@
 includedir       = @includedir@
 libdir           = @libdir@
 # Build directories
+includebuild_dir = @includebuild_dir@
 libbuild_dir     = @libbuild_dir@
 binbuild_dir     = @binbuild_dir@
 srcdir           = @srcdir@
 
-# EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@ testlog@EXEEXT@
-EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@
+EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@ \
+                   ${binbuild_dir}/clog2_join@EXEEXT@ \
+                   ${binbuild_dir}/clog2_repair@EXEEXT@
 
 # GETNAME_DEFS are needed by mpehname.c
 CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
 CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
 MPE_CSOURCES     = clog_util.c clog_timer.c clog_uuid.c clog_commset.c \
-                   clog_preamble.c clog_block.c clog_buffer.c \
-                   clog_record.c clog_sync.c clog_merger.c clog.c mpe_log.c
+                   clog_preamble.c clog_record.c clog_sync.c \
+                   clog_block.c clog_buffer.c clog_merger.c \
+                   clog_cache.c clog_joiner.c clog.c mpe_log.c
 MPE_COBJECTS     = $(MPE_CSOURCES:.c=.@OBJEXT@)
 
 MPE_WSOURCES     = mpe_logf.c
@@ -150,7 +154,19 @@ ${binbuild_dir}/clog2_print@EXEEXT@: clean
 	@$(MAKE) clog_print.@OBJEXT@ \
 	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
 	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.@OBJEXT@ \
-                   -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+
+${binbuild_dir}/clog2_join@EXEEXT@: clean
+	@$(MAKE) clog_join.@OBJEXT@ \
+	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
+	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_join.@OBJEXT@ \
+	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+
+${binbuild_dir}/clog2_repair@EXEEXT@: clean
+	@$(MAKE) clog_repair.@OBJEXT@ \
+	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
+	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_repair.@OBJEXT@ \
+	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 
 #
 # Remove the old libraries before rebuilding (in case they came from another
