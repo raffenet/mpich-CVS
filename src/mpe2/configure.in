@@ -11,7 +11,7 @@ AC_INIT()
 AC_PREREQ(2.52)
 AC_CONFIG_HEADER(mpe_conf.h)
 #
-echo "Configuring MPE Profiling Libraries with $ac_configure_args"
+echo "Configuring MPE Profiling System with $ac_configure_args"
 dnl
 dnl  Set top_srcdir_abs to be the ABSOLUTE path to the home directory of MPE
 dnl  top_srcdir is in relative path.
