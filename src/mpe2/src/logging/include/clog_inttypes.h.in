@@ -3,11 +3,11 @@
        See COPYRIGHT in top-level directory.
 */
 /*
-   MPE Logging's generated header file for integer types
+   MPE Logging's generated header file for fixed size integer types
    and their printf format specifiers used in CLOG2.
 */
-#if !defined( _CLOG_STDINT )
-#define  _CLOG_STDINT
+#if !defined( _CLOG_INTTYPES )
+#define  _CLOG_INTTYPES
 
 @mpe_c99_stdint_inc@
 @mpe_c99_pridxx_inc@
