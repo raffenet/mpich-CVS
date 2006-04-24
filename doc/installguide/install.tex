@@ -693,9 +693,9 @@ is separated by a colon, e.g. 2000:8000.
 If you plan to use one or more multi-homed systems, it is of course useful if
 the default hostname is associated with the interface that mpd will need
 to use for communications.  If not however, you can cause mpd to use a
-specific interface by using the \emph{---ifhn} (interface-hostname) option, e.g.:
+specific interface by using the \texttt{--ifhn} (interface-hostname) option, e.g.:
 \begin{verbatim}
-    n1 $  mpd --ifhn=192.168.1.1 &
+    n1%  mpd --ifhn=192.168.1.1 &
 \end{verbatim}
 
 If you then run mpiexec on n1 connecting to that mpd, the mpiexec will
@@ -707,7 +707,7 @@ the mpd.
 mpdboot can also designate the ifhn to be used by both the local and remote
 mpds which it starts, e.g.:
 \begin{verbatim}
-    n1 $  mpdboot --totalnum=4 --ifhn=192.168.1.1 
+    n1%  mpdboot --totalnum=4 --ifhn=192.168.1.1 
 \end{verbatim}
 where mpd.hosts contains:
 \begin{verbatim}
@@ -727,7 +727,7 @@ root.  This will cause the \texttt{mpdroot} program to be installed in
 the bin directory with setuid-root permissions.  Individual users then
 have the option of starting and using their own mpd rings, or they can run
 with a ring started by root.  To use root's ring, they must use an option
-named \emph{MPD\_USE\_ROOT\_MPD}.  This option may either be set as an environment
+named \texttt{MPD\_USE\_ROOT\_MPD}.  This option may either be set as an environment
 variable or they can set it in their own .mpd.conf file, e.g.:
 \begin{verbatim}
     MPD_USE_ROOT_MPD=1
@@ -764,6 +764,60 @@ purposes.  (It is assumed that you do not want 0, 1, 4, and 5 on hosta
 and only 2 and 3 on hostb; if that is what you \emph{do} want, you can
 control process placement explicitly on the \texttt{mpiexec} command, as
 described in the \textit{User's Guide}.
+
+
+\subsubsection{Security Issues in MPD}
+\label{sec:mpd-security}
+
+Since the \texttt{mpd} process manager allows the remote execution of
+processes, it needs to incorporate security features that prevent
+inappropriate or malicious process creation by someone without
+permission to do so.  In this section we describe how \texttt{mpd} deals
+with a number of security issues.
+
+The first issue is the starting of the \texttt{mpd} processes
+themselves.  This is done either by the user logging into each machine
+starting each \texttt{mpd} process ``by hand,'' or else by using the
+\texttt{mpdboot} program.  \texttt{mpdboot} uses \texttt{ssh} by
+default, although the less secure \texttt{rsh} can be used if the user
+chooses.
+
+The next issue occurs when a single new \texttt{mpd} joins a ring of
+existing \texttt{mpd}'s.  This occurs during \texttt{mpdboot}, or can
+occur later if the user wishes to expand an existing ring.  In this
+situation a ``challenge-response'' protocol is followed.  A user must
+have the same \texttt{secretword} set in his \texttt{.mpd.conf} file on
+each machine.  This file must be readable only by the user starting the
+\texttt{mpd}; otherwise the \texttt{mpd} will refuse to read it.  When
+\texttt{mpd} A wishes to join an existing ring by connecting to
+\texttt{mpd} B, which is already in the ring, at the port B is listening
+on, the following sequence of events occurs:
+\begin{enumerate}
+\item B temporarily accepts the connection.
+\item B seeds the random number generator with the high-resolution part
+  of the time of day, generates a random number, and sends it to A.
+\item A concatenates the random number with the value of secretword in
+  \texttt{.mpd.conf}, encrypts it with md5, and sends the encrypted
+  result to B.
+\item Meanwhile, B encrypts the (same) random number concatenated with
+  its value of \texttt{secretword}.
+\item When B receives the encrypted value from A, it compares the
+  encrypted value with its own.
+\item If the values match, A is allowed to join the ring; otherwise the
+  connection is closed.
+\end{enumerate}
+Note that the secret word is never sent over the connection in the clear,
+and the use of the time of day means that there will be no repeating
+pattern of challenges to be observed.  
+
+The third issue concerns how \texttt{mpiexec} connects to the local
+\texttt{mpd}.  This is done through a Unix socket in /tmp rather than
+through an INET socket.  Thus security is preserved through the security
+of the file system.
+
+Once connections are established, the messages that are sent over them
+are not encrypted.  However, no security information is sent over these
+connections. 
 
 \subsection{SMPD}
 \label{sec:smpd}
