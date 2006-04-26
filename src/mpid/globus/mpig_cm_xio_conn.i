@@ -536,7 +536,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_connection(
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
 		"server failed to accept incoming connection: errcnt=%d", mpig_cm_xio_server_accept_errcnt));
 	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {warn++;}, "**globus|cm_xio|server_handle_connection",
-		"**globus|cm_xio|server_handle_connection %s", globus_error_print_chain(globus_error_peek(grc)));
+		"**globus|cm_xio|server_handle_connection %s", globus_error_print_chain(globus_error_peek(op_grc)));
 	    /* --END ERROR HANDLING-- */
 	}
 	
@@ -901,9 +901,9 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	mpig_cm_xio_conn_open_resp_t open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_UNDEFINED;
 	globus_xio_data_callback_t resp_callback_fn = NULL;
 	char * pg_id = NULL;
-	size_t pg_id_size;
-	int pg_size;
-	int pg_rank;
+	size_t pg_id_size = 0;
+	int pg_size = -1;
+	int pg_rank = -1;
 	mpig_endian_t endian;
 	int df;
 
@@ -1186,7 +1186,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	    /* send the open respoinse message */
 	    mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, resp_callback_fn, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT3((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;}, "**globus|cm_xio|reg_send_open_resp",
-		"**globus|cm_xio|reg_send_open_resp %p %s %d", tmp_vc, pg_id, pg_rank);
+		"**globus|cm_xio|reg_send_open_resp %p %s %d", tmp_vc, (pg_id != NULL) ? pg_id : "(unknown)", pg_rank);
 	}
     }
     mpig_vc_mutex_unlock(tmp_vc);
@@ -2076,7 +2076,7 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     struct mpig_cm_xio_vc * real_vc_cm = NULL;
     bool_t real_vc_locked = FALSE;
     mpig_cm_xio_msg_types_t msg_type;
-    mpig_cm_xio_conn_open_resp_t open_resp;
+    mpig_cm_xio_conn_open_resp_t open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_UNDEFINED;
     mpig_pg_t * pg = NULL;
     int pg_rank;
     bool_t failed;
