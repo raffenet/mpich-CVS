@@ -722,7 +722,8 @@ static const char * GetMPIOpString(MPI_Op o)
     return default_str;
 }
 
-static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, va_list list)
+static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, 
+			 va_list list)
 {
     char *begin, *end, *fmt;
     size_t len;
@@ -975,6 +976,8 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
     int err_code;
     int generic_idx;
     int use_user_error_code = 0;
+    int user_error_code = -1;
+    char user_ring_msg[MPI_MAX_ERROR_STRING+1];
     /* Create the code from the class and the message ring index */
 
     if (MPIR_Err_abort_on_error)
@@ -1011,11 +1014,34 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 #   if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
     {
 	generic_idx = FindGenericMsgIndex(generic_msg);
-	if (generic_idx >= 0)
-	{
+	if (generic_idx >= 0) {
 	    if (strcmp( generic_err_msgs[generic_idx].short_name, "**user" ) == 0)
 	    {
 		use_user_error_code = 1;
+		/* This is a special case.  The format is
+		   "**user", "**userxxx %d", intval
+		   (generic, specific, parameter).  In this
+		   case we must ... save the user value because
+		   we store it explicitly in the ring.  
+		   We do this here because we cannot both access the 
+		   user error code and pass the argp to vsnprintf_mpi . */
+		if (specific_msg) {
+		    const char *specific_fmt; 
+		    int specific_idx;
+		    user_error_code = va_arg(Argp,int);
+		    specific_idx = FindSpecificMsgIndex(specific_msg);
+		    if (specific_idx >= 0) {
+			specific_fmt = specific_err_msgs[specific_idx].long_name;
+		    }
+		    else {
+			specific_fmt = specific_msg;
+		    }
+		    MPIU_Snprintf( user_ring_msg, sizeof(user_ring_msg),
+				   specific_fmt, user_error_code );
+		}
+		else {
+		    user_ring_msg[0] = 0;
+		}
 	    }
 	    err_code |= (generic_idx + 1) << ERROR_GENERIC_SHIFT;
 	}
@@ -1064,9 +1090,14 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 		{
 		    specific_fmt = specific_msg;
 		}
-
-		vsnprintf_mpi( ring_msg, MPI_MAX_ERROR_STRING, specific_fmt, 
-			       Argp );
+		/* See the code above for handling user errors */
+		if (!use_user_error_code) {
+		    vsnprintf_mpi( ring_msg, MPI_MAX_ERROR_STRING, 
+				   specific_fmt, Argp );
+		}
+		else {
+		    ring_msg = user_ring_msg;
+		}
 	    }
 	    else if (generic_idx >= 0)
 	    {
@@ -1096,13 +1127,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	    if (use_user_error_code)
 	    {
 		ErrorRing[ring_idx].use_user_error_code = 1;
-		/* FIXME: You cannot use va_arg after passing Argp to another 
-		   function (the call to vsnprintf_mpi above).  The 
-		   behavior of va_arg is undefined if it is used on 
-		   the same Argp in a different routine (i.e., while 
-		   this may work by accident on some systems, it isn't 
-		   portable) */
-		ErrorRing[ring_idx].user_error_code = va_arg(Argp, int);
+		ErrorRing[ring_idx].user_error_code     = user_error_code;
 	    }
 	    else if (lastcode != MPI_SUCCESS)
 	    {
