@@ -32,3 +32,6 @@ iwritef.f iwriteshf.f : ioharness.tlt ioharness.defn ../../maint/testmerge
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
+
+clean-local:
+	rm -f .iotest.txt.*

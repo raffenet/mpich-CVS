@@ -49,3 +49,6 @@ writeatallbenosx.cxx : ioharness.tlt ioharness.defn
 
 ../util/mtest.o: 
 	(cd ../util && $(MAKE) mtest.o)
+
+clean-local:
+	rm -f .iotest.txt.*
