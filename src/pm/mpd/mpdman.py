@@ -309,11 +309,12 @@ class MPDMan(object):
                 cli_env['PMI_SPAWNED'] = '1'
             else:
                 cli_env['PMI_SPAWNED'] = '0'
-            cli_env['MPD_TVDEBUG'] = str(0)                                   ## BNR
-            cli_env['MPD_JID'] = os.environ['MPDMAN_JOBID']                   ## BNR
-            cli_env['MPD_JSIZE'] = str(self.nprocs)                           ## BNR
-            cli_env['MPD_JRANK'] = str(self.myRank)                           ## BNR
-            cli_env['CLIENT_LISTENER_FD'] = str(self.cliListenSock.fileno())  ## BNR
+            if self.doingBNR:
+                cli_env['MPD_TVDEBUG'] = str(0)                                   ## BNR
+                cli_env['MPD_JID'] = os.environ['MPDMAN_JOBID']                   ## BNR
+                cli_env['MPD_JSIZE'] = str(self.nprocs)                           ## BNR
+                cli_env['MPD_JRANK'] = str(self.myRank)                           ## BNR
+                cli_env['CLIENT_LISTENER_FD'] = str(self.cliListenSock.fileno())  ## BNR
             if hasattr(os,'fork'):
                 (self.fd_read_cli_stdin, self.fd_write_cli_stdin ) = os.pipe()
                 (self.fd_read_cli_stdout,self.fd_write_cli_stdout) = os.pipe()
