@@ -1010,12 +1010,12 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
 	return -1;
     }
     
-    bzero( (void *)&sa, sizeof(sa) );
+    memset( (void *)&sa, 0, sizeof(sa) );
     /* POSIX might define h_addr_list only and node define h_addr */
 #ifdef HAVE_H_ADDR_LIST
-    bcopy( (void *)hp->h_addr_list[0], (void *)&sa.sin_addr, hp->h_length);
+    memcpy( (void *)&sa.sin_addr, (void *)hp->h_addr_list[0], hp->h_length);
 #else
-    bcopy( (void *)hp->h_addr, (void *)&sa.sin_addr, hp->h_length);
+    memcpy( (void *)&sa.sin_addr, (void *)hp->h_addr, hp->h_length);
 #endif
     sa.sin_family = hp->h_addrtype;
     sa.sin_port   = htons( (unsigned short) portnum );
