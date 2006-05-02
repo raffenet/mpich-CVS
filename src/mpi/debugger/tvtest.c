@@ -20,6 +20,9 @@
 
 #include "mpi_interface.h"
 
+/* style: allow:fprintf:8 sig:0 */
+/* style: allow:printf:15 sig:0 */
+
 int showQueues(void);
 int init_dbr(void);
 

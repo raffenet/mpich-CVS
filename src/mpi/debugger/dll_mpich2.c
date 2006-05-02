@@ -22,6 +22,8 @@
    implementation (MPICH2 in this case) */
 #include "mpich2_dll_defs.h"
 
+/* style: allow:strncpy:1 sig:0 */
+
 /* ------------------------------------------------------------------------ */
 /* Local variables for this package */
 
