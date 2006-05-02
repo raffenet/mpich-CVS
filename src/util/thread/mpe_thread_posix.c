@@ -16,7 +16,8 @@
 /*
  * struct MPEI_Thread_info
  *
- * Structure used to pass the user function and data to the intermediate function, MPEI_Thread_start.  See comment in
+ * Structure used to pass the user function and data to the intermediate 
+ * function, MPEI_Thread_start.  See comment in
  * MPEI_Thread_start() header for more information.
  */
 struct MPEI_Thread_info
@@ -69,8 +70,10 @@ void MPE_Thread_create(MPE_Thread_func_t func, void * data, MPE_Thread_id_t * id
 /*
  * MPEI_THread_start()
  *
- * Start functions in pthreads are expected to return a void pointer.  Since our start functions do not return a value we must
- * use an intermediate function to perform call to the user's start function and then return a value of NULL.
+ * Start functions in pthreads are expected to return a void pointer.  Since 
+ * our start functions do not return a value we must
+ * use an intermediate function to perform call to the user's start function 
+ * and then return a value of NULL.
  */
 void * MPEI_Thread_start(void * arg)
 {
