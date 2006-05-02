@@ -8,7 +8,7 @@
 usage: mpd [--host=<host> --port=<portnum>] [--noconsole]
            [--trace] [--echo] [--daemon] [--bulletproof] --ncpus=<ncpus>
            [--ifhn=<interface-hostname>] [--listenport=<listenport>]
-           [--pid=<pidfilename>]
+           [--pid=<pidfilename>] [-zc]
 
 Some long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
@@ -35,6 +35,9 @@ Some long parameter names may be abbreviated to their first letters by using
   will acquire one from the system
 --pid=filename writes the mpd pid into the specified file, or --pid alone
   writes it into /var/run/mpd.pid
+-zc is a purely EXPERIMENTAL option right now used to investigate zeroconf
+  networking; it can be used to allow mpds to discover each other locally
+  using multicast DNS; its usage may change over time
 
 A file named .mpd.conf file must be present in the user's home directory
   with read and write access only for the user, and must contain at least
@@ -126,6 +129,7 @@ class MPD(object):
                                  'MPD_DAEMON_FLAG'      :  0,
                                  'MPD_BULLETPROOF_FLAG' :  0,
                                  'MPD_PID_FILENAME'     :  '',
+                                 'MPD_ZC'               :  0,
                                  'MPD_LOGFILE_TRUNC_SZ' :  4000000,  # -1 -> don't trunc
                                }
         for (k,v) in self.parmsToOverride.items():
@@ -146,7 +150,8 @@ class MPD(object):
                             listenSock=self.listenSock,
                             myIfhn=self.myIfhn,
                             entryIfhn=self.parmdb['MPD_ENTRY_IFHN'],
-                            entryPort=self.parmdb['MPD_ENTRY_PORT'])
+                            entryPort=self.parmdb['MPD_ENTRY_PORT'],
+                            zcFlag=self.parmdb['MPD_ZC'])
         # setup tracing if requested via args
         if self.parmdb['MPD_TRACE_FLAG']:
             proceduresToTrace = []
@@ -416,6 +421,9 @@ class MPD(object):
                 argidx += 1
             elif sys.argv[argidx] == '-b'  or  sys.argv[argidx] == '--bulletproof':
                 self.parmdb[('cmdline','MPD_BULLETPROOF_FLAG')] = 1 
+                argidx += 1
+            elif sys.argv[argidx] == '-zc'  or  sys.argv[argidx] == '--zeroconf':
+                self.parmdb[('cmdline','MPD_ZC')] = 1 
                 argidx += 1
             else:
                 print 'unrecognized arg: %s' % (sys.argv[argidx])

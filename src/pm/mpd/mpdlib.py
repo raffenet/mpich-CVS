@@ -45,10 +45,11 @@ mpd_cli_app = ''
 mpd_my_id = ''
 mpd_procedures_to_trace = []
 mpd_my_hostname = ''
-mpd_signum = 0
 # mpd_signum can be set by mpd_handle_signal to indicate which signal was recently caught;
 # this can be useful below to pop out of loops that ordinarily continue after sigs
 # NOTE: mpd_handle_signal must be called by the user, e.g. in his own signal handler
+mpd_signum = 0
+mpd_zc = 0
 
 def mpd_set_my_id(myid=''):
     global mpd_my_id
@@ -532,7 +533,7 @@ class MPDStreamHandler(object):
 
 class MPDRing(object):
     def __init__(self,listenSock=None,streamHandler=None,secretword='',
-                 myIfhn='',entryIfhn='',entryPort=0):
+                 myIfhn='',entryIfhn='',entryPort=0,zcFlag=0):
         if not streamHandler:
             mpd_print(1, "must supply handler for new conns in ring")
             sys.exit(-1)
@@ -559,6 +560,8 @@ class MPDRing(object):
         self.rhsSock = 0
         self.lhsHandler = None
         self.rhsHandler = None
+        if zcFlag:
+            mpd_init_zc(self.myIfhn)
     def create_single_mem_ring(self,ifhn='',port=0,lhsHandler=None,rhsHandler=None):
         self.lhsSock,self.rhsSock = mpd_sockpair()
         self.lhsIfhn = ifhn
@@ -570,6 +573,9 @@ class MPDRing(object):
         self.rhsHandler = rhsHandler
         self.streamHandler.set_handler(self.rhsSock,rhsHandler)
     def reenter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',ntries=5):
+        if mpd_zc:
+            mpd_close_zc()
+            mpd_init_zc(self.myIfhn)
         rc = -1
         numTries = 0
 	self.generation += 1
@@ -590,6 +596,9 @@ class MPDRing(object):
             entryIfhn = self.entryIfhn
         if not entryPort:
             entryPort = self.entryPort
+        if not entryIfhn  and  mpd_zc:
+            (entryIfhn,entryPort) = mpd_find_zc_peer()
+            print "PEER USED", (entryIfhn,entryPort)
         if not entryIfhn:
             self.create_single_mem_ring(ifhn=self.myIfhn,
                                         port=self.listenPort,
@@ -616,6 +625,8 @@ class MPDRing(object):
             if rv[0] <=  0:  # connect did not succeed; may try again
                 mpd_print(1,"rhs connect failed")
                 return -1
+        if mpd_zc:
+            mpd_register_zc(self.myIfhn)
         return 0
     def connect_lhs(self,lhsIfhn='',lhsPort=0,lhsHandler=None,numTries=1):
         if not lhsHandler:
@@ -1234,6 +1245,66 @@ class MPDTest(object):
                 if exitOnFail:
                     sys.exit(-1)
         return rv
+
+#### experimental code for zeroconf
+def mpd_init_zc(ifhn):
+    import threading, Zeroconf
+    global mpd_zc
+    mpd_zc = Zeroconf.Zeroconf()
+    class ListenerForPeers(object):
+        def __init__(self):
+            mpd_zc.peers = {}
+            mpd_zc.peersLock = threading.Lock()
+            mpd_zc.peers_available_event = threading.Event()
+        def removeService(self, zc, service_type, name):
+            mpd_zc.peersLock.acquire()
+            del mpd_zc.peers[name]
+            print "removed", name ; sys.stdout.flush()
+            mpd_zc.peersLock.release()
+        def addService(self, zc, service_type, name):
+            info = zc.getServiceInfo(service_type, name)
+            if info:
+                if info.properties['username'] != mpd_get_my_username():
+                    return
+                mpd_zc.peersLock.acquire()
+                mpd_zc.peers[name] = info
+                print "added peer:", name, info.properties ; sys.stdout.flush()
+                mpd_zc.peersLock.release()
+                mpd_zc.peers_available_event.set()
+            else:
+                print "OOPS NO INFO FOR", name ; sys.stdout.flush()
+    service_type = "_mpdzc._tcp.local."
+    listenerForPeers = ListenerForPeers()
+    browser = Zeroconf.ServiceBrowser(mpd_zc,service_type,listenerForPeers)
+    ##  sleep(1.5)  # give browser a chance to find some peers
+def mpd_find_zc_peer():
+    print "finding a peer..." ; sys.stdout.flush()
+    mpd_zc.peers_available_event.wait(5)
+    for (peername,info) in mpd_zc.peers.items():
+        if info.properties['mpdid'] == mpd_my_id:
+            continue
+        peerAddr = str(socket.inet_ntoa(info.getAddress()))
+        peerPort = info.getPort()
+        return(peerAddr,peerPort)
+    return ('',0)
+def mpd_register_zc(ifhn):
+    import Zeroconf
+    service_type = "_mpdzc._tcp.local."
+    service_ifhn = socket.inet_aton(ifhn)
+    service_host = socket.gethostname()
+    service_port = int(mpd_my_id.split('_')[1])
+    svc = Zeroconf.ServiceInfo(service_type,
+                               mpd_my_id + service_type,
+                               address = service_ifhn,
+                               port = service_port,
+                               weight = 0, priority = 0,
+                               properties = { 'description': 'mpd',
+                                              'mpdid' : mpd_my_id,
+                                              'username' : mpd_get_my_username() }
+                               )
+    mpd_zc.registerService(svc)
+def mpd_close_zc():
+    mpd_zc.close()
 
 
 # code for testing
