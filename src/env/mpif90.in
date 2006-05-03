@@ -241,6 +241,7 @@ for arg in "$@" ; do
     # - end of special handling for .F files
 
     *)
+    qarg="'$arg'"
     ;;
 
     esac

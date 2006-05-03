@@ -168,6 +168,7 @@ for arg in "$@" ; do
     qarg='\"'"$arg"'\"'
     ;;
     *)
+    qarg="'$arg'"
     ;;
 
     esac
