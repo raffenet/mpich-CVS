@@ -517,8 +517,7 @@ int MPIDI_CH3_Sockconn_handle_connect_event( MPIDI_CH3I_Connection_t *conn,
 	   so we can only report that the connection failed */
 	mpi_errno = MPIR_Err_create_code(
 		  event_error, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-		  MPI_ERR_OTHER, "**ch3|sock|connfailed",
-		  "**ch3|sock|connfailed" );
+		  MPI_ERR_OTHER, "**ch3|sock|connfailed", 0);
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
