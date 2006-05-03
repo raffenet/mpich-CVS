@@ -20,7 +20,8 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 
     if (vc->ch.bShm)
     {
-	/* There is no post_close for shm connections so handle them as closed immediately. */
+	/* There is no post_close for shm connections so handle them as closed 
+	   immediately. */
 	MPIDI_CH3I_SHM_Remove_vc_references(vc);
 	MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
     }
