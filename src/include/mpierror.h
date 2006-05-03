@@ -28,7 +28,11 @@ int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
   to report an error
 
   Input Parameters:
-+ class - Error class
++ lastcode - Previous error code (see notes)
+. severity  - Indicates severity of error
+. fcname - Name of the function in which the error has occurred.  
+. line  - Line number (usually '__LINE__')
+. class - Error class
 . generic_msg - A generic message to be used if not instance-specific
  message is available
 . instance_msg - A message containing printf-style formatting commands
@@ -40,8 +44,9 @@ int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
  Notes:
  A typical use is\:
 .vb
-   mpi_errno = MPIR_Err_create_code( MPI_ERR_RANK, "Invalid Rank",
-                                "Invalid rank %d", rank );
+   mpi_errno = MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE, 
+               FCNAME, __LINE__, MPI_ERR_RANK, 
+               "Invalid Rank", "Invalid rank %d", rank );
 .ve
  
   Predefined message may also be used.  Any message that uses the
@@ -54,12 +59,20 @@ int MPIR_Err_return_file( MPI_File, const char [], int ); /* Romio version */
    Invalid rank provided.  The rank must be between 0 and the 1 less than
    the size of the communicator in this call.
 .ve
-  
   This interface is compatible with the 'gettext' interface for 
   internationalization, in the sense that the 'generic_msg' and 'instance_msg' 
   may be used as arguments to 'gettext' to return a string in the appropriate 
   language; the implementation of 'MPID_Err_create_code' can then convert
   this text into the appropriate code value.
+
+  The current set of formatting commands is undocumented and will change.
+  You may safely use '%d' and '%s' (though only use '%s' for names of 
+  objects, not text messages, as using '%s' for a message breaks support for
+  internationalization.
+
+  This interface allows error messages to be chained together.  The first 
+  argument is the last error code; if there is no previous error code, 
+  use 'MPI_SUCCESS'.  
 
   Module:
   Error
@@ -74,6 +87,10 @@ int MPIR_Err_create_code_valist( int, int, const char [], int, int, const char [
 int MPIR_Err_is_fatal(int);
 void MPIR_Err_init(void);
 void MPIR_Err_preinit( void );
+
+/* FIXME: This comment is incorrect because the routine was improperly modified
+   to take an additional argument (the MPIR_Err_get_class_string_func_t).  
+   That arg needs to be removed and this function restored. */
 /*@
   MPID_Err_get_string - Get the message string that corresponds to an error
   class or code
