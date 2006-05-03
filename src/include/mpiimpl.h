@@ -1885,7 +1885,7 @@ extern MPICH_PerProcess_t MPIR_Process;
 #   include "mpidu_func_nesting.h"
 #elif defined(USE_DBG_LOGGING)
 #   include "mpifunclog.h"
-#else
+#elif !defined(NEEDS_FUNC_ENTER_EXIT_DEFS)
     /* If no timing choice is selected, this sets the entry/exit macros 
        to empty */
 #   include "mpitimerimpl.h"
