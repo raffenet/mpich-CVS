@@ -64,13 +64,14 @@ $ENV{TestEnvVar} = "test var name";
 	    'PMI_DEBUG' => 0, 
 	    'MPI_APPNUM' => 0, 'MPI_UNIVERSE_SIZE' => 1, 
 	    'PMI_PORT' => 1, 
-	    'MPICH_INTERFACE_NAME' => 1,
-	    'MPICH_INTERFACE_NAME_R0' => 1,
-	    'MPICH_INTERFACE_NAME_R1' => 1,
-	    'MPICH_INTERFACE_NAME_R2' => 1,
-	    'MPICH_INTERFACE_NAME_R3' => 1,
+	    'MPICH_INTERFACE_HOSTNAME' => 1,
+	    'MPICH_INTERFACE_HOSTNAME_R0' => 1,
+	    'MPICH_INTERFACE_HOSTNAME_R1' => 1,
+	    'MPICH_INTERFACE_HOSTNAME_R2' => 1,
+	    'MPICH_INTERFACE_HOSTNAME_R3' => 1,
 	    # These are suspicious
 	    'PMI_SPAWNED' => 0, 
+	    'PMI_TOTALVIEW' => 0,
 	    );
 # Other environment variables should be rejected
 
