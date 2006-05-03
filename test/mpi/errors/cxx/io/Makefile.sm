@@ -1,0 +1,10 @@
+INCLUDES = -I../../../include -I${srcdir}/../../../include
+LDADD = -L../../../../../lib ../../util/mtest.o 
+DEPADD = @MPILIBLOC@ ../../util/mtest.o
+smvar_do_sharedlibs = 0
+
+fileerrretx_SOURCES   = fileerrretx.cxx
+
+../../util/mtest.o: 
+	(cd ../../util && $(MAKE) mtest.o)
+

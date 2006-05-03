@@ -29,6 +29,9 @@ AC_ARG_ENABLE(spawn,
 ,enable_spawn=yes)
 AC_ARG_ENABLE(checkerrors,
 [--enable-checkerrors - Add some tests for checking for errors in user programs],,enable_checkerrors=default)
+AC_ARG_ENABLE(fast,
+[--enable-fast - Indicates that the MPI implementation may have been built for fastest operation, such as building without error checking.  Has the effect of --enable-checkerrors=no])
+
 AC_ARG_WITH(mpi,
 [--with-mpi=dir - Use the selected MPI; compilation scripts for mpicc, mpif77
                   and mpicxx should be in dir/bin],,)
@@ -43,7 +46,6 @@ MPI implementation.  The following levels are supported.
 The default is funneled.  If enabled and no level is specified, the
 level is set to multiple.  If disabled, the level is set to single.],,
 enable_threads=funneled)
-
 # ------------------------------------------------------------------------
 if test "$enable_threads" = "yes" ; then 
     enable_threads=multiple
@@ -51,10 +53,15 @@ elif test "$enable_threads" = "no" ; then
     enable_threads=single
 fi
 
+if test "$enable_fast" = "yes" ; then
+    if test "$enable_checkerrors" = "default" ; then
+        enable_checkerrors=no
+    fi
+fi
 # default for MPICH2 is to check error handling; for other cases it
 # is to only check correct programs.
 if test "$FROM_MPICH2" = "yes" ; then
-    if test "$enable_checkerrors" = "default" ; then
+    if test "$enable_checkerrors" = "default" -a "$MPICH_FAST" != "YES" ; then
          enable_checkerrors=yes
     else 
          enable_checkerrors=no
@@ -834,7 +841,11 @@ AC_OUTPUT(maint/testmerge \
 	  threads/comm/Makefile \
 	  errors/Makefile \
 	  errors/coll/Makefile \
+	  errors/comm/Makefile \
+	  errors/errhan/Makefile \
 	  errors/pt2pt/Makefile \
+	  errors/cxx/Makefile \
+	  errors/cxx/io/Makefile \
 	  testlist \
 	  cxx/testlist \
 	  f77/testlist \

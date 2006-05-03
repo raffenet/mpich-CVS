@@ -120,7 +120,8 @@ int test_attrs( void )
     }
 
     delete_flag = 1;
-    MPI_Type_free(&d2);
+    if (d2 != MPI_DATATYPE_NULL) 
+	MPI_Type_free(&d2);
     MPI_Type_free( &dup_type );
 
     return errs;
