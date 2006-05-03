@@ -397,6 +397,9 @@
 #define MPIU_ERR_SETANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_, arg3_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
            __LINE__, class_, gmsg_, smsg_, arg1_, arg2_, arg3_ ); stmt_ ;}
+#define MPIU_ERR_SETANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_, arg3_, arg4_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\
+	    __LINE__, class_, gmsg_, smsg_, arg1_, arg2_, arg3_, arg4_ ); stmt_ ;}
 #define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
            __LINE__, class_, msg_, 0 ); stmt_ ;}
@@ -409,6 +412,9 @@
 #define MPIU_ERR_SETFATALANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_, arg3_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
            __LINE__, class_, gmsg_, smsg_, arg1_, arg2_, arg3_ ); stmt_ ;}
+#define MPIU_ERR_SETFATALANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_, arg3_, arg4_) \
+    {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
+	    __LINE__, class_, gmsg_, smsg_, arg1_, arg2_, arg3_, arg4_ ); stmt_ ;}
 #else
 /* Simply set the class, being careful not to override a previously
    set class */
@@ -426,6 +432,8 @@
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_) \
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
+#define MPIU_ERR_SETANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_) \
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT(err_,class_,stmt_,msg_) \
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,msg_)
 #define MPIU_ERR_SETFATALANDSTMT1(err_,class_,stmt_,gmsg_,smsg_,arg1_) \
@@ -433,6 +441,8 @@
 #define MPIU_ERR_SETFATALANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_) \
+     MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
+#define MPIU_ERR_SETFATALANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_) \
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #endif
 
@@ -469,6 +479,13 @@
     {if (cond_) { MPIU_ERR_SETANDSTMT3(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_); }}
 #define MPIU_ERR_CHKANDJUMP3(cond_,err_,class_,gmsg_,smsg_,arg1_,arg2_,arg3_) \
      MPIU_ERR_CHKANDSTMT3(cond_,err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_,arg3_)
+
+#define MPIU_ERR_SETANDJUMP4(err_,class_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_) \
+     MPIU_ERR_SETANDSTMT4(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_)
+#define MPIU_ERR_CHKANDSTMT4(cond_,err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_, arg4_) \
+    {if (cond_) { MPIU_ERR_SETANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_); }}
+#define MPIU_ERR_CHKANDJUMP4(cond_,err_,class_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_) \
+     MPIU_ERR_CHKANDSTMT4(cond_,err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_)
 /* --END ERROR MACROS-- */
 
 /* 

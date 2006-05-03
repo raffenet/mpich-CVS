@@ -552,18 +552,23 @@ sub ProcessFile
 			      'MPIU_ERR_SETFATALANDSTMT2' => '3:-1:1:1', 
 			      'MPIU_ERR_SETANDSTMT3'      => '3:-1:1:1', 
 			      'MPIU_ERR_SETFATALANDSTMT3' => '3:-1:1:1', 
+			      'MPIU_ERR_SETANDSTMT4'      => '3:-1:1:1', 
+			      'MPIU_ERR_SETFATALANDSTMT4' => '3:-1:1:1', 
 			      'MPIU_ERR_SETANDJUMP'       => '2:-1:0:1',
 			      'MPIU_ERR_SETANDJUMP1'      => '2:-1:1:1', 
 			      'MPIU_ERR_SETANDJUMP2'      => '2:-1:1:1', 
 			      'MPIU_ERR_SETANDJUMP3'      => '2:-1:1:1', 
+			      'MPIU_ERR_SETANDJUMP4'      => '2:-1:1:1', 
 			      'MPIU_ERR_CHKANDSTMT'       => '4:-1:0:1', 
 			      'MPIU_ERR_CHKANDSTMT1'      => '4:-1:1:1', 
 			      'MPIU_ERR_CHKANDSTMT2'      => '4:-1:1:1', 
 			      'MPIU_ERR_CHKANDSTMT3'      => '4:-1:1:1', 
+			      'MPIU_ERR_CHKANDSTMT4'      => '4:-1:1:1', 
 			      'MPIU_ERR_CHKANDJUMP'       => '3:-1:0:1',
 			      'MPIU_ERR_CHKANDJUMP1'      => '3:-1:1:1',
 			      'MPIU_ERR_CHKANDJUMP2'      => '3:-1:1:1',
 			      'MPIU_ERR_CHKANDJUMP3'      => '3:-1:1:1',
+			      'MPIU_ERR_CHKANDJUMP4'      => '3:-1:1:1',
 			      );
 	while (/(MPI[OUR]_E[A-Za-z0-9_]+)\s*(\(.*)$/) {
 	    my $routineName = $1;
