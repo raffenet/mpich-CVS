@@ -28,6 +28,7 @@
 /* style: allow:vprintf:3 sig:0 */
 /* style: allow:fputs:1 sig:0 */
 /* style: allow:printf:2 sig:0 */
+/* style: allow:fprintf:7 sig:0 */
 
 #ifdef HAVE_VA_COPY
 # define va_copy_end(a) va_end(a)
