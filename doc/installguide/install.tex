@@ -25,10 +25,10 @@
 
 % (require 'tex-site)
 % (setq LaTeX-mode-hook '(lambda ()
-%          		 (auto-fill-mode 1)
-%          		 (flyspell-mode 1)
-%          		 (reftex-mode 1)
-% 			 (setq TeX-command "latex")))
+%                        (auto-fill-mode 1)
+%                        (flyspell-mode 1)
+%                        (reftex-mode 1)
+%                        (setq TeX-command "latex")))
 
 
 \begin{document}
@@ -1228,7 +1228,7 @@ determine in a cross-compilation environment
                              include
                                no (no service available)
                                mpd
-			       file:directory (optional directory)
+                               file:directory (optional directory)
 
 --with-cxxlibname=name  - Specify name of library containing C++ interface
 routines
@@ -1266,6 +1266,11 @@ it to find libraries and programs with nonstandard names/locations.
 
 \end{verbatim}
 \end{small}
+
+\paragraph{Notes on the configure options.}
+The \texttt{--with-htmldir} and \texttt{--with-docdir} options specify the 
+directories into which the documentation will be installed by \texttt{make
+  install}. 
 
 \appendix
 
