@@ -1,4 +1,8 @@
 AC_PREREQ(2.59)
+# 
+# (C) 2006 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
 dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
@@ -396,6 +400,10 @@ if test "$enable_fast" = "yes" ; then
     enable_error_checking=no
     enable_error_messages=no
     enable_timing=no
+    # Export a variable that will allow the test suite to detect that
+    # MPICH has no error testing
+    MPICH_FAST=yes
+    export MPICH_FAST
 #
 # [BRT] removed the reseting of enable_g so that --with-enable=dbg,meminit
 # can be specified with -enable-fast.  This change was largely made for the
