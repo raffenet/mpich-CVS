@@ -502,49 +502,49 @@ typedef struct MPIDI_VC * MPID_VCR;
 #   define MPIDI_REQUEST_SEQNUM
 #endif
 
-#define MPID_REQUEST_DECL													\
-struct MPIDI_Request														\
-{																\
-    MPIDI_Message_match match;													\
-																\
+#define MPID_REQUEST_DECL						\
+struct MPIDI_Request							\
+{									\
+    MPIDI_Message_match match;						\
+									\
     /* TODO - user_buf, user_count, and datatype needed to process rendezvous messages. */					\
-    void * user_buf;														\
-    int user_count;														\
-    MPI_Datatype datatype;													\
-																\
+    void * user_buf;							\
+    int user_count;							\
+    MPI_Datatype datatype;						\
+									\
     /* segment, segment_first, and segment_size are used when processing non-contiguous datatypes */				\
-    MPID_Segment segment;													\
-    MPIDI_msg_sz_t segment_first;												\
-    MPIDI_msg_sz_t segment_size;												\
-																\
-    /* Pointer to datatype for reference counting purposes */									\
-    struct MPID_Datatype * datatype_ptr;											\
-																\
-    /* iov and iov_count define the data to be transferred/received */								\
-    MPID_IOV iov[MPID_IOV_LIMIT];												\
-    int iov_count;														\
-    MPID_IOV rdma_iov[MPID_IOV_LIMIT];												\
-    int rdma_iov_count;														\
-    int rdma_iov_offset;													\
-    MPI_Request rdma_request;													\
-																\
+    MPID_Segment segment;						\
+    MPIDI_msg_sz_t segment_first;					\
+    MPIDI_msg_sz_t segment_size;					\
+									\
+    /* Pointer to datatype for reference counting purposes */		\
+    struct MPID_Datatype * datatype_ptr;				\
+									\
+    /* iov and iov_count define the data to be transferred/received */	\
+    MPID_IOV iov[MPID_IOV_LIMIT];					\
+    int iov_count;							\
+    MPID_IOV rdma_iov[MPID_IOV_LIMIT];					\
+    int rdma_iov_count;							\
+    int rdma_iov_offset;						\
+    MPI_Request rdma_request;						\
+									\
     /* ca (completion action) identifies the action to take once the operation described by the iov has completed */		\
-    MPIDI_CA_t ca;														\
-																\
+    MPIDI_CA_t ca;							\
+									\
     /* tmpbuf and tmpbuf_sz describe temporary storage used for things like unexpected eager messages and packing/unpacking	\
        buffers.  tmpuf_off is the current offset into the temporary buffer. */							\
-    void * tmpbuf;														\
-    int tmpbuf_off;														\
-    MPIDI_msg_sz_t tmpbuf_sz;													\
-																\
-    MPIDI_msg_sz_t recv_data_sz;												\
-    MPI_Request sender_req_id;													\
-																\
-    unsigned state;														\
-    int cancel_pending;													        \
-    int recv_pending_count;												        \
-																\
-    /* The next 6 are for RMA */                                                                                                \
+    void * tmpbuf;							\
+    int tmpbuf_off;							\
+    MPIDI_msg_sz_t tmpbuf_sz;						\
+									\
+    MPIDI_msg_sz_t recv_data_sz;					\
+    MPI_Request sender_req_id;						\
+									\
+    unsigned state;							\
+    int cancel_pending;							\
+    int recv_pending_count;						\
+									\
+    /* The next 6 are for RMA */                                        \
     MPI_Op op;												                        \
     /* For accumulate, since data is first read into a tmp_buf */								\
     void *real_user_buf;													\

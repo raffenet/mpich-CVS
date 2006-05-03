@@ -471,7 +471,6 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
   END SEND/RECEIVE BUFFER SECTION
   -------------------------------*/
 
-
 /*----------------------------
   BEGIN DEBUGGING TOOL SECTION
   ----------------------------*/
