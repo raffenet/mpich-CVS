@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include "mpi.h"
 
+/* style: allow:puts:1 sig:0 */
+/* style: allow:fgets:1 sig:0 */
+
 int main( int argc, char *argv[] )
 {
     int rank;
