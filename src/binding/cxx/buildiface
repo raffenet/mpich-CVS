@@ -1729,7 +1729,9 @@ extern Datatype TWOINTEGER;
 
     # Predefined File and Win
     print $OUTFD "${extern}const Win WIN_NULL;\n";
-    print $OUTFD "${extern}const File FILE_NULL;\n";
+    # Note that FILE_NULL cannot be const because you can set the 
+    # error handler on it.
+    print $OUTFD "${extern} File FILE_NULL;\n";
 
     # Predefined integers
     foreach $int (BSEND_OVERHEAD, KEYVAL_INVALID, CART, GRAPH,
