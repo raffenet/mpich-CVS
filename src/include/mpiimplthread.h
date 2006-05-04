@@ -7,6 +7,12 @@
 #if !defined(MPIIMPLTHREAD_H_INCLUDED)
 #define MPIIMPLTHREAD_H_INCLUDED
 
+/* Rather than embed a conditional test in the MPICH2 code, we define a 
+   single value on which we can test */
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#define MPICH_IS_THREADED 1
+#endif
+
 #if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)    
 #include "mpid_thread.h"
 #endif
@@ -23,13 +29,14 @@
 /*
  * Get a pointer to the thread's private data
  */
-#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+#ifndef MPICH_IS_THREADED
 #define MPIR_GetPerThread(pt_)			\
 {						\
     *(pt_) = &MPIR_Thread;			\
 }
 #else
-#define MPIR_GetPerThread(pt_)						\
+/* Define a macro to acquire or create the thread private storage */
+#define MPIR_GetOrInitThreadPriv( pt_ ) \
 {									\
     MPID_Thread_tls_get(&MPIR_Process.thread_storage, (pt_));		\
     if (*(pt_) == NULL)							\
@@ -37,16 +44,28 @@
 	*(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) *(pt_));\
     }									\
-/*printf( "perthread storage (key = %x) is %p\n", MPIR_Process.thread_storage,*pt_); fflush(stdout);*/\
+    MPIU_DBG_MSG_FMT(THREAD,VERBOSE,(MPIU_DBG_FDEST,\
+     "perthread storage (key = %x) is %p\n", MPIR_Process.thread_storage,*pt_));\
 }
-#endif
+/* We want to avoid the overhead of the thread call if we're in the
+   runtime state and threads are not in use.  In that case, MPIR_Thread 
+   is still a pointer but it was already allocated in InitThread */
+#ifdef HAVE_RUNTIME_THREADCHECK
+#define MPIR_GetPerThread(pt_) {\
+ if (MPIR_Process.isThreaded) { MPIR_GetOrInitThreadPriv( pt_ ); } \
+ else { *(pt_) = &MPIR_Thread; } \
+ }
+#else
+#define MPIR_GetPerThread(pt_) MPIR_GetOrInitThreadPriv( pt_ )
+#endif /* HAVE_RUNTIME_THREADCHECK */
+#endif /* MPICH_IS_THREADED */
 
 
 /*
  * Define MPID Critical Section macros, unless the device will be defining them
  */
 #if !defined(MPID_DEFINES_MPID_CS)
-#if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+#ifndef MPICH_IS_THREADED
 #define MPID_CS_INITIALIZE()
 #define MPID_CS_FINALIZE()
 #define MPID_CS_ENTER()
@@ -119,9 +138,6 @@
 #error Internal error in macro definitions in include/mpiimplthread.h
 #endif
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
-#define MPICH_IS_THREADED 1
-#endif
 
 #ifdef MPICH_IS_THREADED
 

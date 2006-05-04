@@ -127,48 +127,20 @@ void MPIR_Err_init( void )
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	char *env;
-	int n;
+	int n, rc;
 
 	error_ring_mutex_create();
+	MPIR_Err_chop_error_stack = FALSE;
 
-	/* FIXME: Use a more general parameter mechanism */
-	/* FIXME: Don't cut and paste code like this; instead, use 
-	   a routine to ensure uniform handling (not just here but anywhere
-	   that any of these values is allowed for on/off) */
-	env = getenv("MPICH_ABORT_ON_ERROR");
-	if (env)
-	{
-	    if (strcmp(env, "1") == 0 || strcmp(env, "on") == 0 || 
-		strcmp(env, "yes") == 0)
-	    { 
-		MPIR_Err_abort_on_error = TRUE;
-	    }
-	    if (strcmp(env, "0") == 0 || strcmp(env, "off") == 0 || 
-		strcmp(env, "no") == 0)
-	    { 
-		MPIR_Err_abort_on_error = FALSE;
-	    }
-	}
-	
-	env = getenv("MPICH_PRINT_ERROR_STACK");
-	if (env)
-	{
-	    if (strcmp(env, "1") == 0 || strcmp(env, "on") == 0 || 
-		strcmp(env, "yes") == 0)
-	    { 
-		MPIR_Err_print_stack_flag = TRUE;
-	    }
-	    if (strcmp(env, "0") == 0 || strcmp(env, "off") == 0 || 
-		strcmp(env, "no") == 0)
-	    {
-		MPIR_Err_print_stack_flag = FALSE;
-	    }
-	}
+	rc = MPIU_GetEnvBool( "MPICH_ABORT_ON_ERROR", 
+			      &MPIR_Err_abort_on_error );
+	rc = MPIU_GetEnvBool( "MPICH_PRINT_ERROR_STACK", 
+			      &MPIR_Err_print_stack_flag );
 
-	env = getenv("MPICH_CHOP_ERROR_STACK");
-	if (env)
-	{
+	rc = MPIU_GetEnvInt( "MPICH_CHOP_ERROR_STACK", &n );
+	if (rc == 1) {
 #ifdef HAVE_WINDOWS_H
+	    /* If windows, set teh default width to the window size */
 	    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	    if (hConsole != INVALID_HANDLE_VALUE)
 	    {
@@ -179,26 +151,12 @@ void MPIR_Err_init( void )
 		}
 	    }
 #endif
-	    /* FIXME: atoi will not signal an error */
-	    n = atoi(env);
-	    if (n > 0)
-	    {
+	    if (n > 0) {
 		MPIR_Err_chop_error_stack = TRUE;
 		MPIR_Err_chop_width = n;
 	    }
-	    else if (n == 0)
-	    {
-		if (*env == '\0')
-		{
-		    MPIR_Err_chop_error_stack = TRUE;
-		}
-		else
-		{
-		    MPIR_Err_chop_error_stack = FALSE;
-		}
-	    }
-	    else
-	    {
+	    else if (n == 0) {
+		/* Use the default width */
 		MPIR_Err_chop_error_stack = TRUE;
 	    }
 	}

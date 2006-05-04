@@ -18,7 +18,7 @@
 /* FIXME: Move thread stuff into some set of abstractions in order to remove
    ifdefs */
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
     volatile int MPIDI_CH3I_progress_blocked = FALSE;
     volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
 
@@ -41,7 +41,7 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #endif
 
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
     static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
     static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
 #endif
@@ -68,8 +68,11 @@ int MPIDI_CH3_Progress_test(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
 
-#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     {
+	/* We don't bother testing whether threads are enabled in the 
+	   runtime-checking case because this simple test will always be false
+	   if threads are not enabled. */
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
 	{
 	    /*
@@ -152,7 +155,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
     }
 #   endif
 	
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     MPIU_THREAD_CHECK_BEGIN;
     {
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
@@ -178,7 +181,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
     
     do
     {
-#       if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#       if MPICH_IS_THREADED
 	MPIU_THREAD_CHECK_BEGIN;
 	{
 	    MPIDI_CH3I_progress_blocked = TRUE;
@@ -191,6 +194,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 	    MPIDI_CH3I_progress_blocked = FALSE;
 	    MPIDI_CH3I_progress_wakeup_signalled = FALSE;
 	}
+	MPIU_THREAD_CHECK_END;
 #       else
 	mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
 				    MPIDU_SOCK_INFINITE_TIME, &event);
@@ -221,7 +225,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
      * that would need to be buffered.
      */
     
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   if MPICH_IS_THREADED
     {
 	/*
 	 * Awaken any threads which are waiting for the progress that just 
@@ -279,6 +283,7 @@ int MPIDI_CH3I_Progress_init(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
+    /* FIXME: Should this be within a check_begin/end block? */
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
     {
 	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
@@ -339,6 +344,7 @@ int MPIDI_CH3I_Progress_finalize(void)
     MPIDU_Sock_destroy_set(MPIDI_CH3I_sock_set);
     MPIDU_Sock_finalize();
 
+    /* FIXME: Should this be within a check_begin/end block? */
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
     {
 	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
@@ -354,7 +360,7 @@ int MPIDI_CH3I_Progress_finalize(void)
 /* end MPIDI_CH3I_Progress_finalize() */
 
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_wakeup
 #undef FCNAME
@@ -730,8 +736,10 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 /* end MPIDI_CH3I_Progress_handle_sock_event() */
 
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
 
+/* Note that this routine is only called if threads are enabled; 
+   it does not need to check whether runtime threads are enabled */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_delay
 #undef FCNAME

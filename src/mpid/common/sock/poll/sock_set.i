@@ -43,7 +43,7 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     /* FIXME: Move the thread-specific operations into thread-specific
        routines (to allow for alternative thread sync models and
        for runtime control of thread level) */
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     {
 	sock_set->pollfds_active = NULL;
 	sock_set->pollfds_updated = FALSE;
@@ -54,7 +54,8 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
     }
 #   endif
 
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
+    MPIU_THREAD_CHECK_BEGIN
     {
 	struct MPIDU_Sock * sock = NULL;
 	struct pollfd * pollfd;
@@ -133,6 +134,7 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 
 	MPIDU_SOCKI_POLLFD_OP_SET(pollfd, pollinfo, POLLIN);
     }
+    MPIU_THREAD_CHECK_END
 #   endif
 
     *sock_setp = sock_set;
@@ -145,7 +147,8 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
   fn_fail:
     if (sock_set != NULL)
     {
-#       if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#       ifdef MPICH_IS_THREADED
+	MPIU_THREAD_CHECK_BEGIN
 	{
 	    if (sock_set->intr_fds[0] != -1)
 	    {
@@ -157,6 +160,7 @@ int MPIDU_Sock_create_set(struct MPIDU_Sock_set ** sock_setp)
 		close(sock_set->intr_fds[1]);
 	    }
 	}
+	MPIU_THREAD_CHECK_END
 #	endif
 	
 	MPIU_Free(sock_set);
@@ -187,13 +191,15 @@ int MPIDU_Sock_destroy_set(struct MPIDU_Sock_set * sock_set)
      */
     
     /*
-     * FIXME: verify no other thread is blocked in poll().  wake it up and get it to exit.
+     * FIXME: verify no other thread is blocked in poll().  wake it up and 
+     * get it to exit.
      */
     
     /*
      * Close pipe for interrupting a blocking poll()
      */
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
+    MPIU_THREAD_CHECK_BEGIN
     {
 	close(sock_set->intr_fds[1]);
 	close(sock_set->intr_fds[0]);
@@ -206,6 +212,7 @@ int MPIDU_Sock_destroy_set(struct MPIDU_Sock_set * sock_set)
 	sock_set->intr_fds[1] = -1;
 	sock_set->intr_sock = NULL;
     }
+    MPIU_THREAD_CHECK_END
 #   endif
 
     /*

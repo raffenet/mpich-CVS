@@ -40,14 +40,14 @@
  * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
  */
 extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
     extern volatile int MPIDI_CH3I_progress_blocked;
     extern volatile int MPIDI_CH3I_progress_wakeup_signalled;
 
     void MPIDI_CH3I_Progress_wakeup(void);
 #endif
 
-#if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+#ifndef MPICH_IS_THREADED
 #   define MPIDI_CH3_Progress_signal_completion()	\
     {							\
         MPIDI_CH3I_progress_completion_count++;		\

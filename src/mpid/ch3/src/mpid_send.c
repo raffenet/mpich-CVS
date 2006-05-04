@@ -44,7 +44,11 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
 	mpi_errno = MPIDI_Isend_self(buf, count, datatype, rank, tag, comm, context_offset, MPIDI_REQUEST_TYPE_SEND, &sreq);
-#       if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+
+	/* In the single threaded case, sending to yourself will cause 
+	   deadlock.  Note that in the runtime-thread case, this check
+	   will not be made (long-term FIXME) */
+#       ifndef MPICH_IS_THREADED
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (sreq != NULL && sreq->cc != 0)

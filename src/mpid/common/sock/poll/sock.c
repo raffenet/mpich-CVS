@@ -91,7 +91,7 @@ struct pollinfo
     enum MPIDU_Socki_type type;
     enum MPIDU_Socki_state state;
     int os_errno;
-# if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)    
+# ifdef MPICH_IS_THREADED
     int pollfd_events;
 # endif
     union
@@ -160,7 +160,7 @@ struct MPIDU_Sock_set
     struct MPIDU_Socki_eventq_elem * eventq_head;
     struct MPIDU_Socki_eventq_elem * eventq_tail;
     
-# if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+# ifdef MPICH_IS_THREADED
     /* pointer to the pollfds array being actively used by a blocking poll();
        NULL if not blocking in poll() */
     struct pollfd * pollfds_active;

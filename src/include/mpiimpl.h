@@ -77,7 +77,7 @@
    portability)
    More detailed documentation is contained in the MPICH2 and ADI3 manuals.
  */
-/* ... to do ... */
+/* FIXME: ... to do ... */
 #include "mpitypedefs.h"
 
 #include "mpiimplthread.h"
@@ -659,6 +659,8 @@ int MPIU_Param_get_string( const char [], const char *, char ** );
 void MPIU_Param_finalize( void );
 
 int MPIU_GetEnvRange( const char *, int *, int * );
+int MPIU_GetEnvInt( const char *, int * );
+int MPIU_GetEnvBool( const char *envName, int *val );
 
 /* ------------------------------------------------------------------------- */
 /* end of mpiparam.h*/
@@ -1718,7 +1720,7 @@ typedef struct MPICH_PerThread_t {
 #endif    
 } MPICH_PerThread_t;
 
-#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE) 
+#if !defined(MPICH_IS_THREADED) || defined(HAVE_RUNTIME_THREADCHECK)
 /* If single threaded, make this point at a pre-allocated segment */
 extern MPICH_PerThread_t MPIR_Thread;
 
@@ -1776,6 +1778,8 @@ struct MPID_Datatype;
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
     int               thread_provided;  /* Provided level of thread support */
+    /* This is a special case for is_thread_main, which must be
+       implemented even if MPICH2 itself is single threaded.  */
 #if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)    
     MPID_Thread_tls_t thread_storage;   /* Id for perthread data */
     MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
@@ -1829,13 +1833,6 @@ typedef struct MPICH_PerProcess_t {
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
-/* Record the level of thread support */
-/* FIXME: Where is this used, and why isn't in the PerProcess structure? */
-/* [BRT] MPID_THREAD_LEVEL appears not to used, nor is it ever defined.
-   I had to remove the external declaration because the insure linker
-   failed, complaining that the symbol could not be resolved. */
-/* extern int MPID_THREAD_LEVEL; */
-
 /*D
   MPICH_THREAD_LEVEL - Indicates the maximum level of thread
   support provided at compile time.
@@ -1850,7 +1847,7 @@ extern MPICH_PerProcess_t MPIR_Process;
 
   A typical use is 
 .vb
-  #if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+  #if MPICH_IS_THREADED
      lock((r)->lock_ptr);
      (r)->ref_count++;
      unlock((r)->lock_ptr);
@@ -1858,6 +1855,13 @@ extern MPICH_PerProcess_t MPIR_Process;
      (r)->ref_count ++;
   #fi
 .ve
+
+  Note that 'MPICH_IS_THREADED' is defined as 1 if 
+.vb
+  MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+.ve
+  is true.  The test should be used only for special cases (such as 
+  handling 'SERIALIZED').
 
   Module:
   Environment-DS

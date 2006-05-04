@@ -82,7 +82,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 #endif
 
 
-#if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+#if !defined(MPICH_IS_THREADED) /* || defined(HAVE_RUNTIME_THREADCHECK) */
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread = { 0 };
 #endif
@@ -219,6 +219,12 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        MPID_Init if necessary */
     MPIR_Process.initialized = MPICH_WITHIN_MPI;
 
+    /* For any code in the device that wants to check for runtime 
+       decisions on the value of isThreaded, set a provisional
+       value here. We could let the MPID_Init routine override this */
+#ifdef HAVE_RUNTIME_THREADCHECK
+    MPIR_Process.isThreaded = required == MPI_THREAD_MULTIPLE;
+#endif
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
     /* --BEGIN ERROR HANDLING-- */
@@ -241,6 +247,13 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #ifdef HAVE_RUNTIME_THREADCHECK
     MPIR_Process.isThreaded = required == MPI_THREAD_MULTIPLE;
     if (provided) *provided = required;
+#if 0
+    /* Preallocated MPIR_Thread if we're single-threaded */
+    if (provided < MPI_THREAD_MULTIPLE) {
+	MPIR_Thread = (MPICH_PerThread_t *) 
+	    MPIU_Calloc(1, sizeof(MPICH_PerThread_t));
+    }
+#endif
 #endif
 
     /* FIXME: Define these in the interface.  Does Timer init belong here? */

@@ -6,7 +6,7 @@
  */
 
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
 static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set);
 #endif
 
@@ -58,7 +58,7 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
    possibly embedded within special thread macros, to allow
    runtime control of the thread level */
 
-#if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
+#ifndef MPICH_IS_THREADED
 #   define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)	\
     {								\
         (pollfd_)->events |= (op_);				\
@@ -73,7 +73,8 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
             (pollfd_)->fd = -1;					\
         }							\
     }
-#else
+#else /* MPICH_IS_THREADED */
+/* FIXME: Does this need a runtime check on wether threads are in use? */
 #   define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)		\
     {									\
 	(pollinfo_)->pollfd_events |= (op_);				\
@@ -325,7 +326,7 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 }
 
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#ifdef MPICH_IS_THREADED
 
 /*
  * MPIDU_Socki_wakeup()
@@ -336,6 +337,7 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
 {
+    MPIU_THREAD_CHECK_BEGIN
     if (sock_set->wakeup_posted == FALSE)
     {
 	for(;;)
@@ -354,12 +356,12 @@ static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
 	
 	sock_set->wakeup_posted = TRUE;
     }
-
+    MPIU_THREAD_CHECK_END
     return MPIDU_SOCK_SUCCESS;
 }
 /* end MPIDU_Socki_wakeup() */
 
-#endif /* (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) */
+#endif /* (MPICH_IS_THREADED) */
     
 
 /*
@@ -409,10 +411,14 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
     else if (os_errno == EBADF)
     {
 	/*
-	 * If we have a bad file descriptor, then either the sock was bad to start with and we didn't catch it in the preliminary
-	 * checks, or a sock closure was finalized after the preliminary checks were performed.  The latter should not happen if
-	 * the thread safety code is correctly implemented.  In any case, the data structures associated with the sock are no
-	 * longer valid and should not be modified.  We indicate this by returning a fatal error.
+	 * If we have a bad file descriptor, then either the sock was bad to 
+	 * start with and we didn't catch it in the preliminary
+	 * checks, or a sock closure was finalized after the preliminary 
+	 * checks were performed.  The latter should not happen if
+	 * the thread safety code is correctly implemented.  In any case, 
+	 * the data structures associated with the sock are no
+	 * longer valid and should not be modified.  We indicate this by 
+	 * returning a fatal error.
 	 */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, fcname, line, MPIDU_SOCK_ERR_BAD_SOCK,
 					 "**sock|badsock", NULL);
@@ -563,7 +569,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	     * pollfd array must not be freed if it is the one
 	     * actively being used by pol().
 	     */
-#	    if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+#	    ifndef MPICH_IS_THREADED
 	    {
 		memcpy(pollfds, sock_set->pollfds, sock_set->poll_array_sz * sizeof(struct pollfd));
 		MPIU_Free(sock_set->pollfds);
@@ -608,7 +614,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	    pollinfos[elem].sock_id = -1;
 	    pollinfos[elem].type = 0;
 	    pollinfos[elem].state = 0;
-#	    if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#	    ifdef MPICH_IS_THREADED
 	    {
 		pollinfos[elem].pollfd_events = 0;
 	    }
@@ -626,7 +632,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     MPIU_Assert(sock_set->pollinfos[avail_elem].sock_id == -1);
     MPIU_Assert(sock_set->pollinfos[avail_elem].type == 0);
     MPIU_Assert(sock_set->pollinfos[avail_elem].state == 0);
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     {
 	MPIU_Assert(sock_set->pollinfos[avail_elem].pollfd_events == 0);
     }
@@ -644,12 +650,14 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     sock_set->pollfds[avail_elem].events = 0;
     sock_set->pollfds[avail_elem].revents = 0;
 
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     {
+    MPIU_THREAD_CHECK_BEGIN
 	if (sock_set->pollfds_active != NULL)
 	{
 	    sock_set->pollfds_updated = TRUE;
 	}
+    MPIU_THREAD_CHECK_END
     }
 #   endif
     
@@ -696,7 +704,7 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCKI_SOCK_FREE);
 
     /* FIXME: We need an abstraction for the thread sync operations */
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     {
 	/*
 	 * Freeing a sock while Sock_wait() is blocked in poll() is not supported
@@ -727,7 +735,7 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
     pollinfo->sock_id = -1;
     pollinfo->type = 0;
     pollinfo->state = 0;
-#   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#   ifdef MPICH_IS_THREADED
     {
 	pollinfo->pollfd_events = 0;
     }

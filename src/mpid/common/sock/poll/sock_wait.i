@@ -77,7 +77,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		fcntl(pollinfo->fd, F_SETFL, flags & ~O_NONBLOCK);
 	    }
 
-	    /* FIXME: return code?  If an error occurs do we return it instead of the error specified in the event? */
+	    /* FIXME: return code?  If an error occurs do we return it 
+	       instead of the error specified in the event? */
 	    close(pollinfo->fd);
 
 	    MPIDU_Socki_sock_free(pollinfo->sock);
@@ -87,16 +88,18 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 
 	for(;;)
 	{
-#	    if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
+#	    ifndef MPICH_IS_THREADED
 	    {
 		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
-		n_fds = poll(sock_set->pollfds, sock_set->poll_array_elems, millisecond_timeout);
+		n_fds = poll(sock_set->pollfds, sock_set->poll_array_elems, 
+			     millisecond_timeout);
 		MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 	    }
-#	    else /* (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) */
+#	    else /* MPICH_IS_THREADED */
 	    {
 		/*
-		 * First try a non-blocking poll to see if any immediate progress can be made.  This avoids the lock manipulation
+		 * First try a non-blocking poll to see if any immediate 
+		 * progress can be made.  This avoids the lock manipulation
 		 * overhead.
 		 */
 		MPIDI_FUNC_ENTER(MPID_STATE_POLL);
@@ -121,7 +124,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    }
 #                   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
 		    {
-			/* FIXME: this code is an experiment and is not even close to correct. */
+			/* FIXME: this code is an experiment and is not even 
+			   close to correct. */
 			if (MPIU_Monitor_closet_get_occupany_count(MPIR_Process.global_closet) == 0)
 			{
 			    MPIU_Monitor_exit(&MPIR_Process.global_monitor);
@@ -204,7 +208,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    sock_set->wakeup_posted = FALSE;
 		}
 	    }
-#	    endif /* (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) */
+#	    endif /* MPICH_IS_THREADED */
 
 	    if (n_fds > 0)
 	    {
@@ -331,7 +335,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    MPIDU_SOCKI_EVENT_ENQUEUE(pollinfo, MPIDU_SOCK_OP_ACCEPT, 0, pollinfo->user_ptr,
 					      MPI_SUCCESS, mpi_errno, fn_exit);
 		}
-		else if ((MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) && pollinfo->type == MPIDU_SOCKI_TYPE_INTERRUPTER)
+	else if ((MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) && pollinfo->type == MPIDU_SOCKI_TYPE_INTERRUPTER)
 		{
 		    char c[16];
 		    int nb;

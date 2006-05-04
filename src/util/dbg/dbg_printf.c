@@ -352,7 +352,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 
     if (!mpiu_dbg_initialized) return 0;
 
-#if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+#if MPICH_IS_THREADED
     MPE_Thread_self(&threadID);
 #endif
     if (!MPIU_DBG_fp) {
@@ -618,7 +618,7 @@ static int MPIU_DBG_OpenFile( void )
 	withinMthread = 0;        /* True if within an @T...@ */
     /* FIXME: Need to know how many MPI_COMM_WORLDs are known */
     int nWorld = 1;
-#if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+#if MPICH_IS_THREADED
     int nThread = 2;
 #else
     int nThread = 1;
@@ -696,7 +696,7 @@ static int MPIU_DBG_OpenFile( void )
 		    pDest += strlen(rankAsChar);
 		}
 		else if (*p == 't') {
-#if MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
+#if MPICH_IS_THREADED
 		    char threadIDAsChar[20];
 		    MPE_Thread_self(&threadID);
 		    MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
