@@ -117,6 +117,7 @@ int PMIServGetPort( int *, char *, int );
 int PMIServAcceptFromPort( int, int, void * );
 int PMIServSetupPort( ProcessUniverse *, char *, int );
 int MPIE_GetMyHostName( char myname[], int );
+int MPIE_ConnectToPort( char *hostname, int portnum );
 
 int PMISetDebug( int );
 

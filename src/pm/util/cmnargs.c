@@ -26,6 +26,7 @@
 #include "process.h"
 #include "labelout.h"
 #include "env.h"
+#include "pmiserv.h"
 #include "cmnargs.h"
 
 /* Use the memory defintions from mpich2/src/include */

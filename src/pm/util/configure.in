@@ -128,6 +128,15 @@ pac_cv_has_ptrace_parms=no)])
 	fi
     fi
 fi
+# Check for h_addr or h_addr_list
+AC_CACHE_CHECK([whether struct hostent contains h_addr_list],
+pac_cv_have_haddr_list,[
+AC_TRY_COMPILE([
+#include <netdb.h>],[struct hostent hp;hp.h_addr_list[0]=0;],
+pac_cv_have_haddr_list=yes,pac_cv_have_haddr_list=no)])
+if test "$pac_cv_have_haddr_list" = "yes" ; then
+    AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
+fi
 # Check for the functions needed to create a new session.
 # Cygwin has setsid but not getsid
 AC_CHECK_FUNCS(setsid isatty getsid)
