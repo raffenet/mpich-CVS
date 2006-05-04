@@ -474,6 +474,13 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 /*----------------------------
   BEGIN DEBUGGING TOOL SECTION
   ----------------------------*/
+
+/* If there is no support for dynamic processes, there will be no
+   channel-specific connection state */
+#ifdef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+#define MPIDI_CH3_VC_GetStateString( _c ) "none"
+#endif
+
 /* These macros simplify and unify the debugging of changes in the
    connection state 
 
