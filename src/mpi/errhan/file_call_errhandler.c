@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -30,7 +29,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_File_call_errhandler
-
+#undef FCNAME
+#define FCNAME "MPI_File_call_errhander"
 /*@
    MPI_File_call_errhandler - Call the error handler installed on a 
    file
@@ -49,7 +49,6 @@
 @*/
 int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 {
-    static const char FCNAME[] = "MPI_File_call_errhandler";
     int mpi_errno = MPI_SUCCESS;
     MPID_Errhandler *e;
     MPI_Errhandler eh;
