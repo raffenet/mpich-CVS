@@ -143,8 +143,8 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     }
 
     /* We may first need to initialize the channel before calling the channel 
-       VC init functions.  This routine may be a no-op; look in the ch3_init.c file
-       in each channel */
+       VC init functions.  This routine may be a no-op; look in the 
+       ch3_init.c file in each channel */
     MPIDI_CH3_PG_Init( pg );
 
     for (p = 0; p < vct_sz; p++)
@@ -371,7 +371,7 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
     /* The pg_id is at the beginning of the string, so we can just pass
        it to the find routine */
     /* printf( "Looking for pg with id %s\n", str );fflush(stdout); */
-    mpi_errno = MPIDI_PG_Find(str, &existing_pg);
+    mpi_errno = MPIDI_PG_Find((void *)str, &existing_pg);
     if (mpi_errno != PMI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -390,7 +390,7 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
     while (*p) p++; p++;
     vct_sz = atoi(p);
 
-    mpi_errno = MPIDI_PG_Create(vct_sz, str, pg_pptr);
+    mpi_errno = MPIDI_PG_Create(vct_sz, (void *)str, pg_pptr);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -744,7 +744,6 @@ static int connFromString( const char *buf, MPIDI_PG_t *pg )
 {
     MPIDI_ConnInfo *conninfo = 0;
     int i, mpi_errno = MPI_SUCCESS;
-    int totlen = 0;
     const char *buf0 = buf;   /* save the start of buf */
 
     /* printf( "Starting with buf = %s\n", buf );fflush(stdout); */
@@ -800,8 +799,6 @@ int MPIDI_PG_InitConnString( MPIDI_PG_t *pg )
 
  fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 /* Temp to get connection value for rank r */
@@ -877,7 +874,8 @@ int MPIDI_PG_Dup_vcr( MPIDI_PG_t *pg, int rank, MPIDI_VC_t **vc_p )
   MPIDI_PG_Close_VCs - Close all virtual connections on all process groups.
   
   Note:
-  This routine is used in MPID_Finalize.  It is here to 
+  This routine is used in MPID_Finalize.  It is here to keep the process-group
+  related functions together.
   @*/
 int MPIDI_PG_Close_VCs( void )
 {
