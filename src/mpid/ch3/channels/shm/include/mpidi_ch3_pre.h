@@ -10,9 +10,6 @@
 #include "mpidi_ch3i_shm_conf.h"
 #include "mpid_locksconf.h"
 
-/* FIXME: We're almost ready to remove the "unfactored" names */
-/* Prevent PMI, sock and sshm initialization functions from being called by the CH3 device code */
-#define MPIDI_CH3_UNFACTORED_FINALIZE
 /* Feature and capabilities */
 /* shm does not support any of the dynamic process operations (ports,
    spawn, etc.) */
