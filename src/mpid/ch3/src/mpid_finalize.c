@@ -19,7 +19,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_Finalize(void)
 {
-    int mpi_errno = MPI_SUCCESS, inuse, rc;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
