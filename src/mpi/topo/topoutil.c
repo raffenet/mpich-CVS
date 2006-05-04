@@ -136,7 +136,7 @@ static int MPIR_Topology_copy_fn ( MPI_Comm comm, int keyval, void *extra_data,
 	int ndims = old_topology->topo.cart.ndims;
 	copy_topology->topo.cart.nnodes = old_topology->topo.cart.nnodes;
 	copy_topology->topo.cart.ndims  = ndims;
-	copy_topology->topo.cart.dims = MPIR_Copy_array( ndims,
+	copy_topology->topo.cart.dims   = MPIR_Copy_array( ndims,
 				     old_topology->topo.cart.dims, 
 				     &mpi_errno );
 	copy_topology->topo.cart.periodic = MPIR_Copy_array( ndims,
@@ -148,8 +148,7 @@ static int MPIR_Topology_copy_fn ( MPI_Comm comm, int keyval, void *extra_data,
 	int nnodes = old_topology->topo.graph.nnodes;
 	copy_topology->topo.graph.nnodes = nnodes;
 	copy_topology->topo.graph.nedges = old_topology->topo.graph.nedges;
-	copy_topology->topo.graph.index = MPIR_Copy_array( 
-				 old_topology->topo.graph.index[nnodes-1],
+	copy_topology->topo.graph.index  = MPIR_Copy_array( nnodes,
 				 old_topology->topo.graph.index, &mpi_errno );
 	copy_topology->topo.graph.edges = MPIR_Copy_array( 
 				 old_topology->topo.graph.nedges, 
