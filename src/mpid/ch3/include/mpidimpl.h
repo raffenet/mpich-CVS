@@ -334,7 +334,12 @@ int MPIDI_PG_Get_next(MPIDI_PG_t ** pgp);
 int MPIDI_PG_Iterate_reset(void);
 /* FIXME: MPIDI_PG_Get_vc is a macro, not a routine */
 int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc); 
+int MPIDI_PG_Close_VCs( void );
 
+int MPIDI_PG_InitConnKVS( MPIDI_PG_t * );
+int MPIDI_PG_GetConnKVSname( char ** );
+int MPIDI_PG_InitConnString( MPIDI_PG_t * );
+int MPIDI_PG_GetConnString( MPIDI_PG_t *, int, char *, int );
 int MPIDI_PG_Dup_vcr( MPIDI_PG_t *, int, MPIDI_VC_t ** );
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
