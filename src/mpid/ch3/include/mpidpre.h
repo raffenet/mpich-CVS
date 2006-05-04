@@ -24,7 +24,15 @@
 struct MPID_Datatype;
 
 typedef MPI_Aint MPIDI_msg_sz_t;
+/* We need to match the size of MPI_Aint to the relevant Format control
+ */
+#ifdef MPI_AINT_IS_LONG_INT
+#define MPIDI_MSG_SZ_FMT "%ld"
+#elif defined(MPI_AINT_IS_LONG_LONG_INT)
+#define MPIDI_MSG_SZ_FMT "%lld"
+#else
 #define MPIDI_MSG_SZ_FMT "%d"
+#endif
 
 /* Include definitions from the channel which must exist before items in this file (mpidimpl.h) or the file it includes
    (mpiimpl.h) can be defined. */
@@ -427,6 +435,8 @@ typedef struct MPIDI_PG
 }
 MPIDI_PG_t;
 
+
+
 /*E
   MPIDI_VC_State - States for a virtual connection.
  
@@ -475,7 +485,8 @@ typedef struct MPIDI_VC
     /* Sequence number of the next packet we expect to receive */
     MPID_Seqnum_t seqnum_recv;
 
-    /* Queue for holding packets received out of order.  NOTE: the CH3 device only orders packets.  Handling of out-of-order data
+    /* Queue for holding packets received out of order.  NOTE: the CH3 device 
+       only orders packets.  Handling of out-of-order data
        is the responsibility of the channel. */
     MPIDI_CH3_Pkt_send_container_t * msg_reorder_queue;
 #endif
@@ -545,22 +556,22 @@ struct MPIDI_Request							\
     int recv_pending_count;						\
 									\
     /* The next 6 are for RMA */                                        \
-    MPI_Op op;												                        \
-    /* For accumulate, since data is first read into a tmp_buf */								\
-    void *real_user_buf;													\
-    /* For derived datatypes at target */								                        \
-    MPIDI_RMA_dtype_info *dtype_info;												\
-    void *dataloop;													        \
-    /* req. handle needed to implement derived datatype gets  */					                        \
-    MPI_Request request_handle;											                        \
-    MPI_Win target_win_handle;   										                        \
-    MPI_Win source_win_handle;   										                        \
-    int single_op_opt;   /* to indicate a lock-put-unlock optimization case */                                                  \
+    MPI_Op op;								\
+    /* For accumulate, since data is first read into a tmp_buf */	\
+    void *real_user_buf;						\
+    /* For derived datatypes at target */				\
+    MPIDI_RMA_dtype_info *dtype_info;					\
+    void *dataloop;							\
+    /* req. handle needed to implement derived datatype gets  */	\
+    MPI_Request request_handle;						\
+    MPI_Win target_win_handle;   					\
+    MPI_Win source_win_handle;   					\
+    int single_op_opt;   /* to indicate a lock-put-unlock optimization case */\
     MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */		                        \
-																\
-    MPIDI_REQUEST_SEQNUM													\
-																\
-    struct MPID_Request * next;													\
+									\
+    MPIDI_REQUEST_SEQNUM						\
+									\
+    struct MPID_Request * next;						\
 } dev;
 
 #if defined(MPIDI_CH3_REQUEST_DECL)
@@ -633,28 +644,28 @@ typedef struct MPIDI_Win_lock_queue {
     struct MPIDI_PT_single_op *pt_single_op;  /* to store info for lock-put-unlock optimization */
 } MPIDI_Win_lock_queue;
 
-#define MPIDI_DEV_WIN_DECL                                                              \
-    volatile int my_counter;  /* completion counter for operations                      \
-                                 targeting this window */                               \
-    void **base_addrs;     /* array of base addresses of the windows of                 \
-                              all processes */                                          \
-    int *disp_units;      /* array of displacement units of all windows */              \
-    MPI_Win *all_win_handles;    /* array of handles to the window objects              \
-                                          of all processes */                           \
-    MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */                 \
-    volatile int lock_granted;  /* flag to indicate whether lock has                    \
+#define MPIDI_DEV_WIN_DECL                                               \
+    volatile int my_counter;  /* completion counter for operations       \
+                                 targeting this window */                \
+    void **base_addrs;     /* array of base addresses of the windows of  \
+                              all processes */                           \
+    int *disp_units;      /* array of displacement units of all windows */\
+    MPI_Win *all_win_handles;    /* array of handles to the window objects\
+                                          of all processes */            \
+    MPIDI_RMA_ops *rma_ops_list; /* list of outstanding RMA requests */  \
+    volatile int lock_granted;  /* flag to indicate whether lock has     \
                                    been granted to this process (as source) for         \
-                                   passive target rma */                                \
+                                   passive target rma */                 \
     volatile int current_lock_type;   /* current lock type on this window (as target)   \
-                              * (none, shared, exclusive) */                            \
-    volatile int shared_lock_ref_cnt;                                                   \
+                              * (none, shared, exclusive) */             \
+    volatile int shared_lock_ref_cnt;                                    \
     struct MPIDI_Win_lock_queue volatile *lock_queue;  /* list of unsatisfied locks */  \
-                                                                                        \
-    int *pt_rma_puts_accs;  /* array containing the no. of passive target               \
-                               puts/accums issued from this process to other            \
-                               processes. */                                            \
-    volatile int my_pt_rma_puts_accs;  /* no. of passive target puts/accums             \
-                                          that this process has                         \
+                                                                         \
+    int *pt_rma_puts_accs;  /* array containing the no. of passive target\
+                               puts/accums issued from this process to other \
+                               processes. */                             \
+    volatile int my_pt_rma_puts_accs;  /* no. of passive target puts/accums  \
+                                          that this process has          \
                                           completed as target */
  
 #ifdef MPIDI_CH3_WIN_DECL
