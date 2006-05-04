@@ -251,6 +251,7 @@ static int MPIR_Find_context_bit( unsigned int local_mask[] ) {
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 {
     int          context_id = 0;
+    int          mpi_errno = 0;
     unsigned int local_mask[MAX_CONTEXT_MASK];
     MPIU_THREADPRIV_DECL;
 
@@ -262,9 +263,11 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
     MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     /* Comm must be an intracommunicator */
-    NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
-		    MPI_BAND, comm_ptr->handle );
+    mpi_errno = NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, 
+				MPI_INT, MPI_BAND, comm_ptr->handle );
     MPIR_Nest_decr();
+    /* FIXME: We should return the error code upward */
+    if (mpi_errno) return 0;
 
     context_id = MPIR_Find_context_bit( local_mask );
 
@@ -275,7 +278,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
     return context_id;
 }
 
-#else
+#else /* MPICH_IS_THREADED is set and true */
 
 /* Additional values needed to maintain thread safety */
 static volatile int mask_in_use = 0;
@@ -287,6 +290,7 @@ static volatile int lowestContextId = MPIR_MAXID;
 int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 {
     int          context_id = 0;
+    int          mpi_errno = 0;
     unsigned int local_mask[MAX_CONTEXT_MASK];
     int          own_mask = 0;
     MPIU_THREADPRIV_DECL;
@@ -326,8 +330,13 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	
 	/* Now, try to get a context id */
 	/* Comm must be an intracommunicator */
-	NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK, MPI_INT, 
-			MPI_BAND, comm_ptr->handle );
+	mpi_errno = NMPI_Allreduce( MPI_IN_PLACE, local_mask, MAX_CONTEXT_MASK,
+				    MPI_INT, MPI_BAND, comm_ptr->handle );
+	/* FIXME: On error, return mpi_errno upward */
+	if (mpi_errno) {
+	    MPIR_Nest_decr();
+	    return 0;
+	}
 
 	if (own_mask) {
 	    /* There is a chance that we've found a context id */
@@ -449,16 +458,10 @@ void MPIR_Free_contextid( int context_id )
 		    "In MPIR_Free_contextid, idx is out of range" );
     }
     /* --END ERROR HANDLING-- */
-    /* This update must be done atomically in the multithreaded case */
-#ifndef MPICH_IS_THREADED
+    /* MT: Note that this update must be done atomically in the multithreaded
+       case.  In the "one, single lock" implementation, that lock is indeed
+       held when this operation is called. */
     context_mask[idx] |= (0x1 << bitpos);
-#else
-    /* FIXME: We assume that we hold the single cs lock already
-       whenever we enter this routine */
-/*    MPIU_THREAD_SINGLE_CS_ENTER("context_id"); */
-    context_mask[idx] |= (0x1 << bitpos);
-/*     MPIU_THREAD_SINGLE_CS_EXIT("context_id"); */
-#endif
 
     MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
 			"Freed context %d, mask[%d] bit %d\n", 
