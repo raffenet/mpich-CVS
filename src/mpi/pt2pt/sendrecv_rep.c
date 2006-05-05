@@ -217,15 +217,16 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     /* ... end of body of routine ... */
+    MPIR_Nest_decr();
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
-    MPIR_Nest_decr();
     MPID_MPI_PT2PT_FUNC_EXIT_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
     MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
     return mpi_errno;
     
   fn_fail:
+    MPIR_Nest_decr();
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {

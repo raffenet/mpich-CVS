@@ -135,9 +135,10 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 	     error to make */
 	    acthigh = high ? 1 : 0;   /* Clamp high into 1 or 0 */
 	    MPIR_Nest_incr();
-	    NMPI_Allreduce( MPI_IN_PLACE, &acthigh, 1, MPI_INT, MPI_SUM,
-			    comm_ptr->local_comm->handle );
+	    mpi_errno = NMPI_Allreduce( MPI_IN_PLACE, &acthigh, 1, MPI_INT, 
+				MPI_SUM, comm_ptr->local_comm->handle );
 	    MPIR_Nest_decr();
+	    if (mpi_errno) goto fn_fail;
 	    /* acthigh must either == 0 or the size of the local comm */
 	    if (acthigh != 0 && acthigh != comm_ptr->local_size) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
@@ -192,8 +193,10 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
        of processes had the same value for high
     */
     MPIR_Nest_incr();
-    NMPI_Bcast( &local_high, 1, MPI_INT, 0, comm_ptr->local_comm->handle );
+    mpi_errno = NMPI_Bcast( &local_high, 1, MPI_INT, 0, 
+			    comm_ptr->local_comm->handle );
     MPIR_Nest_decr();
+    if (mpi_errno) goto fn_fail;
 
     mpi_errno = MPIR_Comm_create( &newcomm_ptr );
     if (mpi_errno) goto fn_fail;

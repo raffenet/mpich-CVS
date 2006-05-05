@@ -313,9 +313,9 @@ int MPI_Type_create_subarray(int ndims,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
+    MPIR_Nest_decr();
     
   fn_exit:
-    MPIR_Nest_decr();
     MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_SUBARRAY);
     MPIU_THREAD_SINGLE_CS_EXIT("datatype");
@@ -323,6 +323,7 @@ int MPI_Type_create_subarray(int ndims,
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
+    MPIR_Nest_decr();
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(

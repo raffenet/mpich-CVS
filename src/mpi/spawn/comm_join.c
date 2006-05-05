@@ -143,6 +143,8 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     /* ... body of routine ...  */
 
     MPIU_THREADPRIV_GET;
+    /* Set the nest incr here so that we can jump to fn_fail and 
+       call nest_decr without worry */
     MPIR_Nest_incr();
     
     MPIU_CHKLMEM_MALLOC(local_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "local port name");
@@ -173,16 +175,17 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     mpi_errno = NMPI_Close_port(local_port);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    MPIR_Nest_decr();
     /* ... end of body of routine ... */
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
-    MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_JOIN);
     MPIU_THREAD_SINGLE_CS_EXIT("spawn");
     return mpi_errno;
 
   fn_fail:
+    MPIR_Nest_decr();
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
