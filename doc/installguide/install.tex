@@ -348,7 +348,8 @@ no reason for a user to need multiple mpds on a single host.
 The \texttt{-1} option exists mostly to support internal testing.
 The \texttt{--help} option explains these as well as other useful
 options.  In particular, if your cluster has multiprocessor nodes, you
-might want to use the \texttt{--ncpus} argument described in Section~\ref{sec:smps}.
+might want to use the \texttt{--ncpus} argument described in 
+Section~\ref{sec:mpd-on-smps}.
 
 Check to see if all the hosts you listed in mpd.hosts are in the output
 of 
@@ -583,6 +584,53 @@ produces:
     3: bp401
     4: bp402
 \end{verbatim}
+
+\section{Choosing the Communication Device}
+\label{sec:choose-device}
+
+MPICH2 is designed to be build with many different communication devices,
+allowing an implementation to be tuned for different communication fabrics.  A
+simple communication device, known as ``ch3'' (for the third version of the
+``channel'' interface) is provided with MPICH2 and is the default choice.
+
+The ch3 device itself supports a variety of communication methods.  These are
+specified by providing the name of the method after a colon in the
+\texttt{--with-device} configure option.  For example,
+\texttt{--with-device=ch3:ssm} selects the socket plus shared memory method.
+The supported methods include:
+
+\begin{description}
+\item[ch3:sock]This is the default communication method.  It uses sockets for
+  all communications between processes.  As of MPICH2 version 1.0.4, it is the
+  only communication method that enables \texttt{MPI\_THREAD\_MULTIPLE}.
+\item[ch3:ssm]This method uses sockets between nodes and shared memory within
+a node.
+\item[ch3:shm]This method only uses shared memory and only works within a
+single SMP.  It does not support the MPI dynamic process routines such as
+\texttt{MPI\_Comm\_spawn}. 
+\item[ch3:sshm]This method is a scalable version of a shared-memory method and
+only works within a single SMP.
+\item[ch3:nemesis]This method is our new, high performance method.  It
+supports sockets, shared memory, and Myrinet-GM at present.  It does not
+support the MPI dynamic process routines in this release, but will support
+them in subsequent releases.
+\end{description}
+
+Most installations should use either the \texttt{ch3:ssm} or \texttt{ch3:sock}
+methods.  If you need multi-threaded MPI, you must use \texttt{ch3:sock} in
+this release.  If you have a cluster of SMPs and do not need a multi-threaded
+MPI, then select \texttt{ch3:ssm}.  If you are interested in trying out our
+highest-performance device, and need neither threads nor the dynamic process
+routines from MPI, then you can use \texttt{ch3:nemesis}.
+
+%
+% Add any configure options that are specific to each method here.  Also
+% any environment variables that might apply (e.g., MPICH_INTERFACE_HOSTNAME 
+% or MPICH_PORT_RANGE.
+%
+%\subsection{Special Features of Each Communication Device}
+%\subsubsection{ch3:shm}
+%\subsubsection{ch3:nemesis}
 
 \section{Installing and Managing Process Managers}
 \label{sec:process-managers}
