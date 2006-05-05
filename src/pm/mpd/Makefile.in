@@ -35,7 +35,7 @@ MPD      = mpd
 MPDBOOT  = mpdboot
 CMDS     = mpiexec mpdtrace mpdringtest mpdlistjobs mpdkilljob mpdsigjob \
            mpdexit mpdallexit mpdcleanup mpdhelp mpdcheck
-HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver
+HELPERS  = mpdgdbdrv mpdman mpdlib mpdchkpyver Zeroconf
 
 PYTHON_SOURCE =  ${MPD} ${MPDBOOT} ${CMDS} ${HELPERS}
 
