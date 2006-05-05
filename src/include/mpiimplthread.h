@@ -45,7 +45,7 @@
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) *(pt_));\
     }									\
     MPIU_DBG_MSG_FMT(THREAD,VERBOSE,(MPIU_DBG_FDEST,\
-     "perthread storage (key = %x) is %p\n", MPIR_Process.thread_storage,*pt_));\
+     "perthread storage (key = %x) is %p", (unsigned int)MPIR_Process.thread_storage,*pt_));\
 }
 /* We want to avoid the overhead of the thread call if we're in the
    runtime state and threads are not in use.  In that case, MPIR_Thread 
