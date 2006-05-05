@@ -482,8 +482,13 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 
 /* If there is no support for dynamic processes, there will be no
    channel-specific connection state */
+#ifdef USE_DBG_LOGGING
 #ifdef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 #define MPIDI_CH3_VC_GetStateString( _c ) "none"
+#else
+/* FIXME: This duplicates a value in util/sock/ch3usock.h */
+const char *MPIDI_CH3_VC_GetStateString(int);
+#endif
 #endif
 
 /* These macros simplify and unify the debugging of changes in the
