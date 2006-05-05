@@ -21,6 +21,9 @@ for arg in "${_conf_array[@]}" ; do
     --with-papi=* ) 
       papi_dir=`echo "$arg" | sed 's/--with-papi=//'` 
       ;;
+    --enable-fast* )
+      enable_fast="yes"
+      ;;
 #     --with-perfctr=* ) 
 #       perfctr_dir=`echo "$arg" | sed 's/--with-perfctr=//'` 
 #       ;;

@@ -49,4 +49,9 @@ if test -n "${papi_dir}" ; then
 #    LIBS="$LIBS ${papi_dir}/lib/libpapi.a ${papi_dir}/lib/libperfctr.a"
 fi
 
+if [ "${enable_fast}x" == "yesx" ] ; then
+    CFLAGS="$CFLAGS -O3"
+fi
+
+
 export nemesis_network
