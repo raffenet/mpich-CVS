@@ -65,7 +65,7 @@ from  random      import  seed, randrange, random
 from  time        import  sleep
 from  md5         import  new as md5new
 from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair, \
-                          mpd_print, mpd_get_my_username, \
+                          mpd_print, mpd_get_my_username, mpd_close_zc, \
                           mpd_get_groups_for_username, mpd_uncaught_except_tb, \
                           mpd_set_procedures_to_trace, mpd_trace_calls, \
                           MPDSock, MPDListenSock, MPDConListenSock, \
@@ -151,7 +151,7 @@ class MPD(object):
                             myIfhn=self.myIfhn,
                             entryIfhn=self.parmdb['MPD_ENTRY_IFHN'],
                             entryPort=self.parmdb['MPD_ENTRY_PORT'],
-                            zcFlag=self.parmdb['MPD_ZC'])
+                            zcMyLevel=self.parmdb['MPD_ZC'])
         # setup tracing if requested via args
         if self.parmdb['MPD_TRACE_FLAG']:
             proceduresToTrace = []
@@ -281,6 +281,7 @@ class MPD(object):
                     sys.exit(-1)
             if self.exiting:
                 break
+        mpd_close_zc()  # only does something if we have zc
     def usage(self):
         print __doc__
         print "This version of mpd is", mpd_version()
@@ -422,9 +423,19 @@ class MPD(object):
             elif sys.argv[argidx] == '-b'  or  sys.argv[argidx] == '--bulletproof':
                 self.parmdb[('cmdline','MPD_BULLETPROOF_FLAG')] = 1 
                 argidx += 1
-            elif sys.argv[argidx] == '-zc'  or  sys.argv[argidx] == '--zeroconf':
-                self.parmdb[('cmdline','MPD_ZC')] = 1 
-                argidx += 1
+            elif sys.argv[argidx] == '-zc':
+                if argidx >= (len(sys.argv)-1):
+                    print 'missing arg for -zc'
+                    sys.exit(-1)
+                if not sys.argv[argidx+1].isdigit():
+                    print 'invalid arg for -zc %s ; must be numeric' % (sys.argv[argidx+1])
+                    sys.exit(-1)
+                intarg = int(sys.argv[argidx+1])
+                if intarg < 1:
+                    print 'invalid arg for -zc %s ; must be >= 1' % (sys.argv[argidx+1])
+                    sys.exit(-1)
+                self.parmdb[('cmdline','MPD_ZC')] = intarg
+                argidx += 2
             else:
                 print 'unrecognized arg: %s' % (sys.argv[argidx])
                 sys.exit(-1)

@@ -533,7 +533,7 @@ class MPDStreamHandler(object):
 
 class MPDRing(object):
     def __init__(self,listenSock=None,streamHandler=None,secretword='',
-                 myIfhn='',entryIfhn='',entryPort=0,zcFlag=0):
+                 myIfhn='',entryIfhn='',entryPort=0,zcMyLevel=0):
         if not streamHandler:
             mpd_print(1, "must supply handler for new conns in ring")
             sys.exit(-1)
@@ -560,8 +560,9 @@ class MPDRing(object):
         self.rhsSock = 0
         self.lhsHandler = None
         self.rhsHandler = None
-        if zcFlag:
-            mpd_init_zc(self.myIfhn)
+        self.zcMyLevel = zcMyLevel
+        if self.zcMyLevel:
+            mpd_init_zc(self.myIfhn,self.zcMyLevel)
     def create_single_mem_ring(self,ifhn='',port=0,lhsHandler=None,rhsHandler=None):
         self.lhsSock,self.rhsSock = mpd_sockpair()
         self.lhsIfhn = ifhn
@@ -575,7 +576,7 @@ class MPDRing(object):
     def reenter_ring(self,entryIfhn='',entryPort=0,lhsHandler='',rhsHandler='',ntries=5):
         if mpd_zc:
             mpd_close_zc()
-            mpd_init_zc(self.myIfhn)
+            mpd_init_zc(self.myIfhn,self.zcMyLevel)
         rc = -1
         numTries = 0
 	self.generation += 1
@@ -597,8 +598,14 @@ class MPDRing(object):
         if not entryPort:
             entryPort = self.entryPort
         if not entryIfhn  and  mpd_zc:
-            (entryIfhn,entryPort) = mpd_find_zc_peer()
-            print "PEER USED", (entryIfhn,entryPort)
+            if self.zcMyLevel == 1:
+                (entryHost,entryPort) = ('',0)
+            else:
+                (entryIfhn,entryPort) = mpd_find_zc_peer(self.zcMyLevel-1)
+                if not entryPort:
+                    print "FAILED TO FIND A PEER AT LEVEL", self.zcMyLevel-1
+                    sys.exit(-1)
+            print "ENTRY INFO", (entryIfhn,entryPort)
         if not entryIfhn:
             self.create_single_mem_ring(ifhn=self.myIfhn,
                                         port=self.listenPort,
@@ -626,7 +633,7 @@ class MPDRing(object):
                 mpd_print(1,"rhs connect failed")
                 return -1
         if mpd_zc:
-            mpd_register_zc(self.myIfhn)
+            mpd_register_zc(self.myIfhn,self.zcMyLevel)
         return 0
     def connect_lhs(self,lhsIfhn='',lhsPort=0,lhsHandler=None,numTries=1):
         if not lhsHandler:
@@ -1247,7 +1254,7 @@ class MPDTest(object):
         return rv
 
 #### experimental code for zeroconf
-def mpd_init_zc(ifhn):
+def mpd_init_zc(ifhn,my_level):
     import threading, Zeroconf
     global mpd_zc
     mpd_zc = Zeroconf.Zeroconf()
@@ -1277,17 +1284,19 @@ def mpd_init_zc(ifhn):
     listenerForPeers = ListenerForPeers()
     browser = Zeroconf.ServiceBrowser(mpd_zc,service_type,listenerForPeers)
     ##  sleep(1.5)  # give browser a chance to find some peers
-def mpd_find_zc_peer():
-    print "finding a peer..." ; sys.stdout.flush()
+def mpd_find_zc_peer(peer_level):
+    print "finding a peer at level %d..." % (peer_level) ; sys.stdout.flush()
     mpd_zc.peers_available_event.wait(5)
     for (peername,info) in mpd_zc.peers.items():
         if info.properties['mpdid'] == mpd_my_id:
+            continue
+        if info.properties['level'] != peer_level:
             continue
         peerAddr = str(socket.inet_ntoa(info.getAddress()))
         peerPort = info.getPort()
         return(peerAddr,peerPort)
     return ('',0)
-def mpd_register_zc(ifhn):
+def mpd_register_zc(ifhn,level):
     import Zeroconf
     service_type = "_mpdzc._tcp.local."
     service_ifhn = socket.inet_aton(ifhn)
@@ -1300,11 +1309,13 @@ def mpd_register_zc(ifhn):
                                weight = 0, priority = 0,
                                properties = { 'description': 'mpd',
                                               'mpdid' : mpd_my_id,
+                                              'level' : level,
                                               'username' : mpd_get_my_username() }
                                )
     mpd_zc.registerService(svc)
 def mpd_close_zc():
-    mpd_zc.close()
+    if mpd_zc:
+        mpd_zc.close()
 
 
 # code for testing
