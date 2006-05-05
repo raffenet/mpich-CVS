@@ -353,7 +353,11 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     if (!mpiu_dbg_initialized) return 0;
 
 #if MPICH_IS_THREADED
-    MPE_Thread_self(&threadID);
+    {
+	MPE_Thread_id_t tid;
+	MPE_Thread_self(&tid);
+	threadID = (int)tid;
+    }
 #endif
     if (!MPIU_DBG_fp) {
 	MPIU_DBG_OpenFile();
@@ -698,7 +702,10 @@ static int MPIU_DBG_OpenFile( void )
 		else if (*p == 't') {
 #if MPICH_IS_THREADED
 		    char threadIDAsChar[20];
-		    MPE_Thread_self(&threadID);
+		    MPE_Thread_id_t tid;
+		    MPE_Thread_self(&tid);
+		    threadID = (int)tid;
+
 		    MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
 				   "%d", threadID );
 		    *pDest = 0;
