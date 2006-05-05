@@ -1391,6 +1391,7 @@ dnl By modifying mpif.h to use ! for comments, it can work with many f90
 dnl compilers without creating a separate version.  
 dnl Note that this is run AFTER the AC_OUTPUT actions
 AC_OUTPUT_COMMANDS([if test $enable_f77 = yes ; then 
+if test "$bashWorks" = yes ; then cp -f src/env/mpif77.bash src/env/mpif77 ; fi
 chmod a+x src/env/mpif77
 if test "$has_exclaim" = "yes" ; then
     sed -e 's/^C/\!/g' src/binding/f77/mpif.h > src/include/mpif.h
@@ -1408,7 +1409,8 @@ fi],
 enable_f77=$enable_f77
 has_exclaim=$has_exclaim
 includebuild_dir=$includebuild_dir
-libbuild_dir=$libbuild_dir)
+libbuild_dir=$libbuild_dir
+bashWorks=$bashWorks)
 
 if test "$enable_f90" = "yes" ; then
     if test "$enable_f77" != "yes" ; then
@@ -1604,6 +1606,7 @@ fi
 # you include the replacement of C with ! as the comment marker
 # where possible.
 AC_OUTPUT_COMMANDS([if test $enable_f90 = yes ; then 
+if test "$bashWorks" = yes ; then cp -f src/env/mpif90.bash src/env/mpif90 ; fi
 chmod a+x src/env/mpif90
 if test ! -d bin  ; then mkdir bin ; fi 
 sed -e 's%includedir=.*%includedir='$includebuild_dir% \
@@ -1612,11 +1615,13 @@ sed -e 's%includedir=.*%includedir='$includebuild_dir% \
 chmod a+x bin/mpif90 
 else
     rm -f src/env/mpif90 src/env/mpif90.conf bin/mpif90
-fi],
+fi
+],
 enable_f90=$enable_f90
 modincbuild_dir=$modincbuild_dir
 includebuild_dir=$includebuild_dir
-libbuild_dir=$libbuild_dir)
+libbuild_dir=$libbuild_dir
+bashWorks=$bashWorks)
 
 # By default, only build C++ if there is a C++ compiler (if we don't 
 # test here, the configure can fail if there is no C++ compiler available)
@@ -1729,6 +1734,7 @@ if test "$enable_cxx" = "yes" ; then
 fi
 # Copy the mpicxx.h file to the main include directory
 AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
+if test "$bashWorks" = yes ; then cp -f src/env/mpicxx.bash src/env/mpicxx ; fi
 chmod a+x src/env/mpicxx 
 cp src/binding/cxx/mpicxx.h src/include 
 if test ! -d bin  ; then mkdir bin ; fi 
@@ -1737,10 +1743,12 @@ sed -e 's%includedir=.*%includedir='$includebuild_dir% \
 chmod a+x bin/mpicxx
 else
     rm -f src/env/mpicxx src/env/mpicxx.conf
-fi],
+fi
+],
 enable_cxx=$enable_cxx
 includebuild_dir=$includebuild_dir
-libbuild_dir=$libbuild_dir)
+libbuild_dir=$libbuild_dir
+bashWorks=$bashWorks)
 
 AC_SUBST(bindings)
 # Bindings dirs is used for the installation target
@@ -4522,14 +4530,17 @@ if test -z "$modincbuild_dir" ; then
    # The include files may be in a different directory from the mpif.h file
    modincbuild_dir=$top_build_dir/src/binding/f90
 fi
-#export includebuild_dir
-#export libbuild_dir
-AC_OUTPUT_COMMANDS([chmod a+x src/env/mpicc ;
-   if test ! -d bin  ; then mkdir bin ; fi 
-   sed -e 's%includedir=.*%includedir='$includebuild_dir% \
+
+AC_OUTPUT_COMMANDS([
+if test "$bashWorks" = yes ; then cp -f src/env/mpicc.bash src/env/mpicc ; fi
+chmod a+x src/env/mpicc ;
+if test ! -d bin  ; then mkdir bin ; fi 
+sed -e 's%includedir=.*%includedir='$includebuild_dir% \
        -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpicc > bin/mpicc ;
-   chmod a+x bin/mpicc ],includebuild_dir=$includebuild_dir
-libbuild_dir=$libbuild_dir)
+chmod a+x bin/mpicc ],
+includebuild_dir=$includebuild_dir
+libbuild_dir=$libbuild_dir
+bashWorks=$bashWorks)
 
 # move the mpich2version file into the bin directory of the build tree
 AC_OUTPUT_COMMANDS([
@@ -4640,12 +4651,16 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f90/Makefile \
           src/env/mpicc \
 	  src/env/mpicc.conf \
+	  src/env/mpicc.bash \
           src/env/mpicxx \
 	  src/env/mpicxx.conf \
+	  src/env/mpicxx.bash \
 	  src/env/mpif77 \
 	  src/env/mpif77.conf \
+	  src/env/mpif77.bash \
 	  src/env/mpif90 \
 	  src/env/mpif90.conf \
+	  src/env/mpif90.bash \
           src/env/mpich2version \
 	  src/env/Makefile\
 	  src/util/createshlib \
