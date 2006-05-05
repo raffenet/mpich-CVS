@@ -39,7 +39,9 @@ FTPDIR = /home/ftp/pub/mpi/mpich2
 install.aux: $(srcdir)/install.tex
 	latex $(srcdir)/install.tex
 install/install.html: install.aux $(srcdir)/install.tex
-	@if [ ! -s install.tex -a -s $(srcdir)/install.tex ] ; then cp $(srcdir)/install.tex . ; fi
+	@if [ ! -s install.tex -a -s $(srcdir)/install.tex ] ; then \
+	     cp $(srcdir)/install.tex . ; \
+	fi
 	latex2html install.tex
 
 #
