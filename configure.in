@@ -1838,6 +1838,41 @@ PAC_PROG_INSTALL_BREAKS_LIBS
 PAC_PROG_MKDIR_P
 PAC_PROG_MAKE
 
+#
+# Check for bash to allow more robust shell scripts
+AC_PATH_PROG(BASH,bash)
+#
+# Confirm that bash has working arrays.  We can use this to 
+# build more robust versions of the scripts (particularly the 
+# compliation scripts) by taking advantage of the array features in 
+# bash.
+bashWorks=no
+if test -x "$BASH" ; then
+changequote(%%,::)dnl
+    cat >>conftest <<EOF
+#! /bin/bash
+A[0]="b"
+A[1]="c"
+if test \${A[1]} != "c" ; then exit 1 ; fi
+exit 0
+EOF
+changequote([,])dnl
+    AC_MSG_CHECKING([whether $BASH supports arrays])
+    chmod +x conftest
+    if ./conftest 2>&1 >/dev/null ; then
+        bashWorks=yes
+    else
+        bashWorks=no
+    fi
+    rm -f conftest*
+    AC_MSG_RESULT($bashWorks)
+fi
+BUILD_BASH_SCRIPTS=no
+if test "$bashWorks" = yes ; then
+    BUILD_BASH_SCRIPTS=yes
+fi
+AC_SUBST(BUILD_BASH_SCRIPTS)
+
 # ----------------------------------------------------------------------------
 # Don't setup the shared libraries until we know which compiler we will be
 # using
