@@ -38,6 +38,11 @@ Some long parameter names may be abbreviated to their first letters by using
 -zc is a purely EXPERIMENTAL option right now used to investigate zeroconf
   networking; it can be used to allow mpds to discover each other locally
   using multicast DNS; its usage may change over time
+  Currently, -zc is specified like this:  -zc N
+  where N specifies a 'level' in a startup set of mpds.  The first mpd in a ring
+  must have 1 and it will establish a ring of one mpd.  Subsequent mpds can specify
+  -zc 2 and will hook into the ring via the one at level 1.  Except for level 1, new
+  mpds enter the ring via an mpd at level-1.
 
 A file named .mpd.conf file must be present in the user's home directory
   with read and write access only for the user, and must contain at least
