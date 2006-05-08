@@ -11,7 +11,7 @@
 #include <string.h>
 #endif
 
-static int verbose = 0;
+static int verbose = 1;
 
 static struct { MPI_Datatype atype, ptype; char name[32]; }
 pairtypes[] =
@@ -136,19 +136,10 @@ int main(int argc, char *argv[])
 
 int parse_args(int argc, char **argv)
 {
-    /*
-    int ret;
-
-    while ((ret = getopt(argc, argv, "v")) >= 0)
-    {
-	switch (ret) {
-	    case 'v':
-		verbose = 1;
-		break;
-	}
-    }
-    */
+    /* We use a simple test because getopt isn't universally available */
     if (argc > 1 && strcmp(argv[1], "-v") == 0)
 	verbose = 1;
+    if (argc > 1 && strcmp(argv[1], "-nov") == 0)
+	verbose = 0;
     return 0;
 }
