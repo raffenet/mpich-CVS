@@ -1674,6 +1674,28 @@ if test "$enable_cxx" = "yes" ; then
     if test "$ac_cv_cxx_exceptions" = "yes" ; then
         HAVE_CXX_EXCEPTIONS=1
     fi
+    # iostream and math are needed for examples/cxx/cxxpi.cxx
+    AC_CACHE_CHECK([whether <iostream> available],pac_cv_cxx_has_iostream,[
+    AC_TRY_COMPILE([
+#include <iostream>
+],[using namespace std;],pac_cv_cxx_has_iostream=yes,pac_cv_cxx_has_iostream=no)])
+    if test "$pac_cv_cxx_has_iostream" = yes ; then
+        CXX_DEFS="$CXX_DEFS -DHAVE_CXX_IOSTREAM"
+    fi
+    AC_CXX_NAMESPACE_STD
+    if test "$ac_cv_cxx_namespace_std" = "yes" ; then
+        CXX_DEFS="$CXX_DEFS -DHAVE_NAMESPACE_STD"
+    fi
+   
+    AC_CACHE_CHECK([whether <math> available],pac_cv_cxx_has_math,[
+    AC_TRY_COMPILE([
+#include <math>
+],[using namespace std;],pac_cv_cxx_has_math=yes,pac_cv_cxx_has_math=no)])
+    if test "$pac_cv_cxx_has_math" = yes ; then
+        CXX_DEFS="$CXX_DEFS -DHAVE_CXX_MATH"
+    fi
+    AC_SUBST(CXX_DEFS)
+
     # Add support for shared libraries if possible
     AC_SUBST(CXX_SHL)
     AC_SUBST(CXX_LINKPATH_SHL)
