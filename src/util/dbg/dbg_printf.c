@@ -463,6 +463,10 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
     MPID_Time_t t;
     long  whichRank = -1;  /* All ranks */
 
+    /* if the DBG_MSG system was already initialized, say by the device, then
+       return immediately */
+    if (mpiu_dbg_initialized != 0) return;
+
     /* Check to see if any debugging was selected.  The order of these
        tests is important, as they allow general defaults to be set,
        followed by more specific modifications */
@@ -639,6 +643,9 @@ static int MPIU_DBG_OpenFile( void )
     if (!filePattern || *filePattern == 0 ||
 	strcmp(filePattern, "-stdout-" ) == 0) {
 	MPIU_DBG_fp = stdout;
+    }
+    else if (strcmp( filePattern, "-stderr-" )) {
+	MPIU_DBG_fp = stderr;
     }
     else {
 	char filename[MAXPATHLEN], *pDest, *p;
