@@ -323,6 +323,7 @@ sub findStateDecl {
 		$info .= $candidateLine . "\n";
 		$knownLines{$candidateLine} = $linenum;
 	    }
+	}
 	elsif (/FUNC_ENTER\((.*)\)/ && !/^\#\s*define/) {
 	    # Match with current state
 	    my $state = $1;
@@ -337,8 +338,7 @@ sub findStateDecl {
 		print STDERR "State in FUNC_EXIT($state) does not match STATE_DECL($lastState)\n";
 	    }
 	}
-
-	}
+	
     }
     close FD;
 
