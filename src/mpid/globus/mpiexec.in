@@ -136,3 +136,4 @@ if test "$dumprsl" = "no" ; then
 else
     cat $rsl
 fi
+rm -f $rsl
