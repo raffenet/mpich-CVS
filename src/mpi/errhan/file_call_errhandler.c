@@ -23,6 +23,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_File_call_errhandler
 #define MPI_File_call_errhandler PMPI_File_call_errhandler
 
 #endif

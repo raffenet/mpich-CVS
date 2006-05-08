@@ -29,6 +29,7 @@ PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status );
 PMPI_LOCAL int MPIR_Ibsend_free( void *extra );
 PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete );
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Ibsend
 #define MPI_Ibsend PMPI_Ibsend
 
 

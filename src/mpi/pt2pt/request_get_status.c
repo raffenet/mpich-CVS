@@ -21,6 +21,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Request_get_status
 #define MPI_Request_get_status PMPI_Request_get_status
 
 #endif

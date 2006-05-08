@@ -33,6 +33,7 @@ PMPI_LOCAL int MPIR_Factor( int, Factors [], int * );
 PMPI_LOCAL int MPIR_ChooseFactors( int, Factors [], int, int, int [] );
 
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Dims_create
 #define MPI_Dims_create PMPI_Dims_create
 
 /* Return the factors of n and their multiplicity in factors; the number of 

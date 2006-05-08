@@ -21,6 +21,7 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Grequest_complete
 #define MPI_Grequest_complete PMPI_Grequest_complete
 
 /* Any internal routines can go here.  Make them static if possible.  If they

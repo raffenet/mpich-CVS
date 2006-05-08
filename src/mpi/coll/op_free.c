@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Op_free
 #define MPI_Op_free PMPI_Op_free
 
 #endif

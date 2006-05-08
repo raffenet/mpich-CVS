@@ -21,6 +21,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Group_range_excl
 #define MPI_Group_range_excl PMPI_Group_range_excl
 
 #endif

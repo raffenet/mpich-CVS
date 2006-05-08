@@ -21,6 +21,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Cart_coords
 #define MPI_Cart_coords PMPI_Cart_coords
 
 #endif

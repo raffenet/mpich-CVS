@@ -24,6 +24,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Get_elements
 #define MPI_Get_elements PMPI_Get_elements
 
 PMPI_LOCAL int MPIR_Type_get_basic_type_elements(int *bytes_p,

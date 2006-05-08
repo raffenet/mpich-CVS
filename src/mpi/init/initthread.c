@@ -25,6 +25,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Init_thread
 #define MPI_Init_thread PMPI_Init_thread
 
 /* Any internal routines can go here.  Make them static if possible */

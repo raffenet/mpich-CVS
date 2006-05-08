@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Sendrecv_replace
 #define MPI_Sendrecv_replace PMPI_Sendrecv_replace
 
 #endif

@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Alltoallw
 #define MPI_Alltoallw PMPI_Alltoallw
 /* This is the default implementation of alltoallw. The algorithm is:
    

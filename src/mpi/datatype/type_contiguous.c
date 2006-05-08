@@ -21,6 +21,7 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Type_contiguous
 #define MPI_Type_contiguous PMPI_Type_contiguous
 #endif
 

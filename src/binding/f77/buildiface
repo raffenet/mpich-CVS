@@ -844,7 +844,11 @@ sub print_name_map_block {
 #define ${out_prefix}${lcname}_ pmpi_${lcname}_
 #endif
 /* This defines the routine that we call, which must be the PMPI version
-   since we're renameing the Fortran entry as the pmpi version */
+   since we're renaming the Fortran entry as the pmpi version.  The MPI name
+   must be undefined first to prevent any conflicts with previous renamings,
+   such as those put in place by the globus device when it is building on
+   top of a vendor MPI. */
+#undef MPI_${routine_name}
 #define MPI_${routine_name} PMPI_${routine_name} 
 
 #else
@@ -2678,6 +2682,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
     &print_header( "MPI_Keyval_create", "keyval_create", $args );
     print $OUTFD " 
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Comm_create_keyval
 #define MPI_Comm_create_keyval PMPI_Comm_create_keyval
 #endif
 ";
@@ -2817,6 +2822,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char *a )
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Status_f2c
 #define MPI_Status_f2c PMPI_Status_f2c
 #endif
 
@@ -2875,6 +2881,7 @@ print $OUTFD "\
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Status_c2f
 #define MPI_Status_c2f PMPI_Status_c2f
 #endif
 

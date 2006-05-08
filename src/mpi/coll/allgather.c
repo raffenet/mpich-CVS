@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Allgather
 #define MPI_Allgather PMPI_Allgather
 
 /* This is the default implementation of allgather. The algorithm is:

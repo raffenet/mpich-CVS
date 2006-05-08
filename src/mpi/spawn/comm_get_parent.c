@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Comm_get_parent
 #define MPI_Comm_get_parent PMPI_Comm_get_parent
 
 #endif

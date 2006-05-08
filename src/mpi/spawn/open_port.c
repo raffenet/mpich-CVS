@@ -19,6 +19,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Open_port
 #define MPI_Open_port PMPI_Open_port
 
 /* Any internal routines can go here.  Make them static if possible */

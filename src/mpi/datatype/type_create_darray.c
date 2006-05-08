@@ -24,6 +24,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Type_create_darray
 #define MPI_Type_create_darray PMPI_Type_create_darray
 
 PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,

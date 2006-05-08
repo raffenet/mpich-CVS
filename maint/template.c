@@ -21,6 +21,11 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
+/* The PMPI routine is built using a CPP macro to rename the MPI routine
+   implemented below.  The MPI name must be undefined first to prevent any
+   conflicts with previous renamings, such as those put in place by the
+   globus device when it is building on top of a vendor MPI. */
+#undef MPI_Foo
 #define MPI_Foo PMPI_Foo
 
 /* Any internal routines can go here.  Make them static if possible.  If they

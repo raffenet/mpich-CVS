@@ -21,6 +21,7 @@
    the MPI routines.  You can use USE_WEAK_SYMBOLS to see if MPICH is
    using weak symbols to implement the MPI routines. */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Get_processor_name
 #define MPI_Get_processor_name PMPI_Get_processor_name
 
 /* Any internal routines can go here.  Make them static if possible.  If they

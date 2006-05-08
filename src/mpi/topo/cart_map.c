@@ -21,6 +21,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Cart_map
 #define MPI_Cart_map PMPI_Cart_map
 
 int MPIR_Cart_map( const MPID_Comm *comm_ptr, int ndims, const int dims[], 

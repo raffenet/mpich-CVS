@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Test_cancelled
 #define MPI_Test_cancelled PMPI_Test_cancelled
 
 #endif

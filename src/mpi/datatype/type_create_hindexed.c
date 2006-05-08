@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Type_create_hindexed
 #define MPI_Type_create_hindexed PMPI_Type_create_hindexed
 
 #endif

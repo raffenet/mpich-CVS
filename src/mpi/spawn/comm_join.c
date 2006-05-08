@@ -24,6 +24,7 @@ PMPI_LOCAL int MPIR_fd_recv(int, void *, int);
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Comm_join
 #define MPI_Comm_join PMPI_Comm_join
 
 #ifdef HAVE_ERRNO_H

@@ -20,6 +20,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Reduce
 #define MPI_Reduce PMPI_Reduce
 
 /* This is the default implementation of reduce. The algorithm is:

@@ -22,6 +22,7 @@
    the MPI routines */
 PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Intercomm_create
 #define MPI_Intercomm_create PMPI_Intercomm_create
 
 /* 128 allows us to handle up to 4k processes */

@@ -24,6 +24,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Waitsome
 #define MPI_Waitsome PMPI_Waitsome
 
 #endif

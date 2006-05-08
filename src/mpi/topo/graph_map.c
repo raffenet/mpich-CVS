@@ -21,6 +21,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Graph_map
 #define MPI_Graph_map PMPI_Graph_map
 int MPIR_Graph_map( const MPID_Comm *comm_ptr, int nnodes, const int index[], 
 		    const int edges[], int *newrank )

@@ -19,6 +19,7 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Comm_spawn_multiple
 #define MPI_Comm_spawn_multiple PMPI_Comm_spawn_multiple
 
 /* Any internal routines can go here.  Make them static if possible */
