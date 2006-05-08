@@ -846,8 +846,11 @@ AC_OUTPUT(maint/testmerge \
 	  errors/pt2pt/Makefile \
 	  errors/cxx/Makefile \
 	  errors/cxx/io/Makefile \
+	  errors/f77/Makefile \
+	  errors/f90/Makefile \
 	  testlist \
 	  cxx/testlist \
 	  f77/testlist \
 	  f90/testlist \
+	  errors/testlist \
 	  )

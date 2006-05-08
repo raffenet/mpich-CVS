@@ -23,7 +23,7 @@ using namespace std;
 #endif
 #include "mpitestcxx.h"
 
-static int verbose = 1;
+static int verbose = 0;
 
 static int ncalls = 0;
 void efn( MPI::File &fh, int *code, ... )
@@ -59,7 +59,7 @@ int main( int argc, char *argv[] )
     }
     if (!sawErr) {
 	errs++;
-	cout << "Did not see error when opening a non-existent file for writing\n";
+	cout << "Did not see error when opening a non-existent file for writing and reading (without MODE_CREATE)\n";
     }
 
     // Test that we can change the default error handler by changing
@@ -71,7 +71,7 @@ int main( int argc, char *argv[] )
 	fh = MPI::File::Open(MPI::COMM_WORLD, filename, 
 			 MPI::MODE_RDWR, MPI::INFO_NULL );
     } catch (MPI::Exception ex) {
-	if (verbose) cout << "Caught exception from open (should call ef)\n";
+	cout << "Caught exception from open (should have called error handler instead)\n";
 	if (ex.Get_error_class() == MPI_SUCCESS) {
 	    errs++;
 	    cout << "Unexpected error from Open" << endl;
@@ -80,7 +80,7 @@ int main( int argc, char *argv[] )
     }
     if (ncalls != 1) {
 	errs++;
-	cout << "Did not invoke error handler" << endl;
+	cout << "Did not invoke error handler when opening a non-existent file for writing and reading (without MODE_CREATE)" << endl;
     }
 
     // Find out how many errors we saw
