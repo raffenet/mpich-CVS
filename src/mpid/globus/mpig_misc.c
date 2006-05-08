@@ -13,7 +13,7 @@
 						 BEGIN DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/
 #if defined(MPIG_DEBUG)
-#define MPIG_DEBUG_TMPSTR_SIZE 1024U
+#define MPIG_DEBUG_TMPSTR_SIZE ((size_t) 1024)
 
 globus_debug_handle_t mpig_debug_handle;
 time_t mpig_debug_start_tv_sec;
@@ -55,7 +55,7 @@ void mpig_debug_init(void)
     const char * levels;
     char * levels_uc;
     const char * timed_levels;
-    char * timed_levels_uc;
+    char * timed_levels_uc = NULL;
     char settings[MPIG_DEBUG_TMPSTR_SIZE];
     const char * file_basename;
     struct timeval tv;
@@ -70,7 +70,7 @@ void mpig_debug_init(void)
     {
 	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "%s-%s-%d.log",
 		      file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
-	setenv("MPICH_DBG_FILENAME", settings);
+	setenv("MPICH_DBG_FILENAME", settings, TRUE);
 	
 	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,#%s-%s-%d.log,0",
 		      levels_uc, file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
@@ -78,7 +78,7 @@ void mpig_debug_init(void)
     else
     {
 	/* send debugging output to stderr */
-	setenv("MPICH_DBG_FILENAME", "-stderr-");
+	setenv("MPICH_DBG_FILENAME", "-stderr-", TRUE);
 	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,,0", levels_uc);
     }
     
