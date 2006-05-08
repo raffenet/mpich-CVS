@@ -439,7 +439,7 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
     }
 #endif
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_GET_BUSINESS_CARD_SOCK);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_GET_BUSINESS_CARD_SOCK);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
