@@ -2,8 +2,8 @@
 
 usage()
 {
-    echo "usage: $0 -n <nprocs> <pgm> [args...]"
-    exit 1
+    echo "usage: $0 [-dumprsl] -n <nprocs> <pgm> [args...]"
+    exit $1
 }
 
 quote()
@@ -22,22 +22,38 @@ globus_args_quote()
     echo $params
 }
 
-if test $# -lt 3 -o \( "$1" != "-n" -a "$1" != "-np" \) ; then
-    usage
-fi
+dumprsl="no"
+nprocs=""
+while test $# -gt 0 ; do
+    case "$1" in
+	-h|--help)
+	    usage 0
+	    ;;
+	-n|-np)
+	    nprocs=`echo $2 | sed 's/[^0-9]*//g'`
+	    shift 2
+	    ;;
+	-dumprsl | --dumprsl | -dump-rsl | --dump-rsl | -globusdumprsl | --globusdumprsl | -globus-dumprsl | --globus-dumprsl | \
+	    -globus-dump-rsl | --globus-dump-rsl)
+	    dumprsl=true
+	    shift
+	    ;;
+	-*)
+	    echo 'ERROR: unknown option "'$1'"'
+	    ;;
+	*)
+	    break
+	    ;;
+    esac
+done
 
-nprocs=`echo $2 | sed 's/[^0-9]*//g'`
-if test "$2" != "$nprocs" ; then
-    usage
-fi
 
-pgm="$3"
+pgm="$1"
+shift
 if test ! -x "$pgm" ; then
     echo "ERROR: "'"'"$pgm"'"'" is not executable"
     exit 1
 fi
-
-shift 3
 
 if test -z "$MPIEXEC_GRAM_CONTACT" ; then
     echo "ERROR: the environment variable MPIEXEC_GRAM_CONTACT is not set"
@@ -115,7 +131,8 @@ cat >$rsl <<EOF
 )
 EOF
 
-$GLOBUS_LOCATION/bin/globusrun -w -f $rsl
-if test $? -eq 0 ; then
-    rm -f $rsl
+if test "$dumprsl" = "no" ; then
+    $GLOBUS_LOCATION/bin/globusrun -w -f $rsl
+else
+    cat $rsl
 fi
