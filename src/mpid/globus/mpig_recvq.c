@@ -395,7 +395,7 @@ bool_t mpig_recvq_deq_posted_rreq(MPID_Request * rreq)
 MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, int * foundp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int found;
+    int found = FALSE;
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
     int lock_held = FALSE;
@@ -481,8 +481,6 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, in
 	}
 	mpig_recvq_posted_tail = rreq;
 	
-	found = FALSE;
-	
       recvq_lock_exit:
 	rreq->dev.next = NULL;
     }
@@ -528,7 +526,7 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, in
 MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, int * foundp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int found;
+    int found = FALSE;
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
     int lock_held = FALSE;
@@ -615,8 +613,6 @@ MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, in
 	
 	mpig_recvq_unexp_tail = rreq;
         
-	found = FALSE;
-	
       recvq_lock_exit:
 	rreq->dev.next = NULL;
     }
