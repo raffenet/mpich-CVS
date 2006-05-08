@@ -104,6 +104,7 @@ while test $# -gt 0 ; do
 	;;
 	
 	-DMPIG_BUILDING_MPICH2|-DMPIG_BUILDING_MPICH2=*)
+	compile_args="$compile_args '$1'"
 	MPIG_BUILDING_MPICH2=yes
 	;;
 
