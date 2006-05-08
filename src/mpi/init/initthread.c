@@ -83,7 +83,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 #endif
 
 
-#if !defined(MPICH_IS_THREADED) /* || defined(HAVE_RUNTIME_THREADCHECK) */
+#if !defined(MPICH_IS_THREADED) || defined(HAVE_RUNTIME_THREADCHECK)
 /* If single threaded, we preallocate this.  Otherwise, we create it */
 MPICH_PerThread_t  MPIR_Thread = { 0 };
 #endif

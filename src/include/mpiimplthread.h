@@ -76,9 +76,11 @@
 {									\
     MPID_Thread_mutex_create(&MPIR_Process.global_mutex, NULL);		\
     MPID_Thread_tls_create(NULL, &MPIR_Process.thread_storage, NULL);   \
+    MPIU_DBG_MSG(THREAD,TYPICAL,"Created global mutex and private storage");\
 }
 #define MPID_CS_FINALIZE()						\
 {									\
+    MPIU_DBG_MSG(THREAD,TYPICAL,"Freeing global mutex and private storage");\
     MPID_Thread_tls_destroy(&MPIR_Process.thread_storage, NULL);	\
     MPID_Thread_mutex_destroy(&MPIR_Process.global_mutex, NULL);	\
 }
