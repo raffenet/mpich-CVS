@@ -444,7 +444,7 @@ MPIG_STATIC int mpig_cm_other_adi3_issend(
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_recv
 MPIG_STATIC int mpig_cm_other_adi3_recv(
-    void * const buf, const int cnt, const MPI_Datatype dt, const int const rank, const int tag, MPID_Comm * const comm,
+    void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPI_Status * const status, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -497,7 +497,7 @@ MPIG_STATIC int mpig_cm_other_adi3_recv(
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_irecv
 MPIG_STATIC int mpig_cm_other_adi3_irecv(
-    void * const buf, const int cnt, const MPI_Datatype dt, const int const rank, const int tag, MPID_Comm * const comm,
+    void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);

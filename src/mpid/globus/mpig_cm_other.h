@@ -10,30 +10,20 @@
 #define MPICH2_MPIG_CM_OTHER_H_INCLUDED
 
 /*
- * Special case VC for handling things like MPI_ANY_SOURCE and MPI_PROC_NULL
+ * special case VC for handling things like MPI_ANY_SOURCE and MPI_PROC_NULL
  */
 extern struct mpig_vc * mpig_cm_other_vc;
 
+
 /*
- * Add communication module types to be included in the enumeration of modules
+ * add communication module types to be included in the enumeration of modules
  */
 #define MPIG_CM_TYPE_OTHER_LIST	\
     MPIG_CM_TYPE_OTHER
 
-/*
- * Define the communication module structure to be included in a VC
- */
-#define MPIG_VC_CM_OTHER_DECL
-
 
 /*
- * Define the communication module structure to be included in a request
- */
-#define MPIG_REQUEST_CM_OTHER_DECL
-
-
-/*
- * Global funciton prototypes
+ * global function prototypes
  */
 int mpig_cm_other_init(int * argc, char *** argv);
 

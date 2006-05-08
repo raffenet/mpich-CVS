@@ -12,21 +12,20 @@ AC_INIT(configure.in)
 dnl AC_INIT(MPI-G, 20050501, mpi@globus.org, mpig)
 
 #
-# Set the directory that contains support scripts such as install-sh and config.guess
+# set the directory that contains support scripts such as install-sh and config.guess
 #
 AC_CONFIG_AUX_DIR(../../../confdb)
 
 #
-# Definitions will be placed in this file rather than in the DEFS variable
+# definitions will be placed in this file rather than in the DEFS variable
 #
 AC_CONFIG_HEADER(mpidconf.h)
 
 echo ""
 echo "START OF CONFIGURE THE FOR GLOBUS DEVICE"
-echo ""
 
 #
-# First check that we have a clean build if we are doing a VPATH build
+# first check that we have a clean build if we are doing a VPATH build
 #
 if test "`cd $srcdir && pwd`" != "`pwd`" && \
    test -f $srcdir/config.status ; then
@@ -43,14 +42,14 @@ AC_CHECK_HEADERS(unistd.h)
 
 AC_CHECK_FUNCS(gethostname)
 if test "$ac_cv_func_gethostname" = "yes" ; then
-    # Do we need to declare gethostname?
+    # do we need to declare gethostname?
     PAC_FUNC_NEEDS_DECL([#include <unistd.h>],gethostname)
 fi
 
 AC_CHECK_TYPES(bool_t)
 
 #
-# Determine if CPP supports variadic macros
+# determine if CPP supports variadic macros
 #
 AC_CACHE_CHECK([whether CPP accepts C99 style variadic macros],
 lac_cv_have_c99_variadic_macros,[
@@ -81,7 +80,7 @@ if test $lac_cv_have_gnu_variadic_macros = "yes" ; then
 fi
 
 #
-# Determine if the compiler defines a symbol containing the function name
+# determine if the compiler defines a symbol containing the function name
 #
 AC_CACHE_CHECK([whether the compiler defines __func__],
 lac_cv_have__func__,[
@@ -141,7 +140,7 @@ if test $lac_cv_have__function__ = "yes" ; then
 fi
 
 #
-# Determine this machine's endianess
+# determine this machine's endianess
 #
 AC_CACHE_CHECK([endianess of system],
 lac_cv_my_endian,[
@@ -187,52 +186,92 @@ fi
 AC_DEFINE_UNQUOTED(MPIG_MY_ENDIAN,${MPIG_MY_ENDIAN},[endianess of the system])
 
 #
-# determine the size of MPICH2's MPI_AINT
+# determine the size of MPICH2's MPI_AINT, and the printf conversion specifers for MPI_Aint and MPIU_Size_t
 #
-AC_MSG_CHECKING([size of MPICH2 MPI_AINT])
-eval SIZEOF_MPICH2_AINT="\${SIZEOF_`echo ${MPI_AINT} | tr '[a-z]' '[A-Z]'`}"
-AC_MSG_RESULT([$SIZEOF_MPICH2_AINT])
+if test "${MPIG_VMPI:-no}" != "no" ; then
+    AC_MSG_CHECKING([size of MPICH2 MPI_AINT])
+    eval SIZEOF_MPICH2_AINT="\${SIZEOF_`echo ${MPI_AINT} | tr '[a-z]' '[A-Z]'`}"
+    AC_MSG_RESULT([$SIZEOF_MPICH2_AINT])
+fi
+
+echo 'INFO: MPI_Aint is "'$MPI_AINT'"'
+AC_MSG_CHECKING([printf conversion specifier for MPI_Aint])
+eval MPIG_AINT_FMT='"'"%\${MPIG_`echo ${MPI_AINT} | tr '[a-z]' '[A-Z]'`_FMT_MOD}d"'"'
+MPIG_AINT_FMT='"'"$MPIG_AINT_FMT"'"'
+AC_DEFINE_UNQUOTED(MPIG_AINT_FMT,${MPIG_AINT_FMT:?},[printf conversion specifier for MPI_Aint])
+AC_MSG_RESULT([$MPIG_AINT_FMT])
+
+echo 'INFO: MPIU_Size_t is "'$MPIU_SIZE_T'"'
+AC_MSG_CHECKING([printf conversion specifier for MPIU_Size_t])
+eval MPIG_SIZE_FMT='"'"%\${MPIG_`echo ${MPIU_SIZE_T} | tr '[a-z ]' '[A-Z_]'`_FMT_MOD}u"'"'
+MPIG_SIZE_FMT='"'"$MPIG_SIZE_FMT"'"'
+AC_DEFINE_UNQUOTED(MPIG_SIZE_FMT,${MPIG_SIZE_FMT:?},[printf conversion specifier for MPIU_Size_t])
+AC_MSG_RESULT([$MPIG_SIZE_FMT])
 
 #
-# Settings from mpich2prereq
+# vendor MPI settings from mpich2prereq
 #
-AC_DEFINE_UNQUOTED(MPIG_ALIGNED_T,${MPIG_ALIGNED_T},[type to use insure proper memory alignment for all types])
-AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T},[size of the type used for aligning memory accesses])
-AC_DEFINE_UNQUOTED(MEMALIGN_MPIG_ALIGNED_T,${MEMALIGN_MPIG_ALIGNED_T},[memory alignment of MPIG_ALIGNED_T])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_COMM,${SIZEOF_VMPI_COMM},[size of the vendor MPI_COMM handle])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_DATATYPE,${SIZEOF_VMPI_DATATYPE},[size of the vendor MPI_DATATYPE handle])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_REQUEST,${SIZEOF_VMPI_REQUEST},[size of the vendor MPI_REQUEST handle])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_STATUS,${SIZEOF_VMPI_STATUS},[size of the vendor MPI_REQUEST object])
-AC_DEFINE_UNQUOTED(TYPE_VMPI_AINT,${TYPE_VMPI_AINT},[integer type of the same size as the vendor MPI_AINT type])
-AC_DEFINE_UNQUOTED(SIZEOF_VMPI_AINT,${SIZEOF_VMPI_AINT},[size of the vendor MPI_AINT type])
-AC_DEFINE_UNQUOTED(TYPE_MPICH2_AINT,${MPI_AINT},[integer type of the same size as the MPICH2 MPI_AINT type])
-AC_DEFINE_UNQUOTED(SIZEOF_MPICH2_AINT,${SIZEOF_MPICH2_AINT},[size of the MPICH2 MPI_AINT type])
-if test "${MPIG_VMPI}" != "no" ; then
+AC_SUBST(MPIG_VMPI)
+if test "${MPIG_VMPI:?}" != "no" ; then
     AC_DEFINE(MPIG_VMPI,1,[define if we are building on top of a vendor MPI])
-fi 
-if test "${MPIG_GLOBUS_THREADED}" != "no" ; then
-    AC_DEFINE(MPIG_THREADED,1,[define if Globus is configured with threads, allowing MPIG to use threads internals])
-fi 
-if test "${MPIG_DEBUG}" != "no" ; then
-    AC_DEFINE(MPIG_DEBUG,1,[define if Globus is configured with debugging enabled])
+
+    AC_DEFINE_UNQUOTED(SIZEOF_VMPI_COMM,${SIZEOF_VMPI_COMM:?},[size of the vendor MPI_COMM handle])
+    AC_DEFINE_UNQUOTED(SIZEOF_VMPI_DATATYPE,${SIZEOF_VMPI_DATATYPE:?},[size of the vendor MPI_DATATYPE handle])
+    AC_DEFINE_UNQUOTED(SIZEOF_VMPI_REQUEST,${SIZEOF_VMPI_REQUEST:?},[size of the vendor MPI_REQUEST handle])
+    AC_DEFINE_UNQUOTED(SIZEOF_VMPI_OP,${SIZEOF_VMPI_OP:?},[size of the vendor MPI_OP object])
+    AC_DEFINE_UNQUOTED(SIZEOF_VMPI_STATUS,${SIZEOF_VMPI_STATUS:?},[size of the vendor MPI_REQUEST object])
+    AC_DEFINE_UNQUOTED(SIZEOF_VMPI_AINT,${SIZEOF_VMPI_AINT:?},[size of the vendor MPI_AINT type])
+    AC_DEFINE_UNQUOTED(TYPEOF_MPICH2_AINT,${MPI_AINT:?},[integer type of the same size as the MPICH2 MPI_AINT type])
+    AC_DEFINE_UNQUOTED(SIZEOF_MPICH2_AINT,${SIZEOF_MPICH2_AINT:?},[size of the MPICH2 MPI_AINT type])
+    if test "${HAVE_VMPI_2COMPLEX:?}" = "yes" ; then
+        AC_DEFINE(HAVE_VMPI_2COMPLEX,1,[define if vendor has MPI_2COMPLEX])
+    fi
+    if test "${HAVE_VMPI_2DOUBLE_COMPLEX:?}" = "yes" ; then
+        AC_DEFINE(HAVE_VMPI_2DOUBLE_COMPLEX,1,[define if vendor has MPI_2DOUBLE_COMPLEX])
+    fi
+    if test "${HAVE_VMPI_LONG_LONG:?}" = "yes" ; then
+        AC_DEFINE(HAVE_VMPI_LONG_LONG,1,[define if vendor has MPI_LONG_LONG])
+    fi
+    if test "${HAVE_VMPI_LONG_LONG_INT:?}" = "yes" ; then
+        AC_DEFINE(HAVE_VMPI_LONG_LONG_INT,1,[define if vendor has MPI_LONG_LONG_INT])
+    fi
 fi
-if test "${HAVE_MPI_2COMPLEX}" != "no" ; then
-    AC_DEFINE(HAVE_MPI_2COMPLEX,1,[define if vendor has MPI_2COMPLEX])
-fi
-if test "${HAVE_VMPI_2DOUBLE_COMPLEX}" != "no" ; then
-    AC_DEFINE(HAVE_VMPI_2DOUBLE_COMPLEX,1,[define if vendor has MPI_2DOUBLE_COMPLEX])
-fi
-if test "${HAVE_VMPI_LONG_LONG}" != "no" ; then
-    AC_DEFINE(HAVE_VMPI_LONG_LONG,1,[define if vendor has MPI_LONG_LONG])
-fi
-if test "${HAVE_VMPI_LONG_LONG_INT}" != "no" ; then
-    AC_DEFINE(HAVE_VMPI_LONG_LONG_INT,1,[define if vendor has MPI_LONG_LONG_INT])
-fi
+
+#
+# other settings from mpich2prereq
+#
 AC_SUBST(MPIG_SOURCE_DIR)
 AC_SUBST(MPIG_BUILD_DIR)
+if test "${MPIG_GLOBUS_THREADED:?}" = "yes" ; then
+    AC_DEFINE(MPIG_THREADED,1,[define if Globus is configured with threads, allowing MPIG to use threads internals])
+fi 
+if test "${MPIG_DEBUG:?}" = "yes" ; then
+    AC_DEFINE(MPIG_DEBUG,1,[define if Globus is configured with debugging enabled])
+fi
+AC_DEFINE_UNQUOTED(TYPEOF_MPIG_ALIGNED_T,${TYPEOF_MPIG_ALIGNED_T:?},[type to use insure proper memory alignment for all types])
+dnl AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T:?},[size of the type used for aligning memory accesses])
+dnl AC_DEFINE_UNQUOTED(MEMALIGN_MPIG_ALIGNED_T,${MEMALIGN_MPIG_ALIGNED_T:?},[memory alignment of MPIG_ALIGNED_T])
+AC_DEFINE_UNQUOTED(MPIG_PTR_CAST,${MPIG_PTR_CAST:?},[an unsigned integer big enough to hold a pointer])
+AC_DEFINE_UNQUOTED(MPIG_PTR_FMT,${MPIG_PTR_FMT:?},[printf conversion specifier for a pointer converted to a MPIG_PTR_CAST])
+if test "${MPIG_ROMIO_ENABLED:?}" = "yes" ; then
+    ROMIO_ENABLED=1
+else
+    ROMIO_ENABLED=0
+fi
+AC_SUBST(ROMIO_ENABLED)
 
 #
-# Settings imported from the top-level configure
+# setup file substitutions needed to create mpiddefs.h
+#
+MPIG_SYMBOL_MAP_MPI_H=.mpig_symbol_map_mpi.h
+MPIG_SYMBOL_MAP_PMPI_H=.mpig_symbol_map_pmpi.h
+MPIG_SYMBOL_MAP_INTERNAL_H=.mpig_symbol_map_internal.h
+AC_SUBST_FILE(MPIG_SYMBOL_MAP_MPI_H)
+AC_SUBST_FILE(MPIG_SYMBOL_MAP_PMPI_H)
+AC_SUBST_FILE(MPIG_SYMBOL_MAP_INTERNAL_H)
+
+#
+# settings imported from the top-level configure
 # 
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
@@ -248,26 +287,41 @@ AC_SUBST(master_top_srcdir)
 AC_SUBST(master_top_builddir)
 
 #
-# Dependency handling
+# dependency handling
 #
 AC_SUBST(MAKE_DEPEND_C)
 
 #
-# Create Makefiles, etc.
+# create Makefile, etc.
 #
-AC_OUTPUT(Makefile mpiexec,
+AC_OUTPUT(Makefile mpiexec mpiddefs.h,
 [
     echo "Copying mpiexec to $master_top_builddir/bin/"
     if test ! -d $master_top_builddir/bin ; then
-       mkdir $master_top_builddir/bin
+        mkdir $master_top_builddir/bin
     fi
     chmod 755 mpiexec
     cp -pf mpiexec $master_top_builddir/bin/mpiexec
+
+    if test "$MPIG_VMPI" = "yes" ; then
+        echo "Copying mpiddefs.h to $master_top_builddir/src/include/"
+        if test ! -d $master_top_builddir/src/include ; then
+            mkdir $master_top_builddir/src/include
+        fi
+        cp -pf mpiddefs.h $master_top_builddir/src/include/mpiddefs.h
+        rm .mpig_symbol_map_mpi.h .mpig_symbol_map_pmpi.h .mpig_symbol_map_internal.h
+    fi
 ],
 [
     master_top_builddir=$master_top_builddir
+    MPIG_VMPI=$MPIG_VMPI
+    if test "$MPIG_VMPI" = "yes" ; then
+        echo "Extracting symbols from the symbol map"
+	grep '^MPI_' $srcdir/mpig_symbol_map.txt | sed -e 's/^/#define /' > .mpig_symbol_map_mpi.h
+	grep '^PMPI_' $srcdir/mpig_symbol_map.txt | sed -e 's/^/#define /' > .mpig_symbol_map_pmpi.h
+	grep -v '^P\?MPI_' $srcdir/mpig_symbol_map.txt | sed -e 's/^/#define /' > .mpig_symbol_map_internal.h
+    fi
 ])
 AC_OUTPUT_COMMANDS
-echo ""
 echo "END OF CONFIGURE THE FOR GLOBUS DEVICE"
 echo ""

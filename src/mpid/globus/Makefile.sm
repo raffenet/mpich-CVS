@@ -17,7 +17,9 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 #
 # list of header files that all sources depend upon
 #
-HEADERS = mpidconf.h mpidimpl.h mpidpre.h mpidpost.h mpig_sym_redefs.h
+HEADERS = mpidconf.h mpidpre.h mpidimpl.h mpidpost.h \
+          mpig_cm_vmpi.h mpig_cm_self.h mpig_cm_xio.h mpig_cm_other.h \
+          mpiddefs.h
 
 #
 # list of file to compile and include in the MPICH2 library
@@ -29,17 +31,23 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_services.c		\
     mpid_vc.c			\
     mpid_win.c			\
-    mpig_bc.c			\
-    mpig_comm.c			\
-    mpig_pg.c			\
-    mpig_misc.c			\
-    mpig_pm_gk.c		\
-    mpig_recvq.c		\
-    mpig_request.c		\
     mpig_cm_other.c		\
     mpig_cm_self.c		\
     mpig_cm_vmpi.c		\
     mpig_cm_xio.c		\
+    mpig_bc.c			\
+    mpig_comm.c			\
+    mpig_misc.c			\
+    mpig_pg.c			\
+    mpig_pm_gk.c		\
+    mpig_recvq.c		\
+    mpig_request.c		\
+    mpig_vmpi.c			\
+
+
+mpig_vmpi.o: mpig_vmpi.c mpig_vmpi.h mpidconf.h
+	$(CC) -c -I . -I${top_srcdir} $<
+
 
 #
 # install device compiler scripts, and  modify the previously installed MPICH2 compiler scripts to use the installed
@@ -47,6 +55,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
 #
 install_BIN = mpich2-globus-cc mpiexec
 optinstall_BIN = mpich2-globus-cxx mpich2-globus-f77 mpich2-globus-f90
+install_INCLUDE = mpiddefs.h
 
 install-local:
 	@# XXX: The file permissions are assumed to be 755 for the compilers scripts and 644 for the configuration files.  This
@@ -118,23 +127,23 @@ errnames.txt: FORCE_TARGET
 # EXTREMELY IMPORTANT NOTE: this target should only be run when MPIG is configure with --disable-f77 --disable-f90 --disable-cxx
 # --without-mpe
 #
-mpig_sym_redefs.h: FORCE_TARGET
+mpig_symbol_map.txt: FORCE_TARGET
 	objects='Comm\|Datatype\|Errhandler\|Group\|File\|Info\|Keyval\|Op\|Request\|Win'; \
 	fields='mem\|builtin\|direct'; \
 	files="${top_builddir}/lib/libmpich.a" ; \
 	if test -f "${top_builddir}/lib/libpmpich.a" ; then \
 	    files="$files ${top_builddir}/lib/libpmpich.a" ; \
 	fi ; \
-	nm $${files} >.mpig-nm-$$$$.out ; \
+	nm $${files} >.mpig_nm_$$$$.out ; \
 	if test $$? -eq 0 ; then \
-	    cat .mpig-nm-$$$$.out | \
-	        sed -e '/.*[ABCDGIRSTVW] \([A-Za-z0-9_]*\)$$/! d' -e 's/.*[ABCDGIRSTVW\] \([A-Za-z0-9_]*\)$$/\1/' \
-	        -e '/.*_$$/ d' -e '/^[Mm][Pp][Ii][Gg]_/ d' \
-	        -e 's/MPID_\('"$$objects"'\)_\('"$$fields"'\)/#define MPID_\1_\2 MPIG_\1_\2/' \
-	        -e '/^#/! s/\(^.*$$\)/#define \1 \1_g/' | cat ${MPIG_SOURCE_DIR}/mpig_sym_redefs.h ->.mpig-defines-$$$$.out ; \
+	    sed -e '/.*[ABCDGIRSTVW] [A-Za-z0-9_]*$$/! d' -e 's/.*[ABCDGIRSTVW\] \([A-Za-z0-9_]*\)$$/\1/' \
+	        -e '/.*_$$/ d' -e '/^[Mm][Pp][Ii][Gg]_/ d' -e '/_MPIG$/ d' \
+	        -e 's/MPID_\('"$$objects"'\)_\('"$$fields"'\)/@SKIP MPID_\1_\2 MPIG_\1_\2/' \
+	        -e '/^@SKIP /! s/\(^.*$$\)/\1 \1_MPIG/' -e 's/^@SKIP //' .mpig_nm_$$$$.out | \
+	        cat ${MPIG_SOURCE_DIR}/mpig_symbol_map.txt - >.mpig_symbol_map_$$$$.out ; \
 	    if test $$? -eq 0 ; then \
-	        sort .mpig-defines-$$$$.out +1 -2 -u >${MPIG_SOURCE_DIR}/mpig_sym_redefs.h ; \
+	        sort .mpig_symbol_map_$$$$.out +0 -1 -u >${MPIG_SOURCE_DIR}/mpig_symbol_map.txt ; \
 	    fi ; \
-	    rm .mpig-defines-$$$$.out ; \
+	    rm .mpig_symbol_map_$$$$.out ; \
 	fi ; \
-	rm .mpig-nm-$$$$.out
+	rm .mpig_nm_$$$$.out

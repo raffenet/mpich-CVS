@@ -865,9 +865,8 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_send_handle_write_msg_data);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT
-		       ", iov_cnt=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes_written));
+	"entering: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT ", iov_cnt=%d, nbytes="
+	MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes_written));
 
     mpig_vc_mutex_lock(vc);
     vc_locked = TRUE;
@@ -1025,9 +1024,8 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_control_msg(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_send_handle_write_control_msg);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT
-		       ", iov_cnt=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes_written));
+	"entering: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT ", iov_cnt=%d, nbytes="
+	MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes_written));
 
     /* get the send request from the VC; start sending the next message, if one is present */
     mpig_vc_mutex_lock(vc);
@@ -1536,7 +1534,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc, in
 	    if(nbytes < mpig_cm_xio_stream_get_size(rreq))
 	    {
 		/* allocate a temporary data buffer for the unexpected data */
-		mpig_databuf_create(MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cm->databuf, mpi_errno_p, &failed);
+		mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cm->databuf,
+		    mpi_errno_p, &failed);
 		MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "unexpected receive buffer");
 
 		/* use the stream fields to assist in draining data off the network */
@@ -2343,9 +2342,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_recv_handle_read_msg_data);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "enter state: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT
-		       ", iov_cnt=" MPIG_SIZE_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle,
-		       op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes_read));
+	"enter state: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", op_grc=%d, iov=" MPIG_PTR_FMT ", iov_cnt=%d, nbytes="
+	MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) handle, op_grc, (MPIG_PTR_CAST) iov, iov_cnt, nbytes_read));
 
     mpig_vc_mutex_lock(vc);
     vc_locked = TRUE;

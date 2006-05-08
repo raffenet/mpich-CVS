@@ -54,7 +54,7 @@ void mpig_comm_list_add(MPID_Comm * const comm)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_list_add);
     return;
 }
-
+/* mpig_comm_list_add() */
 
 /*
  * void mpig_comm_list_remove([IN] comm)
@@ -118,7 +118,7 @@ void mpig_comm_list_remove(MPID_Comm * const comm)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_list_remove);
     return;
 }
-
+/* mpig_comm_list_remove */
 
 /*
  * void mpig_comm_list_wait_empty([IN/OUT] mpi_errno, [OUT] failed)
@@ -211,3 +211,78 @@ void mpig_comm_list_wait_empty(int * const mpi_errno_p, bool_t * const failed_p)
     /* --END ERROR HANDLING-- */
 }
 /* mpig_comm_list_wait_empty() */
+
+
+/*
+ * void mpig_dev_comm_free_hook[IN] comm, [OUT] mpi_errno)
+ *
+ * comm [IN] - communicator being freed
+ * mpi_errno [OUT] - MPI error code
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_dev_comm_free_hook
+void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_dev_comm_free_hook);
+
+    MPIG_UNUSED_VAR(fcname);
+    
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_dev_comm_free_hook);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
+
+    *mpi_errno_p = MPI_SUCCESS;
+    
+    /* clear the user reference flag to indicate that the user no longer holds a reference to this communicator */
+    comm->dev.user_ref = FALSE;
+
+    /* call the VMPI CM's hook, allowing it to free the associated vendor communicators */
+#   if defined(MPIG_VMPI)
+    {
+	if mpig_cm_vmpi_dev_comm_free_hook(comm, mpi_errno_p);
+	/* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
+    }
+#   endif
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_dev_comm_free_hook);
+}
+/* mpig_dev_comm_free_hook() */
+
+
+#if defined(MPIG_VMPI)
+
+/*
+ * void mpig_dev_comm_dup_hook[IN] orig_comm, [IN] new_comm, [OUT] mpi_errno)
+ *
+ * orig_comm [IN] - communicator being duplicated
+ * new_comm [IN] - communicator resulting from the duplication
+ * mpi_errno [OUT] - MPI error code
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_dev_comm_dup_hook
+void mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm, int * mpi_errno_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_dev_comm_dup_hook);
+
+    MPIG_UNUSED_VAR(fcname);
+    
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_dev_comm_dup_hook);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
+	"entering: orig_comm=" MPIG_HANDLE_FMT ", orig_commp=" MPIG_PTR_FMT ", new_comm=" MPIG_HANDLE_FMT
+	", new_commp=" MPIG_PTR_FMT, orig_comm->handle, (MPIG_PTR_CAST) orig_comm, new_comm->handle, (MPIG_PTR_CAST) new_comm));
+
+    *mpi_errno_p = MPI_SUCCESS;
+    
+    /* call the VMPI CM's hook, allowing it to duplication the associated vendor communicators */
+    mpig_cm_vmpi_dev_comm_dup_hook(orig_comm, new_comm, mpi_errno_p);
+    /* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_dev_comm_dup_hook);
+}
+/* mpig_dev_comm_dup_hook() */
+
+#endif /* defined(MPIG_VMPI) */

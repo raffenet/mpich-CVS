@@ -206,7 +206,7 @@ int mpig_cm_xio_add_contact_info(mpig_bc_t * bc)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_add_contact_info);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
     
-    MPIU_Snprintf(uint_str, 10, "%u", (unsigned) MPIG_CM_XIO_PROTO_VERSION);
+    MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) MPIG_CM_XIO_PROTO_VERSION);
     mpig_bc_add_contact(bc, "CM_XIO_PROTO_VERSION", uint_str, &mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 			 "**globus|bc_add_contact %s", "CM_XIO_PROTO_VERSION");
@@ -215,7 +215,7 @@ int mpig_cm_xio_add_contact_info(mpig_bc_t * bc)
     MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 			 "**globus|bc_add_contact %s", "CM_XIO_CONTACT_STRING");
 
-    MPIU_Snprintf(uint_str, 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
+    MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
     mpig_bc_add_contact(bc, "CM_XIO_DC_FORMAT", uint_str, &mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 			 "**globus|bc_add_contact %s", "CM_XIO_DC_FORMAT");
@@ -396,7 +396,7 @@ void mpig_cm_xio_progress_wait(struct MPID_Progress_state * state, int * mpi_err
     }
     else
     {
-	mpig_progress_signal_completion();
+	mpig_progress_wakeup();
     }
     
   

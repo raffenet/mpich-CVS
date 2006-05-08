@@ -1,0 +1,24 @@
+/*
+ * Globus device code:          Copyright 2005 Northern Illinois University
+ *
+ * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+ */
+
+#if !defined(MPICH2_MPIDDEFS_H_INCLUDED)
+#define MPICH2_MPIDDEFS_H_INCLUDED
+
+@MPIG_SYMBOL_MAP_MPI_H@
+@MPIG_SYMBOL_MAP_PMPI_H@
+
+
+#if defined(MPIG_BUILDING_MPICH2)
+@MPIG_SYMBOL_MAP_INTERNAL_H@
+
+/* a special case when ROMIO is disabled.  see src/binding/f77/mpi_fortimpl.h. */
+#if @ROMIO_ENABLED@ == 0
+#undef MPI_File_f2c
+#endif
+
+#endif /* defined(MPIG_BUILDING_MPICH2) */
+
+#endif /* MPICH2_MPIDDEFS_H_INCLUDED */

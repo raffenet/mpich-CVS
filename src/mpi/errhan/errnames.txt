@@ -922,6 +922,10 @@ with MPI_Alloc_mem.
 **globus|cm_select_module:an error ocurred when a communication module was asked to perform selection
 **globus|cm_select_module %s %s %d:an error ocurred when the '%s' communication module was asked to perform selection for process %s:%d
 **globus|cm_self_hostname:globus|cm_self_hostname
+**globus|cm_vmpi|progress_add_req:a error occurred while adding a vendor MPI request to the request tracking array
+**globus|cm_vmpi|progress_add_req %R %p:a error occurred while adding a vendor MPI request to the request tracking array: req_handle=%R, req_ptr=%p
+**globus|cm_vmpi|uuid_create:an error occurred while attempting to create a UUID
+**globus|cm_vmpi|uuid_create %s:an error occurred while attempting to create a UUID -- %s
 **globus|cm_xio_server_multiple_fail:the XIO communication module encountered too many errors while accepting connections from the listener
 **globus|cm_xio_ver:the 'xio' communication module detected a protocol incompatibility
 **globus|cm_xio|client_handle_open:globus|cm_xio|client_handle_open
@@ -1054,8 +1058,6 @@ with MPI_Alloc_mem.
 **globus|datatype_bc_to_cmap:globus|datatype_bc_to_cmap
 **globus|datatype_cmap %s %d:globus|datatype_cmap -- %s %d
 **globus|datatype_cmap_to_bc:globus|datatype_cmap_to_bc
-**globus|duroc_sjrank:a error occurred while retrieving the rank of this process within its subjob
-**globus|duroc_sjsize:a error occurred while retrieving the size of the subjob to which this process belongs
 **globus|module_activate:attempt to activate a Globus module failed
 **globus|module_activate %s:attempt to activate the Globus %s module failed
 **globus|module_deactivate:attempt to deactivate a Globus module failed
@@ -1074,8 +1076,12 @@ with MPI_Alloc_mem.
 **globus|pg_create:globus|pg_create
 **globus|pg_create %s %d:globus|pg_create -- %s %d
 **globus|pg|lpid_counter:globus|pg|lpid_counter
+**globus|pm_distribute_business_cards:an error occcurred while attempting to distribute business cards 
 **globus|pm_finalize:globus|pm_finalize
 **globus|pm_finalized:attempt to use the process manangement module after shutdown
+**globus|pm_get_sjrank:an error occurred while retrieving the rank of this process within its subjob
+**globus|pm_get_sjsize:an error occurred while retrieving the size of the subjob to which this process belongs
+**globus|pm_get_topology:an error occurred while exchanging topology information
 **globus|pm_init:an error occurred while initializing the process management module
 **globus|pm_no_pg_id:globus|pm_no_pg_id
 **globus|pm_no_pg_rank:globus|pm_no_pg_rank

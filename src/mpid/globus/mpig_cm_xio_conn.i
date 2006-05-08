@@ -946,7 +946,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-		"message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=%d",
+		"message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=" MPIG_SIZE_FMT,
 		(MPIG_PTR_CAST) tmp_vc, tmp_vc_cm->msg_hdr_size, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
 	    
 	    mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_ACCEPT_SENDING_OPEN_RESP_ERROR);
@@ -2135,7 +2135,7 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	{
 	    /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VCCM,
-		"message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=%d",
+		"message received is incomplete: tmp_vc=" MPIG_PTR_FMT ", expected=%d, received=" MPIG_SIZE_FMT,
 		(MPIG_PTR_CAST) tmp_vc, tmp_vc_cm->msg_hdr_size, mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf)));
 	    MPIU_Assertp(FALSE && "not all of open response message was received"); /* [BRT] */
 	    /* --END ERROR HANDLING-- */

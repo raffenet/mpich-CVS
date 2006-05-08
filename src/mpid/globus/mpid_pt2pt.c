@@ -59,13 +59,12 @@ int mpig_adi3_cancel_recv(MPID_Request * rreq)
 int MPID_Probe(int source, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * status)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPID_Progress_state pe_state;
-    MPID_Request * rreq;
     const int ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_PROBE);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_VAR(ctx);
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_PROBE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -77,29 +76,49 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * s
 	goto fn_return;
     }
 
-    MPID_Progress_start(&pe_state);
-    do
+#   if defined(MPIG_VMPI)
     {
-	rreq = mpig_recvq_find_unexp(source, tag, ctx);
-	if (rreq != NULL)
+	int flag;
+	
+	for(;;)
 	{
-	    MPIR_Request_extract_status(rreq, status);
-	    mpig_request_mutex_unlock(rreq);
-	    break;
-	}
+	    mpi_errno = mpig_cm_vmpi_adi3_iprobe(source, tag, comm, ctxoff, &flag, status);
+	    if (mpi_errno || flag) break;
 
-	mpi_errno = MPID_Progress_wait(&pe_state);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    MPID_Progress_end(&pe_state);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	    mpi_errno = MPID_Iprobe(source, tag, comm, ctxoff, &flag, status);
+	    if (mpi_errno || flag) break;
 	}
     }
-    while(mpi_errno == MPI_SUCCESS);
-    MPID_Progress_end(&pe_state);
+#   else
+    {
+	MPID_Progress_state pe_state;
+	MPID_Request * rreq;
+	
+	MPID_Progress_start(&pe_state);
+	do
+	{
+	    rreq = mpig_recvq_find_unexp(source, tag, ctx);
+	    if (rreq != NULL)
+	    {
+		MPIR_Request_extract_status(rreq, status);
+		mpig_request_mutex_unlock(rreq);
+		break;
+	    }
 
+	    mpi_errno = MPID_Progress_wait(&pe_state);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		/* --BEGIN ERROR HANDLING-- */
+		MPID_Progress_end(&pe_state);
+		goto fn_fail;
+		/* --END ERROR HANDLING-- */
+	    }
+	}
+	while(mpi_errno == MPI_SUCCESS);
+	MPID_Progress_end(&pe_state);
+    }
+#   endif
+    
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
 		       "exiting: source=%d, tag=%d, ctx=%d, mpi_errno=0x%08x",

@@ -171,7 +171,7 @@ int mpig_cm_self_add_contact_info(mpig_bc_t * const bc)
     MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 			 "**globus|bc_add_contact %s", "CM_SELF_HOSTNAME");
 
-    MPIU_Snprintf(pid, 64, "%ld", (long) mpig_process.my_pid);
+    MPIU_Snprintf(pid, (size_t) 64, "%ld", (long) mpig_process.my_pid);
     mpig_bc_add_contact(bc, "CM_SELF_PID", pid, &mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 			 "**globus|bc_add_contact %s", "CM_SELF_PID");
@@ -797,7 +797,7 @@ MPIG_STATIC int mpig_cm_self_send(
 	rreq->status.MPI_SOURCE = rank;
 	rreq->status.MPI_TAG = tag;
 	rreq->status.count = (int) data_size;
-	mpig_request_complete(rreq);
+	/* mpig_request_complete(rreq); -- performed below to avoid destroying the request before it is unlocked */
 
 	/* neither the user nor any other part of MPICH has a handle to the send request, so it is safe to just reset the
 	   reference count and completion counter */
@@ -857,9 +857,18 @@ MPIG_STATIC int mpig_cm_self_send(
 	/* the receive request is locked by the recvq routine to insure atomicity.  it must be unlocked before returning. */
 	mpig_request_mutex_unlock(rreq);
 
-	if (!found)
+	if (found)
 	{
-	    mpig_progress_signal_completion();
+	    /* if a matching receive was found in the unexpected queue, then the send will have completed the receive.  the
+	       request is completed here to avoid destroying the request while the request mutex is still locked. */
+	    mpig_request_complete(rreq);
+	}
+	else
+	{
+	    /* MT-FIXME: a new request has been added to unexpected queue.  if another application thread is blocking in a
+	       MPID_Probe(), then the progress engine must be woken up to give MPID_Probe() a chance to inspect the unexpected
+	       queue again. */
+	    mpig_progress_wakeup();
 	}
     }
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
@@ -893,8 +902,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
     void * const rbuf, const int rcnt, const MPI_Datatype rdt, MPIU_Size_t * const rsz, int * const rmpi_errno)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int sdt_contig;
-    int rdt_contig;
+    bool_t sdt_contig;
+    bool_t rdt_contig;
     MPIU_Size_t sdt_size;
     MPIU_Size_t rdt_size;
     MPIU_Size_t sdt_nblks;
@@ -952,7 +961,7 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 
 	MPID_Segment_init(rbuf, rcnt, rdt, &seg, 0);
 	last = sdata_size;
-	MPID_Segment_unpack(&seg, 0, (MPI_Aint *) &last, (const char *) sbuf + sdt_true_lb);
+	MPID_Segment_unpack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (const char *) sbuf + sdt_true_lb);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "unpacked data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
 	if (last != sdata_size)
 	{   /* --BEGIN ERROR HANDLING-- */
@@ -972,7 +981,7 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 
 	MPID_Segment_init(sbuf, scnt, sdt, &seg, 0);
 	last = sdata_size;
-	MPID_Segment_pack(&seg, 0, (MPI_Aint *) &last, (char *) rbuf + rdt_true_lb);
+	MPID_Segment_pack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (char *) rbuf + rdt_true_lb);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "packed data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
 	if (last != sdata_size)
 	{   /* --BEGIN ERROR HANDLING-- */
@@ -994,7 +1003,7 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 	MPID_Segment rseg;
 	MPIU_Size_t rfirst;
 
-	buf = MPIU_Malloc(MPIG_COPY_BUFFER_SIZE);
+	buf = MPIU_Malloc((size_t) MPIG_COPY_BUFFER_SIZE);
 	if (buf == NULL)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,

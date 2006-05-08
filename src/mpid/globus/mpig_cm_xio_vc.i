@@ -51,28 +51,26 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
     mpig_vc_set_cm_funcs((vc_), NULL);					\
 }
 
-#define mpig_cm_xio_vc_inc_ref_count(vc_, was_inuse_flag_p_)					\
-{												\
-    *(was_inuse_flag_p_) = ((vc_)->ref_count++) ? TRUE : FALSE;					\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,				\
-		       "VC - XIO increment ref count: vc=" MPIG_HANDLE_FMT ", ref_count=%d",	\
-		       (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));				\
+#define mpig_cm_xio_vc_inc_ref_count(vc_, was_inuse_flag_p_)								\
+{															\
+    *(was_inuse_flag_p_) = ((vc_)->ref_count++) ? TRUE : FALSE;								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,							\
+	"VC - XIO increment ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
 }
 
-#define mpig_cm_xio_vc_dec_ref_count(vc_, inuse_flag_p_)					\
-{												\
-    *(inuse_flag_p_) = (--(vc_)->ref_count) ? TRUE : FALSE;					\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,				\
-		       "VC - XIO decrement ref count: vc=" MPIG_HANDLE_FMT ", ref_count=%d",	\
-		       (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));				\
+#define mpig_cm_xio_vc_dec_ref_count(vc_, inuse_flag_p_)								\
+{															\
+    *(inuse_flag_p_) = (--(vc_)->ref_count) ? TRUE : FALSE;								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,							\
+	"VC - XIO decrement ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
 }
 
 #define mpig_cm_xio_vc_set_state(vc_, state_)								\
 {													\
     (vc_)->cm.xio.state = (state_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC,								\
-		       "VC - setting XIO state: vc=" MPIG_HANDLE_FMT ", state=%s",			\
-		       (MPIG_PTR_CAST) (vc_), mpig_cm_xio_vc_state_get_string((vc_)->cm.xio.state)));	\
+	"VC - setting XIO state: vc=" MPIG_PTR_FMT ", state=%s",					\
+	(MPIG_PTR_CAST) (vc_), mpig_cm_xio_vc_state_get_string((vc_)->cm.xio.state)));			\
 }
 
 #define mpig_cm_xio_vc_get_state(vc_) ((vc_)->cm.xio.state)

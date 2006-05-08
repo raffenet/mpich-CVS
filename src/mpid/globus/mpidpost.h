@@ -11,32 +11,29 @@
 
 
 /**********************************************************************************************************************************
-						 BEGIN GLOBUS PROCESS ID SECTION
-**********************************************************************************************************************************/
-/*
- * FIXME: XXX: THIS SECTION BELONG IN THE MPI LAYER, NOT IN THE DEVICE!
- */
-   
-int MPID_GPID_Get(MPID_Comm * comm, int rank, int gpid[]);
-/**********************************************************************************************************************************
-						  END GLOBUS PROCESS ID SECTION
-**********************************************************************************************************************************/
-
-
-/**********************************************************************************************************************************
 						   BEGIN COMMUNICATOR SECTION
 **********************************************************************************************************************************/
 void mpig_comm_list_add(MPID_Comm * comm);
-void mpig_comm_list_remove(MPID_Comm * comm);
-
-#define mpig_comm_user_free(comm_)	\
-{					\
-    (comm_)->dev.user_ref = FALSE;	\
-}
-
 #define MPID_Dev_comm_create_hook(comm_) mpig_comm_list_add(comm_)
+
+void mpig_comm_list_remove(MPID_Comm * comm);
 #define MPID_Dev_comm_destroy_hook(comm_) mpig_comm_list_remove(comm_)
-#define MPID_Comm_free(comm_) mpig_comm_user_free(comm_)
+
+void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p);
+#define MPID_Dev_comm_free_hook(comm_, mpi_errno_p_) mpig_dev_comm_free_hook((comm_), (mpi_errno_p_))
+
+#if defined(MPIG_VMPI)
+
+void mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm, int * mpi_errno_p);
+#define MPID_Dev_comm_dup_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
+    mpig_dev_comm_free_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
+
+void mpig_dev_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Comm * peer_comm, int remote_leader, int tag,
+    MPID_Comm * new_intercomm, int * mpi_errno_p);
+#define MPID_Dev_intercomm_create_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
+    mpig_dev_intercomm_create_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
+
+#endif /* defined(MPIG_VMPI) */
 
 /* MT-RC-NOTE: this routine may only be called (directly or indirectly) by MPI routines.  furthermore, the population of the
    cm_funcs table and the the pointer to the cm_funcs table in the VC may only be set routines called by MPI routines.  if the
@@ -143,7 +140,7 @@ void mpig_request_destroy(MPID_Request * req);
 	    mpig_request_destroy((req_));			\
 	}							\
 								\
-        mpig_progress_signal_completion();			\
+        mpig_progress_complete_op();				\
     }								\
 }
 
@@ -166,7 +163,7 @@ void mpig_request_destroy(MPID_Request * req);
 #define MPID_Request_set_completed(req_)		\
 {							\
     *(req_)->cc_ptr = 0;				\
-    mpig_progress_signal_completion();			\
+    mpig_progress_complete_op();			\
 }
 /**********************************************************************************************************************************
 						       END REQUEST SECTION
@@ -174,35 +171,121 @@ void mpig_request_destroy(MPID_Request * req);
 
 
 /**********************************************************************************************************************************
+						   BEGIN ADI3 MAPPING SECTION
+**********************************************************************************************************************************/
+#undef MPID_Send
+#define MPID_Send(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_send((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Isend
+#define MPID_Isend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_isend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Rsend
+#define MPID_Rsend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_rsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Irsend
+#define MPID_Irsend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)							\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_irsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Ssend
+#define MPID_Ssend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_ssend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Issend
+#define MPID_Issend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)							\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_issend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Recv
+#define MPID_Recv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, status_ ,reqp_)							\
+    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_recv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (status_),	\
+                          (reqp_)))
+
+#undef MPID_Irecv
+#define MPID_Irecv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
+     (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_irecv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+
+#undef MPID_Cancel_send
+#define MPID_Cancel_send(sreq_) (mpig_comm_get_vc_cmf((sreq_)->comm, mpig_request_get_rank(sreq_))->adi3_cancel_send(sreq_))
+
+#undef MPID_Cancel_recv
+#define MPID_Cancel_recv(rreq_) (mpig_comm_get_vc_cmf((rreq_)->comm, mpig_request_get_rank(rreq_))->adi3_cancel_recv(rreq_))
+
+/**********************************************************************************************************************************
+						    END ADI3 MAPPING SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
 						  BEGIN PROGRESS ENGINE SECTION
 **********************************************************************************************************************************/
-extern volatile mpig_progress_cc_t mpig_progress_cc;
+extern volatile mpig_progress_count_t mpig_progress_count;
+extern int mpig_progress_num_cm_requiring_polling;
+extern volatile int mpig_progress_ops_outstanding;
 
+#define HAVE_MPID_PROGRESS_START_MACRO
+#undef MPID_Progress_start
 #define MPID_Progress_start(state_)		\
 {						\
-    (state_)->dev.cc = mpig_progress_cc;	\
+    (state_)->dev.count = mpig_progress_count;	\
     /* mpig_cm_vmpi_progress_start(state_); */	\
     mpig_cm_xio_progress_start(state_);		\
 }
 
+#define HAVE_MPID_PROGRESS_END_MACRO
+#undef MPID_Progress_end
 #define MPID_Progress_end(state_)		\
 {						\
     /* mpig_cm_vmpi_progress_end(state_); */	\
     mpig_cm_xio_progress_end(state_);		\
 }
 
+#define HAVE_MPID_PROGRESS_POKE_MACRO
+#undef MPID_Progress_poke
 #define MPID_Progress_poke() MPID_Progress_test()
 
-#define mpig_progress_signal_completion()											\
+#define mpig_progress_start_op()												\
+{																\
+    /* MT-NOTE: this routine should only be called by the user thread, so it is safe to update the counter without locking a	\
+       mutex. the communication modules are responsible for any locking they might require. */					\
+    mpig_progress_ops_outstanding += 1;												\
+}
+
+#define mpig_progress_complete_op()												\
+{																\
+    /* NOTE_MT: this routine should only be called by the user thread, so it is safe to update the counter without locking a	\
+       mutex.  the communication modules are responsible for any locking they might require. */					\
+    mpig_progress_ops_outstanding -= 1;												\
+    mpig_progress_wakeup();													\
+    /* mpig_cm_xio_progress_signal_completion(); -- XXX: MT-APP-NOTE: what is really needed here??? probably nothing until we	\
+       support multithreaded applications */											\
+}
+
+#define mpig_progress_wakeup()													\
 {																\
     /* MT: this routine should only be called by the user thread, so it is safe to update the counter without locking a mutex.	\
        the communication modules are responsible for any locking they might require. */						\
-    mpig_progress_cc += 1;													\
-    /* mpig_cm_xio_progress_signal_completion(); -- XXX: MT-APP-NOTE: what is really needed here??? probably noting until we	\
-       support multithreaded applications */											\
+    mpig_progress_count += 1;													\
 }
 /**********************************************************************************************************************************
 						   END PROGRESS ENGINE SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						    BEGIN PROCESS ID SECTION
+**********************************************************************************************************************************/
+/*
+ * FIXME: XXX: gpids need to be bigger than two integers.  ideally, we would like to use a uuid supplied by globus to identify
+ * the process group and an integer to represent the process rank within the process group; however, this would require reduce
+ * the uuid through some hashing algorithm and thus increase the probability of two unique process groups having the same process
+ * id.
+ */
+   
+int MPID_GPID_Get(MPID_Comm * comm, int rank, int gpid[]);
+/**********************************************************************************************************************************
+						     END PROCESS ID SECTION
 **********************************************************************************************************************************/
 
 
@@ -234,50 +317,7 @@ extern volatile mpig_progress_cc_t mpig_progress_cc;
 {						\
     globus_mutex_unlock(mutex_);		\
 }
-/**********************************************************************************************************************************
-						END DEVICE THREAD SUPPORT SECTION
-**********************************************************************************************************************************/
 
-
-/**********************************************************************************************************************************
-						   BEGIN ADI3 MAPPING SECTION
-**********************************************************************************************************************************/
-#define MPID_Send(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_send((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Isend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_isend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Rsend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_rsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Irsend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)							\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_irsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Ssend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_ssend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Issend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)							\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_issend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Recv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, status_ ,reqp_)							\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_recv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (status_),	\
-                          (reqp_)))
-
-#define MPID_Irecv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-     (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_irecv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
-
-#define MPID_Cancel_send(sreq_) (mpig_comm_get_vc_cmf((sreq_)->comm, mpig_request_get_rank(sreq_))->adi3_cancel_send(sreq_))
-
-#define MPID_Cancel_recv(rreq_) (mpig_comm_get_vc_cmf((rreq_)->comm, mpig_request_get_rank(rreq_))->adi3_cancel_recv(rreq_))
-/**********************************************************************************************************************************
-						    END ADI3 MAPPING SECTION
-**********************************************************************************************************************************/
-
-
-/**********************************************************************************************************************************
-						  BEGIN THREAD SUPPORT SECTION
-**********************************************************************************************************************************/
 unsigned long mpig_thread_get_id(void);
 
 #if !defined(MPIG_THREADED)
@@ -286,7 +326,7 @@ unsigned long mpig_thread_get_id(void);
 #define mpig_thread_get_id() ((unsigned long) globus_thread_self())
 #endif
 /**********************************************************************************************************************************
-						   END THREAD SUPPORT SECTION
+						END DEVICE THREAD SUPPORT SECTION
 **********************************************************************************************************************************/
 
 
@@ -294,6 +334,8 @@ unsigned long mpig_thread_get_id(void);
 						 BEGIN DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/
 #if defined(MPIG_DEBUG)
+
+#define MPIG_DEBUG_STMT(a_) a_
 
 void mpig_debug_init(void);
 
@@ -303,7 +345,7 @@ extern time_t mpig_debug_start_tv_sec;
 #define MPIG_DEBUG_LEVEL_NAMES \
     "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT REQ COMM VC PG BC RECVQ VCCM PM DATABUF MSGHDR MPI" 
 
-enum mpig_debug_levels
+typedef enum mpig_debug_levels
 {
     MPIG_DEBUG_LEVEL_ERROR =		1 << 0,
     MPIG_DEBUG_LEVEL_FUNC =		1 << 1,
@@ -488,6 +530,7 @@ void mpig_debug_printf(int levels, const char * fmt, ...);
 
 #else
 
+#define MPIG_DEBUG_STMT(a_)
 #define	MPIG_DEBUG_PRINTF(a_)
 
 #endif

@@ -8,13 +8,15 @@
 
 #include "mpidimpl.h"
 
-volatile mpig_progress_cc_t mpig_progress_cc = 0;
+volatile mpig_progress_count_t mpig_progress_count = 0;
+int mpig_progress_num_cm_requiring_polling = 0;
+volatile int mpig_progress_ops_outstanding = 0;
 
 
 /*
  * MPID_Progress_start()
  */
-#if !defined (MPID_Progress_start)
+#if !defined (HAVE_MPID_PROGRESS_START_MACRO)
 #undef FUNCNAME
 #define FUNCNAME MPID_Progress_start
 void MPID_Progress_start(MPID_Progress_state * state)
@@ -39,7 +41,7 @@ void MPID_Progress_start(MPID_Progress_state * state)
 /*
  * MPID_Progress_end()
  */
-#if !defined (MPID_Progress_end)
+#if !defined (HAVE_MPID_PROGRESS_END_MACRO)
 #undef FUNCNAME
 #define FUNCNAME MPID_Progress_end
 void MPID_Progress_end(MPID_Progress_state * state)
@@ -78,14 +80,14 @@ int MPID_Progress_wait(MPID_Progress_state * state)
     MPIG_FUNC_ENTER(MPID_STATE_MPID_PROGRESS_WAIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
-    while (state->dev.cc == mpig_progress_cc)
+    while (state->dev.count == mpig_progress_count)
     { 
 	/* mpig_cm_vmpi_progress_wait(state); */
 	mpig_cm_xio_progress_wait(state, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait");
     }
     
-    state->dev.cc = mpig_progress_cc;
+    state->dev.count = mpig_progress_count;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "exiting"));
@@ -93,9 +95,9 @@ int MPID_Progress_wait(MPID_Progress_state * state)
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 /* MPID_Progress_wait() */
 }
 
@@ -103,7 +105,6 @@ int MPID_Progress_wait(MPID_Progress_state * state)
 /*
  * MPID_Progress_test()
  */
-#if !defined (MPID_Progress_test)
 #undef FUNCNAME
 #define FUNCNAME MPID_Progress_test
 int MPID_Progress_test(void)
@@ -128,18 +129,17 @@ int MPID_Progress_test(void)
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* MPID_Progress_test() */
-#endif
 
 
 /*
  * MPID_Progress_poke()
  */
-#if !defined (MPID_Progress_poke)
+#if !defined (HAVE_MPID_PROGRESS_POKE_MACRO)
 #undef FUNCNAME
 #define FUNCNAME MPID_Progress_poke
 int MPID_Progress_poke(void)
@@ -161,9 +161,9 @@ int MPID_Progress_poke(void)
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* MPID_Progress_poke() */
 #endif

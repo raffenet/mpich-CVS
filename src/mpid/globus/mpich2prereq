@@ -10,10 +10,10 @@
 # machines like IBM BG/L.
 
 #
-# NOTE: This file is sourced from the top-level configure script with the current working directory set to the top-level
+# NOTE: this file is sourced from the top-level configure script with the current working directory set to the top-level
 # build directory.
 #
-# Variables of potential interest...
+# variables of potential interest...
 #
 # $master_top_srcdir - top-level source directory
 # $master_top_builddir - top-level build directory
@@ -25,23 +25,22 @@
 
 echo ""
 echo "START OF MPICH2PREREQ FOR THE GLOBUS DEVICE"
-echo ""
 
-# # Define to the address where bug reports for this package should be sent.
+# # define to the address where bug reports for this package should be sent.
 # PACKAGE_BUGREPORT="mpi@globus.org"
 # export PACKAGE_BUGREPORT
 # cat >>confdefs.h <<_ACEOF
 # #define PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
 # _ACEOF
 # 
-# # Define to the full name of this package.
+# # define to the full name of this package.
 # PACKAGE_NAME="MPI-G"
 # export PACKAGE_NAME
 # cat >>confdefs.h <<_ACEOF
 # #define PACKAGE_NAME "$PACKAGE_NAME"
 # _ACEOF
 # 
-# # Define to the version of this package.
+# # define to the version of this package.
 # if grep CVS ${master_top_srcdir}/maint/Version 2>&1 >/dev/null ; then
 #     PACKAGE_VERSION=`date "+%Y%m%d%H%M"`
 # else
@@ -52,14 +51,14 @@ echo ""
 # #define PACKAGE_VERSION "$PACKAGE_VERSION"
 # _ACEOF
 # 
-# # Define to the full name and version of this package.
+# # define to the full name and version of this package.
 # PACKAGE_STRING="${PACKAGE_NAME} ${PACKAGE_VERSION}"
 # export PACKAGE_STRING
 # cat >>confdefs.h <<_ACEOF
 # #define PACKAGE_STRING "$PACKAGE_STRING"
 # _ACEOF
 # 
-# # Define to the one symbol short name of this package.
+# # define to the one symbol short name of this package.
 # PACKAGE_TARNAME="${PACKAGE_NAME}"
 # export PACKAGE_TARNAME
 # cat >>confdefs.h <<_ACEOF
@@ -69,7 +68,7 @@ echo ""
 #
 # mpig_mkdir_p()
 #
-# Simulate "mkdir -p" since it is not available everywhere.  Portions of this code were taken from confdb/aclocal.m4.
+# simulate "mkdir -p" since it is not available everywhere.  portions of this code were taken from confdb/aclocal.m4.
 #
 mpig_mkdir_p()
 {(
@@ -87,7 +86,7 @@ mpig_mkdir_p()
 )}
 
 #
-# Verify that GLOBUS_LOCATION points at a valid installation of Globus
+# verify that GLOBUS_LOCATION points at a valid installation of globus
 #
 if test -z "${GLOBUS_LOCATION}" ; then
     echo ""
@@ -124,7 +123,7 @@ if test ! -x "${MPIG_GMH_CMD}" ; then
 fi
 
 #
-# Get configure options specific to the Globus device
+# get configure options specific to the globus device
 #
 with_ccache=no
 with_insure=no
@@ -137,7 +136,7 @@ for arg in ${ac_configure_args} ; do
     --with-globus-flavor=*)
     with_globus_flavor=`echo ${arg} | sed 's/^[^=]*=//'`
     ;;
-    # NOTE: Doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
+    # NOTE: doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
     # sed replacement mechanism, and instead can rely on library link order.  for now, we are disabling sed substition.
     # --with-f77-sed)
     # MPIG_F77_SED=yes
@@ -175,7 +174,31 @@ if test -z "${with_globus_flavor}" ; then
 fi
 
 #
-# The process management system is built into the device, so we must tell MPICH2 not to build a process manager or an
+# if application level threads are enabled, then they must be disabled and the user warned.
+#
+# FIXME: eventually we should support application level threads, but this requires either a vendor MPI that supported
+# MPI_THREAD_SERIALIZED or MPI_THREAD_MULTIPLE.  it would be possible to provide allow application level threads if the vendor
+# MPI supported MPI_THREAD_FUNNELED; however, all vendor MPI operation would need to be routed through request and completion
+# queues so that the MPI functions were called only by the main thread (the one that called MPI_Init_thread().
+#
+# NOTE: the standard states that in MPI_Init() is called, the it should be treated as MPI_Init_thread having been called with
+# MPI_THREAD_SINGLE.  At present, MPI-G does not detect if MPI_Thread_init is available and thus always called MPI_Init().  As a
+# result, MPI-G can only support MPI_THREAD_SINGLE.
+#
+echo "INFO: application thread level support requested: $enable_threads"
+if test "$enable_threads" = "default" ; then
+    echo "INFO: maximum application thread level support set to MPI_THREAD_SINGLE"
+elif test "$enable_threads" != "single" ; then
+    echo "WARNING: application thread support beyond MPI_THREAD_SINGLE has been"
+    echo "         requested; however, MPI-G presently does not support multithreaded"
+    echo "         applications.  The maximum thread level has been set to"
+    echo "         MPI_THREAD_SINGLE."
+fi
+enable_threads=single
+ac_configure_args="${ac_configure_args} --enable-threads=single"
+
+#
+# the process management system is built into the device, so we must tell MPICH2 not to build a process manager or an
 # implementation of the process management interface.
 #
 if test "${with_pmi}" != "no" -a "${with_pmi}" != "default" ; then
@@ -190,7 +213,7 @@ with_pmi=no
 with_pm=no
 
 #
-# Add include paths needed by the Globus device
+# add include paths needed by the Globus device
 #
 pathlist=""
 pathlist="${pathlist} src/mpid/${device_name}"
@@ -201,14 +224,14 @@ for path in ${pathlist} ; do
 done
 
 #
-# Create the device's build directory, if it doesn't already exist.  This is necessary for VPATH builds.
+# create the device's build directory, if it doesn't already exist.  this is necessary for VPATH builds.
 #
 if test ! -d src/mpid/${device_name} ; then
     mpig_mkdir_p src/mpid/${device_name}
 fi
 
 #
-# Set variables to easily find the device in the source and build trees (may be the same)
+# set variables to easily find the device in the source and build trees (may be the same)
 #
 MPIG_SOURCE_DIR=${master_top_srcdir}/src/mpid/${device_name}
 MPIG_BUILD_DIR=${master_top_builddir}/src/mpid/${device_name}
@@ -216,7 +239,7 @@ export MPIG_SOURCE_DIR
 export MPIG_BUILD_DIR
 
 #
-# Create the makefile for extract settings from Globus
+# create the makefile for extract settings from Globus
 #
 MPIG_GMH_PKGS="globus_xio globus_duroc_runtime globus_rendezvous"
 MPIG_GLOBUS_HEADER_MK=${MPIG_BUILD_DIR}/.globus-header.mk
@@ -246,7 +269,7 @@ sed -e "/@MPIG_GLOBUS_HEADER_MK@/r ${MPIG_GLOBUS_HEADER_MK}" -e 's-@MPIG_GLOBUS_
 echo "${ECHO_T}done"
 
 #
-# Function to extract Globus settings from the previously created makefile
+# function to extract globus settings from the previously created makefile
 #
 MPIG_MAKE=${MAKE:-make}
 mpig_get_globus_setting()
@@ -262,7 +285,7 @@ mpig_get_globus_setting()
 }
 
 #
-# Are the globus libraries multi-threaded?
+# are the globus libraries multi-threaded?
 #
 echo ${ECHO_N} "checking if Globus is built with thread support... ${ECHO_C}"
 mpig_get_globus_setting MPIG_GLOBUS_THREADED multi-threaded
@@ -270,16 +293,20 @@ echo "${ECHO_T}${MPIG_GLOBUS_THREADED}"
 export MPIG_GLOBUS_THREADED
 
 #
-# Are the globus libraries built with debugging enabled?  If so, enable debugging for the MPICH2 globus device.
+# are the globus libraries built with debugging enabled?  If so, enable debugging for the MPICH2 globus device.
 #
 echo ${ECHO_N} "checking if Globus is built with debugging enabled... ${ECHO_C}"
 mpig_get_globus_setting mpig_debug debug
+echo "${ECHO_T}${mpig_debug}"
 if test "${mpig_debug}" = "yes" ; then
     MPIG_DEBUG=yes
 else
     MPIG_DEBUG=no
+    enable_fast=yes
+    ac_configure_args="${ac_configure_args} --enable-fast"
+    echo "INFO: debugging disabled.  adding --enable-fast option to remove error"
+    echo "      checking from MPI routines and disable detailed error reporting."
 fi
-echo "${ECHO_T}${mpig_debug}"
 export MPIG_DEBUG
 
 #
@@ -305,26 +332,12 @@ fi
 echo "${ECHO_T}${mpig_vmpi}"
 export MPIG_VMPI
 
-echo ""
-echo "FIXME: we need to supply transformation header file for the MPI/PMPI functions"
-echo "      and get mpi.h to include it"
-echo ""
-if test ${MPIG_VMPI} == "yes" ; then
-    # XXX: what's the correct symbol to define here?
-    HAVE_MPID_DEFS_H=yes
-    export HAVE_MPID_DEFS_H
-
-    # XXX: where should these really be copied from and to?
-    # cp ${MPIG_SOURCE_DIR}/mpid_defs.h ${includebuild_dir}
-    # cp ${MPIG_SOURCE_DIR}/global_c_symb.h ${includebuild_dir}
-    # cp ${MPIG_SOURCE_DIR}/global_fort_symb.h ${includebuild_dir}
-else
-    MPIG_F77_SED=no
-fi
-
-# NOTE: Doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
+# NOTE: doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
 # sed replacement mechanism, and instead can rely on library link order.  for now, we are disabling sed substition.
-# if test ${MPIG_F77_SED} == "yes" ; then
+# if test ${MPIG_VMPI} = "no" ; then
+#     MPIG_F77_SED=no
+# fi
+# if test ${MPIG_F77_SED} = "yes" ; then
 #     echo "INFO: use of vendor MPI mode and F90 are incompatible.  Disabling F90 support."
 #     enable_f90=no
 #     ac_configure_args="${ac_configure_args} --disable-f90"
@@ -339,7 +352,7 @@ fi
 # fi
 
 #
-# Gather information about the libraries and linker flags
+# gather information about the libraries and linker flags
 #
 echo ${ECHO_N} "extacting library and linker flags from Globus... ${ECHO_C}"
 mpig_get_globus_setting MPIG_LDFLAGS ldflags
@@ -349,13 +362,13 @@ MPIG_TEST_LIBS=
 echo "${ECHO_T}done"
 
 #
-# Gather C compiler and linker information
+# gather C compiler and linker information
 #
 echo ${ECHO_N} "extacting C compiler information from Globus... ${ECHO_C}"
 mpig_get_globus_setting MPIG_CC cc
 mpig_get_globus_setting MPIG_CFLAGS cflags
 if test "${enable_gcc_strict}" = "yes" ; then
-    MPIG_CC="${MPIG_CC} -ansi -D_XOPEN_SOURCE=500"
+    MPIG_CC="${MPIG_CC} -ansi -D_XOPEN_SOURCE=500 -D_POSIX_C_SOURCE=200605"
 fi
 MPIG_BUILD_CC=${MPIG_CC}
 MPIG_CLD=${MPIG_CC}
@@ -383,7 +396,7 @@ if test "${enable_gcc_strict}" = "yes" ; then
 fi
 
 #
-# Gather C++ compiler and flags information
+# gather C++ compiler and flags information
 #
 if test "${enable_cxx}" != "no" ; then
     echo ${ECHO_N} "extacting C++ compiler information from Globus... ${ECHO_C}"
@@ -416,7 +429,7 @@ else
 fi
 
 #
-# Gather F77 compiler and flags information
+# gather F77 compiler and flags information
 #
 if test "${enable_f77}" != "no" ; then
     echo ${ECHO_N} "extacting F77 compiler information from Globus... ${ECHO_C}"
@@ -438,7 +451,7 @@ else
 fi
 
 #
-# Gather F90 compiler and linker information
+# gather F90 compiler and linker information
 #
 if test "${enable_f90}" != "no" ; then
     echo ${ECHO_N} "extacting F90 compiler information from Globus... ${ECHO_C}"
@@ -460,15 +473,15 @@ else
 fi
 
 #
-# Some MPI compilers, like IBM's mpcc, are effectively cross compilers.  For these compilers, we need to define things so that the
-# compiler produces configuration test codes that can be executed locally.  Obviously, using this technique, we are making the
-# assumption that the host platform and the target platform are the same.  If they are different, then the configure code is going
+# some MPI compilers, like IBM's mpcc, are effectively cross compilers.  for these compilers, we need to define things so that the
+# compiler produces configuration test codes that can be executed locally.  obviously, using this technique, we are making the
+# assumption that the host platform and the target platform are the same.  if they are different, then the configure code is going
 # to detect the wrong features and values.  The only way to solve this problem in general is to make configure understand how to
 # run on the target machine or have the user supply all of the necessary values, both of which are painful (for us and the users).
-# For now, we assume that the code is being compiled on an identical platform.  Someday, this script will need to be updated to
+# for now, we assume that the code is being compiled on an identical platform.  someday, this script will need to be updated to
 # allow the user to specify the parameters in a configuration file.
 #
-if test "${ARCH}" = "rs6000" -a ${MPIG_VMPI} == "yes" ; then
+if test "${ARCH}" = "rs6000" -a ${MPIG_VMPI} = "yes" ; then
     if test "${globus_threads_enabled}" = "yes" ; then    
     	MPIG_TEST_CLD=xlc_r
     	MPIG_TEST_CXXLD=xlC_r
@@ -483,14 +496,14 @@ if test "${ARCH}" = "rs6000" -a ${MPIG_VMPI} == "yes" ; then
 fi
 
 #
-# When testing for architecure and operating systems features, we may need to use a different compiler options (or even a different
-# compiler).  Setting MPIG_CONFIGURE_ACTIVE forces the  compiler scripts to use these alternate settings.
+# when testing for architecure and operating systems features, we may need to use a different compiler options (or even a different
+# compiler).  setting MPIG_CONFIGURE_ACTIVE forces the  compiler scripts to use these alternate settings.
 #
 MPIG_CONFIGURE_ACTIVE=1
 export MPIG_CONFIGURE_ACTIVE
 
 #
-# Create compiler scripts
+# create compiler scripts
 #
 sed -e "s!@GCC@!${MPIG_CC}!" \
     -e "s!@GCFLAGS@!${MPIG_CFLAGS}!" \
@@ -583,7 +596,7 @@ fi
 #
 # see if a type is defined
 #
-# mpig_check_type type
+# usage: mpig_check_type type
 #
 mpig_check_type()
 {
@@ -606,7 +619,7 @@ int main(int argc, char ** argv)
 EOF
     # FIXME: output details to config.log
     echo ${ECHO_N} "checking for definition of ${mpig_type_name}""... ${ECHO_C}"
-    mpig_var=`echo HAVE_${mpig_type_name} | tr "[a-z] " "[A-Z]_"`
+    mpig_var=`echo HAVE_${mpig_type_name} | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
     if ${CC} -c conftest.c >/dev/null 2>&1; then
 	mpig_result=yes
 	eval ${mpig_var}=yes
@@ -653,7 +666,7 @@ EOF
 	echo "${ECHO_T}""nonexistent type"
     fi
     rm -f conftest*
-    mpig_var=`echo SIZEOF_${mpig_type_name} | tr "[a-z] " "[A-Z]_"`
+    mpig_var=`echo "SIZEOF_${mpig_type_name}" | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
     eval ${mpig_var}=${mpig_result}
     eval export ${mpig_var}
 }
@@ -697,21 +710,119 @@ EOF
 	echo "${ECHO_T}""nonexistent type"
     fi
     rm -f conftest*
-    mpig_var=`echo MEMALIGN_${mpig_type_name} | tr "[a-z] " "[A-Z]_"`
+    mpig_var=`echo "MEMALIGN_${mpig_type_name}" | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
     eval ${mpig_var}=${mpig_result}
     eval export ${mpig_var}
 }
 
 #
+# determine the size of the basic C types
+#
+SIZEOF_UNKNOWN=0
+for mpig_type in "char" "short" "int" "long" "long long" ; do
+    mpig_get_type_size "$mpig_type"
+    mpig_type_name=`echo "${mpig_type}" | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
+    eval SIZEOF_UNSIGNED_${mpig_type_name}=\${SIZEOF_${mpig_type_name}}
+    eval export SIZEOF_UNSIGNED_${mpig_type_name}
+done
+mpig_get_type_size "float"
+mpig_get_type_size "double"
+mpig_get_type_size "long double"
+mpig_get_type_size "void *"
+
+#
+# determine maximum sized type for memory alignment purposes.  the alignment information is used to construct properly aligned
+# buffers to prevent compiler alignment warnings and runtime faults.  it is also used below to construct the space required to 
+# store the vendor MPI status in the MPICH2 MPI_Status structure.  since that structure is created in the top-level configure
+# before the globus device localdefs file is run (which is generated by the globus device configure), the alighnment information
+# must be gathered here rather than in configure.
+#
+TYPEOF_MPIG_ALIGNED_T=""
+# SIZEOF_MPIG_ALIGNED_T=0
+# MEMALIGN_MPIG_ALIGNED_T=0
+mpig_memalign_max=0
+for mpig_type in "char" "short" "int" "long" "long long" "float" "double" "long double" "void *"; do
+    mpig_get_type_memalign "$mpig_type"
+    mpig_utype=`echo "${mpig_type}" | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
+    eval mpig_memalign="\$MEMALIGN_${mpig_utype}"
+    if test ${mpig_memalign} -gt ${mpig_memalign_max} ; then
+        TYPEOF_MPIG_ALIGNED_T=${mpig_type}
+        SIZEOF_MPIG_ALIGNED_T="\$SIZEOF_${mpig_utype}"
+        # MEMALIGN_MPIG_ALIGNED_T=${mpig_memalign}
+        mpig_memalign_max=${mpig_memalign}
+    fi
+done
+echo "required memory alignment boundary is... ${mpig_memalign_max}"
+echo "setting memory alignment type to... ${TYPEOF_MPIG_ALIGNED_T}"
+# echo "setting size of memory alignment type to ${SIZEOF_MPIG_ALIGNED_T}"
+export TYPEOF_MPIG_ALIGNED_T
+# export SIZEOF_MPIG_ALIGNED_T
+# export MEMALIGN_MPIG_ALIGNED_T
+
+#
+# create a mapping from integer types to printf integer conversion length modifiers
+#
+MPIG_CHAR_FMT_MOD="hh"
+export MPIG_CHAR_FMT_MOD
+MPIG_UNSIGNED_CHAR_FMT_MOD="hh"
+export MPIG_UNSIGNED_CHAR_FMT_MOD
+MPIG_SHORT_FMT_MOD="h"
+export MPIG_SHORT_FMT_MOD
+MPIG_UNSIGNED_SHORT_FMT_MOD="h"
+export MPIG_UNSIGNED_SHORT_FMT_MOD
+MPIG_INT_FMT_MOD=""
+export MPIG_INT_FMT_MOD
+MPIG_UNSIGNED_INT_FMT_MOD=""
+export MPIG_UNSIGNED_INT_FMT_MOD
+MPIG_LONG_FMT_MOD="l"
+export MPIG_LONG_FMT_MOD
+MPIG_UNSIGNED_LONG_FMT_MOD="l"
+export MPIG_UNSIGNED_LONG_FMT_MOD
+MPIG_LONG_LONG_FMT_MOD="ll"
+export MPIG_LONG_LONG_FMT_MOD
+MPIG_UNSIGNED_LONG_LONG_FMT_MOD="ll"
+export MPIG_UNSIGNED_LONG_LONG_FMT_MOD
+
+#
+# determine the integer type to which a pointer should be cast when doing a printf.  also get the corresponding printf conversion
+# specifier.
+#
+echo ${ECHO_N} "checking for an unsigned integer type big enough to hold a pointer""... ${ECHO_C}"
+for mpig_type in "char" "short" "int" "long" "long long" "unknown" ; do
+    mpig_type_name=`echo "${mpig_type}" | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
+    eval mpig_size="\${SIZEOF_${mpig_type_name}}"
+    if test $SIZEOF_VOID_P -eq $mpig_size ; then
+	break
+    fi
+done
+echo "${ECHO_T}""$mpig_type"
+if test $mpig_type = "unknown" ; then
+    
+    echo ""
+    echo "ERROR: unable to find an integer type big enough to hold a pointer!"
+    echo ""
+    exit 1
+fi
+MPIG_PTR_CAST="unsigned ${mpig_type}"
+export MPIG_PTR_CAST
+
+echo ${ECHO_N} "determining the printf conversion specifier for a pointer""... ${ECHO_C}"
+mpig_chars=`expr ${mpig_size} \* 2`
+eval MPIG_PTR_FMT="0x%0${mpig_chars}\${MPIG_${mpig_type_name}_FMT_MOD}x"
+MPIG_PTR_FMT='"'"$MPIG_PTR_FMT"'"'
+export MPIG_PTR_FMT
+echo "${ECHO_T}""$MPIG_PTR_FMT"
+
+#
 # if the device is using a vendor implementation of MPI as one of its transport mechanisms, then we need to gather some information
 # and set some options.
 #
-if test "${MPIG_VMPI}" == "yes" ; then
+if test "${MPIG_VMPI}" = "yes" ; then
     echo "Enabling VendorMPI option"
    
     #
     # we can't use weak symbols with vendor MPI because the symbols names in the pragma directives aren't affected by the name
-    # change definitions in mpig_sym_refs.h.
+    # change definitions in mpiddefs.h.
     #
     echo "Disabling weak symbols (not compatible with VendorMPI option)"
     enable_weak_symbols=no
@@ -720,45 +831,18 @@ if test "${MPIG_VMPI}" == "yes" ; then
     mpig_get_type_size MPI_Comm
     mpig_get_type_size MPI_Datatype
     mpig_get_type_size MPI_Request
+    mpig_get_type_size MPI_Op
     mpig_check_type MPI_2COMPLEX
     mpig_check_type MPI_2DOUBLE_COMPLEX
     mpig_check_type MPI_LONG_LONG
     mpig_check_type MPI_LONG_LONG_INT
 
-    # originally I [BRT] beleived that the vendor MPI_Aint and the MPICH2 MPI_Aint had to be the same length.  however, since
+    # originally I [BRT] believed that the vendor MPI_Aint and the MPICH2 MPI_Aint had to be the same length.  however, since
     # both the vendor and MPICH2 MPI_Aint must be large enough to hold void *, it should suffice to perform a type cast if the
     # sizes don't match.  this type cast is really on an issue when handling an array of MPI_Aints since an intermediate array
     # will have to be created.
     mpig_get_type_size MPI_Aint
     # MPI_SIZEOF_AINT=${SIZEOF_VMPI_AINT}
-
-    #
-    # determine maximum sized type for memory alignment purposes.  the alignment information is used to construct the extract
-    # space required in the MPI_Status structure.  since that structure is created in the top-level configure before the globus
-    # device localdefs file is run (which is generated by the globus device configure), the alighnment information must be
-    # gathered here.
-    #
-    MPIG_ALIGNED_T=""
-    SIZEOF_MPIG_ALIGNED_T=0
-    MEMALIGN_MPIG_ALIGNED_T=0
-    for mpig_type in "char" "short" "int" "long" "long long" "float" "double" "long double" ; do
-        mpig_get_type_size "$mpig_type"
-        mpig_get_type_memalign "$mpig_type"
-        mpig_utype=`echo ${mpig_type} | tr "[a-z] " "[A-Z]_"`
-        eval mpig_memalign="\$MEMALIGN_${mpig_utype}"
-        if test ${mpig_memalign} -gt ${MEMALIGN_MPIG_ALIGNED_T} ; then
-            MPIG_ALIGNED_T=${mpig_type}
-            eval SIZEOF_MPIG_ALIGNED_T="\$SIZEOF_${mpig_utype}"
-            eval MEMALIGN_MPIG_ALIGNED_T="\$MEMALIGN_${mpig_utype}"
-            mpig_memalign_max=${mpig_memalign}
-        fi
-    done
-    echo "setting MPIG_ALIGNED_T to ${MPIG_ALIGNED_T}"
-    echo "setting SIZEOF_MPIG_ALIGNED_T to ${SIZEOF_MPIG_ALIGNED_T}"
-    echo "setting MEMALIGN_MPIG_ALIGNED_T to ${MEMALIGN_MPIG_ALIGNED_T}"
-    export MPIG_ALIGNED_T
-    export SIZEOF_MPIG_ALIGNED_T
-    export MEMALIGN_MPIG_ALIGNED_T
 
     #
     # if the vendor's MPI doesn't support MPI_LONG_LONG or MPI_LONG_LONG_INT then we need to disable long long support
@@ -785,46 +869,24 @@ if test "${MPIG_VMPI}" == "yes" ; then
     fi
 
     #
-    # Determine extra space needed in MPI_Status
+    # determine extra space needed in the MPICH2 MPI_Status structure for the vendor MPI_Status structure
     #
     mpig_get_type_size MPI_Status
     mpig_num=`expr ${SIZEOF_VMPI_STATUS} + ${SIZEOF_MPIG_ALIGNED_T} - 1`
     mpig_num=`expr ${mpig_num} / ${SIZEOF_MPIG_ALIGNED_T}`
-    EXTRA_STATUS_DECL="${MPIG_ALIGNED_T} mpig_vmpi_status[${mpig_num}];"
-else
-    SIZEOF_VMPI_COMM=0
-    SIZEOF_VMPI_DATATYPE=0
-    SIZEOF_VMPI_REQUEST=0
-    SIZEOF_VMPI_STATUS=0
-    HAVE_VMPI_2COMPLEX=no
-    HAVE_VMPI_2DOUBLE_COMPLEX=no
-    HAVE_VMPI_LONG_LONG=no
-    HAVE_VMPI_LONG_LONG_INT=no
-    MPIG_ALIGNED_T=""
-    SIZEOF_MPIG_ALIGNED_T=0
-    MEMALIGN_MPIG_ALIGNED_T=0
-
-    export SIZEOF_VMPI_COMM
-    export SIZEOF_VMPI_DATATYPE
-    export SIZEOF_VMPI_REQUEST
-    export HAVE_VMPI_2COMPLEX
-    export HAVE_VMPI_2DOUBLE_COMPLEX
-    export HAVE_VMPI_LONG_LONG
-    export HAVE_VMPI_LONG_LONG_INT
-    export MPIG_ALIGNED_T
-    export SIZEOF_MPIG_ALIGNED_T
-    export MEMALIGN_MPIG_ALIGNED_T
+    EXTRA_STATUS_DECL="${TYPEOF_MPIG_ALIGNED_T} mpig_vmpi_status[${mpig_num}];"
 fi
 
 # store the format of the received message in the status so that the value of the count field can be evaluated int the context
 # the of the source data format
 EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} int mpig_dc_format;"
 
-# force the top-level configure script to export the value of MPI_AINT to the device configure script
+# force the top-level configure script to export the values of MPI_AINT and MPIU_SIZE_T to the device configure script
 export MPI_AINT
+export MPIU_SIZE_T
 
 #
-# FIXME: the Globus data conversion library does not support long double.  we need to disable support for that type in MPICH2.
+# FIXME: the globus data conversion library does not support long double.  we need to disable support for that type in MPICH2.
 #
 echo ""
 echo "FIXME: disable long double support in the top-level configure"
@@ -834,16 +896,19 @@ echo ""
 # enable_args="${enable_args} --disable-long-double"
 
 #
-# Create a device specific settings script
+# the symbol renaming file, mpiddefs.h, needs to handle a special case if ROMIO is not being built, so we detect that here and
+# pass the result on to configure through the MPIG_ROMIO_ENABLED environemnt variable
 #
-# XXX: IS THIS STILL NECESSARY???  WHERE IS IT USED?
-#
-# sed -e "s!@MPIG_VMPI@!${MPIG_VMPI}!" \
-#     -e "s!@MPIG_F77_SED@!${MPIG_F77_SED}!" \
-#     ${MPIG_SOURCE_DIR}/mpich2-globus-settings.in >${MPIG_BUILD_DIR}/mpich2-globus-settings
+MPIG_ROMIO_ENABLED=no
+if test "$enable_romio" = "yes" ; then
+   if test -d $master_top_srcdir/src/mpi/romio ; then
+       MPIG_ROMIO_ENABLED=yes
+   fi
+fi
+export MPIG_ROMIO_ENABLED
 
 #
-# FIXME: Add a default machines file if one does not exist
+# FIXME: add a default machines file if one does not exist
 #
 # if test ! -f ${binbuild_dir}/machines ; then
 #     echo "Creating a default machines file in ${binbuild_dir}.  This will"
@@ -857,11 +922,18 @@ echo ""
 # fi
 
 #
-# Add the Globus to the list of directories in which to perform a "make install"
+# add the Globus to the list of directories in which to perform a "make install"
 #
 other_install_dirs="${other_install_dirs} src/mpid/globus"
 
-echo ""
+#
+# include mpiddefs.h in mpi.h
+#
+if test "$MPIG_VMPI" = "yes" ; then
+    echo "INFO: adding include of renaming header mpiddefs.h to mpi.h"
+    INCLUDE_MPIDDEFS_H='#include "mpiddefs.h"'
+fi
+
 echo "END OF MPICH2PREREQ FOR THE GLOBUS DEVICE"
 echo ""
 

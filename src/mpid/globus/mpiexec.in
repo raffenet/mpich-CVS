@@ -62,7 +62,7 @@ fi
 rsl=.mpich2-globus-rsl.$$
 curpath=`pwd`
 args=""
-extra_line=""
+extras_line=""
 for arg ; do
     args="$args `globus_args_quote "$arg"`"
 done
@@ -83,6 +83,10 @@ if test -n "$MPIEXEC_TIMEOUT" ; then
     fi
     maxwalltime=`expr \( $MPIEXEC_TIMEOUT + 59 \) / 60`
     extras_line="${extras_line}(maxwalltime=$maxwalltime)"
+fi
+
+if test "@MPIG_VMPI@" = "yes" ; then
+    extras_line="${extras_line}(jobtype=mpi)"
 fi
 
 env_line=""

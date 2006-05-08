@@ -6,356 +6,388 @@
  * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
  */
 
-#if !defined(MPICH2_MPIG_VMPI_H)
-#define MPICH2_MPIG_VMPI_H 1
+#if !defined(MPICH2_MPIG_VMPI_H_INCLUDED)
+#define MPICH2_MPIG_VMPI_H_INCLUDED 1
 
-#if defined(MPIG_VMPI)
 
-extern int				VMPI_MyWorldSize;
-extern int				VMPI_MyWorldRank;
-extern int *				VMPI_VGRank_to_GRank;
-extern int *				VMPI_GRank_to_VGRank;
+/* XXX: do we need still these, or is there enough information in the VC/PG to make these obsolete? */
+#if XXX
+extern int *				mpig_vmpi_vcwrank_to_pgrank;
+extern int *				mpig_vmpi_pgrank_to_vcwrank;
+#endif
+
 
 /*
- * Define constants used as intermediaries when translating between MPICH and
- * the vendor's MPI implementation
+ * types large enough to hold vendor MPI object handles and structures
  */
-#define VMPI_ANY_TAG (-1)
-#define VMPI_ANY_SOURCE (-2)
-#define VMPI_UNDEFINED (-32766)
+typedef struct
+{
+    mpig_aligned_t vcomm[(SIZEOF_VMPI_COMM + sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)];
+}
+mpig_vmpi_comm_t;
 
-#define VMPI_CHAR		0
-#define VMPI_CHARACTER		1
-#define VMPI_UNSIGNED_CHAR      2
-#define VMPI_BYTE		3
-#define VMPI_SHORT		4
-#define VMPI_UNSIGNED_SHORT     5
-#define VMPI_INT		6
-#define VMPI_UNSIGNED		7
-#define VMPI_LONG		8
-#define VMPI_UNSIGNED_LONG      9
-#define VMPI_FLOAT		10
-#define VMPI_DOUBLE		11
-#define VMPI_LONG_DOUBLE	12
-#define VMPI_LONG_LONG_INT      13
-#define VMPI_LONG_LONG		14
-#define VMPI_PACKED		15
-#define VMPI_LB			16
-#define VMPI_UB			17
-#define VMPI_FLOAT_INT		18
-#define VMPI_DOUBLE_INT		19
-#define VMPI_LONG_INT		20
-#define VMPI_SHORT_INT		21
-#define VMPI_2INT		22
-#define VMPI_LONG_DOUBLE_INT    23
-#define VMPI_COMPLEX		24
-#define VMPI_DOUBLE_COMPLEX     25
-#define VMPI_LOGICAL		26
-#define VMPI_REAL		27
-#define VMPI_DOUBLE_PRECISION   28
-#define VMPI_INTEGER		29
-#define VMPI_2INTEGER		30
-#define VMPI_2COMPLEX		31
-#define VMPI_2DOUBLE_COMPLEX    32
-#define VMPI_2REAL		33
-#define VMPI_2DOUBLE_PRECISION  34
+typedef struct
+{
+    mpig_aligned_t vdt[(SIZEOF_VMPI_DATATYPE + sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)];
+}
+mpig_vmpi_datatype_t;
 
-#define VMPI_SUCCESS          0      /* Successful return code */
-#define VMPI_ERR_BUFFER       1      /* Invalid buffer pointer */
-#define VMPI_ERR_COUNT        2      /* Invalid count argument */
-#define VMPI_ERR_TYPE         3      /* Invalid datatype argument */
-#define VMPI_ERR_TAG          4      /* Invalid tag argument */
-#define VMPI_ERR_COMM         5      /* Invalid communicator */
-#define VMPI_ERR_RANK         6      /* Invalid rank */
-#define VMPI_ERR_ROOT         7      /* Invalid root */
-#define VMPI_ERR_GROUP        8      /* Invalid group */
-#define VMPI_ERR_OP           9      /* Invalid operation */
-#define VMPI_ERR_TOPOLOGY    10      /* Invalid topology */
-#define VMPI_ERR_DIMS        11      /* Invalid dimension argument */
-#define VMPI_ERR_ARG         12      /* Invalid argument */
-#define VMPI_ERR_UNKNOWN     13      /* Unknown error */
-#define VMPI_ERR_TRUNCATE    14      /* Message truncated on receive */
-#define VMPI_ERR_OTHER       15      /* Other error; use Error_string */
-#define VMPI_ERR_INTERN      16      /* Internal error code    */
-#define VMPI_ERR_IN_STATUS   17      /* Look in status for error value */
-#define VMPI_ERR_PENDING     18      /* Pending request */
-#define VMPI_ERR_REQUEST     19      /* Invalid mpi_request handle */
-#define VMPI_ERR_ACCESS      20      /* */
-#define VMPI_ERR_AMODE       21      /* */
-#define VMPI_ERR_BAD_FILE    22      /* */
-#define VMPI_ERR_CONVERSION  23      /* */
-#define VMPI_ERR_DUP_DATAREP 24      /* */
-#define VMPI_ERR_FILE_EXISTS 25      /* */
-#define VMPI_ERR_FILE_IN_USE 26      /* */
-#define VMPI_ERR_FILE        27      /* */
-#define VMPI_ERR_INFO        28      /* */
-#define VMPI_ERR_INFO_KEY    29      /* */
-#define VMPI_ERR_INFO_VALUE  30      /* */
-#define VMPI_ERR_INFO_NOKEY  31      /* */
-#define VMPI_ERR_IO          32      /* */
-#define VMPI_ERR_NAME        33      /* */
-#define VMPI_ERR_EXHAUSTED   34      /* */
-#define VMPI_ERR_NOT_SAME    35      /* */
-#define VMPI_ERR_NO_SPACE    36      /* */
-#define VMPI_ERR_NO_SUCH_FILE 37     /* */
-#define VMPI_ERR_PORT        38      /* */
-#define VMPI_ERR_QUOTA       39      /* */
-#define VMPI_ERR_READ_ONLY   40      /* */
-#define VMPI_ERR_SERVICE     41      /* */
-#define VMPI_ERR_SPAWN       42      /* */
-#define VMPI_ERR_UNSUPPORTED_DATAREP   43  /* */
-#define VMPI_ERR_UNSUPPORTED_OPERATION 44 /* */
-#define VMPI_ERR_WIN         45      /* */
-#define VMPI_ERR_LASTCODE    0x3FFFFFFF      /* Last error code*/
+typedef struct
+{
+    mpig_aligned_t vreq[(SIZEOF_VMPI_REQUEST + sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)];
+}
+mpig_vmpi_request_t;
 
-/* 
- * we needed to add this additional level of indirection
- * because the Cray's vMPI already defines some of these mp_xxx symbols
+typedef struct
+{
+    mpig_aligned_t vop[(SIZEOF_VMPI_OP + sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)];
+}
+mpig_vmpi_op_t;
+
+typedef struct
+{
+    mpig_aligned_t vstatus[(SIZEOF_VMPI_STATUS + sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)];
+}
+mpig_vmpi_status_t;
+
+typedef TYPEOF_MPICH2_AINT mpig_vmpi_aint_t;
+
+
+/*
+ * externally accessible symbols containing vendor MPI values
  */
+#if !defined(BUILDING_MPIG_VMPI_C)
 
-#define mp_cancel mpich_globus2_mp_cancel
-#define mp_comm_dup mpich_globus2_mp_comm_dup
-#define mp_comm_free mpich_globus2_mp_comm_free
-#define mp_comm_get_size mpich_globus2_mp_comm_get_size
-#define mp_comm_split mpich_globus2_mp_comm_split
-#define mp_create_miproto mpich_globus2_mp_create_miproto
-#define mp_finalize mpich_globus2_mp_finalize
-#define mp_get_count mpich_globus2_mp_get_count
-#define mp_get_elements mpich_globus2_mp_get_elements
-#define mp_init mpich_globus2_mp_init
-#define mp_intercomm_create mpich_globus2_mp_intercomm_create
-#define mp_intercomm_merge mpich_globus2_mp_intercomm_merge
-#define mp_iprobe mpich_globus2_mp_iprobe
-#define mp_isend mpich_globus2_mp_isend
-#define mp_issend mpich_globus2_mp_issend
-#define mp_miproto mpich_globus2_mp_miproto
-#define mp_probe mpich_globus2_mp_probe
-#define mp_recv mpich_globus2_mp_recv
-#define mp_request_free mpich_globus2_mp_request_free
-#define mp_send mpich_globus2_mp_send
-#define mp_ssend mpich_globus2_mp_ssend
-#define mp_status_get_error mpich_globus2_mp_status_get_error
-#define mp_status_get_source mpich_globus2_mp_status_get_source
-#define mp_status_get_tag mpich_globus2_mp_status_get_tag
-#define mp_test mpich_globus2_mp_test
-#define mp_test_cancelled mpich_globus2_mp_test_cancelled
-#define mp_type_commit mpich_globus2_mp_type_commit
-#define mp_type_contiguous mpich_globus2_mp_type_contiguous
-#define mp_type_free mpich_globus2_mp_type_free
-#define mp_type_hindexed mpich_globus2_mp_type_hindexed
-#define mp_type_hvector mpich_globus2_mp_type_hvector
-#define mp_type_permanent_free mpich_globus2_mp_type_permanent_free
-#define mp_type_permanent_setup mpich_globus2_mp_type_permanent_setup
-#define mp_type_struct mpich_globus2_mp_type_struct
-#define mp_type_vector mpich_globus2_mp_type_vector
-#define mp_wait mpich_globus2_mp_wait
-/* START Special boostrap wrappers for vMPI functions */
-#define mp_bootstrap_bcast mpich_globus2_mp_bootstrap_bcast
-#define mp_bootstrap_gather mpich_globus2_mp_bootstrap_gather
-#define mp_bootstrap_gatherv mpich_globus2_mp_bootstrap_gatherv
-/* END Special boostrap wrappers for vMPI functions */
+/* miscellaneous values */
+extern const mpig_vmpi_request_t mpig_vmpi_request_null;
+#define MPIG_VMPI_REQUEST_NULL (&mpig_vmpi_request_null)
+extern const int MPIG_VMPI_ANY_SOURCE;
+extern const int MPIG_VMPI_ANY_TAG;
+extern void * const MPIG_VMPI_IN_PLACE;
+extern const int MPIG_VMPI_MAX_ERROR_STRING;
+extern const int MPIG_VMPI_PROC_NULL;
+extern mpig_vmpi_status_t * const MPIG_VMPI_STATUS_IGNORE;
+extern mpig_vmpi_status_t * const MPIG_VMPI_STATUSES_IGNORE;
+extern const int MPIG_VMPI_UNDEFINED;
 
-int mp_init(
-    int *				argc,
-    char ***				argv);
+/* predefined communicators */
+#define MPIG_VMPI_COMM_NULL (&mpig_vmpi_comm_null)
+extern const mpig_vmpi_comm_t mpig_vmpi_comm_null;
+#define MPIG_VMPI_COMM_WORLD (&mpig_vmpi_comm_world)
+extern const mpig_vmpi_comm_t mpig_vmpi_comm_world;
+#define MPIG_VMPI_COMM_SELF (&mpig_vmpi_comm_self)
+extern const mpig_vmpi_comm_t mpig_vmpi_comm_self;
 
-void mp_finalize();
+/* predefined datatypes */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_null;
+#define MPIG_VMPI_DATATYPE_NULL (&mpig_vmpi_dt_null)
+/* c basic datatypes */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_byte;
+#define MPIG_VMPI_BYTE (&mpig_vmpi_dt_byte)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_char;
+#define MPIG_VMPI_CHAR (&mpig_vmpi_dt_char)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_signed_char;
+#define MPIG_VMPI_SIGNED_CHAR (&mpig_vmpi_dt_signed_char)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_char;
+#define MPIG_VMPI_UNSIGNED_CHAR (&mpig_vmpi_dt_unsigned_char)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_wchar;
+#define MPIG_VMPI_WCHAR (&mpig_vmpi_dt_wchar)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_short;
+#define MPIG_VMPI_SHORT (&mpig_vmpi_dt_short)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_short;
+#define MPIG_VMPI_UNSIGNED_SHORT (&mpig_vmpi_dt_unsigned_short)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_int;
+#define MPIG_VMPI_INT (&mpig_vmpi_dt_int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned;
+#define MPIG_VMPI_UNSIGNED (&mpig_vmpi_dt_unsigned)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_long;
+#define MPIG_VMPI_LONG (&mpig_vmpi_dt_long)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_long;
+#define MPIG_VMPI_UNSIGNED_LONG (&mpig_vmpi_dt_unsigned_long)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_long_long;
+#define MPIG_VMPI_LONG_LONG (&mpig_vmpi_dt_long_long)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_long_long_int;
+#define MPIG_VMPI_LONG_LONG_INT (&mpig_vmpi_dt_long_long_int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_long_long;
+#define MPIG_VMPI_UNSIGNED_LONG_LONG (&mpig_vmpi_dt_unsigned_long_long)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_float;
+#define MPIG_VMPI_FLOAT (&mpig_vmpi_dt_float)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_double;
+#define MPIG_VMPI_DOUBLE (&mpig_vmpi_dt_double)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_long_double;
+#define MPIG_VMPI_LONG_DOUBLE (&mpig_vmpi_dt_long_double)
+/* c paired datatypes used predominantly for minloc/maxloc reduce operations */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_short_int;
+#define MPIG_VMPI_SHORT_INT (&mpig_vmpi_dt_short_int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_2int;
+#define MPIG_VMPI_2INT (&mpig_vmpi_dt_2int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_long_int;
+#define MPIG_VMPI_LONG_INT (&mpig_vmpi_dt_long_int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_float_int;
+#define MPIG_VMPI_FLOAT_INT (&mpig_vmpi_dt_float_int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_double_int;
+#define MPIG_VMPI_DOUBLE_INT (&mpig_vmpi_dt_double_int)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_long_double_int;
+#define MPIG_VMPI_LONG_DOUBLE_INT (&mpig_vmpi_dt_long_double_int)
+/* fortran basic datatypes */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_logical;
+#define MPIG_VMPI_LOGICAL (&mpig_vmpi_dt_logical)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_character;
+#define MPIG_VMPI_CHARACTER (&mpig_vmpi_dt_character)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_integer;
+#define MPIG_VMPI_INTEGER (&mpig_vmpi_dt_integer)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_real;
+#define MPIG_VMPI_REAL (&mpig_vmpi_dt_real)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_double_precision;
+#define MPIG_VMPI_DOUBLE_PRECISION (&mpig_vmpi_dt_double_precision)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_complex;
+#define MPIG_VMPI_COMPLEX (&mpig_vmpi_dt_complex)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_double_complex;
+#define MPIG_VMPI_DOUBLE_COMPLEX (&mpig_vmpi_dt_double_complex)
+/* fortran paired datatypes used predominantly for minloc/maxloc reduce operations */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_2integer;
+#define MPIG_VMPI_2INTEGER (&mpig_vmpi_dt_2integer)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_2complex;
+#define MPIG_VMPI_2COMPLEX (&mpig_vmpi_dt_2complex)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_2real;
+#define MPIG_VMPI_2REAL (&mpig_vmpi_dt_2real)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_2double_complex;
+#define MPIG_VMPI_2DOUBLE_COMPLEX (&mpig_vmpi_dt_2double_complex)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_2double_precision;
+#define MPIG_VMPI_2DOUBLE_PRECISION (&mpig_vmpi_dt_2double_precision)
+/* fortran size specific datatypes */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_integer1;
+#define MPIG_VMPI_INTEGER1 (&mpig_vmpi_dt_integer1)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_integer2;
+#define MPIG_VMPI_INTEGER2 (&mpig_vmpi_dt_integer2)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_integer4;
+#define MPIG_VMPI_INTEGER4 (&mpig_vmpi_dt_integer4)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_integer8;
+#define MPIG_VMPI_INTEGER8 (&mpig_vmpi_dt_integer8)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_integer16;
+#define MPIG_VMPI_INTEGER16 (&mpig_vmpi_dt_integer16)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_real4;
+#define MPIG_VMPI_REAL4 (&mpig_vmpi_dt_real4)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_real8;
+#define MPIG_VMPI_REAL8 (&mpig_vmpi_dt_real8)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_real16;
+#define MPIG_VMPI_REAL16 (&mpig_vmpi_dt_real16)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_complex8;
+#define MPIG_VMPI_COMPLEX8 (&mpig_vmpi_dt_complex8)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_complex16;
+#define MPIG_VMPI_COMPLEX16 (&mpig_vmpi_dt_complex16)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_complex32;
+#define MPIG_VMPI_COMPLEX32 (&mpig_vmpi_dt_complex32)
+/* type representing a packed user buffer */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_packed;
+#define MPIG_VMPI_PACKED (&mpig_vmpi_dt_packed)
+/* pseudo datatypes used to manipulate the extent */
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_lb;
+#define MPIG_VMPI_LB (&mpig_vmpi_dt_lb)
+extern const mpig_vmpi_datatype_t mpig_vmpi_dt_ub;
+#define MPIG_VMPI_UB (&mpig_vmpi_dt_ub)
 
-void mp_create_miproto(
-    char **				mp_miproto,
-    int *				nbytes);
+/* collective operations (for MPI_Reduce, etc.) */
+extern const mpig_vmpi_op_t mpig_vmpi_op_null;
+#define MPIG_VMPI_OP_NULL (&mpig_vmpi_op_null)
+extern const mpig_vmpi_op_t mpig_vmpi_op_max;
+#define MPIG_VMPI_MAX (&mpig_vmpi_op_max)
+extern const mpig_vmpi_op_t mpig_vmpi_op_min;
+#define MPIG_VMPI_MIN (&mpig_vmpi_op_min)
+extern const mpig_vmpi_op_t mpig_vmpi_op_sum;
+#define MPIG_VMPI_SUM (&mpig_vmpi_op_sum)
+extern const mpig_vmpi_op_t mpig_vmpi_op_prod;
+#define MPIG_VMPI_PROD (&mpig_vmpi_op_prod)
+extern const mpig_vmpi_op_t mpig_vmpi_op_land;
+#define MPIG_VMPI_LAND (&mpig_vmpi_op_land)
+extern const mpig_vmpi_op_t mpig_vmpi_op_band;
+#define MPIG_VMPI_BAND (&mpig_vmpi_op_band)
+extern const mpig_vmpi_op_t mpig_vmpi_op_lor;
+#define MPIG_VMPI_LOR (&mpig_vmpi_op_lor)
+extern const mpig_vmpi_op_t mpig_vmpi_op_bor;
+#define MPIG_VMPI_BOR (&mpig_vmpi_op_bor)
+extern const mpig_vmpi_op_t mpig_vmpi_op_lxor;
+#define MPIG_VMPI_LXOR (&mpig_vmpi_op_lxor)
+extern const mpig_vmpi_op_t mpig_vmpi_op_bxor;
+#define MPIG_VMPI_BXOR (&mpig_vmpi_op_bxor)
+extern const mpig_vmpi_op_t mpig_vmpi_op_minloc;
+#define MPIG_VMPI_MINLOC (&mpig_vmpi_op_minloc)
+extern const mpig_vmpi_op_t mpig_vmpi_op_maxloc;
+#define MPIG_VMPI_MAXLOC (&mpig_vmpi_op_maxloc)
+extern const mpig_vmpi_op_t mpig_vmpi_op_replace;
+#define MPIG_VMPI_REPLACE (&mpig_vmpi_op_replace)
 
-int mp_send(
-    void *				buff, 
-    int					count, 
-    void *				type, 
-    int					dest, 
-    int					tag,
-    void *				comm);
+/* error classes */
+extern const int MPIG_VMPI_ERR_BUFFER;
+extern const int MPIG_VMPI_ERR_COUNT;
+extern const int MPIG_VMPI_ERR_TYPE;
+extern const int MPIG_VMPI_ERR_TAG;
+extern const int MPIG_VMPI_ERR_COMM;
+extern const int MPIG_VMPI_ERR_RANK;
+extern const int MPIG_VMPI_ERR_ROOT;
+extern const int MPIG_VMPI_ERR_TRUNCATE;
+extern const int MPIG_VMPI_ERR_GROUP;
+extern const int MPIG_VMPI_ERR_OP;
+extern const int MPIG_VMPI_ERR_REQUEST;
+extern const int MPIG_VMPI_ERR_TOPOLOGY;
+extern const int MPIG_VMPI_ERR_DIMS;
+extern const int MPIG_VMPI_ERR_ARG;
+extern const int MPIG_VMPI_ERR_OTHER;
+extern const int MPIG_VMPI_ERR_UNKNOWN;
+extern const int MPIG_VMPI_ERR_INTERN;
+extern const int MPIG_VMPI_ERR_IN_STATUS;
+extern const int MPIG_VMPI_ERR_PENDING;
+extern const int MPIG_VMPI_ERR_FILE;
+extern const int MPIG_VMPI_ERR_ACCESS;
+extern const int MPIG_VMPI_ERR_AMODE;
+extern const int MPIG_VMPI_ERR_BAD_FILE;
+extern const int MPIG_VMPI_ERR_FILE_EXISTS;
+extern const int MPIG_VMPI_ERR_FILE_IN_USE;
+extern const int MPIG_VMPI_ERR_NO_SPACE;
+extern const int MPIG_VMPI_ERR_NO_SUCH_FILE;
+extern const int MPIG_VMPI_ERR_IO;
+extern const int MPIG_VMPI_ERR_READ_ONLY;
+extern const int MPIG_VMPI_ERR_CONVERSION;
+extern const int MPIG_VMPI_ERR_DUP_DATAREP;
+extern const int MPIG_VMPI_ERR_UNSUPPORTED_DATAREP;
+extern const int MPIG_VMPI_ERR_INFO;
+extern const int MPIG_VMPI_ERR_INFO_KEY;
+extern const int MPIG_VMPI_ERR_INFO_VALUE;
+extern const int MPIG_VMPI_ERR_INFO_NOKEY;
+extern const int MPIG_VMPI_ERR_NAME;
+extern const int MPIG_VMPI_ERR_NO_MEM;
+extern const int MPIG_VMPI_ERR_NOT_SAME;
+extern const int MPIG_VMPI_ERR_PORT;
+extern const int MPIG_VMPI_ERR_QUOTA;
+extern const int MPIG_VMPI_ERR_SERVICE;
+extern const int MPIG_VMPI_ERR_SPAWN;
+extern const int MPIG_VMPI_ERR_UNSUPPORTED_OPERATION;
+extern const int MPIG_VMPI_ERR_WIN;
+extern const int MPIG_VMPI_ERR_BASE;
+extern const int MPIG_VMPI_ERR_LOCKTYPE;
+extern const int MPIG_VMPI_ERR_KEYVAL;
+extern const int MPIG_VMPI_ERR_RMA_CONFLICT;
+extern const int MPIG_VMPI_ERR_RMA_SYNC;
+extern const int MPIG_VMPI_ERR_SIZE;
+extern const int MPIG_VMPI_ERR_DISP;
+extern const int MPIG_VMPI_ERR_ASSERT;
 
-int mp_isend(
-    void *				buff, 
-    int					count, 
-    void *				type, 
-    int					dest, 
-    int					tag,
-    void *				comm,
-    void *				request);
+#endif /* !defined(BUILDING_MPIG_VMPI_C) */
 
-int mp_ssend(
-    void *				buff, 
-    int					count, 
-    void *				type, 
-    int					dest, 
-    int					tag,
-    void *				comm);
-
-int mp_issend(
-    void *				buff, 
-    int					count, 
-    void *				type, 
-    int					dest, 
-    int					tag,
-    void *				comm,
-    void *				request);
-
-int mp_cancel(void *request);
-
-int mp_recv(
-    void *				buff, 
-    int					count, 
-    void *				type, 
-    int					src, 
-    int					tag,
-    void *				comm,
-    void *				status);
-
-int mp_wait(
-    void *                              request,
-    void *                              status);
-
-int mp_test_cancelled(
-    void *                              status,
-    int *                               flag);
-
-int mp_test(
-    void *				request,
-    int *				flag,
-    void *				status);
-
-int mp_probe(
-    int					src,
-    int					tag,
-    void *				comm,
-    void *				status);
-
-int mp_iprobe(
-    int					src,
-    int					tag,
-    void *				comm,
-    int *				flag,
-    void *				status);
-
-int mp_get_count(
-    void *				status,
-    void *				type, 
-    int *				count);
-
-int mp_get_elements(
-    void *				status,
-    void *				type, 
-    int *				elements);
-
-int mp_status_get_source(
-    void *				status);
-
-int mp_status_get_tag(
-    void *				status);
-
-int mp_status_get_error(
-    void *				status);
-
-int mp_comm_get_size();
-
-int mp_comm_split(
-    void *				oldcomm,
-    int					color,
-    int					key,
-    void *				newcomm);
-
-int mp_comm_dup(
-    void *				oldcomm,
-    void *				newcomm);
-
-int mp_intercomm_create(
-    void *				local_comm,
-    int					local_leader,
-    void *				peer_comm,
-    int					remote_leader,
-    int					tag,
-    void *				newintercomm);
-
-int mp_intercomm_merge(
-    void *				intercomm,
-    int					high,
-    void *				intracomm);
+#define MPIG_VMPI_SUCCESS (0)  /* the MPI standard defines MPI_SUCCESS to always be zero */
 
 
-int mp_comm_free(
-    void *				comm);
+/*
+ * translation functions used to access vendor MPI routines and data structures
+ */
+int mpig_vmpi_init(int * argc, char *** argv);
 
-int mp_request_free(
-    void *				request);
+int mpig_vmpi_finalize(void);
 
-/********************************/
-/* Derived Datatype Contructors */
-/********************************/
+/* point-to-point functions */
+int mpig_vmpi_send(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int dest, int tag, const mpig_vmpi_comm_t * comm);
 
-int mp_type_commit(
-    void *				type);
+int mpig_vmpi_isend(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int dest, int tag, const mpig_vmpi_comm_t * comm,
+    mpig_vmpi_request_t * request_p);
 
-int mp_type_free(
-    void *				type);
+int mpig_vmpi_rsend(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int dest, int tag, const mpig_vmpi_comm_t * comm);
 
-int mp_type_permanent_setup(
-    void *				mpi_type,
-    int					vmpi_type);
+int mpig_vmpi_irsend(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int dest, int tag, const mpig_vmpi_comm_t * comm,
+    mpig_vmpi_request_t * request_p);
 
-int mp_type_permanent_free(
-    void *				mpi_type,
-    int					vmpi_type);
+int mpig_vmpi_ssend(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int dest, int tag, const mpig_vmpi_comm_t * comm);
 
-int mp_type_contiguous(
-    int					count,
-    void *				old_type,
-    void *				new_type);
+int mpig_vmpi_issend(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int dest, int tag, const mpig_vmpi_comm_t * comm,
+    mpig_vmpi_request_t * request_p);
 
-int mp_type_hvector(
-    int					count, 
-    int					blocklength, 
-    MPI_Aint				stride, 
-    void *				old_type, 
-    void *				new_type);
+int mpig_vmpi_recv(void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int src, int tag, const mpig_vmpi_comm_t * comm,
+    mpig_vmpi_status_t * status_p);
 
-int mp_type_hindexed(
-    int					count, 
-    int *				blocklengths, 
-    MPI_Aint *				displacements, 
-    void *				old_type, 
-    void *				new_type);
+int mpig_vmpi_irecv(void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int src, int tag, const mpig_vmpi_comm_t * comm,
+    mpig_vmpi_request_t * request_p);
 
-int mp_type_struct(
-    int					count, 
-    int *				blocklengths, 
-    MPI_Aint *				displacements, 
-    void *				old_types, 
-    void *				new_type);
+int mpig_vmpi_cancel(mpig_vmpi_request_t * request_p);
 
-/******************************************************/
-/* START Special boostrap wrappers for vMPI functions */
-/******************************************************/
+int mpig_vmpi_request_free(mpig_vmpi_request_t * request_p);
 
-int mp_bootstrap_bcast(void *buff, int  count, int type);
-int mp_bootstrap_gather(void *sbuff, int scnt, void *rbuff, int rcnt);
-int mp_bootstrap_gatherv(void *sendbuff,
-                        int sendcount,
-                        void *recvbuff,
-                        int *recvcounts,
-                        int *displs);
+int mpig_vmpi_wait(mpig_vmpi_request_t * request_p, mpig_vmpi_status_t * status_p);
 
-/****************************************************/
-/* END Special boostrap wrappers for vMPI functions */
-/****************************************************/
+int mpig_vmpi_test(mpig_vmpi_request_t * request_p, int * flag_p, mpig_vmpi_status_t * status_p);
 
-#if !defined(VMPI_NO_MPICH)
+int mpig_vmpi_test_cancelled(mpig_vmpi_status_t * status_p, int * flag_p);
 
-int vmpi_error_to_mpich_error(
-    int					vmpi_error);
+int mpig_vmpi_probe(int src, int tag, const mpig_vmpi_comm_t * comm, mpig_vmpi_status_t * status_p);
 
-int vmpi_grank_to_mpich_grank(
-    int					vmpi_grank);
+int mpig_vmpi_iprobe(int src, int tag, const mpig_vmpi_comm_t * comm, int * flag_p, mpig_vmpi_status_t * status_p);
 
-#endif /* !defined(VMPI_NO_MPICH) */
+/* collective communication functions */
+int mpig_vmpi_bcast(const void * buf, int cnt, const mpig_vmpi_datatype_t * dt, int root, const mpig_vmpi_comm_t * comm);
 
-#endif /* defined(MPIG_VMPI) */
-#endif /* !defined(MPICH2_MPIG_VMPI_H) */
+int mpig_vmpi_gather(const void * send_buf, int send_cnt, const mpig_vmpi_datatype_t * send_dt, void * recv_buf, int recv_cnt,
+    const mpig_vmpi_datatype_t * recv_dt, int root, const mpig_vmpi_comm_t * comm);
+
+int mpig_vmpi_gatherv(const void * send_buf, int send_cnt, const mpig_vmpi_datatype_t * send_dt, void * recv_buf,
+    const int * recv_cnts, const int * recv_displs, const mpig_vmpi_datatype_t * recv_dt, int root, const mpig_vmpi_comm_t * comm);
+
+int mpig_vmpi_allreduce(const void * send_buf, void * recv_buf, int cnt, const mpig_vmpi_datatype_t * dt,
+    const mpig_vmpi_op_t * op, const mpig_vmpi_comm_t * comm);
+
+/* communicator functions */
+int mpig_vmpi_comm_size(const mpig_vmpi_comm_t * comm, int * size_p);
+
+int mpig_vmpi_comm_rank(const mpig_vmpi_comm_t * comm, int * rank_p);
+
+int mpig_vmpi_comm_dup(const mpig_vmpi_comm_t * old_comm, mpig_vmpi_comm_t * new_comm_p);
+
+int mpig_vmpi_comm_split(const mpig_vmpi_comm_t * old_comm, int color, int key, mpig_vmpi_comm_t * new_comm_p);
+
+int mpig_vmpi_intercomm_create(const mpig_vmpi_comm_t * local_comm, int local_leader, const mpig_vmpi_comm_t * peer_comm,
+    int remote_leader, int tag, mpig_vmpi_comm_t * new_intercomm_p);
+
+int mpig_vmpi_intercomm_merge(const mpig_vmpi_comm_t * intercomm, int high, mpig_vmpi_comm_t * new_intracomm_p);
+
+int mpig_vmpi_comm_free(mpig_vmpi_comm_t * comm_p);
+
+/* datatype functions */
+int mpig_vmpi_type_commit(mpig_vmpi_datatype_t dt_p);
+
+int mpig_vmpi_type_free(mpig_vmpi_datatype_t * dt_p);
+
+int mpig_vmpi_type_contiguous(int cnt, const mpig_vmpi_datatype_t * old_dt, mpig_vmpi_datatype_t * new_dt_p);
+
+int mpig_vmpi_type_hvector(int cnt, int blocklength, mpig_vmpi_aint_t stride, const mpig_vmpi_datatype_t * old_dt,
+    mpig_vmpi_datatype_t * new_dt_p);
+
+int mpig_vmpi_type_hindexed(int cnt, int * blocklengths, mpig_vmpi_aint_t * displacements, const mpig_vmpi_datatype_t * old_dt,
+    mpig_vmpi_datatype_t * new_dt);
+
+int mpig_vmpi_type_struct(int cnt, int * blocklengths, mpig_vmpi_aint_t * displacements, const mpig_vmpi_datatype_t ** old_dts,
+    mpig_vmpi_datatype_t * new_dt);
+
+int mpig_vmpi_get_count(mpig_vmpi_status_t * status_p, const mpig_vmpi_datatype_t * dt, int * cnt_p);
+
+int mpig_vmpi_get_elements(mpig_vmpi_status_t * status_p, const mpig_vmpi_datatype_t * dt, int * elements_p);
+
+/* error extraction and conversion functions */
+int mpig_vmpi_error_class(int vendor_errno, int * vendor_class_p);
+
+int mpig_vmpi_error_string(int vendor_errno, char * string, int * result_length);
+
+
+/*
+ * utility functions that are not defined in the MPI standard but are needed to transition between MPICH2 and the vendor MPI
+ */
+int mpig_vmpi_status_get_source(const mpig_vmpi_status_t * status_p);
+
+int mpig_vmpi_status_get_tag(const mpig_vmpi_status_t * status_p);
+
+int mpig_vmpi_status_get_error(const mpig_vmpi_status_t * status_p);
+
+int mpig_vmpi_comm_is_null(const mpig_vmpi_comm_t * comm);
+
+int mpig_vmpi_datatype_is_null(const mpig_vmpi_datatype_t * dt);
+
+int mpig_vmpi_request_is_null(const mpig_vmpi_request_t * req);
+
+
+#endif /* !defined(MPICH2_MPIG_VMPI_H_INCLUDED) */

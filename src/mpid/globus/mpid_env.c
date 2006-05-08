@@ -50,7 +50,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	/* get the name of the machine on which the local process is running */
 #       if defined(HAVE_GETHOSTNAME)
 	{
-	    if(gethostname(mpig_process.my_hostname, MPIG_PROCESSOR_NAME_SIZE) != 0)
+	    if(gethostname(mpig_process.my_hostname, (size_t) MPIG_PROCESSOR_NAME_SIZE) != 0)
 	    {
 		mpig_process.my_hostname[0] = '\0';
 	    }
@@ -63,6 +63,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
     mpig_process_rc_rel(TRUE);
     
+    /* set the maximum size of a message tag.  a communication module may reduce this value if needed. */
+    MPIR_Process.attrs.tag_ub = INT_MAX;
 
     /* activate globus modules */
     globus_module_set_args(argc, argv);
@@ -77,15 +79,15 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpig_recvq_init(&mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_init");
     
-    /* create and populate the buiness card */
-    mpig_bc_create(&bc, &mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_init");
+    /* initialize the process management module which interfaces with globus */
+    mpi_errno = mpig_pm_init();
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_init");
 
     /* initialize the process group tracking subsystem */
     mpig_pg_init(&mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**dev|pg_init");
 
-    /* initialize the communication modules, and populate the business card with contact information */
+    /* initialize the communication modules */
     mpi_errno = mpig_cm_self_init(argc, argv);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "self");
     
@@ -98,6 +100,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpi_errno = mpig_cm_other_init(argc, argv);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s", "other");
     
+    /* create and populate the buiness card with contact information from the communication modules */
+    mpig_bc_create(&bc, &mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_init");
+
     mpi_errno = mpig_cm_self_add_contact_info(&bc);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s", "self");
 
@@ -110,17 +116,14 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpi_errno = mpig_cm_other_add_contact_info(&bc);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s", "other");
 
-    /*initialize the process management module which interfaces with Globus.  use it to exchange the businesses cards and obtian
-      information about the process group. */
-    mpi_errno = mpig_pm_init();
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_init");
-
+    /* use the process management module to exchange the businesses cards and obtian information about the process group. */
     mpi_errno = mpig_pm_exchange_business_cards(&bc, &bcs);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_xchg");
 
     mpig_pm_get_pg_id(&pg_id);
     mpig_pm_get_pg_size(&pg_size);
     mpig_pm_get_pg_rank(&pg_rank);
+    mpig_pm_get_app_num(&MPIR_Process.attrs.appnum);
 
     /* place a copy of the process group information in the process structure */
     mpig_process.my_pg_id = MPIU_Strdup(pg_id);
@@ -267,11 +270,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
 #   endif
     
-    /* set global (static) process attributes */
-    MPIR_Process.attrs.tag_ub = MPIG_TAG_UB;
-    /* XXX: appnum should be the subjob number */
-    MPIR_Process.attrs.appnum = 0;
-
     /* set provided thread level */
     if (provided != NULL)
     {
@@ -397,10 +395,6 @@ int MPID_Finalize()
     rc = mpig_pm_finalize();
     MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|pm_finalize");
     
-    /* deactivate globus modules */
-    rc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
-    MPIU_ERR_CHKANDJUMP1((rc), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate", "**globus|module_deactivate %s", "common");
-
     /* shutdown the receive queue module */
     mpig_recvq_finalize(&mpi_errno, &failed);
     MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_finalize");
@@ -408,7 +402,11 @@ int MPID_Finalize()
     /* shutdown the request allocator module */
     mpig_request_alloc_finalize();
     
-  fn_return:
+    /* deactivate globus modules */
+    rc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
+    MPIU_ERR_CHKANDJUMP1((rc), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate", "**globus|module_deactivate %s", "common");
+
+   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: mpi_errno=0x%08x", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
@@ -536,7 +534,7 @@ int MPID_Get_processor_name(char * name, int * resultlen)
     len = (int) strlen(mpig_process.my_hostname);
     if (len > 0 && len < MPI_MAX_PROCESSOR_NAME)
     {
-	MPIU_Strncpy(name, mpig_process.my_hostname, MPI_MAX_PROCESSOR_NAME);
+	MPIU_Strncpy(name, mpig_process.my_hostname, (size_t) MPI_MAX_PROCESSOR_NAME);
 	*resultlen = len;
     }
     else

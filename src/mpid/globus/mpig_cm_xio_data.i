@@ -23,14 +23,14 @@
 {													\
     *(unsigned char *)(mpig_databuf_get_ptr(msgbuf_)) = (unsigned char) mpig_databuf_get_eod(msgbuf_);	\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", msg_size=%u",	\
-		     (MPIG_PTR_CAST) (msgbuf_), (unsigned) mpig_databuf_get_eod(msgbuf_)));		\
+	(MPIG_PTR_CAST) (msgbuf_), (unsigned) mpig_databuf_get_eod(msgbuf_)));				\
 }
 
 #define mpig_cm_xio_msg_hdr_get_msg_size(msgbuf_, msg_size_p_)						\
 {													\
     *(msg_size_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", msg_size=%u",	\
-		     (MPIG_PTR_CAST) (msgbuf_),  (unsigned) *(msg_size_p_)));				\
+	(MPIG_PTR_CAST) (msgbuf_),  (unsigned) *(msg_size_p_)));					\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_size);				\
 }
 
@@ -40,7 +40,7 @@
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (msg_type_);		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", msg_type=%s",	\
-		     (MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_msg_type_get_string(msg_type_)));		\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_msg_type_get_string(msg_type_)));			\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_type);				\
 }
 
@@ -48,7 +48,7 @@
 {													\
     *(msg_type_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", msg_type=%s",	\
-		     (MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_msg_type_get_string(*(msg_type_p_))));	\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_msg_type_get_string(*(msg_type_p_))));			\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_type);				\
 }
 
@@ -58,7 +58,7 @@
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (endian_);			\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", endian=%s",		\
-		     (MPIG_PTR_CAST) (msgbuf_), ((endian_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+	(MPIG_PTR_CAST) (msgbuf_), ((endian_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));		\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_endian);					\
 }
 
@@ -66,7 +66,7 @@
 {														\
     *(endian_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);					\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", endian=%s",			\
-		     (MPIG_PTR_CAST) (msgbuf_), (*(endian_p_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+	(MPIG_PTR_CAST) (msgbuf_), (*(endian_p_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));			\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_endian);						\
 }
 
@@ -76,7 +76,7 @@
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (df_);			\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", data_format=%d",	\
-		     (MPIG_PTR_CAST) (msgbuf_), (df_)));						\
+	(MPIG_PTR_CAST) (msgbuf_), (df_)));								\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_df);					\
 }
 
@@ -84,7 +84,7 @@
 {													\
     *(df_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);					\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", data_format=%d",	\
-		     (MPIG_PTR_CAST) (msgbuf_), *(df_p_)));						\
+	(MPIG_PTR_CAST) (msgbuf_), *(df_p_)));								\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_df);					\
 }
 
@@ -94,7 +94,7 @@
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (req_type_);		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", req_type=%s",	\
-		     (MPIG_PTR_CAST) (msgbuf_), mpig_request_type_get_string(req_type_)));		\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_request_type_get_string(req_type_)));				\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_type);				\
 }
 
@@ -102,7 +102,7 @@
 {													\
     *(req_type_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", req_type=%s",	\
-		     (MPIG_PTR_CAST) (msgbuf_), mpig_request_type_get_string(*(req_type_p_))));		\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_request_type_get_string(*(req_type_p_))));			\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_type);				\
 }
 
@@ -113,12 +113,14 @@
     int32_t rank__ = (rank_);											\
     int32_t tag__ = (tag_);											\
     int32_t ctx__ = (ctx_);											\
-    int32_t * ptr__ = (int32_t *) mpig_databuf_get_eod_ptr(msgbuf_);						\
-    mpig_dc_put_int32(ptr__++, (rank__));									\
-    mpig_dc_put_int32(ptr__++, (tag__));									\
-    mpig_dc_put_int32(ptr__++, (ctx__));									\
+    char * ptr__ = (char *) mpig_databuf_get_eod_ptr(msgbuf_);							\
+    mpig_dc_put_int32(ptr__, (rank__));										\
+    ptr__ += sizeof(int32_t);											\
+    mpig_dc_put_int32(ptr__, (tag__));										\
+    ptr__ += sizeof(int32_t);											\
+    mpig_dc_put_int32(ptr__, (ctx__));										\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", rank=%d, tag=%d ctx=%d",	\
-		     (MPIG_PTR_CAST) (msgbuf_), (rank_), (tag_), (ctx_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), (rank_), (tag_), (ctx_)));							\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_envelope);					\
 }
 
@@ -127,15 +129,17 @@
     int32_t rank__;												\
     int32_t tag__;												\
     int32_t ctx__;												\
-    int32_t * ptr__ = (int32_t *) mpig_databuf_get_pos_ptr(msgbuf_);						\
-    mpig_dc_get_int32((endian_), ptr__++, &rank__);								\
-    mpig_dc_get_int32((endian_), ptr__++, &tag__);								\
-    mpig_dc_get_int32((endian_), ptr__++, &ctx__);								\
+    char * ptr__ = (char *) mpig_databuf_get_pos_ptr(msgbuf_);							\
+    mpig_dc_get_int32((endian_), ptr__, &rank__);								\
+    ptr__ += sizeof(int32_t);											\
+    mpig_dc_get_int32((endian_), ptr__, &tag__);								\
+    ptr__ += sizeof(int32_t);											\
+    mpig_dc_get_int32((endian_), ptr__, &ctx__);								\
     *(rank_p_) = rank__;											\
     *(tag_p_) = tag__;												\
     *(ctx_p_) = ctx__;												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", rank=%d, tag=%d ctx=%d",	\
-		     (MPIG_PTR_CAST) (msgbuf_), *(rank_p_), *(tag_p_), *(ctx_p_)));				\
+	(MPIG_PTR_CAST) (msgbuf_), *(rank_p_), *(tag_p_), *(ctx_p_)));						\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_envelope);					\
 }
 
@@ -146,7 +150,7 @@
     int32_t rank__ = (rank_);									\
     mpig_dc_put_int32(mpig_databuf_get_eod_ptr(msgbuf_), (rank__));				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", rank=%d",	\
-		     (MPIG_PTR_CAST) (msgbuf_), (rank_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), (rank_)));							\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_rank);				\
 }
 
@@ -156,7 +160,7 @@
     mpig_dc_get_int32((endian_), mpig_databuf_get_pos_ptr(msgbuf_), &rank__);			\
     *(rank_p_) = rank__;									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", rank=%d",	\
-		     (MPIG_PTR_CAST) (msgbuf_), *(rank_p_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), *(rank_p_)));						\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_rank);				\
 }
 
@@ -167,7 +171,7 @@
     u_int64_t data_size__ = (u_int64_t) (data_size_);								\
     mpig_dc_put_uint64(mpig_databuf_get_eod_ptr(msgbuf_), data_size__);						\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
-		     (MPIG_PTR_CAST) (msgbuf_), (MPIU_SIZE_T) (data_size_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), (MPIU_Size_t) (data_size_)));						\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_data_size);					\
 }
 
@@ -178,7 +182,7 @@
     *(data_size_p_) = data_size__;										\
     MPIU_Assertp(data_size__ == *(data_size_p_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
-		     (MPIG_PTR_CAST) (msgbuf_), (MPIU_SIZE_T) *(data_size_p_)));				\
+	(MPIG_PTR_CAST) (msgbuf_), (MPIU_Size_t) *(data_size_p_)));						\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_data_size);					\
 }
 
@@ -189,7 +193,7 @@
     int32_t req_id__ = (req_id_);										\
     mpig_dc_put_int32(mpig_databuf_get_eod_ptr(msgbuf_), (req_id__));						\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", req_id=" MPIG_HANDLE_FMT,	\
-		     (MPIG_PTR_CAST) (msgbuf_), (MPIU_SIZE_T) (req_id_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), (unsigned)(req_id_)));							\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_id);						\
 }
 
@@ -199,7 +203,7 @@
     mpig_dc_get_int32((endian_), mpig_databuf_get_pos_ptr(msgbuf_), &req_id__);					\
     *(req_id_p_) = req_id__;											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", req_id=" MPIG_HANDLE_FMT,	\
-		     (MPIG_PTR_CAST) (msgbuf_), (MPIU_SIZE_T) *(req_id_p_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), (unsigned) *(req_id_p_)));							\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_id);						\
 }
 
@@ -209,7 +213,7 @@
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) ((bool_) ? 0xff : 0x0);	\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", bool=%s",		\
-		     (MPIG_PTR_CAST) (msgbuf_), MPIG_BOOL_STR(bool_)));					\
+	(MPIG_PTR_CAST) (msgbuf_), MPIG_BOOL_STR(bool_)));						\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_bool);					\
 }
 
@@ -217,7 +221,7 @@
 {												\
     *(bool_p_) = (*(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_)) ? TRUE : FALSE;		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", bool=%s",	\
-		     (MPIG_PTR_CAST) (msgbuf_), MPIG_BOOL_STR(*(bool_p_))));			\
+	(MPIG_PTR_CAST) (msgbuf_), MPIG_BOOL_STR(*(bool_p_))));					\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_type);			\
 }
 
@@ -227,7 +231,7 @@
 {														\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (conn_open_resp_);			\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", conn_open_resp=%s",		\
-		     (MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(conn_open_resp_)));	\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(conn_open_resp_)));			\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_conn_open_resp);					\
 }
 
@@ -235,7 +239,7 @@
 {														\
     *(conn_open_resp_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", conn_open_resp=%s",		\
-		     (MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(*(conn_open_resp_p_))));	\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(*(conn_open_resp_p_))));		\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_conn_open_resp);					\
 }
 
@@ -385,7 +389,7 @@ MPIG_STATIC void mpig_cm_xio_stream_sreq_init(
 	
 	MPID_Segment_init(buf, cnt, dt, &sreq_cm->seg, 0); /* always packs using local data format */
 	
-	mpig_databuf_create(MPIG_CM_XIO_DATA_SPARSE_BUFFER_SIZE, &sreq_cm->databuf, mpi_errno_p, &failed);
+	mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_SPARSE_BUFFER_SIZE, &sreq_cm->databuf, mpi_errno_p, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
 			     "intermediate pack buffer");
 
@@ -661,7 +665,7 @@ MPIG_STATIC void mpig_cm_xio_stream_rreq_init(
 
 	if (rreq_cm->databuf == NULL)
 	{
-	    mpig_databuf_create(MPIG_CM_XIO_DATA_SPARSE_BUFFER_SIZE, &rreq_cm->databuf, mpi_errno_p, &failed);
+	    mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_SPARSE_BUFFER_SIZE, &rreq_cm->databuf, mpi_errno_p, &failed);
 	    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
 				 "intermediate unpack buffer");
 	}
@@ -745,7 +749,7 @@ MPIG_STATIC void mpig_cm_xio_stream_rreq_unpack(
     else if (rreq_cm->stream_pos != (MPIU_Size_t) rreq->status.count)
     {
 	/* if truncation has occurred, then set the IOV to drain the next chunck bytes from the network. */
-	mpig_cm_xio_stream_rreq_handle_truncation(rreq, 0, mpi_errno_p, &failed);
+	mpig_cm_xio_stream_rreq_handle_truncation(rreq, (MPIU_Size_t) 0, mpi_errno_p, &failed);
 	MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|stream_trunc");
     }
     else if (rreq_cm->buf_type == MPIG_CM_XIO_USERBUF_TYPE_CONTIG)
@@ -1297,7 +1301,7 @@ MPIG_STATIC void mpig_cm_xio_stream_rreq_handle_truncation(
     if (rreq_cm->databuf == NULL || mpig_databuf_get_size(rreq_cm->databuf) < MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE)
     {
 	if (rreq_cm->databuf != NULL) mpig_databuf_destroy(rreq_cm->databuf);
-	mpig_databuf_create(MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cm->databuf, mpi_errno_p, &failed);
+	mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cm->databuf, mpi_errno_p, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "truncation receive buffer");
     }
 

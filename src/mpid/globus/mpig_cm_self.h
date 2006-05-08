@@ -10,25 +10,14 @@
 #define MPICH2_MPIG_CM_SELF_H_INCLUDED
 
 /*
- * Add communication module types to be included in the enumeration of modules
+ * add communication module types to be included in the enumeration of modules
  */
 #define MPIG_CM_TYPE_SELF_LIST	\
     MPIG_CM_TYPE_SELF
 
-/*
- * Define the communication module structure to be included in a VC
- */
-#define MPIG_VC_CM_SELF_DECL
-
 
 /*
- * Define the communication module structure to be included in a request
- */
-#define MPIG_REQUEST_CM_SELF_DECL
-
-
-/*
- * Global funciton prototypes
+ * global function prototypes
  */
 int mpig_cm_self_init(int * argc, char *** argv);
 
