@@ -1649,6 +1649,26 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 
     MPIG_UNUSED_VAR(fcname);
 
+    /* increment the reference count on the real VC to reflect the internal reference to it.  this is to prevent the real VC from
+       disappearing before the connection completes.  (this could occur if the local process did a send, cancelled that send, and
+       then called MPI_{Finalize,Comm_free,Comm_disconnect}. */
+    {
+	bool_t was_inuse;
+	mpig_cm_xio_vc_inc_ref_count(real_vc, &was_inuse);
+	if (was_inuse == FALSE)
+	{   /* --BEGIN ERROR HANDLING-- */
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT,
+		"ERROR: attempt to connect a VC with no references; likely a dangling pointer, vc=" MPIG_PTR_FMT,
+		(MPIG_PTR_CAST) real_vc));
+	    MPIU_ERR_SETFATALANDJUMP1(*mpi_errno_p, MPI_ERR_OTHER, "**globus|vc_ptr_bad", "**globus|vc_ptr_bad %p", real_vc);
+	}   /* --END ERROR HANDLING-- */
+    }
+    
+    /* change the state of the real VC to 'connecting' so that any additional send operations know not to initiate another
+       register connect.  this also allows the the code that handles incoming connections to detect a head-to-head connection
+       scenerio. */
+    mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_CONNECTING);
+
     /* allocate and initialize a temporary VC for use during connection establishment. */
     tmp_vc = (mpig_vc_t *) MPIU_Malloc(sizeof(mpig_vc_t));
     MPIU_ERR_CHKANDJUMP1((tmp_vc == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
@@ -1661,14 +1681,21 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
     mpig_cm_xio_vc_list_add(tmp_vc);
 
     /* pg and pg_rank are stored in the temp VC so the real VC can be located again later, adjusting the PG reference count
-       accordingly */
-    mpig_pg_mutex_lock(pg);
+       accordingly.  MT-NOTE: the real VC mutex must be released since the process group is locked below.  A thread should never
+       attempt to acquire the mutex of a process group while holding the mutex of a VC belonging to that thread.  In fact, with
+       current implementation, where the PG module uses a single global mutex, a thread should never attempt to acquire the mutex
+       of any PG while holding the mutex of any VC. */
+    mpig_vc_mutex_unlock(real_vc);
     {
-	mpig_pg_inc_ref_count(pg);
+	mpig_pg_mutex_lock(pg);
+	{
+	    mpig_pg_inc_ref_count(pg);
+	}
+	mpig_pg_mutex_unlock(pg);
+	mpig_vc_set_pg_info(tmp_vc, pg, pg_rank);
     }
-    mpig_pg_mutex_unlock(pg);
-    mpig_vc_set_pg_info(tmp_vc, pg, pg_rank);
-
+    mpig_vc_mutex_lock(real_vc);
+    
     /* create an XIO handle and initiate the connection */
     grc = globus_xio_handle_create(&tmp_vc_cm->handle, mpig_cm_xio_conn_stack);
     MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|xio_handle_create",
@@ -1682,8 +1709,8 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
     {
-	grc = globus_xio_register_open(tmp_vc_cm->handle, real_vc_cm->cs, mpig_cm_xio_conn_attrs, mpig_cm_xio_client_handle_open,
-	    (void *) tmp_vc);
+	grc = globus_xio_register_open(tmp_vc_cm->handle, real_vc_cm->cs, mpig_cm_xio_conn_attrs,
+	    mpig_cm_xio_client_handle_open,(void *) tmp_vc);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_open",
 	    "**globus|cm_xio|xio_reg_open %s", globus_error_print_chain(globus_error_peek(grc)));
 
@@ -1691,27 +1718,6 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
     }
     mpig_vc_mutex_unlock(tmp_vc);
     tmp_vc_locked = FALSE;
-
-    /* increment the reference count on the real VC to reflect the internal reference to it.  this is to prevent the real VC from
-       disappearing before the connection completes.  (this could occur if the local process did a send, cancelled that send, and
-       then called MPI_{Finalize,Comm_free,Comm_disconnect}. */
-    {
-	bool_t was_inuse;
-	mpig_cm_xio_vc_inc_ref_count(real_vc, &was_inuse);
-	if (was_inuse == FALSE)
-	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT,
-		"ERROR: attempt to connect a VC with no references; likely a dangling pointer, vc=" MPIG_PTR_FMT,
-		(MPIG_PTR_CAST) real_vc));
-	    MPIU_ERR_SET1(*mpi_errno_p, MPI_ERR_OTHER, "**globus|vc_ptr_bad", "**globus|vc_ptr_bad %p", real_vc);
-	    MPID_Abort(NULL, *mpi_errno_p, 13, NULL);
-	}   /* --END ERROR HANDLING-- */
-    }
-    
-    /* change the state of the real VC to 'connecting' so that any additional send operations know not to initiate another
-       register connect.  this also allows the the code that handles incoming connections to detect a head-to-head connection
-       scenerio. */
-    mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_CONNECTING);
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM,
@@ -1735,8 +1741,14 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
 		"**globus|cm_xio|tmp_vc_destroy %p", tmp_vc);
 	}
 
-	/* change the state of the real VC to the failed state */
-	mpig_cm_xio_vc_set_state(tmp_vc, MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING);
+	/* if the reference count of the real VC was bumped, then decrement it.  then, change the state of the real VC to the
+	   failed state */
+	if (mpig_cm_xio_vc_get_state(real_vc) == MPIG_CM_XIO_VC_STATE_CONNECTING)
+	{
+	    bool_t inuse;
+	    mpig_cm_xio_vc_dec_ref_count(real_vc, &inuse);
+	}
+	mpig_cm_xio_vc_set_state(real_vc, MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING);
 
 	/* FT: add code to make multiple connection attempts before declaring the VC as failed? */
 	
