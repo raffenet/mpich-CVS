@@ -26,6 +26,8 @@
 echo ""
 echo "START OF MPICH2PREREQ FOR THE GLOBUS DEVICE"
 
+MPILIBNAME=mpig
+
 # # define to the address where bug reports for this package should be sent.
 # PACKAGE_BUGREPORT="mpi@globus.org"
 # export PACKAGE_BUGREPORT
@@ -738,7 +740,7 @@ mpig_get_type_size "void *"
 # must be gathered here rather than in configure.
 #
 TYPEOF_MPIG_ALIGNED_T=""
-# SIZEOF_MPIG_ALIGNED_T=0
+SIZEOF_MPIG_ALIGNED_T=0
 # MEMALIGN_MPIG_ALIGNED_T=0
 mpig_memalign_max=0
 for mpig_type in "char" "short" "int" "long" "long long" "float" "double" "long double" "void *"; do
@@ -747,7 +749,7 @@ for mpig_type in "char" "short" "int" "long" "long long" "float" "double" "long 
     eval mpig_memalign="\$MEMALIGN_${mpig_utype}"
     if test ${mpig_memalign} -gt ${mpig_memalign_max} ; then
         TYPEOF_MPIG_ALIGNED_T=${mpig_type}
-        SIZEOF_MPIG_ALIGNED_T="\$SIZEOF_${mpig_utype}"
+        eval SIZEOF_MPIG_ALIGNED_T="\$SIZEOF_${mpig_utype}"
         # MEMALIGN_MPIG_ALIGNED_T=${mpig_memalign}
         mpig_memalign_max=${mpig_memalign}
     fi
@@ -756,7 +758,7 @@ echo "required memory alignment boundary is... ${mpig_memalign_max}"
 echo "setting memory alignment type to... ${TYPEOF_MPIG_ALIGNED_T}"
 # echo "setting size of memory alignment type to ${SIZEOF_MPIG_ALIGNED_T}"
 export TYPEOF_MPIG_ALIGNED_T
-# export SIZEOF_MPIG_ALIGNED_T
+export SIZEOF_MPIG_ALIGNED_T
 # export MEMALIGN_MPIG_ALIGNED_T
 
 #
@@ -788,7 +790,7 @@ export MPIG_UNSIGNED_LONG_LONG_FMT_MOD
 # specifier.
 #
 echo ${ECHO_N} "checking for an unsigned integer type big enough to hold a pointer""... ${ECHO_C}"
-for mpig_type in "char" "short" "int" "long" "long long" "unknown" ; do
+for mpig_type in "unsigned char" "unsigned short" "unsigned int" "unsigned long" "unsigned long long" "unknown" ; do
     mpig_type_name=`echo "${mpig_type}" | sed -e 's/\*/P/' | tr "[a-z] " "[A-Z]_"`
     eval mpig_size="\${SIZEOF_${mpig_type_name}}"
     if test $SIZEOF_VOID_P -eq $mpig_size ; then
@@ -796,14 +798,14 @@ for mpig_type in "char" "short" "int" "long" "long long" "unknown" ; do
     fi
 done
 echo "${ECHO_T}""$mpig_type"
-if test $mpig_type = "unknown" ; then
+if test "$mpig_type" = "unknown" ; then
     
     echo ""
     echo "ERROR: unable to find an integer type big enough to hold a pointer!"
     echo ""
     exit 1
 fi
-MPIG_PTR_CAST="unsigned ${mpig_type}"
+MPIG_PTR_CAST="${mpig_type}"
 export MPIG_PTR_CAST
 
 echo ${ECHO_N} "determining the printf conversion specifier for a pointer""... ${ECHO_C}"
@@ -847,25 +849,18 @@ if test "${MPIG_VMPI}" = "yes" ; then
     #
     # if the vendor's MPI doesn't support MPI_LONG_LONG or MPI_LONG_LONG_INT then we need to disable long long support
     #
-    # XXX: how do we communicate the equivalent of --disable-long-long to the top-level configure script?
-    #
     # XXX: in MPICH-G2, why did we need to disable ROMIO if MPI_LONG_LONG wasn't supported?
     #
     if test "${HAVE_VMPI_LONG_LONG}" = "no" -a "${HAVE_VMPI_LONG_LONG_INT}" = "no" ; then
-	echo ""
-	echo "ERROR: MPI-G currently requires that the vendor MPI support MPI_LONG_LONG and"
-	echo "       MPI_LONG_LONG_INT.  Please send mail to mpi@globus.org if you receive"
-	echo "       this message."
-	echo ""
-	exit 1
-	# echo "INFO: MPI_LONG_LONG and/or MPI_LONG_LONG is not supported by the vendor MPI."
-	# echo "      Disabling long long suport in MPI-G."
-	# ac_configure_args="${ac_configure_args} --disable-long-long"
-	# if test "$enable_romio" != "no" ; then
-	#     echo "INFO: ROMIO requires MPI_LONG_LONG.  Disabling ROMIO."
-	#     enable_romio=no
-	#     ac_configure_args="${ac_configure_args} --disable-romio"
-	# fi
+	echo "WARNING: The vendor MPI does not support MPI_LONG_LONG or MPI_LONG_LONG_INT."
+	echo "       Support for these types in MPI-G has been disabled."
+	enable_long_long=no
+	ac_configure_args="${ac_configure_args} --disable-long-long"
+	if test "$enable_romio" != "no" ; then
+	    echo "WARNING: ROMIO requires MPI_LONG_LONG. ROMIO has been disabled."
+	    enable_romio=no
+	    ac_configure_args="${ac_configure_args} --disable-romio"
+	fi
     fi
 
     #
@@ -888,12 +883,10 @@ export MPIU_SIZE_T
 #
 # FIXME: the globus data conversion library does not support long double.  we need to disable support for that type in MPICH2.
 #
-echo ""
-echo "FIXME: disable long double support in the top-level configure"
-echo ""
-# echo "Disabling long double (not supported by Globus data conversion library)"
-# NO_LONG_DOUBLE="yes"
-# enable_args="${enable_args} --disable-long-double"
+echo "WARNING: long double is not supported by Globus data conversion library."
+ehco "      Support for MPI_LONG_DOUBLE has been disabled."
+enable_long_double=no
+ac_configure_args="${ac_configure_args} --disable-long-double"
 
 #
 # the symbol renaming file, mpiddefs.h, needs to handle a special case if ROMIO is not being built, so we detect that here and
@@ -912,8 +905,8 @@ export MPIG_ROMIO_ENABLED
 #
 # if test ! -f ${binbuild_dir}/machines ; then
 #     echo "Creating a default machines file in ${binbuild_dir}.  This will"
-#     echo "allow testing of MPICH-G2, but you will need to create a new"
-#     echo "file to exploit the full capabilities of MPICH-G2.  Please see"
+#     echo "allow testing of MPI-G, but you will need to create a new"
+#     echo "file to exploit the full capabilities of MPI-G.  Please see"
 #     echo "the documentation."
 #     host=`uname -n 2>&1`
 #     if [ -n "${host}" ] ; then
