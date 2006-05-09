@@ -884,7 +884,7 @@ export MPIU_SIZE_T
 # FIXME: the globus data conversion library does not support long double.  we need to disable support for that type in MPICH2.
 #
 echo "WARNING: long double is not supported by Globus data conversion library."
-ehco "      Support for MPI_LONG_DOUBLE has been disabled."
+echo "         Support for MPI_LONG_DOUBLE has been disabled."
 enable_long_double=no
 ac_configure_args="${ac_configure_args} --disable-long-double"
 
