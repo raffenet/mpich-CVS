@@ -34,14 +34,25 @@ fi
 # FIXME:
 # *Never* unconditionally add libraries and paths to these variables.  
 # autoconf provides routines to check for these, USE THEM!
+# The following code includes examples for each library
 if test "$ibu_name" = ibal ; then
     AC_DEFINE(USE_IB_IBAL,,[Define to use the SourceForge ibal interface])
-    IB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
+    save_LIBS=$LIBS
+    LIBS=""
+dnl    AC_SEARCH_LIBS(routine-in-library,libraryname)
+    AC_SEARCH_LIBS(unknown-routine-name,allib)
+    AC_SEARCH_LIBS(unknown-routine-name,complib)
+    AC_SEARCH_LIBS(pthread_create,pthread)
+    AC_SEARCH_LIBS(dlopen,dl)
+    IB_LIBS="$IB_LIBS $LIBS"
+    LIBS=$save_LIBS
+    dnlIB_LIBS="$IB_LIBS -lallib -lcomplib -lpthread -ldl"
 # FIXME:
 # It isn't reasonable to ask the user to fix this in configure.in, since
 # they may have trouble rebuilding configure (and the path needs to be
 # checked anyway).  Provide a better solution, such as a documented 
 # environment variable.
+# Note that the setup_channel scripts have the same problem.
 # As an example of how easy it is to be nicer to the user, I've included
 # an examble.
     if test ! -d "/usr/sf-iba/iba/linuxuser/bin/x86/2.4.18-19.7.x/lib/free" ; then
