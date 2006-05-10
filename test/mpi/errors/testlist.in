@@ -2,6 +2,7 @@ coll
 comm
 errhan
 pt2pt
+spawn
 @f77dir@
 @cxxdir@
 @f90dir@
