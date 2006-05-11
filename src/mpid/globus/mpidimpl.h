@@ -1339,6 +1339,8 @@ int mpig_pm_init(void);
 
 int mpig_pm_finalize(void);
 
+int mpig_pm_abort(int exit_code);
+
 int mpig_pm_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
 
 int mpig_pm_free_business_cards(mpig_bc_t * bcs);
@@ -1356,6 +1358,8 @@ int mpig_pm_gk_init(void);
 
 int mpig_pm_gk_finalize(void);
 
+int mpig_pm_gk_abort(int exit_code);
+
 int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
 
 int mpig_pm_gk_free_business_cards(mpig_bc_t * bcs);
@@ -1369,14 +1373,45 @@ int mpig_pm_gk_get_pg_id(const char ** pg_id_p);
 int mpig_pm_gk_get_app_num(int * app_num);
 
 
+int mpig_pm_ws_init(void);
+
+int mpig_pm_ws_finalize(void);
+
+int mpig_pm_ws_abort(int exit_code);
+
+int mpig_pm_ws_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
+
+int mpig_pm_ws_free_business_cards(mpig_bc_t * bcs);
+
+int mpig_pm_ws_get_pg_size(int * pg_size);
+
+int mpig_pm_ws_get_pg_rank(int * pg_rank);
+
+int mpig_pm_ws_get_pg_id(const char ** pg_id_p);
+
+int mpig_pm_ws_get_app_num(int * app_num);
+
+#if 1
 #define mpig_pm_init mpig_pm_gk_init
 #define mpig_pm_finalize mpig_pm_gk_finalize
+#define mpig_pm_abort mpig_pm_gk_abort
 #define mpig_pm_exchange_business_cards mpig_pm_gk_exchange_business_cards
 #define mpig_pm_free_business_cards mpig_pm_gk_free_business_cards
 #define mpig_pm_get_pg_size mpig_pm_gk_get_pg_size
 #define mpig_pm_get_pg_rank mpig_pm_gk_get_pg_rank
 #define mpig_pm_get_pg_id mpig_pm_gk_get_pg_id
 #define mpig_pm_get_app_num mpig_pm_gk_get_app_num
+#else
+#define mpig_pm_init mpig_pm_ws_init
+#define mpig_pm_finalize mpig_pm_ws_finalize
+#define mpig_pm_abort mpig_pm_ws_abort
+#define mpig_pm_exchange_business_cards mpig_pm_ws_exchange_business_cards
+#define mpig_pm_free_business_cards mpig_pm_ws_free_business_cards
+#define mpig_pm_get_pg_size mpig_pm_ws_get_pg_size
+#define mpig_pm_get_pg_rank mpig_pm_ws_get_pg_rank
+#define mpig_pm_get_pg_id mpig_pm_ws_get_pg_id
+#define mpig_pm_get_app_num mpig_pm_ws_get_app_num
+#endif
 /**********************************************************************************************************************************
 						 END PROCESS MANAGEMENT SECTION
 **********************************************************************************************************************************/
