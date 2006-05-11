@@ -366,7 +366,7 @@ MPIG_STATIC void mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request *
     }
 
     /* set state and pack the message header according to the protocol being used */
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
     if (mpig_cm_xio_stream_get_size(sreq) <= MPIG_CM_XIO_EAGER_MAX_SIZE || mpig_request_get_type(sreq) == MPIG_REQUEST_TYPE_RSEND)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
@@ -400,24 +400,24 @@ MPIG_STATIC void mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request *
 	mpig_cm_xio_request_set_state(sreq, MPIG_CM_XIO_REQ_STATE_SEND_RNDV_RTS);
 	mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_RNDV_RTS);
     }
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_type(sreq_cm->msgbuf, mpig_request_get_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, sreq->handle);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_type(vc, sreq_cm->msgbuf, mpig_request_get_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, sreq->handle);
     {
 	int rank;
 	int tag;
 	int ctx;
 
 	mpig_request_get_envelope(sreq, &rank, &tag, &ctx);
-	mpig_cm_xio_msg_hdr_put_envelope(sreq_cm->msgbuf, sreq->comm->rank, tag, ctx);
+	mpig_cm_xio_msg_hdr_put_envelope(vc, sreq_cm->msgbuf, sreq->comm->rank, tag, ctx);
     }
     /* XXX: still need to handle, and thus identify, MPI_PACKED messages since they will have a special header */
     if (mpig_cm_xio_request_get_msg_type(sreq) == MPIG_CM_XIO_MSG_TYPE_RNDV_RTS)
     {
-	mpig_cm_xio_msg_hdr_put_data_size(sreq_cm->msgbuf, mpig_iov_get_num_bytes(sreq_cm->iov));
+	mpig_cm_xio_msg_hdr_put_data_size(vc, sreq_cm->msgbuf, mpig_iov_get_num_bytes(sreq_cm->iov));
     }
-    mpig_cm_xio_msg_hdr_put_data_size(sreq_cm->msgbuf, mpig_cm_xio_stream_get_size(sreq));
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_data_size(vc, sreq_cm->msgbuf, mpig_cm_xio_stream_get_size(sreq));
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
     
     /* iovec count was set to one earlier to leave room for the header, so we put the message header in the first iovec entry
        instead of adding it to the end */
@@ -496,11 +496,11 @@ MPIG_STATIC void mpig_cm_xio_send_enq_rndv_cts_msg(
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_RNDV_CTS);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, local_rreq_id);
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, local_rreq_id);
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
 
     mpig_iov_reset(sreq_cm->iov, 0);
     mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
@@ -567,10 +567,10 @@ MPIG_STATIC void mpig_cm_xio_send_enq_rndv_data_msg(
     mpig_cm_xio_request_set_state(sreq, MPIG_CM_XIO_REQ_STATE_SEND_DATA);
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_RNDV_DATA);
     
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, remote_rreq_id);
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_rreq_id);
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
 
     mpig_iov_reset(sreq_cm->iov, 0);
     mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
@@ -646,10 +646,10 @@ MPIG_STATIC void mpig_cm_xio_send_enq_ssend_ack_msg(
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_SSEND_ACK);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
 
     mpig_iov_reset(sreq_cm->iov, 0);
     mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
@@ -723,11 +723,11 @@ MPIG_STATIC void mpig_cm_xio_send_enq_cancel_send_msg(
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_envelope(sreq_cm->msgbuf, rank, tag, ctx);
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_envelope(vc, sreq_cm->msgbuf, rank, tag, ctx);
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
 
     mpig_iov_reset(sreq_cm->iov, 0);
     mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
@@ -802,11 +802,11 @@ MPIG_STATIC void mpig_cm_xio_send_enq_cancel_send_resp_msg(
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND_RESP);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_bool(sreq_cm->msgbuf, cancelled);
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cm->msgbuf, cancelled);
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
 
     mpig_iov_reset(sreq_cm->iov, 0);
     mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
@@ -1164,8 +1164,8 @@ void mpig_cm_xio_recv_next_msg(mpig_vc_t * const vc, int * const mpi_errno_p, bo
 	    
 	MPIU_Assert(vc_cm->active_rreq == NULL);
 
-	min_nbytes = (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < mpig_cm_xio_msg_hdr_sizeof_msg_size) ?
-	    mpig_cm_xio_msg_hdr_sizeof_msg_size - mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) : 0;
+	min_nbytes = (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc)) ?
+	    mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc) - mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) : 0;
 	
 	mpig_cm_xio_register_read_vc_msgbuf(vc, min_nbytes, mpig_databuf_get_free_bytes(vc_cm->msgbuf),
 					    mpig_cm_xio_recv_handle_incoming_msg, mpi_errno_p, &failed);
@@ -1263,16 +1263,17 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(
 	    if (vc_cm->msg_hdr_size == 0)
 	    {
 		/* if the message buffer does not contain enough bytes to get the message header size, then receive more data */
-		if (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < mpig_cm_xio_msg_hdr_sizeof_msg_size)
+		if (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc))
 		{
-		    bytes_needed = mpig_cm_xio_msg_hdr_sizeof_msg_size - mpig_databuf_get_remaining_bytes(vc_cm->msgbuf);
-		    MPIU_Assert(bytes_needed > 0 && bytes_needed <= mpig_cm_xio_msg_hdr_sizeof_msg_size);
+		    bytes_needed = mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc) -
+			mpig_databuf_get_remaining_bytes(vc_cm->msgbuf);
+		    MPIU_Assert(bytes_needed > 0 && bytes_needed <= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc));
 		    break;
 		}
 
 		/* extract the message header size from the message header */
-		mpig_cm_xio_msg_hdr_get_msg_size(vc_cm->msgbuf, &vc_cm->msg_hdr_size);
-		vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_sizeof_msg_size;
+		mpig_cm_xio_msg_hdr_get_msg_size(vc, vc_cm->msgbuf, &vc_cm->msg_hdr_size);
+		vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc);
 
 		/* if the message buffer does not contain the entire message header, then receive remainder of header */
 		if (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < vc_cm->msg_hdr_size)
@@ -1289,8 +1290,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(
 		MPIU_Assert(mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) >= vc_cm->msg_hdr_size);
 		
 		/* extract the message type from the message header */
-		mpig_cm_xio_msg_hdr_get_msg_type(vc_cm->msgbuf, &msg_type);
-		vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_sizeof_msg_type;
+		mpig_cm_xio_msg_hdr_get_msg_type(vc, vc_cm->msgbuf, &msg_type);
+		vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_type(vc);
 
 		/* call the message handler associated with the extracted message type.  after the handler returns, set the
 		   message header size to zero to indicate that the message header has been consumed. */
@@ -1408,13 +1409,14 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc, in
     MPIG_UNUSED_VAR(fcname);
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_req_type + mpig_cm_xio_msg_hdr_sizeof_req_id +
-	mpig_cm_xio_msg_hdr_sizeof_envelope + mpig_cm_xio_msg_hdr_sizeof_data_size);
-    mpig_cm_xio_msg_hdr_get_req_type(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_type);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_envelope(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &rank, &tag, &ctx);
+    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc) +
+	mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) + mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
+	mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc));
+    mpig_cm_xio_msg_hdr_get_req_type(vc, vc_cm->msgbuf, &sreq_type);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cm->msgbuf, &rank, &tag, &ctx);
     /* XXX: still need to handle, and thus identify, MPI_PACKED messages since they will have a special header */
-    mpig_cm_xio_msg_hdr_get_data_size(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &stream_size);
+    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cm->msgbuf, &stream_size);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 	"eager message received: rank=%d, tag=%d, ctx=%d, sreq_type=%s, stream_size=" MPIG_SIZE_FMT,
@@ -1679,15 +1681,16 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc, int 
     MPIG_UNUSED_VAR(fcname);
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_req_type + mpig_cm_xio_msg_hdr_sizeof_req_id +
-		mpig_cm_xio_msg_hdr_sizeof_envelope + 2 * mpig_cm_xio_msg_hdr_sizeof_data_size);
+    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc) +
+	mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) + mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
+	2 * mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc));
     
-    mpig_cm_xio_msg_hdr_get_req_type(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_type);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_envelope(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &rank, &tag, &ctx);
+    mpig_cm_xio_msg_hdr_get_req_type(vc, vc_cm->msgbuf, &sreq_type);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cm->msgbuf, &rank, &tag, &ctx);
     /* XXX: still need to handle, and thus identify, MPI_PACKED messages since they will have a special header */
-    mpig_cm_xio_msg_hdr_get_data_size(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &rts_size);
-    mpig_cm_xio_msg_hdr_get_data_size(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &stream_size);
+    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cm->msgbuf, &rts_size);
+    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cm->msgbuf, &stream_size);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 		       "eager message received: rank=%d, tag=%d, ctx=%d, sreq_type=%s, stream_size=" MPIG_SIZE_FMT,
@@ -1874,9 +1877,9 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_rndv_cts_msg(
     *failed_p = FALSE;
 
     /* get the request handles from the message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_sizeof_req_id);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &rreq_id);
+    MPIU_Assert(vc_cm->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &rreq_id);
     MPID_Request_get_ptr(sreq_id, sreq);
 
     mpig_request_mutex_lock(sreq);
@@ -1950,8 +1953,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_rndv_data_msg(
     *failed_p = FALSE;
 
     /* get the receive request handle from the message header and turn it into a pointer to the request object */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_req_id);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &rreq_id);
+    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &rreq_id);
     MPID_Request_get_ptr(rreq_id, rreq);
     rreq_cm = &rreq->cm.xio;
 
@@ -2034,8 +2037,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc, int
     *failed_p = FALSE;
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_req_id);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_id);
+    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
 
     /* get the send request object */
     MPID_Request_get_ptr(sreq_id, sreq);
@@ -2104,9 +2107,10 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_cancel_send_msg(
     *failed_p = FALSE;
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_envelope + mpig_cm_xio_msg_hdr_sizeof_req_id);
-    mpig_cm_xio_msg_hdr_get_envelope(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &rank, &tag, &ctx);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_id);
+    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
+	mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cm->msgbuf, &rank, &tag, &ctx);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 		       "cancel send message received: rank=%d, tag=%d, ctx=%d, sreq_id=" MPIG_HANDLE_FMT,
@@ -2233,9 +2237,10 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_cancel_send_resp_msg(
     *failed_p = FALSE;
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_sizeof_req_id + mpig_cm_xio_msg_hdr_sizeof_bool);
-    mpig_cm_xio_msg_hdr_get_req_id(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_bool(mpig_cm_xio_vc_get_endian(vc), vc_cm->msgbuf, &cancelled);
+    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) +
+	mpig_cm_xio_msg_hdr_remote_sizeof_bool(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_bool(vc, vc_cm->msgbuf, &cancelled);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 		       "received cancel send request: vc=" MPIG_PTR_FMT ", sreq_id=" MPIG_HANDLE_FMT ", cancelled=%s",

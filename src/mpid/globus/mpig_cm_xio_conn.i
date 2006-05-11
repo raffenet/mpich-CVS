@@ -818,9 +818,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_send_magic(
 	/* register a read operation to receive the open request control message */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
 	tmp_vc_cm->msg_hdr_size = 0;
-	mpig_cm_xio_register_read_vc_msgbuf(
-	    tmp_vc, mpig_cm_xio_msg_hdr_sizeof_msg_size, mpig_databuf_get_size(tmp_vc_cm->msgbuf),
-	    mpig_cm_xio_server_handle_recv_open_req, &mpi_errno, &failed);
+	mpig_cm_xio_register_read_vc_msgbuf(tmp_vc, mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(tmp_vc),
+	    mpig_databuf_get_size(tmp_vc_cm->msgbuf), mpig_cm_xio_server_handle_recv_open_req, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_INTERN, {err++; goto fn_fail;},
 	    "**globus|cm_xio|server_reg_recv_open_req", "**globus|cm_xio|server_reg_recv_open_req %p", tmp_vc);
 	
@@ -917,9 +916,9 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	   entire header will be in the VC message buffer when the next callback occurs. */
 	if (tmp_vc_cm->msg_hdr_size == 0)
 	{
-	    MPIU_Assert(nbytes >= mpig_cm_xio_msg_hdr_sizeof_msg_size);
-	    mpig_cm_xio_msg_hdr_get_msg_size(tmp_vc_cm->msgbuf, &tmp_vc_cm->msg_hdr_size);
-	    tmp_vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_sizeof_msg_size;
+	    MPIU_Assert(nbytes >= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(tmp_vc));
+	    mpig_cm_xio_msg_hdr_get_msg_size(tmp_vc, tmp_vc_cm->msgbuf, &tmp_vc_cm->msg_hdr_size);
+	    tmp_vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(tmp_vc);
 
 	    if (mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf) < tmp_vc_cm->msg_hdr_size)
 	    {
@@ -957,7 +956,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	}
 	
 	/* get message type and verify it is an open request */
-	mpig_cm_xio_msg_hdr_get_msg_type(tmp_vc_cm->msgbuf, &req_msg_type);
+	mpig_cm_xio_msg_hdr_get_msg_type(tmp_vc, tmp_vc_cm->msgbuf, &req_msg_type);
 	if (req_msg_type != MPIG_CM_XIO_MSG_TYPE_OPEN_REQ)
 	{
 	    /* --BEGIN ERROR HANDLING-- */
@@ -973,15 +972,15 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	}
 
 	/* unpack information from message header */
-	mpig_cm_xio_msg_hdr_get_endian(tmp_vc_cm->msgbuf, &endian);
-	mpig_cm_xio_msg_hdr_get_df(tmp_vc_cm->msgbuf, &df);
-	mpig_cm_xio_msg_hdr_get_rank(endian, tmp_vc_cm->msgbuf, &pg_size);
-	mpig_cm_xio_msg_hdr_get_rank(endian, tmp_vc_cm->msgbuf, &pg_rank);
+	mpig_cm_xio_msg_hdr_get_endian(tmp_vc, tmp_vc_cm->msgbuf, &endian);
+	mpig_cm_xio_msg_hdr_get_df(tmp_vc, tmp_vc_cm->msgbuf, &df);
+	mpig_cm_xio_vc_set_endian(tmp_vc, endian);
+	mpig_cm_xio_vc_set_data_format(tmp_vc, df);
+	mpig_cm_xio_msg_hdr_get_rank(tmp_vc, tmp_vc_cm->msgbuf, &pg_size);
+	mpig_cm_xio_msg_hdr_get_rank(tmp_vc, tmp_vc_cm->msgbuf, &pg_rank);
 	pg_id = (char *) mpig_databuf_get_pos_ptr(tmp_vc_cm->msgbuf);
 	pg_id_size = strlen(pg_id) + 1;
 	mpig_databuf_inc_pos(tmp_vc_cm->msgbuf, pg_id_size);
-	mpig_cm_xio_vc_set_endian(tmp_vc, endian);
-	mpig_cm_xio_vc_set_data_format(tmp_vc, df);
 	
 	/* verify that the message buffer is now empty.  extra data should never be received. */
 	if (mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf) != 0)
@@ -1178,10 +1177,10 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 	{
 	    /* construct the open response message */
 	    mpig_databuf_reset(tmp_vc_cm->msgbuf);
-	    mpig_cm_xio_msg_hdr_put_init(tmp_vc_cm->msgbuf);
-	    mpig_cm_xio_msg_hdr_put_msg_type(tmp_vc_cm->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_RESP);
-	    mpig_cm_xio_msg_hdr_put_conn_open_resp(tmp_vc_cm->msgbuf, open_resp);
-	    mpig_cm_xio_msg_hdr_put_msg_size(tmp_vc_cm->msgbuf);
+	    mpig_cm_xio_msg_hdr_put_init(tmp_vc, tmp_vc_cm->msgbuf);
+	    mpig_cm_xio_msg_hdr_put_msg_type(tmp_vc, tmp_vc_cm->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_RESP);
+	    mpig_cm_xio_msg_hdr_put_conn_open_resp(tmp_vc, tmp_vc_cm->msgbuf, open_resp);
+	    mpig_cm_xio_msg_hdr_put_msg_size(tmp_vc, tmp_vc_cm->msgbuf);
 
 	    /* send the open respoinse message */
 	    mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, resp_callback_fn, &mpi_errno, &failed);
@@ -1959,16 +1958,16 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_magic(
 	
 	/* send the open request message */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
-	mpig_cm_xio_msg_hdr_put_init(tmp_vc_cm->msgbuf);
-	mpig_cm_xio_msg_hdr_put_msg_type(tmp_vc_cm->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_REQ);
-	mpig_cm_xio_msg_hdr_put_endian(tmp_vc_cm->msgbuf, MPIG_MY_ENDIAN);
-	mpig_cm_xio_msg_hdr_put_df(tmp_vc_cm->msgbuf, GLOBUS_DC_FORMAT_LOCAL);
-	mpig_cm_xio_msg_hdr_put_rank(tmp_vc_cm->msgbuf, mpig_process.my_pg_size);
-	mpig_cm_xio_msg_hdr_put_rank(tmp_vc_cm->msgbuf, mpig_process.my_pg_rank);
+	mpig_cm_xio_msg_hdr_put_init(tmp_vc, tmp_vc_cm->msgbuf);
+	mpig_cm_xio_msg_hdr_put_msg_type(tmp_vc, tmp_vc_cm->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_REQ);
+	mpig_cm_xio_msg_hdr_put_endian(tmp_vc, tmp_vc_cm->msgbuf, MPIG_MY_ENDIAN);
+	mpig_cm_xio_msg_hdr_put_df(tmp_vc, tmp_vc_cm->msgbuf, GLOBUS_DC_FORMAT_LOCAL);
+	mpig_cm_xio_msg_hdr_put_rank(tmp_vc, tmp_vc_cm->msgbuf, mpig_process.my_pg_size);
+	mpig_cm_xio_msg_hdr_put_rank(tmp_vc, tmp_vc_cm->msgbuf, mpig_process.my_pg_rank);
 	pg_id_size = strlen(mpig_process.my_pg->id) + 1;
 	MPIU_Strncpy(mpig_databuf_get_eod_ptr(tmp_vc_cm->msgbuf), mpig_process.my_pg->id, pg_id_size);
 	mpig_databuf_inc_eod(tmp_vc_cm->msgbuf, pg_id_size);
-	mpig_cm_xio_msg_hdr_put_msg_size(tmp_vc_cm->msgbuf);
+	mpig_cm_xio_msg_hdr_put_msg_size(tmp_vc, tmp_vc_cm->msgbuf);
 
 	/* send the open request message */
 	mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, mpig_cm_xio_client_handle_send_open_req, &mpi_errno, &failed);
@@ -2040,9 +2039,8 @@ MPIG_STATIC void mpig_cm_xio_client_handle_send_open_req(
 	/* register a read operation to receive the open response control message */
 	mpig_databuf_reset(tmp_vc_cm->msgbuf);
 	tmp_vc_cm->msg_hdr_size = 0;
-	mpig_cm_xio_register_read_vc_msgbuf(
-	    tmp_vc, mpig_cm_xio_msg_hdr_sizeof_msg_size, mpig_databuf_get_size(tmp_vc_cm->msgbuf),
-	    mpig_cm_xio_client_handle_recv_open_resp, &mpi_errno, &failed);
+	mpig_cm_xio_register_read_vc_msgbuf(tmp_vc, mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(tmp_vc),
+	    mpig_databuf_get_size(tmp_vc_cm->msgbuf), mpig_cm_xio_client_handle_recv_open_resp, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP3((failed), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|client_reg_recv_open_req",
 	    "**globus|cm_xio|client_reg_recv_open_req %p %s %d", tmp_vc, mpig_vc_get_pg_id(tmp_vc), mpig_vc_get_pg_rank(tmp_vc));
 	
@@ -2119,9 +2117,9 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	   entire header will be in the VC message buffer when the next callback occurs. */
 	if (tmp_vc_cm->msg_hdr_size == 0)
 	{
-	    MPIU_Assert(nbytes >= mpig_cm_xio_msg_hdr_sizeof_msg_size);
-	    mpig_cm_xio_msg_hdr_get_msg_size(tmp_vc_cm->msgbuf, &tmp_vc_cm->msg_hdr_size);
-	    tmp_vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_sizeof_msg_size;
+	    MPIU_Assert(nbytes >= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(tmp_vc));
+	    mpig_cm_xio_msg_hdr_get_msg_size(tmp_vc, tmp_vc_cm->msgbuf, &tmp_vc_cm->msg_hdr_size);
+	    tmp_vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(tmp_vc);
 
 	    if (mpig_databuf_get_remaining_bytes(tmp_vc_cm->msgbuf) < tmp_vc_cm->msg_hdr_size)
 	    {
@@ -2158,9 +2156,9 @@ void mpig_cm_xio_client_handle_recv_open_resp(
 	pg_rank = mpig_vc_get_pg_rank(tmp_vc);
 
 	/* get the message type and and open resp */
-	mpig_cm_xio_msg_hdr_get_msg_type(tmp_vc_cm->msgbuf, &msg_type);
+	mpig_cm_xio_msg_hdr_get_msg_type(tmp_vc, tmp_vc_cm->msgbuf, &msg_type);
 	MPIU_Assert(msg_type == MPIG_CM_XIO_MSG_TYPE_OPEN_RESP);
-	mpig_cm_xio_msg_hdr_get_conn_open_resp(tmp_vc_cm->msgbuf, &open_resp);
+	mpig_cm_xio_msg_hdr_get_conn_open_resp(tmp_vc, tmp_vc_cm->msgbuf, &open_resp);
     }
     mpig_vc_mutex_unlock(tmp_vc);
     tmp_vc_locked = FALSE;
@@ -2439,11 +2437,11 @@ MPIG_STATIC void mpig_cm_xio_disconnect_enq_close_msg(
     sreq_cm->gcb = mpig_cm_xio_disconnect_handle_send_close_msg;
     
     /* pack message header */
-    mpig_cm_xio_msg_hdr_put_init(sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_bool(sreq_cm->msgbuf, cr);
-    mpig_cm_xio_msg_hdr_put_bool(sreq_cm->msgbuf, ack);
-    mpig_cm_xio_msg_hdr_put_msg_size(sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_init(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cm->msgbuf, cr);
+    mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cm->msgbuf, ack);
+    mpig_cm_xio_msg_hdr_put_msg_size(vc, sreq_cm->msgbuf);
 
     mpig_iov_reset(sreq_cm->iov, 0);
     mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
@@ -2663,9 +2661,9 @@ MPIG_STATIC void mpig_cm_xio_disconnect_handle_recv_close_msg(
     *failed_p = FALSE;
     
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_sizeof_bool);
-    mpig_cm_xio_msg_hdr_get_bool(mpig_vm_xio_vc_get_endian(vc), vc_cm->msgbuf, &cr);
-    mpig_cm_xio_msg_hdr_get_bool(mpig_vm_xio_vc_get_endian(vc), vc_cm->msgbuf, &ack);
+    MPIU_Assert(vc_cm->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_remote_sizeof_bool(vc));
+    mpig_cm_xio_msg_hdr_get_bool(vc, vc_cm->msgbuf, &cr);
+    mpig_cm_xio_msg_hdr_get_bool(vc, vc_cm->msgbuf, &ack);
 
     MPIG_UNUSED_VAR(fcname);
 

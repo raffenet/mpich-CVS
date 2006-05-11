@@ -11,104 +11,110 @@
 **********************************************************************************************************************************/
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
-#define mpig_cm_xio_msg_hdr_put_init(msgbuf_)					\
-{										\
-    mpig_databuf_reset(msgbuf_);						\
-    mpig_databuf_set_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_size);	\
+#define mpig_cm_xio_msg_hdr_put_init(vc_, msgbuf_)					\
+{											\
+    mpig_databuf_reset(msgbuf_);							\
+    mpig_databuf_set_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_msg_size(vc_));	\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_msg_size (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_msg_size(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_msg_size(msgbuf_)							\
+#define mpig_cm_xio_msg_hdr_put_msg_size(vc_, msgbuf_)							\
 {													\
     *(unsigned char *)(mpig_databuf_get_ptr(msgbuf_)) = (unsigned char) mpig_databuf_get_eod(msgbuf_);	\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", msg_size=%u",	\
 	(MPIG_PTR_CAST) (msgbuf_), (unsigned) mpig_databuf_get_eod(msgbuf_)));				\
 }
 
-#define mpig_cm_xio_msg_hdr_get_msg_size(msgbuf_, msg_size_p_)						\
+#define mpig_cm_xio_msg_hdr_get_msg_size(vc_, msgbuf_, msg_size_p_)					\
 {													\
     *(msg_size_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", msg_size=%u",	\
 	(MPIG_PTR_CAST) (msgbuf_),  (unsigned) *(msg_size_p_)));					\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_size);				\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc_));			\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_msg_type (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_msg_type(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_msg_type(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_msg_type(msgbuf_, msg_type_)						\
+#define mpig_cm_xio_msg_hdr_put_msg_type(vc_, msgbuf_, msg_type_)					\
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (msg_type_);		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", msg_type=%s",	\
 	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_msg_type_get_string(msg_type_)));			\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_type);				\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_msg_type(vc_));			\
 }
 
-#define mpig_cm_xio_msg_hdr_get_msg_type(msgbuf_, msg_type_p_)						\
+#define mpig_cm_xio_msg_hdr_get_msg_type(vc_, msgbuf_, msg_type_p_)					\
 {													\
     *(msg_type_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", msg_type=%s",	\
 	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_msg_type_get_string(*(msg_type_p_))));			\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_type);				\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_msg_type(vc_));			\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_endian (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_endian(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_endian(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_endian(msgbuf_, endian_)						\
-{													\
-    *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (endian_);			\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", endian=%s",		\
-	(MPIG_PTR_CAST) (msgbuf_), ((endian_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));		\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_endian);					\
+#define mpig_cm_xio_msg_hdr_put_endian(vc_, msgbuf_, endian_)					\
+{												\
+    *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (endian_);		\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", endian=%s",	\
+	(MPIG_PTR_CAST) (msgbuf_), ((endian_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_endian(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_get_endian(msgbuf_, endian_p_)							\
-{														\
-    *(endian_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);					\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", endian=%s",			\
-	(MPIG_PTR_CAST) (msgbuf_), (*(endian_p_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));			\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_endian);						\
+#define mpig_cm_xio_msg_hdr_get_endian(vc_, msgbuf_, endian_p_)					\
+{												\
+    *(endian_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);			\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", endian=%s",	\
+	(MPIG_PTR_CAST) (msgbuf_), (*(endian_p_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_endian(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_df (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_df(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_df(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_df(msgbuf_, df_)							\
+#define mpig_cm_xio_msg_hdr_put_df(vc_, msgbuf_, df_)							\
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (df_);			\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", data_format=%d",	\
 	(MPIG_PTR_CAST) (msgbuf_), (df_)));								\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_df);					\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_df(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_get_df(msgbuf_, df_p_)							\
+#define mpig_cm_xio_msg_hdr_get_df(vc_, msgbuf_, df_p_)							\
 {													\
     *(df_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);					\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", data_format=%d",	\
 	(MPIG_PTR_CAST) (msgbuf_), *(df_p_)));								\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_df);					\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_df(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_req_type (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_req_type(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_req_type(msgbuf_, req_type_)						\
+#define mpig_cm_xio_msg_hdr_put_req_type(vc_, msgbuf_, req_type_)					\
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (req_type_);		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", req_type=%s",	\
 	(MPIG_PTR_CAST) (msgbuf_), mpig_request_type_get_string(req_type_)));				\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_type);				\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_req_type(vc_));			\
 }
 
-#define mpig_cm_xio_msg_hdr_get_req_type(endian_, msgbuf_, req_type_p_)					\
+#define mpig_cm_xio_msg_hdr_get_req_type(vc_, msgbuf_, req_type_p_)					\
 {													\
     *(req_type_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", req_type=%s",	\
 	(MPIG_PTR_CAST) (msgbuf_), mpig_request_type_get_string(*(req_type_p_))));			\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_type);				\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc_));			\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_envelope (3 * sizeof(int32_t))
+#define mpig_cm_xio_msg_hdr_local_sizeof_envelope(vc_) (3 * sizeof(int32_t))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc_) (3 * sizeof(int32_t))
 
-#define mpig_cm_xio_msg_hdr_put_envelope(msgbuf_, rank_, tag_, ctx_)						\
+#define mpig_cm_xio_msg_hdr_put_envelope(vc_, msgbuf_, rank_, tag_, ctx_)					\
 {														\
     int32_t rank__ = (rank_);											\
     int32_t tag__ = (tag_);											\
@@ -121,126 +127,133 @@
     mpig_dc_put_int32(ptr__, (ctx__));										\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", rank=%d, tag=%d ctx=%d",	\
 	(MPIG_PTR_CAST) (msgbuf_), (rank_), (tag_), (ctx_)));							\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_envelope);					\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_envelope(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_get_envelope(endian_, msgbuf_, rank_p_, tag_p_, ctx_p_)				\
+#define mpig_cm_xio_msg_hdr_get_envelope(vc_, msgbuf_, rank_p_, tag_p_, ctx_p_)					\
 {														\
     int32_t rank__;												\
     int32_t tag__;												\
     int32_t ctx__;												\
     char * ptr__ = (char *) mpig_databuf_get_pos_ptr(msgbuf_);							\
-    mpig_dc_get_int32((endian_), ptr__, &rank__);								\
+    mpig_dc_get_int32((vc_)->cm.xio.endian, ptr__, &rank__);							\
     ptr__ += sizeof(int32_t);											\
-    mpig_dc_get_int32((endian_), ptr__, &tag__);								\
+    mpig_dc_get_int32((vc_)->cm.xio.endian, ptr__, &tag__);							\
     ptr__ += sizeof(int32_t);											\
-    mpig_dc_get_int32((endian_), ptr__, &ctx__);								\
+    mpig_dc_get_int32((vc_)->cm.xio.endian, ptr__, &ctx__);							\
     *(rank_p_) = rank__;											\
     *(tag_p_) = tag__;												\
     *(ctx_p_) = ctx__;												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", rank=%d, tag=%d ctx=%d",	\
 	(MPIG_PTR_CAST) (msgbuf_), *(rank_p_), *(tag_p_), *(ctx_p_)));						\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_envelope);					\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_rank (sizeof(int32_t))
+#define mpig_cm_xio_msg_hdr_local_sizeof_rank(vc_) (sizeof(int32_t))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_rank(vc_) (sizeof(int32_t))
 
-#define mpig_cm_xio_msg_hdr_put_rank(msgbuf_, rank_)						\
+#define mpig_cm_xio_msg_hdr_put_rank(vc_, msgbuf_, rank_)					\
 {												\
     int32_t rank__ = (rank_);									\
     mpig_dc_put_int32(mpig_databuf_get_eod_ptr(msgbuf_), (rank__));				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", rank=%d",	\
 	(MPIG_PTR_CAST) (msgbuf_), (rank_)));							\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_rank);				\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_rank(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_get_rank(endian_, msgbuf_, rank_p_)					\
+#define mpig_cm_xio_msg_hdr_get_rank(vc_, msgbuf_, rank_p_)					\
 {												\
     int32_t rank__;										\
-    mpig_dc_get_int32((endian_), mpig_databuf_get_pos_ptr(msgbuf_), &rank__);			\
+    mpig_dc_get_int32((vc_)->cm.xio.endian, mpig_databuf_get_pos_ptr(msgbuf_), &rank__);	\
     *(rank_p_) = rank__;									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", rank=%d",	\
 	(MPIG_PTR_CAST) (msgbuf_), *(rank_p_)));						\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_rank);				\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_rank(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_data_size (sizeof(u_int64_t))
+#define mpig_cm_xio_msg_hdr_local_sizeof_data_size(vc_) (nexus_dc_sizeof_u_long_long(1))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_) (nexus_dc_sizeof_remote_u_long_long(1, (vc_)->cm.xio.df))
 
-#define mpig_cm_xio_msg_hdr_put_data_size(msgbuf_, data_size_);							\
+#define mpig_cm_xio_msg_hdr_put_data_size(vc_, msgbuf_, data_size_);						\
 {														\
-    u_int64_t data_size__ = (u_int64_t) (data_size_);								\
-    mpig_dc_put_uint64(mpig_databuf_get_eod_ptr(msgbuf_), data_size__);						\
+    unsigned long long data_size__ = (unsigned long long) (data_size_);						\
+    nexus_byte_t * ptr__ = (nexus_byte_t *) mpig_databuf_get_eod_ptr(msgbuf_);					\
+    nexus_dc_put_u_long_long(&ptr__, &data_size__, 1);								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
 	(MPIG_PTR_CAST) (msgbuf_), (MPIU_Size_t) (data_size_)));						\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_data_size);					\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_data_size(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_get_data_size(endian_, msgbuf_, data_size_p_);					\
+#define mpig_cm_xio_msg_hdr_get_data_size(vc_, msgbuf_, data_size_p_);						\
 {														\
-    u_int64_t data_size__;											\
-    mpig_dc_get_uint64((endian_), mpig_databuf_get_pos_ptr(msgbuf_), &data_size__);				\
+    unsigned long long data_size__;										\
+    nexus_byte_t * ptr__ = (nexus_byte_t *) mpig_databuf_get_pos_ptr(msgbuf_);					\
+    nexus_dc_get_u_long_long(&ptr__, &data_size__, 1, (vc_)->cm.xio.df);					\
     *(data_size_p_) = data_size__;										\
     MPIU_Assertp(data_size__ == *(data_size_p_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
 	(MPIG_PTR_CAST) (msgbuf_), (MPIU_Size_t) *(data_size_p_)));						\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_data_size);					\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_req_id (sizeof(int32_t))
+#define mpig_cm_xio_msg_hdr_local_sizeof_req_id(vc_) (sizeof(int32_t))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc_) (sizeof(int32_t))
 
-#define mpig_cm_xio_msg_hdr_put_req_id(msgbuf_, req_id_)							\
+#define mpig_cm_xio_msg_hdr_put_req_id(vc_, msgbuf_, req_id_)							\
 {														\
     int32_t req_id__ = (req_id_);										\
     mpig_dc_put_int32(mpig_databuf_get_eod_ptr(msgbuf_), (req_id__));						\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", req_id=" MPIG_HANDLE_FMT,	\
 	(MPIG_PTR_CAST) (msgbuf_), (unsigned)(req_id_)));							\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_id);						\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_req_id(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_get_req_id(endian_, msgbuf_, req_id_p_)						\
+#define mpig_cm_xio_msg_hdr_get_req_id(vc_, msgbuf_, req_id_p_)							\
 {														\
     int32_t req_id__;												\
-    mpig_dc_get_int32((endian_), mpig_databuf_get_pos_ptr(msgbuf_), &req_id__);					\
+    mpig_dc_get_int32((vc_)->cm.xio.endian, mpig_databuf_get_pos_ptr(msgbuf_), &req_id__);			\
     *(req_id_p_) = req_id__;											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", req_id=" MPIG_HANDLE_FMT,	\
 	(MPIG_PTR_CAST) (msgbuf_), (unsigned) *(req_id_p_)));							\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_req_id);						\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc_));				\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_bool (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_bool(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_bool(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_bool(msgbuf_, bool_)							\
+#define mpig_cm_xio_msg_hdr_put_bool(vc_, msgbuf_, bool_)						\
 {													\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) ((bool_) ? 0xff : 0x0);	\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", bool=%s",		\
 	(MPIG_PTR_CAST) (msgbuf_), MPIG_BOOL_STR(bool_)));						\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_bool);					\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_bool(vc_));			\
 }
 
-#define mpig_cm_xio_msg_hdr_get_bool(endian_, msgbuf_, bool_p_)					\
+#define mpig_cm_xio_msg_hdr_get_bool(vc_, msgbuf_, bool_p_)					\
 {												\
     *(bool_p_) = (*(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_)) ? TRUE : FALSE;		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", bool=%s",	\
 	(MPIG_PTR_CAST) (msgbuf_), MPIG_BOOL_STR(*(bool_p_))));					\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_msg_type);			\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_msg_type(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_sizeof_conn_open_resp (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_local_sizeof_conn_open_resp(vc_) (sizeof(unsigned char))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_conn_open_resp(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_conn_open_resp(msgbuf_, conn_open_resp_)					\
-{														\
-    *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (conn_open_resp_);			\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", conn_open_resp=%s",		\
-	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(conn_open_resp_)));			\
-    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_conn_open_resp);					\
+#define mpig_cm_xio_msg_hdr_put_conn_open_resp(vc_, msgbuf_, conn_open_resp_)				\
+{													\
+    *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (conn_open_resp_);		\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", conn_open_resp=%s",	\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(conn_open_resp_)));		\
+    mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_conn_open_resp(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_get_conn_open_resp(msgbuf_, conn_open_resp_p_)					\
-{														\
-    *(conn_open_resp_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);				\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", conn_open_resp=%s",		\
-	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(*(conn_open_resp_p_))));		\
-    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_sizeof_conn_open_resp);					\
+#define mpig_cm_xio_msg_hdr_get_conn_open_resp(vc_, msgbuf_, conn_open_resp_p_)				\
+{													\
+    *(conn_open_resp_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);			\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", conn_open_resp=%s",	\
+	(MPIG_PTR_CAST) (msgbuf_), mpig_cm_xio_conn_open_resp_get_string(*(conn_open_resp_p_))));	\
+    mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_conn_open_resp(vc_));		\
 }
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
