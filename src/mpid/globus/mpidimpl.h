@@ -898,7 +898,7 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
 #define mpig_databuf_set_eod(dbuf_, val_)											\
 {																\
-    MPIU_Assert((val_) >= 0 && (val_) <= ((mpig_databuf_t *)(dbuf_))->size);							\
+    MPIU_Assert(((mpig_databuf_t *)(dbuf_))->size - (val_) <= ((mpig_databuf_t *)(dbuf_))->size);				\
     ((mpig_databuf_t *)(dbuf_))->eod = (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - set eod: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
@@ -920,7 +920,7 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
 #define mpig_databuf_dec_eod(dbuf_, val_)											\
 {																\
-    MPIU_Assert(((mpig_databuf_t *)(dbuf_))->eod - (val_) >= 0);								\
+    MPIU_Assert(((mpig_databuf_t *)(dbuf_))->eod - (val_) <= ((mpig_databuf_t *)(dbuf_))->eod);					\
     ((mpig_databuf_t *)(dbuf_))->eod -= (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - dec eod: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
@@ -933,7 +933,7 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
 #define mpig_databuf_set_pos(dbuf_, val_)											\
 {																\
-    MPIU_Assert((val_) >= 0 && (val_) <= ((mpig_databuf_t *)(dbuf_))->pos);							\
+    MPIU_Assert(((mpig_databuf_t *)(dbuf_))->eod - (val_) <= ((mpig_databuf_t *)(dbuf_))->eod);					\
     ((mpig_databuf_t *)(dbuf_))->pos = (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - set pos: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
@@ -955,7 +955,7 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
 #define mpig_databuf_dec_pos(dbuf_, val_)											\
 {																\
-    MPIU_Assert(((mpig_databuf_t *)(dbuf_))->pos - (val_) >= 0);								\
+    MPIU_Assert(((mpig_databuf_t *)(dbuf_))->pos - (val_) <= ((mpig_databuf_t *)(dbuf_))->pos);					\
     ((mpig_databuf_t *)(dbuf_))->pos -= (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - dec pos: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
