@@ -1,0 +1,7 @@
+INCLUDES = -I../../../include -I${srcdir}/../../../include
+LDADD = -L../../../../../lib 
+DEPADD = @MPILIBLOC@ 
+smvar_do_sharedlibs = 0
+
+errsetx_SOURCES   = errsetx.cxx
+

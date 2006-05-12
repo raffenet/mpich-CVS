@@ -1,4 +1,4 @@
-SUBDIRS = io
+SUBDIRS = io errhan
 
 # A special testing target to simplify testing just the C++ code
 testing:
