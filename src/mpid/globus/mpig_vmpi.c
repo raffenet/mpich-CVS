@@ -9,12 +9,11 @@
 #include "mpidconf.h"
 
 #if defined(MPIG_VMPI)
+#include <stdlib.h>
 
-#define BUILDING_MPIG_VMPI_C
 
-
-/* NOTE: TRUE and FALSE values must match the values set in mpidpre.h.  the defintion of mpig_aligned_t must also match the value
-   defined in mpidpre.h. */
+/* VERY-IMPORTANT-NOTE: TRUE and FALSE values must match the values set in mpidpre.h.  the defintion of mpig_aligned_t must also
+   match the value defined in mpidpre.h. */
 #undef FALSE
 #define FALSE 0
 #undef TRUE
@@ -30,150 +29,150 @@ typedef TYPEOF_MPIG_ALIGNED_T mpig_aligned_t;
 /*
  * symbols for exporting predefined vendor MPI handles and values
  */
-mpig_vmpi_request_t mpig_vmpi_request_null;
-int MPIG_VMPI_ANY_SOURCE;
-int MPIG_VMPI_ANY_TAG;
-void * MPIG_VMPI_IN_PLACE;
-int MPIG_VMPI_MAX_ERROR_STRING;
-int MPIG_VMPI_PROC_NULL;
-mpig_vmpi_status_t * MPIG_VMPI_STATUS_IGNORE;
-mpig_vmpi_status_t * MPIG_VMPI_STATUSES_IGNORE;
-int MPIG_VMPI_UNDEFINED;
+mpig_vmpi_request_t mpig_vmpi_request_null = MPIG_VMPI_REQUEST_INITIALIZER;
+int mpig_vmpi_any_source = -1;
+int mpig_vmpi_any_tag = -1;
+void * mpig_vmpi_in_place = NULL;
+int mpig_vmpi_max_error_string = -1;
+int mpig_vmpi_proc_null = -1;
+mpig_vmpi_status_t * mpig_vmpi_status_ignore = NULL;
+mpig_vmpi_status_t * mpig_vmpi_statuses_ignore = NULL;
+int mpig_vmpi_undefined = -1;
 
 /* predefined communicators */
-mpig_vmpi_comm_t mpig_vmpi_comm_null;
-mpig_vmpi_comm_t mpig_vmpi_comm_world;
-mpig_vmpi_comm_t mpig_vmpi_comm_self;
+mpig_vmpi_comm_t mpig_vmpi_comm_null = MPIG_VMPI_COMM_INITIALIZER;
+mpig_vmpi_comm_t mpig_vmpi_comm_world = MPIG_VMPI_COMM_INITIALIZER;
+mpig_vmpi_comm_t mpig_vmpi_comm_self = MPIG_VMPI_COMM_INITIALIZER;
 
 /* predefined datatypes */
-mpig_vmpi_datatype_t mpig_vmpi_dt_null;
+mpig_vmpi_datatype_t mpig_vmpi_dt_null = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* c basic datatypes */
-mpig_vmpi_datatype_t mpig_vmpi_dt_byte;
-mpig_vmpi_datatype_t mpig_vmpi_dt_char;
-mpig_vmpi_datatype_t mpig_vmpi_dt_signed_char;
-mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_char;
-mpig_vmpi_datatype_t mpig_vmpi_dt_wchar;
-mpig_vmpi_datatype_t mpig_vmpi_dt_short;
-mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_short;
-mpig_vmpi_datatype_t mpig_vmpi_dt_int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned;
-mpig_vmpi_datatype_t mpig_vmpi_dt_long;
-mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_long;
-mpig_vmpi_datatype_t mpig_vmpi_dt_long_long;
-mpig_vmpi_datatype_t mpig_vmpi_dt_long_long_int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_long_long;
-mpig_vmpi_datatype_t mpig_vmpi_dt_float;
-mpig_vmpi_datatype_t mpig_vmpi_dt_double;
-mpig_vmpi_datatype_t mpig_vmpi_dt_long_double;
+mpig_vmpi_datatype_t mpig_vmpi_dt_byte = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_char = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_signed_char = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_char = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_wchar = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_short = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_short = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_long = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_long = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_long_long = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_long_long_int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_unsigned_long_long = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_float = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_double = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_long_double = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* c paired datatypes used predominantly for minloc/maxloc reduce operations */
-mpig_vmpi_datatype_t mpig_vmpi_dt_short_int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_2int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_long_int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_float_int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_double_int;
-mpig_vmpi_datatype_t mpig_vmpi_dt_long_double_int;
+mpig_vmpi_datatype_t mpig_vmpi_dt_short_int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_2int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_long_int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_float_int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_double_int = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_long_double_int = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* fortran basic datatypes */
-mpig_vmpi_datatype_t mpig_vmpi_dt_logical;
-mpig_vmpi_datatype_t mpig_vmpi_dt_character;
-mpig_vmpi_datatype_t mpig_vmpi_dt_integer;
-mpig_vmpi_datatype_t mpig_vmpi_dt_real;
-mpig_vmpi_datatype_t mpig_vmpi_dt_double_precision;
-mpig_vmpi_datatype_t mpig_vmpi_dt_complex;
-mpig_vmpi_datatype_t mpig_vmpi_dt_double_complex;
+mpig_vmpi_datatype_t mpig_vmpi_dt_logical = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_character = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_integer = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_real = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_double_precision = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_complex = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_double_complex = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* fortran paired datatypes used predominantly for minloc/maxloc reduce operations */
-mpig_vmpi_datatype_t mpig_vmpi_dt_2integer;
-mpig_vmpi_datatype_t mpig_vmpi_dt_2complex;
-mpig_vmpi_datatype_t mpig_vmpi_dt_2real;
-mpig_vmpi_datatype_t mpig_vmpi_dt_2double_complex;
-mpig_vmpi_datatype_t mpig_vmpi_dt_2double_precision;
+mpig_vmpi_datatype_t mpig_vmpi_dt_2integer = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_2complex = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_2real = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_2double_complex = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_2double_precision = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* fortran size specific datatypes */
-mpig_vmpi_datatype_t mpig_vmpi_dt_integer1;
-mpig_vmpi_datatype_t mpig_vmpi_dt_integer2;
-mpig_vmpi_datatype_t mpig_vmpi_dt_integer4;
-mpig_vmpi_datatype_t mpig_vmpi_dt_integer8;
-mpig_vmpi_datatype_t mpig_vmpi_dt_integer16;
-mpig_vmpi_datatype_t mpig_vmpi_dt_real4;
-mpig_vmpi_datatype_t mpig_vmpi_dt_real8;
-mpig_vmpi_datatype_t mpig_vmpi_dt_real16;
-mpig_vmpi_datatype_t mpig_vmpi_dt_complex8;
-mpig_vmpi_datatype_t mpig_vmpi_dt_complex16;
-mpig_vmpi_datatype_t mpig_vmpi_dt_complex32;
+mpig_vmpi_datatype_t mpig_vmpi_dt_integer1 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_integer2 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_integer4 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_integer8 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_integer16 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_real4 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_real8 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_real16 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_complex8 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_complex16 = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_complex32 = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* type representing a packed user buffer */
-mpig_vmpi_datatype_t mpig_vmpi_dt_packed;
+mpig_vmpi_datatype_t mpig_vmpi_dt_packed = MPIG_VMPI_DATATYPE_INITIALIZER;
 /* pseudo datatypes used to manipulate the extent */
-mpig_vmpi_datatype_t mpig_vmpi_dt_lb;
-mpig_vmpi_datatype_t mpig_vmpi_dt_ub;
+mpig_vmpi_datatype_t mpig_vmpi_dt_lb = MPIG_VMPI_DATATYPE_INITIALIZER;
+mpig_vmpi_datatype_t mpig_vmpi_dt_ub = MPIG_VMPI_DATATYPE_INITIALIZER;
 
 /* collective operations (for MPI_Reduce, etc.) */
-mpig_vmpi_op_t mpig_vmpi_op_null;
-mpig_vmpi_op_t mpig_vmpi_op_max;
-mpig_vmpi_op_t mpig_vmpi_op_min;
-mpig_vmpi_op_t mpig_vmpi_op_sum;
-mpig_vmpi_op_t mpig_vmpi_op_prod;
-mpig_vmpi_op_t mpig_vmpi_op_land;
-mpig_vmpi_op_t mpig_vmpi_op_band;
-mpig_vmpi_op_t mpig_vmpi_op_lor;
-mpig_vmpi_op_t mpig_vmpi_op_bor;
-mpig_vmpi_op_t mpig_vmpi_op_lxor;
-mpig_vmpi_op_t mpig_vmpi_op_bxor;
-mpig_vmpi_op_t mpig_vmpi_op_minloc;
-mpig_vmpi_op_t mpig_vmpi_op_maxloc;
-mpig_vmpi_op_t mpig_vmpi_op_replace;
+mpig_vmpi_op_t mpig_vmpi_op_null = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_max = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_min = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_sum = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_prod = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_land = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_band = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_lor = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_bor = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_lxor = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_bxor = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_minloc = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_maxloc = MPIG_VMPI_OP_INITIALIZER;
+mpig_vmpi_op_t mpig_vmpi_op_replace = MPIG_VMPI_OP_INITIALIZER;
 
 /* predefined error classes */
-int MPIG_VMPI_ERR_BUFFER;
-int MPIG_VMPI_ERR_COUNT;
-int MPIG_VMPI_ERR_TYPE;
-int MPIG_VMPI_ERR_TAG;
-int MPIG_VMPI_ERR_COMM;
-int MPIG_VMPI_ERR_RANK;
-int MPIG_VMPI_ERR_ROOT;
-int MPIG_VMPI_ERR_TRUNCATE;
-int MPIG_VMPI_ERR_GROUP;
-int MPIG_VMPI_ERR_OP;
-int MPIG_VMPI_ERR_REQUEST;
-int MPIG_VMPI_ERR_TOPOLOGY;
-int MPIG_VMPI_ERR_DIMS;
-int MPIG_VMPI_ERR_ARG;
-int MPIG_VMPI_ERR_OTHER;
-int MPIG_VMPI_ERR_UNKNOWN;
-int MPIG_VMPI_ERR_INTERN;
-int MPIG_VMPI_ERR_IN_STATUS;
-int MPIG_VMPI_ERR_PENDING;
-int MPIG_VMPI_ERR_FILE;
-int MPIG_VMPI_ERR_ACCESS;
-int MPIG_VMPI_ERR_AMODE;
-int MPIG_VMPI_ERR_BAD_FILE;
-int MPIG_VMPI_ERR_FILE_EXISTS;
-int MPIG_VMPI_ERR_FILE_IN_USE;
-int MPIG_VMPI_ERR_NO_SPACE;
-int MPIG_VMPI_ERR_NO_SUCH_FILE;
-int MPIG_VMPI_ERR_IO;
-int MPIG_VMPI_ERR_READ_ONLY;
-int MPIG_VMPI_ERR_CONVERSION;
-int MPIG_VMPI_ERR_DUP_DATAREP;
-int MPIG_VMPI_ERR_UNSUPPORTED_DATAREP;
-int MPIG_VMPI_ERR_INFO;
-int MPIG_VMPI_ERR_INFO_KEY;
-int MPIG_VMPI_ERR_INFO_VALUE;
-int MPIG_VMPI_ERR_INFO_NOKEY;
-int MPIG_VMPI_ERR_NAME;
-int MPIG_VMPI_ERR_NO_MEM;
-int MPIG_VMPI_ERR_NOT_SAME;
-int MPIG_VMPI_ERR_PORT;
-int MPIG_VMPI_ERR_QUOTA;
-int MPIG_VMPI_ERR_SERVICE;
-int MPIG_VMPI_ERR_SPAWN;
-int MPIG_VMPI_ERR_UNSUPPORTED_OPERATION;
-int MPIG_VMPI_ERR_WIN;
-int MPIG_VMPI_ERR_BASE;
-int MPIG_VMPI_ERR_LOCKTYPE;
-int MPIG_VMPI_ERR_KEYVAL;
-int MPIG_VMPI_ERR_RMA_CONFLICT;
-int MPIG_VMPI_ERR_RMA_SYNC;
-int MPIG_VMPI_ERR_SIZE;
-int MPIG_VMPI_ERR_DISP;
-int MPIG_VMPI_ERR_ASSERT;
+int mpig_vmpi_err_buffer = -1;
+int mpig_vmpi_err_count = -1;
+int mpig_vmpi_err_type = -1;
+int mpig_vmpi_err_tag = -1;
+int mpig_vmpi_err_comm = -1;
+int mpig_vmpi_err_rank = -1;
+int mpig_vmpi_err_root = -1;
+int mpig_vmpi_err_truncate = -1;
+int mpig_vmpi_err_group = -1;
+int mpig_vmpi_err_op = -1;
+int mpig_vmpi_err_request = -1;
+int mpig_vmpi_err_topology = -1;
+int mpig_vmpi_err_dims = -1;
+int mpig_vmpi_err_arg = -1;
+int mpig_vmpi_err_other = -1;
+int mpig_vmpi_err_unknown = -1;
+int mpig_vmpi_err_intern = -1;
+int mpig_vmpi_err_in_status = -1;
+int mpig_vmpi_err_pending = -1;
+int mpig_vmpi_err_file = -1;
+int mpig_vmpi_err_access = -1;
+int mpig_vmpi_err_amode = -1;
+int mpig_vmpi_err_bad_file = -1;
+int mpig_vmpi_err_file_exists = -1;
+int mpig_vmpi_err_file_in_use = -1;
+int mpig_vmpi_err_no_space = -1;
+int mpig_vmpi_err_no_such_file = -1;
+int mpig_vmpi_err_io = -1;
+int mpig_vmpi_err_read_only = -1;
+int mpig_vmpi_err_conversion = -1;
+int mpig_vmpi_err_dup_datarep = -1;
+int mpig_vmpi_err_unsupported_datarep = -1;
+int mpig_vmpi_err_info = -1;
+int mpig_vmpi_err_info_key = -1;
+int mpig_vmpi_err_info_value = -1;
+int mpig_vmpi_err_info_nokey = -1;
+int mpig_vmpi_err_name = -1;
+int mpig_vmpi_err_no_mem = -1;
+int mpig_vmpi_err_not_same = -1;
+int mpig_vmpi_err_port = -1;
+int mpig_vmpi_err_quota = -1;
+int mpig_vmpi_err_service = -1;
+int mpig_vmpi_err_spawn = -1;
+int mpig_vmpi_err_unsupported_operation = -1;
+int mpig_vmpi_err_win = -1;
+int mpig_vmpi_err_base = -1;
+int mpig_vmpi_err_locktype = -1;
+int mpig_vmpi_err_keyval = -1;
+int mpig_vmpi_err_rma_conflict = -1;
+int mpig_vmpi_err_rma_sync = -1;
+int mpig_vmpi_err_size = -1;
+int mpig_vmpi_err_disp = -1;
+int mpig_vmpi_err_assert = -1;
 
 
 /*
@@ -184,7 +183,7 @@ int mpig_vmpi_module_ref_count = 0;
 
 
 /*
- * mpig_vmpi_init(argc_p, argv_p)
+ * initialization and termination functions
  */
 int mpig_vmpi_init(int * argc_p, char *** argv_p)
 {
@@ -213,14 +212,14 @@ int mpig_vmpi_init(int * argc_p, char *** argv_p)
     /* copy miscellaneous vendor MPI symbols into externally visible constants */
     *(MPI_Request *) &mpig_vmpi_request_null = MPI_REQUEST_NULL;
     
-    MPIG_VMPI_ANY_SOURCE = MPI_ANY_SOURCE;
-    MPIG_VMPI_ANY_TAG = MPI_ANY_TAG;
-    MPIG_VMPI_IN_PLACE = (void *) MPI_IN_PLACE;
-    MPIG_VMPI_MAX_ERROR_STRING = MPI_MAX_ERROR_STRING;
-    MPIG_VMPI_PROC_NULL = MPI_PROC_NULL;
-    MPIG_VMPI_STATUS_IGNORE = (mpig_vmpi_status_t *) MPI_STATUS_IGNORE;
-    MPIG_VMPI_STATUSES_IGNORE = (mpig_vmpi_status_t *) MPI_STATUSES_IGNORE;
-    MPIG_VMPI_UNDEFINED = MPI_UNDEFINED;
+    mpig_vmpi_any_source = MPI_ANY_SOURCE;
+    mpig_vmpi_any_tag = MPI_ANY_TAG;
+    mpig_vmpi_in_place = (void *) MPI_IN_PLACE;
+    mpig_vmpi_max_error_string = MPI_MAX_ERROR_STRING;
+    mpig_vmpi_proc_null = MPI_PROC_NULL;
+    mpig_vmpi_status_ignore = (mpig_vmpi_status_t *) MPI_STATUS_IGNORE;
+    mpig_vmpi_statuses_ignore = (mpig_vmpi_status_t *) MPI_STATUSES_IGNORE;
+    mpig_vmpi_undefined = MPI_UNDEFINED;
     
     /* copy the vendor MPI predefined communicator handles into externally visible constants */
     *(MPI_Comm *) &mpig_vmpi_comm_null = MPI_COMM_NULL;
@@ -303,59 +302,59 @@ int mpig_vmpi_init(int * argc_p, char *** argv_p)
     *(MPI_Op *) &mpig_vmpi_op_replace = MPI_REPLACE;
     
     /* copy the vendor MPI predefined error class values into the externally visible constants */
-    MPIG_VMPI_ERR_BUFFER = MPI_ERR_BUFFER;
-    MPIG_VMPI_ERR_COUNT = MPI_ERR_COUNT;
-    MPIG_VMPI_ERR_TYPE = MPI_ERR_TYPE;
-    MPIG_VMPI_ERR_TAG = MPI_ERR_TAG;
-    MPIG_VMPI_ERR_COMM = MPI_ERR_COMM;
-    MPIG_VMPI_ERR_RANK = MPI_ERR_RANK;
-    MPIG_VMPI_ERR_ROOT = MPI_ERR_ROOT;
-    MPIG_VMPI_ERR_TRUNCATE = MPI_ERR_TRUNCATE;
-    MPIG_VMPI_ERR_GROUP = MPI_ERR_GROUP;
-    MPIG_VMPI_ERR_OP = MPI_ERR_OP;
-    MPIG_VMPI_ERR_REQUEST = MPI_ERR_REQUEST;
-    MPIG_VMPI_ERR_TOPOLOGY = MPI_ERR_TOPOLOGY;
-    MPIG_VMPI_ERR_DIMS = MPI_ERR_DIMS;
-    MPIG_VMPI_ERR_ARG = MPI_ERR_ARG;
-    MPIG_VMPI_ERR_OTHER = MPI_ERR_OTHER;
-    MPIG_VMPI_ERR_UNKNOWN = MPI_ERR_UNKNOWN;
-    MPIG_VMPI_ERR_INTERN = MPI_ERR_INTERN;
-    MPIG_VMPI_ERR_IN_STATUS = MPI_ERR_IN_STATUS;
-    MPIG_VMPI_ERR_PENDING = MPI_ERR_PENDING;
-    MPIG_VMPI_ERR_FILE = MPI_ERR_FILE;
-    MPIG_VMPI_ERR_ACCESS = MPI_ERR_ACCESS;
-    MPIG_VMPI_ERR_AMODE = MPI_ERR_AMODE;
-    MPIG_VMPI_ERR_BAD_FILE = MPI_ERR_BAD_FILE;
-    MPIG_VMPI_ERR_FILE_EXISTS = MPI_ERR_FILE_EXISTS;
-    MPIG_VMPI_ERR_FILE_IN_USE = MPI_ERR_FILE_IN_USE;
-    MPIG_VMPI_ERR_NO_SPACE = MPI_ERR_NO_SPACE;
-    MPIG_VMPI_ERR_NO_SUCH_FILE = MPI_ERR_NO_SUCH_FILE;
-    MPIG_VMPI_ERR_IO = MPI_ERR_IO;
-    MPIG_VMPI_ERR_READ_ONLY = MPI_ERR_READ_ONLY;
-    MPIG_VMPI_ERR_CONVERSION = MPI_ERR_CONVERSION;
-    MPIG_VMPI_ERR_DUP_DATAREP = MPI_ERR_DUP_DATAREP;
-    MPIG_VMPI_ERR_UNSUPPORTED_DATAREP = MPI_ERR_UNSUPPORTED_DATAREP;
-    MPIG_VMPI_ERR_INFO = MPI_ERR_INFO;
-    MPIG_VMPI_ERR_INFO_KEY = MPI_ERR_INFO_KEY;
-    MPIG_VMPI_ERR_INFO_VALUE = MPI_ERR_INFO_VALUE;
-    MPIG_VMPI_ERR_INFO_NOKEY = MPI_ERR_INFO_NOKEY;
-    MPIG_VMPI_ERR_NAME = MPI_ERR_NAME;
-    MPIG_VMPI_ERR_NO_MEM = MPI_ERR_NO_MEM;
-    MPIG_VMPI_ERR_NOT_SAME = MPI_ERR_NOT_SAME;
-    MPIG_VMPI_ERR_PORT = MPI_ERR_PORT;
-    MPIG_VMPI_ERR_QUOTA = MPI_ERR_QUOTA;
-    MPIG_VMPI_ERR_SERVICE = MPI_ERR_SERVICE;
-    MPIG_VMPI_ERR_SPAWN = MPI_ERR_SPAWN;
-    MPIG_VMPI_ERR_UNSUPPORTED_OPERATION = MPI_ERR_UNSUPPORTED_OPERATION;
-    MPIG_VMPI_ERR_WIN = MPI_ERR_WIN;
-    MPIG_VMPI_ERR_BASE = MPI_ERR_BASE;
-    MPIG_VMPI_ERR_LOCKTYPE = MPI_ERR_LOCKTYPE;
-    MPIG_VMPI_ERR_KEYVAL = MPI_ERR_KEYVAL;
-    MPIG_VMPI_ERR_RMA_CONFLICT = MPI_ERR_RMA_CONFLICT;
-    MPIG_VMPI_ERR_RMA_SYNC = MPI_ERR_RMA_SYNC;
-    MPIG_VMPI_ERR_SIZE = MPI_ERR_SIZE;
-    MPIG_VMPI_ERR_DISP = MPI_ERR_DISP;
-    MPIG_VMPI_ERR_ASSERT = MPI_ERR_ASSERT;
+    mpig_vmpi_err_buffer = MPI_ERR_BUFFER;
+    mpig_vmpi_err_count = MPI_ERR_COUNT;
+    mpig_vmpi_err_type = MPI_ERR_TYPE;
+    mpig_vmpi_err_tag = MPI_ERR_TAG;
+    mpig_vmpi_err_comm = MPI_ERR_COMM;
+    mpig_vmpi_err_rank = MPI_ERR_RANK;
+    mpig_vmpi_err_root = MPI_ERR_ROOT;
+    mpig_vmpi_err_truncate = MPI_ERR_TRUNCATE;
+    mpig_vmpi_err_group = MPI_ERR_GROUP;
+    mpig_vmpi_err_op = MPI_ERR_OP;
+    mpig_vmpi_err_request = MPI_ERR_REQUEST;
+    mpig_vmpi_err_topology = MPI_ERR_TOPOLOGY;
+    mpig_vmpi_err_dims = MPI_ERR_DIMS;
+    mpig_vmpi_err_arg = MPI_ERR_ARG;
+    mpig_vmpi_err_other = MPI_ERR_OTHER;
+    mpig_vmpi_err_unknown = MPI_ERR_UNKNOWN;
+    mpig_vmpi_err_intern = MPI_ERR_INTERN;
+    mpig_vmpi_err_in_status = MPI_ERR_IN_STATUS;
+    mpig_vmpi_err_pending = MPI_ERR_PENDING;
+    mpig_vmpi_err_file = MPI_ERR_FILE;
+    mpig_vmpi_err_access = MPI_ERR_ACCESS;
+    mpig_vmpi_err_amode = MPI_ERR_AMODE;
+    mpig_vmpi_err_bad_file = MPI_ERR_BAD_FILE;
+    mpig_vmpi_err_file_exists = MPI_ERR_FILE_EXISTS;
+    mpig_vmpi_err_file_in_use = MPI_ERR_FILE_IN_USE;
+    mpig_vmpi_err_no_space = MPI_ERR_NO_SPACE;
+    mpig_vmpi_err_no_such_file = MPI_ERR_NO_SUCH_FILE;
+    mpig_vmpi_err_io = MPI_ERR_IO;
+    mpig_vmpi_err_read_only = MPI_ERR_READ_ONLY;
+    mpig_vmpi_err_conversion = MPI_ERR_CONVERSION;
+    mpig_vmpi_err_dup_datarep = MPI_ERR_DUP_DATAREP;
+    mpig_vmpi_err_unsupported_datarep = MPI_ERR_UNSUPPORTED_DATAREP;
+    mpig_vmpi_err_info = MPI_ERR_INFO;
+    mpig_vmpi_err_info_key = MPI_ERR_INFO_KEY;
+    mpig_vmpi_err_info_value = MPI_ERR_INFO_VALUE;
+    mpig_vmpi_err_info_nokey = MPI_ERR_INFO_NOKEY;
+    mpig_vmpi_err_name = MPI_ERR_NAME;
+    mpig_vmpi_err_no_mem = MPI_ERR_NO_MEM;
+    mpig_vmpi_err_not_same = MPI_ERR_NOT_SAME;
+    mpig_vmpi_err_port = MPI_ERR_PORT;
+    mpig_vmpi_err_quota = MPI_ERR_QUOTA;
+    mpig_vmpi_err_service = MPI_ERR_SERVICE;
+    mpig_vmpi_err_spawn = MPI_ERR_SPAWN;
+    mpig_vmpi_err_unsupported_operation = MPI_ERR_UNSUPPORTED_OPERATION;
+    mpig_vmpi_err_win = MPI_ERR_WIN;
+    mpig_vmpi_err_base = MPI_ERR_BASE;
+    mpig_vmpi_err_locktype = MPI_ERR_LOCKTYPE;
+    mpig_vmpi_err_keyval = MPI_ERR_KEYVAL;
+    mpig_vmpi_err_rma_conflict = MPI_ERR_RMA_CONFLICT;
+    mpig_vmpi_err_rma_sync = MPI_ERR_RMA_SYNC;
+    mpig_vmpi_err_size = MPI_ERR_SIZE;
+    mpig_vmpi_err_disp = MPI_ERR_DISP;
+    mpig_vmpi_err_assert = MPI_ERR_ASSERT;
 
   fn_return:
     return vrc;
@@ -365,6 +364,7 @@ int mpig_vmpi_init(int * argc_p, char *** argv_p)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
+/* mpig_vmpi_init() */
 
 int mpig_vmpi_finalize(void)
 {
@@ -397,7 +397,12 @@ int mpig_vmpi_finalize(void)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
+/* mpig_vmpi_finalize() */
 
+int mpig_vmpi_abort(mpig_vmpi_comm_t * comm, int exit_code)
+{
+    return MPI_Abort(*(MPI_Comm *) comm, exit_code);
+}
 
 /*
  * point-to-point functions
