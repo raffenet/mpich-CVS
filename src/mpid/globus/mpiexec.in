@@ -2,7 +2,7 @@
 
 usage()
 {
-    echo "usage: $0 [-dumprsl] -n <nprocs> <pgm> [args...]"
+    echo "usage: $0 [-dumprsl] [-n <nprocs>] <pgm> [args...]"
     exit $1
 }
 
@@ -23,7 +23,7 @@ globus_args_quote()
 }
 
 dumprsl="no"
-nprocs=""
+nprocs=1
 while test $# -gt 0 ; do
     case "$1" in
 	-h|--help)
@@ -40,6 +40,7 @@ while test $# -gt 0 ; do
 	    ;;
 	-*)
 	    echo 'ERROR: unknown option "'$1'"'
+	    usage 1
 	    ;;
 	*)
 	    break
@@ -47,9 +48,14 @@ while test $# -gt 0 ; do
     esac
 done
 
-
 pgm="$1"
 shift
+
+if test ! -f "$pgm" ; then
+    echo "ERROR: "'"'"$pgm"'"'" not found"
+    exit 1
+fi
+
 if test ! -x "$pgm" ; then
     echo "ERROR: "'"'"$pgm"'"'" is not executable"
     exit 1
@@ -71,7 +77,7 @@ if test ! -d "$GLOBUS_LOCATION" ; then
 fi
 
 if test ! -x "$GLOBUS_LOCATION/bin/globusrun" ; then
-    echo "ERROR: the environment variable GLOBUS_LOCATION does not point at a valid directory"
+    echo "ERROR: GLOBUS_LOCATION/bin/globusrun does not exist"
     exit 1
 fi
 
