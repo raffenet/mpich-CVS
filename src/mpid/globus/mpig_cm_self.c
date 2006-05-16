@@ -868,7 +868,7 @@ MPIG_STATIC int mpig_cm_self_send(
 	    /* MT-FIXME: a new request has been added to unexpected queue.  if another application thread is blocking in a
 	       MPID_Probe(), then the progress engine must be woken up to give MPID_Probe() a chance to inspect the unexpected
 	       queue again. */
-	    mpig_progress_wakeup();
+	    mpig_pe_notify_unexp_recv();
 	}
     }
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,

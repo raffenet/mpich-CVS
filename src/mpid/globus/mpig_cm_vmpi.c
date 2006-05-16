@@ -10,9 +10,14 @@
 
 #if defined(MPIG_VMPI)
 /*
- * miscellaneous internal variable and function declarations
+ * miscellaneous internal constants, variables, and function declarations
  */
 globus_uuid_t mpig_vmpi_job_id;
+
+
+#if !defined(MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE)
+#define MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE 32
+#endif
 
 
 /**********************************************************************************************************************************
@@ -79,12 +84,17 @@ MPIG_STATIC mpig_vc_cm_funcs_t mpig_cm_vmpi_vc_funcs =
 /**********************************************************************************************************************************
 				     BEGIN COMMUNICATION MODULE PROGRESS ENGINE DECLARATIONS
 **********************************************************************************************************************************/
-MPIG_STATIC mpig_vmpi_request_t * mpig_cm_vmpi_vreq_table;
-MPIG_STATIC MPID_Request * mpig_vm_vmpi_req_table;
+MPIG_STATIC mpig_vmpi_request_t * mpig_cm_vmpi_pe_table_vreqs = NULL;
+MPIG_STATIC MPID_Request ** mpig_cm_vmpi_pe_table_mreqs = NULL;
+MPIG_STATIC mpig_vmpi_status_t * mpig_cm_vmpi_pe_table_vstatuses = NULL;
+MPIG_STATIC int mpig_cm_vmpi_pe_table_active = 0;
+MPIG_STATIC int mpig_cm_vmpi_pe_table_size = 0;
 
-MPIG_STATIC void mpig_cm_vmpi_progress_init(int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC void mpig_cm_vmpi_pe_init(int * mpi_errno_p, bool_t * failed_p);
 
-MPIG_STATIC void mpig_cm_vmpi_progress_add_req(MPID_Request * req, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC void mpig_cm_vmpi_pe_finalize(int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_vmpi_pe_table_inc_size(int * mpi_errno_p, bool_t * failed_p);
 /**********************************************************************************************************************************
 				      END COMMUNICATION MODULE PROGRESS ENGINE DECLARATIONS
 **********************************************************************************************************************************/
@@ -98,9 +108,40 @@ MPIG_STATIC void mpig_cm_vmpi_progress_add_req(MPID_Request * req, int * mpi_err
     (comm_)->cm.vmpi.remote_ranks_mtov[mrank_] = (vrank_);	\
 }
 
-#define mpig_cm_vmpi_comm_get_vrank(comm_, mrank_, vrank_p_)	\
-{								\
-    *(vrank_p_) = (comm_)->cm.vmpi.remote_ranks_mtov[mrank_];	\
+#define mpig_cm_vmpi_comm_get_send_vrank(comm_, mrank_, vrank_p_)	\
+{									\
+    if ((mrank_) >= 0)							\
+    {									\
+	*(vrank_p_) = (comm_)->cm.vmpi.remote_ranks_mtov[mrank_];	\
+    }									\
+    else if ((mrank_) == MPI_PROC_NULL)					\
+    {									\
+	*(vrank_p_) = MPIG_VMPI_PROC_NULL;				\
+    }									\
+    else								\
+    {									\
+	*(vrank_p_) = MPIG_VMPI_UNDEFINED;				\
+    }									\
+}
+
+#define mpig_cm_vmpi_comm_get_recv_vrank(comm_, mrank_, vrank_p_)	\
+{									\
+    if ((mrank_) >= 0)							\
+    {									\
+	*(vrank_p_) = (comm_)->cm.vmpi.remote_ranks_mtov[mrank_];	\
+    }									\
+    else if ((mrank_) == MPI_PROC_NULL)					\
+    {									\
+	*(vrank_p_) = MPIG_VMPI_PROC_NULL;				\
+    }									\
+    else if ((mrank_) == MPI_ANY_SOURCE)				\
+    {									\
+	*(vrank_p_) = MPIG_VMPI_ANY_SOURCE;				\
+    }									\
+    else								\
+    {									\
+	*(vrank_p_) = MPIG_VMPI_UNDEFINED;				\
+    }									\
 }
 
 #define mpig_cm_vmpi_comm_set_mrank(comm_, vrank_, mrank_)	\
@@ -169,6 +210,22 @@ MPIG_STATIC void mpig_cm_vmpi_progress_add_req(MPID_Request * req, int * mpi_err
 	*(vdt_p_) = (mpig_vmpi_datatype_t *) MPIG_VMPI_DATATYPE_NULL;	\
     }									\
 }
+
+#define mpig_cm_vmpi_tag_get_vtag(tag_, vtag_p_)
+{
+    if ((tag_) >= 0)
+    {
+	*(vtag_p_) = (tag_);
+    }
+    else if ((tag_) == MPI_ANY_TAG)
+    {
+	*(vtag_p_) = MPIG_VMPI_ANY_TAG;
+    }
+    else
+    {
+	*(vtag_p_) = MPIG_VMPI_UNDEFINED;
+    }
+}
 /**********************************************************************************************************************************
 						BEGIN UTILITY AND ACCESSOR MACROS
 **********************************************************************************************************************************/
@@ -193,6 +250,7 @@ int mpig_cm_vmpi_init(int * argc, char *** argv)
 	int rank;
 	globus_result_t grc;
 	int vrc;
+	bool_t failed;
 	int mpi_errno = MPI_SUCCESS;
 	MPIU_CHKPMEM_DECL(2);
 	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_init);
@@ -351,24 +409,31 @@ int mpig_cm_vmpi_init(int * argc, char *** argv)
 	    "vendor MPI to MPICH2 comm rank translation table");
 	for (rank = 0; rank < comm->remote_size; rank++)
 	{
+	    /* these mappings will be defined during the module selection process.  see mpig_cm_vmpi_select_module() */
 	    mpig_cm_vmpi_comm_set_vrank(comm, rank, MPIG_VMPI_UNDEFINED);
 	}
 	for (rank = 0; rank <  mpig_process.cm.vmpi.cw_size; rank++)
 	{
+	    /* these mappings will be defined during the module selection process.  see mpig_cm_vmpi_select_module() */
 	    mpig_cm_vmpi_comm_set_mrank(comm, rank, MPI_UNDEFINED);
 	}
 
-	/* initialize the VMPI specific fields that are part of the MPI_COMM_SELF object */
+	/* initialize the VMPI specific fields that are part of the MPI_COMM_SELF object.  since the vendor MPI is not used by
+	   MPI_COMM_SELF, the fields are all nullified. */
 	comm = MPIR_Process.comm_self;
 	mpig_cm_vmpi_comm_set_vcomm(comm, MPID_CONTEXT_INTRA_PT2PT, MPIG_VMPI_COMM_NULL);
 	mpig_cm_vmpi_comm_set_vcomm(comm, MPID_CONTEXT_INTRA_COLL, MPIG_VMPI_COMM_NULL);
 	comm->cm.vmpi.remote_ranks_mtov = NULL;
 	comm->cm.vmpi.remote_ranks_vtom = NULL;
 
+	/* intialize the VMPI communication module progress engine */
+	mpig_cm_vmpi_pe_init(&mpi_errno, &failed);
+	MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_pe_init");
+	
 	/* MPIU_CHKPMEM_COMMIT() is implicit */
 
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_init);
 	return mpi_errno;
 
@@ -412,7 +477,7 @@ int mpig_cm_vmpi_finalize(void)
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Finalize", &mpi_errno);
 
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_finalize);
 	return mpi_errno;
 
@@ -463,7 +528,7 @@ int mpig_cm_vmpi_add_contact_info(mpig_bc_t * bc)
 	    "**globus|bc_add_contact %s", "CM_VMPI_CW_RANK");
 	
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_add_contact_info);
 	return mpi_errno;
 
@@ -548,7 +613,7 @@ int mpig_cm_vmpi_select_module(mpig_bc_t * bc, mpig_vc_t * vc, bool_t * selected
 	if (uuid_str != NULL) mpig_bc_free_contact(uuid_str);
 	if (cw_rank_str != NULL) mpig_bc_free_contact(cw_rank_str);
 	
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_select_module);
 	return mpi_errno;
 
@@ -574,151 +639,215 @@ int mpig_cm_vmpi_select_module(mpig_bc_t * bc, mpig_vc_t * vc, bool_t * selected
 /**********************************************************************************************************************************
 				    BEGIN COMMUNICATION MODULE PROGRESS ENGINE API FUNCTIONS
 **********************************************************************************************************************************/
-MPIG_STATIC mpig_vmpi_request_t * mpig_cm_vmpi_progress_vreq_array;
-MPIG_STATIC MPID_Request * mpig_vm_vmpi_progress_mreq_array;
-MPIG_STATIC mpig_vmpi_status_t * mpig_cm_vmpi_progress_vstatus_array;
-MPIG_STATIC int mpig_cm_vmpi_progress_array_num_active_entries;
-MPIG_STATIC int mpig_cm_vmpi_progress_array_size;
-MPIG_STATIC int * mpig_cm_vmpi_progress_free_entry_stack;
-MPIG_STATIC int mpig_cm_vmpi_progress_free_entry_stack_top;
-volatile int mpig_cm_vmpi_progress_ops_outstanding = 0;
+#if defined(MPIG_DEBUG)
+#define mpig_cm_vmpi_pe_table_init_entry(entry_)			\
+{									\
+    mpig_cm_vmpi_pe_table_vreqs[entry_] = MPIG_VMPI_REQUEST_NULL;	\
+    mpig_cm_vmpi_pe_table_mreqs[entry_] = NULL;				\
+}
+#else
+#define mpig_cm_vmpi_pe_table_init_entry(entry_)
+#endif
 
-
-#define mpig_cm_vmpi_progress_start_op()	\
-{						\
-    mpig_cm_vmpi_progress_ops_outstanding += 1;	\
-    mpig_progress_start_op();			\
+#define mpig_cm_vmpi_pe_start_op(req_, mpi_errno_p)										\
+{																\
+    *(mpi_errno_p_) = MPI_SUCCESS;												\
+																\
+    /* if the progress engine tables for tracking outstanding requests are not big enough to add a new request, then increase	\
+       their size */														\
+    if (mpig_cm_vmpi_pe_table_active == mpig_cm_vmpi_pe_table_size)								\
+    {																\
+	*(mpi_errno_p_) = mpig_cm_vmpi_pe_table_inc_size();									\
+    }																\
+																\
+    /* add the new request to the last end of the table */									\
+    mpig_cm_vmpi_pe_table_vreqs[mpig_cm_vmpi_pe_table_active] = &(req_)->cm.vmpi.vreq;						\
+    mpig_cm_vmpi_pe_table_mreqs[mpig_cm_vmpi_pe_table_active] = (req_);								\
+    (req_)->cm.vmpi.pe_table_loc = mpig_cm_vmpi_pe_table_active;								\
+    mpig_cm_vmpi_pe_table_active += 1;												\
+																\
+    /* notify the progress engine core that a new operation has been started */							\
+    mpig_pe_start_op();														\
 }
 
-#define mpig_cm_vmpi_progress_complete_op()	\
-{						\
-    mpig_cm_vmpi_progress_ops_outstanding -= 1;	\
-    mpig_progress_start_complete_op();		\
+#define mpig_cm_vmpi_pe_complete_op(req_)										\
+{															\
+    const int req_table_loc__ = (req_)->cm.vmpi.pe_table_loc;								\
+															\
+    /* move the last request in the table to the location of the request that completed */				\
+    mpig_cm_vmpi_pe_table_active -= 1;											\
+    if (req_table_loc__ != mpig_cm_vmpi_pe_table_active)								\
+    {															\
+	mpig_cm_vmpi_pe_table_vreqs[req_table_loc__] = mpig_cm_vmpi_pe_table_vreqs[mpig_cm_vmpi_pe_table_active];	\
+	mpig_cm_vmpi_pe_table_mreqs[req_table_loc__] = mpig_cm_vmpi_pe_table_mreqs[mpig_cm_vmpi_pe_table_active];	\
+	mpig_cm_vmpi_pe_table_mreqs[req_table_loc__]->cm.vmpi.pe_table_loc = req_table_loc__;				\
+    }															\
+    mpig_vm_vmpi_pe_table_init_entry(mpig_cm_vmpi_pe_table_active);							\
+															\
+    /* notify the progress engine core that an operation has completed */						\
+    mpig_pe_complete_op();												\
 }
 
 
 /*
- * int mpig_cm_vmpi_progress_init([IN/OUT] mpi_errno, [OUT] failed)
+ * int mpig_cm_vmpi_pe_init([IN/OUT] mpi_errno, [OUT] failed)
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_vmpi_progress_init
-MPIG_STATIC void mpig_cm_vmpi_progress_init(int * mpi_errno_p, bool_t * failed_p)
+#define FUNCNAME mpig_cm_vmpi_pe_init
+MPIG_STATIC void mpig_cm_vmpi_pe_init(int * mpi_errno_p, bool_t * failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPIU_CHKPMEM_DECL(4);
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_progress_init);
+    bool_t failed;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_pe_init);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_progress_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_pe_init);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
 
     *failed_p = FALSE;
     
-    /* the vendor MPI communication requires that it be polled.  increment the counter that tracks the number of communications
-       modules that require polling to make progress. */
-    mpig_progress_num_cm_requiring_polling += 1;
+    /* the vendor MPI communication module requires that it be polled in order for communication to progress. */
+    mpig_pe_cm_must_be_polled();
 
-    /* allocate and initialize the arrays used to track active requests */
-    mpig_cm_vmpi_array_size = 0;
-    mpig_cm_vmpi_array_num_active_entries = 0;
+    /* preallocate a set of entries in the progress engine tables for tracking outstanding requests */
+    mpig_cm_vmpi_pe_table_inc_size(mpi_errno_p, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|vmpi_pe_table_inc_size");
     
-    MPIU_CHKPMEM_MALLOC(mpig_cm_vmpi_progress_vreq_array, mpig_vmpi_request_t *, MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE *
-	sizeof(mpig_vmpi_request_t), *mpi_errno_p, "array of active vendor MPI requests");
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS,
+	"exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_pe_init);
+    return;
 
-    MPIU_CHKPMEM_MALLOC(mpig_cm_vmpi_progress_mreq_table, MPID_Request *, MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE *
-	sizeof(MPID_Request), *mpi_errno_p, "array of corresponding MPICH2 requests");
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_vmpi_pe_init() */
 
-    MPIU_CHKPMEM_MALLOC(mpig_cm_vmpi_progress_status_array, mpig_vmpi_status_t *, MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE *
-	sizeof(mpig_vmpi_status_t), *mpi_errno_p, "array of vendor MPI status structures for completed requests");
 
-    MPIU_CHKPMEM_MALLOC(mpig_cm_vmpi_progress_free_req_stack, int *, MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE *
-	sizeof(int), *mpi_errno_p, "array containing stack of free entries in request and status arrays");
+/*
+ * void mpig_cm_vmpi_pe_table_inc_size([IN/OUT] mpi_errno, [OUT] failed)
+ */
+void mpig_cm_vmpi_pe_table_inc_size(int * mpi_errno_p, bool_t * failed_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    void * ptr;
+    int entry;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_pe_table_inc_size);
 
-    for (index = mpig_cm_vmpi_array_size; index < mpig_cm_vmpi_array_size + MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE; index++)
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_pe_table_inc_size);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+
+    *failed_p = FALSE;
+
+    ptr = MPIU_Realloc(mpig_cm_vmpi_pe_table_vreqs, mpig_cm_vmpi_pe_table_size + MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE *
+	sizeof(mpig_vmpi_request_t));
+    MPIU_ERR_CHKANDJUMP1((ptr == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+	"table of active vendor MPI requests");
+    mpig_cm_vmpi_pe_table_vreqs = (mpig_vmpi_request_t *) ptr;
+    
+    ptr = MPIU_Realloc(mpig_cm_vmpi_pe_table_mreqs, mpig_cm_vmpi_pe_table_size + MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE *
+	sizeof(MPID_Request *));
+    MPIU_ERR_CHKANDJUMP1((ptr == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+	"table of MPICH2 requests associated with the active vendor MPI requests");
+    mpig_cm_vmpi_pe_table_mreqs = (MPID_Request **) ptr;
+    
+    ptr = MPIU_Realloc(mpig_cm_vmpi_pe_table_vstatuses, mpig_cm_vmpi_pe_table_size + MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE *
+	sizeof(mpig_vmpi_status_t));
+    MPIU_ERR_CHKANDJUMP1((ptr == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+	"table of vendor MPI status structures for completed requests");
+    mpig_cm_vmpi_pe_table_vstatuses = (mpig_vmpi_status_t *) ptr;
+    
+    for (entry = mpig_cm_vmpi_pe_table_size; entry < mpig_cm_vmpi_pe_table_size + MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE;
+	 entry++)
     {
-	mpig_cm_vmpi_progress_vreq_array[index] = MPIG_VMPI_REQUEST_NULL;
-	mpig_cm_vmpi_progress_mreq_array[index] = NULL;
-	mpig_cm_vmpi_progress_free_entry_stack[index - mpig_cm_vmpi_array_size] = mpig_cm_vmpi_array_size +
-	    MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE - index - 1;
+	mpig_cm_vmpi_pe_table_init_entry(entry);
     }
     
-    mpig_cm_vmpi_array_size += MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE;
-    mpig_cm_vmpi_progress_free_entry_stack_top = MPIG_CM_VMPI_REQUEST_TABLE_BLOCK_ALLOC_SIZE - 1;
+    mpig_cm_vmpi_pe_table_size += MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS,
-    "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_progress_init);
-    return mpi_errno;
+	"exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_pe_table_inc_size);
+    return;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	*failed_p = TRUE;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_vmpi_progress_init() */
+/* mpig_cm_vmpi_pe_table_inc_size() */
 
 
 /*
- * int mpig_cm_vmpi_progress_wait([IN/OUT] state, [IN/OUT] mpi_errno, [OUT] failed)
+ * int mpig_cm_vmpi_pe_wait([IN/OUT] state, [IN/OUT] mpi_errno, [OUT] failed)
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_vmpi_progress_wait
-void mpig_cm_vmpi_progress_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * failed_p)
+#define FUNCNAME mpig_cm_vmpi_pe_wait
+void mpig_cm_vmpi_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_progress_wait);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_pe_wait);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_progress_wait);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_pe_wait);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
     *failed_p = FALSE;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS,
-    "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_progress_wait);
-    return mpi_errno;
+	"exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_pe_wait);
+    return;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	*failed_p = TRUE;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_vmpi_progress_wait() */
+/* mpig_cm_vmpi_pe_wait() */
 
 /*
- * int mpig_cm_vmpi_progress_test([IN/OUT] mpi_errno, [OUT] failed)
+ * int mpig_cm_vmpi_pe_test([IN/OUT] mpi_errno, [OUT] failed)
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_vmpi_progress_wait
-void mpig_cm_vmpi_progress_test(int * mpi_errno_p, bool_t * failed_p)
+#define FUNCNAME mpig_cm_vmpi_pe_wait
+void mpig_cm_vmpi_pe_test(int * mpi_errno_p, bool_t * failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_progress_wait);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_pe_wait);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_progress_wait);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_pe_wait);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
     *failed_p = FALSE;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS,
-    "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_progress_wait);
-    return mpi_errno;
+	"exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_pe_wait);
+    return;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	*failed_p = TRUE;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_vmpi_progress_test() */
+/* mpig_cm_vmpi_pe_test() */
 /**********************************************************************************************************************************
 				     END COMMUNICATION MODULE PROGRESS ENGINE API FUNCTIONS
 **********************************************************************************************************************************/
@@ -754,8 +883,8 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_send(
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
-    mpig_cm_vmpi_comm_get_vrank(comm, rank, &vrank);
-    mpig_cm_vmpi_comm_get_vtag(comm, tag, &vtag);
+    mpig_cm_vmpi_comm_get_send_vrank(comm, rank, &vrank);
+    mpig_cm_vmpi_tag_get_vtag(comm, tag, &vtag);
     mpig_cm_vmpi_comm_get_vcomm(comm, ctxoff, &vcomm);
 
     /* NOTE: we can only call the blocking send when no other communication module requires polling to make progress, or no
@@ -779,21 +908,21 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_send(
 	vrc = mpig_vmpi_isend(buf, cnt, vdt, vrank, vtag, vcomm, vsreq);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Irecv", &mpi_errno);
 
-	mpig_cm_vmpi_progress_op_start();
+	mpig_cm_vmpi_pe_op_start();
 	*sreqp = sreq;
     }
 
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_send);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_send(...) */
@@ -825,14 +954,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_isend(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_isend);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_isend() */
@@ -864,14 +993,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_rsend(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_rsend);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_rsend() */
@@ -903,14 +1032,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irsend(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_irsend);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_irsend() */
@@ -942,14 +1071,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_ssend(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_ssend);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_ssend() */
@@ -981,14 +1110,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_issend(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpig_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_issend);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_issend() */
@@ -1023,8 +1152,8 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_recv(
 		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, comm->context_id + ctx));
 
-    mpig_cm_vmpi_comm_get_vrank(comm, rank, &vrank);
-    mpig_cm_vmpi_comm_get_vtag(tag, &vtag);
+    mpig_cm_vmpi_comm_get_recv_vrank(comm, rank, &vrank);
+    mpig_cm_vmpi_tag_get_vtag(tag, &vtag);
     mpig_cm_vmpi_comm_get_vcomm(comm, ctxoff, &vcomm);
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
     
@@ -1045,7 +1174,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_recv(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpig_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_recv);
     return mpi_errno;
@@ -1088,8 +1217,8 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irecv(
 		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
-    mpig_cm_vmpi_comm_get_vrank(comm, rank, &vrank);
-    mpig_cm_vmpi_comm_get_vtag(tag, &vtag);
+    mpig_cm_vmpi_comm_get_recv_vrank(comm, rank, &vrank);
+    mpig_cm_vmpi_tag_get_vtag(tag, &vtag);
     mpig_cm_vmpi_comm_get_vcomm(comm, ctxoff, &vcomm);
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
     
@@ -1101,7 +1230,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irecv(
     vrc = mpig_vmpi_irecv(buf, cnt, vdt, vrank, tag, vcomm, vrreq);
     MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Irecv", &mpi_errno);
     
-    /* mpi_errno = mpig_cm_vmpi_progress_add_req(rreq); */
+    /* mpi_errno = mpig_cm_vmpi_pe_add_req(rreq); */
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|progress_add_req",
 	"**globus|cm_vmpi|progress_add_req %R %p", rreq->handle, rreq);
     
@@ -1109,7 +1238,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irecv(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpig_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_irecv);
     return mpi_errno;
@@ -1150,14 +1279,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_send(MPID_Request * const sreq)
     
     fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT "mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT "mpig_errno=" MPIG_ERRNO_FMT,
 		       sreq->handle, (MPIG_PTR_CAST) sreq, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_cancel_send);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_cancel_send() */
@@ -1184,14 +1313,14 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_recv(MPID_Request * const sreq)
     
     fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT "mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT "mpig_errno=" MPIG_ERRNO_FMT,
 		       sreq->handle, (MPIG_PTR_CAST) sreq, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_cancel_recv);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_cancel_recv() */
@@ -1226,13 +1355,13 @@ void mpig_cm_vmpi_dev_comm_dup_hook(MPID_Comm * const orig_comm, MPID_Comm * con
     MPIU_ERR_SETFATALANDSTMT1(*mpi_errno_p, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpig_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_dev_comm_dup_hook);
     return;
     
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_dev_comm_dup_hook() */
@@ -1265,13 +1394,13 @@ void mpig_cm_vmpi_dev_intercomm_create_hook(MPID_Comm * const local_comm, const 
     MPIU_ERR_SETFATALANDSTMT1(*mpi_errno_p, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpig_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_dev_intercomm_create_hook);
     return;
     
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_dev_intercomm_create_hook() */
@@ -1307,7 +1436,7 @@ void mpig_cm_vmpi_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p)
     vrc = mpig_vmpi_comm_free(vcomm);
     MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Comm_free", {;}, mpi_errno_p);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpig_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_dev_comm_free_hook);
     return;
 }
@@ -1343,8 +1472,8 @@ int mpig_cm_vmpi_iprobe(int src, int tag, MPID_Comm * comm, int ctxoff, int * fl
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
 		       "entering: src=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", src, tag, (MPIG_PTR_CAST) comm, ctx));
 
-    mpig_cm_vmpi_comm_get_vrank(comm, src, &vsrc);
-    mpig_cm_vmpi_comm_get_vtag(tag, &vtag);
+    mpig_cm_vmpi_comm_get_recv_vrank(comm, src, &vsrc);
+    mpig_cm_vmpi_tag_get_vtag(tag, &vtag);
     mpig_cm_vmpi_comm_get_vcomm(comm, ctxoff, &vcomm);
 
     vrc = mpig_vmpi_iprobe(vrank, tag, vcomm, flag, vstatus);
@@ -1362,14 +1491,14 @@ int mpig_cm_vmpi_iprobe(int src, int tag, MPID_Comm * comm, int ctxoff, int * fl
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpig_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_iprobe);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
+	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_vmpi_adi3_iprobe(...) */

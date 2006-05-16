@@ -1188,7 +1188,7 @@ typedef struct mpig_vcrt
     /* globus_mutex_t mutex; -- not need right now; see note above */
 
     /* number of references to this object */
-    volatile int ref_count;
+    int ref_count;
 
     /* number of entries in the table */
     int size;

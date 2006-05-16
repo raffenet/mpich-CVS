@@ -140,7 +140,7 @@ void mpig_request_destroy(MPID_Request * req);
 	    mpig_request_destroy((req_));			\
 	}							\
 								\
-        mpig_progress_complete_op();				\
+        mpig_pe_complete_op();					\
     }								\
 }
 
@@ -163,7 +163,7 @@ void mpig_request_destroy(MPID_Request * req);
 #define MPID_Request_set_completed(req_)		\
 {							\
     *(req_)->cc_ptr = 0;				\
-    mpig_progress_complete_op();			\
+    mpig_pe_complete_op();				\
 }
 /**********************************************************************************************************************************
 						       END REQUEST SECTION
@@ -220,53 +220,75 @@ void mpig_request_destroy(MPID_Request * req);
 /**********************************************************************************************************************************
 						  BEGIN PROGRESS ENGINE SECTION
 **********************************************************************************************************************************/
-extern volatile mpig_progress_count_t mpig_progress_count;
-extern int mpig_progress_num_cm_requiring_polling;
-extern volatile int mpig_progress_ops_outstanding;
+extern mpig_pe_count_t mpig_pe_count;
+extern int mpig_pe_num_cm_must_be_polled;
+extern int mpig_pe_active_ops_count;
 
 #define HAVE_MPID_PROGRESS_START_MACRO
 #undef MPID_Progress_start
 #define MPID_Progress_start(state_)		\
 {						\
-    (state_)->dev.count = mpig_progress_count;	\
-    /* mpig_cm_vmpi_progress_start(state_); */	\
-    mpig_cm_xio_progress_start(state_);		\
+    (state_)->dev.count = mpig_pe_count;	\
+    mpig_cm_vmpi_pe_start(state_);		\
+    mpig_cm_xio_pe_start(state_);		\
 }
 
 #define HAVE_MPID_PROGRESS_END_MACRO
 #undef MPID_Progress_end
-#define MPID_Progress_end(state_)		\
-{						\
-    /* mpig_cm_vmpi_progress_end(state_); */	\
-    mpig_cm_xio_progress_end(state_);		\
+#define MPID_Progress_end(state_)	\
+{					\
+    mpig_cm_vmpi_pe_end(state_);	\
+    mpig_cm_xio_pe_end(state_);		\
 }
 
 #define HAVE_MPID_PROGRESS_POKE_MACRO
 #undef MPID_Progress_poke
 #define MPID_Progress_poke() MPID_Progress_test()
 
-#define mpig_progress_start_op()												\
+#define mpig_pe_start_op()													\
 {																\
     /* MT-NOTE: this routine should only be called by the user thread, so it is safe to update the counter without locking a	\
        mutex. the communication modules are responsible for any locking they might require. */					\
-    mpig_progress_ops_outstanding += 1;												\
+    mpig_pe_active_ops_count += 1;												\
 }
 
-#define mpig_progress_complete_op()												\
+#define mpig_pe_complete_op()													\
 {																\
     /* NOTE_MT: this routine should only be called by the user thread, so it is safe to update the counter without locking a	\
        mutex.  the communication modules are responsible for any locking they might require. */					\
-    mpig_progress_ops_outstanding -= 1;												\
-    mpig_progress_wakeup();													\
-    /* mpig_cm_xio_progress_signal_completion(); -- XXX: MT-APP-NOTE: what is really needed here??? probably nothing until we	\
+    mpig_pe_active_ops_count -= 1;												\
+    mpig_pe_wakeup();														\
+    /* mpig_cm_xio_pe_signal_completion(); -- XXX: MT-APP-NOTE: what is really needed here??? probably nothing until we		\
        support multithreaded applications */											\
 }
 
-#define mpig_progress_wakeup()													\
+#define mpig_pe_wakeup()													\
 {																\
     /* MT: this routine should only be called by the user thread, so it is safe to update the counter without locking a mutex.	\
        the communication modules are responsible for any locking they might require. */						\
-    mpig_progress_count += 1;													\
+    mpig_pe_count += 1;														\
+}
+
+/* a communication module should call this routine if a new unpexpected message has arrived.  this routine will wake up the
+   progress engine if it is blocking inside of a MPID_Probe(). */
+#define mpig_pe_notify_unexp_recv()												\
+{																\
+    /* MT: this routine should only be called by the user thread, so it is safe to update the counter without locking a mutex.	\
+       the communication modules are responsible for any locking they might require. */						\
+    mpig_pe_count += 1;														\
+}
+
+#define mpig_pe_can_block(cm_active_op_count_, can_block_)							\
+{														\
+    (mpig_pe_num_cm_must_be_polled <= 1 && (cm_active_op_count_) == mpig_pe_active_ops_count) ? TRUE : FALSE;	\
+}
+
+/* a communication module should call this routine during intialization if it requires polling to make progress.  FIXME:
+   eventually, we want to pass the polling function to this routine so that it can create a list of polling functions to call.
+   for now, these routines are hard coded into the MPID_Progress routines. */
+#define mpig_pe_cm_must_be_polled()	\
+{					\
+    mpig_pe_num_cm_must_be_polled += 1;	\
 }
 /**********************************************************************************************************************************
 						   END PROGRESS ENGINE SECTION
@@ -379,39 +401,35 @@ mpig_debug_levels_t;
     mpig_debug_printf a_;	\
 }
 
-#define mpig_debug_printf(levels_, fmt_, ...)				\
-{									\
-    if ((levels_) & mpig_debug_handle.levels)				\
-    {									\
-	if (mpig_debug_handle.file != NULL)				\
-	{								\
-	    if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)	\
-	    {								\
-		mpig_debug_printf_untimed(fmt_, ## __VA_ARGS__);	\
-	    }								\
-	    else							\
-	    {								\
-		mpig_debug_printf_timed(fmt_, ## __VA_ARGS__);		\
-	    }								\
-	}								\
-    }									\
+#define mpig_debug_printf(levels_, fmt_, ...)						\
+{											\
+    if (((levels_) & mpig_debug_handle.levels) && mpig_debug_handle.file != NULL)	\
+    {											\
+	if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)			\
+	{										\
+	    mpig_debug_printf_untimed(fmt_, ## __VA_ARGS__);				\
+	}										\
+	else										\
+	{										\
+	    mpig_debug_printf_timed(fmt_, ## __VA_ARGS__);				\
+	}										\
+    }											\
 }
 
-#define mpig_debug_printf_untimed(fmt_, ...)						\
-{											\
-    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d) " fmt_ "\n",			\
-	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(),	\
-	    MPIU_QUOTE(FUNCNAME), __LINE__, ## __VA_ARGS__);				\
+#define mpig_debug_printf_untimed(fmt_, ...)											\
+{																\
+    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d) " fmt_ "\n",								\
+	mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME), __LINE__, ## __VA_ARGS__);	\
 }
 
 #define mpig_debug_printf_timed(fmt_, ...)								\
 {													\
-    struct timeval tv;											\
-    gettimeofday(&tv, NULL);										\
-    tv.tv_sec -= mpig_debug_start_tv_sec;								\
+    struct timeval tv__;										\
+    gettimeofday(&tv__, NULL);										\
+    tv__.tv_sec -= mpig_debug_start_tv_sec;								\
     fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) " fmt_ "\n",			\
-	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME),	\
-	    __LINE__, (unsigned long) tv.tv_sec, (unsigned long) tv.tv_usec, ## __VA_ARGS__);		\
+	mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME),	\
+	__LINE__, (unsigned long) tv__.tv_sec, (unsigned long) tv__.tv_usec, ## __VA_ARGS__);		\
 }
 
 #undef MPIU_DBG_PRINTF
@@ -428,39 +446,35 @@ mpig_debug_levels_t;
     mpig_debug_printf a_;	\
 }
 
-#define mpig_debug_printf(levels_, fmt_, args_...)			\
-{									\
-    if ((levels_) & mpig_debug_handle.levels)				\
-    {									\
-	if (mpig_debug_handle.file != NULL)				\
-	{								\
-	    if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)	\
-	    {								\
-		mpig_debug_printf_untimed((fmt_), ## args_);		\
-	    }								\
-	    else							\
-	    {								\
-		mpig_debug_printf_timed((fmt_), ## args_);		\
-	    }								\
-	}								\
-    }									\
+#define mpig_debug_printf(levels_, fmt_, args_...)					\
+{											\
+    if (((levels_) & mpig_debug_handle.levels) && mpig_debug_handle.file != NULL)	\
+    {											\
+	if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)			\
+	{										\
+	    mpig_debug_printf_untimed((fmt_), ## args_);				\
+	}										\
+	else										\
+	{										\
+	    mpig_debug_printf_timed((fmt_), ## args_);					\
+	}										\
+    }											\
 }
 
-#define mpig_debug_printf_untimed(fmt_, args_...)					\
-{											\
-    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d) " fmt_ "\n",			\
-	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(),	\
-	    MPIU_QUOTE(FUNCNAME), __LINE__, ## args_);					\
+#define mpig_debug_printf_untimed(fmt_, args_...)										\
+{																\
+    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d) " fmt_ "\n",								\
+	mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME), __LINE__, ## args_);	\
 }
 
 #define mpig_debug_printf_timed(fmt_, args_...)								\
 {													\
-    struct timeval tv;											\
-    gettimeofday(&tv, NULL);										\
-    tv.tv_sec -= mpig_debug_start_tv_sec;								\
+    struct timeval tv__;										\
+    gettimeofday(&tv__, NULL);										\
+    tv__.tv_sec -= mpig_debug_start_tv_sec;								\
     fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) " fmt_ "\n",			\
 	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME),	\
-	    __LINE__, (unsigned long) tv.tv_sec, (unsigned long) tv.tv_usec, ## args_);			\
+	    __LINE__, (unsigned long) tv__.tv_sec, (unsigned long) tv__.tv_usec, ## args_);		\
 }
 
 #undef MPIU_DBG_PRINTF

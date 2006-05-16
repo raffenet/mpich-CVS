@@ -365,25 +365,25 @@ int mpig_cm_xio_select_module(mpig_bc_t * bc, mpig_vc_t * vc, bool_t * selected)
 				    BEGIN COMMUNICATION MODULE PROGRESS ENGINE API FUNCTIONS
 **********************************************************************************************************************************/
 /*
- * void mpig_cm_xio_progress_wait([IN/OUT] state, [IN/OUT] mpi_errno, [OUT] failed)
+ * void mpig_cm_xio_pe_wait([IN/OUT] state, [IN/OUT] mpi_errno, [OUT] failed)
  *
  * XXX: this should be rolled together with the rcq_wait so that multiple requests can be completed in a single call.  also,
- * mpig_cm_xio_progress_start() should be used to eliminate returns everytime an message is receive just in case the application
+ * mpig_cm_xio_pe_start() should be used to eliminate returns everytime a message is receive just in case the application
  * might be calling MPI_Probe().  It would likely be better for progress_start() to clear the wakeup_pending flag, but it will
  * come at the cost of an extra lock/unlock on the RCQ mutex.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_xio_progress_wait
-void mpig_cm_xio_progress_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * const failed_p)
+#define FUNCNAME mpig_cm_xio_pe_wait
+void mpig_cm_xio_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * const failed_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * req;
     bool_t failed;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_progress_wait);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_pe_wait);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_progress_wait);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_pe_wait);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=0x%08x", *mpi_errno_p));
     *failed_p = FALSE;
 
@@ -396,13 +396,13 @@ void mpig_cm_xio_progress_wait(struct MPID_Progress_state * state, int * mpi_err
     }
     else
     {
-	mpig_progress_wakeup();
+	mpig_pe_notify_unexp_recv();
     }
     
   
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_progress_wait);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_pe_wait);
     return;
 
   fn_fail:
@@ -413,24 +413,24 @@ void mpig_cm_xio_progress_wait(struct MPID_Progress_state * state, int * mpi_err
     }
     /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_xio_progress_wait() */
+/* mpig_cm_xio_pe_wait() */
 
 
 /*
- * void mpig_cm_xio_progress_test([IN/OUT] mpi_errno, [OUT] failed)
+ * void mpig_cm_xio_pe_test([IN/OUT] mpi_errno, [OUT] failed)
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_xio_progress_test
-void mpig_cm_xio_progress_test(int * mpi_errno_p, bool_t * const failed_p)
+#define FUNCNAME mpig_cm_xio_pe_test
+void mpig_cm_xio_pe_test(int * mpi_errno_p, bool_t * const failed_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * req;
     bool_t failed;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_progress_test);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_pe_test);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_progress_test);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_pe_test);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=0x%08x", *mpi_errno_p));
     *failed_p = FALSE;
 
@@ -444,7 +444,7 @@ void mpig_cm_xio_progress_test(int * mpi_errno_p, bool_t * const failed_p)
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_progress_test);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_pe_test);
     return;
 
   fn_fail:
@@ -455,7 +455,7 @@ void mpig_cm_xio_progress_test(int * mpi_errno_p, bool_t * const failed_p)
     }
     /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_xio_progress_test() */
+/* mpig_cm_xio_pe_test() */
 /**********************************************************************************************************************************
 				     END COMMUNICATION MODULE PROGRESS ENGINE API FUNCTIONS
 **********************************************************************************************************************************/

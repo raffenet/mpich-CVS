@@ -115,7 +115,7 @@
 #define MPIG_ERR_VMPI_SETANDSTMT(vrc_, vfcname_, stmt_, mpi_errno_p_)	\
 {									\
     MPIG_ERR_VMPI_SET((vrc_), (vfcname_), (mpi_errno_p_));		\
-    { stmt_ }								\
+    { stmt_ ; }								\
 }
 
 #define MPIG_ERR_VMPI_CHKANDSTMT(vrc_, vfcname_, stmt_, mpi_errno_p_)	\
@@ -123,7 +123,7 @@
     if (vrc_)								\
     {									\
 	MPIG_ERR_VMPI_SET((vrc_), (vfcname_), (mpi_errno_p_));		\
-	{ stmt_ }							\
+	{ stmt_ ; }							\
     }									\
 }
 
@@ -148,15 +148,15 @@ int mpig_cm_vmpi_select_module(struct mpig_bc * bc, struct mpig_vc * vc, int * f
 
 #if defined(MPIG_VMPI)
 
-void mpig_cm_vmpi_progress_start(struct MPID_Progress_state * state);
+void mpig_cm_vmpi_pe_start(struct MPID_Progress_state * state);
 
-void mpig_cm_vmpi_progress_end(struct MPID_Progress_state * state);
+void mpig_cm_vmpi_pe_end(struct MPID_Progress_state * state);
 
-void mpig_cm_vmpi_progress_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * failed_p);
+void mpig_cm_vmpi_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * failed_p);
 
-void mpig_cm_vmpi_progress_test(int * mpi_errno_p, bool_t * failed_p);
+void mpig_cm_vmpi_pe_test(int * mpi_errno_p, bool_t * failed_p);
 
-void mpig_cm_vmpi_progress_poke(int * mpi_errno_p, bool_t * failed_p);
+void mpig_cm_vmpi_pe_poke(int * mpi_errno_p, bool_t * failed_p);
 
 
 void mpig_cm_vmpi_dev_comm_dup_hook(struct MPID_Comm * orig_comm, struct MPID_Comm * new_comm, int * mpi_errno_p);
@@ -179,16 +179,33 @@ int mpig_cm_vmpi_error_class_vtom(int vendor_error_class);
  */
 #if defined(MPIG_VMPI)
 
-#define mpig_cm_vmpi_progress_start(state_)	\
-{						\
+#define mpig_cm_vmpi_pe_start(state_)
+
+#define mpig_cm_vmpi_pe_end(state_)
+
+#define mpig_cm_vmpi_pe_poke(mpi_errno_p_, failed_p_) mpig_cm_vmpi_progess_test((mpi_errno_p_), (failed_p_))
+
+#else /* !defined(MPIG_VMPI) */
+
+#define mpig_cm_vmpi_pe_start(state_)
+
+#define mpig_cm_vmpi_pe_end(state_)
+
+#define mpig_cm_vmpi_pe_wait(state_, mpi_errno_p_, failed_p_)	\
+{								\
+    *(failed_p_) = FALSE;					\
 }
 
-#define mpig_cm_vmpi_progress_end(state_)	\
-{						\
+#define mpig_cm_vmpi_pe_test(mpi_errno_p_, failed_p_)	\
+{							\
+    *(failed_p_) = FALSE;				\
 }
 
-#define mpig_cm_vmpi_progress_poke(mpi_errno_p_, failed_p_) mpig_cm_vmpi_progess_test((mpi_errno_p_), (failed_p_))
+#define mpig_cm_vmpi_pe_poke(mpi_errno_p_, failed_p_)	\
+{							\
+    *(failed_p_) = FALSE;				\
+}
 
-#endif /* defined(MPIG_VMPI) */
+#endif /* else !defined(MPIG_VMPI) */
 
 #endif /* !defined(MPICH2_MPIG_CM_VMPI_H_INCLUDED) */

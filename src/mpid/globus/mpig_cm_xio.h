@@ -276,28 +276,28 @@ int mpig_cm_xio_add_contact_info(struct mpig_bc * bc);
 
 int mpig_cm_xio_select_module(struct mpig_bc * bc, struct mpig_vc * vc, bool_t * selected);
 
-void mpig_cm_xio_progress_start(struct MPID_Progress_state * state);
+void mpig_cm_xio_pe_start(struct MPID_Progress_state * state);
 
-void mpig_cm_xio_progress_end(struct MPID_Progress_state * state);
+void mpig_cm_xio_pe_end(struct MPID_Progress_state * state);
 
-void mpig_cm_xio_progress_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * failed_p);
+void mpig_cm_xio_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * failed_p);
 
-void mpig_cm_xio_progress_test(int * mpi_errno_p, bool_t * failed_p);
+void mpig_cm_xio_pe_test(int * mpi_errno_p, bool_t * failed_p);
 
-void mpig_cm_xio_progress_poke(int * mpi_errno_p, bool_t * failed_p);
+void mpig_cm_xio_pe_poke(int * mpi_errno_p, bool_t * failed_p);
 
 
 /*
  * macro implementations of CM interface functions
  */
-#define mpig_cm_xio_progress_start(state_)	\
-{						\
+#define mpig_cm_xio_pe_start(state_)	\
+{					\
 }
 
-#define mpig_cm_xio_progress_end(state_)	\
-{						\
+#define mpig_cm_xio_pe_end(state_)	\
+{					\
 }
 
-#define mpig_cm_xio_progress_poke(mpi_errno_p_, failed_p_) mpig_cm_xio_progess_test((mpi_errno_p_), (failed_p_))
+#define mpig_cm_xio_pe_poke(mpi_errno_p_, failed_p_) mpig_cm_xio_progess_test((mpi_errno_p_), (failed_p_))
 
 #endif /* !defined(MPICH2_MPIG_CM_XIO_H_INCLUDED) */

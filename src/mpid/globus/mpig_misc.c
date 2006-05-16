@@ -144,30 +144,27 @@ void mpig_debug_printf(int levels, const char * fmt, ...)
     func = "";
     line = -1;
     
-    if (levels & mpig_debug_handle.levels)
+    if ((levels & mpig_debug_handle.levels) && mpig_debug_handle.file != NULL)
     {
-	if (mpig_debug_handle.file != NULL)
+	if (levels & mpig_debug_handle.timestamp_levels == 0)
 	{
-	    if (levels & mpig_debug_handle.timestamp_levels == 0)
-	    {
-		va_start(ap, fmt);
-		MPIU_Snprintf(lfmt, MPIG_DEBUG_TMPSTR_SIZE, "[%s:%d:%lu] %s(l=%d) %s\n", mpig_process.my_pg_id,
-			      mpig_process.my_pg_rank, mpig_thread_get_id(), func, line, fmt);
-		vfprintf(mpig_debug_handle.file, lfmt, ap);
-		va_end(ap);
-	    }
-	    else
-	    {
-		struct timeval tv;
-		
-		gettimeofday(&tv, NULL);
-		tv.tv_sec -= mpig_debug_start_tv_sec;
-		va_start(ap, fmt);
-		MPIU_Snprintf(lfmt, MPIG_DEBUG_TMPSTR_SIZE, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) %s\n", mpig_process.my_pg_id,
-			      mpig_process.my_pg_rank, mpig_thread_get_id(), func, line, tv.tv_sec, tv.tv_usec, fmt);
-		vfprintf(mpig_debug_handle.file, lfmt, ap);
-		va_end(ap);
-	    }
+	    va_start(ap, fmt);
+	    MPIU_Snprintf(lfmt, MPIG_DEBUG_TMPSTR_SIZE, "[%s:%d:%lu] %s(l=%d) %s\n", mpig_process.my_pg_id,
+		mpig_process.my_pg_rank, mpig_thread_get_id(), func, line, fmt);
+	    vfprintf(mpig_debug_handle.file, lfmt, ap);
+	    va_end(ap);
+	}
+	else
+	{
+	    struct timeval tv;
+	    
+	    gettimeofday(&tv, NULL);
+	    tv.tv_sec -= mpig_debug_start_tv_sec;
+	    va_start(ap, fmt);
+	    MPIU_Snprintf(lfmt, MPIG_DEBUG_TMPSTR_SIZE, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) %s\n", mpig_process.my_pg_id,
+		mpig_process.my_pg_rank, mpig_thread_get_id(), func, line, tv.tv_sec, tv.tv_usec, fmt);
+	    vfprintf(mpig_debug_handle.file, lfmt, ap);
+	    va_end(ap);
 	}
     }
 }

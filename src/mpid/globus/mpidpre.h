@@ -651,7 +651,7 @@ mpig_pg_t;
 /**********************************************************************************************************************************
 						  BEGIN PROGRESS ENGINE SECTION
 **********************************************************************************************************************************/
-typedef unsigned long mpig_progress_count_t;
+typedef unsigned long mpig_pe_count_t;
 /*
  * MPID_PROGRESS_STATE_DECL
  *
@@ -660,54 +660,54 @@ typedef unsigned long mpig_progress_count_t;
  * MPID_Progress_start().  MPID_Progress_end() is only called if MPID_Progress_wait() is not, so any cleanup of data structures
  * in the state object must occur in both routines.
  */
-#if !defined(MPIG_PROGRESS_STATE_CM_SELF_DECL)
-#define MPIG_PROGRESS_STATE_CM_SELF_DECL
+#if !defined(MPIG_PE_STATE_CM_SELF_DECL)
+#define MPIG_PE_STATE_CM_SELF_DECL
 #else
-#undef MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PROGRESS_STATE_CM_VMPI_DECL)
-#define MPIG_PROGRESS_STATE_CM_VMPI_DECL
+#if !defined(MPIG_PE_STATE_CM_VMPI_DECL)
+#define MPIG_PE_STATE_CM_VMPI_DECL
 #else
-#undef MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PROGRESS_STATE_CM_XIO_DECL)
-#define MPIG_PROGRESS_STATE_CM_XIO_DECL
+#if !defined(MPIG_PE_STATE_CM_XIO_DECL)
+#define MPIG_PE_STATE_CM_XIO_DECL
 #else
-#undef MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PROGRESS_STATE_CM_OTHER_DECL)
-#define MPIG_PROGRESS_STATE_CM_OTHER_DECL
+#if !defined(MPIG_PE_STATE_CM_OTHER_DECL)
+#define MPIG_PE_STATE_CM_OTHER_DECL
 #else
-#undef MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
 #endif
 
-#if defined(MPIG_PROGRESS_STATE_CM_DECL_STRUCT_DEFINED)
-#define MPIG_PROGRESS_STATE_CM_DECL		\
-    struct mpig_progress_state_cm		\
-    {						\
-	MPIG_PROGRESS_STATE_CM_SELF_DECL	\
-	MPIG_PROGRESS_STATE_CM_VMPI_DECL	\
-	MPIG_PROGRESS_STATE_CM_XIO_DECL		\
-	MPIG_PROGRESS_STATE_CM_OTHER_DECL	\
+#if defined(MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED)
+#define MPIG_PE_STATE_CM_DECL		\
+    struct mpig_pe_state_cm		\
+    {					\
+	MPIG_PE_STATE_CM_SELF_DECL	\
+	MPIG_PE_STATE_CM_VMPI_DECL	\
+	MPIG_PE_STATE_CM_XIO_DECL	\
+	MPIG_PE_STATE_CM_OTHER_DECL	\
     } cm;
 #else
-#define MPIG_PROGRESS_STATE_CM_DECL
+#define MPIG_PE_STATE_CM_DECL
 #endif
 
-typedef struct mpig_progress_state
+typedef struct mpig_pe_state
 {
     /* snapshot of the progress engine completion counter */
-    volatile mpig_progress_count_t count;
+    mpig_pe_count_t count;
 }
-mpig_progress_state_t;
+mpig_pe_state_t;
 
 #define MPID_PROGRESS_STATE_DECL	\
-    mpig_progress_state_t dev;		\
-    MPIG_PROGRESS_STATE_CM_DECL
+    mpig_pe_state_t dev;		\
+    MPIG_PE_STATE_CM_DECL
 /**********************************************************************************************************************************
 						   END PROGRESS ENGINE SECTION
 **********************************************************************************************************************************/
