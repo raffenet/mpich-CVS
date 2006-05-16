@@ -26,7 +26,10 @@
 echo ""
 echo "START OF MPICH2PREREQ FOR THE GLOBUS DEVICE"
 
-MPILIBNAME=mpig
+MPILIBNAME="mpig"
+if test "$set_FWRAPNAME" != "yes" ; then
+    FWRAPNAME="f${MPILIBNAME}"
+fi
 
 # # define to the address where bug reports for this package should be sent.
 # PACKAGE_BUGREPORT="mpi@globus.org"
