@@ -130,14 +130,14 @@ errnames.txt: FORCE_TARGET
 mpig_symbol_map.txt: FORCE_TARGET
 	objects='Comm\|Datatype\|Errhandler\|Group\|File\|Info\|Keyval\|Op\|Request\|Win'; \
 	fields='mem\|builtin\|direct'; \
-	files="${top_builddir}/lib/libmpich.a" ; \
-	if test -f "${top_builddir}/lib/libpmpich.a" ; then \
-	    files="$files ${top_builddir}/lib/libpmpich.a" ; \
+	files="${top_builddir}/lib/lib${MPILIBNAME}.a" ; \
+	if test -n "${PMPILIBNAME}" -a "${PMPILIBNAME}" != "${MPILIBNAME}" -a -f "${top_builddir}/lib/lib${PMPILIBNAME}.a" ; then \
+	    files="$${files} ${top_builddir}/lib/lib${PMPILIBNAME}.a" ; \
 	fi ; \
 	nm $${files} >.mpig_nm_$$$$.out ; \
 	if test $$? -eq 0 ; then \
 	    sed -e '/.*[ABCDGIRSTVW] [A-Za-z0-9_]*$$/! d' -e 's/.*[ABCDGIRSTVW\] \([A-Za-z0-9_]*\)$$/\1/' \
-	        -e '/.*_$$/ d' -e '/^[Mm][Pp][Ii][Gg]_/ d' -e '/_MPIG$/ d' \
+	        -e '/.*_$$/ d' -e '/^[Mm][Pp][Ii][Gg]_/ d' -e '/_MPIG$$/ d' \
 	        -e 's/MPID_\('"$$objects"'\)_\('"$$fields"'\)/@SKIP MPID_\1_\2 MPIG_\1_\2/' \
 	        -e '/^@SKIP /! s/\(^.*$$\)/\1 \1_MPIG/' -e 's/^@SKIP //' .mpig_nm_$$$$.out | \
 	        cat ${MPIG_SOURCE_DIR}/mpig_symbol_map.txt - >.mpig_symbol_map_$$$$.out ; \
