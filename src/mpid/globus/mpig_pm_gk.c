@@ -38,20 +38,23 @@ MPIG_STATIC enum
     MPIG_PM_GK_STATE_FINALIZED
 }
 mpig_pm_gk_state = MPIG_PM_GK_STATE_UNINITIALIZED;
-MPIG_STATIC int mpig_pm_gk_pg_size;			/* the size of the initial process group (comm world) */
-MPIG_STATIC int mpig_pm_gk_pg_rank;			/* the rank of the local process in the initial process group */
-MPIG_STATIC const char * mpig_pm_gk_pg_id;		/* the unique identification string of the initial process group */
-MPIG_STATIC int mpig_pm_gk_my_sj_size;			/* the size of subjob to which the local process belongs */
-MPIG_STATIC int mpig_pm_gk_my_sj_rank;			/* the rank of the local process within its subjob */
-MPIG_STATIC int mpig_pm_gk_sj_num;			/* the number of subjobs in the initial process group */
-MPIG_STATIC int mpig_pm_gk_sj_index;			/* the id of subjob to which the local process belongs
+MPIG_STATIC int mpig_pm_gk_pg_size = -1;		/* the size of the initial process group (comm world) */
+MPIG_STATIC int mpig_pm_gk_pg_rank = -1;		/* the rank of the local process in the initial process group */
+MPIG_STATIC const char * mpig_pm_gk_pg_id = NULL;	/* the unique identification string of the initial process group */
+MPIG_STATIC int mpig_pm_gk_my_sj_size = -1;		/* the size of subjob to which the local process belongs */
+MPIG_STATIC int mpig_pm_gk_my_sj_rank = -1;		/* the rank of the local process within its subjob */
+MPIG_STATIC int mpig_pm_gk_sj_num = -1;			/* the number of subjobs in the initial process group */
+MPIG_STATIC int mpig_pm_gk_my_sj_index = -1;		/* the id of subjob to which the local process belongs
 							   [0..mpig_pm_gk_sj_num-1] */
-MPIG_STATIC int * mpig_pm_gk_sj_addrs;			/* duroc addresses for the subjob masters */
+MPIG_STATIC int * mpig_pm_gk_sj_addrs = NULL;		/* duroc addresses for the subjob masters */
+MPIG_STATIC char ** mpig_pm_gk_sj_contact_strs = NULL;	/* array containging the gram subjob contact strings for all of the
+							   subjobs in the process group. */
 #if defined(MPIG_VMPI)
-MPIG_STATIC mpig_vmpi_comm_t mpig_pm_gk_vmpi_cw;	/* a duplicate of MPIG_VMPI_COMM_WORLD to be used by this module */
-MPIG_STATIC int mpig_pm_gk_vmpi_cw_size;		/* the size of MPIG_VMPI_COMM_WORLD to which the local process belongs */
-MPIG_STATIC int mpig_pm_gk_vmpi_cw_rank;		/* the rank of the local process within MPIG_VMPI_COMM_WORLD */
-MPIG_STATIC int mpig_pm_gk_vmpi_root;			/* the rank within MPGI_VMPI_COMM_WORLD of the subjob leader */
+MPIG_STATIC mpig_vmpi_comm_t mpig_pm_gk_vmpi_cw =	/* a duplicate of MPIG_VMPI_COMM_WORLD to be used by this module */
+    MPIG_VMPI_COMM_INITIALIZER;				
+MPIG_STATIC int mpig_pm_gk_vmpi_cw_size = -1;		/* the size of MPIG_VMPI_COMM_WORLD to which the local process belongs */
+MPIG_STATIC int mpig_pm_gk_vmpi_cw_rank = -1;		/* the rank of the local process within MPIG_VMPI_COMM_WORLD */
+MPIG_STATIC int mpig_pm_gk_vmpi_root = -1;		/* the rank within MPGI_VMPI_COMM_WORLD of the subjob leader */
 #endif
 
 
@@ -92,7 +95,7 @@ int mpig_pm_gk_init(void)
 	FUNC_STATE_NEXUS_INIT,
 	
     } func_state = FUNC_STATE_START;
-    int rc;
+    globus_result_t grc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_init);
 
@@ -104,8 +107,8 @@ int mpig_pm_gk_init(void)
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
     
     /* activate the duroc runtime module, and wait for all other processes to startup */
-    rc = globus_module_activate(GLOBUS_DUROC_RUNTIME_MODULE);
-    MPIU_ERR_CHKANDJUMP1((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
+    grc = globus_module_activate(GLOBUS_DUROC_RUNTIME_MODULE);
+    MPIU_ERR_CHKANDJUMP1((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
 	"**globus|module_activate %s", "DUROC runtime");
     func_state = FUNC_STATE_DUROC_INIT;
     
@@ -115,19 +118,19 @@ int mpig_pm_gk_init(void)
        substantial number of error messages are output by nexus when a remote process terminates unexpectedly.  furthermore,
        nexus_fatal is called causing the local process to terminate.  by registering null error handlers with nexus, we prevent
        the extraneous error messages and prevent our process from terminating unexpectedly. */
-    rc = globus_module_activate(GLOBUS_NEXUS_MODULE);
-    MPIU_ERR_CHKANDJUMP1((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
+    grc = globus_module_activate(GLOBUS_NEXUS_MODULE);
+    MPIU_ERR_CHKANDJUMP1((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
 	"**globus|module_activate %s", "Nexus");
     func_state = FUNC_STATE_NEXUS_INIT;
 
     nexus_enable_fault_tolerance (NULL, NULL);
     
     /* get the topology info, including the process group size and the rank of this process in that group */
-    rc = globus_duroc_runtime_intra_subjob_size(&mpig_pm_gk_my_sj_size);
-    MPIU_ERR_CHKANDJUMP((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjsize");
+    grc = globus_duroc_runtime_intra_subjob_size(&mpig_pm_gk_my_sj_size);
+    MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjsize");
 	
-    rc = globus_duroc_runtime_intra_subjob_rank(&mpig_pm_gk_my_sj_rank);
-    MPIU_ERR_CHKANDJUMP((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjrank");
+    grc = globus_duroc_runtime_intra_subjob_rank(&mpig_pm_gk_my_sj_rank);
+    MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjrank");
 
 #   if defined(MPIG_VMPI)
     {
@@ -163,16 +166,11 @@ int mpig_pm_gk_init(void)
 	mpig_pm_gk_vmpi_root = ranks[1];
     }
 #   endif
-    
-    rc = mpig_pm_gk_get_topology(mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, &mpig_pm_gk_pg_size, &mpig_pm_gk_pg_rank,
-	&mpig_pm_gk_sj_num, &mpig_pm_gk_sj_index, &mpig_pm_gk_sj_addrs);
-    MPIU_ERR_CHKANDJUMP((rc != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_topology");
 
-    /* MPI-2-FIXME: this needs to be set to some real before we implement MPI-2 functionality */
-    mpig_pm_gk_pg_id = "XXX";
+    mpi_errno = mpig_pm_gk_get_topology(mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, &mpig_pm_gk_pg_size, &mpig_pm_gk_pg_rank,
+	&mpig_pm_gk_sj_num, &mpig_pm_gk_my_sj_index, &mpig_pm_gk_sj_addrs);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_topology");
 
-    /* we already have all of the PG information, but since implemenations are not required to have the info until after
-       mpig_pm_gk_exchange_business_cards() is called, we only set the state to INITIALIZED to catch any usage errors. */
     mpig_pm_gk_state = MPIG_PM_GK_STATE_INITIALIZED;
     
   fn_return:
@@ -261,6 +259,87 @@ int mpig_pm_gk_finalize(void)
 
 
 /*
+ * mpig_pm_gk_abort()
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_pm_gk_abort
+int mpig_pm_gk_abort(int exit_code)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int n;
+    globus_result_t grc;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_abort);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_abort);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
+
+    /* if the list of GRAM subjob contact strings is not defined, then the best we can do is call abort() */
+    if (mpig_pm_gk_sj_contact_strs == NULL)
+    {
+	MPIU_Internal_error_printf("WARNING: %s: the subjob contact list has yet to be established, thus preventing the use of "
+	    "GRAM to systematically cancel all subjobs in the job.  Calling abort() instead.  Some processes may not be "
+	    "terminated.", fcname);
+	abort();
+    }
+
+    grc = globus_module_activate(GLOBUS_GRAM_CLIENT_MODULE);
+    if (grc)
+    {
+	MPIU_Internal_error_printf("ERROR: %s: globus_module_activate(GLOBUS_GRAM_CLIENT_MODULE) failed, preventing the use of "
+	    "GRAM to systematically cancel all subjobs.  Calling abort() instead.  Some processes may not be terminated.",
+	    fcname);
+	abort();
+    }
+
+    /* loop to cancel all subjobs in the process group except the subjob to which this process belongs.  that subjob is treated
+       as a special case below.  XXX: should we use the nonblocking (register) cancel to obtain some parallelism, thus cancelling
+       the subjobs more quickly and hopefully reducing the amount of error output caused by severed communication links. */
+    for (n = 0; n < mpig_pm_gk_sj_num - 1; n++)
+    {
+	grc = globus_gram_client_job_cancel(mpig_pm_gk_sj_contact_strs[n]);
+	if (grc)
+	{
+	    MPIU_Internal_error_printf("ERROR: %s: failed to cancel a remote subjob using the job contact string \"%s\.  Some "
+		"processes may not have been terminated.", fcname, mpig_pm_gk_sj_contact_strs[n]);
+	}
+    }
+    
+    /* if using a vendor MPI, then first attempt to abort my subjob using the vendor MPI_Abort() */
+#   if defined(MPIG_VMPI)
+    {
+	int vrc;
+	vrc = mpig_vmpi_abort(&mpig_pm_gk_vmpi_cw, exit_code);
+	MPIU_Internal_error_printf("WARNING: %s: failed to cancel the local (my) subjob using the vendor MPI_Abort() function.  "
+	    "Attempting to cancel the local subjob using the GRAM cancel function.\n", fcname);
+    }
+#   endif
+
+    /* if not using a vendor MPI, or the vendor MPI_Abort() failed, then kill my subjob using GRAM */
+    grc = globus_gram_client_job_cancel(mpig_pm_gk_sj_contact_strs[mpig_pm_gk_sj_num - 1]);
+    if (grc)
+    {
+	MPIU_Internal_error_printf("ERROR: %s: failed cancel the local (my) subjob using the contact string \"%s\.  Calling "
+	    "abort() instead.  Some processes may not be terminated.", fcname, mpig_pm_gk_sj_contact_strs[mpig_pm_gk_sj_num - 1]);
+	abort();
+    }
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_abort);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    goto fn_return;
+    /* --END ERROR HANDLING-- */
+}
+/* mpig_pm_gk_abort() */
+
+
+/*
  * mpig_pm_gk_exchange_business_cards()
  */
 #undef FUNCNAME
@@ -269,7 +348,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKLMEM_DECL(2);
-    MPIU_CHKPMEM_DECL(1);
+    MPIU_CHKPMEM_DECL(2);
     char * bc_str;
     char ** bc_strs;
     int * bc_lens;
@@ -287,20 +366,80 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
+
+    /* if this process is the process group master, then create a process group id and add it to the business card */
+    if (mpig_pm_gk_pg_rank == 0)
+    {
+	globus_uuid_t uuid;
+	globus_result_t grc;
+	
+	grc = globus_uuid_create(&uuid);
+	MPIU_ERR_CHKANDSTMT((grc), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_create_pg_id_block;}, "**globus|pm_pg_id_create");
+	mpig_bc_add_contact(bc, "PM_GK_PG_ID", uuid.text, &mpi_errno, &failed);
+	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER,  {errors++; goto end_create_pg_id_block;},
+	    "**globus|bc_add_contact", "**globus|bc_add_contact %s", "PM_GK_PG_ID");
+
+      end_create_pg_id_block: ;
+    }
     
+    /* if this process is a subjob master, then acquire the gram contact string for this subjob and add it to the business card.
+       the contact string will be used mpig_pm_abort() to cancel all subjobs in the process group.  NOTE: the error handling code
+       for these actions does not immediately exit the function.  instead, the code continues onward and does the exchange of
+       businss cards.  the failure will be detected after the exchange is complete so that all processes are aware of the failure
+       and know to terminate. */
+    if (mpig_pm_gk_my_sj_rank == 0)
+    {
+	char * sj_contact_str;
+	char sj_index_str[10];
+	
+	sj_contact_str = globus_libc_getenv("GLOBUS_GRAM_JOB_CONTACT");
+	if (sj_contact_str != NULL)
+	{
+	    mpig_bc_add_contact(bc, "PM_GK_GRAM_SUBJOB_CONTACT", sj_contact_str, &mpi_errno, &failed);
+	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_add_contact",
+		"**globus|bc_add_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
+	}
+	else
+	{
+	    MPIU_ERR_SETANDSTMT(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|pm_get_gram_sj_contact");
+	}
+
+	if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_gk_my_sj_index) < 10)
+	{
+	    mpig_bc_add_contact(bc, "PM_GK_GRAM_SUBJOB_INDEX", sj_index_str, &mpi_errno, &failed);
+	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_add_contact",
+		"**globus|bc_add_contact %s", "PM_GK_GRAM_SUBJOB_INDEX");
+	}
+	else
+	{
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**failed", "**failed %s",
+		"conversion of subjob index number to a string failed");
+	}
+    }
+
+    /* convert the business card object for this process into a string that can be distributed to other processes */
     mpig_bc_serialize_object(bc, &bc_str, &mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_serialize");
-    
+
+    /* allocate memory for the array of business cards objects that will result from the exchange, as well as the intermediate
+       arrays needed to hold the stringified representations of those objects */
+    MPIU_CHKPMEM_MALLOC(bcs, mpig_bc_t *, mpig_pm_gk_pg_size * sizeof(mpig_bc_t), mpi_errno, "array of business cards lengths");
     MPIU_CHKLMEM_MALLOC(bc_strs, char **, mpig_pm_gk_pg_size * sizeof(char *), mpi_errno,
 	"array of serialized business cards");
     MPIU_CHKLMEM_MALLOC(bc_lens, int *, mpig_pm_gk_pg_size * sizeof(int), mpi_errno, "array of business cards lengths");
-    MPIU_CHKPMEM_MALLOC(bcs, mpig_bc_t *, mpig_pm_gk_pg_size * sizeof(mpig_bc_t), mpi_errno, "array of business cards lengths");
-    
+    MPIU_CHKPMEM_MALLOC(mpig_pm_gk_sj_contact_strs, char **, mpig_pm_gk_sj_num * sizeof(char *), mpi_errno,
+	"array of GRAM subjob contact strings");
+
+    /* perform the all-to-all distribution of the business cards */
     mpi_errno = mpig_pm_gk_distribute_byte_array(mpig_pm_gk_pg_size, mpig_pm_gk_pg_rank, mpig_pm_gk_sj_num,
 	mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, mpig_pm_gk_sj_addrs, (globus_byte_t *) bc_str, (int) strlen(bc_str) + 1,
 	(globus_byte_t **) bc_strs, bc_lens);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_distribute_business_cards");
 
+    /* free the memory used by the stringified respresentation of business card for this process */
+    mpig_bc_free_serialized_object(bc_str);
+
+    /* convert each serialized business card back to business card object */
     for (p = 0; p < mpig_pm_gk_pg_size; p++)
     {
 	mpig_bc_deserialize_object((char *) bc_strs[p], &bcs[p], &mpi_errno, &failed);
@@ -308,8 +447,98 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 	MPIU_Free(bc_strs[p]);
     }
 
-    mpig_bc_free_serialized_object(bc_str);
+    /* get the GRAM contact strings from the business cards of the subjob masters.  the contact string for the subjob to which
+       the current process belongs is always placed at the end of list.  this prevents mpig_pm_gk_abort() from terminating its
+       own subjob before it cancels all of the other subjobs. */
+    {
+	const int starting_error_count = errors;
+	int n;
 
+	for (n = 0; n < mpig_pm_gk_sj_num; n++)
+	{
+	    mpig_pm_gk_sj_contact_strs[n] = NULL;
+	}
+
+	n = 0;
+	for (p = 0; p < mpig_pm_gk_pg_size; p++)
+	{
+	    char * sj_contact_str = NULL;
+	    bool_t sj_contact_found;
+	    char * sj_index_str = NULL;
+	    bool_t sj_index_found;
+	    int sj_index;
+
+	    mpig_bc_get_contact(&bcs[p], "PM_GK_GRAM_SUBJOB_CONTACT", &sj_contact_str, &sj_contact_found, &mpi_errno, &failed);
+	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process; },
+		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
+	    
+	    mpig_bc_get_contact(&bcs[p], "PM_GK_GRAM_SUBJOB_INDEX", &sj_index_str, &sj_index_found, &mpi_errno, &failed);
+	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process; },
+		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_GRAM_SUBJOB_INDEX");
+	    
+	    if (sj_contact_found && sj_index_found)
+	    {
+		if (sscanf(sj_index_str, "%d", &sj_index) == 1)
+		{
+		    if (sj_index == mpig_pm_gk_my_sj_index)
+		    {
+			mpig_pm_gk_sj_contact_strs[mpig_pm_gk_sj_num - 1] = MPIU_Strdup(sj_contact_str);
+		    }
+		    else
+		    {
+			mpig_pm_gk_sj_contact_strs[n++] = MPIU_Strdup(sj_contact_str);
+		    }
+		}
+		else
+		{
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process;}, "**fail", "**fail %s",
+			"an error occurred while extracting the subjob index from the string in the business card");
+		}
+	    }
+
+	  cont_foreach_process:
+	    if (sj_contact_str != NULL) mpig_bc_free_contact(sj_contact_str);
+	    if (sj_index_str != NULL) mpig_bc_free_contact(sj_index_str);
+	}
+
+	if (n != mpig_pm_gk_sj_num - 1)
+	{
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**fail", "**fail %s",
+		"insufficient subjob contact strings were found in the business cards");
+	}
+
+	/* if any errors have occurred while creating the array of contact strings, then nullify the pointer to the array.  the
+	   array will be freed automatically by the MPIU_CHKPMEM_REAP() in the fn_fail block */
+	if (starting_error_count != errors)
+	{
+	    mpig_pm_gk_sj_contact_strs = NULL;
+	}
+    }
+    
+    /* get the process group id from the process group master */
+    {
+	char * pg_id_str;
+	bool_t found;
+	
+	mpig_bc_get_contact(&bcs[0], "PM_GK_PG_ID", &pg_id_str, &found, &mpi_errno, &failed);
+	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;}, "**globus|bc_get_contact",
+			 "**globus|bc_get_contact %s", "PM_GK_PG_ID");
+	if (found)
+	{
+	    mpig_pm_gk_pg_id = MPIU_Strdup(pg_id_str);
+	    MPIU_ERR_CHKANDSTMT1((mpig_pm_gk_pg_id == NULL), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;},
+		"**nomem", "nomem %s", "process group id");
+	    mpig_bc_free_contact(pg_id_str);
+	}
+	else
+	{
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;}, "**globus|bc_contact_not_found",
+		"**globus|bc_contact_not_found %s", "PM_GK_PG_ID");
+	}
+
+      end_get_pg_id_block: ;
+    }
+    
     if (errors > 0) goto fn_fail;
     
     MPIU_CHKPMEM_COMMIT();
@@ -506,7 +735,7 @@ int mpig_pm_gk_get_app_num(int * const app_num)
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
     
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_INTERN, "**globus|pm_no_pg_id");
-    *app_num = mpig_pm_gk_sj_index;
+    *app_num = mpig_pm_gk_my_sj_index;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
