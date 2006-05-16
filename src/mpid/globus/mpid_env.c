@@ -11,7 +11,7 @@
 #include <unistd.h>
 #endif
 
-mpig_process_t mpig_process = {NULL, "{null)", -1, -1, -1, -1};
+mpig_process_t mpig_process = {NULL, "(unknown)", -1, -1, -1, -1};
 
 /*
  * MPID_Init()
@@ -456,8 +456,6 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
 	fflush(stderr);
     }
 
-    /* XXX: contact GRAMs and cancel other subjobs, then cancel our own */
-    
     /* MPI-2-XXX: what do we do with jobs spawned by a communicator containing one or more processes in the aborting
        communicator?  do we abort those job as well or leave them running?  should we follow the unix model and terminate any
        child jobs if they are connected directly or indirectly to the processes in the aborting communicator (see the definition
@@ -466,10 +464,12 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
        program terminats?  if it is desirable to leave disconnected child jobs running, how do we determine that no process in
        the child job is (indirectly) connected to the processes in the aborting communicator? */
 
-    /* XXX: in an ideal universe, we would like a core file for the process initiating the abort, but there is a race condition
-       between GRAM killing the process and the process reaching the call to the abort() function.  I'm not sure how to resolve
-       this.  Perhaps there is a way to tell GRAM to send a SIGABRT to the job(s). */
-    abort();
+    /* contact GRAMs and cancel other subjobs, then cancel our own.  XXX: in an ideal universe, we would like a core file for the
+       process initiating the abort, but there is a race condition between GRAM killing the process and the process reaching the
+       call to the abort() function.  I'm not sure how to resolve this.  Perhaps there is a way to tell GRAM to send a SIGABRT to
+       the job(s). */
+    mpig_pm_abort(exit_code);
+    abort();  /* just in case... */
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting"));
