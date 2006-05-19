@@ -3013,7 +3013,10 @@ sub TargetTags {
 	printMakeVariable( FD, "SOURCEFILES", '$(SOURCES)' );
     }
     print FD "tags: TAGS$newline"; 
-    print FD "TAGS:";
+    # By adding "Makefile" to TAGS, we ensure that the TAGS target
+    # will be rebuilt anytime the package is reconfigured.  We
+    # could also make TAGS always rebuild, to catch any source changes.
+    print FD "TAGS: Makefile";
     # Only generate a local etags call if there are local sources
     # This target is designed for VPATH builds to build a TAGS file in
     if ($has_headers || $has_sources) {
