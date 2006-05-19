@@ -221,7 +221,7 @@ int MPI_Finalize( void )
   fn_exit:
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
     MPIU_THREAD_SINGLE_CS_EXIT("init");
-    MPID_CS_FINALIZE();
+    MPIU_THREAD_SINGLE_CS_FINALIZE;
     return mpi_errno;
 
   fn_fail:
