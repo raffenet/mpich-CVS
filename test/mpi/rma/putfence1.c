@@ -44,6 +44,10 @@ int main( int argc, char *argv[] )
 				extent, MPI_INFO_NULL, comm, &win );
 		MPI_Win_fence( 0, win );
 		if (rank == source) {
+		    /* To improve reporting of problems about operations, we
+		       change the error handler to errors return */
+		    MPI_Win_set_errhandler( win, MPI_ERRORS_RETURN );
+
 		    sendtype.InitBuf( &sendtype );
 		    
 		    err = MPI_Put( sendtype.buf, sendtype.count, 
@@ -55,7 +59,13 @@ int main( int argc, char *argv[] )
 			    MTestPrintError( err );
 			}
 		    }
-		    MPI_Win_fence( 0, win );
+		    err = MPI_Win_fence( 0, win );
+		    if (err) {
+			errs++;
+			if (errs < 10) {
+			    MTestPrintError( err );
+			}
+		    }
 		}
 		else if (rank == dest) {
 		    MPI_Win_fence( 0, win );

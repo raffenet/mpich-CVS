@@ -842,6 +842,7 @@ AC_OUTPUT(maint/testmerge \
 	  errors/Makefile \
 	  errors/coll/Makefile \
 	  errors/comm/Makefile \
+	  errors/group/Makefile \
 	  errors/errhan/Makefile \
 	  errors/pt2pt/Makefile \
 	  errors/spawn/Makefile \

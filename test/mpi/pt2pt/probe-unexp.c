@@ -13,9 +13,9 @@ char buf[1 << MAX_BUF_SIZE_LG];
 
 /* 
  * This program verifies that MPI_Probe() is operating properly in the face of
- *  unexpected messages arriving after MPI_Probe() has
+ * unexpected messages arriving after MPI_Probe() has
  * been called.  This program may hang if MPI_Probe() does not return when the
- *  message finally arrives (see req #375).
+ * message finally arrives (see req #375).
  */
 int main(int argc, char **argv)
 {
@@ -29,6 +29,10 @@ int main(int argc, char **argv)
 
     MPI_Comm_size(MPI_COMM_WORLD, &p_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &p_rank);
+    /* To improve reporting of problems about operations, we
+       change the error handler to errors return */
+    MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
+
 
     for (msg_size_lg = 0; msg_size_lg <= MAX_BUF_SIZE_LG; msg_size_lg++)
     {

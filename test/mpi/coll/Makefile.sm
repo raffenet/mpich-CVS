@@ -54,7 +54,6 @@ scatter2_SOURCES = scatter2.c
 scatter2_LDADD = ../util/mtest.o
 scatter3_SOURCES = scatter3.c
 scatter3_LDADD = ../util/mtest.o
-rerr_SOURCES = rerr.c
 gather_SOURCES = gather.c
 gather_LDADD = ../util/mtest.o
 gather2_SOURCES = gather2.c

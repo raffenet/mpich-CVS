@@ -27,3 +27,4 @@ isendselfprobe 1
 # and earlier.
 inactivereq 1
 waittestnull 1
+waitany-null 1

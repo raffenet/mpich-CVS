@@ -32,6 +32,10 @@ int main( int argc, char *argv[] )
 	source = 0;
 	dest   = size - 1;
 	
+	/* To improve reporting of problems about operations, we
+	   change the error handler to errors return */
+	MPI_Comm_set_errhandler( comm, MPI_ERRORS_RETURN );
+
 	for (count = 1; count < 65000; count = count * 2) {
 	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
 		maxmsg = 65000 - count;

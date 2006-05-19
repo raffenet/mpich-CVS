@@ -1,6 +1,6 @@
-#SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors .
+#SUBDIRS = util attr basic datatype info init rma topo io @threadsdir@ .
 SUBDIRS_otherlangs = cxx f77 f90
-SUBDIRS = coll comm errhan pt2pt spawn @otherlangs@
+SUBDIRS = coll comm group errhan pt2pt spawn @otherlangs@
 
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \

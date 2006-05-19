@@ -45,6 +45,8 @@ int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 }
 #endif
 
+/* Keep track of whether the send succeeded */
+static int sendok = 0;
 THREAD_RETURN_TYPE send_thread(void *p)
 {
     int err;
@@ -61,6 +63,10 @@ THREAD_RETURN_TYPE send_thread(void *p)
     }
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    /* To improve reporting of problems about operations, we
+       change the error handler to errors return */
+    MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
+
     err = MPI_Send(buffer, MSG_SIZE, MPI_CHAR, rank == 0 ? 1 : 0, 0, MPI_COMM_WORLD);
     if (err)
     {
@@ -69,12 +75,15 @@ THREAD_RETURN_TYPE send_thread(void *p)
 	    MSG_SIZE, rank, rank == 0 ? 1 : 0, buffer);
 	fflush(stdout);
     }
+    else {
+	sendok = 1;
+    }
     return (THREAD_RETURN_TYPE)err;
 }
 
 int main( int argc, char *argv[] )
 {
-    int err;
+    int err, errs=0;
     int rank, size;
     int provided;
     char *buffer;
@@ -110,7 +119,8 @@ int main( int argc, char *argv[] )
 
     start_send_thread(send_thread);
 
-    sleep(3); /* give the send thread time to start up and begin sending the message */
+    sleep(3); /* give the send thread time to start up and begin sending the 
+		 message */
 
     buffer = malloc(sizeof(char)*MSG_SIZE);
     if (buffer == NULL)
@@ -119,16 +129,26 @@ int main( int argc, char *argv[] )
 	fflush(stdout);
 	MPI_Abort(MPI_COMM_WORLD, -1);
     }
-    err = MPI_Recv(buffer, MSG_SIZE, MPI_CHAR, rank == 0 ? 1 : 0, 0, MPI_COMM_WORLD, &status);
-    if (err)
-    {
+
+    /* To improve reporting of problems about operations, we
+       change the error handler to errors return */
+    MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
+
+    err = MPI_Recv(buffer, MSG_SIZE, MPI_CHAR, rank == 0 ? 1 : 0, 0, 
+		   MPI_COMM_WORLD, &status);
+    if (err) {
+	errs++;
 	MPI_Error_string(err, buffer, &length);
 	printf("MPI_Recv of %d bytes from %d to %d failed, error: %s\n",
 	    MSG_SIZE, rank, rank == 0 ? 1 : 0, buffer);
 	fflush(stdout);
     }
 
-    MTest_Finalize(err != MPI_SUCCESS ? 1 : 0);
+    if (!sendok) {
+	errs ++;
+    }
+
+    MTest_Finalize(errs);
     MPI_Finalize();
     return 0;
 }

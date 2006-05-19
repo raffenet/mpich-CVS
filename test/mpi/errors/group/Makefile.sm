@@ -6,8 +6,7 @@ smvar_do_sharedlibs = 0
 # Use extra programs to list programs that should not be built by default.
 EXTRA_PROGRAMS       = 
 
-noalias_SOURCES    = noalias.c
-rerr_SOURCES = rerr.c
+gerr_SOURCES = gerr.c
 
 ../../util/mtest.o:
 	(cd ../../util && $(MAKE) mtest.o)
