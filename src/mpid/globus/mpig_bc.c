@@ -192,11 +192,11 @@ void mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, cha
     char * val_str;
     int val_size;
     int rc;
-    MPIG_STATE_DECL(MPID_STATE_mpig_get_contact);
+    MPIG_STATE_DECL(MPID_STATE_mpig_bc_get_contact);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_get_contact);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_get_contact);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
 		       "entering: bc=" MPIG_PTR_FMT ", key=\"%s\", mpi_errno=0x%08x",
 		       (MPIG_PTR_CAST) bc, key, *mpi_errno_p));
