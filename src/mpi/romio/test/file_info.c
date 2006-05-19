@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 	    }
 	}
 	else if (!strcmp("cb_nodes", key)) {
-	    if (atoi(value) != nprocs/2 ? 0 : 1) {
+	    if (atoi(value) != (nprocs/2 ? 0 : 1)) {
 		errs++;
 		if (verbose) fprintf(stderr, "cb_nodes is %d; should be %d\n", atoi(value),
 				     nprocs/2 ? 0 : 1);
