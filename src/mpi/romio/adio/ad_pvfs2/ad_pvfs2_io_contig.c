@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*-
+ * vim: ts=8 sts=4 sw=4 noexpandtab
+ *
+ *   Copyright (C) 2006 University of Chicago. 
+ *   See COPYRIGHT notice in top-level directory.
+ */
+
 #include "adio.h"
 #include "adio_extern.h"
 #include "ad_pvfs2.h"

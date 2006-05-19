@@ -192,6 +192,7 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    MPI_Info_get(users_info, "romio_pvfs2_distribution_name",
 		    MPI_MAX_INFO_VAL, value, &flag);
 	    if (flag) {
+		/* TODO: handle this hint */
 	    }
 
             ADIOI_Free(value);

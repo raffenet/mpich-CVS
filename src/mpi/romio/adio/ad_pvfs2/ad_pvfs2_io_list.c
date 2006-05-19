@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- 
+ *   vim: ts=8 sts=4 sw=4 noexpandtab
+ *
+ *   Copyright (C) 2006 Unknown (TODO: fix this)
+ */
+
 #include <assert.h>
 #include "adio.h"
 #include "adio_extern.h"
@@ -5,7 +11,7 @@
 #include "ad_pvfs2_io.h"
 #include "ad_pvfs2_common.h"
 
-#define COALESCE_REGIONS
+#define COALESCE_REGIONS  /* TODO: would we ever want to *not* coalesce? */
 #define MAX_OL_COUNT 64
 int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 			      MPI_Datatype datatype, int file_ptr_type,
@@ -19,7 +25,7 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
     int etype_size = -1;
     int num_etypes_in_filetype = -1, num_filetypes = -1;
     int etypes_in_filetype = -1, size_in_filetype = -1;
-    int bytes_into_filetype = -1;
+    int bytes_into_filetype = 0;
     MPI_Offset total_bytes_accessed = 0;
     
     /* parameters for offset-length pairs arrays */
@@ -35,7 +41,7 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
     int flat_file_index = 0;
     int64_t cur_flat_buf_reg_off = 0;
     int64_t cur_flat_file_reg_off = 0;
-    ADIOI_Flatlist_node *flat_buf, *flat_file;
+    ADIOI_Flatlist_node *flat_buf_p, *flat_file_p;
     int buftype_size = -1, buftype_extent = -1,
         filetype_size = -1, filetype_extent = -1;
     int buftype_is_contig = -1, filetype_is_contig = -1;
@@ -69,83 +75,138 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
     
     /* Flatten the memory datatype
-     * (file datatype has already been flattened in ADIO open)
+     * (file datatype has already been flattened in ADIO open
+     * unless it is contibuous, then we need to flatten it manually)
      * and set the correct buffers for flat_buf and flat_file */
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
     if (buftype_is_contig == 0)
     {
 	ADIOI_Flatten_datatype(datatype);
-	flat_buf = ADIOI_Flatlist;
-	while (flat_buf->type != datatype) 
-	    flat_buf = flat_buf->next;
+	flat_buf_p = ADIOI_Flatlist;
+	while (flat_buf_p->type != datatype) 
+	    flat_buf_p = flat_buf_p->next;
     }
     else 
     {
 	/* flatten and add to the list */
-	flat_buf = (ADIOI_Flatlist_node *) ADIOI_Malloc
+	flat_buf_p = (ADIOI_Flatlist_node *) ADIOI_Malloc
 	    (sizeof(ADIOI_Flatlist_node));
-	flat_buf->blocklens = (int *) ADIOI_Malloc(sizeof(int));
-	flat_buf->indices = (ADIO_Offset *) ADIOI_Malloc(sizeof(ADIO_Offset));
+	flat_buf_p->blocklens = (int *) ADIOI_Malloc(sizeof(int));
+	flat_buf_p->indices = 
+		(ADIO_Offset *) ADIOI_Malloc(sizeof(ADIO_Offset));
 	/* For the buffer, we can optimize the buftype, this is not 
 	 * possible with the filetype since it is tiled */
 	buftype_size = buftype_size*count;
 	buftype_extent = buftype_size*count;
-	flat_buf->blocklens[0] = buftype_size;
-	flat_buf->indices[0] = 0;
-	flat_buf->count = 1;
+	flat_buf_p->blocklens[0] = buftype_size;
+	flat_buf_p->indices[0] = 0;
+	flat_buf_p->count = 1;
     }
     if (filetype_is_contig == 0)
     {
+	    /* TODO: why does avery say this should already have been
+	     * flattened in Open, but also says contig types don't get
+	     * flattened */
 	ADIOI_Flatten_datatype(fd->filetype);
-	flat_file = ADIOI_Flatlist;
-	while (flat_file->type != fd->filetype) 
-	    flat_file = flat_file->next;
+	flat_file_p = ADIOI_Flatlist;
+	while (flat_file_p->type != fd->filetype) 
+	    flat_file_p = flat_file_p->next;
     }
     else
     {
         /* flatten and add to the list */
-        flat_file = (ADIOI_Flatlist_node *) ADIOI_Malloc
+        flat_file_p = (ADIOI_Flatlist_node *) ADIOI_Malloc
             (sizeof(ADIOI_Flatlist_node));
-        flat_file->blocklens = (int *) ADIOI_Malloc(sizeof(int));
-        flat_file->indices = (ADIO_Offset *) ADIOI_Malloc(sizeof(ADIO_Offset));
-        flat_file->blocklens[0] = filetype_size;
-        flat_file->indices[0] = 0;
-        flat_file->count = 1;
+        flat_file_p->blocklens = (int *) ADIOI_Malloc(sizeof(int));
+        flat_file_p->indices = 
+		(ADIO_Offset *) ADIOI_Malloc(sizeof(ADIO_Offset));
+        flat_file_p->blocklens[0] = filetype_size;
+        flat_file_p->indices[0] = 0;
+        flat_file_p->count = 1;
     }
-    
-    /* Find out where the we are in the flattened filetype (both 
-     * the block index and how far into the block */
+        
+    /* Find out where we are in the flattened filetype (the block index, 
+     * how far into the block, and how many bytes_into_filetype)
+     * If the file_ptr_type == ADIO_INDIVIDUAL we will use disp, fp_ind 
+     * to figure this out (offset should always be zero) 
+     * If file_ptr_type == ADIO_EXPLICIT, we will use disp and offset 
+     * to figure this out. */
+
     etype_size = fd->etype_size;
     num_etypes_in_filetype = filetype_size / etype_size;
-    num_filetypes = (int) (offset / num_etypes_in_filetype);
-    etypes_in_filetype = (int) (offset % num_etypes_in_filetype);
-    size_in_filetype = etypes_in_filetype * etype_size;
-
-    tmp_filetype_size = 0;
-    for (i=0; i<flat_file->count; i++) {
-        tmp_filetype_size += flat_file->blocklens[i];
-        if (tmp_filetype_size > size_in_filetype) 
+    if (file_ptr_type == ADIO_INDIVIDUAL)
+    {
+	int flag = 0;
+	/* Should have already been flattened in ADIO_Open*/
+	num_filetypes = -1;
+	while (!flag)
 	{
-	    flat_file_index = i;
-	    cur_flat_file_reg_off = flat_file->blocklens[i] - 
-		(tmp_filetype_size - size_in_filetype);
-            break;
-        }
+	    num_filetypes++;
+	    for (i = 0; i < flat_file_p->count; i++)
+	    {
+		/* Start on a non zero-length region */
+		if (flat_file_p->blocklens[i])
+		{
+		    if (fd->disp + flat_file_p->indices[i] +
+			(num_filetypes * filetype_extent) +
+			flat_file_p->blocklens[i] > fd->fp_ind &&
+			fd->disp + flat_file_p->indices[i] <=
+			fd->fp_ind)
+		    {
+			flat_file_index = i;
+			cur_flat_file_reg_off = fd->fp_ind -
+			    (fd->disp + flat_file_p->indices[i] +
+			     (num_filetypes * filetype_extent));
+			flag = 1;
+			break;
+		    }
+		    else
+			bytes_into_filetype += flat_file_p->blocklens[i];
+		}
+	    }
+	}
+	/* Impossible that we don't find it in this datatype */
+	assert(i != flat_file_p->count);
     }
-    bytes_into_filetype = offset * filetype_size;
+    else
+    { 
+	num_filetypes = (int) (offset / num_etypes_in_filetype);
+	etypes_in_filetype = (int) (offset % num_etypes_in_filetype);
+	size_in_filetype = etypes_in_filetype * etype_size;
 
+	tmp_filetype_size = 0;
+	for (i=0; i<flat_file_p->count; i++) {
+	    tmp_filetype_size += flat_file_p->blocklens[i];
+	    if (tmp_filetype_size > size_in_filetype) 
+	    {
+		flat_file_index = i;
+		cur_flat_file_reg_off = flat_file_p->blocklens[i] - 
+		    (tmp_filetype_size - size_in_filetype);
+		bytes_into_filetype = offset * filetype_size -
+		    flat_file_p->blocklens[i];
+		break;
+	    }
+	}
+    }
+#ifdef DEBUG_LIST
+    fprintf(stderr, "ADIOI_PVFS2_StridedListIO: (fd->fp_ind=%Ld,fd->disp=%Ld,"
+            " offset=%Ld)\n(flat_file_index=%d,cur_flat_file_reg_off=%Ld,"
+	    "bytes_into_filetype=%d)\n",
+            fd->fp_ind, fd->disp, offset, flat_file_index, 
+	    cur_flat_file_reg_off, bytes_into_filetype);
+#endif
 #ifdef DEBUG_LIST2
     fprintf(stderr, "flat_buf:\n");
-    for (i = 0; i < flat_buf->count; i++)
+    for (i = 0; i < flat_buf_p->count; i++)
 	fprintf(stderr, "(offset, length) = (%Ld, %d)\n",
-	       flat_buf->indices[i],
-	       flat_buf->blocklens[i]);
+	       flat_buf_p->indices[i],
+	       flat_buf_p->blocklens[i]);
     fprintf(stderr, "flat_file:\n");
-    for (i = 0; i < flat_file->count; i++)
+    for (i = 0; i < flat_file_p->count; i++)
 	fprintf(stderr, "(offset, length) = (%Ld, %d)\n",
-	       flat_file->indices[i],
-	       flat_file->blocklens[i]);
+	       flat_file_p->indices[i],
+	       flat_file_p->blocklens[i]);
 #endif    
 
     /* total data written */
@@ -166,12 +227,12 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 
         /* Generate the offset-length pairs for a
          * list I/O operation */
-	gen_listio_arr(flat_buf,
+	gen_listio_arr(flat_buf_p,
 		       &flat_buf_index,
 		       &cur_flat_buf_reg_off,
 		       buftype_size,
 		       buftype_extent,
-		       flat_file,
+		       flat_file_p,
 		       &flat_file_index,
 		       &cur_flat_file_reg_off,
 		       filetype_size,
@@ -190,7 +251,7 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 
 	assert(buf_ol_count <= MAX_OL_COUNT);
 	assert(file_ol_count <= MAX_OL_COUNT);
-#ifdef DEBUG_LIST
+#ifdef DEBUG_LIST2
 	print_buf_file_ol_pairs(buf_off_arr,
 				buf_len_arr,
 				buf_ol_count,
@@ -200,7 +261,7 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 				buf,
 				rw_type);
 #endif
-#ifdef DEBUG_LIST
+#ifdef DEBUG_LIST2
 	do {
 	    int y, z;
 	    fprintf(stderr, "ad_pvfs2_io_list.c::\n");
@@ -233,17 +294,40 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 				 buf, mem_req, 
 				 &(pvfs_fs->credentials), &resp_io);
 	}
+	if (ret != 0) 
+	{
+	    fprintf(stderr, "ADIOI_PVFS2_StridedListIO: Warning - PVFS_sys_"
+		    "read/write returned %d and completed %Ld bytes.\n", 
+		    ret, resp_io.total_completed);
+	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
+					       MPIR_ERR_RECOVERABLE,
+					       myname, __LINE__,
+					       ADIOI_PVFS2_error_convert(ret),
+					       "Error in PVFS_sys_io \n", 0);
+	    PVFS_Request_free(&mem_req);
+	    PVFS_Request_free(&file_req);
+	    goto error_state;
+	}
 	total_bytes_accessed += resp_io.total_completed;
 
 	PVFS_Request_free(&mem_req);
 	PVFS_Request_free(&file_req);
     }
     
+#ifdef DEBUG_LIST
+    fprintf(stderr, "ADIOI_PVFS2_StridedListIO: "
+            "total_bytes_accessed=%Ld,ret=%d\n", 
+	    total_bytes_accessed, ret);
+#endif
+
     if (file_ptr_type == ADIO_INDIVIDUAL) 
 	fd->fp_ind += total_bytes_accessed;
     *error_code = MPI_SUCCESS;
+
+error_state:
 #ifdef HAVE_STATUS_SET_BYTES
-    MPIR_Status_set_bytes(status, datatype, total_bytes_accessed);
+    /* TODO: why the cast? */
+    MPIR_Status_set_bytes(status, datatype, (int)total_bytes_accessed);
 /* This is a temporary way of filling in status. The right way is to
    keep track of how much data was actually written by ADIOI_BUFFERED_WRITE. */
 #endif
@@ -251,18 +335,18 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 	ADIOI_Delete_flattened(datatype);
     else
     {
-	ADIOI_Free(flat_buf->blocklens);
-	ADIOI_Free(flat_buf->indices);
-	ADIOI_Free(flat_buf);
+	ADIOI_Free(flat_buf_p->blocklens);
+	ADIOI_Free(flat_buf_p->indices);
+	ADIOI_Free(flat_buf_p);
     }
 
     if (filetype_is_contig == 0)
 	ADIOI_Delete_flattened(fd->filetype);
     else
     {
-	ADIOI_Free(flat_file->blocklens);
-	ADIOI_Free(flat_file->indices);
-	ADIOI_Free(flat_file);
+	ADIOI_Free(flat_file_p->blocklens);
+	ADIOI_Free(flat_file_p->indices);
+	ADIOI_Free(flat_file_p);
     }
 
     return 0;
@@ -273,12 +357,12 @@ int ADIOI_PVFS2_StridedListIO(ADIO_File fd, void *buf, int count,
 
 /* gen_listio_arr - fills in offset-length pairs for memory and file
  * for list I/O */
-int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
+int gen_listio_arr(ADIOI_Flatlist_node *flat_buf_p,
 		   int *flat_buf_index_p,
 		   int64_t *cur_flat_buf_reg_off_p,
 		   int flat_buf_size,
 		   int flat_buf_extent,
-		   ADIOI_Flatlist_node *flat_file,
+		   ADIOI_Flatlist_node *flat_file_p,
 		   int *flat_file_index_p,
 		   int64_t *cur_flat_file_reg_off_p,
 		   int flat_file_size,
@@ -315,27 +399,27 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
      * Note this does not affect the bytes_completed 
      * since no data is in these regions.  Initialize the 
      * first memory and file offsets. */
-    while (flat_buf->blocklens[(*flat_buf_index_p)] == 0)
+    while (flat_buf_p->blocklens[(*flat_buf_index_p)] == 0)
     {
 	(*flat_buf_index_p) = ((*flat_buf_index_p) + 1) % 
-	    flat_buf->count;
+	    flat_buf_p->count;
     }
     buf_off_arr[*buf_ol_count_p] =
 	(*bytes_completed / flat_buf_size) * 
 	flat_buf_extent + 
-	flat_buf->indices[*flat_buf_index_p] +
+	flat_buf_p->indices[*flat_buf_index_p] +
 	*cur_flat_buf_reg_off_p;
     buf_len_arr[*buf_ol_count_p] = 0;
 
-    while (flat_file->blocklens[(*flat_file_index_p)] == 0)
+    while (flat_file_p->blocklens[(*flat_file_index_p)] == 0)
     {
 	(*flat_file_index_p) = ((*flat_file_index_p) + 1) % 
-	    flat_file->count;
+	    flat_file_p->count;
     }
     file_off_arr[*file_ol_count_p] = disp + 
 	(((bytes_into_filetype + *bytes_completed) / flat_file_size) * 
 	 flat_file_extent) + 
-	flat_file->indices[*flat_file_index_p] +
+	flat_file_p->indices[*flat_file_index_p] +
 	*cur_flat_file_reg_off_p;
     file_len_arr[*file_ol_count_p] = 0;
 
@@ -352,9 +436,9 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
     {
 	/* How much data is left in the current piece in
 	 * the flattened datatypes */
-	cur_flat_buf_reg_left = flat_buf->blocklens[*flat_buf_index_p]
+	cur_flat_buf_reg_left = flat_buf_p->blocklens[*flat_buf_index_p]
 	    - *cur_flat_buf_reg_off_p;
-	cur_flat_file_reg_left = flat_file->blocklens[*flat_file_index_p]
+	cur_flat_file_reg_left = flat_file_p->blocklens[*flat_file_index_p]
 	    - *cur_flat_file_reg_off_p;
 
 #ifdef DEBUG_LIST2
@@ -369,11 +453,11 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
 		"buf_ol_count=%d file_ol_count=%d\n"
 		"buf_len_arr[%d]=%d file_len_arr[%d]=%d\n\n",
 		*flat_buf_index_p, *flat_buf_index_p, 
-		flat_buf->blocklens[*flat_buf_index_p],
+		flat_buf_p->blocklens[*flat_buf_index_p],
 		cur_flat_buf_reg_left,
 		*cur_flat_buf_reg_off_p,
 		*flat_file_index_p, *flat_file_index_p, 
-		flat_file->blocklens[*flat_file_index_p],
+		flat_file_p->blocklens[*flat_file_index_p],
 		cur_flat_file_reg_left,
 		*cur_flat_file_reg_off_p,
 		*bytes_completed,
@@ -407,11 +491,11 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
 	    fprintf(stderr, "reached end of memory block...\n");
 #endif
 	    (*flat_buf_index_p) = ((*flat_buf_index_p) + 1) % 
-		flat_buf->count;
-	    while (flat_buf->blocklens[(*flat_buf_index_p)] == 0)
+		flat_buf_p->count;
+	    while (flat_buf_p->blocklens[(*flat_buf_index_p)] == 0)
 	    {
 		(*flat_buf_index_p) = ((*flat_buf_index_p) + 1) % 
-		    flat_buf->count;
+		    flat_buf_p->count;
 	    }
 	    *cur_flat_buf_reg_off_p = 0;
 
@@ -447,7 +531,7 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
 		buf_off_arr[*buf_ol_count_p] = 
 		    ((*bytes_completed + region_size) / flat_buf_size) * 
 		    flat_buf_extent + 
-		    flat_buf->indices[*flat_buf_index_p] +
+		    flat_buf_p->indices[*flat_buf_index_p] +
 		    (*cur_flat_buf_reg_off_p);
 		buf_len_arr[*buf_ol_count_p] = 0;
 	    }
@@ -476,11 +560,11 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
 	    fprintf(stderr, "reached end of file block...\n");
 #endif
 	    (*flat_file_index_p) = ((*flat_file_index_p) + 1) % 
-		flat_file->count;
-	    while (flat_file->blocklens[(*flat_file_index_p)] == 0)
+		flat_file_p->count;
+	    while (flat_file_p->blocklens[(*flat_file_index_p)] == 0)
 	    {
 		(*flat_file_index_p) = ((*flat_file_index_p) + 1) % 
-		    flat_file->count;
+		    flat_file_p->count;
 	    }
 	    (*cur_flat_file_reg_off_p) = 0;
 
@@ -517,7 +601,7 @@ int gen_listio_arr(ADIOI_Flatlist_node *flat_buf,
 		    (((bytes_into_filetype + *bytes_completed + region_size) 
 		      / flat_file_size) * 
 		     flat_file_extent) + 
-		    flat_file->indices[*flat_file_index_p] +
+		    flat_file_p->indices[*flat_file_index_p] +
 		    (*cur_flat_file_reg_off_p);
 		file_len_arr[*file_ol_count_p] = 0;
 	    }

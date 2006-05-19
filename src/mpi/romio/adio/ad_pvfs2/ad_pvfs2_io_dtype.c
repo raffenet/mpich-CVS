@@ -1,3 +1,11 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*-
+ * vim: ts=8 sts=4 sw=4 noexpandtab
+ *
+ *   Copyright (C) 2006 University of Chicago. 
+ *   See COPYRIGHT notice in top-level directory.
+ */
+
+#include <assert.h>
 #include "adio.h"
 #include "adio_extern.h"
 #include "ad_pvfs2.h"
@@ -10,12 +18,15 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
 			       *error_code,
 			       int rw_type)
 {
-    int filetype_size = -1, ret = -1, buftype_is_contig;
+    int filetype_size = -1, ret = -1, filetype_is_contig = -1;
+    int num_filetypes = 0, cur_flat_file_reg_off = 0;
     PVFS_Request tmp_mem_req, mem_req, tmp_file_req, file_req;
     PVFS_sysresp_io resp_io;
-    ADIO_Offset off = -1;
-    int etype_size = -1;
+    ADIO_Offset off = -1, bytes_into_filetype = 0;
+    MPI_Aint filetype_extent = -1;
+    int etype_size = -1, i = -1;
     PVFS_size pvfs_disp = -1;
+    ADIOI_Flatlist_node *flat_file_p = ADIOI_Flatlist;
 
     /* Use for offseting the PVFS2 filetype */
     int pvfs_blk = 1;
@@ -29,7 +40,7 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
 
-    ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
+    ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
 
     /* changed below if error */
     *error_code = MPI_SUCCESS;  
@@ -41,27 +52,78 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
         *error_code = MPI_SUCCESS;
         return -1;
     }
+    MPI_Type_extent(fd->filetype, &filetype_extent);
     MPI_Type_size(fd->etype, &etype_size);
     if (filetype_size == 0) {
         *error_code = MPI_SUCCESS;
         return -1;
     }
 
-    /* offset is in units of etype relative to the filetype.  We convert
-     * this to be an offset in terms of actual data bytes
-     * the offset minus the number of bytes that are not used.  
-     * We are allowed to do this since
-     * PVFS2 handles offsets with respect to a file_req in bytes,
-     * otherwise we would have to convert into a pure byte offset as
-     * is done in other methods */
-    off = etype_size*offset;
-    if (file_ptr_type == ADIO_INDIVIDUAL) {
-        pvfs_disp = fd->disp;
+    /* offset is in units of etype relative to the filetype.  We
+     * convert this to off in terms of actual data bytes (the offset
+     * minus the number of bytes that are not used).  We are allowed
+     * to do this since PVFS2 handles offsets with respect to a
+     * file_req in bytes, otherwise we would have to convert into a
+     * pure byte offset as is done in other methods.  Explicit offset
+     * case is handled by using fd->disp and byte-converted off. */
+
+    pvfs_disp = fd->disp;
+    if (file_ptr_type == ADIO_INDIVIDUAL) 
+    {
+	if (filetype_is_contig) 
+	{
+	    off = fd->fp_ind - fd->disp;
+	}
+	else 
+	{
+	    int flag = 0;
+	    /* Should have already been flattened in ADIO_Open*/
+	    while (flat_file_p->type != fd->filetype) 
+	    {
+		flat_file_p = flat_file_p->next;
+	    }
+	    num_filetypes = -1;
+	    while (!flag) 
+	    {
+		num_filetypes++;
+		for (i = 0; i < flat_file_p->count; i++) 
+		{
+		    /* Start on a non zero-length region */
+		    if (flat_file_p->blocklens[i]) 
+		    {
+			if (fd->disp + flat_file_p->indices[i] +
+			    (num_filetypes * filetype_extent) +
+			    flat_file_p->blocklens[i] > fd->fp_ind &&
+			    fd->disp + flat_file_p->indices[i] <= 
+			    fd->fp_ind) 
+			{
+			    cur_flat_file_reg_off = fd->fp_ind -
+				(fd->disp + flat_file_p->indices[i] +
+				 (num_filetypes * filetype_extent));
+			    flag = 1;
+			    break;
+			}
+			else
+			    bytes_into_filetype += flat_file_p->blocklens[i];
+		    }
+		}
+	    }
+	    /* Impossible that we don't find it in this datatype */
+	    assert(i != flat_file_p->count);
+	    off = bytes_into_filetype + cur_flat_file_reg_off;
+	}
     }
-    /* explicit offset */
-    else {
-        pvfs_disp = fd->fp_ind;
+    else /* ADIO_EXPLICIT */
+    { 
+	off = etype_size * offset;
     }
+
+#ifdef DEBUG_DTYPE
+    fprintf(stderr, "ADIOI_PVFS2_StridedDtypeIO: (fd->fp_ind=%Ld,fd->disp=%Ld,"
+	    " offset=%Ld),(pvfs_disp=%Ld,off=%Ld)\n",
+	    fd->fp_ind, fd->disp, offset, pvfs_disp, off);
+#endif
+
 
     /* Convert the MPI memory and file datatypes into
      * PVFS2 datatypes */
@@ -77,18 +139,17 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
     }
 
     ret = PVFS_Request_contiguous(count, tmp_mem_req, &mem_req);
-    if (ret != 0)
-        fprintf(stderr,
-                "ad_pvfs2_write.c: error in final CONTIG memory type\n");
+    if (ret != 0) /* TODO: convert this to MPIO error handling */
+        fprintf(stderr, "ADIOI_PVFS2_stridedDtypeIO: error in final"
+		" CONTIG memory type\n");
     PVFS_Request_free(&tmp_mem_req);    
 
-    /* pvfs_disp is used to offset the filetype by the bytes 
-     * into the filetype*/
+    /* pvfs_disp is used to offset the filetype */
     ret = PVFS_Request_hindexed(1, &pvfs_blk, &pvfs_disp,
                                 tmp_file_req, &file_req);
     if (ret != 0)
-        fprintf(stderr,
-                "ad_pvfs2_write.c: error in final HINDEXED file type\n");
+        fprintf(stderr, "ADIOI_PVFS2_StridedDtypeIO: error in final"
+			" HINDEXED file type\n");
     PVFS_Request_free(&tmp_file_req);
 
     if (rw_type == READ)
@@ -99,6 +160,9 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
 			     mem_req, &(pvfs_fs->credentials), &resp_io);
 
     if (ret != 0) {
+	fprintf(stderr, "ADIOI_PVFS2_StridedDtypeIO: Warning - PVFS_sys_"
+		"read/write returned %d and completed %Ld bytes.\n", 
+		ret, resp_io.total_completed);
         *error_code = MPIO_Err_create_code(MPI_SUCCESS,
                                            MPIR_ERR_RECOVERABLE,
                                            myname, __LINE__,
@@ -117,6 +181,12 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
 
     PVFS_Request_free(&mem_req);
     PVFS_Request_free(&file_req);    
+
+#ifdef DEBUG_DTYPE
+    fprintf(stderr, "ADIOI_PVFS2_StridedDtypeIO: "
+            "resp_io.total_completed=%Ld,ret=%d\n", 
+	    resp_io.total_completed, ret);
+#endif
 
 #ifdef HAVE_STATUS_SET_BYTES
     MPIR_Status_set_bytes(status, datatype, (int)resp_io.total_completed);
