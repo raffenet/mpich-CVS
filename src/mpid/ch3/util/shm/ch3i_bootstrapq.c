@@ -10,6 +10,8 @@
 #include <windows.h>
 #endif
 
+/* STATES:NO WARNINGS */
+
 /* FIXME: Are these needed here (these were defined within an unrelated 
    ifdef in mpidimpl.h) */
 #ifdef HAVE_TIME_H

@@ -5,6 +5,8 @@
  */
 #include "mpidi_ch3_impl.h"
 
+/* STATES:NO WARNINGS */
+
 #define MQSHM_END -1
 /* #define DBG_PRINT_SEND_RECEIVE */
 /* #define DBG_TEST_LOCKING */

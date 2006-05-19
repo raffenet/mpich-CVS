@@ -6,6 +6,8 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* STATES:NO WARNINGS */
+
 /*static MPID_Request * create_request(void * pkt, MPIDI_msg_sz_t pkt_sz, int nb)*/
 #undef create_request
 #define create_request(sreq, pkt, pkt_sz, nb) \

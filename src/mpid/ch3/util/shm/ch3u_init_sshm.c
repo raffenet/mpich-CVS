@@ -147,7 +147,9 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     /* brad : do the shared memory specific setup items so we can later do the
      *         shared memory aspects of the business card
      */
-    
+
+    /* FIXME: Machine (host) name should be a routine call (service); do not 
+       use ifdefs to inline this */
 #ifdef HAVE_WINDOWS_H
     {
 	DWORD len = sizeof(pg_p->ch.shm_hostname);
@@ -315,15 +317,18 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     }
 
 #ifdef USE_PERSISTENT_SHARED_MEMORY
-    /* The bootstrap queue cannot be unlinked because it can be used outside of this process group. */
-    /* Spawned groups will use it and other MPI jobs may use it by calling MPI_Comm_connect/accept */
+    /* The bootstrap queue cannot be unlinked because it can be used outside 
+       of this process group. */
+    /* Spawned groups will use it and other MPI jobs may use it by calling 
+       MPI_Comm_connect/accept */
     /* By not unlinking here, if the program aborts, the 
      * shared memory segments can be left dangling.
      */
 #else
-    /* Unlinking here prevents leaking shared memory segments but also prevents any other processes
-     * from attaching to the segment later thus preventing the implementation of 
-     * MPI_Comm_connect/accept/spawn/spawn_multiple
+    /* Unlinking here prevents leaking shared memory segments but also 
+     *  prevents any other processes
+     * from attaching to the segment later thus preventing the implementation 
+     * of MPI_Comm_connect/accept/spawn/spawn_multiple
      */
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg_p->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS) {
@@ -340,7 +345,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
 #endif
 
-    /* brad : the pg needs to be set for sshm channels.  for all channels this is done in mpid_init.c */
+    /* brad : the pg needs to be set for sshm channels.  for all channels this
+       is done in mpid_init.c */
     MPIDI_Process.my_pg = pg_p;
 
     /* brad : get the sshm part of the business card  */

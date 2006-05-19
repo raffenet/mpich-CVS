@@ -6,6 +6,8 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* STATES:NO WARNINGS */
+
 #undef update_request
 #ifdef MPICH_DBG_OUTPUT
 #define update_request(sreq, pkt, pkt_sz, nb) \

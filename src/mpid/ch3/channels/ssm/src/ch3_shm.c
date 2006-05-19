@@ -7,6 +7,8 @@
 #include "mpidi_ch3_impl.h"
 #include <stdio.h>
 
+/* STATES:NO WARNINGS */
+
 /*#undef USE_IOV_LEN_2_SHORTCUT*/
 #define USE_IOV_LEN_2_SHORTCUT
 

@@ -14,6 +14,8 @@
 #endif
 #include "mpidi_ch3_impl.h"
 
+/* STATES:NO WARNINGS */
+
 #ifdef USE_IB_VAPI
 
 #include "ibuimpl.vapi.h"

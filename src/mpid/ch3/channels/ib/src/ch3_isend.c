@@ -6,6 +6,8 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* STATES:NO WARNINGS */
+
 /* static void update_request(MPID_Request * sreq, void * hdr, int hdr_sz, int nb) */
 #undef update_request
 #ifdef MPICH_DBG_OUTPUT
