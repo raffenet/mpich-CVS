@@ -136,7 +136,7 @@ sub ReadCacheContents {
 
     return %fileInfo;
 }
-# Print the cache.  Pass fileInfo by referecne (\%fileInfo)
+# Print the cache.  Pass fileInfo by reference (\%fileInfo)
 sub PrintCacheFile {
     my ($dir,$cachefile,$fileInfo) = @_;
 
