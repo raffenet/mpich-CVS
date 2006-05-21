@@ -24,7 +24,6 @@ top_srcdir=@top_srcdir_abs@
 libbuild_dir=@libbuild_dir@
 binbuild_dir=@binbuild_dir@
 docbuild_dir=@docbuild_dir@
-logfilesbuild_dir=@logfilesbuild_dir@
 etcbuild_dir=@etcbuild_dir@
 sharebuild_dir=@sharebuild_dir@
 sbinbuild_dir=@sbinbuild_dir@
@@ -38,7 +37,6 @@ sbindir=@sbindir@
 datadir=@datadir@
 sysconfdir=@sysconfdir@
 docdir=@docdir@
-logfilesdir=@logfilesdir@
 etcdir=$sysconfdir
 sharedir=$datadir
 
@@ -380,7 +378,6 @@ if [ "$prefix_override" = 1 ] ; then
     docdir=$prefix/doc
     etcdir=$prefix/etc
     sharedir=$prefix/share
-    logfilesdir=$prefix/logfiles
     if [ $appendUninstall = 0 ] ; then
         UNINSTALLFILE=$DESTDIR${sbindir}/${UNINSTALL_base}
     fi
@@ -404,7 +401,12 @@ if [ "$uninstall_dirname" = "$DESTDIR$sbindir" ] ; then
 fi
 
 if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
-    for type in lib doc logfiles etc ; do
+    if [ ! -d $DESTDIR$sharedir ] ; then
+        echo "Creating ${pkgname}'s share"
+        MkDir $sharedir
+    fi
+
+    for type in lib doc share etc ; do
         fromdir_name=${type}build_dir
         todir_name=${type}dir
         eval fromdir_value=\$"$fromdir_name"
@@ -418,31 +420,6 @@ if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
                 CopyDirRecurP $fromdir_value $todir_value $MODE
             fi
         fi 
-    done
-fi
-
-if [ "$copymode" = "all" ] ; then
-    if [ -n "$PKGS" ] ; then
-        if [ ! -d $DESTDIR$sharedir ] ; then
-            echo "Creating ${pkgname}'s share"
-            MkDir $sharedir
-        fi
-    fi
-
-    for type in share ; do
-        fromdir_name=${type}build_dir
-        todir_name=${type}dir
-        eval fromdir_value=\$"$fromdir_name"
-        eval todir_value=\$"$todir_name"
-        if [ -n "$fromdir_value" ] ; then
-            if [ -d $fromdir_value ] ; then
-                echo "Copying ${pkgname}'s $type"
-                if [ $verbose = 1 ] ; then
-                    echo "$fromdir_value -> $DESTDIR$todir_value"
-                fi
-                CopyDirRecurP $fromdir_value $todir_value $MODE
-            fi
-        fi
     done
 fi
 
