@@ -14,8 +14,6 @@
 # or different from the source directory
 #
 
-MAKE="@MAKE@"
-
 # Location of sources
 # top_srcdir=@top_srcdir@
 top_srcdir=@top_srcdir_abs@       # in absolute path
@@ -42,11 +40,20 @@ docdir=@docdir@
 
 # Assume PROF_LIBNAME=MPE_LIBNAME.
 PROF_LIBNAME=@MPE_LIBNAME@
-CPRP="@CPRP@"
-RM="@RM@"
-LN_S="@LN_S@"
 MPI_IMPL=@MPI_IMPL@
 MPE_BUILD_FORTRAN2C=@MPE_BUILD_FORTRAN2C@
+
+# Determine this package's name
+tmpname="`echo $top_srcdir | sed -e 's%\(.*\)/\([^/]*\)%\2%'`"
+pkgname="`echo $tmpname | sed -e 'y%abcdefghijklmnopqrstuvwxyz/%ABCDEFGHIJKLMNOPQRSTUVWXYZ_%'`"
+if [ "x$pkgname" = "x" ] ; then
+    pkgname="MPE2"
+fi
+
+MAKE="@MAKE@"
+INSTALL="@INSTALL@"
+RM="@RM@"
+LN_S="@LN_S@"
 
 # File access mode
 MODE=0644
@@ -116,7 +123,7 @@ for arg in "$@" ; do
         -softchmod)               chmodfailmode="soft" ;;
         -help|-u|-usage|-h)
 cat <<EOF
-Install MPE into $prefix.
+Install $pkgname into $prefix.
 -prefix=path     - Destination directory.
 -uninstall=file  - File to append uninstall information to
 -mode=nnnn       - mode for regular files.  Default is $MODE .
@@ -154,12 +161,9 @@ fi
 #
 ##############################################################################
 
-# We could use install, but install is too different and too hard to 
-# test.  So here are the routines to copy file, make directories, and 
-# replace #...# and @...@ in files
-CP=cp
+INSTALLER="$INSTALL"
 #
-CopyFile() {
+InstallFile() {
 if [ -z "$3" ] ; then
     mode=$MODE
 else
@@ -175,7 +179,7 @@ fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
 elif [ -d $1 ] ; then
-    echo ">>> $1 is a directory; not copied <<<"
+    echo ">>> $1 is a directory; not installed <<<"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 elif [ ! -f $1 ] ; then 
@@ -183,51 +187,44 @@ elif [ ! -f $1 ] ; then
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 elif [ "$1" = "$dest" ] ; then
-    echo "**File $1 is being copied to itself!"
+    echo "**File $1 is being installed to itself!"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 else
-    if [ $verbose = 1 ] ; then echo "Copying $1 to $dest" ; fi
+    if [ $verbose = 1 ] ; then echo "Installing $1 to $dest" ; fi
     if [ -f $dest ] ; then
         echo "Replacing existing file $dest..."
         $Show $RM -f $dest
     fi
-    $Show $CP $1 $dest
+    $Show $INSTALLER -m $mode $1 $dest
     rc=$?
     if [ $rc != 0 ] ; then
-        echo "**Error copying file $1 to $dest **"
+        echo "**Error installing file $1 to $dest with mode $mode**"
         errs=`expr $errs + 1`
         if [ $failmode = "hard" ] ; then exit $rc ; fi
     else
-        # store the destination filename copied
+        # store the destination installed filename
         filelist="$filelist $destfile"
-    fi
-    $Show chmod $mode $dest
-    rc=$?
-    if [ $rc != 0 ] ; then
-        echo "**Error setting mode to $mode on file $dest**"
-        errs=`expr $errs + 1`
-        if [ $chmodefailmode = "hard" ] ; then exit $rc ; fi
     fi
 fi
 }
 
 
 #
-# A version of copy file that preserves file dates
-CopyFileP() {
-    CP="$CPRP -p"
-    CopyFile $1 $2 $3
-    CP=cp
+# A version of InstallFile that preserves file dates
+InstallFileP() {
+    INSTALLER="$INSTALL -p"
+    InstallFile $1 $2 $3
+    INSTALLER="$INSTALL"
 }
 
 
 #
-# A version of recursive directory copy that copies or replaces files
-# ( file replacement of replace=1 ) and reserves copied file dates
-# but does NOT copy directories, CVS/, old/ and tex/.
+# A version of recursive directory install that installs or replaces files
+# ( file replacement of replace=1 ) and reserves installed file dates
+# but does NOT install directories, CVS/, old/ and tex/.
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-CopyDirRecurP() {
+InstallDirRecurP() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -237,7 +234,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
-                CopyFileP $file $2/$file $3
+                InstallFileP $file $2/$file $3
             fi
         done
         for dir in * ; do
@@ -245,7 +242,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                CopyDirRecurP $dir $2/$dir $3
+                InstallDirRecurP $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -310,7 +307,7 @@ fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
 elif [ -d $1 ] ; then
-    echo "$1 is a directory; not copied"
+    echo "$1 is a directory; not fixed"
 else
     if [ -f $dest ] ; then $Show $RM -f $dest ; fi
     if [ $just_testing = 0 ] ; then \
@@ -337,11 +334,11 @@ else
             errs=`expr $errs + 1`
             if [ $failmode = "hard" ] ; then exit $rc ; fi
         else
-            # store the destination filename fixed
+            # store the destination fixed filename
             filelist="$filelist $destfile"
         fi
     else
-        if [ $verbose = 1 ] ; then echo "Fixup $1 and copy to $dest" ; fi
+        if [ $verbose = 1 ] ; then echo "Fixup $1 and install to $dest" ; fi
     fi
 fi
 if [ -z "$3" ] ; then
@@ -365,7 +362,7 @@ fi
 #
 ##############################################################################
 if [ ! -s $libbuild_dir/lib${PROF_LIBNAME}.a ] ; then 
-    echo "You must make MPE before installing it!"
+    echo "You must make $pkgname before installing it!"
     echo "Could not find $libbuild_dir/lib${PROF_LIBNAME}.a !"
     exit 1
 fi
@@ -414,35 +411,35 @@ if [ "$prefix_override" = 1 ] ; then
     fi
 fi
 
-# Copy end-user MPE include Files, i.e. mpe*h
+# Install end-user include Files, i.e. mpe*h
 if [ -n "$includebuild_dir" ] ; then
     if [ -d $includebuild_dir ] ; then
-        echo "Copying MPE include files to $DESTDIR$includedir"
+        echo "Installing $pkgname include files to $DESTDIR$includedir"
         if [ ! -d $DESTDIR$includedir ] ; then
             MkDir $includedir
         fi
         cd $includebuild_dir
         for file in clog*.h mpe*.h ; do
             if [ -f $includebuild_dir/$file ] ; then
-                CopyFileP $includebuild_dir/$file $includedir/$file $MODE
+                InstallFileP $includebuild_dir/$file $includedir/$file $MODE
             fi
         done
     fi
 fi
 
-# Copy MPE libraries
+# Install libraries
 if [ -n "$libbuild_dir" ] ; then
     if [ -d $libbuild_dir ] ; then
-        echo "Copying MPE libraries to $DESTDIR$libdir"
-        CopyDirRecurP $libbuild_dir $libdir $MODE
+        echo "Installing $pkgname libraries to $DESTDIR$libdir"
+        InstallDirRecurP $libbuild_dir $libdir $MODE
     fi
 fi
 
-# Copy MPE utility programs
+# Install utility programs
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
-         echo "Copying MPE utility programs to $DESTDIR$bindir"
-         CopyDirRecurP $binbuild_dir $bindir $XMODE
+         echo "Installing $pkgname utility programs to $DESTDIR$bindir"
+         InstallDirRecurP $binbuild_dir $bindir $XMODE
          if [ -s $binbuild_dir/mpecc -a -x $binbuild_dir/mpecc ] ; then
              FixInstallFile $binbuild_dir/mpecc $bindir/mpecc $XMODE
          fi
@@ -452,11 +449,11 @@ if [ -n "$binbuild_dir" ] ; then
     fi
 fi
 
-# Copy MPE compiler configuration files
+# Install compiler configuration files
 if [ -n "$etcbuild_dir" ] ; then
     if [ -d $etcbuild_dir ] ; then
-         echo "Copying MPE compiler configuration files to $DESTDIR$sysconfdir"
-         CopyDirRecurP $etcbuild_dir $sysconfdir $MODE
+         echo "Installing $pkgname configuration files to $DESTDIR$sysconfdir"
+         InstallDirRecurP $etcbuild_dir $sysconfdir $MODE
          cd $etcbuild_dir && \
          for file in *.conf ; do \
              FixInstallFile $file $sysconfdir/$file ; \
@@ -468,11 +465,11 @@ fi
 # even if $sbinbuild_dir/* do not exist.
 MkDir $sbindir
 
-# Copy MPE system-admin related utilies
+# Install system-admin related utilies
 if [ -n "$sbinbuild_dir" ] ; then
     if [ -d $sbinbuild_dir ] ; then
-         echo "Copying MPE system utility programs to $DESTDIR$sbindir"
-         CopyFileP      $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
+         echo "Installing $pkgname system utility programs to $DESTDIR$sbindir"
+         InstallFileP   $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestlink      $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestexec      $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestexeclog   $sbindir $XMODE
@@ -491,10 +488,10 @@ for pkg in logging graphics collchk ; do
     if [ -f $libbuild_dir/../$dirvalue/Makefile ] ; then
         examplesdir=$datadir/examples_${pkg}
         MkDir $examplesdir
-#       Copy MPE Example C and Fortran programs
-        CopyDirRecurP $top_srcdir/$dirvalue $examplesdir
+#       Install example C and Fortran programs
+        InstallDirRecurP $top_srcdir/$dirvalue $examplesdir
 
-#       Create MPE examples Makefile
+#       Create examples Makefile
         cd $DESTDIR$examplesdir && \
         FixInstallFile $libbuild_dir/../$dirvalue/Makefile \
                        $examplesdir/Makefile
@@ -515,10 +512,10 @@ for pkg in logging graphics collchk ; do
 done
 
 
-# Copy documentation related files if they exist,
-# ie CP $top_srcdir/doc  $docdir
-#    CP $top_srcdir/man  $mandir
-#    CP $top_srcdir/html $htmldir
+# Install documentation related files if they exist,
+# ie INSTALL $top_srcdir/doc  $docdir
+#    INSTALL $top_srcdir/man  $mandir
+#    INSTALL $top_srcdir/html $htmldir
 for type in doc man html ; do
     typename=${type}dir
     eval typevalue=\$"$typename"
@@ -526,8 +523,8 @@ for type in doc man html ; do
         if [ ! -d $DESTDIR$typevalue ] ; then
             MkDir $typevalue
         fi
-        echo "Copying MPE $type to $DESTDIR$typevalue"
-        CopyDirRecurP $top_srcdir/$type $typevalue $MODE
+        echo "Installing $pkgname $type to $DESTDIR$typevalue"
+        InstallDirRecurP $top_srcdir/$type $typevalue $MODE
     fi
 done
 
@@ -587,7 +584,7 @@ done
 if [ "$appendUninstall" = 0 ] ; then
     cp $UNINSTALLFILE $sbinbuild_dir/mpeuninstall
 #
-    echo "Installed MPE in $DESTDIR$prefix"
+    echo "Installed $pkgname in $DESTDIR$prefix"
     echo "$UNINSTALLFILE may be used to remove the installation"
 fi
 
