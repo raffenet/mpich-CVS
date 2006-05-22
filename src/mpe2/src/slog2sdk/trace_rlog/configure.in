@@ -222,7 +222,7 @@ AC_SUBST(RM)
 # includebuild_dir is for all user header files
 #
 rootbuild_dir=`pwd`
-for dir in lib bin sbin logfiles ; do
+for dir in lib bin share sbin ; do
     dirname=${dir}build_dir
     eval dirvalue=\$"$dirname"
     eval $dirname=$rootbuild_dir/$dir
@@ -239,25 +239,22 @@ if test ! -d $libbuild_dir ; then
     $MKDIR $libbuild_dir
 fi
 
-# VPATH build: Set the logfilesbuild_dir
-for dir in logfiles ; do
-    dirname=${dir}build_dir
-    eval dirvalue=\$"$dirname"
-    if test -n "$dirvalue" ; then
-        if test ! -d $dirvalue ; then
-            if $CPRP -pr $srcdir/$dir $dirvalue ; then
-                echo "creating $dirvalue from source"
-            else
-                AC_MSG_ERROR( [Could not create directory $dirvalue] )
-            fi
-        fi
-    fi
-done
+# VPATH build: Set the sharebuild_dir
+if test ! -d $sharebuild_dir ; then
+    echo "creating $sharebuild_dir"
+    $MKDIR $sharebuild_dir
+fi
+
+# Copying $srcdir/logfiles to sharebuild_dir
+if test -d $srcdir/logfiles ; then
+    echo "creating sample logfiles from source"
+    $CPRP -pr $srcdir/logfiles $sharebuild_dir
+fi
 
 AC_SUBST(libbuild_dir)
 AC_SUBST(binbuild_dir)
 AC_SUBST(sbinbuild_dir)
-AC_SUBST(logfilesbuild_dir)
+AC_SUBST(sharebuild_dir)
 AC_SUBST(gui_libbuild_dir)
 
 # Define bindir's executables, and pass them down to sbindir's install-package
