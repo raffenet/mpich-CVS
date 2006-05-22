@@ -140,14 +140,14 @@ void CLOG_Sync_set_timediffs( CLOG_Sync_t *sync, int root )
                 bestgap = 1000000.0; /* infinity, fastest turnaround so far */
                 for ( jj = 0; jj < num_tests; jj++ ) {
                     PMPI_Send( &dummy, 0, MPI_INT, ii,
-                               CLOG_MASTER_READY, MPI_COMM_WORLD );
+                               CLOG_SYNC_MASTER_READY, MPI_COMM_WORLD );
                     PMPI_Recv( &dummy, 0, MPI_INT, ii,
-                               CLOG_SLAVE_READY, MPI_COMM_WORLD, &status );
+                               CLOG_SYNC_SLAVE_READY, MPI_COMM_WORLD, &status );
                     time_1 = CLOG_Timer_get();
                     PMPI_Send( &dummy, 0, MPI_INT, ii,
-                               CLOG_TIME_QUERY, MPI_COMM_WORLD );
+                               CLOG_SYNC_TIME_QUERY, MPI_COMM_WORLD );
                     PMPI_Recv( &time_i, 1, CLOG_TIME_MPI_TYPE, ii,
-                               CLOG_TIME_ANSWER, MPI_COMM_WORLD, &status );
+                               CLOG_SYNC_TIME_ANSWER, MPI_COMM_WORLD, &status );
                     time_2 = CLOG_Timer_get();
                     if ( (time_2 - time_1) < bestgap ) {
                         bestgap   = time_2 - time_1;
@@ -163,14 +163,14 @@ void CLOG_Sync_set_timediffs( CLOG_Sync_t *sync, int root )
     else {                        /* not the root */
         for ( jj = 0; jj < num_tests; jj++ ) {
             PMPI_Recv( &dummy, 0, MPI_INT, root,
-                       CLOG_MASTER_READY, MPI_COMM_WORLD, &status );
+                       CLOG_SYNC_MASTER_READY, MPI_COMM_WORLD, &status );
             PMPI_Send( &dummy, 0, MPI_INT, root,
-                       CLOG_SLAVE_READY, MPI_COMM_WORLD );
+                       CLOG_SYNC_SLAVE_READY, MPI_COMM_WORLD );
             PMPI_Recv( &dummy, 0, MPI_INT, root,
-                       CLOG_TIME_QUERY, MPI_COMM_WORLD, &status );
+                       CLOG_SYNC_TIME_QUERY, MPI_COMM_WORLD, &status );
             time_i = CLOG_Timer_get();
             PMPI_Send( &time_i, 1, CLOG_TIME_MPI_TYPE, root,
-                       CLOG_TIME_ANSWER, MPI_COMM_WORLD );
+                       CLOG_SYNC_TIME_ANSWER, MPI_COMM_WORLD );
         }
     }
     PMPI_Bcast( sync->timediffs, sync->world_size, CLOG_TIME_MPI_TYPE,

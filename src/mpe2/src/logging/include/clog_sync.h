@@ -5,10 +5,10 @@
 #if !defined( _CLOG_SYNC )
 #define _CLOG_SYNC
 
-#define CLOG_MASTER_READY      801
-#define CLOG_SLAVE_READY       802
-#define CLOG_TIME_QUERY        803
-#define CLOG_TIME_ANSWER       804
+#define CLOG_SYNC_MASTER_READY      801
+#define CLOG_SYNC_SLAVE_READY       802
+#define CLOG_SYNC_TIME_QUERY        803
+#define CLOG_SYNC_TIME_ANSWER       804
 
 typedef struct {
    int                 is_ok_to_sync;
