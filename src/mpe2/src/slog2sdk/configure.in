@@ -130,6 +130,10 @@ if test ! -s bin/jumpshot.in -a -z "$VPATH" ; then
 	The GNU make (sometimes available as gnumake) can be used.])
 fi
 AC_SUBST(MAKE)
+
+dnl checking for working INSTALL
+AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
  
 CPRP=cp
 MKDIR=mkdir

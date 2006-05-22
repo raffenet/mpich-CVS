@@ -70,6 +70,10 @@ if test ! -s include/mpe.h -a -z "$VPATH" ; then
 	The GNU make (sometimes available as gnumake) can be used.] )
 fi
 
+dnl checking for working INSTALL
+AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
+
 dnl CPRP is the version of cp that accepts -r and -p arguments.
 MKDIR=mkdir
 CPRP=cp
