@@ -23,7 +23,7 @@ top_srcdir=@top_srcdir_abs@
 libbuild_dir=@libbuild_dir@
 binbuild_dir=@binbuild_dir@
 sbinbuild_dir=@sbinbuild_dir@
-logfilesbuild_dir=@logfilesbuild_dir@
+sharebuild_dir=@sharebuild_dir@
 
 # Installation directories: Default paths (set at configure time)
 prefix=@prefix@
@@ -33,7 +33,6 @@ bindir=@bindir@
 sbindir=@sbindir@
 datadir=@datadir@
 sysconfdir=@sysconfdir@
-logfilesdir=$prefix/logfiles
 etcdir=$sysconfdir
 sharedir=$datadir
 gui_libdir="`echo $prefix | sed -e 's%\(.*\)/[^/]*/[^/]*$%\1/lib%'`"
@@ -367,7 +366,7 @@ if [ "$prefix_override" = 1 ] ; then
     libdir=$prefix/lib
     bindir=$prefix/bin
     sbindir=$prefix/sbin
-    logfilesdir=$prefix/logfiles
+    sharedir=$prefix/share
     gui_libdir="`echo $prefix | sed -e 's%\(.*\)/[^/]*/[^/]*$%\1/lib%'`"
     if [ $appendUninstall = 0 ] ; then
         UNINSTALLFILE=$DESTDIR${sbindir}/${UNINSTALL_base}
@@ -385,8 +384,13 @@ if [ "$uninstall_dirname" = "$DESTDIR$sbindir" ] ; then
     fi
 fi
 
+if [ ! -d $DESTDIR$sharedir ] ; then
+    echo "Creating ${pkgname}'s share"
+    MkDir $sharedir
+fi
+
 # Copy libraries
-for type in lib logfiles ; do
+for type in lib share ; do
     fromdir_name=${type}build_dir
     todir_name=${type}dir
     eval fromdir_value=\$"$fromdir_name"
