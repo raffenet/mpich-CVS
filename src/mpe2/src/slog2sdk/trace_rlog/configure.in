@@ -95,6 +95,10 @@ if test ! -s src/trace_impl.c -a -z "$VPATH" ; then
 fi
 AC_SUBST(MAKE)
 
+dnl Checking for working INSTALL
+AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
+
 # Check if --without-java is specified
 if test "$JDK_TOPDIR" = "no" ; then
     PAC_MSG_ERROR($enable_softerror, [--without-java is specified, exit!])
@@ -183,8 +187,6 @@ AC_LIBTOOL_WIN32_DLL
 dnl  Set SED that is not set in AC_PROG_LIBTOOL in autoconf 2.5x
 AC_CHECK_PROG(SED, sed, sed, ;)
 AC_PROG_LIBTOOL
-AC_PROG_INSTALL
-PAC_PROG_CHECK_INSTALL_WORKS
 AC_SUBST(LIBTOOL_DEPS)
 
 dnl Checks for libraries.
