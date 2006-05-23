@@ -14,8 +14,6 @@
 # or different from the source directory
 #
 
-MAKE="@MAKE@"
-
 # Source locations
 top_srcdir=@top_srcdir_abs@
 
@@ -43,6 +41,10 @@ pkgname="`echo $tmpname | sed -e 'y%abcdefghijklmnopqrstuvwxyz/%ABCDEFGHIJKLMNOP
 if [ "x$pkgname" = "x" ] ; then
     pkgname="TRACE-IMPL"
 fi
+
+MAKE="@MAKE@"
+INSTALL="@INSTALL@"
+RM="@RM@"
 
 # File access mode
 MODE=0644
@@ -136,14 +138,10 @@ fi
 # Start of Routines
 #
 ##############################################################################
-RM="@RM@"
 
-# We could use install, but install is too different and too hard to 
-# test.  So here are the routines to copy file, make directories, and 
-# replace #...# and @...@ in files
-CP=cp
+INSTALLER="$INSTALL"
 #
-CopyFile() {
+InstallFile() {
 if [ -z "$3" ] ; then
     mode=$MODE
 else
@@ -159,7 +157,7 @@ fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
 elif [ -d $1 ] ; then
-    echo ">>> $1 is a directory; not copied <<<"
+    echo ">>> $1 is a directory; not installed <<<"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 elif [ ! -f $1 ] ; then
@@ -167,55 +165,47 @@ elif [ ! -f $1 ] ; then
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 elif [ "$1" = "$dest" ] ; then
-    echo "**File $1 is being copied to itself!"
+    echo "**File $1 is being installed to itself!"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 else
-    if [ $verbose = 1 ] ; then echo "Copying $1 to $dest" ; fi
-    # We don't delete the file in the event that we are copying the
+    if [ $verbose = 1 ] ; then echo "Installing $1 to $dest" ; fi
+    # We don't delete the file in the event that we are installing the
     # file over itself (we SHOULD check for that separately, by checking 
     # that directories are distinct)
     if [ -f $dest ] ; then
         echo "Replacing existing file $dest..."
         $Show $RM $dest
     fi
-    $Show $CP $1 $dest
+    $Show $INSTALLER -m $mode $1 $dest
     rc=$?
     if [ $rc != 0 ] ; then
-        echo "**Error copying file $1 to $dest **"
+        echo "**Error installing file $1 to $dest with mode $mode**"
         errs=`expr $errs + 1`
         if [ $failmode = "hard" ] ; then exit $rc ; fi
     else
-        # store the destination filename copied
+        # store the destination installed filename
         filelist="$filelist $destfile"
-    fi
-    $Show chmod $mode $dest
-    rc=$?
-    if [ $rc != 0 ] ; then
-        echo "**Error setting mode on file $dest**"
-        errs=`expr $errs + 1`
-        if [ $chmodefailmode = "hard" ] ; then exit $rc ; fi
     fi
 fi
 }
 
 
 #
-# A version of copy file that preserves file dates
-CPRP=cp
-CopyFileP() {
-    CP="$CPRP -p"
-    CopyFile $1 $2 $3
-    CP=cp
+# A version of InstallFile that preserves file dates
+InstallFileP() {
+    INSTALLER="$INSTALL -p"
+    InstallFile $1 $2 $3
+    INSTALLER="$INSTALL"
 }
 
 
 
 #
-# A version of recursive directory copy that preserves file dates
-# but does NOT copy CVS, old, tex directory. 
+# A version of recursive directory install that preserves file dates
+# but does NOT install CVS, old, tex directory. 
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-CopyDirRecurP() {
+InstallDirRecurP() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -225,7 +215,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
-                CopyFileP $file $2/$file $3
+                InstallFileP $file $2/$file $3
             fi
         done
         for dir in * ; do
@@ -233,7 +223,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                CopyDirRecurP $dir $2/$dir $3
+                InstallDirRecurP $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -304,7 +294,7 @@ fi
 if [ $replace = 0 -a -f $dest ] ; then
     if [ $verbose = 1 ] ; then echo "$dest exists; not changed" ; fi
 elif [ -d $1 ] ; then
-    echo "$1 is a directory; not copied"
+    echo "$1 is a directory; not fixed"
 else
     if [ -f $dest ] ; then $Show $RM $dest ; fi
     if [ $just_testing = 0 ] ; then
@@ -318,11 +308,11 @@ else
             errs=`expr $errs + 1`
             if [ $failmode = "hard" ] ; then exit $rc ; fi
         else
-            # store the destination filename copied
+            # store the destination installed filename
             filelist="$filelist $destfile"
         fi
     else
-        if [ $verbose = 1 ] ; then echo "Fixup $1.in and copy to $dest" ; fi
+        if [ $verbose = 1 ] ; then echo "Fixup $1.in and install to $dest" ; fi
     fi
 fi
 if [ -z "$3" ] ; then
@@ -389,7 +379,7 @@ if [ ! -d $DESTDIR$sharedir ] ; then
     MkDir $sharedir
 fi
 
-# Copy libraries
+# Install libraries
 for type in lib share ; do
     fromdir_name=${type}build_dir
     todir_name=${type}dir
@@ -397,11 +387,11 @@ for type in lib share ; do
     eval todir_value=\$"$todir_name"
     if [ -n "$fromdir_value" ] ; then
         if [ -d $fromdir_value ] ; then
-            echo "Copying ${pkgname}'s $type"
+            echo "Installing ${pkgname}'s $type"
             if [ $verbose = 1 ] ; then
                 echo "$fromdir_value -> $DESTDIR$todir_value"
             fi
-            CopyDirRecurP $fromdir_value $todir_value $MODE
+            InstallDirRecurP $fromdir_value $todir_value $MODE
         fi
     fi
 done
@@ -410,15 +400,15 @@ cd $libbuild_dir/../src && $MAKE INSTALL_LIBSO LIBDIR=$libdir
 
 EXEFILES="@EXEFILES@"
 
-# Copy utility programs
+# Install utility programs
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
-        echo "Copying ${pkgname}'s bin"
+        echo "Installing ${pkgname}'s bin"
         if [ $verbose = 1 ] ; then
             echo "$binbuild_dir -> $DESTDIR$bindir"
         fi
-#       Copying all
-        CopyDirRecurP $binbuild_dir $bindir $XMODE
+#       Installing all
+        InstallDirRecurP $binbuild_dir $bindir $XMODE
 #       Fixing up the scripts
         for exefile in $EXEFILES ; do
             if [ -x $binbuild_dir/$exefile ] ; then
