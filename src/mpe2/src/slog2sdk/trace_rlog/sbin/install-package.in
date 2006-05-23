@@ -191,21 +191,13 @@ fi
 }
 
 
-#
-# A version of InstallFile that preserves file dates
-InstallFileP() {
-    INSTALLER="$INSTALL -p"
-    InstallFile $1 $2 $3
-    INSTALLER="$INSTALL"
-}
-
-
 
 #
-# A version of recursive directory install that preserves file dates
-# but does NOT install CVS, old, tex directory. 
+# Recursive directory install that installs or replaces files
+# (file replacement of replace=1) but excluding directories,
+# CVS/, old/ and tex/.
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-InstallDirRecurP() {
+InstallDirRecur() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -215,7 +207,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
-                InstallFileP $file $2/$file $3
+                InstallFile $file $2/$file $3
             fi
         done
         for dir in * ; do
@@ -223,7 +215,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                InstallDirRecurP $dir $2/$dir $3
+                InstallDirRecur $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -390,7 +382,7 @@ for type in lib share ; do
             if [ $verbose = 1 ] ; then
                 echo "$fromdir_value -> $DESTDIR$todir_value"
             fi
-            InstallDirRecurP $fromdir_value $todir_value $MODE
+            InstallDirRecur $fromdir_value $todir_value $MODE
         fi
     fi
 done
@@ -407,7 +399,7 @@ if [ -n "$binbuild_dir" ] ; then
             echo "$binbuild_dir -> $DESTDIR$bindir"
         fi
 #       Installing all
-        InstallDirRecurP $binbuild_dir $bindir $XMODE
+        InstallDirRecur $binbuild_dir $bindir $XMODE
 #       Fixing up the scripts
         for exefile in $EXEFILES ; do
             if [ -x $binbuild_dir/$exefile ] ; then

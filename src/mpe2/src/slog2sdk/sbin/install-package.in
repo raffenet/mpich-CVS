@@ -203,21 +203,13 @@ fi
 }
 
 
-#
-# A version of InstallFile that preserves file dates
-InstallFileP() {
-    INSTALLER="$INSTALL -p"
-    InstallFile $1 $2 $3
-    INSTALLER="$INSTALL"
-}
-
-
 
 #
-# A version of recursive directory install that preserves file dates
-# but does NOT install CVS, old, tex directory. 
+# Recursive directory install that installs or replaces files
+# (file replacement of replace=1) but excluding directories,
+# CVS/, old/ and tex/.
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-InstallDirRecurP() {
+InstallDirRecur() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -227,7 +219,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
-                InstallFileP $file $2/$file $3
+                InstallFile $file $2/$file $3
             fi
         done
         for dir in * ; do
@@ -235,7 +227,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                InstallDirRecurP $dir $2/$dir $3
+                InstallDirRecur $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -408,7 +400,7 @@ if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
                 if [ $verbose = 1 ] ; then
                     echo "$fromdir_value -> $DESTDIR$todir_value"
                 fi
-                InstallDirRecurP $fromdir_value $todir_value $MODE
+                InstallDirRecur $fromdir_value $todir_value $MODE
             fi
         fi 
     done
@@ -431,11 +423,11 @@ if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
 fi
     
 if [ "$copymode" = "all" -o "$copymode" = "optional" ] ; then
-    InstallFileP $top_srcdir/COPYRIGHT           $prefix
-    InstallFileP $top_srcdir/CHANGES             $prefix
-    InstallFileP $top_srcdir/FAQ                 $prefix
-    InstallFileP $top_srcdir/README.sdk          $prefix
-    InstallFileP $top_srcdir/README.rte          $prefix
+    InstallFile $top_srcdir/COPYRIGHT           $prefix
+    InstallFile $top_srcdir/CHANGES             $prefix
+    InstallFile $top_srcdir/FAQ                 $prefix
+    InstallFile $top_srcdir/README.sdk          $prefix
+    InstallFile $top_srcdir/README.rte          $prefix
 fi
 
 # Remove old uninstall file & Prepare the UNINSTALLFILE for appending

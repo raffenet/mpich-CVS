@@ -210,21 +210,13 @@ fi
 }
 
 
-#
-# A version of InstallFile that preserves file dates
-InstallFileP() {
-    INSTALLER="$INSTALL -p"
-    InstallFile $1 $2 $3
-    INSTALLER="$INSTALL"
-}
-
 
 #
-# A version of recursive directory install that installs or replaces files
-# ( file replacement of replace=1 ) and reserves installed file dates
-# but does NOT install directories, CVS/, old/ and tex/.
+# Recursive directory install that installs or replaces files
+# (file replacement of replace=1) but excluding directories,
+# CVS/, old/ and tex/.
 # $1 is the src directory, $2 is dest directory, $3 is $MODE or $XMODE
-InstallDirRecurP() {
+InstallDirRecur() {
 if [ -n "$1" -a -n "$2" ] ; then
     if [ -d $1 ] ; then
         MkDir $2
@@ -234,7 +226,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
-                InstallFileP $file $2/$file $3
+                InstallFile $file $2/$file $3
             fi
         done
         for dir in * ; do
@@ -242,7 +234,7 @@ if [ -n "$1" -a -n "$2" ] ; then
                  -a "$dir" != "CVS" -a "$dir" != "old" \
                  -a "$dir" != "tex" \
                ] ; then
-                InstallDirRecurP $dir $2/$dir $3
+                InstallDirRecur $dir $2/$dir $3
             fi
         done
         # cd back where it comes from
@@ -421,7 +413,7 @@ if [ -n "$includebuild_dir" ] ; then
         cd $includebuild_dir
         for file in clog*.h mpe*.h ; do
             if [ -f $includebuild_dir/$file ] ; then
-                InstallFileP $includebuild_dir/$file $includedir/$file $MODE
+                InstallFile $includebuild_dir/$file $includedir/$file $MODE
             fi
         done
     fi
@@ -431,7 +423,7 @@ fi
 if [ -n "$libbuild_dir" ] ; then
     if [ -d $libbuild_dir ] ; then
         echo "Installing $pkgname libraries to $DESTDIR$libdir"
-        InstallDirRecurP $libbuild_dir $libdir $MODE
+        InstallDirRecur $libbuild_dir $libdir $MODE
     fi
 fi
 
@@ -439,7 +431,7 @@ fi
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
          echo "Installing $pkgname utility programs to $DESTDIR$bindir"
-         InstallDirRecurP $binbuild_dir $bindir $XMODE
+         InstallDirRecur $binbuild_dir $bindir $XMODE
          if [ -s $binbuild_dir/mpecc -a -x $binbuild_dir/mpecc ] ; then
              FixInstallFile $binbuild_dir/mpecc $bindir/mpecc $XMODE
          fi
@@ -453,7 +445,7 @@ fi
 if [ -n "$etcbuild_dir" ] ; then
     if [ -d $etcbuild_dir ] ; then
          echo "Installing $pkgname configuration files to $DESTDIR$sysconfdir"
-         InstallDirRecurP $etcbuild_dir $sysconfdir $MODE
+         InstallDirRecur $etcbuild_dir $sysconfdir $MODE
          cd $etcbuild_dir && \
          for file in *.conf ; do \
              FixInstallFile $file $sysconfdir/$file ; \
@@ -469,7 +461,7 @@ MkDir $sbindir
 if [ -n "$sbinbuild_dir" ] ; then
     if [ -d $sbinbuild_dir ] ; then
          echo "Installing $pkgname system utility programs to $DESTDIR$sbindir"
-         InstallFileP   $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
+         InstallFile   $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestlink      $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestexec      $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestexeclog   $sbindir $XMODE
@@ -489,7 +481,7 @@ for pkg in logging graphics collchk ; do
         examplesdir=$datadir/examples_${pkg}
         MkDir $examplesdir
 #       Install example C and Fortran programs
-        InstallDirRecurP $top_srcdir/$dirvalue $examplesdir
+        InstallDirRecur $top_srcdir/$dirvalue $examplesdir
 
 #       Create examples Makefile
         cd $DESTDIR$examplesdir && \
@@ -524,7 +516,7 @@ for type in doc man html ; do
             MkDir $typevalue
         fi
         echo "Installing $pkgname $type to $DESTDIR$typevalue"
-        InstallDirRecurP $top_srcdir/$type $typevalue $MODE
+        InstallDirRecur $top_srcdir/$type $typevalue $MODE
     fi
 done
 
