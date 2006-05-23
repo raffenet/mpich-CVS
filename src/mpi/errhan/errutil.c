@@ -126,7 +126,6 @@ void MPIR_Err_init( void )
 {
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
-	char *env;
 	int n, rc;
 
 	error_ring_mutex_create();
@@ -224,12 +223,19 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	switch (comm_ptr->errhandler->language)
 	{
 	case MPID_LANG_C:
-#ifdef HAVE_CXX_BINDING
-	case MPID_LANG_CXX:
-#endif
 	    (*comm_ptr->errhandler->errfn.C_Comm_Handler_function)( 
 		&comm_ptr->handle, &errcode, 0 );
 	    break;
+#ifdef HAVE_CXX_BINDING
+	case MPID_LANG_CXX:
+	    (*MPIR_Process.cxx_call_errfn)( 0, &comm_ptr->handle, &errcode, 
+		    (void (*)(void))*comm_ptr->errhandler->errfn.C_Comm_Handler_function );
+	    /* The C++ code throws an exception if the error handler 
+	     returns something other than MPI_SUCCESS. There is no "return"
+	     of an error code. */
+	    errcode = MPI_SUCCESS;
+	    break;
+#endif
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
@@ -290,12 +296,19 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 	switch (win_ptr->errhandler->language)
 	{
 	    case MPID_LANG_C:
-#ifdef HAVE_CXX_BINDING
-	    case MPID_LANG_CXX:
-#endif
 		(*win_ptr->errhandler->errfn.C_Win_Handler_function)( 
 		    &win_ptr->handle, &errcode, 0 );
 		break;
+#ifdef HAVE_CXX_BINDING
+	    case MPID_LANG_CXX:
+	    (*MPIR_Process.cxx_call_errfn)( 2, &win_ptr->handle, &errcode, 
+		    (void (*)(void))*win_ptr->errhandler->errfn.C_Win_Handler_function );
+	    /* The C++ code throws an exception if the error handler 
+	     returns something other than MPI_SUCCESS. There is no "return"
+	     of an error code. */
+	    errcode = MPI_SUCCESS;
+	    break;
+#endif
 #ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN90:
 	    case MPID_LANG_FORTRAN:
@@ -352,12 +365,19 @@ int MPIR_Err_return_file( MPID_File  *file_ptr, const char fcname[],
 	switch (file_ptr->errhandler->language)
 	{
 	    case MPID_LANG_C:
-#ifdef HAVE_CXX_BINDING
-	    case MPID_LANG_CXX:
-#endif
 		(*file_ptr->errhandler->errfn.C_File_Handler_function)( 
 		(MPI_File *)&file_ptr->handle, &errcode );
 		break;
+#ifdef HAVE_CXX_BINDING
+	    case MPID_LANG_CXX:
+		(*MPIR_Process.cxx_call_errfn)( 1, &file_ptr->handle, &errcode, 
+		    (void (*)(void))*e->errfn.C_File_Handler_function );
+	    /* The C++ code throws an exception if the error handler 
+	     returns something other than MPI_SUCCESS. There is no "return"
+	     of an error code. */
+	    errcode = MPI_SUCCESS;
+		break;
+#endif
 #ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN90:
 	    case MPID_LANG_FORTRAN:
@@ -776,6 +796,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 	    }
 	    else
 	    {
+		/* FIXME: Do not use OS/System values, use capabilities */
 #ifdef HAVE_WINDOWS_H
 		MPIU_Snprintf(str, maxlen, "0x%p", p);
 #else
