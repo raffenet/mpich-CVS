@@ -4663,6 +4663,8 @@ AC_SUBST(MPICXX)
 AC_SUBST(MPIF77)
 AC_SUBST(MPIF90)
 
+AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
+
 AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/include/mpichtimer.h \
           src/binding/Makefile \

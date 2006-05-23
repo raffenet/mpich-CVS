@@ -7,6 +7,10 @@
 #if !defined(MPIIMPLTHREAD_H_INCLUDED)
 #define MPIIMPLTHREAD_H_INCLUDED
 
+#ifndef HAVE_MPICHCONF
+#error 'This file requires mpichconf.h'
+#endif
+
 /* Rather than embed a conditional test in the MPICH2 code, we define a 
    single value on which we can test */
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
