@@ -155,6 +155,10 @@ case "$host_os" in
         dnl  i.e. inform libtool to do runtime linking.
         LDFLAGS="$LDFLAGS -brtl"
         ;;
+    *darwin* )
+        dnl  force libtool to build .jnilib which is needed by Mac's JVM
+        LDFLAGS="$LDFLAGS -shrext .jnilib"
+        ;;
     *cygwin* )
         dnl  Since SUN's JDK assumes a win32 compiler, so force cygwin/gcc
         dnl  to be in MINGW32 mode. 
