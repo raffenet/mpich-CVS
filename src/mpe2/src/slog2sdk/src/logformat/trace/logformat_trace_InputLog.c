@@ -12,6 +12,9 @@
  */
 
 #include "trace_impl.h"
+#if defined( HAVE_JNI_H )
+#include <jni.h>
+#endif
 #if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
 #endif
@@ -20,9 +23,6 @@
 #endif
 #if defined( STDC_HEADERS ) || defined( HAVE_STRING_H )
 #include <string.h>
-#endif
-#if defined( HAVE_JNI_H )
-#include <jni.h>
 #endif
 #include "logformat_trace_InputLog.h"
 #include "trace_API.h"
