@@ -761,6 +761,8 @@ with MPI_Alloc_mem.
 **argstr_shmhost:no space for the host name
 **argstr_shmq:no space for the shared memory queue name
 **argstr_shmpid:no process id in the business card
+**argstr_missinghost:Missing hostname or invalid host/port description in business card
+**argstr_missingport:Missing port or invalid host/port description in business card
 **bad_set:bad set parameter
 **buscard:unable to create a business card
 **buscard_len:no space left in the business card to add a parameter
