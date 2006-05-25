@@ -8,6 +8,11 @@ define([AC_CACHE_SAVE], )dnl
 dnl
 dnl
 AH_BOTTOM([
+/* Temporary fix of undefined int64_t on SLES8 with "icc -no-gcc" */
+#if defined(FIX_STDINT_ORDER)
+#include "clog_inttypes.h"
+#endif
+
 /* Define WINDOWS specific features */
 /*
    Windows' open() opens an ASCII file by default, add Windows specific
@@ -246,6 +251,28 @@ AC_SUBST(mpe_int8_fmt)
 AC_SUBST(mpe_int16_fmt)
 AC_SUBST(mpe_int32_fmt)
 AC_SUBST(mpe_int64_fmt)
+
+if test "X$mpe_c99_stdint_h" != "X" ; then
+    AC_MSG_CHECKING( [if <$mpe_c99_stdint_h> can be behind system headers] )
+    AC_COMPILE_IFELSE( [ AC_LANG_PROGRAM( [
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
+#include <stdio.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
+#include <stdlib.h>
+#endif
+#include <$mpe_c99_stdint_h>
+                                          ],
+                                          [ int64_t   ii64 = 0; ] )
+                       ], [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+    if test "$mpe_link_ok" = "yes" ; then
+        AC_MSG_RESULT(yes)
+    else
+        AC_MSG_RESULT(no)
+        AC_DEFINE( FIX_STDINT_ORDER, 1,
+                   [Define if stdint.h should be before system headers] )
+    fi
+fi
 
 
 dnl ****   Checking for specific functions needed for the package.
