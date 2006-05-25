@@ -10,6 +10,7 @@
 #define TCP_POLL_FREQ_MULTI 5 
 #define TCP_POLL_FREQ_ALONE 1
 #define TCP_POLL_FREQ_NO   -1
+#define TCP_END_STRING "NEM_TCP_MOD_FINALIZE"
 
 typedef struct MPID_nem_tcp_module_internal_queue
 {
@@ -43,6 +44,7 @@ typedef struct tcp_internal
    int     outstanding;
    int     poll_freq;
    int     old_poll_freq;
+   int     nb_slaves;   
 } mpid_nem_tcp_internal_t ;
 
 extern mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars;

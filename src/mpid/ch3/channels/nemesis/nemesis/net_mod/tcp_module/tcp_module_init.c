@@ -30,7 +30,6 @@ MPID_nem_queue_ptr_t module_tcp_free_queue;
 MPID_nem_queue_ptr_t process_recv_queue;
 MPID_nem_queue_ptr_t process_free_queue;
 
-
 mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars ;
 
 static int init_tcp (MPIDI_PG_t *pg_p) 
@@ -51,11 +50,11 @@ static int init_tcp (MPIDI_PG_t *pg_p)
     if (ret != MPI_SUCCESS)
 	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");    
 
-   
     /* Allocate more than used, but fill only the external ones */
     MPID_nem_tcp_internal_vars.nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
     MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
-   
+    MPID_nem_tcp_internal_vars.nb_slaves = 0;
+
     /* All Masters create their sockets and put their keys w/PMI */
     for(index = 0 ; index < numprocs ; index++)
     {
@@ -70,8 +69,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    temp.sin_family      = AF_INET;
 	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
 	    temp.sin_port        = htons(port);	
-	  
+
 	    ret = bind(MPID_nem_tcp_nodes[grank].desc, (struct sockaddr *)&temp, len);	  
+
 	    if(ret == -1)
 		perror("bind");	      
 	  
@@ -137,6 +137,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	if(grank > MPID_nem_mem_region.rank)
 	{
 	    /* I am a master */
+	  MPID_nem_tcp_internal_vars.nb_slaves++;
 #ifdef TRACE  
 	    fprintf(stderr,"MASTER accepting sockets \n");
 #endif
@@ -172,7 +173,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    master.sin_family      = AF_INET;
 	    master.sin_port        = htons(port_num);
 	    MPID_NEM_MEMCPY(&(master.sin_addr.s_addr), hp->h_addr, hp->h_length);
-
+	    
 	    ret = connect(MPID_nem_tcp_nodes[grank].desc,(struct sockaddr *)&master, sizeof(master));
 	    if(ret == -1)
 		perror("connect");
