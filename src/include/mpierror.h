@@ -127,9 +127,6 @@ typedef int (* MPIR_Err_get_class_string_func_t)(int error, char *str, int lengt
 void MPIR_Err_get_string( int, char *, int, MPIR_Err_get_class_string_func_t );
 
 void MPIR_Err_print_stack(FILE *, int);
-/* FIXME: Our coding standard requires that most global variables be placed 
- within the MPIR_Process structure */
-extern int MPIR_Err_print_stack_flag;
 
 /* FIXME: Where is the documentation for these functions?  What are they for? *? */
 void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen);
