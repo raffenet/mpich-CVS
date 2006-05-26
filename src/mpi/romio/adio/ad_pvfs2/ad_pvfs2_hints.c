@@ -19,6 +19,12 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	MPI_Info_create(&(fd->info));
 	MPI_Info_set(fd->info, "romio_pvfs2_debugmask", "0");
 	fd->hints->fs_hints.pvfs2.debugmask = 0;
+
+	MPI_Info_set(fd->info, "striping_factor", "0");
+	fd->hints->striping_factor = 0;
+
+	MPI_Info_set(fd->info, "striping_unit", "0");
+	fd->hints->striping_unit = 0;
 	
 	/* any user-provided hints? */
 	if (users_info != MPI_INFO_NULL) {
