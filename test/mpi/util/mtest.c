@@ -110,6 +110,25 @@ void MTest_Finalize( int errs )
 }
 
 /*
+ * Miscellaneous utilities, particularly to eliminate OS dependencies
+ * from the tests.
+ * MTestSleep( seconds )
+ */
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+void MTestSleep( int sec )
+{
+    Sleep( 1000 * sec );
+}
+#else
+#include <unistd.h>
+void MTestSleep( int sec )
+{
+    sleep( sec );
+}
+#endif
+
+/*
  * Datatypes
  *
  * Eventually, this could read a description of a file.  For now, we hard 

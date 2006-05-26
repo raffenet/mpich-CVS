@@ -14,7 +14,6 @@ static char MTEST_Descrip[] = "Send to self in a threaded program";
 
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
-#define sleep(a) Sleep(a*1000)
 #define THREAD_RETURN_TYPE DWORD
 int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 {

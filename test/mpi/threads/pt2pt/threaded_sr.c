@@ -19,7 +19,6 @@ static char MTEST_Descrip[] = "Threaded Send-Recv";
 
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
-#define sleep(a) Sleep(a*1000)
 #define THREAD_RETURN_TYPE DWORD
 int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 {
@@ -119,8 +118,8 @@ int main( int argc, char *argv[] )
 
     start_send_thread(send_thread);
 
-    sleep(3); /* give the send thread time to start up and begin sending the 
-		 message */
+    /* give the send thread time to start up and begin sending the message */
+    MTestSleep(3); 
 
     buffer = malloc(sizeof(char)*MSG_SIZE);
     if (buffer == NULL)
