@@ -274,6 +274,7 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 
     IOLabelSetupInClient( &s->labelinfo );
     PMISetupInClient( usePort, &s->pmiinfo );
+/*    setvbuf(stdout,NULL,_IOLBF,0); */
 
     return 0;
 }
