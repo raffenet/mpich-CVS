@@ -32,28 +32,27 @@ MPID_nem_tcp_module_finalize ()
       for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
 	{
 	  grank = MPID_nem_mem_region.ext_ranks[index];
-	  if(grank <= MPID_nem_mem_region.rank) 		
+	  if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
 	    {
-	      if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
-	      	{
-		  write(MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
+	      write(MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
 #ifdef TRACE
-		  fprintf(stderr,"[%i] --- SLAVE WROTE TO MASTER %i on desc %i: %s, size %i\n",MPID_nem_mem_region.rank, grank, MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
+	      fprintf(stderr,"[%i] --- WROTE TO PROC %i on desc %i: %s, size %i\n",MPID_nem_mem_region.rank, grank, MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
 #endif
-		}
 	    }
 	}
+
 #ifdef TRACE 
-      fprintf(stderr,"[%i] --- TCP END PENDING  3 : waiting for %i slaves\n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_slaves);      
+      fprintf(stderr,"[%i] --- TCP END PENDING  3 : waiting for %i processes \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);      
 #endif 
-      while (MPID_nem_tcp_internal_vars.nb_slaves > 0)
+      while (MPID_nem_tcp_internal_vars.nb_procs > 0)
 	{
 	  MPID_nem_tcp_module_poll_recv();
 	}
 
 #ifdef TRACE 
-      fprintf(stderr,"[%i] --- TCP END PENDING  4 : %i slaves left \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_slaves);            
+      fprintf(stderr,"[%i] --- TCP END PENDING  4 : %i processes left \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);            
 #endif //TRACE 
+
     } 
   return MPID_nem_tcp_module_ckpt_shutdown ();    
 }

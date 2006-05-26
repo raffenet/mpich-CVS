@@ -53,7 +53,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
     /* Allocate more than used, but fill only the external ones */
     MPID_nem_tcp_internal_vars.nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
     MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
-    MPID_nem_tcp_internal_vars.nb_slaves = 0;
+    MPID_nem_tcp_internal_vars.nb_procs = numprocs;
 
     /* All Masters create their sockets and put their keys w/PMI */
     for(index = 0 ; index < numprocs ; index++)
@@ -137,7 +137,6 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	if(grank > MPID_nem_mem_region.rank)
 	{
 	    /* I am a master */
-	  MPID_nem_tcp_internal_vars.nb_slaves++;
 #ifdef TRACE  
 	    fprintf(stderr,"MASTER accepting sockets \n");
 #endif

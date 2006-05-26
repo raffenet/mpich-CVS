@@ -319,7 +319,7 @@ MPID_nem_tcp_module_poll_recv( void )
 					    fprintf(stderr,"[%i] -- RECV TCP READ : got TERM MSG (PARTIAL) : %s \n",
 						    MPID_nem_mem_region.rank,(char *)((MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2)));
 #endif 
-					    --MPID_nem_tcp_internal_vars.nb_slaves;
+					    --MPID_nem_tcp_internal_vars.nb_procs;
 					    MPID_nem_queue_enqueue (module_tcp_free_queue, cell);
 					    goto end;
 					  }
@@ -351,7 +351,7 @@ MPID_nem_tcp_module_poll_recv( void )
 					    fprintf(stderr,"[%i] -- RECV TCP READ : got TERM MSG (FULL) : %s, cell @ %p \n",
 						    MPID_nem_mem_region.rank,(char *)((MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2)),cell);
 #endif 
-					    --MPID_nem_tcp_internal_vars.nb_slaves;
+					    --MPID_nem_tcp_internal_vars.nb_procs;
 					    MPID_nem_queue_enqueue (module_tcp_free_queue, cell);
 					    goto end; ;
 					  }

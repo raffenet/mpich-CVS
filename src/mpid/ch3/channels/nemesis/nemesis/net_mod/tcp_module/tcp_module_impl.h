@@ -43,7 +43,7 @@ typedef struct tcp_internal
    int     outstanding;
    int     poll_freq;
    int     old_poll_freq;
-   int     nb_slaves;   
+   int     nb_procs;   
 } mpid_nem_tcp_internal_t ;
 
 extern mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars;
