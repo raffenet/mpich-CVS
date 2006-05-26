@@ -164,9 +164,9 @@ libs=$GLIBS
 if test -n "${MPIG_CONFIGURE_ACTIVE}" ; then
     cc=$TCC
     cflags=$TCFLAGS
-    cld=$TLD
-    cld_flags=$TLDFLAGS
-    clibs=$TLIBS
+    ld=$TLD
+    ld_flags=$TLDFLAGS
+    libs=$TLIBS
 elif test -n "${MPIG_BUILDING_MPICH2}" ; then
     cc=$BCC
     cflags=$BCFLAGS
