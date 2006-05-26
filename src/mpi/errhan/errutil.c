@@ -34,6 +34,7 @@ static int checkValidErrcode( int error_class, const char fcname[],
 			      int *errcode );
 static int checkForUserErrcode( int errcode );
 static int checkErrcodeIsValid( int errcode );
+static const char *ErrcodeInvalidReasonStr( int reason );
 static void handleFatalError( MPID_Comm *comm_ptr, 
 			      const char fcname[], int errcode );
 static const char *get_class_msg( int error_class );
@@ -45,14 +46,20 @@ static const char *get_class_msg( int error_class );
  *         the error code and location in the ring.  The routine
  *           ErrcodeToId( errcode, &id ) is used to extract the id from an 
  *         error code and
- *           ErrcodeCreateID( class, generic, msg, &id ) is used to create the 
- *         id from an error class, generic index, and message string.
+ *           ErrcodeCreateID( class, generic, msg, &id, &seq ) is used to 
+ *         create the id from an error class, generic index, and message 
+ *         string.  The "seq" field is inserted into the error code as a 
+ *         check.
  *
  *    prev_error - The full MPI error code of the previous error attached 
  *         to this list of errors, or MPI_SUCCESSS (which has value 0).
  *         This is the last error code, not the index in the ring of the last 
  *         error code.  That's the right choice, because we want to ensure 
- *         that the value is valid if the ring overflows.
+ *         that the value is valid if the ring overflows.  In addition,
+ *         we allow this to be an error CLASS (one of the predefined MPI
+ *         error classes).  This is particularly important for 
+ *         MPI_ERR_IN_STATUS, which may be returned as a valid error code.
+ *         (classes are valid error codes).
  *         
  *    use_user_error_code and user_error_code - Used to handle a few cases 
  *         in MPI where a user-provided routine returns an error code; 
@@ -156,7 +163,7 @@ void MPIR_Err_init( void )
 	rc = MPIU_GetEnvInt( "MPICH_CHOP_ERROR_STACK", &n );
 	if (rc == 1) {
 #ifdef HAVE_WINDOWS_H
-	    /* If windows, set teh default width to the window size */
+	    /* If windows, set the default width to the window size */
 	    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	    if (hConsole != INVALID_HANDLE_VALUE)
 	    {
@@ -423,7 +430,7 @@ int MPIR_Err_is_fatal(int errcode)
 
 /* Create the ring id from information about the message */
 static void ErrcodeCreateID( int error_class, int generic_idx, 
-			     const char *msg, int *id )
+			     const char *msg, int *id, int *seq )
 {
     int i;
     int ring_seq = 0, ring_id;
@@ -440,7 +447,8 @@ static void ErrcodeCreateID( int error_class, int generic_idx,
 	((generic_idx + 1) << ERROR_GENERIC_SHIFT) |
 	(ring_seq << ERROR_SPECIFIC_SEQ_SHIFT);
 
-    *id = ring_id;
+    *id  = ring_id;
+    *seq = ring_seq;
 }
  
 /* Check for a valid error code.  If the code is not valid, attempt to
@@ -476,17 +484,41 @@ static int checkValidErrcode( int error_class, const char fcname[],
     return rc;
 }
 
-/* Check that an encoded error code is valid. Return 1 if valid. */
+/* Check that an encoded error code is valid. Return 0 if valid, positive, 
+   non-zero if invalid.  Value indicates reason; see 
+   ErrcodeInvalidReasonStr() */
 static int checkErrcodeIsValid( int errcode )
 {
     int ring_id, generic_idx, ring_idx;
 
+    /* If the errcode is a class, then it is valid */
+    if (errcode <= MPIR_MAX_ERROR_CLASS_INDEX && errcode >= 0) return 0;
+
     convertErrcodeToIndexes( errcode, &ring_idx, &ring_id, &generic_idx );
     if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING ||
-	ring_idx > max_error_ring_loc) return 0;
-    if (ErrorRing[ring_idx].id != ring_id) return 0;
-    if (generic_idx < 0 || generic_idx > generic_msgs_len) return 0;
-    return 1;
+	ring_idx > max_error_ring_loc) return 1;
+    if (ErrorRing[ring_idx].id != ring_id) return 2;
+    if (generic_idx < 0 || generic_idx > generic_msgs_len) return 3;
+    return 0;
+}
+static const char *ErrcodeInvalidReasonStr( int reason )
+{
+    const char *str = 0;
+    switch (reason) {
+    case 1:
+	str = "Ring Index out of range";
+	break;
+    case 2:
+	str = "Ring ids do not match";
+	break;
+    case 3:
+	str = "Generic message index out of range";
+	break;
+    default:
+	str = "Unknown reason for invalid errcode";
+	break;
+    }
+    return str;
 }
 
 /* Check to see if the error code is a user-specified error code
@@ -889,12 +921,11 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 	    }
 	    else
 	    {
-		/* FIXME: Do not use OS/System values, use capabilities */
-#ifdef HAVE_WINDOWS_H
-		MPIU_Snprintf(str, maxlen, "0x%p", p);
-#else
+		/* FIXME: We may want to use 0x%p for systems that 
+		   (including Windows) that don't prefix %p with 0x. 
+		   This must be done with a capability, not a test on
+		   particular OS or header files */
 		MPIU_Snprintf(str, maxlen, "%p", p);
-#endif
 	    }
 	    break;
 	case (int)'C':
@@ -1065,6 +1096,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
     int use_user_error_code = 0;
     int user_error_code = -1;
     char user_ring_msg[MPI_MAX_ERROR_STRING+1];
+
     /* Create the code from the class and the message ring index */
 
     /* FIXME: We want to make abort invoke any cleanup routines first */
@@ -1076,9 +1108,12 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 
     /* Check that lastcode is valid */
     if (lastcode != MPI_SUCCESS) {
-	if (!checkErrcodeIsValid(lastcode)) {
-	    MPIU_Error_printf( "Internal Error: invalid error code %x in %s:%d\n", 
-			       lastcode, fcname, line );
+	int reason;
+	reason = checkErrcodeIsValid(lastcode);
+	if (reason) {
+	    MPIU_Error_printf( "Internal Error: invalid error code %x (%s) in %s:%d\n", 
+			       lastcode, ErrcodeInvalidReasonStr( reason ), 
+			       fcname, line );
 	    lastcode = MPI_SUCCESS;
 	}
     }
@@ -1218,17 +1253,9 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 
 	    ring_msg[MPI_MAX_ERROR_STRING] = '\0';
 	
-	    /* Create a simple hash function of the message to serve as the 
-	       sequence number */
-	    ring_seq = 0;
-	    for (i=0; ring_msg[i]; i++)
-	    {
-		ring_seq += (unsigned int) ring_msg[i];
-	    }
-	    ring_seq %= ERROR_SPECIFIC_SEQ_SIZE;
-	    /* Set the ring id */
+	    /* Get the ring sequence number and set the ring id */
 	    ErrcodeCreateID( error_class, generic_idx, ring_msg, 
-			     &ErrorRing[ring_idx].id );
+			     &ErrorRing[ring_idx].id, &ring_seq );
 	    /* Set the previous code. */
 	    ErrorRing[ring_idx].prev_error = lastcode;
 
@@ -1274,7 +1301,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	    }
 	}
 	error_ring_mutex_unlock();
-	
+
 	err_code |= ring_idx << ERROR_SPECIFIC_INDEX_SHIFT;
 	err_code |= ring_seq << ERROR_SPECIFIC_SEQ_SHIFT;
 
