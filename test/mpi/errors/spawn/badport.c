@@ -1,6 +1,9 @@
 #include "mpi.h"
 #include <stdio.h>
 
+/* Set verbose to 1 to see the error message */
+static int verbose = 0;
+
 int main( int argc, char *argv[] )
 {
     int ierr, errs=0;
@@ -17,13 +20,22 @@ int main( int argc, char *argv[] )
 	MPI_Comm_free( &newcomm );
     }
     else {
-	char str[MPI_MAX_ERROR_STRING];
-	int  slen;
-	/* Check the message */
-	MPI_Error_string( ierr, str, &slen );
-	printf( "Error message is: %s\n", str );
+	if (verbose) {
+	    char str[MPI_MAX_ERROR_STRING];
+	    int  slen;
+	    /* Check the message */
+	    MPI_Error_string( ierr, str, &slen );
+	    printf( "Error message is: %s\n", str );
+	}
     }
     fflush(stdout);
+
+    if (errs) {
+	printf( " Found %d errors\n", errs );
+    }
+    else
+	printf( " No Errors\n" );
+
     MPI_Finalize();
 
     return 0;
