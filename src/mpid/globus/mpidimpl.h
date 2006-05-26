@@ -81,7 +81,8 @@ int gethostname(char *name, size_t len);
 /**********************************************************************************************************************************
 					       BEGIN COMMUNICATION MODULE SECTION
 **********************************************************************************************************************************/
-const mpig_cm_vtable_t * const mpig_cm_vtables[];
+const mpig_cm_vtable_t * const * const mpig_cm_vtables;
+const int mpig_cm_vtables_num_entries;
 
 char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif);
 /**********************************************************************************************************************************
