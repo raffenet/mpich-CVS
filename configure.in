@@ -218,7 +218,7 @@ elif test "$enable_threads" = "no" ; then
     enable_threads=single
 elif test "$enable_threads" = "default"; then
     if test "$with_device" = "default" -o "$with_device" = "ch3:sock" ; then
-        enable_threads=multiple
+        enable_threads=runtime
     fi
 fi
 dnl
