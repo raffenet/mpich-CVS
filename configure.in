@@ -250,10 +250,14 @@ AC_ARG_WITH(cxxlibname,
 [--with-cxxlibname=name  - Specify name of library containing C++ interface
 routines],[MPICXXLIBNAME=$withval;set_MPICXXLIBNAME="yes"],MPICXXLIBNAME=)
 AC_SUBST(MPICXXLIBNAME)
+
+dnl flibname complicates the handling of MPIR_F_TRUE and MPIR_F_FALSE, 
+dnl particularly when using IBM/MS-style shared libraries.  Withdraw this
+dnl option and see if anyone misses it.
 dnl
-AC_ARG_WITH(flibname,
-[--with-flibname=name  - Specify name of library containing Fortran interface
-routines],[MPIFLIBNAME=$withval;set_MPIFLIBNAME="yes"],MPIFLIBNAME=)
+dnl AC_ARG_WITH(flibname,
+dnl [--with-flibname=name  - Specify name of library containing Fortran interface
+dnl routines],[MPIFLIBNAME=$withval;set_MPIFLIBNAME="yes"],MPIFLIBNAME=)
 AC_SUBST(MPIFLIBNAME)
 AC_SUBST(PMPIFLIBNAME)
 dnl
@@ -4725,6 +4729,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/util/param/Makefile \
           src/util/dbg/Makefile \
 	  src/util/dbg/getfuncstack \
+	  src/util/osserv/Makefile \
           src/include/mpi.h \
 	  test/Makefile test/util/Makefile \
 	  test/basic/Makefile \
