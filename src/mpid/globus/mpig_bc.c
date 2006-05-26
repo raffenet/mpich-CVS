@@ -12,78 +12,54 @@
 #define MPIG_BC_VAL_GROWTH_RATE 128
 
 /*
- * int mpig_bc_create([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
+ * int mpig_bc_copy([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
  *
  * Paramters:
  *
- * bc [IN/MOD] - business card object to be initialized
+ * orig_bc [IN] - original business card object
+ * copy_bc [IN/MOD] - (constructed) business card object in which to place the duplicate
  * mpi_errno [IN/OUT] - MPI error code
  * failed [OUT] - TRUE if the routine failed; FALSE otherwise
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_bc_create
-void mpig_bc_create(mpig_bc_t * const bc, int * const mpi_errno_p, bool_t * const failed_p)
+#define FUNCNAME mpig_bc_copy
+void mpig_bc_copy(const mpig_bc_t * const orig_bc, mpig_bc_t * const copy_bc, int * const mpi_errno_p, bool_t * const failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPIG_STATE_DECL(MPID_STATE_mpig_bc_create);
+    char * str;
+    MPIG_STATE_DECL(MPID_STATE_mpig_bc_copy);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_create);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) bc, *mpi_errno_p));
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_copy);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: orig_bc=" MPIG_PTR_FMT ", copy_bc=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) orig_bc, (MPIG_PTR_CAST) copy_bc, *mpi_errno_p));
     *failed_p = FALSE;
     
-    bc->str_begin = NULL;
-    bc->str_end = NULL;
-    bc->str_size = 0;
-    bc->str_left = 0;
+    str = MPIU_Strdup(orig_bc->str_begin);
+    MPIU_ERR_CHKANDJUMP1((str == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "duplicate business card");
+
+    if (copy_bc->str_begin != NULL) MPIU_Free(copy_bc->str_begin);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_create);
+    copy_bc->str_begin = str;
+    copy_bc->str_size = strlen(copy_bc->str_begin);
+    copy_bc->str_end = copy_bc->str_begin + copy_bc->str_size;
+    copy_bc->str_left = 0;
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: orig_bc=" MPIG_PTR_FMT ", copy_bc=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) orig_bc, (MPIG_PTR_CAST) copy_bc, *mpi_errno_p,
+	MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_copy);
     return;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
-/* int mpig_bc_create() */
-
-
-/*
- * int mpig_bc_destroy([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
- *
- * Paramters:
- *
- * bc [IN/MOD] - business card object to be destroyed, freeing an internal resources, and resetting internal values
- * mpi_errno [IN/OUT] - MPI error code
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
- */
-#undef FUNCNAME
-#define FUNCNAME mpig_bc_destroy
-void mpig_bc_destroy(mpig_bc_t * const bc, int * const mpi_errno_p, bool_t * const failed_p)
-{
-    const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPIG_STATE_DECL(MPID_STATE_mpig_bc_destroy);
-
-    MPIG_UNUSED_VAR(fcname);
-
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_destroy);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) bc, *mpi_errno_p));
-    *failed_p = FALSE;
-    
-    MPIU_Free(bc->str_begin);
-    bc->str_begin = NULL;
-    bc->str_end = NULL;
-    bc->str_size = 0;
-    bc->str_left = 0;
-
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_destroy);
-    return;
-}
-/* int mpig_bc_destroy() */
+/* int mpig_bc_copy() */
 
 
 /*
@@ -109,9 +85,8 @@ void mpig_bc_add_contact(mpig_bc_t * const bc, const char * const key, const cha
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_add_contact);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: bc=" MPIG_PTR_FMT ", key=\"%s\", value=\"%s\", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) bc, key, value, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT ", key=\"%s\", value=\"%s\""
+	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, key, value, *mpi_errno_p));
     *failed_p = FALSE;
 
     do
@@ -123,7 +98,7 @@ void mpig_bc_add_contact(mpig_bc_t * const bc, const char * const key, const cha
 	if (rc == MPIU_STR_SUCCESS)
 	{
 	    bc->str_end = str_end;
-	    bc->str_left = bc->str_left;
+	    bc->str_left = str_left;
 	}
 	else if (rc == MPIU_STR_NOMEM)
 	{
@@ -154,19 +129,16 @@ void mpig_bc_add_contact(mpig_bc_t * const bc, const char * const key, const cha
     while (rc != MPIU_STR_SUCCESS);
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT
+	", failed=%s", (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_add_contact);
     return;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
+    {   /* --BEGIN ERROR HANDLING-- */
 	*failed_p = TRUE;
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /* int mpig_bc_add_contact() */
 
@@ -197,9 +169,9 @@ void mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, cha
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_get_contact);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: bc=" MPIG_PTR_FMT ", key=\"%s\", mpi_errno=0x%08x",
-		       (MPIG_PTR_CAST) bc, key, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT ", key=\"%s\", mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, key, *mpi_errno_p));
+    
     *failed_p = FALSE;
 
     val_size = MPIG_BC_VAL_GROWTH_RATE;
@@ -231,25 +203,22 @@ void mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, cha
     while (rc != MPIU_STR_SUCCESS);
 
     *flag = TRUE;
+    *value = val_str;
     
   fn_return:
-    *value = val_str;
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", key=\"%s\", value=\"%s\", valuep=" MPIG_PTR_FMT ", mpi_errno=0x%08x, "
-		       "failed=%s", (MPIG_PTR_CAST) bc, key, (flag) ? *value : "", (MPIG_PTR_CAST) *value, *mpi_errno_p,
-		       MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", key=\"%s\", value=\"%s\""
+	", valuep=" MPIG_PTR_FMT "flag=%s, mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) bc, key,
+	(*flag) ? *value : "", (MPIG_PTR_CAST) *value, MPIG_BOOL_STR(*flag), *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_get_contact);
     return;
     
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
+    {   /* --BEGIN ERROR HANDLING-- */
 	if (val_str != NULL) MPIU_Free(val_str);
 	*flag = FALSE;
 	*failed_p = TRUE;
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /*mpig_bc_get_contact() */
 
@@ -271,13 +240,12 @@ void mpig_bc_free_contact(char * const value)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_free_contact);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: valuep=" MPIG_PTR_FMT ", value=\"%s\"", (MPIG_PTR_CAST) value, value));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: valuep=" MPIG_PTR_FMT ", value=\"%s\"",
+	(MPIG_PTR_CAST) value, value));
     
     MPIU_Free(value);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: valuep=" MPIG_PTR_FMT, (MPIG_PTR_CAST) value));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: valuep=" MPIG_PTR_FMT, (MPIG_PTR_CAST) value));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_free_contact);
     return;
 }
@@ -304,27 +272,25 @@ void mpig_bc_serialize_object(mpig_bc_t * const bc, char ** const str, int * con
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_serialize_object);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) bc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
+	(MPIG_PTR_CAST) bc, *mpi_errno_p));
     *failed_p = FALSE;
     
     *str = MPIU_Strdup(bc->str_begin);
     MPIU_ERR_CHKANDJUMP1((*str == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "serialized business card");
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", str=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) *str, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", str=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) *str, *mpi_errno_p,
+	MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_serialize_object);
     return;
     
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
+    {   /* --BEGIN ERROR HANDLING-- */
 	*failed_p = TRUE;
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_bc_serialize_object() */
 
@@ -344,13 +310,11 @@ void mpig_bc_free_serialized_object(char * const str)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_free_serialized_object);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: str=" MPIG_PTR_FMT, (MPIG_PTR_CAST) str));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: str=" MPIG_PTR_FMT, (MPIG_PTR_CAST) str));
     
     MPIU_Free(str);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: str=" MPIG_PTR_FMT, (MPIG_PTR_CAST) str));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: str=" MPIG_PTR_FMT, (MPIG_PTR_CAST) str));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_free_serialized_object);
     return;
 }
@@ -358,12 +322,12 @@ void mpig_bc_free_serialized_object(char * const str)
 
 
 /*
- * int mpig_bc_deserialize_object([IN] str, [OUT] bc, [IN/OUT] mpi_errno, [OUT] failed)
+ * int mpig_bc_deserialize_object([IN] str, [IN/OUT] bc, [IN/OUT] mpi_errno, [OUT] failed)
  *
  * Parameters:
  *
  * str - [IN] string containing a serialzed business card object
- * bc [OUT] - pointer to an uninitialized business card object in which to place the object
+ * bc [IN/OUT] - pointer to an existing (constructed) business card object; any informaton stored in the object will be replaced
  * mpi_errno [IN/OUT] - MPI error code
  * failed [OUT] - TRUE if the routine failed; FALSE otherwise
  */
@@ -373,40 +337,43 @@ void mpig_bc_deserialize_object(const char * const str, mpig_bc_t * const bc, in
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int str_len;
+    char * new_str;
     MPIG_STATE_DECL(MPID_STATE_mpig_bc_deserialize_object);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_deserialize_object);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "entering: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) bc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
+	(MPIG_PTR_CAST) bc, *mpi_errno_p));
     *failed_p = FALSE;
 
     str_len = strlen(str);
     
-    bc->str_begin = MPIU_Strdup(str);
-    MPIU_ERR_CHKANDJUMP1((bc->str_begin == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "business card string");
+    new_str = MPIU_Strdup(str);
+    MPIU_ERR_CHKANDJUMP1((new_str == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "business card string");
 
     /*
      * str_end should point at the terminating NULL, not the last character, so one (1) is not subtracted.  likewise, one (1) is
      * added to str_size.
      */
+    bc->str_begin = new_str;
     bc->str_end = bc->str_begin + str_len;
     bc->str_size = str_len + 1;
     bc->str_left = 0;
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT
+	", failed=%s", (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     return;
-    
+
   fn_fail:
-    bc->str_begin = NULL;
-    bc->str_end = NULL;
-    bc->str_size = 0;
-    bc->str_left = 0;
-    *failed_p = TRUE;
-    goto fn_return;
+    {   /* --BEGIN ERROR HANDLING-- */
+	bc->str_begin = NULL;
+	bc->str_end = NULL;
+	bc->str_size = 0;
+	bc->str_left = 0;
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* int mpig_bc_deserialize_object([IN] str, [OUT] bc) */

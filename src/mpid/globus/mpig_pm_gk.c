@@ -38,6 +38,8 @@ MPIG_STATIC enum
     MPIG_PM_GK_STATE_FINALIZED
 }
 mpig_pm_gk_state = MPIG_PM_GK_STATE_UNINITIALIZED;
+MPIG_STATIC bool_t mpig_pm_gk_use_system_abort = TRUE;	/* FIXME: control this seting with the environment variable
+							   MPIG_USE_SYSTEM_ABORT */
 MPIG_STATIC int mpig_pm_gk_pg_size = -1;		/* the size of the initial process group (comm world) */
 MPIG_STATIC int mpig_pm_gk_pg_rank = -1;		/* the rank of the local process in the initial process group */
 MPIG_STATIC const char * mpig_pm_gk_pg_id = NULL;	/* the unique identification string of the initial process group */
@@ -104,12 +106,12 @@ int mpig_pm_gk_init(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
     
     /* activate the duroc runtime module, and wait for all other processes to startup */
     grc = globus_module_activate(GLOBUS_DUROC_RUNTIME_MODULE);
-    MPIU_ERR_CHKANDJUMP1((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
-	"**globus|module_activate %s", "DUROC runtime");
+    MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
+	"**globus|module_activate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
     func_state = FUNC_STATE_DUROC_INIT;
     
     globus_duroc_runtime_barrier();
@@ -119,8 +121,8 @@ int mpig_pm_gk_init(void)
        nexus_fatal is called causing the local process to terminate.  by registering null error handlers with nexus, we prevent
        the extraneous error messages and prevent our process from terminating unexpectedly. */
     grc = globus_module_activate(GLOBUS_NEXUS_MODULE);
-    MPIU_ERR_CHKANDJUMP1((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
-	"**globus|module_activate %s", "Nexus");
+    MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
+	"**globus|module_activate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
     func_state = FUNC_STATE_NEXUS_INIT;
 
     nexus_enable_fault_tolerance (NULL, NULL);
@@ -174,7 +176,7 @@ int mpig_pm_gk_init(void)
     mpig_pm_gk_state = MPIG_PM_GK_STATE_INITIALIZED;
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_init);
     return mpi_errno;
 
@@ -208,7 +210,7 @@ int mpig_pm_gk_init(void)
 int mpig_pm_gk_finalize(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int rc;
+    globus_result_t grc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_finalize);
 
@@ -217,8 +219,8 @@ int mpig_pm_gk_finalize(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
     
     mpig_pm_gk_state = MPIG_PM_GK_STATE_FINALIZED;
 
@@ -237,16 +239,16 @@ int mpig_pm_gk_finalize(void)
 
     /* deactivate the duroc and nexus modules.  remember, nexus was activated in init to prevent excessive and confusing error
        messages. */
-    rc = globus_module_deactivate(GLOBUS_NEXUS_MODULE);
-    MPIU_ERR_CHKANDSTMT1((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
-	"**globus|module_deactivate %s", "Nexus");
+    grc = globus_module_deactivate(GLOBUS_NEXUS_MODULE);
+    MPIU_ERR_CHKANDSTMT2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
+	"**globus|module_deactivate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
 
-    rc = globus_module_deactivate(GLOBUS_DUROC_RUNTIME_MODULE);
-    MPIU_ERR_CHKANDSTMT1((rc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
-	"**globus|module_deactivate %s", "DUROC runtime");
+    grc = globus_module_deactivate(GLOBUS_DUROC_RUNTIME_MODULE);
+    MPIU_ERR_CHKANDSTMT2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
+	"**globus|module_deactivate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_finalize);
     return mpi_errno;
 
@@ -276,6 +278,12 @@ int mpig_pm_gk_abort(int exit_code)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_abort);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
+    if (mpig_pm_gk_use_system_abort)
+    {
+	MPIU_Internal_error_printf("mpig_pm_gk_abort() called with MPIG_USE_SYSTEM_ABORT set.  calling abort().\n");
+	abort();
+    }
+
     /* if the list of GRAM subjob contact strings is not defined, then the best we can do is call abort() */
     if (mpig_pm_gk_sj_contact_strs == NULL)
     {
@@ -302,7 +310,7 @@ int mpig_pm_gk_abort(int exit_code)
 	grc = globus_gram_client_job_cancel(mpig_pm_gk_sj_contact_strs[n]);
 	if (grc)
 	{
-	    MPIU_Internal_error_printf("ERROR: %s: failed to cancel a remote subjob using the job contact string \"%s\.  Some "
+	    MPIU_Internal_error_printf("ERROR: %s: failed to cancel a remote subjob using the job contact string \"%s\".  Some "
 		"processes may not have been terminated.", fcname, mpig_pm_gk_sj_contact_strs[n]);
 	}
     }
@@ -321,20 +329,15 @@ int mpig_pm_gk_abort(int exit_code)
     grc = globus_gram_client_job_cancel(mpig_pm_gk_sj_contact_strs[mpig_pm_gk_sj_num - 1]);
     if (grc)
     {
-	MPIU_Internal_error_printf("ERROR: %s: failed cancel the local (my) subjob using the contact string \"%s\.  Calling "
+	MPIU_Internal_error_printf("ERROR: %s: failed cancel the local (my) subjob using the contact string \"%s\".  Calling "
 	    "abort() instead.  Some processes may not be terminated.", fcname, mpig_pm_gk_sj_contact_strs[mpig_pm_gk_sj_num - 1]);
 	abort();
     }
 
-  fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=0x%08x", mpi_errno));
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_abort);
     return mpi_errno;
-
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
 }
 /* mpig_pm_gk_abort() */
 
@@ -344,7 +347,7 @@ int mpig_pm_gk_abort(int exit_code)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_exchange_business_cards
-int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
+int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKLMEM_DECL(2);
@@ -364,8 +367,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_exchange_business_cards);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
 
     /* if this process is the process group master, then create a process group id and add it to the business card */
     if (mpig_pm_gk_pg_rank == 0)
@@ -390,7 +393,6 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
     if (mpig_pm_gk_my_sj_rank == 0)
     {
 	char * sj_contact_str;
-	char sj_index_str[10];
 	
 	sj_contact_str = globus_libc_getenv("GLOBUS_GRAM_JOB_CONTACT");
 	if (sj_contact_str != NULL)
@@ -404,19 +406,26 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 	    MPIU_ERR_SETANDSTMT(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|pm_get_gram_sj_contact");
 	}
 
+    }
+
+    /* add the subjob index to the business card.  in addition to helping order the list of the GRAM subjob contacts, the subjob
+       index is be needed by the topology module to perform topology discovery. */
+    {
+	char sj_index_str[10];
+	
 	if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_gk_my_sj_index) < 10)
 	{
-	    mpig_bc_add_contact(bc, "PM_GK_GRAM_SUBJOB_INDEX", sj_index_str, &mpi_errno, &failed);
+	    mpig_bc_add_contact(bc, "PM_GK_APP_NUM", sj_index_str, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_add_contact",
-		"**globus|bc_add_contact %s", "PM_GK_GRAM_SUBJOB_INDEX");
+		"**globus|bc_add_contact %s", "PM_GK_APP_NUM");
 	}
 	else
 	{
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**failed", "**failed %s",
-		"conversion of subjob index number to a string failed");
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|pm_gk_sj_index_atoi",
+	    "**globus|pm_gk_sj_index_atoi %s", sj_index_str);
 	}
-    }
-
+    }	
+	
     /* convert the business card object for this process into a string that can be distributed to other processes */
     mpig_bc_serialize_object(bc, &bc_str, &mpi_errno, &failed);
     MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_serialize");
@@ -442,6 +451,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
     /* convert each serialized business card back to business card object */
     for (p = 0; p < mpig_pm_gk_pg_size; p++)
     {
+	mpig_bc_construct(&bcs[p]);
 	mpig_bc_deserialize_object((char *) bc_strs[p], &bcs[p], &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_deserialize");
 	MPIU_Free(bc_strs[p]);
@@ -472,9 +482,9 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process; },
 		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
 	    
-	    mpig_bc_get_contact(&bcs[p], "PM_GK_GRAM_SUBJOB_INDEX", &sj_index_str, &sj_index_found, &mpi_errno, &failed);
+	    mpig_bc_get_contact(&bcs[p], "PM_GK_APP_NUM", &sj_index_str, &sj_index_found, &mpi_errno, &failed);
 	    MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process; },
-		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_GRAM_SUBJOB_INDEX");
+		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_APP_NUM");
 	    
 	    if (sj_contact_found && sj_index_found)
 	    {
@@ -491,8 +501,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 		}
 		else
 		{
-		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process;}, "**fail", "**fail %s",
-			"an error occurred while extracting the subjob index from the string in the business card");
+		    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto cont_foreach_process;},
+			"**globus|pm_gk_malformed_app_num", "**globus|pm_gk_malformed_app_num %s", sj_index_str);
 		}
 	    }
 
@@ -503,8 +513,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
 
 	if (n != mpig_pm_gk_sj_num - 1)
 	{
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**fail", "**fail %s",
-		"insufficient subjob contact strings were found in the business cards");
+	    MPIU_ERR_SETANDSTMT2(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|pm_gk_insufficient_bc",
+		"**globus|pm_gk_insufficient_bc %d %d", n, mpig_pm_gk_sj_num - 1);
 	}
 
 	/* if any errors have occurred while creating the array of contact strings, then nullify the pointer to the array.  the
@@ -549,7 +559,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
   fn_return:
     MPIU_CHKLMEM_FREEALL();
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-		       "exiting: bcs=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) *bcs_ptr, mpi_errno));
+		       "exiting: bcs=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) *bcs_ptr, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_exchange_business_cards);
     return mpi_errno;
 
@@ -568,12 +578,10 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_ptr)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_free_business_cards
-int mpig_pm_gk_free_business_cards(mpig_bc_t * bcs)
+int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int p;
-    int errors = 0;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_free_business_cards);
 
@@ -582,20 +590,17 @@ int mpig_pm_gk_free_business_cards(mpig_bc_t * bcs)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_free_business_cards);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bcs=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bcs));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
     
     for (p = 0; p < mpig_pm_gk_pg_size; p++)
     {
-	mpig_bc_destroy(&bcs[p], &mpi_errno, &failed);
-	MPIU_ERR_CHKANDSTMT((failed), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_destroy");
+	mpig_bc_destruct(&bcs[p]);
     }
     MPIU_Free(bcs);
 
-    if (errors > 0) goto fn_fail;
-
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_free_business_cards);
     return mpi_errno;
 
@@ -612,7 +617,7 @@ int mpig_pm_gk_free_business_cards(mpig_bc_t * bcs)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_size
-int mpig_pm_gk_get_pg_size(int * pg_size)
+int mpig_pm_gk_get_pg_size(int * const pg_size)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -623,15 +628,14 @@ int mpig_pm_gk_get_pg_size(int * pg_size)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_size);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
-    
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_INTERN, "**globus|pm_no_pg_size");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
     *pg_size = mpig_pm_gk_pg_size;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-	"exiting: pg_size=%d, mpi_errno=0x%08x", (mpi_errno) ? -1 : *pg_size, mpi_errno));
+	"exiting: pg_size=%d, mpi_errno=" MPIG_ERRNO_FMT, (mpi_errno) ? -1 : *pg_size, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_get_pg_size);
     return mpi_errno;
 
@@ -648,7 +652,7 @@ int mpig_pm_gk_get_pg_size(int * pg_size)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_rank
-int mpig_pm_gk_get_pg_rank(int * pg_rank)
+int mpig_pm_gk_get_pg_rank(int * const pg_rank)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -659,15 +663,14 @@ int mpig_pm_gk_get_pg_rank(int * pg_rank)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_rank);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
-    
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_INTERN, "**globus|pm_no_pg_rank");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
     *pg_rank = mpig_pm_gk_pg_rank;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-		       "exiting: pg_rank=%d, mpi_errno=0x%08x", (mpi_errno) ? -1 : *pg_rank, mpi_errno));
+		       "exiting: pg_rank=%d, mpi_errno=" MPIG_ERRNO_FMT, (mpi_errno) ? -1 : *pg_rank, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_get_pg_rank);
     return mpi_errno;
 
@@ -684,7 +687,7 @@ int mpig_pm_gk_get_pg_rank(int * pg_rank)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_id
-int mpig_pm_gk_get_pg_id(const char ** pg_id)
+int mpig_pm_gk_get_pg_id(const char ** const pg_id)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -695,15 +698,14 @@ int mpig_pm_gk_get_pg_id(const char ** pg_id)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_id);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
-    
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_INTERN, "**globus|pm_no_pg_id");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
     *pg_id = mpig_pm_gk_pg_id;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-		       "exiting: pg_id=%s, mpi_errno=0x%08x", (mpi_errno) ? "(null)" : *pg_id, mpi_errno));
+		       "exiting: pg_id=%s, mpi_errno=" MPIG_ERRNO_FMT, (mpi_errno) ? "(null)" : *pg_id, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_get_pg_id);
     return mpi_errno;
 
@@ -720,9 +722,14 @@ int mpig_pm_gk_get_pg_id(const char ** pg_id)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_app_num
-int mpig_pm_gk_get_app_num(int * const app_num)
+int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    char * app_num_str = NULL;
+    int app_num;
+    bool_t found;
+    bool_t failed;
+    int rc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_app_num);
 
@@ -731,15 +738,25 @@ int mpig_pm_gk_get_app_num(int * const app_num)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_app_num);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_INTERN, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
     
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_INTERN, "**globus|pm_no_pg_id");
-    *app_num = mpig_pm_gk_my_sj_index;
+    mpig_bc_get_contact(bc, "PM_GK_APP_NUM", &app_num_str, &found, &mpi_errno, &failed);
+    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
+	"PM_GK_APP_NUM");
+    MPIU_ERR_CHKANDJUMP((!found), mpi_errno, MPI_ERR_INTERN, "**globus|pm_gk_no_app_num");
+
+    rc = sscanf(app_num_str, "%d", &app_num);
+    MPIU_ERR_CHKANDJUMP1((rc != 1), mpi_errno, MPI_ERR_INTERN, "**globus|pm_gk_malformed_app_num",
+	"**globus|pm_gk_malformed_app_num %s", app_num_str);
+   
+    *app_num_p = app_num;
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-	"exiting: app_num=%d, mpi_errno=0x%08x", (mpi_errno) ? -1 : *app_num, mpi_errno));
+    if (app_num_str != NULL) mpig_bc_free_contact(app_num_str);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: app_num=%d, mpi_errno=" MPIG_ERRNO_FMT,
+	(mpi_errno) ? -1 : app_num, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_get_app_num);
     return mpi_errno;
 
@@ -823,7 +840,8 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
         {
 	    sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_MASTER_TO_SJ_SLAVE_TOPOLOGY, call_count);
 	    mpi_errno = mpig_pm_gk_intra_subjob_receive(tag, &rbuf_len, &rbuf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_receive");
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_receive",
+		"**globus|pm_gk_intra_subjob_receive %s", tag);
 	    sscanf((char *) rbuf, "%d %d %d %d", pg_size, my_pg_rank, sj_num, my_rsl_index);
 	    MPIU_Free(rbuf);
         }
@@ -863,7 +881,7 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
 	(*sj_num) ++;
 
 	/* XXX: should not exit here ... should set globus-like rc. */
-	my_rsl_index_str = getenv("GLOBUS_DUROC_SUBJOB_INDEX");
+	my_rsl_index_str = globus_libc_getenv("GLOBUS_DUROC_SUBJOB_INDEX");
 	if (my_rsl_index_str == NULL)
 	{
 	    globus_libc_fprintf(stderr, "ERROR: required environment variable GLOBUS_DUROC_SUBJOB_INDEX not set.\n");
@@ -1014,7 +1032,8 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
 		sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_MASTER_TO_SJ_SLAVE_TOPOLOGY, call_count);
 		sprintf((char *) sbuf, "%d %d %d %d", *pg_size, sj_pg_rank + sj_index, *sj_num, *my_rsl_index);
 		mpi_errno = mpig_pm_gk_intra_subjob_send(sj_index, tag, (int) strlen((char *) sbuf) + 1, sbuf);
-		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_send");
+		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_send",
+		    "**globus|pm_gk_intra_subjob_send %s", tag);
 	    }
 
 	    *my_pg_rank = sj_pg_rank;
@@ -1111,7 +1130,8 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_SLAVE_TO_SJ_MASTER_DATA, call_count);
 	    mpi_errno = mpig_pm_gk_intra_subjob_gather(my_sj_size, my_sj_rank, msg_buf, 2 * INT_MAX_STRLEN + in_buf_len, tag,
 		(int *) NULL, (globus_byte_t **) NULL);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_gather");
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
+		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
 
 	    MPIU_CHKLMEM_FREEALL();
 	}
@@ -1148,8 +1168,8 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: before intra_subjob_bcast\n",
 		                       MPID_MyWorldRank); */
 		mpi_errno = mpig_pm_gk_intra_subjob_bcast(my_sj_size, my_sj_rank, tag, &rbuf_len, &rbuf);
-		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s",
-		    "mpig_pm_gk_intra_subjob_bcast");
+		MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_bcast",
+		    "**globus|pm_gk_intra_subjob_bcast %d %s", my_sj_rank, tag);
 		MPIU_CHKPMEM_REGISTER(rbuf);
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: after intra_subjob_bcast\n",
 		                       MPID_MyWorldRank); */
@@ -1247,7 +1267,8 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 
 	    mpi_errno = mpig_pm_gk_intra_subjob_gather(my_sj_size, my_sj_rank, msg_buf, msg_buf_len, tag,
 		&my_sj_buf_len, &my_sj_buf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_gather");
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
+		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
 
 	    /* add the subjob data buffer to the list of allocated memory to be reaped if a failure occurs */
 	    MPIU_CHKPMEM_REGISTER(my_sj_buf);
@@ -1278,7 +1299,8 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    /* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: before intra_subjob_bcast our subjob\n",
 	                           MPID_MyWorldRank); */
 	    mpi_errno = mpig_pm_gk_intra_subjob_bcast(my_sj_size, my_sj_rank, tag, &my_sj_buf_len, &my_sj_buf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_bcast");
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
+		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
 
 	    /* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: after intra_subjob_bcast our subjob\n",
 	                           MPID_MyWorldRank); */
@@ -1323,8 +1345,8 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: before intra_subjob_bcast"
 		   " other subjob\n", MPID_MyWorldRank); */
 		mpi_errno = mpig_pm_gk_intra_subjob_bcast(my_sj_size, my_sj_rank, tag, &sj_buf_len, &sj_buf);
-		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s",
-		    "mpig_pm_gk_intra_subjob_bcast");
+		MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_bcast",
+		    "**globus|pm_gk_intra_subjob_bcast %d %s", my_sj_rank, tag);
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: after intra_subjob_bcast"
 		   " other subjob\n", MPID_MyWorldRank); */
 	    }
@@ -1685,7 +1707,8 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my
     {
 	/* i am not root */
 	mpi_errno = mpig_pm_gk_intra_subjob_receive(tag_base, rcvd_nbytes, buf);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_receive");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_receive",
+	    "**globus|pm_gk_intra_subjob_receive %s", tag_base);
     }
 
     /*
@@ -1699,7 +1722,8 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my
 	if (my_sj_rank + mask < my_sj_size) 
 	{
 	    mpi_errno = mpig_pm_gk_intra_subjob_send(my_sj_rank + mask, tag_base, *rcvd_nbytes, *buf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_send");
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_send",
+		"**globus|pm_gk_intra_subjob_send %s", tag_base);
 	}
 	mask >>= 1;
     }
@@ -1761,7 +1785,8 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 	{
 	    sprintf(tag, "%s%d", tag_base, my_sj_rank + mask);
 	    mpi_errno = mpig_pm_gk_intra_subjob_receive(tag, &rbuf_len, &rbuf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_receive");
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_receive",
+		"**globus|pm_gk_intra_subjob_receive %s", tag);
 
 	    if (my_sj_buf_len - (dest - my_sj_buf) < rbuf_len)
 	    {
@@ -1788,7 +1813,8 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 	/* subjob slave */
 	sprintf(tag, "%s%d", tag_base, my_sj_rank);
 	mpi_errno = mpig_pm_gk_intra_subjob_send(my_sj_rank - mask, tag, (int)(dest - my_sj_buf), my_sj_buf);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s", "mpig_pm_gk_intra_subjob_send");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_send",
+	    "**globus|pm_gk_intra_subjob_send %s", tag);
 	MPIU_Free(my_sj_buf);
 	my_sj_buf = NULL;
     } 

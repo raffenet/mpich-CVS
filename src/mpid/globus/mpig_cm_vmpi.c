@@ -9,21 +9,65 @@
 #include "mpidimpl.h"
 
 #if defined(MPIG_VMPI)
-/*
- * miscellaneous internal constants, variables, and function declarations
- */
-globus_uuid_t mpig_vmpi_job_id;
-
-
+/**********************************************************************************************************************************
+							BEGIN PARAMETERS
+**********************************************************************************************************************************/
 #if !defined(MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE)
 #define MPIG_CM_VMPI_PE_TABLE_ALLOC_SIZE 32
 #endif
+/**********************************************************************************************************************************
+							 END PARAMETERS
+**********************************************************************************************************************************/
 
 
 /**********************************************************************************************************************************
-					       BEGIN VC FUNCTION TABLE DEFINITION
+				      BEGIN MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
 **********************************************************************************************************************************/
-/* prototypes for VC function table functions */
+MPIG_STATIC globus_uuid_t mpig_vmpi_job_id;
+/**********************************************************************************************************************************
+				       END MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
+**********************************************************************************************************************************/
+#endif /* defined(MPIG_VMPI) */
+
+
+/**********************************************************************************************************************************
+					      BEGIN COMMUNICATION MODULE API VTABLE
+**********************************************************************************************************************************/
+MPIG_STATIC void mpig_cm_vmpi_init(int * argc, char *** argv, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_vmpi_finalize(int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_vmpi_add_contact_info(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_vmpi_extract_contact_info(mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_vmpi_select_module(mpig_vc_t * vc, bool_t * selected, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
+    unsigned * const levels_out, int * mpi_errno_p, bool_t * failed_p);
+
+
+const mpig_cm_vtable_t mpig_cm_vmpi_vtable =
+{
+    MPIG_CM_TYPE_VMPI,
+    "VMPI",
+    mpig_cm_vmpi_init,
+    mpig_cm_vmpi_finalize,
+    mpig_cm_vmpi_add_contact_info,
+    mpig_cm_vmpi_extract_contact_info,
+    mpig_cm_vmpi_select_module,
+    mpig_cm_vmpi_get_vc_compatability,
+    mpig_cm_vtable_last_entry
+};
+/**********************************************************************************************************************************
+					       END COMMUNICATION MODULE API VTABLE
+**********************************************************************************************************************************/
+
+
+#if defined(MPIG_VMPI)
+/**********************************************************************************************************************************
+						    BEGIN VC CORE API VTABLE
+**********************************************************************************************************************************/
 MPIG_STATIC int mpig_cm_vmpi_adi3_send(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
@@ -77,7 +121,7 @@ MPIG_STATIC mpig_vc_cm_funcs_t mpig_cm_vmpi_vc_funcs =
     mpig_vc_null_func
 };
 /**********************************************************************************************************************************
-					       END VC FUNCTION TABLE DEFINITION
+						    END VC CORE API VTABLE
 **********************************************************************************************************************************/
 
 
@@ -233,14 +277,16 @@ MPIG_STATIC void mpig_cm_vmpi_pe_table_inc_size(int * mpi_errno_p, bool_t * fail
 
 
 /**********************************************************************************************************************************
-					   END COMMUNICATION MODULE CORE API FUNCTIONS
+					    BEGIN COMMUNICATION MODULE API FUNCTIONS
 **********************************************************************************************************************************/
 /*
- * mpig_cm_vmpi_init()
+ * mpig_cm_vmpi_initialize([IN/OUT] argc, [IN/OUT] argv, [IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_init
-int mpig_cm_vmpi_init(int * argc, char *** argv)
+MPIG_STATIC void mpig_cm_vmpi_init(int * const argc, char *** const argv, int * const mpi_errno_p, bool_t * const failed_p)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -251,19 +297,20 @@ int mpig_cm_vmpi_init(int * argc, char *** argv)
 	globus_result_t grc;
 	int vrc;
 	bool_t failed;
-	int mpi_errno = MPI_SUCCESS;
 	MPIU_CHKPMEM_DECL(2);
 	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_init);
 
 	MPIG_UNUSED_VAR(fcname);
 	
 	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_init);
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+	
+	*failed_p = FALSE;
 	
 	/* iniitialize the vendor MPI module.  as part of the initialization process, mpig_vmpi_init() sets the
 	   MPIG_VMPI_COMM_WORLD error handler to MPI_ERRORS_RETURN. */
         vrc = mpig_vmpi_init(argc, argv);
-	MPIU_ERR_CHKANDJUMP((vrc), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_init");
+	MPIU_ERR_CHKANDJUMP((vrc), mpi_errno, MPI_ERR_OTHER, "**globus|failed", "** fail %s", "mpig_vmpi_init() failed");
 
 	/* get the size of the vendor MPI_COMM_WORLD and the rank of this process within it */
 	vrc = mpig_vmpi_comm_size(MPIG_VMPI_COMM_WORLD, &mpig_process.cm.vmpi.cw_size);
@@ -433,20 +480,23 @@ int mpig_cm_vmpi_init(int * argc, char *** argv)
 	/* MPIU_CHKPMEM_COMMIT() is implicit */
 
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	    *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_init);
 	return mpi_errno;
 
       fn_fail:
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIU_CHKPMEM_REAP();
+	    *failed_p = TRUE;
 	    goto fn_return;
 	}   /* --END ERROR HANDLING-- */
     }
 #   else
     {
 	/* ...nothing to do... */
-	return MPI_SUCCESS;
+	*failed_p = FALSE;
+	return;
     }
 #   endif
 }
@@ -454,11 +504,13 @@ int mpig_cm_vmpi_init(int * argc, char *** argv)
 
 
 /*
- * mpig_cm_vmpi_finalize()
+ * mpig_cm_vmpi_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_finalize
-int mpig_cm_vmpi_finalize(void)
+MPIG_STATIC void mpig_cm_vmpi_finalize(int * const mpi_errno_p, bool_t * const failed_p)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -470,26 +522,31 @@ int mpig_cm_vmpi_finalize(void)
 	MPIG_UNUSED_VAR(fcname);
 	
 	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_finalize);
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
 
+	*failed_p = FALSE;
+	
 	/* shutdown the vendor MPI module */
 	vrc = mpig_vmpi_finalize();
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Finalize", &mpi_errno);
 
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	    *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_finalize);
 	return mpi_errno;
 
       fn_fail:
 	{   /* --BEGIN ERROR HANDLING-- */
+	    *failed_p = TRUE;
 	    goto fn_return;
 	}   /* --END ERROR HANDLING-- */
     }
 #   else
     {
 	/* ...nothing to do... */
-	return MPI_SUCCESS;
+	*failed_p = FALSE;
+	return;
     }
 #endif
 }
@@ -497,27 +554,28 @@ int mpig_cm_vmpi_finalize(void)
 
 
 /*
- * mpig_cm_vmpi_add_contact_info([IN/OUT] business card)
+ * mpig_cm_vmpi_add_contact_info([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
  *
- * Add any and all contact information for this communication module to the supplied business card.
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_add_contact_info
-int mpig_cm_vmpi_add_contact_info(mpig_bc_t * bc)
+MPIG_STATIC void mpig_cm_vmpi_add_contact_info(mpig_bc_t * const bc, int * const mpi_errno_p, bool_t * const failed_p)
 {
 #   if defined(MPIG_VMPI)
     {
 	const char fcname[] = MPIG_QUOTE(FUNCNAME);
 	char uint_str[10];
 	bool_t failed;
-	int mpi_errno = MPI_SUCCESS;
 	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_add_contact_info);
 
 	MPIG_UNUSED_VAR(fcname);
 	
 	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_add_contact_info);
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
     
+	*failed_p = FALSE;
+	
 	mpig_bc_add_contact(bc, "CM_VMPI_UUID", mpig_vmpi_job_id.text, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	    "**globus|bc_add_contact %s", "CM_VMPI_UUID");
@@ -528,19 +586,22 @@ int mpig_cm_vmpi_add_contact_info(mpig_bc_t * bc)
 	    "**globus|bc_add_contact %s", "CM_VMPI_CW_RANK");
 	
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	    *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_add_contact_info);
 	return mpi_errno;
 
       fn_fail:
 	{   /* --BEGIN ERROR HANDLING-- */
+	    *failed_p = TRUE;
 	    goto fn_return;
 	}   /* --END ERROR HANDLING-- */
     }
 #   else
     {
 	/* ...nothing to do... */
-	return MPI_SUCCESS;
+	*failed_p = FALSE;
+	return;
     }
 #   endif
 }
@@ -548,44 +609,46 @@ int mpig_cm_vmpi_add_contact_info(mpig_bc_t * bc)
 
 
 /*
- * int mpig_cm_vmpi_select_module([IN] bc, [IN/OUT] vc, [OUT] selected)
+ * mpig_cm_vmpi_extract_contact_info([IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
  *
- * Check the business card to see if the connection module can communicate with the remote process associated with the supplied
- * VC.  If it can, then the VC will be initialized accordingly.
- *
- * Parameters:
- *
- * bc [IN] - business card containing contact information
- * vc [IN] - vc object to initialize if the communication module is capable of performing communication with the associated process
- * selected [OUT] - TRUE if the communication module can communicate with the remote process; otherwise FALSE
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_vmpi_select_module
-int mpig_cm_vmpi_select_module(mpig_bc_t * bc, mpig_vc_t * vc, bool_t * selected)
+#define FUNCNAME mpig_cm_vmpi_extract_contact_info
+MPIG_STATIC void mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t * const failed_p)
 {
 #   if defined(MPIG_VMPI)
     {
 	const char fcname[] = MPIG_QUOTE(FUNCNAME);
+	mpig_bc_t * bc;
 	char * uuid_str = NULL;
 	char * cw_rank_str = NULL;
 	int cw_rank;
 	bool_t found;
 	bool_t failed;
 	int rc;
-	int mpi_errno = MPI_SUCCESS;
-	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_select_module);
+	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_extract_contact_info);
 
 	MPIG_UNUSED_VAR(fcname);
 	
-	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_select_module);
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_extract_contact_info);
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
+	    (MPIG_PTR_CAST) vc, *mpi_errno_p));
+
+	*failed_p = FALSE;
 	
+	vc->ci.vmpi.subjob_id = NULL;
+	vc->ci.vmpi.cw_rank = -1;
+	
+	bc = mpig_vc_get_bc(vc);
+
+	/* extract the subjob id from the business card */
 	mpig_bc_get_contact(bc, "CM_VMPI_UUID", &uuid_str, &found, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
 	    "**globus|bc_get_contact %s", "CM_VMPI_UUID");
 	if (found == FALSE) goto fn_return;
-	if (strcmp(mpig_vmpi_job_id.text, uuid_str) != 0) goto fn_return;
     
+	/* extract the rank of the process in _its_ MPI_COMM_WORLD from the business card */
 	mpig_bc_get_contact(bc, "CM_VMPI_CW_RANK", &cw_rank_str, &found, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
 	    "**globus|bc_get_contact %s", "CM_VMPI_CW_RANK");
@@ -594,44 +657,154 @@ int mpig_cm_vmpi_select_module(mpig_bc_t * bc, mpig_vc_t * vc, bool_t * selected
 	rc = sscanf(cw_rank_str, "%d", &cw_rank);
 	MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 
+	/* if all when well, copy the extracted contact information into the VC */
+	vc->ci.vmpi.subjob_id = MPIU_Strdup(uuid_str);
+	MPIU_ERR_CHKANDJUMP1((vc->ci.vmpi.subjob_id == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+	    "name of remote host");
+	vc->ci.vmpi.cw_rank = cw_rank;
+
+	/* set the topology information.  NOTE: this may seem a bit wacky since the VMPI level is set even if the VMPI module is
+	   not responsible for the VC; however, the tpology information is defined such that a level set if it is _possible_ for
+	   the module to perform the communication regardless of whether it does so or not. */
+	vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_VMPI;
+	if (vc->ci.topology_num_levels < MPIG_TOPOLOGY_LEVEL_VMPI)
+	{
+	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI;
+	}
+
+      fn_return:
+	/* free the contact strings returned from mpig_bc_get_contact() */
+	if (uuid_str != NULL) mpig_bc_free_contact(uuid_str);
+	if (cw_rank_str != NULL) mpig_bc_free_contact(cw_rank_str);
+	
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	    (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_extract_contact_info);
+	return mpi_errno;
+
+      fn_fail:
+	{   /* --BEGIN ERROR HANDLING-- */
+	    *failed_p = TRUE;
+	    goto fn_return;
+	}   /* --END ERROR HANDLING-- */
+    }
+#   else
+    {
+	vc->ci.vmpi.subjob_id = NULL;
+	vc->ci.vmpi.cw_rank = -1;
+	*failed_p = FALSE;
+	return;
+    }
+#   endif
+}
+/* int mpig_cm_vmpi_extract_contact_info() */
+
+
+/*
+ * mpig_cm_vmpi_select_module([IN/MOD] vc, [OUT] selected, [IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_vmpi_select_module
+MPIG_STATIC void mpig_cm_vmpi_select_module(mpig_vc_t * const vc, bool_t * const selected, int * const mpi_errno_p,
+    bool_t * const failed_p)
+{
+#   if defined(MPIG_VMPI)
+    {
+	const char fcname[] = MPIG_QUOTE(FUNCNAME);
+	mpig_bc_t * bc;
+	bool_t failed;
+	int rc;
+	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_select_module);
+
+	MPIG_UNUSED_VAR(fcname);
+	
+	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_select_module);
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
+	    (MPIG_PTR_CAST) vc, *mpi_errno_p));
+
+	*failed_p = FALSE;
+	*selected = FALSE;
+
+	/* if the VC is not in the same subjob, then return */
+	if (vc->ci.vmpi.subjob_id == NULL || strcmp(vc->ci.vmpi.subjob_id, mpig_vmpi_job_id.text) != 0) goto fn_exit;
+    
 	/* initialize the CM VMPI fields in the VC object */
 	mpig_vc_set_cm_type(vc, MPIG_CM_TYPE_VMPI);
 	mpig_vc_set_cm_funcs(vc, &mpig_cm_vmpi_vc_funcs);
-	vc->cm.vmpi.cw_rank = cw_rank;
 
 	/* set the rank translations in the MPI_COMM_WORLD communicator */
-	mpig_cm_vmpi_comm_set_vrank(MPIR_Process.comm_world, mpig_vc_get_pg_rank(vc), cw_rank);
-	mpig_cm_vmpi_comm_set_mrank(MPIR_Process.comm_world, cw_rank, mpig_vc_get_pg_rank(vc));
+	mpig_cm_vmpi_comm_set_vrank(MPIR_Process.comm_world, mpig_vc_get_pg_rank(vc), vc->ci.vmpi.cw_rank);
+	mpig_cm_vmpi_comm_set_mrank(MPIR_Process.comm_world, vc->ci.vmpi.cw_rank, mpig_vc_get_pg_rank(vc));
 
 	/* adjust the PG reference to account for the newly activated VC */
 	mpig_pg_inc_ref_count(mpig_vc_get_pg(vc));
     
 	/* set the selected flag to indicate that the "vmpi" communication module has accepted responsibility for the VC */
 	*selected = TRUE;
-    
+
       fn_return:
-	if (uuid_str != NULL) mpig_bc_free_contact(uuid_str);
-	if (cw_rank_str != NULL) mpig_bc_free_contact(cw_rank_str);
-	
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT
+	    ", failed=%s", (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_select_module);
 	return mpi_errno;
 
       fn_fail:
 	{   /* --BEGIN ERROR HANDLING-- */
+	    *failed_p = TRUE;
 	    goto fn_return;
 	}   /* --END ERROR HANDLING-- */
     }
 #   else
     {
+	*failed_p = FALSE;
 	*selected = FALSE;
-	return MPI_SUCCESS;
+	return;
     }
 #   endif
 }
 /* int mpig_cm_vmpi_select_module() */
+
+
+/*
+ * mpig_cm_vmpi_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out, [IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_vmpi_get_vc_compatability
+MPIG_STATIC void mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
+    unsigned levels_in, unsigned * const levels_out, int * const mpi_errno_p, bool_t * const failed_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_get_vc_compatability);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_get_vc_compatability);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x, mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in, *mpi_errno_p));
+
+    *failed_p = FALSE;
+    *levels_out = 0;
+
+    if ((levels_in & MPIG_TOPOLOGY_LEVEL_VMPI_MASK) == 0) goto fn_return;
+    if (vc1->ci.vmpi.subjob_id == NULL || vc1->ci.vmpi.subjob_id == NULL ||
+	strcmp(vc1->ci.vmpi.subjob_id, vc2->ci.vmpi.subjob_id) != 0) goto fn_return;
+
+    *levels_out |= MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
+    
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
+	"mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out,
+	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_get_vc_compatability);
+    return;
+}
+/* int mpig_cm_vmpi_get_vc_compatability() */
 /**********************************************************************************************************************************
-					   END COMMUNICATION MODULE CORE API FUNCTIONS
+					    BEGIN COMMUNICATION MODULE API FUNCTIONS
 **********************************************************************************************************************************/
 
 
@@ -853,7 +1026,7 @@ void mpig_cm_vmpi_pe_test(int * mpi_errno_p, bool_t * failed_p)
 **********************************************************************************************************************************/
 
 /**********************************************************************************************************************************
-						BEGIN VC FUNCTION TABLE ROUTINES
+						   BEGIN VC CORE API FUNCTIONS
 **********************************************************************************************************************************/
 /*
  * int mpig_cm_vmpi_adi3_send(...)
@@ -1325,7 +1498,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_recv(MPID_Request * const sreq)
 }
 /* mpig_cm_vmpi_adi3_cancel_recv() */
 /**********************************************************************************************************************************
-						 END VC FUNCTION TABLE ROUTINES
+						    END VC CORE API FUNCTIONS
 **********************************************************************************************************************************/
 
 

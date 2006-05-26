@@ -12,13 +12,14 @@
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
 MPIG_STATIC void mpig_cm_xio_vc_destruct_fn(mpig_vc_t * vc);
-MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t vc_state);
+MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t vc_state);
 
 #define mpig_cm_xio_vc_construct(vc_)						\
 {										\
     mpig_cm_xio_vc_set_state((vc_), MPIG_CM_XIO_VC_STATE_UNCONNECTED);		\
     (vc_)->cm.xio.state = MPIG_CM_XIO_VC_STATE_UNCONNECTED;			\
-    (vc_)->cm.xio.cs = NULL;							\
+    mpig_cm_xio_vc_set_contact_string((vc_), NULL);				\
+    (vc_)->cm.xio.endian = MPIG_ENDIAN_UNKNOWN;					\
     (vc_)->cm.xio.df = -1;							\
     (vc_)->cm.xio.handle = NULL;						\
     (vc_)->cm.xio.active_sreq = NULL;						\
@@ -30,13 +31,14 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
     (vc_)->cm.xio.list_next = NULL;						\
 										\
     mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_XIO);				\
-    mpig_vc_set_cm_funcs((vc_), &mpig_cm_xio_vc_funcs);				\
+    mpig_vc_set_vtable((vc_), &mpig_cm_xio_vc_vtable);				\
 }
 
 #define mpig_cm_xio_vc_destruct(vc_)					\
 {									\
     mpig_cm_xio_vc_set_state((vc_), MPIG_CM_XIO_VC_STATE_UNDEFINED);	\
-    MPIU_Free((vc_)->cm.xio.cs);					\
+    MPIU_Free(mpig_cm_xio_vc_get_contact_string(vc_));			\
+    (vc_)->cm.xio.endian = MPIG_ENDIAN_UNKNOWN;				\
     (vc_)->cm.xio.df = -1;						\
     (vc_)->cm.xio.handle = NULL;					\
     (vc_)->cm.xio.active_sreq = NULL;					\
@@ -48,7 +50,7 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
     (vc_)->cm.xio.list_next = NULL;					\
 									\
     mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_UNDEFINED);			\
-    mpig_vc_set_cm_funcs((vc_), NULL);					\
+    mpig_vc_set_vtable((vc_), NULL);					\
 }
 
 #define mpig_cm_xio_vc_inc_ref_count(vc_, was_inuse_flag_p_)								\
@@ -68,28 +70,33 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
 #define mpig_cm_xio_vc_set_state(vc_, state_)								\
 {													\
     (vc_)->cm.xio.state = (state_);									\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC,								\
-	"VC - setting XIO state: vc=" MPIG_PTR_FMT ", state=%s",					\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO state: vc=" MPIG_PTR_FMT ", state=%s",	\
 	(MPIG_PTR_CAST) (vc_), mpig_cm_xio_vc_state_get_string((vc_)->cm.xio.state)));			\
 }
 
 #define mpig_cm_xio_vc_get_state(vc_) ((vc_)->cm.xio.state)
 
-#define mpig_cm_xio_vc_set_endian(vc_, endian_)										\
-{															\
-    (vc_)->cm.xio.endian = (endian_);											\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC,										\
-		       "VC - setting XIO endian: vc=" MPIG_PTR_FMT ", endian=%s",					\
-		       (MPIG_PTR_CAST) (vc_), ((vc_)->cm.xio.endian == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+#define mpig_cm_xio_vc_set_contact_string(vc_, cs_)	\
+{							\
+    (vc_)->cm.xio.cs = (cs_);				\
+}
+
+#define mpig_cm_xio_vc_get_contact_string(vc_) ((vc_)->cm.xio.cs)
+
+#define mpig_cm_xio_vc_set_endian(vc_, endian_)								\
+{													\
+    (vc_)->cm.xio.endian = (endian_);									\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO endian: vc=" MPIG_PTR_FMT ", endian=%s",	\
+	(MPIG_PTR_CAST) (vc_), MPIG_ENDIAN_STR((vc_)->cm.xio.endian)));					\
 }
 
 #define mpig_cm_xio_vc_get_endian(vc_) ((vc_)->cm.xio.endian)
 
-#define mpig_cm_xio_vc_set_data_format(vc_, df_)									\
-{															\
-    (vc_)->cm.xio.df = (df_);												\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC,										\
-		       "VC - setting XIO VC data format: vc=" MPIG_PTR_FMT ", df=%d", (MPIG_PTR_CAST) (vc_), (df_)));	\
+#define mpig_cm_xio_vc_set_data_format(vc_, df_)								\
+{														\
+    (vc_)->cm.xio.df = (df_);											\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO VC data format: vc=" MPIG_PTR_FMT ", df=%d",	\
+	(MPIG_PTR_CAST) (vc_), (df_)));										\
 }
 
 #define mpig_cm_xio_vc_get_data_format(vc_) ((vc_)->cm.xio.df)
@@ -121,8 +128,6 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
     ((mpig_cm_xio_vc_get_state(vc_) > MPIG_CM_XIO_VC_STATE_FAILED_FIRST &&			\
 	mpig_cm_xio_vc_get_state(vc_) < MPIG_CM_XIO_VC_STATE_FAILED_LAST) ? TRUE : FALSE)
 
-#define mpig_cm_xio_vc_is_temporary(vc_) (((vc_)->cm.xio.cs == NULL) ? TRUE : FALSE)
-
 #define mpig_cm_xio_vc_state_is_valid(vc_)										\
     (mpig_cm_xio_vc_is_undefined(vc_) || mpig_cm_xio_vc_is_unconnected(vc_) || mpig_cm_xio_vc_is_connecting(vc_) ||	\
     mpig_cm_xio_vc_is_connected(vc_) || mpig_cm_xio_vc_is_disconnecting(vc_) || mpig_cm_xio_vc_has_failed(vc_))
@@ -152,7 +157,7 @@ MPIG_STATIC void mpig_cm_xio_vc_destruct_fn(mpig_vc_t * vc)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_vc_state_get_string
-MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t vc_state)
+MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t vc_state)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const char * str;
@@ -267,7 +272,7 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_states_t
 
 
 /**********************************************************************************************************************************
-						     BEGIN VC FUNCTION TABLE
+						 BEGIN VC VIRTUAL FUNCTION TABLE
 **********************************************************************************************************************************/
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
@@ -298,7 +303,7 @@ MPIG_STATIC void mpig_cm_xio_vc_dec_ref_count_and_close(
 
 
 /* VC function table definition */
-MPIG_STATIC mpig_vc_cm_funcs_t mpig_cm_xio_vc_funcs =
+MPIG_STATIC mpig_vc_vtable_t mpig_cm_xio_vc_vtable =
 {
     mpig_cm_xio_adi3_isend,
     mpig_cm_xio_adi3_isend,
@@ -313,7 +318,8 @@ MPIG_STATIC mpig_vc_cm_funcs_t mpig_cm_xio_vc_funcs =
     mpig_cm_xio_vc_recv_any_source,
     NULL, /* vc_inc_ref_count */
     mpig_cm_xio_vc_dec_ref_count_and_close,
-    mpig_cm_xio_vc_destruct_fn
+    mpig_cm_xio_vc_destruct_fn,
+    mpig_vc_vtable_last_entry
 };
 
 
@@ -961,7 +967,7 @@ MPIG_STATIC void mpig_cm_xio_vc_dec_ref_count_and_close(
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
 /**********************************************************************************************************************************
-						      END VC FUNCTION TABLE
+						  END VC VIRTUAL FUNCTION TABLE
 **********************************************************************************************************************************/
 
 
@@ -975,6 +981,7 @@ acquire and releases are performed on machines with release consistent memory mo
 **********************************************************************************************************************************/
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
+#if FALSE /* eliminate compiler warnings */
 MPIG_STATIC void mpig_cm_xio_sendq_construct(mpig_vc_t * vc);
 
 MPIG_STATIC void mpig_cm_xio_sendq_destruct(mpig_vc_t * vc);
@@ -985,11 +992,12 @@ MPIG_STATIC void mpig_cm_xio_sendq_enq_head(mpig_vc_t * vc, MPID_Request * sreq)
 
 MPIG_STATIC void mpig_cm_xio_sendq_deq(mpig_vc_t * vc, MPID_Request ** sreqp);
 
-MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq);
-
 MPIG_STATIC MPID_Request * mpig_cm_xio_sendq_head(mpig_vc_t * vc);
 
 MPIG_STATIC bool_t mpig_cm_xio_sendq_empty(mpig_vc_t * vc);
+#endif /* FALSE */
+
+MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq);
 
 #define mpig_cm_xio_sendq_construct(vc_)	\
 {						\

@@ -892,14 +892,13 @@ with MPI_Alloc_mem.
 #
 # Globus device
 #
-**globus|accept_handle_open:globus|accept_handle_open
-**globus|accept_handle_open %s:globus|accept_handle_open -- %s
 **globus|badreqtype:globus|badreqtype
 **globus|badreqtype %d:globus|badreqtype -- %d
 **globus|bc_add_contact:globus|bc_add_contact
 **globus|bc_add_contact %s:globus|bc_add_contact -- %s
+**globus|bc_contact_not_found:the requested information was not found in the business card
+**globus|bc_contact_not_found %s:the requested information, %s, was not found in the business card
 **globus|bc_deserialize:globus|bc_deserialize
-**globus|bc_destroy:globus|bc_destroy
 **globus|bc_get_contact:globus|bc_get_contact
 **globus|bc_get_contact %s:globus|bc_get_contact -- %s
 **globus|bc_init:failed to initialize the business card module
@@ -908,6 +907,8 @@ with MPI_Alloc_mem.
 **globus|cancel_completed_sreq %p:globus|cancel_completed_sreq -- %p
 **globus|cm_add_contact:an error occurred while a communication module was adding its contact information to the business card
 **globus|cm_add_contact %s:an error occurred while the '%s' communication module was adding its contact information to the business card
+**globus|cm_extract_contact:globus|cm_extract_contact
+**globus|cm_extract_contact %s:globus|cm_extract_contact -- %s
 **globus|cm_finalize:an error occurred while shutting down a communication module
 **globus|cm_finalize %s:an error occurred while shutting down the '%s' communication module
 **globus|cm_init:an error occured while initializing a communication module
@@ -938,8 +939,6 @@ with MPI_Alloc_mem.
 **globus|cm_xio|client_handle_send_magic %p %s %d %s:globus|cm_xio|client_handle_send_magic -- %p %s %d %s
 **globus|cm_xio|client_magic_mismatch:globus|cm_xio|client_magic_mismatch
 **globus|cm_xio|client_magic_mismatch %p %s %d:globus|cm_xio|client_magic_mismatch -- %p %s %d
-**globus|cm_xio|client_reg_open:globus|cm_xio|client_reg_open
-**globus|cm_xio|client_reg_open %s:globus|cm_xio|client_reg_open -- %s
 **globus|cm_xio|client_reg_recv_magic:globus|cm_xio|client_reg_recv_magic
 **globus|cm_xio|client_reg_recv_magic %p:globus|cm_xio|client_reg_recv_magic -- %p
 **globus|cm_xio|client_reg_recv_open_req:globus|cm_xio|client_reg_recv_open_req
@@ -955,12 +954,6 @@ with MPI_Alloc_mem.
 **globus|cm_xio|disconnect_handle_send_close_msg:globus|cm_xio|disconnect_handle_send_close_msg
 **globus|cm_xio|disconnect_handle_send_close_msg %s:globus|cm_xio|disconnect_handle_send_close_msg -- %s
 **globus|cm_xio|disonnect_enq_close_msg:an error occurred while sending a connection close message
-**globus|cm_xio|handle_xio_read:globus|cm_xio|handle_xio_read
-**globus|cm_xio|handle_xio_read %s:globus|cm_xio|handle_xio_read -- %s
-**globus|cm_xio|handle_xio_readv:globus|cm_xio|handle_xio_readv
-**globus|cm_xio|handle_xio_readv %s:globus|cm_xio|handle_xio_readv -- %s
-**globus|cm_xio|handle_xio_writev:globus|cm_xio|handle_xio_writev
-**globus|cm_xio|handle_xio_writev %s:globus|cm_xio|handle_xio_writev -- %s
 **globus|cm_xio|listen:globus|cm_xio|listen
 **globus|cm_xio|msg_handler:globus|cm_xio|msg_handler
 **globus|cm_xio|null_vc_handle_close:globus|cm_xio|reg_close_null
@@ -980,7 +973,6 @@ with MPI_Alloc_mem.
 **globus|cm_xio|reg_write_sreq:globus|cm_xio|reg_write_sreq
 **globus|cm_xio|req_recv_state:globus|cm_xio|req_recv_state
 **globus|cm_xio|req_recv_state %s:globus|cm_xio|req_recv_state -- %s
-**globus|cm_xio|seg_pack:globus|cm_xio|seg_pack
 **globus|cm_xio|seg_pack_iov:globus|cm_xio|seg_pack_iov
 **globus|cm_xio|send_enq_cancel_send_msg:a failure occurred while sending a cancel send message
 **globus|cm_xio|send_enq_cancel_send_resp_msg:a failure occurred while send a cancel send response message
@@ -1016,9 +1008,6 @@ with MPI_Alloc_mem.
 **globus|cm_xio|server_reg_recv_open_req %p:globus|cm_xio|server_reg_recv_open_req -- %p
 **globus|cm_xio|server_reg_send_magic:globus|cm_xio|server_reg_send_magic
 **globus|cm_xio|server_reg_send_magic %p:globus|cm_xio|server_reg_send_magic -- %p
-**globus|cm_xio|server_xio_reg_accept:globus|cm_xio|server_xio_reg_accept
-**globus|cm_xio|stream_bad_max_pos:globus|cm_xio|stream_bad_max_pos
-**globus|cm_xio|stream_bad_max_pos %lu %lu:globus|cm_xio|stream_bad_max_pos -- %lu %lu
 **globus|cm_xio|stream_rreq_init:globus|cm_xio|stream_rreq_init
 **globus|cm_xio|stream_rreq_unpack:globus|cm_xio|stream_rreq_unpack
 **globus|cm_xio|stream_rreq_unpack_vc_msgbuf:globus|cm_xio|stream_rreq_unpack_vc_msgbuf
@@ -1031,7 +1020,6 @@ with MPI_Alloc_mem.
 **globus|cm_xio|vc_connection %s %d %s:globus|cm_xio|vc_connection -- %s %d %s
 **globus|cm_xio|xio_close_server:globus|cm_xio|xio_close_server
 **globus|cm_xio|xio_close_server %s:globus|cm_xio|xio_close_server -- %s
-**globus|cm_xio|xio_reg_accept %s:globus|cm_xio|xio_reg_accept -- %s
 **globus|cm_xio|xio_reg_close:globus|cm_xio|xio_reg_close
 **globus|cm_xio|xio_reg_close %s:globus|cm_xio|xio_reg_close -- %s
 **globus|cm_xio|xio_reg_open:globus|cm_xio|xio_reg_open
@@ -1051,6 +1039,13 @@ with MPI_Alloc_mem.
 **globus|cm_xio|xio_server_reg_accept %s:globus|cm_xio|xio_server_reg_accept -- %s
 **globus|cm_xio|xio_stack_create:globus|cm_xio|xio_stack_create
 **globus|cm_xio|xio_stack_create %s:globus|cm_xio|xio_stack_create -- %s
+**globus|comm_create_key:globus|comm_create_key
+**globus|comm_create_key %s:globus|comm_create_key -- %s
+**globus|comm_destroy_key:globus|comm_destroy_key
+**globus|comm_destroy_key %s:globus|comm_destroy_key -- %s
+**globus|comm_list_wait_empty:globus|comm_list_wait_empty
+**globus|comm_set_attr:globus|comm_set_attr
+**globus|comm_set_attr %s:globus|comm_set_attr -- %s
 **globus|cond_destroy:an error occurred while destroying a condition variable 
 **globus|cond_destroy %d:globus|cond_destroy -- %d
 **globus|cond_destroy %s:an error occurred while destroying the condition variable associated with a %s object
@@ -1060,11 +1055,17 @@ with MPI_Alloc_mem.
 **globus|datatype_bc_to_cmap:globus|datatype_bc_to_cmap
 **globus|datatype_cmap %s %d:globus|datatype_cmap -- %s %d
 **globus|datatype_cmap_to_bc:globus|datatype_cmap_to_bc
+**globus|failed:globus|failed
+**globus|gc_copy:globus|gc_copy
+**globus|get_vc_compatability:globus|get_vc_compatability
+**globus|get_vc_compatability %s:globus|get_vc_compatability -- %s
 **globus|module_activate:attempt to activate a Globus module failed
 **globus|module_activate %s:attempt to activate the Globus %s module failed
+**globus|module_activate %s %s:globus|module_activate -- %s %s
 **globus|module_deactivate:attempt to deactivate a Globus module failed
 **globus|module_deactivate %s:attempt to deactivate the Globus %s module failed
 **globus|module_deactivate %s %s:globus|module_deactivate -- %s %s
+**globus|mpi_comm_size:globus|mpi_comm_size
 **globus|mutex_destroy:an error occurred while destroying a mutex
 **globus|mutex_destroy %d:globus|mutex_destroy -- %d
 **globus|mutex_destroy %s:an error occurred while destroying the mutex associated with a %s object
@@ -1072,7 +1073,9 @@ with MPI_Alloc_mem.
 **globus|mutex_init %d:globus|mutex_init -- %d
 **globus|mutex_init %s:an error occurred while initializing the mutex associated with a %s object
 **globus|pe_test:globus|pe_test
+**globus|pe_test %s:globus|pe_test -- %s
 **globus|pe_wait:globus|pe_wait
+**globus|pe_wait %s:globus|pe_wait -- %s
 **globus|pg_acquire_ref:globus|pg_acquire_ref
 **globus|pg_acquire_ref %s %d:globus|pg_acquire_ref -- %s %d
 **globus|pg_create:globus|pg_create
@@ -1081,14 +1084,34 @@ with MPI_Alloc_mem.
 **globus|pm_distribute_business_cards:an error occcurred while attempting to distribute business cards 
 **globus|pm_finalize:globus|pm_finalize
 **globus|pm_finalized:attempt to use the process manangement module after shutdown
-**globus|pm_get_sjrank:an error occurred while retrieving the rank of this process within its subjob
-**globus|pm_get_sjsize:an error occurred while retrieving the size of the subjob to which this process belongs
+**globus|pm_get_app_num:globus|pm_get_app_num
+**globus|pm_get_gram_sj_contact:an error occurred while attempting to acquire the GRAM contact information for the subjob to which the current process belongs
+**globus|pm_get_sjrank:an error occurred while attempting to acquire the rank of this process within its subjob
+**globus|pm_get_sjsize:an error occurred while attempting to acquire  the size of the subjob to which this process belongs
 **globus|pm_get_topology:an error occurred while exchanging topology information
+**globus|pm_gk_insufficient_bc:globus|pm_gk_insufficient_bc
+**globus|pm_gk_insufficient_bc %d %d:globus|pm_gk_insufficient_bc -- %d %d
+**globus|pm_gk_intra_subjob_bcast:globus|pm_gk_intra_subjob_bcast
+**globus|pm_gk_intra_subjob_bcast %d %s:globus|pm_gk_intra_subjob_bcast -- %d %s
+**globus|pm_gk_intra_subjob_gather:globus|pm_gk_intra_subjob_gather
+**globus|pm_gk_intra_subjob_gather %d %s:globus|pm_gk_intra_subjob_gather -- %d %s
+**globus|pm_gk_intra_subjob_receive:globus|pm_gk_intra_subjob_receive
+**globus|pm_gk_intra_subjob_receive %s:globus|pm_gk_intra_subjob_receive -- %s
+**globus|pm_gk_intra_subjob_send:globus|pm_gk_intra_subjob_send
+**globus|pm_gk_intra_subjob_send %s:globus|pm_gk_intra_subjob_send -- %s
+**globus|pm_gk_malformed_app_num:globus|pm_gk_malformed_app_num
+**globus|pm_gk_malformed_app_num %s:globus|pm_gk_malformed_app_num -- %s
+**globus|pm_gk_no_app_num:the PM_GK_APP_NUM contact string was missing from the business card
+**globus|pm_gk_sj_index_atoi:globus|pm_gk_sj_index_atoi
+**globus|pm_gk_sj_index_atoi %s:globus|pm_gk_sj_index_atoi -- %s
 **globus|pm_init:an error occurred while initializing the process management module
-**globus|pm_no_pg_id:globus|pm_no_pg_id
-**globus|pm_no_pg_rank:globus|pm_no_pg_rank
-**globus|pm_no_pg_size:globus|pm_no_pg_size
+**globus|pm_no_exchange:globus|pm_no_exchange
+**globus|pm_no_pg_id:globus|the process group id is not yet known
+**globus|pm_no_pg_rank:globus|the process group rank is not yet known
+**globus|pm_no_pg_size:globus|the process group size is not yet known
 **globus|pm_not_init:attempt to use the process manangement module before initialization
+**globus|pm_pg_id_acquire:an error occurred while attempting to acquire the process group id
+**globus|pm_pg_id_create:an error occurred while attempting to create a process group id
 **globus|pm_xchg:an error occurred while exchanging business cards with the other processes
 **globus|recvq_finalize:an error occurred while shutting down the receive queue module
 **globus|recvq_init:an error occurred while initializing the receive queue module
@@ -1096,24 +1119,32 @@ with MPI_Alloc_mem.
 **globus|request_get_ptr %R:globus|request_get_ptr -- %R
 **globus|server_handle_open:globus|server_handle_open
 **globus|server_handle_open %s:globus|server_handle_open -- %s
+**globus|topology_comm_construct:globus|topology_comm_construct
+**globus|topology_comm_destruct:globus|topology_comm_destruct
+**globus|topology_finalize:globus|topology_finalize
+**globus|topology_init:globus|topology_init
 **globus|vc_bad_state:virtual connection state is not valid
 **globus|vc_bad_state %p %d:virtual connection state is not valid (vc=%p, state=%d)
 **globus|vc_inc_ref_count:an error occurred while incrementing the reference count of a virtual connection
+**globus|vc_ptr_bad:globus|vc_ptr_bad
+**globus|vc_ptr_bad %p:globus|vc_ptr_bad -- %p
 **globus|vc_release_ref:an error occurred while releasing the reference count of a virtual connection
 **globus|vc_release_ref %p:an error occurred while releasing the reference count of a virtual connection (vc=%p)
 **globus|vc_release_ref_n %d:an error occurred while releasing the reference counts on a set of a virtual connections (count=%d)
 **globus|vc_uninit:virtual connection is not initialized
 **globus|vc_uninit %p:virtual connection is not initialized (vc=%p)
-**globus|vmpi_finalize:globus|vmpi_finalize
+**globus|vmpi_fn_failed:globus|vmpi_fn_failed
+**globus|vmpi_fn_failed %s %s:globus|vmpi_fn_failed -- %s %s
 **globus|vmpi_get_comm_rank:attempt to obtain the rank of the process from a vendor MPI communicator failed
 **globus|vmpi_get_comm_size:attempt to obtain the size of a vendor MPI communicator failed
 **globus|vmpi_get_comm_world:attempt to obtain the vendor MPI_COMM_WORLD failed
 **globus|vmpi_init:an error occurred while initializing the vendor MPI
+**globus|vmpi_pe_init:globus|vmpi_pe_init
+**globus|vmpi_pe_table_inc_size:globus|vmpi_pe_table_inc_size
 **globus|xio_cm|recv_next_msg:globus|xio_cm|recv_next_msg
 **globus|xio_cm|send_next_sreq:globus|xio_cm|send_next_sreq
 **globus|xio_handle_create:globus|xio_handle_create
 **globus|xio_handle_create %s:globus|xio_handle_create -- %s
-
 
 #
 # Sock

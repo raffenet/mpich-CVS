@@ -2,7 +2,7 @@
 
 usage()
 {
-    echo "usage: $0 [-dumprsl] [-n <nprocs>] <pgm> [args...]"
+    echo "usage: $0 [-dumprsl] [-env <var>=<value>] [-n <nprocs>] <pgm> [args...]"
     exit $1
 }
 
@@ -22,6 +22,7 @@ globus_args_quote()
     echo $params
 }
 
+env_line=""
 dumprsl="no"
 nprocs=1
 while test $# -gt 0 ; do
@@ -38,6 +39,16 @@ while test $# -gt 0 ; do
 	    dumprsl=true
 	    shift
 	    ;;
+	-env)
+	    var=`echo "$2" | sed -e 's/^\([^=]*\)=.*/\1/'`
+	    if test -z "$var" ; then
+		echo "ERROR: invalid -env syntax"
+		usage 1
+	    fi
+	    value=`echo "$2" | sed -e 's/^[^=]*=//'`
+	    env_line="$env_line ($var "`globus_args_quote "$value"`")"
+	    shift 2
+	    ;;
 	-*)
 	    echo 'ERROR: unknown option "'$1'"'
 	    usage 1
@@ -52,7 +63,7 @@ pgm="$1"
 shift
 
 if test ! -f "$pgm" ; then
-    echo "ERROR: "'"'"$pgm"'"'" not found"
+    echo "ERROR: program "'"'"$pgm"'"'" not found"
     exit 1
 fi
 
@@ -111,7 +122,6 @@ if test "@MPIG_VMPI@" = "yes" ; then
     extras_line="${extras_line}(jobtype=mpi)"
 fi
 
-env_line=""
 if test -n "$MPIG_DEBUG_LEVELS" ; then
     env_line="$env_line (MPIG_DEBUG_LEVELS "'"'"$MPIG_DEBUG_LEVELS"'")'
     file_basename="DEBUG-`basename $pgm`"

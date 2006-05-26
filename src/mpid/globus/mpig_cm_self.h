@@ -10,21 +10,27 @@
 #define MPICH2_MPIG_CM_SELF_H_INCLUDED
 
 /*
- * add communication module types to be included in the enumeration of modules
+ * expose the communication module's vtable so that it is accessible to other modules in the device
  */
-#define MPIG_CM_TYPE_SELF_LIST	\
-    MPIG_CM_TYPE_SELF
+extern const mpig_cm_vtable_t mpig_cm_self_vtable;
+
+
+/*
+ * define the connect information structure to be included in a VC
+ */
+#define MPIG_VC_CI_SELF_DECL						\
+struct mpig_ci_self_vc							\
+{									\
+    /* name of hostname running the process */				\
+    char * hostname;							\
+									\
+    /* process id of the process */					\
+    unsigned long pid;							\
+}									\
+self;
 
 
 /*
  * global function prototypes
  */
-int mpig_cm_self_init(int * argc, char *** argv);
-
-int mpig_cm_self_finalize(void);
-
-int mpig_cm_self_add_contact_info(struct mpig_bc * bc);
-
-int mpig_cm_self_select_module(struct mpig_bc * bc, struct mpig_vc * vc, bool_t * selected);
-
 #endif /* !defined(MPICH2_MPIG_CM_SELF_H_INCLUDED) */

@@ -18,22 +18,6 @@
 globus_debug_handle_t mpig_debug_handle;
 time_t mpig_debug_start_tv_sec;
 
-/*
- * Not all systems support va_copy().  These definitions were taken from mpich2/src/util/dbg/dbg_printf.c.  They rely on the
- * top-level configure script to test for va_copy() and __va_copy().
- */
-#ifdef HAVE_VA_COPY
-# define va_copy_end(a) va_end(a)
-#else
-# ifdef HAVE___VA_COPY
-#  define va_copy(a,b) __va_copy(a,b)
-#  define va_copy_end(a)
-# else
-#  define va_copy(a,b) ((a) = (b))
-/* Some writers recommend define va_copy(a,b) memcpy(&a,&b,sizeof(va_list)) */
-#  define va_copy_end(a)
-# endif
-#endif
 
 #define MPIG_UPPERCASE_STR(str_)	\
 {					\
@@ -50,6 +34,7 @@ time_t mpig_debug_start_tv_sec;
     }					\
 }
 
+
 void mpig_debug_init(void)
 {
     const char * levels;
@@ -60,12 +45,12 @@ void mpig_debug_init(void)
     const char * file_basename;
     struct timeval tv;
 
-    levels = getenv("MPIG_DEBUG_LEVELS");
+    levels = globus_libc_getenv("MPIG_DEBUG_LEVELS");
     if (levels == NULL || strlen(levels) == 0) goto fn_return;
     levels_uc = MPIU_Strdup(levels);
     MPIG_UPPERCASE_STR(levels_uc);
     
-    file_basename = getenv("MPIG_DEBUG_FILE_BASENAME");
+    file_basename = globus_libc_getenv("MPIG_DEBUG_FILE_BASENAME");
     if (file_basename != NULL)
     {
 	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "%s-%s-%d.log",
@@ -82,7 +67,7 @@ void mpig_debug_init(void)
 	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,,0", levels_uc);
     }
     
-    timed_levels = getenv("MPIG_DEBUG_TIMED_LEVELS");
+    timed_levels = globus_libc_getenv("MPIG_DEBUG_TIMED_LEVELS");
     if (timed_levels != NULL)
     {
 	const int len = strlen(settings);
@@ -113,63 +98,134 @@ void mpig_debug_init(void)
 /* mpig_debug_init */
 
 
-#if !defined(HAVE_C99_VARIADIC_MACROS) && !defined(HAVE_GNU_VARIADIC_MACROS)
-/*
- * void mpig_debug_printf([IN] handle, [IN] func, [IN] line, [IN] fmt, [IN] ...)
- *
- * Paramters:
- *
- * handle[IN] - debugging handle
- * func [IN] - name of calling function
- * line [IN] - line number of debug statement
- * fmt [IN] - format string (see man page for printf)
- * ... [IN] - arguments matching substitutions in the format string
- *
- * Returns: (nothing)
- */
-#undef mpig_debug_printf
+#define mpig_debug_uvfprintf_macro(fp_, levels_, filename_, funcname_, line_, fmt_, ap_)				\
+{															\
+    char lfmt__[MPIG_DEBUG_TMPSTR_SIZE];										\
+															\
+    if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)								\
+    {															\
+	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pg=%s:pgrank=%d:tid=%lu] %s(l=%d): %s\n",			\
+	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));	\
+	vfprintf((fp_), lfmt__, (ap_));											\
+    }															\
+    else														\
+    {															\
+	struct timeval tv__;												\
+															\
+	gettimeofday(&tv__, NULL);											\
+	tv__.tv_sec -= mpig_debug_start_tv_sec;										\
+	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pg=%s:pgrank=%d:tid=%lu]  %s(l=%d:t=%lu.%.6lu): %s\n",		\
+	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_),			\
+	    tv__.tv_sec, tv__.tv_usec, (fmt_));										\
+	vfprintf((fp_), lfmt__, (ap_));											\
+    }															\
+}
+    
+
+#if defined(HAVE_C99_VARIADIC_MACROS) || defined(HAVE_GNU_VARIADIC_MACROS)
 #undef FUNCNAME
-#define FUNCNAME mpig_debug_printf
-void mpig_debug_printf(int levels, const char * fmt, ...)
+#define FUNCNAME mpig_debug_uprintf_fn
+void mpig_debug_uprintf_fn(unsigned levels, const char * filename, const char * funcname, int line, const char * fmt, ...)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    char lfmt[MPIG_DEBUG_TMPSTR_SIZE];
-    const char * func;
-    int line;
-    va_list ap;
+    FILE * fp = (mpig_debug_handle.file != NULL) ? mpig_debug_handle.file : stderr;
+    va_list l_ap;
 
     MPIG_UNUSED_VAR(fcname);
 
-    /* XXX: get function name and line numbers from thread specific storage */
-    func = "";
-    line = -1;
-    
-    if ((levels & mpig_debug_handle.levels) && mpig_debug_handle.file != NULL)
+    va_start(l_ap, fmt);
+    mpig_debug_uvfprintf_macro(fp, levels, filename, funcname, line, fmt, l_ap);
+    va_end(l_ap);
+}
+
+#else /* the compiler does not support variadic macros */
+
+globus_thread_once_t mpig_debug_create_state_key_once = GLOBUS_THREAD_ONCE_INIT;
+globus_thread_key_t mpig_debug_state_key;
+
+MPIG_STATIC void mpig_debug_destroy_state(void * state);
+
+void mpig_debug_create_state_key(void)
+{
+    globus_thread_key_create(&mpig_debug_state_key, mpig_debug_destroy_state);
+}
+
+MPIG_STATIC void mpig_debug_destroy_state(void * state)
+{
+    MPIU_Free(state);
+}
+
+#undef FUNCNAME
+#define FUNCNAME mpig_debug_printf_fn
+void mpig_debug_printf_fn(unsigned levels, const char * fmt, ...)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    FILE * fp = (mpig_debug_handle.file != NULL) ? mpig_debug_handle.file : stderr;
+    const char * filename;
+    const char * funcname;
+    int line;
+    va_list l_ap;
+
+    MPIG_UNUSED_VAR(fcname);
+
+    if (levels & mpig_debug_handle.levels)
     {
-	if (levels & mpig_debug_handle.timestamp_levels == 0)
-	{
-	    va_start(ap, fmt);
-	    MPIU_Snprintf(lfmt, MPIG_DEBUG_TMPSTR_SIZE, "[%s:%d:%lu] %s(l=%d) %s\n", mpig_process.my_pg_id,
-		mpig_process.my_pg_rank, mpig_thread_get_id(), func, line, fmt);
-	    vfprintf(mpig_debug_handle.file, lfmt, ap);
-	    va_end(ap);
-	}
-	else
-	{
-	    struct timeval tv;
-	    
-	    gettimeofday(&tv, NULL);
-	    tv.tv_sec -= mpig_debug_start_tv_sec;
-	    va_start(ap, fmt);
-	    MPIU_Snprintf(lfmt, MPIG_DEBUG_TMPSTR_SIZE, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) %s\n", mpig_process.my_pg_id,
-		mpig_process.my_pg_rank, mpig_thread_get_id(), func, line, tv.tv_sec, tv.tv_usec, fmt);
-	    vfprintf(mpig_debug_handle.file, lfmt, ap);
-	    va_end(ap);
-	}
+	mpig_debug_retrieve_state(&filename, &funcname, &line);
+	va_start(l_ap, fmt);
+	mpig_debug_uvfprintf_macro(fp, levels, filename, funcname, line, fmt, l_ap);
+	va_end(l_ap);
     }
 }
-/* mpig_debug_printf() */
-#endif /* compiler does not suppport variadic macros */
+/* mpig_debug_printf_fn() */
+
+
+#undef FUNCNAME
+#define FUNCNAME mpig_debug_uprintf_fn
+void mpig_debug_uprintf_fn(unsigned levels, const char * fmt, ...)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    FILE * fp = (mpig_debug_handle.file != NULL) ? mpig_debug_handle.file : stderr;
+    const char * filename;
+    const char * funcname;
+    int line;
+    va_list l_ap;
+
+    MPIG_UNUSED_VAR(fcname);
+
+    mpig_debug_retrieve_state(&filename, &funcname, &line);
+    
+    va_start(l_ap, fmt);
+    mpig_debug_uvfprintf_macro(fp, levels, filename, funcname, line, fmt, l_ap);
+    va_end(l_ap);
+}
+/* mpig_debug_uprintf_fn() */
+
+
+#undef FUNCNAME
+#define FUNCNAME mpig_debug_old_util_printf_fn
+void mpig_debug_old_util_printf_fn(const char * fmt, ...)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    FILE * fp = (mpig_debug_handle.file != NULL) ? mpig_debug_handle.file : stderr;
+    const char * filename;
+    const char * funcname;
+    int line;
+    va_list l_ap;
+
+    MPIG_UNUSED_VAR(fcname);
+
+    mpig_debug_retrieve_state(&filename, &funcname, &line);
+    
+    if (MPIG_DEBUG_LEVEL_MPI & mpig_debug_handle.levels)
+    {
+	va_start(l_ap, fmt);
+	mpig_debug_uvfprintf_macro(fp, MPIG_DEBUG_LEVEL_MPI, filename, funcname, line, fmt, l_ap);
+	va_end(l_ap);
+    }
+}
+/* mpig_debug_old_util_printf_fn() */
+#endif /* if variadic macros, else no variadic macros */
+
 #endif /* defined(MPIG_DEBUG) */
 /**********************************************************************************************************************************
 						  END DEBUGGING OUTPUT SECTION
@@ -210,7 +266,7 @@ void mpig_datatype_set_my_bc(mpig_bc_t * const bc, int * const mpi_errno_p, bool
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_set_my_bc);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "entering: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) bc, *mpi_errno_p));
+		       "entering: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, *mpi_errno_p));
 
     *failed_p = FALSE;
     
@@ -244,7 +300,7 @@ void mpig_datatype_set_my_bc(mpig_bc_t * const bc, int * const mpi_errno_p, bool
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
+		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
 		       (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_set_my_bc);
     return;
@@ -283,7 +339,7 @@ void mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc, 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_process_bc);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "entering: bc=" MPIG_PTR_FMT "vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "entering: bc=" MPIG_PTR_FMT "vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc, *mpi_errno_p));
 
     *failed_p = FALSE;
@@ -308,7 +364,7 @@ void mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc, 
   fn_return:
     if (cmap_str != NULL) mpig_bc_free_contact(cmap_str);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "exiting: bc=" MPIG_PTR_FMT "vc=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
+		       "exiting: bc=" MPIG_PTR_FMT "vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
 		       (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_process_bc);
     return;
@@ -439,7 +495,7 @@ void mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp, 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_databuf_create);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF,
-		       "entering: dbufp=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT ", mpi_errno=0x%08x",
+		       "entering: dbufp=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       (MPIG_PTR_CAST) dbufp, size, *mpi_errno_p));
     
     *failed_p = FALSE;
@@ -453,7 +509,7 @@ void mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp, 
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF,
-		       "exiting: dbufp=" MPIG_PTR_FMT ", dbuf=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
+		       "exiting: dbufp=" MPIG_PTR_FMT ", dbuf=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
 		       (MPIG_PTR_CAST) dbufp, (MPIG_PTR_CAST) dbuf, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_databuf_create);
     return;
@@ -494,4 +550,39 @@ void mpig_databuf_destroy(mpig_databuf_t * const dbuf)
 }
 /**********************************************************************************************************************************
 					       END DATA BUFFER MANAGEMENT ROUTINES
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+					       BEGIN COMMUNICATION MODULE ROUTINES
+**********************************************************************************************************************************/
+/*
+ * void mpig_cm_vtable_last_entry(none)
+ *
+ * this routine serves as the last function in the CM virtual table.  its purpose is to help detect when a communication
+ * module's vtable has not be updated when a function be added or removed from the table.  it is not fool proof as it requires
+ * the type signature not to match, but there should be few (if any) routines with such a type signature.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_vtable_last_entry
+char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_vtable_last_entry);
+
+    MPIG_UNUSED_ARG(foo);
+    MPIG_UNUSED_ARG(bar);
+    MPIG_UNUSED_ARG(baz);
+    MPIG_UNUSED_ARG(bif);
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vtable_last_entry);
+    
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "FATAL ERROR: mpig_cm_vtable_last_entry called.  aborting program"));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vtable_last_entry);
+    MPID_Abort(NULL, MPI_SUCCESS, 13, "FATAL ERROR: mpig_cm_vtable_last_entry called.  Aborting Program.");
+    return NULL;
+}
+/**********************************************************************************************************************************
+						END COMMUNICATION MODULE ROUTINES
 **********************************************************************************************************************************/

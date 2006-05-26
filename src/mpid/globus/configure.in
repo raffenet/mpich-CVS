@@ -212,7 +212,9 @@ AC_MSG_RESULT([$MPIG_SIZE_FMT])
 # vendor MPI settings from mpich2prereq
 #
 AC_SUBST(MPIG_VMPI)
+AC_SUBST(MPIG_VMPI_DEFINED)
 if test "${MPIG_VMPI:?}" != "no" ; then
+    MPIG_VMPI_DEFINED=1
     AC_DEFINE(MPIG_VMPI,1,[define if we are building on top of a vendor MPI])
 
     AC_DEFINE_UNQUOTED(SIZEOF_VMPI_COMM,${SIZEOF_VMPI_COMM:?},[size of the vendor MPI_COMM handle])
@@ -235,6 +237,8 @@ if test "${MPIG_VMPI:?}" != "no" ; then
     if test "${HAVE_VMPI_LONG_LONG_INT:?}" = "yes" ; then
         AC_DEFINE(HAVE_VMPI_LONG_LONG_INT,1,[define if vendor has MPI_LONG_LONG_INT])
     fi
+else
+    MPIG_VMPI_DEFINED=0
 fi
 
 #
@@ -263,9 +267,15 @@ AC_SUBST(ROMIO_ENABLED)
 #
 # setup file substitutions needed to create mpiddefs.h
 #
-MPIG_SYMBOL_MAP_MPI_H=.mpig_symbol_map_mpi.h
-MPIG_SYMBOL_MAP_PMPI_H=.mpig_symbol_map_pmpi.h
-MPIG_SYMBOL_MAP_INTERNAL_H=.mpig_symbol_map_internal.h
+if test "${MPIG_VMPI:?}" != "no" ; then
+    MPIG_SYMBOL_MAP_MPI_H=.mpig_symbol_map_mpi.h
+    MPIG_SYMBOL_MAP_PMPI_H=.mpig_symbol_map_pmpi.h
+    MPIG_SYMBOL_MAP_INTERNAL_H=.mpig_symbol_map_internal.h
+else
+    MPIG_SYMBOL_MAP_MPI_H=/dev/null
+    MPIG_SYMBOL_MAP_PMPI_H=/dev/null
+    MPIG_SYMBOL_MAP_INTERNAL_H=/dev/null
+fi
 AC_SUBST_FILE(MPIG_SYMBOL_MAP_MPI_H)
 AC_SUBST_FILE(MPIG_SYMBOL_MAP_PMPI_H)
 AC_SUBST_FILE(MPIG_SYMBOL_MAP_INTERNAL_H)
@@ -294,7 +304,7 @@ AC_SUBST(MAKE_DEPEND_C)
 #
 # create Makefile, etc.
 #
-AC_OUTPUT(Makefile mpiexec mpiddefs.h,
+AC_OUTPUT(Makefile mpiexec mpiddefs.h.out:mpiddefs.h.in,
 [
     echo "Copying mpiexec to $master_top_builddir/bin/"
     if test ! -d $master_top_builddir/bin ; then
@@ -303,13 +313,25 @@ AC_OUTPUT(Makefile mpiexec mpiddefs.h,
     chmod 755 mpiexec
     cp -pf mpiexec $master_top_builddir/bin/mpiexec
 
+    if test ! -d $master_top_builddir/src/include ; then
+        mkdir $master_top_builddir/src/include
+    fi
+
+    # if the mpiddefs.h file has changed, then copy it to the top-level include directory
+    mpig_copy_file=yes
+    if test -f $master_top_builddir/src/include/mpiddefs.h ; then
+        if diff $master_top_builddir/src/include/mpiddefs.h mpiddefs.h.out >/dev/null 2>&1 ; then
+	   mpig_copy_file=no
+	fi
+    fi
+    if test "$mpig_copy_file" = "yes" ; then 
+        echo "Copying mpiddefs.h.out to $master_top_builddir/src/include/"
+	cp -pf mpiddefs.h.out $master_top_builddir/src/include/mpiddefs.h
+    else
+	echo "mpiddefs.h.out has not changed.  skipping copy to top-level include directory."
+    fi    
     if test "$MPIG_VMPI" = "yes" ; then
-        echo "Copying mpiddefs.h to $master_top_builddir/src/include/"
-        if test ! -d $master_top_builddir/src/include ; then
-            mkdir $master_top_builddir/src/include
-        fi
-        cp -pf mpiddefs.h $master_top_builddir/src/include/mpiddefs.h
-        rm .mpig_symbol_map_mpi.h .mpig_symbol_map_pmpi.h .mpig_symbol_map_internal.h
+	rm .mpig_symbol_map_mpi.h .mpig_symbol_map_pmpi.h .mpig_symbol_map_internal.h
     fi
 ],
 [

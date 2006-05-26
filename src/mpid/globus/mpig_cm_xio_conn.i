@@ -896,7 +896,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
     {
-	mpig_cm_xio_msg_types_t req_msg_type;
+	mpig_cm_xio_msg_type_t req_msg_type;
 	mpig_cm_xio_conn_open_resp_t open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_UNDEFINED;
 	globus_xio_data_callback_t resp_callback_fn = NULL;
 	char * pg_id = NULL;
@@ -999,8 +999,8 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 
 	/* given the PG ID and rank, acquire a reference to the the process group object (creating it if necessary).  the
 	   reference is associated with the temp VC. */
-	mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDSTMT2((failed), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|pg_acquire_ref",
+	mpi_errno = mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg);
+	MPIU_ERR_CHKANDSTMT2((mpi_errno), mpi_errno, MPI_ERR_OTHER, {warn++; goto fn_fail;}, "**globus|pg_acquire_ref",
 	    "**globus|pg_acquire_ref %s %d", pg_id, pg_size);
 	{
 	    /* set the PG information fields in the temp VC */
@@ -1021,7 +1021,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 		
 		/* verify that the real VC has been initialized by the XIO CM.  if it hasn't been initialized, then do so; also,
 		   increment the PG reference count to indicate that a new VC is active. */
-		if (real_vc->cm_type == MPIG_CM_TYPE_UNDEFINED)
+		if (mpig_vc_get_cm_type(real_vc) == MPIG_CM_TYPE_UNDEFINED)
 		{
 		    mpig_cm_xio_vc_construct(real_vc);
 		    real_vc_cm->df = tmp_vc_cm->df;
@@ -1042,7 +1042,7 @@ MPIG_STATIC void mpig_cm_xio_server_handle_recv_open_req(
 
 	/* mpig_vc_mutex_lock(real_vc); -- real VC mutex is locked in previous block of code */
 	{
-	    if (real_vc->cm_type != MPIG_CM_TYPE_XIO)
+	    if (mpig_vc_get_cm_type(real_vc) != MPIG_CM_TYPE_XIO)
 	    {
 		/* --BEGIN ERROR HANDLING-- */
 		/* if the real VC is managed by another CM then send an error to the remote process */
@@ -1631,7 +1631,6 @@ MPIG_STATIC void mpig_cm_xio_client_handle_recv_open_resp(
 MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * const mpi_errno_p, bool_t * const failed_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * const real_vc_cm = &real_vc->cm.xio;
     mpig_vc_t * tmp_vc = NULL;
     struct mpig_cm_xio_vc * tmp_vc_cm = NULL;
     bool_t tmp_vc_locked = FALSE;
@@ -1708,7 +1707,7 @@ MPIG_STATIC void mpig_cm_xio_client_connect(mpig_vc_t * const real_vc, int * con
     mpig_vc_mutex_lock(tmp_vc);
     tmp_vc_locked = TRUE;
     {
-	grc = globus_xio_register_open(tmp_vc_cm->handle, real_vc_cm->cs, mpig_cm_xio_conn_attrs,
+	grc = globus_xio_register_open(tmp_vc_cm->handle, mpig_cm_xio_vc_get_contact_string(real_vc), mpig_cm_xio_conn_attrs,
 	    mpig_cm_xio_client_handle_open,(void *) tmp_vc);
 	MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_open",
 	    "**globus|cm_xio|xio_reg_open %s", globus_error_print_chain(globus_error_peek(grc)));
@@ -2085,7 +2084,7 @@ void mpig_cm_xio_client_handle_recv_open_resp(
     mpig_vc_t * real_vc = NULL;
     struct mpig_cm_xio_vc * real_vc_cm = NULL;
     bool_t real_vc_locked = FALSE;
-    mpig_cm_xio_msg_types_t msg_type;
+    mpig_cm_xio_msg_type_t msg_type;
     mpig_cm_xio_conn_open_resp_t open_resp = MPIG_CM_XIO_CONN_OPEN_RESP_UNDEFINED;
     mpig_pg_t * pg = NULL;
     int pg_rank;

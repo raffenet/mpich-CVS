@@ -19,57 +19,52 @@ MPIG_STATIC int mpig_pg_lpid_counter;
 
 
 /* internal function declarations */
-MPIG_STATIC void mpig_pg_create(const char * pg_id, int pg_rank, mpig_pg_t ** pgp, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_pg_create(const char * pg_id, int pg_rank, mpig_pg_t ** pgp);
 
 MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * pg);
 
 
 /*
- * mpig_pg_init([IN/OUT] mpi_errno, [OUT] failed)
+ * mpig_pg_init(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_init
-void mpig_pg_init(int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_pg_init(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_init);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
-
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering"));
 
     mpig_pg_global_mutex_create();
     
     /*  fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_init);
-    return;
+    return mpi_errno;
 }
 /* mpig_pg_init() */
 
 /*
- * mpig_pg_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ * mpig_pg_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_finalize
-void mpig_pg_finalize(int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_pg_finalize(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_finalize);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_finalize);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering"));
 
-    *failed_p = FALSE;
-    
 #if XXX    
     MPIU_ERR_CHKANDJUMP((mpig_pg_list_head != NULL), *mpi_errno_p, MPI_ERR_INTERN, "**dev|pg_finalize|list_not_empty");
 #endif
@@ -77,10 +72,9 @@ void mpig_pg_finalize(int * const mpi_errno_p, bool_t * const failed_p)
     mpig_pg_global_mutex_destroy();
     
     /* fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_finalize);
-    return;
+    return mpi_errno;
 }
 /* mpig_pg_finalize() */
 
@@ -95,23 +89,19 @@ void mpig_pg_finalize(int * const mpi_errno_p, bool_t * const failed_p)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_acquire_ref_locked
-void mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p,
-				int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t pg_global_locked = FALSE;
-    bool_t failed;
     mpig_pg_t * pg;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_acquire_ref_locked);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_acquire_ref_locked);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "entering: pg_id=%s, pg_size=%d, mpi_errno=0x%08x", pg_id, pg_size, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg_id=%s, pg_size=%d", pg_id, pg_size));
 
-    *failed_p = FALSE;
-    
     mpig_pg_global_mutex_lock();
     pg_global_locked = TRUE;
     {
@@ -132,9 +122,9 @@ void mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpi
 	if (pg == NULL)
 	{
 	    /* no matching process group was found, so create a new one */
-	    mpig_pg_create(pg_id, pg_size, pg_p, mpi_errno_p, &failed);
-	    MPIU_ERR_CHKANDJUMP2((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|pg_create", "**globus|pg_create %s %d",
-				 pg_id, pg_size);
+	    mpi_errno = mpig_pg_create(pg_id, pg_size, pg_p);
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_create", "**globus|pg_create %s %d",
+		pg_id, pg_size);
 	}
 
 	/* increment the reference count to reflect reference being returned */
@@ -143,17 +133,15 @@ void mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpi
     /* mpig_pg_global_mutex_unlock(); -- global mutex is left locked */
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       pg_id, pg_size, (MPIG_PTR_CAST) pg, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, (MPIG_PTR_CAST) pg, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_acquire_ref_locked);
-    return;
+    return mpi_errno;
     
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     {
 	if (pg_global_locked) mpig_pg_global_mutex_unlock();
-	*failed_p = TRUE;
 	goto fn_return;
     }
     /* --END ERROR HANDLING-- */
@@ -279,25 +267,22 @@ void mpig_pg_release_ref(mpig_pg_t * const pg)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_create
-void mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p,
-		    int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_pg_t * pg = NULL;
     int p;
     MPIU_CHKPMEM_DECL(1);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_create);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_create);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "entering: pg_id=%s, pg_size=%d, mpi_errno=0x%08x", pg_id, pg_size, *mpi_errno_p));
-    *failed_p = FALSE;
-    
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg_id=%s, pg_size=%d", pg_id, pg_size));
+
     /* allocate space for the process group object */
-    MPIU_CHKPMEM_MALLOC(pg, mpig_pg_t *, sizeof(mpig_pg_t) + (pg_size - 1) * sizeof(mpig_vc_t), *mpi_errno_p,
-			"process group object");
+    MPIU_CHKPMEM_MALLOC(pg, mpig_pg_t *, sizeof(mpig_pg_t) + (pg_size - 1) * sizeof(mpig_vc_t), mpi_errno, "process group object");
 
     /* initial PG fields */
     mpig_pg_mutex_create(pg);
@@ -316,7 +301,7 @@ void mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** co
 	mpig_vc_set_pg_info(vc, pg, p);
 	mpig_vc_set_pg_id(vc, pg->id);
 	vc->lpid = mpig_pg_lpid_counter++;
-	MPIU_ERR_CHKANDJUMP((mpig_pg_lpid_counter < 0), *mpi_errno_p, MPI_ERR_INTERN, "**globus|pg|lpid_counter");
+	MPIU_ERR_CHKANDJUMP((mpig_pg_lpid_counter < 0), mpi_errno, MPI_ERR_INTERN, "**globus|pg|lpid_counter");
     }
 
     /* add the new process group into the list of outstanding process group structures */
@@ -340,17 +325,15 @@ void mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** co
     MPIU_CHKPMEM_COMMIT();
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT ", mpi_errno=0x%08x, failed=%s",
-		       pg_id, pg_size, (MPIG_PTR_CAST) pg, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, (MPIG_PTR_CAST) pg, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_create);
-    return;
+    return mpi_errno;
     
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     {
 	MPIU_CHKPMEM_REAP();
-	*failed_p = TRUE;
 	goto fn_return;
     }
     /* --END ERROR HANDLING-- */

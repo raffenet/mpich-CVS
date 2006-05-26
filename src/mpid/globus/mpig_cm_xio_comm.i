@@ -213,7 +213,8 @@ MPIG_STATIC void mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * 
 
 	/* MT-RC-NOTE: the mutex lock/unlock in the RCQ routines will insure that the sreq data is released and acquired */
 	MPIU_ERR_SETANDSTMT3(sreq->status.MPI_ERROR, MPI_ERR_OTHER, {;}, "**globus|cm_xio|vc_connection",
-	    "**globus|cm_xio|vc_connection %s %d %s", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc), vc->cm.xio.cs);
+	    "**globus|cm_xio|vc_connection %s %d %s", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc),
+	    mpig_cm_xio_vc_get_contact_string(vc));
 	mpig_cm_xio_request_set_cc(sreq, 0);
 	mpig_cm_xio_rcq_enq(sreq);
     }
@@ -1285,7 +1286,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(
 	    }
 	    else
 	    {
-		mpig_cm_xio_msg_types_t msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;
+		mpig_cm_xio_msg_type_t msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;
 		
 		MPIU_Assert(mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) >= vc_cm->msg_hdr_size);
 		
@@ -1392,7 +1393,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc, in
     struct mpig_cm_xio_request * rreq_cm = NULL;
     bool_t rreq_found;
     bool_t rreq_complete = FALSE;
-    mpig_request_types_t sreq_type;
+    mpig_request_type_t sreq_type;
     int sreq_id;
     int rank;
     int tag;
@@ -1661,7 +1662,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc, int 
     MPID_Request * rreq = NULL;
     struct mpig_cm_xio_request * rreq_cm = NULL;
     bool_t rreq_found;
-    mpig_request_types_t sreq_type;
+    mpig_request_type_t sreq_type;
     int sreq_id;
     int rank;
     int tag;

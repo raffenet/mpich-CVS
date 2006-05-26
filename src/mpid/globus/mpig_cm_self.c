@@ -8,17 +8,72 @@
 
 #include "mpidimpl.h"
 
+/**********************************************************************************************************************************
+							BEGIN PARAMETERS
+**********************************************************************************************************************************/
 #if !defined(MPIG_COPY_BUFFER_SIZE)
 #define MPIG_COPY_BUFFER_SIZE (256*1024)
 #endif
+/**********************************************************************************************************************************
+							 END PARAMETERS
+**********************************************************************************************************************************/
 
 
+/**********************************************************************************************************************************
+				      BEGIN MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
+**********************************************************************************************************************************/
 MPIG_STATIC mpig_vc_t * mpig_cm_self_vc = NULL;
 
+MPIG_STATIC int mpig_cm_self_send(
+    mpig_request_type_t type, const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, int ctx, MPID_Comm * comm,
+    MPID_Request ** sreqp);
 
-/*
- * prototypes for VC function table functions
- */
+MPIG_STATIC void mpig_cm_self_buffer_copy(
+    const void * const sbuf, int scnt, MPI_Datatype sdt, int * smpi_errno,
+    void * const rbuf, int rcnt, MPI_Datatype rdt, MPIU_Size_t * rsz, int * rmpi_errno);
+/**********************************************************************************************************************************
+				       END MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+					      BEGIN COMMUNICATION MODULE API VTABLE
+**********************************************************************************************************************************/
+MPIG_STATIC void mpig_cm_self_init(int * argc, char *** argv, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_self_finalize(int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_self_add_contact_info(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
+
+MPIG_STATIC void mpig_cm_self_select_module(mpig_vc_t * vc, bool_t * selected, int * mpi_errno_p, bool_t * failed_p);
+
+#if FALSE
+MPIG_STATIC void mpig_cm_self_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
+    unsigned * const levels_out, int * mpi_errno_p, bool_t * failed_p);
+#endif
+
+const mpig_cm_vtable_t mpig_cm_self_vtable =
+{
+    MPIG_CM_TYPE_SELF,
+    "self",
+    mpig_cm_self_init,
+    mpig_cm_self_finalize,
+    mpig_cm_self_add_contact_info,
+    mpig_cm_self_extract_contact_info,
+    mpig_cm_self_select_module,
+    NULL, /*mpig_cm_self_get_vc_compatability */
+    mpig_cm_vtable_last_entry
+};
+/**********************************************************************************************************************************
+					       END COMMUNICATION MODULE API VTABLE
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						    BEGIN VC CORE API VTABLE
+**********************************************************************************************************************************/
 MPIG_STATIC int mpig_cm_self_adi3_send(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
@@ -50,10 +105,7 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
     mpig_vc_t * vc, MPID_Request * rreq, MPID_Comm * comm, int * mpi_errno_p, bool_t * failed_p);
 
 
-/*
- * VC communication module function table
- */
-MPIG_STATIC mpig_vc_cm_funcs_t mpig_cm_self_vc_funcs =
+MPIG_STATIC mpig_vc_vtable_t mpig_cm_self_vc_vtable =
 {
     mpig_cm_self_adi3_send,
     mpig_cm_self_adi3_isend,
@@ -69,185 +121,261 @@ MPIG_STATIC mpig_vc_cm_funcs_t mpig_cm_self_vc_funcs =
     NULL, /* vc_inc_ref_count */
     NULL, /* vc_dec_ref_count */
     NULL, /* vc_destruct */
-    mpig_vc_null_func
+    mpig_vc_vtable_last_entry
 };
+/**********************************************************************************************************************************
+						     END VC CORE API VTABLE
+**********************************************************************************************************************************/
 
 
+/**********************************************************************************************************************************
+					    BEGIN COMMUNICATION MODULE API FUNCTIONS
+**********************************************************************************************************************************/
 /*
- * Prototypes for internal routines
- */
-MPIG_STATIC int mpig_cm_self_send(
-    mpig_request_types_t type, const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, int ctx, MPID_Comm * comm,
-    MPID_Request ** sreqp);
-
-MPIG_STATIC void mpig_cm_self_buffer_copy(
-    const void * const sbuf, int scnt, MPI_Datatype sdt, int * smpi_errno,
-    void * const rbuf, int rcnt, MPI_Datatype rdt, MPIU_Size_t * rsz, int * rmpi_errno);
-
-
-/*
- * mpig_cm_self_init([IN/OUT] argc, [IN/OUT] argv)
+ * mpig_cm_self_initialize([IN/OUT] argc, [IN/OUT] argv, [IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_init
-int mpig_cm_self_init(int * const argc, char *** const argv)
+MPIG_STATIC void mpig_cm_self_init(int * const argc, char *** const argv, int * mpi_errno_p, bool_t * failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_init);
-
+    
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
 
-    MPIU_ERR_CHKANDJUMP((strlen(mpig_process.my_hostname) == 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_self_hostname");
+    *failed_p = FALSE;
+
+    MPIU_ERR_CHKANDJUMP((strlen(mpig_process.my_hostname) == 0), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_self_hostname");
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_init);
-    return mpi_errno;
+    return;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_init() */
 
 
 /*
- * mpig_cm_self_finalize()
+ * mpig_cm_self_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_finalize
-int mpig_cm_self_finalize(void)
+MPIG_STATIC void mpig_cm_self_finalize(int * mpi_errno_p, bool_t * failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int mpi_errno = MPI_SUCCESS;
+    int errors = 0;
     bool_t failed;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_finalize);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_finalize);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
 
+    *failed_p = FALSE;
+    
     /* release the PG reference held by the VC */
     if (mpig_cm_self_vc != NULL)
     {
-	mpig_vc_release_ref(mpig_cm_self_vc, &mpi_errno, &failed);
+	mpig_vc_release_ref(mpig_cm_self_vc, mpi_errno_p, &failed);
 	mpig_cm_self_vc = NULL;
+	MPIU_ERR_CHKANDSTMT((failed), *mpi_errno_p, MPI_ERR_OTHER, {errors++;}, "**globus|vc_release_ref");
     }
+
+    if (errors > 0) goto fn_fail;
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_finalize);
-    return mpi_errno;
+    return;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_finalize() */
 
 
 /*
- * mpig_cm_self_add_contact_info([IN/MOD] business card)
+ * mpig_cm_self_add_contact_info([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
  *
- * Add any and all contact information for this communication module to the supplied business card.
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_add_contact_info
-int mpig_cm_self_add_contact_info(mpig_bc_t * const bc)
+MPIG_STATIC void mpig_cm_self_add_contact_info(mpig_bc_t * const bc, int * mpi_errno_p, bool_t * failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char pid[64];
     bool_t failed;
-    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_add_contact_info);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_add_contact_info);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
-    
-    mpig_bc_add_contact(bc, "CM_SELF_HOSTNAME", mpig_process.my_hostname, &mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			 "**globus|bc_add_contact %s", "CM_SELF_HOSTNAME");
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
 
-    MPIU_Snprintf(pid, (size_t) 64, "%ld", (long) mpig_process.my_pid);
-    mpig_bc_add_contact(bc, "CM_SELF_PID", pid, &mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			 "**globus|bc_add_contact %s", "CM_SELF_PID");
+    *failed_p = FALSE;
+    
+    mpig_bc_add_contact(bc, "CM_SELF_HOSTNAME", mpig_process.my_hostname, mpi_errno_p, &failed);
+    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	"**globus|bc_add_contact %s", "CM_SELF_HOSTNAME");
+
+    MPIU_Snprintf(pid, (size_t) 64, "%lu", (unsigned long) mpig_process.my_pid);
+    mpig_bc_add_contact(bc, "CM_SELF_PID", pid, mpi_errno_p, &failed);
+    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	"**globus|bc_add_contact %s", "CM_SELF_PID");
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_add_contact_info);
-    return mpi_errno;
+    return;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_add_contact_info() */
 
 
 /*
- * int mpig_cm_self_select_module([IN] bc, [IN/MOD] vc, [OUT] selected)
+ * mpig_cm_self_extract_contact_info([IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
  *
- * Check the business card to see if the connection module can communicate with the remote process associated with the supplied
- * VC.  If it can, then the VC will be initialized accordingly.
+ * see documentation in mpidpre.h.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_extract_contact_info
+MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * mpi_errno_p, bool_t * failed_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_bc_t * bc;
+    bool_t found;
+    char * hostname_str = NULL;
+    char * pid_str = NULL;
+    unsigned long pid;
+    int rc;
+    bool_t failed;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_extract_contact_info);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_extract_contact_info);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
+	(MPIG_PTR_CAST) vc, *mpi_errno_p));
+
+    *failed_p = FALSE;
+    
+    vc->ci.self.hostname = NULL;
+    vc->ci.self.pid = 0;
+
+    bc = mpig_vc_get_bc(vc);
+
+    /* extract the hostname from the business card */
+    mpig_bc_get_contact(bc, "CM_SELF_HOSTNAME", &hostname_str, &found, mpi_errno_p, &failed);
+    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
+	"CM_SELF_HOSTNAME");
+    if (!found) goto fn_return;
+
+    /* extract the process id from the business card */
+    mpig_bc_get_contact(bc, "CM_SELF_PID", &pid_str, &found, mpi_errno_p, &failed);
+    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact",
+	"**globus|bc_get_contact %s", "CM_SELF_PID");
+    if (!found) goto fn_return;
+
+    rc = sscanf(pid_str, "%lu", &pid);
+    MPIU_ERR_CHKANDJUMP((rc != 1), *mpi_errno_p, MPI_ERR_INTERN, "**keyval");
+
+    /* if all when well, copy the extracted contact information into the VC */
+    vc->ci.self.hostname = MPIU_Strdup(hostname_str);
+    MPIU_ERR_CHKANDJUMP1((vc->ci.self.hostname == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+	"name of remote host");
+    vc->ci.self.pid = pid;
+
+#if FALSE
+    /* set the topology information.  NOTE: this may seem a bit wacky since the PROC level is set even if the SELF module is
+       not responsible for the VC; however, the tpology information is defined such that a level set if it is _possible_ for
+       the module to perform the communication regardless of whether it does so or not. */
+    vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_PROC
+	if (vc->ci.topology_num_levels < MPIG_TOPOLOGY_LEVEL_PROC)
+	{
+	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC;
+	}
+#endif
+    
+  fn_return:
+    if (hostname_str != NULL) mpig_bc_free_contact(hostname_str);
+    if (pid_str != NULL) mpig_bc_free_contact(pid_str);
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
+	(MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_extract_contact_info);
+    return;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_self_extract_contact_info() */
+
+
+/*
+ * void mpig_cm_self_select_module([IN/MOD] vc, [OUT] selected, [IN/OUT] mpi_errno, [OUT] failed)
  *
- * Parameters:
- *
- * bc [IN] - business card containing contact information
- * vc [IN] - vc object to initialize if the communication module is capable of performing communication with the associated process
- * selected [OUT] - TRUE if the communication module can communicate with the remote process; otherwise FALSE
+ * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_select_module
-int mpig_cm_self_select_module(mpig_bc_t * const bc, mpig_vc_t * const vc, bool_t * const selected)
+MPIG_STATIC void mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const selected,
+    int * const mpi_errno_p, bool_t * const failed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    char * hostname_str = NULL;
-    char * pid_str = NULL;
-    long pid;
-    bool_t found;
-    int rc;
     bool_t was_inuse;
     bool_t failed;
-    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_select_module);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_select_module);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
+	(MPIG_PTR_CAST) vc, *mpi_errno_p));
 
+    *failed_p = FALSE;
     *selected = FALSE;
 
+    /* determine if communication is possible */
     if (mpig_vc_get_cm_type(vc) != MPIG_CM_TYPE_UNDEFINED) goto fn_return;
-
-    mpig_bc_get_contact(bc, "CM_SELF_HOSTNAME", &hostname_str, &found, &mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-			 "**globus|bc_get_contact %s", "CM_SELF_HOSTNAME");
-    if (found == FALSE) goto fn_return;
-    if (strcmp(mpig_process.my_hostname, hostname_str) != 0) goto fn_return;
-    
-    mpig_bc_get_contact(bc, "CM_SELF_PID", &pid_str, &found, &mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-			 "**globus|bc_get_contact %s", "CM_SELF_PID");
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-    if (found == FALSE) goto fn_return;
-
-    rc = sscanf(pid_str, "%ld", &pid);
-    MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
-    if (mpig_process.my_pid != (pid_t) pid) goto fn_return;
+    if (vc->ci.self.hostname == NULL || strcmp(vc->ci.self.hostname, mpig_process.my_hostname) != 0) goto fn_return;
+    if (vc->ci.self.pid != (unsigned long) mpig_process.my_pid) goto fn_return;
 
     /* initialize the CM self fields in the VC object */
     mpig_vc_set_cm_type(vc, MPIG_CM_TYPE_SELF);
-    mpig_vc_set_cm_funcs(vc, &mpig_cm_self_vc_funcs);
+    mpig_vc_set_vtable(vc, &mpig_cm_self_vc_vtable);
 
     /* set the selected flag to indicate that the "self" communication module has accepted responsibility for the VC */
-    mpig_vc_inc_ref_count(vc, &was_inuse, &mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|vc_inc_ref_count");
+    mpig_vc_inc_ref_count(vc, &was_inuse, mpi_errno_p, &failed);
+    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|vc_inc_ref_count");
     mpig_cm_self_vc = vc;
     *selected = TRUE;
     
@@ -255,21 +383,67 @@ int mpig_cm_self_select_module(mpig_bc_t * const bc, mpig_vc_t * const vc, bool_
     mpig_pg_inc_ref_count(mpig_vc_get_pg(vc));
     
   fn_return:
-    if (hostname_str != NULL) mpig_bc_free_contact(hostname_str);
-    if (pid_str != NULL) mpig_bc_free_contact(pid_str);
-
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mmpi_errno=" MPIG_ERRNO_FMT
+	", failed=%s", (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_select_module);
-    return mpi_errno;
+    return;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
+	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* int mpig_cm_self_select_module() */
+/* mpig_cm_self_select_module() */
 
 
+#if FALSE
+/*
+ * void mpig_cm_self_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out, [IN/OUT] mpi_errno, [OUT] failed)
+ *
+ * see documentation in mpidpre.h.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_get_vc_compatability
+MPIG_STATIC void mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
+    unsigned levels_in, unsigned * const levels_out, int * const mpi_errno_p, bool_t * const failed_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_get_vc_compatability);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_get_vc_compatability);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x, mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in, *mpi_errno_p));
+
+    *failed_p = FALSE;
+    *levels_out = 0;
+
+    if ((levels_in & MPIG_TOPOLOGY_LEVEL_PROC_MASK) == 0) goto fn_return;
+    if (vc1->ci.self.hostname == NULL || vc2->ci.self.hostname == NULL ||
+	strcmp(vc1->ci.self.hostname, vc2->ci.self.hostname) != 0) goto fn_return;
+    if (vc1->ci.self.pid != vc2->ci.self.pid) goto fn_return;
+
+    *levels_out |= MPIG_TOPOLOGY_LEVEL_PROC_MASK;
+    
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
+	"mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out,
+	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_get_vc_compatability);
+    return;
+}
+/* mpig_cm_self_get_vc_compatability() */
+#endif /* FALSE */
+/**********************************************************************************************************************************
+					     END COMMUNICATION MODULE API FUNCTIONS
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						   BEGIN VC CORE API FUNCTIONS
+**********************************************************************************************************************************/
 /*
  * int mpig_cm_self_adi3_send(...)
  */
@@ -288,8 +462,8 @@ MPIG_STATIC int mpig_cm_self_adi3_send(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_send);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 #   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
@@ -299,16 +473,15 @@ MPIG_STATIC int mpig_cm_self_adi3_send(
 #   endif
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_send);
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_adi3_send(...) */
 
@@ -331,14 +504,13 @@ MPIG_STATIC int mpig_cm_self_adi3_isend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_isend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_isend);
     return mpi_errno;
 }
@@ -363,8 +535,8 @@ MPIG_STATIC int mpig_cm_self_adi3_rsend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_rsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 #   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
@@ -374,16 +546,15 @@ MPIG_STATIC int mpig_cm_self_adi3_rsend(
 #   endif
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_rsend);
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_adi3_rsend() */
 
@@ -406,14 +577,13 @@ MPIG_STATIC int mpig_cm_self_adi3_irsend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_irsend);
     return mpi_errno;
 }
@@ -438,8 +608,8 @@ MPIG_STATIC int mpig_cm_self_adi3_ssend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_ssend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 #   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
@@ -449,16 +619,15 @@ MPIG_STATIC int mpig_cm_self_adi3_ssend(
 #   endif
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_ssend);
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_adi3_ssend() */
 
@@ -481,14 +650,13 @@ MPIG_STATIC int mpig_cm_self_adi3_issend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_issend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_issend);
     return mpi_errno;
 }
@@ -512,15 +680,14 @@ MPIG_STATIC int mpig_cm_self_adi3_recv(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_recv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, comm->context_id + ctxoff));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, comm->context_id + ctxoff));
 
     mpi_errno = mpig_cm_self_adi3_irecv(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
     /* the status will be extracted by MPI_Recv() once the request is complete */
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_recv);
     return mpi_errno;
 }
@@ -548,8 +715,8 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irecv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
+	(MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     MPIU_Assert(rank == comm->rank);
     
@@ -573,10 +740,9 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
 
 	if (rreq->status.MPI_ERROR == MPI_SUCCESS)
 	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
-			       "request found in unexpected queue; copying data: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
-			       ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq,
-			       sreq->handle, (MPIG_PTR_CAST) sreq));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request found in unexpected queue; copying data: rreq=" MPIG_HANDLE_FMT
+		", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq,
+		sreq->handle, (MPIG_PTR_CAST) sreq));
 
 	    mpig_request_get_buffer(sreq, &sreq_buf, &sreq_cnt, &sreq_dt);
 	    mpig_cm_self_buffer_copy(sreq_buf, sreq_cnt, sreq_dt, &sreq->status.MPI_ERROR,
@@ -586,10 +752,9 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
 	}
 	else
 	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
-			       "request found in unexpected queue; rreq has error set; skipping data copy: rreq=" MPIG_HANDLE_FMT
-			       ", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
-			       rreq->handle, (MPIG_PTR_CAST) rreq, sreq->handle, (MPIG_PTR_CAST) sreq));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request found in unexpected queue; rreq has error set; "
+		"skipping data copy: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="
+		MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq, sreq->handle, (MPIG_PTR_CAST) sreq));
 	
 	    rreq->status.count = (int) 0;
 	}
@@ -606,9 +771,8 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
 	mpig_vc_t * vc;
 	
 	/* the message has yet to arrived.  the request has been placed on the posted receive queue. */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
-			   "request allocated in posted queue: req=" MPIG_HANDLE_FMT ", ptr=" MPIG_PTR_FMT,
-			   rreq->handle, (MPIG_PTR_CAST) rreq));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request allocated in posted queue: req=" MPIG_HANDLE_FMT ", ptr=" MPIG_PTR_FMT,
+	    rreq->handle, (MPIG_PTR_CAST) rreq));
 
 	mpig_comm_get_vc(comm, rank, &vc);
 	mpig_request_construct_irreq(rreq, 2, 1, buf, cnt, dt, rank, tag, ctx, comm, vc);
@@ -620,16 +784,15 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
     /* the receive request is locked by the recvq routine to insure atomicity.  it must be unlocked before returning. */
     mpig_request_mutex_unlock_conditional(rreq, (rreq != NULL));
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
-		       MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*rreqp),	(MPIG_PTR_CAST) *rreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_irecv);
     return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_adi3_irecv() */
 
@@ -650,7 +813,7 @@ MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * const sreq)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_cancel_send);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, sreq->handle, (MPIG_PTR_CAST) sreq));
+	"entering: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, sreq->handle, (MPIG_PTR_CAST) sreq));
 
     if (sreq->cc != 0)
     {
@@ -670,9 +833,8 @@ MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * const sreq)
     }
     
     /* fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT "mpi_errno=0x%08x",
-		       sreq->handle, (MPIG_PTR_CAST) sreq, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
+	", sreqp=" MPIG_PTR_FMT "mpi_errno=" MPIG_ERRNO_FMT, sreq->handle, (MPIG_PTR_CAST) sreq, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_cancel_send);
     return mpi_errno;
 }
@@ -702,10 +864,9 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
     MPIG_UNUSED_ARG(comm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_vc_recv_any_source);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", comm=" MPIG_PTR_FMT
-		       ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vc, rreq->handle, (MPIG_PTR_CAST) rreq, (MPIG_PTR_CAST) comm,
-		       *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT ", comm=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc, rreq->handle,
+	(MPIG_PTR_CAST) rreq, (MPIG_PTR_CAST) comm, *mpi_errno_p));
     *failed_p = FALSE;
 	
     sreq = rreq->partner_request;
@@ -713,10 +874,9 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
 
     if (rreq->status.MPI_ERROR == MPI_SUCCESS)
     {
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
-			   "request matched by an MPI_ANY_SOURCE receive; copying data: rreq=" MPIG_HANDLE_FMT
-			   ", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, rreq->handle,
-			   (MPIG_PTR_CAST) rreq, sreq->handle, (MPIG_PTR_CAST) sreq));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request matched by an MPI_ANY_SOURCE receive; copying data: rreq="
+	    MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, rreq->handle,
+	    (MPIG_PTR_CAST) rreq, sreq->handle, (MPIG_PTR_CAST) sreq));
 
 	mpig_request_get_buffer(sreq, &sreq_buf, &sreq_cnt, &sreq_dt);
 	mpig_request_get_buffer(rreq, &rreq_buf, &rreq_cnt, &rreq_dt);
@@ -727,10 +887,9 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
     }
     else
     {
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
-			   "request matched by an MPI_ANY_SOURCE receive; rreq has error set; skipping data copy: "
-			   "rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
-			   rreq->handle, (MPIG_PTR_CAST) rreq, sreq->handle, (MPIG_PTR_CAST) sreq));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request matched by an MPI_ANY_SOURCE receive; rreq has error set; "
+	    "skipping data copy: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
+	    rreq->handle, (MPIG_PTR_CAST) rreq, sreq->handle, (MPIG_PTR_CAST) sreq));
 	
 	rreq->status.count = (int) 0;
     }
@@ -743,23 +902,28 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
     mpig_request_complete(sreq);
     
     /* fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: vc= " MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x, "
-		       "failed=%s", (MPIG_PTR_CAST) vc,  rreq->handle, (MPIG_PTR_CAST) rreq, *mpi_errno_p,
-		       MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc= " MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ",failed=%s", (MPIG_PTR_CAST) vc,  rreq->handle,
+	(MPIG_PTR_CAST) rreq, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_vc_recv_any_source);
     return;
 }
 /* mpig_cm_self_vc_recv_any_source() */
+/**********************************************************************************************************************************
+						    END VC CORE API FUNCTIONS
+**********************************************************************************************************************************/
 
 
+/**********************************************************************************************************************************
+					     BEGIN MISCELLANEOUS INTERNAL FUNCTIONS
+**********************************************************************************************************************************/
 /*
  * mpig_cm_self_send(...)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_send
 MPIG_STATIC int mpig_cm_self_send(
-    const mpig_request_types_t type, const void * const buf, const int cnt, MPI_Datatype dt, const int rank,
+    const mpig_request_type_t type, const void * const buf, const int cnt, MPI_Datatype dt, const int rank,
     const int tag, const int ctx, MPID_Comm * const comm, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -872,7 +1036,7 @@ MPIG_STATIC int mpig_cm_self_send(
 	}
     }
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x",
+		       "exiting: sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
 		       MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_send);
     return mpi_errno;
@@ -920,9 +1084,9 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_buffer_copy);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA,
-		       "entering: sbuf=" MPIG_PTR_FMT ", scnt=%d, sdt=" MPIG_HANDLE_FMT ", rbuf="  MPIG_PTR_FMT ", rcnt=%d, rdt="
-		       MPIG_HANDLE_FMT , (MPIG_PTR_CAST) sbuf, scnt, sdt, (MPIG_PTR_CAST)rbuf, rcnt, rdt));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "entering: sbuf=" MPIG_PTR_FMT ", scnt=%d, sdt="
+	MPIG_HANDLE_FMT ", rbuf="  MPIG_PTR_FMT ", rcnt=%d, rdt=" MPIG_HANDLE_FMT , (MPIG_PTR_CAST) sbuf, scnt, sdt,
+	(MPIG_PTR_CAST)rbuf, rcnt, rdt));
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
 
@@ -934,7 +1098,7 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
     if (sdata_size > rdata_size)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA | MPIG_DEBUG_LEVEL_PT2PT,
-			   "message truncated, sdata_size=" MPIG_SIZE_FMT " rdata_size=" MPIG_SIZE_FMT, sdata_size, rdata_size));
+	    "message truncated, sdata_size=" MPIG_SIZE_FMT " rdata_size=" MPIG_SIZE_FMT, sdata_size, rdata_size));
 	sdata_size = rdata_size;
 	MPIU_ERR_SETANDSTMT2(*rmpi_errno, MPI_ERR_TRUNCATE, {;}, "**truncate", "**truncate %d %d", sdata_size, rdata_size);
     }
@@ -950,8 +1114,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 	MPIG_FUNC_ENTER(MPID_STATE_memcpy);
 	memcpy((char *)rbuf + rdt_true_lb, (const char *) sbuf + sdt_true_lb, (size_t) sdata_size);
 	MPIG_FUNC_EXIT(MPID_STATE_memcpy);
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
-			   "copied " MPIG_SIZE_FMT " bytes directly from send buffer to receive buffer", sdata_size));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "copied " MPIG_SIZE_FMT
+	    " bytes directly from send buffer to receive buffer", sdata_size));
 	*rsz = sdata_size;
     }
     else if (sdt_contig)
@@ -965,9 +1129,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "unpacked data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
 	if (last != sdata_size)
 	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,
-			       "data type mismatch: send_nbytes=" MPIG_SIZE_FMT ", nbytes_moved=" MPIG_SIZE_FMT,
-			       sdata_size, last));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "data type mismatch: send_nbytes=" MPIG_SIZE_FMT
+		", nbytes_moved=" MPIG_SIZE_FMT, sdata_size, last));
 	    MPIU_ERR_SET(*rmpi_errno, MPI_ERR_TYPE, "**dtypemismatch");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
@@ -985,9 +1148,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "packed data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
 	if (last != sdata_size)
 	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,
-			       "data type mismatch: send_nbytes=" MPIG_SIZE_FMT ", nbytes_moved=" MPIG_SIZE_FMT,
-			       sdata_size, last));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "data type mismatch: send_nbytes=" MPIG_SIZE_FMT
+		", nbytes_moved=" MPIG_SIZE_FMT, sdata_size, last));
 	    MPIU_ERR_SET(*rmpi_errno, MPI_ERR_TYPE, "**dtypemismatch");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
@@ -1007,7 +1169,7 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 	if (buf == NULL)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,
-			       "ERROR: copy (pack/unpack) buffer allocation failure"));
+		"ERROR: copy (pack/unpack) buffer allocation failure"));
 	    MPIU_ERR_SET1(*smpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "copy (pack/unpack) buffer");
 	    *rmpi_errno = *smpi_errno;
 	    *rsz = 0;
@@ -1035,21 +1197,17 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 		last = sdata_size;
 	    }
 	    
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
-			       "pre-pack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, sfirst, last));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "pre-pack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, sfirst, last));
 	    MPID_Segment_pack(&sseg,  *(MPI_Aint *) &sfirst, (MPI_Aint *) &last, buf + buf_off);
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
-			       "post-pack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, sfirst, last));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "post-pack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, sfirst, last));
 	    MPIU_Assert(last > sfirst);
 	    
 	    buf_end = buf + buf_off + (last - sfirst);
 	    sfirst = last;
 	    
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
-			       "pre-unpack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, rfirst, last));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "pre-unpack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, rfirst, last));
 	    MPID_Segment_unpack(&rseg, *(MPI_Aint *) &rfirst, (MPI_Aint *) &last, buf);
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
-			       "post-unpack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, rfirst, last));
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "post-unpack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, rfirst, last));
 	    MPIU_Assert(last > rfirst);
 
 	    rfirst = last;
@@ -1057,9 +1215,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 
 	    if (sfirst == sdata_size)
 	    {   /* --BEGIN ERROR HANDLING-- */
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,
-				   "data type mismatch: send_nbytes=" MPIG_SIZE_FMT ", nbytes_moved=" MPIG_SIZE_FMT,
-				   sdata_size, last));
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "data type mismatch: send_nbytes="
+		    MPIG_SIZE_FMT ", nbytes_moved=" MPIG_SIZE_FMT, sdata_size, last));
 		MPIU_ERR_SET(*smpi_errno, MPI_ERR_TYPE, "**dtypemismatch");
 		*rmpi_errno = *smpi_errno;
 		break;
@@ -1069,8 +1226,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 	    buf_off = sfirst - rfirst;
 	    if (buf_off > 0)
 	    {
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA,
-				   "moving " MPIG_SIZE_FMT " bytes to the beginning of the intermediate buffer", buf_off));
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "moving " MPIG_SIZE_FMT
+		    " bytes to the beginning of the intermediate buffer", buf_off));
 		memmove(buf, buf_end - buf_off, (size_t) buf_off);
 	    }
 	}
@@ -1080,9 +1237,8 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
     }
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA,
-		       "exiting: rsz=" MPIG_SIZE_FMT ", smpi_errno=0x%08x, rmpi_errno=0x%08x",
-		       *rsz, *smpi_errno, *rmpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "exiting: rsz=" MPIG_SIZE_FMT ", smpi_errno=" MPIG_ERRNO_FMT
+	", rmpi_errno=" MPIG_ERRNO_FMT, *rsz, *smpi_errno, *rmpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_buffer_copy);
     return;
     
@@ -1092,3 +1248,6 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_self_buffer_copy() */
+/**********************************************************************************************************************************
+					     END MISCELLANEOUS INTERNAL FUNCTIONS
+**********************************************************************************************************************************/

@@ -7,18 +7,44 @@
 #if !defined(MPICH2_MPIDDEFS_H_INCLUDED)
 #define MPICH2_MPIDDEFS_H_INCLUDED
 
+/* attribute keys for accessing topology information */
+#define MPIG_TOPOLOGY_DEPTHS ((const int) mpig_topology_depths_attr_key)
+#define MPIG_TOPOLOGY_COLORS ((const int) mpig_topology_depths_attr_key)
+extern int mpig_topology_depths_attr_key;
+extern int mpig_topology_colors_attr_key;
+
+/* topology levels (the order is relevant!) */
+#define MPIG_TOPOLOGY_LEVEL_WAN  0  /* communication across a WAN */
+#define MPIG_TOPOLOGY_LEVEL_LAN  1  /* communication within a LAN */
+#define MPIG_TOPOLOGY_LEVEL_SAN  2  /* communication within a SAN and a single subjob
+				       (SAN --> a network consisting of one or more clustered of machines) */ 
+#define MPIG_TOPOLOGY_LEVEL_VMPI 3  /* communication within a single subjob using an underlying vendor MPI library */
+/* FIXME: MPIG_TOPOLOGY_LEVEL_HOST ... communication within a single host and subjob (such as shared memory) */
+/* FIXME: MPIG_TOPOLOGY_LEVEL_PROC ... communication within a single process (intra-process communication) */
+#define MPIG_TOPOLOGY_NUM_LEVELS 4  /* number of topology levels */
+
+/* deprecated topology symbols */
+#define MPICHX_TOPOLOGY_DEPTHS MPIG_TOPOLOGY_DEPTHS
+#define MPICHX_TOPOLOGY_COLORS MPIG_TOPOLOGY_COLORS
+#define MPICHX_WAN_LEVEL  MPIG_TOPOLOGY_LEVEL_WAN
+#define MPICHX_LAN_LEVEL  MPIG_TOPOLOGY_LEVEL_LAN
+#define MPICHX_HOST_LEVEL MPIG_TOPOLOGY_LEVEL_SAN
+#define MPICHX_VMPI_LEVEL MPIG_TOPOLOGY_LEVEL_VMPI
+
+#if @MPIG_VMPI_DEFINED@ /* defined(MPIG_VMPI) */
+/* rename MPI and PMPI symbols if building on top of a vendor MPI */
 @MPIG_SYMBOL_MAP_MPI_H@
 @MPIG_SYMBOL_MAP_PMPI_H@
 
-
 #if defined(MPIG_BUILDING_MPICH2)
+/* rename internal MPICH2 symbols if building on top of a vendor MPI, but only while building MPICH2 */
 @MPIG_SYMBOL_MAP_INTERNAL_H@
 
 /* a special case when ROMIO is disabled.  see src/binding/f77/mpi_fortimpl.h. */
 #if @ROMIO_ENABLED@ == 0
 #undef MPI_File_f2c
 #endif
-
 #endif /* defined(MPIG_BUILDING_MPICH2) */
+#endif /* defined(MPIG_VMPI) */
 
 #endif /* MPICH2_MPIDDEFS_H_INCLUDED */

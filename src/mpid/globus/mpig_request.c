@@ -131,7 +131,7 @@ void mpig_request_destroy(MPID_Request * req)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_request_state_get_string
-const char * mpig_request_type_get_string(mpig_request_types_t req_type)
+const char * mpig_request_type_get_string(mpig_request_type_t req_type)
 {
     const char * str;
 

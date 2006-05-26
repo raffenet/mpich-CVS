@@ -11,7 +11,6 @@
 
 #include "globus_xio.h"
 
-
 /*
  * user tunable parameters
  */
@@ -29,10 +28,9 @@
 
 
 /*
- * add communication module types to be included in the enumeration of modules
+ * expose the communication module's vtable so that it is accessible to other modules in the device
  */
-#define MPIG_CM_TYPE_XIO_LIST	\
-    MPIG_CM_TYPE_XIO
+extern const mpig_cm_vtable_t mpig_cm_xio_vtable;
 
 
 /*									\
@@ -42,7 +40,7 @@
 struct mpig_cm_xio_vc							\
 {									\
     /* state of the connection */					\
-    mpig_cm_xio_vc_states_t state;					\
+    mpig_cm_xio_vc_state_t state;					\
 									\
     /* contact string for remote process listener */			\
     char * cs;								\
@@ -82,10 +80,10 @@ xio;
 struct mpig_cm_xio_request													\
 {																\
     /* state of the message being sent or received */										\
-    mpig_cm_xio_req_states_t state;												\
+    mpig_cm_xio_req_state_t state;												\
 																\
     /* type of message being sent or received */										\
-    mpig_cm_xio_msg_types_t msg_type;												\
+    mpig_cm_xio_msg_type_t msg_type;												\
 																\
     /* internal completion counter.  since the main completion counter is accessed outside of a lock, we must use a separate	\
        counter within the xio communication module */										\
@@ -94,7 +92,7 @@ struct mpig_cm_xio_request													\
     /* information about the user buffer being sent/received.  the segment object is used to help process buffers that are	\
        noncontiguous or data that is heterogeneous. */										\
     MPIU_Size_t buf_size;													\
-    mpig_cm_xio_userbuf_types_t buf_type;											\
+    mpig_cm_xio_userbuf_type_t buf_type;											\
     MPI_Aint buf_true_lb;													\
     MPIU_Size_t stream_size;													\
     MPIU_Size_t stream_pos;													\
@@ -108,7 +106,7 @@ struct mpig_cm_xio_request													\
     globus_xio_iovec_callback_t gcb;												\
 																\
     /* request type associated with incoming message */										\
-    mpig_request_types_t sreq_type;												\
+    mpig_request_type_t sreq_type;												\
 																\
     /* space for a message header, and perhaps a small amount of data */							\
     MPIG_DATABUF_DECL(msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);									\
@@ -131,7 +129,8 @@ xio;
  */
 #define MPIG_CM_XIO_VC_STATE_CLASS_SHIFT 4
 #define MPIG_CM_XIO_VC_STATE_CLASS_MASK (~0U << MPIG_CM_XIO_VC_STATE_CLASS_SHIFT)
-typedef enum mpig_cm_xio_vc_state_classes
+
+typedef enum mpig_cm_xio_vc_state_class
 {
     MPIG_CM_XIO_VC_STATE_CLASS_FIRST = 0,
     MPIG_CM_XIO_VC_STATE_CLASS_UNDEFINED,
@@ -142,9 +141,9 @@ typedef enum mpig_cm_xio_vc_state_classes
     MPIG_CM_XIO_VC_STATE_CLASS_FAILED,
     MPIG_CM_XIO_VC_STATE_CLASS_LAST
 }
-mpig_cm_xio_vc_state_classes_t;
+mpig_cm_xio_vc_state_class_t;
 
-typedef enum mpig_cm_xio_vc_states
+typedef enum mpig_cm_xio_vc_state
 {
     MPIG_CM_XIO_VC_STATE_UNDEFINED = (MPIG_CM_XIO_VC_STATE_CLASS_UNDEFINED << MPIG_CM_XIO_VC_STATE_CLASS_SHIFT),
     
@@ -194,13 +193,13 @@ typedef enum mpig_cm_xio_vc_states
     MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING,
     MPIG_CM_XIO_VC_STATE_FAILED_LAST
 }
-mpig_cm_xio_vc_states_t;
+mpig_cm_xio_vc_state_t;
 
 
 /*
  * types of messages that can be sent or received
  */
-typedef enum mpig_cm_xio_msg_types
+typedef enum mpig_cm_xio_msg_type
 {
     MPIG_CM_XIO_MSG_TYPE_FIRST = 0,
     MPIG_CM_XIO_MSG_TYPE_UNDEFINED,
@@ -216,13 +215,13 @@ typedef enum mpig_cm_xio_msg_types
     MPIG_CM_XIO_MSG_TYPE_CLOSE,
     MPIG_CM_XIO_MSG_TYPE_LAST
 }
-mpig_cm_xio_msg_types_t;
+mpig_cm_xio_msg_type_t;
 
 
 /*
  * request state
  */
-typedef enum mpig_cm_xio_req_states
+typedef enum mpig_cm_xio_req_state
 {
     MPIG_CM_XIO_REQ_STATE_FIRST = 0,
     MPIG_CM_XIO_REQ_STATE_UNDEFINED,
@@ -247,13 +246,13 @@ typedef enum mpig_cm_xio_req_states
     MPIG_CM_XIO_REQ_STATE_RECV_COMPLETE,
     MPIG_CM_XIO_REQ_STATE_LAST
 }
-mpig_cm_xio_req_states_t;
+mpig_cm_xio_req_state_t;
 
 
 /*
  * user buffer type
  */
-typedef enum mpig_cm_xio_userbuf_types
+typedef enum mpig_cm_xio_userbuf_type
 {
     MPIG_CM_XIO_USERBUF_TYPE_FIRST = 0,
     MPIG_CM_XIO_USERBUF_TYPE_UNDEFINED,
@@ -262,20 +261,12 @@ typedef enum mpig_cm_xio_userbuf_types
     MPIG_CM_XIO_USERBUF_TYPE_SPARSE,
     MPIG_CM_XIO_USERBUF_TYPE_LAST
 }
-mpig_cm_xio_userbuf_types_t;
+mpig_cm_xio_userbuf_type_t;
 
 
 /*
  * communication module interface function prototypes
  */
-int mpig_cm_xio_init(int * argc, char *** argv);
-
-int mpig_cm_xio_finalize(void);
-
-int mpig_cm_xio_add_contact_info(struct mpig_bc * bc);
-
-int mpig_cm_xio_select_module(struct mpig_bc * bc, struct mpig_vc * vc, bool_t * selected);
-
 void mpig_cm_xio_pe_start(struct MPID_Progress_state * state);
 
 void mpig_cm_xio_pe_end(struct MPID_Progress_state * state);

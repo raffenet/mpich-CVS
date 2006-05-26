@@ -46,7 +46,7 @@ fi
 # _ACEOF
 # 
 # # define to the version of this package.
-# if grep CVS ${master_top_srcdir}/maint/Version 2>&1 >/dev/null ; then
+# if grep CVS ${master_top_srcdir}/maint/Version >/dev/null 2>&1 ; then
 #     PACKAGE_VERSION=`date "+%Y%m%d%H%M"`
 # else
 #     PACKAGE_VERSION=`cat $master_top_srcdir/maint/Version`
@@ -606,7 +606,7 @@ fi
 mpig_check_type()
 {
     mpig_type=$1
-    if echo "${mpig_type}" | grep '^MPI_' 2>&1 >/dev/null ; then
+    if echo "${mpig_type}" | grep '^MPI_' >/dev/null 2>&1 ; then
         mpig_type_name="V${mpig_type}"
 	mpig_include_mpi_h="#include <mpi.h>"
     else
@@ -645,7 +645,7 @@ EOF
 mpig_get_type_size()
 {
     mpig_type=$1
-    if echo "${mpig_type}" | grep '^MPI_' 2>&1 >/dev/null ; then
+    if echo "${mpig_type}" | grep '^MPI_' >/dev/null 2>&1 ; then
         mpig_type_name="V${mpig_type}"
 	mpig_include_mpi_h="#include <mpi.h>"
     else
@@ -684,7 +684,7 @@ EOF
 mpig_get_type_memalign()
 {
     mpig_type=$1
-    if echo "${mpig_type}" | grep '^MPI_' 2>&1 >/dev/null ; then
+    if echo "${mpig_type}" | grep '^MPI_' >/dev/null 2>&1 ; then
         mpig_type_name="V${mpig_type}"
 	mpig_include_mpi_h="#include <mpi.h>"
     else
@@ -925,10 +925,8 @@ other_install_dirs="${other_install_dirs} src/mpid/globus"
 #
 # include mpiddefs.h in mpi.h
 #
-if test "$MPIG_VMPI" = "yes" ; then
-    echo "INFO: adding include of renaming header mpiddefs.h to mpi.h"
-    INCLUDE_MPIDDEFS_H='#include "mpiddefs.h"'
-fi
+echo "INFO: adding include of device header file mpiddefs.h to mpi.h"
+INCLUDE_MPIDDEFS_H='#include "mpiddefs.h"'
 
 echo "END OF MPICH2PREREQ FOR THE GLOBUS DEVICE"
 echo ""

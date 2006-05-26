@@ -61,7 +61,7 @@
 {												\
     *(unsigned char *)(mpig_databuf_get_eod_ptr(msgbuf_)) = (unsigned char) (endian_);		\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", endian=%s",	\
-	(MPIG_PTR_CAST) (msgbuf_), ((endian_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+	(MPIG_PTR_CAST) (msgbuf_), MPIG_ENDIAN_STR(endian_)));					\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_endian(vc_));		\
 }
 
@@ -69,7 +69,7 @@
 {												\
     *(endian_p_) = *(unsigned char *) mpig_databuf_get_pos_ptr(msgbuf_);			\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", endian=%s",	\
-	(MPIG_PTR_CAST) (msgbuf_), (*(endian_p_) == MPIG_ENDIAN_LITTLE) ? "little" : "big"));	\
+	(MPIG_PTR_CAST) (msgbuf_), MPIG_ENDIAN_STR(*endian_p_)));				\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_endian(vc_));		\
 }
 

@@ -13,33 +13,42 @@
 /**********************************************************************************************************************************
 						   BEGIN COMMUNICATOR SECTION
 **********************************************************************************************************************************/
-void mpig_comm_list_add(MPID_Comm * comm);
-#define MPID_Dev_comm_create_hook(comm_) mpig_comm_list_add(comm_)
+int mpig_comm_construct(MPID_Comm * comm);
 
-void mpig_comm_list_remove(MPID_Comm * comm);
-#define MPID_Dev_comm_destroy_hook(comm_) mpig_comm_list_remove(comm_)
+int mpig_comm_destruct(MPID_Comm * comm);
 
-void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p);
-#define MPID_Dev_comm_free_hook(comm_, mpi_errno_p_) mpig_dev_comm_free_hook((comm_), (mpi_errno_p_))
+int mpig_dev_comm_free_hook(MPID_Comm * comm);
+
+#define MPID_Dev_comm_create_hook(comm_) {if (mpig_comm_construct(comm_)) MPID_Abort(NULL, mpi_errno, 13, NULL);}
+
+#define MPID_Dev_comm_destroy_hook(comm_)  {if (mpig_comm_destruct(comm_)) MPID_Abort(NULL, mpi_errno, 13, NULL);}
+
+#define MPID_Dev_comm_free_hook(comm_) {if (mpig_dev_comm_free_hook(comm_)) MPID_Abort(NULL, mpi_errno, 13, NULL);}
 
 #if defined(MPIG_VMPI)
 
-void mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm, int * mpi_errno_p);
+int mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
 #define MPID_Dev_comm_dup_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
     mpig_dev_comm_free_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
 
-void mpig_dev_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Comm * peer_comm, int remote_leader, int tag,
-    MPID_Comm * new_intercomm, int * mpi_errno_p);
+int mpig_dev_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Comm * peer_comm, int remote_leader, int tag,
+    MPID_Comm * new_intercomm);
 #define MPID_Dev_intercomm_create_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
     mpig_dev_intercomm_create_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
 
 #endif /* defined(MPIG_VMPI) */
 
-/* MT-RC-NOTE: this routine may only be called (directly or indirectly) by MPI routines.  furthermore, the population of the
-   cm_funcs table and the the pointer to the cm_funcs table in the VC may only be set routines called by MPI routines.  if the
-   MPI routines may be called by multiple threads, then the MPI routines are required to perform the necessary release
-   consistency operations to insure that the cm_funcs table is fresh. */
-#define mpig_comm_get_vc_cmf(comm_, rank_)  (((rank_) >= 0) ? ((comm_)->vcr[(rank_)]->cm_funcs) : mpig_cm_other_vc->cm_funcs)
+/*
+ * MT-RC-NOTE: this routine does not perform insure the pointer to the function table in the VC and the the pointers within the
+ * function table table are consistent across are threads.  as such, it is the responsibily of the calling routine to insure the
+ * VC and the table to which it points is up-to-date before calling this routine.
+ *
+ * MT-RC-FIXME: give the use of this routine in the ADI3 macros below, it may be necessary for this routine to become a function
+ * that performs an RC acquire on platforms that require it.  at present, this is not necessary since the function table pointer
+ * is set in the main thread, the same thread in all of the MPI routines are called (hence the current MPI_THREAD_SINGLE
+ * restriction).
+ */
+#define mpig_comm_get_vc_vtable(comm_, rank_) (((rank_) >= 0) ? ((comm_)->vcr[(rank_)]->vtable) : mpig_cm_other_vc->vtable)
 /**********************************************************************************************************************************
 						    END COMMUNICATOR SECTION
 **********************************************************************************************************************************/
@@ -55,7 +64,6 @@ void mpig_dev_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MP
  * structure are made visible before the completion counter is updated.  the exact operations required depending the on the
  * memory model of the processor architecture.
  */
-
 
 MPID_Request * mpig_request_create(void);
 
@@ -173,45 +181,45 @@ void mpig_request_destroy(MPID_Request * req);
 /**********************************************************************************************************************************
 						   BEGIN ADI3 MAPPING SECTION
 **********************************************************************************************************************************/
+/* MT-RC-FIXME: at present, mpig_comm_get_vc_vtable does not perform a RC acquire.  see description above. */
 #undef MPID_Send
 #define MPID_Send(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_send((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_send((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Isend
 #define MPID_Isend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_isend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_isend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Rsend
 #define MPID_Rsend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_rsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_rsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Irsend
 #define MPID_Irsend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)							\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_irsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_irsend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Ssend
 #define MPID_Ssend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_ssend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_ssend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Issend
 #define MPID_Issend(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)							\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_issend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_issend((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Recv
-#define MPID_Recv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, status_ ,reqp_)							\
-    (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_recv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (status_),	\
-                          (reqp_)))
+#define MPID_Recv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, status_ ,reqp_)						\
+    (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_recv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_),	\
+	(status_), (reqp_)))
 
 #undef MPID_Irecv
 #define MPID_Irecv(buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, reqp_)								\
-     (mpig_comm_get_vc_cmf((comm_), (rank_))->adi3_irecv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
+     (mpig_comm_get_vc_vtable((comm_), (rank_))->adi3_irecv((buf_), (cnt_), (dt_), (rank_), (tag_), (comm_), (ctxoff_), (reqp_)))
 
 #undef MPID_Cancel_send
-#define MPID_Cancel_send(sreq_) (mpig_comm_get_vc_cmf((sreq_)->comm, mpig_request_get_rank(sreq_))->adi3_cancel_send(sreq_))
+#define MPID_Cancel_send(sreq_) (mpig_comm_get_vc_vtable((sreq_)->comm, mpig_request_get_rank(sreq_))->adi3_cancel_send(sreq_))
 
 #undef MPID_Cancel_recv
-#define MPID_Cancel_recv(rreq_) (mpig_comm_get_vc_cmf((rreq_)->comm, mpig_request_get_rank(rreq_))->adi3_cancel_recv(rreq_))
-
+#define MPID_Cancel_recv(rreq_) (mpig_comm_get_vc_vtable((rreq_)->comm, mpig_request_get_rank(rreq_))->adi3_cancel_recv(rreq_))
 /**********************************************************************************************************************************
 						    END ADI3 MAPPING SECTION
 **********************************************************************************************************************************/
@@ -357,8 +365,6 @@ unsigned long mpig_thread_get_id(void);
 **********************************************************************************************************************************/
 #if defined(MPIG_DEBUG)
 
-#define MPIG_DEBUG_STMT(a_) a_
-
 void mpig_debug_init(void);
 
 extern globus_debug_handle_t mpig_debug_handle;
@@ -394,127 +400,125 @@ typedef enum mpig_debug_levels
 }
 mpig_debug_levels_t;
 
+#define MPIG_DEBUG_STMT(levels_, a_)  if ((levels_) & mpig_debug_handle.levels) {a_}
+
+#if defined(HAVE_C99_VARIADIC_MACROS) || defined(HAVE_GNU_VARIADIC_MACROS)
+void mpig_debug_printf_fn(unsigned levels, const char * filename, const char * funcname, int line, const char * fmt, ...);
+void mpig_debug_uprintf_fn(unsigned levels, const char * filename, const char * funcname, int line, const char * fmt, ...);
+#define MPIG_DEBUG_PRINTF(a_) mpig_debug_printf a_
+#define MPIG_DEBUG_UPRINTF(a_) mpig_debug_uprintf a_
+#endif
+
 #if defined(HAVE_C99_VARIADIC_MACROS)
 
-#define MPIG_DEBUG_PRINTF(a_)	\
-{				\
-    mpig_debug_printf a_;	\
-}
-
-#define mpig_debug_printf(levels_, fmt_, ...)						\
-{											\
-    if (((levels_) & mpig_debug_handle.levels) && mpig_debug_handle.file != NULL)	\
-    {											\
-	if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)			\
-	{										\
-	    mpig_debug_printf_untimed(fmt_, ## __VA_ARGS__);				\
-	}										\
-	else										\
-	{										\
-	    mpig_debug_printf_timed(fmt_, ## __VA_ARGS__);				\
-	}										\
-    }											\
-}
-
-#define mpig_debug_printf_untimed(fmt_, ...)											\
-{																\
-    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d) " fmt_ "\n",								\
-	mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME), __LINE__, ## __VA_ARGS__);	\
-}
-
-#define mpig_debug_printf_timed(fmt_, ...)								\
+#define mpig_debug_printf(levels_, fmt_, ...)								\
 {													\
-    struct timeval tv__;										\
-    gettimeofday(&tv__, NULL);										\
-    tv__.tv_sec -= mpig_debug_start_tv_sec;								\
-    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) " fmt_ "\n",			\
-	mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME),	\
-	__LINE__, (unsigned long) tv__.tv_sec, (unsigned long) tv__.tv_usec, ## __VA_ARGS__);		\
+    if ((levels_) & mpig_debug_handle.levels)								\
+    {													\
+	mpig_debug_uprintf_fn(levels_, __FILE__, MPIU_QUOTE(FUNCNAME), __LINE__, fmt_, ## __VA_ARGS__);	\
+    }													\
+}
+
+#define mpig_debug_uprintf(levels_, fmt_, ...)								\
+{													\
+    mpig_debug_uprintf_fn(levels_, __FILE__, MPIU_QUOTE(FUNCNAME), __LINE__, fmt_, ## __VA_ARGS__);	\
 }
 
 #undef MPIU_DBG_PRINTF
-#define MPIU_DBG_PRINTF(a_) MPIG_DEBUG_OLD_STYLE_PRINTF a_
-#define MPIG_DEBUG_OLD_STYLE_PRINTF(fmt_, ...)				\
+#define MPIU_DBG_PRINTF(a_) MPIG_DEBUG_OLD_UTIL_PRINTF a_
+#define MPIG_DEBUG_OLD_UTIL_PRINTF(fmt_, ...)				\
 {									\
     mpig_debug_printf(MPIG_DEBUG_LEVEL_MPI, fmt_, ## __VA_ARGS__);	\
 }
 
 #elif defined(HAVE_GNU_VARIADIC_MACROS)
 
-#define MPIG_DEBUG_PRINTF(a_)	\
-{				\
-    mpig_debug_printf a_;	\
-}
-
-#define mpig_debug_printf(levels_, fmt_, args_...)					\
-{											\
-    if (((levels_) & mpig_debug_handle.levels) && mpig_debug_handle.file != NULL)	\
-    {											\
-	if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)			\
-	{										\
-	    mpig_debug_printf_untimed((fmt_), ## args_);				\
-	}										\
-	else										\
-	{										\
-	    mpig_debug_printf_timed((fmt_), ## args_);					\
-	}										\
-    }											\
-}
-
-#define mpig_debug_printf_untimed(fmt_, args_...)										\
-{																\
-    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d) " fmt_ "\n",								\
-	mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME), __LINE__, ## args_);	\
-}
-
-#define mpig_debug_printf_timed(fmt_, args_...)								\
+#define mpig_debug_printf(levels_, fmt_, args_...)							\
 {													\
-    struct timeval tv__;										\
-    gettimeofday(&tv__, NULL);										\
-    tv__.tv_sec -= mpig_debug_start_tv_sec;								\
-    fprintf(mpig_debug_handle.file, "[%s:%d:%lu] %s(l=%d:t=%lu.%.6lu) " fmt_ "\n",			\
-	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), MPIU_QUOTE(FUNCNAME),	\
-	    __LINE__, (unsigned long) tv__.tv_sec, (unsigned long) tv__.tv_usec, ## args_);		\
+    if ((levels_) & mpig_debug_handle.levels)								\
+    {													\
+	mpig_debug_printf_fn(levels_, __FILE__, MPIU_QUOTE(FUNCNAME), __LINE__, fmt_, ## args_);	\
+    }													\
+}
+
+#define mpig_debug_uprintf(levels_, fmt_, args_...)						\
+{												\
+    mpig_debug_uprintf_fn(levels_, __FILE__, MPIU_QUOTE(FUNCNAME), __LINE__, fmt_, ## args_);	\
 }
 
 #undef MPIU_DBG_PRINTF
-#define MPIU_DBG_PRINTF(a_) MPIG_DEBUG_OLD_STYLE_PRINTF a_
-#define MPIG_DEBUG_OLD_STYLE_PRINTF(fmt_, args_...)		\
+#define MPIU_DBG_PRINTF(a_) MPIG_DEBUG_OLD_UTIL_PRINTF a_
+#define MPIG_DEBUG_OLD_UTIL_PRINTF(fmt_, args,...)		\
 {								\
-    mpig_debug_printf(MPIG_DEBUG_LEVEL_MPI, fmt_, ## args__);	\
+    mpig_debug_printf(MPIG_DEBUG_LEVEL_MPI, fmt_, ## args_);	\
 }
 
-#else /* compiler does not support variadic macros */
+#else /* the compiler does not support variadic macros */
+
+#define MPIG_DEBUG_PRINTF(a_) mpig_debug_printf(a_)
+#define MPIG_DEBUG_UPRINTF(a_) mpig_debug_uprintf(a_)
 
 typedef struct mpig_debug_thread_state
 {
-    const char * file;
-    const int line;
+    const char * filename;
     const char * funcname;
+    int line;
 }
 mpig_debug_thread_state_t;
 
-extern mpig_debug_thread_state_t mpig_debug_thread_state;
+extern globus_thread_once_t mpig_debug_create_state_key_once;
+extern globus_thread_key_t mpig_debug_state_key;
 
-void mpig_debug_printf(int levels, const char * fmt, ...);
+void mpig_debug_printf_fn(unsigned levels, const char * fmt, ...);
+void mpig_debug_uprintf_fn(unsigned levels, const char * fmt, ...);
+void mpig_debug_old_util_printf_fn(const char * fmt, ...);
+void mpig_debug_create_state_key(void);
 
-#define	mpig_debug_save_state()								\
-{											\
-    /* XXX: put function name, file name, and line number into thread specific data */	\
+#define	mpig_debug_save_state(filename_, funcname_, line_)								\
+{															\
+    mpig_debug_thread_state_t * state__;										\
+    globus_thread_once(&mpig_debug_create_state_key_once, mpig_debug_create_state_key);					\
+    state__ = globus_thread_getspecific(mpig_debug_state_key);								\
+    if (state__ == NULL)												\
+    {															\
+	state__ = MPIU_Malloc(sizeof(mpig_debug_thread_state_t));							\
+	MPIU_Assertp((state__ != NULL) && "ERROR: unable to allocate memory for thread specific debugging state");	\
+	globus_thread_setspecific(mpig_debug_state_key, state__);							\
+    }															\
+    state__->filename = (filename_);											\
+    state__->funcname = (funcname_);											\
+    state__->line = (line_);												\
 }
 
-#define	mpig_debug_retrieve_state(funcname_p_, file_p_, line_p_)			\
-{											\
-    /* XXX: get function name, file name, and line number from thread specific data */	\
+#define	mpig_debug_retrieve_state(filename_p_, funcname_p_, line_p_)	\
+{									\
+    mpig_debug_thread_state_t * state__;				\
+    state__ = globus_thread_getspecific(mpig_debug_state_key);		\
+    *(filename_p_) = state__->filename;					\
+    *(funcname_p_) = state__->funcname;					\
+    *(line_p_) = state__->line;						\
 }
 
-#define	MPIG_DEBUG_PRINTF(a_)	\
-{				\
-    mpig_debug_save_state();	\
-    mpig_debug_printf a_;	\
+#define	mpig_debug_printf(a_)						\
+{									\
+    mpig_debug_save_state(__FILE__, MPIU_QUOTE(FUNCNAME), __LINE__);	\
+    mpig_debug_printf_fn a_;						\
 }
 
-#endif
+#define	mpig_debug_uprintf(a_)						\
+{									\
+    mpig_debug_save_state(__FILE__, MPIU_QUOTE(FUNCNAME), __LINE__);	\
+    mpig_debug_uprintf_fn a_;						\
+}
+
+#undef MPIU_DBG_PRINTF
+#define MPIU_DBG_PRINTF(a_) mpig_debug_old_util_printf a_
+#define mpig_debug_old_util_printf(a_)					\
+{									\
+    mpig_debug_save_state(__FILE__, MPIU_QUOTE(FUNCNAME), __LINE__);	\
+    mpig_debug_old_util_printf_fn a_;					\
+}
+#endif /* variadic macros */
 
 /* override the stardard MPICH2 enter/exit debug logging macros */
 #undef MPIR_FUNC_ENTER
@@ -544,7 +548,8 @@ void mpig_debug_printf(int levels, const char * fmt, ...);
 
 #else
 
-#define MPIG_DEBUG_STMT(a_)
+#define MPIG_DEBUG_TEST(levels_) (FALSE)
+#define MPIG_DEBUG_STMT(levels_, a_)
 #define	MPIG_DEBUG_PRINTF(a_)
 
 #endif

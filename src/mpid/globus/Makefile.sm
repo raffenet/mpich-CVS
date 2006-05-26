@@ -18,8 +18,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 # list of header files that all sources depend upon
 #
 HEADERS = mpidconf.h mpidpre.h mpidimpl.h mpidpost.h \
-          mpig_cm_vmpi.h mpig_cm_self.h mpig_cm_xio.h mpig_cm_other.h \
-          mpiddefs.h
+          mpig_cm_vmpi.h mpig_cm_self.h mpig_cm_xio.h mpig_cm_other.h
 
 #
 # list of file to compile and include in the MPICH2 library
@@ -42,6 +41,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpig_pm_gk.c		\
     mpig_recvq.c		\
     mpig_request.c		\
+    mpig_topology.c		\
     mpig_vmpi.c			\
 
 
@@ -55,7 +55,7 @@ mpig_vmpi.o: mpig_vmpi.c mpig_vmpi.h mpidconf.h
 #
 install_BIN = mpich2-globus-cc mpiexec
 optinstall_BIN = mpich2-globus-cxx mpich2-globus-f77 mpich2-globus-f90
-install_INCLUDE = mpiddefs.h
+install_INCLUDE = ../../include/mpiddefs.h
 
 install-local:
 	@# XXX: The file permissions are assumed to be 755 for the compilers scripts and 644 for the configuration files.  This
@@ -112,10 +112,15 @@ describe_states.txt: FORCE_TARGET
 	    sort -u | awk '{print $$1, $$1}' | sed -e 's/ MPID_STATE_/ /' -e 's/ MPID_\([A-Z]\)\([A-Z_]*\)/ MPID_\1\L\2/' \
 	    >${MPIG_SOURCE_DIR}/describe_states.txt
 
-errnames.txt: FORCE_TARGET
-	grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
-	    sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
-	    grep -h '\*\*globus|' ${master_top_srcdir}/src/mpi/errhan/errnames.txt - | sort -t ':' +0 -1 -u >errnames.txt
+globus_errnames.txt: FORCE_TARGET
+	sed -e '/^\*\*\(globus|[^ :]*\):\1/ d' -e '/^\*\*\(globus|[^ :]*\) \([^:]*\):\1 -- \2/ d' \
+	    ${master_top_srcdir}/src/mpi/errhan/errnames.txt >.errnames-$$$$.txt ; \
+	if test $$? -eq 0 ; then \
+	    grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
+	        sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
+	        grep -h '\*\*globus|' .errnames-$$$$.txt - | sort -t ':' +0 -1 -u >globus_errnames.txt ; \
+	fi ; \
+	rm .errnames-$$$$.txt
 
 #
 # add new symbols to the symbol renaming header file.

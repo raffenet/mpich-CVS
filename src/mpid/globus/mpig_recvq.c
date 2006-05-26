@@ -39,29 +39,26 @@ MPIG_STATIC MPID_Request * mpig_recvq_unexp_tail;
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_recvq_init
-void mpig_recvq_init(int * mpi_errno_p, bool_t * failed_p)
+int mpig_recvq_init(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_recvq_init);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering"));
 
-    *failed_p = FALSE;
-    
     mpig_recvq_mutex_create();
     mpig_recvq_posted_head = NULL;
     mpig_recvq_posted_tail = NULL;
     mpig_recvq_unexp_head = NULL;
     mpig_recvq_unexp_tail = NULL;
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_init);
-    return;
+    return mpi_errno;
 }
 /* mpig_recvq_init() */
 
@@ -71,29 +68,26 @@ void mpig_recvq_init(int * mpi_errno_p, bool_t * failed_p)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_recvq_finalize
-void mpig_recvq_finalize(int * mpi_errno_p, bool_t * failed_p)
+int mpig_recvq_finalize(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_recvq_destroy);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_destroy);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering"));
 
-    *failed_p = FALSE;
-    
     mpig_recvq_posted_head = NULL;
     mpig_recvq_posted_tail = NULL;
     mpig_recvq_unexp_head = NULL;
     mpig_recvq_unexp_tail = NULL;
     mpig_recvq_mutex_destroy();
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: mpi_errno=0x%08x, failed=%s", *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_destroy);
-    return;
+    return mpi_errno;
 }
 /* mpig_recvq_finalize() */
 
@@ -117,8 +111,7 @@ MPID_Request * mpig_recvq_find_unexp(int rank, int tag, int ctx)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_find_unexp);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
 
     mpig_recvq_mutex_lock();
     {
@@ -157,9 +150,8 @@ MPID_Request * mpig_recvq_find_unexp(int rank, int tag, int ctx)
     }
     mpig_recvq_mutex_unlock();
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: rank=%d, tag=%d, ctx=%d, rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT,
-		       rank, tag, ctx, MPIG_HANDLE_VAL(rreq), (MPIG_PTR_CAST) rreq));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: rank=%d, tag=%d, ctx=%d, rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT, rank, tag, ctx, MPIG_HANDLE_VAL(rreq), (MPIG_PTR_CAST) rreq));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_find_unexp);
     return rreq;
 }
@@ -188,8 +180,8 @@ MPID_Request * mpig_recvq_deq_unexp(int rank, int tag, int ctx, MPI_Request sreq
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_unexp);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering: rank=%d, tag=%d, ctx=%d, sreq_id="
+	MPIG_HANDLE_FMT, rank, tag, ctx, sreq_id));
 
     matching_prev_rreq = NULL;
     matching_cur_rreq = NULL;
@@ -244,8 +236,8 @@ MPID_Request * mpig_recvq_deq_unexp(int rank, int tag, int ctx, MPI_Request sreq
     /* If the request is still being initialized by another thread, wait for that process to complete */
     mpig_request_mutex_lock_conditional(rreq, (rreq != NULL));
 	
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting"));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT,
+	MPIG_HANDLE_VAL(rreq), (MPIG_PTR_CAST) rreq));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_deq_unexp);
     return rreq;
 }
@@ -271,8 +263,8 @@ bool_t mpig_recvq_deq_unexp_rreq(MPID_Request * rreq)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_unexp_rreq);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT,
+	rreq->handle, (MPIG_PTR_CAST) rreq));
     
     found = FALSE;
     prev_rreq = NULL;
@@ -308,9 +300,8 @@ bool_t mpig_recvq_deq_unexp_rreq(MPID_Request * rreq)
     }
     mpig_recvq_mutex_unlock();
 	
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", found=%s",
-		       rreq->handle, (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
+	", found=%s", rreq->handle, (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_deq_unexp_rreq);
     return found;
 }
@@ -336,8 +327,8 @@ bool_t mpig_recvq_deq_posted_rreq(MPID_Request * rreq)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_posted_rreq);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT,
+	rreq->handle, (MPIG_PTR_CAST) rreq));
     
     found = FALSE;
     prev_rreq = NULL;
@@ -373,9 +364,8 @@ bool_t mpig_recvq_deq_posted_rreq(MPID_Request * rreq)
     }
     mpig_recvq_mutex_unlock();
 	
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", found=%s",
-		       rreq->handle, (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
+	", found=%s", rreq->handle, (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_deq_posted_rreq);
     return found;
 }
@@ -404,8 +394,7 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, in
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_unexp_or_enq_posted);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
     
     lock_held = TRUE;
     mpig_recvq_mutex_lock();
@@ -496,9 +485,8 @@ MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, in
     *foundp = found;
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: rank=%d, tag=%d, ctx=%d, rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", found=%s",
-		       rank, tag, ctx, rreq->handle, (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: rank=%d, tag=%d, ctx=%d, rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT ", found=%s", rank, tag, ctx, MPIG_HANDLE_VAL(rreq), (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_deq_unexp_or_enq_posted);
     return rreq;
 
@@ -535,8 +523,7 @@ MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, in
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_deq_posted_or_enq_unexp);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "entering: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
 
     mpig_recvq_mutex_lock();
     lock_held = TRUE;
@@ -628,9 +615,8 @@ MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, in
     *foundp = found;
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ,
-		       "exiting: rank=%d, tag=%d, ctx=%d, rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", found=%s",
-		       rank, tag, ctx, rreq->handle, (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: rank=%d, tag=%d, ctx=%d, rreq=" MPIG_HANDLE_FMT
+	", rreqp=" MPIG_PTR_FMT ", found=%s", rank, tag, ctx, MPIG_HANDLE_VAL(rreq), (MPIG_PTR_CAST) rreq, MPIG_BOOL_STR(found)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_deq_posted_or_enq_unexp);
     return rreq;
 

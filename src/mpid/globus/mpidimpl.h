@@ -15,6 +15,7 @@
 #include "globus_common.h"
 #include "globus_dc.h"
 
+
 /*
  * When memory tracing is enabled, mpimem.h redefines malloc(), calloc(), and free() to be invalid statements.  These
  * redefinitions have a negative interaction with the Globus heap routines which may be mapped (using C preprocessor defines)
@@ -55,16 +56,16 @@
 
 
 #define MPIG_BOOL_STR(b_) ((b_) ? "TRUE" : "FALSE")
-
+#define MPIG_ENDIAN_STR(e_) (((e_) == MPIG_ENDIAN_LITTLE) ? "little" : (((e_) == MPIG_ENDIAN_BIG) ? "big" : "unknown"))
 
 #define MPIG_MIN(a_, b_) ((a_) <= (b_) ? (a_) : (b_))
 #define MPIG_MAX(a_, b_) ((a_) >= (b_) ? (a_) : (b_))
 
 
-#if defined(NDEBUG)
+#if defined(MPIG_DEBUG)
 #define MPIG_STATIC static
 #else
-#define MPIG_STATIC
+#define MPIG_STATIC static
 #endif
 
 
@@ -78,23 +79,20 @@ int gethostname(char *name, size_t len);
 
 
 /**********************************************************************************************************************************
+					       BEGIN COMMUNICATION MODULE SECTION
+**********************************************************************************************************************************/
+const mpig_cm_vtable_t * const mpig_cm_vtables[];
+
+char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif);
+/**********************************************************************************************************************************
+						END COMMUNICATION MODULE SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
 						   BEGIN COMMUNICATOR SECTION
 **********************************************************************************************************************************/
-void mpig_comm_list_wait_empty(int * mpi_errno_p, bool_t * failed_p);
-
-#define mpig_comm_construct(comm_)		\
-{						\
-    (comm_)->dev.user_ref = FALSE;		\
-    (comm_)->dev.active_list_prev = NULL;	\
-    (comm_)->dev.active_list_next = NULL;	\
-}
-
-#define mpig_comm_destruct(comm_)		\
-{						\
-    (comm_)->dev.user_ref = FALSE;		\
-    (comm_)->dev.active_list_prev = NULL;	\
-    (comm_)->dev.active_list_next = NULL;	\
-}
+int mpig_comm_list_wait_empty(void);
 
 #define mpig_comm_set_vc(comm_, rank_, vc_)	\
 {						\
@@ -116,9 +114,30 @@ void mpig_comm_list_wait_empty(int * mpi_errno_p, bool_t * failed_p);
 	*(vc_p_) = (comm_)->local_vcr[(comm_)->rank];	\
     }							\
 }
-
 /**********************************************************************************************************************************
 						    END COMMUNICATOR SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+					       BEGIN TOPOLOGY INFORMATION SECTION
+**********************************************************************************************************************************/
+int mpig_topology_init(void);
+
+int mpig_topology_finalize(void);
+
+int mpig_topology_comm_construct(MPID_Comm * comm);
+
+int mpig_topology_comm_destruct(MPID_Comm * comm);
+
+#define MPIG_TOPOLOGY_LEVEL_WAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_WAN)
+#define MPIG_TOPOLOGY_LEVEL_LAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_LAN)
+#define MPIG_TOPOLOGY_LEVEL_SAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_SAN)
+#define MPIG_TOPOLOGY_LEVEL_VMPI_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_VMPI)
+/* #define MPIG_TOPOLOGY_LEVEL_HOST_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_HOST) */
+/* #define MPIG_TOPOLOGY_LEVEL_PROC_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_PROC) */
+/**********************************************************************************************************************************
+						END TOPOLOGY INFORMATION SECTION
 **********************************************************************************************************************************/
 
 
@@ -221,7 +240,7 @@ void mpig_request_alloc_finalize(void);
 /*
  * request functions
  */
-const char * mpig_request_type_get_string(mpig_request_types_t req_type);
+const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 
 /*
  * request accessor macros
@@ -992,6 +1011,8 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
 void mpig_bc_create(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
 
+void mpig_bc_copy(const mpig_bc_t * orig_bc, mpig_bc_t * new_bc, int * mpi_errno_p, bool_t * failed_p);
+    
 void mpig_bc_add_contact(mpig_bc_t * bc, const char * key, const char * value, int * mpi_errno_p, bool_t * failed_p);
 
 void mpig_bc_get_contact(const mpig_bc_t * bc, const char * key, char ** value, bool_t * found_p,
@@ -1006,6 +1027,24 @@ void mpig_bc_free_serialized_object(char * str);
 void mpig_bc_deserialize_object(const char *, mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
 
 void mpig_bc_destroy(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
+
+
+#define mpig_bc_construct(bc_)	\
+{				\
+    (bc_)->str_begin = NULL;	\
+    (bc_)->str_end = NULL;	\
+    (bc_)->str_size = 0;	\
+    (bc_)->str_left = 0;	\
+}
+
+#define mpig_bc_destruct(bc_)					\
+{								\
+    if ((bc_)->str_begin != NULL) MPIU_Free((bc_)->str_begin);	\
+    (bc_)->str_begin = NULL;					\
+    (bc_)->str_end = NULL;					\
+    (bc_)->str_size = 0;					\
+    (bc_)->str_left = 0;					\
+}
 /**********************************************************************************************************************************
 						    END BUSINESS CARD SECTION
 **********************************************************************************************************************************/
@@ -1018,7 +1057,7 @@ void mpig_bc_destroy(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
    mutexes. */
 void mpig_vc_release_ref(mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
 
-void mpig_vc_null_func(void);
+double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif);
 
 /*
  * constructor/destructor macros
@@ -1035,23 +1074,33 @@ void mpig_vc_null_func(void);
     mpig_vc_mutex_create(vc_);				\
     mpig_vc_i_set_ref_count((vc_), 0);			\
     mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_UNDEFINED);	\
-    mpig_vc_set_cm_funcs((vc_), NULL);			\
+    mpig_vc_set_vtable((vc_), NULL);			\
     mpig_vc_set_pg_info((vc_), NULL, 0);		\
     mpig_vc_set_pg_id((vc_), "(pg id not set)");	\
+    mpig_bc_construct(mpig_vc_get_bc(vc_));		\
+    (vc_)->ci.topology_num_levels = -1;			\
+    (vc_)->ci.topology_levels = 0;			\
+    (vc_)->ci.lan_id = NULL;				\
+    (vc_)->ci.app_num = -1;				\
     (vc_)->lpid = -1;					\
 }
 
 #define mpig_vc_destruct(vc_)							\
 {										\
-    if ((vc_)->cm_funcs != NULL && (vc_)->cm_funcs->vc_destruct != NULL)	\
+    if ((vc_)->vtable != NULL && (vc_)->vtable->vc_destruct != NULL)		\
     {										\
-	(vc_)->cm_funcs->vc_destruct(vc_);					\
+	(vc_)->vtable->vc_destruct(vc_);					\
     }										\
     mpig_vc_i_set_ref_count((vc_), 0);						\
     mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_UNDEFINED);				\
-    mpig_vc_set_cm_funcs((vc_), NULL);						\
+    mpig_vc_set_vtable((vc_), NULL);						\
     mpig_vc_set_pg_info((vc_), NULL, 0);					\
     mpig_vc_set_pg_id((vc_), "");						\
+    mpig_bc_destruct(mpig_vc_get_bc(vc_));					\
+    (vc_)->ci.topology_num_levels = -1;						\
+    (vc_)->ci.topology_levels = 0;						\
+    (vc_)->ci.lan_id = NULL;							\
+    (vc_)->ci.app_num = -1;							\
     (vc_)->lpid = -1;								\
     mpig_vc_mutex_destroy(vc_);							\
 }
@@ -1076,7 +1125,7 @@ void mpig_vc_null_func(void);
 
 #define mpig_vc_inc_ref_count(vc_, was_inuse_p_, mpi_errno_p_, failed_p_)						\
 {															\
-    if ((vc_)->cm_funcs->vc_inc_ref_count == NULL)									\
+    if ((vc_)->vtable->vc_inc_ref_count == NULL)									\
     {															\
 	*(was_inuse_p_) = ((vc_)->ref_count++) ? TRUE : FALSE;								\
 	*(failed_p_) = FALSE;												\
@@ -1085,13 +1134,13 @@ void mpig_vc_null_func(void);
     }															\
     else														\
     {															\
-	(vc_)->cm_funcs->vc_inc_ref_count((vc_), (was_inuse_p_), (mpi_errno_p_), (failed_p_));				\
+	(vc_)->vtable->vc_inc_ref_count((vc_), (was_inuse_p_), (mpi_errno_p_), (failed_p_));				\
     }															\
 }
 
 #define mpig_vc_dec_ref_count(vc_, is_inuse_p_, mpi_errno_p_, failed_p_)						\
 {															\
-    if ((vc_)->cm_funcs->vc_dec_ref_count == NULL)									\
+    if ((vc_)->vtable->vc_dec_ref_count == NULL)									\
     {															\
 	*(is_inuse_p_) = (--(vc_)->ref_count) ? TRUE : FALSE;								\
 	*(failed_p_) = FALSE;												\
@@ -1100,7 +1149,7 @@ void mpig_vc_null_func(void);
     }															\
     else														\
     {															\
-	(vc_)->cm_funcs->vc_dec_ref_count((vc_), (is_inuse_p_), (mpi_errno_p_), (failed_p_));				\
+	(vc_)->vtable->vc_dec_ref_count((vc_), (is_inuse_p_), (mpi_errno_p_), (failed_p_));				\
     }															\
 }
 
@@ -1118,9 +1167,9 @@ void mpig_vc_null_func(void);
 
 #define mpig_vc_get_cm_type(vc_) ((vc_)->cm_type)
 
-#define mpig_vc_set_cm_funcs(vc_, cm_funcs_)	\
+#define mpig_vc_set_vtable(vc_, vtable_)	\
 {						\
-    (vc_)->cm_funcs = (cm_funcs_);		\
+    (vc_)->vtable = (vtable_);			\
 }
 
 #define mpig_vc_set_pg_info(vc_, pg_, pg_rank_)	\
@@ -1139,6 +1188,16 @@ void mpig_vc_null_func(void);
 #define mpig_vc_get_pg_rank(vc_) ((vc_)->pg_rank)
 
 #define mpig_vc_get_pg_id(vc_) ((vc_)->pg_id)
+
+#define mpig_vc_get_bc(vc_) (&(vc_)->ci.bc)
+
+#define mpig_vc_get_num_topology_levels(vc_) ((vc_)->ci.topology_num_levels)
+
+#define mpig_vc_get_topology_levels(vc_) ((vc_)->ci.topology_levels)
+
+#define mpig_vc_get_lan_id(vc_) ((const char *)((vc_)->ci.lan_id))
+
+#define mpig_vc_get_app_num(vc_) ((vc_)->ci.app_num)
 
 /* Thread safety and release consistency macros */
 #define mpig_vc_mutex_create(vc_)	globus_mutex_init(&(vc_)->mutex, NULL)
@@ -1205,11 +1264,11 @@ mpig_vcrt_t;
 /**********************************************************************************************************************************
 						   BEGIN PROCESS GROUP SECTION
 **********************************************************************************************************************************/
-void mpig_pg_init(int * mpi_errno_p, bool_t * failed_p);
+int mpig_pg_init(void);
 
-void mpig_pg_finalize(int * mpi_errno_p, bool_t * failed_p);
+int mpig_pg_finalize(void);
 
-void mpig_pg_acquire_ref_locked(const char * pg_id, int pg_size, mpig_pg_t ** pg_p, int * mpi_errno_p, bool_t * failed_p);
+int mpig_pg_acquire_ref_locked(const char * pg_id, int pg_size, mpig_pg_t ** pg_p);
 
 void mpig_pg_commit(mpig_pg_t * pg);
 
@@ -1312,9 +1371,9 @@ extern globus_mutex_t mpig_pg_global_mutex;
  * necessary if the request be found and dequeued.  Acquiring the mutex guarantees that no other thread is in the process of
  * initializing the request.
  */
-void mpig_recvq_init(int * mpi_errno_p, bool_t * failed_p);
+int mpig_recvq_init(void);
 
-void mpig_recvq_finalize(int * mpi_errno_p, bool_t * failed_p);
+int mpig_recvq_finalize(void);
 
 struct MPID_Request * mpig_recvq_find_unexp(int rank, int tag, int ctx);
 
@@ -1351,7 +1410,7 @@ int mpig_pm_get_pg_rank(int * pg_rank);
 
 int mpig_pm_get_pg_id(const char ** pg_id_p);
 
-int mpig_pm_get_app_num(int * app_num);
+int mpig_pm_get_app_num(const mpig_bc_t * bc, int * app_num);
 
 
 int mpig_pm_gk_init(void);
@@ -1370,7 +1429,7 @@ int mpig_pm_gk_get_pg_rank(int * pg_rank);
 
 int mpig_pm_gk_get_pg_id(const char ** pg_id_p);
 
-int mpig_pm_gk_get_app_num(int * app_num);
+int mpig_pm_gk_get_app_num(const mpig_bc_t * bc, int * app_num);
 
 
 int mpig_pm_ws_init(void);
@@ -1389,7 +1448,7 @@ int mpig_pm_ws_get_pg_rank(int * pg_rank);
 
 int mpig_pm_ws_get_pg_id(const char ** pg_id_p);
 
-int mpig_pm_ws_get_app_num(int * app_num);
+int mpig_pm_ws_get_app_num(const mpig_bc_t * bc, int * app_num);
 
 #if 1
 #define mpig_pm_init mpig_pm_gk_init
@@ -1420,7 +1479,7 @@ int mpig_pm_ws_get_app_num(int * app_num);
 /**********************************************************************************************************************************
 						       BEGIN PT2PT SECTION
 **********************************************************************************************************************************/
-int mpig_adi3_cancel_recv(struct MPID_Request * rreq);
+int mpig_adi3_cancel_recv(MPID_Request * rreq);
 /**********************************************************************************************************************************
 							END PT2PT SECTION
 **********************************************************************************************************************************/

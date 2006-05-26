@@ -12,7 +12,7 @@
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
 MPIG_STATIC void mpig_cm_xio_request_destruct_fn(MPID_Request * req);
-MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_states_t req_state);
+MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_state_t req_state);
 
 #define mpig_cm_xio_request_construct(req_)						\
 {											\
@@ -132,7 +132,7 @@ MPIG_STATIC void mpig_cm_xio_request_destruct_fn(MPID_Request * const req)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_request_state_get_string
-MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_states_t req_state)
+MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_state_t req_state)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const char * str;

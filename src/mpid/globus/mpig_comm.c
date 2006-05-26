@@ -8,18 +8,105 @@
 
 #include "mpidimpl.h"
 
+/*
+ * internal function declarations
+ */
+MPIG_STATIC void mpig_comm_list_add(MPID_Comm * const comm);
+MPIG_STATIC void mpig_comm_list_remove(MPID_Comm * const comm);
 
+
+/*
+ * internal data structures
+ */
 MPIG_STATIC MPID_Comm * mpig_comm_list = NULL;
 
 
 /*
- * void mpig_comm_list_add([IN] comm)
+ * int mpig_comm_construct([IN/MOD] comm)
  *
- * comm [IN] - communicator to add to the list of active communicators
+ * comm [IN/MOD] - communicator being created
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_comm_construct
+int mpig_comm_construct(MPID_Comm * const comm)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_comm_construct);
+
+    MPIG_UNUSED_VAR(fcname);
+    
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_construct);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
+
+    mpi_errno = mpig_topology_comm_construct(comm);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|topology_comm_construct",
+	"*globus|topology_comm_construct %C", comm);
+    
+    mpig_comm_list_add(comm);
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, comm->handle, (MPIG_PTR_CAST) comm, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_construct);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_comm_construct() */
+
+
+/*
+ * int mpig_comm_destruct([IN/MOD] comm)
+ *
+ * comm [IN/MOD] - communicator being destroyed
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_comm_destruct
+int mpig_comm_destruct(MPID_Comm * const comm)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_comm_destruct);
+
+    MPIG_UNUSED_VAR(fcname);
+    
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_destruct);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
+
+    mpig_comm_list_remove(comm);
+    
+    mpi_errno = mpig_topology_comm_destruct(comm);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|topology_comm_destruct",
+	"*globus|topology_comm_destruct %C", comm);
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, comm->handle, (MPIG_PTR_CAST) comm, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_destruct);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_comm_destruct() */
+
+
+/*
+ * void mpig_comm_list_add([IN/MOD] comm)
+ *
+ * comm [IN/MOD] - communicator to add to the list of active communicators
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_comm_list_add
-void mpig_comm_list_add(MPID_Comm * const comm)
+MPIG_STATIC void mpig_comm_list_add(MPID_Comm * const comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIG_STATE_DECL(MPID_STATE_mpig_comm_list_add);
@@ -28,7 +115,7 @@ void mpig_comm_list_add(MPID_Comm * const comm)
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_list_add);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-		       "entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm))
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
 
     comm->dev.user_ref = TRUE;
     comm->dev.active_list_prev = NULL;
@@ -40,15 +127,11 @@ void mpig_comm_list_add(MPID_Comm * const comm)
     mpig_comm_list = comm;
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM,
-		       ", mpig_comm_list=" MPIG_PTR_FMT ", comm->prev=" MPIG_PTR_FMT ", comm->prev->next=" MPIG_PTR_FMT
-		       ", comm->next=" MPIG_PTR_FMT ", comm->next->prev=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) mpig_comm_list,
-		       (MPIG_PTR_CAST) comm->dev.active_list_prev,
-		       (MPIG_PTR_CAST)((comm->dev.active_list_prev != NULL) ?
-				       comm->dev.active_list_prev->dev.active_list_next : NULL),
-		       (MPIG_PTR_CAST) comm->dev.active_list_next,
-		       (MPIG_PTR_CAST)((comm->dev.active_list_next != NULL) ?
-				       comm->dev.active_list_next->dev.active_list_prev : NULL)));
+	"mpig_comm_list=" MPIG_PTR_FMT ", comm->prev=" MPIG_PTR_FMT ", comm->prev->next=" MPIG_PTR_FMT ", comm->next="
+	MPIG_PTR_FMT ", comm->next->prev=" MPIG_PTR_FMT, (MPIG_PTR_CAST) mpig_comm_list,
+	(MPIG_PTR_CAST) comm->dev.active_list_prev,(MPIG_PTR_CAST)((comm->dev.active_list_prev != NULL) ?
+	comm->dev.active_list_prev->dev.active_list_next : NULL), (MPIG_PTR_CAST) comm->dev.active_list_next,
+	(MPIG_PTR_CAST)((comm->dev.active_list_next != NULL) ? comm->dev.active_list_next->dev.active_list_prev : NULL)));
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 		       "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm))
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_list_add);
@@ -57,13 +140,13 @@ void mpig_comm_list_add(MPID_Comm * const comm)
 /* mpig_comm_list_add() */
 
 /*
- * void mpig_comm_list_remove([IN] comm)
+ * void mpig_comm_list_remove([IN/MOD] comm)
  *
- * comm [IN] - communicator to remove from the list of active communicators
+ * comm [IN/MOD] - communicator to remove from the list of active communicators
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_comm_list_remove
-void mpig_comm_list_remove(MPID_Comm * const comm)
+MPIG_STATIC void mpig_comm_list_remove(MPID_Comm * const comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIG_STATE_DECL(MPID_STATE_mpig_comm_list_remove);
@@ -72,17 +155,13 @@ void mpig_comm_list_remove(MPID_Comm * const comm)
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_list_remove);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-		       "entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm))
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM,
-		       ", mpig_comm_list=" MPIG_PTR_FMT ", comm->prev=" MPIG_PTR_FMT ", comm->prev->next=" MPIG_PTR_FMT
-		       ", comm->next=" MPIG_PTR_FMT ", comm->next->prev=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) mpig_comm_list,
-		       (MPIG_PTR_CAST) comm->dev.active_list_prev,
-		       (MPIG_PTR_CAST)((comm->dev.active_list_prev != NULL) ?
-				       comm->dev.active_list_prev->dev.active_list_next : NULL),
-		       (MPIG_PTR_CAST) comm->dev.active_list_next,
-		       (MPIG_PTR_CAST)((comm->dev.active_list_next != NULL) ?
-				       comm->dev.active_list_next->dev.active_list_prev : NULL)));
+	"mpig_comm_list=" MPIG_PTR_FMT ", comm->prev=" MPIG_PTR_FMT ", comm->prev->next=" MPIG_PTR_FMT ", comm->next="
+	MPIG_PTR_FMT ", comm->next->prev=" MPIG_PTR_FMT, (MPIG_PTR_CAST) mpig_comm_list,
+	(MPIG_PTR_CAST) comm->dev.active_list_prev, (MPIG_PTR_CAST)((comm->dev.active_list_prev != NULL) ?
+	comm->dev.active_list_prev->dev.active_list_next : NULL), (MPIG_PTR_CAST) comm->dev.active_list_next,
+	(MPIG_PTR_CAST)((comm->dev.active_list_next != NULL) ? comm->dev.active_list_next->dev.active_list_prev : NULL)));
 
     MPIU_Assert(HANDLE_GET_KIND(comm->handle) == HANDLE_KIND_BUILTIN || comm->dev.user_ref == FALSE);
     
@@ -100,47 +179,39 @@ void mpig_comm_list_remove(MPID_Comm * const comm)
 	comm->dev.active_list_next->dev.active_list_prev = comm->dev.active_list_prev;
     }
 
+    comm->dev.user_ref = FALSE;
     comm->dev.active_list_prev = NULL;
     comm->dev.active_list_next = NULL;
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM,
-		       ", mpig_comm_list=" MPIG_PTR_FMT ", comm->prev=" MPIG_PTR_FMT ", comm->prev->next=" MPIG_PTR_FMT
-		       ", comm->next=" MPIG_PTR_FMT ", comm->next->prev=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) mpig_comm_list,
-		       (MPIG_PTR_CAST) comm->dev.active_list_prev,
-		       (MPIG_PTR_CAST)((comm->dev.active_list_prev != NULL) ?
-				       comm->dev.active_list_prev->dev.active_list_next : NULL),
-		       (MPIG_PTR_CAST) comm->dev.active_list_next,
-		       (MPIG_PTR_CAST)((comm->dev.active_list_next != NULL) ?
-				       comm->dev.active_list_next->dev.active_list_prev : NULL)));
+	"mpig_comm_list=" MPIG_PTR_FMT ", comm->prev=" MPIG_PTR_FMT ", comm->prev->next=" MPIG_PTR_FMT ", comm->next="
+	MPIG_PTR_FMT ", comm->next->prev=" MPIG_PTR_FMT, (MPIG_PTR_CAST) mpig_comm_list,
+	(MPIG_PTR_CAST) comm->dev.active_list_prev, (MPIG_PTR_CAST)((comm->dev.active_list_prev != NULL) ?
+	comm->dev.active_list_prev->dev.active_list_next : NULL), (MPIG_PTR_CAST) comm->dev.active_list_next,
+	(MPIG_PTR_CAST)((comm->dev.active_list_next != NULL) ? comm->dev.active_list_next->dev.active_list_prev : NULL)));
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-		       "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm))
+	"exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_list_remove);
     return;
 }
 /* mpig_comm_list_remove */
 
 /*
- * void mpig_comm_list_wait_empty([IN/OUT] mpi_errno, [OUT] failed)
- *
- * mpi_errno [IN/OUT] - MPI error code
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * int mpig_comm_list_wait_empty(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_comm_list_wait_empty
-void mpig_comm_list_wait_empty(int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_comm_list_wait_empty(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_comm_list_wait_empty);
 
     MPIG_UNUSED_VAR(fcname);
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_list_wait_empty);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-		       "entering: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "entering"));
 
-    *failed_p = FALSE;
-    
     /* release application references to communicators */
     {
 	MPID_Comm * comm = mpig_comm_list;
@@ -169,7 +240,6 @@ void mpig_comm_list_wait_empty(int * const mpi_errno_p, bool_t * const failed_p)
 	const MPID_Comm * comm = mpig_comm_list;
 	const int required_count = (HANDLE_GET_KIND(mpig_comm_list->handle) == HANDLE_KIND_BUILTIN) ? 1 : 0;
 	MPID_Progress_state pe_state;
-	int mpi_errno;
 	
 	MPID_Progress_start(&pe_state);
 	while(mpig_comm_list == comm && comm->ref_count > required_count)
@@ -179,51 +249,46 @@ void mpig_comm_list_wait_empty(int * const mpi_errno_p, bool_t * const failed_p)
 			       comm->handle, (MPIG_PTR_CAST) comm));
 	    mpi_errno = MPID_Progress_wait(&pe_state);
 	    if (mpi_errno)
-	    {
-		/* --BEGIN ERROR HANDLING-- */
-		*mpi_errno_p = mpi_errno;
+	    {   /* --BEGIN ERROR HANDLING-- */
 		MPID_Progress_end(&pe_state);
 		goto fn_fail;
-		/* --END ERROR HANDLING-- */
-	    }
+	    }   /* --END ERROR HANDLING-- */
 	}
 	MPID_Progress_end(&pe_state);
 
+	/* MPIR_Comm_release() is never called for builtin communicators, and thus mpig_comm_destruct() is never called, so we
+	   call the destruct routine here to release any device related resources still held by the communicator. */
 	if (HANDLE_GET_KIND(mpig_comm_list->handle) == HANDLE_KIND_BUILTIN)
 	{
-	    mpig_comm_list_remove(mpig_comm_list);
+	    mpig_comm_destruct(mpig_comm_list);
 	}
     }
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-		       "exiting: mpi_errno=0x%08x, failed=%s",
-		       *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_list_wait_empty);
-    return;
+    return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
-	*failed_p = TRUE;
+    {   /* --BEGIN ERROR HANDLING-- */
 	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_comm_list_wait_empty() */
 
 
 /*
- * void mpig_dev_comm_free_hook[IN] comm, [OUT] mpi_errno)
+ * int mpig_dev_comm_free_hook[IN/MOD] comm)
  *
- * comm [IN] - communicator being freed
+ * comm [IN/MOD] - communicator being freed
  * mpi_errno [OUT] - MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_dev_comm_free_hook
-void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p)
+int mpig_dev_comm_free_hook(MPID_Comm * comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_dev_comm_free_hook);
 
     MPIG_UNUSED_VAR(fcname);
@@ -232,7 +297,6 @@ void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
 
-    *mpi_errno_p = MPI_SUCCESS;
     
     /* clear the user reference flag to indicate that the user no longer holds a reference to this communicator */
     comm->dev.user_ref = FALSE;
@@ -245,8 +309,9 @@ void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p)
     }
 #   endif
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_dev_comm_free_hook);
+    return mpi_errno;
 }
 /* mpig_dev_comm_free_hook() */
 
@@ -254,17 +319,18 @@ void mpig_dev_comm_free_hook(MPID_Comm * comm, int * mpi_errno_p)
 #if defined(MPIG_VMPI)
 
 /*
- * void mpig_dev_comm_dup_hook[IN] orig_comm, [IN] new_comm, [OUT] mpi_errno)
+ * int mpig_dev_comm_dup_hook[IN] orig_comm, [IN/MOD] new_comm)
  *
  * orig_comm [IN] - communicator being duplicated
- * new_comm [IN] - communicator resulting from the duplication
+ * new_comm [IN/MOD] - communicator resulting from the duplication
  * mpi_errno [OUT] - MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_dev_comm_dup_hook
-void mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm, int * mpi_errno_p)
+int  mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_dev_comm_dup_hook);
 
     MPIG_UNUSED_VAR(fcname);
@@ -274,14 +340,13 @@ void mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm, int * m
 	"entering: orig_comm=" MPIG_HANDLE_FMT ", orig_commp=" MPIG_PTR_FMT ", new_comm=" MPIG_HANDLE_FMT
 	", new_commp=" MPIG_PTR_FMT, orig_comm->handle, (MPIG_PTR_CAST) orig_comm, new_comm->handle, (MPIG_PTR_CAST) new_comm));
 
-    *mpi_errno_p = MPI_SUCCESS;
-    
     /* call the VMPI CM's hook, allowing it to duplication the associated vendor communicators */
     mpig_cm_vmpi_dev_comm_dup_hook(orig_comm, new_comm, mpi_errno_p);
     /* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_dev_comm_dup_hook);
+    return mpi_errno;
 }
 /* mpig_dev_comm_dup_hook() */
 

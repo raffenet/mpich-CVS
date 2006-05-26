@@ -25,7 +25,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT * vcrt_ptr)
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCRT_CREATE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: size=%d, vcrt_ptr="
-		       MPIG_PTR_FMT, size, (MPIG_PTR_CAST) vcrt_ptr));
+	MPIG_PTR_FMT, size, (MPIG_PTR_CAST) vcrt_ptr));
     
     vcrt = MPIU_Malloc(sizeof(mpig_vcrt_t) + (size - 1) * sizeof(mpig_vc_t *));
     MPIU_ERR_CHKANDJUMP1((vcrt == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "virtual connection reference table");
@@ -42,7 +42,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT * vcrt_ptr)
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "exiting: vcrt_ptr=" MPIG_PTR_FMT
-		       ", vcrt=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vcrt_ptr, (MPIG_PTR_CAST) vcrt, mpi_errno));
+	", vcrt=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vcrt_ptr, (MPIG_PTR_CAST) vcrt, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
     return mpi_errno;
 
@@ -71,7 +71,7 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCRT_ADD_REF);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: vcrt=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) vcrt));
+	(MPIG_PTR_CAST) vcrt));
     
     mpig_vcrt_mutex_lock(vcrt);
     {
@@ -81,7 +81,7 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "exiting: vcrt=" MPIG_PTR_FMT
-		       ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vcrt, mpi_errno));
+	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vcrt, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCRT_ADD_REF);
     return mpi_errno;
 }
@@ -106,7 +106,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: vcrt=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) vcrt));
+	(MPIG_PTR_CAST) vcrt));
 
     mpig_vcrt_mutex_lock(vcrt);
     {
@@ -129,11 +129,11 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     }
 
     MPIU_ERR_CHKANDJUMP1((errors > 0), mpi_errno, MPI_ERR_OTHER, "**globus|vc_release_ref",
-			 "**globus|vc_release_ref_n %d", errors);
+	"**globus|vc_release_ref_n %d", errors);
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "exiting: vcrt=" MPIG_PTR_FMT
-		       "mpi_errno=0x%08x", (MPIG_PTR_CAST) vcrt, mpi_errno));
+	"mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vcrt, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
 
@@ -162,7 +162,7 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vcr_array_p)
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCRT_GET_PTR);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: vcrt=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) vcrt));
+	(MPIG_PTR_CAST) vcrt));
     
     mpig_vcrt_rc_acq(vcrt, TRUE);
     {
@@ -172,8 +172,8 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vcr_array_p)
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "exiting: vcrt=" MPIG_PTR_FMT
-		       ", vcr_array=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) vcrt, (MPIG_PTR_CAST) *vcr_array_p,
-		       mpi_errno));
+	", vcr_array=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vcrt, (MPIG_PTR_CAST) *vcr_array_p,
+	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCRT_GET_PTR);
     return mpi_errno;
 }
@@ -197,7 +197,7 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr_p)
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCR_DUP);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: orig_vcr=" MPIG_PTR_FMT
-		       ", new_vcr_p=" MPIG_PTR_FMT, (MPIG_PTR_CAST) orig_vcr, (MPIG_PTR_CAST) new_vcr_p));
+	", new_vcr_p=" MPIG_PTR_FMT, (MPIG_PTR_CAST) orig_vcr, (MPIG_PTR_CAST) new_vcr_p));
 
     mpig_vc_mutex_lock(orig_vcr);
     {
@@ -210,8 +210,8 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr_p)
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "exiting: orig_vcr=" MPIG_PTR_FMT
-		       ", new_vcr_p=" MPIG_PTR_FMT ", mpi_errno=0x%08x", (MPIG_PTR_CAST) orig_vcr, (MPIG_PTR_CAST) new_vcr_p,
-		       mpi_errno));
+	", new_vcr_p=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) orig_vcr, (MPIG_PTR_CAST) new_vcr_p,
+	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCR_DUP);
     return mpi_errno;
 }
@@ -233,7 +233,7 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_p)
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCR_GET_LPID);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: vcr=" MPIG_PTR_FMT
-		       ", lpid_p=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vcr, (MPIG_PTR_CAST) lpid_p));
+	", lpid_p=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vcr, (MPIG_PTR_CAST) lpid_p));
     
     mpig_vc_rc_acq(vcr, TRUE);
     {
@@ -243,8 +243,8 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_p)
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "entering: vcr=" MPIG_PTR_FMT
-		       ", lpid_p=" MPIG_PTR_FMT ", lpid=%d, mpi_errno=0x%08x", (MPIG_PTR_CAST) vcr, (MPIG_PTR_CAST) lpid_p,
-		       *lpid_p, mpi_errno));
+	", lpid_p=" MPIG_PTR_FMT ", lpid=%d, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vcr, (MPIG_PTR_CAST) lpid_p,
+	*lpid_p, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCR_GET_LPID);
     return mpi_errno;
 }
@@ -274,7 +274,7 @@ void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t *
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_vc_release_ref);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC, "entering: vc=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) vc));
+	(MPIG_PTR_CAST) vc));
     
     mpig_vc_mutex_lock(vc);
     {
@@ -294,7 +294,7 @@ void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t *
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC, "exiting: vc=" MPIG_PTR_FMT
-		       ", mpi_errno=0x%08x, failed=%s", (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_vc_release_ref);
     return;
     
@@ -308,7 +308,7 @@ void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t *
 
 
 /*
- * void mpig_vc_null_func(none)
+ * void mpig_vc_vtable_last_entry(none)
  *
  * this routine serves as the last function in the VC function table.  its purpose is to help detect when a communication
  * module's VC table has not be updated when a function be added or removed from the table.  it is not fool proof as it requires
@@ -316,17 +316,22 @@ void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t *
  * no values.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_vc_null_func
-void mpig_vc_null_func(void)
+#define FUNCNAME mpig_vc_vtable_last_entry
+double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPIG_STATE_DECL(MPID_STATE_mpig_vc_null_func);
+    MPIG_STATE_DECL(MPID_STATE_mpig_vc_vtable_last_entry);
 
+    MPIG_UNUSED_ARG(foo);
+    MPIG_UNUSED_ARG(bar);
+    MPIG_UNUSED_ARG(baz);
+    MPIG_UNUSED_ARG(bif);
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_vc_null_func);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_vc_vtable_last_entry);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "FATAL ERROR: mpig_vc_null_func called.  aborting program"));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_vc_null_func);
-    MPID_Abort(NULL, MPI_SUCCESS, 13, "FATAL ERROR: mpig_vc_null_func called.  Aborting Program.");
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "FATAL ERROR: mpig_vc_vtable_last_entry called.  aborting program"));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_vc_vtable_last_entry);
+    MPID_Abort(NULL, MPI_SUCCESS, 13, "FATAL ERROR: mpig_vc_vtable_last_entry called.  Aborting Program.");
+    return 0.0;
 }

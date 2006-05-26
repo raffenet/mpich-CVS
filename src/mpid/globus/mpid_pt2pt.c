@@ -25,12 +25,12 @@ int mpig_adi3_cancel_recv(MPID_Request * rreq)
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_adi3_cancel_recv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rreq=" MPIG_HANDLE_FMT
-		       ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
+	", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
 
     if (mpig_recvq_deq_posted_rreq(rreq))
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "receive request found; cancel succeeded: rreq=" MPIG_HANDLE_FMT
-			   ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
+	    ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
 
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
@@ -39,12 +39,12 @@ int mpig_adi3_cancel_recv(MPID_Request * rreq)
     else
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "receive request note found; cancel failed: rreq=" MPIG_HANDLE_FMT
-			   ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
+	    ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
     }
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT
-		       ", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
+	", rreqp=" MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_adi3_cancel_recv);
     return mpi_errno;
 }
@@ -68,7 +68,7 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * s
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_PROBE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: source=%d, tag=%d, ctx=%d", source, tag, ctx));
+	"entering: source=%d, tag=%d, ctx=%d", source, tag, ctx));
 
     if (source == MPI_PROC_NULL)
     {
@@ -121,8 +121,7 @@ int MPID_Probe(int source, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * s
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: source=%d, tag=%d, ctx=%d, mpi_errno=0x%08x",
-		       source, tag, ctx, mpi_errno));
+	"exiting: source=%d, tag=%d, ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, source, tag, ctx, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_PROBE);
     return mpi_errno;
 
@@ -148,7 +147,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int ctxoff, int * flag, M
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_IPROBE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: source=%d, tag=%d, ctx=%d", source, tag, ctx));
+	"entering: source=%d, tag=%d, ctx=%d", source, tag, ctx));
     
     if (source == MPI_PROC_NULL)
     {
@@ -173,7 +172,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm * comm, int ctxoff, int * flag, M
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: source=%d, tag=%d, "
-		       "ctx=%d, flag=%s, mpi_errno=0x%08x", source, tag, ctx, MPIG_BOOL_STR(*flag), mpi_errno));
+	"ctx=%d, flag=%s, mpi_errno=" MPIG_ERRNO_FMT, source, tag, ctx, MPIG_BOOL_STR(*flag), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_IPROBE);
     return mpi_errno;
     
@@ -263,7 +262,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    {
 		/* --BEGIN ERROR HANDLING-- */
 		rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, fcname, __LINE__, MPI_ERR_INTERN, "**globus|badreqtype",
-					  "**globus|badreqtype %d", mpig_request_get_type(preq));
+		    "**globus|badreqtype %d", mpig_request_get_type(preq));
 		/* --END ERROR HANDLING-- */
 	    }
 	}
@@ -288,7 +287,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
     }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "exiting: mpi_errno=0x%08x", mpi_errno));
+	"exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_STARTALL);
     return mpi_errno;
 }
@@ -311,17 +310,17 @@ int MPID_Recv_init(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_RECV_INIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-		       ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-		       (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt,
+	rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_request_create_prreq(1, 0, buf, cnt, dt, rank, tag, ctx, comm, rreqp);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Recv request allocated, handle=0x%08x, ptr=%p",
-		       (*rreqp)->handle, *rreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Recv request allocated, handle=" MPIG_HANDLE_FMT ", ptr=%p",
+	(*rreqp)->handle, *rreqp));
     
   fn_return:    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT
-		       ", rreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
+	", rreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp,	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_RECV_INIT);
     return mpi_errno;
 
@@ -339,7 +338,7 @@ int MPID_Recv_init(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID
 #undef FUNCNAME
 #define FUNCNAME MPID_Send_init
 int MPID_Send_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff,
-		   MPID_Request ** sreqp)
+    MPID_Request ** sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
@@ -350,17 +349,17 @@ int MPID_Send_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_SEND_INIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
+	", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_request_create_psreq(MPIG_REQUEST_TYPE_SEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Send request allocated, handle=0x%08x, ptr=%p",
-		       (*sreqp)->handle, *sreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Send request allocated, handle=" MPIG_HANDLE_FMT ", ptr=%p",
+	(*sreqp)->handle, *sreqp));
     
   fn_return:    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
-		       ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_SEND_INIT);
     return mpi_errno;
 
@@ -378,7 +377,7 @@ int MPID_Send_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag
 #undef FUNCNAME
 #define FUNCNAME MPID_Rsend_init
 int MPID_Rsend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff,
-		    MPID_Request ** sreqp)
+    MPID_Request ** sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
@@ -389,17 +388,17 @@ int MPID_Rsend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int ta
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_RSEND_INIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
+	", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_request_create_psreq(MPIG_REQUEST_TYPE_RSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Rsend request allocated, handle=0x%08x, ptr=%p",
-		       (*sreqp)->handle, *sreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Rsend request allocated, handle=" MPIG_HANDLE_FMT ", ptr=%p",
+	(*sreqp)->handle, *sreqp));
     
   fn_return:    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
-		       ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_RSEND_INIT);
     return mpi_errno;
 
@@ -417,7 +416,7 @@ int MPID_Rsend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int ta
 #undef FUNCNAME
 #define FUNCNAME MPID_Ssend_init
 int MPID_Ssend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff,
-		    MPID_Request ** sreqp)
+    MPID_Request ** sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
@@ -428,17 +427,17 @@ int MPID_Ssend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int ta
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_SSEND_INIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
-		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
+	", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_request_create_psreq(MPIG_REQUEST_TYPE_SSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Ssend request allocated, handle=0x%08x, ptr=%p",
-		       (*sreqp)->handle, *sreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Ssend request allocated, handle="MPIG_HANDLE_FMT ", ptr=%p",
+	(*sreqp)->handle, *sreqp));
     
   fn_return:    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
-		       ", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_SSEND_INIT);
     return mpi_errno;
 
@@ -456,7 +455,7 @@ int MPID_Ssend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int ta
 #undef FUNCNAME
 #define FUNCNAME MPID_Bsend_init
 int MPID_Bsend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff,
-		    MPID_Request ** sreqp)
+    MPID_Request ** sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
@@ -475,12 +474,12 @@ int MPID_Bsend_init(const void * buf, int cnt, MPI_Datatype dt, int rank, int ta
     
     mpig_request_create_psreq(MPIG_REQUEST_TYPE_BSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Bsend request allocated, handle=0x%08x, ptr=%p",
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "persistent Bsend request allocated, handle="MPIG_HANDLE_FMT ", ptr=%p",
 	(*sreqp)->handle, *sreqp));
     
   fn_return:    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
-	", sreqp=" MPIG_PTR_FMT ", mpi_errno=0x%08x", MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
+	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), (MPIG_PTR_CAST) *sreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_BSEND_INIT);
     return mpi_errno;
 

@@ -8,10 +8,26 @@
 
 #if !defined(MPICH2_MPIG_CM_VMPI_H_INCLUDED)
 #define MPICH2_MPIG_CM_VMPI_H_INCLUDED 1
+
+/*
+ * expose the communication module's vtable so that it is accessible to other modules in the device
+ */
+extern const mpig_cm_vtable_t mpig_cm_vmpi_vtable;
+
+
+/*
+ * define the contact information to be included in a VC
+ */
+#define MPIG_VC_CI_VMPI_DECL	\
+struct				\
+{				\
+    char * subjob_id;		\
+    int cw_rank;		\
+} vmpi;
+
+
 #if defined(MPIG_VMPI)
-
 #include "mpig_vmpi.h"
-
 
 /* change any occurences of MPID and MPID_ to MPIG and MPIG_ respectively.  this symbols are found in macros that construct
    symbol names.  One example of such macros are those that convert object handles to object pointers in
@@ -24,13 +40,6 @@
 #define MPIR_NEST_INCR_FCNAME		MPIR_Nest_incr_MPIG
 #define MPIR_NEST_DECR_FCNAME		MPIR_Nest_decr_MPIG
 #define MPIR_NEST_VALUE_FCNAME		MPIR_Nest_value_MPIG
-
-
-/*
- * add communication module types to be included in the enumeration of modules
- */
-#define MPIG_CM_TYPE_VMPI_LIST \
-    MPIG_CM_TYPE_VMPI
 
 
 /*
@@ -74,17 +83,6 @@
 	int cw_rank;			\
 	int cw_size;			\
     } vmpi;
-
-
-/*
- * define the communication module structure to be included in a VC
- */
-#define MPIG_VC_CM_VMPI_DECL	\
-    struct			\
-    {				\
-	int cw_rank;		\
-    } vmpi;
-
 
 
 /*
@@ -138,14 +136,6 @@
 /*
  * global function prototypes
  */
-int mpig_cm_vmpi_init(int * argc, char *** argv);
-
-int mpig_cm_vmpi_finalize(void);
-
-int mpig_cm_vmpi_add_contact_info(struct mpig_bc * bc);
-
-int mpig_cm_vmpi_select_module(struct mpig_bc * bc, struct mpig_vc * vc, int * flag);
-
 #if defined(MPIG_VMPI)
 
 void mpig_cm_vmpi_pe_start(struct MPID_Progress_state * state);
