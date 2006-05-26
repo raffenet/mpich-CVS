@@ -1264,7 +1264,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
                 new_ptr->pt_single_op->datatype = lock_get_unlock_pkt->datatype;
                 new_ptr->pt_single_op->data = NULL;
                 new_ptr->pt_single_op->request_handle = lock_get_unlock_pkt->request_handle;
-                new_ptr->pt_single_op->data_recd = 0;
+                new_ptr->pt_single_op->data_recd = 1;
             }
 
             *rreqp = NULL;
