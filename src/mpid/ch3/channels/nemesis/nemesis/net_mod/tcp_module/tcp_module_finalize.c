@@ -48,7 +48,7 @@ MPID_nem_tcp_module_finalize ()
 #endif 
       while (MPID_nem_tcp_internal_vars.nb_slaves > 0)
 	{
-	  MPID_nem_tcp_module_poll_recv_end();
+	  MPID_nem_tcp_module_poll_recv();
 	}
 
 #ifdef TRACE 
