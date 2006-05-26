@@ -915,6 +915,8 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 	    break;
 	case (int)'p':
 	    p = va_arg(list, void *);
+	    /* FIXME: A check for MPI_IN_PLACE should only be used 
+	       where that is valid */
 	    if (p == MPI_IN_PLACE)
 	    {
 		MPIU_Strncpy(str, "MPI_IN_PLACE", maxlen);
