@@ -100,6 +100,9 @@ int PMI_Init( int *spawned )
     int notset = 1;
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
+    /* FIXME: Why is setvbuf commented out? */
+    /* FIXME: What if the output should be fully buffered (directed to file)?
+       unbuffered (user explicitly set?) */
     /* setvbuf(stdout,0,_IONBF,0); */
     setbuf(stdout,NULL);
     /* PMIU_printf( 1, "PMI_INIT\n" ); */
