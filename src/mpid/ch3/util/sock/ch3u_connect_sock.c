@@ -155,7 +155,7 @@ int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t ** connp)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Connect_to_root_sock(const char * port_name, 
-					 MPIDI_VC_t ** new_vc)
+				    MPIDI_VC_t ** new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t * vc;
@@ -283,6 +283,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 				     int *hasIfaddr )
 {
     int mpi_errno = MPI_SUCCESS;
+    int str_errno;
 #if !defined(HAVE_WINDOWS_H) && defined(HAVE_INET_PTON)
     char ifname[256];
 #endif
@@ -290,14 +291,30 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_GET_CONNINFO_FROM_BC);
 
-    mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_HOST_DESCRIPTION_KEY, 
+    str_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_HOST_DESCRIPTION_KEY, 
 				 host_description, maxlen);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
+    if (str_errno != MPIU_STR_SUCCESS) {
+	/* --BEGIN ERROR HANDLING */
+	if (str_errno == MPIU_STR_FAIL) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**argstr_missinghost");
+	}
+	else {
+	    /* MPIU_STR_TRUNCATED or MPIU_STR_NONEM */
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
+	}
+	/* --END ERROR HANDLING-- */
     }
-    mpi_errno = MPIU_Str_get_int_arg(bc, MPIDI_CH3I_PORT_KEY, port);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port");
+    str_errno = MPIU_Str_get_int_arg(bc, MPIDI_CH3I_PORT_KEY, port);
+    if (str_errno != MPIU_STR_SUCCESS) {
+	/* --BEGIN ERROR HANDLING */
+	if (str_errno == MPIU_STR_FAIL) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_missingport");
+	}
+	else {
+	    /* MPIU_STR_TRUNCATED or MPIU_STR_NONEM */
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port");
+	}
+	/* --END ERROR HANDLING-- */
     }
     /* ifname is optional */
     /* FIXME: This is a hack to allow Windows to continue to use
@@ -310,9 +327,9 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
        channels/ssm/ch3_progress_connect.c */
     *hasIfaddr = 0;
 #if !defined(HAVE_WINDOWS_H) && defined(HAVE_INET_PTON)
-    mpi_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_IFNAME_KEY, 
+    str_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_IFNAME_KEY, 
 					ifname, sizeof(ifname) );
-    if (mpi_errno == MPIU_STR_SUCCESS) {
+    if (str_errno == MPIU_STR_SUCCESS) {
 	/* Convert ifname into 4-byte ip address */
 	/* Use AF_INET6 for IPv6 (inet_pton may still be used).
 	   An address with more than 3 :'s is an IPv6 address */
