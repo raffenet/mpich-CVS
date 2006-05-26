@@ -316,9 +316,9 @@ MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * m
        not responsible for the VC; however, the tpology information is defined such that a level set if it is _possible_ for
        the module to perform the communication regardless of whether it does so or not. */
     vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_PROC
-	if (vc->ci.topology_num_levels < MPIG_TOPOLOGY_LEVEL_PROC)
+	if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_PROC)
 	{
-	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC;
+	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC + 1;
 	}
 #endif
     

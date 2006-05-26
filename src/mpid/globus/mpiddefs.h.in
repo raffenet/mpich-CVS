@@ -8,10 +8,10 @@
 #define MPICH2_MPIDDEFS_H_INCLUDED
 
 /* attribute keys for accessing topology information */
-#define MPIG_TOPOLOGY_DEPTHS ((const int) mpig_topology_depths_attr_key)
-#define MPIG_TOPOLOGY_COLORS ((const int) mpig_topology_depths_attr_key)
-extern int mpig_topology_depths_attr_key;
-extern int mpig_topology_colors_attr_key;
+#define MPIG_TOPOLOGY_DEPTHS_KEYVAL ((const int) mpig_topology_depths_keyval)
+#define MPIG_TOPOLOGY_COLORS_KEYVAL ((const int) mpig_topology_colors_keyval)
+extern int mpig_topology_depths_keyval;
+extern int mpig_topology_colors_keyval;
 
 /* topology levels (the order is relevant!) */
 #define MPIG_TOPOLOGY_LEVEL_WAN  0  /* communication across a WAN */
@@ -24,8 +24,8 @@ extern int mpig_topology_colors_attr_key;
 #define MPIG_TOPOLOGY_NUM_LEVELS 4  /* number of topology levels */
 
 /* deprecated topology symbols */
-#define MPICHX_TOPOLOGY_DEPTHS MPIG_TOPOLOGY_DEPTHS
-#define MPICHX_TOPOLOGY_COLORS MPIG_TOPOLOGY_COLORS
+#define MPICHX_TOPOLOGY_DEPTHS MPIG_TOPOLOGY_DEPTHS_KEYVAL
+#define MPICHX_TOPOLOGY_COLORS MPIG_TOPOLOGY_COLORS_KEYVAL
 #define MPICHX_WAN_LEVEL  MPIG_TOPOLOGY_LEVEL_WAN
 #define MPICHX_LAN_LEVEL  MPIG_TOPOLOGY_LEVEL_LAN
 #define MPICHX_HOST_LEVEL MPIG_TOPOLOGY_LEVEL_SAN

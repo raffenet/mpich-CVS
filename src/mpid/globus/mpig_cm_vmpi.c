@@ -667,9 +667,9 @@ MPIG_STATIC void mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc, int * c
 	   not responsible for the VC; however, the tpology information is defined such that a level set if it is _possible_ for
 	   the module to perform the communication regardless of whether it does so or not. */
 	vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_VMPI;
-	if (vc->ci.topology_num_levels < MPIG_TOPOLOGY_LEVEL_VMPI)
+	if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_VMPI)
 	{
-	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI;
+	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI + 1;
 	}
 
       fn_return:

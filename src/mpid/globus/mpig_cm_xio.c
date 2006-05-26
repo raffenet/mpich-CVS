@@ -329,9 +329,9 @@ MPIG_STATIC void mpig_cm_xio_extract_contact_info(mpig_vc_t * const vc, int * co
        module is not responsible for the VC; however, the tpology information is defined such that a level set if it is
        _possible_ for the module to perform the communication regardless of whether it does so or not. */
     vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_WAN | MPIG_TOPOLOGY_LEVEL_LAN | MPIG_TOPOLOGY_LEVEL_SAN;
-    if (vc->ci.topology_num_levels < MPIG_TOPOLOGY_LEVEL_SAN)
+    if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_SAN)
     {
-	vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_SAN;
+	vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_SAN + 1;
     }
 	
     /*  fn_return: */
