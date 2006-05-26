@@ -498,7 +498,9 @@ static int checkErrcodeIsValid( int errcode )
     if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING ||
 	ring_idx > max_error_ring_loc) return 1;
     if (ErrorRing[ring_idx].id != ring_id) return 2;
-    if (generic_idx < 0 || generic_idx > generic_msgs_len) return 3;
+    /* It looks like the code uses a generic idx of -1 to indicate no
+       generic message */
+    if (generic_idx < -1 || generic_idx > generic_msgs_len) return 3;
     return 0;
 }
 static const char *ErrcodeInvalidReasonStr( int reason )
