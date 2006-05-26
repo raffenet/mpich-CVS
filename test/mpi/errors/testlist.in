@@ -4,6 +4,7 @@ group
 errhan
 pt2pt
 spawn
+io
 @f77dir@
 @cxxdir@
 @f90dir@
