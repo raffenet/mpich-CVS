@@ -30,6 +30,11 @@ AC_CHECK_HEADERS( pthread.h sched.h )
 
 if test "$HAVE_SPARC_INLINE_PROCESS_LOCKS" = "yes" ; then
     AC_DEFINE(HAVE_SPARC_INLINE_PROCESS_LOCKS, 1, [Use inline spin locks on SPARC architectures])
+    # The current code design adds a .il file to CFLAGS, which (a) doesn't 
+    # always reach all of the necessary files (I saw failures in ch3_progress.c
+    # where the inline file was not in the Makefile) and (a) adds the inline
+    # where it should not be, such as in mpicc.
+    AC_MSG_ERROR([Use of inline process locks is not supported.  Please volunteer to fix this code])
 fi
 
 AC_SUBST(AR)

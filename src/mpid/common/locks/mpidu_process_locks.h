@@ -134,6 +134,7 @@ static inline void MPIDU_Sleep_yield()
 
 #if defined(HAVE_SPARC_INLINE_PROCESS_LOCKS)
 typedef int MPIDU_Process_lock_t;
+#error 'process locks are not supported for Solaris.  Developers should see req 2033'
 
 #else
 
