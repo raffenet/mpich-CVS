@@ -211,7 +211,7 @@ void MPIR_Sendq_forget( MPID_Request *req )
     p    = MPIR_Sendq_head;
     prev = 0;
 
-    /* FIXME: Thread-safe */
+    /* FIXME: Make this thread-safe */
     while (p) {
 	if (p->sreq == req) {
 	    if (prev) prev->next = p->next;
@@ -239,7 +239,13 @@ MPIR_Comm_list MPIR_All_communicators = { 0, 0 };
 
 void MPIR_CommL_remember( MPID_Comm *comm_ptr )
 {   
+    MPIU_DBG_MSG_P(COMM,VERBOSE,
+		   "Adding communicator %p to remember list",comm_ptr);
     /* FIXME: (MT) Ensure thread-safe */
+    if (comm_ptr == MPIR_All_communicators.head) {
+	MPIU_Internal_error_printf( "Internal error: communicator is already on free list\n" );
+	return;
+    }
     comm_ptr->comm_next = MPIR_All_communicators.head;
     MPIR_All_communicators.head = comm_ptr;
     MPIR_All_communicators.sequence_number++;
@@ -248,13 +254,20 @@ void MPIR_CommL_remember( MPID_Comm *comm_ptr )
 void MPIR_CommL_forget( MPID_Comm *comm_ptr )
 {
     MPID_Comm *p, *prev;
+
+    MPIU_DBG_MSG_P(COMM,VERBOSE,
+		   "Forgetting communicator %p from remember list",comm_ptr);
     /* FIXME: (MT) Ensure thread-safe */
     p = MPIR_All_communicators.head;
     prev = 0;
     while (p) {
 	if (p == comm_ptr) {
 	    if (prev) prev->comm_next = p->comm_next;
-	    else MPIR_All_communicators.head = p;
+	    else MPIR_All_communicators.head = p->comm_next;
+	    break;
+	}
+	if (p == p->comm_next) {
+	    MPIU_Internal_error_printf( "Mangled pointers to communicators - next is itself for %x\n", p );
 	    break;
 	}
 	prev = p;
