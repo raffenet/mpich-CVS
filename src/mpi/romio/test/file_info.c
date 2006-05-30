@@ -8,7 +8,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-static int verbose = 0;
+/* Set verbose to 0 only if you want no information about any failure */
+static int verbose = 1;
 
 int main(int argc, char **argv)
 {

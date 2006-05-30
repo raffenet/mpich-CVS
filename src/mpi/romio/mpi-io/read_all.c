@@ -107,7 +107,7 @@ int MPIOI_File_read_all(MPI_File mpi_fh,
 			 offset, status, &error_code);
 fn_exit:
     MPIR_Nest_decr();
-    MPID_CS_EXIT()
+    MPIU_THREAD_SINGLE_CS_EXIT("io");
 
     return error_code;
 }

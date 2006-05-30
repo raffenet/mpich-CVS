@@ -17,16 +17,25 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
     if ((fd->info) == MPI_INFO_NULL) {
 	/* part of the open call */
 	MPI_Info_create(&(fd->info));
+
 	MPI_Info_set(fd->info, "romio_pvfs2_debugmask", "0");
 	fd->hints->fs_hints.pvfs2.debugmask = 0;
+
 	MPI_Info_set(fd->info, "romio_pvfs2_posix_read", "disable");
         MPI_Info_set(fd->info, "romio_pvfs2_posix_write", "disable");
         fd->hints->fs_hints.pvfs2.posix_read = ADIOI_HINT_DISABLE;
         fd->hints->fs_hints.pvfs2.posix_write = ADIOI_HINT_DISABLE;
+
         MPI_Info_set(fd->info, "romio_pvfs2_dtype_read", "disable");
         MPI_Info_set(fd->info, "romio_pvfs2_dtype_write", "disable");
         fd->hints->fs_hints.pvfs2.dtype_read = ADIOI_HINT_DISABLE;
         fd->hints->fs_hints.pvfs2.dtype_write = ADIOI_HINT_DISABLE;
+
+	MPI_Info_set(fd->info, "striping_factor", "0");
+	fd->hints->striping_factor = 0;
+
+	MPI_Info_set(fd->info, "striping_unit", "0");
+	fd->hints->striping_unit = 0;
 	
 	/* any user-provided hints? */
 	if (users_info != MPI_INFO_NULL) {
@@ -194,7 +203,6 @@ void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code)
 	    if (flag) {
 		/* TODO: handle this hint */
 	    }
-
             ADIOI_Free(value);
 	}
     }
