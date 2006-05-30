@@ -80,7 +80,10 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
     /* The user error handler may make calls to MPI routines, so the nesting
      * counter must be incremented before the handler is called */
     MPIR_Nest_incr();
-    
+
+    /* Note that, unlike the rest of MPICH2, MPI_File objects are pointers,
+       not integers.  */
+
     switch (e->language) {
     case MPID_LANG_C:
 	(*e->errfn.C_File_Handler_function)( &fh, &errorcode );
@@ -88,8 +91,8 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 #ifdef HAVE_CXX_BINDING
     case MPID_LANG_CXX:
 	/* See HAVE_LANGUAGE_FORTRAN below for an explanation */
-	{ int fh1 = (int)fh;
-	(*MPIR_Process.cxx_call_errfn)( 1, &fh1, &errorcode, 
+    { void *fh1 = (void *)&fh;
+	(*MPIR_Process.cxx_call_errfn)( 1, fh1, &errorcode, 
 			(void (*)(void))*e->errfn.C_File_Handler_function );
 	}
 	break;
@@ -101,8 +104,8 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 	   from generating a warning about a type-punned pointer.  Since
 	   the value is really const (but MPI didn't define error handlers 
 	   with const), this preserves the intent */
-	{ MPI_Fint fh1 = (MPI_Fint)fh;
-	(*e->errfn.F77_Handler_function)( &fh1, &errorcode );
+	{ void *fh1 = (void *)&fh;
+	(*e->errfn.F77_Handler_function)( fh1, &errorcode );
 	}
 	break;
 #endif
@@ -116,7 +119,9 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 #endif
     /* ... end of body of routine ... */
 
+#if 0
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_CALL_ERRHANDLER);
     return mpi_errno;
 
