@@ -250,6 +250,14 @@ install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich2.@SHLIB_EXT@ \
 			${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
+
+# 
+# The install-examples target may be used if you want to install the cpi
+# program for others to use.  This is nto part of the default installation
+# because there isn't a good place to put this in the GNU recommended 
+# installation targets (its a kind of hardware-architecture-specific
+# documentation)
+install-examples:
 	if [ ! -d ${DESTDIR}${exec_prefix}/examples ] ; then \
 	    $(MKDIR_P) ${DESTDIR}${exec_prefix}/examples ; \
 	fi

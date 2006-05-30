@@ -30,6 +30,11 @@
 %                        (reftex-mode 1)
 %                        (setq TeX-command "latex")))
 
+%
+% When updating the version number of MPICH2, make sure that you change *all*
+% instances of the version.  Search for mpich2- and check each match.  Some
+% are within a verbatim statement and will need to be changed for each update.
+%
 
 \begin{document}
 \markright{MPICH2 Installer's Guide}
@@ -173,7 +178,7 @@ If your tar doesn't accept the z option, use
 \end{verbatim}
 Let us assume that the directory where you do this is
 \texttt{/home/you/libraries}.  It will now contain a subdirectory named
-\texttt{mpich2-1.0}.
+\texttt{mpich2-1.0.3}.
 
 \item
 Choose an installation directory (the default is \texttt{/usr/local/bin)}:
@@ -193,15 +198,15 @@ that this also be separate from the source directory, so that the
 source directories remain
 clean and can be reused to build other copies on other machines.
 \begin{verbatim}
-    mkdir /tmp/you/mpich2-1.0
+    mkdir /tmp/you/mpich2-1.0.3
 \end{verbatim}
 
 \item
 Configure MPICH2, specifying the installation directory, and running
 the \texttt{configure} script in the source directory:
 \begin{verbatim}
-    cd  /tmp/you/mpich2-1.0
-    /home/you/libraries/mpich2-1.0/configure \
+    cd  /tmp/you/mpich2-1.0.3
+    /home/you/libraries/mpich2-1.0.3/configure \
             -prefix=/home/you/mpich2-install |& tee configure.log
 \end{verbatim}
 where the \texttt{$\backslash$} means that this is really one line.  (On
@@ -378,7 +383,7 @@ started.  From each machine, after starting the mpd, you can do
 \end{verbatim}
 to see which machines are in the ring so far.  More details on
 \texttt{mpdboot} and other options for starting the mpd's are in
-\texttt{mpich2-1.0/src/pm/mpd/README}.
+\texttt{mpich2-1.0.3/src/pm/mpd/README}.
 
 In case of persistent difficulties getting the ring of mpd's up and
 running on the machines you want, please see Appendix~\ref{app:mpd}.
@@ -423,13 +428,20 @@ command because it is in your path.  If not, use the full pathname:
 
 \item
 Now we will run an MPI job, using the \texttt{mpiexec} command as specified
-in the MPI-2 standard.  There are some examples in the install
-directory, which you have already put in your path, as well as in
-the directory \texttt{mpich2-1.0/examples}.  One of them is the classic \texttt{cpi}
-example, which computes the value of $\pi$ by numerical integration in
-parallel.   
+in the MPI-2 standard.  
+
+% There are some examples in the install
+% directory, which you have already put in your path, as well as in
+% the directory \texttt{mpich2-1.0.3/examples}.  
+% One of them is the classic \texttt{cpi}
+% example, which computes the value of $\pi$ by numerical integration in
+% parallel.   
+As part of the build process for MPICH2, a simple program to compute the value
+of $\pi$ by numerical integration is created in the
+\texttt{mpich2-1.0.3/examples} directory.  If the current directory is the top
+level MPICH2 build directory, then you can run this program with
 \begin{verbatim}
-    mpiexec -n 5 cpi
+    mpiexec -n 5 examples/cpi
 \end{verbatim}
 The number of processes need not match the number of hosts.
 The \texttt{cpi} example will tell you which hosts it is running on.
@@ -1095,7 +1107,7 @@ Intel Fortran 8 or later.
 
 \begin{itemize}
 \item
-Download \texttt{mpich2-1.x.tar.gz} and unzip it.
+Download \texttt{mpich2-1.x.y.tar.gz} and unzip it.
 \item
 Bring up a Visual Studio Command prompt with the compiler environment 
 variables set.
@@ -1444,6 +1456,8 @@ Try a few tests:
     n1 $  mpiexec -l -n 4 /bin/hostname
     n1 $  mpiexec -n 2 PATH_TO_MPICH2_EXAMPLES/cpi
 \end{verbatim}
+where \texttt{PATH\_TO\_MPICH2\_EXAMPLES} is the path to the
+\texttt{mpich2-1.0.3/examples} directory.
 
 To terminate the mpd:
 \begin{verbatim}
@@ -1532,6 +1546,8 @@ To run some programs in parallel:
     n1 $  mpiexec -l -n 4 /bin/hostname
     n1 $  mpiexec -l -n 4 PATH_TO_MPICH2_EXAMPLES/cpi
 \end{verbatim}
+where \texttt{PATH\_TO\_MPICH2\_EXAMPLES} is the path to the
+\texttt{mpich2-1.0.3/examples} directory.
 
 To bring down the ring of mpds:
 \begin{verbatim}
