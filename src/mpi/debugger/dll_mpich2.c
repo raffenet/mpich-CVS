@@ -349,7 +349,6 @@ int mqs_process_has_queues (mqs_process *proc, char **msg)
     mqs_image * image          = dbgr_get_image (proc);
     mpich_image_info *i_info   = 
 	(mpich_image_info *)dbgr_get_image_info (image);
-    mqs_taddr_t debugged_addr;
     mqs_taddr_t head_ptr;
 
     /* Don't bother with a pop up here, it's unlikely to be helpful */
@@ -486,8 +485,8 @@ int mqs_setup_operation_iterator (mqs_process *proc, int op)
     mpich_process_info *p_info = 
 	(mpich_process_info *)dbgr_get_process_info (proc);
     mqs_image * image          = dbgr_get_image (proc);
-    mpich_image_info *i_info   = 
-	(mpich_image_info *)dbgr_get_image_info (image);
+/*    mpich_image_info *i_info   = 
+      (mpich_image_info *)dbgr_get_image_info (image); */
 
   p_info->what = (mqs_op_class)op;
 
