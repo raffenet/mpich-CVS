@@ -465,7 +465,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 
     /* if the DBG_MSG system was already initialized, say by the device, then
        return immediately */
-    if (mpiu_dbg_initialized != 0) return;
+    if (mpiu_dbg_initialized != 0) return 0;
 
     /* Check to see if any debugging was selected.  The order of these
        tests is important, as they allow general defaults to be set,
@@ -644,7 +644,7 @@ static int MPIU_DBG_OpenFile( void )
 	strcmp(filePattern, "-stdout-" ) == 0) {
 	MPIU_DBG_fp = stdout;
     }
-    else if (strcmp( filePattern, "-stderr-" )) {
+    else if (strcmp( filePattern, "-stderr-" ) == 0) {
 	MPIU_DBG_fp = stderr;
     }
     else {
@@ -741,6 +741,9 @@ static int MPIU_DBG_OpenFile( void )
 	}
 	*pDest = 0;
 	MPIU_DBG_fp = fopen( filename, "w" );
+	if (!MPIU_DBG_fp) {
+	    MPIU_Error_printf( "Could not open log file %s\n", filename );
+	}
     }
     return 0;
 }
