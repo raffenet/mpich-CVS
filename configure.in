@@ -285,14 +285,9 @@ if test -n "$PMPILIBNAME" ; then
    PMPILIBNAME_set=yes
 fi
 PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
-# Set the defaults for the Fortran libraries to be the same as the C libraries
-if test -z "$MPIFLIBNAME" ; then 
-    MPIFLIBNAME=$MPILIBNAME 
-    if test -z "$PMPIFLIBNAME" ; then
-        PMPIFLIBNAME=$PMPILIBNAME
-    fi
-fi
-PMPIFLIBNAME=${PMPIFLIBNAME:-p"$MPIFLIBNAME"}
+# Note that the name for this library may be updated after we check for 
+# enable_shmem
+# Fortran names are set later.
 # We use a different library for the C++ wrappers to avoid problems when
 # creating shared libraries
 if test -z "$MPICXXLIBNAME" ; then MPICXXLIBNAME="${MPILIBNAME}cxx" ; fi
@@ -1074,14 +1069,6 @@ if test $enable_weak_symbols = "yes" ; then
 else
     NO_WEAK_SYM=build_proflib
     PROFILE_DEF_MPI="-DMPICH_MPI_FROM_PMPI"
-    if test "$PMPILIBNAME" != "$MPILIBNAME" ; then
-        # NEEDSPLIB is used to indicate that there are two libraries,
-	# one with the basic routines (PMPI + utility) and one with the 
-	# MPI routines
-        NEEDSPLIB=yes
-    else
-        NEEDSPLIB=no
-    fi
 fi
 export NEEDSPLIB
 export NO_WEAK_SYM
@@ -1931,6 +1918,23 @@ esac
 AC_SUBST(ENABLE_SHLIB)
 AC_SUBST(C_LINKPATH_SHL)
 # ----------------------------------------------------------------------------
+# At this point, we've finally settled on the value of PMPILIBNAME.  We
+# can now set NEEDSPLIB.
+if test "$PMPILIBNAME" != "$MPILIBNAME" ; then
+    # NEEDSPLIB is used to indicate that there are two libraries,
+	# one with the basic routines (PMPI + utility) and one with the 
+	# MPI routines
+    NEEDSPLIB=yes
+else
+    NEEDSPLIB=no
+fi
+# Set the defaults for the Fortran libraries to be the same as the C libraries
+if test -z "$MPIFLIBNAME" ; then 
+    MPIFLIBNAME=$MPILIBNAME 
+fi
+if test -z "$PMPIFLIBNAME" ; then
+    PMPIFLIBNAME=$PMPILIBNAME
+fi
 
 # ----------------------------------------------------------------------------
 # 
