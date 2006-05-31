@@ -1054,6 +1054,7 @@ PAC_CC_STRICT
 # to the Make target name understood by simplemake.
 # Set NEEDSPLIB to yes if link commands need both -l$MPILIBNAME
 # and -lp$MPILIBNAME.
+NEEDSPLIB=yes
 NO_WEAK_SYM_TARGET=build_proflib
 if test $enable_weak_symbols = yes ; then
     # Turn off weak symbols if they aren't available
@@ -1920,12 +1921,7 @@ AC_SUBST(C_LINKPATH_SHL)
 # ----------------------------------------------------------------------------
 # At this point, we've finally settled on the value of PMPILIBNAME.  We
 # can now set NEEDSPLIB.
-if test "$PMPILIBNAME" != "$MPILIBNAME" ; then
-    # NEEDSPLIB is used to indicate that there are two libraries,
-	# one with the basic routines (PMPI + utility) and one with the 
-	# MPI routines
-    NEEDSPLIB=yes
-else
+if test "$NEEDSPLIB" = yes -a "$PMPILIBNAME" = "$MPILIBNAME" ; then
     NEEDSPLIB=no
 fi
 # Set the defaults for the Fortran libraries to be the same as the C libraries
