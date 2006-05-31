@@ -107,7 +107,7 @@ case "$enable_sharedlibs" in
     esac
     ;;
 
-    cygwin|cygwin-gcc)
+    cygwin|cygwin-gcc|gcc-cygwin)
     AC_MSG_RESULT([Creating shared libraries using GNU under CYGWIN])
     C_LINK_SHL='${CC} -shared'
     CC_SHL='${CC}'
@@ -171,7 +171,7 @@ dnl Other, such as solaris-cc
     enable_sharedlibs="solaris-gcc"
     ;;
     *)
-    AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs])
+    AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs.  Values should be of the form os-compiler, as in osx-gcc or solaris-cc])
     enable_sharedlibs=no
     ;;  
 esac
