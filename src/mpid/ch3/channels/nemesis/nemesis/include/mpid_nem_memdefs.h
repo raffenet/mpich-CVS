@@ -249,6 +249,12 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
     }
 }
 
+static inline
+void *volatile_memcpy (volatile void *dst, volatile void *src, size_t n)
+{
+    return memcpy ((void *)dst, (void *)src, n);
+}
+
 #define MPID_NEM_MEMCPY_CROSSOVER (32*1024)
 #define MPID_NEM_MEMCPY(a,b,c) (((c) >= MPID_NEM_MEMCPY_CROSSOVER) ? amd64_cpy_nt(a, b, c) : memcpy(a, b, c))
 /* #define MPID_NEM_MEMCPY(a,b,c) (((c) < MPID_NEM_MEMCPY_CROSSOVER) ? memcpy(a, b, c) : amd64_cpy_nt(a, b, c)) */

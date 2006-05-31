@@ -15,16 +15,16 @@
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) do {} while (0)
 #endif
 
-MPID_Request ** const MPID_Recvq_posted_head_ptr;     
-MPID_Request ** const MPID_Recvq_unexpected_head_ptr; 
-MPID_Request ** const MPID_Recvq_posted_tail_ptr;     
-MPID_Request ** const MPID_Recvq_unexpected_tail_ptr;
+MPID_Request ** const MPID_Recvq_posted_head_ptr = 0;
+MPID_Request ** const MPID_Recvq_unexpected_head_ptr = 0; 
+MPID_Request ** const MPID_Recvq_posted_tail_ptr = 0;
+MPID_Request ** const MPID_Recvq_unexpected_tail_ptr = 0;
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
-struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES];
-struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES];
-struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
+struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
+struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
+struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
 
 #if !defined(MPIDI_CH3_Progress_start)
 #undef FUNCNAME
