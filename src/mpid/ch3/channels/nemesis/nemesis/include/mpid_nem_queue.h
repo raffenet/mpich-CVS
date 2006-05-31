@@ -13,9 +13,9 @@
 /*#define PAPI_MONITOR */
 #include "my_papi_defs.h"
 
-#define MPID_nem_dump_cell_mpich2(cell, index)  __MPID_nem_dump_cell_mpich2((cell),(index),__FILE__,__LINE__) 
+#define MPID_nem_dump_cell_mpich2(cell, index)  MPID_nem_dump_cell_mpich2__((cell),(index),__FILE__,__LINE__) 
 
-void __MPID_nem_dump_cell_mpich2 ( MPID_nem_cell_ptr_t cell, int, char* ,int);
+void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int, char* ,int);
 inline void   MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int);
 
 inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell);

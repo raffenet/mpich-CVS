@@ -19,7 +19,7 @@
 #define MPID_NEM_POLLS_BEFORE_YIELD 1000
 #endif
 
-extern MPID_nem_cell_ptr_t prefetched_cell;
+extern MPID_nem_cell_ptr_t MPID_nem_prefetched_cell;
 
 /*
   int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc);
@@ -51,7 +51,7 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    el = prefetched_cell;
+    el = MPID_nem_prefetched_cell;
     
     if (!el)
     {
@@ -104,9 +104,9 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
     else
-	prefetched_cell = 0;
+	MPID_nem_prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
 #endif /*PREFETCH_CELL    */
 
@@ -189,7 +189,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    el = prefetched_cell;
+    el = MPID_nem_prefetched_cell;
     
     if (!el)
     {
@@ -260,9 +260,9 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
     else
-	prefetched_cell = 0;
+	MPID_nem_prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
 #endif /*PREFETCH_CELL */
 
@@ -304,7 +304,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     my_rank = MPID_nem_mem_region.rank;
 	
 #ifdef PREFETCH_CELL
-    el = prefetched_cell;
+    el = MPID_nem_prefetched_cell;
     
     if (!el)
     {
@@ -371,9 +371,9 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
     else
-	prefetched_cell = 0;
+	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 
@@ -458,7 +458,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 #endif /*USE_FASTBOX */
 	
 #ifdef PREFETCH_CELL
-    el = prefetched_cell;
+    el = MPID_nem_prefetched_cell;
     
     if (!el)
     {
@@ -541,9 +541,9 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
     else
-	prefetched_cell = 0;
+	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 
@@ -563,7 +563,7 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
     int ret = MPID_NEM_MPICH2_SUCCESS;
     MPID_nem_fboxq_elem_t *el;
 
-    el = &fboxq_elem_list[local_rank];
+    el = &MPID_nem_fboxq_elem_list[local_rank];
 
     if (!el->usage)
     {
@@ -575,21 +575,21 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
     if (el->usage == 0)
     {
 	if (el->prev == NULL)
-	    fboxq_head = el->next;
+	    MPID_nem_fboxq_head = el->next;
 	else
 	    el->prev->next = el->next;
 
 	if (el->next == NULL)
-	    fboxq_tail = el->prev;
+	    MPID_nem_fboxq_tail = el->prev;
 	else
 	    el->next->prev = el->prev;
 
-	if (el == curr_fboxq_elem)
+	if (el == MPID_nem_curr_fboxq_elem)
 	{
 	    if (el->next == NULL)
-		curr_fboxq_elem = fboxq_head;
+		MPID_nem_curr_fboxq_elem = MPID_nem_fboxq_head;
 	    else
-		curr_fboxq_elem = el->next;
+		MPID_nem_curr_fboxq_elem = el->next;
 	}
     }
     
@@ -609,7 +609,7 @@ int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
     int ret = MPID_NEM_MPICH2_SUCCESS;
     MPID_nem_fboxq_elem_t *el;
 
-    el = &fboxq_elem_list[local_rank];
+    el = &MPID_nem_fboxq_elem_list[local_rank];
 	
     if (el->usage)
     {
@@ -618,36 +618,36 @@ int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
     else
     {
 	el->usage = 1;
-	if (fboxq_tail == NULL)
+	if (MPID_nem_fboxq_tail == NULL)
 	{
 	    el->prev = NULL;
-	    curr_fboxq_elem = fboxq_head = el;
+	    MPID_nem_curr_fboxq_elem = MPID_nem_fboxq_head = el;
 	}
 	else
 	{
-	    el->prev = fboxq_tail;
-	    fboxq_tail->next = el;
+	    el->prev = MPID_nem_fboxq_tail;
+	    MPID_nem_fboxq_tail->next = el;
 	}
 	    
 	el->next = NULL;
-	fboxq_tail = el;
+	MPID_nem_fboxq_tail = el;
     }
     
     return ret;
 }
 /*
-  recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
+  MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
   check whether the sequence number for the cell at the head of qhead is the one
   expected from the sender of that cell
   We only check these for processes in COMM_WORLD (i.e. the ones initially allocated)
 */
 MPID_NEM_INLINE_DECL int
-recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
+MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 {
     MPID_nem_cell_ptr_t cell = MPID_NEM_REL_TO_ABS(qhead->my_head);
     int source = cell->pkt.mpich2.source;
     
-    return (cell->pkt.mpich2.seqno == recv_seqno[source]);
+    return (cell->pkt.mpich2.seqno == MPID_nem_recv_seqno[source]);
 }
 
 /*
@@ -668,8 +668,8 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     if (MPID_nem_ckpt_message_log)
     {
 	MPID_nem_ckpt_replay_message (cell);
-	MPIU_Assert ((*cell)->pkt.mpich2.seqno == recv_seqno[(*cell)->pkt.mpich2.source]);
-	++recv_seqno[(*cell)->pkt.mpich2.source];
+	MPIU_Assert ((*cell)->pkt.mpich2.seqno == MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source]);
+	++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
 	return MPID_NEM_MPICH2_SUCCESS;
     }
@@ -684,7 +684,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
     }
 
-    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
+    if (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
 #ifdef USE_FASTBOX
 	poll_all_fboxes (cell, goto fbox_l);
@@ -695,7 +695,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
-    ++recv_seqno[(*cell)->pkt.mpich2.source];
+    ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
  exit_l:
 #ifdef ENABLED_CHECKPOINTING
@@ -741,7 +741,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
       }
 
-    while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ)))
+    while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ)))
     {
 #ifdef USE_FASTBOX
 	poll_all_fboxes (cell, goto fbox_l);
@@ -752,7 +752,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
-    ++recv_seqno[(*cell)->pkt.mpich2.source];
+    ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
  exit_l:
     
@@ -793,8 +793,8 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     if (MPID_nem_ckpt_message_log)
     {
 	MPID_nem_ckpt_replay_message (cell);
-	MPIU_Assert ((*cell)->pkt.mpich2.seqno == recv_seqno[(*cell)->pkt.mpich2.source]);
-	++recv_seqno[(*cell)->pkt.mpich2.source];
+	MPIU_Assert ((*cell)->pkt.mpich2.seqno == MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source]);
+	++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
 	return MPID_NEM_MPICH2_SUCCESS;
     }
@@ -810,7 +810,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPID_nem_network_poll (MPID_NEM_POLL_IN);
     }
 
-    while (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
+    while (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
 
@@ -835,7 +835,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
-    ++recv_seqno[(*cell)->pkt.mpich2.source];
+    ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
 
  exit_l:    

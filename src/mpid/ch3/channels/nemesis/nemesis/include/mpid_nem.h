@@ -156,7 +156,7 @@ int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc);
 int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc);
 int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
-int recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;
+int MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;
 int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc);
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank);

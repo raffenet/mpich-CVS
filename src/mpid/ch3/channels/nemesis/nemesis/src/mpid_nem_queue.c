@@ -81,7 +81,7 @@ inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 }
 
 /*inline */
-void __MPID_nem_dump_cell_mpich2 ( MPID_nem_cell_ptr_t cell, int master, char *file, int line)
+void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int master, char *file, int line)
 {
   int mark;
 

@@ -8,9 +8,9 @@
 
 #define printf_dd(x...) /*printf (x) */
 
-int MPID_nem_ckpt_logging_messages; /* are we in logging-message-mode? */
-int MPID_nem_ckpt_sending_markers; /* are we in the process of sending markers? */
-struct cli_message_log_total *MPID_nem_ckpt_message_log; /* are we replaying messages? */
+int MPID_nem_ckpt_logging_messages = 0; /* are we in logging-message-mode? */
+int MPID_nem_ckpt_sending_markers = 0; /* are we in the process of sending markers? */
+struct cli_message_log_total *MPID_nem_ckpt_message_log = 0; /* are we replaying messages? */
 
 #ifdef ENABLED_CHECKPOINTING
 #include "cli.h"
@@ -23,7 +23,7 @@ static int next_marker_dest;
 static void checkpoint_shutdown();
 static void restore_env (int rank);
 
-extern unsigned short *recv_seqno;
+extern unsigned short *MPID_nem_recv_seqno;
 
 static int _rank;
 
@@ -229,7 +229,7 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	    int newsize;
 	    struct cli_emitter_based_message_log *per_rank_log;
 
-	    --recv_seqno[source]; /* Will thie really work????? */
+	    --MPID_nem_recv_seqno[source]; /* Will thie really work????? */
 	    
 	    printf_dd ("%d: cli_on_marker_recv: CLI_CP_RESTART wave = %d\n", rank, marker.checkpoint_wave_number);
 	    restore_env (rank);

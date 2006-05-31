@@ -14,21 +14,20 @@
 #define DO_PAPI2(x) /*x */
 #define DO_PAPI3(x) /*x */
 
-MPID_nem_fboxq_elem_t *fboxq_head;
-MPID_nem_fboxq_elem_t *fboxq_tail;
-MPID_nem_fboxq_elem_t *fboxq_elem_list;
-MPID_nem_fboxq_elem_t *fboxq_elem_list_last;
-MPID_nem_fboxq_elem_t *curr_fboxq_elem;
-MPID_nem_fboxq_elem_t *curr_fbox_all_poll;
+MPID_nem_fboxq_elem_t *MPID_nem_fboxq_head = 0;
+MPID_nem_fboxq_elem_t *MPID_nem_fboxq_tail = 0;
+MPID_nem_fboxq_elem_t *MPID_nem_fboxq_elem_list = 0;
+MPID_nem_fboxq_elem_t *MPID_nem_fboxq_elem_list_last = 0;
+MPID_nem_fboxq_elem_t *MPID_nem_curr_fboxq_elem = 0;
+MPID_nem_fboxq_elem_t *MPID_nem_curr_fbox_all_poll = 0;
 
 extern int MPID_nem_ckpt_logging_messages; /* are we in logging-message-mode? */
 extern int MPID_nem_ckpt_sending_markers; /* are we in the process of sending markers? */
 extern struct cli_message_log_total *MPID_nem_ckpt_message_log; /* are we replaying messages? */
 
-MPID_nem_cell_ptr_t prefetched_cell;
+MPID_nem_cell_ptr_t MPID_nem_prefetched_cell = 0;
 
-unsigned short *send_seqno;
-unsigned short *recv_seqno;
+unsigned short *MPID_nem_recv_seqno = 0;
 
 #ifndef ENABLE_NO_SCHED_YIELD
 #define POLLS_BEFORE_YIELD 1000
@@ -50,54 +49,52 @@ MPID_nem_mpich2_init (int ckpt_restart)
     /*     printf ("sizeof (MPID_nem_mem_region.mailboxes.in[1]->mpich2) = %u\n", sizeof (MPID_nem_mem_region.mailboxes.in[1]->mpich2)); */
     /*     printf ("OFFSETPF (MPID_nem_fbox_mpich2_t, cell) = %u\n", MPID_NEM_OFFSETOF(MPID_nem_fbox_mpich2_t, cell)); */
 
-    prefetched_cell = NULL;
+    MPID_nem_prefetched_cell = NULL;
     
     if (!ckpt_restart)
     {
-	send_seqno = MPIU_Malloc (sizeof(*send_seqno) * MPID_nem_mem_region.num_procs);
-	recv_seqno = MPIU_Malloc (sizeof(*recv_seqno) * MPID_nem_mem_region.num_procs);
-	if (!send_seqno || !recv_seqno)
+	MPID_nem_recv_seqno = MPIU_Malloc (sizeof(*MPID_nem_recv_seqno) * MPID_nem_mem_region.num_procs);
+	if (!MPID_nem_recv_seqno)
 	    FATAL_ERROR ("malloc failed");
 
 	for (i = 0; i < MPID_nem_mem_region.num_procs; ++i)
 	{
-	    send_seqno[i] = 0;
-	    recv_seqno[i] = 0;
+	    MPID_nem_recv_seqno[i] = 0;
 	}
     
 	/* set up fbox queue */
-	fboxq_elem_list = MPIU_Malloc (MPID_nem_mem_region.num_local * sizeof(MPID_nem_fboxq_elem_t));
-	if (!fboxq_elem_list)
+	MPID_nem_fboxq_elem_list = MPIU_Malloc (MPID_nem_mem_region.num_local * sizeof(MPID_nem_fboxq_elem_t));
+	if (!MPID_nem_fboxq_elem_list)
 	    FATAL_ERROR ("malloc failed");
     
 	for (i = 0; i < MPID_nem_mem_region.num_local; ++i)
 	{
-	    fboxq_elem_list[i].usage = 0;
-	    fboxq_elem_list[i].prev = NULL;
-	    fboxq_elem_list[i].next = NULL;
-	    fboxq_elem_list[i].grank = MPID_nem_mem_region.local_procs[i];
-	    fboxq_elem_list[i].fbox = &MPID_nem_mem_region.mailboxes.in[i]->mpich2;
+	    MPID_nem_fboxq_elem_list[i].usage = 0;
+	    MPID_nem_fboxq_elem_list[i].prev = NULL;
+	    MPID_nem_fboxq_elem_list[i].next = NULL;
+	    MPID_nem_fboxq_elem_list[i].grank = MPID_nem_mem_region.local_procs[i];
+	    MPID_nem_fboxq_elem_list[i].fbox = &MPID_nem_mem_region.mailboxes.in[i]->mpich2;
 	}
 	
-	fboxq_head = NULL;
-	fboxq_tail = NULL;
-	curr_fboxq_elem = NULL;
-	curr_fbox_all_poll = &fboxq_elem_list[0];
-	fboxq_elem_list_last = &fboxq_elem_list[MPID_nem_mem_region.num_local - 1];
+	MPID_nem_fboxq_head = NULL;
+	MPID_nem_fboxq_tail = NULL;
+	MPID_nem_curr_fboxq_elem = NULL;
+	MPID_nem_curr_fbox_all_poll = &MPID_nem_fboxq_elem_list[0];
+	MPID_nem_fboxq_elem_list_last = &MPID_nem_fboxq_elem_list[MPID_nem_mem_region.num_local - 1];
     }
     else
     {
 	for (i = 0; i < MPID_nem_mem_region.num_local; ++i)
 	{
-	    MPIU_Assert (fboxq_elem_list[i].grank == MPID_nem_mem_region.local_procs[i]);
-	    fboxq_elem_list[i].fbox = &MPID_nem_mem_region.mailboxes.in[i]->mpich2;
+	    MPIU_Assert (MPID_nem_fboxq_elem_list[i].grank == MPID_nem_mem_region.local_procs[i]);
+	    MPID_nem_fboxq_elem_list[i].fbox = &MPID_nem_mem_region.mailboxes.in[i]->mpich2;
 	}
 
-	fboxq_head = NULL;
-	fboxq_tail = NULL;
-	curr_fboxq_elem = NULL;
-	curr_fbox_all_poll = &fboxq_elem_list[0];
-	fboxq_elem_list_last = &fboxq_elem_list[MPID_nem_mem_region.num_local - 1];
+	MPID_nem_fboxq_head = NULL;
+	MPID_nem_fboxq_tail = NULL;
+	MPID_nem_curr_fboxq_elem = NULL;
+	MPID_nem_curr_fbox_all_poll = &MPID_nem_fboxq_elem_list[0];
+	MPID_nem_fboxq_elem_list_last = &MPID_nem_fboxq_elem_list[MPID_nem_mem_region.num_local - 1];
     }
 }
 
@@ -118,7 +115,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
     my_rank = MPID_nem_mem_region.rank;
     
 #ifdef PREFETCH_CELL
-    el = prefetched_cell;
+    el = MPID_nem_prefetched_cell;
     
     if (!el)
     {
@@ -138,7 +135,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
     el->pkt.ckpt.source  = my_rank;
     el->pkt.ckpt.dest    = vc->lpid;
     el->pkt.ckpt.datalen = sizeof(el->pkt.ckpt.wave); /* FIXME: we need a way to handle packet types w/ different sizes */
-    el->pkt.ckpt.seqno   = send_seqno[vc->lpid]++;
+    el->pkt.ckpt.seqno   = vc->ch.send_seqno++;
     el->pkt.ckpt.type    = MPID_NEM_PKT_CKPT;
     el->pkt.ckpt.wave    = wave;
 
@@ -155,9 +152,9 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &prefetched_cell);
+	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
     else
-	prefetched_cell = 0;
+	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
 #endif /*ENABLED_CHECKPOINTING */
     return MPID_NEM_MPICH2_SUCCESS;

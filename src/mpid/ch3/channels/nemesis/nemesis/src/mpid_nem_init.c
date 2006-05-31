@@ -9,9 +9,9 @@
 #include "mpid_nem_nets.h"
 
 #ifdef MEM_REGION_IN_HEAP
-MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
+MPID_nem_mem_region_t *MPID_nem_mem_region_ptr = 0;
 #else /* MEM_REGION_IN_HEAP */
-MPID_nem_mem_region_t MPID_nem_mem_region;
+MPID_nem_mem_region_t MPID_nem_mem_region = {0};
 #endif /* MEM_REGION_IN_HEAP */
 
 char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
@@ -24,10 +24,9 @@ char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 
 static int intcompar (const void *a, const void *b) { return *(int *)a - *(int *)b; }
 
-char *MPID_nem_asymm_base_addr;
+char *MPID_nem_asymm_base_addr = 0;
 
-int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank);
-int get_MPID_nem_key();
+static int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank);
 
 int
 MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
