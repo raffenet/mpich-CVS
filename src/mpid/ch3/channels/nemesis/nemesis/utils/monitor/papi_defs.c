@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #ifdef PAPI_MONITOR
 #include <papi.h>
 #include <math.h>

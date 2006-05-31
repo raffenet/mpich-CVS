@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #ifdef MPID_NEM_DONT_INLINE_FUNCTIONS
 #undef MPID_NEM_INLINE_DECL
 #define MPID_NEM_INLINE_DECL

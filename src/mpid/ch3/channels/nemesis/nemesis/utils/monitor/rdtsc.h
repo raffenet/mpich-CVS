@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /***********************************************************************
 This header file provides some simple functions to use the pentium
 cycle counter to take timings.  Let me know if you find any errors.
