@@ -14,6 +14,7 @@ test2_SOURCES = test2.c
 test3_SOURCES = test3.c
 test4_SOURCES = test4.c
 test5_SOURCES = test5.c
+lockcontention_SOURCES = lockcontention.c
 wintest_SOURCES = wintest.c
 transpose1_SOURCES = transpose1.c
 transpose2_SOURCES = transpose2.c

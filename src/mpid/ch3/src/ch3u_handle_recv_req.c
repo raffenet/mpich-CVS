@@ -654,7 +654,8 @@ static int do_accumulate_op(MPID_Request *rreq)
     return mpi_errno;
 }
 
-
+static int entered_flag = 0;
+static int entered_count = 0;
 
 /* Release the current lock on the window and grant the next lock in the
    queue if any */
@@ -665,7 +666,7 @@ static int do_accumulate_op(MPID_Request *rreq)
 int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
 {
     MPIDI_Win_lock_queue *lock_queue, **lock_queue_ptr;
-    int requested_lock, mpi_errno = MPI_SUCCESS;
+    int requested_lock, mpi_errno = MPI_SUCCESS, temp_entered_count;
 
     if (win_ptr->current_lock_type == MPI_LOCK_SHARED) {
         /* decr ref cnt */
@@ -676,128 +677,151 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
     /* If shared lock ref count is 0 (which is also true if the lock is an
        exclusive lock), release the lock. */
     if (win_ptr->shared_lock_ref_cnt == 0) {
-        /* FIXME: MT: The setting of the lock type must be done atomically */
-        win_ptr->current_lock_type = MPID_LOCK_NONE;
 
-        /* If there is a lock queue, try to satisfy as many lock requests as 
-           possible. If the first one is a shared lock, grant it and grant all 
-           other shared locks. If the first one is an exclusive lock, grant 
-           only that one. */
-        
-        /* FIXME: MT: All queue accesses need to be made atomic */
-        lock_queue = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
-        lock_queue_ptr = (MPIDI_Win_lock_queue **) &(win_ptr->lock_queue);
-        while (lock_queue) {
-            /* if it is not a lock-op-unlock type case or if it is a 
-               lock-op-unlock type case but all the data has been received, 
-               try to acquire the lock */
-            if ((lock_queue->pt_single_op == NULL) || 
-                (lock_queue->pt_single_op->data_recd == 1)) {
+	/* This function needs to be reentrant even in the single-threaded case
+           because when going through the lock queue, the do_simple_get called in the 
+	   lock-get-unlock case may itself cause a request to complete, and this function
+           may again get called in the completion action in ch3u_handle_send_req.c. To
+           handle this possibility, we use an entered_flag. If the flag is not 0, we simply
+	   increment the entered_count and return. The loop through the lock queue is repeated 
+	   if the entered_count has changed while we are in the loop.
+	 */
+	if (entered_flag != 0) {
+	    entered_count++;
+	    goto fn_exit;
+	}
+	else {
+	    entered_flag = 1;
+	    temp_entered_count = entered_count;
+	}
 
-                requested_lock = lock_queue->lock_type;
-                if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, requested_lock) 
-                                                                       == 1) {
+	do { 
+	    if (temp_entered_count != entered_count) temp_entered_count++;
 
-                    if (lock_queue->pt_single_op != NULL) {
-                        /* single op. do it here */
-                        MPIDI_PT_single_op * single_op;
-
-                        single_op = lock_queue->pt_single_op;
-                        if (single_op->type == MPIDI_RMA_PUT) {
-                            mpi_errno = MPIR_Localcopy(single_op->data,
-                                                       single_op->count,
-                                                       single_op->datatype,
-                                                       single_op->addr,
-                                                       single_op->count,
-                                                       single_op->datatype);
-                        }   
-                        else if (single_op->type == MPIDI_RMA_ACCUMULATE) {
-                            mpi_errno = do_simple_accumulate(single_op);
-                        }
-                        else if (single_op->type == MPIDI_RMA_GET) {
-                            mpi_errno = do_simple_get(win_ptr, lock_queue);
-                        }
-
-                        /* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                        /* --END ERROR HANDLING-- */
-
-                        /* if put or accumulate, send rma done packet and release lock. */
-                        if (single_op->type != MPIDI_RMA_GET) {
-                            /* increment counter */
-                            win_ptr->my_pt_rma_puts_accs++;
-
-                            mpi_errno = 
-                               MPIDI_CH3I_Send_pt_rma_done_pkt(lock_queue->vc, 
-                                         lock_queue->source_win_handle);
-                            /* --BEGIN ERROR HANDLING-- */
-                            if (mpi_errno != MPI_SUCCESS) goto fn_exit;
-                            /* --END ERROR HANDLING-- */
-
-                            /* release the lock */
-                            if (win_ptr->current_lock_type == MPI_LOCK_SHARED) {
-                                /* decr ref cnt */
-                                /* FIXME: MT: Must be done atomically */
-                                win_ptr->shared_lock_ref_cnt--;
-                            }
-                        
-                            /* If shared lock ref count is 0 
-                               (which is also true if the lock is an
-                               exclusive lock), release the lock. */
-                            if (win_ptr->shared_lock_ref_cnt == 0) {
-                                /* FIXME: MT: The setting of the lock type 
-                                   must be done atomically */
-                                win_ptr->current_lock_type = MPID_LOCK_NONE;
-                            }
-
-                            /* dequeue entry from lock queue */
-                            MPIU_Free(single_op->data);
-                            MPIU_Free(single_op);
-                            *lock_queue_ptr = lock_queue->next;
-                            MPIU_Free(lock_queue);
-                            lock_queue = *lock_queue_ptr;
-                        }
-
-                        else {
-                            /* it's a get. The operation is not complete. It 
-                               will be completed in ch3u_handle_send_req.c. 
-                               Free the single_op structure. If it's an 
-                               exclusive lock, break. Otherwise continue to the
-                               next operation. */
-
-                            MPIU_Free(single_op);
-                            *lock_queue_ptr = lock_queue->next;
-                            MPIU_Free(lock_queue);
-                            lock_queue = *lock_queue_ptr;
-
-                            if (requested_lock == MPI_LOCK_EXCLUSIVE)
-                                break;
-                        }
-                    }
-
-                    else {
-                        /* send lock granted packet. */
-                        mpi_errno = 
-                            MPIDI_CH3I_Send_lock_granted_pkt(lock_queue->vc,
-                                                lock_queue->source_win_handle);
-                    
-                        /* dequeue entry from lock queue */
-                        *lock_queue_ptr = lock_queue->next;
-                        MPIU_Free(lock_queue);
-                        lock_queue = *lock_queue_ptr;
-                        
-                        /* if the granted lock is exclusive, 
-                           no need to continue */
-                        if (requested_lock == MPI_LOCK_EXCLUSIVE)
-                            break;
-                    }
-                }
-            }
-            else {
-                lock_queue_ptr = &(lock_queue->next);
-                lock_queue = lock_queue->next;
-            }
-        }
+	    /* FIXME: MT: The setting of the lock type must be done atomically */
+	    win_ptr->current_lock_type = MPID_LOCK_NONE;
+	    
+	    /* If there is a lock queue, try to satisfy as many lock requests as 
+	       possible. If the first one is a shared lock, grant it and grant all 
+	       other shared locks. If the first one is an exclusive lock, grant 
+	       only that one. */
+	    
+	    /* FIXME: MT: All queue accesses need to be made atomic */
+	    lock_queue = (MPIDI_Win_lock_queue *) win_ptr->lock_queue;
+	    lock_queue_ptr = (MPIDI_Win_lock_queue **) &(win_ptr->lock_queue);
+	    while (lock_queue) {
+		/* if it is not a lock-op-unlock type case or if it is a 
+		   lock-op-unlock type case but all the data has been received, 
+		   try to acquire the lock */
+		if ((lock_queue->pt_single_op == NULL) || 
+		    (lock_queue->pt_single_op->data_recd == 1)) {
+		    
+		    requested_lock = lock_queue->lock_type;
+		    if (MPIDI_CH3I_Try_acquire_win_lock(win_ptr, requested_lock) 
+			== 1) {
+			
+			if (lock_queue->pt_single_op != NULL) {
+			    /* single op. do it here */
+			    MPIDI_PT_single_op * single_op;
+			    
+			    single_op = lock_queue->pt_single_op;
+			    if (single_op->type == MPIDI_RMA_PUT) {
+				mpi_errno = MPIR_Localcopy(single_op->data,
+							   single_op->count,
+							   single_op->datatype,
+							   single_op->addr,
+							   single_op->count,
+							   single_op->datatype);
+			    }   
+			    else if (single_op->type == MPIDI_RMA_ACCUMULATE) {
+				mpi_errno = do_simple_accumulate(single_op);
+			    }
+			    else if (single_op->type == MPIDI_RMA_GET) {
+				mpi_errno = do_simple_get(win_ptr, lock_queue);
+			    }
+			    
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+			    /* --END ERROR HANDLING-- */
+			    
+			    /* if put or accumulate, send rma done packet and release lock. */
+			    if (single_op->type != MPIDI_RMA_GET) {
+				/* increment counter */
+				win_ptr->my_pt_rma_puts_accs++;
+				
+				mpi_errno = 
+				    MPIDI_CH3I_Send_pt_rma_done_pkt(lock_queue->vc, 
+								    lock_queue->source_win_handle);
+				/* --BEGIN ERROR HANDLING-- */
+				if (mpi_errno != MPI_SUCCESS) goto fn_exit;
+				/* --END ERROR HANDLING-- */
+				
+				/* release the lock */
+				if (win_ptr->current_lock_type == MPI_LOCK_SHARED) {
+				    /* decr ref cnt */
+				    /* FIXME: MT: Must be done atomically */
+				    win_ptr->shared_lock_ref_cnt--;
+				}
+				
+				/* If shared lock ref count is 0 
+				   (which is also true if the lock is an
+				   exclusive lock), release the lock. */
+				if (win_ptr->shared_lock_ref_cnt == 0) {
+				    /* FIXME: MT: The setting of the lock type 
+				       must be done atomically */
+				    win_ptr->current_lock_type = MPID_LOCK_NONE;
+				}
+				
+				/* dequeue entry from lock queue */
+				MPIU_Free(single_op->data);
+				MPIU_Free(single_op);
+				*lock_queue_ptr = lock_queue->next;
+				MPIU_Free(lock_queue);
+				lock_queue = *lock_queue_ptr;
+			    }
+			    
+			    else {
+				/* it's a get. The operation is not complete. It 
+				   will be completed in ch3u_handle_send_req.c. 
+				   Free the single_op structure. If it's an 
+				   exclusive lock, break. Otherwise continue to the
+				   next operation. */
+				
+				MPIU_Free(single_op);
+				*lock_queue_ptr = lock_queue->next;
+				MPIU_Free(lock_queue);
+				lock_queue = *lock_queue_ptr;
+				
+				if (requested_lock == MPI_LOCK_EXCLUSIVE)
+				    break;
+			    }
+			}
+			
+			else {
+			    /* send lock granted packet. */
+			    mpi_errno = 
+				MPIDI_CH3I_Send_lock_granted_pkt(lock_queue->vc,
+								 lock_queue->source_win_handle);
+			    
+			    /* dequeue entry from lock queue */
+			    *lock_queue_ptr = lock_queue->next;
+			    MPIU_Free(lock_queue);
+			    lock_queue = *lock_queue_ptr;
+			    
+			    /* if the granted lock is exclusive, 
+			       no need to continue */
+			    if (requested_lock == MPI_LOCK_EXCLUSIVE)
+				break;
+			}
+		    }
+		}
+		else {
+		    lock_queue_ptr = &(lock_queue->next);
+		    lock_queue = lock_queue->next;
+		}
+	    }
+	} while (temp_entered_count != entered_count);
+	entered_count = entered_flag = 0;
     }
 
  fn_exit:
