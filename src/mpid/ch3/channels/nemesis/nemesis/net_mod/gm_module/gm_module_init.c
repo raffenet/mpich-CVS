@@ -340,7 +340,7 @@ MPID_nem_gm_module_get_port_unique_from_bc (const char *business_card, unsigned 
 	/* FIXME: create a real error string for this */
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
     }
-    *port_id = (unsigned)port_id;
+    *port_id = (unsigned)tmp_port_id;
 
     mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN, &len);
     if (mpi_errno != MPIU_STR_SUCCESS || len != UNIQUE_ID_LEN) {
