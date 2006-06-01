@@ -25,7 +25,7 @@ send_callback (struct gm_port *p, void *context, gm_status_t status)
 
     ++num_send_tokens;
 
-    MPID_nem_queue_enqueue (process_free_queue, cell);
+    MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);
 }
 
 /*

@@ -36,7 +36,7 @@ MPID_nem_queue_ptr_t MPID_nem_module_tcp_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
-mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars = 0;
+mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars = {0};
 
 static int init_tcp (MPIDI_PG_t *pg_p) 
 {

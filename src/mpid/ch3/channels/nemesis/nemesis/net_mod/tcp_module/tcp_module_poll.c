@@ -61,7 +61,7 @@ MPID_nem_tcp_module_poll_send( void )
 		      
 		      MPID_nem_tcp_nodes[dest].left2write = 0;
 		      MPID_nem_tcp_internal_queue_dequeue (MPID_nem_tcp_nodes[dest].internal_recv_queue, &cell);
-		      MPID_nem_queue_enqueue (process_free_queue, cell); 
+		      MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell); 
 		      MPID_nem_tcp_internal_vars.n_pending_send--;
 		      MPID_nem_tcp_internal_vars.n_pending_sends[dest]--;
 		    }
@@ -95,7 +95,7 @@ MPID_nem_tcp_module_poll_send( void )
 	  if( offset == len )	
 	    {
 	      MPID_nem_tcp_nodes[dest].left2write = 0;
-	      MPID_nem_queue_enqueue (process_free_queue, cell);	      
+	      MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);	      
 #ifdef TRACE
 	      fprintf(stderr,"[%i] -- TCP SEND : sent ALL MSG (%i len, payload is %i)\n",
 		      MPID_nem_mem_region.rank,
