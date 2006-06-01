@@ -133,10 +133,8 @@ int mpig_topology_comm_destruct(MPID_Comm * comm);
 
 #define MPIG_TOPOLOGY_LEVEL_WAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_WAN)
 #define MPIG_TOPOLOGY_LEVEL_LAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_LAN)
-#define MPIG_TOPOLOGY_LEVEL_SAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_SAN)
+#define MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_SUBJOB)
 #define MPIG_TOPOLOGY_LEVEL_VMPI_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_VMPI)
-/* #define MPIG_TOPOLOGY_LEVEL_HOST_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_HOST) */
-/* #define MPIG_TOPOLOGY_LEVEL_PROC_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_PROC) */
 /**********************************************************************************************************************************
 						END TOPOLOGY INFORMATION SECTION
 **********************************************************************************************************************************/

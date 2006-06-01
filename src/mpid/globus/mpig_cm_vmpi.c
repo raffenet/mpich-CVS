@@ -664,9 +664,9 @@ MPIG_STATIC void mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc, int * c
 	vc->ci.vmpi.cw_rank = cw_rank;
 
 	/* set the topology information.  NOTE: this may seem a bit wacky since the VMPI level is set even if the VMPI module is
-	   not responsible for the VC; however, the tpology information is defined such that a level set if it is _possible_ for
+	   not responsible for the VC; however, the topology information is defined such that a level set if it is _possible_ for
 	   the module to perform the communication regardless of whether it does so or not. */
-	vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_VMPI;
+	vc->ci.topology_levels |= MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
 	if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_VMPI)
 	{
 	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI + 1;
@@ -789,13 +789,16 @@ MPIG_STATIC void mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * const vc1, 
     *failed_p = FALSE;
     *levels_out = 0;
 
-    if ((levels_in & MPIG_TOPOLOGY_LEVEL_VMPI_MASK) == 0) goto fn_return;
-    if (vc1->ci.vmpi.subjob_id == NULL || vc1->ci.vmpi.subjob_id == NULL ||
-	strcmp(vc1->ci.vmpi.subjob_id, vc2->ci.vmpi.subjob_id) != 0) goto fn_return;
-
-    *levels_out |= MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
+    if (levels_in & (MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK))
+    {
+	if (vc1->ci.vmpi.subjob_id != NULL && vc1->ci.vmpi.subjob_id != NULL &&
+	    strcmp(vc1->ci.vmpi.subjob_id, vc2->ci.vmpi.subjob_id) == 0)
+	{
+	    *levels_out |= levels_in & (MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK);
+	}
+    }
     
-  fn_return:
+    /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
 	"mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out,
 	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));

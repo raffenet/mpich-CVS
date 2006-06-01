@@ -225,6 +225,7 @@ typedef struct mpig_comm
     int ** topology_cluster_ids;
     int ** topology_cluster_sizes;
     mpig_comm_set_t * topology_comm_sets;
+    int topology_max_depth;
     
     /* data structures for tracking active communicators to prevent MPID_Finalize from returning before all outstanding
        communication has completed. */

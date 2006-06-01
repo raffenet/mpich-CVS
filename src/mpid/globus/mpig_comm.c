@@ -278,22 +278,22 @@ int mpig_comm_list_wait_empty(void)
 
 
 /*
- * int mpig_dev_comm_free_hook[IN/MOD] comm)
+ * int mpig_comm_free_hook[IN/MOD] comm)
  *
  * comm [IN/MOD] - communicator being freed
  * mpi_errno [OUT] - MPI error code
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_dev_comm_free_hook
-int mpig_dev_comm_free_hook(MPID_Comm * comm)
+#define FUNCNAME mpig_comm_free_hook
+int mpig_comm_free_hook(MPID_Comm * comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_dev_comm_free_hook);
+    MPIG_STATE_DECL(MPID_STATE_mpig_comm_free_hook);
 
     MPIG_UNUSED_VAR(fcname);
     
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_dev_comm_free_hook);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_free_hook);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
 
@@ -310,32 +310,32 @@ int mpig_dev_comm_free_hook(MPID_Comm * comm)
 #   endif
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_dev_comm_free_hook);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_free_hook);
     return mpi_errno;
 }
-/* mpig_dev_comm_free_hook() */
+/* mpig_comm_free_hook() */
 
 
 #if defined(MPIG_VMPI)
 
 /*
- * int mpig_dev_comm_dup_hook[IN] orig_comm, [IN/MOD] new_comm)
+ * int mpig_comm_dup_hook[IN] orig_comm, [IN/MOD] new_comm)
  *
  * orig_comm [IN] - communicator being duplicated
  * new_comm [IN/MOD] - communicator resulting from the duplication
  * mpi_errno [OUT] - MPI error code
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_dev_comm_dup_hook
-int  mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm)
+#define FUNCNAME mpig_comm_dup_hook
+int  mpig_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_dev_comm_dup_hook);
+    MPIG_STATE_DECL(MPID_STATE_mpig_comm_dup_hook);
 
     MPIG_UNUSED_VAR(fcname);
     
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_dev_comm_dup_hook);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_comm_dup_hook);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 	"entering: orig_comm=" MPIG_HANDLE_FMT ", orig_commp=" MPIG_PTR_FMT ", new_comm=" MPIG_HANDLE_FMT
 	", new_commp=" MPIG_PTR_FMT, orig_comm->handle, (MPIG_PTR_CAST) orig_comm, new_comm->handle, (MPIG_PTR_CAST) new_comm));
@@ -345,9 +345,9 @@ int  mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm)
     /* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_dev_comm_dup_hook);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_dup_hook);
     return mpi_errno;
 }
-/* mpig_dev_comm_dup_hook() */
+/* mpig_comm_dup_hook() */
 
 #endif /* defined(MPIG_VMPI) */

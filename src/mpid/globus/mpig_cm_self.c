@@ -313,13 +313,13 @@ MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * m
 
 #if FALSE
     /* set the topology information.  NOTE: this may seem a bit wacky since the PROC level is set even if the SELF module is
-       not responsible for the VC; however, the tpology information is defined such that a level set if it is _possible_ for
+       not responsible for the VC; however, the topology information is defined such that a level set if it is _possible_ for
        the module to perform the communication regardless of whether it does so or not. */
-    vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_PROC
-	if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_PROC)
-	{
-	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC + 1;
-	}
+    vc->ci.topology_levels |= MPIG_TOPOLOGY_LEVEL_PROC_MASK;
+    if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_PROC)
+    {
+	vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC + 1;
+    }
 #endif
     
   fn_return:
@@ -420,12 +420,14 @@ MPIG_STATIC void mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, 
     *failed_p = FALSE;
     *levels_out = 0;
 
-    if ((levels_in & MPIG_TOPOLOGY_LEVEL_PROC_MASK) == 0) goto fn_return;
-    if (vc1->ci.self.hostname == NULL || vc2->ci.self.hostname == NULL ||
-	strcmp(vc1->ci.self.hostname, vc2->ci.self.hostname) != 0) goto fn_return;
-    if (vc1->ci.self.pid != vc2->ci.self.pid) goto fn_return;
-
-    *levels_out |= MPIG_TOPOLOGY_LEVEL_PROC_MASK;
+    if (levels_in & MPIG_TOPOLOGY_LEVEL_PROC_MASK)
+    {
+	if (vc1->ci.self.hostname != NULL && vc2->ci.self.hostname != NULL &&
+	    strcmp(vc1->ci.self.hostname, vc2->ci.self.hostname) == 0 && vc1->ci.self.pid == vc2->ci.self.pid)
+	{
+	    *levels_out |= MPIG_TOPOLOGY_LEVEL_PROC_MASK;
+	}
+    }
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "

@@ -17,24 +17,39 @@ int mpig_comm_construct(MPID_Comm * comm);
 
 int mpig_comm_destruct(MPID_Comm * comm);
 
-int mpig_dev_comm_free_hook(MPID_Comm * comm);
+int mpig_comm_free_hook(MPID_Comm * comm);
 
-#define MPID_Dev_comm_create_hook(comm_) {if (mpig_comm_construct(comm_)) MPID_Abort(NULL, mpi_errno, 13, NULL);}
+#define MPID_Dev_comm_create_hook(comm_)		\
+{							\
+    int mrc__;						\
+    mrc__ = mpig_comm_construct(comm_);			\
+    if (mrc__) MPID_Abort(NULL, mrc__, 13, NULL);	\
+}
 
-#define MPID_Dev_comm_destroy_hook(comm_)  {if (mpig_comm_destruct(comm_)) MPID_Abort(NULL, mpi_errno, 13, NULL);}
+#define MPID_Dev_comm_destroy_hook(comm_)		\
+{							\
+    int mrc__;						\
+    mrc__ = mpig_comm_destruct(comm_);			\
+    if (mrc__) MPID_Abort(NULL, mrc__, 13, NULL);	\
+}
 
-#define MPID_Dev_comm_free_hook(comm_) {if (mpig_dev_comm_free_hook(comm_)) MPID_Abort(NULL, mpi_errno, 13, NULL);}
+#define MPID_Dev_comm_free_hook(comm_)			\
+{							\
+    int mrc__;						\
+    mrc__ = mpig_comm_free_hook(comm_);			\
+    if (mrc__) MPID_Abort(NULL, mrc__, 13, NULL);	\
+}
 
 #if defined(MPIG_VMPI)
 
-int mpig_dev_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
+int mpig_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
 #define MPID_Dev_comm_dup_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
-    mpig_dev_comm_free_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
+    mpig_comm_free_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
 
-int mpig_dev_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Comm * peer_comm, int remote_leader, int tag,
+int mpig_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Comm * peer_comm, int remote_leader, int tag,
     MPID_Comm * new_intercomm);
 #define MPID_Dev_intercomm_create_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
-    mpig_dev_intercomm_create_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
+    mpig_intercomm_create_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
 
 #endif /* defined(MPIG_VMPI) */
 
@@ -371,7 +386,7 @@ extern globus_debug_handle_t mpig_debug_handle;
 extern time_t mpig_debug_start_tv_sec;
 
 #define MPIG_DEBUG_LEVEL_NAMES \
-    "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT REQ COMM VC PG BC RECVQ VCCM PM DATABUF MSGHDR MPI" 
+    "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT REQ COMM TOPO VC PG BC RECVQ VCCM PM DATABUF MSGHDR MPI" 
 
 typedef enum mpig_debug_levels
 {
@@ -388,15 +403,16 @@ typedef enum mpig_debug_levels
     MPIG_DEBUG_LEVEL_COUNT =		1 << 10,
     MPIG_DEBUG_LEVEL_REQ =		1 << 11,
     MPIG_DEBUG_LEVEL_COMM =		1 << 12,
-    MPIG_DEBUG_LEVEL_VC =		1 << 13,
-    MPIG_DEBUG_LEVEL_PG =		1 << 14,
-    MPIG_DEBUG_LEVEL_BC =		1 << 15,
-    MPIG_DEBUG_LEVEL_RECVQ =		1 << 16,
-    MPIG_DEBUG_LEVEL_VCCM =		1 << 17,
-    MPIG_DEBUG_LEVEL_PM =		1 << 18,
-    MPIG_DEBUG_LEVEL_DATABUF =		1 << 19,
-    MPIG_DEBUG_LEVEL_MSGHDR =		1 << 20,
-    MPIG_DEBUG_LEVEL_MPI =		1 << 21
+    MPIG_DEBUG_LEVEL_TOPO =		1 << 13,
+    MPIG_DEBUG_LEVEL_VC =		1 << 14,
+    MPIG_DEBUG_LEVEL_PG =		1 << 15,
+    MPIG_DEBUG_LEVEL_BC =		1 << 16,
+    MPIG_DEBUG_LEVEL_RECVQ =		1 << 17,
+    MPIG_DEBUG_LEVEL_VCCM =		1 << 18,
+    MPIG_DEBUG_LEVEL_PM =		1 << 19,
+    MPIG_DEBUG_LEVEL_DATABUF =		1 << 20,
+    MPIG_DEBUG_LEVEL_MSGHDR =		1 << 21,
+    MPIG_DEBUG_LEVEL_MPI =		1 << 22
 }
 mpig_debug_levels_t;
 
@@ -532,7 +548,6 @@ void mpig_debug_create_state_key(void);
 #define MPIR_FUNC_EXIT(state_)					\
 {								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting"));	\
-    MPIG_FUNCNAME_CHECK();					\
 }
 
 /* macro to verify that the function name in FUNCNAME is really the name of the function */

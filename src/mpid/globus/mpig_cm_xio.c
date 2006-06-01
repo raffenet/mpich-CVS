@@ -325,15 +325,15 @@ MPIG_STATIC void mpig_cm_xio_extract_contact_info(mpig_vc_t * const vc, int * co
        until the decision has been made for the CM to take responsibility for the VC.  therefore, all extraction of information
        from the business card is done in mpig_cm_xio_select_module(). */
 
-    /* set the topology information.  NOTE: this may seem a bit wacky since the SAN, LAN, and WAN levels are set even if the XIO
-       module is not responsible for the VC; however, the tpology information is defined such that a level set if it is
+    /* set the topology information.  NOTE: this may seem a bit wacky since the WAN, LAN and SUBJOB levels are set even if the
+       XIO module is not responsible for the VC; however, the topology information is defined such that a level set if it is
        _possible_ for the module to perform the communication regardless of whether it does so or not. */
-    vc->ci.topology_levels = MPIG_TOPOLOGY_LEVEL_WAN | MPIG_TOPOLOGY_LEVEL_LAN | MPIG_TOPOLOGY_LEVEL_SAN;
-    if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_SAN)
+    vc->ci.topology_levels |= MPIG_TOPOLOGY_LEVEL_WAN_MASK | MPIG_TOPOLOGY_LEVEL_LAN_MASK | MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK;
+    if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_SUBJOB)
     {
-	vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_SAN + 1;
+	vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_SUBJOB + 1;
     }
-	
+		
     /*  fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
 	(MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
@@ -474,13 +474,11 @@ MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, c
 	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in, *mpi_errno_p));
 
     *failed_p = FALSE;
-    *levels_out = 0;
 
-    *levels_out |= (levels_in & MPIG_TOPOLOGY_LEVEL_WAN_MASK);
+    *levels_out = levels_in & MPIG_TOPOLOGY_LEVEL_WAN_MASK;
     
     if (levels_in & MPIG_TOPOLOGY_LEVEL_LAN_MASK)
     {
-	
 	if (mpig_vc_get_lan_id(vc1) != NULL && mpig_vc_get_lan_id(vc2) != NULL &&
 	    strcmp(mpig_vc_get_lan_id(vc1), mpig_vc_get_lan_id(vc2)) == 0)
 	{
@@ -493,14 +491,27 @@ MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, c
 	}
     }
 
+#if FALSE    
     if (levels_in & MPIG_TOPOLOGY_LEVEL_SAN_MASK)
     {
+	/* NOTE: the SAN level is currently unused.  however, should it ever be enabled, one cannot assume XIO is automatically
+	   able to communicate over the system area network.  that depends on the SAN and the XIO drivers available.  also, even
+	   if an XIO driver could be written, the XIO stream based interface may not be appropriate for the SAN and result in
+	   less than optimal performance.  instead, communication over the SAN may be handled via another MPIG communication
+	   module. */
+    }
+#endif
+    
+    if (levels_in & MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK)
+    {
+	/* FIXME: for now, the XIO communication module assumes that it can be used to communicate within the subjob.  this might
+	   not be the case on all systems. */
 	if (mpig_vc_get_pg(vc1) == mpig_vc_get_pg(vc2) && mpig_vc_get_app_num(vc1) == mpig_vc_get_app_num(vc2))
 	{
-	    *levels_out |= MPIG_TOPOLOGY_LEVEL_SAN_MASK;
+	    *levels_out |= MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK;
 	}
     }
-
+    
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
 	"mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out,
