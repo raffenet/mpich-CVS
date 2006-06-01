@@ -69,7 +69,7 @@ static MPID_nem_queue_t _free_queue;
 MPID_nem_queue_ptr_t module_gm_recv_queue;
 MPID_nem_queue_ptr_t module_gm_free_queue;
 
-MPID_nem_queue_ptr_t process_recv_queue;
+MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 MPID_nem_queue_ptr_t process_free_queue;
 
 #define FREE_SEND_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS
@@ -235,7 +235,7 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     if (ret != 0)
 	ERROR_RET (-1, "get_businesscard() failed");
 
-    process_recv_queue = proc_recv_queue;
+    MPID_nem_process_recv_queue = proc_recv_queue;
     process_free_queue = proc_free_queue;
 
     status = gm_register_memory (port, (void *)proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);

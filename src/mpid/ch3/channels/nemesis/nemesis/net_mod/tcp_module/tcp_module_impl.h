@@ -54,9 +54,9 @@ typedef struct tcp_internal
 
 extern mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars;
 
-extern MPID_nem_queue_ptr_t module_tcp_recv_queue;
-extern MPID_nem_queue_ptr_t module_tcp_free_queue;
-extern MPID_nem_queue_ptr_t process_recv_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_module_tcp_recv_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_module_tcp_free_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t process_free_queue;   
 
 

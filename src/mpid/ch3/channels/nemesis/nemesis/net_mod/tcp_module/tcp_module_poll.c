@@ -81,9 +81,9 @@ MPID_nem_tcp_module_poll_send( void )
     }
 
   /* handle main Q */      
-  while (!MPID_nem_queue_empty (module_tcp_recv_queue))
+  while (!MPID_nem_queue_empty (MPID_nem_module_tcp_recv_queue))
     {      
-      MPID_nem_queue_dequeue (module_tcp_recv_queue, &cell);
+      MPID_nem_queue_dequeue (MPID_nem_module_tcp_recv_queue, &cell);
       pkt  = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell); /* cast away volatile */
       len  = MPID_NEM_PACKET_OPT_LEN(pkt);
       dest = pkt->mpich2.dest;
@@ -219,7 +219,7 @@ MPID_nem_tcp_module_poll_recv( void )
 					    if (MPID_nem_tcp_nodes[grank].left2read == 0)
 					    {
 						MPID_nem_tcp_internal_queue_dequeue (MPID_nem_tcp_nodes[grank].internal_free_queue, &cell);
-						MPID_nem_queue_enqueue (process_recv_queue, cell);	      
+						MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);	      
 						MPID_nem_tcp_internal_vars.n_pending_recv--;
 					    }
 					}
@@ -273,7 +273,7 @@ MPID_nem_tcp_module_poll_recv( void )
 				{
 				    MPID_nem_tcp_nodes[grank].left2read_head = 0;
 				    MPID_nem_tcp_internal_queue_dequeue (MPID_nem_tcp_nodes[grank].internal_free_queue, &cell);
-				    MPID_nem_queue_enqueue (process_recv_queue, cell);	      
+				    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);	      
 				    MPID_nem_tcp_internal_vars.n_pending_recv--;					  
 				}
 			    }
@@ -289,9 +289,9 @@ MPID_nem_tcp_module_poll_recv( void )
 		    }
 		    else {
 			/* handle regular Net Q */
-			if (!MPID_nem_queue_empty(module_tcp_free_queue))
+			if (!MPID_nem_queue_empty(MPID_nem_module_tcp_free_queue))
 			{
-			    MPID_nem_queue_dequeue (module_tcp_free_queue, &cell);
+			    MPID_nem_queue_dequeue (MPID_nem_module_tcp_free_queue, &cell);
 			    offset = read (MPID_nem_tcp_nodes[grank].desc,
 					   (MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2), /* cast away volatile */
 					   MPID_NEM_OPT_HEAD_LEN);
@@ -326,7 +326,7 @@ MPID_nem_tcp_module_poll_recv( void )
 						    MPID_nem_mem_region.rank,(char *)((MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2)));
 #endif 
 					    --MPID_nem_tcp_internal_vars.nb_procs;
-					    MPID_nem_queue_enqueue (module_tcp_free_queue, cell);
+					    MPID_nem_queue_enqueue (MPID_nem_module_tcp_free_queue, cell);
 					    goto end;
 					  }
 					else					
@@ -358,7 +358,7 @@ MPID_nem_tcp_module_poll_recv( void )
 						    MPID_nem_mem_region.rank,(char *)((MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2)),cell);
 #endif 
 					    --MPID_nem_tcp_internal_vars.nb_procs;
-					    MPID_nem_queue_enqueue (module_tcp_free_queue, cell);
+					    MPID_nem_queue_enqueue (MPID_nem_module_tcp_free_queue, cell);
 					    goto end; ;
 					  }
 					
@@ -392,7 +392,7 @@ MPID_nem_tcp_module_poll_recv( void )
 						MPID_nem_tcp_nodes[grank].left2read     -= offset;
 						if (MPID_nem_tcp_nodes[grank].left2read == 0)
 						  {
-						    MPID_nem_queue_enqueue (process_recv_queue, cell);	      
+						    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);	      
 						  }
 						else				     
 						    {
@@ -415,7 +415,7 @@ MPID_nem_tcp_module_poll_recv( void )
 					      }
 					  }
 					else{
-					  MPID_nem_queue_enqueue (process_recv_queue, cell);
+					  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
 					end:
 					  MPID_nem_tcp_nodes[grank].left2read      = 0;
 					  MPID_nem_tcp_nodes[grank].left2read_head = 0;
@@ -425,7 +425,7 @@ MPID_nem_tcp_module_poll_recv( void )
 				else
 				  {
 				    /* eof i guess */
-				    MPID_nem_queue_enqueue (module_tcp_free_queue, cell);
+				    MPID_nem_queue_enqueue (MPID_nem_module_tcp_free_queue, cell);
 #ifdef TRACE			
 				    perror("EOF SOCK");
 #endif		

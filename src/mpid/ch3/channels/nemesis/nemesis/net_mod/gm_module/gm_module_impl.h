@@ -31,7 +31,7 @@ extern struct gm_port *port;
 extern MPID_nem_queue_ptr_t module_gm_recv_queue;
 extern MPID_nem_queue_ptr_t module_gm_free_queue;
 
-extern MPID_nem_queue_ptr_t process_recv_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t process_free_queue;
 
 void MPID_nem_gm_module_recv_poll();
