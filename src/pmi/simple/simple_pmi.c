@@ -88,6 +88,7 @@ static int PMII_Connect_to_pm( char *, int );
 static int PMII_singinit(void);
 static int PMI_totalview = 0;
 #endif
+static int PMIi_InitIfSingleton(void);
 static int accept_one_connection(int);
 static char cached_singinit_key[PMIU_MAXLINE];
 static char cached_singinit_val[PMIU_MAXLINE];
@@ -252,26 +253,19 @@ int PMI_Get_rank( int *rank )
     return( 0 );
 }
 
+/* 
+ * Get_universe_size is one of the routines that needs to communicate
+ * with the process manager.  If we started as a singleton init, then
+ * we first need to connect to the process manager and acquire the 
+ * needed information.
+ */
 int PMI_Get_universe_size( int *size)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], size_c[PMIU_MAXLINE];
     int rc;
 
-#ifdef USE_PMI_PORT
-    if (PMI_initialized < 2)
-    {
-	rc = PMII_singinit();
-	if (rc < 0)
-	    return(-1);
-	PMI_initialized = SINGLETON_INIT_WITH_PM;    /* do this right away */
-	PMI_size = 1;
-	PMI_rank = 0;
-	PMI_debug = 0;
-	PMI_spawned = 0;
-	PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
-	PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
-    }
-#endif
+    /* Connect to the PM if we haven't already */
+    if (PMIi_InitIfSingleton() != 0) return -1;
 
     if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
     {
@@ -393,7 +387,11 @@ int PMI_KVS_Get_my_name( char kvsname[], int length )
 
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
 	/* Return a dummy name */
-	MPIU_Strncpy( kvsname, "singinit_kvs_0", PMIU_MAXLINE );
+	/* FIXME: We need to support a distinct kvsname for each 
+	   process group */
+	/* FIXME: Should the length be length (from the arg list) 
+	   instead of PMIU_MAXLINE? */
+	MPIU_Strncpy( kvsname, "singinit_kvs_0", PMIU_MAXLINE ); 
 	return 0;
     }
     PMIU_writeline( PMI_fd, "cmd=get_my_kvsname\n" );
@@ -518,7 +516,9 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], message[PMIU_MAXLINE];
     int  rc;
 
+    /* This is a special hack to support singleton initialization */
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
+	/* FIXME: Check for truncation */
 	MPIU_Strncpy(cached_singinit_key,key,PMI_keylen_max);
 	MPIU_Strncpy(cached_singinit_val,value,PMI_vallen_max);
 	return 0;
@@ -559,6 +559,12 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[], int lengt
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int  rc;
+
+    /* Connect to the PM if we haven't already.  This is needed in case
+       we're doing an MPI_Comm_join or MPI_Comm_connect/accept from
+       the singleton init case.  This test is here because, in the way in 
+       which MPICH2 uses PMI, this is where the test needs to be. */
+    if (PMIi_InitIfSingleton() != 0) return -1;
 
     /* FIXME: Check for tempbuf too short */
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", kvsname, key );
@@ -719,21 +725,8 @@ int PMI_Spawn_multiple(int count,
     int  i,rc,argcnt,spawncnt;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
 
-#ifdef USE_PMI_PORT
-    if (PMI_initialized < 2)
-    {
-	rc = PMII_singinit();
-	if (rc < 0)
-	    return(-1);
-	PMI_initialized = SINGLETON_INIT_WITH_PM;    /* do this right away */
-	PMI_size = 1;
-	PMI_rank = 0;
-	PMI_debug = 0;
-	PMI_spawned = 0;
-	PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
-	PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
-    }
-#endif
+    /* Connect to the PM if we haven't already */
+    if (PMIi_InitIfSingleton() != 0) return -1;
 
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
@@ -1162,7 +1155,16 @@ static int PMII_Set_from_port( int fd, int id )
 }
 
 
-static int PMII_singinit()
+/* This is a special routine used to re-initialize PMI when it is in 
+   the singleton init case.  That is, the executable was started without 
+   mpiexec, and PMI_Init returned as if there was only one process.
+
+   Note that PMI routines should not call PMII_singinit; they should
+   call PMIi_InitIfSingleton(), which both connects to the process mangager
+   and sets up the initial KVS connection entry.
+*/
+
+static int PMII_singinit(void)
 {
     int pid, rc;
     int singinit_listen_sock, pmi_sock, stdin_sock, stdout_sock, stderr_sock;
@@ -1208,6 +1210,8 @@ static int PMII_singinit()
     {
 	pmi_sock = accept_one_connection(singinit_listen_sock);
 	PMI_fd = pmi_sock;
+	/* FIXME: These need to be optional, since not all systems
+	   may choose to intercept STDIO */
 	stdin_sock  = accept_one_connection(singinit_listen_sock);
 	dup2(stdin_sock, 0);
 	stdout_sock = accept_one_connection(singinit_listen_sock);
@@ -1216,6 +1220,35 @@ static int PMII_singinit()
 	dup2(stderr_sock,2);
     }
     return(0);
+}
+
+/* Promote PMI to a fully initialized version if it was started as
+   a singleton init */
+static int PMIi_InitIfSingleton(void)
+{
+    int rc;
+    static int firstcall = 1;
+
+    if (PMI_initialized != SINGLETON_INIT_BUT_NO_PM || !firstcall) return 0;
+
+    /* We only try to init as a singleton the first time */
+    firstcall = 0;
+
+    rc = PMII_singinit();
+
+    if (rc < 0)
+	return(-1);
+    PMI_initialized = SINGLETON_INIT_WITH_PM;    /* do this right away */
+    PMI_size	    = 1;
+    PMI_rank	    = 0;
+    PMI_debug	    = 0;
+    PMI_spawned	    = 0;
+    PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
+    /* FIXME: We need to support a distinct kvsname for each 
+       process group */
+    PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
+
+    return 0;
 }
 
 static int accept_one_connection(int list_sock)
