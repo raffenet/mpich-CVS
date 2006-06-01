@@ -23,20 +23,20 @@
 
 #define PACKET_SIZE (gm_min_size_for_length (MPID_NEM_MAX_PACKET_LEN))
 
-extern int num_send_tokens;
-extern int num_recv_tokens;
+extern int MPID_nem_module_gm_num_send_tokens;
+extern int MPID_nem_module_gm_num_recv_tokens;
 
-extern struct gm_port *port;
+extern struct gm_port *MPID_nem_module_gm_port;
 
-extern MPID_nem_queue_ptr_t module_gm_recv_queue;
-extern MPID_nem_queue_ptr_t module_gm_free_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_module_gm_recv_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_module_gm_free_queue;
 
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 
 void MPID_nem_gm_module_recv_poll();
 inline void MPID_nem_gm_module_recv();
-inline void send_from_queue();
+inline void MPID_nem_send_from_queue();
 
 int MPID_nem_gm_module_lmt_init();
 void MPID_nem_gm_module_lmt_finalize();

@@ -11,8 +11,8 @@
 
 #define FREE_LMT_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS
 
-MPID_nem_gm_module_lmt_queue_head_t MPID_nem_gm_module_lmt_queue;
-MPID_nem_gm_module_lmt_queue_t *MPID_nem_gm_module_lmt_free_queue;
+MPID_nem_gm_module_lmt_queue_head_t MPID_nem_gm_module_lmt_queue = {0};
+MPID_nem_gm_module_lmt_queue_t *MPID_nem_gm_module_lmt_free_queue = 0;
 
 int
 MPID_nem_gm_module_lmt_init()
@@ -196,7 +196,7 @@ get_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 	gm_perror ("Get error", status);
     }
 
-    ++num_send_tokens;
+    ++MPID_nem_module_gm_num_send_tokens;
 
     MPID_NEM_ATOMIC_DEC ((int *)completion_ctr);
 }
@@ -222,7 +222,7 @@ MPID_nem_gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, i
     
     while (1)
     {
-	if (num_recv_tokens == 0)
+	if (MPID_nem_module_gm_num_send_tokens == 0)
 	{
 	    *s_offset = s_buf - (char *)((*s_iov)[s_i].iov_base);
 	    *r_offset = r_buf - (char *)((*r_iov)[r_i].iov_base);
@@ -240,9 +240,9 @@ MPID_nem_gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_iov, i
 	if (len > 0)
 	{
 	    MPID_NEM_ATOMIC_INC (compl_ctr);
-	    //	    gm_get (port, (long)s_buf, r_buf, len, GM_LOW_PRIORITY, node_id, port_id, get_callback, compl_ctr);
+	    //	    gm_get (MPID_nem_module_gm_port, (long)s_buf, r_buf, len, GM_LOW_PRIORITY, node_id, port_id, get_callback, compl_ctr);
 	    
-	    --num_send_tokens;
+	    --MPID_nem_module_gm_num_send_tokens;
 	    
 	    s_len -= len;
 	    r_len -= len;

@@ -10,5 +10,5 @@
 int
 MPID_nem_gm_module_test()
 {
-    return gm_receive_pending (port) || !MPID_nem_queue_empty (module_gm_recv_queue);
+    return gm_receive_pending (MPID_nem_module_gm_port) || !MPID_nem_queue_empty (MPID_nem_module_gm_recv_queue);
 }

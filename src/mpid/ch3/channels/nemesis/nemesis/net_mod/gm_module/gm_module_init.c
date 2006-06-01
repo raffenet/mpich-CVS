@@ -73,7 +73,7 @@ MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
 #define FREE_SEND_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS
-MPID_nem_gm_module_send_queue_head_t MPID_nem_gm_module_send_queue = 0;
+MPID_nem_gm_module_send_queue_head_t MPID_nem_gm_module_send_queue = {0};
 MPID_nem_gm_module_send_queue_t *MPID_nem_gm_module_send_free_queue = 0;
 
 static int
@@ -340,7 +340,7 @@ MPID_nem_gm_module_get_port_unique_from_bc (const char *business_card, int *port
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
     }
 
-    mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, unique_id, UNIQUE_ID_LEN, &len);
+    mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN, &len);
     if (mpi_errno != MPIU_STR_SUCCESS || len != UNIQUE_ID_LEN) {
 	/* FIXME: create a real error string for this */
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");

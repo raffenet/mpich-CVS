@@ -23,7 +23,7 @@ send_callback (struct gm_port *p, void *context, gm_status_t status)
 	gm_perror ("Send error", status);
     }
 
-    ++num_send_tokens;
+    ++MPID_nem_module_gm_num_send_tokens;
 
     MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);
 }
@@ -40,7 +40,7 @@ send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
     MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    gm_send_with_callback (port, pkt, PACKET_SIZE, datalen + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,
+    gm_send_with_callback (MPID_nem_module_gm_port, pkt, PACKET_SIZE, datalen + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,
 			   port_id, send_callback, (void *)cell);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));
     printf_d ("  Sent packet to node = %d, port = %d\n", node_id, port_id);
@@ -53,7 +53,7 @@ send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
     MPIU_Assert ((datalen) <= MPID_NEM_MPICH2_DATA_LEN);									\
 															\
     DO_PAPI (PAPI_reset (PAPI_EventSet));										\
-    gm_send_with_callback (port, pkt, PACKET_SIZE, (datalen) + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,	\
+    gm_send_with_callback (MPID_nem_module_gm_port, pkt, PACKET_SIZE, (datalen) + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,	\
 			   port_id, send_callback, (void *)(cell));							\
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));								\
     printf_d ("  Sent packet to node = %d, port = %d\n", node_id, port_id);						\
@@ -64,7 +64,7 @@ send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
 
 /* #define BOUNCE_BUFFER */
 inline void
-send_from_queue()
+MPID_nem_send_from_queue()
 {
     MPID_nem_gm_module_send_queue_t *e;
 #ifdef BOUNCE_BUFFER
@@ -74,11 +74,11 @@ send_from_queue()
     if (first)
     {
 	first = 0;
-	gm_register_memory (port, &c, sizeof (c));
+	gm_register_memory (MPID_nem_module_gm_port, &c, sizeof (c));
     }
 #endif /* BOUNCE_BUFFER */
     
-    while (!MPID_nem_gm_module_queue_empty (send) && num_send_tokens)
+    while (!MPID_nem_gm_module_queue_empty (send) && MPID_nem_module_gm_num_send_tokens)
     {
 	MPID_nem_gm_module_queue_dequeue (send, &e);
 
@@ -86,7 +86,7 @@ send_from_queue()
 	{
 	case SEND_TYPE_CELL:
 	    send_cell (e->node_id, e->port_id, e->u.cell, e->u.cell->pkt.mpich2.datalen);
-	    --num_send_tokens;
+	    --MPID_nem_module_gm_num_send_tokens;
 	    break;
 	case SEND_TYPE_RDMA:
 	    switch (e->u.rdma.type)
@@ -116,12 +116,12 @@ void
 MPID_nem_gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 {
     DO_PAPI3 (PAPI_reset (PAPI_EventSet));
-    if (MPID_nem_queue_empty (module_gm_recv_queue) && num_send_tokens)
+    if (MPID_nem_queue_empty (MPID_nem_module_gm_recv_queue) && MPID_nem_module_gm_num_send_tokens)
     {
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
 	send_cell (vc->ch.node_id, vc->ch.port_id, cell, datalen);
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues16));
-	--num_send_tokens;
+	--MPID_nem_module_gm_num_send_tokens;
     }
     else
     {
@@ -138,7 +138,7 @@ MPID_nem_gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 	cell->pkt.mpich2.datalen = datalen;
 	
 	MPID_nem_gm_module_queue_enqueue (send, e);
-	send_from_queue();
+	MPID_nem_send_from_queue();
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues17));
     }    
 }

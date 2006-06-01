@@ -19,17 +19,17 @@ MPID_nem_gm_module_recv()
     /*    printf_d ("MPID_nem_gm_module_recv()\n"); */
     
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    while (num_recv_tokens && !MPID_nem_queue_empty (module_gm_free_queue))
+    while (MPID_nem_module_gm_num_recv_tokens && !MPID_nem_queue_empty (MPID_nem_module_gm_free_queue))
     {
-	MPID_nem_queue_dequeue (module_gm_free_queue, &c);
-	gm_provide_receive_buffer_with_tag (port, (void *)MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
-	--num_recv_tokens;
-	DO_PAPI (if (!(num_recv_tokens && !MPID_nem_queue_empty (module_gm_free_queue)))
+	MPID_nem_queue_dequeue (MPID_nem_module_gm_free_queue, &c);
+	gm_provide_receive_buffer_with_tag (MPID_nem_module_gm_port, (void *)MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
+	--MPID_nem_module_gm_num_recv_tokens;
+	DO_PAPI (if (!(MPID_nem_module_gm_num_recv_tokens && !MPID_nem_queue_empty (MPID_nem_module_gm_free_queue)))
 		 PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
    }
     
     DO_PAPI (PAPI_reset (PAPI_EventSet));
-    e = gm_receive (port);
+    e = gm_receive (MPID_nem_module_gm_port);
     while (gm_ntoh_u8 (e->recv.type) != GM_NO_RECV_EVENT)
     {
 	MPID_nem_pkt_header_t *header;
@@ -40,7 +40,7 @@ MPID_nem_gm_module_recv()
 	case GM_HIGH_PEER_RECV_EVENT:
 	case GM_HIGH_RECV_EVENT:
 	    printf ("Received unexpected high priority message\n");
-	    gm_provide_receive_buffer_with_tag (port, gm_ntohp (e->recv.buffer), gm_ntoh_u8 (e->recv.size), GM_HIGH_PRIORITY,
+	    gm_provide_receive_buffer_with_tag (MPID_nem_module_gm_port, gm_ntohp (e->recv.buffer), gm_ntoh_u8 (e->recv.size), GM_HIGH_PRIORITY,
 						gm_ntoh_u8 (e->recv.tag));
 	    break;
 	case GM_FAST_PEER_RECV_EVENT:
@@ -67,23 +67,23 @@ MPID_nem_gm_module_recv()
 	    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, c);
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues9));
 
-/* 	    if (!MPID_nem_queue_empty (module_gm_free_queue)) */
+/* 	    if (!MPID_nem_queue_empty (MPID_nem_module_gm_free_queue)) */
 /* 	    { */
-/* 		MPID_nem_queue_dequeue (module_gm_free_queue, &c); */
-/* 		gm_provide_receive_buffer_with_tag (port, MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0); */
+/* 		MPID_nem_queue_dequeue (MPID_nem_module_gm_free_queue, &c); */
+/* 		gm_provide_receive_buffer_with_tag (MPID_nem_module_gm_port, MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0); */
 /* 	    } */
 /* 	    else */
 /* 	    { */
-		++num_recv_tokens; 
+		++MPID_nem_module_gm_num_recv_tokens; 
 /* 	    } */
 	    break;
 	default:
-	    gm_unknown (port, e);
+	    gm_unknown (MPID_nem_module_gm_port, e);
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues6));
 	}
 	
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
-	e = gm_receive (port);
+	e = gm_receive (MPID_nem_module_gm_port);
     }
 }
 
@@ -95,7 +95,7 @@ lmt_poll()
     
     MPID_nem_gm_module_queue_dequeue (lmt, &e);
     
-    while (e && num_send_tokens)
+    while (e && MPID_nem_module_gm_num_send_tokens)
     {
 	ret = MPID_nem_gm_module_lmt_do_get (e->node_id, e->port_id, &e->r_iov, &e->r_n_iov, &e->r_offset, &e->s_iov, &e->s_n_iov, &e->s_offset,
 				    e->compl_ctr);
@@ -117,7 +117,7 @@ lmt_poll()
 inline void
 MPID_nem_gm_module_send_poll( void )
 {
-    send_from_queue();
+    MPID_nem_send_from_queue();
     /*lmt_poll(); */
     MPID_nem_gm_module_recv();
 }
@@ -126,7 +126,7 @@ inline void
 MPID_nem_gm_module_recv_poll( void )
 {
     MPID_nem_gm_module_recv();
-    send_from_queue();
+    MPID_nem_send_from_queue();
     /*lmt_poll(); */
 }
 

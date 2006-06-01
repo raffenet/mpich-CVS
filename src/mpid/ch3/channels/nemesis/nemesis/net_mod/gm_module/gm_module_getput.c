@@ -15,7 +15,7 @@ getput_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 	gm_perror ("Send error", status);
     }
 
-    ++num_send_tokens;
+    ++MPID_nem_module_gm_num_send_tokens;
 
     MPID_NEM_ATOMIC_DEC ((int *)completion_ctr);
 }
@@ -24,9 +24,9 @@ getput_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)
 void
 MPID_nem_gm_module_do_get (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr)
 {
-    //    gm_get (port, (long)source_p, target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
+    //    gm_get (MPID_nem_module_gm_port, (long)source_p, target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
     
-    --num_send_tokens;
+    --MPID_nem_module_gm_num_send_tokens;
 }
 
 int
@@ -46,7 +46,7 @@ MPID_nem_gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *sou
     {
 	gm_status_t status;
 	
-	status = gm_directcopy_get (port, source_p, target_p, len, 0, source_vc->ch.port_id);
+	status = gm_directcopy_get (MPID_nem_module_gm_port, source_p, target_p, len, 0, source_vc->ch.port_id);
 	if (status != GM_SUCCESS)
 	{
 	    gm_perror ("directcopy", status);
@@ -56,7 +56,7 @@ MPID_nem_gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *sou
     return 0;
     }
 #endif
-    if (num_send_tokens)
+    if (MPID_nem_module_gm_num_send_tokens)
     {
 	MPID_nem_gm_module_do_get (target_p, source_p, len, source_vc->ch.node_id, source_vc->ch.port_id, completion_ctr);
     }
@@ -81,9 +81,9 @@ MPID_nem_gm_module_get (void *target_p, void *source_p, int len, MPIDI_VC_t *sou
 void
 MPID_nem_gm_module_do_put (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr)
 {
-    //    gm_put (port, source_p, (long)target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
+    //    gm_put (MPID_nem_module_gm_port, source_p, (long)target_p, len, GM_LOW_PRIORITY, node_id, port_id, getput_callback, completion_ctr);
 
-    --num_send_tokens;
+    --MPID_nem_module_gm_num_send_tokens;
 }
 
 int
@@ -100,7 +100,7 @@ MPID_nem_gm_module_put (void *target_p, void *source_p, int len, MPIDI_VC_t *tar
 	return 0;
     }
     
-    if (num_send_tokens)
+    if (MPID_nem_module_gm_num_send_tokens)
     {
 	MPID_nem_gm_module_do_put (target_p, source_p, len, target_vc->ch.node_id, target_vc->ch.port_id, completion_ctr);
     }

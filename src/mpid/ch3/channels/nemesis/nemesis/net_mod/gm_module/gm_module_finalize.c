@@ -14,9 +14,9 @@ MPID_nem_gm_module_finalize()
     int max_send_tokens;
     MPID_nem_gm_module_send_queue_t *e;
 
-    max_send_tokens = gm_num_send_tokens (port);
+    max_send_tokens = gm_num_send_tokens (MPID_nem_module_gm_port);
     
-    while (num_send_tokens < max_send_tokens && !MPID_nem_gm_module_queue_empty (send))
+    while (MPID_nem_module_gm_num_send_tokens < max_send_tokens && !MPID_nem_gm_module_queue_empty (send))
     {
 	MPID_nem_gm_module_recv_poll();
     }
