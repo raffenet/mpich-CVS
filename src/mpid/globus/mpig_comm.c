@@ -79,6 +79,30 @@ int mpig_comm_destruct(MPID_Comm * const comm)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
 
+    /* if this communicator was created by MPIR_Setup_intercomm_localcomm(), then skip the destruction process.  see comments
+       below. */
+    if (comm->dev.active_list_prev == comm) goto fn_return;
+    
+    /* a local intracommunicator may be attached to an intercommunicator.  this intracommunicator is created locally (meaning not
+       collectively) by MPIR_Setup_intercomm_localcomm() when needed.  the device is not notified of its creation and thus has
+       not intialized any of the device information.  we set the active list previous and next fields of the local
+       intracommunicator to point at itself so that we can detect when one of these local intracommuncators is being destroyed
+       and skip the destruction process. */
+    if (comm->comm_kind == MPID_INTERCOMM)
+    {
+	MPID_Comm * const local_comm = comm->local_comm;
+	
+	if (local_comm != NULL)
+	{
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "encountered an intercommunicator with a local intracommunicator: comm="
+		MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT ", local_comm"  MPIG_HANDLE_FMT ", local_commp=" MPIG_PTR_FMT, 
+		comm->handle, (MPIG_PTR_CAST) comm, local_comm->handle, (MPIG_PTR_CAST) local_comm));
+	    
+	    local_comm->dev.active_list_prev = local_comm;
+	    local_comm->dev.active_list_next = local_comm;
+	}
+    }
+
     mpig_comm_list_remove(comm);
     
     mpi_errno = mpig_topology_comm_destruct(comm);

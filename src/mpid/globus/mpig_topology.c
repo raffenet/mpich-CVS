@@ -129,7 +129,7 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
 
     MPIR_Nest_incr();
     
-    /* topology information is created for intracommunicators, at least for now */
+    /* topology information is only created for intracommunicators, at least for now */
     if (comm->comm_kind == MPID_INTERCOMM) goto fn_return;
 
     /* allocate memory for copies of the depths and colors arrays */
@@ -458,7 +458,7 @@ int mpig_topology_comm_destruct(MPID_Comm * const comm)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
 
-    /* topology information is created for intracommunicators, at least for now */
+    /* topology information is only created for intracommunicators, at least for now */
     if (comm->comm_kind == MPID_INTERCOMM) goto fn_return;
 
     /* free all of the toploogy information arrays attach to the communicator */
