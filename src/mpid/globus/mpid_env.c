@@ -491,12 +491,19 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
 	str = (char *) MPIU_Malloc(MPIG_ERR_STRING_SIZE);
 	if (str)
 	{
-	    MPIR_Err_print_stack_string(mpi_errno, str, MPIG_ERR_STRING_SIZE);
+	    MPIR_Err_get_string(mpi_errno, str, MPIG_ERR_STRING_SIZE, NULL);
 	    fprintf(stderr, "[%s:%d:%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), str);
 	    fflush(stderr);
 	    MPIU_Free(str);
 	}
+	else
+	{
+	    fprintf(stderr, "[%s:%d:%lu] ERROR: unable to allocate memory needed to output an error message\n",
+		mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id());
+	    fflush(stderr);
+	}
     }
+
     if (error_msg != NULL)
     {
 	fprintf(stderr, "[%s:%d:%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), error_msg);
