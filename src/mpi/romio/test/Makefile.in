@@ -35,31 +35,6 @@ clean:
 	rm -f $(CTESTS) $(FTESTS)
 	@-rm -f work.pc work.pcl
 
-simple: simple.o
-psimple: psimple.o
-perf: perf.o
-excl: excl.o
-status: status.o
-async: async.o
-atomicity: atomicity.o
-coll_test: coll_test.o
-coll_perf: coll_perf.o
-misc: misc.o
-noncontig: noncontig.o
-i_noncontig: i_noncontig.o
-noncontig_coll: noncontig_coll.o
-noncontig_coll2: noncontig_coll2.o
-file_info: file_info.o
-error: error.o
-shared_fp: shared_fp.o
-split_coll: split_coll.o
-#fperf: fperf.o
-#fcoll_test: fcoll_test.o
-#pfcoll_test: pfcoll_test.o
-#fmisc: fmisc.o
-large_file: large_file.o
-large_array: large_array.o
-
 #
 # The Fortran tests must be built with the Fortran linker
 fperf: fperf.o
