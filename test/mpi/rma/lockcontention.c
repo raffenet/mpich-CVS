@@ -7,7 +7,6 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "mpitest.h"
-#include <windows.h>
 
 /* This is a modified version of test4.c. Sent by Liwei Peng, Microsoft. */
 
