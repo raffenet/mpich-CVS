@@ -232,7 +232,9 @@ fn_exit:
     MPIU_THREAD_SINGLE_CS_EXIT("io");
     return error_code;
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIR_Nest_decr();
     error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

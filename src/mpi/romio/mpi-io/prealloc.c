@@ -84,6 +84,10 @@ int MPI_File_preallocate(MPI_File mpi_fh, MPI_Offset size)
 	fcntl_struct->diskspace = size;
 	ADIO_Fcntl(fh, ADIO_FCNTL_SET_DISKSPACE, fcntl_struct, &error_code);
 	ADIOI_Free(fcntl_struct);
+	/* --BEGIN ERROR HANDLING-- */
+	if (error_code != MPI_SUCCESS)
+	    error_code = MPIO_Err_return_file(fh, error_code);
+	/* --END ERROR HANDLING-- */
     }
     MPI_Barrier(fh->comm);
     

@@ -61,6 +61,10 @@ int MPI_File_sync(MPI_File mpi_fh)
     ADIOI_TEST_DEFERRED(fh, "MPI_File_sync", &error_code);
 
     ADIO_Flush(fh, &error_code);
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+	error_code = MPIO_Err_return_file(fh, error_code);
+    /* --END ERROR HANDLING-- */
 
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);

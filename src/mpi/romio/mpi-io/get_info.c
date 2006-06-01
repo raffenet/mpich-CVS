@@ -50,6 +50,10 @@ int MPI_File_get_info(MPI_File mpi_fh, MPI_Info *info_used)
     /* --END ERROR HANDLING-- */
 
     error_code = MPI_Info_dup(fh->info, info_used);
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+	error_code = MPIO_Err_return_file(fh, error_code);
+    /* --END ERROR HANDLING-- */
 
 fn_exit:
     MPIR_Nest_decr();
