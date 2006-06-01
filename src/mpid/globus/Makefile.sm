@@ -79,6 +79,11 @@ install-local:
 	done
 
 #
+# Other directories in which simplemake should translate the Makefile.sm to a Makefile.in
+#
+OTHER_DIRS = examples
+
+#
 # clean up files created by configure
 #
 distclean-local:

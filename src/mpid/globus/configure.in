@@ -304,7 +304,7 @@ AC_SUBST(MAKE_DEPEND_C)
 #
 # create Makefile, etc.
 #
-AC_OUTPUT(Makefile mpiexec mpiddefs.h.out:mpiddefs.h.in,
+AC_OUTPUT(Makefile examples/Makefile mpiexec mpiddefs.h.out:mpiddefs.h.in,
 [
     echo "Copying mpiexec to $master_top_builddir/bin/"
     if test ! -d $master_top_builddir/bin ; then
