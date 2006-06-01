@@ -38,7 +38,7 @@ MPIG_STATIC enum
     MPIG_PM_GK_STATE_FINALIZED
 }
 mpig_pm_gk_state = MPIG_PM_GK_STATE_UNINITIALIZED;
-MPIG_STATIC bool_t mpig_pm_gk_use_system_abort = TRUE;	/* FIXME: control this seting with the environment variable
+MPIG_STATIC bool_t mpig_pm_gk_use_system_abort = FALSE;	/* control this seting with the environment variable
 							   MPIG_USE_SYSTEM_ABORT */
 MPIG_STATIC int mpig_pm_gk_pg_size = -1;		/* the size of the initial process group (comm world) */
 MPIG_STATIC int mpig_pm_gk_pg_rank = -1;		/* the rank of the local process in the initial process group */
@@ -169,10 +169,15 @@ int mpig_pm_gk_init(void)
     }
 #   endif
 
+    /* gather information about the topology of the job and the addresses that allow the subjob masters to talk */
     mpi_errno = mpig_pm_gk_get_topology(mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, &mpig_pm_gk_pg_size, &mpig_pm_gk_pg_rank,
 	&mpig_pm_gk_sj_num, &mpig_pm_gk_my_sj_index, &mpig_pm_gk_sj_addrs);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_topology");
 
+    /* determine if the job should be cancelled or abort() should be called if an error occurs.  this feature is used to get a
+       core dump while debugging and is not some users will normally set. */
+    MPIU_GetEnvBool("MPIG_USE_SYSTEM_ABORT",&mpig_pm_gk_use_system_abort);
+     
     mpig_pm_gk_state = MPIG_PM_GK_STATE_INITIALIZED;
     
   fn_return:
