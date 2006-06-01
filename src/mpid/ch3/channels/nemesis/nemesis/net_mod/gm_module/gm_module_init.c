@@ -58,16 +58,16 @@ static char UNIQUE_TO_STR_TMPSTR[UNIQUE_TO_STR_TMPSTR_LEN];
 static unsigned char unique_id[UNIQUE_ID_LEN] = UNDEFINED_UNIQUE_ID_VAL;
 static int port_id;
 
-int MPID_nem_module_gm_num_send_tokens;
-int MPID_nem_module_gm_num_recv_tokens;
+int MPID_nem_module_gm_num_send_tokens = 0;
+int MPID_nem_module_gm_num_recv_tokens = 0;
 
-struct gm_port *MPID_nem_module_gm_port;
+struct gm_port *MPID_nem_module_gm_port = 0;
 
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
 
-MPID_nem_queue_ptr_t MPID_nem_module_gm_recv_queue;
-MPID_nem_queue_ptr_t MPID_nem_module_gm_free_queue;
+MPID_nem_queue_ptr_t MPID_nem_module_gm_recv_queue = 0;
+MPID_nem_queue_ptr_t MPID_nem_module_gm_free_queue = 0;
 
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
