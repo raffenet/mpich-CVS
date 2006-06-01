@@ -329,16 +329,18 @@ MPID_nem_gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 }
 
 int
-MPID_nem_gm_module_get_port_unique_from_bc (const char *business_card, int *port_id, unsigned char *unique_id)
+MPID_nem_gm_module_get_port_unique_from_bc (const char *business_card, unsigned *port_id, unsigned char *unique_id)
 {
     int mpi_errno = MPI_SUCCESS;
     int len;
+    int tmp_port_id;
     
-    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, port_id);
+    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, &tmp_port_id);
     if (mpi_errno != MPIU_STR_SUCCESS) {
 	/* FIXME: create a real error string for this */
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
     }
+    *port_id = (unsigned)port_id;
 
     mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN, &len);
     if (mpi_errno != MPIU_STR_SUCCESS || len != UNIQUE_ID_LEN) {
