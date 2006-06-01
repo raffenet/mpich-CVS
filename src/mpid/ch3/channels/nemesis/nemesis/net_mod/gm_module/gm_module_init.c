@@ -46,7 +46,7 @@ _safe_malloc (size_t len, char* file, int line)
 } while (0)
 
 #define UNIQUE_TO_STR_TMPSTR_LEN (UNIQUE_ID_LEN * 3) /* two hex digits each, a ':' between each, and a \0 at the end */
-char UNIQUE_TO_STR_TMPSTR[UNIQUE_TO_STR_TMPSTR_LEN]; 
+static char UNIQUE_TO_STR_TMPSTR[UNIQUE_TO_STR_TMPSTR_LEN]; 
 #define UNIQUE_TO_STR(un) ({														  \
     snprintf (UNIQUE_TO_STR_TMPSTR, UNIQUE_TO_STR_TMPSTR_LEN, "%02x:%02x:%02x:%02x:%02x:%02x", un[0], un[1], un[2], un[3], un[4], un[5]); \
     UNIQUE_TO_STR_TMPSTR;														  \
@@ -55,26 +55,26 @@ char UNIQUE_TO_STR_TMPSTR[UNIQUE_TO_STR_TMPSTR_LEN];
 #define UNDEFINED_UNIQUE_ID_VAL "\0\0\0\0\0\0"
 
 //node_t *nodes;
-unsigned char unique_id[UNIQUE_ID_LEN] = UNDEFINED_UNIQUE_ID_VAL;
-int port_id;
+static unsigned char unique_id[UNIQUE_ID_LEN] = UNDEFINED_UNIQUE_ID_VAL;
+static int port_id;
 
-int num_send_tokens;
-int num_recv_tokens;
+int MPID_nem_module_gm_num_send_tokens;
+int MPID_nem_module_gm_num_recv_tokens;
 
-struct gm_port *port;
+struct gm_port *MPID_nem_module_gm_port;
 
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
 
-MPID_nem_queue_ptr_t module_gm_recv_queue;
-MPID_nem_queue_ptr_t module_gm_free_queue;
+MPID_nem_queue_ptr_t MPID_nem_module_gm_recv_queue;
+MPID_nem_queue_ptr_t MPID_nem_module_gm_free_queue;
 
-MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
-MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
+MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
+MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
 #define FREE_SEND_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS
-MPID_nem_gm_module_send_queue_head_t MPID_nem_gm_module_send_queue;
-MPID_nem_gm_module_send_queue_t *MPID_nem_gm_module_send_free_queue;
+MPID_nem_gm_module_send_queue_head_t MPID_nem_gm_module_send_queue = 0;
+MPID_nem_gm_module_send_queue_t *MPID_nem_gm_module_send_free_queue = 0;
 
 static int
 init_gm (int *boardId, int *portId, unsigned char unique_id[])
@@ -99,13 +99,13 @@ init_gm (int *boardId, int *portId, unsigned char unique_id[])
 	    continue;
 	for (*boardId = 0; *boardId < MAX_GM_BOARDS; ++*boardId)
 	{
-	    status = gm_open (&port, *boardId, *portId, " ", GM_API_VERSION);
+	    status = gm_open (&MPID_nem_module_gm_port, *boardId, *portId, " ", GM_API_VERSION);
 		
 	    switch (status)
 	    {
 	    case GM_SUCCESS:
 		/* successfuly allocated a port */
-		if (gm_get_unique_board_id (port, (char *)unique_id) != GM_SUCCESS)
+		if (gm_get_unique_board_id (MPID_nem_module_gm_port, (char *)unique_id) != GM_SUCCESS)
 		{
 		    memset (unique_id, 0, UNIQUE_ID_LEN);
 		    ERROR_RET (-1, "Failed to get local unique id");
@@ -175,7 +175,7 @@ distribute_mac_ids ()
 
 	nodes[i].port_id = p;
 	UINT64_TO_UNIQUE (u, nodes[i].unique_id);
-	ret = gm_unique_id_to_node_id (port, (char *)nodes[i].unique_id, &nodes[i].node_id);
+	ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)nodes[i].unique_id, &nodes[i].node_id);
 	if (ret != GM_SUCCESS)
 	    ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", i, UNIQUE_TO_STR (nodes[i].unique_id));
 	
@@ -238,38 +238,38 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     MPID_nem_process_recv_queue = proc_recv_queue;
     MPID_nem_process_free_queue = proc_free_queue;
 
-    status = gm_register_memory (port, (void *)proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);
+    status = gm_register_memory (MPID_nem_module_gm_port, (void *)proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);
     if (status != GM_SUCCESS)
 	ERROR_RET (-1, "gm_register_memory() for proc elements failed");
 
-    status = gm_register_memory (port, (void *)module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
+    status = gm_register_memory (MPID_nem_module_gm_port, (void *)module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
     if (status != GM_SUCCESS)
 	ERROR_RET (-1, "gm_register_memory() for module elements failed");
 
-    module_gm_recv_queue = &_recv_queue;
-    module_gm_free_queue = &_free_queue;
+    MPID_nem_module_gm_recv_queue = &_recv_queue;
+    MPID_nem_module_gm_free_queue = &_free_queue;
 
-    MPID_nem_queue_init (module_gm_recv_queue);
-    MPID_nem_queue_init (module_gm_free_queue);
+    MPID_nem_queue_init (MPID_nem_module_gm_recv_queue);
+    MPID_nem_queue_init (MPID_nem_module_gm_free_queue);
 
-    num_send_tokens = gm_num_send_tokens (port);
-    num_recv_tokens = gm_num_receive_tokens (port);
+    MPID_nem_module_gm_num_send_tokens = gm_num_send_tokens (MPID_nem_module_gm_port);
+    MPID_nem_module_gm_num_recv_tokens = gm_num_receive_tokens (MPID_nem_module_gm_port);
 
     for (i = 0; i < num_module_elements; ++i)
     {
-	MPID_nem_queue_enqueue (module_gm_free_queue, &module_elements[i]);
+	MPID_nem_queue_enqueue (MPID_nem_module_gm_free_queue, &module_elements[i]);
     }
 
-    while (num_recv_tokens && !MPID_nem_queue_empty (module_gm_free_queue))
+    while (MPID_nem_module_gm_num_recv_tokens && !MPID_nem_queue_empty (MPID_nem_module_gm_free_queue))
     {
 	MPID_nem_cell_ptr_t c;
-	MPID_nem_queue_dequeue (module_gm_free_queue, &c);
-	gm_provide_receive_buffer_with_tag (port, (void *)MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
-	--num_recv_tokens;
+	MPID_nem_queue_dequeue (MPID_nem_module_gm_free_queue, &c);
+	gm_provide_receive_buffer_with_tag (MPID_nem_module_gm_port, (void *)MPID_NEM_CELL_TO_PACKET (c), PACKET_SIZE, GM_LOW_PRIORITY, 0);
+	--MPID_nem_module_gm_num_recv_tokens;
     }
 
-    *module_recv_queue = module_gm_recv_queue;
-    *module_free_queue = module_gm_free_queue;
+    *module_recv_queue = MPID_nem_module_gm_recv_queue;
+    *module_free_queue = MPID_nem_module_gm_free_queue;
 
     MPID_nem_gm_module_send_queue.head = NULL;
     MPID_nem_gm_module_send_queue.tail = NULL;
@@ -387,7 +387,7 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
     vc->ch.port_id = p;
     UINT64_TO_UNIQUE (u, vc->ch.unique_id);
-    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)vc->ch.unique_id, &vc->ch.node_id);
     if (ret != GM_SUCCESS)
 	ERROR_RET (-1, "gm_unique_id_to_node_id() failed for node %d %s", vc->pg_rank, UNIQUE_TO_STR (vc->ch.unique_id));
 	
@@ -404,7 +404,7 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     }
     /* --END ERROR HANDLING-- */
 
-    ret = gm_unique_id_to_node_id (port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)vc->ch.unique_id, &vc->ch.node_id);
     /* --BEGIN ERROR HANDLING-- */
     if (ret != GM_SUCCESS)
     {
