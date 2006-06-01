@@ -361,7 +361,7 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 				int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
-    char *p;
+    const char *p;
     int vct_sz;
     MPIDI_PG_t *existing_pg, *pg_ptr=0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE_FROM_STRING);
@@ -786,6 +786,34 @@ static int connFree( MPIDI_PG_t *pg )
 
     return MPI_SUCCESS;
 }
+
+#ifdef USE_DBG_LOGGING
+/* This is a temporary routine that is used to print out the pg string.
+   A better approach may be to convert it into a single (long) string
+   with no nulls. */
+int MPIDI_PrintConnStr( const char *file, int line, 
+			const char *label, const char *str )
+{
+    int pg_size, i;
+
+    MPIU_DBG_Outevent( file, line, MPIU_DBG_CH3_CONNECT, 0, label );
+    MPIU_DBG_Outevent( file, line, MPIU_DBG_CH3_CONNECT, 0, str );
+    
+    /* Skip the pg id */
+    while (*str) str++; str++;
+
+    /* Determine the size of the pg */
+    pg_size = atoi( str );
+    while (*str) str++; str++;
+
+    for (i=0; i<pg_size; i++) {
+	MPIU_DBG_Outevent( file, line, MPIU_DBG_CH3_CONNECT, 0, str );
+	while (*str) str++;
+	str++;
+    }
+    return 0;
+}
+#endif
 
 int MPIDI_PG_InitConnString( MPIDI_PG_t *pg )
 {
