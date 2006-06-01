@@ -198,6 +198,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS) {
         MPI_Comm_free(&dupcomm);
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
@@ -232,6 +233,6 @@ fn_exit:
     return error_code;
  fn_fail:
     MPIR_Nest_decr();
-    error_code = MPIO_Err_return_comm(comm, error_code);
+    error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
     goto fn_exit;
 }
