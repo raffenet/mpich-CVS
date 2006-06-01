@@ -1,24 +1,111 @@
 ===================================================================================================================================
-				   To do list for alpha release to friendly TeraGrid users
+				   To Do Before Next Alpha Release to Friendly TeraGrid Users
 ===================================================================================================================================
+* discuss naming of topology attributes and constants
 
-- FIX ENQUEUING A REQ TWICE ON THE RCQ!  this happens with cancel.  can it happen any other time?
+  - all MPICHX constants are maintained for backwards compatibility (see mpiddefs.h.in)
 
-- XIO communication module bug fixes (threaded and nonthreaded)
+  - the topology attribute keyval are now named MPIG_TOPOLOGY_DEPTHS_KEYVAL and MPIG_TOPOLOGY_COLORS_KEYVAL
 
-- integrate Nick's segment unpack code that uses globus_dc
+  - the topology level constants are now as follows:
 
-- MPI_PACKED support
+    - MPIG_TOPOLOGY_LEVEL_WAN -- communication across a wide area network
 
-- vendor MPI communication module
+    - MPIG_TOPOLOGY_LEVEL_LAN -- communication within a local area network
 
-- allow application to call vendor MPI directly
+    - Reserved: MPIG_TOPOLOGY_LEVEL_SAN -- communication within a system area network
+
+    - Reserved: MPIG_TOPOLOGY_LEVEL_HOST -- communication within a single host (e.g. shared memory)
+
+    - MPIG_TOPOLOGY_LEVEL_SUBJOB -- communication within a single subjob (presumably all communication occurs over the same SAN)
+
+      - "SUBJOB" replaced "HOST" for two reasons.  first, "HOST" suggests communication within a single machine (something with a
+        single hostname), which for a cluster is a single node, and therefore is too restrictive a term.  second, the topology
+        discovery code considered two different subjobs not to be connected at the "HOST" level, so "SAN" was inappropriate since
+        two subjobs coulbe be running on the same cluster and connected using the same fast internal network.  for that matter,
+        two subjobs could be running on the same host and able to communicate via shared memory.
+
+    - MPIG_TOPOLOGY_LEVEL_VMPI -- communication within a single subjob using an underlying vendor MPI library */
+
+    - Reserved: MPIG_TOPOLOGY_LEVEL_PROC -- communication within a single process (intra-process communication)
+
+* Web service version of mpig_pm interface
+
+  - the interface to mpig_pm_get_app_num() has changed.  it now takes a business card so that the subjob id can be extracted for
+    any process.  the topology discovery code required this feature in order to determine if two processes are part of the same
+    "SUBJOB" (formerly called "HOST").
+
+* MPI_Comm_connect/accept
+
+  * need intercommunicator context id solution from Bill G.
+
+  o fix GPID so that MPI_Intercomm_create/merge work with communicators containing processes outside of MPI_COMM_WORLD
+
+* Vendor MPI
+
+  * track communicators
+
+  * track data types
+
+  * translate return codes
+
+  * progress engine code
+
+* add -globusrsl option to mpiexec
+
+===================================================================================================================================
+					       To Do Before Next Official Release
+===================================================================================================================================
 
 * adjust tunable parameters to more sane values (currently set to maximize code coverage during testing)
 
-- fix error reporting in XIO client-side connection establishment code (replace assert statement with real error messages)
+* Heterogenous data conversion
+
+  * integrate Nick's segment unpack code that uses globus_dc
+
+  * handle communication and manipulation of MPI_PACKED data
+
+* FIX CM_XIO progress engine code
+
+  * don't allow a req to be enqueued twice on the rcq!  this happens with send cancel.  can it happen any other time?
+
+  - don't return every time an unexpected message is received just so that MPI_Probe works
+  
+  - roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in a single call
+
+* XIO communication module bug fixes (threaded and nonthreaded)
 
 - add UDT support to the XIO communication module
+
+- fix error reporting in XIO client-side connection establishment code (replace assert statement with real error messages)
+
+o full visual inspection of error handling code, and fill in missing cases (particularly in CM XIO)
+
+o add vendor MPI bypass for calling the vendor MPI directly for special predefined communicators
+
+o clean up wrapping debugging output lines
+
+o update MPIG compiler scripts.  the current ones result in a few oddities while configuring MPIG.  presently, these oddities
+  don't affect us because configure gives us what we need anyway, but that may not be true for all platforms.  here is one in
+  particular:
+
+  checking whether install breaks libraries... gcc: libconftest1.a: linker input file unused because linking not done
+  no
+
+o modify compiler scripts to the following quote function.  it _should_ work better than present handling in the case statement.
+
+      quote()
+      {
+          IFS=""
+          params="$*"
+          params="'`echo "$params" | sed -e "s/'/'"'"'"'"'"'"'/g"`'";
+          echo $params
+      }
+
+o add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
+
+o singleton init.  does this even make sense for globus?  probably since a singleton process could the spawn other jobs and
+  connect to services.  this might be useful for portals, etc.
 
 
 ===================================================================================================================================
@@ -75,73 +162,56 @@
 
 
 ===================================================================================================================================
-						      To Do Before Release
-===================================================================================================================================
-
-
-* FIX CM_XIO progress engine code so that it doesn't return every time an unexpected message is receive just so that MPI_Probe
-  works.  While doing this, roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in
-  a single call.
-
-* add vendor MPI bypass for calling the vendor MPI directly for special predefined communicators
-
-* change tunable parameters in mpig_cm_xio.c to something reasonable.  right now they are set to trigger maximal code coverage.
-
-* full visual inspection of error handling code, and fill in missing cases (particularly in CM XIO)
-
-- clean up wrapping debugging output lines
-
-- update MPIG compiler scripts.  the current ones result in a few oddities while configuring MPIG.  presently, these oddities
-  don't affect us because configure gives us what we need anyway, but that may not be true for all platforms.  here is one in
-  particular:
-
-  checking whether install breaks libraries... gcc: libconftest1.a: linker input file unused because linking not done
-  no
-
-- modify compiler scripts to the following quote function.  it _should_ work better than present handling in the case statement.
-
-      quote()
-      {
-          IFS=""
-          params="$*"
-          params="'`echo "$params" | sed -e "s/'/'"'"'"'"'"'"'/g"`'";
-          echo $params
-      }
-
-- add script to generate function renaming headers
-
-- include definitions from device into mpi.h, allowing function renaming, etc.
-
-- add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
-
-- singleton init
-
-
-===================================================================================================================================
 							   MPICH2 Issues
 ===================================================================================================================================
+- need to create an intercommunicator for MPI_Comm_{connect,accept}
+
+  - this requires that we create a single context id that is common throughout the intercommuncator
+
+  - using the existing MPIR_Get_context_id, this does not seem possible since there is not mechanism for exchanging the context
+    id allocation bitmask between the connect/accept processes
+
+  - one solution is to include a callout to a user supplied routine after the NMPI_All_reduce() to exchange the bitmasks, then
+    perform another NMPI_All_reduce() after applying the remote bitmask to the local bitmask.  this would require exposing the
+    structure of a context id allocation bitmask.
+
+  * Bill needs to think about this
+
+- an mechanism is needed to allow the device to define the structure of a GPID.  see 'global process ids' email for the solution.
+
+  * Brian will create a prototype
+
+- an interface is needed to tracking the creation and freeing of communicators so that MPIG may duplicate the operations in the
+  vendor MPI.  what should the interface and semantics be?  allowing the return of error codes would be useful.
+
+  * use existing hooks with new parameter list (ROUTINE_NAME, old_comm, new_comm, &mpi_errno, STMT)
+
+- an interface is need for tracking creation and freeing of datatypes so that MPIG may duplicate the operations in the vendor
+  MPI.  what should the interface and semantics be?  allowing the return of error codes would be useful.
+
+  * Talk to Rob R., but something similar to comm hooks
+
+- many things to commit.  need to set up a meeting with Bill to go through changes.
+
+  * Meet with Bill next week.
 
 - a mechanism for disabling long long and long double support in MPICH2 even if the compiler support those types.  the vendor MPI
   may not support MPI_LONG_LONG or MPI_LONG_LONG_INT, and the Globus data conversion library doesn't support long double.
 
+  * DONE.  NEEDS TO BE COMMITTED.
+
 - a mechanism for specifying the size of MPI_Aint so that it matches the size used by the vendor MPI.  alternatively, we may be
   able to performs cast where appropriate, but this seems risky.  what if we renamed MPICH2's MPI_Aint to MPIG_Aint, and then let
   the cast occur naturally in mpig_vmpi.c?
-
-- an interface is needed to tracking the creation and freeing of communicators so that MPIG may duplicate the operations in the
-  vendor MPI.
-
-- an interface is need for tracking creation and freeing of datatypes so that MPIG may duplicate the operations in the vendor
-  MPI.
 
 
 ===================================================================================================================================
 							   Globus Issues
 ===================================================================================================================================
 
-- support for long double and fixed sized integers (ex: uint32_t) in the Globus data conversion module.  this isn't critical
-  since MPIG provides its own routines for conversion of fixed types, but it would be nicer if all data conversion were provided
-  by globus_dc.  this is something worth adding when support for long double is added.
+- support for long double and fixed sized integers (ex: uint32_t) in the Globus data conversion module.  fixed type support isn't
+  critical since MPIG provides its own routines for conversion of fixed types, but it would be nicer if all data conversion were
+  provided by globus_dc.  this is something worth adding when support for long double is added, which is critical.
 
 
 ===================================================================================================================================
