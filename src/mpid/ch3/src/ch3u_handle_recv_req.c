@@ -623,7 +623,7 @@ static int do_accumulate_op(MPID_Request *rreq)
         MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
         
         type = dtp->eltype;
-        type_size = MPID_Datatype_get_basic_size(type);
+        MPID_Datatype_get_size_macro(type, type_size);
         for (i=0; i<vec_len; i++)
 	{
             count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
