@@ -15,10 +15,10 @@
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) do {} while (0)
 #endif
 
-MPID_Request ** const MPID_Recvq_posted_head_ptr = 0;
-MPID_Request ** const MPID_Recvq_unexpected_head_ptr = 0; 
-MPID_Request ** const MPID_Recvq_posted_tail_ptr = 0;
-MPID_Request ** const MPID_Recvq_unexpected_tail_ptr = 0;
+extern MPID_Request ** const MPID_Recvq_posted_head_ptr;
+extern MPID_Request ** const MPID_Recvq_unexpected_head_ptr; 
+extern MPID_Request ** const MPID_Recvq_posted_tail_ptr;
+extern MPID_Request ** const MPID_Recvq_unexpected_tail_ptr;
 
 volatile unsigned int MPIDI_CH3I_progress_completions = 0;
 
