@@ -192,6 +192,12 @@ void MPIR_Get_file_error_routine( MPI_Errhandler e,
 	else {
 	    *c = e_ptr->errfn.C_File_Handler_function;
 	    *kind = 2;
+	    /* If the language is C++, we need to use a special call
+	       interface.  This is MPIR_File_call_cxx_errhandler.  
+	       See file_call_errhandler.c */
+#ifdef HAVE_CXX_BINDING
+	    if (e_ptr->language == MPID_LANG_CXX) *kind = 3;
+#endif
 	}
     }
  fn_fail:

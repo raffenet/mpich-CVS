@@ -14,8 +14,8 @@
 /* This routine, given an MPI_Errhandler (from a file), returns
    a pointer to the user-supplied error function.  The last argument
    is set to an integer indicating that the function is MPI_ERRORS_RETURN 
-   (value == 1), MPI_ERRORS_ARE_FATAL (value == 0), or a valid user-function
-   (value == 2) 
+   (value == 1), MPI_ERRORS_ARE_FATAL (value == 0), a valid user-function
+   (value == 2), or a valid user-function that is a C++ routine (value == 3)
 
    This routine is implemented in mpich2/src/mpi/errhan/file_set_errhandler.c
 */
@@ -23,6 +23,13 @@ void MPIR_Get_file_error_routine( MPI_Errhandler,
 				  void (**)(MPI_File *, int *, ...), 
 				  int * );
 
+/* Invoke the C++ error handler (this invokes a special C++ routine that
+ in turn calls the provided function.  That special routine also 
+ resets the errorcode to MPI_SUCCESS to prevent the MPICH2 C++ error handling
+ code from throwing an exception when the user routine returns.
+*/
+int MPIR_File_call_cxx_errhandler( MPI_File *, int *, 
+				   void (*)(MPI_File *, int *, ... ) );
 /* 
    These routines provide access to the MPI_Errhandler field within the 
    ROMIO MPI_File structure
