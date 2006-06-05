@@ -365,7 +365,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
     MPIDI_Request_set_msg_type((rreq_), (msg_type_));           \
 }
 
-//#ifdef BYPASS_PROGRESS
+#ifdef BYPASS_PROGRESS
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_poke_with_matching
 #undef FCNAME
@@ -923,7 +923,6 @@ ch3|cancelresp", 0);
     return rreq;
 }
 
-#ifdef BYPASS_PROGRESS
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_ipoke_with_matching
 #undef FCNAME
