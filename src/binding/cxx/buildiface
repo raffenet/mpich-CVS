@@ -2588,10 +2588,10 @@ void MPIR_CXX_InitDatatypeNames( void )
     static int _isInit = 1; 
     if (_isInit) { 
 	_isInit=0; 
-	MPI_Type_set_name( MPI::BOOL, \"MPI::BOOL\" );
-	MPI_Type_set_name( MPI::COMPLEX, \"MPI::COMPLEX\" );\
-	MPI_Type_set_name( MPI::DOUBLE_COMPLEX, \"MPI::DOUBLE_COMPLEX\" );\
-	MPI_Type_set_name( MPI::LONG_DOUBLE_COMPLEX, \"MPI::LONG_DOUBLE_COMPLEX\" );\
+	PMPI_Type_set_name( MPI::BOOL, (char *)\"MPI::BOOL\" );
+	PMPI_Type_set_name( MPI::COMPLEX, (char *)\"MPI::COMPLEX\" );\
+	PMPI_Type_set_name( MPI::DOUBLE_COMPLEX, (char *)\"MPI::DOUBLE_COMPLEX\" );\
+	PMPI_Type_set_name( MPI::LONG_DOUBLE_COMPLEX, (char *)\"MPI::LONG_DOUBLE_COMPLEX\" );\
     }
 }\n";
 
