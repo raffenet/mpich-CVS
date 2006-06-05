@@ -890,12 +890,12 @@ if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
     with_pm=mpd
 fi
 
-# Eventually, we should allow multiple pm names, separated by :
+# Eventually, we should allow multiple pm names, separated by : or ,
 # Set the value MANY_PM to yes in this case
 MANY_PM=no
 AC_SUBST(MANY_PM)
 if test "$with_pm" != "no" ; then
-    pm_names="`echo $with_pm | sed -e 's/:/ /g'`"
+    pm_names="`echo $with_pm | sed -e 's/:/ /g' -e 's/,/ /g'`"
 else
     pm_names=""
 fi
