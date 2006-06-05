@@ -145,9 +145,13 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 #endif
 }
 
+#ifndef MPICH_MPI_FROM_PMPI
 /* This is a glue routine that can be used by ROMIO 
    (see mpi-io/glue/mpich2/mpio_err.c) to properly invoke the C++ 
    error handler */
+#undef FUNCNAME
+#define FUNCNAME MPIR_File_call_cxx_errhandler
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_File_call_cxx_errhandler( MPI_File *fh, int *errorcode, 
 			   void (*c_errhandler)(MPI_File *, int *, ... ) )
 {
@@ -159,3 +163,4 @@ int MPIR_File_call_cxx_errhandler( MPI_File *fh, int *errorcode,
     *errorcode = MPI_SUCCESS;
     return *errorcode;
 }
+#endif
