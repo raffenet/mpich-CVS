@@ -4,6 +4,7 @@ config.log
 config.status
 Makefile
 lib
+share
 autom4te.cache
 config.h.in
 trace_impl.h
