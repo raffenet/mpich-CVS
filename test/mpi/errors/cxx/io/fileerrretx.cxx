@@ -72,6 +72,7 @@ int main( int argc, char *argv[] )
 			 MPI::MODE_RDWR, MPI::INFO_NULL );
     } catch (MPI::Exception ex) {
 	cout << "Caught exception from open (should have called error handler instead)\n";
+	errs++;
 	if (ex.Get_error_class() == MPI_SUCCESS) {
 	    errs++;
 	    cout << "Unexpected error from Open" << endl;
