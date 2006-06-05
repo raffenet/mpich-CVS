@@ -18,6 +18,7 @@ $gDebugOther = 0;
 	      "acc\\+\\+", "xlc", "xlf", "xlC", "xlf90", 
 	      "true", "false", "/[A-Za-z0-9_\/\.-]*createshlib", 
 	      "/bin/sh\s+[A-Za-z0-9_\/\.-]*libtool\s+--mode=",
+	      "/bin/bash\s+[A-Za-z0-9_\/\.-]*libtool\s+--mode=",
 	      "[A-Za-z0-9_\/-]*\/icc",
 	      "[A-Za-z0-9_\/-]*\/install-sh",
 	      "/usr/bin/ar", "mkdir",
