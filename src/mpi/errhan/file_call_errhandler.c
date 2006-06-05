@@ -151,6 +151,7 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
    error handler */
 #undef FUNCNAME
 #define FUNCNAME MPIR_File_call_cxx_errhandler
+#undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_File_call_cxx_errhandler( MPI_File *fh, int *errorcode, 
 			   void (*c_errhandler)(MPI_File *, int *, ... ) )
