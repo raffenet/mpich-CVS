@@ -447,6 +447,7 @@ if ($rc != 0) {
     system( "cat $outlog" );
     $errors ++;
 }
+unlink "a.out";
 
 # Run this test only if mpicxx is valid
 if ("@bindings@" =~ /cxx/) {
@@ -469,6 +470,7 @@ if ("@bindings@" =~ /cxx/) {
 	system( "cat $outlog" );
 	$errors ++;
     }
+    unlink "a.out";
 }
 # Run this test only if mpif77 is valid
 if ("@bindings@" =~ /f77/) {
@@ -491,6 +493,7 @@ if ("@bindings@" =~ /f77/) {
 	system( "cat $outlog" );
 	$errors ++;
     }
+    unlink "a.out";
 }
 
 # FIXME: 
