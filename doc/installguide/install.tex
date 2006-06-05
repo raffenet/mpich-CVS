@@ -488,6 +488,29 @@ A list of \texttt{configure} options is found in
 Section~\ref{configure-options}.  Here we comment on some of them.  This
 section needs much more work.
 
+\subsubsection{The Most Important Configure Options}
+\begin{description}
+\item[--prefix]Set the installation directories for MPICH2.  
+\item[--enable-debuginfo]Provide access to the message queues for
+  debuggers such as Totalview.
+\item[--enable-g]Build MPICH2 with various debugging options.  This is
+  of interest primarily to MPICH2 developers.  The options
+  \texttt{--enable-g=dbg,mem,log} are recommended in that case.
+\item[--enable-fast]Configure MPICH2 for fastest performance at the
+  expense of error reporting and other program development aids.  This
+  is recommended only for getting the best performance out of proven
+  production applications, and for benchmarking.
+\item[--without-mpe]Configure MPICH2 without the MPE package of
+  program development tools (including the Jumpshot performance viewer)
+\item[--enable-sharedlibs]Build MPICH2 with shared libraries. You must
+  select an Operating System and Compiler combination.  For example, 
+  \texttt{--enable-sharedlibs=osx-gcc} or
+  \texttt{--enable-sharedlibs=linux-gcc}.  
+\item[--with-pm]Select the process manager.  The default is
+  \texttt{mpd}; also useful is \texttt{gforker}.  You can build with
+  both process managers with \texttt{--with-pm=mpd:gforker}.
+\end{description}
+
 
 \subsubsection{Using the Absoft Fortran compilers with MPICH2}
 \label{sec:absoft}
