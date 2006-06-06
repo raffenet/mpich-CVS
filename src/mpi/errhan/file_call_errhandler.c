@@ -156,12 +156,16 @@ int MPI_File_call_errhandler(MPI_File fh, int errorcode)
 int MPIR_File_call_cxx_errhandler( MPI_File *fh, int *errorcode, 
 			   void (*c_errhandler)(MPI_File *, int *, ... ) )
 {
+    /* ROMIO will contain a reference to this routine, so if there is 
+       no C++ support, it will never be called but it must be availavle. */
+#ifdef HAVE_CXX_BINDING
     void *fh1 = (void *)fh;
-    (*MPIR_Process.cxx_call_errfn)( 1, fh1, errorcode, c_errhandler );
+    (*MPIR_Process.cxx_call_errfn)( 1, fh1, errorcode, (void(*)(void))c_errhandler );
     /* The C++ code throws an exception if the error handler 
        returns something other than MPI_SUCCESS. There is no "return"
        of an error code. This code mirrors that in errutil.c */
     *errorcode = MPI_SUCCESS;
+#endif
     return *errorcode;
 }
 #endif
