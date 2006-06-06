@@ -370,7 +370,9 @@ typedef struct MPID_Datatype {
 extern MPIU_Object_alloc_t MPID_Datatype_mem;
 
 /* Preallocated datatype objects */
-#define MPID_DATATYPE_N_BUILTIN 50
+/* The C++ types BOOL, COMPLEX, DOUBLE_COMPLEX, and LONG_DOUBLE_COMPLEX 
+   added a few more builtin types */
+#define MPID_DATATYPE_N_BUILTIN 55
 extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN + 1];
 extern MPID_Datatype MPID_Datatype_direct[];
 
