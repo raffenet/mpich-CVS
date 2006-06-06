@@ -487,6 +487,7 @@ static int checkValidErrcode( int error_class, const char fcname[],
 /* Check that an encoded error code is valid. Return 0 if valid, positive, 
    non-zero if invalid.  Value indicates reason; see 
    ErrcodeInvalidReasonStr() */
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
 static int checkErrcodeIsValid( int errcode )
 {
     int ring_id, generic_idx, ring_idx;
@@ -522,6 +523,29 @@ static const char *ErrcodeInvalidReasonStr( int reason )
     }
     return str;
 }
+#else
+/* This is the shortened version when there are no error messages */
+static int checkErrcodeIsValid( int errcode )
+{
+    if (errcode < 0 || errcode >= MPICH_ERR_LAST_CLASS) {
+	return 3;
+    }
+    return 0;
+}
+static const char *ErrcodeInvalidReasonStr( int reason )
+{
+    const char *str = 0;
+    switch (reason) {
+    case 3:
+	str = "Message class is out of range";
+	break;
+    default:
+	str = "Unknown reason for invalid errcode";
+	break;
+    }
+    return str;
+}
+#endif
 
 /* Check to see if the error code is a user-specified error code
    (e.g., from the attribute delete function) and if so, set the error code
