@@ -34,8 +34,12 @@ void CLOG_Timer_start( void )
         PMPI_Allreduce( &local_time, &clog_time_offset, 1, MPI_DOUBLE,
                         MPI_MAX, MPI_COMM_WORLD );
     }
-    else /*  Clocks are NOT synchronized  */
+    else {/*  Clocks are NOT synchronized  */
+        /*  Do couple barriers before getting synchronized time offset */
+        PMPI_Barrier( MPI_COMM_WORLD );
+        PMPI_Barrier( MPI_COMM_WORLD );
         clog_time_offset = PMPI_Wtime();
+    }
 }
 
 CLOG_Time_t  CLOG_Timer_get( void )
