@@ -50,11 +50,11 @@ if test "$enable_totalview" = "no" ; then
     DO_MTV="no"
 elif test "$enable_totalview" = "yes" ; then
     DO_MTV="yes"
-# else
-    # AC_CHECK_PROG(TOTALVIEW, totalview, totalview)
-    # if test -n "$TOTALVIEW" ; then
-        # DO_MTV="yes"
-    # fi
+else
+    AC_CHECK_PROG(TOTALVIEW, totalview, totalview)
+    if test -n "$TOTALVIEW" ; then
+        DO_MTV="yes"
+    fi
 fi
 AC_SUBST(DO_MTV)
 
