@@ -326,7 +326,7 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPIDI_CH3_Pkt_put_t *put_pkt = &upkt.put;
     MPIDI_CH3_Pkt_accum_t *accum_pkt = &upkt.accum;
     MPID_IOV iov[MPID_IOV_LIMIT];
-    int mpi_errno=MPI_SUCCESS;
+    int mpi_errno=MPI_SUCCESS, predefined;
     int origin_dt_derived, target_dt_derived, origin_type_size, iovcnt, iov_n; 
     MPIDI_VC_t * vc;
     MPID_Comm *comm_ptr;
@@ -376,7 +376,8 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
     MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
-    if (HANDLE_GET_KIND(rma_op->origin_datatype) != HANDLE_KIND_BUILTIN)
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(rma_op->origin_datatype, predefined);
+    if (!predefined)
     {
         origin_dt_derived = 1;
         MPID_Datatype_get_ptr(rma_op->origin_datatype, origin_dtp);
@@ -386,7 +387,8 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         origin_dt_derived = 0;
     }
 
-    if (HANDLE_GET_KIND(rma_op->target_datatype) != HANDLE_KIND_BUILTIN)
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(rma_op->target_datatype, predefined);
+    if (!predefined)
     {
         target_dt_derived = 1;
         MPID_Datatype_get_ptr(rma_op->target_datatype, target_dtp);
@@ -570,7 +572,7 @@ static int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
 {
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_get_t *get_pkt = &upkt.get;
-    int mpi_errno;
+    int mpi_errno, predefined;
     MPIDI_VC_t * vc;
     MPID_Comm *comm_ptr;
     MPID_Request *req = NULL;
@@ -604,7 +606,8 @@ static int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     req->dev.datatype = rma_op->origin_datatype;
     req->dev.target_win_handle = MPI_WIN_NULL;
     req->dev.source_win_handle = source_win_handle;
-    if (HANDLE_GET_KIND(req->dev.datatype) != HANDLE_KIND_BUILTIN)
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(req->dev.datatype, predefined);
+    if (!predefined)
     {
         MPID_Datatype_get_ptr(req->dev.datatype, dtp);
         req->dev.datatype_ptr = dtp;
@@ -629,8 +632,8 @@ static int MPIDI_CH3I_Recv_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
     MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
-    if (HANDLE_GET_KIND(rma_op->target_datatype) ==
-        HANDLE_KIND_BUILTIN)
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(rma_op->target_datatype, predefined);
+    if (predefined)
     {
         /* basic datatype on target. simply send the get_pkt. */
         mpi_errno = MPIDI_CH3_iStartMsg(vc, get_pkt, sizeof(*get_pkt), &req);
@@ -1305,7 +1308,7 @@ int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr)
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_lock_t *lock_pkt = &upkt.lock;
     MPIDI_VC_t * vc;
-    int wait_for_rma_done_pkt = 0;
+    int wait_for_rma_done_pkt = 0, predefined;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_UNLOCK);
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_UNLOCK);
 
@@ -1356,8 +1359,10 @@ int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr)
 	
 	MPID_Datatype_get_size_macro(curr_op->origin_datatype, type_size);
 	
-	if ( (HANDLE_GET_KIND(curr_op->target_datatype) == HANDLE_KIND_BUILTIN) 
-	     && (type_size * curr_op->origin_count <= MPIDI_CH3_EAGER_MAX_MSG_SIZE) ) {
+	MPIDI_CH3I_DATATYPE_IS_PREDEFINED(curr_op->target_datatype, predefined);
+
+	if ( predefined &&
+	     (type_size * curr_op->origin_count <= MPIDI_CH3_EAGER_MAX_MSG_SIZE) ) {
 	    single_op_opt = 1;
 	    /* Set the lock granted flag to 1 */
 	    win_ptr->lock_granted = 1;
@@ -1707,7 +1712,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     MPID_IOV iov[MPID_IOV_LIMIT];
     MPID_Comm *comm_ptr;
     MPID_Datatype *origin_dtp=NULL;
-    int origin_type_size;
+    int origin_type_size, predefined;
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_lock_put_unlock_t *lock_put_unlock_pkt = &upkt.lock_put_unlock;
     MPIDI_CH3_Pkt_lock_accum_unlock_t *lock_accum_unlock_pkt = &upkt.lock_accum_unlock;
@@ -1762,7 +1767,8 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
     MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
     MPIDI_Comm_get_vc(comm_ptr, rma_op->target_rank, &vc);
 
-    if (HANDLE_GET_KIND(rma_op->origin_datatype) != HANDLE_KIND_BUILTIN)
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(rma_op->origin_datatype, predefined);
+    if (!predefined)
     {
         origin_dt_derived = 1;
         MPID_Datatype_get_ptr(rma_op->origin_datatype, origin_dtp);
@@ -1903,7 +1909,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
 {
-    int mpi_errno=MPI_SUCCESS, lock_type;
+    int mpi_errno=MPI_SUCCESS, lock_type, predefined;
     MPIDI_RMA_ops *rma_op;
     MPID_Request *rreq=NULL, *sreq=NULL;
     MPIDI_VC_t * vc;
@@ -1940,7 +1946,9 @@ static int MPIDI_CH3I_Send_lock_get(MPID_Win *win_ptr)
     rreq->dev.datatype = rma_op->origin_datatype;
     rreq->dev.target_win_handle = MPI_WIN_NULL;
     rreq->dev.source_win_handle = win_ptr->handle;
-    if (HANDLE_GET_KIND(rreq->dev.datatype) != HANDLE_KIND_BUILTIN)
+
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(rreq->dev.datatype, predefined);
+    if (!predefined)
     {
         MPID_Datatype_get_ptr(rreq->dev.datatype, dtp);
         rreq->dev.datatype_ptr = dtp;

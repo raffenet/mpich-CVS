@@ -725,6 +725,15 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 
 
+#define MPIDI_CH3I_DATATYPE_IS_PREDEFINED(type, predefined) \
+    if ((HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) || \
+        (type == MPI_FLOAT_INT) || (type == MPI_DOUBLE_INT) || \
+        (type == MPI_LONG_INT) || (type == MPI_SHORT_INT) || \
+	(type == MPI_LONG_DOUBLE_INT)) \
+        predefined = 1; \
+    else predefined = 0;
+
+
 int MPIDI_CH3I_Progress_finalize(void);
 
 /* Function that may be used to provide buisness card info */

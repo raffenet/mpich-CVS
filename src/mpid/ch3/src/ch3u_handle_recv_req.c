@@ -541,7 +541,7 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int do_accumulate_op(MPID_Request *rreq)
 {
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, predefined;
     MPI_Aint true_lb, true_extent;
     MPI_User_function *uop;
     MPIU_THREADPRIV_DECL;
@@ -579,7 +579,8 @@ static int do_accumulate_op(MPID_Request *rreq)
 	/* --END ERROR HANDLING-- */
     }
     
-    if (HANDLE_GET_KIND(rreq->dev.datatype) == HANDLE_KIND_BUILTIN)
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(rreq->dev.datatype, predefined);
+    if (predefined)
     {
         (*uop)(rreq->dev.user_buf, rreq->dev.real_user_buf,
                &(rreq->dev.user_count), &(rreq->dev.datatype));

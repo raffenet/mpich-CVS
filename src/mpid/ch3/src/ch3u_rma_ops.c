@@ -195,7 +195,7 @@ int MPIDI_Put(void *origin_addr, int origin_count, MPI_Datatype
             int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int dt_contig, rank;
+    int dt_contig, rank, predefined;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
     MPI_Aint dt_true_lb;
@@ -260,12 +260,14 @@ int MPIDI_Put(void *origin_addr, int origin_count, MPI_Datatype
 	
 	/* if source or target datatypes are derived, increment their
 	   reference counts */ 
-	if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
+	MPIDI_CH3I_DATATYPE_IS_PREDEFINED(origin_datatype, predefined);
+	if (!predefined)
 	{
 	    MPID_Datatype_get_ptr(origin_datatype, dtp);
 	    MPID_Datatype_add_ref(dtp);
 	}
-	if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
+	MPIDI_CH3I_DATATYPE_IS_PREDEFINED(target_datatype, predefined);
+	if (!predefined)
 	{
 	    MPID_Datatype_get_ptr(target_datatype, dtp);
 	    MPID_Datatype_add_ref(dtp);
@@ -295,7 +297,7 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_msg_sz_t data_sz;
-    int dt_contig, rank;
+    int dt_contig, rank, predefined;
     MPI_Aint dt_true_lb;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
@@ -362,12 +364,14 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
 	
 	/* if source or target datatypes are derived, increment their
 	   reference counts */ 
-	if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
+	MPIDI_CH3I_DATATYPE_IS_PREDEFINED(origin_datatype, predefined);
+	if (!predefined)
 	{
 	    MPID_Datatype_get_ptr(origin_datatype, dtp);
 	    MPID_Datatype_add_ref(dtp);
 	}
-	if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
+	MPIDI_CH3I_DATATYPE_IS_PREDEFINED(target_datatype, predefined);
+	if (!predefined)
 	{
 	    MPID_Datatype_get_ptr(target_datatype, dtp);
 	    MPID_Datatype_add_ref(dtp);
@@ -399,7 +403,7 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     int nest_level_inc = FALSE;
     int mpi_errno=MPI_SUCCESS;
     MPIDI_msg_sz_t data_sz;
-    int dt_contig, rank;
+    int dt_contig, rank, origin_predefined, target_predefined;
     MPI_Aint dt_true_lb;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
@@ -429,6 +433,9 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     */
     NMPI_Comm_rank(win_ptr->comm, &rank);
     
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(origin_datatype, origin_predefined);
+    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(target_datatype, target_predefined);
+
     if (target_rank == rank)
     {
 	MPI_User_function *uop;
@@ -447,8 +454,7 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	/* get the function by indexing into the op table */
 	uop = MPIR_Op_table[(op)%16 - 1];
 	
-	if (HANDLE_GET_KIND(origin_datatype) == HANDLE_KIND_BUILTIN &&
-	    HANDLE_GET_KIND(target_datatype) == HANDLE_KIND_BUILTIN)
+	if (origin_predefined && target_predefined)
 	{    
 	    (*uop)(origin_addr, (char *) win_ptr->base + win_ptr->disp_unit *
 		   target_disp, &target_count, &target_datatype);
@@ -551,12 +557,12 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	
 	/* if source or target datatypes are derived, increment their
 	   reference counts */ 
-	if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
+	if (!origin_predefined)
 	{
 	    MPID_Datatype_get_ptr(origin_datatype, dtp);
 	    MPID_Datatype_add_ref(dtp);
 	}
-	if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
+	if (!target_predefined)
 	{
 	    MPID_Datatype_get_ptr(target_datatype, dtp);
 	    MPID_Datatype_add_ref(dtp);

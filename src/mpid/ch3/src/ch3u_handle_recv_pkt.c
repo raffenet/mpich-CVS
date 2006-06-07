@@ -637,6 +637,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 	{
 	    MPIDI_CH3_Pkt_put_t * put_pkt = &pkt->put;
             MPID_Request *req;
+	    int predefined;
 
 	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received put pkt");
 
@@ -666,7 +667,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
                 req->dev.target_win_handle = put_pkt->target_win_handle;
                 req->dev.source_win_handle = put_pkt->source_win_handle;
 
-                if (HANDLE_GET_KIND(put_pkt->datatype) == HANDLE_KIND_BUILTIN)
+		MPIDI_CH3I_DATATYPE_IS_PREDEFINED(put_pkt->datatype, predefined);
+		if (predefined)
 		{
                     MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PUT_RESP);
                     req->dev.datatype = put_pkt->datatype;
@@ -723,6 +725,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
             MPID_Request *req;
             MPI_Aint true_lb, true_extent, extent;
             void *tmp_buf;
+	    int predefined;
 
 	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received accumulate pkt");
 
@@ -736,7 +739,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
             req->dev.target_win_handle = accum_pkt->target_win_handle;
             req->dev.source_win_handle = accum_pkt->source_win_handle;
 
-            if (HANDLE_GET_KIND(accum_pkt->datatype) == HANDLE_KIND_BUILTIN)
+	    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(accum_pkt->datatype, predefined);
+	    if (predefined)
 	    {
 		MPIU_THREADPRIV_DECL;
 		MPIU_THREADPRIV_GET;
@@ -812,6 +816,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 	    MPIDI_CH3_Pkt_get_t * get_pkt = &pkt->get;
             MPID_Request *req;
             MPID_IOV iov[MPID_IOV_LIMIT];
+	    int predefined;
 
 	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received get pkt");
 
@@ -820,7 +825,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
             req->dev.source_win_handle = get_pkt->source_win_handle;
             req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 
-            if (HANDLE_GET_KIND(get_pkt->datatype) == HANDLE_KIND_BUILTIN)
+	    MPIDI_CH3I_DATATYPE_IS_PREDEFINED(get_pkt->datatype, predefined);
+	    if (predefined)
 	    {
                 /* basic datatype. send the data. */
                 MPIDI_CH3_Pkt_t upkt;
