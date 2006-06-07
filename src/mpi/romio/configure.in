@@ -784,6 +784,47 @@ else
   fi
 fi
 #
+# Test that we can use the FORTRAN_MPI_OFFSET type.  If the environment
+# is a strict Fortran 90/95 or later compiler, the "integer*8" format
+# may not work.
+if test "$NOF77" = 0 ; then
+    rm -f conftest*
+    ac_cv_f77_offset_type_works=no
+    AC_MSG_CHECKING([that we can use $FORTRAN_MPI_OFFSET to declare MPI_DISPLACMENT_CURRENT])
+    cat >conftest.f <<EOF
+        program main
+        $FORTRAN_MPI_OFFSET j
+        end
+EOF
+    if $F77 -o conftest conftest.f >>config.log 2>&1 && test -x conftest ; then
+        ac_cv_f77_offset_type_works=yes
+    fi
+    rm -f conftest*
+    AC_MSG_RESULT($ac_cv_f77_offset_type_works)
+
+    if test "$ac_cv_f77_offset_type_works" != "yes" ; then
+        AC_MSG_CHECKING([whether we can use KIND with the selected F77 compiler $F77])
+        ac_cv_f77_allows_offset_kind=no
+        rm -f conftest*
+        cat >conftest.f <<EOF
+        program main
+        integer (kind=$MPI_OFFSET_KIND) j
+        end
+EOF
+        if $F77 -o conftest conftest.f >>config.log 2>&1 && test -x conftest ; then
+            ac_cv_f77_allows_offset_kind=yes
+        fi
+        rm -f conftest*
+        AC_MSG_RESULT($ac_cv_f77_allows_offset_kind)
+        if test "$ac_cv_f77_allows_offset_kind" ; then
+             FORTRAN_MPI_OFFSET="integer (kind=$MPI_OFFSET_KIND)"
+        else
+             AC_MSG_WARN([Could not find a way to declare an integer type corresponding to MPI_Offset in Fortran.])
+        fi
+    fi
+fi
+
+#
 # check if MPI_Info functions are defined in the MPI implementation
 if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    PAC_MPI_INFO
