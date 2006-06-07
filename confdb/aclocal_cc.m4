@@ -2011,7 +2011,7 @@ if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
 	    libinstall="$INSTALL_DATA"
 	    eval "libinstall=\"$libinstall\""
 	    if ${libinstall} libconftest.a libconftest1.a  >/dev/null 2>&1 ; then
-                if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest1.a 2>&1 >>conftest.out && test -x conftest ; then
+                if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest1.a >>conftest.out 2>&1 && test -x conftest ; then
 		    # Success!  Install works
  	            ac_cv_prog_install_breaks_libs=no
 	        else
