@@ -640,23 +640,33 @@ if test "$enable_threads" = "runtime" ; then
     # FIXME: This doesn't support runtime:thread-impl (as in multiple:thread-impl)
 fi
 
+MPICH_THREAD_LEVEL=MPI_THREAD_FUNNELED
 case "$enable_threads" in 
-    single|funneled)
+    single)
     thread_pkg_required=no
     thread_impl=none
+    MPICH_THREAD_LEVEL=MPI_THREAD_SINGLE
+    ;;
+    funneled)
+    thread_pkg_required=no
+    thread_impl=none
+    MPICH_THREAD_LEVEL=MPI_THREAD_FUNNELED
     ;;
     serialized)
     # FIXME: Why does serialized require a thread package?
     thread_pkg_required=yes
     thread_impl=none
+    MPICH_THREAD_LEVEL=MPI_THREAD_SERIALIZED
     ;;
     multiple)
     thread_pkg_required=yes
     thread_impl=global_mutex
+    MPICH_THREAD_LEVEL=MPI_THREAD_MULTIPLE
     ;;
     multiple:*)
     thread_pkg_required=yes
     thread_impl="`echo $enable_threads | sed -e 's/.*://'`"
+    MPICH_THREAD_LEVEL=MPI_THREAD_MULTIPLE
     case "$thread_impl" in 
 	global_mutex)
 	;;
@@ -672,7 +682,6 @@ case "$enable_threads" in
     ;;
 esac
 
-MPICH_THREAD_LEVEL="MPI_THREAD_`echo $enable_threads | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`"
 export MPICH_THREAD_LEVEL
 AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$MPICH_THREAD_LEVEL,[Level of thread support selected at compile time])
 
