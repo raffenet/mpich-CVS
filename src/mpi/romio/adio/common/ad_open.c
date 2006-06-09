@@ -62,6 +62,8 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 
     fd->async_count = 0;
 
+    fd->fortran_handle = -1;
+
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
 
 /* create and initialize info object */

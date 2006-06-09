@@ -235,6 +235,7 @@ typedef struct ADIOI_FileD {
     int async_count;         /* count of outstanding nonblocking operations */
     int perm;
     int atomicity;          /* true=atomic, false=nonatomic */
+    int fortran_handle;     /* handle for Fortran interface if needed */
     MPI_Errhandler err_handler;
     void *fs_ptr;            /* file-system specific information */
 } ADIOI_FileD;
