@@ -1547,6 +1547,9 @@ EOF
         pac_cv_f90_vendor=absoft
     elif grep 'G95' conftest.txt >/dev/null 2>&1 ; then
         pac_cv_f90_vendor=gnu
+    elif grep 'GNU Fortran' conftest.txt >/dev/null 2>&1 ; then
+        # This is gfortran
+        pac_cv_f90_vendor=gnu
     elif test ! -f conftest.txt ; then
         # Try to use the compiler name
         if test "$F90" = "ifort" -o "$F90" = "ifc" ; then 
@@ -1585,11 +1588,13 @@ EOF
         F90_LINKPATH_SHL=$C_LINKPATH_SHL
     ;;
     *)
-    if test -z "$F90_LINKPATH_SHL" -a -n "$C_LINKPATH_SHL" ; then
-        AC_MSG_WARN([Unable to determine how to pass the shared-library link patth to the Fortran 90 compiler $F90.  Set the environment variable F90_LINKPATH_SHL and rerun configure (the corresponding value for the C compiler is $C_LINKPATH_SHL)])
-    fi
+       # Unknown, ignore
     ;;
     esac
+    if test "$ENABLE_SHLIB" != "none" -a -z "$F90_LINKPATH_SHL" -a \
+        -n "$C_LINKPATH_SHL" ; then
+        AC_MSG_WARN([Unable to determine how to pass the shared-library link patth to the Fortran 90 compiler $F90.  Set the environment variable F90_LINKPATH_SHL and rerun configure (the corresponding value for the C compiler is $C_LINKPATH_SHL)])
+    fi
     # ------------------------------------------------
 fi
 

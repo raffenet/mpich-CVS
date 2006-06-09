@@ -1,5 +1,5 @@
 #! @BASH@
-# 
+#
 # (C) 2006 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
@@ -50,7 +50,7 @@ PMPILIBNAME="@PMPILIBNAME@"
 MPI_OTHERLIBS="@LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
 #
-# MPIVERSION is the version of the MPICH2 library that mpif77 is intended for
+# MPIVERSION is the version of the MPICH2 library for which mpif77 is intended
 MPIVERSION="@VERSION@"
 #
 # Internal variables
@@ -192,8 +192,10 @@ for arg in "$@" ; do
 	    exit 1
         fi
         addarg=no
+	# Remove and directory names and extension
 	$ext=`expr "$arg" : '.*\(\..*\)'`
         bfile=`basename $arg $ext`
+	# 
 	TMPDIR=${TMPDIR:-/tmp}
         tmpfile=$TMPDIR/f$$-$bfile.f
         if $F77CPP "${cppflags[@]}" $arg > $tmpfile ; then
@@ -211,10 +213,6 @@ for arg in "$@" ; do
     ;;
     # - end of special handling for .F files
     
-    *)
-    qarg="'$arg'"
-    ;;
-
     esac
     if [ $addarg = no ] ; then
         unset allargs[$argno]
