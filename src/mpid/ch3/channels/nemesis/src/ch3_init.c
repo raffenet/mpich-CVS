@@ -167,3 +167,8 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
+
+const char *MPIDI_CH3_VC_GetStateString(int state)
+{
+    return "";
+}

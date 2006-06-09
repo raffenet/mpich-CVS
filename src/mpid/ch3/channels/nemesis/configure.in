@@ -152,7 +152,9 @@ AC_CHECK_HEADERS(				\
 	sys/socket.h				\
 	sys/sockio.h				\
 	sys/types.h				\
-	errno.h)
+	errno.h					\
+	sys/ipc.h				\
+	sys/shm.h)
 
 # netinet/in.h often requires sys/types.h first.  With AC 2.57, check_headers
 # does the right thing, which is to test whether the header is found 
@@ -169,6 +171,32 @@ AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
 if test "$ac_cv_header_netinet_in_h" = yes ; then
     AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
 fi
+
+AC_ARG_WITH(shared-memory, [--with-shared-memory[=auto|sysv|mmap] - create shared memory using sysv or mmap (dafault is auto)],,
+    with_shared_memory=auto)
+
+if test "$with_shared_memory" = auto -o "$with_shared_memory" = sysv; then
+    found_sysv_shm_funcs=yes
+    AC_CHECK_FUNCS(shmget shmat shmctl shmdt, , found_sysv_shm_funcs=no)
+    if test "$found_sysv_shm_funcs" = yes ; then
+        AC_DEFINE(HAVE_SYSV_SHARED_MEM,1,[Define if we have sysv shared memory])
+        AC_MSG_NOTICE([Using SYSV shared memory])
+        with_shared_memory=sysv
+    elif test "$with_shared_memory" = sysv ; then
+        AC_MSG_ERROR([cannot support shared memory:  sysv shared memory functions functions not found])
+    fi
+fi
+if test "$with_shared_memory" = auto -o "$with_shared_memory" = mmap; then
+    AC_CHECK_FUNCS(mmap munmap, , 
+	if test "$with_shared_memory" = mmap ; then
+	    AC_MSG_ERROR([cannot support shared memory:  mmap or munmap not found])
+	else
+            AC_MSG_ERROR([need either sysv shared memory functions or mmap in order to support shared memory])
+	fi
+    )
+    AC_MSG_NOTICE([Using a memory-mapped file for shared memory])
+fi
+
 
 
 

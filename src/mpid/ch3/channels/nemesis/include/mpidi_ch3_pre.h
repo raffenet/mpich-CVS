@@ -48,6 +48,7 @@ typedef struct MPIDI_CH3I_VC
        portion of the vc.  This is unused in nemesis and should be set
        to NULL */
     void *sendq_head;
+    int state;
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;

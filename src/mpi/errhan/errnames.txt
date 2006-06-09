@@ -890,6 +890,20 @@ with MPI_Alloc_mem.
 **setup_connections:MPIDI_CH3I_Setup_connections failed
 
 #
+# Nemesis
+#
+**shmdt:shmdt failed
+**shmdt %s:shmdt failed - %s
+**alloc_shar_mem:unable to allocate shared memory
+**alloc_shar_mem %s %s:unable to allocate shared memory - %s %s
+**attach_shar_mem:unable to attach to shared memory
+**attach_shar_mem %s %s:unable to attach to shared memory - %s %s
+**remove_shar_mem:unable to remove shared memory
+**remove_shar_mem %s %s:unable to remove shared memory - %s %s
+**detach_shar_mem:unable to detach shared memory
+**detach_shar_mem %s %s:unable to detach shared memory - %s %s
+
+#
 # Globus device
 #
 **globus|badreqtype:globus|badreqtype
