@@ -190,6 +190,10 @@ void MPID_nem_check_alloc (int num_processes)
 #ifdef HAVE_SYSV_SHARED_MEM
 /* SYSV shared memory */
 
+/* FIXME: for sysv, when we have more than 8 procs, we exceed SHMMAX
+   when allocating a shared-memory region.  We need a way to handle
+   this, e.g., break it up into smaller chunks, but make them
+   contiguous. */
 #define MAX_INT_STR_LEN 12
 #undef FUNCNAME
 #define FUNCNAME allocate_shared_memory
