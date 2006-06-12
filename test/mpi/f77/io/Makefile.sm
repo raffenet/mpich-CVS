@@ -22,6 +22,7 @@ shpositionf_SOURCES   = shpositionf.f
 
 atomicityf_SOURCES    = atomicityf.f
 miscfilef_SOURCES     = miscfilef.f
+setviewcurf_SOURCES   = setviewcurf.f
 
 # These IO tests are build from a template and a set of definitions.
 iwriteatf.f writef.f writeatf.f writeatallf.f writeallf.f writeallbef.f \
