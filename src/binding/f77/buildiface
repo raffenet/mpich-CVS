@@ -2284,7 +2284,8 @@ if ($write_mpif) {
 	foreach $distrib (BLOCK, CYCLIC, NONE, DFLT_DARG) {
 	    &print_mpif_int("MPI_DISTRIBUTE_$distrib");
 	}
-	&print_mpif_int( "MPI_DISPLACEMENT_CURRENT" );
+	&print_mpif_int( "MPI_DISPLACEMENT_CURRENT", 0,
+			 "\@FORTRAN_MPI_OFFSET\@" );
     }
     # 
     # Finally, the special symbols
@@ -2913,6 +2914,18 @@ sub print_mpif_int {
     my $key = $_[0];
     my $value = $mpidef{$key};
     my $valueOffset = $_[1];
+    my $inttype = $_[2];
+
+    # integertype lets use change the integer type of the 
+    # variable; e.g., to make it integer*8 or integer (kind=MPI_OFFSET_KIND).
+    # This is needed for MPI_DISPLACEMENT_CURRENT.
+    # Because this will need to be set by configure, if set, this 
+    # needs to be a configure variable.
+    my $integertype = "INTEGER";
+
+    if (defined($inttype)) {
+	$integertype = $inttype;
+    }
     
     if (!defined($value) || $value eq "") {
 	print STDERR "No value found for \"$key\"\n";
@@ -2934,15 +2947,15 @@ sub print_mpif_int {
 	$value = hex $value;
 	print "hex conversion: $value\n" if $debug;
     }
-    if (defined($valueOffset)) { 
-	if ($value =~ /^\d+/) {
+    if (defined($valueOffset) && $valueOffset ne "0") { 
+	if ($value =~ /^-?\d+/) {
 	    $value += $valueOffset;
 	}
 	else {
 	    $value .= "$valueOffset";
 	}
     }
-    print MPIFFD "       INTEGER $key\n";
+    print MPIFFD "       $integertype $key\n";
     print MPIFFD "       PARAMETER ($key=$value)\n";
 }
 

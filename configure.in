@@ -4428,6 +4428,30 @@ AC_SUBST(MPI_OFFSET)
 MPI_OFFSET_TYPEDEF="typedef $MPI_OFFSET MPI_Offset;"
 AC_SUBST(MPI_OFFSET_TYPEDEF)
 #
+# Fortran type for an Offset type (needed to define MPI_DISPLACEMENT_CURRENT
+# The value for this comes from ROMIO, and is needed in mpif.h.in
+# First, we check that this works with both Fortran compilers (if
+# they are defined)
+if test "$enable_f77" = yes -a "$enable_f90" = yes ; then
+    AC_LANG_FORTRAN77
+    AC_MSG_CHECKING([whether the Fortran Offset type works with Fortran77])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      $FORTRAN_MPI_OFFSET i])],
+                      has_f77_offsettype=yes,has_f77_offsetype=no)
+    AC_MSG_RESULT($has_f77_offsettype)
+    PAC_LANG_PUSH_COMPILERS
+    PAC_LANG_FORTRAN90
+    AC_MSG_CHECKING([whether the Fortran Offset type works with Fortran90])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      $FORTRAN_MPI_OFFSET i])],
+                      has_f90_offsettype=yes,has_f90_offsetype=no)
+    AC_MSG_RESULT($has_f90_offsettype)
+    PAC_LANG_POP_COMPILERS
+    if test "$has_f77_offsettype" != yes -o "$has_f90_offsettype" != yes ; then
+        AC_MSG_WARN([mpif.h is not compatible with both $F77 and $F90.  We \
+recommend that you set both F77 and F90 to the same compiler and reconfigure.])
+    fi
+fi
+AC_SUBST(FORTRAN_MPI_OFFSET)
+#
 dnl Temporary value for extra status information, from device subsystem
 AC_SUBST(EXTRA_STATUS_DECL)
 
