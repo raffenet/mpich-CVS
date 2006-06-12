@@ -20,7 +20,7 @@ C    using a combination of collective and ordered writes
       comm = MPI_COMM_WORLD
       call MPI_File_open( comm, "test.ord", MPI_MODE_WRONLY +
      $     MPI_MODE_CREATE, MPI_INFO_NULL, fh, ierr )
-      if (ierr .ne. MPI_SUCCESSS) then
+      if (ierr .ne. MPI_SUCCESS) then
          errs = errs + 1
          call MTestPrintErrorMsg( "Open(1)", ierr )
       endif
