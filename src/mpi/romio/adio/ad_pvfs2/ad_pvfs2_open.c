@@ -41,7 +41,10 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
     PVFS_sys_dist* dist;
 
     ADIOI_PVFS2_makeattribs(&attribs);
-    attribs.dfile_count = nr_datafiles;
+    if (nr_datafiles > 0 ) {
+	attribs.dfile_count = nr_datafiles;
+	attribs.mask |= PVFS_ATTR_SYS_DFILE_COUNT;
+    }
 
     dist = NULL;
     
