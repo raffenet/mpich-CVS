@@ -77,6 +77,11 @@ int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
     ADIO_Fcntl(fh, ADIO_FCNTL_SET_ATOMICITY, fcntl_struct, &error_code);
     /* TODO: what do we do with this error code? */
 
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+	error_code = MPIO_Err_return_file(fh, error_code);
+    /* --END ERROR HANDLING-- */
+
     ADIOI_Free(fcntl_struct);
 
 fn_exit:

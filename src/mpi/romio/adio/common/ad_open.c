@@ -62,6 +62,8 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 
     fd->async_count = 0;
 
+    fd->fortran_handle = -1;
+
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
 
 /* create and initialize info object */
@@ -257,8 +259,10 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
                 (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
             }
         }
-
 	if (fd->filename) ADIOI_Free(fd->filename);
+	if (fd->hints->ranklist) ADIOI_Free(fd->hints->ranklist);
+	if (fd->hints->cb_config_list) ADIOI_Free(fd->hints->cb_config_list);
+	if (fd->hints) ADIOI_Free(fd->hints);
 	if (fd->info != MPI_INFO_NULL) MPI_Info_free(&(fd->info));
 	ADIOI_Free(fd);
         fd = ADIO_FILE_NULL;

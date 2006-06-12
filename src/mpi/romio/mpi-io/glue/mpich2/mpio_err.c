@@ -89,7 +89,10 @@ int MPIO_Err_return_file(MPI_File mpi_fh, int error_code)
     }
     /* --END ERROR HANDLING-- */
     else if (kind == 2) {
-	(*c_errhandler)( &mpi_fh, &error_code, 0 );
+	(*c_errhandler)( &mpi_fh, &error_code, 0 ); 
+    }
+    else if (kind == 3) {
+	MPIR_File_call_cxx_errhandler( &mpi_fh, &error_code, c_errhandler );
     }
 
     /* kind == 1 just returns */

@@ -61,19 +61,32 @@ int MPI_File_close(MPI_File *mpi_fh)
         pointer is opened with COMM_SELF. We don't want it to be
 	deleted while others are still accessing it. */ 
         MPI_Barrier((fh)->comm);
-	if ((fh)->shared_fp_fd != ADIO_FILE_NULL)
+	if ((fh)->shared_fp_fd != ADIO_FILE_NULL) {
 	    ADIO_Close((fh)->shared_fp_fd, &error_code);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (error_code != MPI_SUCCESS) goto fn_fail;
+	    /* --END ERROR HANDLING-- */
+	}
     }
 
     ADIO_Close(fh, &error_code);
     MPIO_File_free(mpi_fh);
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS) goto fn_fail;
+    /* --END ERROR HANDLING-- */
 
 #ifdef MPI_hpux
     HPMP_IO_WEND(fl_xmpi);
 #endif /* MPI_hpux */
 
-fn_exit:
     MPIR_Nest_decr();
+fn_exit:
     MPIU_THREAD_SINGLE_CS_EXIT("io");
     return error_code;
+fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    MPIR_Nest_decr();
+    error_code = MPIO_Err_return_file(fh, error_code);
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

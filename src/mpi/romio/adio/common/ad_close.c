@@ -6,6 +6,7 @@
  */
 
 #include "adio.h"
+#include "adio_extern.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -58,6 +59,10 @@ void ADIO_Close(ADIO_File fd, int *error_code)
 		ADIO_Delete(fd->filename, &err);
 	}
 	MPI_Barrier(fd->comm);
+    }
+
+    if (fd->fortran_handle != -1) {
+	ADIOI_Ftable[fd->fortran_handle] = MPI_FILE_NULL;
     }
 
     ADIOI_Free(fd->hints->ranklist);

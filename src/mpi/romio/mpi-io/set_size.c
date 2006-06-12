@@ -82,6 +82,11 @@ int MPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
     ADIO_Resize(fh, size, &error_code);
     /* TODO: what to do with error code? */
     
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+	error_code = MPIO_Err_return_file(fh, error_code);
+    /* --END ERROR HANDLING-- */
+
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */

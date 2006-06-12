@@ -121,6 +121,11 @@ int MPI_File_seek(MPI_File mpi_fh, MPI_Offset offset, int whence)
     ADIO_SeekIndividual(fh, offset, ADIO_SEEK_SET, &error_code);
     /* TODO: what do we do with this error? */
 
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+	error_code = MPIO_Err_return_file(fh, error_code);
+    /* --END ERROR HANDLING-- */
+
 #ifdef MPI_hpux
     HPMP_IO_END(fl_xmpi, fh, MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */

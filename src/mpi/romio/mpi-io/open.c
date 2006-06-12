@@ -198,6 +198,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS) {
         MPI_Comm_free(&dupcomm);
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
@@ -230,8 +231,10 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 fn_exit:
     MPIU_THREAD_SINGLE_CS_EXIT("io");
     return error_code;
- fn_fail:
+fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIR_Nest_decr();
-    error_code = MPIO_Err_return_comm(comm, error_code);
+    error_code = MPIO_Err_return_file(MPI_FILE_NULL, error_code);
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }

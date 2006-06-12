@@ -157,6 +157,11 @@ int MPIOI_File_write(MPI_File mpi_fh,
 			  offset, status, &error_code);
     }
 
+    /* --BEGIN ERROR HANDLING-- */
+    if (error_code != MPI_SUCCESS)
+	error_code = MPIO_Err_return_file(fh, error_code);
+    /* --END ERROR HANDLING-- */
+
 fn_exit:
     MPIR_Nest_decr();
     MPIU_THREAD_SINGLE_CS_EXIT("io");
