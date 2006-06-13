@@ -11,81 +11,107 @@
 #define NEM_TCP_BUF_SIZE    MPID_NEM_OPT_HEAD_LEN
 #define NEM_TCP_MASTER_RANK 0
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_tcp_module_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_tcp_module_finalize ()
 {
-  if (MPID_nem_mem_region.ext_procs > 0)
+    int mpi_errno = MPI_SUCCESS;
+    
+    if (MPID_nem_mem_region.ext_procs > 0)
     {
-      node_t *MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
-      char buff[NEM_TCP_BUF_SIZE] = TCP_END_STRING;
-      int index;
-      int grank;
-      int is_master = 0;
+        node_t *MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
+        char buff[NEM_TCP_BUF_SIZE] = TCP_END_STRING;
+        int index;
+        int grank;
+        int is_master = 0;
 
 #ifdef TRACE
-      fprintf(stderr,"[%i] --- TCP END PENDING SEND \n",MPID_nem_mem_region.rank);
+        fprintf(stderr,"[%i] --- TCP END PENDING SEND \n",MPID_nem_mem_region.rank);
 #endif
-      while( MPID_nem_tcp_internal_vars.n_pending_send > 0 )
+        while( MPID_nem_tcp_internal_vars.n_pending_send > 0 )
 	{
-	  MPID_nem_tcp_module_poll( MPID_NEM_POLL_OUT );
+            MPID_nem_tcp_module_poll( MPID_NEM_POLL_OUT );
 	}
       
 #ifdef TRACE
-      fprintf(stderr,"[%i] --- TCP END PENDING DONE  1\n",MPID_nem_mem_region.rank);
+        fprintf(stderr,"[%i] --- TCP END PENDING DONE  1\n",MPID_nem_mem_region.rank);
 #endif
       
       
-      for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
+        for(index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
 	{
-	  grank = MPID_nem_mem_region.ext_ranks[index];
-	  if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
+            grank = MPID_nem_mem_region.ext_ranks[index];
+            if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
 	    {
-	      write(MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
+                write(MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
 #ifdef TRACE
-	      fprintf(stderr,"[%i] --- WROTE TO PROC %i on desc %i: %s, size %i\n",MPID_nem_mem_region.rank, grank, MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
+                fprintf(stderr,"[%i] --- WROTE TO PROC %i on desc %i: %s, size %i\n",MPID_nem_mem_region.rank, grank, MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
 #endif
 	    }
 	}
 
 #ifdef TRACE 
-      fprintf(stderr,"[%i] --- TCP END PENDING  3 : waiting for %i processes \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);      
+        fprintf(stderr,"[%i] --- TCP END PENDING  3 : waiting for %i processes \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);      
 #endif 
-      while (MPID_nem_tcp_internal_vars.nb_procs > 0)
+        while (MPID_nem_tcp_internal_vars.nb_procs > 0)
 	{
-	  MPID_nem_tcp_module_poll_recv();
+            MPID_nem_tcp_module_poll_recv();
 	}
 
 #ifdef TRACE 
-      fprintf(stderr,"[%i] --- TCP END PENDING  4 : %i processes left \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);            
+        fprintf(stderr,"[%i] --- TCP END PENDING  4 : %i processes left \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);            
 #endif //TRACE 
 
     } 
-  return MPID_nem_tcp_module_ckpt_shutdown ();    
+
+    mpi_errno = MPID_nem_tcp_module_ckpt_shutdown();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_tcp_module_ckpt_shutdown
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_tcp_module_ckpt_shutdown ()
 {
-  if (MPID_nem_mem_region.ext_procs > 0)
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    
+    if (MPID_nem_mem_region.ext_procs > 0)
     {  
-      int index;
-      int grank;
+        int index;
+        int grank;
       
-      /* close the sockets */
-      for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
+        /* close the sockets */
+        for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
 	{
-	  grank = MPID_nem_mem_region.ext_ranks[index];
-	  if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
+            grank = MPID_nem_mem_region.ext_ranks[index];
+            if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
 	    {
-	      shutdown ((MPID_nem_tcp_internal_vars.nodes)[grank].desc, SHUT_RDWR);
-	      close ((MPID_nem_tcp_internal_vars.nodes)[grank].desc);
+                ret = shutdown ((MPID_nem_tcp_internal_vars.nodes)[grank].desc, SHUT_RDWR);
+                MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**shutdown", "**shutdown %s %d", strerror (errno), errno);
+                ret = close ((MPID_nem_tcp_internal_vars.nodes)[grank].desc);
+                MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**closesocket", "**closesocket %s %d", strerror (errno), errno);
 	    }
 	}
       
 #ifdef TRACE
-      fprintf(stderr,"[%i] --- sockets closed .... \n",MPID_nem_mem_region.rank);
+        fprintf(stderr,"[%i] --- sockets closed .... \n",MPID_nem_mem_region.rank);
 #endif
     }
-  return 0 ;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 

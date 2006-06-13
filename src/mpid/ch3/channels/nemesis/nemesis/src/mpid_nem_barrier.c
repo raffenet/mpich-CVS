@@ -5,12 +5,17 @@
  */
 
 #include "mpid_nem.h"
+#include <sched.h>
 
 static int sense;
 static int barrier_init = 0;
 
 
-void MPID_nem_barrier_init (MPID_nem_barrier_t *barrier_region)
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_barrier_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_barrier_init (MPID_nem_barrier_t *barrier_region)
 {
     MPID_nem_mem_region.barrier = barrier_region;
     MPID_nem_mem_region.barrier->val = 0;
@@ -18,12 +23,18 @@ void MPID_nem_barrier_init (MPID_nem_barrier_t *barrier_region)
     sense = 0;
     barrier_init = 1;
     MPID_NEM_WRITE_BARRIER();
+    return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_barrier
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* FIXME: this is not a scalable algorithm because everyone is polling on the same cacheline */
-void MPID_nem_barrier (int num_processes, int rank)
+int MPID_nem_barrier (int num_processes, int rank)
 {
-    MPIU_Assert (barrier_init);
+    int mpi_errno = MPI_SUCCESS;
+    MPIU_ERR_CHKANDJUMP1 (!barrier_init, mpi_errno, MPI_ERR_INTERN, "**intern", "**intern %s", "barrier not initialized");
     
     if (MPID_NEM_FETCH_AND_INC (&MPID_nem_mem_region.barrier->val) == MPID_nem_mem_region.num_local - 1)
     {
@@ -35,7 +46,10 @@ void MPID_nem_barrier (int num_processes, int rank)
     {
 	/* wait */
 	while (MPID_nem_mem_region.barrier->wait == sense)
-	    ; /* skip */
+            sched_yield(); /* skip */
     }
     sense = 1 - sense;
+
+ fn_fail:
+    return mpi_errno;
 }

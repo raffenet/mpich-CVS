@@ -93,19 +93,19 @@ MPID_nem_send_from_queue()
 	    {
 	    case RDMA_TYPE_GET:
 		MPID_nem_gm_module_do_get (e->u.rdma.target_p, e->u.rdma.source_p, e->u.rdma.len, e->node_id, e->port_id,
-				  e->u.rdma.completion_ctr);
+                                           e->u.rdma.completion_ctr);
 		break;
 	    case RDMA_TYPE_PUT:
 		MPID_nem_gm_module_do_put (e->u.rdma.target_p, e->u.rdma.source_p, e->u.rdma.len, e->node_id, e->port_id,
-				  e->u.rdma.completion_ctr);
+                                           e->u.rdma.completion_ctr);
 		break;
 	    default:
-		FATAL_ERROR ("internal error");
+		MPIU_Assert (0);
 		break;
 	    }
 	    break;
 	default:
-	    FATAL_ERROR ("internal error");
+            MPIU_Assert (0);
 	    break;
 	}
 	MPID_nem_gm_module_queue_free (send, e);

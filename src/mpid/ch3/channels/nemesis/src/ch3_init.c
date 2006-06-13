@@ -25,20 +25,16 @@ static int nemesis_initialized = 0;
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
 {
+    int mpi_errno = MPI_SUCCESS;
     int i;
-    int nem_errno;
-    int mpi_errno;
 
     /* There are hard-coded copy routines that depend on the size of the mpich2 header
        We only handle the 32- and 40-byte cases.
     */
     MPIU_Assert (MPID_NEM__MPICH2_HEADER_LEN >= 32 && MPID_NEM__MPICH2_HEADER_LEN <= 40);
     
-    nem_errno = MPID_nem_init (pg_rank, pg_p);
-    if (nem_errno != 0)
-    {
-	return MPI_ERR_INTERN;
-    }
+    mpi_errno = MPID_nem_init (pg_rank, pg_p);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     nemesis_initialized = 1;
     
@@ -48,22 +44,20 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
      * Initialize Progress Engine 
      */
     mpi_errno = MPIDI_CH3I_Progress_init();
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	/* --BEGIN ERROR HANDLING-- */
-	mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**init_progress", 0);
-	return mpi_errno;
-	/* --END ERROR HANDLING-- */
-    }
+    if (mpi_errno) MPIU_ERR_SETFATALANDJUMP (mpi_errno, MPI_ERR_OTHER, "**init_progress");
 
     for (i = 0; i < pg_p->size; i++)
     {
 	MPIDI_VC_t *vc;
 	MPIDI_PG_Get_vc (pg_p, i, &vc);
-	MPIDI_CH3_VC_Init (vc);
+	mpi_errno = MPIDI_CH3_VC_Init (vc);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
-    return MPI_SUCCESS;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /* This function simply tells the CH3 device to use the defaults for the 

@@ -902,6 +902,21 @@ with MPI_Alloc_mem.
 **remove_shar_mem %s %s:unable to remove shared memory - %s %s
 **detach_shar_mem:unable to detach shared memory
 **detach_shar_mem %s %s:unable to detach shared memory - %s %s
+**getsockname:getsockname failed
+**getsockname %s:getsockname failed - %s
+**setsockopt:setsockopt failed
+**setsockopt %s:setsockopt failed - %s
+**fcntl:fcntl failed
+**fcntl %s:fcntl failed - %s
+**gm_init:gm_init failed
+**gm_init %d:gm_init failed gm_status=%d
+**gm_regmem:gm_register_memory failed
+**gm_regmem %d:gm_register_memory failed gm_status=%d
+**gm_get_unique_board_id:gm_get_unique_board_id failed
+**gm_get_unique_board_id %d:gm_get_unique_board_id failed status=%d
+**gm_incompatible_lib:GM library and driver are different versions
+**gm_no_port:unable to find a free GM port
+**not_in_local_ranks:cannot find our rank in the list of local processes
 
 #
 # Globus device

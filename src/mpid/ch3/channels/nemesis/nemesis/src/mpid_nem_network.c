@@ -42,9 +42,15 @@ int (* MPID_nem_net_module_vc_init) (MPIDI_VC_t *vc, const char *business_card) 
     MPID_nem_net_module_vc_init           = MPID_nem_##prefix##_module_vc_init;		  \
 } while (0)
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_net_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_net_init( void)
 {
+    int mpi_errno = MPI_SUCCESS;
+    
 #if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
   {
       assign_functions (gm);
@@ -60,5 +66,5 @@ MPID_nem_net_init( void)
 #else
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE INITIALIZATION"
 #endif 
-  return 0;
+  return mpi_errno;
 }

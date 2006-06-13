@@ -8,9 +8,14 @@
 #include "gm.h"
 
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_gm_module_finalize()
 {
+    int mpi_errno = MPI_SUCCESS;
     int max_send_tokens;
     MPID_nem_gm_module_send_queue_t *e;
 
@@ -31,13 +36,21 @@ MPID_nem_gm_module_finalize()
     MPID_nem_gm_module_lmt_finalize();
     
     gm_finalize();
-    return 0;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_ckpt_shutdown
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_gm_module_ckpt_shutdown ()
 {
     /* for GM we can't touch the network because the original process is still using it */
-    return 0;
+    return MPI_SUCCESS;
 }
 

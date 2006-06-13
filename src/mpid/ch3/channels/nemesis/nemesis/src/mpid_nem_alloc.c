@@ -11,103 +11,65 @@
 #include <errno.h>
 #include "mpidimpl.h"
 
-/* allocate_shared_memory allocates a shared mem region of size "length" and attaches to it.  "handle" points to a string
-   descriptor for the region to be passed in to attach_shared_memory.  "handle" is dynamically allocated and should be
-   freed by the caller.*/
-static int allocate_shared_memory (char **buf_p, const int length, char *handle[]);
-/* attach_shared_memory attaches to shared memory previously allocated by allocate_shared_memory */
-static int attach_shared_memory (char **buf_p, const int length, const char const handle[]);
-/* remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
-   the OS resource will be destroyed. */
-static int remove_shared_memory (const char const handle[]);
-/* detach_shared_memory detaches the shared memory region from this process */
-static int detach_shared_memory (const char *buf_p, const int length);
-
-void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank, MPIDI_PG_t *pg_p)
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_seg_create
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank, MPIDI_PG_t *pg_p)
 {
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
-    char *handle;
+    char *handle = 0;
  
-    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
-    if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+    mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
     memory->max_size = size;
     
     if (local_rank == 0)
     {
-        ret = allocate_shared_memory (&memory->base_addr, memory->max_size, &handle);
-        if (ret != MPI_SUCCESS)
-            FATAL_ERROR ("allocate_shared_memory failed");        
+        mpi_errno = MPID_nem_allocate_shared_memory (&memory->base_addr, memory->max_size, &handle);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	
 	/* post name of shared file */
 	MPIU_Assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
 	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.rank);
-	ret = PMI_KVS_Put (kvs_name, key, handle);
-	if (ret != MPI_SUCCESS)
-	{
-            remove_shared_memory (handle);
-	    FATAL_ERROR ("PMI_KVS_Put failed %d", ret);
-	}
-        
-	ret = PMI_KVS_Commit (kvs_name);
-	if (ret != 0)
-	{
-            remove_shared_memory (handle);
-	    FATAL_ERROR ("PMI_KVS_Commit failed %d", ret);
-	}
 
-	ret = PMI_Barrier();
-	if (ret != 0)
-	{
-            remove_shared_memory (handle);
-	    FATAL_ERROR ("PMI_Barrier failed %d", ret);
-	}
+	pmi_errno = PMI_KVS_Put (kvs_name, key, handle);
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
+
+        pmi_errno = PMI_KVS_Commit (kvs_name);
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+
+	pmi_errno = PMI_Barrier();
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
     }
     else
     {
-	ret = PMI_Barrier();
-	if (ret != 0)
-	{
-	    FATAL_ERROR ("PMI_Barrier failed %d", ret);
-	}
+	pmi_errno = PMI_Barrier();
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
 	/* get name of shared file */
 	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.local_procs[0]);
-	ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
-	if (ret != MPI_SUCCESS)
-	{
-	    FATAL_ERROR ("PMI_KVS_Get failed %d", ret);
-	}
+	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 
         handle = val;
 
-	ret = attach_shared_memory (&memory->base_addr, memory->max_size, handle);
-	if (ret == -1)
-	{
-            remove_shared_memory (handle);
-            FATAL_ERROR ("attach_shared_memory failed");
-	}
+	mpi_errno = MPID_nem_attach_shared_memory (&memory->base_addr, memory->max_size, handle);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }    
     
-    ret = PMI_Barrier();
-    if (ret != 0)
-    {
-        remove_shared_memory (handle);
-	FATAL_ERROR ("PMI_Barrier failed %d", ret);
-    }
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
     
     if (local_rank == 0)
     {
-        ret = remove_shared_memory (handle);
-        if (ret != MPI_SUCCESS)
-        {
-            FATAL_ERROR ("remove_shared_memory failed");
-        }
-
+        mpi_errno = MPID_nem_remove_shared_memory (handle);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         MPIU_Free (handle);
     }
     
@@ -115,43 +77,65 @@ void MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int
     memory->max_addr     = (char *)(memory->base_addr) + memory->max_size;
     memory->size_left    = memory->max_size;
     memory->symmetrical  = 0 ;   
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    if (handle)
+        MPID_nem_remove_shared_memory (handle);
+    goto fn_exit;
 }
 
 
 
 
-void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg, int size)
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_seg_alloc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg, int size)
 {
-   MPIU_Assert( memory->size_left >= size );
+    int mpi_errno = MPI_SUCCESS;
+    
+    MPIU_Assert( memory->size_left >= size );
   
-   seg->addr = memory->current_addr;
-   seg->size = size ;
+    seg->addr = memory->current_addr;
+    seg->size = size ;
    
-   memory->size_left    -= size;
-   memory->current_addr  = (char *)(memory->current_addr) + size;
+    memory->size_left    -= size;
+    memory->current_addr  = (char *)(memory->current_addr) + size;
    
-   MPIU_Assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );   
+    MPIU_Assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );   
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
-void MPID_nem_check_alloc (int num_processes)
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_check_alloc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_check_alloc (int num_processes)
 {
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
     int rank    = MPID_nem_mem_region.local_rank;
     int address = 0;
     int base, found, index;
     int ret;
     
-    ret = PMI_Barrier();
-    if (ret != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", ret);
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
     address =  ((MPID_nem_addr_t)(MPID_nem_mem_region.memory.current_addr));
     MPID_NEM_MEMCPY(&(((int*)(MPID_nem_mem_region.memory.current_addr))[rank]),
 	   &address,
 	   sizeof(MPID_nem_addr_t));
 
-    ret = PMI_Barrier();
-    if (ret != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", ret);
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
     base  = ((int *)MPID_nem_mem_region.memory.current_addr)[rank];
     found = 1 ;
@@ -165,9 +149,8 @@ void MPID_nem_check_alloc (int num_processes)
 	      }		  
 	  }	     
       }
-    ret = PMI_Barrier();
-    if (ret != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", ret);
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
     if (found == num_processes)
       {	     
@@ -181,10 +164,14 @@ void MPID_nem_check_alloc (int num_processes)
 	MPID_nem_mem_region.memory.symmetrical = 0;
 	MPID_nem_asymm_base_addr = MPID_nem_mem_region.memory.base_addr;
 #ifdef MPID_NEM_SYMMETRIC_QUEUES
-	fprintf(stderr,"[%i] ===  Expecting symmetric...aborting \n",rank);	
-	exit (-1);
+        MPIU_ERR_SETFATALANDJUMP1 (mpi_errno, MPI_ERR_INTERN, "**intern", "**intern %s", "queues are not symmetrically allocated as expected");
 #endif
       }
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #ifdef HAVE_SYSV_SHARED_MEM
@@ -194,13 +181,16 @@ void MPID_nem_check_alloc (int num_processes)
    when allocating a shared-memory region.  We need a way to handle
    this, e.g., break it up into smaller chunks, but make them
    contiguous. */
+/* MPID_nem_allocate_shared_memory allocates a shared mem region of size "length" and attaches to it.  "handle" points to a string
+   descriptor for the region to be passed in to MPID_nem_attach_shared_memory.  "handle" is dynamically allocated and should be
+   freed by the caller.*/
 #define MAX_INT_STR_LEN 12
 #undef FUNCNAME
-#define FUNCNAME allocate_shared_memory
+#define FUNCNAME MPID_nem_allocate_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-allocate_shared_memory (char **buf_p, const int length, char *handle[])
+int
+MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     int shmid;
@@ -236,12 +226,13 @@ allocate_shared_memory (char **buf_p, const int length, char *handle[])
     goto fn_exit;
 }
 
+/* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
 #undef FUNCNAME
-#define FUNCNAME attach_shared_memory
+#define FUNCNAME MPID_nem_attach_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-attach_shared_memory (char **buf_p, const int length, const char const handle[])
+int
+MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     void *buf;
@@ -264,12 +255,14 @@ attach_shared_memory (char **buf_p, const int length, const char const handle[])
     goto fn_exit;
 }
 
+/* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
+   the OS resource will be destroyed. */
 #undef FUNCNAME
-#define FUNCNAME remove_shared_memory
+#define FUNCNAME MPID_nem_remove_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-remove_shared_memory (const char const handle[])
+int
+MPID_nem_remove_shared_memory (const char const handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
@@ -288,12 +281,13 @@ remove_shared_memory (const char const handle[])
     goto fn_exit;
 }
 
+/* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
 #undef FUNCNAME
-#define FUNCNAME detach_shared_memory
+#define FUNCNAME MPID_nem_detach_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-detach_shared_memory (const char *buf_p, const int length)
+int
+MPID_nem_detach_shared_memory (const char *buf_p, const int length)
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
@@ -312,12 +306,15 @@ detach_shared_memory (const char *buf_p, const int length)
 
 #define MAX_INT_STR_LEN 12 /* chars needed to store largest integer including /0 */
 
+/* MPID_nem_allocate_shared_memory allocates a shared mem region of size "length" and attaches to it.  "handle" points to a string
+   descriptor for the region to be passed in to MPID_nem_attach_shared_memory.  "handle" is dynamically allocated and should be
+   freed by the caller.*/
 #undef FUNCNAME
-#define FUNCNAME allocate_shared_memory
+#define FUNCNAME MPID_nem_allocate_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-allocate_shared_memory (char **buf_p, const int length, char *handle[])
+int
+MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     int fd;
@@ -377,12 +374,13 @@ allocate_shared_memory (char **buf_p, const int length, char *handle[])
     goto fn_exit;
 }
 
+/* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
 #undef FUNCNAME
-#define FUNCNAME attach_shared_memory
+#define FUNCNAME MPID_nem_attach_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-attach_shared_memory (char **buf_p, const int length, const char const handle[])
+int
+MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
@@ -412,12 +410,14 @@ attach_shared_memory (char **buf_p, const int length, const char const handle[])
     goto fn_exit;
 }
 
+/* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
+   the OS resource will be destroyed. */
 #undef FUNCNAME
-#define FUNCNAME remove_shared_memory
+#define FUNCNAME MPID_nem_remove_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-remove_shared_memory (const char const handle[])
+int
+MPID_nem_remove_shared_memory (const char const handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
@@ -431,12 +431,13 @@ remove_shared_memory (const char const handle[])
     goto fn_exit;
 }
 
+/* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
 #undef FUNCNAME
-#define FUNCNAME detach_shared_memory
+#define FUNCNAME MPID_nem_detach_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int
-detach_shared_memory (const char *buf_p, const int length)
+int
+MPID_nem_detach_shared_memory (const char *buf_p, const int length)
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;

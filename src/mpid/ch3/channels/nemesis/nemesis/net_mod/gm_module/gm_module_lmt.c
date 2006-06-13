@@ -14,9 +14,14 @@
 MPID_nem_gm_module_lmt_queue_head_t MPID_nem_gm_module_lmt_queue = {0};
 MPID_nem_gm_module_lmt_queue_t *MPID_nem_gm_module_lmt_free_queue = 0;
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_lmt_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_gm_module_lmt_init()
 {
+    int mpi_errno = MPI_SUCCESS;
     int i;
     
     MPID_nem_gm_module_lmt_queue.head = NULL;
@@ -29,12 +34,15 @@ MPID_nem_gm_module_lmt_init()
 	MPID_nem_gm_module_lmt_queue_t *e;
 	
 	e = MPIU_Malloc (sizeof (MPID_nem_gm_module_lmt_queue_t));
-	if (!e)
-	    ERROR_RET (-1, "malloc failed");
+        if (e == NULL) MPIU_CHKMEM_SETERR (mpi_errno, sizeof (MPID_nem_gm_module_send_queue_t), "gm module lmt queue");
 	e->next = MPID_nem_gm_module_lmt_free_queue;
 	MPID_nem_gm_module_lmt_free_queue = e;
     }
-    return 0;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+     goto fn_exit;
 }
 
 void

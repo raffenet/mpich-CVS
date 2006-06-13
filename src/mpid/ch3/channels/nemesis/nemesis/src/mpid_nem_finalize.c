@@ -8,10 +8,16 @@
 #include "mpidimpl.h"
 #include "mpid_nem_nets.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_finalize()
 {
-    int rank     = MPID_nem_mem_region.rank;
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
+    int rank = MPID_nem_mem_region.rank;
+
     /* this test is not the right one */
     while (! MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[rank] ))
     {
@@ -19,18 +25,21 @@ int MPID_nem_finalize()
 	exit(0);
 	SKIP;
     }
+    
     MPID_nem_net_module_finalize();
-    munmap (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
+    MPID_nem_detach_shared_memory (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
 
 #ifdef PAPI_MONITOR
     my_papi_close();
 #endif /*PAPI_MONITOR */
 
-    ret = PMI_Barrier();
-    if (ret != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", ret);
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
-    return MPID_NEM_RET_OK;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 int

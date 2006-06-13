@@ -11,22 +11,6 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 
-#define ERROR(err...) ERROR_RET (-1, err)
-
-#define safe_malloc(x) _safe_malloc(x, __FILE__, __LINE__)
-static inline void *
-_safe_malloc (size_t len, char* file, int line)
-{
-    void *p;
-
-    p = MPIU_Malloc (len);
-    if (p)
-	return p;
-    else
-	FATAL_ERROR ("malloc failed at %s:%d\n", file, line);
-}
-
-
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
 
@@ -38,122 +22,121 @@ MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
 mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars = {0};
 
+#undef FUNCNAME
+#define FUNCNAME init_tcp
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int init_tcp (MPIDI_PG_t *pg_p) 
 {
-    int             numprocs = MPID_nem_mem_region.ext_procs;
-    unsigned int    len      = sizeof(struct sockaddr_in);
-    int             port     = 0 ;  
-    int             ret;
-    int             grank;
-    int             index;
-    node_t         *MPID_nem_tcp_nodes;
+    int           mpi_errno = MPI_SUCCESS;
+    int           ret;
+    int           pmi_errno;
+    int           numprocs  = MPID_nem_mem_region.ext_procs;
+    unsigned int  len       = sizeof(struct sockaddr_in);
+    int           port      = 0 ;  
+    int           grank;
+    int           index;
+    node_t       *nodes;
    
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
+    MPIU_CHKPMEM_DECL(1);
     
-    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
-    if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");    
+    mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Allocate more than used, but fill only the external ones */
-    MPID_nem_tcp_internal_vars.nodes = safe_malloc (sizeof (node_t) * MPID_nem_mem_region.num_procs);
-    MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
+    MPIU_CHKPMEM_MALLOC (nodes, node_t *, sizeof (node_t) * MPID_nem_mem_region.num_procs, mpi_errno, "node struct");
+    MPID_nem_tcp_internal_vars.nodes = nodes;
     MPID_nem_tcp_internal_vars.nb_procs = numprocs;
 
     /* All Masters create their sockets and put their keys w/PMI */
-    for(index = 0 ; index < numprocs ; index++)
+    for (index = 0 ; index < numprocs ; index++)
     {
 	grank = MPID_nem_mem_region.ext_ranks[index];
-	if(grank > MPID_nem_mem_region.rank)
+	if (grank > MPID_nem_mem_region.rank)
 	{
 	    struct sockaddr_in temp;
 	    char              s[255];
 	    int               len2 = 255;
 
-	    MPID_nem_tcp_nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);	  	    
+	    nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);	  	    
 	    temp.sin_family      = AF_INET;
 	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
 	    temp.sin_port        = htons(port);	
 
-	    ret = bind(MPID_nem_tcp_nodes[grank].desc, (struct sockaddr *)&temp, len);	  
-
-	    if(ret == -1)
-		perror("bind");	      
+	    ret = bind(nodes[grank].desc, (struct sockaddr *)&temp, len);	  
+            MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
 	  
-	    ret = getsockname(MPID_nem_tcp_nodes[grank].desc, 
-			      (struct sockaddr *)&(MPID_nem_tcp_nodes[grank].sock_id), 
+	    ret = getsockname(nodes[grank].desc, 
+			      (struct sockaddr *)&(nodes[grank].sock_id), 
 			      &len);	 
-	    if(ret == -1)
-		perror("getsockname");
+            MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
 	  
-	    ret = listen(MPID_nem_tcp_nodes[grank].desc, SOMAXCONN);	      
-	    if(ret == -1)
-		perror("listen");	      
+	    ret = listen(nodes[grank].desc, SOMAXCONN);	      
+            MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", strerror (errno), errno);
 	  
 	    /* Put the key (machine name, port #, src , dest) with PMI */
-	    gethostname(s, len2);
+	    ret = gethostname(s, len2);
+            MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock_gethost", "**sock_gethost %s %d", strerror (errno), errno);
 #ifdef TRACE
 	    fprintf(stderr,"[%i] ID :  %s_%d_%d_%d \n",MPID_nem_mem_region.rank,s,
-		    ntohs(MPID_nem_tcp_nodes[grank].sock_id.sin_port),grank,MPID_nem_mem_region.rank);
+		    ntohs(nodes[grank].sock_id.sin_port),grank,MPID_nem_mem_region.rank);
 #endif
-	    snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%d:%s", ntohs(MPID_nem_tcp_nodes[grank].sock_id.sin_port), s);
-	    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "TCPkey[%d:%d]", MPID_nem_mem_region.rank, grank);
+	    MPIU_Snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%d:%s", ntohs(nodes[grank].sock_id.sin_port), s);
+	    MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "TCPkey[%d:%d]", MPID_nem_mem_region.rank, grank);
 
 	    /* Put my unique id */
-	    ret = PMI_KVS_Put (kvs_name, key, val);
-	    if (ret != 0)
-		ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
+	    pmi_errno = PMI_KVS_Put (kvs_name, key, val);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
 	  
-	    ret = PMI_KVS_Commit (kvs_name);
-	    if (ret != 0)
-		ERROR_RET (-1, "PMI_KVS_commit failed %d", ret);
+	    pmi_errno = PMI_KVS_Commit (kvs_name);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
 	}       
 	else if (grank < MPID_nem_mem_region.rank)
 	{
 	    struct sockaddr_in temp;
-	    MPID_nem_tcp_nodes[grank].desc   = socket(AF_INET, SOCK_STREAM, 0);
+	    nodes[grank].desc   = socket(AF_INET, SOCK_STREAM, 0);
 	    temp.sin_family      = AF_INET;
 	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
 	    temp.sin_port        = htons(port);
-	    ret = bind(MPID_nem_tcp_nodes[grank].desc, (struct sockaddr *)&temp, len);
-	    if(ret == -1)
-		perror("bind");
+	    ret = bind (nodes[grank].desc, (struct sockaddr *)&temp, len);
+            MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
 
-	    ret = getsockname(MPID_nem_tcp_nodes[grank].desc,
-			      (struct sockaddr *)&(MPID_nem_tcp_nodes[grank].sock_id),
+	    ret = getsockname(nodes[grank].desc,
+			      (struct sockaddr *)&(nodes[grank].sock_id),
 			      &len);
-	    if(ret == -1)
-		perror("getsockname");
-
+            MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
 	}
     }
-    ret = PMI_Barrier();
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
 #ifdef TRACE
     fprintf(stderr,"[%i] ---- Creating sockets done \n",MPID_nem_mem_region.rank);	  	  
 #endif
 
     /* Connect/accept sequence */
-    for(index = 0 ; index < numprocs ; index++)
+    for (index = 0 ; index < numprocs ; index++)
     {
 	grank = MPID_nem_mem_region.ext_ranks[index];
-	if(grank > MPID_nem_mem_region.rank)
+	if (grank > MPID_nem_mem_region.rank)
 	{
 	    /* I am a master */
 #ifdef TRACE  
 	    fprintf(stderr,"MASTER accepting sockets \n");
 #endif
-	    MPID_nem_tcp_nodes[grank].desc = accept(MPID_nem_tcp_nodes[grank].desc,
-						    (struct sockaddr *)&(MPID_nem_tcp_nodes[grank].sock_id),
+	    nodes[grank].desc = accept(nodes[grank].desc,
+						    (struct sockaddr *)&(nodes[grank].sock_id),
 						    &len);
+            MPIU_ERR_CHKANDJUMP2 (nodes[grank].desc == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|accept", "**sock|poll|accept %d %s", errno, strerror (errno));
+
 #ifdef TRACE  
 	    fprintf(stderr,"[%i] ====> ACCEPT DONE for GRANK %i\n",MPID_nem_mem_region.rank,grank);    
 #endif
 	}
-	else if(grank < MPID_nem_mem_region.rank)
+	else if (grank < MPID_nem_mem_region.rank)
 	{	      
 	    /* I am the slave */
 	    struct sockaddr_in  master;
@@ -162,26 +145,22 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    int                 port_num;  
 		  
 	    memset(val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
-	    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN,"TCPkey[%d:%d]", grank, MPID_nem_mem_region.rank);
+	    MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN,"TCPkey[%d:%d]", grank, MPID_nem_mem_region.rank);
 	      
-	    ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
-	    if (ret != 0)
-		ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, grank);
+	    pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 	  
 	    ret = sscanf (val, "%d:%s", &port_num, s);
-	    if ( ret != 2)
-	    {
-		ERROR_RET (-1, "unable to parse data from PMI_KVS_Get %s", val);
-	    }
+            MPIU_ERR_CHKANDJUMP1 (ret != 2, mpi_errno, MPI_ERR_OTHER, "**business_card", "**business_card %s", val);
 
 	    hp = gethostbyname(s);	  
+            MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno);
 	    master.sin_family      = AF_INET;
 	    master.sin_port        = htons(port_num);
 	    MPID_NEM_MEMCPY(&(master.sin_addr.s_addr), hp->h_addr, hp->h_length);
 	    
-	    ret = connect(MPID_nem_tcp_nodes[grank].desc,(struct sockaddr *)&master, sizeof(master));
-	    if(ret == -1)
-		perror("connect");
+	    ret = connect(nodes[grank].desc,(struct sockaddr *)&master, sizeof(master));
+            MPIU_ERR_CHKANDJUMP4 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock_connect", "**sock_connect %s %d %s %d", s, port_num, strerror (errno), errno);
 #ifdef TRACE
 	    fprintf(stderr,"====> CONNECT DONE : %i\n", ret);	      	 
 #endif
@@ -191,49 +170,55 @@ static int init_tcp (MPIDI_PG_t *pg_p)
     for(index = 0 ; index < numprocs ; index++)
     {
 	int option = 1;
+        
 	grank     = MPID_nem_mem_region.ext_ranks[index];
 	if(grank != MPID_nem_mem_region.rank)
 	{
-
-	    MPID_nem_tcp_nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
-	    MPID_nem_tcp_nodes[grank].internal_free_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
-	    MPID_nem_tcp_nodes[grank].internal_recv_queue->head = NULL;
-	    MPID_nem_tcp_nodes[grank].internal_recv_queue->tail = NULL;
-	    MPID_nem_tcp_nodes[grank].internal_free_queue->head = NULL;
-	    MPID_nem_tcp_nodes[grank].internal_free_queue->tail = NULL;
+	    nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
+            if (!nodes[grank].internal_recv_queue) MPIU_CHKMEM_SETERR (mpi_errno, sizeof (internal_queue_t), "internal_recv_queue");
+	    nodes[grank].internal_free_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
+            if (!nodes[grank].internal_free_queue) MPIU_CHKMEM_SETERR (mpi_errno, sizeof (internal_queue_t), "internal_free_queue");
+	    nodes[grank].internal_recv_queue->head = NULL;
+	    nodes[grank].internal_recv_queue->tail = NULL;
+	    nodes[grank].internal_free_queue->head = NULL;
+	    nodes[grank].internal_free_queue->tail = NULL;
 	  
-	    MPID_nem_tcp_nodes[grank].left2write     = 0;
-	    MPID_nem_tcp_nodes[grank].left2read_head = 0;
-	    MPID_nem_tcp_nodes[grank].left2read      = 0;
-	    MPID_nem_tcp_nodes[grank].toread         = 0;
+	    nodes[grank].left2write     = 0;
+	    nodes[grank].left2read_head = 0;
+	    nodes[grank].left2read      = 0;
+	    nodes[grank].toread         = 0;
 
 #ifdef TRACE
 	    fprintf(stderr,"[%i] ----- DESC %i is %i ------ \n",
 		    MPID_nem_mem_region.rank,grank,
-		    MPID_nem_tcp_nodes[grank].desc);
+		    nodes[grank].desc);
 #endif
 
-	    FD_SET(MPID_nem_tcp_nodes[grank].desc, &MPID_nem_tcp_internal_vars.set);
-	    if(MPID_nem_tcp_nodes[grank].desc > MPID_nem_tcp_internal_vars.max_fd)
-		MPID_nem_tcp_internal_vars.max_fd = MPID_nem_tcp_nodes[grank].desc ;
+	    FD_SET(nodes[grank].desc, &MPID_nem_tcp_internal_vars.set);
+	    if(nodes[grank].desc > MPID_nem_tcp_internal_vars.max_fd)
+		MPID_nem_tcp_internal_vars.max_fd = nodes[grank].desc ;
 	  
-	    fcntl(MPID_nem_tcp_nodes[grank].desc, F_SETFL, O_NONBLOCK);
-	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
-			IPPROTO_TCP,  
-			TCP_NODELAY,  
-			&option, 
-			sizeof(int));	  
+	    ret = fcntl(nodes[grank].desc, F_SETFL, O_NONBLOCK);
+            MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fcntl", "**fcntl %s", strerror (errno));
+	    ret = setsockopt( nodes[grank].desc, 
+                              IPPROTO_TCP,  
+                              TCP_NODELAY,  
+                              &option, 
+                              sizeof(int));
+            MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**setsockopt", "**setsockopt %s", strerror (errno));
 	    option = 2 * MPID_NEM_CELL_PAYLOAD_LEN ;
-	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
-			SOL_SOCKET,  
-			SO_RCVBUF,  
-			&option, 
-			sizeof(int));	  
-	    setsockopt( MPID_nem_tcp_nodes[grank].desc, 
-			SOL_SOCKET,  
-			SO_SNDBUF,  
-			&option, 
-			sizeof(int));	  	  
+	    ret = setsockopt( nodes[grank].desc, 
+                              SOL_SOCKET,  
+                              SO_RCVBUF,  
+                              &option, 
+                              sizeof(int));
+            MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**setsockopt", "**setsockopt %s", strerror (errno));
+	    ret = setsockopt( nodes[grank].desc, 
+                              SOL_SOCKET,  
+                              SO_SNDBUF,  
+                              &option, 
+                              sizeof(int));  	  
+            MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**setsockopt", "**setsockopt %s", strerror (errno));
 	    /*
 	      setsockopt( nodes[grank].desc, 
 	      IPPROTO_TCP,  
@@ -244,7 +229,13 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	}
     }
     (MPID_nem_tcp_internal_vars.max_fd)++;
-    return 0;
+
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }
 
 
@@ -287,16 +278,17 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 			  int ckpt_restart, MPIDI_PG_t *pg_p, int pg_rank,
 			  char **bc_val_p, int *val_max_sz_p)
 {
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
     int index;
-   
+    MPIU_CHKPMEM_DECL(1);
+ 
     MPID_nem_tcp_internal_vars.n_pending_send  = 0;
     MPID_nem_tcp_internal_vars.n_pending_recv  = 0;
     MPID_nem_tcp_internal_vars.outstanding     = 0;
     MPID_nem_tcp_internal_vars.poll_freq       = TCP_POLL_FREQ_NO;
     MPID_nem_tcp_internal_vars.old_poll_freq   = TCP_POLL_FREQ_NO;
 
-    MPID_nem_tcp_internal_vars.n_pending_sends = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));    
+    MPIU_CHKPMEM_MALLOC (MPID_nem_tcp_internal_vars.n_pending_sends, int *, MPID_nem_mem_region.num_procs * sizeof (int), mpi_errno, "pending sends");
     for(index = 0 ; index < MPID_nem_mem_region.num_procs ; index++)
     {
 	MPID_nem_tcp_internal_vars.n_pending_sends[index] = 0;
@@ -304,9 +296,8 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
 
     if( MPID_nem_mem_region.ext_procs > 0)
     {
-	ret = init_tcp (pg_p);
-	if (ret != 0)
-	    ERROR_RET (-1, "init_tcp() failed");
+	mpi_errno = init_tcp (pg_p);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
        
 	if(MPID_nem_mem_region.num_local == 0)
 	    MPID_nem_tcp_internal_vars.poll_freq = TCP_POLL_FREQ_ALONE ;
@@ -332,7 +323,12 @@ MPID_nem_tcp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
     *module_recv_queue = MPID_nem_module_tcp_recv_queue;
     *module_free_queue = MPID_nem_module_tcp_free_queue;
 
-    return 0;
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }
 
 #undef FUNCNAME

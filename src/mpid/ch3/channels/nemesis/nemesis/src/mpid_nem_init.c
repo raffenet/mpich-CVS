@@ -20,8 +20,6 @@ char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 #define MIN( a , b ) ((a) >  (b)) ? (b) : (a)
 #define MAX( a , b ) ((a) >= (b)) ? (a) : (b)
 
-#define ERROR(err...) ERROR_RET (-1, err)
-
 static int intcompar (const void *a, const void *b) { return *(int *)a - *(int *)b; }
 
 char *MPID_nem_asymm_base_addr = 0;
@@ -34,61 +32,56 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
     return  _MPID_nem_init (rank, pg_p, 0);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 {
-    int num_procs = pg_p->size;
-    pid_t            my_pid;
-    int              ret;
-    int              num_local;
-    int             *local_procs;
-    int              local_rank;
-    int              global_size;
-    int              index, index2, size;
-    int i;
-    char *publish_bc_orig = NULL;
-    char *bc_val = NULL;
-    int val_max_remaining;
-
+    int    mpi_errno       = MPI_SUCCESS;
+    int    pmi_errno;
+    int    num_procs       = pg_p->size;
+    pid_t  my_pid;
+    int    ret;
+    int    num_local;
+    int   *local_procs;
+    int    local_rank;
+    int    global_size;
+    int    index, index2, size;
+    int    i;
+    char  *publish_bc_orig = NULL;
+    char  *bc_val          = NULL;
+    int    val_max_remaining;
+    MPIU_CHKPMEM_DECL(5);
+    
     /* Initialize the business card */
-    ret = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );
-    if (ret)
-	FATAL_ERROR ("MPIDI_CH3I_BCInit failed \n");
+    mpi_errno = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     publish_bc_orig = bc_val;
     
     gethostname (MPID_nem_hostname, MAX_HOSTNAME_LEN);
     MPID_nem_hostname[MAX_HOSTNAME_LEN-1] = '\0';
 
-    ret = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank);
-    if (ret != 0)
-    	FATAL_ERROR ("get_local_procs() failed");
+    mpi_errno = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
 
 #ifdef MEM_REGION_IN_HEAP
-    MPID_nem_mem_region_ptr = MPIU_Malloc (sizeof(MPID_nem_mem_region_t));
-    if (!MPID_nem_mem_region_ptr)
-	FATAL_ERROR ("failed to allocate mem_region");
+    MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region_ptr, MPID_nem_mem_region_t *, sizeof(MPID_nem_mem_region_t), mpi_errno, "mem_region");
 #endif /* MEM_REGION_IN_HEAP */
     
     MPID_nem_mem_region.num_seg        = 6;
-    MPID_nem_mem_region.seg            = (MPID_nem_seg_info_ptr_t)MPIU_Malloc (MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t));
-    if (MPID_nem_mem_region.seg == NULL)
-	FATAL_ERROR ("malloc failed");
-    MPID_nem_mem_region.pid            = (pid_t *)MPIU_Malloc (num_local * sizeof(pid_t));
-    if (MPID_nem_mem_region.pid == NULL)
-	FATAL_ERROR ("malloc failed");
+    MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.seg, MPID_nem_seg_info_ptr_t, MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t), mpi_errno, "mem_region segments");
+    MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.pid, pid_t *, num_local * sizeof(pid_t), mpi_errno, "mem_region pid list");
     MPID_nem_mem_region.rank           = pg_rank;
     MPID_nem_mem_region.num_local      = num_local;
     MPID_nem_mem_region.num_procs      = num_procs;
     MPID_nem_mem_region.local_procs    = local_procs;
     MPID_nem_mem_region.local_rank     = local_rank;
-    MPID_nem_mem_region.local_ranks    = (int *)MPIU_Malloc (num_procs* sizeof(int));
-    if (MPID_nem_mem_region.local_ranks == NULL)
-	FATAL_ERROR ("malloc failed");
+    MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.local_ranks, int *, num_procs * sizeof(int), mpi_errno, "mem_region local ranks");
     MPID_nem_mem_region.ext_procs      = num_procs - num_local ; 
-    MPID_nem_mem_region.ext_ranks      = (int *)MPIU_Malloc (MPID_nem_mem_region.ext_procs * sizeof(int));
-    if (MPID_nem_mem_region.ext_ranks == NULL)
-	FATAL_ERROR ("malloc failed");
+    MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.ext_ranks, int *, MPID_nem_mem_region.ext_procs * sizeof(int), mpi_errno, "mem_region ext ranks");
     MPID_nem_mem_region.next           = NULL;
     
     for (index = 0 ; index < num_procs; index++)
@@ -121,22 +114,32 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
 #ifdef FORCE_ASYM
     {
-	char name[MPID_NEM_MAX_FNAME_LEN] = "/tmp/shmem.map2_";
-	char *user              = getenv("USER");
-	char  file_name[MPID_NEM_MAX_FNAME_LEN];
-	int   descs; 
-	int size                 = (local_rank * 65536) + 65536;
+        /* this is used for debugging
+           each process allocates a different sized piece of shared
+           memory so that when the shared memory segment used for
+           communication is allocated it will probably be mapped at a
+           different location for each process
+        */
+        char *handle;
+	int size = (local_rank * 65536) + 65536;
 	char *base_addr;
 
-	strcat (name, user);
-	strncpy (file_name, name, MPID_NEM_MAX_FNAME_LEN);
-	descs   = open(file_name,O_RDWR | O_CREAT, S_IRWXU);
-	ftruncate(descs, size);
-	base_addr    = (char *)mmap(NULL,
-				    size,
-				    PROT_READ | PROT_WRITE ,
-				    MAP_SHARED ,
-				    descs,0);
+        mpi_errno = MPID_nem_allocate_shared_memory (&base_addr, size, &handle);
+        if (mpi_errno)
+        {
+            MPID_nem_remove_shared_memory (handle);
+            MPIU_Free (handle);
+            MPIU_ERR_POP (mpi_errno);
+        }
+        
+        mpi_errno = MPID_nem_remove_shared_memory (handle);
+        if (mpi_errno)
+        {
+            MPIU_Free (handle);
+            MPIU_ERR_POP (mpi_errno);
+        }
+        
+        MPIU_Free (handle);
     }
     /*fprintf(stderr,"[%i] -- address shift ok \n",pg_rank); */
 #endif  /*FORCE_ASYM */
@@ -144,50 +147,61 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     /*     if (num_local > 1) */
     /* 	MPID_nem_mem_region.map_lock = make_sem (local_rank, num_local, 0); */
     
-    MPID_nem_seg_create (&(MPID_nem_mem_region.memory), global_size, num_local, local_rank, pg_p);
-    MPID_nem_check_alloc (num_local);    
+    mpi_errno = MPID_nem_seg_create (&(MPID_nem_mem_region.memory), global_size, num_local, local_rank, pg_p);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    mpi_errno = MPID_nem_check_alloc (num_local);    
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Fastpath boxes */
     size =  MAX((num_local*((num_local-1)*sizeof(MPID_nem_fastbox_t))), MPID_NEM_ASYMM_NULL_VAL);
-    MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[0]), size);      
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[0]), size);      
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Data cells */
     size =  num_local * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t);
-    MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[1]), size);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[1]), size);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Network data cells */
     size =  num_local  * (MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t);
-    MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[2]), size);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[2]), size);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Header Qs */
     size = num_local * (2 * sizeof(MPID_nem_queue_t));
-    MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[3]), size);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[3]), size);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Control blocks */
     size = num_local * (sizeof(int));
-    MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[4]), size);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[4]), size);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Barrier data */
     size = sizeof(MPID_nem_barrier_t);
-    MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[5]), size);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[5]), size);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* set up barrier region */
-    MPID_nem_barrier_init ((MPID_nem_barrier_t *)(MPID_nem_mem_region.seg[5].addr));	
-    
-    ret = PMI_Barrier();
-    if (ret != 0)
-	FATAL_ERROR ("PMI_Barrier failed %d", ret);
+    mpi_errno = MPID_nem_barrier_init ((MPID_nem_barrier_t *)(MPID_nem_mem_region.seg[5].addr));	
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
     my_pid = getpid();
     MPID_NEM_MEMCPY (&(((pid_t *)(MPID_nem_mem_region.seg[0].addr))[local_rank]), &my_pid, sizeof(pid_t));
    
     /* syncro part */  
-    MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     for (index = 0 ; index < num_local ; index ++)
     {
 	MPID_nem_mem_region.pid[index] = (((pid_t *)MPID_nem_mem_region.seg[0].addr)[index]);
     }
-    MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* SHMEM QS */
     MPID_nem_mem_region.Elements =
@@ -213,28 +227,28 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
     /* Recv Q init only*/
     MPID_nem_queue_init (MPID_nem_mem_region.RecvQ[pg_rank]);
-    close (MPID_nem_mem_region.memory.base_descs);   
 
     /* Initialize generic net module pointers */
-    MPID_nem_net_init();
-    
+    mpi_errno = MPID_nem_net_init();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
     /* network init */
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
     {
-	ret = MPID_nem_net_module_init (MPID_nem_mem_region.RecvQ[pg_rank],
-					MPID_nem_mem_region.FreeQ[pg_rank],
-					MPID_nem_mem_region.Elements, 
-					MPID_NEM_NUM_CELLS,
-					MPID_nem_mem_region.net_elements, 
-					MPID_NEM_NUM_CELLS, 
-					&MPID_nem_mem_region.net_recv_queue, 
-					&MPID_nem_mem_region.net_free_queue,
-					ckpt_restart, pg_p, pg_rank,
-					&bc_val, &val_max_remaining);
-	if (ret != 0)
-	    FATAL_ERROR ("net_module_init() failed");
+	mpi_errno = MPID_nem_net_module_init (MPID_nem_mem_region.RecvQ[pg_rank],
+                                              MPID_nem_mem_region.FreeQ[pg_rank],
+                                              MPID_nem_mem_region.Elements, 
+                                              MPID_NEM_NUM_CELLS,
+                                              MPID_nem_mem_region.net_elements, 
+                                              MPID_NEM_NUM_CELLS, 
+                                              &MPID_nem_mem_region.net_recv_queue, 
+                                              &MPID_nem_mem_region.net_free_queue,
+                                              ckpt_restart, pg_p, pg_rank,
+                                              &bc_val, &val_max_remaining);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
-    else{
+    else
+    {
 	if (pg_rank == 0)
 	{
 	    MPID_nem_mem_region.net_recv_queue = NULL;
@@ -269,7 +283,8 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.my_recvQ = MPID_nem_mem_region.RecvQ[MPID_nem_mem_region.rank];
     
     
-    MPID_nem_barrier (num_local, local_rank);
+    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* POboxes stuff */
     MPID_nem_mem_region.mailboxes.in  = (MPID_nem_fastbox_t **)MPIU_Malloc((num_local)*sizeof(MPID_nem_fastbox_t *));
@@ -278,7 +293,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPIU_Assert (num_local > 0);
 
 #define MAILBOX_INDEX(sender, receiver) ( ((sender) > (receiver)) ? ((num_local-1) * (sender) + (receiver)) :		\
-                                         (((sender) < (receiver)) ? ((num_local-1) * (sender) + ((receiver)-1)) : 0) )
+                                          (((sender) < (receiver)) ? ((num_local-1) * (sender) + ((receiver)-1)) : 0) )
 
     for (i = 0; i < num_local; ++i)
     {
@@ -297,13 +312,15 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     }
 #undef MAILBOX_INDEX    
 
-    ret = MPIDI_PG_SetConnInfo (pg_rank, (const char *)publish_bc_orig);
-    if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_SetConnInfo failed\n");
+    mpi_errno = MPIDI_PG_SetConnInfo (pg_rank, (const char *)publish_bc_orig);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    MPID_nem_barrier (num_local, local_rank);
-    MPID_nem_mpich2_init (ckpt_restart);
-    MPID_nem_barrier (num_local, local_rank);
+    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    mpi_errno = MPID_nem_mpich2_init (ckpt_restart);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
 #ifdef ENABLED_CHECKPOINTING
     MPID_nem_ckpt_init (ckpt_restart);
@@ -314,7 +331,12 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     my_papi_start( pg_rank );
 #endif /*PAPI_MONITOR   */ 
 
-    return 0;
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }
 
 
@@ -329,78 +351,85 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
    This uses PMI to get all of the processes that have the same
    hostname, and puts them into local_procs sorted by global rank.
 */
+#undef FUNCNAME
+#define FUNCNAME get_local_procs
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 get_local_procs (int global_rank, int num_global, int *num_local, int **local_procs, int *local_rank)
 {
 #if 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
 #warning PMI_Get_clique doesnt work with mpd
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
     int *lrank_p;
+    MPIU_CHKPMEM_DECL(1);
 
     /* get an array of all processes on this node */
-    ret = PMI_Get_clique_size (num_local);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Get_clique_size failed %d", ret);
+    pmi_errno = PMI_Get_clique_size (num_local);
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_get_clique_size", "**pmi_get_clique_size %d", pmi_errno);
     
-    *local_procs = MPIU_Malloc (*num_local * sizeof (int));
-    if (*local_procs == NULL)
-	ERROR_RET (-1, "malloc failed");
+    MPIU_CHKPMEM_MALLOC (*local_procs, int *, *num_local * sizeof (int), mpi_errno, "local proc array");
 
-    ret = PMI_Get_clique_ranks (*local_procs, *num_local);
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Get_clique_ranks failed %d", ret);
+    pmi_errno = PMI_Get_clique_ranks (*local_procs, *num_local);
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_get_clique_ranks", "**pmi_get_clique_ranks %d", pmi_errno);
 
     /* make sure it's sorted  so that ranks are consistent between processes */
     qsort (*local_procs, *num_local, sizeof (**local_procs), intcompar);
 
     /* find our local rank */
     lrank_p = bsearch (&global_rank, *local_procs, *num_local, sizeof (**local_procs), intcompar);
-    if (lrank_p == NULL)
-	ERROR_RET (-1, "Can't find our rank in local ranks");
+    MPIU_ERR_CHKANDJUMP (lrank_p == NULL, mpi_errno, MPI_ERR_OTHER, "**not_in_local_ranks");
     *local_rank = lrank_p - *local_procs;
 
-    return 0;
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
     
 #else
 
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
     int *procs;
     int i;
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
-    
-    ret = MPIDI_PG_GetConnKVSname (&kvs_name);
-    if (ret != MPI_SUCCESS)
-	FATAL_ERROR ("MPIDI_PG_GetConnKVSname failed");
+    MPIU_CHKPMEM_DECL(1);
+    MPIU_CHKLMEM_DECL(1);
+
+    mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Put my hostname id */
     memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
-    snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", global_rank);
+    MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", global_rank);
 
-    ret = PMI_KVS_Put (kvs_name, key, MPID_nem_hostname);
-    if (ret != MPI_SUCCESS)
-	ERROR_RET (-1, "PMI_KVS_Put failed %d", ret);
+    pmi_errno = PMI_KVS_Put (kvs_name, key, MPID_nem_hostname);
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
 
-    ret = PMI_Barrier();
-    if (ret != 0)
-	ERROR_RET (-1, "PMI_Barrier failed %d", ret);
+    pmi_errno = PMI_KVS_Commit (kvs_name);
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
     /* Gather hostnames */
-    procs = MPIU_Malloc (num_global * sizeof (int));
-    if (!procs)
-	ERROR_RET (-1, "malloc failed");
+    MPIU_CHKLMEM_MALLOC (procs, int *, num_global * sizeof (int), mpi_errno, "local process index array");
+
     *num_local = 0;
 
     for (i = 0; i < num_global; ++i)
     {
 	memset (val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
 	memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
-	snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", i);
+	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", i);
 
-	ret = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
-	if (ret != MPI_SUCCESS)
-	    ERROR_RET (-1, "PMI_KVS_Get failed %d for rank %d", ret, i);
+	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 	
 	if (!strncmp (MPID_nem_hostname, val, MPID_NEM_MAX_KEY_VAL_LEN))
 	{
@@ -408,20 +437,20 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 		*local_rank = *num_local;
 	    procs[*num_local] = i;
 	    ++*num_local;
-	}
-	
-	printf_d ("  %d: %s\n", i, val);
+	}	
     }
 	
     /* copy over local procs into smaller array */
-    *local_procs = MPIU_Malloc (*num_local * sizeof (int));
-    if (!local_procs)
-	ERROR_RET (-1, "malloc failed");
+    MPIU_CHKPMEM_MALLOC (*local_procs, int *, *num_local * sizeof (int), mpi_errno, "local process index array");
     MPID_NEM_MEMCPY (*local_procs, procs, *num_local * sizeof (int));
 
-    MPIU_Free (procs);
-    
-    return 0;
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    MPIU_CHKLMEM_FREEALL();
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 #endif
 }
 

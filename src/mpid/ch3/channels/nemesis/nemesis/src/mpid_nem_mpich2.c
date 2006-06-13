@@ -37,10 +37,16 @@ unsigned short *MPID_nem_recv_seqno = 0;
 #define MPID_NEM_DONT_INLINE_FUNCTIONS 1
 #include <mpid_nem_inline.h>
 
-void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_mpich2_init (int ckpt_restart)
 {
+    int mpi_errno = MPI_SUCCESS;
     int i;
+    MPIU_CHKPMEM_DECL (2);
 
     /*     printf ("sizeof (MPID_nem_cell_t) == %u\n", sizeof (MPID_nem_cell_t)); */
     /*     printf ("&MPID_nem_mem_region.mailboxes.in[0]->mpich2 = %p\n", &MPID_nem_mem_region.mailboxes.in[0]->mpich2); */
@@ -53,9 +59,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
     
     if (!ckpt_restart)
     {
-	MPID_nem_recv_seqno = MPIU_Malloc (sizeof(*MPID_nem_recv_seqno) * MPID_nem_mem_region.num_procs);
-	if (!MPID_nem_recv_seqno)
-	    FATAL_ERROR ("malloc failed");
+        MPIU_CHKPMEM_MALLOC (MPID_nem_recv_seqno, unsigned short *, sizeof(*MPID_nem_recv_seqno) * MPID_nem_mem_region.num_procs, mpi_errno, "recv seqno");
 
 	for (i = 0; i < MPID_nem_mem_region.num_procs; ++i)
 	{
@@ -63,9 +67,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
 	}
     
 	/* set up fbox queue */
-	MPID_nem_fboxq_elem_list = MPIU_Malloc (MPID_nem_mem_region.num_local * sizeof(MPID_nem_fboxq_elem_t));
-	if (!MPID_nem_fboxq_elem_list)
-	    FATAL_ERROR ("malloc failed");
+        MPIU_CHKPMEM_MALLOC (MPID_nem_fboxq_elem_list, MPID_nem_fboxq_elem_t *, MPID_nem_mem_region.num_local * sizeof(MPID_nem_fboxq_elem_t), mpi_errno, "fastbox element list");
     
 	for (i = 0; i < MPID_nem_mem_region.num_local; ++i)
 	{
@@ -96,6 +98,13 @@ MPID_nem_mpich2_init (int ckpt_restart)
 	MPID_nem_curr_fbox_all_poll = &MPID_nem_fboxq_elem_list[0];
 	MPID_nem_fboxq_elem_list_last = &MPID_nem_fboxq_elem_list[MPID_nem_mem_region.num_local - 1];
     }
+    
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }
 
 /*

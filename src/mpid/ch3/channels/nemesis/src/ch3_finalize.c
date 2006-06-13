@@ -14,7 +14,9 @@ int MPIDI_CH3_Finalize()
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_nem_finalize();
+    mpi_errno = MPID_nem_finalize();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
+ fn_fail:
     return mpi_errno;
 }

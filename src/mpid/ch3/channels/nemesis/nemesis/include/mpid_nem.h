@@ -24,11 +24,11 @@ int MPID_nem_init (int rank, MPIDI_PG_t *pg_p);
 int _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart);
 int MPID_nem_finalize (void);
 int MPID_nem_ckpt_shutdown (void);
-void MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
-void MPID_nem_barrier(int, int);
-void MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, int num_local, int local_rank, MPIDI_PG_t *pg_p);
-void MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
-void MPID_nem_check_alloc(int);
+int MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
+int MPID_nem_barrier(int, int);
+int MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, int num_local, int local_rank, MPIDI_PG_t *pg_p);
+int MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
+int MPID_nem_check_alloc(int);
 static inline void MPID_nem_waitforlock(MPID_nem_fbox_common_ptr_t pbox, int value, int count);
 static inline int MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count);
 int MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card);
@@ -42,7 +42,7 @@ int MPID_nem_connect_to_root (const char *port_name, MPIDI_VC_t *new_vc);
 #define MPID_NEM_MPICH2_FAILURE 1
 #define MPID_NEM_MPICH2_AGAIN   2  /* try again */
 
-void MPID_nem_mpich2_init (int ckpt_restart);
+int MPID_nem_mpich2_init (int ckpt_restart);
 /* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPID_NEM_MPICH2_SUCCESS)
@@ -55,6 +55,19 @@ void MPID_nem_ckpt_log_message (MPID_nem_cell_ptr_t cell);
 void MPID_nem_ckpt_send_markers (void);
 int MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell);
 void MPID_nem_ckpt_free_msg_log (void);
+
+/* Shared memory allocation utility functions */
+/* MPID_nem_allocate_shared_memory allocates a shared mem region of size "length" and attaches to it.  "handle" points to a string
+   descriptor for the region to be passed in to MPID_nem_attach_shared_memory.  "handle" is dynamically allocated and should be
+   freed by the caller.*/
+int MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[]);
+/* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
+int MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]);
+/* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
+   the OS resource will be destroyed. */
+int MPID_nem_remove_shared_memory (const char const handle[]);
+/* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
+int MPID_nem_detach_shared_memory (const char *buf_p, const int length);
 
 
 /* one-sided */
