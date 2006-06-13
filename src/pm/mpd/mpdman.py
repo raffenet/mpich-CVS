@@ -157,6 +157,8 @@ class MPDMan(object):
                 self.appnum = self.clientPgmEnv[k]    # don't put in application env
             else:
                 cli_env[k] = self.clientPgmEnv[k]
+                if k == 'MPICH_INTERFACE_HOSTNAME':
+                    cli_env['MPICH_INTERFACE_HOSTNAME_R%d' % self.myRank] = cli_env[k]
         self.kvs_next_id = 1
         self.jobEndingEarly = 0
         self.pmiCollectiveJob = 0
