@@ -246,6 +246,14 @@ fi
 #
 AC_SUBST(MPIG_SOURCE_DIR)
 AC_SUBST(MPIG_BUILD_DIR)
+AC_SUBST(MPIG_GLOBUS_DUROC_INSTALLED)
+if test "${MPIG_GLOBUS_DUROC_INSTALLED:?}" = "yes" ; then
+    AC_DEFINE(MPIG_GLOBUS_DUROC_INSTALLED,1,[define if the Globus DUROC Runtime module is installed])
+fi
+AC_SUBST(MPIG_GLOBUS_RENDEZVOUS_INSTALLED)
+if test "${MPIG_GLOBUS_RENDEZVOUS_INSTALLED:?}" = "yes" ; then
+    AC_DEFINE(MPIG_GLOBUS_RENDEZVOUS_INSTALLED,1,[define if the Globus Rendezvous Client C bindings module is installed])
+fi
 if test "${MPIG_GLOBUS_THREADED:?}" = "yes" ; then
     AC_DEFINE(MPIG_THREADED,1,[define if Globus is configured with threads, allowing MPIG to use threads internals])
 fi 

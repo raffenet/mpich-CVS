@@ -7,10 +7,12 @@
  */
 
 /*
- * This file contains an implementation of process management routines that interface with the Globus 2.x GRAM service.
+ * This file contains an implementation of process management routines that interface with the Globus 2.x DUROC/GRAM service.
  */
-
 #include "mpidimpl.h"
+
+#if defined(MPIG_GLOBUS_DUROC_INSTALLED)
+
 #include "globus_duroc_runtime.h"
 #include "globus_duroc_bootstrap.h"
 #include "globus_gram_client.h"
@@ -383,6 +385,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 	
 	grc = globus_uuid_create(&uuid);
 	MPIU_ERR_CHKANDSTMT((grc), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_create_pg_id_block;}, "**globus|pm_pg_id_create");
+
 	mpig_bc_add_contact(bc, "PM_GK_PG_ID", uuid.text, &mpi_errno, &failed);
 	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER,  {errors++; goto end_create_pg_id_block;},
 	    "**globus|bc_add_contact", "**globus|bc_add_contact %s", "PM_GK_PG_ID");
@@ -414,7 +417,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     }
 
     /* add the subjob index to the business card.  in addition to helping order the list of the GRAM subjob contacts, the subjob
-       index is be needed by the topology module to perform topology discovery. */
+       index is be needed by the topology module to perform topology discovery and to fill in the MPI_APP_NUM attribute attached
+       to MPI_COMM_WORLD (see MPID_Init). */
     {
 	char sj_index_str[10];
 	
@@ -1847,3 +1851,5 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 /* mpig_pm_gk_intra_subjob_gather() */
 
 #endif /* !defined(MPIG_VMPI) */
+
+#endif /*# defined(MPIG_GLOBUS_DUROC_INSTALLED) */

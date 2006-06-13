@@ -7,16 +7,20 @@
  */
 
 /*
- * This file contains an implementation of process management routines that interface with the Globus Web Services GRAM container.
+ * This file contains an implementation of process management routines that interface with Web Services implementation of Globus.
+ * In particular, this module makes use of the GRAM and Redezvous services.
  */
-
 #include "mpidimpl.h"
+
+#if defined(MPIG_GLOBUS_RENDEZVOUS_INSTALLED)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <strings.h>
 #include <string.h>
 #include "globus_rendezvous.h"
+#include "globus_uuid.h"
 #ifdef MPIG_VMPI
 #include <mpi.h>
 #endif
@@ -92,7 +96,7 @@ MPIG_STATIC int mpig_pm_ws_SizeAndRankSet =  0;
 MPIG_STATIC int mpig_pm_ws_MySubjobRank   = -1;
 MPIG_STATIC int mpig_pm_ws_PG_Size        = -1;
 MPIG_STATIC int mpig_pm_ws_PG_Rank        = -1;
-MPIG_STATIC char *mpig_pm_ws_PG_Id = "-- NOT YET IMPLEMENTED --"; /* NICK */
+MPIG_STATIC char *mpig_pm_ws_PG_Id = NULL;
 MPIG_STATIC int mpig_pm_ws_Done;
 MPIG_STATIC int mpig_pm_ws_SubjobIdx;
 #ifndef MPIG_VMPI
@@ -108,8 +112,8 @@ MPIG_STATIC char mpig_pm_ws_ErrorMsg[500];
 MPIG_STATIC void globus_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args);
 /* LOCAL UTILITY FUNCTIONS */
 MPIG_STATIC void print_byte_array(char *v, int vlen);
-MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data, char *my_checkinbuff, int hdr_len, int my_checkinbufflen);
-MPIG_STATIC void process_wholejob_byte_array(char *v,
+MPIG_STATIC void mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data, char *my_checkinbuff, int hdr_len, int my_checkinbufflen);
+MPIG_STATIC void mpig_pm_ws_process_wholejob_byte_array(char *v,
 					    int vlen,
 					    int my_subjobidx,
 					    int rank_in_my_subjob,
@@ -119,7 +123,7 @@ MPIG_STATIC void process_wholejob_byte_array(char *v,
 					    char ***boot_cs_array,
 					    int *nprocs,
 					    int *my_grank);
-MPIG_STATIC void process_subjob_byte_array(char *v,
+MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 					    int vlen,
 					    char **cp,
 					    int mpig_pm_ws_SubjobIdx,
@@ -127,9 +131,9 @@ MPIG_STATIC void process_subjob_byte_array(char *v,
 					    char ***subjob_byte_arrays,
 					    int **subjob_byte_array_lens,
 					    char ***subjob_boot_cs_array);
-MPIG_STATIC void extract_int_and_single_space(char *v, int vlen, char **cp, int *val);
+MPIG_STATIC void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char **cp, int *val);
 #ifndef MPIG_VMPI
-MPIG_STATIC int distribute_byte_array_to_my_children(char *v,
+MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v,
 						    int vlen,
 						    int my_subjob_rank,
 						    int my_subjob_size,
@@ -139,9 +143,9 @@ MPIG_STATIC int distribute_byte_array_to_my_children(char *v,
 
 
 /*********************
- * mpig_pm_init_ws()
+ * mpig_pm_ws_init()
  ********************/ 
-int mpig_pm_init_ws(void)
+int mpig_pm_ws_init(void)
 {       
     globus_result_t res;
     const char *subjob_epr;
@@ -208,18 +212,18 @@ int mpig_pm_init_ws(void)
 
     return MPI_SUCCESS;
 
-} /* end mpig_pm_init_ws() */
+} /* end mpig_pm_ws_init() */
 
 /*********************
- * mpig_pm_finalize_ws()
+ * mpig_pm_ws_finalize()
  ********************/ 
-int mpig_pm_finalize_ws(void)
+int mpig_pm_ws_finalize(void)
 {       
     globus_result_t res;
 
     if (!mpig_pm_ws_Initialized)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_finalize_ws() called without calling mpig_pm_ws_init()", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_finalize() called without calling mpig_pm_ws_init()", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
@@ -248,10 +252,25 @@ int mpig_pm_finalize_ws(void)
 
     return MPI_SUCCESS;
 
-} /* end mpig_pm_finalize_ws() */
+} /* end mpig_pm_ws_finalize() */
+
+/*
+ * mpig_pm_ws_abort()
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_pm_ws_abort
+int mpig_pm_ws_abort(int exit_code)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+
+    /* FIXME: kill the jobs (all subjobs) */
+    
+    return mpi_errno;
+}
+
 
 /*********************
- * mpig_pm_exchange_business_cards_ws()
+ * mpig_pm_ws_exchange_business_cards()
  * assumptions made in writing MPIDI_PM_distribute_byte_array(): 
  * - vMPI MPI_Init has been called before entering this function 
  * - globus_module_activate(GLOBUS_XIO_MODULE) has been called 
@@ -261,7 +280,7 @@ int mpig_pm_finalize_ws(void)
  * - the byte arrays we are distributing here MUST be the biz cards
  * - all procs use the same stack as passed by the arg 'stack'
  ********************/ 
-int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
+int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
 {       
     int rc;
     char *inbuf = NULL;
@@ -288,22 +307,64 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
     if (!mpig_pm_ws_Initialized)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
-	    "ERROR: file %s: line %d: mpig_pm_exchange_business_cards_ws() called without calling mpig_pm_ws_init()", 
+	    "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() called without calling mpig_pm_ws_init()", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!bc)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_exchange_business_cards_ws() passed NULL bc", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() passed NULL bc", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!bcs_ptr)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_exchange_business_cards_ws() passed NULL bcs_ptr", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() passed NULL bcs_ptr", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
+
+    /* create a process group id and add it to the business card.  only the id added to the job master will be used below. */
+    {
+	globus_uuid_t uuid;
+	globus_result_t grc;
+
+	grc = globus_uuid_create(&uuid);
+	if (grc)
+	{
+	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() could not create UUID", 
+		__FILE__, __LINE__);
+	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	}
+	
+	mpig_bc_add_contact(bc, "PM_WS_PG_ID", uuid.text, &mpi_errno, &failed);
+    }
+
+    /* add the subjob index to the business card.  the subjob index is be needed by the topology module to perform topology
+       discovery and to fill in the MPI_APP_NUM attribute attached to MPI_COMM_WORLD (see MPID_Init). */
+    {
+	char str[10];
+
+	if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_ws_SubjobIdx) < 10)
+        {
+	    mpig_bc_add_contact(bc, "PM_GK_APP_NUM", str, &mpi_errno, &failed);
+
+	    if (failed)
+	    {
+		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() was unable to add "
+		    "the subjob index to the business card", __FILE__, __LINE__);
+		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	    }
+	}
+	else /* if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_ws_SubjobIdx) >= 10) */
+        {
+		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() failed to convert "
+		    "the subjob index to a string", __FILE__, __LINE__);
+		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	}
+	/* end if/else (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_ws_SubjobIdx) < 10) */
+    }
+    /* end of block that adds the subjob index to the business card */
 
     mpig_bc_serialize_object(bc, &inbuf);
     if (!inbuf)
@@ -335,7 +396,7 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
      * where (SJ_CS_Len=0 and SJ_CS=NULL) iff vMPI build
      *
      * NOTE: need to place (SJ_CS_Len=0 and SJ_CS=NULL) for
-     *       process_subjob_byte_array().  procs in other
+     *       mpig_pm_ws_process_subjob_byte_array().  procs in other
      *       subjobs have no way to know if I have vMPI
      *       so I cannot simply omit <SJ_CS_Len, SJ_CS>.
      */
@@ -377,7 +438,7 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 #ifdef MPIG_VMPI
     if (mpig_pm_ws_MySubjobRank == -1)
     {
-	MPI_Comm_rank(MPI_COMM_WORLD, &mpig_pm_ws_MySubjobRank);
+	mpig_vmpi_comm_rank(VMPI_COMM_WORLD, &mpig_pm_ws_MySubjobRank);
     } /* endif */
 #endif
 
@@ -387,8 +448,8 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 
     /* assigns mpig_pm_ws_MySubjobRank (if not already known) */
     /* and gathers SJ data in mpig_pm_ws_MySubjobRank = 0     */
-    /* fprintf(Log_fp, "%ud: before call gather_subjob_data: hdr_len %d my_checkinbufflen %d\n", Pid, hdr_len, my_checkinbufflen); fflush(Log_fp);  */
-    gather_subjob_data(&subjob_data, 
+    /* fprintf(Log_fp, "%ud: before call mpig_pm_ws_gather_subjob_data: hdr_len %d my_checkinbufflen %d\n", Pid, hdr_len, my_checkinbufflen); fflush(Log_fp);  */
+    mpig_pm_ws_gather_subjob_data(&subjob_data, 
 			my_checkinbuff, 
 			hdr_len, 
 			my_checkinbufflen);
@@ -445,7 +506,7 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 	res = globus_rz_data_request_finished(mpig_pm_ws_WholejobHandle); TEST_RES(res);
 	/* fprintf(Log_fp, "%ud: after globus_rz_data_request_finished()\n", Pid); fflush(Log_fp); */
 
-	process_wholejob_byte_array(subjob_data.data,
+	mpig_pm_ws_process_wholejob_byte_array(subjob_data.data,
 				    subjob_data.length,
 				    mpig_pm_ws_SubjobIdx,
 				    mpig_pm_ws_MySubjobRank,
@@ -457,21 +518,21 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 				    &mpig_pm_ws_PG_Rank);
 	mpig_pm_ws_SizeAndRankSet = 1;
 
-	/* fprintf(Log_fp, "%ud: after process_wholejob_byte_array(): mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
+	/* fprintf(Log_fp, "%ud: after mpig_pm_ws_process_wholejob_byte_array(): mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
 
 	/*****************************************************/
 	/* distributing wholejob byte array to subjob slaves */
 	/*****************************************************/
 
 #ifdef MPIG_VMPI
-	MPI_Bcast(&(subjob_data.length), 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(subjob_data.data, 
+	mpig_vmpi_bcast(&(subjob_data.length), 1, VMPI_INT, 0, VMPI_COMM_WORLD);
+	mpig_vmpi_bcast(subjob_data.data, 
 		    subjob_data.length, 
-		    MPI_BYTE, 
+		    VMPI_BYTE, 
 		    0, 
-		    MPI_COMM_WORLD);
+		    VMPI_COMM_WORLD);
 #else
-	rc = distribute_byte_array_to_my_children(subjob_data.data,
+	rc = mpig_pm_ws_distribute_byte_array_to_my_children(subjob_data.data,
 						subjob_data.length,
 						mpig_pm_ws_MySubjobRank,
 						mysubjobsize,
@@ -484,7 +545,7 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 	    globus_free(boot_cs_array);
 	    globus_free(subjob_data.data);
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: file %s: line %d: recvd erroneous rc %d from distribute_byte_array_to_my_children", 
+		"ERROR: file %s: line %d: recvd erroneous rc %d from mpig_pm_ws_distribute_byte_array_to_my_children", 
 		__FILE__, __LINE__, rc);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	} /* endif */
@@ -506,12 +567,12 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 #endif
 
 #ifdef MPIG_VMPI
-	MPI_Bcast(&ba_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	mpig_vmpi_bcast(&ba_len, 1, VMPI_INT, 0, VMPI_COMM_WORLD);
 
 	TRY_MALLOC(ba, char *, ba_len);
 
-	MPI_Bcast(ba, ba_len, MPI_BYTE, 0, MPI_COMM_WORLD);
-	process_wholejob_byte_array(ba,
+	mpig_vmpi_bcast(ba, ba_len, VMPI_BYTE, 0, VMPI_COMM_WORLD);
+	mpig_pm_ws_process_wholejob_byte_array(ba,
 				    ba_len,
 				    mpig_pm_ws_SubjobIdx,
 				    mpig_pm_ws_MySubjobRank,
@@ -558,7 +619,7 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 
         res = globus_xio_close(parent_handle, NULL); TEST_RES(res);
 
-	process_wholejob_byte_array(ba,
+	mpig_pm_ws_process_wholejob_byte_array(ba,
 				    ba_len,
 				    mpig_pm_ws_SubjobIdx,
 				    mpig_pm_ws_MySubjobRank,
@@ -570,9 +631,9 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 				    &mpig_pm_ws_PG_Rank);
 	mpig_pm_ws_SizeAndRankSet = 1;
 
-	/* fprintf(Log_fp, "%ud: after process_wholejob_byte_array(): mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
+	/* fprintf(Log_fp, "%ud: after mpig_pm_ws_process_wholejob_byte_array(): mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
 	/* distributing wholejob byte array to my children */
-	if (distribute_byte_array_to_my_children(ba,
+	if (mpig_pm_ws_distribute_byte_array_to_my_children(ba,
 					    ba_len,
 					    mpig_pm_ws_MySubjobRank,
 					    mysubjobsize,
@@ -584,11 +645,11 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
 	    globus_free(boot_cs_array);
 	    globus_free(ba);
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: file %s: line %d: recvd erroneous rc %d from distribute_byte_array_to_my_children", 
+		"ERROR: file %s: line %d: recvd erroneous rc %d from mpig_pm_ws_distribute_byte_array_to_my_children", 
 		__FILE__, __LINE__, rc);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	} /* endif */
-	/* fprintf(Log_fp, "%ud: after distribute_byte_array_to_my_children(): mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
+	/* fprintf(Log_fp, "%ud: after mpig_pm_ws_distribute_byte_array_to_my_children(): mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
 #endif
 	globus_free(ba);
     } /* endif */
@@ -600,10 +661,44 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
     for (i = 0; i < mpig_pm_ws_PG_Size; i ++)
     {
 	/* fprintf(Log_fp, "%ud: my_grank %d nprocs %d: before mpig_bc_deserialize_object outbufs[%d]: ", Pid, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size, i); fflush(Log_fp); print_byte_array(outbufs[i], outbufs_lens[i]); */
+	mpig_bc_construct(&((*bcs_ptr)[i]));
 	mpig_bc_deserialize_object((char *) outbufs[i], &((*bcs_ptr)[i]));
 	/* fprintf(Log_fp, "%ud: my_grank %d nprocs %d: after mpig_bc_deserialize_object outbufs[%d]\n", Pid, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size, i); fflush(Log_fp); */
     } /* endif */
     /* fprintf(Log_fp, "%ud: my_grank %d nprocs %d: after converting %d byte arrays to biz cards\n", Pid, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size, mpig_pm_ws_PG_Size); fflush(Log_fp); */
+
+    /* get the process group id from the job master */
+    {
+	char * pg_id_str;
+	bool_t found;
+
+	mpig_bc_get_contact(&bcs_ptr[0], "PM_WS_PG_ID", &pg_id_str, &found, &mpi_errno, &failed);
+	if (failed)
+	{
+	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() could not extract the "
+		"process group ID from the job master business card", __FILE__, __LINE__);
+	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	}
+
+	if (found)
+        {
+	    mpig_pm_ws_PG_Id = globus_libc_strdup(pg_id_str);
+	    if (mpig_pm_ws_PG_Id == NULL)
+	    {
+		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() failed to allocate "
+		    "memory for the process group ID", __FILE__, __LINE__);
+		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	    }
+
+	    mpig_bc_free_contact(pg_id_str);
+	}
+	else
+        {
+	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() the process group ID "
+		"was not found in the job master's business card", __FILE__, __LINE__);
+	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	}
+    }
 
     /* cleanup */
     globus_free(my_checkinbuff);
@@ -616,17 +711,17 @@ int mpig_pm_exchange_business_cards_ws(mpig_bc_t *bc, mpig_bc_t **bcs_ptr)
     globus_free(outbufs);
     globus_free(outbufs_lens);
 
-    /* fprintf(Log_fp, "%ud: exit mpig_pm_exchange_business_cards_ws: mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
+    /* fprintf(Log_fp, "%ud: exit mpig_pm_ws_exchange_business_cards: mysubjobsize %d my_grank %d nprocs %d\n", Pid, mysubjobsize, mpig_pm_ws_PG_Rank, mpig_pm_ws_PG_Size); fflush(Log_fp); */
 
     return MPI_SUCCESS;
 
-} /* end mpig_pm_exchange_business_cards_ws() */
+} /* end mpig_pm_ws_exchange_business_cards() */
 
 /*********************
- * mpig_pm_free_business_cards_ws()
+ * mpig_pm_ws_free_business_cards()
  * NICK: need to write this later ... dunno what it's for. Brian added this.
  ********************/ 
-int mpig_pm_free_business_cards_ws(mpig_bc_t * bcs)
+int mpig_pm_ws_free_business_cards(mpig_bc_t * const bcs)
 {       
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -634,49 +729,49 @@ int mpig_pm_free_business_cards_ws(mpig_bc_t * bcs)
     if (!mpig_pm_ws_Initialized)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
-	    "ERROR: file %s: line %d: mpig_pm_free_business_cards_ws() called without calling mpig_pm_ws_init()", 
+	    "ERROR: file %s: line %d: mpig_pm_ws_free_business_cards() called without calling mpig_pm_ws_init()", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
-	    "ERROR: file %s: line %d: mpig_pm_free_business_cards_ws() called without calling mpig_pm_exchange_business_cards_ws()",
+	    "ERROR: file %s: line %d: mpig_pm_ws_free_business_cards() called without calling mpig_pm_ws_exchange_business_cards()",
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!bcs)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_free_business_cards_ws() passed NULL bcs", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_free_business_cards() passed NULL bcs", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
     for (i = 0; mpi_errno == MPI_SUCCESS && i < mpig_pm_ws_PG_Size; i ++)
     {
-	mpi_errno = mpig_bc_destroy(&bcs[i]);
+	mpi_errno = mpig_bc_destruct(&bcs[i]);
     } /* endfor */
 
     return mpi_errno;
 
-} /* end mpig_pm_free_business_cards_ws() */
+} /* end mpig_pm_ws_free_business_cards() */
 
 /*********************
- * mpig_pm_get_pg_size_ws()
- * Assumed that mpig_pm_exchange_business_cards_ws() called before this func
+ * mpig_pm_ws_get_pg_size()
+ * Assumed that mpig_pm_ws_exchange_business_cards() called before this func
  ********************/ 
-int mpig_pm_get_pg_size_ws(int *pg_size)
+int mpig_pm_ws_get_pg_size(int * const pg_size)
 {       
     if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
-	    "ERROR: file %s: line %d: mpig_pm_get_pg_size_ws() called without calling mpig_pm_exchange_business_cards_ws()", 
+	    "ERROR: file %s: line %d: mpig_pm_ws_get_pg_size() called without calling mpig_pm_ws_exchange_business_cards()", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!pg_size)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_get_pg_size_ws() passed NULL pg_size", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_pg_size() passed NULL pg_size", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
@@ -685,24 +780,24 @@ int mpig_pm_get_pg_size_ws(int *pg_size)
 
     return MPI_SUCCESS;
 
-} /* end mpig_pm_get_pg_size_ws() */
+} /* end mpig_pm_ws_get_pg_size() */
 
 /*********************
- * mpig_pm_get_pg_rank_ws()
- * Assumed that mpig_pm_exchange_business_cards_ws() called before this func
+ * mpig_pm_ws_get_pg_rank()
+ * Assumed that mpig_pm_ws_exchange_business_cards() called before this func
  ********************/ 
-int mpig_pm_get_pg_rank_ws(int *pg_rank)
+int mpig_pm_ws_get_pg_rank(int * const pg_rank)
 {       
     if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
-	    "ERROR: file %s: line %d: mpig_pm_get_pg_rank_ws() called without calling mpig_pm_exchange_business_cards_ws()", 
+	    "ERROR: file %s: line %d: mpig_pm_ws_get_pg_rank() called without calling mpig_pm_ws_exchange_business_cards()", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!pg_rank)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_get_pg_rank_ws() passed NULL pg_rank", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_pg_rank() passed NULL pg_rank", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
@@ -711,25 +806,25 @@ int mpig_pm_get_pg_rank_ws(int *pg_rank)
 
     return MPI_SUCCESS;
 
-} /* end mpig_pm_get_pg_rank_ws() */
+} /* end mpig_pm_ws_get_pg_rank() */
 
 /*********************
- * mpig_pm_get_pg_id_ws()
- * Assumed that mpig_pm_exchange_business_cards_ws() called before this func
+ * mpig_pm_ws_get_pg_id()
+ * Assumed that mpig_pm_ws_exchange_business_cards() called before this func
  * NICK: need to write this later ... dunno what it's for. Brian added this.
  ********************/ 
-int mpig_pm_get_pg_id_ws(const char **pg_id)
+int mpig_pm_ws_get_pg_id(const char ** char pg_id)
 {       
     if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
-	    "ERROR: file %s: line %d: mpig_pm_get_pg_id_ws() called without calling mpig_pm_exchange_business_cards_ws()", 
+	    "ERROR: file %s: line %d: mpig_pm_ws_get_pg_id() called without calling mpig_pm_ws_exchange_business_cards()", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     }
     else if (!pg_id)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_get_pg_id_ws() passed NULL pg_id", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_pg_id() passed NULL pg_id", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
@@ -738,17 +833,64 @@ int mpig_pm_get_pg_id_ws(const char **pg_id)
 
     return MPI_SUCCESS;
 
-} /* end mpig_pm_get_pg_id_ws() */
+} /* end mpig_pm_ws_get_pg_id() */
+
+
+/*
+ * mpig_pm_ws_get_app_num()
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_pm_ws_get_app_num
+int mpig_pm_ws_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    char * app_num_str = NULL;
+    int app_num;
+    bool_t found;
+    bool_t failed;
+    int rc;
+    int mpi_errno = MPI_SUCCESS;
+
+    mpig_bc_get_contact(bc, "PM_WS_APP_NUM", &app_num_str, &found, &mpi_errno, &failed);
+    if (failed)
+    {
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_app_num() failed to extract the application number "
+	    "from the specified business card", __FILE__, __LINE__);
+	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+    }
+
+    if (!found)
+    {
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_app_num() could not find the application number "
+	    "in the specified business card", __FILE__, __LINE__);
+	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+    }
+
+    rc = sscanf(app_num_str, "%d", &app_num);
+    if (rc != 1)
+    {
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_app_num() found a malformed application number "
+	    "in the specified business card", __FILE__, __LINE__);
+	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+    }
+    
+    *app_num_p = app_num;
+
+    return mpi_errno;
+}
+/* mpig_pm_ws_get_app_num() */
+
+    
 
 /****************************/
 /* LOCAL CALLBACK FUNCTIONS */
 /****************************/
 
 #undef FUNCNAME
-#define FUNCNAME globus_rz_data_callback
+#define FUNCNAME mpig_pm_ws_rz_data_callback
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC void globus_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args)
+MPIG_STATIC void mpig_pm_ws_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args)
 {
     struct rz_data *v = (struct rz_data *) args;
 
@@ -756,7 +898,7 @@ MPIG_STATIC void globus_rz_data_callback(globus_result_t res, const char *data, 
 
     if (!v)
     {
-        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: globus_rz_data_callback() passed NULL args", 
+        sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_rz_data_callback() passed NULL args", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
@@ -774,7 +916,7 @@ MPIG_STATIC void globus_rz_data_callback(globus_result_t res, const char *data, 
 
     return;
 
-} /* end globus_rz_data_callback() */
+} /* end mpig_pm_ws_rz_data_callback() */
 
 /***************************/
 /* LOCAL UTILITY FUNCTIONS */
@@ -796,8 +938,8 @@ MPIG_STATIC void print_byte_array(char *v, int vlen)
 #endif
 
 #ifdef MPIG_VMPI
-/* gather_subjob_data() using vMPI */
-MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
+/* mpig_pm_ws_gather_subjob_data() using vMPI */
+MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data,
 			    char *my_checkinbuff, 
 			    int hdr_len, 
 			    int my_checkinbufflen)
@@ -808,7 +950,7 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
     int *displs      = NULL;
     int mycheckinlen = hdr_len+my_checkinbufflen;
 
-    MPI_Comm_size(MPI_COMM_WORLD, &mysubjobsize);
+    mpig_vmpi_comm_size(VMPI_COMM_WORLD, &mysubjobsize);
 
     if (mpig_pm_ws_MySubjobRank == 0)
     {
@@ -816,15 +958,15 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
 	TRY_MALLOC(displs,      int *, mysubjobsize*sizeof(int));
     } /* endif */
 
-    MPI_Gather(&mycheckinlen,    /* sendbuff  */
+    mpig_vmpi_gather(&mycheckinlen,    /* sendbuff  */
 		1,               /* sendcount */
-		MPI_INT,         /* sendtype  */
+		VMPI_INT,         /* sendtype  */
 		checkinlens,     /* recvbuff  */
 		1,               /* recvcount */
-		MPI_INT,         /* recvtype  */
+		VMPI_INT,         /* recvtype  */
 		0,               /* root      */
-		MPI_COMM_WORLD); /* comm      */
-/* fprintf(Log_fp, "gather_subjob_data(): " "after MPI_Gather mysubjobsize %d ... i submitted mycheckinlen %d\n", mysubjobsize, mycheckinlen); fflush(Log_fp); */
+		VMPI_COMM_WORLD); /* comm      */
+/* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): " "after MPI_Gather mysubjobsize %d ... i submitted mycheckinlen %d\n", mysubjobsize, mycheckinlen); fflush(Log_fp); */
 
     if (mpig_pm_ws_MySubjobRank == 0)
     {
@@ -834,23 +976,23 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
 	displs[0] = strlen(b);
 	if (checkinlens[0] < 0)
 	{
-	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: gather_subjob_data(): received checkinlens[0]=%d (must be >= 0)",
+	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): received checkinlens[0]=%d (must be >= 0)",
 		__FILE__, __LINE__, checkinlens[0]);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	} /* endif */
 	subjob_data->length = strlen(b) + checkinlens[0];
-/* fprintf(Log_fp, "gather_subjob_data(): " "after adding checkinlens[0]=%d: subjob_data->length = %d\n", checkinlens[0], subjob_data->length); fflush(Log_fp); */
+/* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): " "after adding checkinlens[0]=%d: subjob_data->length = %d\n", checkinlens[0], subjob_data->length); fflush(Log_fp); */
 
 	for (i = 1; i < mysubjobsize; i ++)
 	{
 	    if (checkinlens[i] < 0)
 	    {
-		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: gather_subjob_data(): received checkinlens[%d]=%d (must be >= 0)",
+		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): received checkinlens[%d]=%d (must be >= 0)",
 		    __FILE__, __LINE__, i, checkinlens[i]);
 		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	    } /* endif */
 	    (subjob_data->length) += checkinlens[i];
-/* fprintf(Log_fp, "gather_subjob_data(): " "after adding checkinlens[%d]=%d: subjob_data->length = %d\n", i, checkinlens[i], subjob_data->length); fflush(Log_fp); */
+/* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): " "after adding checkinlens[%d]=%d: subjob_data->length = %d\n", i, checkinlens[i], subjob_data->length); fflush(Log_fp); */
 	    displs[i] = displs[i-1] + checkinlens[i-1];
 	} /* endfor */
 
@@ -859,26 +1001,26 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
 
     } /* endif */
 
-    MPI_Gatherv(my_checkinbuff,    /* sendbuff  */
+    mpig_vmpi_gatherv(my_checkinbuff,    /* sendbuff  */
 		mycheckinlen,      /* sendcount */
-		MPI_BYTE,          /* sendtype  */
+		VMPI_BYTE,          /* sendtype  */
 		subjob_data->data, /* recvbuff  */
 		checkinlens,       /* recvcounts */
 		displs,            /* displs */
-		MPI_BYTE,          /* recvtype  */
+		VMPI_BYTE,          /* recvtype  */
 		0,                 /* root      */
-		MPI_COMM_WORLD);   /* comm      */
-    /* fprintf(Log_fp, "gather_subjob_data(): after vMPI checkin my byte array to subjob master %d bytes: ", mycheckinlen); print_byte_array(my_checkinbuff, mycheckinlen); */
+		VMPI_COMM_WORLD);   /* comm      */
+    /* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): after vMPI checkin my byte array to subjob master %d bytes: ", mycheckinlen); print_byte_array(my_checkinbuff, mycheckinlen); */
 
     globus_free(checkinlens);
     globus_free(displs);
 
     return;
 
-} /* end gather_subjob_data() - vMPI */
+} /* end mpig_pm_ws_mpig_pm_ws_gather_subjob_data() - vMPI */
 #else
-/* gather_subjob_data() using rendezvous service (i.e., without vMPI) */
-MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
+/* mpig_pm_ws_mpig_pm_ws_gather_subjob_data() using rendezvous service (i.e., without vMPI) */
+MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data,
 			    char *my_checkinbuff, 
 			    int hdr_len, 
 			    int my_checkinbufflen)
@@ -903,7 +1045,7 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
 
 	mpig_pm_ws_Done = 0;
 	GlobusTimeReltimeSet(poll_freq, 1, 0);
-	res = globus_rz_sub_data_request_begin(mpig_pm_ws_SubjobHandle, &poll_freq, globus_rz_data_callback, subjob_data); TEST_RES(res);
+	res = globus_rz_sub_data_request_begin(mpig_pm_ws_SubjobHandle, &poll_freq, mpig_pm_ws_rz_data_callback, subjob_data); TEST_RES(res);
 
 	/* Wait for result */
 	/* fprintf(Log_fp, "%ud: subjob master BEFORE wait loop\n", Pid); fflush(Log_fp); */
@@ -925,7 +1067,7 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
 
     return;
 
-} /* end gather_subjob_data() - rendezvous service */
+} /* end mpig_pm_ws_mpig_pm_ws_gather_subjob_data() - rendezvous service */
 #endif
 
 /* format of v = <nsubjobs><singlespace><subjob_0>...<subjob_n-1>
@@ -933,7 +1075,7 @@ MPIG_STATIC void gather_subjob_data(struct rz_data *subjob_data,
 	    where <proc_i> = <nbytes><singlespace><nbytes of data>
  */
 
-MPIG_STATIC void process_wholejob_byte_array(char *v, 
+MPIG_STATIC void mpig_pm_ws_process_wholejob_byte_array(char *v, 
 					    int vlen,
 					    int my_subjobidx, 
 					    int rank_in_my_subjob,
@@ -955,20 +1097,20 @@ MPIG_STATIC void process_wholejob_byte_array(char *v,
 
     if (!(cp = v))
     {
-	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: process_wholejob_byte_array(): passed NULL bytearray", 
+	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_process_wholejob_byte_array(): passed NULL bytearray", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
     /* extracting <nsubjobs> */
-    extract_int_and_single_space(v, vlen, &cp, &nsubjobs);
+    mpig_pm_ws_extract_int_and_single_space(v, vlen, &cp, &nsubjobs);
     if (my_subjobidx >= nsubjobs)
     {
-	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: process_wholejob_byte_array(): my_subjobidx %d >= nsubjobs %d", 
+	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_process_wholejob_byte_array(): my_subjobidx %d >= nsubjobs %d", 
 	    __FILE__, __LINE__, my_subjobidx, nsubjobs);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
-    /* fprintf(Log_fp, "%ud: process_wholejob_byte_array: nsubjobs %d\n", Pid, nsubjobs); fflush(Log_fp); */
+    /* fprintf(Log_fp, "%ud: mpig_pm_ws_process_wholejob_byte_array: nsubjobs %d\n", Pid, nsubjobs); fflush(Log_fp); */
 
     /* processing each subjob one at a time */
     for (subjobidx = 0; subjobidx < nsubjobs; subjobidx ++)
@@ -979,7 +1121,7 @@ MPIG_STATIC void process_wholejob_byte_array(char *v,
 	int *subjob_byte_array_lens;
 	char **subjob_boot_cs_array;
 
-	process_subjob_byte_array(v, 
+	mpig_pm_ws_process_subjob_byte_array(v, 
 				vlen, 
 				&cp, 
 				subjobidx, 
@@ -991,7 +1133,7 @@ MPIG_STATIC void process_wholejob_byte_array(char *v,
 	if (my_subjobidx == subjobidx && rank_in_my_subjob >= nsubjobprocs)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: %s: line %d: process_wholejob_byte_array(): encountered subjobidx %d with %d nprocs "
+		"ERROR: %s: line %d: mpig_pm_ws_process_wholejob_byte_array(): encountered subjobidx %d with %d nprocs "
 		"but I'm rank %d in that same subjob", 
 		__FILE__, __LINE__, subjobidx, nsubjobprocs, rank_in_my_subjob);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
@@ -1019,14 +1161,14 @@ MPIG_STATIC void process_wholejob_byte_array(char *v,
 
     } /* endfor */
 
-} /* end process_wholejob_byte_array() */
+} /* end mpig_pm_ws_process_wholejob_byte_array() */
 
 /* format of v = <nprocs><singlespace><proc_0>...<proc_n-1>
     where 
     <proc_i> = <nbytes><sp><nbytes of boot CS><kbytes><sp><kbytes of biz card>
 */
 
-MPIG_STATIC void process_subjob_byte_array(char *v,
+MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 					    int vlen,
 					    char **cp, 
 					    int mpig_pm_ws_SubjobIdx,
@@ -1038,8 +1180,8 @@ MPIG_STATIC void process_subjob_byte_array(char *v,
     int proc;
 
     /* extracting <nprocs> */
-    extract_int_and_single_space(v, vlen, cp, nprocs);
-    /* fprintf(Log_fp, "%ud: process_subjob_byte_array: nprocs %d\n", Pid, *nprocs); fflush(Log_fp); */
+    mpig_pm_ws_extract_int_and_single_space(v, vlen, cp, nprocs);
+    /* fprintf(Log_fp, "%ud: mpig_pm_ws_process_subjob_byte_array: nprocs %d\n", Pid, *nprocs); fflush(Log_fp); */
 
     TRY_MALLOC(*subjob_byte_arrays,     char **, (*nprocs)*sizeof(char *));
     TRY_MALLOC(*subjob_byte_array_lens, int *,   (*nprocs)*sizeof(int));
@@ -1052,24 +1194,24 @@ MPIG_STATIC void process_subjob_byte_array(char *v,
 	/* extract this proc's checkin length which includes boot CS len,
 	   boot CS, biz card len, and biz card ... just tossing this checkin len
 	*/
-	extract_int_and_single_space(v, vlen, cp, &nbytes);
-	/* fprintf(Log_fp, "%ud: process_subjob_byte_array: proccheckinlen %d ... tossing it\n", Pid, nbytes); fflush(Log_fp); */
+	mpig_pm_ws_extract_int_and_single_space(v, vlen, cp, &nbytes);
+	/* fprintf(Log_fp, "%ud: mpig_pm_ws_process_subjob_byte_array: proccheckinlen %d ... tossing it\n", Pid, nbytes); fflush(Log_fp); */
 
 	/* extract boot CS */
-	extract_int_and_single_space(v, vlen, cp, &nbytes);
-	/* fprintf(Log_fp, "%ud: process_subjob_byte_array: bootCSlen %d\n", Pid, nbytes); fflush(Log_fp); */
+	mpig_pm_ws_extract_int_and_single_space(v, vlen, cp, &nbytes);
+	/* fprintf(Log_fp, "%ud: mpig_pm_ws_process_subjob_byte_array: bootCSlen %d\n", Pid, nbytes); fflush(Log_fp); */
 
 	if (nbytes < 0)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: %s: line %d: process_subjob_byte_array(): extracted invalid nbytes %d for proc %d of subjob %d", 
+		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): extracted invalid nbytes %d for proc %d of subjob %d", 
 		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
 	else if (*cp+nbytes-v > vlen)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: %s: line %d: process_subjob_byte_array(): "
+		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): "
 		"ran off end of bytearray reading data %d bytes for proc %d of subjob %d", 
 		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
@@ -1087,20 +1229,20 @@ MPIG_STATIC void process_subjob_byte_array(char *v,
 
 	/* extract biz card */
 
-	extract_int_and_single_space(v, vlen, cp, &nbytes);
-	/* fprintf(Log_fp, "%ud: process_subjob_byte_array: bizcardlen %d\n", Pid, nbytes); fflush(Log_fp); */
+	mpig_pm_ws_extract_int_and_single_space(v, vlen, cp, &nbytes);
+	/* fprintf(Log_fp, "%ud: mpig_pm_ws_process_subjob_byte_array: bizcardlen %d\n", Pid, nbytes); fflush(Log_fp); */
 
 	if (nbytes < 0)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: %s: line %d: process_subjob_byte_array(): extracted invalid nbytes %d for proc %d of subjob %d", 
+		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): extracted invalid nbytes %d for proc %d of subjob %d", 
 		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
 	else if (*cp+nbytes-v > vlen)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: %s: line %d: process_subjob_byte_array(): "
+		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): "
 		"ran off end of bytearray reading data %d bytes for proc %d of subjob %d", 
 		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
@@ -1119,9 +1261,9 @@ MPIG_STATIC void process_subjob_byte_array(char *v,
 
     } /* endfor */
 
-} /* end process_subjob_byte_array() */
+} /* end mpig_pm_ws_process_subjob_byte_array() */
 
-MPIG_STATIC void extract_int_and_single_space(char *v, int vlen, char **cp, int *val)
+MPIG_STATIC void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char **cp, int *val)
 {
     int rc;
 
@@ -1129,7 +1271,7 @@ MPIG_STATIC void extract_int_and_single_space(char *v, int vlen, char **cp, int 
     rc = sscanf(*cp, "%d ", val);
     if (rc == 0 || rc == EOF)
     {
-	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: extract_int_and_single_space(): sscanf for val returned %d",
+	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_extract_int_and_single_space(): sscanf for val returned %d",
 	    __FILE__, __LINE__, rc);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
@@ -1138,20 +1280,20 @@ MPIG_STATIC void extract_int_and_single_space(char *v, int vlen, char **cp, int 
 	*cp = *cp + 1;
     else
     {
-	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: extract_int_and_single_space(): no space found after val", 
+	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_extract_int_and_single_space(): no space found after val", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
     if (*cp-v > vlen)
     {
-	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: extract_int_and_single_space: "
+	sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_extract_int_and_single_space: "
 	"ran off end of bytearray after reading val + single space", 
 	    __FILE__, __LINE__);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
-} /* end extract_int_and_single_space() */
+} /* end mpig_pm_ws_extract_int_and_single_space() */
 
 #ifndef MPIG_VMPI
 /* 
@@ -1235,7 +1377,7 @@ MPIG_STATIC void extract_int_and_single_space(char *v, int vlen, char **cp, int 
  *   
  */
 
-MPIG_STATIC int distribute_byte_array_to_my_children(char *v, 
+MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v, 
 						int vlen,
 						int my_subjob_rank,
 						int my_subjob_size,
@@ -1282,7 +1424,7 @@ MPIG_STATIC int distribute_byte_array_to_my_children(char *v,
 	    if (!(contact_strings[my_grank+mask]))
 	    {
 		sprintf(mpig_pm_ws_ErrorMsg, 
-		"ERROR: %s: line %d: distribute_byte_array_to_my_children() found NULL contact_strings[%d]: my_grank %d mask %d", 
+		"ERROR: %s: line %d: mpig_pm_ws_distribute_byte_array_to_my_children() found NULL contact_strings[%d]: my_grank %d mask %d", 
 		    __FILE__, __LINE__, my_grank+mask, my_grank, mask);
 		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	    } /* endif */
@@ -1302,7 +1444,7 @@ MPIG_STATIC int distribute_byte_array_to_my_children(char *v,
 	    if (nbytes != BUFFSIZE)
 	    {
 		sprintf(mpig_pm_ws_ErrorMsg, 
-		    "ERROR: %s: line %d: distribute_byte_array_to_my_children(): ba_len wrote only %d bytes, requested %d bytes", 
+		    "ERROR: %s: line %d: mpig_pm_ws_distribute_byte_array_to_my_children(): ba_len wrote only %d bytes, requested %d bytes", 
 		    __FILE__, __LINE__, (int) nbytes, BUFFSIZE);
 		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	    } /* endif */
@@ -1312,7 +1454,7 @@ MPIG_STATIC int distribute_byte_array_to_my_children(char *v,
 	    if (nbytes != vlen)
 	    {
 		sprintf(mpig_pm_ws_ErrorMsg, 
-		    "ERROR: %s: line %d: distribute_byte_array_to_my_children(): ba wrote only %d bytes, requested %d bytes", 
+		    "ERROR: %s: line %d: mpig_pm_ws_distribute_byte_array_to_my_children(): ba wrote only %d bytes, requested %d bytes", 
 		    __FILE__, __LINE__, (int) nbytes, vlen);
 		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 		return -1;
@@ -1326,5 +1468,8 @@ MPIG_STATIC int distribute_byte_array_to_my_children(char *v,
 
     return 0;
 
-} /* end distribute_byte_array_to_my_children() */
-#endif
+} /* end mpig_pm_ws_distribute_byte_array_to_my_children() */
+
+#endif /* !defined(MPIG_VMPI) */
+
+#endif /* defined(MPIG_GLOBUS_RENDEZVOUS_INSTALLED) */

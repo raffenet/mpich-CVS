@@ -290,6 +290,44 @@ mpig_get_globus_setting()
 }
 
 #
+# are the required globus packages installed
+#
+echo ${ECHO_N} "checking if Globus XIO is installed... ${ECHO_C}"
+mpig_get_globus_setting MPIG_GLOBUS_XIO_INSTALLED xio-installed
+echo "${ECHO_T}${MPIG_GLOBUS_XIO_INSTALLED}"
+export MPIG_GLOBUS_XIO_INSTALLED
+if test "$MPIG_GLOBUS_XIO_INSTALLED" != "yes" ; then
+    echo ""
+    echo "ERROR: The Globus XIO module has not been installed for the specifed flavor"
+    echo "       ${with_globus_flavor}.  This module is required.  Please install the"
+    echo "       XIO module or select a different flavor for which the module has"
+    echo "       already been installed."
+    echo ""
+    exit 1
+fi
+
+echo ${ECHO_N} "checking if the Globus pre-WS job management modules are installed... ${ECHO_C}"
+mpig_get_globus_setting MPIG_GLOBUS_DUROC_INSTALLED duroc-installed
+echo "${ECHO_T}${MPIG_GLOBUS_DUROC_INSTALLED}"
+export MPIG_GLOBUS_DUROC_INSTALLED
+
+echo ${ECHO_N} "checking if the Globus WS job management modules are installed... ${ECHO_C}"
+mpig_get_globus_setting MPIG_GLOBUS_RENDEZVOUS_INSTALLED rendezvous-installed
+echo "${ECHO_T}${MPIG_GLOBUS_RENDEZVOUS_INSTALLED}"
+export MPIG_GLOBUS_RENDEZVOUS_INSTALLED
+
+if test "$MPIG_GLOBUS_DUROC_INSTALLED" != "yes" -a "$MPIG_GLOBUS_RENDEZVOUS_INSTALLED" != "yes" ; then
+    echo ""
+    echo "ERROR: Neither the Globus DUROC Runtime module nor the Globus Rendezvous"
+    echo "       Client C bindings module have been installed for the specified flavor"
+    echo "       ${with_globus_flavor}.  At least one of these modules is required."
+    echo "       Please install one of these modules or select a different flavor for"
+    echo "       which one of these modules has already been installed."
+    echo ""
+    exit 1
+fi
+
+#
 # are the globus libraries multi-threaded?
 #
 echo ${ECHO_N} "checking if Globus is built with thread support... ${ECHO_C}"
@@ -301,12 +339,9 @@ export MPIG_GLOBUS_THREADED
 # are the globus libraries built with debugging enabled?  If so, enable debugging for the MPICH2 globus device.
 #
 echo ${ECHO_N} "checking if Globus is built with debugging enabled... ${ECHO_C}"
-mpig_get_globus_setting mpig_debug debug
+mpig_get_globus_setting MPIG_DEBUG debug
 echo "${ECHO_T}${mpig_debug}"
-if test "${mpig_debug}" = "yes" ; then
-    MPIG_DEBUG=yes
-else
-    MPIG_DEBUG=no
+if test "${MPIG_DEBUG}" = "no" ; then
     enable_fast=yes
     ac_configure_args="${ac_configure_args} --enable-fast"
     echo "INFO: debugging disabled.  adding --enable-fast option to remove error"
@@ -328,12 +363,7 @@ export MPIG_DEBUG
 # necessary, but for now we only rename the C symbols since those are the only ones we use in the vendor MPI.
 #
 echo ${ECHO_N} "checking if Globus is built for use with a vendor MPI... ${ECHO_C}"
-mpig_get_globus_setting mpig_vmpi vmpi
-if test "${mpig_vmpi}" = "yes" ; then
-    MPIG_VMPI=yes
-else
-    MPIG_VMPI=no
-fi
+mpig_get_globus_setting MPIG_VMPI vmpi
 echo "${ECHO_T}${mpig_vmpi}"
 export MPIG_VMPI
 

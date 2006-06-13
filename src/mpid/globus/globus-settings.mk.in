@@ -19,17 +19,32 @@
 vmpi:
 	@mpi=$(GLOBUS_MP); if test "$${mpi}" = "mpi" ; then echo "yes"; else echo "no"; fi
 
+
 #
 # Are the Globus libraries multi-threaded?
 #
 multi-threaded:
 	@thr=$(GLOBUS_THREADS); if test "$${thr}" = "none" -o -z "$${thr}" ; then echo "no"; else echo "yes"; fi
 
+
+#
+# Are the desired Globus modules installed for the selected flavor?
+#
+duroc-installed:
+	@if test -n "$(GLOBUS_DUROC_RUNTIME_VERSION)" ; then echo "yes"; else echo "no"; fi
+
+rendezvous-installed:
+	@if test -n "$(GLOBUS_C_RENDEZVOUS_CLIENT_BINDINGS_VERSION)" ; then echo "yes"; else echo "no"; fi
+
+xio-installed:
+	@if test -n "$(GLOBUS_XIO_VERSION)" ; then echo "yes"; else echo "no"; fi
+
 #
 # Are the Globus libraries built with debugging enabled?
 #
 debug:
 	@dbg=$(GLOBUS_DEBUG); if test "$${dbg}" = "yes" ; then echo "yes"; else echo "no"; fi
+
 
 #
 # Libraries and linking flags

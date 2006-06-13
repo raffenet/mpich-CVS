@@ -38,7 +38,9 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpig_comm.c			\
     mpig_misc.c			\
     mpig_pg.c			\
+    mpig_pm.c			\
     mpig_pm_gk.c		\
+    mpig_pm_ws.c		\
     mpig_recvq.c		\
     mpig_request.c		\
     mpig_topology.c		\
@@ -117,13 +119,13 @@ describe_states.txt: FORCE_TARGET
 	    sort -u | awk '{print $$1, $$1}' | sed -e 's/ MPID_STATE_/ /' -e 's/ MPID_\([A-Z]\)\([A-Z_]*\)/ MPID_\1\L\2/' \
 	    >${MPIG_SOURCE_DIR}/describe_states.txt
 
-globus_errnames.txt: FORCE_TARGET
+globus-errnames.txt: FORCE_TARGET
 	sed -e '/^\*\*\(globus|[^ :]*\):\1/ d' -e '/^\*\*\(globus|[^ :]*\) \([^:]*\):\1 -- \2/ d' \
 	    ${master_top_srcdir}/src/mpi/errhan/errnames.txt >.errnames-$$$$.txt ; \
 	if test $$? -eq 0 ; then \
 	    grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
 	        sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
-	        grep -h '\*\*globus|' .errnames-$$$$.txt - | sort -t ':' +0 -1 -u >globus_errnames.txt ; \
+	        grep -h '\*\*globus|' .errnames-$$$$.txt - | sort -t ':' +0 -1 -u >globus-errnames.txt ; \
 	fi ; \
 	rm .errnames-$$$$.txt
 
