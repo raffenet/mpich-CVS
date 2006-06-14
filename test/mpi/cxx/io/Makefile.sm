@@ -1,5 +1,5 @@
 INCLUDES = -I../../include -I${srcdir}/../../include
-LDADD = -L../../../../lib ../util/mtest.o 
+LDADD = ../util/mtest.o 
 DEPADD = @MPILIBLOC@ ../util/mtest.o
 smvar_do_sharedlibs = 0
 
