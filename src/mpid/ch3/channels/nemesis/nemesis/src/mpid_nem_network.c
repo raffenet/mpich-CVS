@@ -15,21 +15,14 @@
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE SELECTION"
 #endif 
 
-int  (* MPID_nem_net_module_init) (MPID_nem_queue_ptr_t proc_recv_queue, 
-				   MPID_nem_queue_ptr_t proc_free_queue, 
-				   MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
-				   MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
-				   MPID_nem_queue_ptr_t *module_recv_queue,
-				   MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart,
-				   MPIDI_PG_t *pg_p, int pg_rank,
-				   char **bc_val_p, int *val_max_sz_p) = 0;
-int  (* MPID_nem_net_module_finalize) (void) = 0;
-int  (* MPID_nem_net_module_ckpt_shutdown) (void) = 0;
-void (* MPID_nem_net_module_poll) (MPID_nem_poll_dir_t in_or_out) = 0;
-void (* MPID_nem_net_module_send) (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen) = 0;
-int (* MPID_nem_net_module_get_business_card) (char **bc_val_p, int *val_max_sz_p) = 0;
-int (* MPID_nem_net_module_connect_to_root) (const char *business_card, MPIDI_VC_t *new_vc) = 0;
-int (* MPID_nem_net_module_vc_init) (MPIDI_VC_t *vc, const char *business_card) = 0;
+MPID_nem_net_module_init_t MPID_nem_net_module_init = 0;
+MPID_nem_net_module_finalize_t MPID_nem_net_module_finalize = 0;
+MPID_nem_net_module_ckpt_shutdown_t MPID_nem_net_module_ckpt_shutdown = 0;
+MPID_nem_net_module_poll_t MPID_nem_net_module_poll = 0;
+MPID_nem_net_module_send_t MPID_nem_net_module_send = 0;
+MPID_nem_net_module_get_business_card_t MPID_nem_net_module_get_business_card = 0;
+MPID_nem_net_module_connect_to_root_t MPID_nem_net_module_connect_to_root = 0;
+MPID_nem_net_module_vc_init_t MPID_nem_net_module_vc_init = 0;
 
 #define assign_functions(prefix) do {						          \
     MPID_nem_net_module_init              = MPID_nem_##prefix##_module_init;	          \

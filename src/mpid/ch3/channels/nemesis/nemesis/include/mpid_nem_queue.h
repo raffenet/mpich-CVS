@@ -19,7 +19,7 @@ void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int, char* ,int);
 inline void   MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int);
 
 inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell);
-static inline void MPID_nem_dump_queue( MPID_nem_queue_ptr_t q) {printf ("dump queue not implemented\n"); exit (-1);};
+static inline void MPID_nem_dump_queue( MPID_nem_queue_ptr_t q) MPIU_Assertp (0) /* not implemented */
 inline void MPID_nem_queue_init( MPID_nem_queue_ptr_t );
 void MPID_nem_network_poll (MPID_nem_poll_dir_t in_or_out);
 

@@ -174,7 +174,7 @@ int MPID_nem_check_alloc (int num_processes)
     goto fn_exit;
 }
 
-#ifdef HAVE_SYSV_SHARED_MEM
+#if defined (HAVE_SYSV_SHARED_MEM)
 /* SYSV shared memory */
 
 /* FIXME: for sysv, when we have more than 8 procs, we exceed SHMMAX
@@ -239,8 +239,10 @@ MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const 
     int ret;
     int shmid;
     struct shmid_ds ds;
+    char *endptr;
 
-    shmid = atoi (handle);
+    shmid = strtoll (handle, &endptr, 10);
+    MPIU_ERR_CHKANDJUMP2 (endptr == handle || *endptr != '\0', mpi_errno, MPI_ERR_OTHER, "**attach_shar_mem", "**attach_shar_mem %s %s", "strtoll", strerror (errno));
     
     buf = 0;
     buf = shmat (shmid, buf, 0);

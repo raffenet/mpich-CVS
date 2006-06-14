@@ -346,7 +346,7 @@ restore_env (int rank)
 
     printf_dd ("%d: restore_env\n", rank);
     
-    snprintf (env_filename, MAX_STR_LEN, "/tmp/cli-restart-env:%d", rank);
+    MPIU_Snprintf (env_filename, MAX_STR_LEN, "/tmp/cli-restart-env:%d", rank);
     printf_dd ("1 %s\n", env_filename);
     fd = fopen (env_filename, "r");
     if (!fd)
