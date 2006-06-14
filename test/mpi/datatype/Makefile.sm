@@ -14,6 +14,10 @@ simple-resized_SOURCES = simple-resized.c
 
 triangular-pack_SOURCES = triangular-pack.c
 
+get-elements-pairtype_SOURCES = get-elements-pairtype.c
+
+simple-commit_SOURCES = simple-commit.c
+
 simple-commit_SOURCES = simple-commit.c
 
 simple-size-extent_SOURCES = simple-size-extent.c
