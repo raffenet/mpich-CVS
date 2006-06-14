@@ -116,6 +116,20 @@ In some cases, MPICH2 is able to build the Fortran interfaces in a way that
  some environments.  For example, when using \texttt{gcc} under Linux, this is
  the default.
 
+%% Heading: Q: How do I configure to use the Absoft Fortran compilers?
+%% Filename: absoft
+%% End
+A: You have several options.  One is to use the Fortran 90 compiler for both
+F77 and F90.  Another (if you do not need Fortran 90) is to use 
+\texttt{--disable-f90} when configuring.  The options with which we test
+MPICH2 and the Absoft compilers are the following:
+\begin{verbatim}
+setenv FFLAGS "-f -B108"
+setenv F90FLAGS "-YALL_NAMES=LCS -B108"
+setenv F77 f77
+setenf F90 f90
+\end{verbatim}
+
 %% Heading: Q: When I configure MPICH2, I get a message about FDZERO and the\
  configure aborts
 %% Filename: fdzero
