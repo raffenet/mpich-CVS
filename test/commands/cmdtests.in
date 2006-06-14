@@ -105,7 +105,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    &ReportError( "Non-zero return from mpiexec\n" );
+    &ReportError( "Non-zero return ($rc) from mpiexec\n" );
 }
 # Check that all vars in save are seen
 %copyEnv = %SaveENV;
@@ -137,7 +137,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    &ReportError( "Non-zero return from mpiexec\n" );
+    &ReportError( "Non-zero return ($rc) from mpiexec\n" );
 }
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
@@ -161,7 +161,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    &ReportError( "Non-zero return from mpiexec\n" );
+    &ReportError( "Non-zero return ($rc) from mpiexec\n" );
 }
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
@@ -187,7 +187,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    &ReportError( "Non-zero return from mpiexec\n" );
+    &ReportError( "Non-zero return ($rc) from mpiexec\n" );
 }
 # Check that only PATH and the PMI variables are set
 $errors += &CheckEnvVars;
@@ -220,7 +220,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    &ReportError( "Non-zero return from mpiexec\n" );
+    &ReportError( "Non-zero return ($rc) from mpiexec\n" );
 }
 # Check that only PATH, TESTVAR, and the PMI variables are set, and
 # that they have the correct values
@@ -265,7 +265,7 @@ close MOUT;
 $rc = $?;
 if ($rc != 0) {
     $errors ++;
-    &ReportError( "Non-zero return from mpiexec\n" );
+    &ReportError( "Non-zero return ($rc) from mpiexec\n" );
 }
 if (! $foundNoErrors) {
     $errors ++;
