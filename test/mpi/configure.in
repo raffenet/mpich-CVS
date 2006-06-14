@@ -506,8 +506,6 @@ EOF
     fi	
     AC_LANG_FORTRAN77
     PAC_PROG_F77_NAME_MANGLE
-    F77=$saveF77
-    CC=$saveCC
 
     # Check whether we need -lU77 to get iargc and getarg, which 
     # are used for a few of the tests in spawn
@@ -556,6 +554,10 @@ EOF
     ALLOCMEMF=""
     PAC_PROG_F77_HAS_POINTER(ALLOCMEMF="allocmemf 1")
     AC_SUBST(ALLOCMEMF)
+
+    # It is safe to now switch back to the "final" (MPI) compilers
+    F77=$saveF77
+    CC=$saveCC
 fi
 # Set a default for the Fortran 77 version of MPI_Offset.
 if test -z "$F77_MPI_OFFSET" ; then
