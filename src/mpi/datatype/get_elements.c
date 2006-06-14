@@ -51,7 +51,8 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
  * up by the types.
  *
  * Assumptions:
- * - the type passed to this function must be a basic
+ * - the type passed to this function must be a basic *or* a pairtype
+ *   (which aren't 
  * - the count is not zero (otherwise we can't tell between a "no more
  *   complete types" case and a "zero count" case)
  *
@@ -168,7 +169,13 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
     /* if we have gotten down to a type with only one element type,
      * call MPIR_Type_get_basic_type_elements() and return.
      */
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN ||
+	datatype == MPI_FLOAT_INT ||
+	datatype == MPI_DOUBLE_INT ||
+	datatype == MPI_LONG_INT ||
+	datatype == MPI_SHORT_INT ||
+	datatype == MPI_LONG_DOUBLE_INT)
+    {
 	return MPIR_Type_get_basic_type_elements(bytes_p, count, datatype);
     }
     else if (datatype_ptr->element_size >= 0) {
