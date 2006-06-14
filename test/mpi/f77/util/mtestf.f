@@ -91,6 +91,7 @@ C
         call MPI_Error_string( errcode, string, slen, ierr )
         print *, "Error class ", errclass, "(", string(1:slen), ")"
         end
+C
         subroutine MTestPrintErrorMsg( msg, errcode )
         include 'mpif.h'
         character*(*) msg
