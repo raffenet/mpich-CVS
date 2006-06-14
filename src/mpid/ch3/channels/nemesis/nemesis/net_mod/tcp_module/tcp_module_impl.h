@@ -20,21 +20,21 @@
 
 typedef struct MPID_nem_tcp_module_internal_queue
 {
-    MPID_nem_abs_cell_ptr_t     head;
-    MPID_nem_abs_cell_ptr_t     tail;
-} internal_queue_t, * volatile internal_queue_ptr_t;
+    MPID_nem_abs_cell_ptr_t head;
+    MPID_nem_abs_cell_ptr_t tail;
+} internal_queue_t;
 
 typedef struct nodes_struct
 {
-    int                  node_id; 
-    int                  desc;
-    struct sockaddr_in   sock_id;
-    int                  left2write;
-    int                  left2read_head; 
-    int                  left2read;
-    int                  toread;
-    internal_queue_ptr_t internal_recv_queue;
-    internal_queue_ptr_t internal_free_queue;
+    int                node_id; 
+    int                desc;
+    struct sockaddr_in sock_id;
+    int                left2write;
+    int                left2read_head; 
+    int                left2read;
+    int                toread;
+    internal_queue_t   internal_recv_queue;
+    internal_queue_t   internal_free_queue;
 } node_t;
 
 typedef struct tcp_internal
@@ -50,7 +50,7 @@ typedef struct tcp_internal
    int     poll_freq;
    int     old_poll_freq;
    int     nb_procs;   
-} mpid_nem_tcp_internal_t ;
+} mpid_nem_tcp_internal_t;
 
 extern mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars;
 
@@ -63,7 +63,7 @@ extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 #undef MPID_NEM_USE_MACROS
 #ifndef MPID_NEM_USE_MACROS
 static inline void
-MPID_nem_tcp_internal_queue_enqueue (internal_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
+MPID_nem_tcp_internal_queue_enqueue (internal_queue_t *qhead, MPID_nem_cell_ptr_t element)
 {
     MPID_nem_abs_cell_ptr_t abs_element = (MPID_nem_abs_cell_ptr_t)element;
     MPID_nem_abs_cell_ptr_t prev = qhead->tail;         
@@ -80,13 +80,13 @@ MPID_nem_tcp_internal_queue_enqueue (internal_queue_ptr_t qhead, MPID_nem_cell_p
 }
 
 static inline int 
-MPID_nem_tcp_internal_queue_empty ( internal_queue_ptr_t qhead )
+MPID_nem_tcp_internal_queue_empty (const internal_queue_t qhead)
 {
-    return qhead->head == NULL;
+    return qhead.head == NULL;
 }
 /* Gets the head */
 static inline void 
-MPID_nem_tcp_internal_queue_dequeue (internal_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
+MPID_nem_tcp_internal_queue_dequeue (internal_queue_t *qhead, MPID_nem_cell_ptr_t *e)
 {
     register MPID_nem_abs_cell_ptr_t _e = qhead->head;
   
@@ -122,7 +122,7 @@ MPID_nem_tcp_internal_queue_dequeue (internal_queue_ptr_t qhead, MPID_nem_cell_p
     (qhead)->tail = abs_element;						\
 } while (0) 
 
-#define MPID_nem_tcp_internal_queue_empty(qhead) ((qhead)->head == NULL)
+#define MPID_nem_tcp_internal_queue_empty(qhead) ((qhead).head == NULL)
 
 #define MPID_nem_tcp_internal_queue_dequeue(qhead, e)    do {	\
     register MPID_nem_cell_ptr_t _e = (qhead)->head;	\

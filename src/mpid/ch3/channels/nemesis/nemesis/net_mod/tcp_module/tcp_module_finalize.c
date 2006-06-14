@@ -22,7 +22,7 @@ MPID_nem_tcp_module_finalize ()
     
     if (MPID_nem_mem_region.ext_procs > 0)
     {
-        node_t *MPID_nem_tcp_nodes = MPID_nem_tcp_internal_vars.nodes ;
+        node_t *nodes = MPID_nem_tcp_internal_vars.nodes ;
         char buff[NEM_TCP_BUF_SIZE] = TCP_END_STRING;
         int index;
         int grank;
@@ -46,9 +46,9 @@ MPID_nem_tcp_module_finalize ()
             grank = MPID_nem_mem_region.ext_ranks[index];
             if ((grank != MPID_nem_mem_region.rank) && (!MPID_NEM_IS_LOCAL (grank)))
 	    {
-                write(MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
+                write(nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
 #ifdef TRACE
-                fprintf(stderr,"[%i] --- WROTE TO PROC %i on desc %i: %s, size %i\n",MPID_nem_mem_region.rank, grank, MPID_nem_tcp_nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
+                fprintf(stderr,"[%i] --- WROTE TO PROC %i on desc %i: %s, size %i\n",MPID_nem_mem_region.rank, grank, nodes[grank].desc, buff,NEM_TCP_BUF_SIZE);
 #endif
 	    }
 	}

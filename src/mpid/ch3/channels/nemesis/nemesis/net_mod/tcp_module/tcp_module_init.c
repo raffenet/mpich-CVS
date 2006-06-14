@@ -174,14 +174,10 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	grank     = MPID_nem_mem_region.ext_ranks[index];
 	if(grank != MPID_nem_mem_region.rank)
 	{
-	    nodes[grank].internal_recv_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
-            if (!nodes[grank].internal_recv_queue) MPIU_CHKMEM_SETERR (mpi_errno, sizeof (internal_queue_t), "internal_recv_queue");
-	    nodes[grank].internal_free_queue = (internal_queue_ptr_t)MPIU_Malloc(sizeof(internal_queue_t));
-            if (!nodes[grank].internal_free_queue) MPIU_CHKMEM_SETERR (mpi_errno, sizeof (internal_queue_t), "internal_free_queue");
-	    nodes[grank].internal_recv_queue->head = NULL;
-	    nodes[grank].internal_recv_queue->tail = NULL;
-	    nodes[grank].internal_free_queue->head = NULL;
-	    nodes[grank].internal_free_queue->tail = NULL;
+	    nodes[grank].internal_recv_queue.head = NULL;
+	    nodes[grank].internal_recv_queue.tail = NULL;
+	    nodes[grank].internal_free_queue.head = NULL;
+	    nodes[grank].internal_free_queue.tail = NULL;
 	  
 	    nodes[grank].left2write     = 0;
 	    nodes[grank].left2read_head = 0;
