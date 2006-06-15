@@ -17,8 +17,8 @@ typedef int (* MPID_nem_net_module_init_t) (MPID_nem_queue_ptr_t proc_recv_queue
                                             char **bc_val_p, int *val_max_sz_p);     
 typedef int (* MPID_nem_net_module_finalize_t) (void);
 typedef int (* MPID_nem_net_module_ckpt_shutdown_t) (void);
-typedef void (* MPID_nem_net_module_poll_t) (MPID_nem_poll_dir_t in_or_out);
-typedef void (* MPID_nem_net_module_send_t) (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
+typedef int (* MPID_nem_net_module_poll_t) (MPID_nem_poll_dir_t in_or_out);
+typedef int (* MPID_nem_net_module_send_t) (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
 typedef int (* MPID_nem_net_module_get_business_card_t) (char **bc_val_p, int *val_max_sz_p);
 typedef int (* MPID_nem_net_module_connect_to_root_t) (const char *business_card, MPIDI_VC_t *new_vc);
 typedef int (* MPID_nem_net_module_vc_init_t) (MPIDI_VC_t *vc, const char *business_card);

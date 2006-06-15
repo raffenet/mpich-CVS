@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include "tcp_module.h"
 
 #define TCP_POLL_FREQ_MULTI 5 
 #define TCP_POLL_FREQ_ALONE 1

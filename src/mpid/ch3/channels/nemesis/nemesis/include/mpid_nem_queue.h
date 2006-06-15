@@ -21,7 +21,7 @@ inline void   MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int);
 inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell);
 static inline void MPID_nem_dump_queue( MPID_nem_queue_ptr_t q) MPIU_Assertp (0) /* not implemented */
 inline void MPID_nem_queue_init( MPID_nem_queue_ptr_t );
-void MPID_nem_network_poll (MPID_nem_poll_dir_t in_or_out);
+int MPID_nem_network_poll (MPID_nem_poll_dir_t in_or_out);
 
 /* inline void MPID_nem_rel_cell_init( MPID_nem_cell_ptr_t cell); */
 /* static inline void MPID_nem_rel_dump_queue( MPID_nem_queue_ptr_t q){printf ("dump queue not implemented\n"); exit (-1);}; */
@@ -462,30 +462,55 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 /* #endif /\* MPID_NEM_USE_MACROS *\/ */
 
 #ifdef MPID_NEM_USE_SHADOW_HEAD
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_queue_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline 
-void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_out)
+int MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_out)
 {
-    MPID_nem_network_poll (in_or_out);
+    int mpi_errno = MPI_SUCCESS;
+    
+    mpi_errno = MPID_nem_network_poll (in_or_out);
+    if (mpi_errno) MPI_ERR_POP (mpi_errno);
     if (MPID_NEM_IS_REL_NULL (qhead->my_head))
     {
 	while (MPID_NEM_IS_REL_NULL (qhead->head))
 	{
-	    MPID_nem_network_poll (in_or_out);
+	    mpi_errno = MPID_nem_network_poll (in_or_out);
+            if (mpi_errno) MPI_ERR_POP (mpi_errno);
 	    sched_yield();
 	}
 	qhead->my_head = qhead->head;
 	MPID_NEM_SET_REL_NULL (qhead->head);
     }
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 #else 
-static inline void MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_out)
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_queue_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static inline int MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_out)
 {
-    MPID_nem_network_poll (in_or_out);    
+    int mpi_errno = MPI_SUCCESS;
+    
+    mpi_errno = MPID_nem_network_poll (in_or_out);    
+    if (mpi_errno) MPI_ERR_POP (mpi_errno);
     while (MPID_NEM_IS_REL_NULL (qhead->head))
     {
-	MPID_nem_network_poll (in_or_out);
+	mpi_errno = MPID_nem_network_poll (in_or_out);
+        if (mpi_errno) MPI_ERR_POP (mpi_errno);
 	sched_yield();
     }
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 #endif/* MPID_NEM_USE_SHADOW_HEAD */
 

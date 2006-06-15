@@ -6,6 +6,7 @@
 
 #include "tcp_module.h"
 #include "tcp_module_impl.h"
+#include <sched.h>
 
 //#define TRACE 
 #define NEM_TCP_BUF_SIZE    MPID_NEM_OPT_HEAD_LEN
@@ -33,7 +34,9 @@ MPID_nem_tcp_module_finalize ()
 #endif
         while( MPID_nem_tcp_internal_vars.n_pending_send > 0 )
 	{
-            MPID_nem_tcp_module_poll( MPID_NEM_POLL_OUT );
+            mpi_errno = MPID_nem_tcp_module_poll( MPID_NEM_POLL_OUT );
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            sched_yield();
 	}
       
 #ifdef TRACE
@@ -58,7 +61,9 @@ MPID_nem_tcp_module_finalize ()
 #endif 
         while (MPID_nem_tcp_internal_vars.nb_procs > 0)
 	{
-            MPID_nem_tcp_module_poll_recv();
+            mpi_errno = MPID_nem_tcp_module_poll_recv();
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            sched_yield();
 	}
 
 #ifdef TRACE 

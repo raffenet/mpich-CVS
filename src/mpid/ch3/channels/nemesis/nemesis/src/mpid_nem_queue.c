@@ -8,10 +8,8 @@
 #include "my_papi_defs.h"
 #include "rdtsc.h"
 
-void MPID_nem_network_poll();
 
 #define USE_MPICH2
-
 
 inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell)
 {

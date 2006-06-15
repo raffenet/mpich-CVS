@@ -357,7 +357,7 @@ MPID_nem_tcp_module_connect_to_root (const char *business_card, MPIDI_VC_t *new_
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc)
+MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     return MPI_SUCCESS;
 }

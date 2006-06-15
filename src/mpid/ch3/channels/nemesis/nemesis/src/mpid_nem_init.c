@@ -358,7 +358,28 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 int
 get_local_procs (int global_rank, int num_global, int *num_local, int **local_procs, int *local_rank)
 {
-#if 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
+#if defined (ENABLED_NO_LOCAL)
+#warning shared-memory communication disabled
+    /* used for debugging only */
+    /* return an array as if there are no other processes on this processor */
+    int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL(1);
+
+    *num_local = 1;
+    
+    MPIU_CHKPMEM_MALLOC (*local_procs, int *, *num_local * sizeof (int), mpi_errno, "local proc array");
+    **local_procs = global_rank;
+
+    *local_rank = 0;
+    
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
+
+#elif 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
 #warning PMI_Get_clique doesnt work with mpd
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -399,7 +420,6 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     MPIU_CHKPMEM_DECL(1);
-    MPIU_CHKLMEM_DECL(1);
 
     mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -418,7 +438,7 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
     /* Gather hostnames */
-    MPIU_CHKLMEM_MALLOC (procs, int *, num_global * sizeof (int), mpi_errno, "local process index array");
+    MPIU_CHKPMEM_MALLOC (procs, int *, num_global * sizeof (int), mpi_errno, "local process index array");
 
     *num_local = 0;
 
@@ -439,14 +459,19 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 	    ++*num_local;
 	}	
     }
-	
-    /* copy over local procs into smaller array */
-    MPIU_CHKPMEM_MALLOC (*local_procs, int *, *num_local * sizeof (int), mpi_errno, "local process index array");
-    MPID_NEM_MEMCPY (*local_procs, procs, *num_local * sizeof (int));
+
+    MPIU_Assert (*num_local > 0); /* there's always at least one process */
+    
+    /* reduce size of local process array */
+    *local_procs = MPIU_Realloc (procs, *num_local * sizeof (int));
+    if (*local_procs == NULL)
+    {
+        MPIU_CHKMEM_SETERR (mpi_errno, *num_local * sizeof (int), "local process index array");
+        goto fn_fail;
+    }
 
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
-    MPIU_CHKLMEM_FREEALL();
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
