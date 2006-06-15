@@ -1156,11 +1156,14 @@ if test "$enable_f77" = yes ; then
 and many Fortran programs may use either upper or lower case names for MPI
 calls.  Consider specifying a particular parameter to your Fortran compiler
 to select either upper or lower case names.  For the Absoft compiler, 
--f selects lower case and -N109 selects upper case.  Specify new command
+-f selects lower case and -N109 selects upper case (if you use -f, also use 
+-B108 to enable the iargc and getarg routines, which are needed for some
+tests and by many user programs).  Specify new command
 line options by setting the environment variable FFLAGS to include
-the options (e.g., setenv FLAGS -f).  In addition, make sure that your
+the options (e.g., setenv FFLAGS "-f -B108").  In addition, make sure that your
 Fortran 90 compiler uses a compatible naming choice.  For the 
-Absoft Fortran 90, -YALL_NAMES=LCS selects lower case names.  Pass this
+Absoft Fortran 90, -YALL_NAMES=LCS selects lower case names and -B108 
+adds underscores to names, as required for iargc and getarg.  Pass this
 information to configure with the F90FLAGS environment variable.])
         # If Fortran implicitly enabled, disable it now.  Otherwise,
 	# abort the configure since warning messages are often lost in
