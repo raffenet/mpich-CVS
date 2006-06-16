@@ -74,11 +74,11 @@ int MPID_nem_detach_shared_memory (const char *buf_p, const int length);
 
 typedef struct MPID_nem_mpich2_win
 {
-    char filename[MPID_NEM_MAX_FNAME_LEN]; /* shared filename */
-    int proc;                     /* rank of owner */
-    void *home_address;           /* address of window at owner */
-    int len;                      /* size of window */
-    void *local_address;          /* address of window at this process */
+    char *handle;               /* shared-memory segment handle */
+    int   proc;                 /* rank of owner */
+    void *home_address;         /* address of window at owner */
+    int   len;                  /* size of window */
+    void *local_address;        /* address of window at this process */
 }
 MPID_nem_mpich2_win_t;
 

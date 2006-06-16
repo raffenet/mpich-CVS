@@ -15,7 +15,6 @@ MPID_nem_mem_region_t MPID_nem_mem_region = {0};
 #endif /* MEM_REGION_IN_HEAP */
 
 char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
-char MPID_nem_err_str[MAX_ERR_STR_LEN] = "";
 
 #define MIN( a , b ) ((a) >  (b)) ? (b) : (a)
 #define MAX( a , b ) ((a) >= (b)) ? (a) : (b)

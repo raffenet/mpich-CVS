@@ -115,7 +115,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
   returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
 */
 int
-MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc)
+MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_again)
 {
 #ifdef ENABLED_CHECKPOINTING
     MPID_nem_cell_ptr_t el;

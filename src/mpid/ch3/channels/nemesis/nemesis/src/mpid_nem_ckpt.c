@@ -27,12 +27,18 @@ extern unsigned short *MPID_nem_recv_seqno;
 
 static int _rank;
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_ckpt_init (int ckpt_restart)
 {
+    int mpi_errno = MPI_SUCCESS;
     int num_procs;
     int rank;
     int i;
+    MPIU_CHKPMEM_DECL(3);
 
     num_procs = MPID_nem_mem_region.num_procs;
     rank = _rank = MPID_nem_mem_region.rank;
@@ -41,9 +47,7 @@ MPID_nem_ckpt_init (int ckpt_restart)
     {
 	process_id_t *procids;
 
-	procids = MPIU_Malloc (sizeof (*procids) * num_procs);
-	if (!procids)
-	    ERROR_RET (-1, "Malloc_FAILED");
+        MPIU_CHKPMEM_MALLOC (procids, process_id_t *, sizeof (*procids) * num_procs, mpi_errno, "procids");
 
 	for (i = 0; i < num_procs; ++i)
 	    procids[i] = i;
@@ -51,12 +55,8 @@ MPID_nem_ckpt_init (int ckpt_restart)
 	cli_init (num_procs, procids, rank, checkpoint_shutdown);
     }
 	    
-    log_msg = MPIU_Malloc (sizeof (*log_msg) * num_procs);
-    if (!log_msg)
-	ERROR_RET (-1, "Malloc failed");
-    sent_marker = MPIU_Malloc (sizeof (*sent_marker) * num_procs);
-    if (!sent_marker)
-	ERROR_RET (-1, "Malloc failed");
+    MPIU_CHKPMEM_MALLOC (log_msg, int *, sizeof (*log_msg) * num_procs, mpi_errno, "log_msg");
+    MPIU_CHKPMEM_MALLOC (sent_marker, int *, sizeof (*sent_marker) * num_procs, mpi_errno, "sent_marker");
 
     for (i = 0; i < num_procs; ++i)
     {
@@ -69,25 +69,42 @@ MPID_nem_ckpt_init (int ckpt_restart)
 
     current_wave = 0;
     
-    return 0;
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }
 
-void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_ckpt_finalize()
 {
     MPIU_Free (log_msg);
     MPIU_Free (sent_marker);
+
+    return MPI_SUCCESS;
 }
 
-void
+#undef FUNCNAME
+#define FUNCNAME 
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_ckpt_maybe_take_checkpoint()
 {
+    int mpi_errno = MPI_SUCCESS;
     int ret;
     struct cli_marker marker;
     int num_procs;
     int rank;
     int i;
-    
+    MPIU_CHKLMEM_DECL(1);
+
     num_procs = MPID_nem_mem_region.num_procs;
     rank = MPID_nem_mem_region.rank;
    
@@ -95,9 +112,7 @@ MPID_nem_ckpt_maybe_take_checkpoint()
 
     switch (ret)
     {
-    case CLI_CP_BEGIN:
-	printf_dd ("%d: cli_check_for_checkpoint_start: CLI_CP_BEGIN wave = %d\n", rank, marker.checkpoint_wave_number);
-	
+    case CLI_CP_BEGIN:	
 	MPIU_Assert (MPID_nem_ckpt_logging_messages == 0);
 
 	/* initialize the state */
@@ -112,49 +127,55 @@ MPID_nem_ckpt_maybe_take_checkpoint()
 	/* we don't send messages to ourselves, so we pretend we sent and received a marker */
 	--MPID_nem_ckpt_sending_markers;
 	ret = cli_on_marker_receive (&marker, rank);
-	MPIU_Assert (ret == CLI_CP_MARKED);
+        MPIU_ERR_CHKANDJUMP (ret != CLI_CP_MARKED, mpi_errno, MPI_ERR_OTHER, "**intern");
 	--MPID_nem_ckpt_logging_messages;
 	log_msg[rank] = 0;
 	sent_marker[rank] = 1;
 
 	next_marker_dest = 0;
 	current_wave = marker.checkpoint_wave_number;
-	MPID_nem_ckpt_send_markers ();
+	mpi_errno = MPID_nem_ckpt_send_markers();
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	break;
     case CLI_RESTART:
 	{
 	    int newrank;
 	    int newsize;
 	    struct cli_emitter_based_message_log *per_rank_log;
-	    printf_dd ("%d: cli_check_for_checkpoint_start: CLI_CP_RESTART wave = %d\n", rank, marker.checkpoint_wave_number);
 
-	    restore_env (rank);
-	    printf_dd ("%d: before _MPID_nem_init\n", rank);
+	    mpi_errno = restore_env (rank);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
 	    _MPID_nem_init (0, NULL, &newrank, &newsize, 1);
-	    printf_dd ("%d: after _MPID_nem_init\n", rank);
 	    MPIU_Assert (newrank == rank);
 	    MPIU_Assert (newsize == num_procs);   
-	    printf_dd ("%d: _MPID_nem_init done\n", rank);
 
-	    per_rank_log = MPIU_Malloc (sizeof (struct cli_emitter_based_message_log) * num_procs);
-	    if (!per_rank_log)
-		FATAL_ERROR ("malloc error");
+            /* we don't use the per_rank_log, so we discard it */
+            MPIU_CHKLMEM_MALLOC (per_rank_log, struct cli_emitter_based_message_log *, sizeof (struct cli_emitter_based_message_log) * num_procs, mpi_errno, "per rank log");
 	    MPID_nem_ckpt_message_log = cli_get_network_state (per_rank_log);
-	    printf_dd ("%d: got %s message log\n", rank, MPID_nem_ckpt_message_log ? "non-empty" : "empty");
-	    MPIU_Free (per_rank_log); /* we don't need the log separated by rank */
 	    break;
 	}
     case CLI_NOTHING:
 	break;
     default:
-	FATAL_ERROR ("Error taking checkpoint");
-	return;
+        MPIU_ERR_CHKANDJUMP (ret != CLI_CP_MARKED, mpi_errno, MPI_ERR_OTHER, "**intern");
     }
+
+ fn_exit:
+    MPIU_CHKLMEM_FREEALL();
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_got_marker
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
+    int mpi_errno = MPI_SUCCESS;
     int ret;
     int source;
     struct cli_marker marker;
@@ -187,7 +208,6 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     switch (ret)
     {
     case CLI_CP_BEGIN:
-	printf_dd ("%d: cli_on_marker_recv: CLI_CP_BEGIN wave = %d\n", rank, marker.checkpoint_wave_number);
 	MPIU_Assert (MPID_nem_ckpt_logging_messages == 0);
 
 	/* initialize the state */
@@ -206,17 +226,17 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	/* we don't send messages to ourselves, so we pretend we sent and received a marker */
 	--MPID_nem_ckpt_sending_markers;
 	ret = cli_on_marker_receive (&marker, rank);
-	MPIU_Assert (ret == CLI_CP_MARKED);
+        MPIU_ERR_CHKANDJUMP (ret != CLI_CP_MARKED, mpi_errno, MPI_ERR_OTHER, "**intern");
 	--MPID_nem_ckpt_logging_messages;
 	log_msg[rank] = 0;
 	sent_marker[rank] = 1;
 
 	next_marker_dest = 0;
 	current_wave = marker.checkpoint_wave_number;
-	MPID_nem_ckpt_send_markers();
+	mpi_errno = MPID_nem_ckpt_send_markers();
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	break;
     case CLI_CP_MARKED:
-	printf_dd ("%d: cli_on_marker_recv: CLI_CP_MARKED wave = %d\n", rank, marker.checkpoint_wave_number);
 	MPIU_Assert (MPID_nem_ckpt_logging_messages);
 	MPIU_Assert (log_msg[source]);
 	    
@@ -240,41 +260,52 @@ MPID_nem_ckpt_got_marker (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	    MPIU_Assert (newsize == num_procs);
 	    printf_dd ("%d: _MPID_nem_init done\n", rank);
 
-	    per_rank_log = MPIU_Malloc (sizeof (struct cli_emitter_based_message_log) * num_procs);
-	    if (!per_rank_log)
-		FATAL_ERROR ("malloc error");
+            /* we don't use the per_rank_log, so we discard it */
+            MPIU_CHKLMEM_MALLOC (per_rank_log, struct cli_emitter_based_message_log *, sizeof (struct cli_emitter_based_message_log) * num_procs, mpi_errno, "per rank log");
 	    MPID_nem_ckpt_message_log = cli_get_network_state (per_rank_log);
-	    printf_dd ("%d: got %s message log\n", rank, MPID_nem_ckpt_message_log ? "non-empty" : "empty");
-	    MPIU_Free (per_rank_log); /* we don't need the log separated by rank */
 	    break;
 	}
     default:
-	FATAL_ERROR ("Error taking checkpoint");
+        MPIU_ERR_CHKANDJUMP (ret != CLI_CP_MARKED, mpi_errno, MPI_ERR_OTHER, "**intern");
 	return;
     }
+    
+ fn_exit:
+    MPIU_CHKLMEM_FREEALL();
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
-void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_log_message
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_ckpt_log_message (MPID_nem_cell_ptr_t cell)
 {
+    int mpi_errno = MPI_SUCCESS;
     int source;
     
     source = cell->pkt.mpich2.source;
     if (log_msg[source])
     {
 	cli_log_message (cell, cell->pkt.header.datalen + MPID_NEM__MPICH2_HEADER_LEN + MPID_NEM_OFFSETOF (MPID_nem_cell_t, pkt.mpich2.payload), source);
-	printf_dd ("%d: logging message from %d size (%d + %d + %d = %d)\n", _rank, source,
-		   cell->pkt.header.datalen, MPID_NEM__MPICH2_HEADER_LEN, MPID_NEM_OFFSETOF (MPID_nem_cell_t, pkt.mpich2.payload),
-		   cell->pkt.header.datalen + MPID_NEM__MPICH2_HEADER_LEN + MPID_NEM_OFFSETOF (MPID_nem_cell_t, pkt.mpich2.payload));
     }
 
+    return mpi_errno;
 }
 
-void
+/* MPID_nem_ckpt_send_markers() -- keep sending markers until we're done or out of cells */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_send_markers
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_ckpt_send_markers()
 {
-    /* keep sending markers until we're done or out of cells */
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
+    int try_again;
     int num_procs = MPID_nem_mem_region.num_procs;
     MPIDI_VC_t vc;
     
@@ -290,33 +321,45 @@ MPID_nem_ckpt_send_markers()
 	}
 	
 	MPIDI_PG_Get_vc (MPIDI_Process.my_pg, next_marker_dest, &vc);
-	ret = MPID_nem_mpich2_send_ckpt_marker (current_wave, vc);
-	if (ret == MPID_NEM_MPICH2_AGAIN)
-	    break;
-	if (ret == MPID_NEM_MPICH2_FAILURE)
-	    FATAL_ERROR ("checkpoint send failed");
+	mpi_errno = MPID_nem_mpich2_send_ckpt_marker (current_wave, vc, &try_again);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+        if (try_again)
+            break;
 
 	sent_marker[next_marker_dest] = 1;
 	++next_marker_dest;
 	--MPID_nem_ckpt_sending_markers;
     }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_replay_message
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_ckpt_replay_message (MPID_nem_cell_ptr_t *cell)
 {
+    int mpi_errno = MPI_SUCCESS;
+    
     MPIU_Assert (MPID_nem_ckpt_message_log);
 
     *cell = (MPID_nem_cell_ptr_t)MPID_nem_ckpt_message_log->ptr;
     (*cell)->pkt.header.type = MPID_NEM_PKT_CKPT_REPLAY;
-    printf_dd ("%d: replaying message source = %d (%d) seno=%d\n", _rank, MPID_nem_ckpt_message_log->from, (*cell)->pkt.header.source,
-	       (*cell)->pkt.header.seqno);
     
     MPID_nem_ckpt_message_log = MPID_nem_ckpt_message_log->next;
 
-    return 0;
+    return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ckpt_free_msg_log
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 void
 MPID_nem_ckpt_free_msg_log()
 {
@@ -324,67 +367,77 @@ MPID_nem_ckpt_free_msg_log()
     cli_message_log_free();
 }
 
-static void
+#undef FUNCNAME
+#define FUNCNAME checkpoint_shutdown
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int
 checkpoint_shutdown()
 {
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
     
-    ret = MPID_nem_ckpt_shutdown ();
-    if (ret)
-	FATAL_ERROR ("checkpoint shutdown failed");
+    mpi_errno = MPID_nem_ckpt_shutdown ();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #define MAX_STR_LEN 256
 
-static void
+#undef FUNCNAME
+#define FUNCNAME restore_env
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int
 restore_env (int rank)
 {
+    int mpi_errno = MPI_SUCCESS;
     FILE *fd;
     char env_filename[MAX_STR_LEN];
     char var[MAX_STR_LEN], val[MAX_STR_LEN];
     int ret;
 
-    printf_dd ("%d: restore_env\n", rank);
     
     MPIU_Snprintf (env_filename, MAX_STR_LEN, "/tmp/cli-restart-env:%d", rank);
-    printf_dd ("1 %s\n", env_filename);
+
     fd = fopen (env_filename, "r");
-    if (!fd)
-	FATAL_PERROR ("fopen(%s) failed", env_filename);
-    printf_dd ("2 %p\n", fd);
+    MPIU_ERR_CHKANDJUMP1 (!fd, mpi_errno, MPI_ERR_OTHER, "**open", "**open %s", strerror (errno));
     
-    {
-	int i;
+    /* { */
+/* 	int i; */
 
-	for (i = 0; i < sizeof(FILE); ++i)
-	{
-	    if (!(i%8))
-		printf (" ");
-	    if (!(i%64))
-		printf ("\n");
-	    printf ("%02x", ((unsigned char *)fd)[i]);
-	}
-	printf ("\n--\n");
+/* 	for (i = 0; i < sizeof(FILE); ++i) */
+/* 	{ */
+/* 	    if (!(i%8)) */
+/* 		printf (" "); */
+/* 	    if (!(i%64)) */
+/* 		printf ("\n"); */
+/* 	    printf ("%02x", ((unsigned char *)fd)[i]); */
+/* 	} */
+/* 	printf ("\n--\n"); */
 
-	fgets (var, MAX_STR_LEN, fd);
-	printf_dd ("var = %s\n", var);
-    }
+/* 	fgets (var, MAX_STR_LEN, fd); */
+/* 	printf_dd ("var = %s\n", var); */
+/*     } */
     
     ret = fscanf (fd, "%[^=]=%[^\n]\n", var, val);
-    printf_dd ("2\n");
+
     while (ret != EOF)
     {
-	printf_dd ("3\n");
 	if (ret == 2)
 	{
 	    ret = setenv (var, val, 1);
-	    printf_dd ("4\n");
-	    if (ret)
-		FATAL_ERROR ("putenv failed");
+            MPIU_ERR_CHKANDJUMP (ret != 0, mpi_errno, MPI_ERR_OTHER, "**setenv");
 	}
 	ret = fscanf (fd, "%[^=]=%[^\n]\n", var, val);
-	printf_dd ("5\n");
     }
-    printf_dd ("6\n");
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 #endif
