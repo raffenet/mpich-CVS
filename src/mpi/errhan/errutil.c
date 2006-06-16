@@ -487,7 +487,7 @@ static int checkValidErrcode( int error_class, const char fcname[],
 /* Check that an encoded error code is valid. Return 0 if valid, positive, 
    non-zero if invalid.  Value indicates reason; see 
    ErrcodeInvalidReasonStr() */
-#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC
 static int checkErrcodeIsValid( int errcode )
 {
     int ring_id, generic_idx, ring_idx;
@@ -1193,6 +1193,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 		    const char *specific_fmt; 
 		    int specific_idx;
 		    user_error_code = va_arg(Argp,int);
+#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC
 		    specific_idx = FindSpecificMsgIndex(specific_msg);
 		    if (specific_idx >= 0) {
 			specific_fmt = specific_err_msgs[specific_idx].long_name;
@@ -1200,6 +1201,9 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 		    else {
 			specific_fmt = specific_msg;
 		    }
+#else
+			specific_fmt = specific_msg;
+#endif
 		    MPIU_Snprintf( user_ring_msg, sizeof(user_ring_msg),
 				   specific_fmt, user_error_code );
 		}
