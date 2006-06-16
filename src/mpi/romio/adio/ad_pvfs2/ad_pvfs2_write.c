@@ -60,7 +60,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 					       myname, __LINE__,
 					       ADIOI_PVFS2_error_convert(ret),
 					       "Error in PVFS_sys_write", 0);
-	    return;
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -76,7 +76,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 					       myname, __LINE__,
 					       ADIOI_PVFS2_error_convert(ret),
 					       "Error in PVFS_sys_write", 0);
-	    return;
+	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 	fd->fp_ind += (int)resp_io.total_completed;
@@ -86,6 +86,9 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
     MPIR_Status_set_bytes(status, datatype, (int)resp_io.total_completed);
 #endif
     *error_code = MPI_SUCCESS;
+fn_exit:
+    PVFS_Request_free(&file_req);
+    PVFS_Request_free(&mem_req);
     return;
 }
 
@@ -268,6 +271,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 
 		    file_offsets += file_lengths;
 		    file_lengths = 0;
+		    PVFS_Request_free(&mem_req);
+		    PVFS_Request_free(&file_req);
 		} 
 	    } /* for (i=0; i<flat_buf->count; i++) */
 	    j++;
@@ -473,6 +478,9 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 
             mem_offsets += mem_lengths;
             mem_lengths = 0;
+	    PVFS_Request_free(&file_req);
+	    PVFS_Request_free(&mem_req);
+
         } /* for (i=0; i<n_write_lists; i++) */
 
         /* for file arrays smaller than MAX_ARRAY_SIZE (last read_list call) */
@@ -542,6 +550,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    }
 	    /* --END ERROR HANDLING-- */
 	    total_bytes_written += resp_io.total_completed;
+	    PVFS_Request_free(&mem_req);
+	    PVFS_Request_free(&file_req);
         }
     } 
     else {
@@ -931,6 +941,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    total_bytes_written += resp_io.total_completed;
 	    start_k = k;
 	    start_j = j;
+	    PVFS_Request_free(&mem_req);
+	    PVFS_Request_free(&file_req);
 	} /* while (size_wrote < bufsize) */
 	ADIOI_Free(mem_offsets);
 	ADIOI_Free(mem_lengths);

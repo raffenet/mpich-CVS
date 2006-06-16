@@ -64,7 +64,7 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 					   myname, __LINE__,
 					   ADIOI_PVFS2_error_convert(ret),
 					   "Error in PVFS_sys_read", 0);
-	return;
+	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
 
@@ -79,6 +79,9 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 #endif
 
     *error_code = MPI_SUCCESS;
+fn_exit:
+    PVFS_Request_free(&mem_req);
+    PVFS_Request_free(&file_req);
     return;
 }
 
@@ -211,6 +214,8 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 							   "Error in PVFS_sys_read", 0);
 			goto error_state;
 		    }
+		    PVFS_Request_free(&mem_req);
+		    PVFS_Request_free(&file_req);
 		    total_bytes_read += resp_io.total_completed;
 		    /* --END ERROR HANDLING-- */
 		  
@@ -418,6 +423,9 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 		goto error_state;
 	    }
 	    /* --END ERROR HANDING-- */
+	    PVFS_Request_free(&mem_req);
+	    PVFS_Request_free(&file_req);
+
 	    total_bytes_read += resp_io.total_completed;
 
 	    mem_offsets += mem_lengths;
@@ -487,6 +495,8 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 		goto error_state;
 	    }
 	    /* --END ERROR HANDLING-- */
+	    PVFS_Request_free(&mem_req);
+	    PVFS_Request_free(&file_req);
 	    total_bytes_read += resp_io.total_completed;
 	}
     }
@@ -861,6 +871,8 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 						   "Error in PVFS_sys_read", 0);
 	    }
 	    /* --END ERROR HANDLING-- */
+	    PVFS_Request_free(&mem_req);
+	    PVFS_Request_free(&file_req);
 	    total_bytes_read += resp_io.total_completed;
 	    size_read += new_buffer_read;
 	    start_k = k;
