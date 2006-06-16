@@ -391,7 +391,8 @@ int MPID_Type_struct(int count,
     if ((!found_sticky_lb) && (!found_sticky_ub))
     {
 	/* account for padding */
-	MPI_Aint epsilon = new_dtp->extent % new_dtp->alignsize;
+	MPI_Aint epsilon = (new_dtp->alignsize > 0) ?
+	    new_dtp->extent % new_dtp->alignsize : 0;
 
 	if (epsilon)
 	{
