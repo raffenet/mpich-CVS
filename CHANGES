@@ -9,8 +9,25 @@
   is no penalty.
 
 - A new low-latency channel called Nemesis has been added. It can be
-  selected by specifying the option --with-device=ch3:nemesis. (How
-  does the right method get chosen?)
+  selected by specifying the option --with-device=ch3:nemesis.
+  Nemesis will use shared-memory for intra-node communication and the
+  network for inter-node communication.  The default network is TCP.
+  Other networks available are GM and MX.
+
+  To use the GM network, use the --with-device=ch3:nemesis:gm
+  configure option.  If the GM include files and libraries are not in
+  the normal search paths, you can specify them with the
+  --with-gm-include= and --with-gm-lib= options, or the --with-gm=
+  option, if lib/ and include/ are in the same directory.
+
+  To use the MX network ... [to be completed by Guillaume]
+
+  Using the --enable-fast configure option significantly improves
+  intra-node performance.
+
+  Nemesis is still a work in progress.  Thread-safety, dynamic
+  processes and connect/accept are not yet implemented.  Performance
+  in some areas is still suboptimal.
 
 - Need to say something about Totalview support
 
