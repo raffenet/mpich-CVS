@@ -4437,6 +4437,11 @@ AC_SUBST(MPI_OFFSET_TYPEDEF)
 # they are defined)
 if test "$enable_f77" = yes -a "$enable_f90" = yes ; then
     AC_LANG_FORTRAN77
+    # If there is not FORTRAN_MPI_OFFSET type (because ROMIO is disabled),
+    # just use INTEGER
+    if test -z "$FORTRAN_MPI_OFFSET" ; then
+        FORTRAN_MPI_OFFSET=INTEGER
+    fi
     AC_MSG_CHECKING([whether the Fortran Offset type works with Fortran77])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      $FORTRAN_MPI_OFFSET i])],
                       has_f77_offsettype=yes,has_f77_offsetype=no)
