@@ -217,7 +217,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 	    MPI_Type_size(types[0], &old_size);
 	    flat->blocklens[j] = ints[1] * old_size;
 	    for (i=j+1; i<j+top_count; i++) {
-		flat->indices[i] = flat->indices[i-1] + ints[2]*old_size;
+		flat->indices[i] = flat->indices[i-1] + 
+		    (unsigned) ints[2] * (unsigned) old_size;
 		flat->blocklens[i] = flat->blocklens[j];
 	    }
 	    *curr_index = i;
