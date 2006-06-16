@@ -44,7 +44,7 @@
     SciDAC Program, Office of Science, U.S. Department of Energy, under
     Contract
     W-31-109-ENG-38.}\\
-  Version 1.0.3\\
+  Version 1.0.4\\
   Mathematics and Computer Science Division\\
   Argonne National Laboratory}
 
@@ -108,11 +108,7 @@ User's Guide}, found in this same \texttt{doc} subdirectory.
 
 MPICH2 has many options.  We will first go through a recommended,
 ``standard'' installation in a step-by-step fashion, and later describe
-alternative possibilities.  This \emph{Installer's Guide} is for MPICH2
-Release 1.0.  We are reserving the 1.0 designation for when every last
-feature of the MPI-2 Standard is implemented, but most features are
-included.  See the \texttt{RELEASE\_NOTES} file in the top-level
-directory for details.
+alternative possibilities. 
 
 
 \section{Quick Start}
@@ -178,7 +174,7 @@ If your tar doesn't accept the z option, use
 \end{verbatim}
 Let us assume that the directory where you do this is
 \texttt{/home/you/libraries}.  It will now contain a subdirectory named
-\texttt{mpich2-1.0.3}.
+\texttt{mpich2-1.0.4}.
 
 \item
 Choose an installation directory (the default is \texttt{/usr/local/bin)}:
@@ -198,15 +194,15 @@ that this also be separate from the source directory, so that the
 source directories remain
 clean and can be reused to build other copies on other machines.
 \begin{verbatim}
-    mkdir /tmp/you/mpich2-1.0.3
+    mkdir /tmp/you/mpich2-1.0.4
 \end{verbatim}
 
 \item
 Configure MPICH2, specifying the installation directory, and running
 the \texttt{configure} script in the source directory:
 \begin{verbatim}
-    cd  /tmp/you/mpich2-1.0.3
-    /home/you/libraries/mpich2-1.0.3/configure \
+    cd  /tmp/you/mpich2-1.0.4
+    /home/you/libraries/mpich2-1.0.4/configure \
             -prefix=/home/you/mpich2-install |& tee configure.log
 \end{verbatim}
 where the \texttt{$\backslash$} means that this is really one line.  (On
@@ -383,7 +379,7 @@ started.  From each machine, after starting the mpd, you can do
 \end{verbatim}
 to see which machines are in the ring so far.  More details on
 \texttt{mpdboot} and other options for starting the mpd's are in
-\texttt{mpich2-1.0.3/src/pm/mpd/README}.
+\texttt{mpich2-1.0.4/src/pm/mpd/README}.
 
 In case of persistent difficulties getting the ring of mpd's up and
 running on the machines you want, please see Appendix~\ref{app:mpd}.
@@ -432,13 +428,13 @@ in the MPI-2 standard.
 
 % There are some examples in the install
 % directory, which you have already put in your path, as well as in
-% the directory \texttt{mpich2-1.0.3/examples}.  
+% the directory \texttt{mpich2-1.0.4/examples}.  
 % One of them is the classic \texttt{cpi}
 % example, which computes the value of $\pi$ by numerical integration in
 % parallel.   
 As part of the build process for MPICH2, a simple program to compute the value
 of $\pi$ by numerical integration is created in the
-\texttt{mpich2-1.0.3/examples} directory.  If the current directory is the top
+\texttt{mpich2-1.0.4/examples} directory.  If the current directory is the top
 level MPICH2 build directory, then you can run this program with
 \begin{verbatim}
     mpiexec -n 5 examples/cpi
@@ -1570,7 +1566,7 @@ To run some programs in parallel:
     n1 $  mpiexec -l -n 4 PATH_TO_MPICH2_EXAMPLES/cpi
 \end{verbatim}
 where \texttt{PATH\_TO\_MPICH2\_EXAMPLES} is the path to the
-\texttt{mpich2-1.0.3/examples} directory.
+\texttt{mpich2-1.0.4/examples} directory.
 
 To bring down the ring of mpds:
 \begin{verbatim}

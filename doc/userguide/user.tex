@@ -38,7 +38,7 @@
     Office of Advanced Scientific Computing Research, SciDAC Program,
     Office of Science, U.S. Department of Energy, under Contract
     W-31-109-ENG-38.}\\
-Version 1.0.3\\
+Version 1.0.4\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
@@ -104,7 +104,7 @@ get you started with MPICH2.
 \section{Migrating to MPICH2 from MPICH1}
 \label{sec:migrating}
 
-If you have been using MPICH 1.2.x (1.2.6 is the latest version), you
+If you have been using MPICH 1.2.x (1.2.7p1 is the latest version), you
 will find a number of things about MPICH2 that are different (and
 hopefully better in every case.)  Your MPI application programs need not
 change, of course, but a number of things about how you run them will be
@@ -625,7 +625,7 @@ A small number of environment variables affect the behavior of
 \item[\texttt{MPIEXEC\_BNR}] If this environment variable is defined
   (its value, if any, is currently insignificant), then MPD will act in
   backward-compatibility mode, supporting the BNR interface from the
-  original MPICH (e.g. versions 1.2.0 -- 1.2.6)
+  original MPICH (e.g. versions 1.2.0 -- 1.2.7p1)
   instead of its native PMI interface, as a way for application
   processes to interact with the process management system.
 \item[\texttt{MPD\_CON\_EXT}] Adds a string to the default Unix socket

@@ -1,4 +1,23 @@
 ===============================================================================
+			       Changes in 1.0.4
+===============================================================================
+
+- For the ch3:sock channel, the default build of MPICH2 supports
+  thread safety. A separate build is not needed. However, thread
+  safety is enabled only if the user calls MPI_Init_thread with  
+  MPI_THREAD_MULTIPLE. If not, no thread locks are called, so there
+  is no penalty.
+
+- A new low-latency channel called Nemesis has been added. It can be
+  selected by specifying the option --with-device=ch3:nemesis. (How
+  does the right method get chosen?)
+
+- Need to say something about Totalview support
+
+- Numerous bug fixes and code cleanup
+
+
+===============================================================================
 			       Changes in 1.0.3
 ===============================================================================
 
