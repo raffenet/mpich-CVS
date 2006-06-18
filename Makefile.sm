@@ -129,11 +129,12 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version}/src/mpid && /bin/rm -rf mm rdma globus)
 	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes develop )
 	( cd tmpdir/${PACKAGE}-${version}/src/pm && /bin/rm -rf forker rmpd ompd remshell )
+	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels && /bin/rm -rf ib)
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'autom4te.cache' \
 	  -print | xargs -r rm -rf)
-	( cd tmpdir//${PACKAGE}-${version} && rm -rf src/mpe2/src/slog2sdk/doc/jumpshot-4/tex  )
+	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpe2/src/slog2sdk/doc/jumpshot-4/tex  )
 	if [ "$(doc)" = "yes" ] ; then \
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
