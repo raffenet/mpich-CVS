@@ -15,6 +15,8 @@ AC_CONFIG_HEADER(include/mpidi_ch3_conf.h)
 
 echo "RUNNING CONFIGURE FOR RDMA DEVICE"
 
+AC_MSG_ERROR([The RDMA device is no longer supported.  Contact mpich2-maint@mcs.anl.gov for information about using RDMA networks with MPICH2.])
+
 dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 if test "`cd $srcdir && pwd`" != "`pwd`" && \

@@ -14,6 +14,8 @@ AC_CONFIG_HEADER(include/mpidi_ch3i_sshm_conf.h)
 
 echo "RUNNING CONFIGURE FOR THE SCALABLE-SHARED_MEMORY CHANNEL"
 
+AC_MSG_ERROR([The sshm channel is no longer supported and will not work.  It is included to provide an example of some MPI-2 RMA optimizations.  These optimizations will be included in the Nemesis channel.])
+
 save_libs=$LIBS
 LIBS=
 
