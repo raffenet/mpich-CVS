@@ -67,6 +67,10 @@ if __name__ == '__main__':    # so I can be imported by pydoc
     gdb_sout_serr_fileno = gdb_sout_serr.fileno()
     write(gdb_sin_fileno,'set prompt (gdb)\\n\n')
     gdb_line = gdb_sout_serr.readline() 
+    # check if gdb reports any errors
+    if findall(r'.*: No such file or directory.',gdb_line) != []:
+        print gdb_line, ; stdout.flush()
+        exit(-1)
     mpd_print(0000, "LINE1=|%s|" % (gdb_line.rstrip()))
     write(gdb_sin_fileno,'set confirm off\n')
     gdb_line = gdb_sout_serr.readline() 
@@ -140,36 +144,82 @@ if __name__ == '__main__':    # so I can be imported by pydoc
                     mpd_print(1, 'mpdgdbdrv: problem: expected user input but got none')
                     exit(-1)
                 if user_line.startswith('r'):
+                    write(gdb_sin_fileno,'show prompt\n')
+                    gdb_line = gdb_sout_serr.readline()
+                    gdb_prompt = findall(r'Gdb\'s prompt is "(.+)"\.',gdb_line)
+                    if gdb_prompt == []:
+                        mpd_print(1, 'expecting gdb\'s prompt, got :%s:' % (gdb_line))
+                        exit(-1)
+                    gdb_prompt = gdb_prompt[0]
+                    # cut everything after first escape character (including it)
+                    p = gdb_prompt.find("\\")
+                    if p > 0:
+                        gdb_prompt = gdb_prompt[0:p]
+                    gdb_line = gdb_sout_serr.readline() # drain one line
+
+                    write(gdb_sin_fileno,'show confirm\n')
+                    gdb_line = gdb_sout_serr.readline()
+                    gdb_confirm = findall(r'Whether to confirm potentially dangerous operations is (on|off)\.',gdb_line)
+                    if gdb_confirm == []:
+                        mpd_print(1, 'expecting gdb\'s confirm state, got :%s:' % (gdb_line))
+                        exit(-1)
+                    gdb_confirm = gdb_confirm[0]
+                    gdb_line = gdb_sout_serr.readline() # drain one line
+
+                    # set confirm to 'on' to get 'Starting program' message
+                    write(gdb_sin_fileno,'set confirm on\n')
+                    gdb_line = gdb_sout_serr.readline()
+
                     # we have already set breakpoint 1 in main
                     write(gdb_sin_fileno,user_line)
-                    gdb_line = gdb_sout_serr.readline()  # drain starting msg
+                    # ignore any warnings befor starting msg
+                    while 1:
+                        gdb_line = gdb_sout_serr.readline()  # drain one line
+                        if not gdb_line.startswith('warning:'):
+                            break
+                        else:
+                            print gdb_line, ; stdout.flush()
+                    # drain starting msg
                     if not gdb_line.startswith('Starting program'):
                         mpd_print(1, 'expecting "Starting program", got :%s:' % \
                                   (gdb_line))
                         exit(-1)
                     while 1:    # drain to a prompt
                         gdb_line = gdb_sout_serr.readline()  # drain one line
-                        if gdb_line.startswith('(gdb)'):
+                        if gdb_line.startswith(gdb_prompt):
                             break
-                    write(gdb_sin_fileno,'info program\n')
-                    gdb_line = gdb_sout_serr.readline().lstrip()  # get pid
-                    if gdb_line.startswith('Using'):
-                        if gdb_line.find('process') >= 0:
-                            appPid = findall(r'Using .* image of child process (\d+)',gdb_line)
-                        elif gdb_line.find('Thread') >= 0:
-                            appPid = findall(r'Using .* image of child .* \(LWP (\d+)\).',gdb_line)
-                        else:
-                            mpd_print(1, 'expecting process or thread line, got :%s:' % \
-                                      (gdb_line))
-                            exit(-1)
+                    # try to get the pid
+                    write(gdb_sin_fileno,'info pid\n')  # macosx
+                    gdb_line = gdb_sout_serr.readline().lstrip()
+                    if gdb_line.find('process ID') >= 0:  # macosx
+                        appPid = findall(r'.* has process ID (\d+)',gdb_line)
                         appPid = int(appPid[0])
                     else:
-                        mpd_print(1, 'expecting line with "Using"; got :%s:' % (gdb_line))
-                        exit(-1)
+                        while 1:    # drain to a prompt
+                            gdb_line = gdb_sout_serr.readline()  # drain one line
+                            if gdb_line.startswith(gdb_prompt):
+                                break
+                        write(gdb_sin_fileno,'info program\n')
+                        gdb_line = gdb_sout_serr.readline().lstrip()
+                        if gdb_line.startswith('Using'):
+                            if gdb_line.find('process') >= 0:
+                                appPid = findall(r'Using .* image of child process (\d+)',gdb_line)
+                            elif gdb_line.find('Thread') >= 0:  # solaris
+                                appPid = findall(r'Using .* image of child .* \(LWP (\d+)\).',gdb_line)
+                            else:
+                                mpd_print(1, 'expecting process or thread line, got :%s:' % \
+                                          (gdb_line))
+                                exit(-1)
+                            appPid = int(appPid[0])
+                        else:
+                            mpd_print(1, 'expecting line with "Using"; got :%s:' % (gdb_line))
+                            exit(-1)
                     while 1:    # drain to a prompt
                         gdb_line = gdb_sout_serr.readline()  # drain one line
-                        if gdb_line.startswith('(gdb)'):
+                        if gdb_line.startswith(gdb_prompt):
                             break
                     write(gdb_sin_fileno,'c\n')
+                    # set confirm back to original state
+                    write(gdb_sin_fileno,'set confirm %s\n' % (gdb_confirm))
                 else:
                     write(gdb_sin_fileno,user_line)
