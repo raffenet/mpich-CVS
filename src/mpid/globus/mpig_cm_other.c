@@ -20,9 +20,9 @@ mpig_vc_t * mpig_cm_other_vc = NULL;
 /**********************************************************************************************************************************
 					      BEGIN COMMUNICATION MODULE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC void mpig_cm_other_init(int * argc, char *** argv, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_other_init(int * argc, char *** argv);
 
-MPIG_STATIC void mpig_cm_other_finalize(int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int  mpig_cm_other_finalize(void);
 
 
 const mpig_cm_vtable_t mpig_cm_other_vtable =
@@ -102,46 +102,42 @@ MPIG_STATIC mpig_vc_vtable_t mpig_cm_other_vc_vtable =
 /*
  * Prototypes for internal routines
  */
-MPIG_STATIC void mpig_cm_other_recv_any_source(
-    void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** rreqp,
-    int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_other_recv_any_source(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+    int ctxoff, MPID_Request ** rreqp);
 
 /*
- * mpig_cm_other_init([IN/OUT] argc, [IN/OUT] argv, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_other_init([IN/OUT] argc, [IN/OUT] argv)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_init
-MPIG_STATIC void mpig_cm_other_init(int * argc, char *** argv, int * mpi_errno_p, bool_t * failed_p)
+MPIG_STATIC int mpig_cm_other_init(int * argc, char *** argv)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKPMEM_DECL(1);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_init);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p ));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-    
-    MPIU_CHKPMEM_MALLOC(mpig_cm_other_vc, mpig_vc_t *, sizeof(mpig_vc_t), *mpi_errno_p,
+    MPIU_CHKPMEM_MALLOC(mpig_cm_other_vc, mpig_vc_t *, sizeof(mpig_vc_t), mpi_errno,
 	"VC that handles MPI_ANY_SOURCE/MPI_PROC_NULL");
     mpig_vc_construct(mpig_cm_other_vc);
     mpig_vc_set_cm_type(mpig_cm_other_vc, MPIG_CM_TYPE_OTHER);
     mpig_vc_set_vtable(mpig_cm_other_vc, &mpig_cm_other_vc_vtable);
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", *mpi_errno_p,
-	MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_init);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIU_CHKPMEM_REAP();
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -149,33 +145,31 @@ MPIG_STATIC void mpig_cm_other_init(int * argc, char *** argv, int * mpi_errno_p
 
 
 /*
- * mpig_cm_other_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_other_finalize(void)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_finalize
-MPIG_STATIC void mpig_cm_other_finalize(int * mpi_errno_p, bool_t * failed_p)
+MPIG_STATIC int mpig_cm_other_finalize(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_finalize);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_finalize);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p ));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-    
     mpig_vc_destruct(mpig_cm_other_vc);
     MPIU_Free(mpig_cm_other_vc);
     mpig_cm_other_vc = NULL;
 
     /* fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", *mpi_errno_p,
-	MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_finalize);
-    return;
+    return mpi_errno;
 }
 /* mpig_cm_other_finalize() */
 /**********************************************************************************************************************************
@@ -243,8 +237,8 @@ MPIG_STATIC int mpig_cm_other_adi3_isend(
     MPIU_Assert(rank == MPI_PROC_NULL);
     mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, mpig_cm_other_vc, sreqp);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "send to MPI_PROC_NULL; request allocated; handle=0x%08x, ptr=" MPIG_PTR_FMT,
-		       (*sreqp)->handle, (MPIG_PTR_CAST) *sreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "send to MPI_PROC_NULL; request allocated; handle=" MPIG_HANDLE_FMT ", ptr="
+	MPIG_PTR_FMT, (*sreqp)->handle, (MPIG_PTR_CAST) *sreqp));
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
@@ -319,8 +313,8 @@ MPIG_STATIC int mpig_cm_other_adi3_irsend(
     MPIU_Assert(rank == MPI_PROC_NULL);
     mpig_request_create_isreq(MPIG_REQUEST_TYPE_RSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, mpig_cm_other_vc, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "send to MPI_PROC_NULL; request allocated; handle=0x%08x, ptr=" MPIG_PTR_FMT,
-		       (*sreqp)->handle, (MPIG_PTR_CAST) *sreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "send to MPI_PROC_NULL; request allocated; handle=" MPIG_HANDLE_FMT ", ptr="
+	MPIG_PTR_FMT, (*sreqp)->handle, (MPIG_PTR_CAST) *sreqp));
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
@@ -393,8 +387,8 @@ MPIG_STATIC int mpig_cm_other_adi3_issend(
     MPIU_Assert(rank == MPI_PROC_NULL);
     mpig_request_create_isreq(MPIG_REQUEST_TYPE_SSEND, 1, 0, (void *) buf, cnt, dt, rank, tag, ctx, comm, mpig_cm_other_vc, sreqp);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "send to MPI_PROC_NULL; request allocated; handle=0x%08x, ptr=" MPIG_PTR_FMT,
-		       (*sreqp)->handle, (MPIG_PTR_CAST) *sreqp));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "send to MPI_PROC_NULL; request allocated; handle=" MPIG_HANDLE_FMT ", ptr="
+	MPIG_PTR_FMT, (*sreqp)->handle, (MPIG_PTR_CAST) *sreqp));
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
@@ -420,7 +414,6 @@ MPIG_STATIC int mpig_cm_other_adi3_recv(
     const int ctxoff, MPI_Status * const status, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_recv);
 
@@ -439,8 +432,8 @@ MPIG_STATIC int mpig_cm_other_adi3_recv(
     }
     else if (rank == MPI_ANY_SOURCE)
     {
-	mpig_cm_other_recv_any_source(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|recv_any_source");
+	mpi_errno = mpig_cm_other_recv_any_source(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|recv_any_source");
 	/* the status will be extracted by MPI_Recv() once the request is complete */
     }
     else
@@ -473,7 +466,6 @@ MPIG_STATIC int mpig_cm_other_adi3_irecv(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_irecv);
 
@@ -489,13 +481,13 @@ MPIG_STATIC int mpig_cm_other_adi3_irecv(
 	mpig_request_create_irreq(1, 0, buf, cnt, dt, rank, tag, ctx, comm, mpig_cm_other_vc, rreqp);
 	MPIR_Status_set_procnull(&(*rreqp)->status);
 	
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "MPI_PROC_NULL receive request allocated, handle=0x%08x, ptr=" MPIG_PTR_FMT,
-	    MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "MPI_PROC_NULL receive request allocated, handle=" MPIG_HANDLE_FMT ", ptr="
+	    MPIG_PTR_FMT, MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp));
     }
     else if (rank == MPI_ANY_SOURCE)
     {
-	mpig_cm_other_recv_any_source(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|recv_any_source");
+	mpi_errno = mpig_cm_other_recv_any_source(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|recv_any_source");
     }
     else
     {
@@ -545,31 +537,29 @@ MPIG_STATIC int mpig_cm_other_adi3_cancel_send(MPID_Request * const sreq)
 
 
 /*
- * void mpig_cm_other_recv_any_source(...)
+ * <mpi_errno> mpig_cm_other_recv_any_source(...)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_recv_any_source
-MPIG_STATIC void mpig_cm_other_recv_any_source(
-    void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
-    const int ctxoff, MPID_Request ** const rreqp, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_other_recv_any_source(void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+    const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
     MPID_Request * rreq;
     bool_t found;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_recv_any_source);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_recv_any_source);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d, "
-	"mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx, *mpi_errno_p));
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt="
+	MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_HANDLE_FMT ", comm=" MPIG_PTR_FMT ", ctx=%d, ", (MPIG_PTR_CAST) buf, cnt,
+	dt, rank, tag, comm->handle, (MPIG_PTR_CAST) comm, ctx));
 	
     rreq = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, ctx, &found);
-    MPIU_ERR_CHKANDJUMP1((rreq == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
+    MPIU_ERR_CHKANDJUMP1((rreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
 
     if (found)
     {
@@ -588,8 +578,8 @@ MPIG_STATIC void mpig_cm_other_recv_any_source(
 	vc = mpig_request_get_vc(rreq);
 
 	/* call VC function to process a message that has already been received */
-	vc->vtable->recv_any_source(vc, rreq, comm, mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_other|vc_recv_any_source");
+	mpi_errno = vc->vtable->recv_any_source(vc, rreq);
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|vc_recv_any_source");
     }
     else
     {
@@ -611,16 +601,14 @@ MPIG_STATIC void mpig_cm_other_recv_any_source(
     }
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, *mpi_errno_p,
-	MPIG_BOOL_STR(*failed_p)));
+	", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*rreqp), (MPIG_PTR_CAST) *rreqp, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_recv_any_source);
-    return;
+    return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    *failed_p = TRUE;
-    goto fn_return;
-    /* --END ERROR HANDLING-- */
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_other_recv_any_source() */
 /**********************************************************************************************************************************

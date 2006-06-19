@@ -97,14 +97,14 @@ void mpig_debug_init(void)
 }
 /* mpig_debug_init */
 
-
+#if defined(MPIG_DEBUG_REPORT_PGID)
 #define mpig_debug_uvfprintf_macro(fp_, levels_, filename_, funcname_, line_, fmt_, ap_)				\
 {															\
     char lfmt__[MPIG_DEBUG_TMPSTR_SIZE];										\
 															\
     if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)								\
     {															\
-	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pg=%s:pgrank=%d:tid=%lu] %s(l=%d): %s\n",			\
+	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgid=%s:pgrank=%d:tid=%lu] %s(l=%d): %s\n",			\
 	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));	\
 	vfprintf((fp_), lfmt__, (ap_));											\
     }															\
@@ -114,13 +114,36 @@ void mpig_debug_init(void)
 															\
 	gettimeofday(&tv__, NULL);											\
 	tv__.tv_sec -= mpig_debug_start_tv_sec;										\
-	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pg=%s:pgrank=%d:tid=%lu]  %s(l=%d:t=%lu.%.6lu): %s\n",		\
+	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgid=%s:pgrank=%d:tid=%lu] %s(l=%d:t=%lu.%.6lu): %s\n",		\
 	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_),			\
 	    tv__.tv_sec, tv__.tv_usec, (fmt_));										\
 	vfprintf((fp_), lfmt__, (ap_));											\
     }															\
 }
-    
+#else
+#define mpig_debug_uvfprintf_macro(fp_, levels_, filename_, funcname_, line_, fmt_, ap_)		\
+{													\
+    char lfmt__[MPIG_DEBUG_TMPSTR_SIZE];								\
+													\
+    if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)						\
+    {													\
+	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgrank=%d:tid=%lu] %s(l=%d): %s\n",		\
+	    mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));		\
+	vfprintf((fp_), lfmt__, (ap_));									\
+    }													\
+    else												\
+    {													\
+	struct timeval tv__;										\
+													\
+	gettimeofday(&tv__, NULL);									\
+	tv__.tv_sec -= mpig_debug_start_tv_sec;								\
+	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgrank=%d:tid=%lu] %s(l=%d:t=%lu.%.6lu): %s\n",	\
+	    mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_),			\
+	    tv__.tv_sec, tv__.tv_usec, (fmt_));								\
+	vfprintf((fp_), lfmt__, (ap_));									\
+    }													\
+}
+#endif
 
 #if defined(HAVE_C99_VARIADIC_MACROS) || defined(HAVE_GNU_VARIADIC_MACROS)
 #undef FUNCNAME
@@ -243,33 +266,31 @@ void mpig_debug_old_util_printf_fn(const char * fmt, ...)
 
 
 /*
- * int mpig_datatype_set_my_bc([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_datatype_set_my_bc([IN/MOD] bc)
  *
  * Paramters:
  *
- * bc - [IN/MOD] business card to augment with datatype information
- * mpi_errno [IN/OUT] - MPI error code
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ *   bc - [IN/MOD] business card to augment with datatype information
+ *
+ * Returns: a MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_datatype_set_my_bc
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-void mpig_datatype_set_my_bc(mpig_bc_t * const bc, int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_datatype_set_my_bc(mpig_bc_t * const bc)
 {
     mpig_vc_t * vc;
     int loc;
     mpig_ctype_t cmap[MPIG_DATATYPE_MAX_BASIC_TYPES];
     char cmap_str[MPIG_DATATYPE_MAX_BASIC_TYPES + 1];
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_datatype_set_my_bc);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_set_my_bc);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "entering: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "entering: bc=" MPIG_PTR_FMT,
+	(MPIG_PTR_CAST) bc));
 
-    *failed_p = FALSE;
-    
     mpig_pg_rc_acq(mpig_process.my_pg, TRUE);
     {
 	mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &vc);
@@ -295,19 +316,17 @@ void mpig_datatype_set_my_bc(mpig_bc_t * const bc, int * const mpi_errno_p, bool
     cmap_str[MPIG_DATATYPE_MAX_BASIC_TYPES] = '\0';
 
     /* add mappings to the business card */
-    mpig_bc_add_contact(bc, "DATATYPE_CMAP", cmap_str, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|datatype_cmap_to_bc");
+    mpi_errno = mpig_bc_add_contact(bc, "DATATYPE_CMAP", cmap_str);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_cmap_to_bc");
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-		       (MPIG_PTR_CAST) bc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "exiting: bc=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT,  (MPIG_PTR_CAST) bc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_set_my_bc);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -315,38 +334,36 @@ void mpig_datatype_set_my_bc(mpig_bc_t * const bc, int * const mpi_errno_p, bool
 
 
 /*
- * int mpig_datatype_process_bc([IN] bc, [IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_datatype_process_bc([IN] bc, [IN/MOD] vc)
  *
  * Paramters:
  *
- * bc - [IN/MOD] business card from which to extract datatype information
- * vc - [IN/MOD] virtual connection to augment with extracted information
- * mpi_errno [IN/OUT] - MPI error code
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ *   bc - [IN/MOD] business card from which to extract datatype information
+ *
+ *   vc - [IN/MOD] virtual connection to augment with extracted information
+ *
+ * Returns: a MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_datatype_process_bc
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-void mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc, int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc)
 {
     char * cmap_str = NULL;
     int loc;
     char * strp;
     bool_t found;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_datatype_process_bc);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_process_bc);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "entering: bc=" MPIG_PTR_FMT "vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-		       (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "entering: bc=" MPIG_PTR_FMT
+	"vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc));
 
-    *failed_p = FALSE;
-    
-    mpig_bc_get_contact(bc, "DATATYPE_CMAP", &cmap_str, &found, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP2((failed || found == FALSE), *mpi_errno_p, MPI_ERR_INTERN, "**globus|datatype_bc_to_cmap",
-			 "**globus|datatype_cmap %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
+    mpi_errno = mpig_bc_get_contact(bc, "DATATYPE_CMAP", &cmap_str, &found);
+    MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**globus|datatype_bc_to_cmap",
+	"**globus|datatype_cmap %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
 
     MPIU_Assert(strlen(cmap_str) <= MPIG_DATATYPE_MAX_BASIC_TYPES);
     
@@ -363,15 +380,13 @@ void mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc, 
     
   fn_return:
     if (cmap_str != NULL) mpig_bc_free_contact(cmap_str);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA,
-		       "exiting: bc=" MPIG_PTR_FMT "vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-		       (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "exiting: bc=" MPIG_PTR_FMT
+	"vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_process_bc);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -477,48 +492,42 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * const buf, const MPIU_Size_t buf_siz
 					      BEGIN DATA BUFFER MANAGEMENT ROUTINES
 **********************************************************************************************************************************/
 /*
- * void mpig_databuf_create([IN] size, [OUT] dbufp, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_databuf_create([IN] size, [OUT] dbufp)
  *
  * size [IN] - size of intermediate buffer
  * dbufp [OUT] - pointer to new data buffer object
- * mpi_errno [IN/OUT] - MPI error code
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_databuf_create
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-void mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp, int * const mpi_errno_p, bool_t * const failed_p)
+int mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp)
 {
     mpig_databuf_t * dbuf;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_databuf_create);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_databuf_create);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF,
-		       "entering: dbufp=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-		       (MPIG_PTR_CAST) dbufp, size, *mpi_errno_p));
-    
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "entering: dbufp=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT,
+		       (MPIG_PTR_CAST) dbufp, size));
     
     dbuf = (mpig_databuf_t *) MPIU_Malloc(sizeof(mpig_databuf_t) + size);
-    MPIU_ERR_CHKANDJUMP1((dbuf == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "intermediate data buffer");
+    MPIU_ERR_CHKANDJUMP1((dbuf == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "intermediate data buffer");
 
     mpig_databuf_construct(dbuf, size);
 
     *dbufp = dbuf;
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF,
-		       "exiting: dbufp=" MPIG_PTR_FMT ", dbuf=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-		       (MPIG_PTR_CAST) dbufp, (MPIG_PTR_CAST) dbuf, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: dbufp=" MPIG_PTR_FMT ", dbuf=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) dbufp, (MPIG_PTR_CAST) dbuf, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_databuf_create);
-    return;
+    return mpi_errno;
 
   fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    *failed_p = TRUE;
+    {   /* --BEGIN ERROR HANDLING-- */
     goto fn_return;
-    /* --END ERROR HANDLING-- */
+    }   /* --END ERROR HANDLING-- */
 }
 
 

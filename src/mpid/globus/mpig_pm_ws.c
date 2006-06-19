@@ -302,6 +302,7 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 #else 
     int subjobcslen = strlen(mpig_pm_ws_SubjobBootCS)+1;
 #endif
+    int mpi_errno = MPI_SUCCESS;
     /* fprintf(Log_fp, "%ud: subjobcslen %d: ", Pid, subjobcslen); fflush(Log_fp); print_byte_array(mpig_pm_ws_SubjobBootCS, subjobcslen); */
 
     if (!mpig_pm_ws_Initialized)
@@ -337,7 +338,13 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
 	
-	mpig_bc_add_contact(bc, "PM_WS_PG_ID", uuid.text, &mpi_errno, &failed);
+	mpi_errno = mpig_bc_add_contact(bc, "PM_WS_PG_ID", uuid.text);
+	if (mpi_errno)
+	{
+	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() was unable to add "
+		"the process group ID to the business card", __FILE__, __LINE__);
+	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
+	}
     }
 
     /* add the subjob index to the business card.  the subjob index is be needed by the topology module to perform topology
@@ -347,9 +354,9 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 
 	if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_ws_SubjobIdx) < 10)
         {
-	    mpig_bc_add_contact(bc, "PM_GK_APP_NUM", str, &mpi_errno, &failed);
+	    mpi_errno = mpig_bc_add_contact(bc, "PM_GK_APP_NUM", str);
 
-	    if (failed)
+	    if (mpi_errno)
 	    {
 		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() was unable to add "
 		    "the subjob index to the business card", __FILE__, __LINE__);
@@ -672,8 +679,8 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 	char * pg_id_str;
 	bool_t found;
 
-	mpig_bc_get_contact(&bcs_ptr[0], "PM_WS_PG_ID", &pg_id_str, &found, &mpi_errno, &failed);
-	if (failed)
+	mpi_errno = mpig_bc_get_contact(&bcs_ptr[0], "PM_WS_PG_ID", &pg_id_str, &found);
+	if (mpi_errno)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() could not extract the "
 		"process group ID from the job master business card", __FILE__, __LINE__);
@@ -847,12 +854,11 @@ int mpig_pm_ws_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
     char * app_num_str = NULL;
     int app_num;
     bool_t found;
-    bool_t failed;
     int rc;
     int mpi_errno = MPI_SUCCESS;
 
-    mpig_bc_get_contact(bc, "PM_WS_APP_NUM", &app_num_str, &found, &mpi_errno, &failed);
-    if (failed)
+    mpi_errno = mpig_bc_get_contact(bc, "PM_WS_APP_NUM", &app_num_str, &found);
+    if (mpi_errno)
     {
         sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_get_app_num() failed to extract the application number "
 	    "from the specified business card", __FILE__, __LINE__);

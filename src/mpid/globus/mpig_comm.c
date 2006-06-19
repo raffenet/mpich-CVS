@@ -328,7 +328,7 @@ int mpig_comm_free_hook(MPID_Comm * comm)
     /* call the VMPI CM's hook, allowing it to free the associated vendor communicators */
 #   if defined(MPIG_VMPI)
     {
-	if mpig_cm_vmpi_dev_comm_free_hook(comm, mpi_errno_p);
+	mpi_errno = mpig_cm_vmpi_dev_comm_free_hook(comm);
 	/* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
     }
 #   endif
@@ -365,7 +365,7 @@ int  mpig_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm)
 	", new_commp=" MPIG_PTR_FMT, orig_comm->handle, (MPIG_PTR_CAST) orig_comm, new_comm->handle, (MPIG_PTR_CAST) new_comm));
 
     /* call the VMPI CM's hook, allowing it to duplication the associated vendor communicators */
-    mpig_cm_vmpi_dev_comm_dup_hook(orig_comm, new_comm, mpi_errno_p);
+    mpi_errno = mpig_cm_vmpi_dev_comm_dup_hook(orig_comm, new_comm);
     /* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));

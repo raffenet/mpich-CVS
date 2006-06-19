@@ -71,7 +71,6 @@ void MPID_Progress_end(MPID_Progress_state * state)
 int MPID_Progress_wait(MPID_Progress_state * state)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_PROGRESS_WAIT);
 
@@ -88,13 +87,13 @@ int MPID_Progress_wait(MPID_Progress_state * state)
 
 	/* XXX: should we loop some number of times here to reduce average latency, or does that belong in
 	   mpig_cm_vmpi_pe_wait()? */
-	mpig_cm_vmpi_pe_wait(state, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait", "**globus|pe_wait %s", "CM_VMPI");
+	mpi_errno = mpig_cm_vmpi_pe_wait(state);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait", "**globus|pe_wait %s", "VMPI");
 
 	/* XXX: likewise, should we perform a thread yield here if no progress was made, allowing the XIO CM threads some CPU
 	   time in which to make progress, or should that decision be in the XIO CM pe_wait() routine? */
-	mpig_cm_xio_pe_wait(state, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait", "**globus|pe_wait %s", "CM_XIO");
+	mpi_errno = mpig_cm_xio_pe_wait(state);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait", "**globus|pe_wait %s", "XIO");
 
         if (state->dev.count != mpig_pe_count) break;
     }
@@ -122,7 +121,6 @@ int MPID_Progress_wait(MPID_Progress_state * state)
 int MPID_Progress_test(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_PROGRESS_TEST);
 
@@ -131,10 +129,11 @@ int MPID_Progress_test(void)
     MPIG_FUNC_ENTER(MPID_STATE_MPID_PROGRESS_TEST);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
-    mpig_cm_vmpi_pe_test(&mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|pe_test", "**globus|pe_test %s", "CM_VMPI");
-    mpig_cm_xio_pe_test(&mpi_errno, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|pe_test", "**globus|pe_test %s", "CM_XIO");
+    mpi_errno = mpig_cm_vmpi_pe_test();
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_test", "**globus|pe_test %s", "VMPI");
+
+    mpi_errno = mpig_cm_xio_pe_test();
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_test", "**globus|pe_test %s", "XIO");
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "exiting"));

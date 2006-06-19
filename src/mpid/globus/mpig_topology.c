@@ -19,7 +19,11 @@ MPIG_STATIC int mpig_topology_destroy_colors_attr(MPI_Comm comm, int keyval, voi
 MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * vc1, const mpig_vc_t * vc2, int level, bool_t * match);
 
 /*
- * int mpig_topology_init(void)
+ * <mpi_errno> mpig_topology_init(void)
+ *
+ * Parameters: (none)
+ *
+ * Returns: a MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_init
@@ -61,7 +65,11 @@ int mpig_topology_init(void)
 
 
 /*
- * void mpig_topology_finalize([IN/MOD] comm)
+ * <mpi_errno> mpig_topology_finalize([IN/MOD] comm)
+ *
+ * Parameters: (none)
+ *
+ * Returns: a MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_finalize
@@ -96,9 +104,13 @@ int mpig_topology_finalize(void)
 
 
 /*
- * void mpig_topology_comm_construct([IN/MOD] comm)
+ * <mpi_errno> mpig_topology_comm_construct([IN/MOD] comm)
  *
- * comm [IN/MOD] - communicator being created
+ * Parameters:
+ *
+ *   comm [IN/MOD] - communicator being created
+ *
+ * Returns: a MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_comm_construct
@@ -436,9 +448,13 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
 
 
 /*
- * void mpig_topology_comm_destruct([IN/MOD] comm)
+ * <mpi_errno> mpig_topology_comm_destruct([IN/MOD] comm)
  *
- * comm [IN/MOD] - communicator being destroyed
+ * Parameters:
+ *
+ *   comm [IN/MOD] - communicator being destroyed
+ *
+ * Returns: a MPI error code
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_comm_destruct
@@ -528,7 +544,6 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
     int n;
     unsigned levels_out;
     bool_t match = FALSE;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_topology_get_vc_match);
 
@@ -547,7 +562,7 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
 	{
 	    if (mpig_cm_vtables[n]->get_vc_compatability != NULL)
 	    {
-		mpig_cm_vtables[n]->get_vc_compatability(vc1, vc2, ((unsigned) 1 << level), &levels_out, &mpi_errno, &failed);
+		mpi_errno = mpig_cm_vtables[n]->get_vc_compatability(vc1, vc2, ((unsigned) 1 << level), &levels_out);
 		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|get_vc_compatability",
 		    "**globus|get_vc_compatability %s", mpig_cm_vtables[n]->name);
 		
@@ -580,7 +595,7 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
 
 
 /*
- * void mpig_topology_destroy_depths_attr(...)
+ * <mpi_errno> mpig_topology_destroy_depths_attr(...)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_destroy_depths_attr
@@ -609,7 +624,7 @@ MPIG_STATIC int mpig_topology_destroy_depths_attr(MPI_Comm comm_handle, int keyv
 
 
 /*
- * void mpig_topology_destroy_colors_attr(...)
+ * <mpi_errno> mpig_topology_destroy_colors_attr(...)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_destroy_colors_attr

@@ -39,6 +39,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpig_bc_t bc;
     mpig_bc_t * bcs = NULL;
     mpig_pg_t * pg = NULL;
+    bool_t new_pg;
     const char * pg_id = NULL;
     char * lan_id = NULL;
     bool_t pg_locked = FALSE;
@@ -47,7 +48,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPID_Comm * comm;
     int n;
     globus_result_t grc;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_INIT);
 
@@ -107,8 +107,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     /* initialize the communication modules */
     for (n = 0; n < mpig_cm_vtables_num_entries; n++)
     {
-	mpig_cm_vtables[n]->init(argc, argv, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s",
+	mpi_errno = mpig_cm_vtables[n]->init(argc, argv);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_init", "**globus|cm_init %s",
 	    mpig_cm_vtables[n]->name);
     }
 
@@ -119,7 +119,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     {
 	if (mpig_cm_vtables[n]->add_contact_info != NULL)
 	{
-	    mpig_cm_vtables[n]->add_contact_info(&bc, &mpi_errno, &failed);
+	    mpi_errno = mpig_cm_vtables[n]->add_contact_info(&bc);
 	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_add_contact", "**globus|cm_add_contact %s",
 		mpig_cm_vtables[n]->name);
 	}
@@ -129,8 +129,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     lan_id = globus_libc_getenv("GLOBUS_LAN_ID");
     if (lan_id != NULL)
     {
-	mpig_bc_add_contact(&bc, "GLOBUS_LAN_ID", lan_id, &mpi_errno, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	mpi_errno = mpig_bc_add_contact(&bc, "GLOBUS_LAN_ID", lan_id);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_XIO_LAN_ID");
     }
     
@@ -159,12 +159,12 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     
     /* acquire, creating if necessary, a reference to the process group object used to manage the virtual connection objects.  if
        creation was necessary, the virtual connection objects within the PG will be initialized at this time. */
-    mpi_errno = mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg);
+    mpi_errno = mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg, &new_pg);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_acquire_ref");
     pg_locked = TRUE;
     {    
 	mpig_vc_t * vc;
-	bool_t vc_was_in_use;
+	bool_t vc_was_inuse;
 	int p;
 
 	/* stash away a pointer to my process group.  the PG reference count was already incremented by
@@ -181,7 +181,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		MPIG_DEBUG_STMT(MPIG_DEBUG_LEVEL_BC,
 		{
 		    char * bc_str;
-		    mpig_bc_serialize_object(&bcs[p], &bc_str, &mpi_errno, &failed);
+		    mpig_bc_serialize_object(&bcs[p], &bc_str);
 		    mpig_debug_uprintf(MPIG_DEBUG_LEVEL_BC, "serialized BC for process %s:%d - %s\n", pg_id, p, bc_str);
 		    mpig_bc_free_serialized_object(bc_str);
 		});
@@ -194,8 +194,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	    {
 		/* stash a copy of the business card in the VC.  it will be used during the extraction of contact information,
 		   and also by the MPI-2 dynamic process routines when an exchange of business cards is necessary. */
-		mpig_bc_copy(&bcs[p], mpig_vc_get_bc(vc), &mpi_errno, &failed);
-		MPIU_ERR_CHKANDJUMP((failed), mpi_errno, MPI_ERR_OTHER, "**globus|gc_copy");
+		mpi_errno = mpig_bc_copy(&bcs[p], mpig_vc_get_bc(vc));
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|gc_copy");
 
 		/* extract the contact information from the business card attached to the VC object.  the information is
 		   extracted from the business card because it is used each time a communicator is created to construct the
@@ -205,8 +205,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		{
 		    if (mpig_cm_vtables[n]->extract_contact_info != NULL)
 		    {
-			mpig_cm_vtables[n]->extract_contact_info(vc, &mpi_errno, &failed);
-			MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;},
+			mpi_errno = mpig_cm_vtables[n]->extract_contact_info(vc);
+			MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;},
 			    "**globus|cm_extract_contact", "**globus|cm_extract_contact %s", mpig_cm_vtables[n]->name);
 		    }
 		}
@@ -223,8 +223,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		{
 		    if (mpig_cm_vtables[n]->select_module != NULL)
 		    {
-			mpig_cm_vtables[n]->select_module(vc, &selected, &mpi_errno, &failed);
-			MPIU_ERR_CHKANDSTMT3((failed), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_select_module",
+			mpi_errno = mpig_cm_vtables[n]->select_module(vc, &selected);
+			MPIU_ERR_CHKANDSTMT3((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_select_module",
 			    "**globus|cm_select_module %s %s %d", mpig_cm_vtables[n]->name, pg_id, pg_rank);
 			if (selected) break;
 		    }
@@ -234,8 +234,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 				     "**globus|cm_no_module %s %d", pg_id, pg_rank);
 
 		/* get the LAN indentification string, if one is present, and store it in the VC */
-		mpig_bc_get_contact(&bcs[p], "GLOBUS_LAN_ID", &lan_id, &found, &mpi_errno, &failed);
-		MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|bc_get_contact",
+		mpi_errno = mpig_bc_get_contact(&bcs[p], "GLOBUS_LAN_ID", &lan_id, &found);
+		MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|bc_get_contact",
 		    "**globus|bc_get_contact %s", "GLOBUS_LAN_ID");
 		if (found)
 		{
@@ -255,6 +255,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 
 	    if (mpi_errno) goto fn_fail;
 	}
+	/* end for (p = 0; p < pg_size; p++) */
 
 	/* free the business card array provided by the process management subsystem */
 	mpig_pm_free_business_cards(bcs);
@@ -278,17 +279,23 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_get_ptr",
 			     "**dev|vcrt_get_ptr %s", "MPI_COMM_WORLD");
 
+	/* add each VC in the process group to the MPI_COMM_WORLD communicator and increment each VC's reference count */
 	for (p = 0; p < pg_size; p++)
 	{
 	    mpig_pg_get_vc(pg, p, &vc);
 	    mpig_comm_set_vc(comm, p, vc);
 	    mpig_vc_mutex_lock(vc);
 	    {
-		mpig_vc_inc_ref_count(vc, &vc_was_in_use, &mpi_errno, &failed);
+		mpig_vc_inc_ref_count(vc, &vc_was_inuse);
+		/* The VC reference should always be greater than zero before the increment since the PG module holds a reference
+		   to it until the PG is committed */
+		MPIU_Assert(vc_was_inuse == TRUE);
 	    }
 	    mpig_vc_mutex_unlock(vc);
 	}
 
+	/* construction of the device fields must occur after the VCs have been added to the VCRT since topology discovery, which
+	   is part of the constructio process, is performed as part of the construction process */
 	mpig_comm_construct(comm);
 	
 	/* initialize the MPI_COMM_SELF object */
@@ -306,14 +313,30 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_get_ptr",
 			     "**dev|vcrt_get_ptr %s", "MPI_COMM_SELF");
     
+	/* add the VC representing the local process the MPI_COMM_SELF communicator and increment that VC's reference count */
 	mpig_pg_get_vc(pg, pg_rank, &vc);
 	mpig_comm_set_vc(comm, 0, vc);
-	MPID_VCR_Dup(MPIR_Process.comm_world->vcr[pg_rank], &comm->vcr[0]);
+	mpig_vc_mutex_lock(vc);
+	{
+	    mpig_vc_inc_ref_count(vc, &vc_was_inuse);
+	    /* The VC reference should always be greater than zero before the increment since the PG module holds a reference
+	       to it until the PG is committed */
+	    MPIU_Assert(vc_was_inuse == TRUE);
+	}
+	mpig_vc_mutex_unlock(vc);
 
+	/* construction of the device fields must occur after the VCs have been added to the VCRT since topology discovery, which
+	   is part of the constructio process, is performed as part of the construction process */
 	mpig_comm_construct(comm);
     }
     mpig_pg_mutex_unlock(pg);
     pg_locked = FALSE;
+
+    /* now that all of the VCs have been activated and references to them established, commit the process group */
+    if (pg != NULL)
+    {
+	mpig_pg_commit(pg);
+    }
 
     /* if this process group was spawned by a MPI job, then form the MPI_COMM_PARENT inter-communicator */
 #   if XXX
@@ -346,12 +369,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
 
   fn_return:
-    /* mark the process group as committed, indicating that it may safely be destroyed if mpig_pg_release_ref() is called */
-    if (pg != NULL)
-    {
-	mpig_pg_commit(pg);
-    }
-	
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: provided=%d, has_args=%s, has_env=%s, "
 		       "mpi_errno=" MPIG_ERRNO_FMT, MPI_THREAD_FUNNELED, "true", "true", mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_INIT);
@@ -391,7 +408,6 @@ int MPID_Finalize()
     int n;
     int mrc;
     globus_result_t grc;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
@@ -425,9 +441,9 @@ int MPID_Finalize()
        before returning. */
     for (n = mpig_cm_vtables_num_entries - 1; n >= 0; n--)
     {
-	mpig_cm_vtables[n]->finalize(&mpi_errno, &failed);
-	MPIU_ERR_CHKANDSTMT1((failed), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_finalize", "**globus|cm_finalize %s",
-	    mpig_cm_vtables[n]->name);
+	mrc = mpig_cm_vtables[n]->finalize();
+	MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|cm_finalize",
+	    "**globus|cm_finalize %s", mpig_cm_vtables[n]->name);
     }
     
     /* release the reference to the process group associated with MPI_COMM_WORLD */
@@ -453,6 +469,8 @@ int MPID_Finalize()
     grc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
     MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate", "**globus|module_deactivate %s", "common");
 
+    if (mpi_errno) goto fn_fail;
+    
    fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
@@ -460,6 +478,7 @@ int MPID_Finalize()
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
+    MPID_Abort(NULL, mpi_errno, 255, "ERROR: MPID_Finalize was about to return a nonzero error code");
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
@@ -483,6 +502,7 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
 		       ", exit_code=%d, error_msg=%s", (MPIG_PTR_CAST) comm, mpi_errno, exit_code, MPIG_STR_VAL(error_msg)));
 
     fflush(stdout);
+    fflush(stderr);
     
     if (mpi_errno)
     {
@@ -492,22 +512,27 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
 	if (str)
 	{
 	    MPIR_Err_get_string(mpi_errno, str, MPIG_ERR_STRING_SIZE, NULL);
-	    fprintf(stderr, "[%s:%d:%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), str);
+	    fprintf(stderr, "[pgid=%s:pgrank=%d:tid=%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank,
+		mpig_thread_get_id(), str);
 	    fflush(stderr);
 	    MPIU_Free(str);
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "%s", str));
 	}
 	else
 	{
-	    fprintf(stderr, "[%s:%d:%lu] ERROR: unable to allocate memory needed to output an error message\n",
+	    fprintf(stderr, "[pgid=%s:pgrank=%d:tid=%lu] ERROR: unable to allocate memory needed to output an error message\n",
 		mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id());
 	    fflush(stderr);
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "ERROR: unable to allocate memory needed to output an error message"));
 	}
     }
 
     if (error_msg != NULL)
     {
-	fprintf(stderr, "[%s:%d:%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), error_msg);
+	fprintf(stderr, "[pgid=%s:pgrank=%d:tid=%lu] %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(),
+	    error_msg);
 	fflush(stderr);
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "%s", error_msg));
     }
 
     /* MPI-2-XXX: what do we do with jobs spawned by a communicator containing one or more processes in the aborting

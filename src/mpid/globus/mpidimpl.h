@@ -143,31 +143,31 @@ int mpig_topology_comm_destruct(MPID_Comm * comm);
 /**********************************************************************************************************************************
 						     BEGIN DATATYPE SECTION
 **********************************************************************************************************************************/
-void mpig_datatype_set_my_bc(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
-void mpig_datatype_process_bc(const mpig_bc_t * bc, mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
+int mpig_datatype_set_my_bc(mpig_bc_t * bc);
+int mpig_datatype_process_bc(const mpig_bc_t * bc, mpig_vc_t * vc);
 void mpig_datatype_get_src_ctype(const mpig_vc_t * vc, const MPID_Datatype dt, mpig_ctype_t * ctype);
 void mpig_datatype_get_my_ctype(const MPI_Datatype dt, mpig_ctype_t * ctype);
 
-#define mpig_datatype_get_src_ctype(vc_, dt_, ctype_)							\
-{													\
-    int dt_id__;											\
-    													\
-    MPIU_Assert(HANDLE_GET_KIND(dt_) == MPI_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);	\
-    MPID_Datatype_get_basic_id(dt_, dt_id__);								\
-    MPIU_Assert(dt_id__ < MPIG_DATATYPE_MAX_BASIC_TYPES);						\
-    *(ctype_) = (mpig_ctype_t) (vc_)->dt_cmap[dt_id__];							\
+#define mpig_datatype_get_src_ctype(/* mpig_vc_t ptr */ vc_, /* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)	\
+{															\
+    int dt_id__;													\
+															\
+    MPIU_Assert(HANDLE_GET_KIND(dt_) == MPI_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);			\
+    MPID_Datatype_get_basic_id(dt_, dt_id__);										\
+    MPIU_Assert(dt_id__ < MPIG_DATATYPE_MAX_BASIC_TYPES);								\
+    *(ctype_p_) = (mpig_ctype_t) (vc_)->dt_cmap[dt_id__];								\
 }
 
-#define mpig_datatype_get_my_ctype(dt_, ctype_)				\
-{									\
-    const mpig_vc_t * vc__;						\
-									\
-    mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &vc__);	\
-    mpig_datatype_get_src_ctype(vc__, (dt_), (ctype_));			\
+#define mpig_datatype_get_my_ctype(/* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)	\
+{												\
+    const mpig_vc_t * vc__;									\
+												\
+    mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &vc__);				\
+    mpig_datatype_get_src_ctype(vc__, (dt_), (ctype_p_));					\
 }
 
-#define mpig_datatype_get_info(/* MPI_Datatype */ dt_, /* bool_t */ dt_contig_, /* MPIU_Size_t */ dt_size_,		\
-    /* MPIU_Size_t */ dt_nblks_, /* MPI_Aint */ dt_true_lb_)								\
+#define mpig_datatype_get_info(/* MPI_Datatype */ dt_, /* bool_t ptr */ dt_contig_, /* MPIU_Size_t ptr */ dt_size_,	\
+    /* MPIU_Size_t ptr */ dt_nblks_, /* MPI_Aint ptr */ dt_true_lb_)							\
 {															\
     if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)									\
     {															\
@@ -880,7 +880,7 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * buf, MPIU_Size_t buf_size, mpig_iov_
  * sections for other objects concerning issues with super lazy release consistent systems like Treadmarks.)
  */
 
-void mpig_databuf_create(MPIU_Size_t size, mpig_databuf_t ** dbufp, int * mpi_errno_p, bool_t * failed_p);
+int mpig_databuf_create(MPIU_Size_t size, mpig_databuf_t ** dbufp);
 
 void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
@@ -1008,24 +1008,19 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
  * sections for other objects concerning issues with super lazy release consistent systems like Treadmarks.)
  */
 
-void mpig_bc_create(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
-
-void mpig_bc_copy(const mpig_bc_t * orig_bc, mpig_bc_t * new_bc, int * mpi_errno_p, bool_t * failed_p);
+int mpig_bc_copy(const mpig_bc_t * orig_bc, mpig_bc_t * new_bc);
     
-void mpig_bc_add_contact(mpig_bc_t * bc, const char * key, const char * value, int * mpi_errno_p, bool_t * failed_p);
+int mpig_bc_add_contact(mpig_bc_t * bc, const char * key, const char * value);
 
-void mpig_bc_get_contact(const mpig_bc_t * bc, const char * key, char ** value, bool_t * found_p,
-			 int * mpi_errno_p, bool_t * failed_p);
+int mpig_bc_get_contact(const mpig_bc_t * bc, const char * key, char ** value, bool_t * found_p);
 
 void mpig_bc_free_contact(char * value);
 
-void mpig_bc_serialize_object(mpig_bc_t * bc, char ** str, int * mpi_errno_p, bool_t * failed_p);
+int mpig_bc_serialize_object(mpig_bc_t * bc, char ** str);
 
 void mpig_bc_free_serialized_object(char * str);
 
-void mpig_bc_deserialize_object(const char *, mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
-
-void mpig_bc_destroy(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
+int mpig_bc_deserialize_object(const char *, mpig_bc_t * bc);
 
 
 #define mpig_bc_construct(bc_)	\
@@ -1054,7 +1049,8 @@ void mpig_bc_destroy(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
 **********************************************************************************************************************************/
 /* MT-NOTE: the following routine locks the VC and PG mutexes.  previous routines on the call stack must not be holding those
    mutexes. */
-void mpig_vc_release_ref(mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
+
+void mpig_vc_release_ref(mpig_vc_t * vc);
 
 double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif);
 
@@ -1110,9 +1106,9 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
  * MT-NOTE: these macros are not thread safe.  their use will likely require locking the PG mutex, although performing a RC
  * acquire/release may prove sufficient, depending on the level of synchronization required.
  */
-#define mpig_vc_i_set_ref_count(vc_, ref_count_)						\
-{												\
-    (vc_)->ref_count = (ref_count_);								\
+#define mpig_vc_i_set_ref_count(vc_, ref_count_)	\
+{							\
+    (vc_)->ref_count = (ref_count_);			\
 }
 
 #define mpig_vc_set_ref_count(vc_, ref_count_)									\
@@ -1122,35 +1118,35 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 	"VC - set ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
 }
 
-#define mpig_vc_inc_ref_count(vc_, was_inuse_p_, mpi_errno_p_, failed_p_)						\
+#define mpig_vc_inc_ref_count(vc_, was_inuse_p_)									\
 {															\
     if ((vc_)->vtable->vc_inc_ref_count == NULL)									\
     {															\
 	*(was_inuse_p_) = ((vc_)->ref_count++) ? TRUE : FALSE;								\
-	*(failed_p_) = FALSE;												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,						\
 	    "VC - increment ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
     }															\
     else														\
     {															\
-	(vc_)->vtable->vc_inc_ref_count((vc_), (was_inuse_p_), (mpi_errno_p_), (failed_p_));				\
+	(vc_)->vtable->vc_inc_ref_count((vc_), (was_inuse_p_));								\
     }															\
 }
 
-#define mpig_vc_dec_ref_count(vc_, is_inuse_p_, mpi_errno_p_, failed_p_)						\
+#define mpig_vc_dec_ref_count(vc_, is_inuse_p_)										\
 {															\
     if ((vc_)->vtable->vc_dec_ref_count == NULL)									\
     {															\
 	*(is_inuse_p_) = (--(vc_)->ref_count) ? TRUE : FALSE;								\
-	*(failed_p_) = FALSE;												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,						\
 	    "VC - decrement ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
     }															\
     else														\
     {															\
-	(vc_)->vtable->vc_dec_ref_count((vc_), (is_inuse_p_), (mpi_errno_p_), (failed_p_));				\
+	(vc_)->vtable->vc_dec_ref_count((vc_), (is_inuse_p_));								\
     }															\
 }
+
+#define mpig_vc_get_ref_count(vc_) ((vc_)->ref_count)
 
 /*
  * miscellaneous accessor macros
@@ -1267,7 +1263,7 @@ int mpig_pg_init(void);
 
 int mpig_pg_finalize(void);
 
-int mpig_pg_acquire_ref_locked(const char * pg_id, int pg_size, mpig_pg_t ** pg_p);
+int mpig_pg_acquire_ref_locked(const char * pg_id, int pg_size, mpig_pg_t ** pg_p, bool_t * new_pg_p);
 
 void mpig_pg_commit(mpig_pg_t * pg);
 
@@ -1283,7 +1279,7 @@ void mpig_pg_release_ref(mpig_pg_t * pg);
 {															\
     (pg_)->ref_count++;													\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_PG,							\
-	"PG - increment ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (pg_), (pg_)->ref_count));	\
+	"PG - increment ref count: pg=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (pg_), (pg_)->ref_count));	\
 }
 
 
@@ -1291,7 +1287,7 @@ void mpig_pg_release_ref(mpig_pg_t * pg);
 {															\
     *(is_inuse_p_) = (--(pg_)->ref_count) ? TRUE : FALSE;								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_PG,							\
-	"PG - decrement ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (pg_), (pg_)->ref_count));	\
+	"PG - decrement ref count: pg=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (pg_), (pg_)->ref_count));	\
 }
 
 /*
@@ -1481,6 +1477,29 @@ int mpig_pm_ws_get_app_num(const mpig_bc_t * bc, int * app_num);
 int mpig_adi3_cancel_recv(MPID_Request * rreq);
 /**********************************************************************************************************************************
 							END PT2PT SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						  BEGIN CONNECT-ACCEPT SECTION
+**********************************************************************************************************************************/
+/* NOTE: mpig_connection_t must be defined by the communication module providing connect/accept service */
+
+int mpig_port_open(MPID_Info * info, char * port_name);
+
+int mpig_port_close(const char * port_name);
+
+int mpig_port_accept(const char * port_name, int nprocs, int local_buf_size, int * remote_buf_size, mpig_connection_t ** conn);
+
+int mpig_port_connect(const char * port_name, int nprocs, int local_buf_size, int * remote_buf_size, mpig_connection_t ** conn);
+
+int mpig_connection_send(mpig_connection_t * conn, void * buf, int nbytes);
+
+int mpig_connection_recv(mpig_connection_t * conn, void * buf, int nbytes);
+
+int mpig_connection_close(mpig_connection_t * conn);
+/**********************************************************************************************************************************
+						   END CONNECT-ACCEPT SECTION
 **********************************************************************************************************************************/
 
 

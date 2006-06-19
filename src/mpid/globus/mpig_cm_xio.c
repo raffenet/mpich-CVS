@@ -44,6 +44,7 @@
  *internal parameters
  */
 #define MPIG_CM_XIO_PROTO_VERSION 1
+#define MPIG_CM_XIO_CONNACC_PROTO_VERSION 1
 #define MPIG_CM_XIO_PROTO_CONNECT_MAGIC "MPIG-CM-XIO-SHAKE-MAGIC-8-BALL\n"
 #define MPIG_CM_XIO_PROTO_ACCEPT_MAGIC "MPIG-CM-XIO-MAGIC-8-BALL-SAYS-YES\n"
 /**********************************************************************************************************************************
@@ -101,18 +102,18 @@ MPIG_STATIC const char * mpig_cm_xio_msg_type_get_string(mpig_cm_xio_msg_type_t 
 /*
  * prototypes for the entries in the CM function table
  */
-MPIG_STATIC void mpig_cm_xio_init(int * argc, char *** argv, int * mpi_errro_p, bool_t * failed);
+MPIG_STATIC int mpig_cm_xio_init(int * argc, char *** argv);
 
-MPIG_STATIC void mpig_cm_xio_finalize(int * mpi_errro_p, bool_t * failed);
+MPIG_STATIC int mpig_cm_xio_finalize(void);
 
-MPIG_STATIC void mpig_cm_xio_add_contact_info(struct mpig_bc * bc, int * mpi_errro_p, bool_t * failed);
+MPIG_STATIC int mpig_cm_xio_add_contact_info(struct mpig_bc * bc);
 
-MPIG_STATIC void mpig_cm_xio_extract_contact_info(struct mpig_vc * vc, int * mpi_errro_p, bool_t * failed);
+MPIG_STATIC int mpig_cm_xio_extract_contact_info(struct mpig_vc * vc);
 
-MPIG_STATIC void mpig_cm_xio_select_module(struct mpig_vc * vc, bool_t * selected, int * mpi_errro_p, bool_t * failed);
+MPIG_STATIC int mpig_cm_xio_select_module(struct mpig_vc * vc, bool_t * selected);
 
-MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
-    unsigned * const levels_out, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_xio_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
+    unsigned * levels_out);
 
 
 /*
@@ -133,51 +134,50 @@ const mpig_cm_vtable_t mpig_cm_xio_vtable =
 
 
 /*
- * mpig_cm_xio_init([IN/OUT] argc, [IN/OUT] argv, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_init([IN/OUT] argc, [IN/OUT] argv)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_init
-MPIG_STATIC void mpig_cm_xio_init(int * const argc, char *** const argv, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_xio_init(int * const argc, char *** const argv)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_result_t grc;
-    bool_t failed;
+    int mrc;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_init);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-    
     MPIU_Assert(sizeof(mpig_cm_xio_msghan_funcs) != MPIG_CM_XIO_MSG_TYPE_LAST + 1);
 
     mpig_cm_xio_mutex_create();
 
     /* initialize the request completion queue */
-    mpig_cm_xio_rcq_init(mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|rcq_init")
+    mrc = mpig_cm_xio_rcq_init();
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc); goto fn_fail;},
+	"**globus|cm_xio|rcq_init");
 
     /* activate globus XIO module */
     grc = globus_module_activate(GLOBUS_XIO_MODULE);
-    MPIU_ERR_CHKANDJUMP1((grc), *mpi_errno_p, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s", "XIO");
+    MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s", "XIO");
 
     /* initialize the connection management subsystem */
-    mpig_cm_xio_conn_init(mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|conn_init");
+    mrc = mpig_cm_xio_conn_init();
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc); goto fn_fail;},
+	"**globus|cm_xio|conn_init");
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_init);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -185,53 +185,49 @@ MPIG_STATIC void mpig_cm_xio_init(int * const argc, char *** const argv, int * c
 
 
 /*
- * mpig_cm_xio_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_finalize(void)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_finalize
-MPIG_STATIC void mpig_cm_xio_finalize(int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_xio_finalize(void)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_result_t grc;
-    bool_t failed;
-    int errors = 0;
+    int mrc;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_finalize);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_finalize);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-    
     /* shutdown the connection management subsystem */
-    mpig_cm_xio_conn_finalize(mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDSTMT((failed), *mpi_errno_p, MPI_ERR_OTHER, {errors++;}, "**globus|cm_xio|conn_finalize");
+    mrc = mpig_cm_xio_conn_finalize();
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|cm_xio|conn_finalize");
     
     /* deactivate the globus XIO module */
     grc = globus_module_deactivate(GLOBUS_XIO_MODULE);
-    MPIU_ERR_CHKANDSTMT2((grc), *mpi_errno_p, MPI_ERR_OTHER, {errors++;}, "**globus|module_deactivate",
-			 "**globus|module_deactivate %s %s", "XIO", globus_error_print_chain(globus_error_peek(grc)));
+    MPIU_ERR_CHKANDSTMT2((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
+	"**globus|module_deactivate %s %s", "XIO", globus_error_print_chain(globus_error_peek(grc)));
 
     /* shutdown the request completion queue */
-    mpig_cm_xio_rcq_finalize(mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDSTMT((failed), *mpi_errno_p, MPI_ERR_OTHER, {errors++;}, "**globus|cm_xio|rcq_finalize");
+    mrc = mpig_cm_xio_rcq_finalize();
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|cm_xio|rcq_finalize");
     
     mpig_cm_xio_mutex_destroy();
 
-    if (errors > 0) goto fn_fail;
+    if (mpi_errno) goto fn_fail;
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_finalize);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -239,62 +235,58 @@ MPIG_STATIC void mpig_cm_xio_finalize(int * const mpi_errno_p, bool_t * const fa
 
 
 /*
- * mpig_cm_xio_add_contact_info([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_add_contact_info([IN/MOD] bc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_add_contact_info
-MPIG_STATIC void mpig_cm_xio_add_contact_info(mpig_bc_t * const bc, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_xio_add_contact_info(mpig_bc_t * const bc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char uint_str[10];
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_add_contact_info);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_add_contact_info);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
-    
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
     
     MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) MPIG_CM_XIO_PROTO_VERSION);
-    mpig_bc_add_contact(bc, "CM_XIO_PROTO_VERSION", uint_str, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			 "**globus|bc_add_contact %s", "CM_XIO_PROTO_VERSION");
+    mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_PROTO_VERSION", uint_str);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	"**globus|bc_add_contact %s", "CM_XIO_PROTO_VERSION");
 
-    mpig_bc_add_contact(bc, "CM_XIO_CONTACT_STRING", mpig_cm_xio_server_cs, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			 "**globus|bc_add_contact %s", "CM_XIO_CONTACT_STRING");
+    mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_CONTACT_STRING", mpig_cm_xio_server_cs);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	"**globus|bc_add_contact %s", "CM_XIO_CONTACT_STRING");
 
     MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
-    mpig_bc_add_contact(bc, "CM_XIO_DC_FORMAT", uint_str, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			 "**globus|bc_add_contact %s", "CM_XIO_DC_FORMAT");
+    mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_DC_FORMAT", uint_str);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	"**globus|bc_add_contact %s", "CM_XIO_DC_FORMAT");
 
     if (MPIG_MY_ENDIAN == MPIG_ENDIAN_LITTLE)
     {
-	mpig_bc_add_contact(bc, "CM_XIO_DC_ENDIAN", "little", mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			     "**globus|bc_add_contact %s", "CM_XIO_DC_ENDIAN");
+	mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_DC_ENDIAN", "little");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	    "**globus|bc_add_contact %s", "CM_XIO_DC_ENDIAN");
     }
     else
     {
-	mpig_bc_add_contact(bc, "CM_XIO_DC_ENDIAN", "big", mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
-			     "**globus|bc_add_contact %s", "CM_XIO_DC_ENDIAN");
+	mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_DC_ENDIAN", "big");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
+	    "**globus|bc_add_contact %s", "CM_XIO_DC_ENDIAN");
     }
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_add_contact_info);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -302,24 +294,22 @@ MPIG_STATIC void mpig_cm_xio_add_contact_info(mpig_bc_t * const bc, int * const 
 
 
 /*
- * mpig_cm_xio_extract_contact_info([IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_extract_contact_info([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_extract_contact_info
-MPIG_STATIC void mpig_cm_xio_extract_contact_info(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_xio_extract_contact_info(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_extract_contact_info);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_extract_contact_info);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) vc, *mpi_errno_p));
-
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     /* NOTE: all of the contact information for the XIO module is stored in the CM union, so it must not be stored in the VC
        until the decision has been made for the CM to take responsibility for the VC.  therefore, all extraction of information
@@ -335,23 +325,22 @@ MPIG_STATIC void mpig_cm_xio_extract_contact_info(mpig_vc_t * const vc, int * co
     }
 		
     /*  fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	(MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc,
+	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_extract_contact_info);
-    return;
+    return mpi_errno;
 }
 /* mpig_cm_xio_extract_contact_info() */
 
 
 /*
- * mpig_cm_xio_select_module([IN/MOD] vc, [OUT] selected, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_select_module([IN/MOD] vc, [OUT] selected)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_select_module
-MPIG_STATIC void mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const selected, int * const mpi_errno_p,
-    bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const selected)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_bc_t * bc;
@@ -364,16 +353,14 @@ MPIG_STATIC void mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const 
     mpig_endian_t endian;
     bool_t found;
     int rc;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_select_module);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_select_module);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) vc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-    *failed_p = FALSE;
     *selected = FALSE;
     
     bc = mpig_vc_get_bc(vc);
@@ -381,28 +368,28 @@ MPIG_STATIC void mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const 
     if (mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_UNDEFINED)
     {
 	/* Get protocol version number and check that it is compatible with this module */
-	mpig_bc_get_contact(bc, "CM_XIO_PROTO_VERSION", &version_str, &found, mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact",
-			     "**globus|bc_get_contact %s", "CM_XIO_PROTO_VERSION");
+	mpi_errno = mpig_bc_get_contact(bc, "CM_XIO_PROTO_VERSION", &version_str, &found);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
+	    "**globus|bc_get_contact %s", "CM_XIO_PROTO_VERSION");
 	if (!found) goto fn_return;
 
 	rc = sscanf(version_str, "%d", &version);
-	MPIU_ERR_CHKANDJUMP((rc != 1), *mpi_errno_p, MPI_ERR_INTERN, "**keyval");
+	MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 	if (version != MPIG_CM_XIO_PROTO_VERSION) goto fn_return;
 
 	/* Get format of basic datatypes */
-	mpig_bc_get_contact(bc, "CM_XIO_DC_FORMAT", &format_str, &found, mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact",
-			     "**globus|bc_get_contact %s", "CM_XIO_DC_FORMAT");
+	mpi_errno = mpig_bc_get_contact(bc, "CM_XIO_DC_FORMAT", &format_str, &found);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
+	    "**globus|bc_get_contact %s", "CM_XIO_DC_FORMAT");
 	if (!found) goto fn_return;
 	
 	rc = sscanf(format_str, "%d", &format);
-	MPIU_ERR_CHKANDJUMP((rc != 1), *mpi_errno_p, MPI_ERR_INTERN, "**keyval");
+	MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 
 	/* Get endianess of remote system */
-	mpig_bc_get_contact(bc, "CM_XIO_DC_ENDIAN", &endian_str, &found, mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact",
-			     "**globus|bc_get_contact %s", "CM_XIO_DC_ENDIAN");
+	mpi_errno = mpig_bc_get_contact(bc, "CM_XIO_DC_ENDIAN", &endian_str, &found);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
+	    "**globus|bc_get_contact %s", "CM_XIO_DC_ENDIAN");
 	if (!found) goto fn_return;
 
 	endian = (strcmp(endian_str, "little") == 0) ? MPIG_ENDIAN_LITTLE : MPIG_ENDIAN_BIG;
@@ -411,9 +398,6 @@ MPIG_STATIC void mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const 
 	mpig_cm_xio_vc_construct(vc);
 	vc->cm.xio.endian = endian;
 	vc->cm.xio.df = format;
-
-	/* adjust the PG reference to account for the newly activated VC */
-	mpig_pg_inc_ref_count(mpig_vc_get_pg(vc));
     }
 
     if (mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_XIO)
@@ -421,14 +405,14 @@ MPIG_STATIC void mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const 
 	char * cs;
 	
 	/* Get the contact string */
-	mpig_bc_get_contact(bc, "CM_XIO_CONTACT_STRING", &contact_str, &found, mpi_errno_p, &failed);
-	MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact",
-			     "**globus|bc_get_contact %s", "CM_XIO_CONTACT_STRING");
+	mpi_errno = mpig_bc_get_contact(bc, "CM_XIO_CONTACT_STRING", &contact_str, &found);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
+	    "**globus|bc_get_contact %s", "CM_XIO_CONTACT_STRING");
 	if (!found) goto fn_return;
 
 	/* add the contact string to the VC */
 	cs = MPIU_Strdup(contact_str);
-	MPIU_ERR_CHKANDJUMP1((cs == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s", "XIO contact string");
+	MPIU_ERR_CHKANDJUMP1((cs == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "XIO contact string");
 	mpig_cm_xio_vc_set_contact_string(vc, cs);
 
 	/* set the selected flag to indicate that the XIO communication module has accepted responsibility for the VC */
@@ -441,39 +425,37 @@ MPIG_STATIC void mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const 
     if (format_str != NULL) mpig_bc_free_contact(format_str);
     if (endian_str != NULL) mpig_bc_free_contact(endian_str);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT
-	", failed=%s", (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT,
+	(MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_select_module);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_xio_select_module() */
 
 /*
- * mpig_cm_xio_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_get_vc_compatability
-MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
-    unsigned levels_in, unsigned * const levels_out, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
+    const unsigned levels_in, unsigned * const levels_out)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_get_vc_compatability);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_get_vc_compatability);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x, mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in, *mpi_errno_p));
-
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x",
+	(MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in));
 
     *levels_out = levels_in & MPIG_TOPOLOGY_LEVEL_WAN_MASK;
     
@@ -514,10 +496,9 @@ MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, c
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
-	"mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out,
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_get_vc_compatability);
-    return;
+    return mpi_errno;
 }
 /* int mpig_cm_xio_get_vc_compatability() */
 /**********************************************************************************************************************************
@@ -529,7 +510,7 @@ MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, c
 				    BEGIN COMMUNICATION MODULE PROGRESS ENGINE API FUNCTIONS
 **********************************************************************************************************************************/
 /*
- * void mpig_cm_xio_pe_wait([IN/OUT] state, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_pe_wait([IN/OUT] state)
  *
  * XXX: this should be rolled together with the rcq_wait so that multiple requests can be completed in a single call.  also,
  * mpig_cm_xio_pe_start() should be used to eliminate returns everytime a message is receive just in case the application
@@ -538,21 +519,20 @@ MPIG_STATIC void mpig_cm_xio_get_vc_compatability(const mpig_vc_t * const vc1, c
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_pe_wait
-void mpig_cm_xio_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, bool_t * const failed_p)
+int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * req;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_pe_wait);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_pe_wait);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=0x%08x", *mpi_errno_p));
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    mpig_cm_xio_rcq_deq_wait(&req, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_wait");
+    mpi_errno = mpig_cm_xio_rcq_deq_wait(&req);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_wait");
 
     if (req != NULL)
     {
@@ -565,14 +545,13 @@ void mpig_cm_xio_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, 
     
   
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_pe_wait);
-    return;
+    return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     {
-	*failed_p = TRUE;
 	goto fn_return;
     }
     /* --END ERROR HANDLING-- */
@@ -581,25 +560,24 @@ void mpig_cm_xio_pe_wait(struct MPID_Progress_state * state, int * mpi_errno_p, 
 
 
 /*
- * void mpig_cm_xio_pe_test([IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_xio_pe_test(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_pe_test
-void mpig_cm_xio_pe_test(int * mpi_errno_p, bool_t * const failed_p)
+int mpig_cm_xio_pe_test(void)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * req;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_pe_test);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_pe_test);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=0x%08x", *mpi_errno_p));
-    *failed_p = FALSE;
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    mpig_cm_xio_rcq_deq_test(&req, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+    mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
 
     if (req != NULL)
     {
@@ -607,14 +585,13 @@ void mpig_cm_xio_pe_test(int * mpi_errno_p, bool_t * const failed_p)
     }
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=0x%08x", *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_pe_test);
-    return;
+    return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     {
-	*failed_p = TRUE;
 	goto fn_return;
     }
     /* --END ERROR HANDLING-- */
@@ -680,10 +657,19 @@ MPIG_STATIC const char * mpig_cm_xio_msg_type_get_string(mpig_cm_xio_msg_type_t 
 	case MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND_RESP:
 	    str ="MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND_RESP";
 	    break;
-	case MPIG_CM_XIO_MSG_TYPE_OPEN_REQ:
-	    str ="MPIG_CM_XIO_MSG_TYPE_OPEN_REQ";
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_VC_REQ:
+	    str ="MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_REQ";
 	    break;
-	case MPIG_CM_XIO_MSG_TYPE_OPEN_RESP:
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_VC_RESP:
+	    str ="MPIG_CM_XIO_MSG_TYPE_OPEN_VC_RESP";
+	    break;
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_REQ:
+	    str ="MPIG_CM_XIO_MSG_TYPE_OPEN_VC_REQ";
+	    break;
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_RESP:
+	    str ="MPIG_CM_XIO_MSG_TYPE_OPEN_RESP";
+	    break;
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_ERROR_RESP:
 	    str ="MPIG_CM_XIO_MSG_TYPE_OPEN_RESP";
 	    break;
 	case MPIG_CM_XIO_MSG_TYPE_CLOSE:

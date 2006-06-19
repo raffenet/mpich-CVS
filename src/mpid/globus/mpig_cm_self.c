@@ -39,19 +39,19 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 /**********************************************************************************************************************************
 					      BEGIN COMMUNICATION MODULE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC void mpig_cm_self_init(int * argc, char *** argv, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_init(int * argc, char *** argv);
 
-MPIG_STATIC void mpig_cm_self_finalize(int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_finalize(void);
 
-MPIG_STATIC void mpig_cm_self_add_contact_info(mpig_bc_t * bc, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_add_contact_info(mpig_bc_t * bc);
 
-MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * vc, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * vc);
 
-MPIG_STATIC void mpig_cm_self_select_module(mpig_vc_t * vc, bool_t * selected, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_select_module(mpig_vc_t * vc, bool_t * selected);
 
 #if FALSE
-MPIG_STATIC void mpig_cm_self_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
-    unsigned * const levels_out, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
+    unsigned * levels_out);
 #endif
 
 const mpig_cm_vtable_t mpig_cm_self_vtable =
@@ -101,8 +101,7 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
 
 MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * sreq);
 
-MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
-    mpig_vc_t * vc, MPID_Request * rreq, MPID_Comm * comm, int * mpi_errno_p, bool_t * failed_p);
+MPIG_STATIC int mpig_cm_self_vc_recv_any_source(mpig_vc_t * vc, MPID_Request * rreq);
 
 
 MPIG_STATIC mpig_vc_vtable_t mpig_cm_self_vc_vtable =
@@ -132,35 +131,32 @@ MPIG_STATIC mpig_vc_vtable_t mpig_cm_self_vc_vtable =
 					    BEGIN COMMUNICATION MODULE API FUNCTIONS
 **********************************************************************************************************************************/
 /*
- * mpig_cm_self_initialize([IN/OUT] argc, [IN/OUT] argv, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_self_initialize([IN/OUT] argc, [IN/OUT] argv)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_init
-MPIG_STATIC void mpig_cm_self_init(int * const argc, char *** const argv, int * mpi_errno_p, bool_t * failed_p)
+MPIG_STATIC int mpig_cm_self_init(int * const argc, char *** const argv)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_init);
     
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_init);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-
-    MPIU_ERR_CHKANDJUMP((strlen(mpig_process.my_hostname) == 0), *mpi_errno_p, MPI_ERR_OTHER, "**globus|cm_self_hostname");
+    MPIU_ERR_CHKANDJUMP((strlen(mpig_process.my_hostname) == 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_self|hostname");
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_init);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -168,90 +164,73 @@ MPIG_STATIC void mpig_cm_self_init(int * const argc, char *** const argv, int * 
 
 
 /*
- * mpig_cm_self_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_self_finalize(void)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_finalize
-MPIG_STATIC void mpig_cm_self_finalize(int * mpi_errno_p, bool_t * failed_p)
+MPIG_STATIC int mpig_cm_self_finalize(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    int errors = 0;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_finalize);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_finalize);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-    
     /* release the PG reference held by the VC */
     if (mpig_cm_self_vc != NULL)
     {
-	mpig_vc_release_ref(mpig_cm_self_vc, mpi_errno_p, &failed);
+	mpig_vc_release_ref(mpig_cm_self_vc);
 	mpig_cm_self_vc = NULL;
-	MPIU_ERR_CHKANDSTMT((failed), *mpi_errno_p, MPI_ERR_OTHER, {errors++;}, "**globus|vc_release_ref");
     }
 
-    if (errors > 0) goto fn_fail;
-    
-  fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_finalize);
-    return;
-
-  fn_fail:
-    {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
-	goto fn_return;
-    }   /* --END ERROR HANDLING-- */
+    return mpi_errno;
 }
 /* mpig_cm_self_finalize() */
 
 
 /*
- * mpig_cm_self_add_contact_info([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_self_add_contact_info([IN/MOD] bc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_add_contact_info
-MPIG_STATIC void mpig_cm_self_add_contact_info(mpig_bc_t * const bc, int * mpi_errno_p, bool_t * failed_p)
+MPIG_STATIC int mpig_cm_self_add_contact_info(mpig_bc_t * const bc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char pid[64];
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_add_contact_info);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_add_contact_info);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: mpi_errno=" MPIG_ERRNO_FMT, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    *failed_p = FALSE;
-    
-    mpig_bc_add_contact(bc, "CM_SELF_HOSTNAME", mpig_process.my_hostname, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
+    mpi_errno = mpig_bc_add_contact(bc, "CM_SELF_HOSTNAME", mpig_process.my_hostname);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_SELF_HOSTNAME");
 
     MPIU_Snprintf(pid, (size_t) 64, "%lu", (unsigned long) mpig_process.my_pid);
-    mpig_bc_add_contact(bc, "CM_SELF_PID", pid, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_add_contact",
+    mpi_errno = mpig_bc_add_contact(bc, "CM_SELF_PID", pid);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_SELF_PID");
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_add_contact_info);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -259,13 +238,13 @@ MPIG_STATIC void mpig_cm_self_add_contact_info(mpig_bc_t * const bc, int * mpi_e
 
 
 /*
- * mpig_cm_self_extract_contact_info([IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_self_extract_contact_info([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_extract_contact_info
-MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * mpi_errno_p, bool_t * failed_p)
+MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * const vc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_bc_t * bc;
@@ -274,40 +253,37 @@ MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * m
     char * pid_str = NULL;
     unsigned long pid;
     int rc;
-    bool_t failed;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_extract_contact_info);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_extract_contact_info);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) vc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-    *failed_p = FALSE;
-    
     vc->ci.self.hostname = NULL;
     vc->ci.self.pid = 0;
 
     bc = mpig_vc_get_bc(vc);
 
     /* extract the hostname from the business card */
-    mpig_bc_get_contact(bc, "CM_SELF_HOSTNAME", &hostname_str, &found, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
+    mpi_errno = mpig_bc_get_contact(bc, "CM_SELF_HOSTNAME", &hostname_str, &found);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
 	"CM_SELF_HOSTNAME");
     if (!found) goto fn_return;
 
     /* extract the process id from the business card */
-    mpig_bc_get_contact(bc, "CM_SELF_PID", &pid_str, &found, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP1((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|bc_get_contact",
+    mpi_errno = mpig_bc_get_contact(bc, "CM_SELF_PID", &pid_str, &found);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
 	"**globus|bc_get_contact %s", "CM_SELF_PID");
     if (!found) goto fn_return;
 
     rc = sscanf(pid_str, "%lu", &pid);
-    MPIU_ERR_CHKANDJUMP((rc != 1), *mpi_errno_p, MPI_ERR_INTERN, "**keyval");
+    MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 
     /* if all when well, copy the extracted contact information into the VC */
     vc->ci.self.hostname = MPIU_Strdup(hostname_str);
-    MPIU_ERR_CHKANDJUMP1((vc->ci.self.hostname == NULL), *mpi_errno_p, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+    MPIU_ERR_CHKANDJUMP1((vc->ci.self.hostname == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
 	"name of remote host");
     vc->ci.self.pid = pid;
 
@@ -326,14 +302,13 @@ MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * m
     if (hostname_str != NULL) mpig_bc_free_contact(hostname_str);
     if (pid_str != NULL) mpig_bc_free_contact(pid_str);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s",
-	(MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc,
+	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_extract_contact_info);
-    return;
+    return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -341,27 +316,24 @@ MPIG_STATIC void mpig_cm_self_extract_contact_info(mpig_vc_t * const vc, int * m
 
 
 /*
- * void mpig_cm_self_select_module([IN/MOD] vc, [OUT] selected, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_self_select_module([IN/MOD] vc, [OUT] selected)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_select_module
-MPIG_STATIC void mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const selected,
-    int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const selected)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    bool_t was_inuse;
-    bool_t failed;
+    bool_t vc_was_inuse;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_select_module);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_select_module);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) vc, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-    *failed_p = FALSE;
     *selected = FALSE;
 
     /* determine if communication is possible */
@@ -374,50 +346,46 @@ MPIG_STATIC void mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const
     mpig_vc_set_vtable(vc, &mpig_cm_self_vc_vtable);
 
     /* set the selected flag to indicate that the "self" communication module has accepted responsibility for the VC */
-    mpig_vc_inc_ref_count(vc, &was_inuse, mpi_errno_p, &failed);
-    MPIU_ERR_CHKANDJUMP((failed), *mpi_errno_p, MPI_ERR_OTHER, "**globus|vc_inc_ref_count");
-    mpig_cm_self_vc = vc;
     *selected = TRUE;
-    
-    /* adjust the PG reference to account for the newly activated VC */
-    mpig_pg_inc_ref_count(mpig_vc_get_pg(vc));
+
+    /* store a copy of the VC, adjusting the VC and PG reference counts as necessary */
+    mpig_cm_self_vc = vc;
+    mpig_vc_inc_ref_count(vc, &vc_was_inuse);
+    if (vc_was_inuse == FALSE)
+    {
+	mpig_pg_inc_ref_count(mpig_vc_get_pg(vc));
+    }
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mmpi_errno=" MPIG_ERRNO_FMT
-	", failed=%s", (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mmpi_errno=" MPIG_ERRNO_FMT,
+	(MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_select_module);
-    return;
-
-  fn_fail:
-    {   /* --BEGIN ERROR HANDLING-- */
-	*failed_p = TRUE;
-	goto fn_return;
-    }   /* --END ERROR HANDLING-- */
+    return mpi_errno;
 }
 /* mpig_cm_self_select_module() */
 
 
 #if FALSE
 /*
- * void mpig_cm_self_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_self_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_get_vc_compatability
-MPIG_STATIC void mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
-    unsigned levels_in, unsigned * const levels_out, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
+    unsigned levels_in, unsigned * const levels_out)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_get_vc_compatability);
 
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_get_vc_compatability);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x, mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in, *mpi_errno_p));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x",
+	(MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in));
 
-    *failed_p = FALSE;
     *levels_out = 0;
 
     if (levels_in & MPIG_TOPOLOGY_LEVEL_PROC_MASK)
@@ -431,8 +399,7 @@ MPIG_STATIC void mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, 
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
-	"mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out,
-	*mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	"mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_get_vc_compatability);
     return;
 }
@@ -848,8 +815,7 @@ MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * const sreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_vc_recv_any_source
-MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
-    mpig_vc_t * const vc, MPID_Request * const rreq, MPID_Comm * const comm, int * const mpi_errno_p, bool_t * const failed_p)
+MPIG_STATIC int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * const rreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq;
@@ -860,16 +826,15 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
     int rreq_cnt;
     MPI_Datatype sreq_dt;
     MPIU_Size_t data_size;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_vc_recv_any_source);
 
     MPIG_UNUSED_VAR(fcname);
-    MPIG_UNUSED_ARG(comm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_vc_recv_any_source);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
-	", rreqp=" MPIG_PTR_FMT ", comm=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc, rreq->handle,
-	(MPIG_PTR_CAST) rreq, (MPIG_PTR_CAST) comm, *mpi_errno_p));
-    *failed_p = FALSE;
+	", rreqp=" MPIG_PTR_FMT ", comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc, rreq->handle,
+	(MPIG_PTR_CAST) rreq, rreq->comm->handle, (MPIG_PTR_CAST) rreq->comm));
 	
     sreq = rreq->partner_request;
     MPIU_Assertp(sreq != NULL);
@@ -905,10 +870,10 @@ MPIG_STATIC void mpig_cm_self_vc_recv_any_source(
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc= " MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
-	", rreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT ",failed=%s", (MPIG_PTR_CAST) vc,  rreq->handle,
-	(MPIG_PTR_CAST) rreq, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	", rreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc,  rreq->handle, (MPIG_PTR_CAST) rreq,
+	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_vc_recv_any_source);
-    return;
+    return mpi_errno;
 }
 /* mpig_cm_self_vc_recv_any_source() */
 /**********************************************************************************************************************************

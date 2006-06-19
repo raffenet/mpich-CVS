@@ -97,8 +97,6 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t inuse;
-    int errors = 0;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_VCRT_RELEASE);
 
@@ -120,29 +118,18 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	
 	for (p = 0; p < vcrt->size; p++)
 	{
-	    mpig_vc_release_ref(vcrt->vcr_table[p], &mpi_errno, &failed);
-	    if (failed) errors++;
+	    mpig_vc_release_ref(vcrt->vcr_table[p]);
 	}
 	
 	vcrt->size = 0;
 	MPIU_Free(vcrt);
     }
 
-    MPIU_ERR_CHKANDJUMP1((errors > 0), mpi_errno, MPI_ERR_OTHER, "**globus|vc_release_ref",
-	"**globus|vc_release_ref_n %d", errors);
-
-  fn_return:
+    /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_VC, "exiting: vcrt=" MPIG_PTR_FMT
 	"mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vcrt, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
-
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
-	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
 }
 /* MPID_VCRT_Release() */
 
@@ -189,7 +176,6 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t vc_was_inuse;
-    bool_t failed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_VCR_DUP);
 
@@ -201,10 +187,11 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr_p)
 
     mpig_vc_mutex_lock(orig_vcr);
     {
-	mpig_vc_inc_ref_count(orig_vcr, &vc_was_inuse, &mpi_errno, &failed);
+	mpig_vc_inc_ref_count(orig_vcr, &vc_was_inuse);
     }
     mpig_vc_mutex_unlock(orig_vcr);
-    /* if (vc_was_inuse == FALSE) mpig_pg_add_ref(pg); -- not necessary since orig_vcr would already hold a ref to the PG */
+    /* if (vc_was_inuse == FALSE) mpig_pg_add_ref(pg); -- not necessary since orig_vcr already has a reference to the VC and thus
+       'vc_was_inuse' will always be true.  */
 
     *new_vcr_p = orig_vcr;
     
@@ -252,7 +239,7 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_p)
 
 
 /*
- * void mpig_vc_release_ref([IN/MOD] vc)
+ * <void> mpig_vc_release_ref([IN/MOD] vc)
  *
  * Paramters:
  *
@@ -263,7 +250,7 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_p)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_vc_release_ref
-void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t * const failed_p)
+void mpig_vc_release_ref(mpig_vc_t * const vc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t vc_inuse;
@@ -279,11 +266,10 @@ void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t *
     mpig_vc_mutex_lock(vc);
     {
 	pg = mpig_vc_get_pg(vc);
-	mpig_vc_dec_ref_count(vc, &vc_inuse, mpi_errno_p, failed_p);
+	mpig_vc_dec_ref_count(vc, &vc_inuse);
     }
     mpig_vc_mutex_unlock(vc);
 
-    if (*failed_p) goto fn_fail;
     /*
      * note: a communication module may decide that a VC is still in use even if the VC's reference count has reached zero.  for
      * example: this can occur when a shutdown protocol is required to cleanly terminate the underlying connection, and the
@@ -292,18 +278,11 @@ void mpig_vc_release_ref(mpig_vc_t * const vc, int * const mpi_errno_p, bool_t *
      */
     if (vc_inuse == FALSE) mpig_pg_release_ref(pg);
     
-  fn_return:
+    /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC, "exiting: vc=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT ", failed=%s", (MPIG_PTR_CAST) vc, *mpi_errno_p, MPIG_BOOL_STR(*failed_p)));
+	", vc_inuse=%s", (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(vc_inuse)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_vc_release_ref);
     return;
-    
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    {
-	goto fn_return;
-    }
-    /* --END ERROR HANDLING-- */
 }
 
 

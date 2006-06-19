@@ -65,110 +65,98 @@ mpig_cm_type_t;
 #define MPIG_CM_NUM_TYPES (MPIG_CM_TYPE_LAST - MPIG_CM_TYPE_FIRST - 2)
 
 /*
- * mpig_cm_init([IN/OUT] argc, [IN/OUT] argv, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_init([IN/OUT] argc, [IN/OUT] argv)
  *
  * Parameters:
  *
- * argc [IN/OUT] - number of arguments in the argv array.  this may be modified communication module.
+ *   argc [IN/OUT] - number of arguments in the argv array.  this may be modified communication module.
  *
- * argv [IN/OUT] - array of command line arguments.  arguments may be added or removed as appropriate.
+ *   argv [IN/OUT] - array of command line arguments.  arguments may be added or removed as appropriate.
  *
- * mpi_errno [IN/OUT] - MPI error code
- *
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * Returns: a MPI error code
  */
-typedef void (*mpig_cm_init_fn_t)(int * argc, char *** argv, int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_cm_init_fn_t)(int * argc, char *** argv);
 
 /*
- * mpig_cm_finalize([IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_finalize(void)
  *
  * shutdown down the communication module.  all pending communication using this module must complete before the routine returns.
  *
- * Parameters:
+ * Parameters: (none)
  *
- * mpi_errno [IN/OUT] - MPI error code
- *
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * Returns: a MPI error code
  */
-typedef void (*mpig_cm_finalize_fn_t)(int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_cm_finalize_fn_t)(void);
 
 /*
- * mpig_cm_add_contact_info([IN/MOD] bc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_add_contact_info([IN/MOD] bc)
  *
  * Add contact information for the current process to the supplied business card.
  *
  * Parameters:
  *
- * bc [IN/MOD] - business card object in which to store contact information for this process
+ *   bc [IN/MOD] - business card object in which to store contact information for this process
  *
- * mpi_errno [IN/OUT] - MPI error code
- *
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * Returns: a MPI error code
  */
-typedef void (*mpig_cm_add_contact_info_fn_t)(struct mpig_bc * bc, int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_cm_add_contact_info_fn_t)(struct mpig_bc * bc);
 
 /*
- * mpig_cm_extract_contact_info([IN/MOD] vc, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_extract_contact_info([IN/MOD] vc)
  *
  * extract contact information from the business card and store it in machine processable form
  *
- * NOTE: this routine assumes the that business card has been attached to the VC
- *
  * Parameters:
  *
- * vc [IN/MOD] - vc object in which to place contact information
+ *   vc [IN/MOD] - vc object in which to place contact information
  *
- * mpi_errno [IN/OUT] - MPI error code
+ * Returns: a MPI error code
  *
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * NOTE: this routine assumes the that business card has been attached to the VC
  */
-typedef void (*mpig_cm_extract_contact_info_fn_t)(struct mpig_vc * vc, int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_cm_extract_contact_info_fn_t)(struct mpig_vc * vc);
 
 /*
- * void mpig_cm_select_module([IN/MOD] vc, [OUT] selected, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_select_module([IN/MOD] vc, [OUT] selected)
  *
  * determine if the current process can use the communication module to communicate with the process associated with the supplied
  * VC.  if it can, then the VC will be initialized accordingly.  if the VC has already been selected by another communication
  * module, the routine will return with 'selected' equal to FALSE.
  *
- * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called
- *
  * Parameters:
  *
- * vc [IN] - vc object to initialize if the communication module is capable of performing communication with the process
+ *   vc [IN] - vc object to initialize if the communication module is capable of performing communication with the process
  *
- * selected [OUT] - TRUE if the communication module can communicate with the remote process; otherwise FALSE
+ *   selected [OUT] - TRUE if the communication module can communicate with the remote process; otherwise FALSE
  *
- * mpi_errno [IN/OUT] - MPI error code
+ * Returns: a MPI error code
  *
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called
  */
-typedef void (*mpig_cm_select_module_fn_t)(struct mpig_vc * vc, bool_t * selected, int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_cm_select_module_fn_t)(struct mpig_vc * vc, bool_t * selected);
 
 /*
- * void mpig_cm_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out, [IN/OUT] mpi_errno, [OUT] failed)
+ * <mpi_errno> mpig_cm_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out)
  *
  * determine if the two VCs supplied to the routine are capable of communicating at any of the predefined topology levels using
  * the communication module.
  *
- * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called for both VCs
- *
  * Parameters:
  *
- * vc1 [IN] - first VC
+ *   vc1 [IN] - first VC
  *
- * vc2 [IN[ - second VC
+ *   vc2 [IN[ - second VC
  *
- * levels_in [IN] - a bitmask defining the topology levels of interest
+ *   levels_in [IN] - a bitmask defining the topology levels of interest
  *
- * levels_out [OUT] - a bitmask containing the topology levels are shared by the two VCs (a subset of levels_in)
+ *   levels_out [OUT] - a bitmask containing the topology levels are shared by the two VCs (a subset of levels_in)
  *
- * mpi_errno [IN/OUT] - MPI error code
+ * Returns: a MPI error code
  *
- * failed [OUT] - TRUE if the routine failed; FALSE otherwise
+ * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called for both VCs
  */
-typedef void (*mpig_cm_get_vc_compatability_fn_t)(const struct mpig_vc * vc1, const struct mpig_vc * vc2,
-    unsigned levels_in, unsigned * levels_out, int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_cm_get_vc_compatability_fn_t)(const struct mpig_vc * vc1, const struct mpig_vc * vc2,
+    unsigned levels_in, unsigned * levels_out);
 
 typedef char * (*mpig_cm_vtable_last_entry_fn_t)(int foo, float bar, const short * baz, char bif);
 
@@ -617,39 +605,38 @@ mpig_bc_t;
 						BEGIN VIRTUAL CONNECTION SECTION
 **********************************************************************************************************************************/
 typedef int (*mpig_vc_adi3_send_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					 int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_isend_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					  int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_rsend_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					  int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_irsend_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					   int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_ssend_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					  int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_issend_fn_t)(const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					   int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_recv_fn_t)(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					 int ctxoff, MPI_Status * status, struct MPID_Request ** reqp);
+    int ctxoff, MPI_Status * status, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_irecv_fn_t)(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
-					  int ctxoff, struct MPID_Request ** reqp);
+    int ctxoff, struct MPID_Request ** reqp);
 
 typedef int (*mpig_vc_adi3_cancel_recv_fn_t)(struct MPID_Request * rreq);
 	     
 typedef int (*mpig_vc_adi3_cancel_send_fn_t)(struct MPID_Request * sreq);
 	     
-typedef void (*mpig_vc_recv_any_source_fn_t)(struct mpig_vc * vc, struct MPID_Request * rreq, struct MPID_Comm * comm,
-						int * mpi_errno_p, bool_t * failed_p);
+typedef int (*mpig_vc_recv_any_source_fn_t)(struct mpig_vc * vc, struct MPID_Request * rreq);
 
-typedef void (*mpig_vc_inc_ref_count_fn_t)(struct mpig_vc * vc, bool_t * was_inuse, int * mpi_errno_p, bool_t * failed_p);
+typedef void(*mpig_vc_inc_ref_count_fn_t)(struct mpig_vc * vc, bool_t * was_inuse);
 
-typedef void (*mpig_vc_dec_ref_count_fn_t)(struct mpig_vc * vc, bool_t * inuse, int * mpi_errno_p, bool_t * failed_p);
+typedef void (*mpig_vc_dec_ref_count_fn_t)(struct mpig_vc * vc, bool_t * inuse);
 
 typedef void (*mpig_vc_destruct_fn_t)(struct mpig_vc * vc);
 
