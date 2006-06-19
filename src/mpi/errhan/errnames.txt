@@ -14,6 +14,7 @@
 **nomem %d:Out of memory (unable to allocate %d bytes)
 **nomem2:Unable to allocate memory (probably out of memory)
 **nomem2 %d %s:Unable to allocate %d bytes of memory for %s (probably out of memory)
+**notimp:Function not implemented
 **notimpl:Function not implemented
 **notimpl %s:Function %s not implemented
 **nullptr:Null pointer
@@ -942,10 +943,9 @@ with MPI_Alloc_mem.
 **globus|bc_deserialize:globus|bc_deserialize
 **globus|bc_get_contact:globus|bc_get_contact
 **globus|bc_get_contact %s:globus|bc_get_contact -- %s
-**globus|bc_init:failed to initialize the business card module
 **globus|bc_serialize:globus|bc_serialize
 **globus|cancel_completed_sreq:globus|cancel_completed_sreq
-**globus|cancel_completed_sreq %p:globus|cancel_completed_sreq -- %p
+**globus|cancel_completed_sreq %R %p:globus|cancel_completed_sreq -- %R %p
 **globus|cm_add_contact:an error occurred while a communication module was adding its contact information to the business card
 **globus|cm_add_contact %s:an error occurred while the '%s' communication module was adding its contact information to the business card
 **globus|cm_extract_contact:globus|cm_extract_contact
@@ -956,22 +956,19 @@ with MPI_Alloc_mem.
 **globus|cm_init %s:an error occured while initializing the '%s' communication module
 **globus|cm_no_module:globus|cm_no_module
 **globus|cm_no_module %s %d:globus|cm_no_module -- %s %d
-**globus|cm_other_invalid_dest:destination rank may only be MPI_ANY_SOURCE or MPI_PROC_NULL
-**globus|cm_other_invalid_dest %d:destination rank may only be MPI_PROC_NULL, not %d
-**globus|cm_other_invalid_src:source rank may only be MPI_ANY_SOURCE or MPI_PROC_NULL
-**globus|cm_other_invalid_src %d:source rank may only be MPI_ANY_SOURCE or MPI_PROC_NULL, not %d
-**globus|cm_other_send_any_source:MPI_ANY_SOURCE is not a valid destination
 **globus|cm_other|recv_any_source:globus|cm_other|recv_any_source
 **globus|cm_other|vc_recv_any_source:globus|cm_other|vc_recv_any_source
 **globus|cm_select_module:an error ocurred when a communication module was asked to perform selection
 **globus|cm_select_module %s %s %d:an error ocurred when the '%s' communication module was asked to perform selection for process %s:%d
-**globus|cm_self_hostname:globus|cm_self_hostname
+**globus|cm_self|hostname:globus|cm_self_hostname
 **globus|cm_vmpi|progress_add_req:a error occurred while adding a vendor MPI request to the request tracking array
 **globus|cm_vmpi|progress_add_req %R %p:a error occurred while adding a vendor MPI request to the request tracking array: req_handle=%R, req_ptr=%p
 **globus|cm_vmpi|uuid_create:an error occurred while attempting to create a UUID
 **globus|cm_vmpi|uuid_create %s:an error occurred while attempting to create a UUID -- %s
-**globus|cm_xio_server_multiple_fail:the XIO communication module encountered too many errors while accepting connections from the listener
-**globus|cm_xio_ver:the 'xio' communication module detected a protocol incompatibility
+**globus|cm_xio_vc|corrupt:globus|cm_xio_vc|corrupt
+**globus|cm_xio|client_connect:globus|cm_xio|client_connect
+**globus|cm_xio|client_handle_create:attempt to create an XIO handle failed
+**globus|cm_xio|client_handle_create %s:attempt to create an XIO handle failed: %s
 **globus|cm_xio|client_handle_open:globus|cm_xio|client_handle_open
 **globus|cm_xio|client_handle_open %p %s %d %s:globus|cm_xio|client_handle_open -- %p %s %d %s
 **globus|cm_xio|client_handle_recv_magic:globus|cm_xio|client_handle_recv_magic
@@ -982,23 +979,44 @@ with MPI_Alloc_mem.
 **globus|cm_xio|client_magic_mismatch %p %s %d:globus|cm_xio|client_magic_mismatch -- %p %s %d
 **globus|cm_xio|client_reg_recv_magic:globus|cm_xio|client_reg_recv_magic
 **globus|cm_xio|client_reg_recv_magic %p:globus|cm_xio|client_reg_recv_magic -- %p
+**globus|cm_xio|client_reg_recv_open_conn_resp:globus|cm_xio|client_reg_recv_open_conn_resp
 **globus|cm_xio|client_reg_recv_open_req:globus|cm_xio|client_reg_recv_open_req
 **globus|cm_xio|client_reg_recv_open_req %p %s %d:globus|cm_xio|client_reg_recv_open_req -- %p %s %d
 **globus|cm_xio|client_reg_send_magic:globus|cm_xio|client_reg_send_magic
 **globus|cm_xio|client_reg_send_magic %p:globus|cm_xio|client_reg_send_magic -- %p
+**globus|cm_xio|client_reg_send_open_req:globus|cm_xio|client_reg_send_open_req
+**globus|cm_xio|client_reg_send_open_req %p %s %d:globus|cm_xio|client_reg_send_open_req -- %p %s %d
+**globus|cm_xio|conn_attr_add:globus|cm_xio|conn_attr_add
+**globus|cm_xio|conn_attr_add %s %s:globus|cm_xio|conn_attr_add -- %s %s
+**globus|cm_xio|conn_attr_create:globus|cm_xio|conn_attr_create
+**globus|cm_xio|conn_attr_create %s %s:globus|cm_xio|conn_attr_create -- %s %s
+**globus|cm_xio|conn_attr_destroy:globus|cm_xio|conn_attr_destroy
+**globus|cm_xio|conn_attr_destroy %s:globus|cm_xio|conn_attr_destroy -- %s
+**globus|cm_xio|conn_driver_destroy_load_transform %s %s:globus|cm_xio|conn_driver_destroy_load_transform -- %s %s
+**globus|cm_xio|conn_driver_destroy_load_transport %s %s:globus|cm_xio|conn_driver_destroy_load_transport -- %s %s
+**globus|cm_xio|conn_driver_destroy_unload_transport %s %s:globus|cm_xio|conn_driver_destroy_unload_transport -- %s %s
+**globus|cm_xio|conn_driver_load_transform:globus|cm_xio|conn_driver_load_transform
+**globus|cm_xio|conn_driver_load_transport:globus|cm_xio|conn_driver_load_transport
+**globus|cm_xio|conn_driver_unload_transport:globus|cm_xio|conn_driver_unload_transport
 **globus|cm_xio|conn_finalize:globus|cm_xio|conn_finalize
 **globus|cm_xio|conn_init:globus|cm_xio|conn_init
+**globus|cm_xio|conn_stack_destroy:globus|cm_xio|conn_stack_destroy
+**globus|cm_xio|conn_stack_destroy %s:globus|cm_xio|conn_stack_destroy -- %s
+**globus|cm_xio|conn_stack_init:globus|cm_xio|conn_stack_init
+**globus|cm_xio|conn_stack_init %s:globus|cm_xio|conn_stack_init -- %s
+**globus|cm_xio|conn_stack_push_driver:globus|cm_xio|conn_stack_push_driver
+**globus|cm_xio|conn_stack_push_driver %s %s:globus|cm_xio|conn_stack_push_driver -- %s %s
+**globus|cm_xio|conn_tmp_vc_destroy:globus|cm_xio|tmp_vc_destroy
 **globus|cm_xio|connect:globus|cm_xio|connect
-**globus|cm_xio|disconnect_enq_close_msg:globus|cm_xio|disconnect_enq_close_msg
 **globus|cm_xio|disconnect_handle_close:globus|cm_xio|disconnect_handle_close
 **globus|cm_xio|disconnect_handle_close %s:globus|cm_xio|disconnect_handle_close -- %s
 **globus|cm_xio|disconnect_handle_send_close_msg:globus|cm_xio|disconnect_handle_send_close_msg
 **globus|cm_xio|disconnect_handle_send_close_msg %s:globus|cm_xio|disconnect_handle_send_close_msg -- %s
-**globus|cm_xio|disonnect_enq_close_msg:an error occurred while sending a connection close message
-**globus|cm_xio|listen:globus|cm_xio|listen
+**globus|cm_xio|disconnect_send_enq_close_msg:globus|cm_xio|disconnect_send_enq_close_msg
 **globus|cm_xio|msg_handler:globus|cm_xio|msg_handler
-**globus|cm_xio|null_vc_handle_close:globus|cm_xio|reg_close_null
-**globus|cm_xio|null_vc_handle_close %s:globus|cm_xio|reg_close_null -- %s
+**globus|cm_xio|port_list_insert:globus|cm_xio|port_list_insert
+**globus|cm_xio|port_name_too_long:globus|cm_xio|port_name_too_long
+**globus|cm_xio|port_name_too_long %d %d:globus|cm_xio|port_name_too_long -- %d %d
 **globus|cm_xio|rcq_deq_test:globus|cm_xio|rcq_deq_test
 **globus|cm_xio|rcq_deq_wait:globus|cm_xio|rcq_deq_wait
 **globus|cm_xio|rcq_finalize:globus|cm_xio|rcq_finalize
@@ -1007,10 +1025,9 @@ with MPI_Alloc_mem.
 **globus|cm_xio|recv_handle_incoming_msg %s:globus|cm_xio|recv_handle_incoming_msg -- %s
 **globus|cm_xio|recv_handle_read_msg_data %s:globus|cm_xio|recv_handle_read_msg_data -- %s
 **globus|cm_xio|recv_handle_xio_read_msg_data:globus|cm_xio|recv_handle_xio_read_msg_data
+**globus|cm_xio|recv_next_msg:attempt to post a receive for the next incoming message failed
 **globus|cm_xio|reg_read_rreq:globus|cm_xio|reg_read_rreq
 **globus|cm_xio|reg_read_vc_msgbuf:globus|cm_xio|reg_read_vc_msgbuf
-**globus|cm_xio|reg_send_open_resp:globus|cm_xio|reg_send_open_resp
-**globus|cm_xio|reg_send_open_resp %p %s %d:globus|cm_xio|reg_send_open_resp -- %p %s %d
 **globus|cm_xio|reg_write_sreq:globus|cm_xio|reg_write_sreq
 **globus|cm_xio|req_recv_state:globus|cm_xio|req_recv_state
 **globus|cm_xio|req_recv_state %s:globus|cm_xio|req_recv_state -- %s
@@ -1023,32 +1040,34 @@ with MPI_Alloc_mem.
 **globus|cm_xio|send_enq_sreq:globus|cm_xio|send_enq_sreq
 **globus|cm_xio|send_enq_ssend_ack_msg:globus|cm_xio|send_enq_ssend_ack_msg
 **globus|cm_xio|send_handle_msg_data:globus|cm_xio|send_handle_msg_data
-**globus|cm_xio|send_handle_open_resp_ack_msg:globus|cm_xio|send_handle_open_resp_ack_msg
-**globus|cm_xio|send_handle_open_resp_ack_msg %p %s:globus|cm_xio|send_handle_open_resp_ack_msg -- %p %s
 **globus|cm_xio|send_handle_write_contro_msg %s:globus|cm_xio|send_handle_write_contro_msg -- %s
 **globus|cm_xio|send_handle_write_control_msg:globus|cm_xio|send_handle_write_control_msg
 **globus|cm_xio|send_handle_write_msg_data %s:globus|cm_xio|send_handle_write_msg_data -- %s
-**globus|cm_xio|send_next_sreq:globus|cm_xio|send_next_sreq
+**globus|cm_xio|send_next_sreq:attempt to send the next request on the send queue failed
+**globus|cm_xio|server_create:globus|cm_xio|server_create
+**globus|cm_xio|server_create %s:globus|cm_xio|server_create -- %s
+**globus|cm_xio|server_get_cs:globus|cm_xio|server_get_cs
+**globus|cm_xio|server_get_cs %s:globus|cm_xio|server_get_cs -- %s
 **globus|cm_xio|server_handle_connection:globus|cm_xio|server_handle_connection
 **globus|cm_xio|server_handle_connection %s:globus|cm_xio|server_handle_connection -- %s
-**globus|cm_xio|server_handle_recv_magic:globus|cm_xio|server_handle_recv_magic
-**globus|cm_xio|server_handle_recv_magic %p %s:globus|cm_xio|server_handle_recv_magic -- %p %s
-**globus|cm_xio|server_handle_recv_open_req:globus|cm_xio|server_handle_recv_open_req
-**globus|cm_xio|server_handle_recv_open_req %p %s:globus|cm_xio|server_handle_recv_open_req -- %p %s
-**globus|cm_xio|server_handle_send_magic:globus|cm_xio|server_handle_send_magic
-**globus|cm_xio|server_handle_send_magic %p %s:globus|cm_xio|server_handle_send_magic -- %p %s
-**globus|cm_xio|server_handle_send_open_resp_error:globus|cm_xio|server_handle_send_open_resp_error
-**globus|cm_xio|server_handle_send_open_resp_error %s:globus|cm_xio|server_handle_send_open_resp_error -- %s
-**globus|cm_xio|server_handle_send_open_resp_nak:globus|cm_xio|server_handle_send_open_resp_nak
-**globus|cm_xio|server_handle_send_open_resp_nak %s:globus|cm_xio|server_handle_send_open_resp_nak -- %s
-**globus|cm_xio|server_magic_mismatch:globus|cm_xio|server_magic_mismatch
-**globus|cm_xio|server_magic_mismatch %p:globus|cm_xio|server_magic_mismatch -- %p
-**globus|cm_xio|server_multiple_failures:globus|cm_xio|server_multiple_failures
+**globus|cm_xio|server_handle_recv_open_port_req:globus|cm_xio|server_handle_recv_open_port_req
+**globus|cm_xio|server_handle_recv_open_vc_req:globus|cm_xio|server_handle_recv_open_vc_req
+**globus|cm_xio|server_handle_send_open_error_resp:globus|cm_xio|server_handle_send_open_error_resp
+**globus|cm_xio|server_handle_send_open_error_resp %s:globus|cm_xio|server_handle_send_open_error_resp -- %s
+**globus|cm_xio|server_handle_send_open_resp_vc_nak:globus|cm_xio|server_handle_send_open_resp_vc_nak
+**globus|cm_xio|server_handle_send_open_resp_vc_nak %s:globus|cm_xio|server_handle_send_open_resp_vc_nak -- %s
+**globus|cm_xio|server_listen:globus|cm_xio|server_listen
+**globus|cm_xio|server_multiple_failures:the XIO communication module encountered too many errors while accepting connections from the listener
 **globus|cm_xio|server_reg_recv_magic:globus|cm_xio|server_reg_recv_magic
 **globus|cm_xio|server_reg_recv_open_req:globus|cm_xio|server_reg_recv_open_req
-**globus|cm_xio|server_reg_recv_open_req %p:globus|cm_xio|server_reg_recv_open_req -- %p
 **globus|cm_xio|server_reg_send_magic:globus|cm_xio|server_reg_send_magic
-**globus|cm_xio|server_reg_send_magic %p:globus|cm_xio|server_reg_send_magic -- %p
+**globus|cm_xio|server_reg_send_open_error_resp:globus|cm_xio|server_reg_send_open_error_resp
+**globus|cm_xio|server_reg_send_open_resp:globus|cm_xio|server_reg_send_open_resp
+**globus|cm_xio|server_reg_send_open_resp %s:globus|cm_xio|server_reg_send_open_resp -- %s
+**globus|cm_xio|server_reg_send_open_resp_vc_ack:globus|cm_xio|server_reg_send_open_resp_vc_ack
+**globus|cm_xio|server_reg_send_open_resp_vc_error:globus|cm_xio|server_reg_send_open_resp_vc_error
+**globus|cm_xio|server_reg_send_open_resp_vc_nak:globus|cm_xio|server_reg_send_open_resp_vc_nak
+**globus|cm_xio|stream_req_init:globus|cm_xio|stream_req_init
 **globus|cm_xio|stream_rreq_init:globus|cm_xio|stream_rreq_init
 **globus|cm_xio|stream_rreq_unpack:globus|cm_xio|stream_rreq_unpack
 **globus|cm_xio|stream_rreq_unpack_vc_msgbuf:globus|cm_xio|stream_rreq_unpack_vc_msgbuf
@@ -1056,9 +1075,11 @@ with MPI_Alloc_mem.
 **globus|cm_xio|stream_sreq_pack:globus|cm_xio|stream_sreq_pack
 **globus|cm_xio|stream_trunc:globus|cm_xio|stream_trunc
 **globus|cm_xio|tmp_vc_destroy:globus|cm_xio|tmp_vc_destroy
-**globus|cm_xio|tmp_vc_destroy %p:globus|cm_xio|tmp_vc_destroy -- %p
 **globus|cm_xio|vc_connection:globus|cm_xio|vc_connection
 **globus|cm_xio|vc_connection %s %d %s:globus|cm_xio|vc_connection -- %s %d %s
+**globus|cm_xio|vc_corrupt %p:globus|cm_xio|vc_corrupt -- %p
+**globus|cm_xio|vc_uninit:globus|cm_xio|vc_uninit
+**globus|cm_xio|vc_uninit %p:globus|cm_xio|vc_uninit -- %p
 **globus|cm_xio|xio_close_server:globus|cm_xio|xio_close_server
 **globus|cm_xio|xio_close_server %s:globus|cm_xio|xio_close_server -- %s
 **globus|cm_xio|xio_reg_close:globus|cm_xio|xio_reg_close
@@ -1073,13 +1094,8 @@ with MPI_Alloc_mem.
 **globus|cm_xio|xio_reg_write %s:globus|cm_xio|xio_reg_write -- %s
 **globus|cm_xio|xio_reg_writev:globus|cm_xio|xio_reg_writev
 **globus|cm_xio|xio_reg_writev %s:globus|cm_xio|xio_reg_writev -- %s
-**globus|cm_xio|xio_server_create:globus|cm_xio|xio_server_create
-**globus|cm_xio|xio_server_create %s:globus|cm_xio|xio_server_create -- %s
-**globus|cm_xio|xio_server_listen:globus|cm_xio|xio_server_listen
 **globus|cm_xio|xio_server_reg_accept:globus|cm_xio|xio_server_reg_accept
 **globus|cm_xio|xio_server_reg_accept %s:globus|cm_xio|xio_server_reg_accept -- %s
-**globus|cm_xio|xio_stack_create:globus|cm_xio|xio_stack_create
-**globus|cm_xio|xio_stack_create %s:globus|cm_xio|xio_stack_create -- %s
 **globus|comm_create_key:globus|comm_create_key
 **globus|comm_create_key %s:globus|comm_create_key -- %s
 **globus|comm_destroy_key:globus|comm_destroy_key
@@ -1088,15 +1104,27 @@ with MPI_Alloc_mem.
 **globus|comm_set_attr:globus|comm_set_attr
 **globus|comm_set_attr %s:globus|comm_set_attr -- %s
 **globus|cond_destroy:an error occurred while destroying a condition variable 
-**globus|cond_destroy %d:globus|cond_destroy -- %d
-**globus|cond_destroy %s:an error occurred while destroying the condition variable associated with a %s object
+**globus|cond_destroy %s:globus|cond_destroy -- %s
 **globus|cond_init:an error occurred while initializing a condition variable 
-**globus|cond_init %d:globus|cond_init -- %d
-**globus|cond_init %s:an error occurred while initializing the condition variable associated with a %s object
+**globus|cond_init %s:globus|cond_init -- %s
+**globus|conn_handle_close:globus|conn_handle_close
+**globus|conn_handle_close %s:globus|conn_handle_close -- %s
+**globus|connacc|bcast_vct_data:globus|connacc|bcast_vct_data
+**globus|connacc|bcast_vct_size:globus|connacc|bcast_vct_size
+**globus|connacc|bcast_vct_size_error:globus|connacc|bcast_vct_size_error
+**globus|connacc|close_port:globus|connacc|close_port
+**globus|connacc|close_port %s:globus|connacc|close_port -- %s
+**globus|connacc|conn_accept:globus|connacc|conn_accept
+**globus|connacc|conn_recv:globus|connacc|conn_recv
+**globus|connacc|conn_send:globus|connacc|conn_send
+**globus|connacc|ctxalloc:globus|connacc|ctxalloc
+**globus|connacc|open_port:globus|connacc|open_port
+**globus|connacc|open_port %p %p:globus|connacc|open_port -- %p %p
 **globus|datatype_bc_to_cmap:globus|datatype_bc_to_cmap
 **globus|datatype_cmap %s %d:globus|datatype_cmap -- %s %d
 **globus|datatype_cmap_to_bc:globus|datatype_cmap_to_bc
 **globus|failed:globus|failed
+**globus|fifo_enq:globus|fifo_enq
 **globus|gc_copy:globus|gc_copy
 **globus|get_vc_compatability:globus|get_vc_compatability
 **globus|get_vc_compatability %s:globus|get_vc_compatability -- %s
@@ -1106,13 +1134,10 @@ with MPI_Alloc_mem.
 **globus|module_deactivate:attempt to deactivate a Globus module failed
 **globus|module_deactivate %s:attempt to deactivate the Globus %s module failed
 **globus|module_deactivate %s %s:globus|module_deactivate -- %s %s
-**globus|mpi_comm_size:globus|mpi_comm_size
 **globus|mutex_destroy:an error occurred while destroying a mutex
-**globus|mutex_destroy %d:globus|mutex_destroy -- %d
-**globus|mutex_destroy %s:an error occurred while destroying the mutex associated with a %s object
+**globus|mutex_destroy %s:globus|mutex_destroy -- %s
 **globus|mutex_init:an error occurred while initializing a mutex 
-**globus|mutex_init %d:globus|mutex_init -- %d
-**globus|mutex_init %s:an error occurred while initializing the mutex associated with a %s object
+**globus|mutex_init %s:globus|mutex_init -- %s
 **globus|pe_test:globus|pe_test
 **globus|pe_test %s:globus|pe_test -- %s
 **globus|pe_wait:globus|pe_wait
@@ -1147,45 +1172,27 @@ with MPI_Alloc_mem.
 **globus|pm_gk_sj_index_atoi %s:globus|pm_gk_sj_index_atoi -- %s
 **globus|pm_init:an error occurred while initializing the process management module
 **globus|pm_no_exchange:globus|pm_no_exchange
-**globus|pm_no_pg_id:globus|the process group id is not yet known
-**globus|pm_no_pg_rank:globus|the process group rank is not yet known
-**globus|pm_no_pg_size:globus|the process group size is not yet known
+**globus|pm_no_module:globus|pm_no_module
 **globus|pm_not_init:attempt to use the process manangement module before initialization
-**globus|pm_pg_id_acquire:an error occurred while attempting to acquire the process group id
 **globus|pm_pg_id_create:an error occurred while attempting to create a process group id
 **globus|pm_xchg:an error occurred while exchanging business cards with the other processes
 **globus|recvq_finalize:an error occurred while shutting down the receive queue module
 **globus|recvq_init:an error occurred while initializing the receive queue module
 **globus|request_get_ptr:globus|request_get_ptr
 **globus|request_get_ptr %R:globus|request_get_ptr -- %R
-**globus|server_handle_open:globus|server_handle_open
-**globus|server_handle_open %s:globus|server_handle_open -- %s
+**globus|server_handle_open_resp_vc_ack:globus|server_handle_open_resp_vc_ack
+**globus|server_handle_open_resp_vc_ack %s:globus|server_handle_open_resp_vc_ack -- %s
 **globus|topology_comm_construct:globus|topology_comm_construct
 **globus|topology_comm_destruct:globus|topology_comm_destruct
 **globus|topology_finalize:globus|topology_finalize
 **globus|topology_init:globus|topology_init
-**globus|vc_bad_state:virtual connection state is not valid
-**globus|vc_bad_state %p %d:virtual connection state is not valid (vc=%p, state=%d)
-**globus|vc_inc_ref_count:an error occurred while incrementing the reference count of a virtual connection
 **globus|vc_ptr_bad:globus|vc_ptr_bad
 **globus|vc_ptr_bad %p:globus|vc_ptr_bad -- %p
-**globus|vc_release_ref:an error occurred while releasing the reference count of a virtual connection
-**globus|vc_release_ref %p:an error occurred while releasing the reference count of a virtual connection (vc=%p)
-**globus|vc_release_ref_n %d:an error occurred while releasing the reference counts on a set of a virtual connections (count=%d)
-**globus|vc_uninit:virtual connection is not initialized
-**globus|vc_uninit %p:virtual connection is not initialized (vc=%p)
 **globus|vmpi_fn_failed:globus|vmpi_fn_failed
 **globus|vmpi_fn_failed %s %s:globus|vmpi_fn_failed -- %s %s
-**globus|vmpi_get_comm_rank:attempt to obtain the rank of the process from a vendor MPI communicator failed
-**globus|vmpi_get_comm_size:attempt to obtain the size of a vendor MPI communicator failed
-**globus|vmpi_get_comm_world:attempt to obtain the vendor MPI_COMM_WORLD failed
 **globus|vmpi_init:an error occurred while initializing the vendor MPI
 **globus|vmpi_pe_init:globus|vmpi_pe_init
 **globus|vmpi_pe_table_inc_size:globus|vmpi_pe_table_inc_size
-**globus|xio_cm|recv_next_msg:globus|xio_cm|recv_next_msg
-**globus|xio_cm|send_next_sreq:globus|xio_cm|send_next_sreq
-**globus|xio_handle_create:globus|xio_handle_create
-**globus|xio_handle_create %s:globus|xio_handle_create -- %s
 
 #
 # Sock
