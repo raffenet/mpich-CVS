@@ -811,15 +811,24 @@ MPICH2 you are using.
 \subsection{\texttt{gdb} via \texttt{mpiexec}}
 \label{sec:gdb via mpiexec}
 
-If you are using the MPD process manager, you can use the
-\texttt{-gdb} argument to \texttt{mpiexec} to execute a program with
-each process running under the control of the \texttt{gdb} sequential
-debugger.  \texttt{-gdb} helps control the multiple instances of
-\texttt{gdb} by sending \texttt{stdin} either to all processes or to a
-selected process and by labeling and merging output.  The following
-script of a \texttt{-gdb} session gives an idea of how this works.
-Input keystrokes are sent to all processes unless specifially directed
-by the ``\texttt{z}'' command.
+If you are using the MPD process manager, you can use the \texttt{-gdb}
+argument to \texttt{mpiexec} to execute a program with each process
+running under the control of the \texttt{gdb} sequential debugger.
+The \texttt{-gdb} option helps control the multiple instances of
+\texttt{gdb} by sending \texttt{stdin} either to all processes or to
+a selected process and by labeling and merging output.  The current
+implementation has some minor limitations.  For example, we do not
+support setting your own prompt.  This is because we capture the \texttt{gdb}
+output and examine it before processing it, e.g. merging identical lines.
+Also, we set a breakpoint at the beginning of \texttt{main) to get all
+processes synchronized at the beginning.  Thus, the user will have a
+duplicate, unusable breakpoint if he sets one at the very first executable
+line of \texttt{main}.  Otherwise, to the extent possible, we try to simply
+pass user input through to \texttt{gdb} and lets things progress normally.
+
+The following script of a \texttt{-gdb} session gives an idea of how
+this works.  Input keystrokes are sent to all processes unless specifially
+directed by the ``\texttt{z}'' command.
 
 %
 % We need to make this tiny; small is still too big for the line lengths
