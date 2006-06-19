@@ -389,22 +389,14 @@ selected by putting
 
   --with-device=ch3:sshm
 
-on the configure command line.
+on the configure command line. *** We note that this channel has not been
+tested for this release (1.0.4) and hence may or may not build. ***
 
-The InfiniBand (ib) channel performs communication using an InfinBand
-network with HBAs that use a Mellanox chipset.  The ib channel may be
-selected by putting
+The InfiniBand (ib) channel has not been kept up to date in a long time
+and hence we have not included it in this release. If you need to use
+MPI on InfiniBand, we recommend using MVAPICH2 or MVAPICH from Ohio
+State Univ.   http://nowlab.cse.ohio-state.edu/projects/mpi-iba/
 
-  --with-device=ch3:ib --with-ib=vapi
-
-on the configure command line.  The channel presently only supports the
-Mellanox Verbs API, although support for the open source InfiniBand
-Access Layer (IBAL) API is nearly complete.  The Mellanox Verbs API is
-typically installed in /usr/mellanox.  The configure option
-
-  --with-ib-path=<vapi-path>
-
-may be used to specify an alternate location.
 
 The gasnet channel is implemented a channel for U.C. Berkeley's GASNet
 communication system, version 1.3.  This channel should be considered
