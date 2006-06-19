@@ -5,8 +5,7 @@ National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is a portable, high-performance implementation of
 the entire MPI-2 standard.  This release has all MPI-2 functions and
 features required by the standard with the exeption of support for the
-"external32" portable I/O format.  It also currently supports only a few
-communication methods.
+"external32" portable I/O format. 
 
 The distribution has been tested by us on a variety of machines in our
 own environments. If you have problems, please report them to
@@ -605,9 +604,7 @@ from the target.
 
 The dynamic process management routines (MPI_Comm_spawn,
 MPI_Comm_Connect, and MPI_Comm_Accept, and their relations) are
-supported but only for the sock channel.
-
-Name publishing is supported on shared file systems.
+supported, but only for the sock and ssm channels.
 
 The "singleton init" feature, whereby a process not started by mpiexec
 can become an MPI process, is supported under the mpd process manager.
@@ -615,9 +612,5 @@ can become an MPI process, is supported under the mpd process manager.
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
 
-The sock channel now has preliminary support for MPI_THREAD_SERIALIZED
-and MPI_THREAD_MULTIPLE on both UNIX and Microsoft Windows.  We have
-performed rudimentary testing; and while overall the results were very
-positive, known issues do exist.  ROMIO in particular experiences hangs
-in several places.  We plan to correct those issues in the next release.
-As always, please report any difficulties you encounter.
+Only the sock channel supports MPI_THREAD_SERIALIZED and MPI_THREAD_MULTIPLE.
+
