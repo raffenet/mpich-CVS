@@ -30,11 +30,11 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpid_services.c		\
     mpid_vc.c			\
     mpid_win.c			\
+    mpig_bc.c			\
     mpig_cm_other.c		\
     mpig_cm_self.c		\
     mpig_cm_vmpi.c		\
     mpig_cm_xio.c		\
-    mpig_bc.c			\
     mpig_comm.c			\
     mpig_misc.c			\
     mpig_pg.c			\

@@ -340,7 +340,7 @@ export MPIG_GLOBUS_THREADED
 #
 echo ${ECHO_N} "checking if Globus is built with debugging enabled... ${ECHO_C}"
 mpig_get_globus_setting MPIG_DEBUG debug
-echo "${ECHO_T}${mpig_debug}"
+echo "${ECHO_T}${MPIG_DEBUG}"
 if test "${MPIG_DEBUG}" = "no" ; then
     enable_fast=yes
     ac_configure_args="${ac_configure_args} --enable-fast"
@@ -364,7 +364,7 @@ export MPIG_DEBUG
 #
 echo ${ECHO_N} "checking if Globus is built for use with a vendor MPI... ${ECHO_C}"
 mpig_get_globus_setting MPIG_VMPI vmpi
-echo "${ECHO_T}${mpig_vmpi}"
+echo "${ECHO_T}${MPIG_VMPI}"
 export MPIG_VMPI
 
 # NOTE: doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require the
