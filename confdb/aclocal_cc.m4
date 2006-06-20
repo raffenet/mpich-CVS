@@ -1762,6 +1762,68 @@ if test -z "$pac_cv_c_max_fp_align" ; then
 fi
 ])
 dnl
+dnl Other tests assume that there is potentially a maximum alignment
+dnl and that if there is no maximum alignment, or a type is smaller than
+dnl that value, then we align on the size of the value, with the exception
+dnl of the "position-based alignment" rules we test for separately.
+dnl
+dnl It turns out that these assumptions have fallen short in at least one
+dnl case, on MacBook Pros, where doubles are aligned on 4-byte boundaries
+dnl even when long doubles are aligned on 16-byte boundaries. So this test
+dnl is here specifically to handle this case.
+dnl
+dnl Puts result in pac_cv_c_double_alignment_exception.
+dnl
+dnl Possible values currently include no and four.
+dnl
+AC_DEFUN(PAC_C_DOUBLE_ALIGNMENT_EXCEPTION,[
+AC_CACHE_CHECK([if double alignment breaks rules, find actual alignment],
+pac_cv_c_double_alignment_exception,[
+AC_TRY_RUN([
+#include <stdio.h>
+#define DBG(a,b,c)
+int main( int argc, char *argv[] )
+{
+    FILE *cf;
+    struct { char a; double b; } char_double;
+    struct { double b; char a; } double_char;
+    int extent1, extent2, align_4 = 0;
+
+    extent1 = sizeof(char_double);
+    extent2 = sizeof(double_char);
+
+    /* we're interested in the largest value, will let separate test
+     * deal with position-based issues.
+     */
+    if (extent1 < extent2) extent1 = extent2;
+    if ((sizeof(double) == 8) && (extent1 % 8) != 0) {
+       if (extent1 % 4 == 0) {
+#ifdef HAVE_MAX_FP_ALIGNMENT
+          if (HAVE_MAX_FP_ALIGNMENT >= 8) align_4 = 1;
+#else
+          align_4 = 1;
+#endif
+       }
+    }
+
+    cf = fopen( "ctest.out", "w" );
+
+    if (align_4) fprintf( cf, "four\n" );
+    else fprintf( cf, "no\n" );
+
+    fclose( cf );
+    return 0;
+}],
+pac_cv_c_double_alignment_exception=`cat ctest.out`,
+pac_cv_c_double_alignment_exception="unknown",
+pac_cv_c_double_alignment_exception="$CROSS_DOUBLE_ALIGNMENT_EXCEPTION")
+rm -f ctest.out
+])
+if test -z "$pac_cv_c_double_alignment_exception" ; then
+    pac_cv_c_double_alignment_exception="unknown"
+fi
+])
+dnl
 dnl
 dnl Test for odd struct alignment rule that only applies max.
 dnl padding when double value is at front of type.

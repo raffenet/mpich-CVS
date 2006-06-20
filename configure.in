@@ -2267,6 +2267,12 @@ if test "$pac_cv_c_llint_pos_align" = "yes" ; then
    AC_DEFINE_UNQUOTED(HAVE_LLINT_POS_ALIGNMENT,1,[Controls how alignment is applied based on position of long long ints in the structure])
 fi
 
+# Test for double alignment not following all our other carefully constructed rules
+PAC_C_DOUBLE_ALIGNMENT_EXCEPTION
+if test "$pac_cv_c_double_alignment_exception" = "four" ; then
+   AC_DEFINE_UNQUOTED(HAVE_DOUBLE_ALIGNMENT_EXCEPTION,4,[Controls how alignment of doubles is performed, separate from other FP values])
+fi
+
 # Test whether pointers can be aligned on a int boundary or require
 # a pointer boundary.
 AC_MSG_CHECKING([for alignment restrictions on pointers])

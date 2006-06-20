@@ -44,6 +44,12 @@ static int MPID_Type_struct_alignsize(int count,
 	{
 	    tmp_alignsize = MPID_Datatype_get_basic_size(oldtype_array[i]);
 
+#ifdef HAVE_DOUBLE_ALIGNMENT_EXCEPTION
+	    if (oldtype_array[i] == MPI_DOUBLE) {
+		tmp_alignsize = HAVE_DOUBLE_ALIGNMENT_EXCEPTION;
+	    }
+#endif
+
 	    switch(oldtype_array[i])
 	    {
 		case MPI_FLOAT:
