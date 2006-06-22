@@ -14,7 +14,6 @@
 **nomem %d:Out of memory (unable to allocate %d bytes)
 **nomem2:Unable to allocate memory (probably out of memory)
 **nomem2 %d %s:Unable to allocate %d bytes of memory for %s (probably out of memory)
-**notimp:Function not implemented
 **notimpl:Function not implemented
 **notimpl %s:Function %s not implemented
 **nullptr:Null pointer
