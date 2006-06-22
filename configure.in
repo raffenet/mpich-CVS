@@ -1535,34 +1535,48 @@ EOF
     # need this to find likely command-line arguments for accessing
     # shared libraries
     AC_MSG_CHECKING([for f90 compiler vendor])
+    # This is complicated by some compilers (such as the Intel 8.1 ifort)
+    # that return a non-zero status even when they accept the -V option
+    # (a zero status is returned only if there is a file).
+    pac_cv_f90_vendor="unknown"
     rm -f conftest.txt
     $F90 --version </dev/null >conftest.txt 2>&1
     if test "$?" != 0 ; then
+        rm -f conftest.txt
         # Put -V before -v because that's better for PGI and Solaris
         $F90 -V </dev/null >conftest.txt 2>&1 
         if test "$?" != 0 ; then 
-	    $F90 -v </dev/null  >conftest.txt 2>&1
-            if test "$?" != 0 ; then 
+	    # First check to see if we like the conftest file
+	    if test -s conftest.txt && \
+	             grep Intel conftest.txt 2>&1 >/dev/null ; then
+	         pac_cv_f90_vendor="intel"
+            fi
+            if test "$pac_cv_f90_vendor" = "unknown" ; then
 	        rm -f conftest.txt
+	        $F90 -v </dev/null  >conftest.txt 2>&1
+                if test "$?" != 0 ; then 
+	            rm -f conftest.txt
+                fi
             fi
         fi
     fi
     # Try to find the compiler information
     # Known limitation.  For the Intel compiler, -V with no program
     # returns status 1 and -v gives ONLY the version number
-    pac_cv_f90_vendor="unknown"
-    if grep 'Portland Group' conftest.txt >/dev/null 2>&1 ; then
-        pac_cv_f90_vendor=pgi
-    elif grep 'Sun Workshop' conftest.txt >/dev/null 2>&1 ; then
-        pac_cv_f90_vendor=sun
-    elif grep 'Absoft' conftest.txt >/dev/null 2>&1 ; then
-        pac_cv_f90_vendor=absoft
-    elif grep 'G95' conftest.txt >/dev/null 2>&1 ; then
-        pac_cv_f90_vendor=gnu
-    elif grep 'GNU Fortran' conftest.txt >/dev/null 2>&1 ; then
-        # This is gfortran
-        pac_cv_f90_vendor=gnu
-    elif test ! -f conftest.txt ; then
+    if test -f conftest.txt ; then
+        if grep 'Portland Group' conftest.txt >/dev/null 2>&1 ; then
+            pac_cv_f90_vendor=pgi
+        elif grep 'Sun Workshop' conftest.txt >/dev/null 2>&1 ; then
+            pac_cv_f90_vendor=sun
+        elif grep 'Absoft' conftest.txt >/dev/null 2>&1 ; then
+            pac_cv_f90_vendor=absoft
+        elif grep 'G95' conftest.txt >/dev/null 2>&1 ; then
+            pac_cv_f90_vendor=gnu
+        elif grep 'GNU Fortran' conftest.txt >/dev/null 2>&1 ; then
+            # This is gfortran
+            pac_cv_f90_vendor=gnu
+        fi
+    else 
         # Try to use the compiler name
         if test "$F90" = "ifort" -o "$F90" = "ifc" ; then 
             pac_cv_f90_vendor=intel
@@ -1588,6 +1602,13 @@ EOF
 	    F90_SHL="$F90 -fpic"
             F90_LINKPATH_SHL="-X -rpath -X "
 	    ;;
+
+	    intel)
+	    # Intel implements the GNU options
+	    F90_SHL="$F90 -shared -fpic"
+            F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
+	    ;;
+
 	    *)
 	    # Unknown, ignore
 	    ;;
