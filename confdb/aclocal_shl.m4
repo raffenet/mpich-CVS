@@ -170,6 +170,19 @@ dnl Other, such as solaris-cc
     C_LINKPATH_SHL="-R"
     enable_sharedlibs="solaris-gcc"
     ;;
+
+    linuxppc-xlc)
+    # This is only the beginning of xlc support, thanks to andy@vpac.org
+    CC_SHL='${CC} -qmkshrobj'
+    C_LINKPATH_SHL="-Wl,-rpath -Wl,"
+    C_LINK_SHL='${CC} -shared -qmkshrobj'
+    # Note that the full line should be more like
+    # $CLINKER -shared -qmkshrobj -Wl,-h,$libbase.$slsuffix -o ../shared/$libbase.$slsuffix *.o $OtherLibs
+    # for the appropriate values of $libbase and $slsuffix
+    # The -h name sets the name of the object; this is necessary to
+    # ensure that the dynamic linker can find the proper shared library.
+    ;;
+
     *)
     AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs.  Values should be of the form os-compiler, as in osx-gcc or solaris-cc])
     enable_sharedlibs=no
