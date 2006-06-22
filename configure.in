@@ -1756,6 +1756,40 @@ if test "$enable_cxx" = "yes" ; then
 	CXX_SHL=false
 	;;
     esac
+    # GNU changed the calling conventions between minor releases (!!!)
+    # This is too hard to detect, but we should be able to detect
+    # the version mismatch
+    GNU_VERSION=0
+    GNU_MINORVERSION=0
+    if test "$ac_compiler_gnu" = "yes" ; then
+         ac_vals=""
+	 AC_MSG_CHECKING([for GNU g++ version])
+         AC_TRY_RUN([#include <stdio.h>
+int main() {
+    int v = -1, m = -1;
+    FILE *fp = fopen("conftest.out","w");
+#ifdef __GNUC_MINOR__
+    m = __GNUC_MINOR__;
+#endif
+#ifdef __GNUC__
+    v = __GNUC__;
+#endif
+    fprintf( fp, "v=%d, m=%d\n", v, m );
+    fclose( fp );
+    return 0;
+}],ac_vals=`cat conftest.out`)
+         if test -n "$ac_vals" ; then
+             v=`echo "$ac_vals" | sed -e 's/v=\(.*\),.*/\1/'`
+             m=`echo "$ac_vals" | sed -e 's/.*m=\(.*\)/\1/'`
+             AC_MSG_RESULT([$v . $m])
+             GNUC_VERSION=$v
+             GNUC_MINORVERSION=$m
+         else
+             AC_MSG_RESULT([unknown])
+         fi 
+         AC_SUBST(GNUC_VERSION)
+         AC_SUBST(GNUC_MINORVERSION)
+    fi    
 
     bindings="$bindings cxx"
     bindings_dirs="$bindings_dirs src/binding/cxx"
