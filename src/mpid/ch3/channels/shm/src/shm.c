@@ -17,15 +17,8 @@
 #endif
 #include <sys/wait.h>
 #include <errno.h>
-#ifdef USE__LLSEEK
-#include <linux/unistd.h>
-static inline _syscall5(int, _llseek, uint, fd, ulong, hi, ulong, lo, loff_t *, res, uint, wh);
-#define OFF_T loff_t
-#define OFF_T_CAST(a) ((loff_t)(unsigned)(a))
-#else
 #define OFF_T off_t
 #define OFF_T_CAST(a) ((off_t)(a))
-#endif
 #endif
 
 #undef USE_SHM_WRITE_FOR_SHM_WRITEV
@@ -467,7 +460,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
     MPID_Request * reload_sreq;
 #ifndef HAVE_WINDOWS_H
-    int n, status;
+    int n;
     OFF_T uOffset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
@@ -479,15 +472,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     reload_pkt->sreq = sreq->handle;
 
 #ifndef HAVE_WINDOWS_H
-    if (ptrace(PTRACE_ATTACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace attach failed", errno);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
-	return mpi_errno;
-    }
-    if (waitpid(vc->ch.nSharedProcessID, &status, WUNTRACED) != vc->ch.nSharedProcessID)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "waitpid failed", errno);
+    mpi_error = MPIDI_SHM_Attach( vc->ch.nSharedProcessID );
+    if (mpi_error) {
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 	return mpi_errno;
     }
@@ -541,16 +527,11 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		/* write is not implemented in the /proc device. It is considered a security hole.  You can recompile a Linux
 		 * kernel with this function enabled and then define HAVE_PROC_RDMA_WRITE and this code will work.
 		 */
-#ifdef USE__LLSEEK
-		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, OFF_T_CAST(rbuf), &uOffset, SEEK_SET);
-#else
 		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(rbuf), SEEK_SET);
-		n = 0;
-#endif
-		if (n != 0 || uOffset != OFF_T_CAST(rbuf))
+		if (uOffset != OFF_T_CAST(rbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
-		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+		    MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 		    return mpi_errno;
 		}
@@ -561,7 +542,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    if (num_written == -1)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "write failed", errno);
-			ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+			MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			return mpi_errno;
 		    }
@@ -644,9 +625,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    if ( (i != (send_count - 1)) || (sbuf_len != 0) )
 		    {
 #ifndef HAVE_WINDOWS_H
-			if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+			mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID, 0, 0);
+			if (mpi_errno) {
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			    return mpi_errno;
 			}
@@ -684,9 +664,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	}
 
 #ifndef HAVE_WINDOWS_H
-	if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+	mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+	if (mpi_errno) {
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 	    return mpi_errno;
 	}
@@ -762,7 +741,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
     MPID_Request * reload_rreq;
 #ifndef HAVE_WINDOWS_H
-    int n, status;
+    int n;
     OFF_T uOffset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
@@ -775,15 +754,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     reload_pkt->rreq = rreq->handle;
 
 #ifndef HAVE_WINDOWS_H
-    if (ptrace(PTRACE_ATTACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace attach failed", errno);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
-	return mpi_errno;
-    }
-    if (waitpid(vc->ch.nSharedProcessID, &status, WUNTRACED) != vc->ch.nSharedProcessID)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "waitpid failed", errno);
+    mpi_errno = MPIDI_SHM_AttachProc( vc->ch.nSharedProcessID );
+    if (mpi_errno != MPI_SUCCESS) {
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 	return mpi_errno;
     }
@@ -834,16 +806,11 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    return mpi_errno;
 		}
 #else
-#ifdef USE_LLSEEK
-		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, OFF_T_CAST(sbuf), &uOffset, SEEK_SET);
-#else
 		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(sbuf), SEEK_SET);
-		n = 0;
-#endif
-		if (n != 0 || uOffset != OFF_T_CAST(sbuf))
+		if (uOffset != OFF_T_CAST(sbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
-		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+		    MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 		    return mpi_errno;
 		}
@@ -854,7 +821,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    if (num_read == -1)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "read failed", errno);
-			ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+			MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 			return mpi_errno;
 		    }
@@ -887,9 +854,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    if ( (i != (recv_count - 1)) || (rbuf_len != 0) )
 		    {
 #ifndef HAVE_WINDOWS_H
-			if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+			mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+			if (mpi_errno != MPI_SUCCESS) {
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 			    return mpi_errno;
 			}
@@ -928,9 +894,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	}
 
 #ifndef HAVE_WINDOWS_H
-	if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+	mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+	if (mpi_errno) {
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 	    return mpi_errno;
 	}

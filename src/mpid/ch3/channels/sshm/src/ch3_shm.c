@@ -416,13 +416,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		/* write is not implemented in the /proc device. It is considered a security hole.  You can recompile a Linux
 		 * kernel with this function enabled and then define HAVE_PROC_RDMA_WRITE and this code will work.
 		 */
-#ifdef USE__LLSEEK
-		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, OFF_T_CAST(rbuf), &uOffset, SEEK_SET);
-#else
 		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(rbuf), SEEK_SET);
-		n = 0;
-#endif
-		if (n != 0 || uOffset != OFF_T_CAST(rbuf))
+		if (uOffset != OFF_T_CAST(rbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
 		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
@@ -709,13 +704,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    return mpi_errno;
 		}
 #else
-#ifdef USE_LLSEEK
-		n = _llseek(vc->ch.nSharedProcessFileDescriptor, 0, OFF_T_CAST(sbuf), &uOffset, SEEK_SET);
-#else
 		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(sbuf), SEEK_SET);
-		n = 0;
-#endif
-		if (n != 0 || uOffset != OFF_T_CAST(sbuf))
+		if (uOffset != OFF_T_CAST(sbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
 		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
