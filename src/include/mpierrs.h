@@ -374,6 +374,8 @@
 /* --BEGIN ERROR MACROS-- */
 #define MPIU_ERR_POP(err_) \
     MPIU_ERR_SETANDSTMT(err_,MPI_ERR_OTHER,goto fn_fail,"**fail")
+#define MPIU_ERR_POPFATAL(err_) \
+    MPIU_ERR_SETFATALANDSTMT(err_,MPI_ERR_OTHER,goto fn_fail,"**fail")
 
 #ifdef HAVE_ERROR_CHECKING
 #define MPIU_ERR_SET(err_,class_,msg_) \
