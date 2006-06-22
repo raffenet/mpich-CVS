@@ -159,6 +159,15 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 #
 **noConnInfoToString:No ConnInfoToString routine defined for this process group
 #
+**typeinitbadmem:builtin datatype handle references invalid memory
+**typeinitbadmem %d:%dth builtin datatype handle references invalid memory
+**typeinitfail:Did not initialize name for all of the predefined datatypes"
+**typeinitfail %d:Did not initialize name for all of the predefined datatypes \
+ (only did first %d)"
+**typeinitminmaxloc: Could not determine pointer for predefined minloc or \
+ maxloc type.  Initialization of those names failed.
+
+# -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
 #
 **buffer:Invalid buffer pointer

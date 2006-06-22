@@ -68,9 +68,10 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
     /* FIXME: The only purpose of this call is to add this function
        to the stack of routines involved in this error */
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**fail");
+	MPIU_ERR_POP(mpi_errno);
     }
-	
+
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_OPEN_PORT);
     return mpi_errno;
 }
@@ -112,10 +113,11 @@ int MPID_Close_port(const char *port_name)
     if (portFns.ClosePort) {
 	mpi_errno = portFns.ClosePort( port_name );
 	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**fail");
+	    MPIU_ERR_POP(mpi_errno);
 	}
     }
-	
+
+ fn_fail:	
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CLOSE_PORT);
     return mpi_errno;
 }
@@ -146,13 +148,14 @@ int MPID_Comm_accept(char * port_name, MPID_Info * info, int root,
 	mpi_errno = portFns.CommAccept( port_name, info, root, comm, 
 					newcomm_ptr );
 	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**fail");
+	    MPIU_ERR_POP(mpi_errno);
 	}
     }
     else {
 	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**notimpl" );
     }
 
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_ACCEPT);
     return mpi_errno;
 }
@@ -183,13 +186,14 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 	mpi_errno = portFns.CommConnect( port_name, info, root, comm, 
 					 newcomm_ptr );
 	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**fail");
+	    MPIU_ERR_POP(mpi_errno);
 	}
     }
     else {
 	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**notimpl" );
     }
 
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_CONNECT);
     return mpi_errno;
 }
@@ -235,12 +239,11 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
     mpi_errno = MPIU_Str_add_int_arg(&port_name, &len, 
 			MPIDI_CH3I_PORT_NAME_TAG_KEY, port_name_tag++);
     /* FIXME: MPIU_xxx routines should return regular mpi error codes */
-    /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
-	goto fn_exit;
+	/* FIXME: We can't use mpi_errno because it isn't a valid mpich2 error code */
+	mpi_errno = MPI_ERR_OTHER;
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
 
     /* This works because Get_business_card uses the same MPIU_Str_xxx 
        functions as above to add the business card to the input string */
@@ -255,6 +258,8 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_OPEN_PORT);
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 /*

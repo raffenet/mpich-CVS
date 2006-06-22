@@ -151,7 +151,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
 	    MPIU_Free(info_keyval_sizes);
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	    goto fn_exit;
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -168,8 +168,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	    free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
 	    MPIU_Free(info_keyval_sizes);
 	    MPIU_Free(pmi_errcodes);
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
-	    goto fn_exit;
+	    MPIU_ERR_POP(mpi_errno);
 	}
 	/* --END ERROR HANDLING-- */
 
@@ -193,7 +192,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	    MPIU_Free(info_keyval_sizes);
 	    MPIU_Free(pmi_errcodes);
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", mpi_errno);
-            goto fn_exit;
+            goto fn_fail;
         }
 	/* --END ERROR HANDLING-- */
 	if (errcodes != MPI_ERRCODES_IGNORE)
