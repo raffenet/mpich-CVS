@@ -426,7 +426,7 @@ MPID_nem_mpich2_put (void *s_buf, void *d_buf, int len, int proc, int *completio
     
     if (MPID_NEM_IS_LOCAL (proc))
     {
-        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
     }
     else 
     {
@@ -438,7 +438,7 @@ MPID_nem_mpich2_put (void *s_buf, void *d_buf, int len, int proc, int *completio
 	    return MPID_nem_gm_module_put (d_buf, s_buf, len, proc, completion_ctr);
 	    break;
 	default:
-            MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+            MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
 	    break;
 	}
       */
@@ -462,7 +462,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
     
     if (MPID_NEM_IS_LOCAL (proc))
     {
-        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
     }
     else 
     {
@@ -511,7 +511,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 	    }
 	    break;
 	default:
-	    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+	    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
 	    break;
 	}
       */
@@ -533,7 +533,7 @@ MPID_nem_mpich2_get (void *s_buf, void *d_buf, int len, int proc, int *completio
     
     if (MPID_NEM_IS_LOCAL (proc))
     {
-        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
     }
     else 
     {
@@ -545,7 +545,7 @@ MPID_nem_mpich2_get (void *s_buf, void *d_buf, int len, int proc, int *completio
 	    return MPID_nem_gm_module_get (d_buf, s_buf, len, proc, completion_ctr);
 	    break;
 	default:
-	    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+	    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
 	    break;
 	}
       */
@@ -569,7 +569,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 
     if (MPID_NEM_IS_LOCAL (proc))
     {
-        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+        MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
     }
     else 
     {
@@ -618,7 +618,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 	    }
 	    break;
 	default:
-	    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimp");
+	    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
 	    break;
 	}
       */
