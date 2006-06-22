@@ -373,9 +373,10 @@ on the configure command line.
 
 In addition to the channels listed above, the ch3 device includes a
 scalable shared memory channel (sshm), a channel for Microsoft Windows
-that uses events rather than busy waiting (essm), an Infiniband channel
-(ib) and a GASNet channel (gasnet).  These channels have been tested by
-their authors, but are not run through the nightly test suites.
+that uses events rather than busy waiting (essm), an Infiniband
+channel (ib), and a channel that uses shared memory and network
+communication (nemesis).  These channels have been tested by their
+authors, but are not run through the nightly test suites.
 
 The scalable shared memory channel, like the shm channel, uses shared
 memory for communication.  However, unlike the shm channel, which
@@ -398,52 +399,27 @@ MPI on InfiniBand, we recommend using MVAPICH2 or MVAPICH from Ohio
 State Univ.   http://nowlab.cse.ohio-state.edu/projects/mpi-iba/
 
 
-The gasnet channel is implemented a channel for U.C. Berkeley's GASNet
-communication system, version 1.3.  This channel should be considered
-experimental, though we are interested in feedback from anyone using the
-channel.
+The nemesis channel uses shared memory for intra-node communication
+and networks for inter-node communication.  Nemesis currently supports
+TCP, GM and MX networks.  The nemesis channel may be selected using
+the --with-device=ch3:nemesis configure option.  The default network
+is TCP.
 
-Here are the configure flags for the GASNet channel:
+To use the GM network, use the --with-device=ch3:nemesis:gm configure
+option.  If the GM include files and libraries are not in the normal
+search paths, you can specify them with the --with-gm-include= and
+--with-gm-lib= options, or the --with-gm= option, if lib/ and include/
+are in the same directory.
 
-  --with-device=ch3:gasnet --with-gasnet-conduit=<conduit>
+To use the MX network ... [to be completed by Guillaume]
 
-where <conduit> is the name of the GASNet conduit (e.g.,
-"--with-gasnet-conduit=gm" for the GM conduit.
+Using the --enable-fast configure option significantly improves
+intra-node performance.
 
-If the GASNet library and include files are not in the standard library
-and include paths, you should use the following flags:
+Nemesis is still a work in progress.  Thread-safety, dynamic processes
+and connect/accept are not yet implemented.  Performance in some areas
+is still suboptimal.
 
-  --with-gasnet=<GASNet install directory>
-
-or use,
-
-  --with-gasnet-include=<GASNet include directory>
-  --with-gasnet-lib=<GASNet lib directory>
-
-if GASNet's lib/ and include/ subdirectories are not in the same directory.
-
-If you are using GASNet with the GM conduit you will have to specify
-the location of GM's include and lib directories, if they are not in
-the standard include and library paths.
-
-  --with-gm=<GM install directory>
-
-or
-
-  --with-gm-include=<directory where gm.h can be found>
-  --with-gm-lib=<directory where libgm.a can be found>
-
-Though we have only tested this with the GM conduit we expect this may
-also work with other conduits.  If you need to specify include and lib
-paths for the other conduits (e.g., Quadrics, or IBA) you should be
-able to use the --with-gm= flag for those too.
-
-Because GASNet doesn't support dynamic process creation, The dynamic
-process features of MPI are not supported.  Also, you will have to use
-the GASNet job launcher to launch your MPI program.
-
-GASNet can be downloaded from the GASNet homepage: 
-http://www.cs.berkeley.edu/~bonachea/gasnet/
 
 
 VPATH Builds
