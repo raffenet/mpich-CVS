@@ -1044,9 +1044,10 @@ static int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn)
     mpi_errno = MPIDU_Sock_post_read(conn->sock, &conn->pkt, sizeof(conn->pkt),
 				     sizeof(conn->pkt), NULL);
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
+	MPIU_ERR_POP(mpi_errno);
     }
-    
+
+ fn_fail:    
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_RECV_PKT);
     return mpi_errno;
 }
@@ -1066,9 +1067,10 @@ static int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn)
     MPIU_DBG_PKT(conn,&conn->pkt,"connect");
     mpi_errno = MPIDU_Sock_post_write(conn->sock, &conn->pkt, sizeof(conn->pkt), sizeof(conn->pkt), NULL);
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
+	MPIU_ERR_POP(mpi_errno);
     }
     
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT);
     return mpi_errno;
 }
@@ -1093,9 +1095,10 @@ static int connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
     MPIU_DBG_PKT(conn,&conn->pkt,"connect-pgid");
     mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->iov, 2, NULL);
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
+	MPIU_ERR_POP(mpi_errno);
     }
     
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
     return mpi_errno;
 }
@@ -1117,13 +1120,12 @@ static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     {
 	MPIU_DBG_MSG_P(CH3,TYPICAL,"conn=%p: Posting message from connection send queue", conn );
 	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
-	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
+	    MPIU_ERR_POP(mpi_errno);
 	}
-	/* --END ERROR HANDLING-- */
     }
     
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
     return mpi_errno;
 }

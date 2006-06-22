@@ -56,22 +56,23 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     connected = FALSE;
-    /* Make is so that the pg_id is not matched on the other side by sending a dummy value */
+    /* Make it so that the pg_id is not matched on the other side by sending a 
+       dummy value */
     cached_pg_id = MPIDI_Process.my_pg->id;
     MPIDI_Process.my_pg->id = dummy_id;
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, port_name, &connected);
     MPIDI_Process.my_pg->id = cached_pg_id;
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail");
-	/* FIXME: Do we want to free the vc instead? */
+	/* FIXME: Do we want to free the vc instead? Or put this into the fail
+	   block? */
 	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
-	goto fn_exit;
+	MPIU_ERR_POP(mpi_errno);
     }
     if (!connected) {
 	/* FIXME: Non conforming (not internationalizable) error message.
 	   why not just MPIU_ERR_POP? */
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to establish a shared memory queue connection");
-	goto fn_exit;
+	goto fn_fail;
     }
 
     MPIDI_CH3I_SHM_Add_to_writer_list(vc);
