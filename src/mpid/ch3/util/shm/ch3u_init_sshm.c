@@ -148,17 +148,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
      *         shared memory aspects of the business card
      */
 
-    /* FIXME: Machine (host) name should be a routine call (service); do not 
-       use ifdefs to inline this */
-#ifdef HAVE_WINDOWS_H
-    {
-	DWORD len = sizeof(pg_p->ch.shm_hostname);
-	/*GetComputerName(pg_p->ch.shm_hostname, &len);*/
-	GetComputerNameEx(ComputerNameDnsFullyQualified, pg_p->ch.shm_hostname, &len);
-    }
-#else
-    gethostname(pg_p->ch.shm_hostname, sizeof(pg_p->ch.shm_hostname));
-#endif
+    MPID_Get_processor_name( pg_p->ch.shm_hostname, 
+			     sizeof(pg_p->ch.shm_hostname), 0);
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
     MPIDI_Process.my_pg = pg_p;  /* was later prior but internally Get_parent_port needs this */    

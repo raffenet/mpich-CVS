@@ -18,12 +18,7 @@ static int GetLocalIPs(int32_t *pIP, int max)
     struct hostent *h = NULL;
     int n = 0;
 
-    DWORD len = sizeof(hostname);
-    /*if (!GetComputerName(hostname, &len))*/
-    if (!GetComputerNameEx(ComputerNameDnsFullyQualified, hostname, &len))
-    {
-	return 0;
-    }
+    MPID_Get_processor_name( hostname, sizeof(hostname), 0 );
 
     h = gethostbyname(hostname);
     if (h == NULL)

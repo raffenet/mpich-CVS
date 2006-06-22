@@ -3088,10 +3088,14 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
 /*@
   MPID_Get_processor_name - Return the name of the current processor
 
+  Input Parameter:
+. namelen - Length of name
+  
   Output Parameters:
 + name - A unique specifier for the actual (as opposed to virtual) node. This
   must be an array of size at least 'MPI_MAX_PROCESSOR_NAME'.
-- resultlen - Length (in characters) of the name 
+- resultlen - Length (in characters) of the name.  If this pointer is null,
+   this value is not set.
 
   Notes:
   The name returned should identify a particular piece of hardware; 
@@ -3100,9 +3104,12 @@ int MPID_Topo_cluster_info( MPID_Comm *comm,
 
   This routine is essentially an MPID version of 'MPI_Get_processor_name' .  
   It must be part of the device because not all environments support calls
-  to return the processor name.
+  to return the processor name.  The additional argument (input name 
+  length) is used to provide better error checking and to ensure that 
+  the input buffer is large enough (rather than assuming that it is
+  'MPI_MAX_PROCESSOR_NAME' long).
   @*/
-int MPID_Get_processor_name( char *name, int *resultlen);
+int MPID_Get_processor_name( char *name, int namelen, int *resultlen);
 
 void MPID_Errhandler_free(MPID_Errhandler *errhan_ptr);
 

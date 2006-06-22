@@ -52,9 +52,6 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     int i, j, k;
     int shm_block;
     char local_host[100];
-#ifdef HAVE_WINDOWS_H
-    DWORD host_len;
-#endif
 
     /*
      * Extract process group related information from PMI and initialize
@@ -190,13 +187,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-#ifdef HAVE_WINDOWS_H
-	    host_len = val_max_sz;
-	    /*GetComputerName(val, &host_len);*/
-	    GetComputerNameEx(ComputerNameDnsFullyQualified, val, &host_len);
-#else
-	    gethostname(val, val_max_sz); /* Don't call this under Windows because it requires the socket library */
-#endif
+	    MPID_Get_processor_name( val, val_max_sz, 0 );
 	    mpi_errno = PMI_KVS_Put(kvsname, key, val);
 	    if (mpi_errno != 0)
 	    {
@@ -254,13 +245,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
 		return mpi_errno;
 	    }
-#ifdef HAVE_WINDOWS_H
-	    host_len = 100;
-	    /*GetComputerName(local_host, &host_len);*/
-	    GetComputerNameEx(ComputerNameDnsFullyQualified, local_host, &host_len);
-#else
-	    gethostname(local_host, 100); /* Don't call this under Windows because it requires the socket library */
-#endif
+	    MPID_Get_processor_name( local_host, sizeof(local_host), NULL );
 	    if (strcmp(val, local_host))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmhost", "**shmhost %s %s", local_host, val);

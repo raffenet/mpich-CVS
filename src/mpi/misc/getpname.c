@@ -92,7 +92,8 @@ int MPI_Get_processor_name( char *name, int *resultlen )
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPID_Get_processor_name( name, resultlen );
+    mpi_errno = MPID_Get_processor_name( name, MPI_MAX_PROCESSOR_NAME, 
+					 resultlen );
     
     /* ... end of body of routine ... */
 
