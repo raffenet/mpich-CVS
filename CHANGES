@@ -3,16 +3,16 @@
 ===============================================================================
 
 - For the ch3:sock channel, the default build of MPICH2 supports
-  thread safety. A separate build is not needed. However, thread
-  safety is enabled only if the user calls MPI_Init_thread with  
+  thread safety. A separate build is not needed as before. However, 
+  thread safety is enabled only if the user calls MPI_Init_thread with  
   MPI_THREAD_MULTIPLE. If not, no thread locks are called, so there
   is no penalty.
 
 - A new low-latency channel called Nemesis has been added. It can be
   selected by specifying the option --with-device=ch3:nemesis.
-  Nemesis will use shared-memory for intra-node communication and the
-  network for inter-node communication.  Available networks are TCP,
-  GM and MX.  Nemesis is still a work in progress.  See the README for
+  Nemesis uses shared memory for intranode communication and various
+  networks for internode communication.  Available networks are TCP,
+  GM, and MX.  Nemesis is still a work in progress.  See the README for
   more information about the channel.
 
 - Need to say something about Totalview support
