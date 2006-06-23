@@ -7,7 +7,7 @@
 ## NOTE: we do NOT allow this pgm to run via mpdroot
 
 """
-usage: mpdcleanup [-h] [-v] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] [-k "killcmd"]
+usage: mpdcleanup [-h] [-v] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] [-k "killcmd"] [-n <num_from_hostsfile>]
    or: mpdcleanup [--help] [--verbose] [--file=<hostsfile>] [--rsh=<rshcmd>] [--user=<user>]
                   [--clean=<cleancmd>] [--kill="killcmd"]
 Removes the Unix socket on local (the default) and remote machines
@@ -32,8 +32,9 @@ def mpdcleanup():
     cleanCmd  = '/bin/rm -f '
     hostsFile = ''
     verbose = 0
+    numFromHostsFile = 0  # chgd below
     try:
-	(opts, args) = getopt(sys.argv[1:], 'hvf:r:u:c:k:',
+	(opts, args) = getopt(sys.argv[1:], 'hvf:r:u:c:k:n:',
                               ['help', 'verbose', 'file=', 'rsh=', 'user=', 'clean=','kill='])
     except:
         print 'invalid arg(s) specified'
@@ -50,6 +51,8 @@ def mpdcleanup():
 		usage()
 	    elif opt[0] == '-v' or opt[0] == '--verbose':
 		verbose = 1
+	    elif opt[0] == '-n':
+		numFromHostsFile = int(opt[1])
 	    elif opt[0] == '-c' or opt[0] == '--clean':
 		cleanCmd = opt[1]
 	    elif opt[0] == '-k' or opt[0] == '--kill':
@@ -76,7 +79,9 @@ def mpdcleanup():
         except:
 	    print 'Not cleaning up on remote hosts; file %s not found' % hostsFile
 	    sys.exit(0)
-        hosts  = f.readlines()
+        hosts = f.readlines()
+        if numFromHostsFile:
+            hosts = hosts[0:numFromHostsFile]
         for host in hosts:
 	    host = host.strip()
 	    if host[0] != '#':
@@ -110,9 +115,4 @@ def usage():
 
 
 if __name__ == '__main__':
-    try:
-        mpdcleanup()
-    except SystemExit, errmsg:
-        pass
-    except mpdError, errmsg:
-	print 'mpdcleanup failed: %s' % (errmsg)
+    mpdcleanup()
