@@ -52,7 +52,6 @@ fi
 dnl
 dnl Process any enable or with values
 dnl
-dnl enable-g
 # enable-g
 # strip off multiple options, separated by commas
 save_IFS="$IFS"

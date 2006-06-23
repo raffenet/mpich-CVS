@@ -65,7 +65,9 @@ int MPIE_ChooseHosts( ProcessWorld *pWorld,
 		      void *readDBdata )
 {
     int i, nNeeded=0;
-    MachineTable *mt;
+    MachineTable *mt = 0;
+    const char *curMtArch = 0;
+    int         curHost = 0;
     ProcessApp   *app;
     ProcessState *pState;
 
@@ -109,7 +111,39 @@ int MPIE_ChooseHosts( ProcessWorld *pWorld,
 	    if (!pState[i].hostname) nForApp++;
 	}
 	
-	mt = (*readDB)( app->arch, nForApp, readDBdata );
+	if (nForApp) {
+	    if (!mt || app->arch != curMtArch) {
+		/* Only read machines file if we need to, even 
+		   with multiple applications */
+		mt = (*readDB)( app->arch, nForApp, readDBdata );
+		curMtArch = app->arch;
+		curHost   = 0;
+		if (!mt) {
+		    MPIU_Error_printf( "Could not find machines for %s\n",
+		       app->arch ? app->arch : "default architecture" );
+		    return nNeeded;
+		}
+	    }
+
+	    /* Now that we have a table, make the assignments */
+	    for (i=0; i<app->nProcess; i++) {
+		if (!pState[i].hostname) {
+		    if (curHost >= mt->nHosts) {
+			/* We've run out of systems */
+			break;
+		    }
+		    DBG_PRINTF(("Adding host %s for state %d\n", 
+				mt->desc[curHost].hostname, i ));
+		    nNeeded --;
+		    nForApp--;
+		    pState[i].hostname = MPIU_Strdup( mt->desc[curHost].hostname );
+		    mt->desc[curHost].np--;
+		    if (mt->desc[curHost].np == 0) 
+			curHost++;
+		}
+	    }
+	}
+	
 #if 0
     /* Read the appropriate machines file.  There may be multiple files, 
        one for each requested architecture.  We'll read one machine file

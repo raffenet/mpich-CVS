@@ -88,12 +88,14 @@ static int printFailure = 0;
 /* Note that envp is common but not standard */
 int main( int argc, char *argv[], char *envp[] )
 {
-    int          rc, erc = 0, signaled;
-    int          reason;
+    int          rc;
+    int          erc = 0;  /* Other (exceptional) return codes */
+    int          reason, signaled = 0;
     SetupInfo    s;
     int          fdPMI;
     char         portString[MAX_PORT_STRING];
 
+    /* MPIE_ProcessInit initializes the global pUniv */
     MPIE_ProcessInit();
     /* Set a default for the universe size */
     pUniv.size = 64;
@@ -107,9 +109,18 @@ int main( int argc, char *argv[], char *envp[] )
     /* Handle the command line arguments.  Use the routine from util/cmnargs.c
        to fill in the universe */
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
-    rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
     /* If there were any soft arguments, we need to handle them now */
+    rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
+    if (!rc) {
+	MPIU_Error_printf( "Unable to process soft arguments\n" );
+	exit(1);
+    }
+
     rc = MPIE_ChooseHosts( &pUniv.worlds[0], MPIE_ReadMachines, 0 );
+    if (rc) {
+	MPIU_Error_printf( "Unable to assign hosts to processes\n" );
+	exit(1);
+    }
 
     if (MPIE_Debug) MPIE_PrintProcessUniverse( stdout, &pUniv );
 
@@ -128,18 +139,29 @@ int main( int argc, char *argv[], char *envp[] )
     }
 #endif    
 
-    PMIServInit(myspawn,0);
+    s.pmiinfo.portName = 0;
+
+    PMIServInit(myspawn,&s);
+    s.pmiinfo.pWorld = &pUniv.worlds[0];
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
-    MPIE_ForwardCommonSignals();
+/*    MPIE_ForwardCommonSignals(); */
+    printf( "About to fork\n" );fflush(stdout);
     MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
 			mypostfork, 0, mypostamble, 0 );
+    printf( "Done with fork\n" );fflush(stdout);
     reason = MPIE_IOLoop( pUniv.timeout );
 
     if (reason == IOLOOP_TIMEOUT) {
 	/* Exited due to timeout.  Generate an error message and
 	   terminate the children */
-	MPIU_Error_printf( "Timeout of %d minutes expired; job aborted\n",
-			 pUniv.timeout / 60 );
+	if (pUniv.timeout > 60) {
+	    MPIU_Error_printf( "Timeout of %d minutes expired; job aborted\n",
+			       pUniv.timeout / 60 );
+	}
+	else {
+	    MPIU_Error_printf( "Timeout of %d seconds expired; job aborted\n",
+			       pUniv.timeout );
+	}
 	erc = 1;
 	MPIE_KillUniverse( &pUniv );
     }
@@ -166,8 +188,12 @@ int main( int argc, char *argv[], char *envp[] )
 
 void mpiexec_usage( const char *msg )
 {
-    if (msg)
+    if (msg) {
 	MPIU_Error_printf( msg );
+	if (msg[strlen(msg)-1] != '\n') {
+	    MPIU_Error_printf( "\n" );
+	}
+    }
     MPIU_Usage_printf( "Usage: mpiexec %s\n", MPIE_ArgDescription() );
     exit( -1 );
 }
@@ -176,12 +202,17 @@ void mpiexec_usage( const char *msg )
 int mypreamble( void *data, ProcessState *pState )
 {
     SetupInfo *s = (SetupInfo *)data;
+    int       rc;
 
     IOLabelSetupFDs( &s->labelinfo );
-    PMISetupSockets( 0, &s->pmiinfo );
+    rc = PMISetupSockets( 0, &s->pmiinfo );
+    /* We must use communication over the socket, rather than the 
+       environment, to pass initialization data */
+    pState->initWithEnv = 0;
     
-    return 0;
+    return rc;
 }
+
 /* Close one side of each pipe pair and replace stdout/err with the pipes */
 int mypostfork( void *predata, void *data, ProcessState *pState )
 {
@@ -189,6 +220,39 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 
     IOLabelSetupInClient( &s->labelinfo );
     PMISetupInClient( 1, &s->pmiinfo );
+
+    /* Now, we *also* change the process state to insert the 
+       interposed remote shell routine.  This is probably not
+       where we want this in the final version (because MPIE_ExecProgram
+       does a lot under the assumption that the started program will
+       know what to do with new environment variables), but this
+       will allow us to start. */
+    {
+	ProcessApp *app = pState->app;
+	char **newargs = 0;
+	int j;
+
+	/* Insert into app->args */
+	newargs = (char **) malloc( app->nArgs + 3 );
+	if (!pState->hostname) {
+	    MPIU_Error_printf( "No hostname avaliable for %s\n", app->exename );
+	    exit(1);
+	}
+	newargs[0] = pState->hostname;
+	newargs[1] = app->exename;
+	for (j=0; j<app->nArgs; j++) {
+	    newargs[j+2] = app->args[j];
+	}
+	newargs[j+1] = 0;
+	app->exename = strdup( "/usr/bin/ssh" );
+
+	app->args = newargs;
+	app->nArgs += 2;
+
+	for (j=0; j<app->nArgs; j++) {
+	    printf( "argv[%d] = %s\n", j, app->args[j] ); fflush(stdout);
+	}
+    }
 
     return 0;
 }
@@ -212,7 +276,7 @@ int mypostamble( void *predata, void *data, ProcessState *pState )
 
 int myspawn( ProcessWorld *pWorld, void *data )
 {
-    SetupInfo    s;
+    SetupInfo    *s = (SetupInfo *)data;
     ProcessWorld *p, **pPtr;
 
     p = pUniv.worlds;
@@ -225,12 +289,12 @@ int myspawn( ProcessWorld *pWorld, void *data )
 
     /* Fork Processes may call a routine that is passed s but not pWorld;
        this makes sure that all routines can access the current world */
-    s.pmiinfo.pWorld = pWorld;
+    s->pmiinfo.pWorld = pWorld;
 
     /* FIXME: This should be part of the PMI initialization in the clients */
-    putenv( "PMI_SPAWNED=1" );
+    MPIE_Putenv( pWorld, "PMI_SPAWNED=1" );
 
-    MPIE_ForkProcesses( pWorld, 0, mypreamble, &s,
+    MPIE_ForkProcesses( pWorld, 0, mypreamble, s,
 			mypostfork, 0, mypostamble, 0 );
     return 0;
 }

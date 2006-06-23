@@ -91,7 +91,7 @@
 typedef struct { PMISetup pmiinfo; IOLabelSetup labelinfo; } SetupInfo;
 
 /* Forward declarations */
-int mypreamble( void *, ProcessState * );
+int mypreamble( void *, ProcessState* );
 int mypostfork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
@@ -115,7 +115,7 @@ int main( int argc, char *argv[], char *envp[] )
     /* MPIE_ProcessInit initializes the global pUniv */
     MPIE_ProcessInit();
     /* Set a default for the universe size */
-    pUniv.size  = 64;
+    pUniv.size = 64;
 
     /* Set defaults for any arguments that are options.  Also check the
        environment for special options, such as debugging.  Set 
@@ -128,6 +128,10 @@ int main( int argc, char *argv[], char *envp[] )
     MPIE_Args( argc, argv, &pUniv, 0, 0 );
     /* If there were any soft arguments, we need to handle them now */
     rc = MPIE_InitWorldWithSoft( &pUniv.worlds[0], pUniv.size );
+    if (!rc) {
+	MPIU_Error_printf( "Unable to process soft arguments\n" );
+	exit(1);
+    }
 
     if (pUniv.fromSingleton) {
 	/* The MPI process is already running.  We create a simple entry

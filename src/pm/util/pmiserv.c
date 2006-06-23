@@ -177,11 +177,17 @@ int PMISetupInClient( int usePort, PMISetup *pmiinfo )
     }
     else {
 	/* We must communicate the port name to the process */
-	MPIU_Snprintf( env_pmi_port, sizeof(env_pmi_port), "PMI_PORT=%s",
-		       pmiinfo->portName );
-	if (MPIE_Putenv( pmiinfo->pWorld, env_pmi_port )) {
-	    MPIU_Internal_error_printf( "Could not set environment PMI_PORT" );
-	    perror( "Reason: " );
+	if (pmiinfo->portName) {
+	    MPIU_Snprintf( env_pmi_port, sizeof(env_pmi_port), "PMI_PORT=%s",
+			   pmiinfo->portName );
+	    if (MPIE_Putenv( pmiinfo->pWorld, env_pmi_port )) {
+		MPIU_Internal_error_printf( "Could not set environment PMI_PORT" );
+		perror( "Reason: " );
+		return 1;
+	    }
+	}
+	else {
+	    MPIU_Internal_error_printf( "Required portname was not defined\n" );
 	    return 1;
 	}
 	

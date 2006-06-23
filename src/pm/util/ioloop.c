@@ -177,6 +177,9 @@ int MPIE_IOLoop( int timeoutSeconds )
 	       signal handler returns (we suspect Linux of this problem),
 	       which is why we have the signal handler in process.c reset 
 	       errno to 0 (we may need to allow ECHILD here (!)) */
+	    /* FIXME: an EINTR may also mean that a process has exited 
+	       (SIGCHILD).  If all processes have exited, we may want to 
+	       exit */
 	    continue;
 	}
 	if (nfds < 0) {
