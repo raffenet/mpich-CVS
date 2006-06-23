@@ -97,8 +97,7 @@ int main(int argc, char *argv[])
     printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
 	
     /* interface may have changed
-    sprintf(msg_to_send,"cmd=spawn nprocs=%d execname=%s arg=%s\n",
-	    1,"/home/rbutler/mpd2/pmitest","spawned");
+    sprintf(msg_to_send,"cmd=spawn nprocs=1 totspawns=1 spawnssofar=1 preput_num=0 info_num=0 execname=./pmitest argcnt=1 arg1=spawned\n");
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
     printf("sent spawn\n");
     ***/
