@@ -360,7 +360,7 @@ with ``\texttt{:}'' separating the sets of processes, as in:
 The \texttt{-configfile} argument allows one to specify a file containing the
 specifications for process sets on separate lines in the file.  This
 makes it unnecessary to have long command lines for \texttt{mpiexec}.  
-(See p. 353 of \cite{Snir:1998:MPI2Book}.)
+(See pg.\ 353 of~\cite{Snir:1998:MPI2Book}.)
 
 It is also possible to start a one process MPI job (with size of
 \texttt{MPI\_COMM\_WORLD} equal to 1), without using \texttt{mpiexec}.
@@ -820,7 +820,7 @@ a selected process and by labeling and merging output.  The current
 implementation has some minor limitations.  For example, we do not
 support setting your own prompt.  This is because we capture the \texttt{gdb}
 output and examine it before processing it, e.g. merging identical lines.
-Also, we set a breakpoint at the beginning of \texttt{main) to get all
+Also, we set a breakpoint at the beginning of \texttt{main} to get all
 processes synchronized at the beginning.  Thus, the user will have a
 duplicate, unusable breakpoint if he sets one at the very first executable
 line of \texttt{main}.  Otherwise, to the extent possible, we try to simply
@@ -1039,45 +1039,110 @@ MPI jobs are run from a command prompt using \texttt{mpiexec.exe}.  See
 Section~\ref{sec:extensions-smpd} on \texttt{mpiexec} for \texttt{smpd}
 for a description of the options to \texttt{mpiexec}.
 
-\appendix{Frequently Asked Questions}
-This is the content of the online FAQ, as of November 7, 2005.
+\clearpage
+\appendix
 
-\section{General Information}
-\begin{itemize}
-\item Q: What is MPICH2?
-\item Q: What does MPICH stand for?
-\end{itemize}
-\section{Building MPICH2}
-\begin{itemize}
-\item Q: What is the difference between the MPD and SMPD process managers?
-\item Q: When I use the g95 Fortran compiler on a 64-bit platform, some  of the tests fail
-\end{itemize}
-\section{Compiling MPI Programs}
-\begin{itemize}
-\item C++ and \texttt{SEEK\_SET}
-\item When building the ssm or sshm channel, I get the error "mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory operation specified to implement busy locks ***"
-\end{itemize}
-\section{Running MPI Programs}
-\begin{itemize}
-\item Q: How do I pass environment variables to the processes of my parallel program
-\item Q:  How do I pass environment variables to the processes of my parallel program when using the mpd process manager?
-\item Q:  What determines the hosts on which my MPI processes run?
-\item Q: On Windows, I get an error when I attempt to call \texttt{MPI\_Comm\_spawn}.
-\end{itemize}
-\subsection{Q: What is MPICH2?}
+\section{Frequently Asked Questions}
+This is the content of the online FAQ, as of June 23, 2006.
+
+\subsection{General Information}
+\subsubsection{Q: What is MPICH2?}
 MPICH2 is a freely available, portable implementation of
 \href{http://www.mpi-forum.org}{MPI}, the Standard for 
 message-passing libraries.  It implements both MPI-1 and MPI-2.
-\subsection{Q: What does MPICH stand for?}
+\subsubsection{Q: What does MPICH stand for?}
 A: MPI stands for Message Passing Interface.
 The CH comes from Chameleon, the portability layer used in the original 
 MPICH to provide portability to the existing message-passing systems.
-\subsection{Q: What is the difference between the MPD and SMPD process managers?}
+\subsection{Building MPICH2}
+\subsubsection{Q: What is the difference between the MPD and SMPD process managers?}
 MPD is the default process manager for MPICH2 on Unix platforms. It is written in
 Python. SMPD is the primary process manager for MPICH2 on Windows. It
 is also used for running on a combination of Windows and Linux
 machines. It is written in C.
-\subsection{Q: When I use the g95 Fortran compiler on a 64-bit platform, some  of the tests fail}
+\subsubsection{Q: Do I have to configure/make/install MPICH2 each time for each  compiler I use?}
+No, in many cases you can build MPICH2 using one set of compilers and then
+use the libraries (and compilation scripts) with other compilers.  However, 
+this depends on the compilers producing \emph{compatible} object files.
+Specifically, the compilers must
+\begin{itemize}
+\item Support the same basic datatypes with the same sizes.  For example, the
+ C compilers should use the same sizes for \texttt{long long} and 
+ \texttt{long double}. 
+\item Map the names of routines in the source code to names in the object
+ files in the object file in the same way.  This can be a problem for Fortran
+ and C++ compilers, though you can often force the Fortran compilers to use
+ the same name mapping.  More specifically, most Fortran compilers map names
+ in the source code into all lower-case with one or two underscores appended
+ to the name.  To use the same MPICH2 library with all Fortran compilers,
+ those compilers must make the same name mapping.  There is one exception to
+ this that is described below.
+\item Perform the same layout for C structures.  The C langauge does not
+ specify how structures are layed out in memory.  For 100\% compatibility, all
+ compilers must follow the same rules.  However, if you do not use any of the 
+ \texttt{MPI\_MIN\_LOC} or \texttt{MPI\_MAX\_LOC} datatypes, and you do not
+ rely on the MPICH2 library to set the extent of a type created with 
+ \texttt{MPI\_Type\_struct} or \texttt{MPI\_Type\_create\_struct}, you can
+ often ignore this requirement.
+\item Require the same additional runtime libraries.  Not all compilers will
+ implement the same version of Unix, and some routines that MPICH2 uses may be
+ present in only some of the run time libraries associated with specific
+ compilers.  
+\end{itemize}
+The above may seem like a stringent set of requirements, but in practice, many
+ systems and compiler sets meet these needs, if for no other reason than that
+ any software built with multiple libraries will have  requirements similar to
+ those of MPICH2 for compatibility.
+\par
+If your compilers are completely compatible, down to the runtime libraries,
+ you may use the compilation scripts (\texttt{mpicc} etc.) by either
+ specifying the compiler on the command line, e.g.
+\begin{verbatim}
+    mpicc -cc=icc -c foo.c
+\end{verbatim}
+or with the environment variables \texttt{MPICH\_CC} etc. (this example assume
+ a c-shell syntax):
+\begin{verbatim}
+    setenv MPICH_CC icc
+    mpicc -c foo.c
+\end{verbatim}
+If the compiler is compatible \emph{except} for the runtime libraries, then
+ this same format works as long as a configuration file that describes the
+ necessary runtime libraries is created and placed into the appropriate
+ directory (the ``\texttt{sysconfdir}'' directory in configure terms).  See the
+ installation manual for more details.
+\par
+In some cases, MPICH2 is able to build the Fortran interfaces in a way that
+ supports multiple mappings of names from the Fortran source code to the
+ object file.  This is done by using the ``multiple weak symbol'' support in
+ some environments.  For example, when using \texttt{gcc} under Linux, this is
+ the default.
+\subsubsection{Q: How do I configure to use the Absoft Fortran compilers?}
+A: You have several options.  One is to use the Fortran 90 compiler for both
+F77 and F90.  Another (if you do not need Fortran 90) is to use 
+\texttt{--disable-f90} when configuring.  The options with which we test
+MPICH2 and the Absoft compilers are the following:
+\begin{verbatim}
+setenv FFLAGS "-f -B108"
+setenv F90FLAGS "-YALL_NAMES=LCS -B108"
+setenv F77 f77
+setenf F90 f90
+\end{verbatim}
+\subsubsection{Q: When I configure MPICH2, I get a message about FDZERO and the configure aborts}
+A: \texttt{FD\_ZERO} is part of the support for the select calls (see ``man
+select'' or ``man 2 select'' on Linux and many other Unix systems) .  What this
+means is that your system (probably a Mac) has a broken version of the
+select call and related data types.  This is an OS bug; the only repair is to
+update the OS to get past this bug.  This test was added specifically to
+detect this error; if there was an easy way to work around it, we would have
+included it (we don't just implement \texttt{FD\_ZERO} ourselves because we
+don't know what else is broken in this implementation of select). 
+
+If this configure works with gcc but not with xlc, then the problem is with
+the include files that xlc is using; since this is an OS call (even if
+emulated), all compilers should be using consistent if not identical include
+files.  In this case, you may need to update xlc. 
+\subsubsection{Q: When I use the g95 Fortran compiler on a 64-bit platform, some  of the tests fail}
 A: The g95 compiler incorrectly defines the default Fortran integer as a
 64-bit integer while defining Fortran reals as 32-bit values (the Fortran
 standard requires that INTEGER and REAL be the same size).  This was 
@@ -1097,7 +1162,13 @@ the standard specifies the \emph{ratio} of sizes, not the absolute sizes, so a
 Fortran 95 compiler that used 64 bits for \emph{both} INTEGER and REAL would
 also conform to the Fortran standard.  However, such a compiler would need to
 use 128 bits for DOUBLE PRECISION quantities).
-\subsection{C++ and \texttt{SEEK\_SET}}
+\subsection{Windows version of MPICH2}
+\subsubsection{I am having trouble installing and using the Windows version of MPICH2}
+See the
+\href{http://www.mcs.anl.gov/mpi/mpich/downloads/windows-mpich2-tips.doc}{tips for installing and running MPICH2 on Windows} provided by a user, Brent Paul. Or see the
+\href{http://www.mcs.anl.gov/mpi/mpich/downloads/mpich2-doc-windev.pdf}{MPICH2 Windows Development Guide}.
+\subsection{Compiling MPI Programs}
+\subsubsection{C++ and \texttt{SEEK\_SET}}
 Some users may get error messages such as
 \begin{verbatim}
     SEEK_SET is #defined but must not be for the C++ binding of MPI
@@ -1116,16 +1187,17 @@ before \texttt{mpi.h} is included, or add the definition
 \end{verbatim}
 to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
-\subsection{When building the ssm or sshm channel, I get the error "mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory operation specified to implement busy locks ***"}
+\subsubsection{When building the ssm or sshm channel, I get the error ``mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory operation specified to implement busy locks ***''}
 The ssm and sshm channels do not work on all platforms because they
 use special interprocess locks (often assembly) that may not work
 with some compilers or machine architectures. They work on Linux with
 gcc, Intel, and Pathscale compilers on various Intel
 architectures. They also work in Windows and Solaris environments.
-\subsection{Q: How do I pass environment variables to the processes of my parallel program}
+\subsection{Running MPI Programs}
+\subsubsection{Q: How do I pass environment variables to the processes of my parallel program}
 A: The specific method depends on the process manager and version of 
 \texttt{mpiexec} that you are using. 
-\subsection{Q:  How do I pass environment variables to the processes of my parallel program when using the mpd process manager?}
+\subsubsection{Q:  How do I pass environment variables to the processes of my parallel program when using the mpd process manager?}
 A:  By default, all the environment variables in the shell where
 \texttt{mpiexec} is run are passed to all processes of the application
 program.  (The one exception is \texttt{LD\_LIBRARY\_PATH} when the
@@ -1138,7 +1210,7 @@ possible arguments can be listed by typing
 \end{verbatim}
 and further details are available in the 
 \href{http://www-unix.mcs.anl.gov/mpi/mpich2/downloads/mpich2-doc-user.pdf}{Users Guide}.
-\subsection{Q:  What determines the hosts on which my MPI processes run?}
+\subsubsection{Q:  What determines the hosts on which my MPI processes run?}
 A:  Where processes run, whether by default or by specifying them
 yourself, depends on the process manager being used.
 
@@ -1195,7 +1267,7 @@ ranks to appear on the same machine.  (In the default case, the same
 number of processes might well run on the machine, but their ranks would
 be different.)
 
-(A feature of the --ncpus=<n> argument is that it has the above effect only
+(A feature of the \texttt{--ncpus=<n>} argument is that it has the above effect only
 until all of the mpd's have started n processes at a time once;
 afterwards each mpd starts one process at a time.  This is in order to 
 balance the number of processes per machine to the extent possible.)
@@ -1203,13 +1275,49 @@ balance the number of processes per machine to the extent possible.)
 Other ways to control the placement of processes are by direct use of
 arguments to \texttt{mpiexec}.  See the 
 \href{http://www-unix.mcs.anl.gov/mpi/mpich2/downloads/mpich2-doc-user.pdf}{Users Guide}.
-
-\subsection{Q: On Windows, I get an error when I attempt to call \texttt{MPI\_Comm\_spawn}.}
+\subsubsection{Q: On Windows, I get an error when I attempt to call \texttt{MPI\_Comm\_spawn}.}
 A: On Windows, you need to start the program with \texttt{mpiexec} for
 any of the MPI-2 dynamic process functions to work.
+\subsubsection{Q: My output does not appear until the program exits}
+A: Output to \texttt{stdout} and \texttt{stderr} may not be written
+from your process immediately after a 'printf' or 'fprintf' (or
+'PRINT' in Fortran) because, under Unix, such output is
+\emph{buffered} unless the program believes that the output is to a
+terminal.  When the program is run by 'mpiexec', the C standard I/O
+library (and normally the Fortran runtime library) will buffer the
+output.  For C programmers, you can either use a call 'fflush(stdout)'
+to force the output to be written or you can set no buffering by
+calling
+\begin{verbatim}
+   #include <stdio.h>
+   
+   setvbuf( stdout, NULL, _IONBF, 0 );
+\end{verbatim}
+on each file descriptor (\texttt{stdout} in this example) which you
+want to send the output immedately to your terminal or file.
 
+There is no standard way to either change the buffering mode or to
+flush the output in Fortran.  However, many Fortrans include an
+extension to provide this function.  For example, in \texttt{g77}, 
+\begin{verbatim}
+    call flush()
+\end{verbatim}
+can be used.  The \texttt{xlf} compiler supports 
+\begin{verbatim}
+    call flush_(6)
+\end{verbatim}
+where the argument is the Fortran logical unit number (here
+\texttt{6}, which is often the unit number associated with \texttt{PRINT}).
+\subsubsection{Q: How do I run MPI programs in the background when using the default MPD process manager?}
+A: To run MPI programs in the background when using MPD, you need to
+redirect stdin from \texttt{/dev/null}. For example, 
+\begin{verbatim}
+    mpiexec -n 4 a.out < /dev/null & 
+\end{verbatim}
 
 \bibliographystyle{plain}
 \bibliography{user}
 
 \end{document}
+
+

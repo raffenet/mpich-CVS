@@ -87,7 +87,7 @@ Specifically, the compilers must
  present in only some of the run time libraries associated with specific
  compilers.  
 \end{itemize}
-The above may seem like a stringint set of requirements, but in practice, many
+The above may seem like a stringent set of requirements, but in practice, many
  systems and compiler sets meet these needs, if for no other reason than that
  any software built with multiple libraries will have  requirements similar to
  those of MPICH2 for compatibility.
@@ -330,7 +330,7 @@ output.  For C programmers, you can either use a call 'fflush(stdout)'
 to force the output to be written or you can set no buffering by
 calling
 \begin{verbatim}
-   #include &lt;stdiot&gt;
+   #include &lt;stdio.h&gt
    
    setvbuf( stdout, NULL, _IONBF, 0 );
 \end{verbatim}
@@ -354,5 +354,7 @@ where the argument is the Fortran logical unit number (here
 %% Filename: background
 %% End
 A: To run MPI programs in the background when using MPD, you need to
-redirect stdin from /dev/null. For example, 
-mpiexec -n 4 a.out < /dev/null \& 
+redirect stdin from \texttt{/dev/null}. For example, 
+\begin{verbatim}
+    mpiexec -n 4 a.out < /dev/null \& 
+\end{verbatim}

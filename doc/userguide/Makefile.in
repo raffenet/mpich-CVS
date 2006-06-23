@@ -17,9 +17,9 @@ FTPDIR = /home/ftp/pub/mpi/mpich2
 	(cd .. && ln -s $(srcdir)/../mpiman.sty mpiman.sty) ; fi
 	@if [ ! -s user.bib ] ; then \
 	 ln -s $(srcdir)/user.bib user.bib ; fi
-	-latex $< </dev/null >/dev/null 2>&1
-	-bibtex $* </dev/null
-	-latex $< </dev/null >/dev/null 2>&1
+	-latex $< 
+	-bibtex $* 
+	-latex $< 
 	latex $<
 
 .dvi.pdf:
@@ -57,7 +57,7 @@ htmldoc:
 latexdoc: ALL
 
 clean:
-	-rm -f *.toc *.out *.dvi user.ps user.pdf *.aux *.blg *.bbl
+	-rm -f *.toc *.out *.dvi user.ps user.pdf *.aux *.blg *.bbl *.log
 
 distclean: clean
 	-rm -f code.sty
