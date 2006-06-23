@@ -4,7 +4,7 @@ MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is a portable, high-performance implementation of
 the entire MPI-2 standard.  This release has all MPI-2 functions and
-features required by the standard with the exeption of support for the
+features required by the standard with the exception of support for the
 "external32" portable I/O format. 
 
 The distribution has been tested by us on a variety of machines in our
@@ -12,7 +12,7 @@ own environments. If you have problems, please report them to
 mpich2-maint@mcs.anl.gov.
 
 This README file should contain enough information to get you started
-with MPICH2.  More extensive intstallation and user guides can be found
+with MPICH2.  More extensive installation and user guides can be found
 in the doc/installguide/install.pdf and doc/userguide/user.pdf files
 respectively.  Additional information regarding the contents of the
 release can be found at the end of this README under "Status of MPI-2
@@ -22,6 +22,8 @@ Finally, the MPICH2 web site, http://www.mcs.anl.gov/mpi/mpich2,
 contains information on bug fixes and new releases.
   
 Windows users should see the file README.windows in this directory. 
+The Windows release is still at version 1.0.3. It has not been updated
+to 1.0.4.
 
 
 Getting Started
@@ -133,7 +135,8 @@ later, in the section "Alternative configurations".
     and tested.  More details on interacting with MPD can be found in
     the README file in mpich2-1.0.4/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
-    use the mpigdb debugger.
+    debug programs with "mpiexec -gdb".
+
     If you have problems getting the MPD ring established, see the
     Installation Guide for instructions on how to diagnose problems
     with your system configuration that may be preventing it.  Also
@@ -325,14 +328,14 @@ mpd
 ---
 MPD is the default process manager.  Its setup and use have been
 described above.  The file mpich2-1.0.4/src/pm/mpd/README has more 
-information about interactive commands for managing the ring of mpds.
+information about interactive commands for managing the ring of MPDs.
 
 smpd
 ---- 
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.0.4/src/pm/smpd/README.
+information, please see mpich2-1.0.4/src/pm/smpd/README. 
 
 gforker
 -------
@@ -356,7 +359,7 @@ specified explicitly by putting
   --with-device=ch3:sock
 
 on the configure command line.  The ch3 device has two other channels
-which are rigorouly tested: "shm" (shared memory) for use on SMPs (all
+which are rigorously tested: "shm" (shared memory) for use on SMPs (all
 communication goes through shared memory instead of over TCP sockets)
 and "ssm" (sockets and shared memory) for use on clusters of SMPs
 (communication between processes on the same machine goes through shared
@@ -371,27 +374,12 @@ or
 
 on the configure command line.
 
-In addition to the channels listed above, the ch3 device includes a
-scalable shared memory channel (sshm), a channel for Microsoft Windows
-that uses events rather than busy waiting (essm), an Infiniband
-channel (ib), and a channel that uses shared memory and network
-communication (nemesis).  These channels have been tested by their
-authors, but are not run through the nightly test suites.
 
-The scalable shared memory channel, like the shm channel, uses shared
-memory for communication.  However, unlike the shm channel, which
-allocates a NxN array of queues in shared memory during MPI_INIT, the
-sshm channel only allocates a queue in shared memory when a pair of
-processes communicate for the first time.  Since the communication
-patterns in most programs does no involve all processes communicating
-with all other processes, this channel will scale to a larger number of
-process than the shm channel.  Hence it's name.  The sshm channel may be
-selected by putting
-
-  --with-device=ch3:sshm
-
-on the configure command line. *** We note that this channel has not been
-tested for this release (1.0.4) and hence may or may not build. ***
+The sshm (scalable shared memory) channel is not supported for
+1.0.4. The code has been retained to provide an example of some MPI-2
+RMA optimizations (the immediate method as opposed to the deferred
+method used in other channels for implementing the synchronization in
+MPI-2 one-sided communication). 
 
 The InfiniBand (ib) channel has not been kept up to date in a long time
 and hence we have not included it in this release. If you need to use
@@ -399,11 +387,12 @@ MPI on InfiniBand, we recommend using MVAPICH2 or MVAPICH from Ohio
 State Univ.   http://nowlab.cse.ohio-state.edu/projects/mpi-iba/
 
 
-The nemesis channel uses shared memory for intra-node communication
-and networks for inter-node communication.  Nemesis currently supports
-TCP, GM and MX networks.  The nemesis channel may be selected using
-the --with-device=ch3:nemesis configure option.  The default network
-is TCP.
+The Nemesis channel is a new low-latency channel that uses shared
+memory for intra-node communication and various networks for
+inter-node communication.  It currently supports TCP, GM and MX
+networks.  The Nemesis channel may be selected using the
+--with-device=ch3:nemesis configure option.  The default network is
+TCP.
 
 To use the GM network, use the --with-device=ch3:nemesis:gm configure
 option.  If the GM include files and libraries are not in the normal
@@ -486,9 +475,8 @@ MPI Features:
                  filesystems ROMIO should support.  See README.romio.
 
   --enable-threads - Build MPICH2 with support for multi-threaded
-                 applications.  This option is not on by default since
-                 it introduces extra overhead that is not required for
-                 single-threaded applications.
+                 applications.  This is supported only for the sock
+                 channel and is the default for that channel.
 
   --with-thread-package - When used with --enable-threads, this option
                  specifies the thread package to use.  This option
@@ -514,7 +502,7 @@ Cross compilation:
                  running a program, such as the tests that configure
                  uses to determine the sizes of the basic types.  This
                  should be a fine in Bourne shell format containing
-                 varable assignment of the form
+                 variable assignment of the form
 
                      CROSS_SIZEOF_INT=2
 
@@ -533,7 +521,7 @@ Error checking and reporting:
                  messages.  By default, MPICH2 provides
                  instance-specific error messages; but, with this
                  option, MPICH2 can be configured to provide less
-                 detailed messages.  This may be deesirable on small
+                 detailed messages.  This may be desirable on small
                  systems, such as clusters built from game consoles or
                  high-density massively parallel systems.  This is still
                  under active development.
@@ -572,7 +560,7 @@ from the target.
 
 The dynamic process management routines (MPI_Comm_spawn,
 MPI_Comm_Connect, and MPI_Comm_Accept, and their relations) are
-supported, but only for the sock and ssm channels.
+supported, but only for the sock and ssm channels. 
 
 The "singleton init" feature, whereby a process not started by mpiexec
 can become an MPI process, is supported under the mpd process manager.
