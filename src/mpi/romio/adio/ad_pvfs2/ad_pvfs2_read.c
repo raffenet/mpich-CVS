@@ -1,4 +1,5 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; -*- 
+ *     vim: ts=8 sts=4 sw=4 noexpandtab */
 /* 
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
@@ -100,7 +101,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     int filetype_size, etype_size, buftype_size;
     MPI_Aint filetype_extent, buftype_extent; 
     int buf_count, buftype_is_contig, filetype_is_contig;
-    ADIO_Offset off, disp, start_off;
+    ADIO_Offset off, disp, start_off, initial_off;
     int flag, st_frd_size, st_n_filetypes;
 
     int mem_list_count, file_list_count;
@@ -256,6 +257,8 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     while (flat_file->type != fd->filetype) flat_file = flat_file->next;
 
     disp = fd->disp;
+    initial_off = offset;
+
 
     /* for each case - ADIO_Individual pointer or explicit, find the file
        offset in bytes (offset), n_filetypes (how many filetypes into
@@ -506,6 +509,27 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
         ADIOI_Flatten_datatype(datatype);
 	flat_buf = ADIOI_Flatlist;
 	while (flat_buf->type != datatype) flat_buf = flat_buf->next;
+
+        /* TODO: This will hopefully go away when we put in Avery's dtype io
+         * approach, but for now, this offset-length pair creating code
+         * (according to keenin) has problems when the first offset-length pair
+         * wants to carry out a zero-byte operation.  Should we encounter such
+         * a datatype, we will punt to the much slower, but correct
+         * naiive version */
+ 
+        if (flat_buf->blocklens[0] == 0) {
+            int rank;
+            MPI_Comm_rank(fd->comm, &rank);
+            printf("[%d]: falling back to naive read\n", rank);
+            /* can't call with 'offset', as that was modified earlier up in the
+             * region that computes offset, n_filetypes, fwr_size, and st_index
+             */
+            ADIOI_GEN_ReadStrided_naive(fd, buf, count, datatype, 
+                    file_ptr_type, initial_off, status, error_code);
+            return;
+        }
+ 
+
 
 	size_read = 0;
 	n_filetypes = st_n_filetypes;
