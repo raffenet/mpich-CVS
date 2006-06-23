@@ -8,7 +8,8 @@
 usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ 
                 [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>]      \ 
                 [--loccons] [--remcons] [--shell] [--verbose] [-1]     \
-                [--ncpus=<ncpus>] [--ifhn=<ifhn>] [--chkup] [--chkuponly]
+                [--ncpus=<ncpus>] [--ifhn=<ifhn>] [--chkup] [--chkuponly] \
+                [--maxbranch=<maxbranch>]
  or, in short form, 
         mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ 
                 [-m <mpdcmd>]  -s -v [-1] [-c]
@@ -39,6 +40,8 @@ usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \
   of hosts specified by -n
 --chkuponly requests that mpdboot try to verify that the hosts in the host file
   are up; it then terminates; it just checks the number of hosts specified by -n
+--maxbranch indicates the maximum number of mpds to enter the ring under another;
+  the default is 4
 """
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
@@ -78,6 +81,7 @@ def mpdboot():
     myNcpus = 1
     myIfhn = ''
     chkupIndicator = 0  # 1 -> chk and start ; 2 -> just chk
+    maxUnderOneRoot = 4
     try:
         shell = path.split(environ['SHELL'])[-1]
     except:
@@ -151,6 +155,14 @@ def mpdboot():
             splitArg = argv[argidx].split('=')
             try:
                 totalnumToStart = int(splitArg[1])
+            except:
+                print 'mpdboot: invalid argument:', argv[argidx]
+                usage()
+            argidx += 1
+        elif argv[argidx].startswith('--maxbranch'):
+            splitArg = argv[argidx].split('=')
+            try:
+                maxUnderOneRoot = int(splitArg[1])
             except:
                 print 'mpdboot: invalid argument:', argv[argidx]
                 usage()
@@ -263,7 +275,6 @@ def mpdboot():
     except:
         maxfds = 1024
     maxAtOnce = min(128,maxfds-8)  # -8  for stdeout, etc. + a few more for padding
-    maxUnderOneRoot = 4
 
     hostsSeen = { myHost : 1 }
     fdsToSelect = []
