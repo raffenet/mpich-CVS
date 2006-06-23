@@ -585,6 +585,11 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
 int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **bc_val_p, int *val_max_sz_p);
 
+int MPIDI_SHM_InitRWProc( pid_t, int * );
+int MPIDI_SHM_AttachProc( pid_t );
+int MPIDI_SHM_DetachProc( pid_t );
+int MPIDI_SHM_ReadProcessMemory( int, int, const char *, char *, size_t );
+
 /* added by brad.  business card related global and functions */
 /* FIXME: Make these part of the channel support headers */
 #define MAX_HOST_DESCRIPTION_LEN 256

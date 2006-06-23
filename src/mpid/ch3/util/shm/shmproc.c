@@ -11,8 +11,24 @@
  * 
  */
 
+#include "mpidi_ch3_impl.h"
+
 #ifndef HAVE_WINDOWS_H
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#ifdef HAVE_SYS_PTRACE_H
 #include <sys/ptrace.h>
+#endif
+#include <sys/wait.h>
+#include <errno.h>
+#define OFF_T off_t
+#define OFF_T_CAST(a) ((off_t)(a))
+#endif
+
+#ifndef HAVE_WINDOWS_H
 
 /* Initialize for reading and writing to the designated process */
 int MPIDI_SHM_InitRWProc( pid_t pid, int *fd )
@@ -21,9 +37,9 @@ int MPIDI_SHM_InitRWProc( pid_t pid, int *fd )
     int mpi_errno = MPI_SUCCESS;
 
     MPIU_Snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
-    *fd = open(filename, O_RDRW );
+    *fd = open(filename, O_RDWR );
     if (*fd == -1) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, info.pid, errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, pid, errno);
 	return mpi_errno;
 	
     }
@@ -59,7 +75,7 @@ int MPIDI_SHM_AttachProc( pid_t pid )
 int MPIDI_SHM_DetachProc( pid_t pid )
 {
     int mpi_errno;
-    if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0) {
+    if (ptrace(PTRACE_DETACH, pid, 0, 0) != 0) {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
     }
     return mpi_errno;
@@ -67,14 +83,15 @@ int MPIDI_SHM_DetachProc( pid_t pid )
 
 /* Read by seeking to the memory location on the file descriptor and then
    using read. */
-int MPIDI_SHM_ReadProcessMemory( int fd, 
+int MPIDI_SHM_ReadProcessMemory( int fd, int pid, 
 				 const char *source, char *dest, size_t len )
 {
     off_t offset = OFF_T_CAST(source);
     off_t uOffset;
+    int   num_read;
     int mpi_errno = MPI_SUCCESS;
 
-    uOffest = lseek( fd, offset, SEEK_SET );
+    uOffset = lseek( fd, offset, SEEK_SET );
     if (uOffset != offset) {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
 	return mpi_errno;
