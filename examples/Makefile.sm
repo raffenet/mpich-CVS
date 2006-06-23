@@ -1,7 +1,3 @@
-#SUBDIRS = mpiexec
-# Do not build the example mpiexec by default (since this is not the 
-# mpiexec that we want users to use)
-OTHER_DIRS = mpiexec
 #OTHER_DIRS = f77 f90 cxx
 # We want to replace the compilation and linking rule used by simplement
 MPICHDIR=..
