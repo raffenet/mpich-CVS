@@ -10,6 +10,7 @@ int main( int argc, char *argv[] )
 {
     int wsize, wrank;
     int source, dest;
+    int buf1[10], buf2[10], buf3[10];
     volatile int hold = 1; 
     MPI_Comm dupcomm;
     MPI_Status status;
