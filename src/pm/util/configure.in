@@ -138,10 +138,27 @@ if test "$pac_cv_have_haddr_list" = "yes" ; then
     AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
 fi
 # Check for the functions needed to create a new session.
+# Note that getsid may not have a prototype in unistd.h unless
+# _XOPEN_SOURCE and _XOPEN_SOURCE_EXTENDED are defined, or
+# if _XOPEN_SOURCE is defined as an integer 500 or larger (this
+# for glibc).  The prototype should be
+# pid_t getsid( pid_t pid );
+#
 # Cygwin has setsid but not getsid
 AC_CHECK_FUNCS(setsid isatty getsid)
 if test "$enable_newsession" = "yes" ; then
     AC_DEFINE(USE_NEW_SESSION,1,[Define if mpiexec should create a new process group session])
+fi
+if test "$ac_cv_func_getsid" = "yes" ; then
+    # Check for prototype
+    AC_CACHE_CHECK([whether getsid is prototyped in unistd.h],
+    pac_cv_func_getsid_has_prototype,[
+    AC_TRY_COMPILE([
+#include <unistd.h>],[double a = getsid("string",1);],
+   pac_cv_func_getsid_has_prototype=no,pac_cv_func_getsid_has_prototype=yes)])
+    if test "$pac_cv_func_getsid_has_prototype" = no ; then
+        AC_DEFINE(NEEDS_GETSID_PROTOTYPE,1,[Define if getsid needs a prototype])
+    fi
 fi
 # Check for convenient functions for the environment
 AC_CHECK_FUNCS(unsetenv)
