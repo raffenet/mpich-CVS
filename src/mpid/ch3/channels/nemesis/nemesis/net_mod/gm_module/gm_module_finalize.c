@@ -23,7 +23,8 @@ MPID_nem_gm_module_finalize()
     
     while (MPID_nem_module_gm_num_send_tokens < max_send_tokens && !MPID_nem_gm_module_queue_empty (send))
     {
-	MPID_nem_gm_module_recv_poll();
+	mpi_errno = MPID_nem_gm_module_recv_poll();
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
     
     while (MPID_nem_gm_module_send_free_queue)
@@ -33,8 +34,9 @@ MPID_nem_gm_module_finalize()
 	MPIU_Free (e);
     }
     
-    MPID_nem_gm_module_lmt_finalize();
-    
+    mpi_errno = MPID_nem_gm_module_lmt_finalize();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
     gm_finalize();
 
  fn_exit:

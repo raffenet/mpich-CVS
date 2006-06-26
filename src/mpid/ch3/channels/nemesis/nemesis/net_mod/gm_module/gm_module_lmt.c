@@ -45,7 +45,7 @@ MPID_nem_gm_module_lmt_init()
      goto fn_exit;
 }
 
-void
+int
 MPID_nem_gm_module_lmt_finalize()
 {
     MPID_nem_gm_module_lmt_queue_t *e;
@@ -56,7 +56,7 @@ MPID_nem_gm_module_lmt_finalize()
 	MPID_nem_gm_module_lmt_free_queue = e->next;
 	MPIU_Free (e);
     }
-
+    return MPI_SUCCESS;
 }
 
 

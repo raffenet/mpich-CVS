@@ -192,11 +192,9 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     mpi_errno = MPID_nem_gm_module_lmt_init();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    MPIU_CHKPMEM_COMMIT();
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 

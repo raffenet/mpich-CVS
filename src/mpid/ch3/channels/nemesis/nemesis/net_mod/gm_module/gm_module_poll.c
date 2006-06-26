@@ -10,7 +10,7 @@
 #include "my_papi_defs.h"
 
 
-inline void
+inline int
 MPID_nem_gm_module_recv()
 {
     gm_recv_event_t *e;
@@ -85,9 +85,10 @@ MPID_nem_gm_module_recv()
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
 	e = gm_receive (MPID_nem_module_gm_port);
     }
+    return MPI_SUCCESS;
 }
 
-static inline void
+static inline int
 lmt_poll()
 {
     int ret;
@@ -111,34 +112,64 @@ lmt_poll()
 	    MPID_nem_gm_module_queue_dequeue (lmt, &e);
 	}
     }
+    return MPI_SUCCESS;
 }
 
 
-inline void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_send_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+inline int
 MPID_nem_gm_module_send_poll( void )
 {
-    MPID_nem_send_from_queue();
+    int mpi_errno = MPI_SUCCESS;
+    
+    mpi_errno = MPID_nem_send_from_queue();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     /*lmt_poll(); */
-    MPID_nem_gm_module_recv();
+    mpi_errno = MPID_nem_gm_module_recv();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
-inline void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_recv_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+inline int
 MPID_nem_gm_module_recv_poll( void )
 {
-    MPID_nem_gm_module_recv();
-    MPID_nem_send_from_queue();
+    int mpi_errno = MPI_SUCCESS;
+    
+    mpi_errno = MPID_nem_gm_module_recv();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    mpi_errno = MPID_nem_send_from_queue();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     /*lmt_poll(); */
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
-void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_gm_module_poll(MPID_nem_poll_dir_t in_or_out)
 {
     if (in_or_out == MPID_NEM_POLL_OUT)
     {
-	MPID_nem_gm_module_send_poll();
+	return MPID_nem_gm_module_send_poll();
     }
     else
     {
-	MPID_nem_gm_module_recv_poll();
+	return MPID_nem_gm_module_recv_poll();
     }
 }
