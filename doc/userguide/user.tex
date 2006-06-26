@@ -158,7 +158,7 @@ options of \texttt{mpiexec} or all of the options of MPICH1's
 \subsection{Command-Line Arguments in Fortran}
 \label{sec:fortran-command-line}
 
-MPICH1 (more precisely) MPICH1's \texttt{mpirun}) required access to
+MPICH1 (more precisely MPICH1's \texttt{mpirun}) required access to
 command line arguments in all application programs, including Fortran
 ones, and MPICH1's \texttt{configure} devoted some effort to finding the
 libraries that contained the right versions of \texttt{iargc} and
@@ -264,7 +264,7 @@ alternate C, C++, Fortran 77, and Fortran 90 compilers, respectively.
 \subsection{Shared Libraries}
 \label{sec:shared-libraries}
 
-Currently shared libraries are only tested on Linux, and there are
+Currently shared libraries are only tested on Linux and Mac OS X, and there are
 restrictions.  See the \emph{Installer's Guide} for how to build MPICH2
 as a shared library.  If shared libraries have been built, you will
 get them automatically when you link your program with any of the
@@ -570,7 +570,7 @@ sends it to processes 1 and 3, while
 \begin{verbatim}
     mpiexec -s 0-3 -n 5 a.out 
 \end{verbatim}
-sends \texttt{stdin} to processes 0,1,2, and 3.
+sends \texttt{stdin} to processes 0, 1, 2, and 3.
 
 The default, if \texttt{-s} is not specified, is to send
 \texttt{mpiexec}'s \texttt{stdin} to process 0 only.
@@ -1280,12 +1280,12 @@ A: On Windows, you need to start the program with \texttt{mpiexec} for
 any of the MPI-2 dynamic process functions to work.
 \subsubsection{Q: My output does not appear until the program exits}
 A: Output to \texttt{stdout} and \texttt{stderr} may not be written
-from your process immediately after a 'printf' or 'fprintf' (or
-'PRINT' in Fortran) because, under Unix, such output is
+from your process immediately after a `printf' or `fprintf' (or
+`PRINT' in Fortran) because, under Unix, such output is
 \emph{buffered} unless the program believes that the output is to a
-terminal.  When the program is run by 'mpiexec', the C standard I/O
+terminal.  When the program is run by `mpiexec', the C standard I/O
 library (and normally the Fortran runtime library) will buffer the
-output.  For C programmers, you can either use a call 'fflush(stdout)'
+output.  For C programmers, you can either use a call `fflush(stdout)'
 to force the output to be written or you can set no buffering by
 calling
 \begin{verbatim}
