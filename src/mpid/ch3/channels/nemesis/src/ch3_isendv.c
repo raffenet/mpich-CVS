@@ -15,7 +15,7 @@ extern void *MPIDI_CH3_packet_buffer;
 int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int ret;
+    int again;
     int j;
     int complete;
     
@@ -48,8 +48,9 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
                     
             MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   + len=%d%s", total, complete ? " " : "+"));
         });
-	ret = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc);
-	while (ret != MPID_NEM_MPICH2_AGAIN && remaining_n_iov > 0)
+	mpi_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc, &again);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+	while (!again && remaining_n_iov > 0)
 	{
             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
                 int total = 0;
@@ -63,7 +64,8 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
                 MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   + len=%d%s", total, complete ? " " : "+"));
             });
 
-	    ret = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc);
+	    mpi_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc, &again);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	}
 
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
@@ -78,7 +80,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
             MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   - len=%d%s", total, complete ? " " : "+"));
         });
 
-	if (ret == MPID_NEM_MPICH2_AGAIN)
+	if (again)
 	{
 	    if (remaining_iov == iov)
 	    {
@@ -105,7 +107,8 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	}
 	else
 	{
-	    MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);
+	    mpi_errno = MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
 	    if (!complete)
 	    {
@@ -152,8 +155,11 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	sreq->ch.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
     }
-    
+
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 

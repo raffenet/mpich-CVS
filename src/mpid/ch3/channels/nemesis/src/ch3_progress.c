@@ -99,10 +99,8 @@ int MPIDI_CH3I_Progress (int is_blocking)
                 MPIU_Assert (vc->ch.recv_active == NULL);
 
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    MPIU_ERR_POP (mpi_errno);
-		}
+		if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                
                 /* Channel fields don't get initialized on request creation, init them here */
                 if (rreq)
                     rreq->ch.iov_offset = 0;
@@ -129,10 +127,8 @@ int MPIDI_CH3I_Progress (int is_blocking)
                     MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-                        MPIU_ERR_POP (mpi_errno);
-		    }
+		    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                    
                     /* Channel fields don't get initialized on request creation, init them here */
                     if (rreq)
                         rreq->ch.iov_offset = 0;
@@ -271,7 +267,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	{
 	    MPID_IOV *_iov;
 	    int _n_iov;
-	    int ret;
+	    int again;
 	    
             MPIU_Assert (sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
             
@@ -291,9 +287,10 @@ int MPIDI_CH3I_Progress (int is_blocking)
                     
                     MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   + len=%d%s", total, reload ? "+" : " "));
                 });
-		ret = MPID_nem_mpich2_sendv (&_iov, &_n_iov, sreq->ch.vc);
+		mpi_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, sreq->ch.vc, &again);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	    }
-	    while (ret != MPID_NEM_MPICH2_AGAIN && _n_iov > 0);
+	    while (!again && _n_iov > 0);
             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
                 int total = 0;
                 int i;
@@ -306,7 +303,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
                 MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   - len=%d%s", total, reload ? "+" : " "));
             });
 
-	    if (ret == MPID_NEM_MPICH2_AGAIN)
+	    if (again)
 	    {
 		sreq->ch.iov_offset = _iov - sreq->dev.iov;
 		sreq->dev.iov_count = _n_iov;
@@ -315,10 +312,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	    {
 		complete = 0;
 		mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->ch.vc, sreq, &complete);
-		if (mpi_errno != MPI_SUCCESS)
-		{
-                    MPIU_ERR_POP (mpi_errno);
-		}
+		if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	    
 		if (complete)
 		{
@@ -520,14 +514,8 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 			}
 				    
 			mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
-				    
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,"**ch3|syncack", 0);
-			    goto exit_fn;
-			}
-			/* --END ERROR HANDLING-- */
+                        MPIU_ERR_CHKANDJUMP (mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|syncack");
+	    
 			if (esa_req != NULL)
 			{
 			    MPID_Request_release(esa_req);
@@ -1575,23 +1563,25 @@ int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 {
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
 
     /* don't enqueue for anysource */
     if (rreq->dev.match.rank < 0)
-	return MPI_SUCCESS;
+	goto fn_exit;
     /* don't enqueue a fastbox for yourself */
     if (rreq->dev.match.rank == MPIDI_CH3I_my_rank)
-	return MPI_SUCCESS;
+	goto fn_exit;
     /* don't enqueue non-local processes */
     if (!MPID_NEM_IS_LOCAL (rreq->dev.match.rank))
-	return MPI_SUCCESS;
+	goto fn_exit;
 
-    ret = MPID_nem_mpich2_enqueue_fastbox (MPID_NEM_LOCAL_RANK (rreq->dev.match.rank));
-    if (ret == MPID_NEM_MPICH2_SUCCESS)
-	return MPI_SUCCESS;
-    else
-	return MPI_ERR_INTERN;
+    mpi_errno = MPID_nem_mpich2_enqueue_fastbox (MPID_NEM_LOCAL_RANK (rreq->dev.match.rank));
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -1600,18 +1590,20 @@ int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq)
 {
-    int ret;
+    int mpi_errno = MPI_SUCCESS;
     
     if (rreq->dev.match.rank < 0)
-	return MPI_SUCCESS;
+	goto fn_exit;
     if (rreq->dev.match.rank == MPIDI_CH3I_my_rank)
-	return MPI_SUCCESS;
+	goto fn_exit;
     if (!MPID_NEM_IS_LOCAL (rreq->dev.match.rank))
-	return MPI_SUCCESS;
+	goto fn_exit;
 
-    ret = MPID_nem_mpich2_dequeue_fastbox (MPID_NEM_LOCAL_RANK (rreq->dev.match.rank));
-    if (ret == MPID_NEM_MPICH2_SUCCESS)
-	return MPI_SUCCESS;
-    else
-	return MPI_ERR_INTERN;
+    mpi_errno = MPID_nem_mpich2_dequeue_fastbox (MPID_NEM_LOCAL_RANK (rreq->dev.match.rank));
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }

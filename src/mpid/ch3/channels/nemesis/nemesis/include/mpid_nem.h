@@ -38,14 +38,12 @@ int MPID_nem_connect_to_root (const char *port_name, MPIDI_VC_t *new_vc);
 #define MPID_NEM__MPICH2_HEADER_LEN sizeof(MPIDI_CH3_Pkt_t)
 #define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (MPID_NEM__MPICH2_HEADER_LEN))
 
-#define MPID_NEM_MPICH2_SUCCESS 0
-#define MPID_NEM_MPICH2_FAILURE 1
 #define MPID_NEM_MPICH2_AGAIN   2  /* try again */
 
 int MPID_nem_mpich2_init (int ckpt_restart);
 /* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
-					    MPID_NEM_MPICH2_SUCCESS)
+					    MPI_SUCCESS)
 
 int MPID_nem_ckpt_init (int ckpt_restart);
 void MPID_nem_ckpt_finalize (void);
@@ -162,11 +160,11 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 #include "mpid_nem_nets.h"
 #include "mpid_nem_inline.h"
 #else //MPID_NEM_INLINE
-int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc);
-int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc);
-int MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc);
-int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc);
-int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc);
+int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc, int *again);
+int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *again);
+int MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again);
+int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *again);
+int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *again);
 int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
 int MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead) ;

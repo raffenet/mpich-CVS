@@ -81,16 +81,16 @@ inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 /*inline */
 void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int master, char *file, int line)
 {
-  int mark;
+    int mark;
 
-  if (master)
-    mark = 111;
-  else
-    mark = 777;
+    if (master)
+        mark = 111;
+    else
+        mark = 777;
  
-  fprintf(stderr,"%i called from file %s at line %i \n",mark,file,line);
+    fprintf(stderr,"%i called from file %s at line %i \n",mark,file,line);
 
-  MPID_nem_dump_cell_mpich(cell,master); 
+    MPID_nem_dump_cell_mpich(cell,master); 
 }
 
 /* inline void MPID_nem_rel_queue_init (MPID_nem_queue_ptr_t rel_qhead ) */

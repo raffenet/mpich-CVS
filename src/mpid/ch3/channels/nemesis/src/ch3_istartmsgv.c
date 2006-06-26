@@ -29,7 +29,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
-    int shmem_errno;
+    int again;
     int j;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
@@ -58,8 +58,9 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
                     
             MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
         });
-	shmem_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc);
-	while ((shmem_errno != MPID_NEM_MPICH2_AGAIN) && (remaining_n_iov > 0))
+	mpi_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc, &again);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+	while (!again && (remaining_n_iov > 0))
 	{
             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
                 int total = 0;
@@ -69,7 +70,8 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
                 MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
             });
 
-	    shmem_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc);
+	    mpi_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc, &again);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	}
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
             int total = 0;
@@ -79,7 +81,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
             MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   - len=%d ", total);
         });
 
-	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
+	if (again)
 	{
             /* Create a new request and save remaining portions of the
 	     * iov in it. */
@@ -136,8 +138,11 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
     }
     
     *sreq_ptr = sreq;
-
+    
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 

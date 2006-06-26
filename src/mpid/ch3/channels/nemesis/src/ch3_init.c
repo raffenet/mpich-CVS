@@ -140,11 +140,7 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
     MPIDI_VC_Init (vc, NULL, 0);
 
     /* init channel portion of vc */
-    if (!nemesis_initialized)
-    {
-	mpi_errno =  MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**intern", 0);
-        goto fn_fail;
-    }
+    MPIU_ERR_CHKANDJUMP (!nemesis_initialized, mpi_errno, MPI_ERR_OTHER, "**intern");
     
     vc->ch.recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;

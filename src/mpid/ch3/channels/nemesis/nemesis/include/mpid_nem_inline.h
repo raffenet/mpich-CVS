@@ -22,16 +22,21 @@
 extern MPID_nem_cell_ptr_t MPID_nem_prefetched_cell;
 
 /*
-  int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc);
+  int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc, int *again);
 
   sends buf to vc
   Non-blocking
   size must not be greater than MPID_NEM_MPICH2_DATA_LEN
-  returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
+  sets again to 1 if it can't get a free cell, 0 otherwise
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_send
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
-MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
+MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc, int *again)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_ptr_t el;
     int my_rank;
 
@@ -41,7 +46,7 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
-	return MPID_NEM_MPICH2_AGAIN;
+	goto return_again;
     }
 #endif
 
@@ -56,16 +61,14 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
     if (!el)
     {
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	    return MPID_NEM_MPICH2_AGAIN;
+	    goto return_again;
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 #else /*PREFETCH_CELL    */
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ)) 
-    { 
-	return MPID_NEM_MPICH2_AGAIN;
-    }
+	goto return_again;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
@@ -111,14 +114,29 @@ MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc)
 #endif /*PREFETCH_CELL    */
 
     /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
-    return MPID_NEM_MPICH2_SUCCESS;
+
+ return_success:
+    *again = 0;
+    goto fn_exit;
+ return_again:
+    *again = 1;
+    goto fn_exit;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /* MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
    same as above, but sends MPICH2 32 byte header */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_send_header
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
-MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
+MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_ptr_t el;
     int my_rank;
 
@@ -126,7 +144,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
-	return MPID_NEM_MPICH2_AGAIN;
+        goto return_again;
     }
 #endif
     
@@ -181,7 +199,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
-	    return MPID_NEM_MPICH2_SUCCESS;
+	    goto return_success;
 	}
     }
  usequeue_l:
@@ -194,7 +212,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     if (!el)
     {
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	    return MPID_NEM_MPICH2_AGAIN;
+	    goto return_again;
 	
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
@@ -203,7 +221,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
     {
-	return MPID_NEM_MPICH2_AGAIN;
+	goto return_again;
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
@@ -268,7 +286,16 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
 
     /*DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14)); */
 
-    return MPID_NEM_MPICH2_SUCCESS;
+ return_success:
+    *again = 0;
+    goto fn_exit;
+ return_again:
+    *again = 1;
+    goto fn_exit;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 
@@ -279,11 +306,16 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
   Non-blocking
   if iov specifies more than MPID_NEM_MPICH2_DATA_LEN of data, the iov will be truncated, so that after MPID_nem_mpich2_sendv returns,
   iov will describe unsent data
-  returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
+  sets again to 1 if it can't get a free cell, 0 otherwise
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_sendv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
-MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
+MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *again)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
     int payload_len;    
@@ -295,7 +327,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
-	return MPID_NEM_MPICH2_AGAIN;
+        goto return_again;
     }
 #endif
     
@@ -311,7 +343,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	{
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
-	    return MPID_NEM_MPICH2_AGAIN;
+            goto return_again;
 	}
 	
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
@@ -320,7 +352,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
     {
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
-	return MPID_NEM_MPICH2_AGAIN;
+        goto return_again;
     }
 
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ , &el);
@@ -377,14 +409,28 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 #endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 
-    return MPID_NEM_MPICH2_SUCCESS;
+ return_success:
+    *again = 0;
+    goto fn_exit;
+ return_again:
+    *again = 1;
+    goto fn_exit;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /* MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
    same as above but first iov element is an MPICH2 32 byte header */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_send_header
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
-MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
+MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *again)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
     int payload_len;    
@@ -394,7 +440,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     if (MPID_nem_ckpt_sending_markers)
     {
 	MPID_nem_ckpt_send_markers();
-	return MPID_NEM_MPICH2_AGAIN;
+        goto return_again;
     }
 #endif
     
@@ -450,7 +496,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
-	    return MPID_NEM_MPICH2_SUCCESS;
+            goto return_success;
 	}
     }
  usequeue_l:
@@ -465,7 +511,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	{
 	    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
-	    return MPID_NEM_MPICH2_AGAIN;
+            goto return_again;
 	}
 	
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
@@ -474,7 +520,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
     {
 	DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
-	return MPID_NEM_MPICH2_AGAIN;
+        goto return_again;
     }
 
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
@@ -547,7 +593,16 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
 #endif /*PREFETCH_CELL */
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues5));
 
-    return MPID_NEM_MPICH2_SUCCESS;
+ return_success:
+    *again = 0;
+    goto fn_exit;
+ return_again:
+    *again = 1;
+    goto fn_exit;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /*
@@ -557,19 +612,19 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc)
   This function is called whenever a receive for a process on this node is matched.
   Fastboxes on fbox queue are polled regularly for incoming messages.
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_dequeue_fastbox
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 {
-    int ret = MPID_NEM_MPICH2_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_fboxq_elem_t *el;
 
-    el = &MPID_nem_fboxq_elem_list[local_rank];
+    el = &MPID_nem_fboxq_elem_list[local_rank];    
 
-    if (!el->usage)
-    {
-	ret = MPID_NEM_MPICH2_FAILURE;
-	goto exit_l;
-    }
+    MPIU_ERR_CHKANDJUMP (!el->usage, mpi_errno, MPI_ERR_OTHER, "**intern");
 
     --el->usage;
     if (el->usage == 0)
@@ -593,8 +648,10 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
 	}
     }
     
- exit_l:
-    return ret;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /*
@@ -603,10 +660,14 @@ MPID_nem_mpich2_dequeue_fastbox (int local_rank)
   This function is called whenever a receive is posted for a process on this node.
   Fastboxes on fbox queue are polled regularly for incoming messages.
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_dequeue_fastbox
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 {
-    int ret = MPID_NEM_MPICH2_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_fboxq_elem_t *el;
 
     el = &MPID_nem_fboxq_elem_list[local_rank];
@@ -633,7 +694,10 @@ int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
 	MPID_nem_fboxq_tail = el;
     }
     
-    return ret;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 /*
   MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
@@ -660,6 +724,8 @@ MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
+    int mpi_errno = MPI_SUCCESS;
+    
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 
 #ifdef ENABLED_CHECKPOINTING
@@ -671,7 +737,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPIU_Assert ((*cell)->pkt.mpich2.seqno == MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source]);
 	++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
-	return MPID_NEM_MPICH2_SUCCESS;
+	goto fn_exit;
     }
 #endif
     
@@ -690,14 +756,15 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 	*cell = NULL;
-	goto exit_l;
+	goto fn_exit;
     }
     
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
     *in_fbox = 0;
- exit_l:
+
+ fn_exit:
 #ifdef ENABLED_CHECKPOINTING
     if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
 	MPID_nem_ckpt_got_marker (cell, in_fbox);
@@ -714,11 +781,12 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	}
     });
     
-    return MPID_NEM_MPICH2_SUCCESS;
+    return mpi_errno;
 
  fbox_l:
     *in_fbox = 1;
-    goto exit_l;
+    goto fn_exit;
+
 }
 
 /*
@@ -764,7 +832,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 	}
     });
     
-    return MPID_NEM_MPICH2_SUCCESS;
+    return MPI_SUCCESS;
 
  fbox_l:
     *in_fbox = 1;
@@ -796,7 +864,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPIU_Assert ((*cell)->pkt.mpich2.seqno == MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source]);
 	++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
-	return MPID_NEM_MPICH2_SUCCESS;
+	return MPI_SUCCESS;
     }
 #endif
     
@@ -855,7 +923,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 
-    return MPID_NEM_MPICH2_SUCCESS;
+    return MPI_SUCCESS;
 
  fbox_l:
     *in_fbox = 1;
@@ -877,12 +945,12 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 	if (!MPID_nem_ckpt_message_log)
 	    /* this is the last replayed message */
 	    MPID_nem_ckpt_free_msg_log();
-	return MPID_NEM_MPICH2_SUCCESS;
+	return MPI_SUCCESS;
     }
 #endif
     MPID_nem_queue_enqueue (vc->ch.free_queue, cell);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9));
-    return MPID_NEM_MPICH2_SUCCESS;
+    return MPI_SUCCESS;
 }
 
 #endif //_MPID_NEM_INLINE_H

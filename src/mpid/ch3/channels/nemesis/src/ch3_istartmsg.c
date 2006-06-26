@@ -22,7 +22,7 @@
 int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_Request **sreq_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int shmem_errno;
+    int again;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
@@ -39,8 +39,9 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
        /* MT */
     {
 	MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "iStartMsg %d", hdr_sz);
-	shmem_errno = MPID_nem_mpich2_send_header (hdr, hdr_sz, vc);
-	if (shmem_errno == MPID_NEM_MPICH2_AGAIN)
+	mpi_errno = MPID_nem_mpich2_send_header (hdr, hdr_sz, vc, &again);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+	if (again)
 	{
 	    goto enqueue_it;
 	}
@@ -54,10 +55,11 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	goto enqueue_it;
     }
 
- end_l:
-
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
     
  enqueue_it:
     {
@@ -81,7 +83,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
 	*sreq_ptr = sreq;
 	
-	goto end_l;
+	goto fn_exit;
     }
 }
 

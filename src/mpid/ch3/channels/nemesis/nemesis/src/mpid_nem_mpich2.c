@@ -129,14 +129,12 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
     if (!el)
     {
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
-	    return MPID_NEM_MPICH2_AGAIN;
+            goto return_again;
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL    */
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ)) 
-    { 
-	return MPID_NEM_MPICH2_AGAIN;
-    }
+        goto return_again;
 
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
 #endif  /*PREFETCH_CELL      */
@@ -166,7 +164,13 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
 	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
 #endif /*ENABLED_CHECKPOINTING */
-    return MPID_NEM_MPICH2_SUCCESS;
+
+ return_success:
+    *try_again = 1;
+    return MPI_SUCCESS;
+ return_again:
+    *try_again = 1;
+    return MPI_SUCCESS;
 }
 
 /* Any reference to gm should be taken out from this file */
