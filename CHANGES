@@ -11,9 +11,9 @@
 - A new low-latency channel called Nemesis has been added. It can be
   selected by specifying the option --with-device=ch3:nemesis.
   Nemesis uses shared memory for intranode communication and various
-  networks for internode communication.  Available networks are TCP,
-  GM, and MX.  Nemesis is still a work in progress.  See the README for
-  more information about the channel.
+  networks for internode communication.  Currently available networks
+  are TCP and GM.  Nemesis is still a work in progress.  See the
+  README for more information about the channel.
 
 - Need to say something about Totalview support
 
