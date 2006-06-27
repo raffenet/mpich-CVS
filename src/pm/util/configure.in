@@ -137,6 +137,10 @@ pac_cv_have_haddr_list=yes,pac_cv_have_haddr_list=no)])
 if test "$pac_cv_have_haddr_list" = "yes" ; then
     AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
 fi
+
+# Check for types
+AC_TYPE_PID_T
+
 # Check for the functions needed to create a new session.
 # Note that getsid may not have a prototype in unistd.h unless
 # _XOPEN_SOURCE and _XOPEN_SOURCE_EXTENDED are defined, or
