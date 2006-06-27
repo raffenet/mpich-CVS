@@ -420,6 +420,14 @@ export device_args
 export devicedir
 
 #
+# Give the device an opportunity to include a header file in mpi.h.  The
+# default value of INCLUDE_MPIDDEFS_H is set prior to the inclusion of the
+# device's mpich2prereq script so that the the script may override the value
+# if needed.
+INCLUDE_MPIDDEFS_H='/* ... no device specific definitions ... */'
+AC_SUBST(INCLUDE_MPIDDEFS_H)
+
+#
 # See if the device wants to say something about the compilers (for example,
 # the globus device may need to do this)
 if test -f $devicedir/mpich2prereq ; then
@@ -451,6 +459,9 @@ fi
 # error-checking
 case "$enable_error_checking" in 
     no)
+    # if error checking has been diabled, then automatically diable the error
+    # checking tests in the test suite
+    ac_configure_args="${ac_configure_args} --disable-checkerrors"
     ;;
     all|yes|runtime)
     error_checking_kind=`echo $enable_error_checking | \
@@ -3840,6 +3851,9 @@ AC_TRY_COMPILE([
 if test "$ac_cv_header_sys_uio_h" = yes ; then
     AC_DEFINE(HAVE_SYS_UIO_H,1,[Define if you have the <sys/uio.h> header file.])
 fi
+
+# Check for special types
+AC_TYPE_SIZE_T
 
 # These are used to support timeouts
 AC_CHECK_FUNCS(setitimer alarm)
