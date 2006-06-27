@@ -8,6 +8,57 @@ dnl
 dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
 dnl bugs in autoconf caching.
 dnl
+dnl This is a large configure script and it is important to keep it
+dnl clearly organized.  In addition, this script must coordinate with 
+dnl the other modules that can be used to construct MPICH2, such as
+dnl the communication device and the process manager.  Each of these
+dnl may have special features or limitations that other modules or
+dnl this configure may need to take into account.  To handle this, there
+dnl are xx major steps in this configure script:
+dnl
+dnl 1. Identify major modules and source any prerequisite scripts
+dnl 2. Determine compiler characteristics 
+dnl 3. Setup and configure the other modules
+dnl 4. Determine MPI features and characteristics (such as datatype values)
+dnl
+dnl Each of these is described in more detail below.
+dnl
+dnl 1. Identify the modules (most are specified by 
+dnl --with-<modulename>=instance,
+dnl for example, --with-pm=mpd or --with-device=ch3:nemesis).
+dnl For each module, source the file mpich2prereq if present (in the
+dnl module's top-level directory).  This
+dnl must be a bourne (sh) shell script; it can access any of the variables
+dnl in the configure script.  In addition, there are a few variables that
+dnl are defined and provided to allow the modules to communicate their 
+dnl needs or limitations to the other modules.  These are:
+dnl    MPID_MAX_THREAD_LEVEL - thread level supported by device.
+dnl                            if unset, is MPI_THREAD_FUNNELED
+dnl    MPID_NO_LONG_LONG     - if yes, the device does not support the 
+dnl                            long long integer type
+dnl    MPID_NO_LONG_DOUBLE   - if yes, the device does not support the
+dnl                            long double type
+dnl
+dnl Note that the meanings of these variables are defined so that an 
+dnl undefined value gives the default.  This makes it easy to expand
+dnl the set of such variables, since only modules that need the new
+dnl variable will need to be changed.
+dnl
+dnl 2. Determine compiler characteristics
+dnl Here is where features of the compilers are determined, including
+dnl support for shared libraries and sizes of the basic datatype types.
+dnl
+dnl 3. Setup and configure the other modules
+dnl Before each module configure is executed, the script setup_<module>
+dnl is run if present.  This is a bourne (sh) shell script and may
+dnl access configure variables.  It should not make any changes to the
+dnl compiler name or flags (e.g., do not add -D_XOPEN_SOURCE to CFLAGS here,
+dnl because that may invalidate the determination of the compiler 
+dnl characteristics in the prior step).
+dnl
+dnl 4. Determine MPI features
+dnl    
+dnl
 dnl Special environment variables
 dnl To let other scripts and in particular the configure in test/mpi
 dnl know that they are being invoked from within the MPICH2 configure,
@@ -202,25 +253,6 @@ The following implementations are supported.
 The default implementation is global_mutex.],,
 enable_threads=default)
 dnl 
-dnl Threads supported only for the sock channel. This check should be done by the 
-dnl channel, but doing it here for now. 
-dnl
-if test "$with_device" != "default" -a "$with_device" != "ch3:sock" ; then
-    if test "$enable_threads" = "yes" -o "$enable_threads" = "multiple"; then
-         AC_MSG_ERROR([--enable-threads=multiple is currently supported only for the default ch3:sock channel])
-    fi
-    enable_threads=funneled
-fi
-dnl 
-if test "$enable_threads" = "yes" ; then 
-    enable_threads=multiple
-elif test "$enable_threads" = "no" ; then
-    enable_threads=single
-elif test "$enable_threads" = "default"; then
-    if test "$with_device" = "default" -o "$with_device" = "ch3:sock" ; then
-        enable_threads=runtime
-    fi
-fi
 dnl
 AC_ARG_ENABLE(weak-symbols,
 [--enable-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
@@ -385,6 +417,7 @@ case "$device_name" in
 esac
 export device_name
 export device_args
+export devicedir
 
 #
 # See if the device wants to say something about the compilers (for example,
@@ -630,9 +663,36 @@ AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging l
 # End of logging tests
 # ----------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------
+# Threads
+# ----------------------------------------------------------------------------
 #
-# threads
-#
+# Threads must be supported by the device.  First, set the default to
+# be the highest supported by the device
+if test "$enable_threads" = default ; then
+    if test -n "$MPID_MAX_THREAD_LEVEL" ; then
+        case $MPID_MAX_THREAD_LEVEL in
+            MPI_THREAD_SINGLE)     enable_threads=single ;;
+            MPI_THREAD_FUNNELED)   enable_threads=funneled ;;
+            MPI_THREAD_SERIALIZED) enable_threads=serialized ;;
+            MPI_THREAD_MULTIPLE)   enable_threads=runtime ;;
+            *) AC_MSG_ERROR([Unrecognized thread level from device $MPID_MAX_THREAD_LEVEL])
+    	    ;;
+        esac
+    else
+        enable_threads=single
+    fi
+fi
+
+if test "$enable_threads" = "yes" ; then 
+    enable_threads=multiple
+elif test "$enable_threads" = "no" ; then
+    enable_threads=single
+elif test "$enable_threads" = "default"; then
+    if test "$with_device" = "default" -o "$with_device" = "ch3:sock" ; then
+        enable_threads=runtime
+    fi
+fi
 # Runtime is an alias for multiple with an additional value
 if test "$enable_threads" = "runtime" ; then
     AC_DEFINE(HAVE_RUNTIME_THREADCHECK,1,[Define if MPI supports MPI_THREAD_MULTIPLE with a runtime check for thread level])
@@ -681,6 +741,39 @@ case "$enable_threads" in
     AC_MSG_ERROR(["$enable_threads" is not a valid value for --enable-threads])     
     ;;
 esac
+# Check that the requested thread level is available.
+threadLevelOK=yes
+if test -z "$MPID_MAX_THREAD_LEVEL" ; then
+    if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" ; then
+        threadLevelOK=no
+    fi
+else
+    # Check that MPID_MAX_THREAD_LEVEL is at least as large as the
+    # selected MPICH_THREAD_LEVEL
+    case $MPICH_THREAD_LEVEL in 
+        MPI_THREAD_MULTIPLE)
+	if test "$MPID_MAX_THREAD_LEVEL" != "MPI_THREAD_MULTIPLE" ; then
+	    threadLevelOK=no
+        fi
+	;;
+	MPI_THREAD_SERIALIZED)
+	if test "$MPID_MAX_THREAD_LEVEL" != "MPI_THREAD_MULTIPLE" -o \
+	        "$MPID_MAX_THREAD_LEVEL" != "MPI_THREAD_SERIALIZED" ; then
+            threadLevelOK=no
+        fi
+	;;
+	MPI_THREAD_FUNNELED)
+        if test "$MPID_MAX_THREAD_LEVEL" = "MPI_THREAD_SINGLE" ; then
+            threadLevelOK=no
+        fi
+	;;
+	MPI_THREAD_SINGLE)
+	;;
+    esac
+fi
+if test "$threadLevelOK" != yes ; then
+   AC_MSG_ERROR([The device $with_device does not support MPI_THREAD_MULTIPLE])
+fi
 
 export MPICH_THREAD_LEVEL
 AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$MPICH_THREAD_LEVEL,[Level of thread support selected at compile time])
@@ -1539,44 +1632,31 @@ EOF
     # that return a non-zero status even when they accept the -V option
     # (a zero status is returned only if there is a file).
     pac_cv_f90_vendor="unknown"
-    rm -f conftest.txt
-    $F90 --version </dev/null >conftest.txt 2>&1
-    if test "$?" != 0 ; then
+    for arg in --version -V -v ; do
         rm -f conftest.txt
-        # Put -V before -v because that's better for PGI and Solaris
-        $F90 -V </dev/null >conftest.txt 2>&1 
-        if test "$?" != 0 ; then 
-	    # First check to see if we like the conftest file
-	    if test -s conftest.txt && \
-	             grep Intel conftest.txt 2>&1 >/dev/null ; then
-	         pac_cv_f90_vendor="intel"
-            fi
-            if test "$pac_cv_f90_vendor" = "unknown" ; then
-	        rm -f conftest.txt
-	        $F90 -v </dev/null  >conftest.txt 2>&1
-                if test "$?" != 0 ; then 
-	            rm -f conftest.txt
-                fi
-            fi
+        $F90 $arg </dev/null >conftest.txt 2>&1
+	# Ignore the return code, because some compilers set the
+	# return code to zero on invalid arguments and some to 
+        # non-zero on success (with no files to compile)
+        if test -f conftest.txt ; then
+            if grep 'Portland Group' conftest.txt >/dev/null 2>&1 ; then
+                pac_cv_f90_vendor=pgi
+            elif grep 'Sun Workshop' conftest.txt >/dev/null 2>&1 ; then
+                pac_cv_f90_vendor=sun
+            elif grep 'Absoft' conftest.txt >/dev/null 2>&1 ; then
+                pac_cv_f90_vendor=absoft
+            elif grep 'G95' conftest.txt >/dev/null 2>&1 ; then
+                pac_cv_f90_vendor=gnu
+            elif grep 'GNU Fortran' conftest.txt >/dev/null 2>&1 ; then
+                # This is gfortran
+                pac_cv_f90_vendor=gnu
+	    elif grep Intel conftest.txt >/dev/null 2>&1 ; then
+                pac_cv_f90_vendor=intel
+	    fi
         fi
-    fi
-    # Try to find the compiler information
-    # Known limitation.  For the Intel compiler, -V with no program
-    # returns status 1 and -v gives ONLY the version number
-    if test -f conftest.txt ; then
-        if grep 'Portland Group' conftest.txt >/dev/null 2>&1 ; then
-            pac_cv_f90_vendor=pgi
-        elif grep 'Sun Workshop' conftest.txt >/dev/null 2>&1 ; then
-            pac_cv_f90_vendor=sun
-        elif grep 'Absoft' conftest.txt >/dev/null 2>&1 ; then
-            pac_cv_f90_vendor=absoft
-        elif grep 'G95' conftest.txt >/dev/null 2>&1 ; then
-            pac_cv_f90_vendor=gnu
-        elif grep 'GNU Fortran' conftest.txt >/dev/null 2>&1 ; then
-            # This is gfortran
-            pac_cv_f90_vendor=gnu
-        fi
-    else 
+        if test "$pac_cv_f90_vendor" != "unknown" ; then break ; fi
+    done
+    if test "$pac_cv_f90_vendor" = "unknown" ; then
         # Try to use the compiler name
         if test "$F90" = "ifort" -o "$F90" = "ifc" ; then 
             pac_cv_f90_vendor=intel
@@ -2245,24 +2325,30 @@ if test "$enable_dependencies" != "no" ; then
 fi
 export MAKE_DEPEND_C
 # ----------------------------------------------------------------------------
-
 # Check on support for long double and long long types.  Do this before the
 # structure alignment test because it will test for including those
-# types as well
-AC_CACHE_CHECK([whether long double is supported],
-pac_cv_have_long_double,[
-AC_TRY_COMPILE(,[long double a;],
-pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
-if test "$pac_cv_have_long_double" = "yes" ; then
-    AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
+# types as well.  In addition, allow the device to suppress support for these
+# optional C types by setting MPID_NO_LONG_DOUBLE and/or MPID_NO_LONG_LONG
+# to yes.
+if test "$MPID_NO_LONG_DOUBLE" != "yes" ; then
+    AC_CACHE_CHECK([whether long double is supported],
+    pac_cv_have_long_double,[
+    AC_TRY_COMPILE(,[long double a;],
+    pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+    if test "$pac_cv_have_long_double" = "yes" ; then
+        AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
+    fi
 fi
-AC_CACHE_CHECK([whether long long is supported],
-pac_cv_have_long_long,[
-AC_TRY_COMPILE(,[long long a;],
-pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
-if test "$pac_cv_have_long_long" = "yes" ; then
-    AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
+if test "$MPID_NO_LONG_LONG" != "yes" ; then
+    AC_CACHE_CHECK([whether long long is supported],
+    pac_cv_have_long_long,[
+    AC_TRY_COMPILE(,[long long a;],
+    pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
+    if test "$pac_cv_have_long_long" = "yes" ; then
+        AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
+    fi
 fi
+# ----------------------------------------------------------------------------
 # Get default structure alignment for integers
 dnl PAC_C_MAX_INTEGER_ALIGN places the default alignment into
 dnl pac_cv_c_max_integer_align, with possible values including
@@ -2538,10 +2624,18 @@ MPI_INT="0x4c00${len_int}05"
 MPI_UNSIGNED_INT="0x4c00${len_int}06"
 MPI_LONG="0x4c00${len_long}07"
 MPI_UNSIGNED_LONG="0x4c00${len_long}08"
-MPI_LONG_LONG="0x4c00${len_long_long}09"
+if test "$len_long_long" != 0 -a "$MPID_NO_LONG_LONG" != yes ; then
+    MPI_LONG_LONG="0x4c00${len_long_long}09"
+else 
+    MPI_LONG_LONG=MPI_DATATYPE_NULL;
+fi
 MPI_FLOAT="0x4c00${len_float}0a"
 MPI_DOUBLE="0x4c00${len_double}0b"
-MPI_LONG_DOUBLE="0x4c00${len_long_double}0c"
+if test "$len_long_double" != 0 -a "$MPID_NO_LONG_DOUBLE" != yes ; then
+    MPI_LONG_DOUBLE="0x4c00${len_long_double}0c"
+else
+    MPI_LONG_DOUBLE=MPI_DATATYPE_NULL
+fi
 # If you change MPI_BYTE, you must change it in src/binding/f77/buildiface
 MPI_BYTE="0x4c00010d"
 MPI_WCHAR="0x4c00${len_wchar_t}0e"
@@ -2572,7 +2666,11 @@ MPI_LONG_DOUBLE_INT="0x8c000004"
 
 # 2 additional predefined types named in MPI-2
 MPI_SIGNED_CHAR="0x4c000118"
-MPI_UNSIGNED_LONG_LONG="0x4c00${len_long_long}19"
+if test "$len_long_long" != 0 -a "$MPID_NO_LONG_LONG" != yes ; then
+    MPI_UNSIGNED_LONG_LONG="0x4c00${len_long_long}19"
+else
+    MPI_UNSIGNED_LONG_LONG=MPI_DATATYPE_NULL
+fi
 
 AC_SUBST(MPI_CHAR)
 AC_SUBST(MPI_UNSIGNED_CHAR)
@@ -2600,15 +2698,16 @@ AC_SUBST(MPI_LONG_DOUBLE_INT)
 AC_SUBST(MPI_SIGNED_CHAR)
 AC_SUBST(MPI_UNSIGNED_LONG_LONG)
 #
-# Export the basic C types so that the Fortran system can use them
-export MPI_CHAR
-export MPI_SHORT
-export MPI_INT
-export MPI_LONG
-export MPI_LONG_LONG
-export MPI_FLOAT
-export MPI_DOUBLE
-export MPI_LONG_DOUBLE
+# FIXME: Leftover from separate fortran system
+## Export the basic C types so that the Fortran system can use them
+#export MPI_CHAR
+#export MPI_SHORT
+#export MPI_INT
+#export MPI_LONG
+#export MPI_LONG_LONG
+#export MPI_FLOAT
+#export MPI_DOUBLE
+#export MPI_LONG_DOUBLE
 #
 # Size-specific types.  Initialize as NULL
 MPI_REAL4=MPI_DATATYPE_NULL
