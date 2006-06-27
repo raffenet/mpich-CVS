@@ -84,6 +84,32 @@ int MPIR_Err_create_code( int, int, const char [], int, int, const char [], cons
 int MPIR_Err_create_code_valist( int, int, const char [], int, int, const char [], const char [], va_list );
 #endif
 
+/*@
+  MPIR_Err_combine_codes - Combine two error codes, or more importantly
+  two lists of error messages.  The list associated with the second error
+  code is appended to the list associated with the first error code.  If
+  the list associated with the first error code has a dangling tail, which
+  is possible if the ring has wrapped and overwritten entries that were
+  once part of the list, then the append operation is not performed and
+  the error code for the first list is returned.
+
+  Input Parameter:
++ errorcode1 - the error code associated with the first list
+- errorcode2 - the error code associated with the second list
+
+  Return value:
+  An error code which resolves to the combined list of error messages
+
+  Notes:
+  If errorcode1 is equal to MPI_SUCCESS, then errorcode2 is returned.
+  Likewise, if errorcode2 is equal to MPI_SUCCESS, then errorcode1 is
+  returned.
+
+  Module:
+  Error 
+  @*/
+int MPIR_Err_combine_codes(int, int);
+
 int MPIR_Err_is_fatal(int);
 void MPIR_Err_init(void);
 void MPIR_Err_preinit( void );
