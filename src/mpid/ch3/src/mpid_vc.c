@@ -157,11 +157,15 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	MPIU_Free(vcrt);
     }
 
- fn_exit:    
+    /* Commented out blocks that are not needed unless MPIU_ERR_POP is 
+       used above */
+    /* fn_exit:     */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
+    /*
  fn_fail:
     goto fn_exit;
+    */
 }
 
 #undef FUNCNAME
@@ -552,7 +556,5 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm *comm_ptr )
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_COMM_FINISHPENDING);
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
