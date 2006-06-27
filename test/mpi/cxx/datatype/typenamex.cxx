@@ -62,7 +62,8 @@ int main( int argc, char **argv )
 
     /* Now we try them ALL */
     for (i=0; mpi_names[i].name != 0; i++) {
-	/* The size-specific types may be DATATYPE_NULL */
+	/* The size-specific types, as well as the language optional
+	   long long and long double, may be DATATYPE_NULL */
 	if (mpi_names[i].dtype == MPI::DATATYPE_NULL) continue;
 	name[0] = 0;
 	mpi_names[i].dtype.Get_name( name, namelen );
