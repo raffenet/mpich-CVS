@@ -344,6 +344,9 @@ int MPIDI_PG_Dup_vcr( MPIDI_PG_t *, int, MPIDI_VC_t ** );
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 
+/* CH3_PG_Init allows the channel to pre-initialize the process group */
+int MPIDI_CH3_PG_Init( MPIDI_PG_t * );
+
 /* FIXME: It would be simpler if we used MPIU_Object_add_ref etc. uniformly,
    rather than defining separate routines */
 #define MPIDI_PG_Add_ref(pg_)			\
@@ -612,6 +615,7 @@ int MPIDI_Comm_accept(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **)
 int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, 
 			      int, MPID_Comm *, MPID_Comm **, int *);
 
+
 /* This structure defines a module that handles the routines that 
    work with MPI port names */
 typedef struct MPIDI_Port_Ops {
@@ -633,6 +637,11 @@ int MPIDI_CH3I_Acceptq_init(void);
 /*--------------------------
   END MPI PORT SECTION 
   --------------------------*/
+
+/* part of mpid_vc.c, this routine completes any pending operations 
+   on a communicator */
+int MPIDI_CH3U_Comm_FinishPending( MPID_Comm * );
+
 
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
