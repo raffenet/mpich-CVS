@@ -258,50 +258,6 @@ int MPIR_Err_add_code( int class )
     return new_code;
 }
 
-#ifdef USE_ERRDELETE
-/* These were added for completeness and for any other modules that 
-   might be loaded with MPICH2.  No code uses these at this time */
-/*
-  MPIR_Err_delete_code - Delete an error code and its associated string
-
-  Input Parameter:
-. code - Code to delete.
- 
-  Notes:
-  This routine is not needed to implement any MPI routine (there are no
-  routines for deleting error codes or classes in MPI-2), but it is 
-  included both for completeness and to remind the implementation to 
-  carefully manage the memory used for dynamically created error codes and
-  classes.
-  */
-void MPIR_Err_delete_code( int code )
-{
-    if (not_initialized)
-	MPIR_Init_err_dyncodes();
-    /* FIXME : mark as free */
-}
-
-/*
-  MPIR_Err_delete_class - Delete an error class and its associated string
-
-  Input Parameter:
-. class - Class to delete.
-  */
-void MPIR_Err_delete_class( int class )
-{
-    if (not_initialized)
-	MPIR_Init_err_dyncodes();
-    /* FIXME : mark as free */
-}
-
-/* FIXME : For the delete code/class, at least delete if at the top of the
-   list; slightly better is to keep minvalue of freed and count; whenever
-   the minvalue + number = current top; reset.  This allows modular 
-   alloc/dealloc to recover codes and classes independent of the order in
-   which they are freed.
-*/
-#endif
-
 /*
   MPIR_Err_get_dynerr_string - Get the message string that corresponds to a
   dynamically created error class or code

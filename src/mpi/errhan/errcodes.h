@@ -12,8 +12,6 @@
 int MPIR_Err_set_msg( int, const char * );
 int MPIR_Err_add_class( void );
 int MPIR_Err_add_code( int );
-void MPIR_Err_delete_code( int );
-void MPIR_Err_delete_class( int );
 
 /* 
    This file contains the definitions of the error code fields
