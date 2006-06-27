@@ -242,10 +242,10 @@ void MPIU_trdumpGrouped ( FILE *, int );
 
 #else /* USE_MEMORY_TRACING */
 /* No memory tracing; just use native functions */
-#define MPIU_Malloc(a)    malloc((unsigned)(a))
-#define MPIU_Calloc(a,b)  calloc((unsigned)(a),(unsigned)(b))
+#define MPIU_Malloc(a)    malloc((size_t)(a))
+#define MPIU_Calloc(a,b)  calloc((size_t)(a),(size_t)(b))
 #define MPIU_Free(a)      free((void *)(a))
-#define MPIU_Realloc(a,b)  realloc((a),(b))
+#define MPIU_Realloc(a,b)  realloc((void *)(a),(size_t)(b))
 
 #ifdef HAVE_STRDUP
 /* Watch for the case where strdup is defined as a macro by a header include */
