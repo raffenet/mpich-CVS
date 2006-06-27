@@ -36,7 +36,7 @@
      MPIU_DBG_Outevent( __FILE__, __LINE__, MPIU_DBG_##_class, 3, _fmat, _pointer ); }}
 
 #define MPIU_DBG_MAXLINE 256
-#define MPIU_DBG_FDEST _s,MPIU_DBG_MAXLINE
+#define MPIU_DBG_FDEST _s,(size_t)MPIU_DBG_MAXLINE
 #define MPIU_DBG_MSG_FMT(_class,_level,_fmatargs) \
    {if ( (MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
           MPIU_DBG_##_level <= MPIU_DBG_MaxLevel ) {\

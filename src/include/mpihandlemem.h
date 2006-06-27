@@ -83,7 +83,7 @@ typedef enum MPID_Object_kind {
 /* Mask assumes that ints are at least 4 bytes */
 #define HANDLE_KIND_MASK 0xc0000000
 #define HANDLE_KIND_SHIFT 30
-#define HANDLE_GET_KIND(a) (((a)&HANDLE_KIND_MASK)>>HANDLE_KIND_SHIFT)
+#define HANDLE_GET_KIND(a) (((unsigned)(a)&HANDLE_KIND_MASK)>>HANDLE_KIND_SHIFT)
 #define HANDLE_SET_KIND(a,kind) ((a)|((kind)<<HANDLE_KIND_SHIFT))
 
 /* For indirect, the remainder of the handle has a block and index */
