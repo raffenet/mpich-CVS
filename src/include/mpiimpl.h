@@ -2063,9 +2063,10 @@ void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 #define MPIR_FINALIZE_CALLBACK_MAX_PRIO 10
 
 /* For no error checking, we could define MPIR_Nest_incr/decr as empty */
-void MPIR_Nest_incr(void);
-void MPIR_Nest_decr(void);
-int MPIR_Nest_value(void);
+
+/* These routines export the nesting controls for use in ROMIO */
+void MPIR_Nest_incr_export(void);
+void MPIR_Nest_decr_export(void);
 
 #ifdef MPICH_DEBUG_NESTING
 /* FIXME: We should move the initialization and error reporting into

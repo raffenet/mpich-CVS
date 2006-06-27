@@ -1884,32 +1884,19 @@ static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
    MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
  */
 
-/* Undefine the macro values to allow us to export these as routines
-   for external packages such as ROMIO */
-#if defined(MPIR_Nest_incr)
-#undef MPIR_Nest_incr
-#undef MPIR_Nest_decr
-#undef MPIR_Nest_value
-#endif
-void MPIR_Nest_incr( void )
+/* These routines export the nest increment and decrement for use in ROMIO */
+void MPIR_Nest_incr_export( void )
 {
     MPICH_PerThread_t *p;
     MPIR_GetPerThread(&p);
     p->nest_count++;
 }
-void MPIR_Nest_decr( void )
+void MPIR_Nest_decr_export( void )
 {
     MPICH_PerThread_t *p;
     MPIR_GetPerThread(&p);
     p->nest_count--;
 }
-int MPIR_Nest_value()
-{
-    MPICH_PerThread_t *p;
-    MPIR_GetPerThread(&p);
-    return p->nest_count;
-}
-
 
 /*
  * Error handlers.  These are handled just like the other opaque objects
