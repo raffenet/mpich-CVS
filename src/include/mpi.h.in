@@ -379,20 +379,6 @@ typedef int (MPI_Grequest_cancel_function)(void *, int);
 typedef int (MPI_Grequest_free_function)(void *); 
 typedef int (MPI_Grequest_query_function)(void *, MPI_Status *); 
 
-#ifdef HAVE_MPICH2G2
-/*************** Experimental MPICH FEATURES BEGIN HERE *******************/
-/* Attribute keys.  These are set to MPI_KEYVAL_INVALID by default */
-extern int MPICHX_QOS_BANDWIDTH;
-extern int MPICHX_QOS_PARAMETERS;
-/**************** Experimental MPICH FEATURES END HERE ********************/
-
-/******** Globus-2 device gives access to the underlying processor ********/
-/******** topology at the user level using attribute caching **************/
-extern int MPICHX_TOPOLOGY_DEPTHS;
-extern int MPICHX_TOPOLOGY_COLORS;
-/******** End of Globus-2 device keys *************************************/
-#endif
-
 /* MPI's error classes */
 #define MPI_SUCCESS          0      /* Successful return code */
 /* Communication argument parameters */
@@ -487,6 +473,9 @@ typedef int (MPI_Datarep_extent_function)(MPI_Datatype datatype, MPI_Aint *,
    conventions or DLL import/export controls).  
 */
 /* --Insert Additional Definitions Here-- */
+
+/* Include any device specific definitions */
+@INCLUDE_MPIDDEFS_H@
 
 /*
  * Normally, we provide prototypes for all MPI routines.  In a few wierd
