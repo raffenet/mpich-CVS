@@ -675,29 +675,32 @@ void *MPIU_trrealloc( void *p, int size, int lineno, const char fname[] )
     void    *pnew;
     char    *pa;
     int     nsize;
-    TRSPACE *head;
+    TRSPACE *head=0;
     char    hexstring[MAX_ADDRESS_CHARS];
 
 /* We should really use the size of the old block... */
-    pa   = (char *)p;
-    head = (TRSPACE *)(pa - sizeof(TrSPACE));
-    if (head->cookie != COOKIE_VALUE) {
-	/* Damaged header */
-	addrToHex( pa, hexstring );
-	MPIU_Error_printf( 
-"[%d] Block at address %s is corrupted; cannot realloc;\n\
+    if (p) {
+	pa   = (char *)p;
+	head = (TRSPACE *)(pa - sizeof(TrSPACE));
+	if (head->cookie != COOKIE_VALUE) {
+	    /* Damaged header */
+	    addrToHex( pa, hexstring );
+	    MPIU_Error_printf( 
+		"[%d] Block at address %s is corrupted; cannot realloc;\n\
 may be block not allocated with MPIU_trmalloc or MALLOC\n", 
-		     world_rank, hexstring );
-	return 0;
+		world_rank, hexstring );
+	    return 0;
+	}
     }
-
     pnew = MPIU_trmalloc( (unsigned)size, lineno, fname );
     if (!pnew) return p;
 
-    nsize = size;
-    if (head->size < (unsigned long)nsize) nsize = (int)(head->size);
-    memcpy( pnew, p, nsize );
-    MPIU_trfree( p, lineno, fname );
+    if (p) {
+	nsize = size;
+	if (head->size < (unsigned long)nsize) nsize = (int)(head->size);
+	memcpy( pnew, p, nsize );
+	MPIU_trfree( p, lineno, fname );
+    }
     return pnew;
 }
 
