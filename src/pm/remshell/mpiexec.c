@@ -6,9 +6,8 @@
 
 /* OWNER=gropp */
 
-/* An example mpiexec program that simply forks new processes on the 
-   same host.  This provides a simple way to run MPI programs without
-   requiring any special services.
+/* An example mpiexec program that uses a remote shell program to create
+   new processes on the selected hosts.
 
    This code also shows how to use the pmutil routines (in ../util) 
    to provide many of the services required by mpiexec 
@@ -47,6 +46,22 @@
    (using one of several approaches, such as taking the maximum of the
    exit statuses).
 
+  Special Case to support Singleton Init:
+  To support a singleton init of a process that then wants to 
+  create processes with MPI_Comm_spawn(_multiple), a special form of
+  mpiexec is supported:
+  
+     mpiexec -pmi_args <port> <interfacename> <securitykey> <pid>
+
+  The singleton process (in a routine in simple_pmi.c) forks a process and
+  execs mpiexe with these arguments, where port is the port to which 
+  mpiexec should connect, interfacename is the name of the network interface
+  (BUG: may not be correctly set as mpd currently ignores it), securitykey
+  is a place-holder for a key used by the singleton init process to verify
+  that the process connecting on the port is the one that was intended, and
+  pid is the pid of the singleton init process.
+
+  FIXME: The above has not been implemented yet.
 */
 
 #include "remshellconf.h"
@@ -116,6 +131,13 @@ int main( int argc, char *argv[], char *envp[] )
 	exit(1);
     }
 
+    if (pUniv.fromSingleton) {
+	/* The MPI process is already running.  We create a simple entry
+	   for a single process rather than creating the process */
+	MPIE_SetupSingleton( &pUniv );
+    }
+
+
     rc = MPIE_ChooseHosts( &pUniv.worlds[0], MPIE_ReadMachines, 0 );
     if (rc) {
 	MPIU_Error_printf( "Unable to assign hosts to processes\n" );
@@ -137,18 +159,25 @@ int main( int argc, char *argv[], char *envp[] )
 	rc = MPIE_StageExecutables( &pUniv.worlds[0] );
 	if (!rc) ...;
     }
-#endif    
+#endif
 
     s.pmiinfo.portName = 0;
 
     PMIServInit(myspawn,&s);
     s.pmiinfo.pWorld = &pUniv.worlds[0];
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
-/*    MPIE_ForwardCommonSignals(); */
-    printf( "About to fork\n" );fflush(stdout);
-    MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
+    MPIE_ForwardCommonSignals(); 
+    if (!pUniv.fromSingleton) {
+	printf( "About to fork\n" );fflush(stdout);
+	MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
 			mypostfork, 0, mypostamble, 0 );
-    printf( "Done with fork\n" );fflush(stdout);
+	printf( "Done with fork\n" );fflush(stdout);
+    }
+    else {
+	/* FIXME: The singleton code goes here */
+	fprintf( stderr, "Singleton init not supported\n" );
+	exit(1);
+    }
     reason = MPIE_IOLoop( pUniv.timeout );
 
     if (reason == IOLOOP_TIMEOUT) {
@@ -243,7 +272,7 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 	for (j=0; j<app->nArgs; j++) {
 	    newargs[j+2] = app->args[j];
 	}
-	newargs[j+1] = 0;
+	newargs[j+2] = 0;
 	app->exename = strdup( "/usr/bin/ssh" );
 
 	app->args = newargs;
