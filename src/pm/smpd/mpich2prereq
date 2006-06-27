@@ -1,0 +1,3 @@
+#! /bin/sh
+# The smpd PM requires the smpd PMI implementation
+PM_REQUIRES_PMI=smpd
