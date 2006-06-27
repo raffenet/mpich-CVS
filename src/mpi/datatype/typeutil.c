@@ -133,10 +133,20 @@ int MPIR_Datatype_init(void)
     MPID_Type_create_pairtype(mpi_pairtypes[0], (MPID_Datatype *) ptr);
 
     for (i=1; mpi_pairtypes[i] != (MPI_Datatype) -1; i++) {
+	/* types based on 'long long' and 'long double', may be disabled at
+	   configure time, and their values set to MPI_DATATYPE_NULL.  skip any
+	   such types. */
+	if (mpi_pairtypes[i] == MPI_DATATYPE_NULL) continue;
+
+	/* XXX: this allocation strategy isn't right if one or more of the
+	   pairtypes is MPI_DATATYPE_NULL.  in fact, the assert below will
+	   fail if any type other than the las in the list is equal to
+	   MPI_DATATYPE_NULL.  obviously, this should be fixed, but I need
+	   to talk to Rob R. first. -- BRT */
 	ptr = MPID_Datatype_mem.avail;
 	MPID_Datatype_mem.avail = ptr->next;
 	ptr->next = 0;
-	
+
 	MPIU_Assert(ptr);
 	MPIU_Assert((void *) ptr ==
 		    (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[i])));
@@ -196,8 +206,9 @@ int MPIR_Datatype_builtin_fillin(void)
 		/* At the end of mpi_dtypes */
 		break;
 	    }
-	    /* Some of the size-specific types may be null,
-	       so skip that case */
+	    /* Some of the size-specific types may be null, as might be types
+	       based on 'long long' and 'long double' if those types were
+	       disabled at configure time.  skip those cases. */
 	    if (d == MPI_DATATYPE_NULL) continue;
 	    
 	    MPID_Datatype_get_ptr(d,dptr);

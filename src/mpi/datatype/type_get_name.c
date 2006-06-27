@@ -126,7 +126,9 @@ int MPIR_Datatype_init_names( void )
 	/* For each predefined type, ensure that there is a corresponding
 	   object and that the object's name is set */
 	for (i=0; mpi_names[i].name != 0; i++) {
-	    /* The size-specific types may be DATATYPE_NULL */
+	    /* The size-specific types may be DATATYPE_NULL, as might be those
+	       based on 'long long' and 'long double' if those types were
+	       disabled at configure time. */
 	    if (mpi_names[i].dtype == MPI_DATATYPE_NULL) continue;
 	    
 	    MPID_Datatype_get_ptr( mpi_names[i].dtype, datatype_ptr );
@@ -148,6 +150,11 @@ int MPIR_Datatype_init_names( void )
 	}
 	/* Handle the minloc/maxloc types */
 	for (i=0; mpi_maxloc_names[i].name != 0; i++) {
+	    /* types based on 'long long' and 'long double' may be disabled at
+	       configure time, and their values set to MPI_DATATYPE_NULL.  skip
+	       those types. */
+	    if (mpi_maxloc_names[i].dtype == MPI_DATATYPE_NULL) continue;
+	    
 	    MPID_Datatype_get_ptr( mpi_maxloc_names[i].dtype, 
 				   datatype_ptr );
 	    if (!datatype_ptr) {
