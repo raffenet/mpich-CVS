@@ -29,7 +29,7 @@
 #endif
 
 #ifndef HAVE_WINDOWS_H
-
+/* FIXME: Do we need these routines for all shmem or only for some options? */
 /* Initialize for reading and writing to the designated process */
 int MPIDI_SHM_InitRWProc( pid_t pid, int *fd )
 {
@@ -39,7 +39,9 @@ int MPIDI_SHM_InitRWProc( pid_t pid, int *fd )
     MPIU_Snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
     *fd = open(filename, O_RDWR );
     if (*fd == -1) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**open", "**open %s %d %d", filename, pid, errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+			  FCNAME, __LINE__, MPI_ERR_OTHER, 
+			  "**open", "**open %s %d %d", filename, pid, errno);
 	return mpi_errno;
 	
     }
@@ -55,15 +57,15 @@ int MPIDI_SHM_AttachProc( pid_t pid )
     int status;
 
     if (ptrace(PTRACE_ATTACH, pid, 0, 0) != 0) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace attach failed", errno);
-	return mpi_errno;
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_OTHER,"**fail", 
+			     "**fail %s %d", "ptrace attach failed", errno);
     }
-    if (waitpid(pid, &status, WUNTRACED) != pid)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "waitpid failed", errno);
-	return mpi_errno;
+    if (waitpid(pid, &status, WUNTRACED) != pid) {
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_OTHER, "**fail", 
+			     "**fail %s %d", "waitpid failed", errno);
     }
-    return MPI_SUCCESS;
+ fn_fail:
+    return mpi_errno;
 }
 
 
@@ -74,10 +76,12 @@ int MPIDI_SHM_AttachProc( pid_t pid )
  */
 int MPIDI_SHM_DetachProc( pid_t pid )
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     if (ptrace(PTRACE_DETACH, pid, 0, 0) != 0) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_OTHER, "**fail", 
+			     "**fail %s %d", "ptrace detach failed", errno);
     }
+ fn_fail:
     return mpi_errno;
 }
 
@@ -93,20 +97,25 @@ int MPIDI_SHM_ReadProcessMemory( int fd, int pid,
 
     uOffset = lseek( fd, offset, SEEK_SET );
     if (uOffset != offset) {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
-	return mpi_errno;
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**fail", 
+			    "**fail %s %d", "lseek failed", errno);
     }
 
     num_read = read( fd, dest, len );
     if (num_read < 1) {
 	if (num_read == -1) {
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "read failed", errno);
-	    return mpi_errno;
+	    MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_OTHER, "**fail", 
+				 "**fail %s %d", "read failed", errno);
 	}
 	/* If we only read part of the data, use ptrace to do what? */
+	/* According to the man page on ptrace, this reads
+	   a word (4 bytes) of memory at the location given by the third 
+	   argument. This is use to force the page in place.
+	*/
 	ptrace( PTRACE_PEEKDATA, pid, source+len - num_read, 0 );
     }
     /* FIXME: Now what? Why not continue to read? */
+ fn_fail:
     return mpi_errno;
 }
 

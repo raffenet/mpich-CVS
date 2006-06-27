@@ -596,8 +596,13 @@ static int connToStringKVS( char **buf_p, int *slen, MPIDI_PG_t *pg )
 	vallen = strlen(buf);
 	/* Check that this will fix in the remaining space */
 	if (len + vallen + 1 >= curSlen) {
-	    string = MPIU_Realloc( string, 
+	    char *nstring = 0;
+	    nstring = MPIU_Realloc( string, 
 				   curSlen + (pg->size - i) * (vallen + 1 ));
+	    if (!nstring) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	    }
+	    string = nstring;
 	}
 	/* Append to string */
 	for (j=0; j<vallen+1; j++) {
@@ -825,7 +830,6 @@ int MPIDI_PG_InitConnString( MPIDI_PG_t *pg )
     pg->connInfoFromString = connFromString;
     pg->freeConnInfo       = connFree;
 
- fn_exit:
     return mpi_errno;
 }
 
@@ -842,13 +846,10 @@ int MPIDI_PG_GetConnString( MPIDI_PG_t *pg, int rank, char *val, int vallen )
 	mpi_errno = (*pg->getConnInfo)( rank, val, vallen, pg );
     }
     else {
-	printf( "Panic: no getConnInfo defined!\n" );
+	MPIU_Internal_error_printf( "Panic: no getConnInfo defined!\n" );
     }
 
- fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 
