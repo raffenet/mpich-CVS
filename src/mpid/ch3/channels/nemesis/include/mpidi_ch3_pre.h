@@ -103,9 +103,5 @@ struct MPIDI_CH3I_Request			\
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_enqueued(x)
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_dequeued(x)
 
-/* We don't initialize before calling MPIDI_CH3_VC_Init */
-static inline void MPIDI_CH3_PG_Init (void *pg_p) {};
-
-
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
 

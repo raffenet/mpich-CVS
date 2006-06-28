@@ -162,3 +162,9 @@ const char *MPIDI_CH3_VC_GetStateString(int state)
 {
     return "";
 }
+
+/* We don't initialize before calling MPIDI_CH3_VC_Init */
+int MPIDI_CH3_PG_Init (MPIDI_PG_t *pg_p)
+{
+    return;
+}
