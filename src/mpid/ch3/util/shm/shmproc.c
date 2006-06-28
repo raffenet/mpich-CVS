@@ -97,7 +97,7 @@ int MPIDI_SHM_ReadProcessMemory( int fd, int pid,
 
     uOffset = lseek( fd, offset, SEEK_SET );
     if (uOffset != offset) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**fail", 
+	MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_OTHER, "**fail", 
 			    "**fail %s %d", "lseek failed", errno);
     }
 
