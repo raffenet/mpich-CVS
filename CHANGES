@@ -15,7 +15,9 @@
   are TCP and GM.  Nemesis is still a work in progress.  See the
   README for more information about the channel.
 
-- Need to say something about Totalview support
+- Support has been added for providing message queues to debuggers.
+  Configure with --enable-debuginfo to make this information available.
+  This is still a "beta" test version and has not been extensively tested.
 
 - Numerous bug fixes and code cleanup
 
