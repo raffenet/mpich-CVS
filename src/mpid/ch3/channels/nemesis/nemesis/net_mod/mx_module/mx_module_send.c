@@ -9,9 +9,15 @@
 #include "mx_module.h"
 #include "my_papi_defs.h"
 
-void  
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_send
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int 
 MPID_nem_mx_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 {
+   int mpi_errno = MPI_SUCCESS;
+   
    MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
    
    if ( !MPID_nem_mx_req_queue_empty(MPID_nem_module_mx_send_free_req_queue))
@@ -35,43 +41,33 @@ MPID_nem_mx_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 		       MPID_NEM_MX_MATCH,
 		       (void *)cell,
 		       request);
-	
-	if(ret != MX_SUCCESS)
-	  {	     
-	     ERROR_RET (-1, "mx_isend() failed");
-	  }	
-	else
-	  {	     
-	     if(MPID_nem_module_mx_pendings_sends == 0)
-	       {	
-		  ret = mx_test(MPID_nem_module_mx_local_endpoint,
-				request,
-				&status,
-				&result);
-		  
-		  if(ret != MX_SUCCESS)
-		    {		       
-		       ERROR_RET (-1, "mx_test() failed");
-		    }
-		  else
-		    {		  
-		       if((result != 0) && (status.code == MX_STATUS_SUCCESS))		    
-			 {	
-			    MPID_nem_queue_enqueue (MPID_nem_process_free_queue, (MPID_nem_cell_ptr_t)status.context);
-			    MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_free_req_queue,cell_req);
-			 }  
-		       else
-			 {
-			    MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_pending_req_queue,cell_req);
-			    MPID_nem_module_mx_pendings_sends++;
-			 }  
-		    }	     
-	       }	
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_isend", "**mx_isend %s", ret);
+	if(MPID_nem_module_mx_pendings_sends == 0)
+	  {	
+	     ret = mx_test(MPID_nem_module_mx_local_endpoint,
+			   request,
+			   &status,
+			   &result);
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))		    
+		    {	
+		       MPID_nem_queue_enqueue (MPID_nem_process_free_queue, (MPID_nem_cell_ptr_t)status.context);
+		       MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_free_req_queue,cell_req);
+		    }  
 	     else
 	       {
 		  MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_pending_req_queue,cell_req);
 		  MPID_nem_module_mx_pendings_sends++;
-	       }
+	       }  
+	  }	
+	else
+	  {
+	     MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_pending_req_queue,cell_req);
+	     MPID_nem_module_mx_pendings_sends++;
 	  }	
      }   
+   fn_exit:
+      return mpi_errno;
+   fn_fail:
+      goto fn_exit;   
 }

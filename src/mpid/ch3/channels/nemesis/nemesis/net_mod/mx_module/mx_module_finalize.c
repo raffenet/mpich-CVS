@@ -8,9 +8,15 @@
 #include "myriexpress.h"
 
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_mx_module_finalize()
 {
+   int mpi_errno = MPI_SUCCESS;
+   
    while(MPID_nem_module_mx_pendings_sends > 0)
      {
 	MPID_nem_mx_module_poll(MPID_NEM_POLL_OUT);
@@ -20,23 +26,33 @@ MPID_nem_mx_module_finalize()
      {
 	int ret ;
 	ret = mx_close_endpoint(MPID_nem_module_mx_local_endpoint);
-	if( ret != MX_SUCCESS)
-	  FATAL_ERROR ("mx_close_endpoint failed");
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_close_endpoint", "**mx_close_endpoint %d", ret);
 
 	MPIU_Free( MPID_nem_module_mx_endpoints_addr );
 	MPIU_Free( MPID_nem_module_mx_send_outstanding_request );      
 	MPIU_Free( MPID_nem_module_mx_recv_outstanding_request );      
 	
 	ret = mx_finalize();
-	if( ret != MX_SUCCESS)
-	  FATAL_ERROR ("mx_finalize failed");
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_finalize", "**mx_finalize %d", ret);
      }   
-   return 0;
+   
+   fn_exit:
+     return mpi_errno;
+   fn_fail:
+     goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_ckpt_shutdown
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
 MPID_nem_mx_module_ckpt_shutdown ()
 {
-    return 0;
+   int mpi_errno = MPI_SUCCESS;
+   fn_exit:
+      return mpi_errno;
+   fn_fail:
+      goto fn_exit;
 }
 

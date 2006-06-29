@@ -34,10 +34,14 @@ void mx__print_queue(MPID_nem_mx_req_queue_ptr_t qhead, int sens)
 }
 */
 
-
-inline void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_send_from_queue
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+inline int
 MPID_nem_mx_module_send_from_queue()
 {
+   int         mpi_errno = MPI_SUCCESS;
    mx_return_t ret;
    mx_status_t status;
    uint32_t    result;
@@ -51,34 +55,36 @@ MPID_nem_mx_module_send_from_queue()
 			   MPID_NEM_MX_CELL_TO_REQUEST(curr_cell),
 			   &status,
 			   &result);
-	     
-	     if(ret != MX_SUCCESS)
-	       {		  
-		  ERROR_RET (-1, "mx_test() failed");
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))
+	       {
+		  MPID_nem_mx_cell_ptr_t cell;
+		  MPID_nem_mx_req_queue_dequeue(MPID_nem_module_mx_send_pending_req_queue,&cell);
+		  MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_free_req_queue,cell);
+		  MPID_nem_queue_enqueue (MPID_nem_process_free_queue, (MPID_nem_cell_ptr_t)status.context);		  
+		  MPID_nem_module_mx_pendings_sends--;
+		  curr_cell = curr_cell->next;
 	       }
 	     else
-	       {		  
-		  if((result != 0) && (status.code == MX_STATUS_SUCCESS))
-		    {
-		       MPID_nem_mx_cell_ptr_t cell;
-		       MPID_nem_mx_req_queue_dequeue(MPID_nem_module_mx_send_pending_req_queue,&cell);
-		       MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_send_free_req_queue,cell);
-		       MPID_nem_queue_enqueue (MPID_nem_process_free_queue, (MPID_nem_cell_ptr_t)status.context);		  
-		       MPID_nem_module_mx_pendings_sends--;
-		       curr_cell = curr_cell->next;
-		    }
-		  else
-		    {
-		       return;
-		    }
-	       }	     	     
+	       {
+		  return;
+	       }
 	  }	
      }
+   fn_exit:
+       return mpi_errno;
+   fn_fail:
+       goto fn_exit;   
 }
 
-inline void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_recv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+inline int 
 MPID_nem_mx_module_recv()
 {
+   int                 mpi_errno = MPI_SUCCESS;
    mx_segment_t        seg;
    mx_return_t         ret;
    mx_status_t         status;
@@ -94,29 +100,24 @@ MPID_nem_mx_module_recv()
 			   MPID_NEM_MX_CELL_TO_REQUEST(curr_cell),
 			   &status,
 			   &result);
-	     
-	     if(ret != MX_SUCCESS)
-	       ERROR_RET (-1, "mx_test() failed");
-	     else
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))
 	       {		  
-		  if((result != 0) && (status.code == MX_STATUS_SUCCESS))
-		    {		  
-		       MPID_nem_mx_cell_ptr_t cell_req;
-		       MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, (MPID_nem_cell_ptr_t)status.context);		      
-		       MPID_nem_mx_req_queue_dequeue(MPID_nem_module_mx_recv_pending_req_queue,&cell_req);
-		       MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_free_req_queue,cell_req);
-		       MPID_nem_module_mx_recv_outstanding_request_num--;
-		       curr_cell = curr_cell->next;	     		  
-		    }
-		  else
-		    {
-		       goto suivant;
-		    }
-	       }	     
+		  MPID_nem_mx_cell_ptr_t cell_req;
+		  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, (MPID_nem_cell_ptr_t)status.context);		      
+		  MPID_nem_mx_req_queue_dequeue(MPID_nem_module_mx_recv_pending_req_queue,&cell_req);
+		  MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_free_req_queue,cell_req);
+		  MPID_nem_module_mx_recv_outstanding_request_num--;
+		  curr_cell = curr_cell->next;	     		  
+	       }
+	     else
+	       {
+		  goto next_step;
+	       }
 	  }
      }
    
-   suivant:   
+   next_step:   
    if (MPID_nem_module_mx_recv_outstanding_request_num == 0)
      {	
 	MPID_nem_cell_ptr_t cell = NULL;	
@@ -138,60 +139,88 @@ MPID_nem_mx_module_recv()
 			    MPID_NEM_MX_MASK,
 			    (void *)cell,
 			    request);
-	     
-	     if(ret != MX_SUCCESS)
-	       ERROR_RET (-1, "mx_irecv() failed");	
-	     else
-	       {	     
-		  ret = mx_test(MPID_nem_module_mx_local_endpoint,
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_irecv", "**mx_irecv %s", ret);	       	     
+	     ret = mx_test(MPID_nem_module_mx_local_endpoint,
 				request,
 				&status,
 				&result);
-		  
-		  if(ret != MX_SUCCESS)
-		    ERROR_RET (-1, "mx_test() failed");
-		  else
-		    {	     
-		       if((result != 0) && (status.code == MX_STATUS_SUCCESS))
-			 {	     
-			    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
-			    MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_free_req_queue,cell_req);
-			 }
-		       else 
-			 {
-			    MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_pending_req_queue,cell_req);
-			    MPID_nem_module_mx_recv_outstanding_request_num++;
-			 }	
-		    }
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))
+	       {	     
+		  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+		  MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_free_req_queue,cell_req);
 	       }
+	     else 
+	       {
+		  MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_pending_req_queue,cell_req);
+		  MPID_nem_module_mx_recv_outstanding_request_num++;
+	       }	
 	  }	
-     }   
+     } 
+   fn_exit:
+       return mpi_errno;
+   fn_fail:
+       goto fn_exit;   
 }
 
 
-inline void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_send_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+inline int
 MPID_nem_mx_module_send_poll( void )
 {
+   int mpi_errno = MPI_SUCCESS;
+   
    MPID_nem_mx_module_send_from_queue();
    MPID_nem_mx_module_recv();
+   
+   fn_exit:
+       return mpi_errno;
+   fn_fail:
+       goto fn_exit;   
 }
 
-inline void
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_recv_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+inline int
 MPID_nem_mx_module_recv_poll( void )
 {
+   int mpi_errno = MPI_SUCCESS;
+   
    MPID_nem_mx_module_recv();
    MPID_nem_mx_module_send_from_queue();
+   
+   fn_exit:
+       return mpi_errno;
+   fn_fail:
+       goto fn_exit;   
 }
 
-void
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mx_module_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
 MPID_nem_mx_module_poll(MPID_nem_poll_dir_t in_or_out)
 {
-    if (in_or_out == MPID_NEM_POLL_OUT)
-    {
-       MPID_nem_mx_module_send_poll();
-    }
+   int mpi_errno = MPI_SUCCESS;
+   
+   if (in_or_out == MPID_NEM_POLL_OUT)
+     {
+	MPID_nem_mx_module_send_poll();
+     }
    else
-    {
-       MPID_nem_mx_module_recv_poll();
-    }
+     {
+	MPID_nem_mx_module_recv_poll();
+     }
+   
+   fn_exit:
+       return mpi_errno;
+   fn_fail:
+       goto fn_exit;   
 }
