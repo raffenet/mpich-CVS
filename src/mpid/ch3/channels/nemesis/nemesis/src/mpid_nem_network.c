@@ -50,7 +50,7 @@ MPID_nem_net_init( void)
   {
       assign_functions (gm);
   }
-#elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
   {
       assign_functions (mx);
   }   
