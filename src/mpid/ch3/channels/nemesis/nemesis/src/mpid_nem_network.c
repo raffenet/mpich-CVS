@@ -7,6 +7,8 @@
 #include "mpid_nem.h"
 #if  (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 #include "gm_module.h"
+#elif(MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
+#include "mx_module.h"
 #elif(MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
 #include "tcp_module.h"
 #elif(MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
@@ -48,6 +50,10 @@ MPID_nem_net_init( void)
   {
       assign_functions (gm);
   }
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
+  {
+      assign_functions (mx);
+  }   
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
   {
       assign_functions (tcp);
