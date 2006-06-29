@@ -55,7 +55,7 @@ MPID_nem_mx_module_send_from_queue()
 			   MPID_NEM_MX_CELL_TO_REQUEST(curr_cell),
 			   &status,
 			   &result);
-	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", mx_strerror (ret));
 	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))
 	       {
 		  MPID_nem_mx_cell_ptr_t cell;
@@ -100,7 +100,7 @@ MPID_nem_mx_module_recv()
 			   MPID_NEM_MX_CELL_TO_REQUEST(curr_cell),
 			   &status,
 			   &result);
-	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", mx_strerror (ret));
 	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))
 	       {		  
 		  MPID_nem_mx_cell_ptr_t cell_req;
@@ -139,12 +139,12 @@ MPID_nem_mx_module_recv()
 			    MPID_NEM_MX_MASK,
 			    (void *)cell,
 			    request);
-	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_irecv", "**mx_irecv %s", ret);	       	     
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_irecv", "**mx_irecv %s", mx_strerror (ret));	       	     
 	     ret = mx_test(MPID_nem_module_mx_local_endpoint,
 				request,
 				&status,
 				&result);
-	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", mx_strerror (ret));
 	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))
 	       {	     
 		  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);

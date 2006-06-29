@@ -937,6 +937,28 @@ with MPI_Alloc_mem.
 **windeserialize:deserializing win object
 **open %s:open failed - %s
 **setenv:setenv failed
+**mx_close_endpoint: mx_close_endpoint failed
+**mx_close_endpoint %s:mx_close_endpoint failed (%s)
+**mx_finalize:mx_finalize failed
+**mx_finalize %s:mx_finalize failed (%s)
+**mx_init:mx_init failed
+**mx_init %s:mx_init failed (%s)
+**mx_get_info:mx_get_info failed
+**mx_get_info %s:mx_get_info failed (%s)
+**mx_open_endpoint:mx_open_endpoint failed
+**mx_open_endpoint %s:mx_open_endpoint failed (%s)
+**mx_get_endpoint_addr:mx_get_endpoint_addr failed
+**mx_get_endpoint_addr %s:mx_get_endpoint_addr failed (%s)
+**mx_decompose_endpoint_addr:mx_decompose_endpoint_addr failed
+**mx_decompose_endpoint_addr %s:mx_decompose_endpoint_addr failed (%s)
+**mx_connect:mx_connect failed
+**mx_connect %s:mx_connect failed (%s)
+**mx_test:mx_test failed
+**mx_test %s:mx_test failed (%s)
+**mx_irecv:mx_irecv failed
+**mx_irecv %s:mx_irecv failed (%s)
+**mx_isend:mx_isend failed
+**mx_isend %s:mx_isend failed (%s)
 
 #
 # Globus device

@@ -41,14 +41,14 @@ MPID_nem_mx_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 		       MPID_NEM_MX_MATCH,
 		       (void *)cell,
 		       request);
-	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_isend", "**mx_isend %s", ret);
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_isend", "**mx_isend %s", mx_strerror (ret));
 	if(MPID_nem_module_mx_pendings_sends == 0)
 	  {	
 	     ret = mx_test(MPID_nem_module_mx_local_endpoint,
 			   request,
 			   &status,
 			   &result);
-	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", ret);
+	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", mx_strerror (ret));
 	     if((result != 0) && (status.code == MX_STATUS_SUCCESS))		    
 		    {	
 		       MPID_nem_queue_enqueue (MPID_nem_process_free_queue, (MPID_nem_cell_ptr_t)status.context);

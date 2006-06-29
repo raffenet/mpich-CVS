@@ -26,14 +26,14 @@ MPID_nem_mx_module_finalize()
      {
 	int ret ;
 	ret = mx_close_endpoint(MPID_nem_module_mx_local_endpoint);
-	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_close_endpoint", "**mx_close_endpoint %d", ret);
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_close_endpoint", "**mx_close_endpoint %s", mx_strerror (ret));
 
 	MPIU_Free( MPID_nem_module_mx_endpoints_addr );
 	MPIU_Free( MPID_nem_module_mx_send_outstanding_request );      
 	MPIU_Free( MPID_nem_module_mx_recv_outstanding_request );      
 	
 	ret = mx_finalize();
-	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_finalize", "**mx_finalize %d", ret);
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_finalize", "**mx_finalize %s", mx_strerror (ret));
      }   
    
    fn_exit:

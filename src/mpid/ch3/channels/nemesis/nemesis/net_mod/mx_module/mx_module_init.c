@@ -70,7 +70,7 @@ int init_mx( MPIDI_PG_t *pg_p )
    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
    ret = mx_init();
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_init", "**mx_init %i", ret);
+   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_init", "**mx_init %s", mx_strerror (ret));
    
    /* Allocate more than needed but use only external processes */
 
@@ -87,12 +87,12 @@ int init_mx( MPIDI_PG_t *pg_p )
       
    /*
    ret = mx_get_info(NULL, MX_NIC_COUNT, NULL, 0, &nic_count, sizeof(int));
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_info", "**mx_get_info %i", ret);
+   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_info", "**mx_get_info %s", mx_strerror (ret));
    
    count = ++nic_count;
    mx_nics = (uint64_t *)MPIU_Malloc(count*sizeof(uint64_t));
    ret = mx_get_info(NULL, MX_NIC_IDS, NULL, 0, mx_nics, count*sizeof(uint64_t));
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_info", "**mx_get_info %i", ret);
+   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_info", "**mx_get_info %s", mx_strerror (ret));
     
     do{	     
       ret = mx_nic_id_to_board_number(mx_nics[index],&mx_board_num);
@@ -106,16 +106,16 @@ int init_mx( MPIDI_PG_t *pg_p )
 			  MPID_nem_module_mx_filter,
 			  NULL,0,
 			  &MPID_nem_module_mx_local_endpoint);
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_open_endpoint", "**mx_open_endpoint %i", ret);
+   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_open_endpoint", "**mx_open_endpoint %s", mx_strerror (ret));
       
    ret = mx_get_endpoint_addr( MPID_nem_module_mx_local_endpoint,
 			       &MPID_nem_module_mx_endpoints_addr[MPID_nem_mem_region.rank]);
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_endpoint_addr", "**mx_get_endpoint_addr %i", ret);
+   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_endpoint_addr", "**mx_get_endpoint_addr %s", mx_strerror (ret));
    
    
    ret = mx_decompose_endpoint_addr(MPID_nem_module_mx_endpoints_addr[MPID_nem_mem_region.rank],
 				    &local_nic_id, &local_endpoint_id);
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_decompose_endpoint_addr", "**mx_decompose_endpoint_addr %i", ret);
+   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_decompose_endpoint_addr", "**mx_decompose_endpoint_addr %s", mx_strerror (ret));
    
    
    ret = PMI_Barrier();
@@ -155,7 +155,7 @@ int init_mx( MPIDI_PG_t *pg_p )
 	MPIU_ERR_CHKANDJUMP1 (ret != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", ret);
 	
 	ret = sscanf (val, "{%u:%Lu}", &remote_endpoint_id, &remote_nic_id);
-	MPIU_ERR_CHKANDJUMP1 (ret != 2, mpi_errno, MPI_ERR_OTHER, "**sscanf", "**sscanf %s", val);
+	MPIU_ERR_CHKANDJUMP1 (ret != 2, mpi_errno, MPI_ERR_OTHER, "**business_card", "**business_card %s", val);
 
 	ret = mx_connect(MPID_nem_module_mx_local_endpoint,
 			 remote_nic_id,
@@ -163,7 +163,7 @@ int init_mx( MPIDI_PG_t *pg_p )
 			 MPID_nem_module_mx_filter,
 			 MPID_nem_module_mx_timeout,
 			 &MPID_nem_module_mx_endpoints_addr[grank]);
-	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %i", ret);
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %s", mx_strerror (ret));
      }
    
    ret = PMI_Barrier();
