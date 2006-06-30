@@ -27,12 +27,15 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_fbox_mpich2_t *fbox_in;
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
-
-#if MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE
+   
+#if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     unsigned port_id;
     unsigned node_id;
     unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
-#elif MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
+    unsigned int       remote_endpoint_id; /* uint32_t equivalent */
+    unsigned long long remote_nic_id;      /* uint64_t equivalent */
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
     int node_id; 
     int desc;
     struct sockaddr_in sock_id;
@@ -43,7 +46,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_nem_tcp_module_internal_queue *internal_recv_queue;
     struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
 #endif
-
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
        portion of the vc.  This is unused in nemesis and should be set
        to NULL */
