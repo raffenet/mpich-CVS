@@ -65,9 +65,9 @@ int init_mx( MPIDI_PG_t *pg_p )
    int         grank;
    int         index = 0;
    MPIU_CHKPMEM_DECL(1);
-   
+
    mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
-   if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+   if (mpi_errno) MPIU_ERR_POP (mpi_errno);   
 
    ret = mx_init();
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_init", "**mx_init %s", mx_strerror (ret));
@@ -78,7 +78,7 @@ int init_mx( MPIDI_PG_t *pg_p )
    MPIU_CHKPMEM_MALLOC (MPID_nem_module_mx_send_outstanding_request, MPID_nem_mx_cell_ptr_t, MPID_NEM_MX_REQ * sizeof(MPID_nem_mx_cell_t), mpi_errno, "send outstanding req");   
    memset(MPID_nem_module_mx_send_outstanding_request,0,MPID_NEM_MX_REQ*sizeof(MPID_nem_mx_cell_t));  
    MPIU_CHKPMEM_MALLOC (MPID_nem_module_mx_recv_outstanding_request, MPID_nem_mx_cell_ptr_t, MPID_NEM_MX_REQ * sizeof(MPID_nem_mx_cell_t), mpi_errno, "recv outstanding req");   
-   memset(MPID_nem_module_mx_recv_outstanding_request,0,MPID_NEM_MX_REQ*sizeof(MPID_nem_mx_cell_t));  
+   memset(MPID_nem_module_mx_recv_outstanding_request,0,MPID_NEM_MX_REQ*sizeof(MPID_nem_mx_cell_t));     
    MPIU_CHKPMEM_MALLOC (MPID_nem_module_mx_pendings_recvs_array,int *, MPID_nem_mem_region.num_procs * sizeof(int), mpi_errno, "pending recvs array");
    for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++)
      {
@@ -120,6 +120,7 @@ int init_mx( MPIDI_PG_t *pg_p )
    
    ret = PMI_Barrier();
    MPIU_ERR_CHKANDJUMP1 (ret != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", ret);
+
    
    /*
    ret = MPIDI_PG_GetConnKVSname (&kvs_name);   
@@ -168,6 +169,24 @@ int init_mx( MPIDI_PG_t *pg_p )
    
    ret = PMI_Barrier();
    MPIU_ERR_CHKANDJUMP1 (ret != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", ret);
+
+   MPID_nem_module_mx_send_free_req_queue->head    = NULL;
+   MPID_nem_module_mx_send_free_req_queue->tail    = NULL;
+   MPID_nem_module_mx_send_pending_req_queue->head = NULL;
+   MPID_nem_module_mx_send_pending_req_queue->tail = NULL;
+   
+   MPID_nem_module_mx_recv_free_req_queue->head    = NULL;
+   MPID_nem_module_mx_recv_free_req_queue->tail    = NULL;
+   MPID_nem_module_mx_recv_pending_req_queue->head = NULL;
+   MPID_nem_module_mx_recv_pending_req_queue->tail = NULL;
+   
+   for (index = 0; index < MPID_NEM_MX_REQ ; ++index)
+     {
+	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_send_free_req_queue, 
+				       &MPID_nem_module_mx_send_outstanding_request[index]);
+	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_recv_free_req_queue, 
+				       &MPID_nem_module_mx_recv_outstanding_request[index]);
+     }
 
    fn_exit:
        return mpi_errno;
@@ -237,24 +256,6 @@ MPID_nem_mx_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
    
    *module_recv_queue = MPID_nem_module_mx_recv_queue;
    *module_free_queue = MPID_nem_module_mx_free_queue;
-
-   MPID_nem_module_mx_send_free_req_queue->head    = NULL;
-   MPID_nem_module_mx_send_free_req_queue->tail    = NULL;
-   MPID_nem_module_mx_send_pending_req_queue->head = NULL;
-   MPID_nem_module_mx_send_pending_req_queue->tail = NULL;
-   
-   MPID_nem_module_mx_recv_free_req_queue->head    = NULL;
-   MPID_nem_module_mx_recv_free_req_queue->tail    = NULL;
-   MPID_nem_module_mx_recv_pending_req_queue->head = NULL;
-   MPID_nem_module_mx_recv_pending_req_queue->tail = NULL;
-   
-   for (index = 0; index < MPID_NEM_MX_REQ ; ++index)
-     {
-	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_send_free_req_queue, 
-				       &MPID_nem_module_mx_send_outstanding_request[index]);
-	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_recv_free_req_queue, 
-				       &MPID_nem_module_mx_recv_outstanding_request[index]);
-     }
 
    fn_exit:
        return mpi_errno;
