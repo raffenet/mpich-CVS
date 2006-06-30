@@ -89,7 +89,6 @@ extern MPID_nem_mx_cell_ptr_t      MPID_nem_module_mx_recv_outstanding_request;
 extern MPID_nem_mx_req_queue_ptr_t MPID_nem_module_mx_recv_free_req_queue;
 extern MPID_nem_mx_req_queue_ptr_t MPID_nem_module_mx_recv_pending_req_queue;
 
-
 extern MPID_nem_queue_ptr_t MPID_nem_module_mx_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_module_mx_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
