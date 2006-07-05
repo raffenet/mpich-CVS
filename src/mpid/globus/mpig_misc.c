@@ -7,7 +7,7 @@
  */
 
 #include "mpidimpl.h"
-
+#include "globus_usage.h"
 
 /**********************************************************************************************************************************
 						 BEGIN DEBUGGING OUTPUT SECTION
@@ -594,4 +594,246 @@ char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif
 }
 /**********************************************************************************************************************************
 						END COMMUNICATION MODULE ROUTINES
+**********************************************************************************************************************************/
+
+/**********************************************************************************************************************************
+					       BEGIN USAGE STAT ROUTINES
+**********************************************************************************************************************************/
+
+
+/*
+ *  base64 encode a string, string may not be null terminated
+ *
+ */
+static void
+mpig_usage_base64_encode(
+    const unsigned char *               inbuf,
+    int                                 in_len,
+    unsigned char *                     outbuf,
+    int *                               out_len)
+{
+    int                                 i;
+    int                                 j;
+    unsigned char                       c;
+    char                                padding = '=';
+    const char *                              base64_charset =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    for (i=0,j=0; i < in_len; i++)
+    {
+        switch (i%3)
+        {
+            case 0:
+                outbuf[j++] = base64_charset[inbuf[i]>>2];
+                c = (inbuf[i]&3)<<4;
+                break;
+            case 1:
+                outbuf[j++] = base64_charset[c|inbuf[i]>>4];
+                c = (inbuf[i]&15)<<2;
+                break;
+            case 2:
+                outbuf[j++] = base64_charset[c|inbuf[i]>>6];
+                outbuf[j++] = base64_charset[inbuf[i]&63];
+                c = 0;
+                break;
+            default:
+                globus_assert(0);
+                break;
+        }
+    }
+    if (i%3)
+    {
+        outbuf[j++] = base64_charset[c];
+    }
+    switch (i%3)
+    {
+        case 1:
+            outbuf[j++] = padding;
+        case 2:
+            outbuf[j++] = padding;
+    }
+
+    outbuf[j] = '\0';
+    *out_len = j;
+
+    return;
+}
+
+
+
+
+/*
+ * void mpig_usage_finalize(none)
+ *
+ */
+
+#define MPIG_USAGE_ID 8
+#define MPIG_USAGE_PACKET_VERSION 0
+
+#define MPICH2VERSION "1.0.3" /* XXX get this from autoconf */
+
+#undef FUNCNAME
+#define FUNCNAME mpig_usage_finalize
+void mpig_usage_finalize(void)
+{
+    globus_usage_stats_handle_t mpig_usage_handle;
+    int rc;
+    globus_result_t result;
+    struct timeval end_time;
+    globus_off_t * total_nbytes;
+    globus_off_t * total_nbytesv;
+    int i;
+    char ver_b[32];
+    char start_b[32];
+    char end_b[32];
+    char nprocs_b[32];
+    char test_b[32];
+    char nbytesv_b[32];
+    char nbytes_b[32];
+    char fnmap_b[4096];
+    int fnmap_b_len;
+    unsigned char fnmap[MPIG_FUNC_CNT_NUMFUNCS * 2 * sizeof(int)];
+    unsigned char * ptr;
+    int total_function_count[MPIG_FUNC_CNT_NUMFUNCS] = { 0 };
+
+ 
+    if(mpig_process.my_pg_rank == 0)
+    {
+        
+        total_nbytes = (globus_off_t *) 
+            globus_malloc(mpig_process.my_pg_size * sizeof(globus_off_t));
+        total_nbytesv = (globus_off_t *) 
+            globus_malloc(mpig_process.my_pg_size * sizeof(globus_off_t));
+    }
+/*
+    MPIR_Nest_incr();
+    MPI_Gather(
+        &mpig_process.nbytes_sent, 8, MPI_BYTE, 
+        &total_nbytes, 8, MPI_BYTE, 
+        0, MPI_COMM_WORLD);
+    MPIR_Nest_decr();
+
+    MPIR_Nest_incr();
+    MPI_Gather(
+        &mpig_process.vendor_nbytes_sent, 8, MPI_BYTE, 
+        &total_nbytesv, 8, MPI_BYTE, 
+        0, MPI_COMM_WORLD);
+    MPIR_Nest_decr();
+*/
+    MPIR_Nest_incr();
+    MPI_Reduce(
+        mpig_process.function_count, total_function_count, 
+        MPIG_FUNC_CNT_NUMFUNCS, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPIR_Nest_decr();
+
+    if(mpig_process.my_pg_rank == 0)
+    {
+
+        mpig_process.nbytes_sent = 0; 
+        for(i = 0; i < mpig_process.my_pg_size; i++)
+        {
+            mpig_process.nbytes_sent += total_nbytes[i];
+        }
+
+        mpig_process.vendor_nbytes_sent = 0; 
+        for(i = 0; i < mpig_process.my_pg_size; i++)
+        {
+            mpig_process.vendor_nbytes_sent += total_nbytesv[i];
+        }
+
+        globus_free(total_nbytes);
+        globus_free(total_nbytesv);
+
+        gettimeofday(&end_time, NULL);
+        
+        rc = globus_module_activate(GLOBUS_USAGE_MODULE);
+        if(rc != 0)
+        {
+            goto err;
+        }
+        
+        result = globus_usage_stats_handle_init(
+            &mpig_usage_handle, 
+            MPIG_USAGE_ID, 
+            MPIG_USAGE_PACKET_VERSION, 
+            "localhost:9999");      
+        if(result != GLOBUS_SUCCESS)
+        {
+            globus_module_deactivate(GLOBUS_USAGE_MODULE);
+            goto err;
+        }
+
+        /* will need to encode these into our own buffer in order to fit
+        the function map */
+
+        snprintf(ver_b, sizeof(ver_b), MPIG_MPICH2_VERSION);
+        snprintf(start_b, sizeof(start_b), "%d.%d", 
+            (int) mpig_process.start_time.tv_sec, (int) mpig_process.start_time.tv_usec);
+        snprintf(end_b, sizeof(end_b), "%d.%d", 
+            (int) end_time.tv_sec, (int) end_time.tv_usec);
+        snprintf(nprocs_b, sizeof(nprocs_b), "%d", 
+            mpig_process.my_pg_size);
+        snprintf(test_b, sizeof(test_b), "%s", 
+            getenv("MPIG_TEST") ? "1" : "0");
+        snprintf(nbytesv_b, sizeof(nbytesv_b), "%"GLOBUS_OFF_T_FORMAT, 
+            mpig_process.vendor_nbytes_sent);
+        snprintf(nbytes_b, sizeof(nbytes_b), "%"GLOBUS_OFF_T_FORMAT, 
+            mpig_process.nbytes_sent);
+        
+        
+        /* write out the function counts, then base64 encode that buffer.
+         * max size of the binary buffer (8 bytes for each function) is about
+         * 1800 bytes, which gives ~2400 bytes in base64... We have about 1300
+         * bytes in the usage packet to play with, so we can handle ~120
+         * unique function calls.  If we can rely on the total count of 
+         * functions staying under 255 (currently 241), we can shave it down 
+         * to 6 bytes per function if needed, and then we'd be able to handle 
+         * ~160 different calls in a given app.  If we care about more than 
+         * that we'll need to get smarter with the encoding (compression)
+         * or just add binary support to the c usage lib.
+         */
+         
+        memset(fnmap, 0, sizeof(fnmap));
+        ptr = fnmap;
+        for(i = 0; i < MPIG_FUNC_CNT_NUMFUNCS; i++)
+        {
+            if(total_function_count[i] > 0)
+            {
+                memcpy(ptr, &i, sizeof(int));
+                ptr += sizeof(int);
+                memcpy(ptr, &total_function_count[i], sizeof(int));
+                ptr += sizeof(int);
+            }
+        }
+
+        mpig_usage_base64_encode(fnmap, ptr - fnmap, fnmap_b, &fnmap_b_len);
+        
+        
+        result = globus_usage_stats_send(
+            mpig_usage_handle,
+            8,
+            "MPICHVER", ver_b,
+            "START", start_b,
+            "END", end_b,
+            "NPROCS", nprocs_b,
+            "NBYTES", nbytes_b,
+            "NBYTESV", nbytesv_b,
+            "TEST", test_b,
+            "FNMAP", fnmap_b);
+        if(result != GLOBUS_SUCCESS)
+        {
+            /* debug output */
+        }
+        
+        globus_usage_stats_handle_destroy(mpig_usage_handle);
+    
+    }
+    return;
+        
+err:
+    return;
+}
+
+/**********************************************************************************************************************************
+						END USAGE STAT ROUTINES
 **********************************************************************************************************************************/

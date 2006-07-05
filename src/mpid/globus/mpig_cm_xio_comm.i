@@ -481,7 +481,10 @@ MPIG_STATIC int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * 
     mpig_vc_mutex_unlock(vc);
     /* MT-RC-NOTE: the unlock of the VC mutex will cause changes made to the sreq to be released as well */
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
-    
+ 
+    /* add to usage bytes sent counter */
+    mpig_process.nbytes_sent += mpig_cm_xio_stream_get_size(sreq);
+       
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
 	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, mpi_errno));

@@ -27,7 +27,7 @@ MPIG_STATIC const mpig_cm_vtable_t * const mpig_cm_vtables_array[] =
 const mpig_cm_vtable_t * const * const mpig_cm_vtables = mpig_cm_vtables_array;
 const int mpig_cm_vtables_num_entries = sizeof(mpig_cm_vtables_array) / sizeof(mpig_cm_vtable_t *) - 1;
 
-
+            
 /*
  * MPID_Init()
  */
@@ -143,6 +143,9 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpig_pm_get_pg_rank(&pg_rank);
     mpig_pm_get_app_num(&bcs[pg_rank], &MPIR_Process.attrs.appnum);
 
+    /* start timer for usage statistics */
+    gettimeofday(&mpig_process.start_time, NULL);
+    
     /* place a copy of the process group information in the process structure */
     mpig_process.my_pg_id = MPIU_Strdup(pg_id);
     mpig_process.my_pg_size = pg_size;
@@ -396,7 +399,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 }
 /* MPID_Init() */
 
-
 /*
  * MPID_Finalize()
  */
@@ -415,6 +417,8 @@ int MPID_Finalize()
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering"));
+
+    mpig_usage_finalize();
 
     /*
      * wait for all posted operations to complete on all communications

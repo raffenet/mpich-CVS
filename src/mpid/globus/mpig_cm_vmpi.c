@@ -46,6 +46,13 @@ MPIG_STATIC int mpig_cm_vmpi_select_module(mpig_vc_t * vc, bool_t * selected);
 MPIG_STATIC int mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
     unsigned * levels_out);
 
+/* XXX dummy placeholder */
+MPIG_STATIC int mpig_datatype_get_size(MPI_Datatype dt, int * size)
+{
+    *size = 10;
+    
+    return 0;
+}
 
 const mpig_cm_vtable_t mpig_cm_vmpi_vtable =
 {
@@ -1002,6 +1009,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_send(
     int vtag;
     mpig_vmpi_comm_t * vcomm;
     int vrc;
+    int dt_size = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_adi3_send);
 
@@ -1043,6 +1051,9 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_send(
 	*sreqp = sreq;
     }
 
+    /* add to usage bytes sent counter */
+    mpig_datatype_get_size(dt, &dt_size);
+    mpig_process.vendor_nbytes_sent += dt_size * cnt;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1070,6 +1081,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_isend(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
+    int dt_size = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_adi3_isend);
 
@@ -1082,6 +1094,10 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_isend(
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
+
+    /* add to usage bytes sent counter */
+    mpig_datatype_get_size(dt, &dt_size);
+    mpig_process.vendor_nbytes_sent += dt_size * cnt;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1109,6 +1125,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_rsend(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
+    int dt_size = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_adi3_rsend);
 
@@ -1121,6 +1138,11 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_rsend(
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
+
+
+    /* add to usage bytes sent counter */
+    mpig_datatype_get_size(dt, &dt_size);
+    mpig_process.vendor_nbytes_sent += dt_size * cnt;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1148,6 +1170,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irsend(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
+    int dt_size = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_adi3_irsend);
 
@@ -1160,6 +1183,10 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irsend(
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
+
+    /* add to usage bytes sent counter */
+    mpig_datatype_get_size(dt, &dt_size);
+    mpig_process.vendor_nbytes_sent += dt_size * cnt;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1187,6 +1214,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_ssend(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
+    int dt_size = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_adi3_ssend);
 
@@ -1199,6 +1227,10 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_ssend(
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
+
+    /* add to usage bytes sent counter */
+    mpig_datatype_get_size(dt, &dt_size);
+    mpig_process.vendor_nbytes_sent += dt_size * cnt;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1226,6 +1258,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_issend(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const int ctx = comm->context_id + ctxoff;
+    int dt_size = 0;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_adi3_issend);
 
@@ -1238,6 +1271,10 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_issend(
 		       ", ctx=%d", (MPIG_PTR_CAST) buf, cnt, dt, rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**notimpl", "**notimpl %s", fcname);
+
+    /* add to usage bytes sent counter */
+    mpig_datatype_get_size(dt, &dt_size);
+    mpig_process.vendor_nbytes_sent += dt_size * cnt;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,

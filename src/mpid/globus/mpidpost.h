@@ -9,6 +9,7 @@
 #if !defined(MPICH2_MPIDPOST_H_INCLUDED)
 #define MPICH2_MPIDPOST_H_INCLUDED
 
+#include "mpiallstates.h"
 
 /**********************************************************************************************************************************
 						   BEGIN COMMUNICATOR SECTION
@@ -535,6 +536,63 @@ void mpig_debug_create_state_key(void);
     mpig_debug_old_util_printf_fn a_;					\
 }
 #endif /* variadic macros */
+
+
+
+#define MPIR_FUNC_COUNT_ENTER(state_)				       \
+{								       \
+    MPIR_FUNC_ENTER(state_);					       \
+    if(state_ >= MPIG_FUNC_CNT_FIRST && state_ <= MPIG_FUNC_CNT_LAST)  \
+    {                                                                  \
+        mpig_process.function_count[state_ - MPIG_FUNC_CNT_FIRST]++;   \
+    }                                                                  \
+}
+
+#define MPIR_FUNC_COUNT_EXIT(state_)				\
+{								\
+    MPIR_FUNC_EXIT(state_);					\
+}
+
+/* override the enter/exit debug logging macros to count function calls */
+#undef MPID_MPI_FUNC_ENTER
+#undef MPID_MPI_FUNC_EXIT
+#undef MPID_MPI_PT2PT_FUNC_ENTER
+#undef MPID_MPI_PT2PT_FUNC_EXIT
+#undef MPID_MPI_PT2PT_FUNC_ENTER_FRONT
+#undef MPID_MPI_PT2PT_FUNC_EXIT_FRONT
+#undef MPID_MPI_PT2PT_FUNC_ENTER_BACK
+#undef MPID_MPI_PT2PT_FUNC_ENTER_BOTH
+#undef MPID_MPI_PT2PT_FUNC_EXIT_BACK
+#undef MPID_MPI_PT2PT_FUNC_EXIT_BOTH
+#undef MPID_MPI_COLL_FUNC_ENTER
+#undef MPID_MPI_COLL_FUNC_EXIT
+#undef MPID_MPI_RMA_FUNC_ENTER
+#undef MPID_MPI_RMA_FUNC_EXIT
+#undef MPID_MPI_INIT_FUNC_ENTER
+#undef MPID_MPI_INIT_FUNC_EXIT
+#undef MPID_MPI_FINALIZE_FUNC_ENTER
+#undef MPID_MPI_FINALIZE_FUNC_EXIT
+
+#define MPID_MPI_FUNC_ENTER(a)			MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_FUNC_EXIT(a)			MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)	MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_FRONT(a)	MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)	MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)	MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)	MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)	MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_COLL_FUNC_ENTER(a)		MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_COLL_FUNC_EXIT(a)		MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_RMA_FUNC_ENTER(a)		MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_RMA_FUNC_EXIT(a)		MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_INIT_FUNC_ENTER(a)		MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_INIT_FUNC_EXIT(a)		MPIR_FUNC_COUNT_EXIT(a)
+#define MPID_MPI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_COUNT_ENTER(a)
+#define MPID_MPI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_COUNT_EXIT(a)
+
+
 
 /* override the stardard MPICH2 enter/exit debug logging macros */
 #undef MPIR_FUNC_ENTER

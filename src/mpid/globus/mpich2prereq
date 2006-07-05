@@ -246,7 +246,7 @@ export MPIG_BUILD_DIR
 #
 # create the makefile for extract settings from Globus
 #
-MPIG_GMH_PKGS="globus_xio globus_duroc_runtime globus_rendezvous"
+MPIG_GMH_PKGS="globus_xio globus_duroc_runtime globus_rendezvous globus_usage"
 MPIG_GLOBUS_HEADER_MK=${MPIG_BUILD_DIR}/.globus-header.mk
 MPIG_GLOBUS_HEADER_ERR=${MPIG_BUILD_DIR}/.globus-header.mk
 MPIG_GLOBUS_SETTINGS_MK_IN=${MPIG_SOURCE_DIR}/globus-settings.mk.in
@@ -290,6 +290,14 @@ mpig_get_globus_setting()
 }
 
 #
+# Check MPICH2 Version
+#
+echo ${ECHO_N} "checking MPICH2 Version... ${ECHO_C}"
+MPIG_MPICH2VERSION=${VERSION}
+echo "${ECHO_T}${MPIG_MPICH2VERSION}"
+export MPIG_MPICH2VERSION
+
+#
 # are the required globus packages installed
 #
 echo ${ECHO_N} "checking if Globus XIO is installed... ${ECHO_C}"
@@ -305,6 +313,15 @@ if test "$MPIG_GLOBUS_XIO_INSTALLED" != "yes" ; then
     echo ""
     exit 1
 fi
+
+#
+# check for the globus-xio package version 
+#
+echo ${ECHO_N} "checking version of Globus XIO... ${ECHO_C}"
+MPIG_XIOVERSION=`gpt-query globus_xio |grep ${with_globus_flavor}-dev |cut -d' ' -f4`   
+echo "${ECHO_T}${MPIG_XIOVERSION}"
+export MPIG_XIOVERSION
+   
 
 echo ${ECHO_N} "checking if the Globus pre-WS job management modules are installed... ${ECHO_C}"
 mpig_get_globus_setting MPIG_GLOBUS_DUROC_INSTALLED duroc-installed

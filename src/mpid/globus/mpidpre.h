@@ -15,6 +15,7 @@
 #endif
 
 #include "mpidconf.h"
+#include "mpiallstates.h"
 
 /* include common tools provided by Globus */
 #include "globus_common.h"
@@ -496,6 +497,11 @@ typedef globus_mutex_t mpig_request_mutex_t;
 #define MPIG_PROCESS_CM_DECL
 #endif
 
+/* define useful names for  function counting */
+#define MPIG_FUNC_CNT_FIRST MPID_STATE_MPI_ABORT
+#define MPIG_FUNC_CNT_LAST MPID_STATE_MPI_WTIME
+#define MPIG_FUNC_CNT_NUMFUNCS (MPIG_FUNC_CNT_LAST - MPIG_FUNC_CNT_FIRST + 1)
+
 typedef struct mpig_process
 {
     /*
@@ -522,6 +528,13 @@ typedef struct mpig_process
     globus_mutex_t mutex;
 
     MPIG_PROCESS_CM_DECL
+    
+    /* usage stats tracking vars */
+    struct timeval start_time;
+    globus_off_t nbytes_sent;
+    globus_off_t vendor_nbytes_sent;
+    
+    int function_count[MPIG_FUNC_CNT_NUMFUNCS];
 }
 mpig_process_t;
 
