@@ -1,5 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/* 
+/* -*- Mode: C; c-basic-offset:4 ; -*- 
+ *  vim: ts=8 sts=4 sw=4 noexpandtab 
+ *
  *   $Id$
  *
  *   Copyright (C) 1997 University of Chicago. 
@@ -732,14 +733,17 @@ int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
  * together, resulting in a shorter blocklist (and thus fewer
  * contiguous operations).
  *
- * Q: IS IT SAFE TO REMOVE THE 0-LENGTH BLOCKS TOO?
+ * NOTE: a further optimization would be to remove zero length blocks. However,
+ * we do not do this as parts of the code use the presence of zero length
+ * blocks to indicate UB and LB.  
+ *
  */
 void ADIOI_Optimize_flattened(ADIOI_Flatlist_node *flat_type)
 {
     int i, j, opt_blocks;
     int *opt_blocklens;
     ADIO_Offset *opt_indices;
-    
+
     opt_blocks = 1;
     
     /* save number of noncontiguous blocks in opt_blocks */
