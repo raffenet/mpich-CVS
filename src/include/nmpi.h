@@ -93,6 +93,7 @@
 #define NMPI_Test_cancelled MPI_Test_cancelled
 #define NMPI_Ibsend MPI_Ibsend
 #define NMPI_Buffer_detach MPI_Buffer_detach
+#define NMPI_Gather MPI_Gather
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -164,5 +165,6 @@
 #define NMPI_Test_cancelled PMPI_Test_cancelled
 #define NMPI_Ibsend PMPI_Ibsend
 #define NMPI_Buffer_detach PMPI_Buffer_detach
+#define NMPI_Gather PMPI_Gather
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */
