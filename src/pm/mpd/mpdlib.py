@@ -186,7 +186,7 @@ def mpd_check_python_version():
     return 0
 
 def mpd_version():
-    return (1,0,0,'May, 2005 release')  # major, minor, micro, special
+    return (1,0,1,'July, 2006 release')  # major, minor, micro, special
 
 def mpd_get_my_username():
     if pwd_module_available:
