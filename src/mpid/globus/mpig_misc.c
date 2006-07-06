@@ -705,21 +705,21 @@ void mpig_usage_finalize(void)
         total_nbytesv = (globus_off_t *) 
             globus_malloc(mpig_process.my_pg_size * sizeof(globus_off_t));
     }
-/*
+
     MPIR_Nest_incr();
     MPI_Gather(
-        &mpig_process.nbytes_sent, 8, MPI_BYTE, 
-        &total_nbytes, 8, MPI_BYTE, 
+        &mpig_process.nbytes_sent, sizeof(globus_off_t), MPI_BYTE, 
+        total_nbytes, sizeof(globus_off_t), MPI_BYTE, 
         0, MPI_COMM_WORLD);
     MPIR_Nest_decr();
 
     MPIR_Nest_incr();
     MPI_Gather(
-        &mpig_process.vendor_nbytes_sent, 8, MPI_BYTE, 
-        &total_nbytesv, 8, MPI_BYTE, 
+        &mpig_process.vendor_nbytes_sent, sizeof(globus_off_t), MPI_BYTE, 
+        total_nbytesv, sizeof(globus_off_t), MPI_BYTE, 
         0, MPI_COMM_WORLD);
     MPIR_Nest_decr();
-*/
+
     MPIR_Nest_incr();
     MPI_Reduce(
         mpig_process.function_count, total_function_count, 

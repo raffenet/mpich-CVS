@@ -318,9 +318,15 @@ fi
 # check for the globus-xio package version 
 #
 echo ${ECHO_N} "checking version of Globus XIO... ${ECHO_C}"
-MPIG_XIOVERSION=`gpt-query globus_xio |grep ${with_globus_flavor}-dev |cut -d' ' -f4`   
+mpig_get_globus_setting MPIG_XIOVERSION xio-installed-version
 echo "${ECHO_T}${MPIG_XIOVERSION}"
 export MPIG_XIOVERSION
+if test "$MPIG_XIOVERSION" == "0.0" ; then
+    echo ""
+    echo "ERROR: The Globus XIO module version is invalid."
+    echo ""
+    exit 1
+fi
    
 
 echo ${ECHO_N} "checking if the Globus pre-WS job management modules are installed... ${ECHO_C}"

@@ -39,6 +39,9 @@ rendezvous-installed:
 xio-installed:
 	@if test -n "$(GLOBUS_XIO_VERSION)" ; then echo "yes"; else echo "no"; fi
 
+xio-installed-version:
+	@if test -n "$(GLOBUS_XIO_VERSION)" ; then echo "$(GLOBUS_XIO_VERSION)"; else echo "0.0"; fi
+
 #
 # Are the Globus libraries built with debugging enabled?
 #
