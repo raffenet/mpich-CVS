@@ -725,14 +725,16 @@ void mpig_usage_finalize(void)
         mpig_process.nbytes_sent = 0; 
         for(i = 0; i < mpig_process.my_pg_size; i++)
         {
-            mpig_dc_get_int64(endianness_of(i), total_nbytes[i], &x);
+            mpig_dc_get_int64(
+                MPIG_MY_ENDIAN/*endianness_of(i)*/, &total_nbytes[i], &x);
             mpig_process.nbytes_sent += x;
         }
 
         mpig_process.vendor_nbytes_sent = 0; 
         for(i = 0; i < mpig_process.my_pg_size; i++)
         {
-            mpig_dc_get_int64(endianness_of(i), total_nbytes[i], &x);
+            mpig_dc_get_int64(
+                MPIG_MY_ENDIAN/*endianness_of(i) */, &total_nbytes[i], &x);
             mpig_process.vendor_nbytes_sent += x;
         }
 
