@@ -531,8 +531,8 @@ typedef struct mpig_process
     
     /* usage stats tracking vars */
     struct timeval start_time;
-    globus_off_t nbytes_sent;
-    globus_off_t vendor_nbytes_sent;
+    int64_t nbytes_sent;
+    int64_t vendor_nbytes_sent;
     
     int function_count[MPIG_FUNC_CNT_NUMFUNCS];
 }

@@ -660,8 +660,6 @@ mpig_usage_base64_encode(
 }
 
 
-
-
 /*
  * void mpig_usage_finalize(none)
  *
@@ -669,8 +667,6 @@ mpig_usage_base64_encode(
 
 #define MPIG_USAGE_ID 8
 #define MPIG_USAGE_PACKET_VERSION 0
-
-#define MPICH2VERSION "1.0.3" /* XXX get this from autoconf */
 
 #undef FUNCNAME
 #define FUNCNAME mpig_usage_finalize
@@ -680,8 +676,8 @@ void mpig_usage_finalize(void)
     int rc;
     globus_result_t result;
     struct timeval end_time;
-    globus_off_t * total_nbytes;
-    globus_off_t * total_nbytesv;
+    int64_t * total_nbytes;
+    int64_t * total_nbytesv;
     int i;
     char ver_b[32];
     char start_b[32];
@@ -700,49 +696,48 @@ void mpig_usage_finalize(void)
     if(mpig_process.my_pg_rank == 0)
     {
         
-        total_nbytes = (globus_off_t *) 
-            globus_malloc(mpig_process.my_pg_size * sizeof(globus_off_t));
-        total_nbytesv = (globus_off_t *) 
-            globus_malloc(mpig_process.my_pg_size * sizeof(globus_off_t));
+        total_nbytes = (int64_t *) 
+            MPIU_Malloc(mpig_process.my_pg_size * sizeof(int64_t));
+        total_nbytesv = (int64_t *) 
+            MPIU_Malloc(mpig_process.my_pg_size * sizeof(int64_t));
     }
 
     MPIR_Nest_incr();
-    MPI_Gather(
-        &mpig_process.nbytes_sent, sizeof(globus_off_t), MPI_BYTE, 
-        total_nbytes, sizeof(globus_off_t), MPI_BYTE, 
+    NMPI_Gather(
+        &mpig_process.nbytes_sent, sizeof(int64_t), MPI_BYTE, 
+        total_nbytes, sizeof(int64_t), MPI_BYTE, 
         0, MPI_COMM_WORLD);
-    MPIR_Nest_decr();
 
-    MPIR_Nest_incr();
-    MPI_Gather(
-        &mpig_process.vendor_nbytes_sent, sizeof(globus_off_t), MPI_BYTE, 
-        total_nbytesv, sizeof(globus_off_t), MPI_BYTE, 
+    NMPI_Gather(
+        &mpig_process.vendor_nbytes_sent, sizeof(int64_t), MPI_BYTE, 
+        total_nbytesv, sizeof(int64_t), MPI_BYTE, 
         0, MPI_COMM_WORLD);
-    MPIR_Nest_decr();
 
-    MPIR_Nest_incr();
-    MPI_Reduce(
+    NMPI_Reduce(
         mpig_process.function_count, total_function_count, 
         MPIG_FUNC_CNT_NUMFUNCS, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     MPIR_Nest_decr();
 
     if(mpig_process.my_pg_rank == 0)
     {
-
+        int64_t x;
+        
         mpig_process.nbytes_sent = 0; 
         for(i = 0; i < mpig_process.my_pg_size; i++)
         {
-            mpig_process.nbytes_sent += total_nbytes[i];
+            mpig_dc_get_int64(endianness_of(i), total_nbytes[i], &x);
+            mpig_process.nbytes_sent += x;
         }
 
         mpig_process.vendor_nbytes_sent = 0; 
         for(i = 0; i < mpig_process.my_pg_size; i++)
         {
-            mpig_process.vendor_nbytes_sent += total_nbytesv[i];
+            mpig_dc_get_int64(endianness_of(i), total_nbytes[i], &x);
+            mpig_process.vendor_nbytes_sent += x;
         }
 
-        globus_free(total_nbytes);
-        globus_free(total_nbytesv);
+        MPIU_Free(total_nbytes);
+        MPIU_Free(total_nbytesv);
 
         gettimeofday(&end_time, NULL);
         
