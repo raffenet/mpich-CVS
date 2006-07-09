@@ -695,6 +695,7 @@ sub ReadMfile {
 	    # The \r is used to remove any \r in DOS-style files
             @subdirs = split(/\s+/,$1);
 	    $subdirs_has_autoconf = 0;
+	    $smmakevars{'SUBDIRS'} = $1;
         }
 	elsif (/^SUBDIRS_(\w+)\s*=\s*(.*)\s*/) {
 	    # use SUBDIRS_acname = realname to say that the
@@ -709,9 +710,11 @@ sub ReadMfile {
         elsif (/^DOC_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    # The \r is used to remove any \r in DOS-style files
             @doc_subdirs = split(/\s+/,$1);
+	    $smmakevars{'DOC_SUBDIRS'} = $1;
         }
 	elsif (/^DOCDESTDIRS\s*=\s*(.*)\s*\r?$/) {
 	# kind:dir [, kind:dir ]*
+	    $smmakevars{'DOCDESTDIRS'} = $1;
 	    for $pair (split(/,\s*/,$1)) {
 		$pair =~ /(.*):(.*)/;
 		$docthiskinddir{$1} = $2;
@@ -719,6 +722,7 @@ sub ReadMfile {
         }
 	elsif (/^INSTALL_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    @install_subdirs = split(/\s+/,$1);
+	    $smmakevars{'INSTALL_SUBDIRS'} = $1;
 	}
 	elsif (/^NOTSIMPLEMAKE_SUBDIRS\s*=\s*(.*)\s*\r?$/) {
 	    foreach my $dir (split(/\s+/,$1)) {
@@ -729,25 +733,30 @@ sub ReadMfile {
 	    foreach $program (split(/\s+/,$1)) {
 		$extra_programs{$program} = 1;
 	    }
+	    $smmakevars{'EXTRA_PROGRAMS'} = $1;
 	}
 	elsif (/^TAGS_DIRS\s*=\s*(.*)\s*$/) {
 	    # Keep track of tags dirs
 	    @tags_dirs = split( /\s+/,$1);
+	    $smmakevars{'TAGS_DIRS'} = $1;
 	}
 	elsif (/^EXTRA_DIRS\s*=\s*(.*)\s*$/) {
 	    @extra_dirs = split( /\s+/,$1);
+	    $smmakevars{'EXTRA_DIRS'} = $1;
 	}
 	elsif (/^OTHER_DIRS\s*=\s*(.*)\s*$/) {
 	    @other_dirs = split( /\s+/,$1);
+	    $smmakevars{'OTHER_DIRS'} = $1;
 	}
 	elsif (/^EXTERNAL_LIBS\s*=\s*(.*)\s*$/) {
 	    foreach $lib (split(/\s+/,$1)) {
 		$external_libraries{$lib} = 1;
 	    }
+	    $smmakevars{'EXTERNAL_LIBS'} = $1;
 	}
 	elsif (/^(\w+)\s*\+=\s*(.*)\s*$/){
 	    # Use this form to prepend values to some of the 
-	    # autoconf generate names, e.g., to change
+	    # autoconf generated names, e.g., to change
 	    # LIBS = \@LIBS\@ 
 	    # to
 	    # LIBS = \@EXAMPLE_LIBS\@ \@LIBS\@
@@ -853,6 +862,7 @@ sub ReadMfile {
 	    # Look for special autoconf directory names
 	    &LookForAutoconfDirs( $_ );
 	    &LookForSuffixes( $_ );
+	    &LookForVariables( $_ );
 	}
 	else {
 	    $other_text .= "$origline";
@@ -860,6 +870,7 @@ sub ReadMfile {
 	    if (!/^\s*#/) {
 	        &LookForAutoconfDirs( $_ );
 	    }
+	    &LookForVariables( $_ );
 	}
     $origline = "";
     }
@@ -897,6 +908,23 @@ sub WriteMfile {
 	# Print out variables before generated targets
 	print FD $other_vars;
 	print FD "$newline";
+
+	# If there were any uses of the smmakevars, add them to the
+	# output here
+	my $sawvar = 0;
+	foreach my $var (keys(%vars_seen)) {
+	    if (defined($smmakevars{$var})) {
+		print FD "$var = ";
+		my $contline = "";
+		foreach my $varline (split(/\n/,$smmakevars{$var})) {
+		    print FD "$contline$varline";
+		    $contline = "\\$newline\t";
+		}
+		print FD $newline;
+		$sawvar = 1;
+	    }
+	}
+	if ($sawvar) { print FD $newline; }
 
         &DefaultRules;
     }
@@ -1597,6 +1625,10 @@ sub ClearVars {
     %PrependVar = ();
     %makevars = ();
     %addedMakeVars = ();
+    # smmakevars are variables that have been defined as SM variables.
+    %smmakevars = ();
+    # vars_seen is a hash of the variables used in the makefile
+    %vars_seen = ();
     # Information about program targets
     %pgmlinktypes = ();
     # Other directories
@@ -2016,6 +2048,20 @@ sub LookForAutoconfDirs {
 	    print "Adding $varname to dirs_seen\n" if $debug;
 	    $dirs_seen{$varname} = $varname;
 	}
+    }
+}
+
+#
+# Look for autoconf directory variables that are used 
+sub LookForVariables {
+    $line = $_[0];
+    print "Looking at $line\n" if $debug;
+    # Look for \$\{\w*\} and \$\(\w*\) 
+    while ($line =~ /^[^\$]*\$[\{\(](\w*)[\}\)](.*)$/) {
+	$varname = $1;
+	$line = $2;
+	print "Found $varname in line\n" if $debug;
+	$vars_seen{$varname} = 1;
     }
 }
 
