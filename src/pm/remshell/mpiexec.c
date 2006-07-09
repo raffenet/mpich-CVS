@@ -37,7 +37,7 @@
    PMI commands, including spawn.  Another "input" is the expiration of the
    specified timelimit for the run, if any.
 
-   7. Process rundown commands and handle any abnormal termination.  
+   7. Process rundown commands and handle any abnormal tErmination.  
 
    8. Wait for any processes to exit; gather the exit status and reason
    for exit (if abnormal, such as signaled with SEGV or BUS)
@@ -258,11 +258,11 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
        will allow us to start. */
     {
 	ProcessApp *app = pState->app;
-	char **newargs = 0;
+	const char **newargs = 0;
 	int j;
 
 	/* Insert into app->args */
-	newargs = (char **) malloc( app->nArgs + 3 );
+	newargs = (const char **) malloc( app->nArgs + 3 );
 	if (!pState->hostname) {
 	    MPIU_Error_printf( "No hostname avaliable for %s\n", app->exename );
 	    exit(1);
