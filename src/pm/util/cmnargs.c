@@ -698,6 +698,9 @@ static int LineToArgv( char *linebuf, char *(argv[]), int maxargv )
 int MPIE_StdioSetMode( FILE *fp, const char *mode )
 {
     int rc = 0;
+    /* Set the default to none (makes the buffering mimic the 
+       users program) */
+    setvbuf( fp, NULL, _IONBF, 0 );
     if (strcmp( mode, "none" ) == 0 || strcmp( mode, "NONE" ) == 0) {
 	DBG_PRINTF(("Setting buffer mode to unbuffered\n"));
 	setvbuf( fp, NULL, _IONBF, 0 );
