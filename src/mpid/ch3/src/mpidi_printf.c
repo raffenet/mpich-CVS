@@ -354,7 +354,7 @@ const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt )
 	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
 		       "EAGER_SEND - (%d,%d,%d,%d)", 
 		       pkt->eager_send.match.context_id,
-		       pkt->eager_send.match.tag, 
+		       (int)pkt->eager_send.match.tag, 
 		       pkt->eager_send.match.rank, 
 		       pkt->eager_send.data_sz );
 	break;
@@ -362,7 +362,7 @@ const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt )
 	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
 		       "EAGER_SYNC_SEND - (%d,%d,%d,%d) req=%d", 
 		       pkt->eager_sync_send.match.context_id,
-		       pkt->eager_sync_send.match.tag, 
+		       (int)pkt->eager_sync_send.match.tag, 
 		       pkt->eager_sync_send.match.rank, 
 		       pkt->eager_sync_send.data_sz,
 		       pkt->eager_sync_send.sender_req_id );
@@ -376,7 +376,7 @@ const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt )
 	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
 		       "READY_SEND - (%d,%d,%d,%d)", 
 		       pkt->ready_send.match.context_id,
-		       pkt->ready_send.match.tag, 
+		       (int)pkt->ready_send.match.tag, 
 		       pkt->ready_send.match.rank, 
 		       pkt->ready_send.data_sz );
 	break;
@@ -384,7 +384,7 @@ const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt )
 	MPIU_Snprintf( pktmsg, sizeof(pktmsg), 
 		       "RNDV_REQ_TO_SEND - (%d,%d,%d,%d) req=%d", 
 		       pkt->rndv_req_to_send.match.context_id,
-		       pkt->rndv_req_to_send.match.tag, 
+		       (int)pkt->rndv_req_to_send.match.tag, 
 		       pkt->rndv_req_to_send.match.rank, 
 		       pkt->rndv_req_to_send.data_sz,
 		       pkt->rndv_req_to_send.sender_req_id );
