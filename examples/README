@@ -1,0 +1,18 @@
+Example MPI programs
+
+This directory contains some example MPI programs.  They are described below.
+Examples of MPI programs in Fortran 77, Fortran 90, and C++ are found in the
+directories f77, f90, and cxx respectively.
+
+cpi - A simple program to compute pi
+
+Optional programs
+These programs are not built by default, but may be built and run
+
+hellow - A simple "hello world" program
+icpi - An interactive version of cpi
+
+parent and child - A simple example of using MPI_Comm_spawn
+
+Others will be documented later.
+
