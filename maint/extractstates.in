@@ -314,7 +314,7 @@ sub findStateDecl {
 	    $curfuncname = $1;
 	    $lastState = "";
 	}
-	elsif (/STATE_DECL\((.*)\)/ && !/^\#\s*define/) {
+	elsif (/STATE_DECL\((.*)\)/ && !/^\#\s*define\s/) {
 	    my $state = $1;
 	    my $candidateLine = "";
 	    $state =~ s/\s+//g;   # Remove blanks
@@ -372,7 +372,7 @@ sub findStateDecl {
 		$knownLines{$candidateLine} = $linenum;
 	    }
 	}
-	elsif (/FUNC_ENTER\((.*)\)/ && !/^\#\s*define/) {
+	elsif (/FUNC_ENTER\((.*)\)/ && !/^\#\s*define\s/) {
 	    # Match with current state
 	    my $state = $1;
 	    $inDecls = 0;
@@ -381,7 +381,7 @@ sub findStateDecl {
 		print STDERR "Warning: State in FUNC_ENTER($state) does not match STATE_DECL($lastState) in $file\n" if $showWarnings;
 	    }
 	}
-	elsif (/FUNC_EXIT\((.*)\)/ && !/^\#\s*define/) {
+	elsif (/FUNC_EXIT\((.*)\)/ && !/^\#\s*define\s/) {
 	    # Match with current state
 	    my $state = $1;
 	    $inDecls = 0;
