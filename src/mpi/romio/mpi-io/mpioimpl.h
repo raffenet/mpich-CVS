@@ -22,8 +22,16 @@
 #include "mpiimplthread.h"
 /* Use the routine versions of the nest macros, to avoid requiring 
    access to the MPIR_Process and MPIR_Thread structures */
+#ifndef MPIR_Nest_incr
+void MPIR_Nest_incr_export(void)
+void MPIR_Nest_decr_export(void)
+#define MPIR_Nest_incr MPIR_Nest_incr_export
+#define MPIR_Nest_decr MPIR_Nest_decr_export
+#endif
+#if 0
 #undef MPIR_Nest_incr
 #undef MPIR_Nest_decr
+#endif
 #else
 /* Any MPI implementation that wishes to follow the thread-safety and
    error reporting features provided by MPICH2 must implement these 
