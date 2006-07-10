@@ -1069,8 +1069,8 @@ if test -n "$file_system_xfs"; then
     AC_CACHE_CHECK([for memory alignment needed for direct I/O],
     pac_cv_memalignval,
     [
-    /bin/rm -f confmemalignval
-    /bin/rm -f /tmp/romio_tmp.bin
+    rm -f confmemalignval
+    rm -f /tmp/romio_tmp.bin
     AC_TRY_RUN([
 	#include <stdio.h>
 	#include <unistd.h>
@@ -1090,8 +1090,8 @@ if test -n "$file_system_xfs"; then
 	pac_cv_memalignval=`cat confmemalignval`,
 	pac_cv_memalignval="unknown",pac_cv_memalignval="unknown"
     )
-    /bin/rm -f confmemalignval
-    /bin/rm -f /tmp/romio_tmp.bin
+    rm -f confmemalignval
+    rm -f /tmp/romio_tmp.bin
     ])
     if test -n "$pac_cv_memalignval" -a "$pac_cv_memalignval" != 0 -a \
 	"$pac_cv_memalignval" != "unknown" ; then
