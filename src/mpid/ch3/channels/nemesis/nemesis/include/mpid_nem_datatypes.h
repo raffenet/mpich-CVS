@@ -27,8 +27,11 @@
 #define MPID_NEM_CACHE_LINE_LEN 64
 #define MPID_NEM_NUM_CELLS      32
 
-#define MPID_NEM_CELL_LEN      (64*1024)
-
+#if (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
+#define MPID_NEM_CELL_LEN           (32*1024)
+#else
+#define MPID_NEM_CELL_LEN           (64*1024)
+#endif 
 #define MPID_NEM_CELL_PAYLOAD_LEN   (MPID_NEM_CELL_LEN - sizeof(void *)) 
 
 #define MPID_NEM_ALIGNED(addr, bytes) ((((unsigned long)addr) & (((unsigned long)bytes)-1)) == 0)
