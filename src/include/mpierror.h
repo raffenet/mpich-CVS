@@ -154,10 +154,6 @@ void MPIR_Err_get_string( int, char *, int, MPIR_Err_get_class_string_func_t );
 
 void MPIR_Err_print_stack(FILE *, int);
 
-/* FIXME: Where is the documentation for these functions?  What are they for? *? */
-void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen);
-void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, MPIR_Err_get_class_string_func_t fn);
-
 int MPIR_Err_set_msg( int code, const char *msg_string );
 
 #define MPIR_ERR_CLASS_MASK 0x0000007f
