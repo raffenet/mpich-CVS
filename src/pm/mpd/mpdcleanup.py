@@ -29,7 +29,7 @@ def mpdcleanup():
     rshCmd    = 'ssh'
     user      = mpd_get_my_username()
     killCmd   = ''  # perhaps '~/bin/kj mpd'  (in quotes)
-    cleanCmd  = '/bin/rm -f '
+    cleanCmd  = 'rm -f '
     hostsFile = ''
     verbose = 0
     numFromHostsFile = 0  # chgd below
