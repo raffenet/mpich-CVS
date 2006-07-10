@@ -8,7 +8,7 @@
 	xlC $(CFLAGS) -c $<
 
 ARCH     = aix
-RM       = /usr/bin/rm
+RM       = rm
 
 TRACE_HOME     = /u/noibm04/js4_slog2_ibm5
 TRACE_INCDIR   = $(TRACE_HOME)/src/logformat/trace

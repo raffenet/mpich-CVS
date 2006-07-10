@@ -9,9 +9,9 @@ PDFLATEX   = pdflatex
 LATEX2HTML = latex2html
 
 # basic Unix command
-CP         = /bin/cp
-MV         = /bin/mv
-RM         = /bin/rm
+CP         = cp
+MV         = mv
+RM         = rm
 
 .SUFFIXES:	.lyx .tex .pdf
 

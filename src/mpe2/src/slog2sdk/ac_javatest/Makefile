@@ -8,7 +8,7 @@ JC        = $(JAVA_HOME)/bin/javac
 JVM       = $(JAVA_HOME)/bin/java
 JFLAGS    =
 JAR       = $(JAVA_HOME)/bin/jar
-RM        = /bin/rm -f
+RM        = rm -f
 
 JSRC      = simple.java simple_swing.java
 JCLS      = $(JSRC:.java=.class)
