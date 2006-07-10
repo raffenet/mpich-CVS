@@ -26,12 +26,12 @@ int                    MPID_nem_module_mx_send_outstanding_request_num;
 MPID_nem_mx_cell_ptr_t MPID_nem_module_mx_recv_outstanding_request;
 int                    MPID_nem_module_mx_recv_outstanding_request_num;
 
-uint32_t            MPID_nem_module_mx_filter  = 0xdeadbeef;
-static uint32_t     MPID_nem_module_mx_timeout = MX_INFINITE;
-int                 MPID_nem_module_mx_pendings_sends = 0;
-int                 MPID_nem_module_mx_pendings_recvs = 0 ;
-int                *MPID_nem_module_mx_pendings_sends_array;
-int                *MPID_nem_module_mx_pendings_recvs_array;
+uint32_t        MPID_nem_module_mx_filter  = 0xdeadbeef;
+static uint32_t MPID_nem_module_mx_timeout = MX_INFINITE;
+int             MPID_nem_module_mx_pendings_sends = 0;
+int             MPID_nem_module_mx_pendings_recvs = 0 ;
+int            *MPID_nem_module_mx_pendings_sends_array;
+int            *MPID_nem_module_mx_pendings_recvs_array;
 
 
 static MPID_nem_mx_req_queue_t _mx_send_free_req_q;
@@ -142,7 +142,6 @@ int init_mx( MPIDI_PG_t *pg_p )
      MPIU_CHKPMEM_REAP();
      goto fn_exit;
 }
-
 
 /*
  int  
@@ -291,7 +290,6 @@ MPID_nem_mx_module_get_from_bc (const char *business_card, uint32_t *remote_endp
      goto fn_exit;
 }
 
-
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mx_module_connect_to_root
 #undef FCNAME
@@ -332,6 +330,7 @@ MPID_nem_mx_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 		    &MPID_nem_module_mx_endpoints_addr[vc->pg_rank]);
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %s", mx_strerror (ret));
 
+//   fprintf(stdout,"[%i] MX connect ================ with %i \n",MPID_nem_mem_region.rank,vc->pg_rank);
    fn_exit:
        return mpi_errno;
    fn_fail:

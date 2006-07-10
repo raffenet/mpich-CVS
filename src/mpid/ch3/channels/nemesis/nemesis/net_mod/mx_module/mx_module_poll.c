@@ -125,13 +125,14 @@ MPID_nem_mx_module_recv()
 	  {	
 	     MPID_nem_mx_cell_ptr_t cell_req;		       
 	     mx_request_t          *request;
+	     uint32_t               num_seg ;
 	     
 	     MPID_nem_mx_req_queue_dequeue(MPID_nem_module_mx_recv_free_req_queue,&cell_req);	     
 	     request = MPID_NEM_MX_CELL_TO_REQUEST(cell_req);		
 	     
 	     MPID_nem_queue_dequeue (MPID_nem_module_mx_free_queue, &cell);	    	     
 	     seg.segment_ptr    = (void *)(MPID_NEM_CELL_TO_PACKET (cell));
-	     seg.segment_length = MPID_NEM_CELL_PAYLOAD_LEN;	
+	     seg.segment_length = MPID_NEM_CELL_PAYLOAD_LEN ;
 	     
 	     ret = mx_irecv(MPID_nem_module_mx_local_endpoint,
 			    &seg,1,		       
@@ -140,6 +141,8 @@ MPID_nem_mx_module_recv()
 			    (void *)cell,
 			    request);
 	     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_irecv", "**mx_irecv %s", mx_strerror (ret));	       	     
+
+	     
 	     ret = mx_test(MPID_nem_module_mx_local_endpoint,
 				request,
 				&status,

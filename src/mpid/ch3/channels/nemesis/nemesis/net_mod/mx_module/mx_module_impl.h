@@ -10,6 +10,9 @@
 #include "mpid_nem.h"
 #include <linux/types.h>
 
+#define MPID_NEM_CELL_LEN_MX          (32*1024)
+#define MPID_NEM_CELL_PAYLOAD_LEN_MX  (MPID_NEM_CELL_LEN_MX - sizeof(void *))
+
 extern uint32_t               MPID_nem_module_mx_filter;
 extern mx_endpoint_t          MPID_nem_module_mx_local_endpoint;
 extern mx_endpoint_addr_t    *MPID_nem_module_mx_endpoints_addr;
@@ -36,7 +39,7 @@ typedef struct MPID_nem_mx_req_queue
 
 
 #define MPID_NEM_MX_CELL_TO_REQUEST(cellp) (&((cellp)->mx_request))
-#define MPID_NEM_MX_REQ                    128
+#define MPID_NEM_MX_REQ                    64
 #define MPID_NEM_MX_MATCH                  (UINT64_C(0x666))
 #define MPID_NEM_MX_MASK                   (UINT64_C(0xffffffffffffffff))
 
