@@ -77,18 +77,18 @@ mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	$(C_LINK) -o $* $*.o $(LIBS)
 
 clean: 
-	@-/bin/rm -f *.o *.dep *~ ${EXAMPLES} core* *.1 *.pyc
+	@-rm -f *.o *.dep *~ ${EXAMPLES} core* *.1 *.pyc
 
 # echo "some of the following might be executables you want to remove"
 # ls -l | grep rwx
 distclean: clean
-	/bin/rm -f Makefile mpdconf.h ${PROGRAMS} ${PYTHON_SOURCE} \
+	rm -f Makefile mpdconf.h ${PROGRAMS} ${PYTHON_SOURCE} \
                    config.status config.cache config.log
 
 
 maintainer-clean: distclean
-	/bin/rm -f configure mpdconf.h.in
-	/bin/rm -rf autom4te.cache
+	rm -f configure mpdconf.h.in
+	rm -rf autom4te.cache
 
 configure: configure.in
 	./makeconfigure
@@ -136,19 +136,19 @@ mpich2-build-install: mpich2-mpdroot install
 	else \
             ${INSTALL} -m  755 mpich2-mpdroot ${bindir}/mpdroot ;\
 	fi
-	/bin/rm -f mpich2-mpdroot
+	rm -f mpich2-mpdroot
 
 mpich2-build-uninstall:
-	/bin/rm -f ${bindir}/mpdroot
+	rm -f ${bindir}/mpdroot
 
 mpich2-mpdroot: mpich2-mpdroot.o
 	$(C_LINK) -o mpich2-mpdroot mpich2-mpdroot.o $(LIBS)
-	/bin/rm -f mpich2-mpdroot.o
+	rm -f mpich2-mpdroot.o
 
 mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	${INSTALL} -m 644 ${srcdir}/mpdroot.c mpich2-mpdroot.c
 	${C_COMPILE} -c mpich2-mpdroot.c
-	/bin/rm -f mpich2-mpdroot.c
+	rm -f mpich2-mpdroot.c
 
 # Empty dependencies target (MPICH2 wants this target)
 dependencies:
