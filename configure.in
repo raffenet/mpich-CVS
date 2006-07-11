@@ -38,6 +38,16 @@ dnl    MPID_NO_LONG_LONG     - if yes, the device does not support the
 dnl                            long long integer type
 dnl    MPID_NO_LONG_DOUBLE   - if yes, the device does not support the
 dnl                            long double type
+dnl    MPID_PM_NAMESERVER    - if set, provides the name of the nameserver
+dnl                            that the process manager supports.
+dnl                            This name server will be used if the
+dnl                            default name server is selected.
+dnl    PM_REQUIRES_PMI       - if set, provides the name of the PMI 
+dnl                            interface implementation.  If not set,
+dnl                            the "simple" PMI implementation is used.
+dnl                            A process manager that needs a particular
+dnl                            process manager should check that this is
+dnl                            not set to an incompatible value.
 dnl
 dnl Note that the meanings of these variables are defined so that an 
 dnl undefined value gives the default.  This makes it easy to expand
@@ -957,24 +967,94 @@ else
     # Make device_name available to subdirs
 fi
 AC_SUBST(device_name)
+#
+# with-pm
+if test -z "$with_pm" ; then
+    with_pm="no"
+fi
+if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
+    with_pm="no"
+fi
+if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
+    with_pm=mpd
+fi
+
+# We allow multiple pm names, separated by : or ,
+# If multiple PMs are provided, we set the value MANY_PM to yes
+MANY_PM=no
+AC_SUBST(MANY_PM)
+if test "$with_pm" != "no" ; then
+    pm_names="`echo $with_pm | sed -e 's/:/ /g' -e 's/,/ /g'`"
+else
+    pm_names=""
+fi
+#
+hasError=no
+for pm_name in $pm_names ; do
+    if test -z "$first_pm_name" ; then
+       first_pm_name=$pm_name
+    else 
+       # Only add to other_pm_names if the directory exists,
+       # since the Makefile in src/pm/Makefile will try to cd to
+       # that directory
+       if test -d $use_top_srcdir/src/pm/$pm_name ; then
+           other_pm_names="$other_pm_names $pm_name"
+       fi
+    fi
+    if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
+        AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
+	hasError=yes
+    elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
+        AC_MSG_WARN([pm $pm_name has no configure])
+        pm_name=""
+	hasError=yes
+    else
+        subsystems="$subsystems src/pm/$pm_name"
+        if test -f $use_top_srcdir/src/pm/$pm_name/mpich2prereq ; then 
+	    echo sourcing $use_top_srcdir/src/pm/$pm_name/mpich2prereq
+	    . $use_top_srcdir/src/pm/$pm_name/mpich2prereq
+	fi
+        if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
+	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
+	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
+	fi
+    fi
+done
+if test "$hasError" != no ; then
+    AC_MSG_ERROR([Aborting configure because an error was seen in the selection of process managers])
+fi
+#
+# pm_name is the *primary* pm
+pm_name=$first_pm_name
+AC_SUBST(pm_name)
+AC_SUBST(other_pm_names)
+
+if test -n "$first_pm_name" ; then
+    other_install_dirs="${other_install_dirs} src/pm/$first_pm_name"
+fi
+# FIXME: in the multiple pm case, we need to be careful that
+# the PMs don't add conflicting definitions to the configure
+# environment.  To ensure that, we'll need an alternate install target
+# (e.g., cd src/pm/$other_pm_name && make install-alt)
+
+# Once we've selected the process manager (or managers), we can
+# check that we have a compatible PMI implemenatation.
 # with-pmi
 if test "$with_pmi" != "no" ; then
     if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
-        if test "$with_pm" = "smpd" ; then
-	    with_pmi=smpd
-	else
+        if test -n "$PM_REQUIRES_PMI" ; then
+	    with_pmi=$PM_REQUIRES_PMI
+        else
             with_pmi=simple
+        fi
+    elif test -n "$PM_REQUIRES_PMI" ; then
+        # Test for compatibility between pm and pmi choices
+        if test "$PM_REQUIRES_PMI" != "$with_pmi" ; then
+	    AC_MSG_ERROR([The PM choosen ($with_pm) requires the PMI implementation $PM_REQUIRES_PMI but $with_pmi was selected as the PMI implementation.])
         fi
     fi
     pmi_name=$with_pmi
     
-    # Test for compatibility between pm and pmi choices
-    # FIXME: This should be handled by the pm or pmi configures, since
-    # they're in a better position to understand what is needed
-    if test "$with_pmi" = smpd -a "$with_pm" != "smpd" ; then
-    AC_MSG_ERROR([The smpd PMI interface may only be used with the smpd process manager interface (e.g., --with-pmi=smpd --with-pm=smpd)])
-    fi
-
     # FIXME: Details like this should not be in the top-level configure
     if test "$with_pmi" = "smpd" ; then
         AC_DEFINE(USE_HUMAN_READABLE_TOKENS,1,[Define to use ='s and spaces in the string utilities.])
@@ -989,78 +1069,11 @@ if test "$with_pmi" != "no" ; then
         subsystems="$subsystems src/pmi/$pmi_name"
     fi
 else
-    pmi_name=""
+    AC_MSG_ERROR([A PMI implementation must be selected or the default used.])
 fi
 AC_SUBST(pmi_name)
-# with-pm
-if test -z "$with_pm" ; then
-    with_pm="no"
-fi
-if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
-    with_pm="no"
-fi
-if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
-    with_pm=mpd
-fi
 
-# Eventually, we should allow multiple pm names, separated by : or ,
-# Set the value MANY_PM to yes in this case
-MANY_PM=no
-AC_SUBST(MANY_PM)
-if test "$with_pm" != "no" ; then
-    pm_names="`echo $with_pm | sed -e 's/:/ /g' -e 's/,/ /g'`"
-else
-    pm_names=""
-fi
-# smpd is no longer compatible with the other pms since it does not
-# use the simple pmpi.
-hasSMPD=no
-hasNonSMPD=no
-for pm_name in $pm_names ; do
-    if test -z "$first_pm_name" ; then
-       first_pm_name=$pm_name
-    else 
-       # Only add to other_pm_names if the directory exists,
-       # since the Makefile in src/pm/Makefile will try to cd to
-       # that directory
-       if test -d $use_top_srcdir/src/pm/$pm_name ; then
-           other_pm_names="$other_pm_names $pm_name"
-       fi
-    fi
-    if test "$pm_name" = smpd ; then
-         hasSMPD=yes
-    else
-         hasNonSMPD=yes
-    fi
-    if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
-        AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
-    elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
-        AC_MSG_WARN([pm $pm_name has no configure])
-        pm_name=""
-    else
-        subsystems="$subsystems src/pm/$pm_name"
-        if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
-	    echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
-	    . $use_top_srcdir/src/pm/$pm_name/setup_pm
-	fi
-    fi
-done
-if test "$hasSMPD" = yes -a "$hasNonSMPD" != no ; then
-    AC_MSG_ERROR([The smpd process manager may not be used with other process managers.  Either configure with --with=pm=smpd (only) or remove smpd from $with_pm])
-fi
-# pm_name is the *primary* pm
-pm_name=$first_pm_name
-AC_SUBST(pm_name)
-AC_SUBST(other_pm_names)
-
-if test -n "$first_pm_name" ; then
-    other_install_dirs="${other_install_dirs} src/pm/$first_pm_name"
-fi
-# FIXME: in the multiple pm case, we need to be careful that
-# the PMs don't add conflicting definitions to the configure
-# environment.  To ensure that, we'll need an alternate install target
-# (e.g., cd src/pm/$other_pm_name && make install-alt)
-
+# ----------------------------------------------------------------------------
 if test $with_mpe != no ; then
     if test ! -d $use_top_srcdir/src/mpe2 ; then
         if test $with_mpe = yes ; then
@@ -1337,7 +1350,8 @@ if test "$enable_f77" = "yes" ; then
     # We must add the include directories.  We have to wait until here
     # so that the paths will be defined.
     # FIXME: We should not need this
-    CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/binding/f77 -I`pwd`/src/binding/f77"
+#    CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/binding/f77 -I`pwd`/src/binding/f77"
+#    CPPFLAGS="$CPPFLAGS -I${master_top_srcdir}/src/binding/f77"
 
     AC_LANG_FORTRAN77
     PAC_PROG_F77_EXCLAIM_COMMENTS(has_exclaim="yes",has_exclaim="no")
@@ -1960,6 +1974,8 @@ dnl     check for system services
 # mpiexec, mpicc, etc, in test/commands, and in some of the utility
 # programs for processing log files .  If perl is not found,
 # MPICH2 may still be built and used.
+# We need the full path to perl since we'll use it as the interpreter for
+# a shell script.
 AC_PATH_PROG(PERL,perl)
 # Look for ar.  If we fail, abort
 AC_CHECK_PROGS(AR,ar)
@@ -2141,24 +2157,19 @@ on all link lines (consider adding it to LDFLAGS)])
 fi
 # ----------------------------------------------------------------------------
 
-
-# We need the full path to perl since we'll use it as the interpreter for
-# a shell script.
-AC_PATH_PROG(PERL5,perl)
-
 nameserv_name=""
 AC_SUBST(nameserv_name)
-# FIXME: Eventually, we need to export a variable to indicate whether the
-# PM provides name publisher service
+# 
+# Get the default nameserver, if no nameserver was selected.  A process
+# manager may advertise a nameserver name by setting the variable
+# MPID_PM_NAMESERVER.
 if test "$with_namepublisher" = "default" ; then
-   # We use "with_pm" instead of "pm_name" to handle the case where
-   # mpd is just one of several supportted PMs
-   case "$with_pm" in
-   mpd)
-       with_namepublisher=mpd ;;
-   *)
-       with_namepublisher=file ;;
-   esac
+   if test -n "$MPID_PM_NAMESERVER" ; then
+       with_namepublisher=$MPID_PM_NAMESERVER
+   else
+       # The default is to use a file to communicate published names
+       with_namepublisher=file
+   fi
 fi
 
 if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
@@ -2213,6 +2224,7 @@ fi
 if test -n "$nameserv_name" ; then
    AC_DEFINE(HAVE_NAMEPUB_SERVICE,1,[Define if a name publishing service is available])
 fi
+
 # In case the documentation targets are used, find doctext and attempt to 
 # find the source for the doctext LaTeX style files.  Use "false" if
 # doctext is not found
