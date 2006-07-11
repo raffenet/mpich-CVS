@@ -952,7 +952,7 @@ class MPDConClientSock(MPDSock):
                 else:
                     status = os.WEXITSTATUS(status)
                 if status != 0:
-                    mpd_print(1,'forked process failed; status=' % status)
+                    mpd_print(1,'forked process failed; status=%s' % status)
                     sys.exit(-1)
         else:
             self.conFilename = '/tmp/mpd2.console_' + mpd_get_my_username() + self.conExt
