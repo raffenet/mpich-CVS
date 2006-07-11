@@ -266,7 +266,7 @@ def mpdboot():
     mpdArgs = '%s %s --ncpus=%d' % (localConArg,ifhn,myNcpus)
     (mpdPID,mpdFD) = launch_one_mpd(0,0,mpdArgs,hostsAndInfo)
     fd2idx = {mpdFD : 0}
-    # ----------------  Above here  ------------------------------
+
     handle_mpd_output(mpdFD,fd2idx,hostsAndInfo)
 
     try:
