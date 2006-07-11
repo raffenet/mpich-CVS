@@ -123,6 +123,7 @@ int MPI_Finalize( void )
     /* ... body of routine ... */
     
 #if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
+    /* We need to get the rank before freeing MPI_COMM_WORLD */
     rank = MPIR_Process.comm_world->rank;
 #endif    
 
@@ -132,7 +133,7 @@ int MPI_Finalize( void )
        MPI_COMM_SELF are deleted before almost anything else happens */
     if (MPIR_Process.attr_free && MPIR_Process.comm_self->attributes) {
         mpi_errno = MPIR_Process.attr_free( MPI_COMM_SELF,
-                                         MPIR_Process.comm_self->attributes);
+					   MPIR_Process.comm_self->attributes);
     }
     if (MPIR_Process.attr_free && MPIR_Process.comm_world->attributes) {
         mpi_errno = MPIR_Process.attr_free( MPI_COMM_WORLD, 
