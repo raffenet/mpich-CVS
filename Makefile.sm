@@ -126,12 +126,12 @@ dist-with-version:
 	( cd tmpdir/mpich2 && sed -e "s/^VERSION = .*/VERSION = ${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	echo "${version}" >tmpdir/mpich2/maint/Version
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
-	( cd tmpdir/${PACKAGE}-${version}/src/mpid && /bin/rm -rf mm rdma globus)
-	( cd tmpdir/${PACKAGE}-${version}/doc && /bin/rm -rf notes develop )
-	( cd tmpdir/${PACKAGE}-${version}/src/pm && /bin/rm -rf forker rmpd ompd remshell )
-	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels && /bin/rm -rf ib rdma gasnet)
-	( cd tmpdir/${PACKAGE}-${version} && /bin/rm -f ToDo* )
-	( cd tmpdir/${PACKAGE}-${version} && /bin/rm -rf archive )
+	( cd tmpdir/${PACKAGE}-${version}/src/mpid && rm -rf mm rdma globus)
+	( cd tmpdir/${PACKAGE}-${version}/doc && rm -rf notes develop )
+	( cd tmpdir/${PACKAGE}-${version}/src/pm && rm -rf forker rmpd ompd remshell )
+	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels && rm -rf ib rdma gasnet)
+	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
+	( cd tmpdir/${PACKAGE}-${version} && rm -rf archive )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'autom4te.cache' \
 	  -print | xargs -r rm -rf)

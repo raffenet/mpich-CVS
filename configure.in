@@ -4801,7 +4801,7 @@ AC_OUTPUT_COMMANDS([
 #export top_srcdir
 #export enable_romio
 AC_OUTPUT_COMMANDS([if test "$enable_romio" = "yes" ; then
-  /bin/rm -f src/include/mpio.h "${use_top_srcdir}/include/mpio.h"
+  rm -f src/include/mpio.h "${use_top_srcdir}/include/mpio.h"
   cp src/mpi/romio/include/mpio.h src/include ; fi],enable_romio=$enable_romio
 top_srcdir=$top_srcdir)
 
