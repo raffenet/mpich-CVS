@@ -49,10 +49,12 @@ Default copy and delete functions are available.  These are
 - MPI_COMM_DUP_FN         - simple dup function
 
 There are subtle differences between C and Fortran that require that the
-copy_fn be written in the same language that 'MPI_Comm_create_keyval'
-is called from.
+copy_fn be written in the same language from which 'MPI_Comm_create_keyval'
+is called.
 This should not be a problem for most users; only programers using both 
 Fortran and C in the same program need to be sure that they follow this rule.
+
+.N AttrErrReturn
 
 .N ThreadSafe
 

@@ -47,6 +47,8 @@ Notes:
 . MPI_TYPE_NULL_DELETE_FN - empty delete function
 - MPI_TYPE_DUP_FN         - simple dup function
 
+.N AttrErrReturn
+
 .N ThreadSafe
 
 .N Fortran

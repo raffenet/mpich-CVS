@@ -46,6 +46,8 @@
 . MPI_WIN_NULL_DELETE_FN - empty delete function
 - MPI_WIN_DUP_FN         - simple dup function
 
+.N AttrErrReturn
+
 .N ThreadSafe
 
 .N Fortran
