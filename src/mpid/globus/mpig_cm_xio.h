@@ -31,11 +31,24 @@
  * expose the communication module's vtable so that it is accessible to other modules in the device
  */
 extern const mpig_cm_vtable_t mpig_cm_xio_vtable;
+extern const mpig_cm_vtable_t mpig_cm_xio_lan_vtable;
+extern const mpig_cm_vtable_t mpig_cm_xio_wan_vtable;
+extern const mpig_cm_vtable_t mpig_cm_xio_system_vtable;
 
+typedef struct xio_l_conn_info_s
+{
+    globus_xio_driver_t                 driver;
+    globus_xio_stack_t                  stack;
+    globus_xio_server_t                 server;
+    char *                              driver_name;
+    char *                              contact_string;
+    globus_xio_attr_t                   attr;
+    globus_bool_t                       available;
+} xio_l_conn_info_t;
 
 /*									\
  * define the communication module structure to be included in a VC	\
- */									\
+ */
 #define MPIG_VC_CM_XIO_DECL						\
 struct mpig_cm_xio_vc							\
 {									\
@@ -44,6 +57,8 @@ struct mpig_cm_xio_vc							\
 									\
     /* contact string for remote process listener */			\
     char * cs;								\
+    char * driver_name;								\
+    xio_l_conn_info_t * xio_info;                                 \
 									\
     /* data format of remote machine */					\
     int df;								\

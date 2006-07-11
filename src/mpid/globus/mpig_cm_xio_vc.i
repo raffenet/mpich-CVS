@@ -30,6 +30,7 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
     mpig_databuf_construct((vc_)->cm.xio.msgbuf, MPIG_CM_XIO_VC_MSGBUF_SIZE);	\
     (vc_)->cm.xio.list_prev = (vc_);						\
     (vc_)->cm.xio.list_next = (vc_);						\
+    (vc_)->cm.xio.xio_info = NULL;                          \
 										\
     mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_XIO);				\
     mpig_vc_set_vtable((vc_), &mpig_cm_xio_vc_vtable);				\

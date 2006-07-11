@@ -30,14 +30,6 @@ typedef enum mpig_cm_xio_open_resp
 mpig_cm_xio_open_resp_t;
 
 
-globus_xio_driver_t mpig_cm_xio_conn_transport_driver;
-const char * mpig_cm_xio_conn_transport_driver_name = "tcp";
-MPIG_STATIC globus_xio_stack_t mpig_cm_xio_conn_stack;
-MPIG_STATIC globus_xio_attr_t mpig_cm_xio_conn_attrs;
-MPIG_STATIC globus_xio_server_t mpig_cm_xio_server_handle;
-MPIG_STATIC char * mpig_cm_xio_server_cs = NULL;
-
-
 static int mpig_cm_xio_conn_init(void);
 
 static int mpig_cm_xio_conn_finalize(void);
@@ -50,6 +42,8 @@ static const char * mpig_cm_xio_conn_open_resp_get_string(mpig_cm_xio_open_resp_
 
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
+
+static xio_l_conn_info_t                xio_l_fallback_info;
 
 
 /*
@@ -69,39 +63,55 @@ static int mpig_cm_xio_conn_init(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_conn_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM, "entering"));
 
+    xio_l_fallback_info.driver_name = strdup("tcp");
+
+
     /* initialize the vc tracking list */
     mpig_cm_xio_vc_list_init();
     
     /* build stack of communication drivers */
-    grc = globus_xio_driver_load(mpig_cm_xio_conn_transport_driver_name, &mpig_cm_xio_conn_transport_driver);
+    grc = globus_xio_driver_load(
+        xio_l_fallback_info.driver_name, &xio_l_fallback_info.driver);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: driver=%s, msg=%s",
-	    "globus_xio_driver_load", mpig_cm_xio_conn_transport_driver_name, globus_error_print_chain(globus_error_peek(grc))));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|conn_driver_load_transport",
-	    "**globus|cm_xio|conn_driver_destroy_load_transport %s %s", mpig_cm_xio_conn_transport_driver_name,
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, 
+            "ERROR: call to %s() failed: driver=%s, msg=%s",
+	    "globus_xio_driver_load", 
+            xio_l_fallback_info.driver_name, 
+            globus_error_print_chain(globus_error_peek(grc))));
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, 
+            "**globus|cm_xio|conn_driver_load_transport",
+	    "**globus|cm_xio|conn_driver_destroy_load_transport %s %s", 
+            xio_l_fallback_info.driver_name,
 	    globus_error_print_chain(globus_error_peek(grc)));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
-    grc = globus_xio_stack_init(&mpig_cm_xio_conn_stack, NULL);
+    grc = globus_xio_stack_init(&xio_l_fallback_info.stack, NULL);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
-	    "globus_xio_stack_init", globus_error_print_chain(globus_error_peek(grc))));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM,
+            "ERROR: call to %s() failed: msg=%s",
+	    "globus_xio_stack_init",
+            globus_error_print_chain(globus_error_peek(grc))));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|conn_stack_init",
-	    "**globus|cm_xio|conn_stack_init %s", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|conn_stack_init %s",
+             globus_error_print_chain(globus_error_peek(grc)));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
-    grc = globus_xio_stack_push_driver(mpig_cm_xio_conn_stack, mpig_cm_xio_conn_transport_driver);
+    grc = globus_xio_stack_push_driver(
+        xio_l_fallback_info.stack, xio_l_fallback_info.driver);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: driver=%s, msg=%s",
-	    "globus_xio_stack_push_driver", mpig_cm_xio_conn_transport_driver_name,
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM,
+            "ERROR: call to %s() failed: driver=%s, msg=%s",
+	    "globus_xio_stack_push_driver", xio_l_fallback_info.driver_name,
 	    globus_error_print_chain(globus_error_peek(grc))));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|conn_stack_push_driver",
-	    "**globus|cm_xio|conn_stack_push_driver %s %s", mpig_cm_xio_conn_transport_driver_name,
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, 
+            "**globus|cm_xio|conn_stack_push_driver",
+	    "**globus|cm_xio|conn_stack_push_driver %s %s",
+            xio_l_fallback_info.driver_name,
 	    globus_error_print_chain(globus_error_peek(grc)));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
@@ -121,7 +131,7 @@ static int mpig_cm_xio_conn_init(void)
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
-        grc = globus_xio_stack_push_driver(mpig_cm_xio_conn_stack, gsi_driver);
+        grc = globus_xio_stack_push_driver(xio_l_fallback_info.stack, gsi_driver);
 	if (grc)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: driver=%s, msg=%s",
@@ -135,17 +145,20 @@ static int mpig_cm_xio_conn_init(void)
 
 
     /* set TCP options and parameters */
-    grc = globus_xio_attr_init(&mpig_cm_xio_conn_attrs);
+    grc = globus_xio_attr_init(&xio_l_fallback_info.attr);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
-	    "globus_xio_attr_init", globus_error_print_chain(globus_error_peek(grc))));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM,
+            "ERROR: call to %s() failed: msg=%s", "globus_xio_attr_init", 
+            globus_error_print_chain(globus_error_peek(grc))));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|conn_attr_create",
-	    "**globus|cm_xio|conn_attr_create %s %s", "TCP_SET_NODELAY", globus_error_print_chain(globus_error_peek(grc)));
+	    "**globus|cm_xio|conn_attr_create %s %s", "TCP_SET_NODELAY", 
+            globus_error_print_chain(globus_error_peek(grc)));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
-    grc = globus_xio_attr_cntl(mpig_cm_xio_conn_attrs, mpig_cm_xio_conn_transport_driver, GLOBUS_XIO_TCP_SET_NODELAY, GLOBUS_TRUE);
+    grc = globus_xio_attr_cntl(xio_l_fallback_info.attr, 
+        xio_l_fallback_info.driver, GLOBUS_XIO_TCP_SET_NODELAY, GLOBUS_TRUE);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: attr=%s, msg=%s",
@@ -157,7 +170,7 @@ static int mpig_cm_xio_conn_init(void)
 
 #   if XXX
     {
-	grc = globus_xio_attr_cntl(mpig_cm_xio_conn_attrs, mpig_cm_xio_conn_transport_driver, GLOBUS_XIO_TCP_SET_SNDBUF, buf_size);
+	grc = globus_xio_attr_cntl(xio_l_fallback_info.attrs, xio_l_fallback_info.driver, GLOBUS_XIO_TCP_SET_SNDBUF, buf_size);
 	if (grc)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: attr=%s, msg=%s",
@@ -167,7 +180,7 @@ static int mpig_cm_xio_conn_init(void)
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
-	grc = globus_xio_attr_cntl(mpig_cm_xio_conn_attrs, mpig_cm_xio_conn_transport_driver, GLOBUS_XIO_TCP_SET_RCVBUF, buf_size);
+	grc = globus_xio_attr_cntl(xio_l_fallback_info.attrs, xio_l_fallback_info.driver, GLOBUS_XIO_TCP_SET_RCVBUF, buf_size);
 	if (grc)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: attr=%s, msg=%s",
@@ -180,7 +193,8 @@ static int mpig_cm_xio_conn_init(void)
 #    endif
     
     /* establish server to start listening for new connections */
-    grc = globus_xio_server_create(&mpig_cm_xio_server_handle, mpig_cm_xio_conn_attrs, mpig_cm_xio_conn_stack);
+    grc = globus_xio_server_create(&xio_l_fallback_info.server, 
+        xio_l_fallback_info.attr, xio_l_fallback_info.stack);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
@@ -190,7 +204,8 @@ static int mpig_cm_xio_conn_init(void)
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
-    grc = globus_xio_server_get_contact_string(mpig_cm_xio_server_handle, &mpig_cm_xio_server_cs);
+    grc = globus_xio_server_get_contact_string(xio_l_fallback_info.server, 
+        &xio_l_fallback_info.contact_string);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
@@ -200,7 +215,7 @@ static int mpig_cm_xio_conn_init(void)
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
-    mpi_errno = mpig_cm_xio_server_listen(mpig_cm_xio_server_handle);
+    mpi_errno = mpig_cm_xio_server_listen(xio_l_fallback_info.server);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|server_listen");
 
   fn_return:
@@ -236,7 +251,7 @@ static int mpig_cm_xio_conn_finalize(void)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VCCM, "entering"));
 
     /* disable the connection server and free any resources used by it */
-    grc = globus_xio_server_close(mpig_cm_xio_server_handle);
+    grc = globus_xio_server_close(xio_l_fallback_info.server);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
@@ -246,9 +261,9 @@ static int mpig_cm_xio_conn_finalize(void)
     }   /* --END ERROR HANDLING-- */
 
     /* free the memory used to store the contact string */
-    if (mpig_cm_xio_server_cs != NULL)
+    if (xio_l_fallback_info.contact_string != NULL)
     { 
-	globus_libc_free(mpig_cm_xio_server_cs);
+	globus_libc_free(xio_l_fallback_info.contact_string);
     }
 
     /* NOTE: prior to calling this routine, MPID_Finalize() dissolved all communicators, so there should not be any external VC
@@ -271,7 +286,7 @@ static int mpig_cm_xio_conn_finalize(void)
     mpig_cm_xio_vc_list_finalize();
     
     /* XXX: unload globus XIO drivers? */
-    grc = globus_xio_attr_destroy(mpig_cm_xio_conn_attrs);
+    grc = globus_xio_attr_destroy(xio_l_fallback_info.attr);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
@@ -280,7 +295,7 @@ static int mpig_cm_xio_conn_finalize(void)
 	    "**globus|cm_xio|conn_attr_destroy %s", globus_error_print_chain(globus_error_peek(grc)));
     }   /* --END ERROR HANDLING-- */
 
-    grc = globus_xio_stack_destroy(mpig_cm_xio_conn_stack);
+    grc = globus_xio_stack_destroy(xio_l_fallback_info.stack);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: msg=%s",
@@ -289,13 +304,13 @@ static int mpig_cm_xio_conn_finalize(void)
 	    "**globus|cm_xio|conn_stack_destroy %s", globus_error_print_chain(globus_error_peek(grc)));
     }   /* --END ERROR HANDLING-- */
 
-    grc = globus_xio_driver_unload(mpig_cm_xio_conn_transport_driver);
+    grc = globus_xio_driver_unload(xio_l_fallback_info.driver);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: driver=%s, msg=%s",
-	    "globus_xio_driver_unload", mpig_cm_xio_conn_transport_driver_name, globus_error_print_chain(globus_error_peek(grc))));
+	    "globus_xio_driver_unload", xio_l_fallback_info.driver_name, globus_error_print_chain(globus_error_peek(grc))));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|conn_driver_unload_transport",
-	    "**globus|cm_xio|conn_driver_destroy_unload_transport %s %s", mpig_cm_xio_conn_transport_driver_name,
+	    "**globus|cm_xio|conn_driver_destroy_unload_transport %s %s", xio_l_fallback_info.driver_name,
 	    globus_error_print_chain(globus_error_peek(grc)));
     }   /* --END ERROR HANDLING-- */
 
@@ -682,7 +697,8 @@ static void mpig_cm_xio_server_handle_connection(const globus_xio_server_t serve
     mpig_vc_mutex_unlock(tmp_vc);
 	
     /* complete the formation of the new connection */
-    grc = globus_xio_register_open(handle, NULL, mpig_cm_xio_conn_attrs, mpig_cm_xio_server_handle_open, tmp_vc);
+    grc = globus_xio_register_open(handle, NULL, xio_l_fallback_info.attr,
+        mpig_cm_xio_server_handle_open, tmp_vc);
     if (grc)
     {   /* --END ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: %s",
@@ -2046,7 +2062,7 @@ static int mpig_cm_xio_client_connect(mpig_vc_t * const real_vc)
     }
     
     /* create an XIO handle and initiate the connection */
-    grc = globus_xio_handle_create(&handle, mpig_cm_xio_conn_stack);
+    grc = globus_xio_handle_create(&handle, real_vc->cm.xio.xio_info->stack);
     MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_handle_create",
 	"**globus|cm_xio|client_handle_create %s", globus_error_print_chain(globus_error_peek(grc)));
     
@@ -2102,7 +2118,8 @@ static int mpig_cm_xio_client_connect(mpig_vc_t * const real_vc)
 
 	/* register an ansychronous connect to the process specified in the contact string field located in the real VC.  if the
 	   registration is successful, update the temp VC state. */
-	grc = globus_xio_register_open(tmp_vc_cm->handle, mpig_cm_xio_vc_get_contact_string(real_vc), mpig_cm_xio_conn_attrs,
+	grc = globus_xio_register_open(tmp_vc_cm->handle,
+            mpig_cm_xio_vc_get_contact_string(real_vc), xio_l_fallback_info.attr,
 	    mpig_cm_xio_client_handle_open,(void *) tmp_vc);
 	MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_open",
 	    "**globus|cm_xio|xio_reg_open %s", globus_error_print_chain(globus_error_peek(grc)));
@@ -3473,7 +3490,8 @@ int mpig_port_open(MPID_Info * info, char * port_name)
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_XIO_CONNACC_PROTO_VERSION");
 
-    mpi_errno = mpig_bc_add_contact(&bc, "CM_XIO_CONNACC_CONTACT_STRING", mpig_cm_xio_server_cs);
+    mpi_errno = mpig_bc_add_contact(&bc, "CM_XIO_CONNACC_CONTACT_STRING",
+        xio_l_fallback_info.contact_string);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_XIO_CONNACC_CONTACT_STRING");
 

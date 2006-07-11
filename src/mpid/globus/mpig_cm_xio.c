@@ -115,6 +115,8 @@ MPIG_STATIC int mpig_cm_xio_select_module(struct mpig_vc * vc, bool_t * selected
 MPIG_STATIC int mpig_cm_xio_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
     unsigned * levels_out);
 
+int mpig_cm_xio_premodule_init(void);
+
 
 /*
  * communication module virtual table
@@ -131,6 +133,31 @@ const mpig_cm_vtable_t mpig_cm_xio_vtable =
     mpig_cm_xio_get_vc_compatability,
     mpig_cm_vtable_last_entry
 };
+
+MPIG_STATIC xio_l_conn_info_t           xio_l_fallback_info;
+MPIG_STATIC xio_l_conn_info_t           xio_l_lan_info;
+MPIG_STATIC xio_l_conn_info_t           xio_l_wan_info;
+MPIG_STATIC xio_l_conn_info_t           xio_l_system_info;
+MPIG_STATIC globus_bool_t               xio_l_module_active = GLOBUS_FALSE;
+
+
+/* this is done here so that the mutexes and such will be availabe
+   for the other xio modules */
+int
+mpig_cm_xio_premodule_init()
+{
+    int mrc = MPI_SUCCESS;
+
+    if(!xio_l_module_active)
+    {
+        xio_l_module_active = GLOBUS_TRUE;
+        mpig_cm_xio_mutex_create();
+
+        /* initialize the request completion queue */
+        mrc = mpig_cm_xio_rcq_init();
+    }
+    return mrc;
+}
 
 
 /*
@@ -155,10 +182,8 @@ MPIG_STATIC int mpig_cm_xio_init(int * const argc, char *** const argv)
 
     MPIU_Assert(sizeof(mpig_cm_xio_msghan_funcs) != MPIG_CM_XIO_MSG_TYPE_LAST + 1);
 
-    mpig_cm_xio_mutex_create();
-
     /* initialize the request completion queue */
-    mrc = mpig_cm_xio_rcq_init();
+    mrc = mpig_cm_xio_premodule_init();
     MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc); goto fn_fail;},
 	"**globus|cm_xio|rcq_init");
 
@@ -222,6 +247,7 @@ MPIG_STATIC int mpig_cm_xio_finalize(void)
     if (mpi_errno) goto fn_fail;
     
   fn_return:
+    xio_l_module_active = GLOBUS_FALSE;
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_finalize);
     return mpi_errno;
@@ -258,9 +284,11 @@ MPIG_STATIC int mpig_cm_xio_add_contact_info(mpig_bc_t * const bc)
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_XIO_PROTO_VERSION");
 
-    mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_CONTACT_STRING", mpig_cm_xio_server_cs);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	"**globus|bc_add_contact %s", "CM_XIO_CONTACT_STRING");
+    mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_CONTACT_STRING",
+        xio_l_fallback_info.contact_string);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER,
+        "**globus|bc_add_contact",
+	    "**globus|bc_add_contact %s", "CM_XIO_CONTACT_STRING");
 
     MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
     mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_DC_FORMAT", uint_str);
@@ -414,6 +442,8 @@ MPIG_STATIC int mpig_cm_xio_select_module(mpig_vc_t * const vc, bool_t * const s
 	cs = MPIU_Strdup(contact_str);
 	MPIU_ERR_CHKANDJUMP1((cs == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "XIO contact string");
 	mpig_cm_xio_vc_set_contact_string(vc, cs);
+
+        vc->cm.xio.xio_info = &xio_l_fallback_info;
 
 	/* set the selected flag to indicate that the XIO communication module has accepted responsibility for the VC */
 	*selected = TRUE;
@@ -611,6 +641,7 @@ int mpig_cm_xio_pe_test(void)
 #include "mpig_cm_xio_conn.i"
 #include "mpig_cm_xio_data.i"
 #include "mpig_cm_xio_comm.i"
+#include "mpig_cm_xio_nets.i"
 /**********************************************************************************************************************************
 					  END INCLUSION OF INTERNAL FUNCTION DEFINTIONS
 **********************************************************************************************************************************/

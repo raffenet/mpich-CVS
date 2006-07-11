@@ -387,7 +387,7 @@ extern globus_debug_handle_t mpig_debug_handle;
 extern time_t mpig_debug_start_tv_sec;
 
 #define MPIG_DEBUG_LEVEL_NAMES \
-    "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT REQ COMM TOPO VC PG BC RECVQ VCCM PM DATABUF MSGHDR MPI" 
+    "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT REQ COMM TOPO VC PG BC RECVQ VCCM PM DATABUF MSGHDR MPI XIO" 
 
 typedef enum mpig_debug_levels
 {
@@ -413,7 +413,8 @@ typedef enum mpig_debug_levels
     MPIG_DEBUG_LEVEL_PM =		1 << 19,
     MPIG_DEBUG_LEVEL_DATABUF =		1 << 20,
     MPIG_DEBUG_LEVEL_MSGHDR =		1 << 21,
-    MPIG_DEBUG_LEVEL_MPI =		1 << 22
+    MPIG_DEBUG_LEVEL_MPI =		1 << 22,
+    MPIG_DEBUG_LEVEL_XIO =		1 << 23
 }
 mpig_debug_levels_t;
 

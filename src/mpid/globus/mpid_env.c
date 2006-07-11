@@ -19,6 +19,9 @@ MPIG_STATIC const mpig_cm_vtable_t * const mpig_cm_vtables_array[] =
 {
     &mpig_cm_self_vtable,
     &mpig_cm_vmpi_vtable,
+    &mpig_cm_xio_system_vtable,
+    &mpig_cm_xio_lan_vtable,
+    &mpig_cm_xio_wan_vtable,
     &mpig_cm_xio_vtable,
     &mpig_cm_other_vtable,
     NULL
@@ -200,6 +203,22 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		mpi_errno = mpig_bc_copy(&bcs[p], mpig_vc_get_bc(vc));
 		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|gc_copy");
 
+		/* get the LAN indentification string, if one is present, and store it in the VC */
+		mpi_errno = mpig_bc_get_contact(&bcs[p], "GLOBUS_LAN_ID", &lan_id, &found);
+		MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|bc_get_contact",
+		    "**globus|bc_get_contact %s", "GLOBUS_LAN_ID");
+		if (found)
+		{
+		    vc->ci.lan_id = MPIU_Strdup(lan_id);
+		    mpig_bc_free_contact(lan_id);
+		    MPIU_ERR_CHKANDSTMT1((vc->ci.lan_id == NULL), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**nomem",
+			"**nomem %s", "LAN ID");
+		}
+
+		/* get the app num from the business card and store it in the VC */
+		mpi_errno = mpig_pm_get_app_num(&bcs[p], &vc->ci.app_num);
+	        MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|pm_get_app_num");
+
 		/* extract the contact information from the business card attached to the VC object.  the information is
 		   extracted from the business card because it is used each time a communicator is created to construct the
 		   topology information.  since the gathering of data from the business card is not necessarily efficient, the
@@ -236,21 +255,6 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		MPIU_ERR_CHKANDSTMT2((!selected), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|cm_no_module",
 				     "**globus|cm_no_module %s %d", pg_id, pg_rank);
 
-		/* get the LAN indentification string, if one is present, and store it in the VC */
-		mpi_errno = mpig_bc_get_contact(&bcs[p], "GLOBUS_LAN_ID", &lan_id, &found);
-		MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|bc_get_contact",
-		    "**globus|bc_get_contact %s", "GLOBUS_LAN_ID");
-		if (found)
-		{
-		    vc->ci.lan_id = MPIU_Strdup(lan_id);
-		    mpig_bc_free_contact(lan_id);
-		    MPIU_ERR_CHKANDSTMT1((vc->ci.lan_id == NULL), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**nomem",
-			"**nomem %s", "LAN ID");
-		}
-
-		/* get the app num from the business card and store it in the VC */
-		mpi_errno = mpig_pm_get_app_num(&bcs[p], &vc->ci.app_num);
-	        MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|pm_get_app_num");
 		    
 	      vc_unlock: ;
 	    }
