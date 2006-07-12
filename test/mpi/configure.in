@@ -145,11 +145,16 @@ fi
 # 
 # Some MPI-2 implementations (including some of the MPICH2 shared-memory
 # channels and BG/L) leave out the dynamic process routines.  This
-# allows tests to avoid reporting failure for these routines.
+# allows tests to avoid reporting failure for these routines.  
+# This can be controlled by either a --disable-spawn argument or by
+# setting the environment variable MPI_NO_SPAWN to yes.
 spawndir=spawn
 if test "$enable_spawn" != yes ; then
     spawndir="#"
+elif test "$MPI_NO_SPAWN" = yes ; then
+    spawndir="#"
 fi
+echo "MPI_NO_SPAWN = $MPI_NO_SPAWN"
 AC_SUBST(spawndir)
 
 #

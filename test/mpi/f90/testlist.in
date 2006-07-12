@@ -9,6 +9,6 @@ init
 pt2pt
 datatype
 rma
-spawn
+@spawndir@
 timer
 topo
