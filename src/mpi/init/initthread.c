@@ -97,21 +97,24 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int has_env;
     int thread_provided;
     MPIU_THREADPRIV_DECL;
-#if defined(HAVE_WINDOWS_H) && defined(_WIN64)
-    UINT mode, old_mode;
-#endif
 
 #ifdef HAVE_WINDOWS_H
-    /* prevent the process from bringing up an error message window if mpich asserts */
+    /* prevent the process from bringing up an error message window if mpich 
+       asserts */
     _CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_FILE );
     _CrtSetReportFile( _CRT_ASSERT, _CRTDBG_FILE_STDERR );
     _CrtSetReportHook2(_CRT_RPTHOOK_INSTALL, assert_hook);
 #ifdef _WIN64
-    /* FIXME: This severly degrades performance but fixes alignment issues with the datatype code. */
+    {
+    /* FIXME: This severly degrades performance but fixes alignment issues 
+       with the datatype code. */
     /* Prevent misaligned faults on Win64 machines */
+    UINT mode, old_mode;
+    
     old_mode = SetErrorMode(SEM_NOALIGNMENTFAULTEXCEPT);
     mode = old_mode | SEM_NOALIGNMENTFAULTEXCEPT;
     SetErrorMode(mode);
+    }
 #endif
 #endif
 
