@@ -158,7 +158,7 @@ MPID_nem_mx_module_recv()
 		  MPID_nem_mx_req_queue_enqueue(MPID_nem_module_mx_recv_pending_req_queue,cell_req);
 		  MPID_nem_module_mx_recv_outstanding_request_num++;
 	       }	
-	  }	
+	  }
      } 
    fn_exit:
        return mpi_errno;
@@ -166,43 +166,6 @@ MPID_nem_mx_module_recv()
        goto fn_exit;   
 }
 
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_mx_module_send_poll
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-inline int
-MPID_nem_mx_module_send_poll( void )
-{
-   int mpi_errno = MPI_SUCCESS;
-   
-   MPID_nem_mx_module_send_from_queue();
-   MPID_nem_mx_module_recv();
-   
-   fn_exit:
-       return mpi_errno;
-   fn_fail:
-       goto fn_exit;   
-}
-
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_mx_module_recv_poll
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-inline int
-MPID_nem_mx_module_recv_poll( void )
-{
-   int mpi_errno = MPI_SUCCESS;
-   
-   MPID_nem_mx_module_recv();
-   MPID_nem_mx_module_send_from_queue();
-   
-   fn_exit:
-       return mpi_errno;
-   fn_fail:
-       goto fn_exit;   
-}
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mx_module_poll
@@ -215,11 +178,13 @@ MPID_nem_mx_module_poll(MPID_nem_poll_dir_t in_or_out)
    
    if (in_or_out == MPID_NEM_POLL_OUT)
      {
-	MPID_nem_mx_module_send_poll();
+	MPID_nem_mx_module_send_from_queue();
+	MPID_nem_mx_module_recv();
      }
    else
      {
-	MPID_nem_mx_module_recv_poll();
+	MPID_nem_mx_module_recv();
+	MPID_nem_mx_module_send_from_queue();
      }
    
    fn_exit:

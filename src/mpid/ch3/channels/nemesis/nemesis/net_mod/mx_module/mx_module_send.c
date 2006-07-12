@@ -30,14 +30,13 @@ MPID_nem_mx_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
    
    if ( MPID_nem_mx_req_queue_empty(MPID_nem_module_mx_send_free_req_queue))
      {
-	//fprintf(stdout,"[%i] === Free Req Q empty !! \n",MPID_nem_mem_region.rank);
 	MPID_nem_mx_cell_ptr_t curr_cell = MPID_nem_module_mx_send_pending_req_queue->head;
 	ret = mx_wait(MPID_nem_module_mx_local_endpoint,
 		      MPID_NEM_MX_CELL_TO_REQUEST(curr_cell),
 		      MX_INFINITE,
 		      &status,
 		      &result);
-	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_test", "**mx_test %s", mx_strerror (ret));
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_wait", "**mx_wait %s", mx_strerror (ret));
 	if((result != 0) && (status.code == MX_STATUS_SUCCESS))
 	  {	
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue, (MPID_nem_cell_ptr_t)status.context); 
