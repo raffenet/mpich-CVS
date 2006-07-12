@@ -4,10 +4,16 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* define TEST_RECV_VECTOR to receive the data using the vector datatype.
+   undefine TEST_RECV_VECTOR to receive the data into a contiguous array. */
+#define TEST_RECV_VECTOR
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "mpi.h"
 #include <limits.h>
+
+int MPID_Progress_test(void);
 
 int main(int argc, char **argv)
 {
@@ -88,7 +94,7 @@ int main(int argc, char **argv)
     if (rank == 0)
     {
 	printf("niter=%d, msg_count=%d, msg_blocklength=%d, msg_stride=%d\n",
-	       niter, msg_count, msg_blocklength, msg_stride);
+	    niter, msg_count, msg_blocklength, msg_stride);
 	printf("msg_sz=%d, buf_sz=%d\n", msg_sz, buf_sz);
 	fflush(stdout);
     }
@@ -96,6 +102,7 @@ int main(int argc, char **argv)
     if (buf_sz > 0)
     {
 	buf = (int *) malloc(buf_sz * sizeof(int));
+	/* printf("%d: buf=%p\n", rank, buf); fflush(stdout); */
     }
     else
     {
@@ -103,7 +110,7 @@ int main(int argc, char **argv)
     }
 
     MPI_Type_vector(msg_count, msg_blocklength, msg_stride, MPI_INT, &dt);
-    /* MPI_Type_commit(&dt); */
+    MPI_Type_commit(&dt);
 
     if (rank == 0)
     {
@@ -121,8 +128,7 @@ int main(int argc, char **argv)
 		buf[i] = iter * buf_sz + i;
 	    }
 	    
-	    if (MPI_Send(buf, 1, dt, 1, iter, MPI_COMM_WORLD)
-		!= MPI_SUCCESS)
+	    if (MPI_Send(buf, 1, dt, 1, iter, MPI_COMM_WORLD) != MPI_SUCCESS)
 	    {
 		printf("ERROR: problem with MPI_Send\n"); fflush(stdout);
 	    }
@@ -137,27 +143,51 @@ int main(int argc, char **argv)
 	{
 	    buf[i] = INT_MIN;
 	}
-	
+
 	for (iter = 0; iter < niter; iter++)
 	{
-	    if (MPI_Recv(buf, msg_sz, MPI_INT, 0, iter, MPI_COMM_WORLD,
-			 &status) != MPI_SUCCESS)
+#	    if defined(TEST_RECV_VECTOR)
 	    {
-		printf("ERROR: problem with MPI_Recv\n"); fflush(stdout);
-	    }
-	
-	    for (i = 0; i < msg_sz; i++)
-	    {
-		const int expected = iter * buf_sz +
-		    i / msg_blocklength * msg_stride + i % msg_blocklength;
-		if (buf[i] != expected)
+		if (MPI_Recv(buf, msg_sz, MPI_INT, 0, iter, MPI_COMM_WORLD,
+		    &status) != MPI_SUCCESS)
 		{
-		    printf("ERROR: %d != %d, i=%d iter=%d\n", buf[i],
-			   expected, i, iter);
-		    fflush(stdout);
-		    abort();
+		    printf("ERROR: problem with MPI_Recv\n"); fflush(stdout);
+		}
+		
+		for (i = 0; i < msg_sz; i++)
+		{
+		    const int expected = iter * buf_sz + i / msg_blocklength *
+			msg_stride + i % msg_blocklength;
+		    if (buf[i] != expected)
+		    {
+			printf("ERROR: %d != %d, i=%d iter=%d\n", buf[i],
+			    expected, i, iter);
+			fflush(stdout);
+			abort();
+		    }
 		}
 	    }
+#	    else
+	    {
+		if (MPI_Recv(buf, 1, dt, 0, iter, MPI_COMM_WORLD, &status)
+		    != MPI_SUCCESS)
+		{
+		    printf("ERROR: problem with MPI_Recv\n"); fflush(stdout);
+		}
+		
+		for (i = 0; i < buf_sz; i++)
+		{
+		    if (i % msg_stride < msg_blocklength && buf[i] != iter *
+			buf_sz + i)
+		    {
+			printf("ERROR: %d != %d, i=%d iter=%d\n", buf[i],
+			    iter * buf_sz + i, i, iter);
+			fflush(stdout);
+			abort();
+		    }
+		}
+	    }
+#	    endif
 	}
 	
 	printf("All messages successfully received!\n");
