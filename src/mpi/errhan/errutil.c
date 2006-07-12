@@ -39,6 +39,10 @@ static void handleFatalError( MPID_Comm *comm_ptr,
 			      const char fcname[], int errcode );
 static const char *get_class_msg( int error_class );
 
+/* TEMP TO KEEP COMPILER HAPPY */
+void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, 
+				     MPIR_Err_get_class_string_func_t fn);
+
 /*
  * Instance-specific error messages are stored in a ring.  The elements of this
  * ring are MPIR_Err_msg_t structures, which contain the following fields:
