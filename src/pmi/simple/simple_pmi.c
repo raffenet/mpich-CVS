@@ -262,7 +262,6 @@ int PMI_Get_rank( int *rank )
 int PMI_Get_universe_size( int *size)
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], size_c[PMIU_MAXLINE];
-    int rc;
 
     /* Connect to the PM if we haven't already */
     if (PMIi_InitIfSingleton() != 0) return -1;
