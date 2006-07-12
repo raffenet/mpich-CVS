@@ -320,28 +320,6 @@ if test "`cd $srcdir && pwd`" != "`pwd`" ; then
 fi
 
 # ----------------------------------------------------------------------------
-# Set default variable values
-MPILIBNAME=${MPILIBNAME:-"mpich"}
-PMPILIBNAME_set=no
-if test -n "$PMPILIBNAME" ; then 
-   PMPILIBNAME_set=yes
-fi
-PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
-# Note that the name for this library may be updated after we check for 
-# enable_shmem
-# Fortran names are set later.
-# We use a different library for the C++ wrappers to avoid problems when
-# creating shared libraries
-if test -z "$MPICXXLIBNAME" ; then MPICXXLIBNAME="${MPILIBNAME}cxx" ; fi
-export MPIFLIBNAME
-export PMPIFLIBNAME
-export MPICXXLIBNAME
-
-# We'll set FORTRAN_BINDING to 1 if we support Fortran 
-FORTRAN_BINDING=0
-
-
-# ----------------------------------------------------------------------------
 #
 # Set the defaults for directories that are not included in configure's
 # repetoire
@@ -432,7 +410,7 @@ export devicedir
 #
 # Give the device an opportunity to include a header file in mpi.h.  The
 # default value of INCLUDE_MPIDDEFS_H is set prior to the inclusion of the
-# device's mpich2prereq script so that the the script may override the value
+# device's mpich2prereq script.  The device's script may override the value
 # if needed.
 INCLUDE_MPIDDEFS_H='/* ... no device specific definitions ... */'
 AC_SUBST(INCLUDE_MPIDDEFS_H)
@@ -443,6 +421,28 @@ AC_SUBST(INCLUDE_MPIDDEFS_H)
 if test -f $devicedir/mpich2prereq ; then
     . $devicedir/mpich2prereq
 fi
+
+# ----------------------------------------------------------------------------
+# Set default library names if names haven't already been provided
+MPILIBNAME=${MPILIBNAME:-"mpich"}
+PMPILIBNAME_set=no
+if test -n "$PMPILIBNAME" ; then 
+   PMPILIBNAME_set=yes
+fi
+PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
+# Note that the name for this library may be updated after we check for 
+# enable_shmem
+# Fortran names are set later.
+# We use a different library for the C++ wrappers to avoid problems when
+# creating shared libraries
+if test -z "$MPICXXLIBNAME" ; then MPICXXLIBNAME="${MPILIBNAME}cxx" ; fi
+export MPIFLIBNAME
+export PMPIFLIBNAME
+export MPICXXLIBNAME
+
+# We'll set FORTRAN_BINDING to 1 if we support Fortran 
+FORTRAN_BINDING=0
+
 # ----------------------------------------------------------------------------
 # Process any enable or with values
 # We must do enable-fast first, because it changes the other enable values
