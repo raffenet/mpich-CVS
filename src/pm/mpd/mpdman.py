@@ -551,8 +551,9 @@ class MPDMan(object):
                     sleep(0.1)  # minor pause before intr
                     os.kill(clientPid,signal.SIGUSR1)
                 else:
-                    pmiMsgToSend = 'cmd=barrier_out\n'
-                    self.pmiSock.send_char_msg(pmiMsgToSend)
+                    if self.pmiSock:
+                        pmiMsgToSend = 'cmd=barrier_out\n'
+                        self.pmiSock.send_char_msg(pmiMsgToSend)
         elif msg['cmd'] == 'pmi_get':
             if msg['from_rank'] == self.myRank:
                 if self.pmiSock:  # may have disappeared in early shutdown
