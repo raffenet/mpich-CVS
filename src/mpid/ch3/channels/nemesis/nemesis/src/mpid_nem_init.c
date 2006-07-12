@@ -450,7 +450,14 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
         MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 	
-	if (!strncmp (MPID_nem_hostname, val, MPID_NEM_MAX_KEY_VAL_LEN))
+	if (!strncmp (MPID_nem_hostname, val, MPID_NEM_MAX_KEY_VAL_LEN)
+#if defined (ENABLED_ODD_EVEN_CLIQUES)
+            /* Used for debugging on a single machine: Odd procs on a
+               node are seen as local to each other, and even procs on
+               a node are seen as local to each other. */
+            && ((global_rank & 0x1) == (i & 0x1))
+#endif
+            )
 	{
 	    if (i == global_rank)
 		*local_rank = *num_local;
