@@ -30,9 +30,9 @@ typedef struct MPIDI_CH3I_VC
    
 #if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     unsigned port_id;
-    unsigned node_id;
+    unsigned node_id; 
     unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
-#elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)  
     unsigned int       remote_endpoint_id; /* uint32_t equivalent */
     unsigned long long remote_nic_id;      /* uint64_t equivalent */
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
