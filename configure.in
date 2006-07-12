@@ -2685,7 +2685,11 @@ MPI_FLOAT_INT="0x8c000000"
 MPI_DOUBLE_INT="0x8c000001"
 MPI_LONG_INT="0x8c000002"
 MPI_SHORT_INT="0x8c000003"
-MPI_LONG_DOUBLE_INT="0x8c000004"
+if test "$MPID_NO_LONG_DOUBLE" != yes ; then
+    MPI_LONG_DOUBLE_INT="0x8c000004"
+else
+    MPI_LONG_DOUBLE_INT=MPI_DATATYPE_NULL
+fi
 
 # 2 additional predefined types named in MPI-2
 MPI_SIGNED_CHAR="0x4c000118"
@@ -2782,10 +2786,10 @@ if test "$ac_cv_sizeof_double" = "8" ; then
     MPI_COMPLEX16="0x4c00102a"
     MPIR_REAL8_CTYPE=double
 fi
-if test "$ac_cv_sizeof_long_double" = "16" ; then
+if test "$ac_cv_sizeof_long_double" = "16" -a "$MPID_NO_LONG_DOUBLE" != yes ; then
     MPI_REAL16="0x4c00102b"
     MPI_COMPLEX32="0x4c00202c"
-    MPIR_REAL16_TYPE="long double"
+    MPIR_REAL16_CTYPE="long double"
 fi
 if test -n "$MPIR_REAL4_CTYPE" ; then
     AC_DEFINE_UNQUOTED(MPIR_REAL4_CTYPE,$MPIR_REAL4_CTYPE,[C type to use for MPI_REAL4])
@@ -3118,8 +3122,10 @@ if test "$enable_f77" = yes ; then
     if test "$len_doublecplx" = "10" ; then
         F77_COMPLEX16=$MPI_DOUBLE_COMPLEX
     fi
-    if test "$len_long_double" = "10" ; then
+    if test "$len_long_double" = "10" -a "$MPID_NO_LONG_DOUBLE" != "yes" ; then
         F77_COMPLEX32="0x4c002025"
+    else
+        F77_COMPLEX32="MPI_DATATYPE_NULL"
     fi
 
     len_2dc=`expr $pac_cv_f77_sizeof_double_precision \* 4`
@@ -3639,11 +3645,14 @@ using namespace std;
 using namespace std;
 #define DoubleComplex complex<double>
 ])
-        AC_CHECK_SIZEOF(LongDoubleComplex,0,[#include <stdio.h>
+        if test "$MPID_NO_LONG_DOUBLE" != yes ; then
+             AC_CHECK_SIZEOF(LongDoubleComplex,0,[#include <stdio.h>
 #include <complex>
 using namespace std;
 #define LongDoubleComplex complex<long double>
 ])
+        fi
+
         # Datatypes are given by
         # 0x4c00 <length in bytes> (1 byte) <unique num> (1 byte)    
         # where the unique nums are
@@ -4601,7 +4610,12 @@ EOF
 else
     # Make a guess at the appropriate definition for offset.  Try to 
     # find a 64bit type.
-    if test "$ac_cv_sizeof_long_long" = 8 ; then
+    if test "$ac_cv_sizeof_long" = 8 ; then
+        MPI_OFFSET="long"
+	# Make the size of this type available to other configures
+	MPI_SIZEOF_OFFSET=8
+	export MPI_SIZEOF_OFFSET
+    elif test "$ac_cv_sizeof_long_long" = 8 ; then
         MPI_OFFSET="long long"
 	# Make the size of this type available to other configures
 	MPI_SIZEOF_OFFSET=8
