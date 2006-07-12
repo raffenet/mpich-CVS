@@ -493,11 +493,11 @@ mpig_cm_xio_xxx_select_module(
     bool_t                              found;
     int                                 rc;
     int                                 mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_select_module);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_xxx_select_module);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_select_module);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_xxx_select_module);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC,
         "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
@@ -615,7 +615,7 @@ mpig_cm_xio_xxx_select_module(
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT,
     (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_select_module);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_xxx_select_module);
     return mpi_errno;
 
   fn_fail:
@@ -812,7 +812,7 @@ mpig_cm_xio_system_get_vc_compatability(
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_system_wan_get_vc_compatability);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_system_get_vc_compatability);
 
     MPIG_UNUSED_VAR(fcname);
 
