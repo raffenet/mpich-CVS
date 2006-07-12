@@ -48,6 +48,12 @@ dnl                            the "simple" PMI implementation is used.
 dnl                            A process manager that needs a particular
 dnl                            process manager should check that this is
 dnl                            not set to an incompatible value.
+dnl   MPID_NO_SPAWN          - if yes, the device does not support the
+dnl                            dynamic process routines (spawn, connect
+dnl                            attach, join, plus port and publish 
+dnl                            routines).  The major effect of this
+dnl                            is to let the test codes know that
+dnl                            spawn is not implemented.
 dnl
 dnl Note that the meanings of these variables are defined so that an 
 dnl undefined value gives the default.  This makes it easy to expand
@@ -683,6 +689,16 @@ AC_DEFINE_UNQUOTED(USE_LOGGING,$use_logging_variable,[define to choose logging l
 # ----------------------------------------------------------------------------
 # End of logging tests
 # ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Check to see if the device does not support spawn.  
+# FIXME: This should provide the option of not building the dynamic
+# process routines.  It could also allow us to specialize support
+# for all processes are members of MPI_COMM_WORLD (only one comm_world).
+# ----------------------------------------------------------------------------
+if test "$MPID_NO_SPAWN" = yes ; then
+    AC_MSG_WARN([The device $with_device does not support MPI dynamic process routines])   
+fi
 
 # ----------------------------------------------------------------------------
 # Threads
@@ -4746,7 +4762,7 @@ dnl We can configure the test directory after the rest of the configure
 dnl steps because it does not depend on them.
 # set and export values that the test/mpi configure will reference to ensure
 # that the correct decisions are made since this configure happens before the
-# MPICH2 library is built.  In addition to these values, 
+# MPICH2 library is built. 
 MPICH2_ENABLE_F77=$enable_f77
 MPICH2_ENABLE_F90=$enable_f90
 MPICH2_ENABLE_CXX=$enable_cxx
@@ -4761,8 +4777,11 @@ export MPICH2_BASE_F90
 export MPICH2_BASE_CXX
 # MPI_SRCDIR gives the test/mpi configure the location of the source
 # files for an MPI implementation
-MPI_SRCDIR=$ac_abs_srcdir
-export MPI_SRCDIR
+if test -n "$ac_abs_srcdir" ; then
+    MPI_SRCDIR=$ac_abs_srcdir
+fi
+MPI_NO_SPAWN=$MPID_NO_SPAWN
+export MPI_NO_SPAWN
 AC_CONFIG_SUBDIRS(test/mpi)
 dnl
 dnl Generate the Makefiles from Makefile.in
@@ -4792,6 +4811,11 @@ ENABLE_SHLIB="$ENABLE_SHLIB"
 export LIBDIR ; export MPILIBNAME ; export AR ; export CC ; export CPPFLAGS 
 export PMPILIBNAME 
 export CFLAGS ; export CC_SHL ; export ENABLE_SHLIB ; export C_LINKPATH_SHL
+# For test/mpi/configure
+MPI_SRCDIR=$MPI_SRCDIR
+MPI_NO_SPAWN=$MPID_NO_SPAWN
+export MPI_SRCDIR
+export MPI_NO_SPAWN
 ])
 
 if test -z "$includebuild_dir" ; then
