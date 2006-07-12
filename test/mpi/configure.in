@@ -154,7 +154,7 @@ if test "$enable_spawn" != yes ; then
 elif test "$MPI_NO_SPAWN" = yes ; then
     spawndir="#"
 fi
-echo "MPI_NO_SPAWN = $MPI_NO_SPAWN"
+#echo "MPI_NO_SPAWN = $MPI_NO_SPAWN"
 AC_SUBST(spawndir)
 
 #
