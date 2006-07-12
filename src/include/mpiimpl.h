@@ -2119,6 +2119,14 @@ int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
 int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *, int *);
 int MPIR_Request_get_error(MPID_Request *);
 
+/* The following routines perform the callouts to the user routines registered
+   as part of a generalized request.  They handle any language binding issues
+   that are necessary. They are used when completing, freeing, cancelling or
+   extracting the status from a generalized request. */
+int MPIR_Grequest_cancel(MPID_Request * request_ptr, int complete);
+int MPIR_Grequest_query(MPID_Request * request_ptr);
+int MPIR_Grequest_free(MPID_Request * request_ptr);
+
 /* ------------------------------------------------------------------------- */
 /* Prototypes for language-specific routines, such as routines to set
    Fortran keyval attributes */

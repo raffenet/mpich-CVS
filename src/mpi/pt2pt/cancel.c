@@ -109,8 +109,22 @@ int MPI_Cancel(MPI_Request *request)
 	{
 	    if (request_ptr->partner_request != NULL)
 	    {
-		mpi_errno = MPID_Cancel_send(request_ptr->partner_request);
-		if (mpi_errno) goto fn_fail;
+		if (request_ptr->partner_request->kind != MPID_UREQUEST)
+		{
+		    mpi_errno = MPID_Cancel_send(request_ptr->partner_request);
+		    if (mpi_errno) goto fn_fail;
+		}
+		else
+		{
+		    /* This is needed for persistent Bsend requests */
+		    MPIR_Nest_incr();
+		    {
+			mpi_errno = MPIR_Grequest_cancel(
+			    request_ptr->partner_request,
+			    (request_ptr->partner_request->cc == 0));
+		    }
+		    MPIR_Nest_decr();
+		}
 	    }
 	    else
 	    {
@@ -139,11 +153,13 @@ int MPI_Cancel(MPI_Request *request)
 
 	case MPID_UREQUEST:
 	{
-	    mpi_errno = (request_ptr->cancel_fn)(request_ptr->grequest_extra_state, (request_ptr->cc == 0));
-	    if (mpi_errno) {
-		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**user",
-				     "**usercancel %d", mpi_errno);
+	    MPIR_Nest_incr();
+	    {
+		mpi_errno = MPIR_Grequest_cancel(request_ptr,
+		    (request_ptr->cc == 0));
 	    }
+	    MPIR_Nest_decr();
+	    
 	    break;
 	}
 
@@ -168,8 +184,9 @@ int MPI_Cancel(MPI_Request *request)
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cancel", "**mpi_cancel %p", request);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+	    FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cancel",
+	    "**mpi_cancel %p", request);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);

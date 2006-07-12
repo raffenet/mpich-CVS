@@ -122,11 +122,37 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
             
             if (prequest_ptr != NULL)
             {
-                if (status != MPI_STATUS_IGNORE)
-                {
-                    status->cancelled = request_ptr->status.cancelled;
-                }
-                mpi_errno = prequest_ptr->status.MPI_ERROR;
+		if (prequest_ptr->kind != MPID_UREQUEST)
+		{
+		    if (status != MPI_STATUS_IGNORE)
+		    {
+			status->cancelled = request_ptr->status.cancelled;
+		    }
+		    mpi_errno = prequest_ptr->status.MPI_ERROR;
+		}
+		else
+		{
+		    /* This is needed for persistent Bsend requests */
+		    MPIR_Nest_incr();
+		    {
+			int rc;
+			
+			rc = MPIR_Grequest_query(prequest_ptr);
+			if (mpi_errno == MPI_SUCCESS)
+			{
+			    mpi_errno = rc;
+			}
+			if (status != MPI_STATUS_IGNORE)
+			{
+			    status->cancelled = prequest_ptr->status.cancelled;
+			}
+			if (mpi_errno == MPI_SUCCESS)
+			{
+			    mpi_errno = prequest_ptr->status.MPI_ERROR;
+			}
+		    }
+		    MPIR_Nest_decr();
+		}
             }
             else
             {
@@ -171,16 +197,23 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 
         case MPID_UREQUEST:
         {
-            mpi_errno = (request_ptr->query_fn)(request_ptr->grequest_extra_state, &request_ptr->status);
-            /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno != MPI_SUCCESS)
-            {
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, 
-                                                 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-                                                 MPI_ERR_OTHER, "**user", "**userquery %d", mpi_errno);
-            }
-            /* --END ERROR HANDLING-- */
-            MPIR_Request_extract_status(request_ptr, status);
+	    MPIR_Nest_incr();
+	    {
+		int rc;
+		
+		rc = MPIR_Grequest_query(request_ptr);
+		if (mpi_errno == MPI_SUCCESS)
+		{
+		    mpi_errno = rc;
+		}
+		if (status != MPI_STATUS_IGNORE)
+		{
+		    status->cancelled = request_ptr->status.cancelled;
+		}
+		MPIR_Request_extract_status(request_ptr, status);
+	    }
+	    MPIR_Nest_decr();
+	    
             break;
         }
         
@@ -209,8 +242,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_request_get_status",
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+	    FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_request_get_status",
 	    "**mpi_request_get_status %R %p %p", request, flag, status);
     }
 #   endif
