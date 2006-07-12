@@ -78,7 +78,7 @@ C Reopen the file as sequential
             errs = errs + 1
             call MTestPrintErrorMsg( "Read_all", ierr )
          endif
-	if (buf(1) .ne. size) then
+         if (buf(1) .ne. size) then
            errs = errs + 1
            print *, "Unexpected value for the header = ", buf(1),
      $          ", should be ", size 
