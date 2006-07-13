@@ -103,8 +103,10 @@ MPID_nem_mpich2_init (int ckpt_restart)
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /*

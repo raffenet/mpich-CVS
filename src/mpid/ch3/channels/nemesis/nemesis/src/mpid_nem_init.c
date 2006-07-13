@@ -124,20 +124,24 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 	char *base_addr;
 
         mpi_errno = MPID_nem_allocate_shared_memory (&base_addr, size, &handle);
+        /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
         {
             MPID_nem_remove_shared_memory (handle);
             MPIU_Free (handle);
             MPIU_ERR_POP (mpi_errno);
         }
+        /* --END ERROR HANDLING-- */
         
         mpi_errno = MPID_nem_remove_shared_memory (handle);
+        /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno)
         {
             MPIU_Free (handle);
             MPIU_ERR_POP (mpi_errno);
         }
-        
+        /* --END ERROR HANDLING-- */
+
         MPIU_Free (handle);
     }
     /*fprintf(stderr,"[%i] -- address shift ok \n",pg_rank); */
@@ -334,8 +338,10 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 
@@ -375,8 +381,10 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 
 #elif 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
 #warning PMI_Get_clique doesnt work with mpd
@@ -406,8 +414,10 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
     
 #else
 
@@ -470,18 +480,22 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     
     /* reduce size of local process array */
     *local_procs = MPIU_Realloc (procs, *num_local * sizeof (int));
+    /* --BEGIN ERROR HANDLING-- */
     if (*local_procs == NULL)
     {
         MPIU_CHKMEM_SETERR (mpi_errno, *num_local * sizeof (int), "local process index array");
         goto fn_fail;
     }
+    /* --END ERROR HANDLING-- */
 
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 #endif
 }
 
@@ -493,7 +507,7 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 int
 MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
-    int ret = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL (MPID_STATE_MPID_NEM_VC_INIT);
 
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
@@ -527,9 +541,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in = NULL;
 	vc->ch.recv_queue = NULL;
 
-	ret = MPID_nem_net_module_vc_init (vc, business_card);
-	if (ret != MPI_SUCCESS)
-	    MPIU_ERR_POP(ret);
+	mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
+	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
     
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
@@ -539,7 +552,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     
  fn_exit:
     MPIDI_FUNC_EXIT (MPID_STATE_MPID_NEM_VC_INIT);
-    return ret;
+    return mpi_errno;
  fn_fail:
     goto fn_exit;
 }

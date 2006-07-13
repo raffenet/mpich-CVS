@@ -24,6 +24,7 @@ inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell)
 /*   /\*  memset (&cell->pkt, 0, sizeof (MPID_nem_pkt_header_t)); *\/ */
 /* } */
 
+/* --BEGIN ERROR HANDLING-- */
 inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 {
     MPID_nem_pkt_mpich2_t *mpkt     = (MPID_nem_pkt_mpich2_t *)&(cell->pkt.mpich2); /* cast away volatile */
@@ -77,7 +78,9 @@ inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 	fprintf(stdout,"%i [type:%i]\n", mark, cell_buf[0] );
 
 }
+/* --END ERROR HANDLING-- */
 
+/* --BEGIN ERROR HANDLING-- */
 /*inline */
 void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int master, char *file, int line)
 {
@@ -92,6 +95,7 @@ void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int master, char *f
 
     MPID_nem_dump_cell_mpich(cell,master); 
 }
+/* --END ERROR HANDLING-- */
 
 /* inline void MPID_nem_rel_queue_init (MPID_nem_queue_ptr_t rel_qhead ) */
 /* { */

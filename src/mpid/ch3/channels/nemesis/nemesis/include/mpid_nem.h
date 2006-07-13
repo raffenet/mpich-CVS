@@ -160,7 +160,6 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 #include "mpid_nem_nets.h"
 #include "mpid_nem_inline.h"
 #else //MPID_NEM_INLINE
-int MPID_nem_mpich2_send (void* buf, int size, MPIDI_VC_t *vc, int *again);
 int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *again);
 int MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again);
 int MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *again);

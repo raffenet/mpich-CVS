@@ -8,6 +8,7 @@
 #include "mpid_nem.h"
 #include "mpiimpl.h"
 
+/* --BEGIN ERROR HANDLING-- */
 void
 MPID_nem_dbg_dump_cell (volatile struct MPID_nem_cell *cell)
 {
@@ -17,4 +18,4 @@ MPID_nem_dbg_dump_cell (volatile struct MPID_nem_cell *cell)
     MPIU_DBG_MSG_D (ALL, TERSE, "  sqn = %6d", cell->pkt.mpich2.seqno);
     MPIU_DBG_MSG_D (ALL, TERSE, "  typ = %6d", cell->pkt.mpich2.type);
 }
-
+/* --END ERROR HANDLING-- */

@@ -81,9 +81,11 @@ int MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int 
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     if (handle)
         MPID_nem_remove_shared_memory (handle);
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 
@@ -221,9 +223,11 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     shmctl (shmid, IPC_RMID, &ds);  /* try to remove region */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
@@ -253,8 +257,10 @@ MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const 
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     shmctl (shmid, IPC_RMID, &ds); /* try to remove region */
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
@@ -279,8 +285,10 @@ MPID_nem_remove_shared_memory (const char const handle[])
  fn_exit:
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     shmctl (shmid, IPC_RMID, &ds); /* try to remove region */
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
@@ -372,8 +380,10 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
     close (fd);
     unlink (*handle);
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
@@ -408,8 +418,10 @@ MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const 
  fn_close_fail:
     close (fd);
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     unlink (handle);
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
