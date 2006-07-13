@@ -417,6 +417,8 @@
 #define MPIU_ERR_SETFATALANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_, arg3_, arg4_) \
     {err_ = MPIR_Err_create_code( err_,MPIR_ERR_FATAL,FCNAME,\
 	    __LINE__, class_, gmsg_, smsg_, arg1_, arg2_, arg3_, arg4_ ); stmt_ ;}
+#define MPIU_ERR_ADD(err_, newerr_) \
+    {(err_) = MPIR_Err_combine_codes((newerr_), (err_));}
 #else
 /* Simply set the class, being careful not to override a previously
    set class */
@@ -446,6 +448,8 @@
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_) \
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
+#define MPIU_ERR_ADD(err_, newerr_) \
+     MPIU_ERR_SET((err_), (newerr_), foo)
 #endif
 
 /* The following definitions are the same independent of the choice of 

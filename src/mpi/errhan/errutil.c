@@ -120,21 +120,35 @@ static MPIR_Err_msg_t ErrorRing[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc     = 0;
 static volatile unsigned int max_error_ring_loc = 0;
 
-#ifdef MPICH_IS_THREADED
+#if defined(MPID_REQUIRES_THREAD_SAFETY)
+/* if the device requires internal MPICH routines to be thread safe, the
+   MPIU_THREAD_CHECK macros are not appropriate */
 static MPID_Thread_mutex_t error_ring_mutex;
-#define error_ring_mutex_create() MPID_Thread_mutex_create(&error_ring_mutex,NULL)
-#define error_ring_mutex_destroy() MPID_Thread_mutex_destroy(&error_ring_mutex,NULL)
-#define error_ring_mutex_lock() \
-    MPIU_THREAD_CHECK_BEGIN \
-     MPID_Thread_mutex_lock(&error_ring_mutex) \
-    MPIU_THREAD_CHECK_END
-#define error_ring_mutex_unlock() \
-    MPIU_THREAD_CHECK_BEGIN \
-     MPID_Thread_mutex_unlock(&error_ring_mutex) \
-    MPIU_THREAD_CHECK_END
+#define error_ring_mutex_create(mpi_errno_p_)			\
+    MPID_Thread_mutex_create(&error_ring_mutex, mpi_errno_p_)
+#define error_ring_mutex_destroy()				\
+    MPID_Thread_mutex_destroy(&error_ring_mutex, mpi_errno_p_)
+#define error_ring_mutex_lock()			\
+    MPID_Thread_mutex_lock(&error_ring_mutex)
+#define error_ring_mutex_unlock()		\
+    MPID_Thread_mutex_unlock(&error_ring_mutex)
+#elif defined(MPICH_IS_THREADED)
+static MPID_Thread_mutex_t error_ring_mutex;
+#define error_ring_mutex_create(mpi_errno_p_)				\
+    MPIU_IS_THREADED({							\
+	MPID_Thread_mutex_create(&error_ring_mutex, mpi_errno_p_);	\
+    })
+#define error_ring_mutex_destroy()					\
+    MPIU_IS_THREADED({							\
+	MPID_Thread_mutex_destroy(&error_ring_mutex, mpi_errno_p_);	\
+    })
+#define error_ring_mutex_lock()						\
+    MPIU_IS_THREADED({MPID_Thread_mutex_lock(&error_ring_mutex);})
+#define error_ring_mutex_unlock()					\
+    MPIU_IS_THREADED({PID_Thread_mutex_unlock(&error_ring_mutex);})
 #else
-#define error_ring_mutex_create()
-#define error_ring_mutex_destroy()
+#define error_ring_mutex_create(mpi_errno_p_)
+#define error_ring_mutex_destroy(mpi_errno_p_)
 #define error_ring_mutex_lock()
 #define error_ring_mutex_unlock()
 #endif
@@ -155,8 +169,10 @@ void MPIR_Err_init( void )
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     {
 	int n, rc;
+	int mpi_errno = MPI_SUCCESS;
 
-	error_ring_mutex_create();
+	error_ring_mutex_create(&mpi_errno);
+	MPIU_Assertp(mpi_errno == MPI_SUCCESS);
 	MPIR_Err_chop_error_stack = FALSE;
 
 	rc = MPIU_GetEnvBool( "MPICH_ABORT_ON_ERROR", 
@@ -1351,6 +1367,82 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
     
     return err_code;
 }
+
+
+/* Append an error code, error2, to the end of a list of messages in the error
+   ring whose head endcoded in error1_code.  An error code pointing at the
+   combination is returned.  If the list of messages does not terminate cleanly
+   (i.e. ring wrap has occurred), then the append is not performed. and error1
+   is returned (although it may include the class of error2 if the class of
+   error1 was MPI_ERR_OTHER). */
+int MPIR_Err_combine_codes(const int error1, const int error2)
+{
+    int error1_code = error1;
+    int error2_code = error2;
+    int error2_class;
+    
+    if (error2_code == MPI_SUCCESS) return error1_code;
+    if (error2_code & ERROR_DYN_MASK) return error2_code;
+    if (error1_code == MPI_SUCCESS) return error2_code;
+	    
+    error2_class = MPIR_ERR_GET_CLASS(error2_code);
+    if (MPIR_ERR_GET_CLASS(error2_class) < MPI_SUCCESS ||
+	MPIR_ERR_GET_CLASS(error2_class) > MPICH_ERR_LAST_CLASS)
+    {
+	error2_class = MPI_ERR_OTHER;
+    }
+
+#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
+    {
+	int error_code;
+
+	error_code = error1_code;
+	
+	error_ring_mutex_lock();
+	{
+	    for (;;)
+	    {
+		int error_class;
+		int ring_idx;
+		int ring_id;
+		int generic_idx;
+		
+		if (convertErrcodeToIndexes(error_code, &ring_idx, &ring_id,
+		    &generic_idx) != 0 || generic_idx < 0 ||
+		    ErrorRing[ring_idx].id != ring_id)
+		{
+		    break;
+		}
+
+		error_code = ErrorRing[ring_idx].prev_error;
+
+		if (error_code == MPI_SUCCESS)
+		{
+		    ErrorRing[ring_idx].prev_error = error2;
+		    break;
+		}
+		
+		error_class = MPIR_ERR_GET_CLASS(error_code);
+		
+		if (error_class == MPI_ERR_OTHER)
+		{
+		    ErrorRing[ring_idx].prev_error &= ~(ERROR_CLASS_MASK);
+		    ErrorRing[ring_idx].prev_error |= error2_class;
+		}
+	    }
+	}
+	error_ring_mutex_unlock();
+    }
+#   endif
+
+    if (MPIR_ERR_GET_CLASS(error1_code) == MPI_ERR_OTHER)
+    {
+	error1_code = (error1_code & ~(ERROR_CLASS_MASK)) | error2_class;
+    }
+
+    return error1_code;
+}
+
 
 /*
  * Accessor routines for the predefined messages.  These can be
