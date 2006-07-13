@@ -959,6 +959,7 @@ with MPI_Alloc_mem.
 **mx_irecv %s:mx_irecv failed (%s)
 **mx_isend:mx_isend failed
 **mx_isend %s:mx_isend failed (%s)
+**mx_wait:mx_wait failed
 **mx_wait %s:mx_wait failed (%s)
 
 #
