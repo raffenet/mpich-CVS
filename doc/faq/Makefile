@@ -30,4 +30,4 @@ install-web: faq.htm faq.pdf
 	cp -f faq.pdf ${WEBDIR}/faq.pdf
 
 clean:
-	-rm -f faq.htm *.dvi faq.pdf *.log faq.ps
+	-rm -f faq.htm *.dvi faq.pdf *.log faq.ps faq.out faq.aux
