@@ -135,17 +135,17 @@ static MPID_Thread_mutex_t error_ring_mutex;
 #elif defined(MPICH_IS_THREADED)
 static MPID_Thread_mutex_t error_ring_mutex;
 #define error_ring_mutex_create(mpi_errno_p_)				\
-    MPIU_IS_THREADED({							\
+    MPIU_ISTHREADED({							\
 	MPID_Thread_mutex_create(&error_ring_mutex, mpi_errno_p_);	\
     })
 #define error_ring_mutex_destroy()					\
     MPIU_IS_THREADED({							\
-	MPID_Thread_mutex_destroy(&error_ring_mutex, mpi_errno_p_);	\
+	MPIDThread_mutex_destroy(&error_ring_mutex, mpi_errno_p_);	\
     })
 #define error_ring_mutex_lock()						\
-    MPIU_IS_THREADED({MPID_Thread_mutex_lock(&error_ring_mutex);})
+    MPIU_ISTHREADED({MPID_Thread_mutex_lock(&error_ring_mutex);})
 #define error_ring_mutex_unlock()					\
-    MPIU_IS_THREADED({PID_Thread_mutex_unlock(&error_ring_mutex);})
+    MPIU_ISTHREADED({MPID_Thread_mutex_unlock(&error_ring_mutex);})
 #else
 #define error_ring_mutex_create(mpi_errno_p_)
 #define error_ring_mutex_destroy(mpi_errno_p_)
