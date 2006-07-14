@@ -6,6 +6,7 @@
 
 #ifndef TCP_MODULE_IMPL_H
 #define TCP_MODULE_IMPL_H
+#include "mpidimpl.h"
 #include "mpid_nem.h"
 #include <linux/types.h>
 #include <sys/types.h>

@@ -7,7 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED)
 #define MPICH_MPIDI_CH3_IMPL_H_INCLUDED
 
-#include "mpidi_ch3i_nemesis_conf.h"
+#include "mpid_nem_defs.h"
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
 #include "mpid_nem.h"

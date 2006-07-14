@@ -6,13 +6,24 @@
 
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
-#include <mpid_nem_datatypes.h>
+#include <mpid_nem_defs.h>
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 /*#define MPIDI_CH3_CHANNEL_RNDV*/
 /*#define HAVE_CH3_PRE_INIT*/
 /* #define MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS */
 #define MPIDI_DEV_IMPLEMENTS_KVS
+
+#ifndef MPID_NEM_NET_MODULE
+#error MPID_NEM_NET_MODULE undefined
+#endif
+#ifndef MPID_NEM_DEFS_H
+#error mpid_nem_defs.h must be included with this file
+#endif
+
+#if  !defined (MPID_NEM_NO_MODULE)
+#error MPID_NEM_*_MODULEs are not defined!  Check for loop in include dependencies.
+#endif
 
 struct MPID_nem_tcp_module_internal_queue;
 typedef struct MPIDI_CH3I_VC
@@ -28,7 +39,8 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
    
-#if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
+#if (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     unsigned port_id;
     unsigned node_id; 
     unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
@@ -45,6 +57,8 @@ typedef struct MPIDI_CH3I_VC
     int toread;
     struct MPID_nem_tcp_module_internal_queue *internal_recv_queue;
     struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
+#else
+#error One of the MPID_NEM_*_MODULE must be defined
 #endif
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
        portion of the vc.  This is unused in nemesis and should be set

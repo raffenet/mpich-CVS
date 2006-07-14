@@ -7,6 +7,7 @@
 #ifndef MX_MODULE_IMPL_H
 #define MX_MODULE_IMPL_H
 #include <myriexpress.h>
+#include "mpidimpl.h"
 #include "mpid_nem.h"
 #include <linux/types.h>
 

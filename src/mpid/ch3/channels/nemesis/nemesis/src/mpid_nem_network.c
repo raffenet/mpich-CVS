@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidimpl.h"
 #include "mpid_nem.h"
 #if  (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 #include "gm_module.h"

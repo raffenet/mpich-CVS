@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpid_nem.h"
 #include "mpidimpl.h"
+#include "mpid_nem.h"
 #include "mpid_nem_nets.h"
 
 #ifdef MEM_REGION_IN_HEAP

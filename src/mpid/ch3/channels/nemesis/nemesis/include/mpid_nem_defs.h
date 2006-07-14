@@ -9,7 +9,6 @@
 
 #include "mpid_nem_datatypes.h"
 #include "mpidi_ch3i_nemesis_conf.h"
-#include "mpidimpl.h"
 #include "mpi.h"
 #include "pmi.h"
 
@@ -133,5 +132,6 @@ extern MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
 #else /* MEM_REGION_IN_HEAP */
 extern MPID_nem_mem_region_t MPID_nem_mem_region;
 #endif /* MEM_REGION_IN_HEAP */
+
 
 #endif /* MPID_NEM_DEFS_H */

@@ -7,6 +7,7 @@
 #ifndef GM_MODULE_IMPL_H
 #define GM_MODULE_IMPL_H
 #include <gm.h>
+#include "mpidimpl.h"
 #include "mpid_nem.h"
 #include <linux/types.h>
 

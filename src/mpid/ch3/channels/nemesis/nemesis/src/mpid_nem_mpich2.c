@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidimpl.h"
 #include "mpid_nem.h"
 #include "mpid_nem_fbox.h"
 #include "mpid_nem_nets.h"

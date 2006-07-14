@@ -14,14 +14,11 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-/*#include <sys/ipc.h>
-  #include <sys/sem.h> */
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
 #include <sched.h>
-#include <mpidi_ch3i_nemesis_conf.h>
 
 #define MPID_NEM_OFFSETOF(struc, field) ((int)(&((struc *)0)->field))
 #define MPID_NEM_CACHE_LINE_LEN 64

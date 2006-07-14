@@ -4,12 +4,12 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidimpl.h"
 #include "mpid_nem.h"
 #include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <errno.h>
-#include "mpidimpl.h"
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_seg_create

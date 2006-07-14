@@ -7,3 +7,6 @@
 
 #ifndef MPIDI_CH3I_NEMESIS_CONF_H
 #define MPIDI_CH3I_NEMESIS_CONF_H
+
+#include <mpid_nem_defs.h>
+
