@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "tcp_module.h"
 #include "tcp_module_impl.h"
+#include "tcp_module.h"
 #include <sched.h>
 
 //#define TRACE 

@@ -7,6 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 #include <mpid_nem_defs.h>
+#include <netinet/in.h>
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 /*#define MPIDI_CH3_CHANNEL_RNDV*/
