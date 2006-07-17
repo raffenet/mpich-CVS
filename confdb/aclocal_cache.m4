@@ -319,3 +319,49 @@ if test "$cache_file" != "/dev/null" -a "X$real_enable_cache" = "Xnotgiven" ; th
    cache_file=/dev/null
 fi
 ])
+dnl
+dnl The following three macros support the sharing of configure results
+dnl by configure scripts, including ones that are not run with 
+dnl AC_CONFIG_SUBDIRS (the cachefiles managed by --enable-cache can
+dnl only be used with AC_CONFIG_SUBDIRS; creating a autoconf-style
+dnl cachefile before the the end of the autoconf process will often
+dnl cause problems.
+dnl
+AC_DEFUN([PAC_CREATE_BASE_CACHE],[
+AC_ARG_ENABLE(base-cache,
+[--enable-base-cache - Enable the use of a simple cache for the subsidieary
+                       configure scripts.],,enable_base_cache=default)
+if test "$enable_base_cache" = "default" -a "$CONF_USE_CACHEFILE" = yes ; then
+    enable_base_cache=yes
+fi
+if test "$enable_base_cache" != no ; then
+    if test "$enable_base_cache" = yes ; then
+        basecachefile=`pwd`/cache.base
+    else
+        basecachefile=`pwd`/$enable_base_cache
+    fi
+    set | grep ac_cv > $basecachefile
+    # Tell other configures to load this file
+    echo "Creating and exporting the base cache file $basecachefile"
+    CONF_BASE_CACHEFILE=$basecachefile
+    export CONF_BASE_CACHEFILE
+fi
+])
+AC_DEFUN([PAC_LOAD_BASE_CACHE],[
+if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
+    echo "Loading base cachefile $CONF_BASE_CACHEFILE"
+    . $CONF_BASE_CACHEFILE
+    export CONF_BASE_CACHEFILE
+fi
+])
+AC_DEFUN([PAC_UPDATE_BASE_CACHE],[
+if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
+    set | grep ac_cv > $CONF_BASE_CACHEFILE.new
+    if cmp $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE ; then
+	:
+    else
+	echo "Replacing $CONF_BASE_CACHEFILE"
+	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
+    fi
+fi
+])
