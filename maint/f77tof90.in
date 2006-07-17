@@ -262,6 +262,9 @@ sub ConvertMakefile {
 	# Handle special cases:  
 	# Force the c2f2c test to use the f90 compiler
 	s/c2f2cf90_SOURCES.*/c2f2cf90_SOURCES = c2f2cf90.f90 c2f902c.c/;
+	s/c2f2cfio_SOURCES.*/c2f2cfio90_SOURCES = c2f2cfio90.f90 c2f902cio.c/;
+	s/c2f2cfwin_SOURCES.*/c2f2cfwin90_SOURCES = c2f2cfwin90.f90 c2f902cwin.c/;
+
 	if (/EXTRA_PROGRAMS/) {
 	    s/allocmemf/allocmemf90/;   # allocmemf test is special 
 	}
