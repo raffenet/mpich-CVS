@@ -16,6 +16,9 @@ writeshf90.f90
 writeatallf90.f90
 writeatallbef90.f90
 writeallbef90.f90
+c2f2ciof90.f90
+c2f902cio.c
+c2f90multio.c
 Makefile.in
 Makefile
 Makefile.sm
