@@ -44,8 +44,12 @@ int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 }
 #endif
 
-/* Keep track of whether the send succeeded */
-static int sendok = 0;
+/* Keep track of whether the send succeeded.  The values are:
+   -1 (unset), 0 (failure), 1 (ok).  The unset value allows us to 
+   avoid a possible race caused by reading the value before the send
+   thread sets it.
+*/
+static volatile int sendok = -1;
 THREAD_RETURN_TYPE send_thread(void *p)
 {
     int err;
@@ -58,6 +62,7 @@ THREAD_RETURN_TYPE send_thread(void *p)
     {
 	printf("malloc failed to allocate %d bytes for the send buffer.\n", MSG_SIZE);
 	fflush(stdout);
+	sendok = 0;
 	return (THREAD_RETURN_TYPE)-1;
     }
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -73,6 +78,7 @@ THREAD_RETURN_TYPE send_thread(void *p)
 	printf("MPI_Send of %d bytes from %d to %d failed, error: %s\n",
 	    MSG_SIZE, rank, rank == 0 ? 1 : 0, buffer);
 	fflush(stdout);
+	sendok = 0;
     }
     else {
 	sendok = 1;
@@ -143,6 +149,8 @@ int main( int argc, char *argv[] )
 	fflush(stdout);
     }
 
+    /* Loop until the send flag is set */
+    while (sendok == -1) ;
     if (!sendok) {
 	errs ++;
     }
