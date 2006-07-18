@@ -1,14 +1,14 @@
 attr
 coll
 comm
-#ext
+ext
 info
 init
 @iodir@
 #misc
 pt2pt
 datatype
-rma
+@rmadir@
 @spawndir@
 timer
 topo
