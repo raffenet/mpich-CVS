@@ -6,7 +6,7 @@
 
 #ifndef DUM_MODULE_H
 #define DUM_MODULE_H
-#include "mpid_nem.h"
+#include "mpid_nem_impl.h"
 
 int MPID_nem_dummy_module_init (MPID_nem_queue_ptr_t proc_recv_queue, 
 				MPID_nem_queue_ptr_t proc_free_queue, 

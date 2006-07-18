@@ -4,8 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidimpl.h"
-#include "mpid_nem.h"
+#include "mpid_nem_impl.h"
 #include "mpid_nem_fbox.h"
 #include "mpid_nem_nets.h"
 
@@ -115,7 +114,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
 
   sends checkpoint marker with wave number wave to vc
   Non-blocking
-  returns MPID_NEM_MPICH2_AGAIN if it can't get a free cell
+  sets *try_again to 1 if it can't get a free cell
 */
 int
 MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_again)
@@ -169,7 +168,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
 #endif /*ENABLED_CHECKPOINTING */
 
  return_success:
-    *try_again = 1;
+    *try_again = 0;
     return MPI_SUCCESS;
  return_again:
     *try_again = 1;

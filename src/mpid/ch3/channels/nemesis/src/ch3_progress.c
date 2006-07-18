@@ -5,7 +5,11 @@
  */
 
 
-#include "mpidi_ch3_impl.h"
+#include "mpidpre.h"
+#include "mpid_nem_impl.h"
+#if defined (MPID_NEM_INLINE) && MPID_NEM_INLINE
+#include "mpid_nem_inline.h"
+#endif
 #include "pmi.h"
 
 #ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK

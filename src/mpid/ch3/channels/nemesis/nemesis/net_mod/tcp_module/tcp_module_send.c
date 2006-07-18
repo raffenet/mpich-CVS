@@ -5,8 +5,6 @@
  */
 
 #include "tcp_module_impl.h"
-#include "tcp_module.h"
-#include "my_papi_defs.h"
 
 #define DO_PAPI3(x) /*x */
 

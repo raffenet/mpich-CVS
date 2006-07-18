@@ -5,9 +5,8 @@
  */
 
 #include "myriexpress.h"
-#include "mpidimpl.h"
+#include "mpid_nem_impl.h"
 #include "mx_module_impl.h"
-#include "mpid_nem.h"
 #include "mx_module.h"
 
 #define MPIDI_CH3I_ENDPOINT_KEY "endpoint_id"

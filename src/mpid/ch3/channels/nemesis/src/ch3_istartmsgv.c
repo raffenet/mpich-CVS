@@ -4,7 +4,11 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidi_ch3_impl.h"
+#include "mpidpre.h"
+#include "mpid_nem_impl.h"
+#if defined (MPID_NEM_INLINE) && MPID_NEM_INLINE
+#include "mpid_nem_inline.h"
+#endif
 
 /*
  * MPIDI_CH3_iStartMsgv() attempts to send the message immediately.

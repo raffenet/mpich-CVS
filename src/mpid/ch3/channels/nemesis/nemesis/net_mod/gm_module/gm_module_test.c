@@ -5,7 +5,6 @@
  */
 
 #include "gm_module_impl.h"
-#include "gm.h"
 
 int
 MPID_nem_gm_module_test()

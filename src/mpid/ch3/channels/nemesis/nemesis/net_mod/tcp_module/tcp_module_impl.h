@@ -6,14 +6,15 @@
 
 #ifndef TCP_MODULE_IMPL_H
 #define TCP_MODULE_IMPL_H
-#include "mpidimpl.h"
-#include "mpid_nem.h"
+#include "mpid_nem_impl.h"
+#include "tcp_module.h"
 #include <linux/types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include "tcp_module.h"
+#include <netinet/tcp.h>
+#include <netdb.h>
 
 #define TCP_POLL_FREQ_MULTI 5 
 #define TCP_POLL_FREQ_ALONE 1

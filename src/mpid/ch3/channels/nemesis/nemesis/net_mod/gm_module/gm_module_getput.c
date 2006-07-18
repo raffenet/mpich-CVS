@@ -5,7 +5,6 @@
  */
 
 #include "gm_module_impl.h"
-#include "gm.h"
 
 static void
 getput_callback (struct gm_port *p, void *completion_ctr, gm_status_t status)

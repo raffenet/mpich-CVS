@@ -7,11 +7,8 @@
 #if !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED)
 #define MPICH_MPIDI_CH3_IMPL_H_INCLUDED
 
-#include "mpid_nem_defs.h"
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
-#include "mpid_nem.h"
-#include "mpid_nem_fbox.h"
 
 #if defined(HAVE_ASSERT_H)
 #include <assert.h>

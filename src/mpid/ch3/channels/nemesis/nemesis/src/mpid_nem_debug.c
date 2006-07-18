@@ -4,10 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidimpl.h"
+#include "mpid_nem_impl.h"
 #include "mpid_nem_debug.h"
-#include "mpid_nem.h"
-#include "mpiimpl.h"
 
 /* --BEGIN ERROR HANDLING-- */
 void

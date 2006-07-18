@@ -4,8 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidimpl.h"
-#include "mpid_nem.h"
+#include "mpid_nem_impl.h"
 
 #define printf_dd(x...) /*printf (x) */
 
@@ -291,7 +290,7 @@ MPID_nem_ckpt_log_message (MPID_nem_cell_ptr_t cell)
     source = cell->pkt.mpich2.source;
     if (log_msg[source])
     {
-	cli_log_message (cell, cell->pkt.header.datalen + MPID_NEM__MPICH2_HEADER_LEN + MPID_NEM_OFFSETOF (MPID_nem_cell_t, pkt.mpich2.payload), source);
+	cli_log_message (cell, cell->pkt.header.datalen + sizeof(MPIDI_CH3_Pkt_t) + MPID_NEM_OFFSETOF (MPID_nem_cell_t, pkt.mpich2.payload), source);
     }
 
     return mpi_errno;

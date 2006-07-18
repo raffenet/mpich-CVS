@@ -5,12 +5,6 @@
  */
 
 #include "tcp_module_impl.h"
-#include "tcp_module.h"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/tcp.h>
-#include <errno.h>
-#include <netdb.h>
 extern int h_errno;
 
 static int create_s_cookie (int data_sz, char **cookie, int *len);

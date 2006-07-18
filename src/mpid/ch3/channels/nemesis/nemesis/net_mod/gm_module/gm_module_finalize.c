@@ -5,8 +5,6 @@
  */
 
 #include "gm_module_impl.h"
-#include "gm.h"
-
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_gm_module_finalize

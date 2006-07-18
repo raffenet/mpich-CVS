@@ -72,4 +72,6 @@ int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq);
  */
 #define MPIDI_CH3_Comm_Spawn MPIDI_CH3_Comm_Spawn
 
+#include "mpid_nem_post.h"
+
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */

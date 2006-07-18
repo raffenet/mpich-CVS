@@ -4,11 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "gm.h"
-#include "mpidimpl.h"
 #include "gm_module_impl.h"
-#include "mpid_nem.h"
-#include "gm_module.h"
 
 #define MAX_GM_BOARDS 16
 #define UNIQUE_ID_LEN 6

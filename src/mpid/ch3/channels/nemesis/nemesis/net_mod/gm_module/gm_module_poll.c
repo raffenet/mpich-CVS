@@ -5,9 +5,6 @@
  */
 
 #include "gm_module_impl.h"
-#include "gm.h"
-#include "gm_module.h"
-#include "my_papi_defs.h"
 
 
 inline int

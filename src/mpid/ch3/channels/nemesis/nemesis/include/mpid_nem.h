@@ -4,6 +4,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#error Do not use this file anymore.  Use mpid_nem_impl.h and/or mpid_nem_pre.h.
+
+/* I refactored the include files to eliminate the potential for
+   dependency cycles.  This new structure better matches the mpich2
+   structure.  So don't use this file anymore.  I'll delete it once
+   I'm sure I didn't mess anything up (too badly). --DARIUS */
+
 #ifndef _MPID_NEM_H
 #define _MPID_NEM_H
 
@@ -35,10 +42,7 @@ int MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card);
 int MPID_nem_get_business_card (char *value, int length);
 int MPID_nem_connect_to_root (const char *port_name, MPIDI_VC_t *new_vc);
 
-#define MPID_NEM__MPICH2_HEADER_LEN sizeof(MPIDI_CH3_Pkt_t)
-#define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (MPID_NEM__MPICH2_HEADER_LEN))
-
-#define MPID_NEM_MPICH2_AGAIN   2  /* try again */
+#define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (sizeof(MPIDI_CH3_Pkt_t)))
 
 int MPID_nem_mpich2_init (int ckpt_restart);
 /* int MPID_nem_mpich2_release_fbox (MPID_nem_cell_t *cell); */

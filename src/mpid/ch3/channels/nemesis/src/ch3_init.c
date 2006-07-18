@@ -11,7 +11,8 @@
 #include <sys/param.h>
 #endif
 
-#include "mpidi_ch3_impl.h"
+#include "mpidpre.h"
+#include "mpid_nem_impl.h"
 
 void *MPIDI_CH3_packet_buffer = NULL;
 int MPIDI_CH3I_my_rank = -1;
@@ -31,7 +32,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
     /* There are hard-coded copy routines that depend on the size of the mpich2 header
        We only handle the 32- and 40-byte cases.
     */
-    MPIU_Assert (MPID_NEM__MPICH2_HEADER_LEN >= 32 && MPID_NEM__MPICH2_HEADER_LEN <= 40);
+    MPIU_Assert (sizeof(MPIDI_CH3_Pkt_t) >= 32 && sizeof(MPIDI_CH3_Pkt_t) <= 40);
     
     mpi_errno = MPID_nem_init (pg_rank, pg_p);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);

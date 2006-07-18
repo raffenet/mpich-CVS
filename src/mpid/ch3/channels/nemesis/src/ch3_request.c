@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpidi_ch3_impl.h"
+#include "mpid_nem_impl.h"
 
 #ifndef MPID_REQUEST_PREALLOC
 #define MPID_REQUEST_PREALLOC 8

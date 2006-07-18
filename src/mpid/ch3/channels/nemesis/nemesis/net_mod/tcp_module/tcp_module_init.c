@@ -5,11 +5,6 @@
  */
 
 #include "tcp_module_impl.h"
-#include "mpidimpl.h"
-#include "mpid_nem.h"
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/tcp.h>
 
 static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;

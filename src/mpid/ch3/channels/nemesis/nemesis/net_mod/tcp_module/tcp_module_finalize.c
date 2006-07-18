@@ -5,7 +5,6 @@
  */
 
 #include "tcp_module_impl.h"
-#include "tcp_module.h"
 #include <sched.h>
 
 //#define TRACE 
