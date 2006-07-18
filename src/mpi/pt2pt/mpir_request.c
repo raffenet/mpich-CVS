@@ -70,6 +70,8 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 		else
 		{
 		    /* This is needed for persistent Bsend requests */
+		    MPIU_THREADPRIV_DECL;
+		    MPIU_THREADPRIV_GET;
 		    MPIR_Nest_incr();
 		    {
 			int rc;
@@ -274,6 +276,8 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 	    /* The user error handler may make calls to MPI routines, so the 
 	       nesting counter must be incremented before the handler 
 	       is called */
+	    MPIU_THREADPRIV_DECL;
+	    MPIU_THREADPRIV_GET;
 	    MPIR_Nest_incr();
     
 	    switch (request_ptr->greq_lang)

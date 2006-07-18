@@ -117,6 +117,8 @@ int MPI_Cancel(MPI_Request *request)
 		else
 		{
 		    /* This is needed for persistent Bsend requests */
+		    MPIU_THREADPRIV_DECL;
+		    MPIU_THREADPRIV_GET;
 		    MPIR_Nest_incr();
 		    {
 			mpi_errno = MPIR_Grequest_cancel(
@@ -153,6 +155,8 @@ int MPI_Cancel(MPI_Request *request)
 
 	case MPID_UREQUEST:
 	{
+	    MPIU_THREADPRIV_DECL;
+	    MPIU_THREADPRIV_GET;
 	    MPIR_Nest_incr();
 	    {
 		mpi_errno = MPIR_Grequest_cancel(request_ptr,

@@ -133,6 +133,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 		else
 		{
 		    /* This is needed for persistent Bsend requests */
+		    MPIU_THREADPRIV_DECL;
+		    MPIU_THREADPRIV_GET;
 		    MPIR_Nest_incr();
 		    {
 			int rc;
@@ -197,6 +199,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 
         case MPID_UREQUEST:
         {
+	    MPIU_THREADPRIV_DECL;
+	    MPIU_THREADPRIV_GET;
 	    MPIR_Nest_incr();
 	    {
 		int rc;
