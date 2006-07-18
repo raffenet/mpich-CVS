@@ -20,19 +20,20 @@
 #ifdef ROMIO_INSIDE_MPICH2
 #include "mpiimpl.h"
 #include "mpiimplthread.h"
+
 /* Use the routine versions of the nest macros, to avoid requiring 
    access to the MPIR_Process and MPIR_Thread structures */
-#ifndef MPIR_Nest_incr
-void MPIR_Nest_incr_export(void)
-void MPIR_Nest_decr_export(void)
-#define MPIR_Nest_incr MPIR_Nest_incr_export
-#define MPIR_Nest_decr MPIR_Nest_decr_export
-#endif
-#if 0
+#ifdef MPIR_Nest_incr
 #undef MPIR_Nest_incr
 #undef MPIR_Nest_decr
 #endif
-#else
+
+void MPIR_Nest_incr_export(void);
+void MPIR_Nest_decr_export(void);
+#define MPIR_Nest_incr MPIR_Nest_incr_export
+#define MPIR_Nest_decr MPIR_Nest_decr_export
+
+#else /* not ROMIO_INSIDE_MPICH2 */
 /* Any MPI implementation that wishes to follow the thread-safety and
    error reporting features provided by MPICH2 must implement these 
    four functions.  Defining these as empty should not change the behavior 
@@ -46,7 +47,7 @@ void MPIR_Nest_decr_export(void)
 #else
 #define MPIU_UNREFERENCED_ARG(a)
 #endif
-#endif
+#endif /* ROMIO_INSIDE_MPICH2 */
 
 /* info is a linked list of these structures */
 struct MPIR_Info {
