@@ -23,6 +23,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && \
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+PAC_LOAD_BASE_CACHE
+
 . ${master_top_srcdir}/src/mpid/common/sock/setup.args
 export sock_name
 AC_SUBST(sock_name)
@@ -58,6 +60,7 @@ export ETAGS
 export ETAGSADD
 
 PAC_SUBDIR_CACHE
+
 AC_CONFIG_SUBDIRS(${sock_name})
 
 AC_OUTPUT(Makefile localdefs)

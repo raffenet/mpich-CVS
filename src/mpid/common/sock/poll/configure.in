@@ -25,6 +25,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+PAC_LOAD_BASE_CACHE
+
 PAC_PROG_MAKE
 
 AC_C_INLINE
@@ -177,5 +179,6 @@ AC_SUBST(ETAGSADD)
 export ETAGS
 export ETAGSADD
 
+PAC_UPDATE_BASE_CACHE
 
 AC_OUTPUT(Makefile localdefs)
