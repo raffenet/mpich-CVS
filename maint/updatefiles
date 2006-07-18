@@ -36,10 +36,11 @@ do_f77tof90=yes
 do_build_configure=yes
 do_genstates=yes
 do_makefiles=yes
+do_smpdversion=yes
 
 # List of steps that we will consider
 # (We do not include depend because the values for depend are not just yes/no)
-AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles"
+AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles smpdversion"
 stepsCleared=no
 
 # Options for some steps
@@ -741,9 +742,10 @@ fi
 if [ $rm_prepost = yes ] ; then
     rm -f src/include/mpidpre.h src/include/mpidpost.h
 fi
-echo "Creating src/pm/smpd/smpd_version.h"
-smpdVersion=`cat maint/Version`
-cat >src/pm/smpd/smpd_version.h <<EOF
+if [ "$do_smpdversion" = yes ] ; then
+    echo "Creating src/pm/smpd/smpd_version.h"
+    smpdVersion=`cat maint/Version`
+    cat >src/pm/smpd/smpd_version.h <<EOF
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
  *  (C) 2005 by Argonne National Laboratory.
@@ -751,6 +753,7 @@ cat >src/pm/smpd/smpd_version.h <<EOF
  */
 #define SMPD_VERSION "$smpdVersion"
 EOF
+fi
 #
 # The following must be the last statements executed
 if [ -n "$error_summary" ] ; then
