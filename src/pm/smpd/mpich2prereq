@@ -9,3 +9,4 @@ elif [ "$PM_REQUIRES_PMI" != "smpd" ] ; then
     echo "SMPD requires the smpd PMI implementation; $PM_REQUIRES_PMI has already been selected"
     exit 1
 fi
+PMI_REQUIRES_READABLE_TOKENS=yes
