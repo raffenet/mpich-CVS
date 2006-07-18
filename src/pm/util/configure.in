@@ -80,6 +80,9 @@ if test -z "$top_srcdir" ; then
 else
    use_top_srcdir=$top_srcdir
 fi
+
+PAC_LOAD_BASE_CACHE
+
 AC_DEFINE(PMUTILCONF_H_INCLUDED,1,[Define so that we can ensure that the config file has been included])
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
@@ -234,30 +237,36 @@ AC_CHECK_FUNCS(strdup)
 dnl 
 dnl Check for signal handlers
 AC_CHECK_FUNCS(sigaction signal sigset)
+sigaction_ok=no
 if test "$ac_cv_func_sigaction" = "yes" ; then
     # Make sure that the fields that we need in sigaction are defined
-    AC_MSG_CHECKING(for struct sigaction)
+    AC_CACHE_CHECK([for struct sigaction and sa_handler],
+    pac_cv_struct_sigaction_with_sa_handler,[
     AC_TRY_COMPILE([#include <signal.h>],[
 struct sigaction act; sigaddset( &act.sa_mask, SIGINT );
-act.sa_handler = SIG_IGN;],sigaction_ok="yes",sigaction_ok="no")
-    AC_MSG_RESULT($sigaction_ok)
-    if test "$sigaction_ok" = "no" ; then
-        AC_MSG_CHECKING(for struct sigaction with _POSIX_SOURCE)
+act.sa_handler = SIG_IGN;],
+    pac_cv_struct_sigaction_with_sa_handler=yes,
+    pac_cv_struct_sigaction_with_sa_handler=no)])
+    if test "$pac_cv_struct_sigaction_with_sa_handler" = "no" ; then
+        AC_CACHE_CHECK([for struct sigaction and sa_handler with _POSIX_SOURCE],
+	pac_cv_struct_sigaction_with_sa_handler_needs_posix,[
         AC_TRY_COMPILE([#define _POSIX_SOURCE
 #include <signal.h>],[
 struct sigaction act; sigaddset( &act.sa_mask, SIGINT );
-act.sa_handler = SIG_IGN;],sigaction_with_posix_ok="yes",sigaction_with_posix_ok="no")
-        AC_MSG_RESULT($sigaction_with_posix_ok)
-        if test "$sigaction_with_posix_ok" = "yes" ; then
+act.sa_handler = SIG_IGN;],
+	pac_cv_struct_sigaction_with_sa_handler_needs_posix=yes,
+	pac_cv_struct_sigaction_with_sa_handler_needs_posix=no)])
+        if test "$pac_cv_struct_sigaction_with_sa_handler_needs_posix" = "yes" ; then
             sigaction_ok=yes
-	    sigaction_needs_posix=yes
 	fi
+    else
+        sigaction_ok=yes
     fi
 fi
 dnl
 # Decide on the signal handler to use
 if test "$ac_cv_func_sigaction" = "yes" -a "$sigaction_ok" = "yes" ; then
-    if test "$sigaction_needs_posix" = yes ; then
+    if test "$pac_cv_sigaction_with_sa_handler_needs_posix" = yes ; then
         AC_DEFINE(NEEDS_POSIX_FOR_SIGACTION,1,[Define if _POSIX_SOURCE needed to get sigaction])
     fi
     AC_DEFINE(USE_SIGACTION,,[Define if sigaction should be used to set signals])
@@ -307,6 +316,7 @@ AC_SUBST(MPILIBNAME)
 if test -z "$master_top_srcdir" ; then
    master_top_srcdir='${srcdir}/../../..'
 fi
+AC_SUBST(master_top_srcdir)
 
 AC_CHECK_HEADERS(string.h sys/time.h time.h stdlib.h sys/socket.h wait.h errno.h)
 # Check whether socklen_t is defined
@@ -337,5 +347,11 @@ dnl We don't want the library in this directory to be shared, but we
 dnl do want to avoid unsubstituted autoconf variables.
 AC_SUBST(LIBTOOL)
 dnl
+
+dnl Allow the Makefile to refer to the top of the build dir
+AC_SUBST(master_top_builddir)
+
+PAC_UPDATE_BASE_CACHE
+
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile test/Makefile)

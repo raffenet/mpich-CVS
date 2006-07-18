@@ -4,6 +4,10 @@ dnl
 dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
 dnl bugs in autoconf caching.
 dnl
+dnl
+dnl Environment variables that affect behavior of the test configure
+dnl MPICH_FAST 
+dnl
 dnl The file name here refers to a file in the source being configured
 AC_INIT(include/mpitest.h)
 AC_CONFIG_HEADER(include/mpitestconf.h)
@@ -44,13 +48,36 @@ MPI implementation.  The following levels are supported.
     serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
     multiple - Fully multi-threaded (MPI_THREAD_MULTIPLE)
 The default is funneled.  If enabled and no level is specified, the
-level is set to multiple.  If disabled, the level is set to single.],,
-enable_threads=funneled)
+level is set to multiple.  If disabled, the level is set to single.
+If the environment variable MPICH_THREAD_LEVEL is set, that thread
+level is used (this is to let MPICH2 build for the correct thread 
+support without requiring a specific --enable-threads argument.
+],,
+enable_threads=default)
 # ------------------------------------------------------------------------
 if test "$enable_threads" = "yes" ; then 
     enable_threads=multiple
 elif test "$enable_threads" = "no" ; then
     enable_threads=single
+elif test "$enable_threads" = default ; then
+    if test -n "$MPICH_THREAD_LEVEL" ; then
+        case $MPICH_THREAD_LEVEL in 
+	    MPI_THREAD_MULTIPLE)
+	    enable_threads=multiple
+	    ;;
+	    MPI_THREAD_SERIALIZED)
+	    enable_threads=serialized
+	    ;;
+	    MPI_THREAD_FUNNELED)
+	    enable_threads=funneled
+	    ;;
+	    MPI_THREAD_SINGLE)
+	    enable_threads=single
+	    ;;
+        esac
+    else
+        enable_threads=funneled
+    fi
 fi
 
 if test "$enable_fast" = "yes" ; then
@@ -83,6 +110,8 @@ AC_SUBST(errordir)
 if test "$enable_threads" = "multiple" ; then
     threadsdir="threads"
 fi
+
+PAC_LOAD_BASE_CACHE
 
 PAC_VPATH_CHECK()
 
@@ -157,6 +186,14 @@ fi
 #echo "MPI_NO_SPAWN = $MPI_NO_SPAWN"
 AC_SUBST(spawndir)
 
+# Also allow rma to be disabled
+rmadir=rma
+if test "$MPI_NO_RMA"  = yes ; then
+    rmadir="#"
+else
+    AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
+fi
+AC_SUBST(rmadir)
 #
 # Now, get the versions of the compilers that we'll use for MPI programs
 if test -n "$with_mpi" ; then
@@ -236,25 +273,23 @@ dnl same test in the MPICH2 configure.
 # Check on support for long double and long long types.  Do this before the
 # structure alignment test because it will test for including those
 # types as well
-AC_CACHE_CHECK([whether long double is supported],
-pac_cv_have_long_double,[
-AC_TRY_COMPILE(,[long double a;],
-pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+AC_CACHE_CHECK([whether long double is supported],pac_cv_have_long_double,[
+     AC_TRY_COMPILE(,[long double a;],
+    pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
 if test "$pac_cv_have_long_double" = "yes" ; then
     AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
 fi
-AC_MSG_CHECKING([whether long long available])
-AC_TRY_COMPILE(,[long long a;],pac_cv_have_long_long=yes,pac_cv_have_long_long=no)
-AC_MSG_RESULT($pac_cv_have_long_long)
-if test "$pac_cv_have_long_long" ; then 
+AC_CACHE_CHECK([whether long long is supported],pac_cv_have_long_long,[
+    AC_TRY_COMPILE(,[long long a;],
+    pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
+if test "$pac_cv_have_long_long" = yes ; then 
     AC_DEFINE(HAVE_LONG_LONG,1,[Define if compiler supports long long])
 fi
 #
 # General headers
-AC_CHECK_HEADERS(unistd.h stdarg.h string.h stdio.h stdlib.h memory.h)
+AC_CHECK_HEADERS(unistd.h stdarg.h string.h stdlib.h memory.h)
 
 # Define functionality that we support
-AC_DEFINE(HAVE_MPI_WIN_CREATE,1,[Define if MPI_Win_create is available])
 
 # Now, select the proper compilers for the tests
 if test "$FROM_MPICH2" = yes ; then
@@ -458,39 +493,26 @@ EOF
     fi	
     
     AC_LANG_FORTRAN77
-    AC_MSG_CHECKING([whether integer*4 is supported])
+    AC_CACHE_CHECK([whether integer*4 is supported],pac_cv_fort_integer4,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*4 i])],
-        has_integer_4=4,
-        has_integer_4=0)
-    if test "$has_integer_4" != 0 ; then 
-        AC_MSG_RESULT(yes)
-    else
-        AC_MSG_RESULT(no)
-    fi
-    AC_MSG_CHECKING([whether integer*8 is supported])
+        pac_cv_fort_integer4=yes,
+        pac_cv_fort_integer4=no)])
+    AC_CACHE_CHECK([whether integer*8 is supported],pac_cv_fort_integer8,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*8 i])],
-        has_integer_8=8,
-        has_integer_8=0)
-    if test "$has_integer_8" != 0 ; then 
-        AC_MSG_RESULT(yes)
-    else
-        AC_MSG_RESULT(no)
-    fi
-    AC_MSG_CHECKING([whether integer*16 is supported])
+        pac_cv_fort_integer8=yes,
+        pac_cv_fort_integer8=no)])
+    AC_CACHE_CHECK([whether integer*16 is supported],pac_cv_fort_integer16,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*16 i])],
-        has_integer_16=16,
-        has_integer_16=0)
-    if test "$has_integer_16" != 0 ; then 
-        AC_MSG_RESULT(yes)
-    else
-        AC_MSG_RESULT(no)
-    fi
+        pac_cv_fort_integer16=yes,
+        pac_cv_fort_integer16=no)])
+
     F77=$saveF77
     AC_LANG_C
     # Determine Aint and Offset
     for len in 4 8 16 ; do
-        eval testval=\$"has_integer_$len"
-	if test "$testval" = 0 ; then continue ; fi
+        eval testval=\$"pac_cv_fort_integer$len"
+	if test "$testval" = no ; then continue ; fi
+	testval=$len
         if test $len = "$MPI_SIZEOF_AINT" ; then
 	    F77_MPI_ADDRESS="integer*$len"
         fi
