@@ -21,6 +21,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+PAC_LOAD_BASE_CACHE
+
 PAC_PROG_MAKE
 
 dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
@@ -91,5 +93,7 @@ AC_SUBST(ETAGS)
 AC_SUBST(ETAGSADD)
 export ETAGS
 export ETAGSADD
+
+PAC_UPDATE_BASE_CACHE
 
 AC_OUTPUT(Makefile src/Makefile localdefs)

@@ -77,6 +77,9 @@ if test -z "$top_srcdir" ; then
 else
    use_top_srcdir=$top_srcdir
 fi
+
+PAC_LOAD_BASE_CACHE
+
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
 dnl     check for libraries
@@ -259,5 +262,16 @@ AC_SUBST(MAKE_DEPEND_C)
 dnl
 AC_DEFINE_UNQUOTED(DEFAULT_MACHINES_PATH,"$eval_datadir:.",[Define the search path for machines files])
 AC_DEFINE_UNQUOTED(DEFAULT_REMOTE_SHELL,"$remshell",[Define the default remote shell program to use])
+dnl
+dnl Etags
+AC_SUBST(ETAGS)
+AC_SUBST(ETAGSADD)
+export ETAGS
+export ETAGSADD
+dnl
+dnl Other autoconf variables that may be imported from the calling environment
+AC_SUBST(DOCTEXT)
+PAC_UPDATE_BASE_CACHE
+
 dnl Generate the Makefiles from Makefile.in
 AC_OUTPUT(Makefile)
