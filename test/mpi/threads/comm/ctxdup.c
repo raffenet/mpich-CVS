@@ -16,7 +16,7 @@ static char MTEST_Descrip[] = "Creating communications concurrently in different
 #define sleep(a) Sleep(a*1000)
 #endif
 
-MTEST_THREAD_RETURN_TYPE dup_thread(void *p);
+MTEST_THREAD_RETURN_TYPE dup_thread(void *);
 
 MTEST_THREAD_RETURN_TYPE dup_thread(void *p)
 {
