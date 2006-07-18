@@ -113,6 +113,8 @@ fi
 dnl
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 AC_SUBST(MPILIBNAME)
+PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
+AC_SUBST(PMPILIBNAME)
 
 dnl
 dnl How do I get configure to find these values for me?
@@ -142,9 +144,17 @@ dnl AC_CHECK_LIB(thread, mutex_init)
 dnl AC_CHECK_HEADERS(foo.h bar.h)
 dnl AC_CHECK_FUNCS(baz biff)
 
-dnl AC_OUTPUT_COMMANDS(cp ./rlogconf.h ../../../include/rlogconf.h)
+dnl
+dnl Etags
+AC_SUBST(ETAGS)
+AC_SUBST(ETAGSADD)
+export ETAGS
+export ETAGSADD
+dnl
+dnl 
+dnl
+dnl Other autoconf variables that may be imported from the calling environment
+AC_SUBST(DOCTEXT)
 
 dnl Generate the Makefiles from Makefile.in
-
-dnl AC_OUTPUT(Makefile TraceInput/Makefile)
 AC_OUTPUT(Makefile)
