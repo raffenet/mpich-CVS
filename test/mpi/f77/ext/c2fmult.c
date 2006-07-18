@@ -21,28 +21,27 @@ int main( int argc, char *argv[] )
     int      rc;
     int      errs = 0;
     int      rank;
-    MPI_File cFile;
+    int      buf[1];
+    MPI_Request cRequest;
 
     MPI_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-    /* File */
-    rc = MPI_File_open( MPI_COMM_WORLD, "temp", 
-		   MPI_MODE_RDWR | MPI_MODE_DELETE_ON_CLOSE | MPI_MODE_CREATE, 
-		   MPI_INFO_NULL, &cFile );
+    /* Request */
+    rc = MPI_Irecv( buf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &cRequest );
     if (rc) {
 	errs++;
-	printf( "Unable to open file \"temp\"\n" );
+	printf( "Unable to create request\n" );
     }
     else {
-	handleA = MPI_File_c2f( cFile );
-	handleB = MPI_File_c2f( cFile );
+	handleA = MPI_Request_c2f( cRequest );
+	handleB = MPI_Request_c2f( cRequest );
 	if (handleA != handleB) {
 	    errs++;
-	    printf( "MPI_File_c2f does not give the same handle twice on the same MPI_File\n" );
+	    printf( "MPI_Request_c2f does not give the same handle twice on the same MPI_Request\n" );
 	}
     }
-    MPI_File_close( &cFile );
+    MPI_Cancel( &cRequest );
 
     if (rank == 0) {
 	if (errs) {
