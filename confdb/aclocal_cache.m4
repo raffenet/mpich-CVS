@@ -357,7 +357,7 @@ fi
 AC_DEFUN([PAC_UPDATE_BASE_CACHE],[
 if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
     set | grep ac_cv > $CONF_BASE_CACHEFILE.new
-    if cmp $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE ; then
+    if cmp -s $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE ; then
 	:
     else
 	echo "Replacing $CONF_BASE_CACHEFILE"
