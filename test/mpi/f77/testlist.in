@@ -5,7 +5,7 @@ pt2pt
 info
 @spawndir@
 @iodir@
-rma
+@rmadir@
 init
 comm
 ext
