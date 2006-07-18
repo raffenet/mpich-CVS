@@ -1118,11 +1118,13 @@ AC_SUBST(pmi_name)
 # Step 3: complete pm setup.
 # Note that checks for errors have already been performed, so this
 # loop does not need to perform any extra error checks.
-for pm_name in $pm_names ; do
-    subsystems="$subsystems src/pm/$pm_name"
-    if test -f $use_top_srcdir/src/pm/$pm_name/setup_pm ; then 
-	echo sourcing $use_top_srcdir/src/pm/$pm_name/setup_pm
-	. $use_top_srcdir/src/pm/$pm_name/setup_pm
+# Note that this uses this_pm_name because pm_name must be the *first*
+# of the PM names
+for this_pm_name in $pm_names ; do
+    subsystems="$subsystems src/pm/$this_pm_name"
+    if test -f $use_top_srcdir/src/pm/$this_pm_name/setup_pm ; then 
+	echo sourcing $use_top_srcdir/src/pm/$this_pm_name/setup_pm
+	. $use_top_srcdir/src/pm/$this_pm_name/setup_pm
     fi
 done
 
