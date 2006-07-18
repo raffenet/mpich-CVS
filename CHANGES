@@ -19,7 +19,25 @@
   Configure with --enable-debuginfo to make this information available.
   This is still a "beta" test version and has not been extensively tested.
 
-- Numerous bug fixes and code cleanup
+- For systems with firewalls, the environment variable MPICH_PORT_RANGE can
+  be used to restrict the range of ports used by MPICH2.  See the documentation
+  for more details.
+
+- Withdrew obsolete modules, including the ib and rdma communication layers.
+  For Infiniband and MPICH2, please see 
+  http://nowlab.cse.ohio-state.edu/projects/mpi-iba/ 
+  For other interconnects, please contact us at mpich2-maint@mcs.anl.gov .
+
+- Numerous bug fixes and code cleanup.  A full list of changes is available 
+  at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_4changes.htm . 
+
+- Numerous new tests in the MPICH2 test suite.
+
+- For developers, the way in which information is passed between the top
+  level configure and configures in the device, process management, and
+  related modules has been cleaned up.  See the comments at the beginning
+  of the top-level configure.in for details.  This change makes it easier
+  to interface other modules to MPICH2.
 
 
 ===============================================================================
