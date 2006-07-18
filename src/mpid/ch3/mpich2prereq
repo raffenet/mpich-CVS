@@ -16,3 +16,6 @@ if test -n "$device_args" ; then
         . $devicedir/channels/$device_args/mpich2prereq
     fi
 fi
+# Set a value for the maximum processor name.  If necessary, this script
+# should run whatever tests are needed to determine the supported value.
+MPID_MAX_PROCESSOR_NAME=128
