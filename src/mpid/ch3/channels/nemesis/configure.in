@@ -42,16 +42,14 @@ if test "${with_gm_lib}" != "yes" -a "${with_gm_lib}" != "no" ; then
     LDFLAGS="$LDFLAGS -L${with_gm_lib}"
 fi,)
 
-AC_CHECK_HEADER([gm.h], , [
-    if test "${nemesis_network}" == "gm" ; then
+if test "${nemesis_network}" == "gm" ; then
+    AC_CHECK_HEADER([gm.h], , [
         AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm= or --with-gm-include=?'])
-    fi;
-])
-AC_CHECK_LIB(gm, gm_init, , [
-    if test "${nemesis_network}" == "gm" ; then
+    ])
+    AC_CHECK_LIB(gm, gm_init, , [
         AC_MSG_ERROR(['gm library not found.  Did you specify --with-gm= or --with-gm-lib=?'])
-    fi;
-])
+    ])
+fi;
 
 AC_ARG_WITH(mx, [--with-mx=path - specify path where mx include directory and lib directory can be found],
 if test "${with_mx}" != "yes" -a "${with_mx}" != "no" ; then
@@ -67,17 +65,15 @@ if test "${with_mx_lib}" != "yes" -a "${with_mx_lib}" != "no" ; then
     LDFLAGS="$LDFLAGS -L${with_mx_lib}"
 fi,)
 
-AC_CHECK_HEADER([myriexpress.h], , [
-    if test "${nemesis_network}" == "mx" ; then
+if test "${nemesis_network}" == "mx" ; then
+    AC_CHECK_HEADER([myriexpress.h], , [
         AC_MSG_ERROR(['myriexpress.h not found.  Did you specify --with-mx= or --with-mx-include=?'])
-    fi;
-])
-#mx_init is a macro, switch to mx_finalize to find the symbol
-AC_CHECK_LIB(myriexpress, mx_finalize, , [
-    if test "${nemesis_network}" == "mx" ; then
+    ])
+    #mx_init is a macro, switch to mx_finalize to find the symbol
+    AC_CHECK_LIB(myriexpress, mx_finalize, , [
         AC_MSG_ERROR(['myriexpress library not found.  Did you specify --with-mx= or --with-mx-lib=?'])
-    fi;
-])
+    ])
+fi;
 
 
 case "${nemesis_network}" in
