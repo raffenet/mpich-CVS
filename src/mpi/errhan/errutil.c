@@ -135,7 +135,7 @@ void MPIR_Errhandler_set_cxx( MPI_Errhandler errhand, void (*errcall)(void) )
    Note that since these use per-thread data, no locks or atomic update
    routines are required.
 
-   In a single-threaded environment, These are replaced with
+   In a single-threaded environment, these are replaced with
    MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
  */
 /* ------------------------------------------------------------------------- */
