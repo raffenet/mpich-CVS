@@ -1723,7 +1723,7 @@ typedef struct MPICH_PerThread_t {
 #if !defined(MPICH_IS_THREADED)
 /* If single threaded, make this point at a pre-allocated segment.
    This structure is allocated in src/mpi/init/initthread.c */
-/*extern MPICH_PerThread_t MPIR_Thread; */
+extern MPICH_PerThread_t MPIR_Thread;
 
 /* The following three macros define a way to portably access thread-private
    storage in MPICH2, and avoid extra overhead when MPICH2 is single 
@@ -1740,7 +1740,7 @@ typedef struct MPICH_PerThread_t {
 */
 #define MPIU_THREADPRIV_INITKEY
 #define MPIU_THREADPRIV_INIT 
-#define MPIU_THREADPRIV_DECL extern MPICH_PerThread_t MPIR_Thread
+#define MPIU_THREADPRIV_DECL 
 #define MPIU_THREADPRIV_GET
 #define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread._a)
 
