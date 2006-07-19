@@ -1720,9 +1720,10 @@ typedef struct MPICH_PerThread_t {
 #endif    
 } MPICH_PerThread_t;
 
-#if !defined(MPICH_IS_THREADED) || defined(HAVE_RUNTIME_THREADCHECK)
-/* If single threaded, make this point at a pre-allocated segment */
-extern MPICH_PerThread_t MPIR_Thread;
+#if !defined(MPICH_IS_THREADED)
+/* If single threaded, make this point at a pre-allocated segment.
+   This structure is allocated in src/mpi/init/initthread.c */
+/*extern MPICH_PerThread_t MPIR_Thread; */
 
 /* The following three macros define a way to portably access thread-private
    storage in MPICH2, and avoid extra overhead when MPICH2 is single 
@@ -1743,10 +1744,42 @@ extern MPICH_PerThread_t MPIR_Thread;
 #define MPIU_THREADPRIV_GET
 #define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread._a)
 
-#else
+#elif  defined(HAVE_RUNTIME_THREADCHECK)
+/* In the case where the thread level is set in MPI_Init_thread, we
+   need a blended version of the non-threaded and the thread-multiple
+   definitions.
+   
+   The approach is to have TWO MPICH_PerThread_t pointers.  One is local
+   (The MPIU_THREADPRIV_DECL is used in the routines local definitions), 
+   as in the threaded version of these macros.  This is set by using a routine
+   to get thread-private storage.  The second is a preallocated, extern 
+   MPICH_PerThread_t struct, as in the single threaded case.  Based on
+   MPIR_Process.isThreaded, one or the other is used.
+   
+ */
+/* For the single threaded case, we use a preallocated structure 
+   This structure is allocated in src/mpi/init/initthread.c */
+extern MPICH_PerThread_t MPIR_ThreadSingle;
+
+#define MPIU_THREADPRIV_INITKEY  \
+    {if (MPIR_Process.isThreaded) {\
+    MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL);}}
+#define MPIU_THREADPRIV_INIT {if (MPIR_Process.isThreaded) {\
+	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
+	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
+        }}
+#define MPIU_THREADPRIV_DECL \
+    MPICH_PerThread_t *MPIR_Thread=0
+#define MPIU_THREADPRIV_GET  \
+    {if (!MPIR_Thread){MPIR_GetPerThread( &MPIR_Thread );}}
+#define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread->_a)
+
+#else /* Thread multiple */
 /* The following three macros define a way to portably access thread-private
    storage in MPICH2, and avoid extra overhead when MPICH2 is single 
-   threaded */
+   threaded.  We initialize the MPIR_Thread pointer to null so that
+   we need call the routine to get the thread-private storage only once
+   in an invocation of a routine.  */
 
 #define MPIU_THREADPRIV_INITKEY  \
     MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL)
@@ -1754,8 +1787,8 @@ extern MPICH_PerThread_t MPIR_Thread;
 	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
         }
-#define MPIU_THREADPRIV_DECL MPICH_PerThread_t *MPIR_Thread
-#define MPIU_THREADPRIV_GET  MPIR_GetPerThread( &MPIR_Thread )
+#define MPIU_THREADPRIV_DECL MPICH_PerThread_t *MPIR_Thread=0
+#define MPIU_THREADPRIV_GET {if (!MPIR_Thread)MPIR_GetPerThread( &MPIR_Thread );}
 #define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread->_a)
 #endif
 

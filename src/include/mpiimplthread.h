@@ -57,7 +57,7 @@
 #ifdef HAVE_RUNTIME_THREADCHECK
 #define MPIR_GetPerThread(pt_) {\
  if (MPIR_Process.isThreaded) { MPIR_GetOrInitThreadPriv( pt_ ); } \
- else { *(pt_) = &MPIR_Thread; } \
+ else { *(pt_) = &MPIR_ThreadSingle; } \
  }
 #else
 #define MPIR_GetPerThread(pt_) MPIR_GetOrInitThreadPriv( pt_ )
