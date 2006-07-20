@@ -20,6 +20,51 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status ; then
     configured.  Run "make distclean" in $srcdir first.])
 fi
 
+PAC_PROG_MAKE
+
+AC_C_INLINE
+
+dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+],,lac_cv_header_net_if_h=yes,lac_cv_header_net_if_h=no)
+
+echo "checking for net/if.h... $lac_cv_header_net_if_h"
+
+if test "$lac_cv_header_net_if_h" = "yes" ; then
+    AC_DEFINE(HAVE_NET_IF_H, 1, [Define if you have the <net/if.h> header file.])
+fi
+
+AC_CHECK_HEADERS(				\
+	assert.h				\
+	netdb.h					\
+	sys/ioctl.h				\
+	sys/socket.h				\
+	sys/sockio.h				\
+	sys/types.h				\
+	errno.h					\
+	sys/ipc.h				\
+	sys/shm.h)
+
+# netinet/in.h often requires sys/types.h first.  With AC 2.57, check_headers
+# does the right thing, which is to test whether the header is found 
+# by the compiler, but this can cause problems when the header needs 
+# other headers.  2.57 changes the syntax (!) of check_headers to allow 
+# additional headers.
+AC_CACHE_CHECK([for netinet/in.h],ac_cv_header_netinet_in_h,[
+AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#include <netinet/in.h>],[int a=0;],
+    ac_cv_header_netinet_in_h=yes,
+    ac_cv_header_netinet_in_h=no)])
+if test "$ac_cv_header_netinet_in_h" = yes ; then
+    AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
+fi
+
+
 AC_ARG_ENABLE(fast,
 [--enable-fast - pick the appropriate options for fast execution.  This
                 turns off error checking and timing collection],,
@@ -42,7 +87,7 @@ if test "${with_gm_lib}" != "yes" -a "${with_gm_lib}" != "no" ; then
     LDFLAGS="$LDFLAGS -L${with_gm_lib}"
 fi,)
 
-if test "${nemesis_network}" == "gm" ; then
+if test "${nemesis_network}" == "gm" ; then 
     AC_CHECK_HEADER([gm.h], , [
         AC_MSG_ERROR(['gm.h not found.  Did you specify --with-gm= or --with-gm-include=?'])
     ])
@@ -158,49 +203,6 @@ int main(int argc, char *argv[])
    mmx_copy_s="", AC_MSG_RESULT(not checking when cross compiling)
 )
 
-PAC_PROG_MAKE
-
-AC_C_INLINE
-
-dnl AC_CHECK_HEADER(net/if.h) fails on Solaris; extra header files needed
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/if.h>
-],,lac_cv_header_net_if_h=yes,lac_cv_header_net_if_h=no)
-
-echo "checking for net/if.h... $lac_cv_header_net_if_h"
-
-if test "$lac_cv_header_net_if_h" = "yes" ; then
-    AC_DEFINE(HAVE_NET_IF_H, 1, [Define if you have the <net/if.h> header file.])
-fi
-
-AC_CHECK_HEADERS(				\
-	assert.h				\
-	netdb.h					\
-	sys/ioctl.h				\
-	sys/socket.h				\
-	sys/sockio.h				\
-	sys/types.h				\
-	errno.h					\
-	sys/ipc.h				\
-	sys/shm.h)
-
-# netinet/in.h often requires sys/types.h first.  With AC 2.57, check_headers
-# does the right thing, which is to test whether the header is found 
-# by the compiler, but this can cause problems when the header needs 
-# other headers.  2.57 changes the syntax (!) of check_headers to allow 
-# additional headers.
-AC_CACHE_CHECK([for netinet/in.h],ac_cv_header_netinet_in_h,[
-AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include <netinet/in.h>],[int a=0;],
-    ac_cv_header_netinet_in_h=yes,
-    ac_cv_header_netinet_in_h=no)])
-if test "$ac_cv_header_netinet_in_h" = yes ; then
-    AC_DEFINE(HAVE_NETINET_IN_H,1,[Define if netinet/in.h exists])
-fi
 
 AC_ARG_WITH(shared-memory, [--with-shared-memory[=auto|sysv|mmap] - create shared memory using sysv or mmap (dafault is auto)],,
     with_shared_memory=auto)

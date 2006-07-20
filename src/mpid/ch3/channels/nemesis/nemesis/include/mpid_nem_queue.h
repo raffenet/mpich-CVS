@@ -461,6 +461,7 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 /* #endif /\* MPID_NEM_USE_SHADOW_HEAD *\/ */
 /* #endif /\* MPID_NEM_USE_MACROS *\/ */
 
+#if 0 /* Where are these functions used? */
 #ifdef MPID_NEM_USE_SHADOW_HEAD
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_queue_poll
@@ -472,13 +473,13 @@ int MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll_dir_t in_or_o
     int mpi_errno = MPI_SUCCESS;
     
     mpi_errno = MPID_nem_network_poll (in_or_out);
-    if (mpi_errno) MPI_ERR_POP (mpi_errno);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     if (MPID_NEM_IS_REL_NULL (qhead->my_head))
     {
 	while (MPID_NEM_IS_REL_NULL (qhead->head))
 	{
 	    mpi_errno = MPID_nem_network_poll (in_or_out);
-            if (mpi_errno) MPI_ERR_POP (mpi_errno);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	    sched_yield();
 	}
 	qhead->my_head = qhead->head;
@@ -499,11 +500,11 @@ static inline int MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll
     int mpi_errno = MPI_SUCCESS;
     
     mpi_errno = MPID_nem_network_poll (in_or_out);    
-    if (mpi_errno) MPI_ERR_POP (mpi_errno);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     while (MPID_NEM_IS_REL_NULL (qhead->head))
     {
 	mpi_errno = MPID_nem_network_poll (in_or_out);
-        if (mpi_errno) MPI_ERR_POP (mpi_errno);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	sched_yield();
     }
     
@@ -513,6 +514,7 @@ static inline int MPID_nem_queue_poll (MPID_nem_queue_ptr_t qhead, MPID_nem_poll
     goto fn_exit;
 }
 #endif/* MPID_NEM_USE_SHADOW_HEAD */
+#endif
 
 /* #ifdef MPID_NEM_USE_SHADOW_HEAD */
 /* static inline  */

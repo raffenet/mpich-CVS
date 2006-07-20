@@ -23,8 +23,8 @@ extern MPID_nem_fboxq_elem_t *MPID_nem_fboxq_elem_list_last;
 extern MPID_nem_fboxq_elem_t *MPID_nem_curr_fboxq_elem;
 extern MPID_nem_fboxq_elem_t *MPID_nem_curr_fbox_all_poll;
 extern unsigned short        *MPID_nem_recv_seqno;
-int    MPID_nem_mpich2_dequeue_fastbox (int local_rank);
-int    MPID_nem_mpich2_enqueue_fastbox (int local_rank);
+/* int    MPID_nem_mpich2_dequeue_fastbox (int local_rank); */
+/* int    MPID_nem_mpich2_enqueue_fastbox (int local_rank); */
 
 #if 0 /* papi timing stuff added */
 #define poll_fboxes(_cell, do_found) do {								\
