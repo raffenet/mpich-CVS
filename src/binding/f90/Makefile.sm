@@ -12,7 +12,7 @@ F90_COMPILE_MODS = $(F90_COMPILE)
 # in a VPATH build)
 F90INCLUDES = @F90INCFLAG@.
 
-lib${MPILIBNAME}f90_a_SOURCES = mpi.o
+lib${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_constants.o
 all-preamble: $(MPIMOD).$(MOD)
 
 # Thes copy line in this step makes the F90 modules available to 
