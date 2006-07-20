@@ -42,6 +42,10 @@ dnl    MPID_PM_NAMESERVER    - if set, provides the name of the nameserver
 dnl                            that the process manager supports.
 dnl                            This name server will be used if the
 dnl                            default name server is selected.
+dnl    MPID_NO_PM            - If yes, the device does not require any
+dnl                            PM implementation.  
+dnl    MPID_NO_PMI           - If yes, the device does not require any 
+dnl                            PMI implementation.
 dnl    EXTRA_STATUS_DECL     - Any extra declarations that the device
 dnl                            needs added to the definition of MPI_Status.
 dnl    MPID_MAX_PROCESSOR_NAME - The maximum number of character in a processor
@@ -994,6 +998,14 @@ fi
 AC_SUBST(device_name)
 #
 # with-pm
+if test "$MPID_NO_PM" = yes ; then
+    if test "$with_pm" != "default" -a "$with_pm" != no ; then
+        AC_MSG_ERROR([The PM chosen ($with_pm) is is not valid for the selected device ($with_device)])
+    fi
+    # This is used to change with_pm=default to with_pm=no in the case
+    # where the device does not want a PM
+    with_pm=no
+fi
 if test -z "$with_pm" ; then
     with_pm="no"
 fi
@@ -1087,6 +1099,14 @@ fi
 # Once we've selected the process manager (or managers), we can
 # check that we have a compatible PMI implemenatation.
 # with-pmi
+if test "$MPID_NO_PMI" = yes ; then
+    if test "$with_pmi" != "default" -a "$with_pmi" != no ; then
+        AC_MSG_ERROR([The PMI chosen ($with_pmi) is is not valid for the selected device ($with_device)])
+    fi
+    # This is used to change with_pmi=default to with_pmi=no in the case
+    # where the device does not want a PMI
+    with_pmi=no
+fi
 if test "$with_pmi" != "no" ; then
     if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
         if test -n "$PM_REQUIRES_PMI" ; then
@@ -1097,7 +1117,7 @@ if test "$with_pmi" != "no" ; then
     elif test -n "$PM_REQUIRES_PMI" ; then
         # Test for compatibility between pm and pmi choices
         if test "$PM_REQUIRES_PMI" != "$with_pmi" ; then
-	    AC_MSG_ERROR([The PM choosen ($with_pm) requires the PMI implementation $PM_REQUIRES_PMI but $with_pmi was selected as the PMI implementation.])
+	    AC_MSG_ERROR([The PM chosen ($with_pm) requires the PMI implementation $PM_REQUIRES_PMI but $with_pmi was selected as the PMI implementation.])
         fi
     fi
     pmi_name=$with_pmi
