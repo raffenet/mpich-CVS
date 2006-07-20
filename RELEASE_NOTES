@@ -32,11 +32,8 @@
   multiple-program-multiple-data, or MPMD, programming).
 
 - The support for MPI_THREAD_SERIALIZED and MPI_THREAD_MULTIPLE is preliminary,
-  and only available with the sock channel.  Rudimentary testing has been
-  performed; however, several problems still exist.  Several of the MPI I/O
-  routines hang.  Some of the internal routines can cause a hang if they
-  encounter an error.  We plan to correct these issues in the next release.
-  That said, we encourage people to experiment and provide feedback.
+  and only available with the sock channel.  We encourage people to
+  experiment and provide feedback.  
 
 - MPI_IRECV operations that are not explicitly completed before MPI_FINALIZE is
   called may fail to complete before MPI_FINALIZE returns, and thus never

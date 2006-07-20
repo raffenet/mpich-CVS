@@ -184,7 +184,7 @@ dnl Other, such as solaris-cc
     ;;
 
     *)
-    AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs.  Values should be of the form os-compiler, as in osx-gcc or solaris-cc])
+    AC_MSG_ERROR([Unknown value $enable_sharedlibs for enable-sharedlibs.  Values should be gcc or osx-gcc])
     enable_sharedlibs=no
     ;;  
 esac
