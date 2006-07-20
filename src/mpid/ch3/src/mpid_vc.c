@@ -18,6 +18,8 @@
 
  */
 
+static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt );
+
 /*S
  * MPIDI_VCRT - virtual connection reference table
  *
@@ -468,7 +470,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 #define FUNCNAME MPIDI_CH3U_VC_FinishPending
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
+static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t **vc;
@@ -553,7 +555,6 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm *comm_ptr )
 	mpi_errno = MPIDI_CH3U_VC_FinishPending( comm_ptr->local_vcrt );
     }
 
- fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_COMM_FINISHPENDING);
     return mpi_errno;
 }

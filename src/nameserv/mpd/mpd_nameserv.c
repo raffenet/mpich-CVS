@@ -31,8 +31,6 @@ struct MPID_NS_Handle {
 #define FUNCNAME MPID_NS_Create
 int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
 {
-    static const char FCNAME[] = "MPID_NS_Create";
-
     *handle_ptr = NULL;		/* The mpd name service needs no local data */
                                 /* All will be handled at the mpd through the PMI interface */
     return 0;
