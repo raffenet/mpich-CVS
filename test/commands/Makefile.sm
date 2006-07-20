@@ -4,6 +4,7 @@ checkenv1_SOURCES = checkenv1.c
 rtest_SOURCES     = rtest.c
 rtestf_SOURCES    = rtestf.f
 rtestx_SOURCES    = rtestx.cxx
+testout_SOURCES   = testout.c
 
 C_LINK = $(bindir)/mpicc
 MPICC = $(bindir)/mpicc
