@@ -36,6 +36,7 @@ MPID_nem_queue_ptr_t MPID_nem_module_elan_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
+static 
 int my_compar(const int *a, const int *b)
 {
    if ( *a <= *b ) 
@@ -43,7 +44,6 @@ int my_compar(const int *a, const int *b)
    else
      return 1;
 }
-
 
 #undef FUNCNAME
 #define FUNCNAME init_elan
@@ -66,6 +66,7 @@ int init_elan( MPIDI_PG_t *pg_p )
    int             pmi_errno;
    int             ret;
    
+   /* Get My Node Id from relevant file */
    myfile = fopen("/proc/qsnet/elan3/device0/position","r");
    if (myfile == NULL) 
      {
@@ -82,7 +83,8 @@ int init_elan( MPIDI_PG_t *pg_p )
      }
 
    mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);      
-   node_ids = (int *)MPIU_Malloc(numprocs * sizeof(int));
+
+   /* Put My Node Id */
    for (index = 0 ; index < numprocs ; index++)
      {	
 	grank = MPID_nem_mem_region.ext_ranks[index];
@@ -97,7 +99,9 @@ int init_elan( MPIDI_PG_t *pg_p )
      }   
    pmi_errno = PMI_Barrier();
    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-   
+
+   /* Get Node Ids from others */
+   node_ids = (int *)MPIU_Malloc(numprocs * sizeof(int));
    for (index = 0 ; index < numprocs ; index++)
      {
 	grank = MPID_nem_mem_region.ext_ranks[index];
@@ -113,7 +117,8 @@ int init_elan( MPIDI_PG_t *pg_p )
    pmi_errno = PMI_Barrier();
    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
-   qsort(node_ids, numprocs, sizeof(int), my_compar);
+   /* Compute Min and Max  Ids*/
+   qsort(node_ids, numprocs, sizeof(int), my_compar);   
    
    if (node_ids[0] < my_node_id)
      min_node_id = node_ids[0] ;
@@ -125,16 +130,16 @@ int init_elan( MPIDI_PG_t *pg_p )
    else
      max_node_id = my_node_id;
    
+   /* Generate capability string */
    MPIU_Snprintf(capability_str, ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
 		 my_node_id,
 		 ELAN_CONTEXT_ID_OFFSET,
 		 ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
 		 ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
-		 min_node_id,
-		 max_node_id);   
+		 min_node_id,max_node_id);      
+   elan_generateCapability (capability_str);    
    
-   elan_generateCapability (capability_str);            
-   
+   /* Init Elan */
    base = elan_baseInit(0);
    my_elan_base = *base;
    
