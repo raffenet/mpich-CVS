@@ -1,3 +1,10 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /* Test of MPI_Comm_join.  This should work even when each process
  * is started as a singleton process.
  *
