@@ -11,6 +11,8 @@
 #include "mx_module.h"
 #elif(MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
 #include "tcp_module.h"
+#elif(MPID_NEM_NET_MODULE == MPID_NEM_ELAN_MODULE)
+#include "elan_module.h"
 #elif(MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
 #include "dummy_module.h"
 #else
@@ -58,6 +60,10 @@ MPID_nem_net_init( void)
   {
       assign_functions (tcp);
   }
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_ELAN_MODULE)
+  {
+      assign_functions (elan);
+  }   
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
   {
       assign_functions (dummy);
