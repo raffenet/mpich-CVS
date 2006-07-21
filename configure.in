@@ -275,15 +275,15 @@ MPICH implementation.  The following levels are supported.
     single - No threads (MPI_THREAD_SINGLE)
     funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
     serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
-    multiple[:impl] - Fully multi-threaded (MPI_THREAD_MULTIPLE)
+    multiple(:impl) - Fully multi-threaded (MPI_THREAD_MULTIPLE)
+The following implementations are supported.
+    global_mutex - a single global lock guards access to all MPI functions.
+The default implementation is global_mutex.
 For the ch3:sock channel, a separate build is no longer needed for thread-multiple. 
 It is compiled by default and is selectable at run time with MPI_Init_thread. 
 If MPI_Init_thread is not called, the default is funneled .
 For other channels, the --enable-threads option is not supported currently, and 
-the default is funneled.
-The following implementations are supported.
-    global_mutex - a single global lock guards access to all MPI functions.
-The default implementation is global_mutex.],,
+the default is funneled.],,
 enable_threads=default)
 dnl 
 dnl
