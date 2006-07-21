@@ -66,8 +66,7 @@ int init_mx( MPIDI_PG_t *pg_p )
    ret = mx_init();
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_init", "**mx_init %s", mx_strerror (ret));
    
-   /* Allocate more than needed but use only external processes */
-   
+   /* Allocate more than needed but use only external processes */   
    MPIU_CHKPMEM_MALLOC (MPID_nem_module_mx_endpoints_addr, mx_endpoint_addr_t *, MPID_nem_mem_region.num_procs * sizeof(mx_endpoint_addr_t), mpi_errno, "endpoints addr");   
 #if 1
    /* Fix me : mysteriously  MPIU_CHKPMEM_MALLOC fails here, when the regular MPIU_Malloc doesn't ... */
@@ -101,19 +100,13 @@ int init_mx( MPIDI_PG_t *pg_p )
    */
    
    /* mx_board_num */
-   ret = mx_open_endpoint(MX_ANY_NIC,
-			  MX_ANY_ENDPOINT,
-			  MPID_nem_module_mx_filter,
-			  NULL,0,
-			  &MPID_nem_module_mx_local_endpoint);
+   ret = mx_open_endpoint(MX_ANY_NIC,MX_ANY_ENDPOINT,MPID_nem_module_mx_filter,NULL,0,&MPID_nem_module_mx_local_endpoint);
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_open_endpoint", "**mx_open_endpoint %s", mx_strerror (ret));
       
-   ret = mx_get_endpoint_addr( MPID_nem_module_mx_local_endpoint,
-			       &MPID_nem_module_mx_endpoints_addr[MPID_nem_mem_region.rank]);
+   ret = mx_get_endpoint_addr( MPID_nem_module_mx_local_endpoint,&MPID_nem_module_mx_endpoints_addr[MPID_nem_mem_region.rank]);
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_get_endpoint_addr", "**mx_get_endpoint_addr %s", mx_strerror (ret));   
    
-   ret = mx_decompose_endpoint_addr(MPID_nem_module_mx_endpoints_addr[MPID_nem_mem_region.rank],
-				    &local_nic_id, &local_endpoint_id);
+   ret = mx_decompose_endpoint_addr(MPID_nem_module_mx_endpoints_addr[MPID_nem_mem_region.rank],&local_nic_id, &local_endpoint_id);
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_decompose_endpoint_addr", "**mx_decompose_endpoint_addr %s", mx_strerror (ret));
    
    MPID_nem_module_mx_send_free_req_queue->head    = NULL;
@@ -128,10 +121,8 @@ int init_mx( MPIDI_PG_t *pg_p )
    
    for (index = 0; index < MPID_NEM_MX_REQ ; ++index)
      {
-	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_send_free_req_queue, 
-				       &MPID_nem_module_mx_send_outstanding_request[index]);
-	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_recv_free_req_queue, 
-				       &MPID_nem_module_mx_recv_outstanding_request[index]);
+	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_send_free_req_queue,&MPID_nem_module_mx_send_outstanding_request[index]);
+	MPID_nem_mx_req_queue_enqueue (MPID_nem_module_mx_recv_free_req_queue,&MPID_nem_module_mx_recv_outstanding_request[index]);
      }
 
    MPIU_CHKPMEM_COMMIT();
@@ -329,7 +320,6 @@ MPID_nem_mx_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 		    &MPID_nem_module_mx_endpoints_addr[vc->pg_rank]);
    MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %s", mx_strerror (ret));
 
-//   fprintf(stdout,"[%i] MX connect ================ with %i \n",MPID_nem_mem_region.rank,vc->pg_rank);
    fn_exit:
        return mpi_errno;
    fn_fail:
