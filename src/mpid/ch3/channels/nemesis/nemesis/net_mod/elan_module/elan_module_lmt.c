@@ -4,9 +4,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+
 #include "elan.h"
+#include "mpid_nem_impl.h"
 #include "elan_module_impl.h"
-#include "mpid_nem.h"
 #include "elan_module.h"
 
 //#define FREE_LMT_QUEUE_ELEMENTS MPID_NEM_NUM_CELLS

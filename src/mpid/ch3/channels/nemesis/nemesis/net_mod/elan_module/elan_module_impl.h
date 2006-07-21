@@ -7,7 +7,7 @@
 #ifndef ELAN_MODULE_IMPL_H
 #define ELAN_MODULE_IMPL_H
 #include <elan.h>
-#include "mpid_nem.h"
+#include "mpid_nem_impl.h"
 #include <linux/types.h>
 
 extern int MPID_nem_module_elan_pendings_sends;

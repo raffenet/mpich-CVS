@@ -9,8 +9,8 @@
 #include <capability.h>
 #include <elanctrl.h>
 #include "mpidimpl.h"
+#include "mpid_nem_impl.h"
 #include "elan_module_impl.h"
-#include "mpid_nem.h"
 #include "elan_module.h"
 
 #define ELAN_CONTEXT_ID_OFFSET  2
