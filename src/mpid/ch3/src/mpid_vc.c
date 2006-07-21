@@ -6,20 +6,6 @@
 
 #include "mpidimpl.h"
 
-/* What is the arrangement of VCRT and VCR and VC? 
-   
-   Each VC (the virtual connection itself) is refered to by a reference 
-   (pointer) or VCR.  
-   Each communicator has a VCRT, which is nothing more than a 
-   structure containing a count (size) and an array of pointers to 
-   virtual connections (as an abstraction, this could be a sparse
-   array, allowing a more scalable representation on massively 
-   parallel systems).
-
- */
-
-static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt );
-
 /*S
  * MPIDI_VCRT - virtual connection reference table
  *
@@ -39,6 +25,19 @@ typedef struct MPIDI_VCRT
 }
 MPIDI_VCRT_t;
 
+/* What is the arrangement of VCRT and VCR and VC? 
+   
+   Each VC (the virtual connection itself) is refered to by a reference 
+   (pointer) or VCR.  
+   Each communicator has a VCRT, which is nothing more than a 
+   structure containing a count (size) and an array of pointers to 
+   virtual connections (as an abstraction, this could be a sparse
+   array, allowing a more scalable representation on massively 
+   parallel systems).
+
+ */
+
+static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt );
 
 /*@
   MPID_VCRT_Create - Create a table of VC references
