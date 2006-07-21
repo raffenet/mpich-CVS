@@ -164,9 +164,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 
     for(index = 0 ; index < numprocs ; index++)
     {
-	int option = 1;
-        int option2;
-        int size;
+	int       option = 1;
+        int       option2;
+        socklen_t size;
        
 	grank     = MPID_nem_mem_region.ext_ranks[index];
 	if(grank != MPID_nem_mem_region.rank)
@@ -219,7 +219,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    getsockopt(nodes[grank].desc,SOL_SOCKET,SO_SNDBUF,&option2,&size);
 	    
 	    setsockopt( nodes[grank].desc, IPPROTO_TCP,TCP_MAXSEG,&option,sizeof(int));
-	    getsockopt(nodes[grank].desc,IPPROTO_TCP,TCP_MAXSEG,,&option2,&size);
+	    getsockopt(nodes[grank].desc,IPPROTO_TCP,TCP_MAXSEG,&option2,&size);
 	}
     }
     (MPID_nem_tcp_internal_vars.max_fd)++;
