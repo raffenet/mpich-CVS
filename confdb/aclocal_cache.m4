@@ -331,8 +331,13 @@ AC_DEFUN([PAC_CREATE_BASE_CACHE],[
 AC_ARG_ENABLE(base-cache,
 [--enable-base-cache - Enable the use of a simple cache for the subsidieary
                        configure scripts.],,enable_base_cache=default)
-if test "$enable_base_cache" = "default" -a "$CONF_USE_CACHEFILE" = yes ; then
-    enable_base_cache=yes
+# The default case is controlled by the environment variable CONF_USE_CACHEFILE
+if test "$enable_base_cache" = "default" ; then
+    if "$CONF_USE_CACHEFILE" = yes ; then
+        enable_base_cache=yes
+    else 
+        enable_base_cache=no
+    fi
 fi
 if test "$enable_base_cache" != no ; then
     if test "$enable_base_cache" = yes ; then
