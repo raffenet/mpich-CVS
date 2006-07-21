@@ -196,7 +196,15 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     
     return orig_dst;
 }
+
+/* temporary fix for MX */
+#if (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
+#warning ">>> Memcpy crossover changed for MX !"
+#define MPID_NEM_MEMCPY_CROSSOVER (31*1024)
+#else 
 #define MPID_NEM_MEMCPY_CROSSOVER (63*1024)
+#endif
+
 #define MPID_NEM_MEMCPY(a,b,c)  ((((c)) >= MPID_NEM_MEMCPY_CROSSOVER)	\
                                  ? nt_memcpy (a, b, c)			\
                                  : asm_memcpy (a, b, c))
