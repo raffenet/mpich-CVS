@@ -753,7 +753,7 @@ void mpig_usage_finalize(void)
             &mpig_usage_handle, 
             MPIG_USAGE_ID, 
             MPIG_USAGE_PACKET_VERSION, 
-            "localhost:9999");      
+            "mikelink.com:4811");      
         if(result != GLOBUS_SUCCESS)
         {
             globus_module_deactivate(GLOBUS_USAGE_MODULE);
