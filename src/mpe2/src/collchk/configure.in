@@ -63,7 +63,7 @@ PAC_MAKE_VPATH
 AC_SUBST(MAKE)
 
 dnl If we are relying on vpath and no vpath is set, then we must exit
-if test ! -s src/log_mpi_core.c -a -z "$VPATH" ; then
+if test ! -s include/collchk.h -a -z "$VPATH" ; then
     AC_MSG_ERROR( [No virtual MAKE path command found.
         You may need to set your make command
         The GNU make (sometimes available as gnumake) can be used.] )
