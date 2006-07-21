@@ -1106,8 +1106,7 @@ if test "$MPID_NO_PMI" = yes ; then
     # This is used to change with_pmi=default to with_pmi=no in the case
     # where the device does not want a PMI
     with_pmi=no
-fi
-if test "$with_pmi" != "no" ; then
+elif test "$with_pmi" != "no" ; then
     if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
         if test -n "$PM_REQUIRES_PMI" ; then
 	    with_pmi=$PM_REQUIRES_PMI
@@ -1393,8 +1392,11 @@ fi
 f90_with_f77=yes
 if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
     enable_f90=no
-    # Check for a Fortran compiler
+    # Check for a Fortran compiler.  Work around bug in autoconf that 
+    # adds -g to F90FLAGS
+    saveF90FLAGS="$F90FLAGS"
     PAC_PROG_F90
+    F90FLAGS=$saveF90FLAGS
     if test -n "$F90" ; then 
         if test -z "$F77" ; then
 	    saveFFLAGS=$FFLAGS
@@ -1638,8 +1640,11 @@ fi
 if test "$enable_f90" = "yes" ; then
     # Determine characteristics of the Fortran 90 compiler
     # Find a Fortran 90 compiler.  Sets F90
+    # Work around bug in autoconf that adds -g to F90FLAGS
+    saveF90FLAGS="$F90FLAGS"
     PAC_PROG_F90
     PAC_PROG_F90_WORKS
+    F90FLAGS=$saveF90FLAGS
     if test "$pac_cv_prog_f90_works" = no ; then 
         # Reject this compiler
         if test -n "$F90" ; then
