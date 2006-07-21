@@ -230,12 +230,13 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
 }
 
 /* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
+/* MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]) triggers a warning */
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_attach_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[])
+MPID_nem_attach_shared_memory (char **buf_p, const int length, const char handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     void *buf;
@@ -386,12 +387,13 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
 }
 
 /* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
+/* MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]) make a warning */
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_attach_shared_memory
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[])
+MPID_nem_attach_shared_memory (char **buf_p, const int length, const char handle[])    
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
