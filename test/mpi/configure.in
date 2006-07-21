@@ -581,6 +581,8 @@ EOF
     ALLOCMEMF=""
     PAC_PROG_F77_HAS_POINTER(ALLOCMEMF="allocmemf 1")
     AC_SUBST(ALLOCMEMF)
+    # See the f90 block of code for the Fortran 90 version of
+    # ALLOCMEMF
 
     # It is safe to now switch back to the "final" (MPI) compilers
     F77=$saveF77
@@ -609,12 +611,32 @@ if test "$enable_f90" = default -a "$enable_f77" = yes ; then
         saveF90=$F90 
         F90=$BASEF90
     fi
+    # Work around bug in autoconf that adds -g to F90FLAGS
+    saveF90FLAGS="$F90FLAGS"
     PAC_PROG_F90
     PAC_PROG_F90_WORKS
+    F90FLAGS=$saveF90FLAGS
     if test -z "$F90" -o "$pac_cv_prog_f90_works" != yes ; then
         AC_MSG_WARN([Use --disable-f90 to keep configure from searching for a Fortran 90 compiler])
 	enable_f90=no
-    elif test -n "$F90" ; then
+    elif test -z "$BASEF90" ; then
+        BASEF90=$F90
+    fi
+    F90=$saveF90
+fi
+
+if test "$enable_f90" = yes ; then
+    if test -n "$BASEF90" ; then
+        saveF90=$F90 
+        F90=$BASEF90
+    fi
+    # Work around bug in autoconf that adds -g to F90FLAGS
+    saveF90FLAGS="$F90FLAGS"
+    PAC_PROG_F90
+    PAC_PROG_F90_WORKS
+    F90FLAGS=$saveF90FLAGS
+
+    if test -n "$F90" ; then
         # Make sure that the compilers are compatible.  This 
 	# will also make sure that the program named in F90 is
 	# a working Fortran 90 compiler
@@ -651,6 +673,12 @@ EOF
             enable_f90=no
         fi
     fi
+
+    # See if the compiler supports the Cray-style pointers
+    ALLOCMEMF90=""
+    PAC_PROG_F90_HAS_POINTER(ALLOCMEMF90="allocmemf90 1")
+    AC_SUBST(ALLOCMEMF90)
+
     if test -n "$BASEF90" ; then
         F90=$saveF90
     fi
