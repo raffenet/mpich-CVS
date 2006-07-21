@@ -7,6 +7,7 @@
 #include "mpid_nem_pre.h"
 #include "mpid_nem_impl.h"
 #include "mpid_nem_nets.h"
+#include <errno.h>
 
 #ifdef MEM_REGION_IN_HEAP
 MPID_nem_mem_region_t *MPID_nem_mem_region_ptr = 0;
@@ -59,7 +60,9 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     publish_bc_orig = bc_val;
     
-    gethostname (MPID_nem_hostname, MAX_HOSTNAME_LEN);
+    ret = gethostname (MPID_nem_hostname, MAX_HOSTNAME_LEN);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock_gethost", "**sock_gethost %s %d", strerror (errno), errno);
+
     MPID_nem_hostname[MAX_HOSTNAME_LEN-1] = '\0';
 
     mpi_errno = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank);

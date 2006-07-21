@@ -61,6 +61,8 @@ typedef struct MPIDI_CH3I_VC
     int toread;
     struct MPID_nem_tcp_module_internal_queue *internal_recv_queue;
     struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
+    int fd;
 #else
 #error One of the MPID_NEM_*_MODULE must be defined
 #endif
