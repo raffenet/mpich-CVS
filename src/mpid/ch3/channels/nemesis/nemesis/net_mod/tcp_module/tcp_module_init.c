@@ -165,7 +165,9 @@ static int init_tcp (MPIDI_PG_t *pg_p)
     for(index = 0 ; index < numprocs ; index++)
     {
 	int option = 1;
-        
+        int option2;
+        int size;
+       
 	grank     = MPID_nem_mem_region.ext_ranks[index];
 	if(grank != MPID_nem_mem_region.rank)
 	{
@@ -197,6 +199,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                               &option, 
                               sizeof(int));
             MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**setsockopt", "**setsockopt %s", strerror (errno));
+ 	    getsockopt(nodes[grank].desc,IPPROTO_TCP,TCP_NODELAY,&option2,&size);
+	   
 	    option = 2 * MPID_NEM_CELL_PAYLOAD_LEN ;
 	    ret = setsockopt( nodes[grank].desc, 
                               SOL_SOCKET,  
@@ -204,19 +208,18 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                               &option, 
                               sizeof(int));
             MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**setsockopt", "**setsockopt %s", strerror (errno));
+	    getsockopt(nodes[grank].desc,SOL_SOCKET,SO_RCVBUF,&option2,&size);
+	   
 	    ret = setsockopt( nodes[grank].desc, 
                               SOL_SOCKET,  
                               SO_SNDBUF,  
                               &option, 
                               sizeof(int));  	  
             MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**setsockopt", "**setsockopt %s", strerror (errno));
-	    /*
-	      setsockopt( nodes[grank].desc, 
-	      IPPROTO_TCP,  
-	      TCP_MAXSEG,  
-	      &option, 
-	      sizeof(int));	  	 
-	    */
+	    getsockopt(nodes[grank].desc,SOL_SOCKET,SO_SNDBUF,&option2,&size);
+	    
+	    setsockopt( nodes[grank].desc, IPPROTO_TCP,TCP_MAXSEG,&option,sizeof(int));
+	    getsockopt(nodes[grank].desc,IPPROTO_TCP,TCP_MAXSEG,,&option2,&size);
 	}
     }
     (MPID_nem_tcp_internal_vars.max_fd)++;
