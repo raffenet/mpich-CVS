@@ -48,6 +48,9 @@ typedef struct MPIDI_CH3I_VC
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)  
     unsigned int       remote_endpoint_id; /* uint32_t equivalent */
     unsigned long long remote_nic_id;      /* uint64_t equivalent */
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_ELAN_MODULE)
+    int elan_vpid;
+    int elan_npid;   
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
     int node_id; 
     int desc;
