@@ -15,9 +15,15 @@
 
 #define ELAN_CONTEXT_ID_OFFSET  2
 #define ELAN_ALLOC_SIZE         16 
+#define MPIDI_CH3I_NODE_ID_KEY  "node_id"
 
 /* elan_base is a reserved name in quadrics */
 static ELAN_BASE my_elan_base;
+static int      *node_ids;  
+static int       my_node_id;
+static int       min_node_id;
+static int       max_node_id;
+static int       my_ctxt_id;
 
 int MPID_nem_module_elan_pendings_sends = 0;
 int MPID_nem_module_elan_pendings_recvs = 0 ;
@@ -30,6 +36,15 @@ MPID_nem_queue_ptr_t MPID_nem_module_elan_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
+int my_compar(const int *a, const int *b)
+{
+   if ( *a <= *b ) 
+     return -1;
+   else
+     return 1;
+}
+
+
 #undef FUNCNAME
 #define FUNCNAME init_elan
 #undef FCNAME
@@ -38,44 +53,90 @@ int init_elan( MPIDI_PG_t *pg_p )
 {
    char            capability_str[ELAN_ALLOC_SIZE];
    int             mpi_errno = MPI_SUCCESS;
-   char            name[256];
-   int             node_id;
-   int             min_node_id;
-   int             max_node_id;
-   ELAN_BASE      *base      = NULL;
-
-   /* this has to be fixed ASAP */
-   gethostname(name,256);   
-   if ( strncmp( name, "joe" ,strlen("joe")) == 0)
-     node_id = 0;
-   else if ( strncmp( name, "jack" ,strlen("jack")) == 0)
-     node_id = 1 ;
-   min_node_id = 0 ;   
-   max_node_id = 1 ;
+   char            file_name[256];
+   char            line[255]; 
+   int             numprocs  = MPID_nem_mem_region.ext_procs;
+   char            key[MPID_NEM_MAX_KEY_VAL_LEN];
+   char            val[MPID_NEM_MAX_KEY_VAL_LEN];
+   char           *kvs_name;
+   FILE           *myfile;
+   ELAN_BASE      *base = NULL;
+   int             grank;
+   int             index; 
+   int             pmi_errno;
+   int             ret;
    
-   snprintf(capability_str, ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
-	    node_id,
-	    ELAN_CONTEXT_ID_OFFSET,
-	    ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
-	    ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
-	    min_node_id,
-	    max_node_id);   
-   /*
-    size = snprintf(str, alloc_size, "N%dC%d-%d-%dN%d-%dR1b",
-    node_id,
-    ELAN_CONTEXT_ID_OFFSET,
-    ctx_id,
-    ctx_id_max,
-    node_id_min,
-    node_id_max);
-    */   
+   myfile = fopen("/proc/qsnet/elan3/device0/position","r");
+   if (myfile == NULL) 
+     {
+	myfile = fopen("/proc/qsnet/elan4/device0/position","r");
+     }
+   
+   if (myfile != NULL)
+     {	
+	ret = fscanf(myfile,"%s%i",&line,&my_node_id);
+     }
+   else
+     {
+	/* Error */
+     }
+
+   mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);      
+   node_ids = (int *)MPIU_Malloc(numprocs * sizeof(int));
+   for (index = 0 ; index < numprocs ; index++)
+     {	
+	grank = MPID_nem_mem_region.ext_ranks[index];
+	MPIU_Snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%i",my_node_id);
+	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "QsNetkey[%d:%d]", MPID_nem_mem_region.rank, grank);
+	
+	pmi_errno = PMI_KVS_Put (kvs_name, key, val);
+	MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
+	
+	pmi_errno = PMI_KVS_Commit (kvs_name);
+	MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+     }   
+   pmi_errno = PMI_Barrier();
+   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+   
+   for (index = 0 ; index < numprocs ; index++)
+     {
+	grank = MPID_nem_mem_region.ext_ranks[index];
+	memset(val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN,"QsNetkey[%d:%d]", grank, MPID_nem_mem_region.rank);
+	
+	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+	MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
+	
+	ret = sscanf (val, "%i", &(node_ids[index]));
+	MPIU_ERR_CHKANDJUMP1 (ret != 1, mpi_errno, MPI_ERR_OTHER, "**business_card", "**business_card %s", val);	
+     }
+   pmi_errno = PMI_Barrier();
+   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+
+   qsort(node_ids, numprocs, sizeof(int), my_compar);
+   
+   if (node_ids[0] < my_node_id)
+     min_node_id = node_ids[0] ;
+   else
+     min_node_id = my_node_id ;
+   
+   if (node_ids[numprocs - 1] > my_node_id)
+     max_node_id = node_ids[numprocs - 1] ;
+   else
+     max_node_id = my_node_id;
+   
+   MPIU_Snprintf(capability_str, ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
+		 my_node_id,
+		 ELAN_CONTEXT_ID_OFFSET,
+		 ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
+		 ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
+		 min_node_id,
+		 max_node_id);   
+   
    elan_generateCapability (capability_str);            
-   //fprintf(stdout,"[%s] generate Cap done !\n",name);
    
    base = elan_baseInit(0);
    my_elan_base = *base;
-   
-   //fprintf(stdout,"[%s] Init done !\n",name);
    
    fn_exit:
      return mpi_errno;
@@ -130,7 +191,7 @@ MPID_nem_elan_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 
    mpi_errno = MPID_nem_elan_module_get_business_card (bc_val_p, val_max_sz_p);
    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
+   
    MPID_nem_process_recv_queue = proc_recv_queue;
    MPID_nem_process_free_queue = proc_free_queue;
    
@@ -163,35 +224,19 @@ int
 {
    int mpi_errno = MPI_SUCCESS;
 
-   /*
-   mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_ENDPOINT_KEY, local_endpoint_id);
+   mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_NODE_ID_KEY, my_node_id);
    if (mpi_errno != MPIU_STR_SUCCESS)
-     {
-	if (mpi_errno == MPIU_STR_NOMEM) 
-	  {
+     {	
+	if (mpi_errno == MPIU_STR_NOMEM)
+	  {	     
 	     MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-	  }
-	else 
-	  {
+	  }	
+	else
+	  {	     
 	     MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
-	  }
+	  }	
 	goto fn_exit;
      }
-
-   mpi_errno = MPIU_Str_add_binary_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_NIC_KEY, (char *)&local_nic_id, sizeof(uint64_t));
-   if (mpi_errno != MPIU_STR_SUCCESS)
-     {
-	if (mpi_errno == MPIU_STR_NOMEM) 
-	  {
-	     MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-	  }
-	else 
-	  {
-	     MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
-	  }
-	goto fn_exit;
-     }
-   */
    
    fn_exit:
        return mpi_errno;
@@ -204,26 +249,17 @@ int
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_elan_module_get_from_bc (const char *business_card,int *remote_endpoint_id,int *remote_nic_id)
+MPID_nem_elan_module_get_from_bc (const char *business_card,int *node_id)
 {
    int mpi_errno = MPI_SUCCESS;
-   int len;
+   int tmp_node_id;
    
-   /*
-   mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_ENDPOINT_KEY, &tmp_endpoint_id);
+   mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_NODE_ID_KEY, &tmp_node_id);
    if (mpi_errno != MPIU_STR_SUCCESS) 
      {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
      }
-   *remote_endpoint_id = (uint32_t)tmp_endpoint_id;
-   
-   mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_NIC_KEY, (char *)remote_nic_id, sizeof(uint64_t), &len);
-   if ((mpi_errno != MPIU_STR_SUCCESS) || len != sizeof(int)) 
-     {	
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
-     }
-   */
-   
+      
    fn_exit:
      return mpi_errno;
    fn_fail:  
@@ -252,30 +288,18 @@ int
 MPID_nem_elan_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
    int mpi_errno = MPI_SUCCESS;
-   int ret;
    
-   //mpi_errno = MPID_nem_mx_module_get_from_bc (business_card, &vc->ch.remote_endpoint_id, &vc->ch.remote_nic_id);
+  // mpi_errno = MPID_nem_mx_module_get_from_bc (business_card, &(vc->ch.node_ids[vc->pg_rank]));
    /* --BEGIN ERROR HANDLING-- */   
    /*
    if (mpi_errno) 
      {	
 	MPIU_ERR_POP (mpi_errno);
      }
-    */ 
-   /* --END ERROR HANDLING-- */
+    */
+    /* --END ERROR HANDLING-- */
    
-   /*
-   ret = mx_connect(MPID_nem_module_mx_local_endpoint,
-		    vc->ch.remote_nic_id,
-		    vc->ch.remote_endpoint_id,
-		    MPID_nem_module_mx_filter,
-		    MPID_nem_module_mx_timeout,
-		    &MPID_nem_module_mx_endpoints_addr[vc->pg_rank]);
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %s", mx_strerror (ret));
-*/
-//   fprintf(stdout,"[%i] ELAN connect ================ with %i \n",MPID_nem_mem_region.rank,vc->pg_rank);
-   fn_exit:
-   
+   fn_exit:   
        return mpi_errno;
    fn_fail:
        goto fn_exit;
