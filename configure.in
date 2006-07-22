@@ -1809,8 +1809,15 @@ EOF
             F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	    ;;
 
+	    pgi)
+	    # Portland Group implements the GNU options
+	    F90_SHL="$F90 -shared -fpic"
+            F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
+	    ;;
+
 	    *)
 	    # Unknown, ignore
+	    AC_MSG_WARN([Unable to determine how to link Fortran 90 compiler with shared libraries])
 	    ;;
         esac
     fi
