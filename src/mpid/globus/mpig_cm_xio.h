@@ -30,71 +30,84 @@
 /*
  * expose the communication module's vtable so that it is accessible to other modules in the device
  */
-extern const mpig_cm_vtable_t mpig_cm_xio_vtable;
-extern const mpig_cm_vtable_t mpig_cm_xio_lan_vtable;
-extern const mpig_cm_vtable_t mpig_cm_xio_wan_vtable;
-extern const mpig_cm_vtable_t mpig_cm_xio_system_vtable;
+extern struct mpig_cm mpig_cm_xio_net_lan;
+extern struct mpig_cm mpig_cm_xio_net_wan;
+extern struct mpig_cm mpig_cm_xio_net_subjob;
+extern struct mpig_cm mpig_cm_xio_net_default;
 
-typedef struct xio_l_conn_info_s
-{
-    globus_xio_driver_t                 driver;
-    globus_xio_stack_t                  stack;
-    globus_xio_server_t                 server;
-    char *                              driver_name;
-    char *                              contact_string;
-    globus_xio_attr_t                   attr;
-    globus_bool_t                       available;
-} xio_l_conn_info_t;
 
-/*									\
- * define the communication module structure to be included in a VC	\
+/*
+ * define the structure to be included in the communication method union (CMU) of the CM object
  */
-#define MPIG_VC_CM_XIO_DECL						\
-struct mpig_cm_xio_vc							\
-{									\
-    /* state of the connection */					\
-    mpig_cm_xio_vc_state_t state;					\
-									\
-    /* contact string for remote process listener */			\
-    char * cs;								\
-    char * driver_name;								\
-    xio_l_conn_info_t * xio_info;                                 \
-									\
-    /* data format of remote machine */					\
-    int df;								\
-    mpig_endian_t endian;						\
-									\
-    /* handle to the XIO connection */					\
-    globus_xio_handle_t handle;						\
-									\
-    /* connection sequence number */					\
-    unsigned conn_seqnum;						\
-									\
-    /* active send and receive requests */				\
-    struct MPID_Request * active_sreq;					\
-    struct MPID_Request * active_rreq;					\
-									\
-    /* send queue */							\
-    struct MPID_Request * sendq_head;					\
-    struct MPID_Request * sendq_tail;					\
-									\
-    /* header size of message being receive */				\
-    unsigned msg_hdr_size;						\
-									\
-    /* internal buffer for headers and small messages */		\
-    MPIG_DATABUF_DECL(msgbuf, MPIG_CM_XIO_VC_MSGBUF_SIZE);		\
-									\
-    /* VC list pointers */						\
-    struct mpig_vc * list_prev;						\
-    struct mpig_vc * list_next;						\
-}									\
+typedef struct mpig_cm_xio_conn_info
+{
+    const char * key_name;
+    unsigned topology_levels;
+    globus_xio_driver_t driver;
+    globus_xio_stack_t stack;
+    globus_xio_server_t server;
+    globus_xio_attr_t attrs;
+    char * driver_name;
+    char * contact_string;
+    bool_t available;
+}
+mpig_cm_xio_conn_info_t;
+
+#define MPIG_CM_CMU_XIO_DECL mpig_cm_xio_conn_info_t xio;
+
+
+/*
+ * define the structure to be included in the communication method union (CMU) of the VC object
+ */
+#define MPIG_VC_CMU_XIO_DECL					\
+struct mpig_cm_xio_vc						\
+{								\
+    /* state of the connection */				\
+    mpig_cm_xio_vc_state_t state;				\
+								\
+    /* contact string for remote process */			\
+    char * contact_string;					\
+								\
+    /* data format of remote machine */				\
+    int df;							\
+    mpig_endian_t endian;					\
+								\
+    /* handle to the XIO connection */				\
+    globus_xio_handle_t handle;					\
+								\
+    /* connection sequence number */				\
+    unsigned conn_seqnum;					\
+								\
+    /* active send and receive requests */			\
+    struct MPID_Request * active_sreq;				\
+    struct MPID_Request * active_rreq;				\
+								\
+    /* send queue */						\
+    struct MPID_Request * sendq_head;				\
+    struct MPID_Request * sendq_tail;				\
+								\
+    /* header size of message being receive */			\
+    unsigned msg_hdr_size;					\
+								\
+    /* internal buffer for headers and small messages */	\
+    MPIG_DATABUF_DECL(msgbuf, MPIG_CM_XIO_VC_MSGBUF_SIZE);	\
+								\
+    /* VC list pointers */					\
+    struct mpig_vc * list_prev;					\
+    struct mpig_vc * list_next;					\
+								\
+    /* data structures for mpig_port_connect-accept */		\
+    globus_cond_t cond;						\
+    char * port_id;						\
+    int mpi_errno;						\
+}								\
 xio;
 
 
 /*
- * define the communication module structure to be included in a request
+ * define the communication method structure to be included in a request
  */
-#define MPIG_REQUEST_CM_XIO_DECL												\
+#define MPIG_REQUEST_CMU_XIO_DECL												\
 struct mpig_cm_xio_request													\
 {																\
     /* state of the message being sent or received */										\
@@ -174,22 +187,22 @@ typedef enum mpig_cm_xio_vc_state
     MPIG_CM_XIO_VC_STATE_CLIENT_CONNECTING,
     MPIG_CM_XIO_VC_STATE_SERVER_ACCEPTING,
     /* states for client temporary VC */
-    MPIG_CM_XIO_VC_STATE_CLIENT_OPENING_VC,
-    MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_VC_MAGIC,
-    MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_VC_MAGIC,
-    MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_VC_REQ,
-    MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_VC_RESP,
-    MPIG_CM_XIO_VC_STATE_CLIENT_OPENING_PORT,
-    MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_PORT_MAGIC,
-    MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_PORT_MAGIC,
+    MPIG_CM_XIO_VC_STATE_CLIENT_OPENING,
+    MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_MAGIC,
+    MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_MAGIC,
+    MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_PROC_REQ,
+    MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_PROC_RESP,
     MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_PORT_REQ,
     MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_PORT_RESP,
     /* states for server temporary VC */
-    MPIG_CM_XIO_VC_STATE_SERVER_OPEN,
+    MPIG_CM_XIO_VC_STATE_SERVER_OPENING,
     MPIG_CM_XIO_VC_STATE_SERVER_RECEIVING_MAGIC,
     MPIG_CM_XIO_VC_STATE_SERVER_SENDING_MAGIC,
     MPIG_CM_XIO_VC_STATE_SERVER_RECEIVING_OPEN_REQ,
-    MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_RESP,
+    MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_PROC_RESP,
+    MPIG_CM_XIO_VC_STATE_SERVER_RECEIVED_OPEN_PORT_REQ_AWAITING_ACCEPT,
+    MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_PORT_RESP,
+    MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_ERROR_RESP,
     MPIG_CM_XIO_VC_STATE_CONNECTING_LAST,
     
     MPIG_CM_XIO_VC_STATE_CONNECTED_FIRST = (MPIG_CM_XIO_VC_STATE_CLASS_CONNECTED << MPIG_CM_XIO_VC_STATE_CLASS_SHIFT),
@@ -197,24 +210,25 @@ typedef enum mpig_cm_xio_vc_state
     MPIG_CM_XIO_VC_STATE_CONNECTED_LAST,
     
     MPIG_CM_XIO_VC_STATE_DISCONNECTING_FIRST = (MPIG_CM_XIO_VC_STATE_CLASS_DISCONNECTING << MPIG_CM_XIO_VC_STATE_CLASS_SHIFT),
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_RECEIVED_CLOSE_REQ,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_RECEIVED_CLOSE,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_AWAITING_CLOSE,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_RECEIVED_CLOSE,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_RECEIVED_ACK,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENT_CLOSE_AWAITING_CLOSE,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_ACK_AWAITING_ACK,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_ACK_RECEIVED_ACK,
     MPIG_CM_XIO_VC_STATE_DISCONNECTING_LAST,
     
     MPIG_CM_XIO_VC_STATE_CLOSING_FIRST = (MPIG_CM_XIO_VC_STATE_CLASS_CLOSING << MPIG_CM_XIO_VC_STATE_CLASS_SHIFT),
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK,
-    MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENT_ACK_AWAITING_ACK,
+    MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING,
     MPIG_CM_XIO_VC_STATE_CLOSING_LAST,
     
     MPIG_CM_XIO_VC_STATE_FAILED_FIRST = (MPIG_CM_XIO_VC_STATE_CLASS_FAILED << MPIG_CM_XIO_VC_STATE_CLASS_SHIFT),
     MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING,
     MPIG_CM_XIO_VC_STATE_FAILED_CONNECTION,
     MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING,
+    MPIG_CM_XIO_VC_STATE_FAILED_CLOSING,
     MPIG_CM_XIO_VC_STATE_FAILED_LAST
 }
 mpig_cm_xio_vc_state_t;
@@ -234,12 +248,12 @@ typedef enum mpig_cm_xio_msg_type
     MPIG_CM_XIO_MSG_TYPE_SSEND_ACK,
     MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND,
     MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND_RESP,
-    MPIG_CM_XIO_MSG_TYPE_OPEN_VC_REQ,
-    MPIG_CM_XIO_MSG_TYPE_OPEN_VC_RESP,
+    MPIG_CM_XIO_MSG_TYPE_OPEN_PROC_REQ,
+    MPIG_CM_XIO_MSG_TYPE_OPEN_PROC_RESP,
     MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_REQ,
     MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_RESP,
     MPIG_CM_XIO_MSG_TYPE_OPEN_ERROR_RESP,
-    MPIG_CM_XIO_MSG_TYPE_CLOSE,
+    MPIG_CM_XIO_MSG_TYPE_CLOSE_PROC,
     MPIG_CM_XIO_MSG_TYPE_LAST
 }
 mpig_cm_xio_msg_type_t;
@@ -319,16 +333,5 @@ int mpig_cm_xio_pe_poke(void);
 
 #define mpig_cm_xio_pe_poke() mpig_cm_xio_progess_test()
 
-
-/*
- * mpig_connection_t definition needed for MPI_Comm_{connect,accept} functionality
- */
-typedef struct mpig_connection
-{
-    struct mpig_vc * vc;
-    int remote_data_size;
-    bool_t acceptor;
-}
-mpig_connection_t;
 
 #endif /* !defined(MPICH2_MPIG_CM_XIO_H_INCLUDED) */

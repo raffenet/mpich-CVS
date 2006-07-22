@@ -38,10 +38,6 @@ PAC_PROG_CHECK_INSTALL_WORKS
 PAC_PROG_MKDIR_P
 PAC_PROG_MAKE
 
-AC_DEFINE_UNQUOTED(MPIG_MPICH2_VERSION,"${MPIG_MPICH2VERSION}",[MPICH2 version])
-
-AC_DEFINE_UNQUOTED(MPIG_XIO_VERSION,"${MPIG_XIOVERSION}",[Globus XIO version])
-
 AC_CHECK_HEADERS(unistd.h)
 
 AC_CHECK_FUNCS(gethostname)
@@ -264,6 +260,8 @@ fi
 if test "${MPIG_DEBUG:?}" = "yes" ; then
     AC_DEFINE(MPIG_DEBUG,1,[define if Globus is configured with debugging enabled])
 fi
+AC_DEFINE_UNQUOTED(MPIG_MPICH2_VERSION,"${MPIG_MPICH2_VERSION:?}",[MPICH2 version])
+AC_DEFINE_UNQUOTED(MPIG_XIO_VERSION,"${MPIG_XIOV_ERSION:?}",[Globus XIO version])
 AC_DEFINE_UNQUOTED(TYPEOF_MPIG_ALIGNED_T,${TYPEOF_MPIG_ALIGNED_T:?},[type to use insure proper memory alignment for all types])
 dnl AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T:?},[size of the type used for aligning memory accesses])
 dnl AC_DEFINE_UNQUOTED(MEMALIGN_MPIG_ALIGNED_T,${MEMALIGN_MPIG_ALIGNED_T:?},[memory alignment of MPIG_ALIGNED_T])

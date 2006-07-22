@@ -12,7 +12,7 @@
 /*
  * expose the communication module's vtable so that it is accessible to other modules in the device
  */
-extern const mpig_cm_vtable_t mpig_cm_other_vtable;
+extern struct mpig_cm mpig_cm_other;
 
 
 /*

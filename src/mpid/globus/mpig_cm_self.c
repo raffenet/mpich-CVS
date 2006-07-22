@@ -22,13 +22,13 @@
 /**********************************************************************************************************************************
 				      BEGIN MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
 **********************************************************************************************************************************/
-MPIG_STATIC mpig_vc_t * mpig_cm_self_vc = NULL;
+static mpig_vc_t * mpig_cm_self_vc = NULL;
 
-MPIG_STATIC int mpig_cm_self_send(
+static int mpig_cm_self_send(
     mpig_request_type_t type, const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, int ctx, MPID_Comm * comm,
     MPID_Request ** sreqp);
 
-MPIG_STATIC void mpig_cm_self_buffer_copy(
+static void mpig_cm_self_buffer_copy(
     const void * const sbuf, int scnt, MPI_Datatype sdt, int * smpi_errno,
     void * const rbuf, int rcnt, MPI_Datatype rdt, MPIU_Size_t * rsz, int * rmpi_errno);
 /**********************************************************************************************************************************
@@ -39,32 +39,40 @@ MPIG_STATIC void mpig_cm_self_buffer_copy(
 /**********************************************************************************************************************************
 					      BEGIN COMMUNICATION MODULE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC int mpig_cm_self_init(int * argc, char *** argv);
+static int mpig_cm_self_init(mpig_cm_t * cm, int * argc, char *** argv);
 
-MPIG_STATIC int mpig_cm_self_finalize(void);
+static int mpig_cm_self_finalize(mpig_cm_t * cm);
 
-MPIG_STATIC int mpig_cm_self_add_contact_info(mpig_bc_t * bc);
+static int mpig_cm_self_add_contact_info(mpig_cm_t * cm, mpig_bc_t * bc);
 
-MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * vc);
+static int mpig_cm_self_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * vc);
 
-MPIG_STATIC int mpig_cm_self_select_module(mpig_vc_t * vc, bool_t * selected);
+static void mpig_cm_self_destruct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * vc);
+
+static int mpig_cm_self_select_comm_method(mpig_cm_t * cm, mpig_vc_t * vc, bool_t * selected);
 
 #if FALSE
-MPIG_STATIC int mpig_cm_self_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
-    unsigned * levels_out);
+static int mpig_cm_self_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * vc1, const mpig_vc_t * vc2,
+    unsigned levels_in, unsigned * levels_out);
 #endif
 
-const mpig_cm_vtable_t mpig_cm_self_vtable =
+static mpig_cm_vtable_t mpig_cm_self_vtable =
 {
-    MPIG_CM_TYPE_SELF,
-    "self",
     mpig_cm_self_init,
     mpig_cm_self_finalize,
     mpig_cm_self_add_contact_info,
-    mpig_cm_self_extract_contact_info,
-    mpig_cm_self_select_module,
+    mpig_cm_self_construct_vc_contact_info,
+    mpig_cm_self_destruct_vc_contact_info,
+    mpig_cm_self_select_comm_method,
     NULL, /*mpig_cm_self_get_vc_compatability */
     mpig_cm_vtable_last_entry
+};
+
+mpig_cm_t mpig_cm_self =
+{
+    MPIG_CM_TYPE_SELF,
+    "self",
+    &mpig_cm_self_vtable
 };
 /**********************************************************************************************************************************
 					       END COMMUNICATION MODULE API VTABLE
@@ -74,34 +82,34 @@ const mpig_cm_vtable_t mpig_cm_self_vtable =
 /**********************************************************************************************************************************
 						    BEGIN VC CORE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC int mpig_cm_self_adi3_send(
+static int mpig_cm_self_adi3_send(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_isend(
+static int mpig_cm_self_adi3_isend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_rsend(
+static int mpig_cm_self_adi3_rsend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_irsend(
+static int mpig_cm_self_adi3_irsend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_ssend(
+static int mpig_cm_self_adi3_ssend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_issend(
+static int mpig_cm_self_adi3_issend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_recv(
+static int mpig_cm_self_adi3_recv(
     void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * status,
     MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_irecv(
+static int mpig_cm_self_adi3_irecv(
     void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,int ctxoff, MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * sreq);
+static int mpig_cm_self_adi3_cancel_send(MPID_Request * sreq);
 
-MPIG_STATIC int mpig_cm_self_vc_recv_any_source(mpig_vc_t * vc, MPID_Request * rreq);
+static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * vc, MPID_Request * rreq);
 
 
 MPIG_STATIC mpig_vc_vtable_t mpig_cm_self_vc_vtable =
@@ -137,7 +145,7 @@ MPIG_STATIC mpig_vc_vtable_t mpig_cm_self_vc_vtable =
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_init
-MPIG_STATIC int mpig_cm_self_init(int * const argc, char *** const argv)
+static int mpig_cm_self_init(mpig_cm_t * const cm, int * const argc, char *** const argv)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -170,7 +178,7 @@ MPIG_STATIC int mpig_cm_self_init(int * const argc, char *** const argv)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_finalize
-MPIG_STATIC int mpig_cm_self_finalize(void)
+static int mpig_cm_self_finalize(mpig_cm_t * const cm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -203,7 +211,7 @@ MPIG_STATIC int mpig_cm_self_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_add_contact_info
-MPIG_STATIC int mpig_cm_self_add_contact_info(mpig_bc_t * const bc)
+static int mpig_cm_self_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * const bc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char pid[64];
@@ -238,13 +246,13 @@ MPIG_STATIC int mpig_cm_self_add_contact_info(mpig_bc_t * const bc)
 
 
 /*
- * <mpi_errno> mpig_cm_self_extract_contact_info([IN/MOD] vc)
+ * <mpi_errno> mpig_cm_self_construct_vc_contact_info([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_self_extract_contact_info
-MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * const vc)
+#define FUNCNAME mpig_cm_self_construct_vc_contact_info
+static int mpig_cm_self_construct_vc_contact_info(mpig_cm_t * const cm, mpig_vc_t * const vc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_bc_t * bc;
@@ -254,15 +262,15 @@ MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * const vc)
     unsigned long pid;
     int rc;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_extract_contact_info);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_construct_vc_contact_info);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_extract_contact_info);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_construct_vc_contact_info);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-    vc->ci.self.hostname = NULL;
-    vc->ci.self.pid = 0;
+    vc->cms.self.hostname = NULL;
+    vc->cms.self.pid = 0;
 
     bc = mpig_vc_get_bc(vc);
 
@@ -282,19 +290,19 @@ MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * const vc)
     MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 
     /* if all when well, copy the extracted contact information into the VC */
-    vc->ci.self.hostname = MPIU_Strdup(hostname_str);
-    MPIU_ERR_CHKANDJUMP1((vc->ci.self.hostname == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+    vc->cms.self.hostname = MPIU_Strdup(hostname_str);
+    MPIU_ERR_CHKANDJUMP1((vc->cms.self.hostname == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
 	"name of remote host");
-    vc->ci.self.pid = pid;
+    vc->cms.self.pid = pid;
 
 #if FALSE
     /* set the topology information.  NOTE: this may seem a bit wacky since the PROC level is set even if the SELF module is
        not responsible for the VC; however, the topology information is defined such that a level set if it is _possible_ for
        the module to perform the communication regardless of whether it does so or not. */
-    vc->ci.topology_levels |= MPIG_TOPOLOGY_LEVEL_PROC_MASK;
-    if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_PROC)
+    vc->cms.topology_levels |= MPIG_TOPOLOGY_LEVEL_PROC_MASK;
+    if (vc->cms.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_PROC)
     {
-	vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC + 1;
+	vc->cms.topology_num_levels = MPIG_TOPOLOGY_LEVEL_PROC + 1;
     }
 #endif
     
@@ -304,45 +312,76 @@ MPIG_STATIC int mpig_cm_self_extract_contact_info(mpig_vc_t * const vc)
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc,
 	mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_extract_contact_info);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_construct_vc_contact_info);
     return mpi_errno;
 
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
+	MPIU_Free(vc->cms.self.hostname);
+	vc->cms.self.pid = 0;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_self_extract_contact_info() */
+/* mpig_cm_self_construct_vc_contact_info() */
 
 
 /*
- * <mpi_errno> mpig_cm_self_select_module([IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_self_destruct_vc_contact_info([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_self_select_module
-MPIG_STATIC int mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const selected)
+#define FUNCNAME mpig_cm_self_destruct_vc_contact_info
+static void mpig_cm_self_destruct_vc_contact_info(mpig_cm_t * const cm, mpig_vc_t * const vc)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_destruct_vc_contact_info);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_destruct_vc_contact_info);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+
+    MPIU_Free(vc->cms.self.hostname);
+    vc->cms.self.hostname = NULL;
+    vc->cms.self.pid = 0;
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_destruct_vc_contact_info);
+    return;
+}
+/* mpig_cm_self_destruct_vc_contact_info() */
+
+
+/*
+ * <mpi_errno> mpig_cm_self_select_comm_method([IN/MOD] vc, [OUT] selected)
+ *
+ * see documentation in mpidpre.h.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_self_select_comm_method
+static int mpig_cm_self_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * const vc, bool_t * const selected)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t vc_was_inuse;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_select_module);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_select_comm_method);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_select_module);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_select_comm_method);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     *selected = FALSE;
 
     /* determine if communication is possible */
-    if (mpig_vc_get_cm_type(vc) != MPIG_CM_TYPE_UNDEFINED) goto fn_return;
-    if (vc->ci.self.hostname == NULL || strcmp(vc->ci.self.hostname, mpig_process.my_hostname) != 0) goto fn_return;
-    if (vc->ci.self.pid != (unsigned long) mpig_process.my_pid) goto fn_return;
+    if (mpig_vc_get_cm(vc) != NULL) goto fn_return;
+    if (vc->cms.self.hostname == NULL || strcmp(vc->cms.self.hostname, mpig_process.my_hostname) != 0) goto fn_return;
+    if (vc->cms.self.pid != (unsigned long) mpig_process.my_pid) goto fn_return;
 
     /* initialize the CM self fields in the VC object */
-    mpig_vc_set_cm_type(vc, MPIG_CM_TYPE_SELF);
+    mpig_vc_set_cm(vc, cm);
     mpig_vc_set_vtable(vc, &mpig_cm_self_vc_vtable);
 
     /* set the selected flag to indicate that the "self" communication module has accepted responsibility for the VC */
@@ -359,10 +398,10 @@ MPIG_STATIC int mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mmpi_errno=" MPIG_ERRNO_FMT,
 	(MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_select_module);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_select_comm_method);
     return mpi_errno;
 }
-/* mpig_cm_self_select_module() */
+/* mpig_cm_self_select_comm_method() */
 
 
 #if FALSE
@@ -373,8 +412,8 @@ MPIG_STATIC int mpig_cm_self_select_module(mpig_vc_t * const vc, bool_t * const 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_get_vc_compatability
-MPIG_STATIC int mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
-    unsigned levels_in, unsigned * const levels_out)
+static int mpig_cm_self_get_vc_compatability(mpig_cm_t * const cm, const mpig_vc_t * const vc1,
+    const mpig_vc_t * const vc2, unsigned levels_in, unsigned * const levels_out)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -418,7 +457,7 @@ MPIG_STATIC int mpig_cm_self_get_vc_compatability(const mpig_vc_t * const vc1, c
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_send
-MPIG_STATIC int mpig_cm_self_adi3_send(
+static int mpig_cm_self_adi3_send(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -460,7 +499,7 @@ MPIG_STATIC int mpig_cm_self_adi3_send(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_isend
-MPIG_STATIC int mpig_cm_self_adi3_isend(
+static int mpig_cm_self_adi3_isend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -491,7 +530,7 @@ MPIG_STATIC int mpig_cm_self_adi3_isend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_rsend
-MPIG_STATIC int mpig_cm_self_adi3_rsend(
+static int mpig_cm_self_adi3_rsend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -533,7 +572,7 @@ MPIG_STATIC int mpig_cm_self_adi3_rsend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_irsend
-MPIG_STATIC int mpig_cm_self_adi3_irsend(
+static int mpig_cm_self_adi3_irsend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -564,7 +603,7 @@ MPIG_STATIC int mpig_cm_self_adi3_irsend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_ssend
-MPIG_STATIC int mpig_cm_self_adi3_ssend(
+static int mpig_cm_self_adi3_ssend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -606,7 +645,7 @@ MPIG_STATIC int mpig_cm_self_adi3_ssend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_issend
-MPIG_STATIC int mpig_cm_self_adi3_issend(
+static int mpig_cm_self_adi3_issend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -637,7 +676,7 @@ MPIG_STATIC int mpig_cm_self_adi3_issend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_recv
-MPIG_STATIC int mpig_cm_self_adi3_recv(
+static int mpig_cm_self_adi3_recv(
     void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPI_Status * const status, MPID_Request ** const rreqp)
 {
@@ -668,7 +707,7 @@ MPIG_STATIC int mpig_cm_self_adi3_recv(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_irecv
-MPIG_STATIC int mpig_cm_self_adi3_irecv(
+static int mpig_cm_self_adi3_irecv(
     void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const rreqp)
 {
@@ -771,7 +810,7 @@ MPIG_STATIC int mpig_cm_self_adi3_irecv(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_adi3_cancel_send
-MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * const sreq)
+static int mpig_cm_self_adi3_cancel_send(MPID_Request * const sreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -815,7 +854,7 @@ MPIG_STATIC int mpig_cm_self_adi3_cancel_send(MPID_Request * const sreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_vc_recv_any_source
-MPIG_STATIC int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * const rreq)
+static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * const rreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq;
@@ -889,7 +928,7 @@ MPIG_STATIC int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Reque
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_send
-MPIG_STATIC int mpig_cm_self_send(
+static int mpig_cm_self_send(
     const mpig_request_type_t type, const void * const buf, const int cnt, MPI_Datatype dt, const int rank,
     const int tag, const int ctx, MPID_Comm * const comm, MPID_Request ** const sreqp)
 {
@@ -1028,7 +1067,7 @@ MPIG_STATIC int mpig_cm_self_send(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_buffer_copy
-MPIG_STATIC void mpig_cm_self_buffer_copy(
+static void mpig_cm_self_buffer_copy(
     const void * const sbuf, const int scnt, const MPI_Datatype sdt, int * const smpi_errno,
     void * const rbuf, const int rcnt, const MPI_Datatype rdt, MPIU_Size_t * const rsz, int * const rmpi_errno)
 {

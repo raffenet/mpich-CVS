@@ -10,8 +10,8 @@
 
 MPIG_STATIC globus_mutex_t mpig_recvq_mutex;
 
-#define mpig_recvq_mutex_create()	globus_mutex_init(&mpig_recvq_mutex, NULL)
-#define mpig_recvq_mutex_destroy()	globus_mutex_destroy(&mpig_recvq_mutex)
+#define mpig_recvq_mutex_construct()	globus_mutex_init(&mpig_recvq_mutex, NULL)
+#define mpig_recvq_mutex_destruct()	globus_mutex_destroy(&mpig_recvq_mutex)
 #define mpig_recvq_mutex_lock()							\
 {										\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_RECVQ,	\
@@ -50,7 +50,7 @@ int mpig_recvq_init(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_recvq_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "entering"));
 
-    mpig_recvq_mutex_create();
+    mpig_recvq_mutex_construct();
     mpig_recvq_posted_head = NULL;
     mpig_recvq_posted_tail = NULL;
     mpig_recvq_unexp_head = NULL;
@@ -83,7 +83,7 @@ int mpig_recvq_finalize(void)
     mpig_recvq_posted_tail = NULL;
     mpig_recvq_unexp_head = NULL;
     mpig_recvq_unexp_tail = NULL;
-    mpig_recvq_mutex_destroy();
+    mpig_recvq_mutex_destruct();
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_RECVQ, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_recvq_destroy);

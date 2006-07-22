@@ -12,13 +12,13 @@
 /*
  * expose the communication module's vtable so that it is accessible to other modules in the device
  */
-extern const mpig_cm_vtable_t mpig_cm_self_vtable;
+extern struct mpig_cm mpig_cm_self;
 
 
 /*
- * define the connect information structure to be included in a VC
+ * define the structure to be included in the communication method structure (CMS) of the VC object
  */
-#define MPIG_VC_CI_SELF_DECL						\
+#define MPIG_VC_CMS_SELF_DECL						\
 struct mpig_ci_self_vc							\
 {									\
     /* name of hostname running the process */				\

@@ -1,8 +1,22 @@
 #!@SHELL@
 
+error()
+{
+    echo ""
+    echo "ERROR: $2"
+    exit $1
+}
+
 usage()
 {
-    echo "usage: $0 [-dumprsl] [-env <var>=<value>] [-n <nprocs>] <pgm> [args...]"
+    if test -n "$2" ; then
+	echo ""
+	echo "ERROR: $2"
+    fi
+    echo ""
+    echo "usage: $0 [-dump-rsl] [-env <var>=<value>] [-n <nprocs>] <pgm> [args...]"
+    echo "       $0 -rsl-file=<file>"
+    echo "       $0 -xml-file=<file>"
     exit $1
 }
 
@@ -10,7 +24,7 @@ quote()
 {
     IFS=""
     params="$*"
-    params="'`echo "$params" | sed -e "s/'/'"'"'"'"'"'"'/g"`'";
+    params="'"`echo "$params" | sed -e "s/'/'"'"'"'"'"'"'/g"`"'"
     echo $params
 }
 
@@ -18,40 +32,54 @@ globus_args_quote()
 {
     IFS=""
     params="$*"
-    params='"'`echo "$params" | sed -e 's/\"/\"\"/g'`'"';
+    params='"'`echo "$params" | sed -e 's/\"/\"\"/g'`'"'
     echo $params
 }
 
+rsl_file=""
+xml_file=""
 env_line=""
-dumprsl="no"
+dump_rsl="no"
 nprocs=1
+nargs=$#
 while test $# -gt 0 ; do
     case "$1" in
-	-h|--help)
+	-h | --help)
 	    usage 0
 	    ;;
-	-n|-np)
+	-xml-file=* | --xml-file=* | -globus-xml=* | --globus-xml=* | -globus-xml-file=* | --globus-xml-file=* | \
+	    -xmlfile=* | --xmlfile=* | -globusxml=* | --globusxml=* | -globusxmlfile=* | --globusxmlfile=*)
+	    xml_option=`echo "$1" | sed -e 's/^\([^=]*\)=.*/\1/'`
+	    xml_file=`echo "$1" | sed -e 's/^[^=]*=//'`
+	    shift
+	    ;;
+	-rsl-file=* | --rsl-file=* | -globus-rsl=* | --globus-rsl=* | -globus-rsl-file=* | --globus-rsl-file=* | \
+	    -rslfile | --rslfile | -globusrsl=* | --globusrsl=* | -globusrslfile=* | --globusrslfile=*)
+	    rsl_option=`echo "$1" | sed -e 's/^\([^=]*\)=.*/\1/'`
+	    rsl_file=`echo "$1" | sed -e 's/^[^=]*=//'`
+	    shift
+	    ;;
+	-n | -np)
 	    nprocs=`echo $2 | sed 's/[^0-9]*//g'`
 	    shift 2
 	    ;;
-	-dumprsl | --dumprsl | -dump-rsl | --dump-rsl | -globusdumprsl | --globusdumprsl | -globus-dumprsl | --globus-dumprsl | \
-	    -globus-dump-rsl | --globus-dump-rsl)
-	    dumprsl=true
+	-dump-rsl | --dump-rsl | -globus-dumprsl | --globus-dumprsl | -globus-dump-rsl | --globus-dump-rsl | \
+	    -dumprsl | --dumprsl | -globusdumprsl | --globusdumprsl)
+	    dump_rsl=true
 	    shift
 	    ;;
 	-env)
 	    var=`echo "$2" | sed -e 's/^\([^=]*\)=.*/\1/'`
 	    if test -z "$var" ; then
-		echo "ERROR: invalid -env syntax"
-		usage 1
+		usage 1 "invalid -env syntax"
 	    fi
 	    value=`echo "$2" | sed -e 's/^[^=]*=//'`
 	    env_line="$env_line ($var "`globus_args_quote "$value"`")"
 	    shift 2
 	    ;;
 	-*)
-	    echo 'ERROR: unknown option "'$1'"'
-	    usage 1
+	    echo 
+	    usage 1 'unknown option "'$1'"'
 	    ;;
 	*)
 	    break
@@ -59,41 +87,76 @@ while test $# -gt 0 ; do
     esac
 done
 
-pgm="$1"
-shift
-
-if test ! -f "$pgm" ; then
-    echo "ERROR: program "'"'"$pgm"'"'" not found"
-    exit 1
-fi
-
-if test ! -x "$pgm" ; then
-    echo "ERROR: "'"'"$pgm"'"'" is not executable"
-    exit 1
-fi
-
-if test -z "$MPIEXEC_GRAM_CONTACT" ; then
-    echo "ERROR: the environment variable MPIEXEC_GRAM_CONTACT is not set"
-    exit 1
-fi
-
 if test -z "$GLOBUS_LOCATION" ; then
-    echo "ERROR: the environment variable GLOBUS_LOCATION is not set"
-    exit 1
+    error 1 "the environment variable GLOBUS_LOCATION is not set"
 fi
 
 if test ! -d "$GLOBUS_LOCATION" ; then
-    echo "ERROR: the environment variable GLOBUS_LOCATION does not point at a valid directory"
-    exit 1
+    error 1 "the environment variable GLOBUS_LOCATION does not point at a valid directory"
 fi
 
-if test ! -x "$GLOBUS_LOCATION/bin/globusrun" ; then
-    echo "ERROR: GLOBUS_LOCATION/bin/globusrun does not exist"
-    exit 1
+#
+# run job using the XML file supplied by the user
+#
+if test -n "$xml_file" ; then
+    if test $nargs -ne 1 ; then
+	usage 1 "$xml_option may not be used with any other options"
+    fi
+
+    if test ! -x "$GLOBUS_LOCATION/bin/globusrun-ws" ; then
+        error 1 "GLOBUS_LOCATION/bin/globusrun-ws does not exist"
+    fi
+
+    # XML job description  must set the environment variable MPIG_PM_MODULE to "ws"
+
+    $GLOBUS_LOCATION/bin/globusrun-ws -w -f $xml_file
+    exit $?
 fi
 
-rsl=.mpich2-globus-rsl.$$
-curpath=`pwd`
+#
+# run job using the RSL file supplied by the user
+#
+if test -n "$rsl_file" ; then
+    if test $nargs -ne 1 ; then
+	usage 1 "$rsloption may not be used with any other options"
+    fi
+
+    if test ! -x "$GLOBUS_LOCATION/bin/globusrun" ; then
+        error 1 "GLOBUS_LOCATION/bin/globusrun does not exist"
+    fi
+
+    # RSL job description must set the environment variable MPIG_PM_MODULE to "gk"
+
+    $GLOBUS_LOCATION/bin/globusrun -w -f $rsl_file
+    exit $?
+fi
+
+#
+# run job constructing an RSL file from the command line parameters
+#
+pgm="$1"
+shift
+
+if test "$dump_rsl" = "no" ; then
+    if test ! -f "$pgm" ; then
+        error 1 'program "'"$pgm"'" not found'
+    fi
+    
+    if test ! -x "$pgm" ; then
+        error 1 '"'"$pgm"'" is not executable'
+    fi
+    
+    if test -z "$MPIEXEC_GRAM_CONTACT" ; then
+        error 1 "the environment variable MPIEXEC_GRAM_CONTACT is not set"
+    fi
+    
+    if test ! -x "$GLOBUS_LOCATION/bin/globusrun" ; then
+        error 1 "GLOBUS_LOCATION/bin/globusrun does not exist"
+    fi
+fi
+
+rsl_file=.mpich2-globus-rsl.$$
+cur_path=`pwd`
 args=""
 extras_line=""
 for arg ; do
@@ -107,15 +170,14 @@ if test -n "$MPIEXEC_TIMEOUT" ; then
     output=`test "$MPIEXEC_TIMEOUT" -gt 0 2>&1`
     result=$?
     if test -n "$output" ; then
-	echo "ERROR: MPIEXEC_TIMEOUT must contain a positive integer"
-	exit 1
+	error 1 "MPIEXEC_TIMEOUT must contain a positive integer"
     fi
     if test $result -ne 0 ; then
-	echo "ERROR: MPIEXEC_TIMEOUT must contain a positive integer"
-	exit 1
+	error "MPIEXEC_TIMEOUT must contain a positive integer"
     fi
     maxwalltime=`expr \( $MPIEXEC_TIMEOUT + 59 \) / 60`
     extras_line="${extras_line}(maxwalltime=$maxwalltime)"
+    env_line="$env_line (MPIG_TEST true)"
 fi
 
 if test "@MPIG_VMPI@" = "yes" ; then
@@ -123,33 +185,39 @@ if test "@MPIG_VMPI@" = "yes" ; then
 fi
 
 if test -n "$MPIG_DEBUG_LEVELS" ; then
-    env_line="$env_line (MPIG_DEBUG_LEVELS "'"'"$MPIG_DEBUG_LEVELS"'")'
+    env_line="$env_line (MPIG_DEBUG_LEVELS `globus_args_quote "$MPIG_DEBUG_LEVELS"`)"
     file_basename="DEBUG-`basename $pgm`"
-    env_line="$env_line (MPIG_DEBUG_FILE_BASENAME "'"'"$file_basename"'")'
+    env_line="$env_line (MPIG_DEBUG_FILE_BASENAME `globus_args_quote "$file_basename"`)"
     if test -n "$MPIG_DEBUG_TIMED_LEVELS" ; then
-	env_line="$env_line (MPIG_DEBUG_TIMED_LEVELS "'"'"$MPIG_DEBUG_TIMED_LEVELS"'")'
+	env_line="$env_line (MPIG_DEBUG_TIMED_LEVELS `globus_args_quote "$MPIG_DEBUG_TIMED_LEVELS"`)"
     fi
 fi
 
-cat >$rsl <<EOF
+cat >$rsl_file <<EOF
 +
 (  &(resourceManagerContact="$MPIEXEC_GRAM_CONTACT")
     (count=$nprocs)
     (label="subjob 0")
     (environment=
 	(GLOBUS_DUROC_SUBJOB_INDEX 0)
+	(MPIG_PM_MODULE "gk")
 	(LD_LIBRARY_PATH "$LD_LIBRARY_PATH")
 	$env_line
     )
-    (directory="$curpath")
+    (directory="$cur_path")
     (executable="$pgm")
     $extras_line
 )
 EOF
 
-if test "$dumprsl" = "no" ; then
-    $GLOBUS_LOCATION/bin/globusrun -w -f $rsl
+if test "$dump_rsl" = "no" ; then
+    $GLOBUS_LOCATION/bin/globusrun -w -f $rsl_file
+    exit_status=$?
 else
-    cat $rsl
+    cat $rsl_file
+    exit_status=0
 fi
-rm -f $rsl
+
+rm -f $rsl_file
+
+exit $exit_status

@@ -38,7 +38,7 @@ int mpig_bc_copy(const mpig_bc_t * const orig_bc, mpig_bc_t * const copy_bc)
     str = MPIU_Strdup(orig_bc->str_begin);
     MPIU_ERR_CHKANDJUMP1((str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "duplicate business card");
 
-    if (copy_bc->str_begin != NULL) MPIU_Free(copy_bc->str_begin);
+    MPIU_Free(copy_bc->str_begin);
     
     copy_bc->str_begin = str;
     copy_bc->str_size = strlen(copy_bc->str_begin);
@@ -207,7 +207,7 @@ int mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, char
     
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
-	if (val_str != NULL) MPIU_Free(val_str);
+	MPIU_Free(val_str);
 	*flag = FALSE;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
@@ -339,6 +339,8 @@ int mpig_bc_deserialize_object(const char * const str, mpig_bc_t * const bc)
     new_str = MPIU_Strdup(str);
     MPIU_ERR_CHKANDJUMP1((new_str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "business card string");
 
+    MPIU_Free(bc->str_begin);
+    
     /*
      * str_end should point at the terminating NULL, not the last character, so one (1) is not subtracted.  likewise, one (1) is
      * added to str_size.

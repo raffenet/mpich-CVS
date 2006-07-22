@@ -558,16 +558,17 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
 	(((unsigned) 1 << level) & mpig_vc_get_topology_levels(vc1) & mpig_vc_get_topology_levels(vc2))));
     if (((unsigned) 1 << level) & mpig_vc_get_topology_levels(vc1) & mpig_vc_get_topology_levels(vc2))
     {
-	for (n = 0; n < mpig_cm_vtables_num_entries; n++)
+	for (n = 0; n < mpig_cm_table_num_entries; n++)
 	{
-	    if (mpig_cm_vtables[n]->get_vc_compatability != NULL)
+	    if (mpig_cm_get_vtable(mpig_cm_table[n])->get_vc_compatability != NULL)
 	    {
-		mpi_errno = mpig_cm_vtables[n]->get_vc_compatability(vc1, vc2, ((unsigned) 1 << level), &levels_out);
+		mpi_errno = mpig_cm_get_vtable(mpig_cm_table[n])->get_vc_compatability(mpig_cm_table[n], vc1, vc2,
+		    ((unsigned) 1 << level), &levels_out);
 		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|get_vc_compatability",
-		    "**globus|get_vc_compatability %s", mpig_cm_vtables[n]->name);
+		    "**globus|get_vc_compatability %s", mpig_cm_get_name(mpig_cm_table[n]));
 		
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_TOPO, "cm=%s, level_mask=0x%02x, levels_out=0x%02x", mpig_cm_vtables[n]->name,
-		    ((unsigned) 1 << level), levels_out));
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_TOPO, "cm=%s, level_mask=0x%02x, levels_out=0x%02x",
+		    mpig_cm_get_name(mpig_cm_table[n]), ((unsigned) 1 << level), levels_out));
 		    
 		if (levels_out)
 		{

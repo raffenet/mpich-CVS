@@ -32,24 +32,6 @@
 #undef free
 #endif
 
-/*
- * Function enter/exit macro, used primarily for logging, but can be used for other things.
- */
-#define FCNAME fcname
-
-#if defined(MPIG_DEBUG)
-#define MPIG_STATE_DECL(a_)
-#define MPIG_FUNC_ENTER(a_) MPIG_FUNCNAME_CHECK()
-#define MPIG_FUNC_EXIT(a_) MPIG_FUNCNAME_CHECK()
-#define MPIG_RMA_FUNC_ENTER(a_) MPIG_FUNCNAME_CHECK()
-#define MPIG_RMA_FUNC_EXIT(a_) MPIG_FUNCNAME_CHECK()
-#else
-#define MPIG_STATE_DECL(a_) MPIDI_STATE_DECL(a_)
-#define MPIG_FUNC_ENTER(a_) MPIDI_FUNC_ENTER(a_)
-#define MPIG_FUNC_EXIT(a_) MPIDI_FUNC_EXIT(a_)
-#define MPIG_RMA_FUNC_ENTER(a_) MPIDI_RMA_FUNC_ENTER(a_)
-#define MPIG_RMA_FUNC_EXIT(a_) MPIDI_RMA_FUNC_EXIT(a_)
-#endif
 
 #define MPIG_QUOTE(a_) MPIG_QUOTE2(a_)
 #define MPIG_QUOTE2(a_) #a_
@@ -63,7 +45,7 @@
 
 
 #if defined(MPIG_DEBUG)
-#define MPIG_STATIC static
+#define MPIG_STATIC
 #else
 #define MPIG_STATIC static
 #endif
@@ -78,13 +60,22 @@ int gethostname(char *name, size_t len);
 # endif
 
 
+#define mpig_get_globus_error_msg(grc_) (globus_error_print_chain(globus_error_peek(grc_)))
+
+
 /**********************************************************************************************************************************
 					       BEGIN COMMUNICATION MODULE SECTION
 **********************************************************************************************************************************/
-const mpig_cm_vtable_t * const * const mpig_cm_vtables;
-const int mpig_cm_vtables_num_entries;
+extern mpig_cm_t * const * const mpig_cm_table;
+extern const int mpig_cm_table_num_entries;
 
 char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif);
+
+#define mpig_cm_get_module_type(cm_) ((cm_)->module_type)
+
+#define mpig_cm_get_name(cm_) ((cm_)->name)
+
+#define mpig_cm_get_vtable(cm_) ((cm_)->vtable)
 /**********************************************************************************************************************************
 						END COMMUNICATION MODULE SECTION
 **********************************************************************************************************************************/
@@ -166,6 +157,21 @@ void mpig_datatype_get_my_ctype(const MPI_Datatype dt, mpig_ctype_t * ctype);
     mpig_datatype_get_src_ctype(vc__, (dt_), (ctype_p_));					\
 }
 
+#define mpig_datatype_get_size(dt_, dt_size_p_)			\
+{								\
+    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)		\
+    {								\
+	*(dt_size_p_) = MPID_Datatype_get_basic_size(dt_);	\
+    }								\
+    else							\
+    {								\
+	MPID_Datatype * dtp__;					\
+								\
+	MPID_Datatype_get_ptr((dt_), dtp__);			\
+	*(dt_size_p_) = dtp__->size;				\
+    }								\
+}
+
 #define mpig_datatype_get_info(/* MPI_Datatype */ dt_, /* bool_t ptr */ dt_contig_, /* MPIU_Size_t ptr */ dt_size_,	\
     /* MPIU_Size_t ptr */ dt_nblks_, /* MPI_Aint ptr */ dt_true_lb_)							\
 {															\
@@ -221,12 +227,12 @@ void mpig_request_alloc_finalize(void);
     }								\
     globus_mutex_unlock(&mpig_request_alloc_mutex);		\
 								\
-    mpig_request_mutex_create(*(req_p_));			\
+    mpig_request_mutex_construct(*(req_p_));			\
 }
 
 #define mpig_request_free(req_)						\
 {									\
-    mpig_request_mutex_destroy(req_);					\
+    mpig_request_mutex_destruct(req_);					\
 									\
     /* release the request back to the object allocation pool */	\
     globus_mutex_lock(&mpig_request_alloc_mutex);			\
@@ -399,8 +405,8 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 /*
  * thread safety and release consistency macros
  */
-#define mpig_request_mutex_create(req_)		globus_mutex_init(&(req_)->dev.mutex, NULL)
-#define mpig_request_mutex_destroy(req_)	globus_mutex_destroy(&(req_)->dev.mutex)
+#define mpig_request_mutex_construct(req_)	globus_mutex_init(&(req_)->dev.mutex, NULL)
+#define mpig_request_mutex_destruct(req_)	globus_mutex_destroy(&(req_)->dev.mutex)
 #define mpig_request_mutex_lock(req_)										\
 {														\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_REQ, "request - acquiring mutex: req="	\
@@ -428,9 +434,14 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
  * MT-RC-NOTE: on release consistent systems, if the request object is to be used by any thread other than the one in which it
  * was created, then the construction of the object must be followed by a RC release or mutex unlock.  for systems using super
  * lazy release consistency models, such as the one used in Treadmarks, it would be necessary to perform an acquire/lock in the
- * mpig_vc_construct() immediately after creating the mutex.  The calling routine would need to perform a release after the temp
- * VC was completely initialized.  we have chosen to assume that none of the the systems upon which MPIG will run have that lazy
- * of a RC model.
+ * mpig_request_construct() immediately after creating the mutex.  The calling routine would need to perform a release after the
+ * temp VC was completely initialized.  we have chosen to assume that none of the the systems upon which MPIG will run have that
+ * lazy of a RC model.
+ */
+
+/*
+ * SUPER-IMPORTANT-MT-NOTE: see the note at the top of the request section in mpidpost.h concerning the creation and destruction
+ * of requests from internal device threads.
  */
 #define mpig_request_construct(req_)						\
 {										\
@@ -456,6 +467,10 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     (req_)->dev.next = NULL;							\
 }
 
+/*
+ * SUPER-IMPORTANT-MT-NOTE: see the note at the top of the request section in mpidpost.h concerning the creation and destruction
+ * of requests from internal device threads.
+ */
 #define mpig_request_destruct(req_)							\
 {											\
     /* call communication module's request destruct function */				\
@@ -481,7 +496,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     (req_)->status.mpig_dc_format = NEXUS_DC_FORMAT_UNKNOWN;				\
 											\
     /* reset device fields */								\
-    mpig_request_i_set_type((req_), MPIG_REQUEST_TYPE_UNDEFINED);			\
+    mpig_request_i_set_type((req_), MPIG_REQUEST_TYPE_FIRST);				\
     mpig_request_i_set_buffer((req_), NULL, 0, MPI_DATATYPE_NULL);			\
     mpig_request_i_set_envelope((req_), MPI_PROC_NULL, MPI_ANY_TAG, -1);		\
     /* (req_)->dev.dtp = NULL; -- cleared by mpig_request_release_dt() */		\
@@ -584,8 +599,8 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 /**********************************************************************************************************************************
 						   BEGIN PROCESS DATA SECTION
 **********************************************************************************************************************************/
-#define mpig_process_mutex_create()	globus_mutex_init(&mpig_process.mutex, NULL)
-#define mpig_process_mutex_destroy()	globus_mutex_destroy(&mpig_process.mutex)
+#define mpig_process_mutex_construct()	globus_mutex_init(&mpig_process.mutex, NULL)
+#define mpig_process_mutex_destruct()	globus_mutex_destroy(&mpig_process.mutex)
 #define mpig_process_mutex_lock()					\
 {									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
@@ -600,9 +615,6 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
 		       "process local data - mutex released"));		\
 }
-
-#define mpig_process_rc_acq(needed_)	mpig_process_mutex_lock()
-#define mpig_process_rc_rel(needed_)	mpig_process_mutex_unlock()
 /**********************************************************************************************************************************
 						    END PROCESS DATA SECTION
 **********************************************************************************************************************************/
@@ -612,6 +624,9 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 						      BEGIN DATA CONVERSION
 **********************************************************************************************************************************/
 /*
+ * NOTE: the data conversion routines do not perform type conversion.  they expect the data (and data pointers) to match the type
+ * indicated by the routine name.
+ *
  * MT-RC-NOTE: the data conversion do not make any effort to insure that the data being converted has been acquired or that the
  * converted data is released.  it is the responsibility of the calling routine to perform any mutex lock/unlock or RC
  * acquire/release operations that are necessary to insure that data manipulated by these routines are visible by the necessary
@@ -904,7 +919,7 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->pos = 0;	\
 }
 
-#define mpig_databuf_get_ptr(dbuf_) ((char *)(dbuf_) + sizeof(mpig_databuf_t))
+#define mpig_databuf_get_base_ptr(dbuf_) ((char *)(dbuf_) + sizeof(mpig_databuf_t))
 
 #define mpig_databuf_get_pos_ptr(dbuf_) ((char *)(dbuf_) + sizeof(mpig_databuf_t) + ((mpig_databuf_t *)(dbuf_))->pos)
 
@@ -991,6 +1006,102 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
 
 
 /**********************************************************************************************************************************
+						   BEGIN STRING SPACE SECTION
+**********************************************************************************************************************************/
+typedef struct mpig_strspace
+{
+    char * base;
+    size_t size;
+    size_t eod;
+    size_t pos;
+}
+mpig_strspace_t;
+
+int mpig_strspace_grow(mpig_strspace_t * space, size_t growth);
+
+int mpig_strspace_import_string(mpig_strspace_t * space, const char * str);
+
+int mpig_strspace_add_element(mpig_strspace_t * space, const char * str, size_t growth);
+
+int mpig_strspace_extract_next_element(mpig_strspace_t * space, size_t growth, char ** str_p);
+
+#define mpig_strspace_construct(space_)	\
+{					\
+    (space_)->base = NULL;		\
+    (space_)->size = 0;			\
+    (space_)->eod = 0;			\
+    (space_)->pos = 0;			\
+}
+
+#define mpig_strspace_destruct(space_)	\
+{					\
+    MPIU_Free((space_)->base);		\
+    (space_)->base = NULL;		\
+    (space_)->size = 0;			\
+    (space_)->eod = 0;			\
+    (space_)->pos = 0;			\
+}
+
+#define mpig_strspace_reset(space_)	\
+{					\
+    (space_)->eod = 0;			\
+    (space_)->pos = 0;			\
+}
+
+#define mpig_strspace_get_base_ptr(space_) ((space_)->base)
+
+#define mpig_strspace_get_eod_ptr(space_) ((space_)->base + (space_)->eod)
+
+#define mpig_strspace_get_pos_ptr(space_) ((space_)->base + (space_)->pos)
+
+#define mpig_strspace_set_eod(space_, val_)	\
+{						\
+    (space_)->eod = (val_);			\
+}
+
+#define mpig_strspace_inc_eod(space_, val_)	\
+{						\
+    (space_)->eod += (val_);			\
+}
+
+#define mpig_strspace_dec_eod(space_, val_)	\
+{						\
+    (space_)->eod -= (val_);			\
+}
+
+#define mpig_strspace_set_pos(space_, val_)	\
+{						\
+    (space_)->pos = (val_);			\
+}
+
+#define mpig_strspace_inc_pos(space_, val_)	\
+{						\
+    (space_)->pos += (val_);			\
+}
+
+#define mpig_strspace_dec_pos(space_, val_)	\
+{						\
+    (space_)->pos -= (val_);			\
+}
+
+#define mpig_strspace_get_size(space_) ((space_)->size)
+
+#define mpig_strspace_get_eod(space_) ((space_)->eod)
+
+#define mpig_strspace_get_remaining_bytes(space_) ((space_)->eod - (space_)->pos)
+
+#define mpig_strspace_get_free_bytes(space_) ((space_)->size - (space_)->eod)
+
+#define mpig_strspace_free_extracted_element(elem_)	\
+{							\
+    MPIU_Free(elem_);					\
+}
+/**********************************************************************************************************************************
+						    END STRING SPACE SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
 						   BEGIN BUSINESS CARD SECTION
 **********************************************************************************************************************************/
 /*
@@ -1031,13 +1142,13 @@ int mpig_bc_deserialize_object(const char *, mpig_bc_t * bc);
     (bc_)->str_left = 0;	\
 }
 
-#define mpig_bc_destruct(bc_)					\
-{								\
-    if ((bc_)->str_begin != NULL) MPIU_Free((bc_)->str_begin);	\
-    (bc_)->str_begin = NULL;					\
-    (bc_)->str_end = NULL;					\
-    (bc_)->str_size = 0;					\
-    (bc_)->str_left = 0;					\
+#define mpig_bc_destruct(bc_)		\
+{					\
+    MPIU_Free((bc_)->str_begin);	\
+    (bc_)->str_begin = NULL;		\
+    (bc_)->str_end = NULL;		\
+    (bc_)->str_size = 0;		\
+    (bc_)->str_left = 0;		\
 }
 /**********************************************************************************************************************************
 						    END BUSINESS CARD SECTION
@@ -1047,11 +1158,19 @@ int mpig_bc_deserialize_object(const char *, mpig_bc_t * bc);
 /**********************************************************************************************************************************
 						BEGIN VIRTUAL CONNECTION SECTION
 **********************************************************************************************************************************/
-/* MT-NOTE: the following routine locks the VC and PG mutexes.  previous routines on the call stack must not be holding those
-   mutexes. */
-
+/* MT-NOTE: the following routine locks the VC and associated PG mutexes.  previous routines on the call stack must not be
+   holding those mutexes. */
 void mpig_vc_release_ref(mpig_vc_t * vc);
 
+/* MT-NOTE: the following routines assume the VC mutex is already held by the current context */
+int mpig_vc_construct_contact_info(mpig_vc_t * vc);
+
+void mpig_vc_destruct_contact_info(mpig_vc_t * vc);
+
+int mpig_vc_select_comm_method(mpig_vc_t * vc);
+
+/* NOTE: the following routine should never be called.  it exists only to help identify problems with missing entries in the VC
+   vtable defined by a communication module */
 double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif);
 
 /*
@@ -1066,38 +1185,41 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
  */
 #define mpig_vc_construct(vc_)				\
 {							\
-    mpig_vc_mutex_create(vc_);				\
+    mpig_vc_mutex_construct(vc_);			\
     mpig_vc_i_set_ref_count((vc_), 0);			\
-    mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_UNDEFINED);	\
+    mpig_vc_set_initialized((vc_), FALSE);		\
+    mpig_vc_set_cm((vc_), NULL);			\
     mpig_vc_set_vtable((vc_), NULL);			\
-    mpig_vc_set_pg_info((vc_), NULL, 0);		\
-    mpig_vc_set_pg_id((vc_), "(pg id not set)");	\
+    mpig_vc_set_pg_info((vc_), NULL, -1);		\
     mpig_bc_construct(mpig_vc_get_bc(vc_));		\
-    (vc_)->ci.topology_num_levels = -1;			\
-    (vc_)->ci.topology_levels = 0;			\
-    (vc_)->ci.lan_id = NULL;				\
-    (vc_)->ci.app_num = -1;				\
+    (vc_)->cms.ci_initialized = FALSE;			\
+    (vc_)->cms.topology_num_levels = -1;		\
+    (vc_)->cms.topology_levels = 0;			\
+    (vc_)->cms.lan_id = NULL;				\
+    (vc_)->cms.app_num = -1;				\
     (vc_)->lpid = -1;					\
 }
 
-#define mpig_vc_destruct(vc_)							\
-{										\
-    if ((vc_)->vtable != NULL && (vc_)->vtable->vc_destruct != NULL)		\
-    {										\
-	(vc_)->vtable->vc_destruct(vc_);					\
-    }										\
-    mpig_vc_i_set_ref_count((vc_), 0);						\
-    mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_UNDEFINED);				\
-    mpig_vc_set_vtable((vc_), NULL);						\
-    mpig_vc_set_pg_info((vc_), NULL, 0);					\
-    mpig_vc_set_pg_id((vc_), "");						\
-    mpig_bc_destruct(mpig_vc_get_bc(vc_));					\
-    (vc_)->ci.topology_num_levels = -1;						\
-    (vc_)->ci.topology_levels = 0;						\
-    (vc_)->ci.lan_id = NULL;							\
-    (vc_)->ci.app_num = -1;							\
-    (vc_)->lpid = -1;								\
-    mpig_vc_mutex_destroy(vc_);							\
+#define mpig_vc_destruct(vc_)						\
+{									\
+    if ((vc_)->vtable != NULL && (vc_)->vtable->vc_destruct != NULL)	\
+    {									\
+	(vc_)->vtable->vc_destruct(vc_);				\
+    }									\
+    mpig_vc_destruct_contact_info(vc_);					\
+    mpig_vc_i_set_ref_count((vc_), 0);					\
+    mpig_vc_set_initialized((vc_), FALSE);				\
+    mpig_vc_set_cm((vc_), NULL);					\
+    mpig_vc_set_vtable((vc_), NULL);					\
+    mpig_vc_set_pg_info((vc_), NULL, -1);				\
+    mpig_bc_destruct(mpig_vc_get_bc(vc_));				\
+    (vc_)->cms.ci_initialized = FALSE;					\
+    (vc_)->cms.topology_num_levels = -1;				\
+    (vc_)->cms.topology_levels = 0;					\
+    (vc_)->cms.lan_id = NULL;						\
+    (vc_)->cms.app_num = -1;						\
+    (vc_)->lpid = -1;							\
+    mpig_vc_mutex_destruct(vc_);					\
 }
 
 /*
@@ -1155,17 +1277,32 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
  * for the get routines to be preceeded by a RC acquire and the set routines to be followed a RC release.  the specific method
  * depends on the level of synchronization required.
  */
-#define mpig_vc_set_cm_type(vc_, cm_type_)	\
+#define mpig_vc_set_initialized(vc_, flag_)	\
 {						\
-    (vc_)->cm_type = (cm_type_);		\
+    (vc_)->initialized = (flag_);		\
 }
 
-#define mpig_vc_get_cm_type(vc_) ((vc_)->cm_type)
+#define mpig_vc_is_initialized(vc_) ((vc_)->initialized)
+
+#define mpig_vc_set_cm(vc_, cm_)	\
+{					\
+    (vc_)->cm = (cm_);			\
+}
+
+#define mpig_vc_get_cm(vc_) ((vc_)->cm)
+
+#define mpig_vc_get_cm_module_type(vc_) ((vc_)->cm->module_type)
+
+#define mpig_vc_get_cm_name(vc_) ((vc_)->cm->name)
+
+#define mpig_vc_get_cm_vtable(vc_) mpig_cm_get_vtable((vc_)->cm)
 
 #define mpig_vc_set_vtable(vc_, vtable_)	\
 {						\
     (vc_)->vtable = (vtable_);			\
 }
+
+#define mpig_vc_get_vtable(vc_, func_) ((vc_)->vtable)
 
 #define mpig_vc_set_pg_info(vc_, pg_, pg_rank_)	\
 {						\
@@ -1173,30 +1310,23 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
     (vc_)->pg_rank = (pg_rank_);		\
 }
 
-#define mpig_vc_set_pg_id(vc_, pg_id_)	\
-{					\
-    (vc_)->pg_id = (pg_id_);		\
-}
-
 #define mpig_vc_get_pg(vc_) ((vc_)->pg)
 
 #define mpig_vc_get_pg_rank(vc_) ((vc_)->pg_rank)
 
-#define mpig_vc_get_pg_id(vc_) ((vc_)->pg_id)
+#define mpig_vc_get_bc(vc_) (&(vc_)->bc)
 
-#define mpig_vc_get_bc(vc_) (&(vc_)->ci.bc)
+#define mpig_vc_get_num_topology_levels(vc_) ((vc_)->cms.topology_num_levels)
 
-#define mpig_vc_get_num_topology_levels(vc_) ((vc_)->ci.topology_num_levels)
+#define mpig_vc_get_topology_levels(vc_) ((vc_)->cms.topology_levels)
 
-#define mpig_vc_get_topology_levels(vc_) ((vc_)->ci.topology_levels)
+#define mpig_vc_get_lan_id(vc_) ((const char *)((vc_)->cms.lan_id))
 
-#define mpig_vc_get_lan_id(vc_) ((const char *)((vc_)->ci.lan_id))
-
-#define mpig_vc_get_app_num(vc_) ((vc_)->ci.app_num)
+#define mpig_vc_get_app_num(vc_) ((vc_)->cms.app_num)
 
 /* Thread safety and release consistency macros */
-#define mpig_vc_mutex_create(vc_)	globus_mutex_init(&(vc_)->mutex, NULL)
-#define mpig_vc_mutex_destroy(vc_)	globus_mutex_destroy(&(vc_)->mutex)
+#define mpig_vc_mutex_construct(vc_)	globus_mutex_init(&(vc_)->mutex, NULL)
+#define mpig_vc_mutex_destruct(vc_)	globus_mutex_destroy(&(vc_)->mutex)
 #define mpig_vc_mutex_lock(vc_)									\
 {												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
@@ -1225,21 +1355,12 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 /**********************************************************************************************************************************
 					BEGIN VIRTUAL CONNECTION REFERENCE TABLE SECTION
 **********************************************************************************************************************************/
-/* MT-NOTE: atomicity and data conherence is presently guaranteed by the MPI layer */
-#define mpig_vcrt_mutex_create(vcrt_)
-#define mpig_vcrt_mutex_lock(vcrt_)
-#define mpig_vcrt_mutex_unlock(vcrt_)
-#define mpig_vcrt_mutex_destroy(vcrt_)
-#define mpig_vcrt_rc_acq(vcrt_, needed_)
-#define mpig_vcrt_rc_rel(vcrt_, needed_)
-
-
 /*
  * mpig_vcrt object definition
  */
 typedef struct mpig_vcrt
 {
-    /* globus_mutex_t mutex; -- not need right now; see note above */
+    globus_mutex_t mutex;
 
     /* number of references to this object */
     int ref_count;
@@ -1251,6 +1372,44 @@ typedef struct mpig_vcrt
     mpig_vc_t * vcr_table[1];
 }
 mpig_vcrt_t;
+
+
+int mpig_vcrt_serialize_object(mpig_vcrt_t * vcrt, char ** str_p);
+
+void mpig_vcrt_free_serialized_object(char * str);
+
+int mpig_vcrt_deserialize_object(char * str, mpig_vcrt_t ** vcrt_p);
+
+#define mpig_vcrt_set_vc(vcrt_, p_, vc_)	\
+{						\
+    (vcrt_)->vcr_table[p_] = (vc_);		\
+}
+	
+#define mpig_vcrt_size(vcrt_) ((vcrt_)->size)
+
+/* Thread safety and release consistency macros */
+#define mpig_vcrt_mutex_construct(vcrt_)	globus_mutex_init(&(vcrt_)->mutex, NULL)
+#define mpig_vcrt_mutex_destruct(vcrt_)		globus_mutex_destroy(&(vcrt_)->mutex)
+#define mpig_vcrt_mutex_lock(vcrt_)								\
+{												\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
+		       "VCRT - acquiring mutex: vcrt=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vcrt_)));	\
+    globus_mutex_lock(&(vcrt_)->mutex);								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
+		       "VCRT - mutex acquired: vcrt=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vcrt_)));	\
+}
+#define mpig_vcrt_mutex_unlock(vcrt_)								\
+{												\
+    globus_mutex_unlock(&(vcrt_)->mutex);							\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
+		       "VCRT - mutex released: vcrt=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vcrt_)));	\
+}
+
+#define mpig_vcrt_mutex_lock_conditional(vcrt_, cond_)	    {if (cond_) mpig_vcrt_mutex_lock(vcrt_);}
+#define mpig_vcrt_mutex_unlock_conditional(vcrt_, cond_)    {if (cond_) mpig_vcrt_mutex_unlock(vcrt_);}
+
+#define mpig_vcrt_rc_acq(vcrt_, needed_)	mpig_vcrt_mutex_lock(vcrt_)
+#define mpig_vcrt_rc_rel(vcrt_, needed_)	mpig_vcrt_mutex_unlock(vcrt_)
 /**********************************************************************************************************************************
 					END VIRTUAL CONNECTION REFERENCE TABLE SECTION
 **********************************************************************************************************************************/
@@ -1311,19 +1470,31 @@ void mpig_pg_release_ref(mpig_pg_t * pg);
 /*
  * process group ID accessor macros
  *
- * MT-NOTE: these macros are not thread safe.  their use may require locking the PG mutex or performing a RC release.
+ * MT-NOTE: these macros are not thread safe.  their use may require locking the PG mutex or performing a RC acquire.
  */
 #define mpig_pg_get_id(pg_) ((pg_)->id)
 
 #define mpig_pg_compare_ids(id1_, id2_) (strcmp((id1_), (id2_)))
 
 /*
+ * macros for accessing static process group information given a VC
+ *
+ * MT-RC-NOTE: these macros assume that the information be access is static for the lifetime of the PG object, and that some form
+ * of RC acquire has been performed to insure the information for a newly created object is up-to-date and not stale data from
+ * previous object utilizing the same memory space.  acquiring the VC mutex, or performing a RC acuqire on the VC, is the most
+ * common way to insure that the PG data is current.
+ */
+#define mpig_vc_get_pg_id(vc_) ((vc_)->pg->id)
+
+#define mpig_vc_get_pg_size(vc_) ((vc_)->pg->size)
+
+/*
  * thread saftey and release consistency macros
  */
 extern globus_mutex_t mpig_pg_global_mutex;
 
-#define mpig_pg_global_mutex_create()	globus_mutex_init(&mpig_pg_global_mutex, NULL)
-#define mpig_pg_global_mutex_destroy()	globus_mutex_destroy(&mpig_pg_global_mutex)
+#define mpig_pg_global_mutex_construct()	globus_mutex_init(&mpig_pg_global_mutex, NULL)
+#define mpig_pg_global_mutex_destruct()		globus_mutex_destroy(&mpig_pg_global_mutex)
 #define mpig_pg_global_mutex_lock()									\
 {													\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG - acquiring global mutex"));	\
@@ -1336,16 +1507,12 @@ extern globus_mutex_t mpig_pg_global_mutex;
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG - global mutex released"));	\
 }
  
-#define mpig_pg_mutex_create(pg_)
-#define mpig_pg_mutex_destroy(pg_)
+#define mpig_pg_mutex_construct(pg_)
+#define mpig_pg_mutex_destruct(pg_)
 #define mpig_pg_mutex_lock(pg_)		mpig_pg_global_mutex_lock()
 #define mpig_pg_mutex_unlock(pg_)	mpig_pg_global_mutex_unlock()
-
 #define mpig_pg_mutex_lock_conditional(pg_, cond_)	{if (cond_) mpig_pg_mutex_lock(pg_);}
 #define mpig_pg_mutex_unlock_conditional(pg_, cond_)	{if (cond_) mpig_pg_mutex_unlock(pg_);}
-
-#define mpig_pg_rc_acq(pg_, needed_)	mpig_pg_mutex_lock(pg_)
-#define mpig_pg_rc_rel(pg_, needed_)	mpig_pg_mutex_unlock(pg_)
 /**********************************************************************************************************************************
 						    END PROCESS GROUP SECTION
 **********************************************************************************************************************************/
@@ -1489,15 +1656,17 @@ int mpig_port_open(MPID_Info * info, char * port_name);
 
 int mpig_port_close(const char * port_name);
 
-int mpig_port_accept(const char * port_name, int nprocs, int local_buf_size, int * remote_buf_size, mpig_connection_t ** conn);
+int mpig_port_accept(const char * port_name, mpig_vc_t ** port_vc);
 
-int mpig_port_connect(const char * port_name, int nprocs, int local_buf_size, int * remote_buf_size, mpig_connection_t ** conn);
+int mpig_port_connect(const char * port_name, mpig_vc_t ** port_vc);
 
-int mpig_connection_send(mpig_connection_t * conn, void * buf, int nbytes);
+int mpig_port_vc_send(mpig_vc_t * port_vc, void * buf, MPIU_Size_t nbytes);
 
-int mpig_connection_recv(mpig_connection_t * conn, void * buf, int nbytes);
+int mpig_port_vc_recv(mpig_vc_t * port_vc, void * buf, MPIU_Size_t nbytes);
 
-int mpig_connection_close(mpig_connection_t * conn);
+mpig_endian_t mpig_port_vc_get_endian(mpig_vc_t * port_vc);
+
+int mpig_port_vc_close(mpig_vc_t * port_vc);
 /**********************************************************************************************************************************
 						   END CONNECT-ACCEPT SECTION
 **********************************************************************************************************************************/
@@ -1513,14 +1682,38 @@ void mpig_vmpi_error_to_mpich2_error(int vendor_errno, int * mpi_errno_p);
 							END VENDOR MPI SECTION
 **********************************************************************************************************************************/
 
+
 /**********************************************************************************************************************************
-					       BEGIN USAGE STAT ROUTINES
+						 BEGIN DEBUGGING OUTPUT SECTION
+**********************************************************************************************************************************/
+#define FCNAME fcname
+
+#if defined(MPIG_DEBUG)
+#define MPIG_STATE_DECL(a_)
+#define MPIG_FUNC_ENTER(a_) MPIG_FUNCNAME_CHECK()
+#define MPIG_FUNC_EXIT(a_) MPIG_FUNCNAME_CHECK()
+#define MPIG_RMA_FUNC_ENTER(a_) MPIG_FUNCNAME_CHECK()
+#define MPIG_RMA_FUNC_EXIT(a_) MPIG_FUNCNAME_CHECK()
+#else
+#define MPIG_STATE_DECL(a_) MPIDI_STATE_DECL(a_)
+#define MPIG_FUNC_ENTER(a_) MPIDI_FUNC_ENTER(a_)
+#define MPIG_FUNC_EXIT(a_) MPIDI_FUNC_EXIT(a_)
+#define MPIG_RMA_FUNC_ENTER(a_) MPIDI_RMA_FUNC_ENTER(a_)
+#define MPIG_RMA_FUNC_EXIT(a_) MPIDI_RMA_FUNC_EXIT(a_)
+#endif
+/**********************************************************************************************************************************
+						  END DEBUGGING OUTPUT SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						    BEGIN USAGE STAT ROUTINES
 **********************************************************************************************************************************/
 
 void mpig_usage_finalize(void);
 
 /**********************************************************************************************************************************
-						END USAGE STAT ROUTINES
+						     END USAGE STAT ROUTINES
 **********************************************************************************************************************************/
 
 #endif /* MPICH2_MPIDIMPL_H_INCLUDED */

@@ -14,6 +14,10 @@
 #define MPIG_ERR_STRING_SIZE 32768
 #endif
 
+#if !defined(MPIG_INT_MAX_STRLEN)
+#define MPIG_INT_MAX_STRLEN 11
+#endif
+
 #include "mpidconf.h"
 #include "mpiallstates.h"
 
@@ -36,6 +40,7 @@ typedef TYPEOF_MPIG_ALIGNED_T mpig_aligned_t;
 struct MPID_Comm;
 struct MPID_Request;
 struct MPID_Progress_state;
+struct mpig_cm;
 struct mpig_bc;
 struct mpig_pg;
 struct mpig_vc;
@@ -46,48 +51,57 @@ struct mpig_vc;
 #define MPIG_HANDLE_VAL(object_) (((object_) != NULL) ? (object_)->handle : 0)
 #define MPIG_STR_VAL(str_) ((str_) != NULL ? (str_) : "(null)")
 
+/* determine if comprehensive error checking should be performed */
+#if #defined(HAVE_ERROR_CHECKING)
+#define MPIG_CHECK_ERRORS TRUE
+#else
+#define MPIG_CHECK_ERRORS FALSE
+#endif
+
 
 /**********************************************************************************************************************************
-					       BEGIN COMMUNICATION MODULE SECTION
+					       BEGIN COMMUNICATION METHOD SECTION
 **********************************************************************************************************************************/
 /* FIXME: this list should be generated at configure time, perhaps by scanning files with a pattern of mpig_cm_*.h. */
-typedef enum mpig_cm_type
+typedef enum mpig_cm_module_type
 {
-    MPIG_CM_TYPE_FIRST = 0,
-    MPIG_CM_TYPE_UNDEFINED,
     MPIG_CM_TYPE_SELF,
     MPIG_CM_TYPE_VMPI,
     MPIG_CM_TYPE_XIO,
     MPIG_CM_TYPE_OTHER,
     MPIG_CM_TYPE_LAST
 }
-mpig_cm_type_t;
+mpig_cm_module_type_t;
 
-#define MPIG_CM_NUM_TYPES (MPIG_CM_TYPE_LAST - MPIG_CM_TYPE_FIRST - 2)
+#define MPIG_CM_NUM_TYPES (MPIG_CM_TYPE_LAST)
 
 /*
- * <mpi_errno> mpig_cm_init([IN/OUT] argc, [IN/OUT] argv)
+ * <mpi_errno> mpig_cm_init([IN/MOD] cm, [IN/OUT] argc, [IN/OUT] argv)
  *
  * Parameters:
  *
- *   argc [IN/OUT] - number of arguments in the argv array.  this may be modified communication module.
+ *   cm [IN/MOD] - communication method object to be initialized
+ *
+ *   argc [IN/OUT] - number of arguments in the argv array.  this may be modified communication method.
  *
  *   argv [IN/OUT] - array of command line arguments.  arguments may be added or removed as appropriate.
  *
  * Returns: a MPI error code
  */
-typedef int (*mpig_cm_init_fn_t)(int * argc, char *** argv);
+typedef int (*mpig_cm_init_fn_t)(struct mpig_cm * cm, int * argc, char *** argv);
 
 /*
- * <mpi_errno> mpig_cm_finalize(void)
+ * <mpi_errno> mpig_cm_finalize([IN/MOD] cm)
  *
- * shutdown down the communication module.  all pending communication using this module must complete before the routine returns.
+ * shutdown down the communication method.  all pending communication using this method must complete before the routine returns.
  *
- * Parameters: (none)
+ * Parameters:
+ *
+ *   cm [IN/MOD] - communication method object to be shutdown
  *
  * Returns: a MPI error code
  */
-typedef int (*mpig_cm_finalize_fn_t)(void);
+typedef int (*mpig_cm_finalize_fn_t)(struct mpig_cm * cm);
 
 /*
  * <mpi_errno> mpig_cm_add_contact_info([IN/MOD] bc)
@@ -96,53 +110,80 @@ typedef int (*mpig_cm_finalize_fn_t)(void);
  *
  * Parameters:
  *
+ *   cm [IN] - communication method object
+ *
  *   bc [IN/MOD] - business card object in which to store contact information for this process
  *
  * Returns: a MPI error code
  */
-typedef int (*mpig_cm_add_contact_info_fn_t)(struct mpig_bc * bc);
+typedef int (*mpig_cm_add_contact_info_fn_t)(struct mpig_cm * cm, struct mpig_bc * bc);
 
 /*
- * <mpi_errno> mpig_cm_extract_contact_info([IN/MOD] vc)
+ * <mpi_errno> mpig_cm_construct_contact_info([IN] cm, [IN/MOD] vc)
  *
- * extract contact information from the business card and store it in machine processable form
+ * extract contact information from the business card (and possibly other sources) and store it in machine processable form
  *
  * Parameters:
+ *
+ *   cm [IN] - communication method object
  *
  *   vc [IN/MOD] - vc object in which to place contact information
  *
  * Returns: a MPI error code
  *
- * NOTE: this routine assumes the that business card has been attached to the VC
+ * NOTE: this routine assumes the that business card object within the VC has been initialized and contains any information
+ * necessary required by the communication method
  */
-typedef int (*mpig_cm_extract_contact_info_fn_t)(struct mpig_vc * vc);
+typedef int (*mpig_cm_construct_vc_contact_info_fn_t)(struct mpig_cm * cm, struct mpig_vc * vc);
 
 /*
- * <mpi_errno> mpig_cm_select_module([IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_construct_contact_info([IN] cm, [IN/MOD] vc)
  *
- * determine if the current process can use the communication module to communicate with the process associated with the supplied
- * VC.  if it can, then the VC will be initialized accordingly.  if the VC has already been selected by another communication
- * module, the routine will return with 'selected' equal to FALSE.
+ * release any resources allocated when the machine readable form of the contact information was constructed
  *
  * Parameters:
  *
- *   vc [IN] - vc object to initialize if the communication module is capable of performing communication with the process
+ *   cm [IN] - communication method object
  *
- *   selected [OUT] - TRUE if the communication module can communicate with the remote process; otherwise FALSE
+ *   vc [IN/MOD] - vc object in which to destroy the contact information
+ *
+ * Returns: a MPI error code
+ *
+ * NOTE: this routine assumes the that business card object within the VC has been initialized and contains any information
+ * necessary required by the communication method
+ */
+typedef void (*mpig_cm_destruct_vc_contact_info_fn_t)(struct mpig_cm * cm, struct mpig_vc * vc);
+
+/*
+ * <mpi_errno> mpig_cm_select_comm_method([IN] cm, [IN/MOD] vc, [OUT] selected)
+ *
+ * determine if the current process can use the communication method to communicate with the process associated with the supplied
+ * VC.  if it can, then the VC will be initialized accordingly.  if the VC has already been selected by another communication
+ * method, the routine will return with 'selected' equal to FALSE.
+ *
+ * Parameters:
+ *
+ *   cm [IN] - communication method object
+ *
+ *   vc [IN] - vc object to initialize if the communication method is capable of performing communication with the process
+ *
+ *   selected [OUT] - TRUE if the communication method can communicate with the remote process; otherwise FALSE
  *
  * Returns: a MPI error code
  *
  * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called
  */
-typedef int (*mpig_cm_select_module_fn_t)(struct mpig_vc * vc, bool_t * selected);
+typedef int (*mpig_cm_select_comm_method_fn_t)(struct mpig_cm * cm, struct mpig_vc * vc, bool_t * selected);
 
 /*
- * <mpi_errno> mpig_cm_get_vc_compatability([IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out)
+ * <mpi_errno> mpig_cm_get_vc_compatability([IN] cm, [IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out)
  *
  * determine if the two VCs supplied to the routine are capable of communicating at any of the predefined topology levels using
- * the communication module.
+ * the communication method.
  *
  * Parameters:
+ *
+ *   cm [IN] - communication method object
  *
  *   vc1 [IN] - first VC
  *
@@ -156,22 +197,21 @@ typedef int (*mpig_cm_select_module_fn_t)(struct mpig_vc * vc, bool_t * selected
  *
  * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called for both VCs
  */
-typedef int (*mpig_cm_get_vc_compatability_fn_t)(const struct mpig_vc * vc1, const struct mpig_vc * vc2,
+typedef int (*mpig_cm_get_vc_compatability_fn_t)(struct mpig_cm * cm, const struct mpig_vc * vc1, const struct mpig_vc * vc2,
     unsigned levels_in, unsigned * levels_out);
 
 typedef char * (*mpig_cm_vtable_last_entry_fn_t)(int foo, float bar, const short * baz, char bif);
 
 typedef struct mpig_cm_vtable
 {
-    mpig_cm_type_t type;
-    const char * name;
-    mpig_cm_init_fn_t			init;
-    mpig_cm_finalize_fn_t		finalize;
-    mpig_cm_add_contact_info_fn_t	add_contact_info;
-    mpig_cm_extract_contact_info_fn_t	extract_contact_info;
-    mpig_cm_select_module_fn_t		select_module;
-    mpig_cm_get_vc_compatability_fn_t	get_vc_compatability;
-    mpig_cm_vtable_last_entry_fn_t	vtable_last_entry;
+    mpig_cm_init_fn_t				init;
+    mpig_cm_finalize_fn_t			finalize;
+    mpig_cm_add_contact_info_fn_t		add_contact_info;
+    mpig_cm_construct_vc_contact_info_fn_t	construct_vc_contact_info;
+    mpig_cm_destruct_vc_contact_info_fn_t	destruct_vc_contact_info;
+    mpig_cm_select_comm_method_fn_t		select_comm_method;
+    mpig_cm_get_vc_compatability_fn_t		get_vc_compatability;
+    mpig_cm_vtable_last_entry_fn_t		vtable_last_entry;
 }
 mpig_cm_vtable_t;
 
@@ -185,8 +225,59 @@ mpig_cm_vtable_t;
 #include "mpig_cm_vmpi.h"
 #include "mpig_cm_xio.h"
 #include "mpig_cm_other.h"
+
+/*
+ * define the mpig_cm structure using any extended information supplied by the communication methods
+ */
+/* FIXME: the defintion of MPIG_COMM_CM_DECL should be generated by configure based on a list of communication modules. */
+#if !defined(MPIG_CM_CMU_SELF_DECL)
+#define MPIG_CM_CMU_SELF_DECL
+#else
+#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#endif
+#if !defined(MPIG_CM_CMU_VMPI_DECL)
+#define MPIG_CM_CMU_VMPI_DECL
+#else
+#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#endif
+#if !defined(MPIG_CM_CMU_XIO_DECL)
+#define MPIG_CM_CMU_XIO_DECL
+#else
+#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#endif
+#if !defined(MPIG_CM_CMU_OTHER_DECL)
+#define MPIG_CM_CMU_OTHER_DECL
+#else
+#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#endif
+
+#if defined(MPIG_CM_CMU_DECL_STRUCT_DEFINED)
+#define MPIG_CM_CMU_DECL	\
+    union			\
+    {				\
+	MPIG_CM_CMU_SELF_DECL	\
+	MPIG_CM_CMU_VMPI_DECL	\
+	MPIG_CM_CMU_XIO_DECL	\
+	MPIG_CM_CMU_OTHER_DECL	\
+    } cmu;
+#else
+#define MPIG_CM_CMU_DECL
+#endif
+
+typedef struct mpig_cm
+{
+    mpig_cm_module_type_t module_type;
+    const char * name;
+    mpig_cm_vtable_t * vtable;
+    MPIG_CM_CMU_DECL
+}
+mpig_cm_t;
 /**********************************************************************************************************************************
-						END COMMUNICATION MODULE SECTION
+						END COMMUNICATION METHOD SECTION
 **********************************************************************************************************************************/
 
 
@@ -224,48 +315,48 @@ typedef struct mpig_comm
 }
 mpig_comm_t;
 
-/* FIXME: the defintion of MPIG_COMM_CM_DECL should be generated by configure based on a list of communication modules. */
-#if !defined(MPIG_COMM_CM_SELF_DECL)
-#define MPIG_COMM_CM_SELF_DECL
+/* FIXME: the defintion of MPIG_COMM_CMS_DECL should be generated by configure based on a list of communication modules. */
+#if !defined(MPIG_COMM_CMS_SELF_DECL)
+#define MPIG_COMM_CMS_SELF_DECL
 #else
-#undef MPIG_COMM_CM_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CM_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_COMM_CM_VMPI_DECL)
-#define MPIG_COMM_CM_VMPI_DECL
+#if !defined(MPIG_COMM_CMS_VMPI_DECL)
+#define MPIG_COMM_CMS_VMPI_DECL
 #else
-#undef MPIG_COMM_CM_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CM_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_COMM_CM_XIO_DECL)
-#define MPIG_COMM_CM_XIO_DECL
+#if !defined(MPIG_COMM_CMS_XIO_DECL)
+#define MPIG_COMM_CMS_XIO_DECL
 #else
-#undef MPIG_COMM_CM_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CM_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_COMM_CM_OTHER_DECL)
-#define MPIG_COMM_CM_OTHER_DECL
+#if !defined(MPIG_COMM_CMS_OTHER_DECL)
+#define MPIG_COMM_CMS_OTHER_DECL
 #else
-#undef MPIG_COMM_CM_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CM_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
 #endif
 
-#if defined(MPIG_COMM_CM_DECL_STRUCT_DEFINED)
-#define MPIG_COMM_CM_DECL	\
-    struct			\
-    {				\
-	MPIG_COMM_CM_SELF_DECL	\
-	MPIG_COMM_CM_VMPI_DECL	\
-	MPIG_COMM_CM_XIO_DECL	\
-	MPIG_COMM_CM_OTHER_DECL	\
-    } cm;
+#if defined(MPIG_COMM_CMS_DECL_STRUCT_DEFINED)
+#define MPIG_COMM_CMS_DECL		\
+    struct				\
+    {					\
+	MPIG_COMM_CMS_SELF_DECL		\
+	MPIG_COMM_CMS_VMPI_DECL		\
+	MPIG_COMM_CMS_XIO_DECL		\
+	MPIG_COMM_CMS_OTHER_DECL	\
+    } cms;
 #else
-#define MPIG_COMM_CM_DECL
+#define MPIG_COMM_CMS_DECL
 #endif
 
 #define MPID_DEV_COMM_DECL \
     mpig_comm_t dev;	   \
-    MPIG_COMM_CM_DECL
+    MPIG_COMM_CMS_DECL
 
 #define HAVE_DEV_COMM_HOOK
 /**********************************************************************************************************************************
@@ -293,50 +384,50 @@ typedef enum mpig_ctype
 }
 mpig_ctype_t;
 
-/* FIXME: the defintion of MPIG_DATATYPE_CM_DECL should be generated by configure based on a list of communication modules. */
-#if !defined(MPIG_DATATYPE_CM_SELF_DECL)
-#define MPIG_DATATYPE_CM_SELF_DECL
+/* FIXME: the defintion of MPIG_DATATYPE_CMS_DECL should be generated by configure based on a list of communication modules. */
+#if !defined(MPIG_DATATYPE_CMS_SELF_DECL)
+#define MPIG_DATATYPE_CMS_SELF_DECL
 #else
-#undef MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_DATATYPE_CM_VMPI_DECL)
-#define MPIG_DATATYPE_CM_VMPI_DECL
+#if !defined(MPIG_DATATYPE_CMS_VMPI_DECL)
+#define MPIG_DATATYPE_CMS_VMPI_DECL
 #else
-#undef MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_DATATYPE_CM_XIO_DECL)
-#define MPIG_DATATYPE_CM_XIO_DECL
+#if !defined(MPIG_DATATYPE_CMS_XIO_DECL)
+#define MPIG_DATATYPE_CMS_XIO_DECL
 #else
-#undef MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_DATATYPE_CM_OTHER_DECL)
-#define MPIG_DATATYPE_CM_OTHER_DECL
+#if !defined(MPIG_DATATYPE_CMS_OTHER_DECL)
+#define MPIG_DATATYPE_CMS_OTHER_DECL
 #else
-#undef MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
 #endif
 
-#if defined(MPIG_DATATYPE_CM_DECL_STRUCT_DEFINED)
-#define MPIG_DATATYPE_CM_DECL		\
+#if defined(MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED)
+#define MPIG_DATATYPE_CMS_DECL		\
     struct				\
     {					\
-	MPIG_DATATYPE_CM_SELF_DECL	\
-	MPIG_DATATYPE_CM_VMPI_DECL	\
-	MPIG_DATATYPE_CM_XIO_DECL	\
-	MPIG_DATATYPE_CM_OTHER_DECL	\
-    } cm;
+	MPIG_DATATYPE_CMS_SELF_DECL	\
+	MPIG_DATATYPE_CMS_VMPI_DECL	\
+	MPIG_DATATYPE_CMS_XIO_DECL	\
+	MPIG_DATATYPE_CMS_OTHER_DECL	\
+    } cms;
 #else
-#define MPIG_DATATYPE_CM_DECL
+#define MPIG_DATATYPE_CMS_DECL
 #endif
 
 #define MPID_DEV_DATATYPE_DECL \
-    MPIG_DATATYPE_CM_DECL
+    MPIG_DATATYPE_CMS_DECL
 
 /* the inclusion of the datatype header file must come after the defintion of MPID_DEV_DATATYPE_DECL.  if it does not, then the
-   device and communication module data structures will not be included in the MPID_Datatype object. */
+   device and communication method data structures will not be included in the MPID_Datatype object. */
 #include "mpid_datatype.h"
 /**********************************************************************************************************************************
 						      END DATATYPE SECTION
@@ -346,15 +437,23 @@ mpig_ctype_t;
 /**********************************************************************************************************************************
 						      BEGIN REQUEST SECTION
 **********************************************************************************************************************************/
+
+/*
+ * SUPER-IMPORTANT-MT-NOTE: see the note at the top of the request section in mpidpost.h concerning the creation and destruction
+ * of requests from internal device threads.
+ */
+
 typedef enum mpig_request_type
 {
-    MPIG_REQUEST_TYPE_UNDEFINED = 0,
+    MPIG_REQUEST_TYPE_FIRST = 0,
+    MPIG_REQUEST_TYPE_UNDEFINED,
     MPIG_REQUEST_TYPE_INTERNAL,
     MPIG_REQUEST_TYPE_RECV,
     MPIG_REQUEST_TYPE_SEND,
     MPIG_REQUEST_TYPE_RSEND,
     MPIG_REQUEST_TYPE_SSEND,
-    MPIG_REQUEST_TYPE_BSEND
+    MPIG_REQUEST_TYPE_BSEND,
+    MPIG_REQUEST_TYPE_LAST
 }
 mpig_request_type_t;
 
@@ -390,7 +489,7 @@ typedef globus_mutex_t mpig_request_mutex_t;
 	   module, but is required by the receive queue code, and thus is part of the general request structure. */		\
 	int remote_req_id;													\
 																\
-	/* pointer to the communication module's request destruct function */							\
+	/* pointer to the communication method's request destruct function */							\
 	mpig_request_cm_destruct_fn_t cm_destruct;										\
 																\
 	/* the virtual connection used to satisfy this request */								\
@@ -400,48 +499,48 @@ typedef globus_mutex_t mpig_request_mutex_t;
 	struct MPID_Request * next;												\
     } dev;
 
-/* FIXME: the defintion of MPIG_REQUEST_CM_DECL should be generated by configure based on a list of communication modules. */
-#if !defined(MPIG_REQUEST_CM_SELF_DECL)
-#define MPIG_REQUEST_CM_SELF_DECL
+/* FIXME: the defintion of MPIG_REQUEST_CMU_DECL should be generated by configure based on a list of communication modules. */
+#if !defined(MPIG_REQUEST_CMU_SELF_DECL)
+#define MPIG_REQUEST_CMU_SELF_DECL
 #else
-#undef MPIG_REQUEST_CM_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CM_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
 #endif
-#if !defined(MPIG_REQUEST_CM_VMPI_DECL)
-#define MPIG_REQUEST_CM_VMPI_DECL
+#if !defined(MPIG_REQUEST_CMU_VMPI_DECL)
+#define MPIG_REQUEST_CMU_VMPI_DECL
 #else
-#undef MPIG_REQUEST_CM_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CM_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
 #endif
-#if !defined(MPIG_REQUEST_CM_XIO_DECL)
-#define MPIG_REQUEST_CM_XIO_DECL
+#if !defined(MPIG_REQUEST_CMU_XIO_DECL)
+#define MPIG_REQUEST_CMU_XIO_DECL
 #else
-#undef MPIG_REQUEST_CM_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CM_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
 #endif
-#if !defined(MPIG_REQUEST_CM_OTHER_DECL)
-#define MPIG_REQUEST_CM_OTHER_DECL
+#if !defined(MPIG_REQUEST_CMU_OTHER_DECL)
+#define MPIG_REQUEST_CMU_OTHER_DECL
 #else
-#undef MPIG_REQUEST_CM_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CM_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
 #endif
 
-#if defined(MPIG_REQUEST_CM_DECL_UNION_DEFINED)
-#define MPIG_REQUEST_CM_DECL		\
+#if defined(MPIG_REQUEST_CMU_DECL_UNION_DEFINED)
+#define MPIG_REQUEST_CMU_DECL		\
     union				\
     {					\
-	MPIG_REQUEST_CM_SELF_DECL	\
-	MPIG_REQUEST_CM_VMPI_DECL	\
-	MPIG_REQUEST_CM_XIO_DECL	\
-	MPIG_REQUEST_CM_OTHER_DECL	\
-    } cm;
+	MPIG_REQUEST_CMU_SELF_DECL	\
+	MPIG_REQUEST_CMU_VMPI_DECL	\
+	MPIG_REQUEST_CMU_XIO_DECL	\
+	MPIG_REQUEST_CMU_OTHER_DECL	\
+    } cmu;
 #else
-#define MPIG_REQUEST_CM_DECL
+#define MPIG_REQUEST_CMU_DECL
 #endif
 
 #define MPID_DEV_REQUEST_DECL	\
     MPIG_REQUEST_DEV_DECL	\
-    MPIG_REQUEST_CM_DECL
+    MPIG_REQUEST_CMU_DECL
 /**********************************************************************************************************************************
 						       END REQUEST SECTION
 **********************************************************************************************************************************/
@@ -458,43 +557,43 @@ typedef globus_mutex_t mpig_request_mutex_t;
 #define MPIG_PROCESSOR_NAME_SIZE 128
 #endif
 
-/* FIXME: the defintion of MPIG_PROCESS_CM_DECL should be generated by configure based on a list of communication modules. */
-#if !defined(MPIG_PROCESS_CM_SELF_DECL)
-#define MPIG_PROCESS_CM_SELF_DECL
+/* FIXME: the defintion of MPIG_PROCESS_CMS_DECL should be generated by configure based on a list of communication modules. */
+#if !defined(MPIG_PROCESS_CMS_SELF_DECL)
+#define MPIG_PROCESS_CMS_SELF_DECL
 #else
-#undef MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PROCESS_CM_VMPI_DECL)
-#define MPIG_PROCESS_CM_VMPI_DECL
+#if !defined(MPIG_PROCESS_CMS_VMPI_DECL)
+#define MPIG_PROCESS_CMS_VMPI_DECL
 #else
-#undef MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PROCESS_CM_XIO_DECL)
-#define MPIG_PROCESS_CM_XIO_DECL
+#if !defined(MPIG_PROCESS_CMS_XIO_DECL)
+#define MPIG_PROCESS_CMS_XIO_DECL
 #else
-#undef MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PROCESS_CM_OTHER_DECL)
-#define MPIG_PROCESS_CM_OTHER_DECL
+#if !defined(MPIG_PROCESS_CMS_OTHER_DECL)
+#define MPIG_PROCESS_CMS_OTHER_DECL
 #else
-#undef MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
 #endif
 
-#if defined(MPIG_PROCESS_CM_DECL_STRUCT_DEFINED)
-#define MPIG_PROCESS_CM_DECL		\
+#if defined(MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED)
+#define MPIG_PROCESS_CMS_DECL		\
     struct				\
     {					\
-	MPIG_PROCESS_CM_SELF_DECL	\
-	MPIG_PROCESS_CM_VMPI_DECL	\
-	MPIG_PROCESS_CM_XIO_DECL	\
-	MPIG_PROCESS_CM_OTHER_DECL	\
-    } cm;
+	MPIG_PROCESS_CMS_SELF_DECL	\
+	MPIG_PROCESS_CMS_VMPI_DECL	\
+	MPIG_PROCESS_CMS_XIO_DECL	\
+	MPIG_PROCESS_CMS_OTHER_DECL	\
+    } cms;
 #else
-#define MPIG_PROCESS_CM_DECL
+#define MPIG_PROCESS_CMS_DECL
 #endif
 
 /* define useful names for  function counting */
@@ -527,7 +626,7 @@ typedef struct mpig_process
     /* mutex to protect and insure coherence of data in the process structure */
     globus_mutex_t mutex;
 
-    MPIG_PROCESS_CM_DECL
+    MPIG_PROCESS_CMS_DECL
     
     /* usage stats tracking vars */
     struct timeval start_time;
@@ -592,7 +691,7 @@ typedef struct mpig_databuf
 mpig_databuf_t;
 
 #define MPIG_DATABUF_DECL(dbuf_var_name_, size_) \
-    mpig_databuf_t dbuf_var_name_[(sizeof(mpig_databuf_t) + (size_) + sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)]
+    mpig_databuf_t dbuf_var_name_[(sizeof(mpig_databuf_t) + (size_) + sizeof(mpig_databuf_t) - 1) / sizeof(mpig_databuf_t)]
 /**********************************************************************************************************************************
 						     END DATA BUFFER SECTION
 **********************************************************************************************************************************/
@@ -676,74 +775,75 @@ typedef struct mpig_vc_vtable
 mpig_vc_vtable_t;
 
 /*
- * create a union containing information specific to the configuration modules.
+ * create a union containing information specific to the communication methods.
  *
- * FIXME: the defintion of MPIG_VC_CM_DECL should be generated by configure based on a list of communication modules.
+ * FIXME: the defintion of MPIG_VC_CMU_DECL should be generated by configure based on a list of communication modules.
  */
-#if !defined(MPIG_VC_CM_SELF_DECL)
-#define MPIG_VC_CM_SELF_DECL
+#if !defined(MPIG_VC_CMU_SELF_DECL)
+#define MPIG_VC_CMU_SELF_DECL
 #else
-#undef MPIG_VC_CM_DECL_UNION_DEFINED
-#define MPIG_VC_CM_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_UNION_DEFINED
+#define MPIG_VC_CMU_DECL_UNION_DEFINED
 #endif
-#if !defined(MPIG_VC_CM_VMPI_DECL)
-#define MPIG_VC_CM_VMPI_DECL
+#if !defined(MPIG_VC_CMU_VMPI_DECL)
+#define MPIG_VC_CMU_VMPI_DECL
 #else
-#undef MPIG_VC_CM_DECL_UNION_DEFINED
-#define MPIG_VC_CM_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_UNION_DEFINED
+#define MPIG_VC_CMU_DECL_UNION_DEFINED
 #endif
-#if !defined(MPIG_VC_CM_XIO_DECL)
-#define MPIG_VC_CM_XIO_DECL
+#if !defined(MPIG_VC_CMU_XIO_DECL)
+#define MPIG_VC_CMU_XIO_DECL
 #else
-#undef MPIG_VC_CM_DECL_UNION_DEFINED
-#define MPIG_VC_CM_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_UNION_DEFINED
+#define MPIG_VC_CMU_DECL_UNION_DEFINED
 #endif
-#if !defined(MPIG_VC_CM_OTHER_DECL)
-#define MPIG_VC_CM_OTHER_DECL
+#if !defined(MPIG_VC_CMU_OTHER_DECL)
+#define MPIG_VC_CMU_OTHER_DECL
 #else
-#undef MPIG_VC_CM_DECL_UNION_DEFINED
-#define MPIG_VC_CM_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_UNION_DEFINED
+#define MPIG_VC_CMU_DECL_UNION_DEFINED
 #endif
 
-#if defined(MPIG_VC_CM_DECL_UNION_DEFINED)
-#define MPIG_VC_CM_DECL		\
+#if defined(MPIG_VC_CMU_DECL_UNION_DEFINED)
+#define MPIG_VC_CMU_DECL		\
     union			\
     {				\
-	MPIG_VC_CM_SELF_DECL	\
-	MPIG_VC_CM_VMPI_DECL	\
-	MPIG_VC_CM_XIO_DECL	\
-	MPIG_VC_CM_OTHER_DECL	\
-    } cm;
+	MPIG_VC_CMU_SELF_DECL	\
+	MPIG_VC_CMU_VMPI_DECL	\
+	MPIG_VC_CMU_XIO_DECL	\
+	MPIG_VC_CMU_OTHER_DECL	\
+    } cmu;
 #else
-#define MPIG_VC_CM_DECL
+#define MPIG_VC_CMU_DECL
 #endif
 
-/* create structure containing contact information for each configuration module.  the information stored in here is primarily
- * used to determine if two connections can speak to each other at the desired topology level; however, depending on the
- * contents, it may also be used during connection formation.
+/* create a structure containing information specific to the communication methods/modules.  this structure should be used to
+ * store any information for a communication method/module that must persist independent of the method selected.  intially, this
+ * structure was created to store information used to determine if two connections can speak to each other at the desired
+ * topology level and thus contains some top-level information pertinent to topology discovery.
  *
  * NOTE: information not needed for computing topology information should reside in the union above to conserve space.
  *
- * FIXME: the defintion of MPIG_VC_CI_DECL should be generated by configure based on a list of communication modules.
+ * FIXME: the defintion of MPIG_VC_CMS_DECL should be generated by configure based on a list of communication modules.
  */
-#if !defined(MPIG_VC_CI_SELF_DECL)
-#define MPIG_VC_CI_SELF_DECL
+#if !defined(MPIG_VC_CMS_SELF_DECL)
+#define MPIG_VC_CMS_SELF_DECL
 #endif
-#if !defined(MPIG_VC_CI_VMPI_DECL)
-#define MPIG_VC_CI_VMPI_DECL
+#if !defined(MPIG_VC_CMS_VMPI_DECL)
+#define MPIG_VC_CMS_VMPI_DECL
 #endif
-#if !defined(MPIG_VC_CI_XIO_DECL)
-#define MPIG_VC_CI_XIO_DECL
+#if !defined(MPIG_VC_CMS_XIO_DECL)
+#define MPIG_VC_CMS_XIO_DECL
 #endif
-#if !defined(MPIG_VC_CI_OTHER_DECL)
-#define MPIG_VC_CI_OTHER_DECL
+#if !defined(MPIG_VC_CMS_OTHER_DECL)
+#define MPIG_VC_CMS_OTHER_DECL
 #endif
 
-#define MPIG_VC_CI_DECL										\
+#define MPIG_VC_CMS_DECL									\
     struct											\
     {												\
-	/* business card containing information on how to connect to the remote process */	\
-	mpig_bc_t bc;										\
+	/* contact information successfully initialized */					\
+	bool_t ci_initialized;									\
 												\
 	/* topology information */								\
 	int topology_num_levels;								\
@@ -751,11 +851,11 @@ mpig_vc_vtable_t;
 	char * lan_id;										\
 	int app_num;										\
 												\
-	MPIG_VC_CI_SELF_DECL									\
-	MPIG_VC_CI_VMPI_DECL									\
-	MPIG_VC_CI_XIO_DECL									\
-	MPIG_VC_CI_OTHER_DECL									\
-    } ci;
+	MPIG_VC_CMS_SELF_DECL									\
+	MPIG_VC_CMS_VMPI_DECL									\
+	MPIG_VC_CMS_XIO_DECL									\
+	MPIG_VC_CMS_OTHER_DECL									\
+    } cms;
 
 typedef globus_mutex_t mpig_vc_mutex_t;
 
@@ -767,20 +867,27 @@ typedef struct mpig_vc
     /* number of references to this VC object */
     int ref_count;
 
+    /* virtual function table containing ADI3 routines, etc. */
+    mpig_vc_vtable_t * vtable;
+
     /* process group to which the process associated with this VC belongs, and the rank of that process in the process group */
     struct mpig_pg * pg;
-    const char * pg_id;
     int pg_rank;
 
     /* local process id */
     int lpid;
 
-    /* communication module type, associated functions, and module specific data structures */
-    mpig_cm_type_t cm_type;
-    mpig_vc_vtable_t * vtable;
-    MPIG_VC_CM_DECL
-    MPIG_VC_CI_DECL
+    /* communication method type, associated functions, and module specific data structures */
+    mpig_cm_t * cm;
+    MPIG_VC_CMU_DECL
+    MPIG_VC_CMS_DECL
+    
+    /* business card containing information on how to connect to the remote process */
+    mpig_bc_t bc;
 
+    /* status of the VC */
+    bool_t initialized;
+    
     /* map of MPI datatypes to basic C types */
     unsigned char dt_cmap[MPIG_DATATYPE_MAX_BASIC_TYPES];
 }
@@ -858,44 +965,44 @@ typedef unsigned long mpig_pe_count_t;
  * MPID_Progress_start().  MPID_Progress_end() is only called if MPID_Progress_wait() is not, so any cleanup of data structures
  * in the state object must occur in both routines.
  *
- * FIXME: the defintion of MPIG_PE_STATE_CM_DECL should be generated by configure based on a list of communication modules.
+ * FIXME: the defintion of MPIG_PE_STATE_CMS_DECL should be generated by configure based on a list of communication modules.
  */
-#if !defined(MPIG_PE_STATE_CM_SELF_DECL)
-#define MPIG_PE_STATE_CM_SELF_DECL
+#if !defined(MPIG_PE_STATE_CMS_SELF_DECL)
+#define MPIG_PE_STATE_CMS_SELF_DECL
 #else
-#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PE_STATE_CM_VMPI_DECL)
-#define MPIG_PE_STATE_CM_VMPI_DECL
+#if !defined(MPIG_PE_STATE_CMS_VMPI_DECL)
+#define MPIG_PE_STATE_CMS_VMPI_DECL
 #else
-#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PE_STATE_CM_XIO_DECL)
-#define MPIG_PE_STATE_CM_XIO_DECL
+#if !defined(MPIG_PE_STATE_CMS_XIO_DECL)
+#define MPIG_PE_STATE_CMS_XIO_DECL
 #else
-#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
 #endif
-#if !defined(MPIG_PE_STATE_CM_OTHER_DECL)
-#define MPIG_PE_STATE_CM_OTHER_DECL
+#if !defined(MPIG_PE_STATE_CMS_OTHER_DECL)
+#define MPIG_PE_STATE_CMS_OTHER_DECL
 #else
-#undef MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
 #endif
 
-#if defined(MPIG_PE_STATE_CM_DECL_STRUCT_DEFINED)
-#define MPIG_PE_STATE_CM_DECL		\
+#if defined(MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED)
+#define MPIG_PE_STATE_CMS_DECL		\
     struct mpig_pe_state_cm		\
     {					\
-	MPIG_PE_STATE_CM_SELF_DECL	\
-	MPIG_PE_STATE_CM_VMPI_DECL	\
-	MPIG_PE_STATE_CM_XIO_DECL	\
-	MPIG_PE_STATE_CM_OTHER_DECL	\
+	MPIG_PE_STATE_CMS_SELF_DECL	\
+	MPIG_PE_STATE_CMS_VMPI_DECL	\
+	MPIG_PE_STATE_CMS_XIO_DECL	\
+	MPIG_PE_STATE_CMS_OTHER_DECL	\
     } cm;
 #else
-#define MPIG_PE_STATE_CM_DECL
+#define MPIG_PE_STATE_CMS_DECL
 #endif
 
 typedef struct mpig_pe_state
@@ -907,7 +1014,7 @@ mpig_pe_state_t;
 
 #define MPID_PROGRESS_STATE_DECL	\
     mpig_pe_state_t dev;		\
-    MPIG_PE_STATE_CM_DECL
+    MPIG_PE_STATE_CMS_DECL
 /**********************************************************************************************************************************
 						   END PROGRESS ENGINE SECTION
 **********************************************************************************************************************************/

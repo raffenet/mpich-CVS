@@ -17,22 +17,22 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 #define mpig_cm_xio_vc_construct(vc_)						\
 {										\
     mpig_cm_xio_vc_set_state((vc_), MPIG_CM_XIO_VC_STATE_UNCONNECTED);		\
-    (vc_)->cm.xio.state = MPIG_CM_XIO_VC_STATE_UNCONNECTED;			\
+    (vc_)->cmu.xio.state = MPIG_CM_XIO_VC_STATE_UNCONNECTED;			\
     mpig_cm_xio_vc_set_contact_string((vc_), NULL);				\
-    (vc_)->cm.xio.endian = MPIG_ENDIAN_UNKNOWN;					\
-    (vc_)->cm.xio.df = -1;							\
-    (vc_)->cm.xio.handle = NULL;						\
-    (vc_)->cm.xio.conn_seqnum = 0;						\
-    (vc_)->cm.xio.active_sreq = NULL;						\
-    (vc_)->cm.xio.active_rreq = NULL;						\
+    (vc_)->cmu.xio.endian = MPIG_ENDIAN_UNKNOWN;				\
+    (vc_)->cmu.xio.df = -1;							\
+    (vc_)->cmu.xio.handle = NULL;						\
+    (vc_)->cmu.xio.conn_seqnum = 0;						\
+    (vc_)->cmu.xio.active_sreq = NULL;						\
+    (vc_)->cmu.xio.active_rreq = NULL;						\
     mpig_cm_xio_sendq_construct(vc_);						\
-    (vc_)->cm.xio.msg_hdr_size = 0;						\
-    mpig_databuf_construct((vc_)->cm.xio.msgbuf, MPIG_CM_XIO_VC_MSGBUF_SIZE);	\
-    (vc_)->cm.xio.list_prev = (vc_);						\
-    (vc_)->cm.xio.list_next = (vc_);						\
-    (vc_)->cm.xio.xio_info = NULL;                          \
-										\
-    mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_XIO);				\
+    (vc_)->cmu.xio.msg_hdr_size = 0;						\
+    mpig_databuf_construct(&(vc_)->cmu.xio.msgbuf, MPIG_CM_XIO_VC_MSGBUF_SIZE);	\
+    (vc_)->cmu.xio.list_prev = (vc_);						\
+    (vc_)->cmu.xio.list_next = (vc_);						\
+    mpig_cm_xio_vc_cond_construct(vc_);						\
+    mpig_cm_xio_vc_set_port_id(vc_, NULL);					\
+    (vc_)->cmu.xio.mpi_errno = MPI_SUCCESS;					\
     mpig_vc_set_vtable((vc_), &mpig_cm_xio_vc_vtable);				\
 }
 
@@ -40,21 +40,29 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 {									\
     mpig_cm_xio_vc_set_state((vc_), MPIG_CM_XIO_VC_STATE_UNDEFINED);	\
     MPIU_Free(mpig_cm_xio_vc_get_contact_string(vc_));			\
-    (vc_)->cm.xio.endian = MPIG_ENDIAN_UNKNOWN;				\
-    (vc_)->cm.xio.df = -1;						\
-    (vc_)->cm.xio.handle = NULL;					\
-    (vc_)->cm.xio.conn_seqnum = 0;					\
-    (vc_)->cm.xio.active_sreq = NULL;					\
-    (vc_)->cm.xio.active_rreq = NULL;					\
+    mpig_cm_xio_vc_set_contact_string(vc_, NULL);			\
+    (vc_)->cmu.xio.endian = MPIG_ENDIAN_UNKNOWN;			\
+    (vc_)->cmu.xio.df = -1;						\
+    (vc_)->cmu.xio.handle = NULL;					\
+    (vc_)->cmu.xio.conn_seqnum = 0;					\
+    (vc_)->cmu.xio.active_sreq = NULL;					\
+    (vc_)->cmu.xio.active_rreq = NULL;					\
     mpig_cm_xio_sendq_destruct(vc_);					\
-    (vc_)->cm.xio.msg_hdr_size = 0;					\
-    mpig_databuf_destruct((vc_)->cm.xio.msgbuf);			\
-    (vc_)->cm.xio.list_prev = NULL;					\
-    (vc_)->cm.xio.list_next = NULL;					\
-									\
-    mpig_vc_set_cm_type((vc_), MPIG_CM_TYPE_UNDEFINED);			\
+    (vc_)->cmu.xio.msg_hdr_size = 0;					\
+    mpig_databuf_destruct(&(vc_)->cmu.xio.msgbuf);			\
+    (vc_)->cmu.xio.list_prev = NULL;					\
+    (vc_)->cmu.xio.list_next = NULL;					\
+    mpig_cm_xio_vc_cond_destruct(vc_);					\
+    MPIU_Free(mpig_cm_xio_vc_get_port_id(vc_));				\
+    mpig_cm_xio_vc_set_port_id(vc_, NULL);				\
+    (vc_)->cmu.xio.mpi_errno = MPI_ERR_INTERN;				\
     mpig_vc_set_vtable((vc_), NULL);					\
 }
+
+#define mpig_cm_xio_vc_cond_construct(vc_)	globus_cond_init(&(vc_)->cmu.xio.cond, NULL)
+#define mpig_cm_xio_vc_cond_destruct(vc_)	globus_cond_destroy(&(vc_)->cmu.xio.cond)
+#define mpig_cm_xio_vc_cond_signal(vc_)		globus_cond_signal(&(vc_)->cmu.xio.cond)
+#define mpig_cm_xio_vc_cond_wait(vc_)		globus_cond_wait(&(vc_)->cmu.xio.cond, &(vc_)->mutex)
 
 #define mpig_cm_xio_vc_inc_ref_count(vc_, was_inuse_flag_p_)								\
 {															\
@@ -72,41 +80,48 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 
 #define mpig_cm_xio_vc_set_state(vc_, state_)								\
 {													\
-    (vc_)->cm.xio.state = (state_);									\
+    (vc_)->cmu.xio.state = (state_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO state: vc=" MPIG_PTR_FMT ", state=%s",	\
-	(MPIG_PTR_CAST) (vc_), mpig_cm_xio_vc_state_get_string((vc_)->cm.xio.state)));			\
+	(MPIG_PTR_CAST) (vc_), mpig_cm_xio_vc_state_get_string((vc_)->cmu.xio.state)));			\
 }
 
-#define mpig_cm_xio_vc_get_state(vc_) ((vc_)->cm.xio.state)
+#define mpig_cm_xio_vc_get_state(vc_) ((vc_)->cmu.xio.state)
 
 #define mpig_cm_xio_vc_set_contact_string(vc_, cs_)	\
 {							\
-    (vc_)->cm.xio.cs = (cs_);				\
+    (vc_)->cmu.xio.contact_string = (cs_);		\
 }
 
-#define mpig_cm_xio_vc_get_contact_string(vc_) ((vc_)->cm.xio.cs)
+#define mpig_cm_xio_vc_get_contact_string(vc_) ((vc_)->cmu.xio.contact_string)
+
+#define mpig_cm_xio_vc_set_port_id(vc_, port_id_)	\
+{							\
+    (vc_)->cmu.xio.port_id = (port_id_);		\
+}
+
+#define mpig_cm_xio_vc_get_port_id(vc_) ((vc_)->cmu.xio.port_id)
 
 #define mpig_cm_xio_vc_set_endian(vc_, endian_)								\
 {													\
-    (vc_)->cm.xio.endian = (endian_);									\
+    (vc_)->cmu.xio.endian = (endian_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO endian: vc=" MPIG_PTR_FMT ", endian=%s",	\
-	(MPIG_PTR_CAST) (vc_), MPIG_ENDIAN_STR((vc_)->cm.xio.endian)));					\
+    (MPIG_PTR_CAST) (vc_), MPIG_ENDIAN_STR((vc_)->cmu.xio.endian)));					\
 }
 
-#define mpig_cm_xio_vc_get_endian(vc_) ((vc_)->cm.xio.endian)
+#define mpig_cm_xio_vc_get_endian(vc_) ((vc_)->cmu.xio.endian)
 
 #define mpig_cm_xio_vc_set_data_format(vc_, df_)								\
 {														\
-    (vc_)->cm.xio.df = (df_);											\
+    (vc_)->cmu.xio.df = (df_);											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO VC data format: vc=" MPIG_PTR_FMT ", df=%d",	\
 	(MPIG_PTR_CAST) (vc_), (df_)));										\
 }
 
-#define mpig_cm_xio_vc_get_data_format(vc_) ((vc_)->cm.xio.df)
+#define mpig_cm_xio_vc_get_data_format(vc_) ((vc_)->cmu.xio.df)
 
 #define mpig_cm_xio_vc_get_state_class(vc_)								\
     ((mpig_cm_xio_vc_state_classes_t)									\
-    (((vc_)->cm.xio.state & MPIG_CM_XIO_VC_STATE_CLASS_MASK) >> MPIG_CM_XIO_VC_STATE_CLASS_SHIFT))
+    (((vc_)->cmu.xio.state & MPIG_CM_XIO_VC_STATE_CLASS_MASK) >> MPIG_CM_XIO_VC_STATE_CLASS_SHIFT))
 
 #define mpig_cm_xio_vc_is_undefined(vc_)						\
     ((mpig_cm_xio_vc_get_state(vc_) == MPIG_CM_XIO_VC_STATE_UNDEFINED) ? TRUE : FALSE)
@@ -185,29 +200,20 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 	case MPIG_CM_XIO_VC_STATE_SERVER_ACCEPTING:
 	    str = "MPIG_CM_XIO_VC_STATE_SERVER_ACCEPTING";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_OPENING_VC:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_OPENING_VC";
+	case MPIG_CM_XIO_VC_STATE_CLIENT_OPENING:
+	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_OPENING";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_VC_MAGIC:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_VC_MAGIC";
+	case MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_MAGIC:
+	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_MAGIC";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_VC_MAGIC:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_VC_MAGIC";
+	case MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_MAGIC:
+	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_MAGIC";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_VC_REQ:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_VC_REQ";
+	case MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_PROC_REQ:
+	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_PROC_REQ";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_VC_RESP:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_VC_RESP";
-	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_OPENING_PORT:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_OPENING_PORT";
-	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_PORT_MAGIC:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_PORT_MAGIC";
-	    break;
-	case MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_PORT_MAGIC:
-	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_PORT_MAGIC";
+	case MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_PROC_RESP:
+	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_PROC_RESP";
 	    break;
 	case MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_PORT_REQ:
 	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_SENDING_OPEN_PORT_REQ";
@@ -215,8 +221,8 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 	case MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_PORT_RESP:
 	    str = "MPIG_CM_XIO_VC_STATE_CLIENT_RECEIVING_OPEN_PORT_RESP";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_SERVER_OPEN:
-	    str = "MPIG_CM_XIO_VC_STATE_SERVER_OPEN";
+	case MPIG_CM_XIO_VC_STATE_SERVER_OPENING:
+	    str = "MPIG_CM_XIO_VC_STATE_SERVER_OPENING";
 	    break;
 	case MPIG_CM_XIO_VC_STATE_SERVER_RECEIVING_MAGIC:
 	    str = "MPIG_CM_XIO_VC_STATE_SERVER_RECEIVING_MAGIC";
@@ -227,38 +233,44 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 	case MPIG_CM_XIO_VC_STATE_SERVER_RECEIVING_OPEN_REQ:
 	    str = "MPIG_CM_XIO_VC_STATE_SERVER_RECEIVING_OPEN_REQ";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_RESP:
-	    str = "MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_RESP";
+	case MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_PROC_RESP:
+	    str = "MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_PROC_RESP";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_PORT_RESP:
+	    str = "MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_PORT_RESP";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_ERROR_RESP:
+	    str = "MPIG_CM_XIO_VC_STATE_SERVER_SENDING_OPEN_ERROR_RESP";
 	    break;
 	case MPIG_CM_XIO_VC_STATE_CONNECTED:
 	    str = "MPIG_CM_XIO_VC_STATE_CONNECTED";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_RECEIVED_CLOSE_REQ:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_RECEIVED_CLOSE_REQ";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_RECEIVED_CLOSE:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_RECEIVED_CLOSE";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_AWAITING_CLOSE_REQ";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_AWAITING_CLOSE:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_AWAITING_CLOSE";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_CLOSE_REQ";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_RECEIVED_CLOSE:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_RECEIVED_CLOSE";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_CLOSE_REQ_RECEIVED_ACK";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_RECEIVED_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_CLOSE_RECEIVED_ACK";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_CLOSE_REQ_AWAITING_CLOSE_REQ";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENT_CLOSE_AWAITING_CLOSE:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENT_CLOSE_AWAITING_CLOSE";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_AWAITING_ACK";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_ACK_AWAITING_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_ACK_AWAITING_ACK";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENDING_ACK_RECEIVED_ACK";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_ACK_RECEIVED_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENDING_ACK_RECEIVED_ACK";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_SENT_ACK_AWAITING_ACK";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENT_ACK_AWAITING_ACK:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_PROC_SENT_ACK_AWAITING_ACK";
 	    break;
-	case MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC:
-	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC";
+	case MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING:
+	    str = "MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING";
 	    break;
 	case MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING:
 	    str = "MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING";
@@ -267,7 +279,10 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 	    str = "MPIG_CM_XIO_VC_STATE_FAILED_CONNECTION";
 	    break;
 	case MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING:
-	    str = "MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING:";
+	    str = "MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING";
+	    break;
+	case MPIG_CM_XIO_VC_STATE_FAILED_CLOSING:
+	    str = "MPIG_CM_XIO_VC_STATE_FAILED_CLOSING";
 	    break;
 	default:
 	    str = "(unrecognized vc state)";
@@ -362,7 +377,7 @@ MPIG_STATIC int mpig_cm_xio_adi3_isend(const void * const buf, const int cnt, co
 	rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_comm_get_vc(comm, rank, &vc);
-    MPIU_Assert(mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_XIO);
+    MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
 
     mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, vc, &sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -416,7 +431,7 @@ MPIG_STATIC int mpig_cm_xio_adi3_irsend(const void * const buf, const int cnt, c
 	rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_comm_get_vc(comm, rank, &vc);
-    MPIU_Assert(mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_XIO);
+    MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
 
     mpig_request_create_isreq(MPIG_REQUEST_TYPE_RSEND, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, vc, &sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -470,7 +485,7 @@ MPIG_STATIC int mpig_cm_xio_adi3_issend(const void * const buf, const int cnt, c
 	rank, tag, (MPIG_PTR_CAST) comm, ctx));
 
     mpig_comm_get_vc(comm, rank, &vc);
-    MPIU_Assert(mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_XIO);
+    MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
     
     mpig_request_create_isreq(MPIG_REQUEST_TYPE_SSEND, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, vc, &sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -552,9 +567,9 @@ MPIG_STATIC int mpig_cm_xio_adi3_irecv(void * const buf, const int cnt, const MP
 
     /* get the associated with the remote process */
     mpig_comm_get_vc(comm, rank, &vc);
-    MPIU_Assert(mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_XIO);
+    MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
 	
-    rreq = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, comm->context_id + ctxoff, &rreq_found);
+    rreq = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, ctx, &rreq_found);
     MPIU_ERR_CHKANDJUMP1((rreq == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
 
     if (rreq_found)
@@ -636,7 +651,7 @@ MPIG_STATIC int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
 	sreq_locked = TRUE;
 	{
 	    /* first try to locate and remove the request from the send queue */
-	    if (vc->cm.xio.active_sreq != sreq && mpig_cm_xio_sendq_find_and_deq(vc, sreq))
+	    if (vc->cmu.xio.active_sreq != sreq && mpig_cm_xio_sendq_find_and_deq(vc, sreq))
 	    {
 		/* if the request is successfully dequeued, then set it's internal completion counter to zero and enqueue it on the
 		   request completion queue. */
@@ -729,7 +744,7 @@ MPIG_STATIC int mpig_cm_xio_vc_recv_any_source(mpig_vc_t * const vc, MPID_Reques
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT ", rreq=" MPIG_PTR_FMT,
 	(MPIG_PTR_CAST) vc, (MPIG_PTR_CAST) rreq));
     
-    MPIU_Assert(mpig_vc_get_cm_type(vc) == MPIG_CM_TYPE_XIO);
+    MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
     MPIU_Assert(mpig_request_get_vc(rreq) == vc);
 
     mpi_errno = mpig_cm_xio_vc_recv_unexpected(vc, rreq);
@@ -753,7 +768,7 @@ MPIG_STATIC int mpig_cm_xio_vc_recv_any_source(mpig_vc_t * const vc, MPID_Reques
 MPIG_STATIC void mpig_cm_xio_vc_dec_ref_count_and_close(mpig_vc_t * const vc, bool_t * const is_inuse_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * const vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * const vc_cmu = &vc->cmu.xio;
     int mpi_errno = MPI_SUCCESS;
 
     MPIG_UNUSED_VAR(fcname);
@@ -763,22 +778,18 @@ MPIG_STATIC void mpig_cm_xio_vc_dec_ref_count_and_close(mpig_vc_t * const vc, bo
     if (*is_inuse_p == FALSE)
     {
 	/* if we still have a valid XIO handle, then start the disconnect process */
-	if (vc_cm->handle != NULL)
+	if (vc_cmu->handle != NULL)
 	{
-	    mpi_errno = mpig_cm_xio_disconnect(vc);
+	    mpi_errno = mpig_cm_xio_disconnect_close_proc(vc);
 	    if (mpi_errno == MPI_SUCCESS)
 	    {
 		*is_inuse_p = TRUE;
 	    }
 	    else
 	    {
-		globus_result_t grc;
-		grc = globus_xio_register_close(vc_cm->handle, NULL, mpig_cm_xio_conn_handle_close, NULL);
-		vc_cm->handle = FALSE;
-		MPIU_ERR_CHKANDSTMT1((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_xio|xio_reg_close",
-		    "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
-		mpig_cm_xio_vc_list_remove(vc);
+		MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_close_proc");
 		mpig_cm_xio_fault_handle_async_error(mpi_errno);
+		mpig_cm_xio_vc_list_remove(vc);
 	    }
 	}
 	else
@@ -808,7 +819,7 @@ MPIG_STATIC void mpig_cm_xio_vc_dec_ref_count_and_close(mpig_vc_t * const vc, bo
 MPIG_STATIC int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * const rreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_request * rreq_cm = &rreq->cm.xio;
+    struct mpig_cm_xio_request * rreq_cmu = &rreq->cmu.xio;
     bool_t rreq_complete = FALSE;
     int mrc;
     int mpi_errno = MPI_SUCCESS;
@@ -843,7 +854,7 @@ MPIG_STATIC int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Reques
 	    mrc = mpig_cm_xio_stream_rreq_init(rreq);
 	    if (mrc == MPI_SUCCESS)
 	    {
-		mpig_iov_reset(rreq_cm->iov, 0);
+		mpig_iov_reset(rreq_cmu->iov, 0);
 		mrc = mpig_cm_xio_stream_rreq_unpack(rreq);
 		MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
 		    "**globus|cm_xio|stream_rreq_unpack");
@@ -854,7 +865,7 @@ MPIG_STATIC int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Reques
 		    "**globus|cm_xio|stream_req_init");
 	    }   /* --END ERROR HANDLING-- */
 		    
-		/* mpig_databuf_destroy(rreq_cm->databuf); -- destroyed by unpack routine */
+		/* mpig_databuf_destroy(rreq_cmu->databuf); -- destroyed by unpack routine */
 		/* rreq->status.count is set by unpack routines */
 	    mpig_cm_xio_request_dec_cc(rreq, &rreq_complete);
 	}
@@ -908,8 +919,8 @@ MPIG_STATIC int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Reques
 	    mrc = mpig_cm_xio_stream_rreq_init(rreq);
 	    if (mrc == MPI_SUCCESS)
 	    {
-		mpig_iov_reset(rreq_cm->iov, 0);
-		mpig_cm_xio_stream_set_max_pos(rreq, mpig_databuf_get_remaining_bytes(rreq_cm->databuf));
+		mpig_iov_reset(rreq_cmu->iov, 0);
+		mpig_cm_xio_stream_set_max_pos(rreq, mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
 		mrc = mpig_cm_xio_stream_rreq_unpack(rreq);
 		MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
 		    "**globus|cm_xio|stream_rreq_unpack");
@@ -980,24 +991,24 @@ MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request *
 
 #define mpig_cm_xio_sendq_construct(vc_)	\
 {						\
-    (vc_)->cm.xio.sendq_head = NULL;		\
-    (vc_)->cm.xio.sendq_tail = NULL;		\
+    (vc_)->cmu.xio.sendq_head = NULL;		\
+    (vc_)->cmu.xio.sendq_tail = NULL;		\
 }
 
 #define mpig_cm_xio_sendq_destruct(vc_)			\
 {							\
-    MPIU_Assert((vc_)->cm.xio.sendq_head == NULL);	\
-    MPIU_Assert((vc_)->cm.xio.sendq_tail == NULL);	\
+    MPIU_Assert((vc_)->cmu.xio.sendq_head == NULL);	\
+    MPIU_Assert((vc_)->cmu.xio.sendq_tail == NULL);	\
 }
 
 #define mpig_cm_xio_sendq_enq_head(vc_, sreq_)											\
 {																\
-    (sreq_)->cm.xio.sendq_next = (vc_)->cm.xio.sendq_head;									\
-    if ((vc_)->cm.xio.sendq_tail == NULL)											\
+    (sreq_)->cmu.xio.sendq_next = (vc_)->cmu.xio.sendq_head;									\
+    if ((vc_)->cmu.xio.sendq_tail == NULL)											\
     {																\
-	(vc_)->cm.xio.sendq_tail = (sreq_);											\
+	(vc_)->cmu.xio.sendq_tail = (sreq_);											\
     }																\
-    (vc_)->cm.xio.sendq_head = (sreq_);												\
+    (vc_)->cmu.xio.sendq_head = (sreq_);											\
 																\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC,								\
 		       "sendq - req enqueued at head: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,	\
@@ -1006,17 +1017,17 @@ MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request *
 
 #define mpig_cm_xio_sendq_enq_tail(vc_, sreq_)											\
 {																\
-    if ((vc_)->cm.xio.sendq_tail != NULL)											\
+    if ((vc_)->cmu.xio.sendq_tail != NULL)											\
     {																\
-	(vc_)->cm.xio.sendq_tail->cm.xio.sendq_next = (sreq_);									\
+	(vc_)->cmu.xio.sendq_tail->cmu.xio.sendq_next = (sreq_);								\
     }																\
     else															\
     {																\
-	(vc_)->cm.xio.sendq_head = (sreq_);											\
+	(vc_)->cmu.xio.sendq_head = (sreq_);											\
     }																\
-    (vc_)->cm.xio.sendq_tail = (sreq_);												\
+    (vc_)->cmu.xio.sendq_tail = (sreq_);											\
 																\
-    (sreq_)->cm.xio.sendq_next = NULL;												\
+    (sreq_)->cmu.xio.sendq_next = NULL;												\
 																\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC,								\
 		       "sendq - req enqueued at tail: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,	\
@@ -1025,17 +1036,17 @@ MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request *
 
 #define mpig_cm_xio_sendq_deq(vc_, sreqp_)										\
 {															\
-    *(sreqp_) = (vc_)->cm.xio.sendq_head;										\
+    *(sreqp_) = (vc_)->cmu.xio.sendq_head;										\
 															\
-    if ((vc_)->cm.xio.sendq_head != NULL)										\
+    if ((vc_)->cmu.xio.sendq_head != NULL)										\
     {															\
-	(vc_)->cm.xio.sendq_head = (vc_)->cm.xio.sendq_head->cm.xio.sendq_next;						\
-	if ((vc_)->cm.xio.sendq_head == NULL)										\
+	(vc_)->cmu.xio.sendq_head = (vc_)->cmu.xio.sendq_head->cmu.xio.sendq_next;					\
+	if ((vc_)->cmu.xio.sendq_head == NULL)										\
 	{														\
-	    (vc_)->cm.xio.sendq_tail = NULL;										\
+	    (vc_)->cmu.xio.sendq_tail = NULL;										\
 	}														\
 															\
-	(*(sreqp_))->cm.xio.sendq_next = NULL;										\
+	(*(sreqp_))->cmu.xio.sendq_next = NULL;										\
 															\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC,						\
 			   "sendq - req dequeued: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,	\
@@ -1048,9 +1059,9 @@ MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request *
     }															\
 }
 
-#define mpig_cm_xio_sendq_head(vc_) ((vc_)->cm.xio.sendq_head)
+#define mpig_cm_xio_sendq_head(vc_) ((vc_)->cmu.xio.sendq_head)
 
-#define mpig_cm_xio_sendq_empty(vc_) (((vc_)->cm.xio.sendq_head == NULL) ? TRUE : FALSE)
+#define mpig_cm_xio_sendq_empty(vc_) (((vc_)->cmu.xio.sendq_head == NULL) ? TRUE : FALSE)
 
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
@@ -1077,7 +1088,7 @@ MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request *
 		       (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq));
 
     prev_sreq = NULL;
-    cur_sreq = vc->cm.xio.sendq_head;
+    cur_sreq = vc->cmu.xio.sendq_head;
 
     while (cur_sreq != NULL)
     {
@@ -1089,25 +1100,25 @@ MPIG_STATIC bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request *
 	    
 	    if (prev_sreq == NULL)
 	    {
-		vc->cm.xio.sendq_head = sreq->cm.xio.sendq_next;
+		vc->cmu.xio.sendq_head = sreq->cmu.xio.sendq_next;
 	    }
 	    else
 	    {
-		prev_sreq->cm.xio.sendq_next = sreq->cm.xio.sendq_next;
+		prev_sreq->cmu.xio.sendq_next = sreq->cmu.xio.sendq_next;
 	    }
 
-	    if (vc->cm.xio.sendq_tail == sreq)
+	    if (vc->cmu.xio.sendq_tail == sreq)
 	    {
-		vc->cm.xio.sendq_tail = sreq->cm.xio.sendq_next;
+		vc->cmu.xio.sendq_tail = sreq->cmu.xio.sendq_next;
 	    }
 
-	    sreq->cm.xio.sendq_next = NULL;
+	    sreq->cmu.xio.sendq_next = NULL;
 	    found = TRUE;
 	    break;
 	}
 
 	prev_sreq = cur_sreq;
-	cur_sreq = cur_sreq->cm.xio.sendq_next;
+	cur_sreq = cur_sreq->cmu.xio.sendq_next;
     }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC,
@@ -1199,7 +1210,7 @@ void mpig_cm_xio_vc_list_finalize()
 void mpig_cm_xio_vc_list_add(mpig_vc_t * vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_vc_list_add);
 
     MPIG_UNUSED_VAR(fcname);
@@ -1209,11 +1220,11 @@ void mpig_cm_xio_vc_list_add(mpig_vc_t * vc)
 
     mpig_cm_xio_mutex_lock();
     {
-	vc_cm->list_prev = NULL;
-	vc_cm->list_next = mpig_cm_xio_vc_list;
+	vc_cmu->list_prev = NULL;
+	vc_cmu->list_next = mpig_cm_xio_vc_list;
 	if (mpig_cm_xio_vc_list != NULL)
 	{
-	    mpig_cm_xio_vc_list->cm.xio.list_prev = vc;
+	    mpig_cm_xio_vc_list->cmu.xio.list_prev = vc;
 	}
 	mpig_cm_xio_vc_list = vc;
     }
@@ -1235,7 +1246,7 @@ void mpig_cm_xio_vc_list_add(mpig_vc_t * vc)
 void mpig_cm_xio_vc_list_remove(mpig_vc_t * vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_vc_list_remove);
 
     MPIG_UNUSED_VAR(fcname);
@@ -1243,13 +1254,13 @@ void mpig_cm_xio_vc_list_remove(mpig_vc_t * vc)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_vc_list_remove);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-    if (vc_cm->list_prev != vc)
+    if (vc_cmu->list_prev != vc)
     {
 	mpig_cm_xio_mutex_lock();
 	{
-	    if (vc_cm->list_prev == NULL)
+	    if (vc_cmu->list_prev == NULL)
 	    {
-		mpig_cm_xio_vc_list = vc_cm->list_next;
+		mpig_cm_xio_vc_list = vc_cmu->list_next;
 		if (mpig_cm_xio_vc_list == NULL)
 		{
 		    globus_cond_signal(&mpig_cm_xio_vc_list_cond);
@@ -1257,18 +1268,18 @@ void mpig_cm_xio_vc_list_remove(mpig_vc_t * vc)
 	    }
 	    else
 	    {
-		vc_cm->list_prev->cm.xio.list_next = vc_cm->list_next;
+		vc_cmu->list_prev->cmu.xio.list_next = vc_cmu->list_next;
 	    }
     
-	    if (vc_cm->list_next != NULL)
+	    if (vc_cmu->list_next != NULL)
 	    {
-		vc_cm->list_next->cm.xio.list_prev = vc_cm->list_prev;
+		vc_cmu->list_next->cmu.xio.list_prev = vc_cmu->list_prev;
 	    }
 	}
 	mpig_cm_xio_mutex_unlock();
 
-	vc_cm->list_prev = vc;
-	vc_cm->list_next = vc;
+	vc_cmu->list_prev = vc;
+	vc_cmu->list_next = vc;
     }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VC, "exiting: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));

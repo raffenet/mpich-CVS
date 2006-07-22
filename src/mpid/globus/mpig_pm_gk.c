@@ -11,14 +11,18 @@
  */
 #include "mpidimpl.h"
 
+
+/* define MPIG_PM_GK_ENABLE_DEBUG to force early initialization of the debug logging subsystem.  see comments in
+   mpig_pm_gk_init(). */
+#undef MPIG_PM_GK_ENABLE_DEBUG
+
+
 #if defined(MPIG_GLOBUS_DUROC_INSTALLED)
 
 #include "globus_duroc_runtime.h"
 #include "globus_duroc_bootstrap.h"
 #include "globus_gram_client.h"
 #include "globus_gram_myjob.h"
-
-#define INT_MAX_STRLEN 10
 
 /* inter-subjob and intra-subjob message tags */
 #define MPIG_PM_GK_TAG_MAX_SIZE	64
@@ -212,7 +216,19 @@ int mpig_pm_gk_init(void)
     MPIU_GetEnvBool("MPIG_USE_SYSTEM_ABORT",&mpig_pm_gk_use_system_abort);
      
     mpig_pm_gk_state = MPIG_PM_GK_STATE_INITIALIZED;
-    
+
+    /* NOTE: THIS IS A HACK!  now that we have the process topology information, initialize the debugging system.  normally, the
+       debug logging subsystem is intialized in MPID_Init(); however, initializng it here allows us to catch some activities that
+       may occur before MPID_Init() has all of the information.  NOTE: the process group id is not know until the business card
+       exchange occurs, and this remains set to "(unknown)" until after the exchange has taken place and MPID_Init() sets the
+       value.  the upshot is that the log filename and the output within it will contain "(unknown)" as the process group id, but
+       this is a small tradeoff for catching early rece conditions. */
+#   if defined(MPIG_PM_GK_ENABLE_DEBUG) && defined(MPIG_DEBUG)
+    {
+	mpig_process.my_pg_rank = mpig_pm_gk_pg_rank;
+	mpig_debug_init();
+    }
+#   endif
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_init);
@@ -443,9 +459,9 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
        index is be needed by the topology module to perform topology discovery and to fill in the MPI_APP_NUM attribute attached
        to MPI_COMM_WORLD (see MPID_Init). */
     {
-	char sj_index_str[10];
+	char sj_index_str[MPIG_INT_MAX_STRLEN];
 	
-	if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_gk_my_sj_index) < 10)
+	if (MPIU_Snprintf(sj_index_str, MPIG_INT_MAX_STRLEN, "%d", mpig_pm_gk_my_sj_index) < MPIG_INT_MAX_STRLEN)
 	{
 	    mpi_errno = mpig_bc_add_contact(bc, "PM_GK_APP_NUM", sj_index_str);
 	    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_add_contact",
@@ -1143,9 +1159,9 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    globus_byte_t stack_msg_buf[GRAM_MYJOB_MAX_BUFFER_LENGTH];
 
 	    /* if the pre-allocated message buffer is too small, then allocate a bigger one */
-	    if ((int) sizeof(msg_buf) < 2 * INT_MAX_STRLEN + in_buf_len)
+	    if ((int) sizeof(msg_buf) < 2 * MPIG_INT_MAX_STRLEN + in_buf_len)
 	    {
-		MPIU_CHKLMEM_MALLOC(msg_buf, globus_byte_t *, 2 * INT_MAX_STRLEN + in_buf_len, mpi_errno,
+		MPIU_CHKLMEM_MALLOC(msg_buf, globus_byte_t *, 2 * MPIG_INT_MAX_STRLEN + in_buf_len, mpi_errno,
 		    "big message buffer for slave process data");
 	    }
 	    else
@@ -1155,12 +1171,12 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 
 	    /* copy my byte array into the message buffer, tagging it with my rank */
 	    sprintf((char *) msg_buf, "%d ", pg_rank);
-	    sprintf((char *) msg_buf + INT_MAX_STRLEN, "%d ", in_buf_len);
-	    memcpy((char *) msg_buf + 2 * INT_MAX_STRLEN, in_buf, (size_t) in_buf_len);
+	    sprintf((char *) msg_buf + MPIG_INT_MAX_STRLEN, "%d ", in_buf_len);
+	    memcpy((char *) msg_buf + 2 * MPIG_INT_MAX_STRLEN, in_buf, (size_t) in_buf_len);
 	    
 	    /* send my byte array to the subjob master */
 	    sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_SLAVE_TO_SJ_MASTER_DATA, call_count);
-	    mpi_errno = mpig_pm_gk_intra_subjob_gather(my_sj_size, my_sj_rank, msg_buf, 2 * INT_MAX_STRLEN + in_buf_len, tag,
+	    mpi_errno = mpig_pm_gk_intra_subjob_gather(my_sj_size, my_sj_rank, msg_buf, 2 * MPIG_INT_MAX_STRLEN + in_buf_len, tag,
 		(int *) NULL, (globus_byte_t **) NULL);
 	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
 		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
@@ -1258,25 +1274,25 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 
 	    /* construct the header for a message containing the data for my subjob so that it may be sent to the process group
 	       master */
-	    my_sj_buf_len += INT_MAX_STRLEN + my_sj_size * 2 * INT_MAX_STRLEN;
+	    my_sj_buf_len += MPIG_INT_MAX_STRLEN + my_sj_size * 2 * MPIG_INT_MAX_STRLEN;
 	    MPIU_CHKPMEM_MALLOC(my_sj_buf, globus_byte_t *, my_sj_buf_len, mpi_errno, "buffer for subjob data");
 
 	    sprintf((char *) my_sj_buf, "%d ", my_sj_size);
-	    sprintf((char *) my_sj_buf + INT_MAX_STRLEN, "%d ", pg_rank);
-	    sprintf((char *) my_sj_buf + 2 * INT_MAX_STRLEN,"%d ", in_buf_len);
+	    sprintf((char *) my_sj_buf + MPIG_INT_MAX_STRLEN, "%d ", pg_rank);
+	    sprintf((char *) my_sj_buf + 2 * MPIG_INT_MAX_STRLEN,"%d ", in_buf_len);
 
 	    /* add my byte array to the message */
-	    memcpy(my_sj_buf+ 3 * INT_MAX_STRLEN,  in_buf, (size_t) in_buf_len);
+	    memcpy(my_sj_buf+ 3 * MPIG_INT_MAX_STRLEN,  in_buf, (size_t) in_buf_len);
 
 	    /* add the byte arrays of the other processes to the message.  include the ranks and sizes of the byte arrays so that
 	       message can be unpacked later. */
-	    sj_buf_cur_ptr = my_sj_buf + 3 * INT_MAX_STRLEN + in_buf_len;
+	    sj_buf_cur_ptr = my_sj_buf + 3 * MPIG_INT_MAX_STRLEN + in_buf_len;
 	    for (i = 1; i < my_sj_size; i ++)
 	    {
 		sprintf((char *) sj_buf_cur_ptr, "%d ", pg_rank + i);
-		sprintf((char *) sj_buf_cur_ptr + INT_MAX_STRLEN, "%d ", rcounts[i]);
-		memcpy((char *) sj_buf_cur_ptr + 2 * INT_MAX_STRLEN, msg_buf + displs[i], (size_t) rcounts[i]);
-		sj_buf_cur_ptr += 2 * INT_MAX_STRLEN + rcounts[i];
+		sprintf((char *) sj_buf_cur_ptr + MPIG_INT_MAX_STRLEN, "%d ", rcounts[i]);
+		memcpy((char *) sj_buf_cur_ptr + 2 * MPIG_INT_MAX_STRLEN, msg_buf + displs[i], (size_t) rcounts[i]);
+		sj_buf_cur_ptr += 2 * MPIG_INT_MAX_STRLEN + rcounts[i];
 	    }
 
 	    /* free the temporary allocations (rcounts, displs, and msg_buf) */
@@ -1286,14 +1302,14 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	{
 	    /* construct a message containing my data, and gather the data from all other processes in my subjob */
 	    globus_byte_t * msg_buf;
-	    int msg_buf_len = 3 * INT_MAX_STRLEN + in_buf_len;
+	    int msg_buf_len = 3 * MPIG_INT_MAX_STRLEN + in_buf_len;
 
 	    MPIU_CHKLMEM_MALLOC(msg_buf, globus_byte_t *, msg_buf_len, mpi_errno, "buffer for local data message");
 
 	    sprintf((char *) msg_buf, "%d ", my_sj_size);
-	    sprintf((char *) msg_buf + INT_MAX_STRLEN, "%d ", pg_rank);
-	    sprintf((char *) msg_buf + 2 * INT_MAX_STRLEN, "%d ", in_buf_len);
-	    memcpy(msg_buf + 3 * INT_MAX_STRLEN, in_buf, (size_t) in_buf_len);
+	    sprintf((char *) msg_buf + MPIG_INT_MAX_STRLEN, "%d ", pg_rank);
+	    sprintf((char *) msg_buf + 2 * MPIG_INT_MAX_STRLEN, "%d ", in_buf_len);
+	    memcpy(msg_buf + 3 * MPIG_INT_MAX_STRLEN, in_buf, (size_t) in_buf_len);
 
 	    sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_SLAVE_TO_SJ_MASTER_DATA, call_count);
 
@@ -1425,7 +1441,7 @@ MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf,
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_extract_byte_arrays);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 	
-    src = rbuf + INT_MAX_STRLEN;
+    src = rbuf + MPIG_INT_MAX_STRLEN;
     sscanf((char *) rbuf, "%d ", &nbufs);
     if (nbufs_p)
     {
@@ -1446,7 +1462,7 @@ MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf,
 	    exit(1);
 	}
 
-	sscanf((char *) src + INT_MAX_STRLEN, "%d ", out_buf_lens+pg_rank);
+	sscanf((char *) src + MPIG_INT_MAX_STRLEN, "%d ", out_buf_lens+pg_rank);
 	
 	/* FIME: create a real error code to be returned */
 	out_bufs[pg_rank] = (globus_byte_t *) MPIU_Malloc(out_buf_lens[pg_rank]);
@@ -1456,9 +1472,9 @@ MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf,
 	    exit(1);
 	}
 
-	memcpy(out_bufs[pg_rank], src + 2 * INT_MAX_STRLEN, (size_t) out_buf_lens[pg_rank]);
+	memcpy(out_bufs[pg_rank], src + 2 * MPIG_INT_MAX_STRLEN, (size_t) out_buf_lens[pg_rank]);
 
-	src += 2 * INT_MAX_STRLEN + out_buf_lens[pg_rank];
+	src += 2 * MPIG_INT_MAX_STRLEN + out_buf_lens[pg_rank];
     } /* end: for all byte arrays in rbuf */
 
   fn_return:
@@ -1507,7 +1523,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_send(const int dest, const char * const 
 	"enter: dest=%d, tag_base=%s, nbytes=%d", dest, tag_base, nbytes));
 
     /* if the pre-allocated tag buffer is too small, then allocate a bigger one */
-    if (strlen(tag_base) + 5 > sizeof(tag))
+    if (strlen(tag_base) + 5 > sizeof(tag_buf))
     {
 	MPIU_CHKLMEM_MALLOC(tag, char *, strlen(tag_base) + 5, mpi_errno, "buffer for large tag");
     }
@@ -1518,11 +1534,11 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_send(const int dest, const char * const 
 
     /* sending as much as i can in the first buffer */
     sprintf(send_buf, "%d ", nbytes);
-    ncpy = max_payload_size - INT_MAX_STRLEN < nbytes ? max_payload_size - INT_MAX_STRLEN : nbytes;
-    memcpy(send_buf + INT_MAX_STRLEN, buf, (size_t) ncpy);
+    ncpy = max_payload_size - MPIG_INT_MAX_STRLEN < nbytes ? max_payload_size - MPIG_INT_MAX_STRLEN : nbytes;
+    memcpy(send_buf + MPIG_INT_MAX_STRLEN, buf, (size_t) ncpy);
 
     sprintf(tag, "%s0", tag_base);
-    globus_duroc_runtime_intra_subjob_send(dest, tag, INT_MAX_STRLEN + ncpy, (globus_byte_t *) send_buf);
+    globus_duroc_runtime_intra_subjob_send(dest, tag, MPIG_INT_MAX_STRLEN + ncpy, (globus_byte_t *) send_buf);
 
     /* pushing out remaining data */
     bytes_sent = ncpy;
@@ -1577,7 +1593,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "enter: tag_base=%s", tag_base));
 
     /* if the pre-allocated tag buffer is too small, then allocate a bigger one */
-    if (strlen(tag_base) + 5 > sizeof(tag))
+    if (strlen(tag_base) + 5 > sizeof(tag_buf))
     {
 	MPIU_CHKLMEM_MALLOC(tag, char *, strlen(tag_base) + 5, mpi_errno, "buffer for large tag");
     }
@@ -1594,11 +1610,11 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int
     MPIU_CHKPMEM_MALLOC(*buf, globus_byte_t *, *rcvd_nbytes, mpi_errno, "receive buffer");
 
     /* copy the first chuck of the message into the receive buffer */
-    memcpy(*buf, rcv_buf + INT_MAX_STRLEN, (size_t) nr - INT_MAX_STRLEN);
+    memcpy(*buf, rcv_buf + MPIG_INT_MAX_STRLEN, (size_t) nr - MPIG_INT_MAX_STRLEN);
 
     /* receiving remaining data */
-    bytes_rcvd = nr - INT_MAX_STRLEN;
-    dest = *buf+(nr - INT_MAX_STRLEN);
+    bytes_rcvd = nr - MPIG_INT_MAX_STRLEN;
+    dest = *buf+(nr - MPIG_INT_MAX_STRLEN);
     chunk = 1;
     while (bytes_rcvd < *rcvd_nbytes)
     {
@@ -1798,7 +1814,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 	"enter: my_sj_size=%d, my_sj_rank=%d, in_buf_len=%d, tag_base=%s", my_sj_size, my_sj_rank, in_buf_len, tag_base));
     
 
-    MPIU_CHKLMEM_MALLOC(tag, char *, strlen(tag_base) + 10, mpi_errno, "buffer for tag");
+    MPIU_CHKLMEM_MALLOC(tag, char *, strlen(tag_base) + MPIG_INT_MAX_STRLEN, mpi_errno, "buffer for tag");
 
     /* 
      * take a guess of how big my_sj_buf needs to be based on my in_buf size and the size of my subjob
@@ -1859,8 +1875,8 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 
   fn_return:
     MPIU_CHKLMEM_FREEALL();
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-	"exiting: rcvd_nbytes=%d, mpi_errno=%d", *rcvd_nbytes, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: rcvd_nbytes=%d, mpi_errno=%d",
+	(rcvd_nbytes != NULL) ? *rcvd_nbytes : 0, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_intra_subjob_gather);
     return mpi_errno;
 

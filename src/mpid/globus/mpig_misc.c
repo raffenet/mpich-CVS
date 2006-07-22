@@ -15,8 +15,8 @@
 #if defined(MPIG_DEBUG)
 #define MPIG_DEBUG_TMPSTR_SIZE ((size_t) 1024)
 
-globus_debug_handle_t mpig_debug_handle;
-time_t mpig_debug_start_tv_sec;
+globus_debug_handle_t mpig_debug_handle = {0, 0, NULL, GLOBUS_FALSE, GLOBUS_FALSE};
+time_t mpig_debug_start_tv_sec = 0;
 
 
 #define MPIG_UPPERCASE_STR(str_)	\
@@ -37,6 +37,7 @@ time_t mpig_debug_start_tv_sec;
 
 void mpig_debug_init(void)
 {
+    static bool_t initialized = FALSE;
     const char * levels;
     char * levels_uc;
     const char * timed_levels;
@@ -45,6 +46,8 @@ void mpig_debug_init(void)
     const char * file_basename;
     struct timeval tv;
 
+    if (initialized) goto fn_return;
+    
     levels = globus_libc_getenv("MPIG_DEBUG_LEVELS");
     if (levels == NULL || strlen(levels) == 0) goto fn_return;
     levels_uc = MPIU_Strdup(levels);
@@ -91,7 +94,9 @@ void mpig_debug_init(void)
 	
     gettimeofday(&tv, NULL);
     mpig_debug_start_tv_sec = tv.tv_sec;
-    
+
+    initialized = TRUE;
+
   fn_return:
     return;
 }
@@ -291,11 +296,11 @@ int mpig_datatype_set_my_bc(mpig_bc_t * const bc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "entering: bc=" MPIG_PTR_FMT,
 	(MPIG_PTR_CAST) bc));
 
-    mpig_pg_rc_acq(mpig_process.my_pg, TRUE);
+    mpig_pg_mutex_lock(mpig_process.my_pg);
     {
 	mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &vc);
     }
-    mpig_pg_rc_rel(mpig_process.my_pg, FALSE);
+    mpig_pg_mutex_unlock(mpig_process.my_pg);
     
     /* create mapping information and store in my VC */
     for (loc = 0; loc < MPIG_DATATYPE_MAX_BASIC_TYPES; loc++)
@@ -563,6 +568,240 @@ void mpig_databuf_destroy(mpig_databuf_t * const dbuf)
 
 
 /**********************************************************************************************************************************
+						   BEGIN STRING SPACE ROUTINES
+**********************************************************************************************************************************/
+/*
+ * <mpi_errno> mpig_strspace_grow([IN/MOD] space, [IN] growth)
+ *
+ * this routine increases the size of the string containing within a string space object while retaining its contents.
+ *
+ * Paramters:
+ *
+ * space [IN/MOD] - the string space object containing the string to be grown
+ *
+ * growth [IN] - the number of bytes in which to grow the string
+ *
+ * NOTE: the base and eod (end-of-data) pointers may be altered and therefore they should be reacquired after calling this
+ * function.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_strspace_grow
+int mpig_strspace_grow(mpig_strspace_t * const space, const size_t growth)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    char * new_base;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_strspace_grow);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_grow);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "entering: space=" MPIG_PTR_FMT ", growth="
+	MPIG_SIZE_FMT, (MPIG_PTR_CAST) space, growth));
+    
+    new_base = (char *) MPIU_Realloc(space->base, space->size + growth);
+    if (new_base == NULL)
+    {
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATABUF, "ERROR: unable to grow string space: space="
+	    MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) space, growth, space->size + growth));
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "string space object");
+	goto fn_fail;
+    }
+    space->base = new_base;
+    space->size += growth;
+    
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_grow);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_strspace_grow() */
+
+
+#undef FUNCNAME
+#define FUNCNAME mpig_strspace_add_element
+int mpig_strspace_add_element(mpig_strspace_t * const space, const char * const str, const size_t growth)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int rc;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_strspace_add_element);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_add_element);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT,
+	(MPIG_PTR_CAST) space, growth));
+    
+    do
+    {
+	char * ptr = mpig_strspace_get_eod_ptr(space);
+	int max = mpig_strspace_get_free_bytes(space);
+	int left = max;
+	
+	rc = MPIU_Str_add_string(&ptr, &max, str);
+	if (rc == 0)
+	{
+	    mpig_strspace_inc_eod(space, left - max);
+	}
+	else
+	{
+	    mpi_errno = mpig_strspace_grow(space, growth);
+	    if (mpi_errno)
+	    {   /* --BEGIN ERROR HANDLING-- */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATABUF, "ERROR: growth of string space failed: "
+		    "space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) space, growth,
+		    mpig_strspace_get_size(space) + growth));
+		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "more string space");
+		goto fn_fail;
+	    }   /* --END ERROR HANDLING-- */
+	}
+    }
+    while (rc);
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_add_element);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_strspace_add_element() */
+
+
+#undef FUNCNAME
+#define FUNCNAME mpig_strspace_extract_next_element
+int mpig_strspace_extract_next_element(mpig_strspace_t * const space, const size_t growth, char ** const str_p)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    char * space_str = mpig_strspace_get_pos_ptr(space);
+    char * out_str;
+    int out_size;
+    int rc;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_strspace_extract_next_element);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_extract_next_element);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT,
+	(MPIG_PTR_CAST) space, growth));
+    
+    out_size = growth;
+    out_str = (char *) MPIU_Malloc(out_size);
+    if (out_str == NULL)
+    {   /* --BEGIN ERROR HANDLING-- */
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATABUF, "ERROR: initial allocation of segment string "
+	    "failed: space=" MPIG_PTR_FMT ", total=" MPIG_SIZE_FMT, growth));
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "initial segment string");
+	goto fn_fail;
+    }   /* --END ERROR HANDLING-- */
+    
+    do
+    {
+	rc = MPIU_Str_get_string(&space_str, out_str, out_size);
+	if (rc)
+	{
+	    MPIU_Free(out_str);
+	    out_size += growth;
+	    out_str = MPIU_Malloc(out_size);
+	    if (out_str == NULL)
+	    {   /* --BEGIN ERROR HANDLING-- */
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATABUF, "ERROR: growth of segment string failed: "
+		    "space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, growth, out_size));
+		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "bigger segment string");
+		goto fn_fail;
+	    }   /* --END ERROR HANDLING-- */
+	}
+    }
+    while (rc);
+
+    if (space_str == NULL)
+    {
+	mpig_strspace_set_pos(space, mpig_strspace_get_eod(space));
+
+	if (strlen(out_str) == 0)
+	{
+	    MPIU_Free(out_str);
+	    *str_p = NULL;
+	    goto fn_return;
+	}
+    }
+    else
+    {
+	mpig_strspace_inc_pos(space, space_str - mpig_strspace_get_pos_ptr(space));
+    }
+
+    *str_p = out_str;
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_extract_next_element);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_strspace_extract_next_element() */
+
+
+
+#undef FUNCNAME
+#define FUNCNAME mpig_strspace_import_string
+int mpig_strspace_import_string(mpig_strspace_t * space, const char * str)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    char * space_str;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_strspace_import_string);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_import_string);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT, (MPIG_PTR_CAST) space));
+
+    space_str = MPIU_Strdup(str);
+    MPIU_ERR_CHKANDJUMP1((space_str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "imported string");
+    
+    MPIU_Free(space->base);
+    space->base = space_str;
+    space->size = strlen(str) + 1;
+    space->eod = space->size - 1;
+    space->pos = 0;
+
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
+	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_import_string);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_strspace_import_string() */
+
+
+/**********************************************************************************************************************************
+						    END STRING SPACE ROUTINES
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
 					       BEGIN COMMUNICATION MODULE ROUTINES
 **********************************************************************************************************************************/
 /*
@@ -668,6 +907,7 @@ mpig_usage_base64_encode(
 #define MPIG_USAGE_ID 8
 #define MPIG_USAGE_PACKET_VERSION 0
 
+
 #undef FUNCNAME
 #define FUNCNAME mpig_usage_finalize
 void mpig_usage_finalize(void)
@@ -686,7 +926,7 @@ void mpig_usage_finalize(void)
     char test_b[32];
     char nbytesv_b[32];
     char nbytes_b[32];
-    char fnmap_b[4096];
+    unsigned char fnmap_b[4096];
     int fnmap_b_len;
     unsigned char fnmap[MPIG_FUNC_CNT_NUMFUNCS * 2 * sizeof(int)];
     unsigned char * ptr;

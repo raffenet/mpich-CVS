@@ -19,97 +19,97 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
 
 #define mpig_cm_xio_request_construct(req_)						\
 {											\
-    (req_)->cm.xio.state = MPIG_CM_XIO_REQ_STATE_UNDEFINED;				\
-    (req_)->cm.xio.msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;				\
-    (req_)->cm.xio.cc = 0;								\
-    (req_)->cm.xio.buf_type = MPIG_CM_XIO_USERBUF_TYPE_UNDEFINED;			\
-    (req_)->cm.xio.stream_pos = 0;							\
-    (req_)->cm.xio.stream_size = 0;							\
-    mpig_iov_construct((req_)->cm.xio.iov, MPIG_CM_XIO_IOV_NUM_ENTRIES);		\
-    (req_)->cm.xio.gcb = NULL;								\
-    (req_)->cm.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;				\
-    mpig_databuf_construct((req_)->cm.xio.msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);	\
-    (req_)->cm.xio.df = NEXUS_DC_FORMAT_UNKNOWN;					\
-    (req_)->cm.xio.databuf = NULL;							\
-    (req_)->cm.xio.sendq_next = NULL;							\
+    (req_)->cmu.xio.state = MPIG_CM_XIO_REQ_STATE_UNDEFINED;				\
+    (req_)->cmu.xio.msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;				\
+    (req_)->cmu.xio.cc = 0;								\
+    (req_)->cmu.xio.buf_type = MPIG_CM_XIO_USERBUF_TYPE_UNDEFINED;			\
+    (req_)->cmu.xio.stream_pos = 0;							\
+    (req_)->cmu.xio.stream_size = 0;							\
+    mpig_iov_construct((req_)->cmu.xio.iov, MPIG_CM_XIO_IOV_NUM_ENTRIES);		\
+    (req_)->cmu.xio.gcb = NULL;								\
+    (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;				\
+    mpig_databuf_construct((req_)->cmu.xio.msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);	\
+    (req_)->cmu.xio.df = NEXUS_DC_FORMAT_UNKNOWN;					\
+    (req_)->cmu.xio.databuf = NULL;							\
+    (req_)->cmu.xio.sendq_next = NULL;							\
 											\
     (req_)->dev.cm_destruct = mpig_cm_xio_request_destruct_fn;				\
 }
 
 #define mpig_cm_xio_request_destruct(req_)				\
 {									\
-    (req_)->cm.xio.state = MPIG_CM_XIO_REQ_STATE_UNDEFINED;		\
-    (req_)->cm.xio.msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;		\
-    (req_)->cm.xio.cc = 0;						\
-    (req_)->cm.xio.buf_type = MPIG_CM_XIO_USERBUF_TYPE_UNDEFINED;	\
-    (req_)->cm.xio.stream_pos = 0;					\
-    (req_)->cm.xio.stream_size = 0;					\
-    mpig_iov_destruct((req_)->cm.xio.iov);				\
-    (req_)->cm.xio.gcb = NULL;						\
-    (req_)->cm.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;		\
-    mpig_databuf_destruct((req_)->cm.xio.msgbuf);			\
-    (req_)->cm.xio.df = NEXUS_DC_FORMAT_UNKNOWN;			\
-    if ((req_)->cm.xio.databuf != NULL)					\
+    (req_)->cmu.xio.state = MPIG_CM_XIO_REQ_STATE_UNDEFINED;		\
+    (req_)->cmu.xio.msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;		\
+    (req_)->cmu.xio.cc = 0;						\
+    (req_)->cmu.xio.buf_type = MPIG_CM_XIO_USERBUF_TYPE_UNDEFINED;	\
+    (req_)->cmu.xio.stream_pos = 0;					\
+    (req_)->cmu.xio.stream_size = 0;					\
+    mpig_iov_destruct((req_)->cmu.xio.iov);				\
+    (req_)->cmu.xio.gcb = NULL;						\
+    (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;		\
+    mpig_databuf_destruct((req_)->cmu.xio.msgbuf);			\
+    (req_)->cmu.xio.df = NEXUS_DC_FORMAT_UNKNOWN;			\
+    if ((req_)->cmu.xio.databuf != NULL)				\
     {									\
-	mpig_databuf_destroy((req_)->cm.xio.databuf);			\
-	(req_)->cm.xio.databuf = NULL;					\
+	mpig_databuf_destroy((req_)->cmu.xio.databuf);			\
+	(req_)->cmu.xio.databuf = NULL;					\
     }									\
-    (req_)->cm.xio.sendq_next = NULL;					\
+    (req_)->cmu.xio.sendq_next = NULL;					\
 }
 
 #define mpig_cm_xio_request_set_cc(req_, cc_)										\
 {															\
-    (req_)->cm.xio.cc = (cc_);												\
+    (req_)->cmu.xio.cc = (cc_);												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_REQ,							\
 		       "request - set XIO completion count: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", cc=%d",	\
-		       (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cm.xio.cc));					\
+		       (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cmu.xio.cc));					\
 }
 
 #define mpig_cm_xio_request_inc_cc(req_, was_complete_p_)									\
 {																\
-    *(was_complete_p_) = (((req_)->cm.xio.cc)++) ? FALSE : TRUE;								\
+    *(was_complete_p_) = (((req_)->cmu.xio.cc)++) ? FALSE : TRUE;								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_REQ,								\
 		       "request - increment XIO completion count: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", cc=%d",	\
-		       (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cm.xio.cc));						\
+		       (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cmu.xio.cc));						\
 }
 
 #define mpig_cm_xio_request_dec_cc(req_, is_complete_p_)									\
 {																\
-    *(is_complete_p_) = (--((req_)->cm.xio.cc)) ? FALSE : TRUE;									\
+    *(is_complete_p_) = (--((req_)->cmu.xio.cc)) ? FALSE : TRUE;								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_REQ,								\
 		       "request - decrement XIO completion count: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", cc=%d",	\
-		       (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cm.xio.cc));						\
+		       (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cmu.xio.cc));						\
 }
 
 #define mpig_cm_xio_request_set_state(req_, state_)										\
 {																\
-    (req_)->cm.xio.state = (state_);												\
+    (req_)->cmu.xio.state = (state_);												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ,											\
 		       "request - set XIO state: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", state=%s",			\
-		       (req_)->handle, (MPIG_PTR_CAST) (req_), mpig_cm_xio_request_state_get_string((req_)->cm.xio.state)));	\
+		       (req_)->handle, (MPIG_PTR_CAST) (req_), mpig_cm_xio_request_state_get_string((req_)->cmu.xio.state)));	\
 }
 
-#define mpig_cm_xio_request_get_state(req_) ((req_)->cm.xio.state)
+#define mpig_cm_xio_request_get_state(req_) ((req_)->cmu.xio.state)
 
 #define mpig_cm_xio_request_set_msg_type(req_, msg_type_)									\
 {																\
-    (req_)->cm.xio.msg_type = (msg_type_);											\
+    (req_)->cmu.xio.msg_type = (msg_type_);											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ,											\
 		       "request - set XIO message type: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", type=%s",		\
-		       (req_)->handle, (MPIG_PTR_CAST) (req_), mpig_cm_xio_msg_type_get_string((req_)->cm.xio.msg_type)));	\
+		       (req_)->handle, (MPIG_PTR_CAST) (req_), mpig_cm_xio_msg_type_get_string((req_)->cmu.xio.msg_type)));	\
 }
 
-#define mpig_cm_xio_request_get_msg_type(req_) ((req_)->cm.xio.msg_type)
+#define mpig_cm_xio_request_get_msg_type(req_) ((req_)->cmu.xio.msg_type)
 
 #define mpig_cm_xio_request_set_sreq_type(req_, sreq_type_)									\
 {																\
-    (req_)->cm.xio.sreq_type = (sreq_type_);											\
+    (req_)->cmu.xio.sreq_type = (sreq_type_);											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ,											\
 		       "request - set XIO request sreq type: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", type=%s",		\
-		       (req_)->handle, (MPIG_PTR_CAST) (req_), mpig_request_type_get_string((req_)->cm.xio.sreq_type)));	\
+		       (req_)->handle, (MPIG_PTR_CAST) (req_), mpig_request_type_get_string((req_)->cmu.xio.sreq_type)));	\
 }
 
-#define mpig_cm_xio_request_get_sreq_type(req_) ((req_)->cm.xio.sreq_type)
+#define mpig_cm_xio_request_get_sreq_type(req_) ((req_)->cmu.xio.sreq_type)
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
 
@@ -208,7 +208,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
 {
     const char * str;
     
-    switch(req->cm.xio.msg_type)
+    switch(req->cmu.xio.msg_type)
     {
 	case MPIG_CM_XIO_MSG_TYPE_EAGER_DATA:
 	case MPIG_CM_XIO_MSG_TYPE_SSEND_ACK:
@@ -223,14 +223,14 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
 	case MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND_RESP:
 	    str ="cancel";
 	    break;
-	case MPIG_CM_XIO_MSG_TYPE_OPEN_VC_REQ:
-	case MPIG_CM_XIO_MSG_TYPE_OPEN_VC_RESP:
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_PROC_REQ:
+	case MPIG_CM_XIO_MSG_TYPE_OPEN_PROC_RESP:
 	case MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_REQ:
 	case MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_RESP:
 	case MPIG_CM_XIO_MSG_TYPE_OPEN_ERROR_RESP:
 	    str ="open";
 	    break;
-	case MPIG_CM_XIO_MSG_TYPE_CLOSE:
+	case MPIG_CM_XIO_MSG_TYPE_CLOSE_PROC:
 	    str ="close";
 	    break;
 	case MPIG_CM_XIO_MSG_TYPE_UNDEFINED:

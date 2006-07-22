@@ -12,13 +12,13 @@
 /*
  * expose the communication module's vtable so that it is accessible to other modules in the device
  */
-extern const mpig_cm_vtable_t mpig_cm_vmpi_vtable;
+extern struct mpig_cm mpig_cm_vmpi;
 
 
 /*
- * define the contact information to be included in a VC
+ * define the structure to be included in the communication method structure (CMS) of a VC object
  */
-#define MPIG_VC_CI_VMPI_DECL	\
+#define MPIG_VC_CMS_VMPI_DECL	\
 struct				\
 {				\
     char * subjob_id;		\
@@ -35,17 +35,11 @@ struct				\
 #define MPID				MPIG
 #define MPID_				MPIG_
 
-/* because the MPIR_Nest routines are defined as both CPP macros and functions, their renaming has to be handled as a special
-   case. */
-#define MPIR_NEST_INCR_FCNAME		MPIR_Nest_incr_MPIG
-#define MPIR_NEST_DECR_FCNAME		MPIR_Nest_decr_MPIG
-#define MPIR_NEST_VALUE_FCNAME		MPIR_Nest_value_MPIG
-
 
 /*
- * define the communication module structure to be included in a communicator object
+ * define the structure to be included in the communcation method structure (CMS) of a communicator object
  */
-#define MPIG_COMM_CM_VMPI_DECL				\
+#define MPIG_COMM_CMS_VMPI_DECL				\
     struct						\
     {							\
 	mpig_vmpi_comm_t comms[MPIG_COMM_NUM_CONTEXTS];	\
@@ -55,9 +49,9 @@ struct				\
 
 
 /*
- * define the communication module structure to be included in a datatype object
+ * define the structure to be included in the communication method structure (CMS) of a datatype object
  */
-#define MPIG_DATATYPE_CM_VMPI_DECL	\
+#define MPIG_DATATYPE_CMS_VMPI_DECL	\
     struct				\
     {					\
 	mpig_vmpi_datatype_t dt;	\
@@ -65,9 +59,9 @@ struct				\
 
 
 /*
- * define the communication module structure to be included in a request object
+ * define the structure to be included in the communication method union (CMU) of a request object
  */
-#define MPIG_REQUEST_CM_VMPI_DECL	\
+#define MPIG_REQUEST_CMU_VMPI_DECL	\
     struct				\
     {					\
 	mpig_vmpi_request_t req;	\
@@ -75,9 +69,9 @@ struct				\
 
 
 /*
- * define the communication module structure to be included in the mpig process structure
+ * define the structure to be included in the communication method structure (CMS) of the MPIG process structure
  */
-#define MPIG_PROCESS_CM_VMPI_DECL	\
+#define MPIG_PROCESS_CMS_VMPI_DECL	\
     struct				\
     {					\
 	int cw_rank;			\

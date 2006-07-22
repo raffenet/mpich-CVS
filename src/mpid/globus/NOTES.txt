@@ -40,18 +40,14 @@
     any process.  the topology discovery code required this feature in order to determine if two processes are part of the same
     "SUBJOB" level (formerly called "HOST").
 
+  - integrate Nick's cancel code
 
-* MPI_Comm_connect/accept  [3-4 days (includes additional debugging time)]
 
-  * finish fixing race conditions in core client/server connetion establishment code exposed during this work  [BRT: 6-8 hours]
+* finish mpig_pm implementation.  this involves updating mpig_pm modules to provide a vtable.  [BRT: 3 hours]
 
-  * compelete code for establishing and tracking VCs formed by MPI_Comm_connect/accept  [BRT: 4-5 hours]
+* MPI_Comm_connect/accept  [1-2 days (includes additional debugging time)]
 
-  * code to exchange byte arrays (for business cards, context ids, etc.)  [BRT: 2-3 hours]
-
-  * intercommunicator context id solution in top-level code  [BRT: 3 hours (includes testing of CH3 device)]
-
-  * MPID_Comm_{connect,accept} code (MPI_Comm_disconnect is device independent)  [BRT: 4-6 hours]
+  - fix finalize hang caused by pg ref count
 
   - fix GPID so that MPI_Intercomm_create/merge work with communicators containing processes outside of MPI_COMM_WORLD
     [BRT: 8-10 hours (includes testing of CH3 device)]
@@ -80,14 +76,8 @@
   * ... I feel like I am forgetting something important ...
 
 
-* add -globusrsl option to mpiexec  [BRT: 10 minutes]
-
-
-* commit top-level changes [BRT & BILL G.: 2-3 hours; more if mods are required]
-
-
 ===================================================================================================================================
-						TO DO BEFORE OFFICIAL JUNE RELEASE
+						TO DO BEFORE OFFICIAL JULY RELEASE
 ===================================================================================================================================
 
 * XIO communication module bug fixes (threaded and nonthreaded)  [BRT: ???]
@@ -113,6 +103,7 @@
 
     * create path from top-level MPI_Pack(), etc. routines to device  [NICK: 2-3 hours??? (with Rob R.)
 
+
  *  cross platform testing (by hand; test suites can't handle heterogeneous platforms): [BRT & NICK: 1+ days]
 
 
@@ -128,9 +119,6 @@
 
 
 * adjust tunable parameters to more sane values (currently set to maximize code coverage during testing)  [BRT & NICK: 1 hour]
-
-
-* add usage stats code  [NICK/BRT: ???]
 
 
 * add real error text to errnames.txt  [BRT/NICK: 3 hours]
@@ -315,3 +303,41 @@ o change module initialization errors to FATAL
   the need to rename the symbols in MPICH and the application.
 
 
+===================================================================================================================================
+						 Communication Method Selection
+===================================================================================================================================
+
+- methods of specificity:
+
+  - subjob to subjob
+
+    - MPI-1
+
+      - use environemnt variable in the RSL/XML job description to denote the communication method to be used when communicating
+        with an process in another subjob.  for example: MPIG_SUBJOB_COMM_METHOD="(1, TCP) (2, MOD-E), (3, UDT)".
+
+     - the method's vtable can be located by scanning the CM vtable array and comparing the name of each entry with that specified
+       by the user.
+
+     - the selection process can start with this CM.  should the CM be unable to perform the communcation between the processes,
+       the existing method of walking the order list of method would be attempted.
+
+    - MPI-2
+
+      - in general, when using MPI_Comm_connect/accept, the subjobs contained within the remote communicator can not be
+        determined until after MPI_Comm_connect/accept complete.  furthermore, the subjobs may be from different jobs (process
+        groups) and thus require the user to specify the subjob as a (job id, app num) tuple.
+
+      - attributes on the newly formed intercommunicator could be used to extract subjob identities associated with the remote
+        communicator; however, the binding of the communication method used by the local process to communicate with a process in
+        a particular subjob would need to be completed after the communicator was formed.  this may be complicated as it may
+        require completion of all oustanding sends and receives prior to making the switch, which could be complicated.
+
+      - if the (job id, app num) tuples were known ahead of time, and the processes in the local communicator had no previous
+        connections established with any of the processes in the remote communicator, then the MPI_Info object passed to
+        MPI_Comm_connect/accept could specify the desired method for each subjob.  this would permit the binding to occur during
+        the MPI_Comm_connect/accept, eliminating the need to handle a binding change and the need to complete communication on
+        one method before transferring to another method.
+
+      - in a simpler case, an MPI_Info setting could state that the default method to be used for any connection where a method
+        has not already been selected.

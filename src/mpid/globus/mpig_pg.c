@@ -43,7 +43,7 @@ int mpig_pg_init(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering"));
 
-    mpig_pg_global_mutex_create();
+    mpig_pg_global_mutex_construct();
     globus_cond_init(&mpig_pg_list_cond, NULL);
     
     /*  fn_return: */
@@ -81,7 +81,7 @@ int mpig_pg_finalize(void)
     mpig_pg_global_mutex_unlock();
 
     globus_cond_destroy(&mpig_pg_list_cond);
-    mpig_pg_global_mutex_destroy();
+    mpig_pg_global_mutex_destruct();
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -208,7 +208,7 @@ void mpig_pg_commit(mpig_pg_t * const pg)
 
 		mpig_vc_mutex_lock(vc);
 		{
-		    if (mpig_vc_get_cm_type(vc) != MPIG_CM_TYPE_UNDEFINED)
+		    if (mpig_vc_is_initialized(vc))
 		    {
 			mpig_vc_dec_ref_count(vc, &vc_inuse);
 		    }
@@ -324,7 +324,7 @@ MPIG_STATIC int mpig_pg_create(const char * const pg_id, const int pg_size, mpig
     MPIU_CHKPMEM_MALLOC(pg, mpig_pg_t *, sizeof(mpig_pg_t) + (pg_size - 1) * sizeof(mpig_vc_t), mpi_errno, "process group object");
 
     /* initial PG fields */
-    mpig_pg_mutex_create(pg);
+    mpig_pg_mutex_construct(pg);
     pg->ref_count = pg_size;
     pg->committed = FALSE;
     pg->size = pg_size;
@@ -339,7 +339,6 @@ MPIG_STATIC int mpig_pg_create(const char * const pg_id, const int pg_size, mpig
 	mpig_vc_construct(vc);
 	mpig_vc_i_set_ref_count(vc, 1);
 	mpig_vc_set_pg_info(vc, pg, p);
-	mpig_vc_set_pg_id(vc, pg->id);
 	vc->lpid = mpig_pg_lpid_counter++;
 	MPIU_ERR_CHKANDJUMP((mpig_pg_lpid_counter < 0), mpi_errno, MPI_ERR_INTERN, "**globus|pg|lpid_counter");
     }
@@ -449,7 +448,7 @@ MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * const pg)
     pg->id = NULL;
     pg->size = 0;
     pg->ref_count = 0;
-    mpig_pg_mutex_destroy(pg);
+    mpig_pg_mutex_destruct(pg);
     MPIU_Free(pg);
 
     globus_cond_signal(&mpig_pg_list_cond);

@@ -186,7 +186,7 @@ fi
 # MPI supported MPI_THREAD_FUNNELED; however, all vendor MPI operation would need to be routed through request and completion
 # queues so that the MPI functions were called only by the main thread (the one that called MPI_Init_thread().
 #
-# NOTE: the standard states that in MPI_Init() is called, the it should be treated as MPI_Init_thread having been called with
+# NOTE: the standard states that if MPI_Init() is called, the it should be treated as MPI_Init_thread having been called with
 # MPI_THREAD_SINGLE.  At present, MPI-G does not detect if MPI_Thread_init is available and thus always called MPI_Init().  As a
 # result, MPI-G can only support MPI_THREAD_SINGLE.
 #
@@ -199,8 +199,7 @@ elif test "$enable_threads" != "single" ; then
     echo "         applications.  The maximum thread level has been set to"
     echo "         MPI_THREAD_SINGLE."
 fi
-enable_threads=single
-ac_configure_args="${ac_configure_args} --enable-threads=single"
+MPID_MAX_THREAD_LEVEL=MPI_THREAD_SINGLE
 
 #
 # the process management system is built into the device, so we must tell MPICH2 not to build a process manager or an
@@ -293,9 +292,9 @@ mpig_get_globus_setting()
 # Check MPICH2 Version
 #
 echo ${ECHO_N} "checking MPICH2 Version... ${ECHO_C}"
-MPIG_MPICH2VERSION=${VERSION}
-echo "${ECHO_T}${MPIG_MPICH2VERSION}"
-export MPIG_MPICH2VERSION
+MPIG_MPICH2_VERSION=${VERSION}
+echo "${ECHO_T}${MPIG_MPICH2_VERSION}"
+export MPIG_MPICH2_VERSION
 
 #
 # are the required globus packages installed
@@ -318,10 +317,10 @@ fi
 # check for the globus-xio package version 
 #
 echo ${ECHO_N} "checking version of Globus XIO... ${ECHO_C}"
-mpig_get_globus_setting MPIG_XIOVERSION xio-installed-version
-echo "${ECHO_T}${MPIG_XIOVERSION}"
-export MPIG_XIOVERSION
-if test "$MPIG_XIOVERSION" == "0.0" ; then
+mpig_get_globus_setting MPIG_XIO_VERSION xio-installed-version
+echo "${ECHO_T}${MPIG_XIO_VERSION}"
+export MPIG_XIO_VERSION
+if test "$MPIG_XIO_VERSION" == "0.0" ; then
     echo ""
     echo "ERROR: The Globus XIO module version is invalid."
     echo ""
@@ -910,8 +909,7 @@ if test "${MPIG_VMPI}" = "yes" ; then
     if test "${HAVE_VMPI_LONG_LONG}" = "no" -a "${HAVE_VMPI_LONG_LONG_INT}" = "no" ; then
 	echo "WARNING: The vendor MPI does not support MPI_LONG_LONG or MPI_LONG_LONG_INT."
 	echo "       Support for these types in MPI-G has been disabled."
-	enable_long_long=no
-	ac_configure_args="${ac_configure_args} --disable-long-long"
+	MPID_NO_LONG_LONG=yes
 	if test "$enable_romio" != "no" ; then
 	    echo "WARNING: ROMIO requires MPI_LONG_LONG. ROMIO has been disabled."
 	    enable_romio=no
@@ -941,8 +939,7 @@ export MPIU_SIZE_T
 #
 echo "WARNING: long double is not supported by Globus data conversion library."
 echo "         Support for MPI_LONG_DOUBLE has been disabled."
-enable_long_double=no
-ac_configure_args="${ac_configure_args} --disable-long-double"
+MPID_NO_LONG_DOUBLE=yes
 
 #
 # the symbol renaming file, mpiddefs.h, needs to handle a special case if ROMIO is not being built, so we detect that here and
@@ -969,6 +966,16 @@ export MPIG_ROMIO_ENABLED
 #         echo "${host}" >> ${binbuild_dir}/machines
 #     fi
 # fi
+
+#
+# miscellaneous settings to feedback to the top-level configure script
+#
+MPID_MAX_PROCESSOR_NAME=128
+MPID_NO_SPAWN=yes
+MPID_NO_RMA=yes
+MPID_NO_PM=yes
+MPID_NO_PMI=yes
+# MPID_PM_NAMESERVER=device
 
 #
 # add the Globus to the list of directories in which to perform a "make install"

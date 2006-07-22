@@ -105,13 +105,6 @@ maintainer-clean-local:
 	-rm -f mpidconf.h.in
 
 #
-# echomaxprocname gives the maximum length of a processor name, as used by MPI_GET_PROCESSOR_NAME.
-# this is initialized in MPID_Init().
-#
-echomaxprocname:
-	@echo 128
-
-#
 # targets for building state and error text translation files
 #
 describe_states.txt: FORCE_TARGET

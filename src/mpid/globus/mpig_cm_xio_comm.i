@@ -15,9 +15,9 @@
 #define mpig_cm_xio_register_write_vc_msgbuf(vc_, gcb_, mpi_errno_p_)								\
 {																\
     globus_result_t grc__;													\
-    globus_xio_handle_t handle__ = (vc_)->cm.xio.handle;									\
-    globus_byte_t * buf__ = (globus_byte_t *) mpig_databuf_get_ptr((vc_)->cm.xio.msgbuf);					\
-    globus_size_t nbytes__= (globus_size_t) mpig_databuf_get_eod((vc_)->cm.xio.msgbuf);						\
+    globus_xio_handle_t handle__ = (vc_)->cmu.xio.handle;									\
+    globus_byte_t * buf__ = (globus_byte_t *) mpig_databuf_get_base_ptr((vc_)->cmu.xio.msgbuf);					\
+    globus_size_t nbytes__= (globus_size_t) mpig_databuf_get_eod((vc_)->cmu.xio.msgbuf);					\
 																\
     *(mpi_errno_p_) = MPI_SUCCESS;												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "register write: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", buf="		\
@@ -27,44 +27,42 @@
     if (grc__)															\
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
-	    ", msg=\"%s\"", "globus_xio_register_write", (MPIG_PTR_CAST) (vc_),							\
-	    globus_error_print_chain(globus_error_peek(grc__))));								\
+	    ", msg=\"%s\"", "globus_xio_register_write", (MPIG_PTR_CAST) (vc_), mpig_get_globus_error_msg(grc__)));		\
 	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_write",						\
-	    "**globus|cm_xio|xio_reg_write %s", globus_error_print_chain(globus_error_peek(grc__)));				\
+	    "**globus|cm_xio|xio_reg_write %s", mpig_get_globus_error_msg(grc__));						\
     }   /* --END ERROR HANDLING-- */												\
 }
 
 #define mpig_cm_xio_register_write_sreq(vc_, sreq_, mpi_errno_p_)								\
 {																\
     globus_result_t grc__;													\
-    globus_xio_handle_t handle__ = (vc_)->cm.xio.handle;									\
-    globus_xio_iovec_t * iov__ = (globus_xio_iovec_t *) mpig_iov_get_current_entry_ptr((sreq_)->cm.xio.iov);			\
-    int iov_cnt__ = mpig_iov_get_num_inuse_entries((sreq_)->cm.xio.iov);							\
-    globus_size_t nbytes__ = (globus_size_t) mpig_iov_get_num_bytes((sreq_)->cm.xio.iov);					\
+    globus_xio_handle_t handle__ = (vc_)->cmu.xio.handle;									\
+    globus_xio_iovec_t * iov__ = (globus_xio_iovec_t *) mpig_iov_get_current_entry_ptr((sreq_)->cmu.xio.iov);			\
+    int iov_cnt__ = mpig_iov_get_num_inuse_entries((sreq_)->cmu.xio.iov);							\
+    globus_size_t nbytes__ = (globus_size_t) mpig_iov_get_num_bytes((sreq_)->cmu.xio.iov);					\
 																\
     *(mpi_errno_p_) = MPI_SUCCESS;												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "register writev: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="		\
 	MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) (vc_), (sreq_)->handle,		\
 	(MPIG_PTR_CAST)(sreq_), (MPIG_PTR_CAST) handle__, nbytes__));								\
-    grc__ = globus_xio_register_writev(handle__, iov__, iov_cnt__, nbytes__,  NULL, (sreq_)->cm.xio.gcb, (void *) (vc_));	\
+    grc__ = globus_xio_register_writev(handle__, iov__, iov_cnt__, nbytes__,  NULL, (sreq_)->cmu.xio.gcb, (void *) (vc_));	\
     if (grc__)															\
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
-	    ", msg=\"%s\"", "globus_xio_register_writev", (MPIG_PTR_CAST) (vc_),						\
-	    globus_error_print_chain(globus_error_peek(grc__))));								\
+	    ", msg=\"%s\"", "globus_xio_register_writev", (MPIG_PTR_CAST) (vc_), mpig_get_globus_error_msg(grc__)));		\
 	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_writev",						\
-	    "**globus|cm_xio|xio_reg_writev %s", globus_error_print_chain(globus_error_peek(grc__)));				\
+	    "**globus|cm_xio|xio_reg_writev %s", mpig_get_globus_error_msg(grc__));						\
     }   /* --END ERROR HANDLING-- */												\
 }
 
 #define mpig_cm_xio_register_read_vc_msgbuf(vc_, nbytes_min_, nbytes_max_, gcb_, mpi_errno_p_)					\
 {																\
     globus_result_t grc__;													\
-    globus_xio_handle_t handle__ = (vc_)->cm.xio.handle;									\
-    globus_byte_t * buf__ = (globus_byte_t *) mpig_databuf_get_eod_ptr((vc_)->cm.xio.msgbuf);					\
+    globus_xio_handle_t handle__ = (vc_)->cmu.xio.handle;									\
+    globus_byte_t * buf__ = (globus_byte_t *) mpig_databuf_get_eod_ptr((vc_)->cmu.xio.msgbuf);					\
 																\
     *(mpi_errno_p_) = MPI_SUCCESS;												\
-    MPIU_Assert((nbytes_max_) <= mpig_databuf_get_free_bytes((vc_)->cm.xio.msgbuf));						\
+    MPIU_Assert((nbytes_max_) <= mpig_databuf_get_free_bytes((vc_)->cmu.xio.msgbuf));						\
     MPIU_Assert((nbytes_min_) <= (nbytes_max_));										\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "register read: vc=" MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", buf="		\
 	MPIG_PTR_FMT ", min=" MPIG_SIZE_FMT ", max=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) (vc_), (MPIG_PTR_CAST) handle__,		\
@@ -73,33 +71,31 @@
     if (grc__)															\
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
-	    ", msg=\"%s\"", "globus_xio_register_read", (MPIG_PTR_CAST) (vc_),							\
-	    globus_error_print_chain(globus_error_peek(grc__))));								\
+	    ", msg=\"%s\"", "globus_xio_register_read", (MPIG_PTR_CAST) (vc_),mpig_get_globus_error_msg(grc__)));		\
 	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_read",						\
-	    "**globus|cm_xio|xio_reg_read %s", globus_error_print_chain(globus_error_peek(grc__)));				\
+	"**globus|cm_xio|xio_reg_read %s", mpig_get_globus_error_msg(grc__));							\
     }   /* --END ERROR HANDLING-- */												\
 }
 
 #define mpig_cm_xio_register_read_rreq(vc_, rreq_, mpi_errno_p_)								\
 {																\
     globus_result_t grc__;													\
-    globus_xio_handle_t handle__ = (vc_)->cm.xio.handle;									\
-    globus_xio_iovec_t * iov__ = (globus_xio_iovec_t *) mpig_iov_get_current_entry_ptr((rreq_)->cm.xio.iov);			\
-    int iov_cnt__ = mpig_iov_get_num_inuse_entries((rreq_)->cm.xio.iov);							\
-    globus_size_t nbytes__ = (globus_size_t) mpig_iov_get_num_bytes((rreq_)->cm.xio.iov);					\
+    globus_xio_handle_t handle__ = (vc_)->cmu.xio.handle;									\
+    globus_xio_iovec_t * iov__ = (globus_xio_iovec_t *) mpig_iov_get_current_entry_ptr((rreq_)->cmu.xio.iov);			\
+    int iov_cnt__ = mpig_iov_get_num_inuse_entries((rreq_)->cmu.xio.iov);							\
+    globus_size_t nbytes__ = (globus_size_t) mpig_iov_get_num_bytes((rreq_)->cmu.xio.iov);					\
 																\
     *(mpi_errno_p_) = MPI_SUCCESS;												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "register writev: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT ", rreqp="		\
 	MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) (vc_), (rreq_)->handle,		\
 	(MPIG_PTR_CAST)(rreq_), (MPIG_PTR_CAST) handle__, nbytes__));								\
-    grc__ = globus_xio_register_readv(handle__, iov__, iov_cnt__, nbytes__, NULL, (rreq_)->cm.xio.gcb, (void *) (vc_));		\
+    grc__ = globus_xio_register_readv(handle__, iov__, iov_cnt__, nbytes__, NULL, (rreq_)->cmu.xio.gcb, (void *) (vc_));	\
     if (grc__)															\
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
-	    ", msg=\"%s\"", "globus_xio_register_readv", (MPIG_PTR_CAST) (vc_),							\
-	    globus_error_print_chain(globus_error_peek(grc__))));								\
+	    ", msg=\"%s\"", "globus_xio_register_readv", (MPIG_PTR_CAST) (vc_), mpig_get_globus_error_msg(grc__)));		\
 	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_readv",						\
-	    "**globus|cm_xio|xio_reg_readv %s", globus_error_print_chain(globus_error_peek(grc__)));				\
+	    "**globus|cm_xio|xio_reg_readv %s", mpig_get_globus_error_msg(grc__));						\
     }   /* --END ERROR HANDLING-- */												\
 }
 
@@ -174,7 +170,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	/* a connection to the remote process exists.  enqueue the send request.  if no other request is actively being sent,
 	   then start sending the request at the head of the queue. */
 	mpig_cm_xio_sendq_enq_tail(vc, sreq);
-	if (vc->cm.xio.active_sreq == NULL)
+	if (vc->cmu.xio.active_sreq == NULL)
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC is connected and send engine is inactive; starting send; vc="
 		MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc, sreq->handle,
@@ -207,7 +203,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	   once it is no longer safe to send messages, the VC state is switch to the "closing" class of states, and messages are
 	   enqueued.  see below. */
 	mpig_cm_xio_sendq_enq_tail(vc, sreq);
-	if (vc->cm.xio.active_sreq == NULL)
+	if (vc->cmu.xio.active_sreq == NULL)
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC is disconnecting and send engine is inactive; starting send; vc="
 		MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc, sreq->handle,
@@ -243,8 +239,8 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC unconnected; enqueuing request and starting connect; vc=" MPIG_PTR_FMT
 		", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq));
-	    mpi_errno = mpig_cm_xio_client_connect(vc);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|connect");
+	    mpi_errno = mpig_cm_xio_client_connect_proc(vc);
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_connect_proc");
 	}
 	else
 	{
@@ -278,7 +274,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	/* VC state is not valid.  this should never happen! */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "FATAL ERROR: VC state is corrupt; vc=" MPIG_PTR_FMT ", state=%d",
 	    (MPIG_PTR_CAST) vc, (int) mpig_cm_xio_vc_get_state(vc)));
-	MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio_vc|corrupt", "**globus|cm_xio|vc_corrupt %p", vc);
+	MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|vc_corrupt", "**globus|cm_xio|vc_corrupt %p", vc);
     }   /* --END ERROR HANDLING-- */
     
   fn_return:
@@ -318,7 +314,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 MPIG_STATIC int mpig_cm_xio_send_next_sreq(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_next_sreq);
@@ -328,13 +324,13 @@ MPIG_STATIC int mpig_cm_xio_send_next_sreq(mpig_vc_t * const vc)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_send_next_sreq);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-    MPIU_Assert(vc_cm->active_sreq == NULL);
+    MPIU_Assert(vc_cmu->active_sreq == NULL);
     
     /* start sending any data in the send queue */
     mpig_cm_xio_sendq_deq(vc, &sreq);
     if (sreq != NULL)
     {
-	vc_cm->active_sreq = sreq;
+	vc_cmu->active_sreq = sreq;
 	
 	/* TODO: try an immediate send first; only queue if necessary */
 
@@ -378,7 +374,7 @@ MPIG_STATIC int mpig_cm_xio_send_next_sreq(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * const sreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_request * sreq_cm = &sreq->cm.xio;
+    struct mpig_cm_xio_request * sreq_cmu = &sreq->cmu.xio;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_enq_isend);
 
@@ -389,7 +385,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * 
 	sreq->handle, (MPIG_PTR_CAST) sreq));
 
     /* allocate space for the header before packing data by setting the initial iovec count to one */
-    mpig_iov_reset(sreq_cm->iov, 1);
+    mpig_iov_reset(sreq_cmu->iov, 1);
 
     /* pack the data (or generate and I/O vector describing the user buffer).  the header includes the amount of data being sent
        with this message.  in the case of a rendezvous request-to-send message, the exact count cannot be determined before the
@@ -413,11 +409,11 @@ MPIG_STATIC int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * 
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "sending data: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="
 	    MPIG_PTR_FMT ", nbytes=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq,
-	    mpig_iov_get_num_bytes(sreq_cm->iov)));
+	    mpig_iov_get_num_bytes(sreq_cmu->iov)));
     }
 
     /* set state and pack the message header according to the protocol being used */
-    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cmu->msgbuf);
     if (mpig_cm_xio_stream_get_size(sreq) <= MPIG_CM_XIO_EAGER_MAX_SIZE || mpig_request_get_type(sreq) == MPIG_REQUEST_TYPE_RSEND)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "eager protocol selected: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="
@@ -444,36 +440,36 @@ MPIG_STATIC int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * 
 	 * predetermine the size of the RTS payload and then reset the segment.  This routine could use MPID_Segment_pack(), but
 	 * it would be more efficient to write a customized segment routine specifically for this purpose.
 	 */
-	mpig_cm_xio_stream_set_max_pos(sreq, mpig_iov_get_num_bytes(sreq_cm->iov));
+	mpig_cm_xio_stream_set_max_pos(sreq, mpig_iov_get_num_bytes(sreq_cmu->iov));
 	
 	mpig_cm_xio_request_set_state(sreq, MPIG_CM_XIO_REQ_STATE_SEND_RNDV_RTS);
 	mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_RNDV_RTS);
     }
-    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_type(vc, sreq_cm->msgbuf, mpig_request_get_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, sreq->handle);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_type(vc, sreq_cmu->msgbuf, mpig_request_get_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, sreq->handle);
     {
 	int rank;
 	int tag;
 	int ctx;
 
 	mpig_request_get_envelope(sreq, &rank, &tag, &ctx);
-	mpig_cm_xio_msg_hdr_put_envelope(vc, sreq_cm->msgbuf, sreq->comm->rank, tag, ctx);
+	mpig_cm_xio_msg_hdr_put_envelope(vc, sreq_cmu->msgbuf, sreq->comm->rank, tag, ctx);
     }
     /* XXX: still need to handle, and thus identify, MPI_PACKED messages since they will have a special header */
     if (mpig_cm_xio_request_get_msg_type(sreq) == MPIG_CM_XIO_MSG_TYPE_RNDV_RTS)
     {
-	mpig_cm_xio_msg_hdr_put_data_size(vc, sreq_cm->msgbuf, mpig_iov_get_num_bytes(sreq_cm->iov));
+	mpig_cm_xio_msg_hdr_put_data_size(vc, sreq_cmu->msgbuf, mpig_iov_get_num_bytes(sreq_cmu->iov));
     }
-    mpig_cm_xio_msg_hdr_put_data_size(vc, sreq_cm->msgbuf, mpig_cm_xio_stream_get_size(sreq));
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_data_size(vc, sreq_cmu->msgbuf, mpig_cm_xio_stream_get_size(sreq));
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
     
     /* iovec count was set to one earlier to leave room for the header, so we put the message header in the first iovec entry
        instead of adding it to the end */
-    mpig_iov_set_entry(sreq_cm->iov, 0, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
+    mpig_iov_set_entry(sreq_cmu->iov, 0, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
 
     /* set the completion handler and add the send request to the VC's send queue */
-    sreq_cm->gcb = mpig_cm_xio_send_handle_write_msg_data;
+    sreq_cmu->gcb = mpig_cm_xio_send_handle_write_msg_data;
     mpig_vc_mutex_lock(vc);
     {
 	mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
@@ -525,7 +521,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_rndv_cts_msg(mpig_vc_t * const vc, const MP
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq = NULL;
-    struct mpig_cm_xio_request * sreq_cm = NULL;
+    struct mpig_cm_xio_request * sreq_cmu = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_enq_rndv_cts_msg);
 
@@ -544,7 +540,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_rndv_cts_msg(mpig_vc_t * const vc, const MP
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "sreq for rndv cts msg");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
-    sreq_cm = &sreq->cm.xio;
+    sreq_cmu = &sreq->cmu.xio;
 
     mpig_request_construct(sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -555,20 +551,20 @@ MPIG_STATIC int mpig_cm_xio_send_enq_rndv_cts_msg(mpig_vc_t * const vc, const MP
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_RNDV_CTS);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, local_rreq_id);
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, local_rreq_id);
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
 
-    mpig_iov_reset(sreq_cm->iov, 0);
-    mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
+    mpig_iov_reset(sreq_cmu->iov, 0);
+    mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
 
     /* MT-RC-NOTE: the request data will be released with the unlock of the VC mutex performed later by one of the routines on
        the call stack. */
 
     /* send the rendezvous clear-to-send message */
-    sreq_cm->gcb = mpig_cm_xio_send_handle_write_control_msg;
+    sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
     
@@ -614,7 +610,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_rndv_data_msg(mpig_vc_t * const vc, MPID_Re
     const MPI_Request remote_rreq_id)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_request * sreq_cm = &sreq->cm.xio;
+    struct mpig_cm_xio_request * sreq_cmu = &sreq->cmu.xio;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_enq_rndv_data_msg);
 
@@ -629,22 +625,22 @@ MPIG_STATIC int mpig_cm_xio_send_enq_rndv_data_msg(mpig_vc_t * const vc, MPID_Re
     mpig_cm_xio_request_set_state(sreq, MPIG_CM_XIO_REQ_STATE_SEND_DATA);
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_RNDV_DATA);
     
-    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_rreq_id);
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, remote_rreq_id);
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
 
-    mpig_iov_reset(sreq_cm->iov, 0);
-    mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
+    mpig_iov_reset(sreq_cmu->iov, 0);
+    mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
 
     /* pack the first (and possible final) set of data */
     mpig_cm_xio_stream_set_max_pos(sreq, 0);
     mpi_errno = mpig_cm_xio_stream_sreq_pack(sreq);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_sreq_pack");
-    MPIU_Assert(mpig_iov_get_num_bytes(sreq_cm->iov) > 0);
+    MPIU_Assert(mpig_iov_get_num_bytes(sreq_cmu->iov) > 0);
 
     /* send the rendezvous data message */
-    sreq_cm->gcb = mpig_cm_xio_send_handle_write_msg_data;
+    sreq_cmu->gcb = mpig_cm_xio_send_handle_write_msg_data;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
     
@@ -685,7 +681,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_ssend_ack_msg(mpig_vc_t * const vc, const M
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq = NULL;
-    struct mpig_cm_xio_request * sreq_cm = NULL;
+    struct mpig_cm_xio_request * sreq_cmu = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_enq_ssend_ack_msg);
 
@@ -704,7 +700,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_ssend_ack_msg(mpig_vc_t * const vc, const M
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "sreq for ssend ack msg");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
-    sreq_cm = &sreq->cm.xio;
+    sreq_cmu = &sreq->cmu.xio;
 
     mpig_request_construct(sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -714,19 +710,19 @@ MPIG_STATIC int mpig_cm_xio_send_enq_ssend_ack_msg(mpig_vc_t * const vc, const M
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_SSEND_ACK);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
 
-    mpig_iov_reset(sreq_cm->iov, 0);
-    mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
+    mpig_iov_reset(sreq_cmu->iov, 0);
+    mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
 
     /* MT-RC-NOTE: the request data will be released with the unlock of the VC mutex performed later by one of the routines on
        the call stack. */
 
     /* send the ssend acknowledgement message */
-    sreq_cm->gcb = mpig_cm_xio_send_handle_write_control_msg;
+    sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
     
@@ -767,7 +763,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_cancel_send_msg(mpig_vc_t * const vc, const
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq = NULL;
-    struct mpig_cm_xio_request * sreq_cm = NULL;
+    struct mpig_cm_xio_request * sreq_cmu = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_enq_cancel_send_msg);
 
@@ -786,7 +782,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_cancel_send_msg(mpig_vc_t * const vc, const
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "sreq for cancel send req msg");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
-    sreq_cm = &sreq->cm.xio;
+    sreq_cmu = &sreq->cmu.xio;
 
     mpig_request_construct(sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -796,20 +792,20 @@ MPIG_STATIC int mpig_cm_xio_send_enq_cancel_send_msg(mpig_vc_t * const vc, const
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_envelope(vc, sreq_cm->msgbuf, rank, tag, ctx);
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_envelope(vc, sreq_cmu->msgbuf, rank, tag, ctx);
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
 
-    mpig_iov_reset(sreq_cm->iov, 0);
-    mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
+    mpig_iov_reset(sreq_cmu->iov, 0);
+    mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
 
     /* MT-RC-NOTE: the request data will be released with the unlock of the VC mutex performed later by one of the routines on
        the call stack. */
 
     /* send the cancel send message */
-    sreq_cm->gcb = mpig_cm_xio_send_handle_write_control_msg;
+    sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
     
@@ -852,7 +848,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_cancel_send_resp_msg(mpig_vc_t * const vc, 
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq = NULL;
-    struct mpig_cm_xio_request * sreq_cm = NULL;
+    struct mpig_cm_xio_request * sreq_cmu = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_send_enq_cancel_send_resp_msg);
 
@@ -871,7 +867,7 @@ MPIG_STATIC int mpig_cm_xio_send_enq_cancel_send_resp_msg(mpig_vc_t * const vc, 
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "sreq for cancel send resp msg");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
-    sreq_cm = &sreq->cm.xio;
+    sreq_cmu = &sreq->cmu.xio;
 
     mpig_request_construct(sreq);
     mpig_cm_xio_request_construct(sreq);
@@ -881,20 +877,20 @@ MPIG_STATIC int mpig_cm_xio_send_enq_cancel_send_resp_msg(mpig_vc_t * const vc, 
     mpig_cm_xio_request_set_msg_type(sreq, MPIG_CM_XIO_MSG_TYPE_CANCEL_SEND_RESP);
     
     /* pack the message header */
-    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cm->msgbuf);
-    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cm->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
-    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cm->msgbuf, remote_sreq_id);
-    mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cm->msgbuf, cancelled);
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cm->msgbuf);
+    mpig_cm_xio_msg_hdr_put_begin(vc, sreq_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
+    mpig_cm_xio_msg_hdr_put_req_id(vc, sreq_cmu->msgbuf, remote_sreq_id);
+    mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cmu->msgbuf, cancelled);
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
 
-    mpig_iov_reset(sreq_cm->iov, 0);
-    mpig_iov_add_entry(sreq_cm->iov, mpig_databuf_get_ptr(sreq_cm->msgbuf), mpig_databuf_get_eod(sreq_cm->msgbuf));
+    mpig_iov_reset(sreq_cmu->iov, 0);
+    mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
 
     /* MT-RC-NOTE: the request data will be released with the unlock of the VC mutex performed later by one of the routines on
        the call stack. */
 
     /* send the cancel send message */
-    sreq_cm->gcb = mpig_cm_xio_send_handle_write_control_msg;
+    sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
     
@@ -927,10 +923,10 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_vc_t * const vc = (mpig_vc_t *) arg;
-    struct mpig_cm_xio_vc * const vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * const vc_cmu = &vc->cmu.xio;
     bool_t vc_locked = FALSE;
     MPID_Request * sreq = NULL;
-    struct mpig_cm_xio_request * sreq_cm = NULL;
+    struct mpig_cm_xio_request * sreq_cmu = NULL;
     bool_t sreq_locked = FALSE;
     bool_t sreq_complete = FALSE;
     int mpi_errno = MPI_SUCCESS;
@@ -946,8 +942,8 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_
     mpig_vc_mutex_lock(vc);
     vc_locked = TRUE;
     {
-	sreq = vc_cm->active_sreq;
-	sreq_cm = &sreq->cm.xio;
+	sreq = vc_cmu->active_sreq;
+	sreq_cmu = &sreq->cmu.xio;
 	
 	mpig_request_mutex_lock(sreq);
 	sreq_locked = TRUE;
@@ -962,7 +958,7 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
     
-	    MPIU_Assert(nbytes_written == mpig_iov_get_num_bytes(sreq_cm->iov));
+	    MPIU_Assert(nbytes_written == mpig_iov_get_num_bytes(sreq_cmu->iov));
 	    MPIU_Assert(
 		(mpig_cm_xio_request_get_state(sreq) == MPIG_CM_XIO_REQ_STATE_SEND_DATA &&
 		    (mpig_cm_xio_request_get_msg_type(sreq) == MPIG_CM_XIO_MSG_TYPE_EAGER_DATA ||
@@ -972,17 +968,17 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_
 		    mpig_cm_xio_request_get_msg_type(sreq) == MPIG_CM_XIO_MSG_TYPE_RNDV_RTS));
 
 	    /* get the next set of data to send */
-	    mpig_iov_reset(sreq_cm->iov, 0);
+	    mpig_iov_reset(sreq_cmu->iov, 0);
 	    mpi_errno = mpig_cm_xio_stream_sreq_pack(sreq);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_sreq_pack");
 
-	    if (mpig_iov_get_num_bytes(sreq_cm->iov) == 0)
+	    if (mpig_iov_get_num_bytes(sreq_cmu->iov) == 0)
 	    {
 		/* if all of the message has been sent, then start sending the the next message on the send queue and update the
 		   state of the current request */
 		
 		/* if the send queue contains any messages, then start sending the one at the head of the queue */
-		vc_cm->active_sreq = NULL;
+		vc_cmu->active_sreq = NULL;
 		mpi_errno = mpig_cm_xio_send_next_sreq(vc);
 		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
 		
@@ -1064,7 +1060,7 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_
 
 	mpig_vc_mutex_lock_conditional(vc, (!vc_locked));
 	{
-	    mpig_cm_xio_fault_handle_async_vc_error(vc, mpi_errno);
+	    mpig_cm_xio_fault_handle_async_proc_vc_error(vc, mpi_errno);
 	}
 	mpig_vc_mutex_unlock(vc);
 	
@@ -1089,7 +1085,7 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_control_msg(const globus_xio_hand
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_vc_t * vc = (mpig_vc_t *) arg;
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     bool_t vc_locked = FALSE;
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
@@ -1106,9 +1102,9 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_control_msg(const globus_xio_hand
     mpig_vc_mutex_lock(vc);
     vc_locked = TRUE;
     {
-	sreq = vc_cm->active_sreq;
+	sreq = vc_cmu->active_sreq;
 	mpig_request_destroy(sreq);
-	vc_cm->active_sreq = NULL;
+	vc_cmu->active_sreq = NULL;
     
 	if (op_grc)
 	{   /* --BEGIN ERROR HANDLING-- */
@@ -1141,7 +1137,7 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_control_msg(const globus_xio_hand
     {
 	mpig_vc_mutex_lock_conditional(vc, (!vc_locked));
 	{
-	    mpig_cm_xio_fault_handle_async_vc_error(vc, mpi_errno);
+	    mpig_cm_xio_fault_handle_async_proc_vc_error(vc, mpi_errno);
 	}
 	mpig_vc_mutex_unlock(vc);
 
@@ -1205,7 +1201,7 @@ MPIG_STATIC mpig_cm_xio_msghan_fn_t mpig_cm_xio_msghan_funcs[] =
     NULL, /* MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_REQ */
     NULL, /* MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_RESP */
     NULL, /* MPIG_CM_XIO_MSG_TYPE_OPEN_ERROR_RESP */
-    mpig_cm_xio_disconnect_handle_recv_close_msg,
+    mpig_cm_xio_disconnect_handle_recv_close_proc_msg,
     NULL  /* MPIG_CM_XIO_MSG_TYPE_LAST */
 };
 
@@ -1231,7 +1227,7 @@ MPIG_STATIC mpig_cm_xio_msghan_fn_t mpig_cm_xio_msghan_funcs[] =
 MPIG_STATIC int mpig_cm_xio_recv_next_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_recv_next_msg);
 
@@ -1243,18 +1239,18 @@ MPIG_STATIC int mpig_cm_xio_recv_next_msg(mpig_vc_t * const vc)
     /* If the routine is being called from a routine that handles message headers, then return; otherwise register a read for the
        next message header.  mpig_cm_xio_recv_handle_incoming_msg() will process the message header, registering a new receive
        when necessary. */
-    if (vc_cm->msg_hdr_size == 0)
+    if (vc_cmu->msg_hdr_size == 0)
     {
 	MPIU_Size_t min_nbytes;
 	
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "registering receive for new message: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 	    
-	MPIU_Assert(vc_cm->active_rreq == NULL);
+	MPIU_Assert(vc_cmu->active_rreq == NULL);
 
-	min_nbytes = (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc)) ?
-	    mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc) - mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) : 0;
+	min_nbytes = (mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) < mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc)) ?
+	    mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc) - mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) : 0;
 	
-	mpig_cm_xio_register_read_vc_msgbuf(vc, min_nbytes, mpig_databuf_get_free_bytes(vc_cm->msgbuf),
+	mpig_cm_xio_register_read_vc_msgbuf(vc, min_nbytes, mpig_databuf_get_free_bytes(vc_cmu->msgbuf),
 					    mpig_cm_xio_recv_handle_incoming_msg, &mpi_errno);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_vc_msgbuf");
     }
@@ -1292,7 +1288,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_vc_t * vc = (mpig_vc_t *) arg;
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     bool_t vc_locked = FALSE;
     bool_t vc_inuse;
     bool_t vc_was_inuse;
@@ -1317,7 +1313,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	
 	/* if the VC is disconnecting or has failed, and the registered read operation was cancelled or EOF was reached, then
 	   ignore the callback */
-	if (globus_xio_error_is_eof(op_grc) && (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC ||
+	if (globus_xio_error_is_eof(op_grc) && (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING ||
 	    mpig_cm_xio_vc_has_failed(vc)))
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "EOF reached; terminating receive state machine: vc=" MPIG_PTR_FMT
@@ -1325,7 +1321,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	    goto vc_lock_exit;
 	}
 
-	if (globus_xio_error_is_canceled(op_grc) && (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING_VC ||
+	if (globus_xio_error_is_canceled(op_grc) && (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_DISCONNECT_CLOSING ||
 	    mpig_cm_xio_vc_has_failed(vc)))
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "read operation cancelled; terminating receive state machine: vc="
@@ -1346,33 +1342,33 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	}   /* --END ERROR HANDLING-- */
 
 	/* adjust number of bytes in the receive buffer */
-	mpig_databuf_inc_eod(vc_cm->msgbuf, nbytes_read);
+	mpig_databuf_inc_eod(vc_cmu->msgbuf, nbytes_read);
     
 	/* process message(s) */
 	while (1)
 	{
 	    /* if the message header size is not known, then we are at the start of a new message; otherwise, we are in the
 	       middle of processing a message header */
-	    if (vc_cm->msg_hdr_size == 0)
+	    if (vc_cmu->msg_hdr_size == 0)
 	    {
 		/* if the message buffer does not contain enough bytes to get the message header size, then receive more data */
-		if (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc))
+		if (mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) < mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc))
 		{
 		    bytes_needed = mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc) -
-			mpig_databuf_get_remaining_bytes(vc_cm->msgbuf);
+			mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf);
 		    MPIU_Assert(bytes_needed > 0 && bytes_needed <= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc));
 		    break;
 		}
 
 		/* extract the message header size from the message header */
-		mpig_cm_xio_msg_hdr_get_msg_size(vc, vc_cm->msgbuf, &vc_cm->msg_hdr_size);
-		vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc);
+		mpig_cm_xio_msg_hdr_get_msg_size(vc, vc_cmu->msgbuf, &vc_cmu->msg_hdr_size);
+		vc_cmu->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc);
 
 		/* if the message buffer does not contain the entire message header, then receive remainder of header */
-		if (mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) < vc_cm->msg_hdr_size)
+		if (mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) < vc_cmu->msg_hdr_size)
 		{
-		    bytes_needed = vc_cm->msg_hdr_size - mpig_databuf_get_remaining_bytes(vc_cm->msgbuf);
-		    MPIU_Assert(bytes_needed > 0 && bytes_needed <= vc_cm->msg_hdr_size);
+		    bytes_needed = vc_cmu->msg_hdr_size - mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf);
+		    MPIU_Assert(bytes_needed > 0 && bytes_needed <= vc_cmu->msg_hdr_size);
 		    break;
 		}
 	    }
@@ -1380,11 +1376,11 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	    {
 		mpig_cm_xio_msg_type_t msg_type = MPIG_CM_XIO_MSG_TYPE_UNDEFINED;
 		
-		MPIU_Assert(mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) >= vc_cm->msg_hdr_size);
+		MPIU_Assert(mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) >= vc_cmu->msg_hdr_size);
 		
 		/* extract the message type from the message header */
-		mpig_cm_xio_msg_hdr_get_msg_type(vc, vc_cm->msgbuf, &msg_type);
-		vc_cm->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_type(vc);
+		mpig_cm_xio_msg_hdr_get_msg_type(vc, vc_cmu->msgbuf, &msg_type);
+		vc_cmu->msg_hdr_size -= mpig_cm_xio_msg_hdr_remote_sizeof_msg_type(vc);
 
 		/*
 		 * call the message handler associated with the extracted message type.  after the handler returns, set the
@@ -1399,7 +1395,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 		 * the mutex allowing other threads to change the VC state or explicitly change the state themselves?
 		 */
 		mpi_errno = mpig_cm_xio_msghan_funcs[msg_type](vc);
-		vc_cm->msg_hdr_size = 0;
+		vc_cmu->msg_hdr_size = 0;
 		if (mpig_cm_xio_vc_is_connected(vc) || mpig_cm_xio_vc_is_disconnecting(vc))
 		{
 		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|msg_handler");
@@ -1415,7 +1411,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 		    goto vc_lock_exit;
 		}
 		
-		if (vc_cm->active_rreq != NULL)
+		if (vc_cmu->active_rreq != NULL)
 		{
 		    /* a receive request is active and awaiting message data.  the message data handler(s) are responsible for
 		       registering a new read operation to receive the next message header once the message data associated with
@@ -1432,7 +1428,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	
 	if (bytes_needed > 0)
 	{
-	    size_t bytes_remaining = mpig_databuf_get_remaining_bytes(vc_cm->msgbuf);
+	    size_t bytes_remaining = mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf);
 	    
 	    /* if there are unconsumed bytes, then move an remaining data to the beginning of the buffer and update the current
 	       position and end-of-data counters; otherwise reset the databuf to the beginning of the buffer.  one could argue
@@ -1442,17 +1438,17 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	       comparison. */
 	    if (bytes_remaining > 0)
 	    {
-		memmove(mpig_databuf_get_ptr(vc_cm->msgbuf), mpig_databuf_get_pos_ptr(vc_cm->msgbuf), bytes_remaining);
-		mpig_databuf_set_pos(vc_cm->msgbuf, 0);
-		mpig_databuf_set_eod(vc_cm->msgbuf, bytes_remaining);
+		memmove(mpig_databuf_get_base_ptr(vc_cmu->msgbuf), mpig_databuf_get_pos_ptr(vc_cmu->msgbuf), bytes_remaining);
+		mpig_databuf_set_pos(vc_cmu->msgbuf, 0);
+		mpig_databuf_set_eod(vc_cmu->msgbuf, bytes_remaining);
 	    }
 	    else
 	    {
-		mpig_databuf_reset(vc_cm->msgbuf);
+		mpig_databuf_reset(vc_cmu->msgbuf);
 	    }
 
 	    /* register a receive to receive, at a minimum, the number of bytes specified by "bytes_needed" */
-	    mpig_cm_xio_register_read_vc_msgbuf(vc, bytes_needed, mpig_databuf_get_free_bytes(vc_cm->msgbuf),
+	    mpig_cm_xio_register_read_vc_msgbuf(vc, bytes_needed, mpig_databuf_get_free_bytes(vc_cmu->msgbuf),
 		mpig_cm_xio_recv_handle_incoming_msg, &mpi_errno);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_vc_msgbuf");
 	}
@@ -1460,8 +1456,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 	{
 	    /* the reception of a message data is in progress.  the handler consuming this data will register a read for the next
 	       message header by calling mpig_cm_xio_recv_next_msg() once it has finished with the current message. */
-	    MPIU_Assert(mpig_databuf_get_remaining_bytes(vc_cm->msgbuf) == 0);
-	    mpig_databuf_reset(vc_cm->msgbuf);
+	    MPIU_Assert(mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) == 0);
+	    mpig_databuf_reset(vc_cmu->msgbuf);
 	}
 	
       vc_lock_exit:
@@ -1485,7 +1481,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
     {
 	mpig_vc_mutex_lock_conditional(vc, (!vc_locked));
 	{
-	    mpig_cm_xio_fault_handle_async_vc_error(vc, mpi_errno);
+	    mpig_cm_xio_fault_handle_async_proc_vc_error(vc, mpi_errno);
 	}
 	mpig_vc_mutex_unlock(vc);
 
@@ -1516,9 +1512,9 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t 
 MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPID_Request * rreq = NULL;
-    struct mpig_cm_xio_request * rreq_cm = NULL;
+    struct mpig_cm_xio_request * rreq_cmu = NULL;
     bool_t rreq_found;
     bool_t rreq_complete = FALSE;
     mpig_request_type_t sreq_type;
@@ -1536,14 +1532,14 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
     MPIG_UNUSED_VAR(fcname);
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc) +
+    MPIU_Assert(vc_cmu->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc) +
 	mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) + mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
 	mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc));
-    mpig_cm_xio_msg_hdr_get_req_type(vc, vc_cm->msgbuf, &sreq_type);
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cm->msgbuf, &rank, &tag, &ctx);
+    mpig_cm_xio_msg_hdr_get_req_type(vc, vc_cmu->msgbuf, &sreq_type);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cmu->msgbuf, &rank, &tag, &ctx);
     /* XXX: still need to handle, and thus identify, MPI_PACKED messages since they will have a special header */
-    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cm->msgbuf, &stream_size);
+    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cmu->msgbuf, &stream_size);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 	"eager message received: rank=%d, tag=%d, ctx=%d, sreq_type=%s, stream_size=" MPIG_SIZE_FMT,
@@ -1558,7 +1554,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
-    rreq_cm = &rreq->cm.xio;
+    rreq_cmu = &rreq->cmu.xio;
 
     /* if a matching request was not found, then initialize the one allocated for the unexpected queue; otherwise, if the request
        was posted with a rank of MPI_ANY_SOURCE, set the request's VC field to the VC on which the message arrived and intialize
@@ -1582,12 +1578,12 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
     mpig_cm_xio_request_set_sreq_type(rreq, sreq_type);
     mpig_request_set_remote_req_id(rreq, sreq_id);
     mpig_cm_xio_stream_set_size(rreq, stream_size);
-    rreq_cm->df = vc_cm->df; /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
+    rreq_cmu->df = vc_cmu->df; /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
     
     /* fill in the status fields */
     rreq->status.MPI_SOURCE = rank;
     rreq->status.MPI_TAG = tag;
-    rreq->status.mpig_dc_format = vc_cm->df;  /* XXX: may be different that local format if data was sent using MPI_PACKED */
+    rreq->status.mpig_dc_format = vc_cmu->df;  /* XXX: may be different that local format if data was sent using MPI_PACKED */
     /* rreq->status.count is set by the stream unpack routines if the message was posted */
     
     if (rreq_found)
@@ -1613,18 +1609,18 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	mpi_errno = mpig_cm_xio_stream_rreq_init(rreq);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_init");
 
-	mpig_iov_reset(rreq_cm->iov, 0);
+	mpig_iov_reset(rreq_cmu->iov, 0);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
 	
 	/* if the message was not a zero-byte message, then first try to get the bytes from the message buffer */
-	if (mpig_iov_get_num_bytes(rreq_cm->iov) > 0)
+	if (mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
 	{
 	    mpi_errno = mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(vc, rreq);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack_vc_msgbuf");
 	}
 
-	if (mpig_iov_get_num_bytes(rreq_cm->iov) == 0)
+	if (mpig_iov_get_num_bytes(rreq_cmu->iov) == 0)
 	{
 	    /* if all of the data has already been received and placed in the applicaton buffer, the change the request state to
 	       complete and decrement the internal (CM XIO) completion counter */
@@ -1635,11 +1631,11 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	{
 	    /* otherwise, register a read operation for more data */
 	    mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_POSTED_DATA);
-	    rreq_cm->gcb = mpig_cm_xio_recv_handle_read_msg_data;
-	    MPIU_Assert(vc_cm->active_rreq == NULL);
+	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
+	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
-	    vc_cm->active_rreq = rreq;
+	    vc_cmu->active_rreq = rreq;
 	}
     }
     else
@@ -1663,13 +1659,13 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	    MPIU_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_OTHER, "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
 
 	    /* if some of the data for this message is in the VC message bufffer, then remove it */
-	    nbytes = MPIG_MIN(mpig_databuf_get_remaining_bytes(vc_cm->msgbuf), mpig_cm_xio_stream_get_size(rreq));
-	    mpig_databuf_inc_pos(vc_cm->msgbuf, nbytes);
+	    nbytes = MPIG_MIN(mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf), mpig_cm_xio_stream_get_size(rreq));
+	    mpig_databuf_inc_pos(vc_cmu->msgbuf, nbytes);
 
 	    if(nbytes < mpig_cm_xio_stream_get_size(rreq))
 	    {
 		/* allocate a temporary data buffer for the unexpected data */
-		mpi_errno = mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cm->databuf);
+		mpi_errno = mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cmu->databuf);
 		if (mpi_errno)
 		{   /* --BEGIN ERROR HANDLING-- */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1685,23 +1681,23 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 
 		/* set up an IOV to pointing at the temporary buffer */
 		nbytes = MPIG_MIN((mpig_cm_xio_stream_get_size(rreq) - mpig_cm_xio_stream_get_cur_pos(rreq)),
-				  mpig_databuf_get_size(rreq_cm->databuf));
-		mpig_iov_reset(rreq_cm->iov, 0);
-		mpig_iov_add_entry(rreq_cm->iov, mpig_databuf_get_ptr(rreq_cm->databuf), nbytes);
-		mpig_databuf_set_eod(rreq_cm->databuf, nbytes);
+				  mpig_databuf_get_size(rreq_cmu->databuf));
+		mpig_iov_reset(rreq_cmu->iov, 0);
+		mpig_iov_add_entry(rreq_cmu->iov, mpig_databuf_get_base_ptr(rreq_cmu->databuf), nbytes);
+		mpig_databuf_set_eod(rreq_cmu->databuf, nbytes);
 		mpig_cm_xio_stream_inc_cur_pos(rreq, nbytes);
 
 		/* register a read operation to start draining the data from the network and place into the temporary buffer */
 		mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_RSEND_DATA);
-		rreq_cm->gcb = mpig_cm_xio_recv_handle_read_msg_data;
-		MPIU_Assert(vc_cm->active_rreq == NULL);
+		rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
+		MPIU_Assert(vc_cmu->active_rreq == NULL);
 		mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
 		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
 		{
 		    bool_t was_complete;
 		    mpig_cm_xio_request_inc_cc(rreq, &was_complete);
 		}
-		vc_cm->active_rreq = rreq;
+		vc_cmu->active_rreq = rreq;
 	    }
 	    else
 	    {
@@ -1714,7 +1710,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	       receive. */
 
 	    /* allocate a temporary data buffer for the unexpected data */
-            mpi_errno = mpig_databuf_create(mpig_cm_xio_stream_get_size(rreq), &rreq_cm->databuf);
+            mpi_errno = mpig_databuf_create(mpig_cm_xio_stream_get_size(rreq), &rreq_cmu->databuf);
 	    if (mpi_errno)
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1724,25 +1720,25 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	    }   /* --END ERROR HANDLING-- */
 
 	    /* set up an IOV to pointing at the temporary buffer */
-	    mpig_iov_reset(rreq_cm->iov, 0);
-	    mpig_iov_add_entry(rreq_cm->iov, mpig_databuf_get_ptr(rreq_cm->databuf), mpig_cm_xio_stream_get_size(rreq));
-	    mpig_databuf_set_eod(rreq_cm->databuf, mpig_cm_xio_stream_get_size(rreq));
+	    mpig_iov_reset(rreq_cmu->iov, 0);
+	    mpig_iov_add_entry(rreq_cmu->iov, mpig_databuf_get_base_ptr(rreq_cmu->databuf), mpig_cm_xio_stream_get_size(rreq));
+	    mpig_databuf_set_eod(rreq_cmu->databuf, mpig_cm_xio_stream_get_size(rreq));
 
 	    /* if some of the data for this message is in the VC message bufffer, then copy it into the data buffer */
-	    nbytes = mpig_iov_unpack(mpig_databuf_get_pos_ptr(vc_cm->msgbuf), mpig_databuf_get_remaining_bytes(vc_cm->msgbuf),
-		rreq_cm->iov);
-	    mpig_databuf_inc_pos(vc_cm->msgbuf, nbytes);
+	    nbytes = mpig_iov_unpack(mpig_databuf_get_pos_ptr(vc_cmu->msgbuf), mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf),
+		rreq_cmu->iov);
+	    mpig_databuf_inc_pos(vc_cmu->msgbuf, nbytes);
 	    
 	    /* if any of the unexpected data remains in the network, the register a read operation to drain the data from the
 	       network and place into the temporary buffer */
-	    if (mpig_iov_get_num_bytes(rreq_cm->iov) > 0)
+	    if (mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
 	    {
 		mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_DATA);
-		rreq_cm->gcb = mpig_cm_xio_recv_handle_read_msg_data;
-		MPIU_Assert(vc_cm->active_rreq == NULL);
+		rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
+		MPIU_Assert(vc_cmu->active_rreq == NULL);
 		mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
 		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
-		vc_cm->active_rreq = rreq;
+		vc_cmu->active_rreq = rreq;
 	    }
 	    else
 	    {
@@ -1811,9 +1807,9 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPID_Request * rreq = NULL;
-    struct mpig_cm_xio_request * rreq_cm = NULL;
+    struct mpig_cm_xio_request * rreq_cmu = NULL;
     bool_t rreq_found;
     mpig_request_type_t sreq_type;
     int sreq_id;
@@ -1833,16 +1829,16 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
     MPIG_UNUSED_VAR(fcname);
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc) +
+    MPIU_Assert(vc_cmu->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc) +
 	mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) + mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
 	2 * mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc));
     
-    mpig_cm_xio_msg_hdr_get_req_type(vc, vc_cm->msgbuf, &sreq_type);
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cm->msgbuf, &rank, &tag, &ctx);
+    mpig_cm_xio_msg_hdr_get_req_type(vc, vc_cmu->msgbuf, &sreq_type);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cmu->msgbuf, &rank, &tag, &ctx);
     /* XXX: still need to handle, and thus identify, MPI_PACKED messages since they will have a special header */
-    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cm->msgbuf, &rts_size);
-    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cm->msgbuf, &stream_size);
+    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cmu->msgbuf, &rts_size);
+    mpig_cm_xio_msg_hdr_get_data_size(vc, vc_cmu->msgbuf, &stream_size);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "eager message received: rank=%d, tag=%d, ctx=%d, sreq_type=%s, stream_size="
 	MPIG_SIZE_FMT, rank, tag, ctx, mpig_request_type_get_string(sreq_type), stream_size));
@@ -1856,7 +1852,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
-    rreq_cm = &rreq->cm.xio;
+    rreq_cmu = &rreq->cmu.xio;
 
     /* if a matching request was not found, then initialize the one allocated for the unexpected queue; otherwise, if the request
        was posted with a rank of MPI_ANY_SOURCE, set the request's VC field to the VC on which the message arrived and intialize
@@ -1880,12 +1876,12 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
     mpig_cm_xio_request_set_sreq_type(rreq, sreq_type);
     mpig_request_set_remote_req_id(rreq, sreq_id);
     mpig_cm_xio_stream_set_size(rreq, stream_size);
-    rreq_cm->df = vc_cm->df; /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
+    rreq_cmu->df = vc_cmu->df; /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
     
     /* fill in the status fields */
     rreq->status.MPI_SOURCE = rank;
     rreq->status.MPI_TAG = tag;
-    rreq->status.mpig_dc_format = vc_cm->df;  /* XXX: may be different that local format if data was sent using MPI_PACKED */
+    rreq->status.mpig_dc_format = vc_cmu->df;  /* XXX: may be different that local format if data was sent using MPI_PACKED */
     /* rreq->status.count is set by the stream unpack routines if the message was posted */
     
     if (rreq_found)
@@ -1908,17 +1904,17 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	mpi_errno = mpig_cm_xio_stream_rreq_init(rreq);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_init");
 
-	mpig_iov_reset(rreq_cm->iov, 0);
+	mpig_iov_reset(rreq_cmu->iov, 0);
 	mpig_cm_xio_stream_set_max_pos(rreq, rts_size);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
 	
 	/* first try to get the bytes from the message buffer */
-	MPIU_Assert(mpig_iov_get_num_bytes(rreq_cm->iov) > 0);
+	MPIU_Assert(mpig_iov_get_num_bytes(rreq_cmu->iov) > 0);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(vc, rreq);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack_vc_msgbuf");
 
-	if (mpig_iov_get_num_bytes(rreq_cm->iov) == 0)
+	if (mpig_iov_get_num_bytes(rreq_cmu->iov) == 0)
 	{
 	    /* if all of the data sent with the request-to-send has already been received and placed in the applicaton buffer,
 	       then change the request state to "wait for rendezvous data message" */
@@ -1928,11 +1924,11 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	{
 	    /*  otherwise, register a read operation for more data */
 	    mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_POSTED_DATA);
-	    rreq_cm->gcb = mpig_cm_xio_recv_handle_read_msg_data;
-	    MPIU_Assert(vc_cm->active_rreq == NULL);
+	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
+	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
-	    vc_cm->active_rreq = rreq;
+	    vc_cmu->active_rreq = rreq;
 	}
     }
     else
@@ -1946,7 +1942,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	    MPIG_PTR_FMT, rreq->handle, (MPIG_PTR_CAST) rreq));
 
 	/* allocate a temporary data buffer for the unexpected data */
-	mpi_errno = mpig_databuf_create(rts_size, &rreq_cm->databuf);
+	mpi_errno = mpig_databuf_create(rts_size, &rreq_cmu->databuf);
 	if (mpi_errno)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT,
@@ -1956,25 +1952,25 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	}   /* --END ERROR HANDLING-- */
 
 	/* set up an IOV to pointing at the temporary buffer */
-	mpig_iov_reset(rreq_cm->iov, 0);
-	mpig_iov_add_entry(rreq_cm->iov, mpig_databuf_get_ptr(rreq_cm->databuf), rts_size);
-	mpig_databuf_set_eod(rreq_cm->databuf, rts_size);
+	mpig_iov_reset(rreq_cmu->iov, 0);
+	mpig_iov_add_entry(rreq_cmu->iov, mpig_databuf_get_base_ptr(rreq_cmu->databuf), rts_size);
+	mpig_databuf_set_eod(rreq_cmu->databuf, rts_size);
 
 	/* if some of the data for this message is in the VC message bufffer, then copy it into the data buffer */
-	nbytes = mpig_iov_unpack(mpig_databuf_get_pos_ptr(vc_cm->msgbuf), mpig_databuf_get_remaining_bytes(vc_cm->msgbuf),
-				 rreq_cm->iov);
-	mpig_databuf_inc_pos(vc_cm->msgbuf, nbytes);
+	nbytes = mpig_iov_unpack(mpig_databuf_get_pos_ptr(vc_cmu->msgbuf), mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf),
+				 rreq_cmu->iov);
+	mpig_databuf_inc_pos(vc_cmu->msgbuf, nbytes);
 	    
 	/* if any of the unexpected data remains in the network, the register a read operation to drain the data from the
 	   network and place into the temporary buffer */
-	if (mpig_iov_get_num_bytes(rreq_cm->iov) > 0)
+	if (mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
 	{
 	    mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_DATA);
-	    rreq_cm->gcb = mpig_cm_xio_recv_handle_read_msg_data;
-	    MPIU_Assert(vc_cm->active_rreq == NULL);
+	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
+	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
-	    vc_cm->active_rreq = rreq;
+	    vc_cmu->active_rreq = rreq;
 	}
 	else
 	{
@@ -2030,7 +2026,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_cts_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     int sreq_id;
     int rreq_id;
     MPID_Request * sreq;
@@ -2044,9 +2040,9 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_cts_msg(mpig_vc_t * const vc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     /* get the request handles from the message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &rreq_id);
+    MPIU_Assert(vc_cmu->msg_hdr_size == 2 * mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &rreq_id);
     MPID_Request_get_ptr(sreq_id, sreq);
 
     mpig_request_mutex_lock(sreq);
@@ -2109,10 +2105,10 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_cts_msg(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     int rreq_id;
     MPID_Request * rreq;
-    struct mpig_cm_xio_request * rreq_cm;
+    struct mpig_cm_xio_request * rreq_cmu;
     bool_t rreq_locked = FALSE;
     bool_t rreq_complete = FALSE;
     int mpi_errno = MPI_SUCCESS;
@@ -2124,10 +2120,10 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     /* get the receive request handle from the message header and turn it into a pointer to the request object */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &rreq_id);
+    MPIU_Assert(vc_cmu->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &rreq_id);
     MPID_Request_get_ptr(rreq_id, rreq);
-    rreq_cm = &rreq->cm.xio;
+    rreq_cmu = &rreq->cmu.xio;
 
     mpig_request_mutex_lock(rreq);
     rreq_locked = TRUE;
@@ -2138,7 +2134,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
 	mpig_cm_xio_stream_set_max_pos(rreq, 0);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
-	MPIU_Assert(mpig_iov_get_num_bytes(rreq_cm->iov) > 0);
+	MPIU_Assert(mpig_iov_get_num_bytes(rreq_cmu->iov) > 0);
 
 	/* first try to get the bytes from the message buffer */
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(vc, rreq);
@@ -2146,15 +2142,15 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
 
 	/* if there is more data to receive, then register a read; otherwise, mark the request as complete and enqueue it on the
 	   completion queue */
-	if (mpig_iov_get_num_bytes(rreq_cm->iov) > 0)
+	if (mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
 	{
 	    mpig_cm_xio_request_set_msg_type(rreq, MPIG_CM_XIO_MSG_TYPE_RNDV_DATA);
 	    mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_POSTED_DATA);
-	    rreq_cm->gcb = mpig_cm_xio_recv_handle_read_msg_data;
-	    MPIU_Assert(vc_cm->active_rreq == NULL);
+	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
+	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
-	    vc_cm->active_rreq = rreq;
+	    vc_cmu->active_rreq = rreq;
 	}
 	else
 	{
@@ -2202,7 +2198,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPI_Request sreq_id;
     MPID_Request * sreq = NULL;
     bool_t sreq_complete = FALSE;
@@ -2215,8 +2211,8 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
+    MPIU_Assert(vc_cmu->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &sreq_id);
 
     /* get the send request object */
     MPID_Request_get_ptr(sreq_id, sreq);
@@ -2272,7 +2268,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     int rank;
     int tag;
     int ctx;
@@ -2288,10 +2284,10 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_msg(mpig_vc_t * const vc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
+    MPIU_Assert(vc_cmu->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_envelope(vc) +
 	mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc));
-    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cm->msgbuf, &rank, &tag, &ctx);
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_envelope(vc, vc_cmu->msgbuf, &rank, &tag, &ctx);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &sreq_id);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "cancel send message received: rank=%d, tag=%d, ctx=%d, sreq_id=" MPIG_HANDLE_FMT,
 	rank, tag, ctx, sreq_id));
@@ -2376,7 +2372,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_msg(mpig_vc_t * const vc)
 MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     MPI_Request sreq_id;
     MPID_Request * sreq = NULL;
     bool_t sreq_complete = FALSE;
@@ -2390,10 +2386,10 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const v
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
     /* unpack message header */
-    MPIU_Assert(vc_cm->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) +
+    MPIU_Assert(vc_cmu->msg_hdr_size == mpig_cm_xio_msg_hdr_remote_sizeof_req_id(vc) +
 	mpig_cm_xio_msg_hdr_remote_sizeof_bool(vc));
-    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cm->msgbuf, &sreq_id);
-    mpig_cm_xio_msg_hdr_get_bool(vc, vc_cm->msgbuf, &cancelled);
+    mpig_cm_xio_msg_hdr_get_req_id(vc, vc_cmu->msgbuf, &sreq_id);
+    mpig_cm_xio_msg_hdr_get_bool(vc, vc_cmu->msgbuf, &cancelled);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "received cancel send request: vc=" MPIG_PTR_FMT ", sreq_id=" MPIG_HANDLE_FMT
 	", cancelled=%s", (MPIG_PTR_CAST) vc, sreq_id, MPIG_BOOL_STR(cancelled)));
@@ -2412,7 +2408,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const v
 	sreq->status.cancelled = cancelled;
 	
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "before adjusting CC: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="
-	    MPIG_PTR_FMT ", cc=%d", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cm.xio.cc));
+	    MPIG_PTR_FMT ", cc=%d", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cmu.xio.cc));
 	
 	/* if this was an eager ssend message, then decrement the completion counter to cover ssend ack that will never arrive */
 	if (mpig_request_get_type(sreq) == MPIG_REQUEST_TYPE_SSEND)
@@ -2421,7 +2417,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const v
 	    MPIU_Assert(sreq_complete == FALSE);
 
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "after ssend CC adjustment: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
-		", sreqp=" MPIG_PTR_FMT ", cc=%d", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cm.xio.cc));
+		", sreqp=" MPIG_PTR_FMT ", cc=%d", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cmu.xio.cc));
 	}
 
 	/* if the request was cancelled and it was sent using the rendezvous protocol, then decrement the completion counter to
@@ -2434,7 +2430,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const v
 	    MPIU_Assert(sreq_complete == FALSE);
 
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "after cancelled CC adjustment: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
-		", sreqp=" MPIG_PTR_FMT ", cc=%d", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cm.xio.cc));
+		", sreqp=" MPIG_PTR_FMT ", cc=%d", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cmu.xio.cc));
 	}
    
 	/* finally, decrement the completion counter for the outstanding cancel send response message we just finished
@@ -2442,7 +2438,7 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const v
 	mpig_cm_xio_request_dec_cc(sreq, &sreq_complete);
 	
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "after adjusting CC: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="
-	    MPIG_PTR_FMT ", cc=%d, sreq_complete=%s", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cm.xio.cc,
+	    MPIG_PTR_FMT ", cc=%d, sreq_complete=%s", (MPIG_PTR_CAST) vc, sreq->handle, (MPIG_PTR_CAST) sreq, sreq->cmu.xio.cc,
 	    MPIG_BOOL_STR(sreq_complete)));
     }
     mpig_request_mutex_unlock(sreq);
@@ -2478,10 +2474,10 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_vc_t * vc = (mpig_vc_t *) arg;
-    struct mpig_cm_xio_vc * vc_cm = &vc->cm.xio;
+    struct mpig_cm_xio_vc * vc_cmu = &vc->cmu.xio;
     bool_t vc_locked = FALSE;
     MPID_Request * rreq = NULL;
-    struct mpig_cm_xio_request * rreq_cm = NULL;
+    struct mpig_cm_xio_request * rreq_cmu = NULL;
     bool_t rreq_locked = FALSE;
     bool_t rreq_complete = FALSE;
     bool_t recv_complete = FALSE;
@@ -2498,8 +2494,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
     mpig_vc_mutex_lock(vc);
     vc_locked = TRUE;
     {
-	rreq = vc_cm->active_rreq;
-	rreq_cm = &rreq->cm.xio;
+	rreq = vc_cmu->active_rreq;
+	rreq_cmu = &rreq->cmu.xio;
 
 	mpig_request_mutex_lock(rreq);
 	rreq_locked = TRUE;
@@ -2514,7 +2510,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
     
-	    MPIU_Assert(nbytes_read == mpig_iov_get_num_bytes(rreq_cm->iov));
+	    MPIU_Assert(nbytes_read == mpig_iov_get_num_bytes(rreq_cmu->iov));
 	    MPIU_Assert(mpig_cm_xio_request_get_msg_type(rreq) == MPIG_CM_XIO_MSG_TYPE_EAGER_DATA ||
 			mpig_cm_xio_request_get_msg_type(rreq) == MPIG_CM_XIO_MSG_TYPE_RNDV_RTS ||
 			mpig_cm_xio_request_get_msg_type(rreq) == MPIG_CM_XIO_MSG_TYPE_RNDV_DATA);
@@ -2525,13 +2521,13 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 		case MPIG_CM_XIO_REQ_STATE_RECV_POSTED_DATA:
 		{
 		    /* unpack any data in the request's databuf, and get the next set of data to be read */
-		    mpig_iov_reset(rreq_cm->iov, 0);
+		    mpig_iov_reset(rreq_cmu->iov, 0);
 		    mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
 		    MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_xio|stream_rreq_unpack");
 		    /* FIXME: better error handling is needed here.  the network should be drained of any remaining data from the
 		       current message.  is this covered by the error handling in stream_rreq_unpack() ??? */
 
-		    if (mpig_iov_get_num_bytes(rreq_cm->iov) == 0)
+		    if (mpig_iov_get_num_bytes(rreq_cmu->iov) == 0)
 		    {
 			/* if all of the message data has been received, then update the state of the receive request... */
 			
@@ -2616,8 +2612,8 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 		    if (mrc == MPI_SUCCESS)
 		    {
 			/* unpack the data send with the unexpected eager or RTS message */
-			mpig_iov_reset(rreq_cm->iov, 0);
-			mpig_cm_xio_stream_set_max_pos(rreq, mpig_databuf_get_remaining_bytes(rreq_cm->databuf));
+			mpig_iov_reset(rreq_cmu->iov, 0);
+			mpig_cm_xio_stream_set_max_pos(rreq, mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
 			mrc = mpig_cm_xio_stream_rreq_unpack(rreq);
 			MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
 			    "**globus|cm_xio|stream_rreq_unpack");
@@ -2704,12 +2700,12 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 		    MPIU_Assert(mpig_cm_xio_request_get_msg_type(rreq) == MPIG_CM_XIO_MSG_TYPE_EAGER_DATA);
 		    
 		    nbytes = MPIG_MIN((mpig_cm_xio_stream_get_size(rreq) - mpig_cm_xio_stream_get_cur_pos(rreq)),
-				      mpig_databuf_get_size(rreq_cm->databuf));
+				      mpig_databuf_get_size(rreq_cmu->databuf));
 		    if (nbytes > 0)
 		    {
-			mpig_iov_reset(rreq_cm->iov, 0);
-			mpig_iov_add_entry(rreq_cm->iov, mpig_databuf_get_ptr(rreq_cm->databuf), nbytes);
-			mpig_databuf_set_eod(rreq_cm->databuf, nbytes);
+			mpig_iov_reset(rreq_cmu->iov, 0);
+			mpig_iov_add_entry(rreq_cmu->iov, mpig_databuf_get_base_ptr(rreq_cmu->databuf), nbytes);
+			mpig_databuf_set_eod(rreq_cmu->databuf, nbytes);
 			mpig_cm_xio_stream_inc_cur_pos(rreq, nbytes);
 
 			MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "draining more rsend data: vc=" MPIG_PTR_FMT ", rreq="
@@ -2748,7 +2744,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 	/* if all of the data for this request has been received, then regiser a read to receive the next incoming message */
 	if (recv_complete == TRUE)
 	{
-	    vc_cm->active_rreq = NULL;
+	    vc_cmu->active_rreq = NULL;
 	    mpi_errno = mpig_cm_xio_recv_next_msg(vc);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|recv_next_msg");
 	}
@@ -2773,7 +2769,7 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 	
 	mpig_vc_mutex_lock_conditional(vc, (!vc_locked));
 	{
-	    mpig_cm_xio_fault_handle_async_vc_error(vc, mpi_errno);
+	    mpig_cm_xio_fault_handle_async_proc_vc_error(vc, mpi_errno);
 	}
 	mpig_vc_mutex_unlock(vc);
 
@@ -2796,9 +2792,9 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 
 MPIG_STATIC void mpig_cm_xio_fault_handle_async_error(int mpi_errno);
 
-MPIG_STATIC void mpig_cm_xio_fault_handle_async_vc_error(mpig_vc_t * vc, int mpi_errno);
+MPIG_STATIC void mpig_cm_xio_fault_handle_async_proc_vc_error(mpig_vc_t * vc, int mpi_errno);
 
-MPIG_STATIC int mpig_cm_xio_fault_handle_sync_vc_error(mpig_vc_t * vc, int mpi_errno);
+MPIG_STATIC int mpig_cm_xio_fault_handle_sync_proc_vc_error(mpig_vc_t * vc, int mpi_errno);
 
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
@@ -2833,26 +2829,26 @@ MPIG_STATIC void mpig_cm_xio_fault_handle_async_error(const int mpi_errno)
 
 
 /*
- * <void> mpig_cm_xio_fault_handle_async_vc_error([IN/OUT] vc, [IN] mpi_errno)
+ * <void> mpig_cm_xio_fault_handle_async_proc_vc_error([IN/OUT] proc_vc, [IN] mpi_errno)
  *
  * MT-NOTE: this routine assumes that the VC mutex is held by the current context.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_xio_fault_handle_async_vc_error
-MPIG_STATIC void mpig_cm_xio_fault_handle_async_vc_error(mpig_vc_t * const vc, const int mpi_errno_in)
+#define FUNCNAME mpig_cm_xio_fault_handle_async_proc_vc_error
+MPIG_STATIC void mpig_cm_xio_fault_handle_async_proc_vc_error(mpig_vc_t * const proc_vc, const int mpi_errno_in)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = mpi_errno_in;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_fault_handle_async_vc_error);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_fault_handle_async_proc_vc_error);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_fault_handle_async_vc_error);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "entering: vc=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc, mpi_errno));
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_fault_handle_async_proc_vc_error);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "entering: proc_vc=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) proc_vc, mpi_errno));
 
     /* if the VC has already failed, then just return */
-    if (mpig_cm_xio_vc_has_failed(vc))
+    if (mpig_cm_xio_vc_has_failed(proc_vc))
     {
 	char * msg;
 
@@ -2862,55 +2858,55 @@ MPIG_STATIC void mpig_cm_xio_fault_handle_async_vc_error(mpig_vc_t * const vc, c
 	    MPIR_Err_get_string(mpi_errno, msg, MPIG_ERR_STRING_SIZE, NULL);
 	}
 
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "WARNING: VC fault handler called again: vc="
-	    MPIG_PTR_FMT ",\nmsg=\"%s\"", (MPIG_PTR_CAST) vc, msg ? msg : "memory allocation error"));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "WARNING: VC fault handler called again: proc_vc="
+	    MPIG_PTR_FMT ",\nmsg=\"%s\"", (MPIG_PTR_CAST) proc_vc, msg ? msg : "memory allocation error"));
 
 	MPIU_Free(msg);
 	
 	goto fn_return;
     }
     
-    mpi_errno = mpig_cm_xio_fault_handle_sync_vc_error(vc, mpi_errno);
+    mpi_errno = mpig_cm_xio_fault_handle_sync_proc_vc_error(proc_vc, mpi_errno);
 
     /* if the error has not been cleared up by the synchronous VC fault handler, then report the error(s) using the asynchronous
        fault handler */
     if (mpi_errno)
     {
-	mpig_vc_mutex_unlock(vc);
+	mpig_vc_mutex_unlock(proc_vc);
 	mpig_cm_xio_fault_handle_async_error(mpi_errno);
     }
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "exiting: vc= " MPIG_PTR_FMT,
-	(MPIG_PTR_CAST) vc));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_fault_handle_async_vc_error);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "exiting: proc_vc= " MPIG_PTR_FMT,
+	(MPIG_PTR_CAST) proc_vc));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_fault_handle_async_proc_vc_error);
     return;
 }
-/* mpig_cm_xio_fault_handle_async_vc_error() */
+/* mpig_cm_xio_fault_handle_async_proc_vc_error() */
 
 
 /*
- * <mpi_errno> mpig_cm_xio_fault_handle_sync_vc_error([IN/OUT] vc, [IN] mpi_errno)
+ * <mpi_errno> mpig_cm_xio_fault_handle_sync_proc_vc_error([IN/OUT] proc_vc, [IN] mpi_errno)
  *
  * MT-NOTE: this routine assumes that the VC mutex is held by the current context.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_xio_fault_handle_sync_vc_error
-MPIG_STATIC int mpig_cm_xio_fault_handle_sync_vc_error(mpig_vc_t * vc, int mpi_errno_in)
+#define FUNCNAME mpig_cm_xio_fault_handle_sync_proc_vc_error
+MPIG_STATIC int mpig_cm_xio_fault_handle_sync_proc_vc_error(mpig_vc_t * proc_vc, int mpi_errno_in)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    globus_result_t grc;
+    int mrc;
     int mpi_errno = mpi_errno_in;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_fault_handle_sync_vc_error);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_fault_handle_sync_proc_vc_error);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_fault_handle_sync_vc_error);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "entering: vc=" MPIG_PTR_FMT,
-	(MPIG_PTR_CAST) vc));
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_fault_handle_sync_proc_vc_error);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "entering: proc_vc=" MPIG_PTR_FMT,
+	(MPIG_PTR_CAST) proc_vc));
 
     /* if the VC has already failed, then just return */
-    if (mpig_cm_xio_vc_has_failed(vc))
+    if (mpig_cm_xio_vc_has_failed(proc_vc))
     {
 	char * msg;
 
@@ -2920,25 +2916,29 @@ MPIG_STATIC int mpig_cm_xio_fault_handle_sync_vc_error(mpig_vc_t * vc, int mpi_e
 	    MPIR_Err_get_string(mpi_errno, msg, MPIG_ERR_STRING_SIZE, NULL);
 	}
 
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "WARNING: VC fault handler called again: vc="
-	    MPIG_PTR_FMT ",\nmsg=\"%s\"", (MPIG_PTR_CAST) vc, msg ? msg : "memory allocation error"));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "WARNING: proc VC fault handler called again: proc_vc="
+	    MPIG_PTR_FMT ",\nmsg=\"%s\"", (MPIG_PTR_CAST) proc_vc, msg ? msg : "memory allocation error"));
 
 	MPIU_Free(msg);
 	
 	goto fn_return;
     }
     
-    if (mpig_cm_xio_vc_is_connecting(vc))
+    if (mpig_cm_xio_vc_is_connecting(proc_vc))
     {
-	mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING);
+	mpig_cm_xio_vc_set_state(proc_vc, MPIG_CM_XIO_VC_STATE_FAILED_CONNECTING);
     }
-    else if (mpig_cm_xio_vc_is_connected(vc))
+    else if (mpig_cm_xio_vc_is_connected(proc_vc))
     {
-	mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_FAILED_CONNECTION);
+	mpig_cm_xio_vc_set_state(proc_vc, MPIG_CM_XIO_VC_STATE_FAILED_CONNECTION);
     }
-    else if (mpig_cm_xio_vc_is_disconnecting(vc) || mpig_cm_xio_vc_is_closing(vc))
+    else if (mpig_cm_xio_vc_is_disconnecting(proc_vc))
     {
-	mpig_cm_xio_vc_set_state(vc, MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING);
+	mpig_cm_xio_vc_set_state(proc_vc, MPIG_CM_XIO_VC_STATE_FAILED_DISCONNECTING);
+    }
+    else if (mpig_cm_xio_vc_is_closing(proc_vc))
+    {
+	mpig_cm_xio_vc_set_state(proc_vc, MPIG_CM_XIO_VC_STATE_FAILED_CLOSING);
     }
     else
     {
@@ -2946,14 +2946,15 @@ MPIG_STATIC int mpig_cm_xio_fault_handle_sync_vc_error(mpig_vc_t * vc, int mpi_e
     }
 
     /* close the XIO handle associated with the VC */
-    grc = globus_xio_register_close(vc->cm.xio.handle, NULL, mpig_cm_xio_conn_handle_close, NULL);
-    vc->cm.xio.handle = NULL;
-    if (grc)
+    if (proc_vc->cmu.xio.handle != NULL)
     {
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VCCM, "ERROR: call to %s() failed: %s",
-	    "globus_xio_register_close", globus_error_print_chain(globus_error_peek(grc))));
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER,"**globus|cm_xio|xio_reg_close",
-	    "**globus|cm_xio|xio_reg_close %s", globus_error_print_chain(globus_error_peek(grc)));
+	mrc = mpig_cm_xio_disconnect_close_proc(proc_vc);
+	if (mrc)
+	{
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: attempt to close the proc VC failed: "
+		"proc_vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) proc_vc));
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_close_proc");
+	}
     }
 
     /* FIXME: mark the VC and any associated communicators as bad.  terminate any requests associated with those
@@ -2962,12 +2963,12 @@ MPIG_STATIC int mpig_cm_xio_fault_handle_sync_vc_error(mpig_vc_t * vc, int mpi_e
     /* XXX: attempt reconnect */
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "exiting: vc= " MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc, mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_fault_handle_sync_vc_error);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "exiting: proc_vc= " MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) proc_vc, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_fault_handle_sync_proc_vc_error);
     return mpi_errno;
 }
-/* mpig_cm_xio_fault_handle_sync_vc_error() */
+/* mpig_cm_xio_fault_handle_sync_proc_vc_error() */
 
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */

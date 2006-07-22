@@ -55,14 +55,22 @@ int mpig_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Co
 #endif /* defined(MPIG_VMPI) */
 
 /*
- * MT-RC-NOTE: this routine does not perform insure the pointer to the function table in the VC and the the pointers within the
- * function table table are consistent across are threads.  as such, it is the responsibily of the calling routine to insure the
- * VC and the table to which it points is up-to-date before calling this routine.
+ * MT-RC-NOTE: this routine does not perform insure the pointer to the vtable in the VC and the the pointers within the function
+ * table table are consistent across are threads.  as such, it is the responsibily of the calling routine to insure the VC and
+ * the table to which it points is up-to-date before calling this routine.
  *
  * MT-RC-FIXME: give the use of this routine in the ADI3 macros below, it may be necessary for this routine to become a function
- * that performs an RC acquire on platforms that require it.  at present, this is not necessary since the function table pointer
- * is set in the main thread, the same thread in all of the MPI routines are called (hence the current MPI_THREAD_SINGLE
- * restriction).
+ * that performs an RC acquire on platforms that require it.  at present, this is not necessary since the vtable pointer set in
+ * the VC by communication module is always set in the main thread, the same thread in which all of the MPI routines are called.
+ * to guarantee this, the maximum application thread level is presently restricted to MPI_THREAD_SINGLE.  in addition, all
+ * communication modules currently insure that the vtable pointer and vtable it points at remain unaltered for the lifetime of
+ * the VC.
+ *
+ * MT-RC-NOTE: as an alternative to adding a RC acquire operation to this routine, the application thread level limitation could
+ * be lifted if it was known that all MPI routines calling the ADI3 rotuines in the vtable performed some form of an acquire
+ * operation before calling the ADI3 routine.  at one point, most MPI routines acquired a global mutex at the beginning of the
+ * routine and released it at the end.  such an operation would be sufficient assuming the vtable pointer and the vtable it
+ * pointed to remained constant until after the ADI3 routine is entered.
  */
 #define mpig_comm_get_vc_vtable(comm_, rank_) (((rank_) >= 0) ? ((comm_)->vcr[(rank_)]->vtable) : mpig_cm_other_vc->vtable)
 /**********************************************************************************************************************************
@@ -81,6 +89,11 @@ int mpig_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Co
  * memory model of the processor architecture.
  */
 
+/*
+ * SUPER-IMPORTANT-MT-NOTE: requests with datatypes and communicators attached to them must only be created and destroyed in the
+ * application threads.  these objects are not protected by any mutex that is presently acquired by the internal device threads.
+ * as such, releasing the reference for these objects from internal device threads would be unsafe.
+ */
 MPID_Request * mpig_request_create(void);
 
 void mpig_request_destroy(MPID_Request * req);
@@ -150,6 +163,10 @@ void mpig_request_destroy(MPID_Request * req);
 		     (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->cc));						\
 }
 
+/*
+ * SUPER-IMPORTANT-MT-NOTE: see the note at the top of this section concerning the creation and destruction of requests from
+ * internal device threads.
+ */
 #define mpig_request_complete(req_)				\
 {								\
     bool_t is_complete__;					\
@@ -170,6 +187,9 @@ void mpig_request_destroy(MPID_Request * req);
 
 /*
  * Request routines implemented as macros
+ *
+ * SUPER-IMPORTANT-MT-NOTE: see the note at the top of this section concerning the creation and destruction of requests from
+ * internal device threads.
  */
 #define MPID_Request_create() mpig_request_create()
 
@@ -386,8 +406,8 @@ void mpig_debug_init(void);
 extern globus_debug_handle_t mpig_debug_handle;
 extern time_t mpig_debug_start_tv_sec;
 
-#define MPIG_DEBUG_LEVEL_NAMES \
-    "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT REQ COMM TOPO VC PG BC RECVQ VCCM PM DATABUF MSGHDR MPI XIO" 
+#define MPIG_DEBUG_LEVEL_NAMES "ERROR FUNC ADI3 PT2PT COLL DYNAMIC WIN THREADS PROGRESS DATA COUNT " \
+    "REQ COMM TOPO CM VC PG BC RECVQ CEMT PM DATABUF MSGHDR MPI" 
 
 typedef enum mpig_debug_levels
 {
@@ -405,16 +425,16 @@ typedef enum mpig_debug_levels
     MPIG_DEBUG_LEVEL_REQ =		1 << 11,
     MPIG_DEBUG_LEVEL_COMM =		1 << 12,
     MPIG_DEBUG_LEVEL_TOPO =		1 << 13,
-    MPIG_DEBUG_LEVEL_VC =		1 << 14,
-    MPIG_DEBUG_LEVEL_PG =		1 << 15,
-    MPIG_DEBUG_LEVEL_BC =		1 << 16,
-    MPIG_DEBUG_LEVEL_RECVQ =		1 << 17,
-    MPIG_DEBUG_LEVEL_VCCM =		1 << 18,
-    MPIG_DEBUG_LEVEL_PM =		1 << 19,
-    MPIG_DEBUG_LEVEL_DATABUF =		1 << 20,
-    MPIG_DEBUG_LEVEL_MSGHDR =		1 << 21,
-    MPIG_DEBUG_LEVEL_MPI =		1 << 22,
-    MPIG_DEBUG_LEVEL_XIO =		1 << 23
+    MPIG_DEBUG_LEVEL_CM =		1 << 14,	/* communication method interface and implementation */
+    MPIG_DEBUG_LEVEL_VC =		1 << 15,	/* virtual connection manipulation */
+    MPIG_DEBUG_LEVEL_PG =		1 << 16,
+    MPIG_DEBUG_LEVEL_BC =		1 << 17,
+    MPIG_DEBUG_LEVEL_RECVQ =		1 << 18,
+    MPIG_DEBUG_LEVEL_CEMT =		1 << 19,	/* connection establishment, maintenance, and teardown */
+    MPIG_DEBUG_LEVEL_PM =		1 << 20,
+    MPIG_DEBUG_LEVEL_DATABUF =		1 << 21,
+    MPIG_DEBUG_LEVEL_MSGHDR =		1 << 22,
+    MPIG_DEBUG_LEVEL_MPI =		1 << 23
 }
 mpig_debug_levels_t;
 
@@ -564,13 +584,44 @@ void mpig_debug_create_state_key(void);
 #define MPIG_FUNCNAME_CHECK()
 #endif
 
-#else
+#else /* !defined(MPIG_DEBUG) */
 
 #define MPIG_DEBUG_TEST(levels_) (FALSE)
 #define MPIG_DEBUG_STMT(levels_, a_)
 #define	MPIG_DEBUG_PRINTF(a_)
 
+#endif /* end if/else defined(MPIG_DEBUG) */
+
+
+#if (!defined(NDEBUG) && defined(HAVE_ERROR_CHECKING))
+#define MPIG_Assert(a_)							\
+{									\
+    if (!(a_))								\
+    {									\
+	MPID_Abort(NULL, MPI_SUCCESS, 1, "Assertion failed in file "	\
+	    __FILE__ " at line " MPIU_QUOTE(__LINE__) ": "		\
+	    MPIU_QUOTE(a_) "\n");					\
+    }									\
+}
+#else
+#define MPIG_Assert(a_)
 #endif
+
+#define MPIG_Assertp(a_)						\
+{									\
+    if (!(a_))								\
+    {									\
+	MPID_Abort(NULL, MPI_SUCCESS, 1, "Assertion failed in file "	\
+	    __FILE__ " at line " MPIU_QUOTE(__LINE__) ": "		\
+	    MPIU_QUOTE(a_) "\n");					\
+    }									\
+}
+
+#undef MPIU_Assert
+#define MPIU_Assert(a_) MPIG_Assert(a_)
+
+#undef MPIU_Assertp
+#define MPIU_Assertp(a_) MPIG_Assertp(a_)
 /**********************************************************************************************************************************
 						  END DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/

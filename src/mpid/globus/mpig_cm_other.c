@@ -20,22 +20,27 @@ mpig_vc_t * mpig_cm_other_vc = NULL;
 /**********************************************************************************************************************************
 					      BEGIN COMMUNICATION MODULE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC int mpig_cm_other_init(int * argc, char *** argv);
+static int mpig_cm_other_init(mpig_cm_t * cm, int * argc, char *** argv);
 
-MPIG_STATIC int  mpig_cm_other_finalize(void);
+static int  mpig_cm_other_finalize(mpig_cm_t * cm);
 
-
-const mpig_cm_vtable_t mpig_cm_other_vtable =
+static mpig_cm_vtable_t mpig_cm_other_vtable =
 {
-    MPIG_CM_TYPE_OTHER,
-    "other",
     mpig_cm_other_init,
     mpig_cm_other_finalize,
     NULL, /* mpig_cm_other_add_contact_info */
-    NULL, /* mpig_cm_other_extract_contact_info */
-    NULL, /* mpig_cm_other_select_module */
+    NULL, /* mpig_cm_other_construct_vc_contact_info */
+    NULL, /* mpig_cm_other_destruct_vc_contact_info */
+    NULL, /* mpig_cm_other_select_comm_method */
     NULL, /* mpig_cm_other_get_vc_compatability */
     mpig_cm_vtable_last_entry
+};
+
+mpig_cm_t mpig_cm_other =
+{
+    MPIG_CM_TYPE_OTHER,
+    "other",
+    &mpig_cm_other_vtable
 };
 /**********************************************************************************************************************************
 					       END COMMUNICATION MODULE API VTABLE
@@ -45,32 +50,32 @@ const mpig_cm_vtable_t mpig_cm_other_vtable =
 /**********************************************************************************************************************************
 						    BEGIN VC CORE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC int mpig_cm_other_adi3_send(
+static int mpig_cm_other_adi3_send(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_isend(
+static int mpig_cm_other_adi3_isend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_rsend(
+static int mpig_cm_other_adi3_rsend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_irsend(
+static int mpig_cm_other_adi3_irsend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_ssend(
+static int mpig_cm_other_adi3_ssend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_issend(
+static int mpig_cm_other_adi3_issend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_recv(
+static int mpig_cm_other_adi3_recv(
     void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * status,
     MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_irecv(
+static int mpig_cm_other_adi3_irecv(
     void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,int ctxoff, MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_other_adi3_cancel_send(MPID_Request * sreq);
+static int mpig_cm_other_adi3_cancel_send(MPID_Request * sreq);
 
 
 MPIG_STATIC mpig_vc_vtable_t mpig_cm_other_vc_vtable =
@@ -102,7 +107,7 @@ MPIG_STATIC mpig_vc_vtable_t mpig_cm_other_vc_vtable =
 /*
  * Prototypes for internal routines
  */
-MPIG_STATIC int mpig_cm_other_recv_any_source(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
+static int mpig_cm_other_recv_any_source(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,
     int ctxoff, MPID_Request ** rreqp);
 
 /*
@@ -112,7 +117,7 @@ MPIG_STATIC int mpig_cm_other_recv_any_source(void * buf, int cnt, MPI_Datatype 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_init
-MPIG_STATIC int mpig_cm_other_init(int * argc, char *** argv)
+static int mpig_cm_other_init(mpig_cm_t * const cm, int * const argc, char *** const argv)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKPMEM_DECL(1);
@@ -127,7 +132,7 @@ MPIG_STATIC int mpig_cm_other_init(int * argc, char *** argv)
     MPIU_CHKPMEM_MALLOC(mpig_cm_other_vc, mpig_vc_t *, sizeof(mpig_vc_t), mpi_errno,
 	"VC that handles MPI_ANY_SOURCE/MPI_PROC_NULL");
     mpig_vc_construct(mpig_cm_other_vc);
-    mpig_vc_set_cm_type(mpig_cm_other_vc, MPIG_CM_TYPE_OTHER);
+    mpig_vc_set_cm(mpig_cm_other_vc, &mpig_cm_other);
     mpig_vc_set_vtable(mpig_cm_other_vc, &mpig_cm_other_vc_vtable);
 
   fn_return:
@@ -151,7 +156,7 @@ MPIG_STATIC int mpig_cm_other_init(int * argc, char *** argv)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_finalize
-MPIG_STATIC int mpig_cm_other_finalize(void)
+static int mpig_cm_other_finalize(mpig_cm_t * const cm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -185,7 +190,7 @@ MPIG_STATIC int mpig_cm_other_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_send
-MPIG_STATIC int mpig_cm_other_adi3_send(
+static int mpig_cm_other_adi3_send(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -218,7 +223,7 @@ MPIG_STATIC int mpig_cm_other_adi3_send(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_isend
-MPIG_STATIC int mpig_cm_other_adi3_isend(
+static int mpig_cm_other_adi3_isend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -261,7 +266,7 @@ MPIG_STATIC int mpig_cm_other_adi3_isend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_rsend
-MPIG_STATIC int mpig_cm_other_adi3_rsend(
+static int mpig_cm_other_adi3_rsend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -294,7 +299,7 @@ MPIG_STATIC int mpig_cm_other_adi3_rsend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_irsend
-MPIG_STATIC int mpig_cm_other_adi3_irsend(
+static int mpig_cm_other_adi3_irsend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -335,7 +340,7 @@ MPIG_STATIC int mpig_cm_other_adi3_irsend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_ssend
-MPIG_STATIC int mpig_cm_other_adi3_ssend(
+static int mpig_cm_other_adi3_ssend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -368,7 +373,7 @@ MPIG_STATIC int mpig_cm_other_adi3_ssend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_issend
-MPIG_STATIC int mpig_cm_other_adi3_issend(
+static int mpig_cm_other_adi3_issend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -409,7 +414,7 @@ MPIG_STATIC int mpig_cm_other_adi3_issend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_recv
-MPIG_STATIC int mpig_cm_other_adi3_recv(
+static int mpig_cm_other_adi3_recv(
     void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPI_Status * const status, MPID_Request ** const rreqp)
 {
@@ -460,7 +465,7 @@ MPIG_STATIC int mpig_cm_other_adi3_recv(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_irecv
-MPIG_STATIC int mpig_cm_other_adi3_irecv(
+static int mpig_cm_other_adi3_irecv(
     void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const rreqp)
 {
@@ -513,7 +518,7 @@ MPIG_STATIC int mpig_cm_other_adi3_irecv(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_adi3_cancel_send
-MPIG_STATIC int mpig_cm_other_adi3_cancel_send(MPID_Request * const sreq)
+static int mpig_cm_other_adi3_cancel_send(MPID_Request * const sreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -541,7 +546,7 @@ MPIG_STATIC int mpig_cm_other_adi3_cancel_send(MPID_Request * const sreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_other_recv_any_source
-MPIG_STATIC int mpig_cm_other_recv_any_source(void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
+static int mpig_cm_other_recv_any_source(void * const buf, const int cnt, const MPI_Datatype dt, const int rank,
     const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);

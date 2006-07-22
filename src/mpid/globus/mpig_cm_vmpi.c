@@ -33,38 +33,37 @@ MPIG_STATIC globus_uuid_t mpig_vmpi_job_id;
 /**********************************************************************************************************************************
 					      BEGIN COMMUNICATION MODULE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC int mpig_cm_vmpi_init(int * argc, char *** argv);
+static int mpig_cm_vmpi_init(mpig_cm_t * cm, int * argc, char *** argv);
 
-MPIG_STATIC int mpig_cm_vmpi_finalize(void);
+static int mpig_cm_vmpi_finalize(mpig_cm_t * cm);
 
-MPIG_STATIC int mpig_cm_vmpi_add_contact_info(mpig_bc_t * bc);
+static int mpig_cm_vmpi_add_contact_info(mpig_cm_t * cm, mpig_bc_t * bc);
 
-MPIG_STATIC int mpig_cm_vmpi_extract_contact_info(mpig_vc_t * vc);
+static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * vc);
 
-MPIG_STATIC int mpig_cm_vmpi_select_module(mpig_vc_t * vc, bool_t * selected);
+static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * vc, bool_t * selected);
 
-MPIG_STATIC int mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * vc1, const mpig_vc_t * vc2, unsigned levels_in,
-    unsigned * levels_out);
+static int mpig_cm_vmpi_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * vc1, const mpig_vc_t * vc2,
+    unsigned levels_in, unsigned * levels_out);
 
-/* XXX dummy placeholder */
-MPIG_STATIC int mpig_datatype_get_size(MPI_Datatype dt, int * size)
+
+static mpig_cm_vtable_t mpig_cm_vmpi_vtable =
 {
-    *size = 10;
-    
-    return 0;
-}
-
-const mpig_cm_vtable_t mpig_cm_vmpi_vtable =
-{
-    MPIG_CM_TYPE_VMPI,
-    "VMPI",
     mpig_cm_vmpi_init,
     mpig_cm_vmpi_finalize,
     mpig_cm_vmpi_add_contact_info,
-    mpig_cm_vmpi_extract_contact_info,
-    mpig_cm_vmpi_select_module,
+    mpig_cm_vmpi_construct_vc_contact_info,
+    NULL, /*mpig_cm_vmpi_destruct_vc_contact_info */
+    mpig_cm_vmpi_select_comm_method,
     mpig_cm_vmpi_get_vc_compatability,
     mpig_cm_vtable_last_entry
+};
+    
+mpig_cm_t mpig_cm_vmpi =
+{
+    MPIG_CM_TYPE_VMPI,
+    "VMPI",
+    &mpig_cm_vmpi_vtable
 };
 /**********************************************************************************************************************************
 					       END COMMUNICATION MODULE API VTABLE
@@ -75,36 +74,36 @@ const mpig_cm_vtable_t mpig_cm_vmpi_vtable =
 /**********************************************************************************************************************************
 						    BEGIN VC CORE API VTABLE
 **********************************************************************************************************************************/
-MPIG_STATIC int mpig_cm_vmpi_adi3_send(
+static int mpig_cm_vmpi_adi3_send(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_isend(
+static int mpig_cm_vmpi_adi3_isend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_rsend(
+static int mpig_cm_vmpi_adi3_rsend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_irsend(
+static int mpig_cm_vmpi_adi3_irsend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_ssend(
+static int mpig_cm_vmpi_adi3_ssend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_issend(
+static int mpig_cm_vmpi_adi3_issend(
     const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** sreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_recv(
+static int mpig_cm_vmpi_adi3_recv(
     void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPI_Status * status,
     MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_irecv(
+static int mpig_cm_vmpi_adi3_irecv(
     void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm,int ctxoff, MPID_Request ** rreqp);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_send(MPID_Request * sreq);
+static int mpig_cm_vmpi_adi3_cancel_send(MPID_Request * sreq);
 
-MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_recv(MPID_Request * rreq);
+static int mpig_cm_vmpi_adi3_cancel_recv(MPID_Request * rreq);
 
-MPIG_STATIC int mpig_cm_vmpi_vc_recv_any_source(mpig_vc_t * vc, MPID_Request * rreq, MPID_Comm * comm);
+static int mpig_cm_vmpi_vc_recv_any_source(mpig_vc_t * vc, MPID_Request * rreq, MPID_Comm * comm);
 
 
 /* VC communication module function table */
@@ -140,11 +139,11 @@ MPIG_STATIC mpig_vmpi_status_t * mpig_cm_vmpi_pe_table_vstatuses = NULL;
 MPIG_STATIC int mpig_cm_vmpi_pe_table_active = 0;
 MPIG_STATIC int mpig_cm_vmpi_pe_table_size = 0;
 
-MPIG_STATIC int mpig_cm_vmpi_pe_init(void);
+static int mpig_cm_vmpi_pe_init(void);
 
-MPIG_STATIC int mpig_cm_vmpi_pe_finalize(void);
+static int mpig_cm_vmpi_pe_finalize(void);
 
-MPIG_STATIC int mpig_cm_vmpi_pe_table_inc_size(void);
+static int mpig_cm_vmpi_pe_table_inc_size(void);
 /**********************************************************************************************************************************
 				      END COMMUNICATION MODULE PROGRESS ENGINE DECLARATIONS
 **********************************************************************************************************************************/
@@ -292,7 +291,7 @@ MPIG_STATIC int mpig_cm_vmpi_pe_table_inc_size(void);
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_init
-MPIG_STATIC int mpig_cm_vmpi_init(int * const argc, char *** const argv)
+static int mpig_cm_vmpi_init(mpig_cm_t * const cm, int * const argc, char *** const argv)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -459,12 +458,12 @@ MPIG_STATIC int mpig_cm_vmpi_init(int * const argc, char *** const argv)
 	    "vendor MPI to MPICH2 comm rank translation table");
 	for (rank = 0; rank < comm->remote_size; rank++)
 	{
-	    /* these mappings will be defined during the module selection process.  see mpig_cm_vmpi_select_module() */
+	    /* these mappings will be defined during the module selection process.  see mpig_cm_vmpi_select_comm_method() */
 	    mpig_cm_vmpi_comm_set_vrank(comm, rank, MPIG_VMPI_UNDEFINED);
 	}
 	for (rank = 0; rank <  mpig_process.cm.vmpi.cw_size; rank++)
 	{
-	    /* these mappings will be defined during the module selection process.  see mpig_cm_vmpi_select_module() */
+	    /* these mappings will be defined during the module selection process.  see mpig_cm_vmpi_select_comm_method() */
 	    mpig_cm_vmpi_comm_set_mrank(comm, rank, MPI_UNDEFINED);
 	}
 
@@ -510,7 +509,7 @@ MPIG_STATIC int mpig_cm_vmpi_init(int * const argc, char *** const argv)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_finalize
-MPIG_STATIC int mpig_cm_vmpi_finalize(void)
+static int mpig_cm_vmpi_finalize(mpig_cm_t * const cm)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -555,7 +554,7 @@ MPIG_STATIC int mpig_cm_vmpi_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_add_contact_info
-MPIG_STATIC int mpig_cm_vmpi_add_contact_info(mpig_bc_t * const bc)
+static int mpig_cm_vmpi_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * const bc)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -599,13 +598,13 @@ MPIG_STATIC int mpig_cm_vmpi_add_contact_info(mpig_bc_t * const bc)
 
 
 /*
- * <mpi_errno> mpig_cm_vmpi_extract_contact_info([IN/MOD] vc)
+ * <mpi_errno> mpig_cm_vmpi_construct_vc_contact_info([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_vmpi_extract_contact_info
-MPIG_STATIC int mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc)
+#define FUNCNAME mpig_cm_vmpi_construct_vc_contact_info
+static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * const vc)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -616,15 +615,15 @@ MPIG_STATIC int mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc)
 	int cw_rank;
 	bool_t found;
 	int rc;
-	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_extract_contact_info);
+	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_construct_vc_contact_info);
 
 	MPIG_UNUSED_VAR(fcname);
 	
-	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_extract_contact_info);
+	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_construct_vc_contact_info);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
-	vc->ci.vmpi.subjob_id = NULL;
-	vc->ci.vmpi.cw_rank = -1;
+	vc->cms.vmpi.subjob_id = NULL;
+	vc->cms.vmpi.cw_rank = -1;
 	
 	bc = mpig_vc_get_bc(vc);
 
@@ -644,18 +643,18 @@ MPIG_STATIC int mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc)
 	MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 
 	/* if all when well, copy the extracted contact information into the VC */
-	vc->ci.vmpi.subjob_id = MPIU_Strdup(uuid_str);
-	MPIU_ERR_CHKANDJUMP1((vc->ci.vmpi.subjob_id == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
+	vc->cms.vmpi.subjob_id = MPIU_Strdup(uuid_str);
+	MPIU_ERR_CHKANDJUMP1((vc->cms.vmpi.subjob_id == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
 	    "name of remote host");
-	vc->ci.vmpi.cw_rank = cw_rank;
+	vc->cms.vmpi.cw_rank = cw_rank;
 
 	/* set the topology information.  NOTE: this may seem a bit wacky since the VMPI level is set even if the VMPI module is
 	   not responsible for the VC; however, the topology information is defined such that a level set if it is _possible_ for
 	   the module to perform the communication regardless of whether it does so or not. */
-	vc->ci.topology_levels |= MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
-	if (vc->ci.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_VMPI)
+	vc->cms.topology_levels |= MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
+	if (vc->cms.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_VMPI)
 	{
-	    vc->ci.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI + 1;
+	    vc->cms.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI + 1;
 	}
 
       fn_return:
@@ -665,7 +664,7 @@ MPIG_STATIC int mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc)
 	
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc,
 	    mpi_errno));
-	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_extract_contact_info);
+	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_construct_vc_contact_info);
 	return mpi_errno;
 
       fn_fail:
@@ -675,48 +674,49 @@ MPIG_STATIC int mpig_cm_vmpi_extract_contact_info(mpig_vc_t * const vc)
     }
 #   else
     {
-	vc->ci.vmpi.subjob_id = NULL;
-	vc->ci.vmpi.cw_rank = -1;
+	vc->cms.vmpi.subjob_id = NULL;
+	vc->cms.vmpi.cw_rank = -1;
 	return MPI_SUCCESS;
     }
 #   endif
 }
-/* int mpig_cm_vmpi_extract_contact_info() */
+/* int mpig_cm_vmpi_construct_vc_contact_info() */
 
 
 /*
- * <mpi_errno> mpig_cm_vmpi_select_module([IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_vmpi_select_comm_method([IN/MOD] vc, [OUT] selected)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_vmpi_select_module
-MPIG_STATIC int mpig_cm_vmpi_select_module(mpig_vc_t * const vc, bool_t * const selected)
+#define FUNCNAME mpig_cm_vmpi_select_comm_method
+static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * const vc, bool_t * const selected)
 {
 #   if defined(MPIG_VMPI)
     {
 	const char fcname[] = MPIG_QUOTE(FUNCNAME);
 	mpig_bc_t * bc;
 	int rc;
-	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_select_module);
+	MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_select_comm_method);
 
 	MPIG_UNUSED_VAR(fcname);
 	
-	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_select_module);
+	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_select_comm_method);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) vc));
 
 	*selected = FALSE;
 
-	/* if the VC is not in the same subjob, then return */
-	if (vc->ci.vmpi.subjob_id == NULL || strcmp(vc->ci.vmpi.subjob_id, mpig_vmpi_job_id.text) != 0) goto fn_return;
+	/* if the VC is not in the same subjob, or has already been selected by another module, then return */
+	if (mpig_vc_get_cm(vc) != NULL) goto fn_return;
+	if (vc->cms.vmpi.subjob_id == NULL || strcmp(vc->cms.vmpi.subjob_id, mpig_vmpi_job_id.text) != 0) goto fn_return;
     
 	/* initialize the CM VMPI fields in the VC object */
 	mpig_vc_set_cm_type(vc, MPIG_CM_TYPE_VMPI);
 	mpig_vc_set_cm_funcs(vc, &mpig_cm_vmpi_vc_funcs);
 
 	/* set the rank translations in the MPI_COMM_WORLD communicator */
-	mpig_cm_vmpi_comm_set_vrank(MPIR_Process.comm_world, mpig_vc_get_pg_rank(vc), vc->ci.vmpi.cw_rank);
-	mpig_cm_vmpi_comm_set_mrank(MPIR_Process.comm_world, vc->ci.vmpi.cw_rank, mpig_vc_get_pg_rank(vc));
+	mpig_cm_vmpi_comm_set_vrank(MPIR_Process.comm_world, mpig_vc_get_pg_rank(vc), vc->cms.vmpi.cw_rank);
+	mpig_cm_vmpi_comm_set_mrank(MPIR_Process.comm_world, vc->cms.vmpi.cw_rank, mpig_vc_get_pg_rank(vc));
 
 	/* set the selected flag to indicate that the "vmpi" communication module has accepted responsibility for the VC */
 	*selected = TRUE;
@@ -724,7 +724,7 @@ MPIG_STATIC int mpig_cm_vmpi_select_module(mpig_vc_t * const vc, bool_t * const 
       fn_return:
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT,
 	    (MPIG_PTR_CAST) vc, MPIG_BOOL_STR(*selected), mpi_errno));
-	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_select_module);
+	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_select_comm_method);
 	return mpi_errno;
 
       fn_fail:
@@ -739,7 +739,7 @@ MPIG_STATIC int mpig_cm_vmpi_select_module(mpig_vc_t * const vc, bool_t * const 
     }
 #   endif
 }
-/* int mpig_cm_vmpi_select_module() */
+/* int mpig_cm_vmpi_select_comm_method() */
 
 
 /*
@@ -749,7 +749,7 @@ MPIG_STATIC int mpig_cm_vmpi_select_module(mpig_vc_t * const vc, bool_t * const 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_get_vc_compatability
-MPIG_STATIC int mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
+static int mpig_cm_vmpi_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * const vc1, const mpig_vc_t * const vc2,
     const unsigned levels_in, unsigned * const levels_out)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -766,8 +766,8 @@ MPIG_STATIC int mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * const vc1, c
 
     if (levels_in & (MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK))
     {
-	if (vc1->ci.vmpi.subjob_id != NULL && vc1->ci.vmpi.subjob_id != NULL &&
-	    strcmp(vc1->ci.vmpi.subjob_id, vc2->ci.vmpi.subjob_id) == 0)
+	if (vc1->cms.vmpi.subjob_id != NULL && vc1->cms.vmpi.subjob_id != NULL &&
+	    strcmp(vc1->cms.vmpi.subjob_id, vc2->cms.vmpi.subjob_id) == 0)
 	{
 	    *levels_out |= levels_in & (MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK);
 	}
@@ -844,7 +844,7 @@ MPIG_STATIC int mpig_cm_vmpi_get_vc_compatability(const mpig_vc_t * const vc1, c
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_pe_init
-MPIG_STATIC int mpig_cm_vmpi_pe_init(void)
+static int mpig_cm_vmpi_pe_init(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -878,7 +878,7 @@ MPIG_STATIC int mpig_cm_vmpi_pe_init(void)
 /*
  * <mpi_errno> mpig_cm_vmpi_pe_table_inc_size(void)
  */
-MPIG_STATIC int mpig_cm_vmpi_pe_table_inc_size(void)
+static int mpig_cm_vmpi_pe_table_inc_size(void)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     void * ptr;
@@ -998,7 +998,7 @@ void mpig_cm_vmpi_pe_test(struct MPID_Progress_state * state)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_send
-MPIG_STATIC int mpig_cm_vmpi_adi3_send(
+static int mpig_cm_vmpi_adi3_send(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -1075,7 +1075,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_send(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_isend
-MPIG_STATIC int mpig_cm_vmpi_adi3_isend(
+static int mpig_cm_vmpi_adi3_isend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -1119,7 +1119,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_isend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_rsend
-MPIG_STATIC int mpig_cm_vmpi_adi3_rsend(
+static int mpig_cm_vmpi_adi3_rsend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -1164,7 +1164,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_rsend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_irsend
-MPIG_STATIC int mpig_cm_vmpi_adi3_irsend(
+static int mpig_cm_vmpi_adi3_irsend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -1208,7 +1208,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irsend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_ssend
-MPIG_STATIC int mpig_cm_vmpi_adi3_ssend(
+static int mpig_cm_vmpi_adi3_ssend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -1252,7 +1252,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_ssend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_issend
-MPIG_STATIC int mpig_cm_vmpi_adi3_issend(
+static int mpig_cm_vmpi_adi3_issend(
     const void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const sreqp)
 {
@@ -1296,7 +1296,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_issend(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_recv
-MPIG_STATIC int mpig_cm_vmpi_adi3_recv(
+static int mpig_cm_vmpi_adi3_recv(
     void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPI_Status * const status, MPID_Request ** const rreqp)
 {
@@ -1360,7 +1360,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_recv(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_irecv
-MPIG_STATIC int mpig_cm_vmpi_adi3_irecv(
+static int mpig_cm_vmpi_adi3_irecv(
     void * const buf, const int cnt, const MPI_Datatype dt, const int rank, const int tag, MPID_Comm * const comm,
     const int ctxoff, MPID_Request ** const rreqp)
 {
@@ -1431,7 +1431,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_irecv(
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_cancel_send
-MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_send(MPID_Request * const sreq)
+static int mpig_cm_vmpi_adi3_cancel_send(MPID_Request * const sreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -1465,7 +1465,7 @@ MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_send(MPID_Request * const sreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_adi3_cancel_recv
-MPIG_STATIC int mpig_cm_vmpi_adi3_cancel_recv(MPID_Request * const sreq)
+static int mpig_cm_vmpi_adi3_cancel_recv(MPID_Request * const sreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
