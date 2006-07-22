@@ -807,7 +807,7 @@ else
         fi
 	;;
 	MPI_THREAD_SERIALIZED)
-	if test "$MPID_MAX_THREAD_LEVEL" != "MPI_THREAD_MULTIPLE" -o \
+	if test "$MPID_MAX_THREAD_LEVEL" != "MPI_THREAD_MULTIPLE" -a \
 	        "$MPID_MAX_THREAD_LEVEL" != "MPI_THREAD_SERIALIZED" ; then
             threadLevelOK=no
         fi
