@@ -15,3 +15,5 @@ LIBS          =
 DEPADD        = $(TOP_BUILD_DIR)/lib/lib${MPILIBNAME}.a
 
 report_colors_SOURCES = report_colors.c
+connacc_client_SOURCES = connacc_client.c
+connacc_server_SOURCES = connacc_server.c
