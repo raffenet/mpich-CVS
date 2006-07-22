@@ -1534,7 +1534,7 @@ EOF
 
 	 solaris|solaris-cc)
 	 FC_SHL="$F77 -xcode=pic32"
-         FC_LINKPATH_SHL=$C_LINKPATH_SHL
+         FC_LINKPATH_SHL=-R
 	 ;;
 
 	 # Do we need a solaris-64 with -xcode=pic64?
@@ -1825,7 +1825,7 @@ EOF
     solaris|solaris-cc)
         # Assume the Solaris F90 compiler, in 32-bit mode
         F90_SHL="$F90 -xcode=pic32"
-        F90_LINKPATH_SHL=$C_LINKPATH_SHL
+        F90_LINKPATH_SHL=-R
     ;;
     *)
        # Unknown, ignore
@@ -1950,7 +1950,7 @@ if test "$enable_cxx" = "yes" ; then
 	;;
 	solaris|solaris-cc)
         CXX_SHL="$CXX -xcode=pic32"
-        CXX_LINKPATH_SHL=$C_LINKPATH_SHL
+        CXX_LINKPATH_SHL=-R
 	;;
 	libtool)
 	CXX_SHL='${LIBTOOL} --mode=compile ${CXX}'
