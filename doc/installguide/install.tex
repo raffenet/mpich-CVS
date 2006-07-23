@@ -491,8 +491,9 @@ section needs much more work.
   program development tools (including the Jumpshot performance viewer)
 \item[--enable-sharedlibs]Build MPICH2 with shared libraries. 
   For example, 
+  \texttt{--enable-sharedlibs=gcc} for standard gcc on Linux  
   \texttt{--enable-sharedlibs=osx-gcc} for Mac OS X or
-  \texttt{--enable-sharedlibs=gcc} for standard gcc on Linux.  
+  \texttt{--enable-sharedlibs=solaris-cc} for cc on Solaris
 \item[--with-pm]Select the process manager.  The default is
   \texttt{mpd}; also useful is \texttt{gforker}.  You can build with
   both process managers with \texttt{--with-pm=mpd:gforker}.
@@ -525,12 +526,16 @@ setenv MPI_F90FLAGS "-YALL_NAMES=LCS -YEXT_SFX=_"
 \subsection{Shared Libraries}
 \label{sec:shared-libraries}
 
-Shared libraries are currently only supported by gcc and tested under
-Linux.  To have shared libraries created when MPICH2 is built, specify
-the following when MPICH2 is configured:
+Shared libraries are currently only supported for gcc on Linux and
+Mac OS X and for cc on Solaris. To have shared libraries created when
+MPICH2 is built, specify the following when MPICH2 is configured:
 \begin{verbatim}
-    configure --enable-sharedlibs=gcc
+    configure --enable-sharedlibs=gcc         (on Linux)
+    configure --enable-sharedlibs=osx-gcc     (on Mac OS X)
+    configure --enable-sharedlibs=solaris-cc  (on Solaris)
 \end{verbatim}
+
+
 
 
 \subsection{What to Tell the Users}

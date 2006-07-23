@@ -437,11 +437,12 @@ Shared Libraries
 ================
 
 Shared libraries are currently only supported for gcc on Linux and
-Mac. To have shared libraries created when MPICH2 is built, specify
-the following when MPICH2 is configured:
+Mac and for cc on Solaris. To have shared libraries created when
+MPICH2 is built, specify the following when MPICH2 is configured:
 
-    configure --enable-sharedlibs=gcc      (on Linux)
-    configure --enable-sharedlibs=osx-gcc  (on Mac OS X)
+    configure --enable-sharedlibs=gcc         (on Linux)
+    configure --enable-sharedlibs=osx-gcc     (on Mac OS X)
+    configure --enable-sharedlibs=solaris-cc  (on Solaris)
 
 
 
