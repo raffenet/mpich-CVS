@@ -104,6 +104,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 
 	    case MPIDI_REQUEST_TYPE_BSEND:
 	    {
+#if 0
 		MPID_Request * sreq;
 		
 		sreq = MPIDI_CH3_Request_create();
@@ -131,7 +132,25 @@ int MPID_Startall(int count, MPID_Request * requests[])
 		    rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		    /* --END ERROR HANDLING-- */
 		}
+#else
+		MPI_Request sreq_handle;
+		MPIU_THREADPRIV_DECL;
+
+		MPIU_THREADPRIV_GET;
 		
+		MPIR_Nest_incr();
+		{
+		    rc = NMPI_Ibsend(preq->dev.user_buf, preq->dev.user_count,
+				     preq->dev.datatype, preq->dev.match.rank,
+				     preq->dev.match.tag, preq->comm->handle, 
+				     &sreq_handle);
+		    if (rc == MPI_SUCCESS)
+		    {
+			MPID_Request_get_ptr(sreq_handle, preq->partner_request);
+		    }
+		}
+		MPIR_Nest_decr();
+#endif		
 		break;
 	    }
 
