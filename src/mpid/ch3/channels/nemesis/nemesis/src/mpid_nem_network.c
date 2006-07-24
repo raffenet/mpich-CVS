@@ -5,7 +5,9 @@
  */
 
 #include "mpid_nem_impl.h"
-#if  (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
+#if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
+#error Error in definition of MPID_NEM_*_MODULE macros
+#elif  (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
 #include "gm_module.h"
 #elif(MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
 #include "mx_module.h"
@@ -48,7 +50,9 @@ MPID_nem_net_init( void)
 {
     int mpi_errno = MPI_SUCCESS;
     
-#if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
+#if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
+#error Error in definition of MPID_NEM_*_MODULE macros
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
   {
       assign_functions (gm);
   }

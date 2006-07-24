@@ -11,7 +11,7 @@
 #include "mpid_nem_atomics.h"
 
 /*#define PAPI_MONITOR */
-#include "my_papi_defs.h"
+//include "my_papi_defs.h"
 
 #define MPID_nem_dump_cell_mpich2(cell, index)  MPID_nem_dump_cell_mpich2__((cell),(index),__FILE__,__LINE__) 
 

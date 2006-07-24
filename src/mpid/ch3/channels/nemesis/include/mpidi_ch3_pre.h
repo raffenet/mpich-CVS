@@ -39,8 +39,10 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_fbox_mpich2_t *fbox_in;
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
-   
-#if (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
+
+#if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
+#error Error in definition of MPID_NEM_*_MODULE macros
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     unsigned port_id;
     unsigned node_id; 

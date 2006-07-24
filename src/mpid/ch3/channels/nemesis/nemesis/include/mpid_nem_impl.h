@@ -9,12 +9,13 @@
 
 #include "my_papi_defs.h"
 #include "mpidi_ch3_impl.h"
+#include "mpid_nem_net_module_defs.h"
 #include "mpid_nem_atomics.h"
 #include "mpid_nem_defs.h"
-#include "mpid_nem_queue.h"
 #include "mpid_nem_memdefs.h"
 #include "mpid_nem_fbox.h"
 #include "mpid_nem_nets.h"
+#include "mpid_nem_queue.h"
 
 #define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (sizeof(MPIDI_CH3_Pkt_t)))
 
