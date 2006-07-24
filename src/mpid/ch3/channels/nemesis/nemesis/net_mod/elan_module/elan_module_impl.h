@@ -14,6 +14,7 @@
 #define MPID_NEM_ELAN_RAIL_NUM  0
 #define MPID_NEM_ELAN_SLOT_SIZE 2048
 
+extern int             MPID_nem_elan_freq;
 extern int             MPID_nem_module_elan_pendings_sends;
 extern int             MPID_nem_module_elan_pendings_recvs;
 extern ELAN_QUEUE_TX **rxq_ptr_array;

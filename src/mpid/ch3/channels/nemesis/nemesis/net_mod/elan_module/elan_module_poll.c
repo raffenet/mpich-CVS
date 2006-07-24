@@ -64,18 +64,18 @@ MPID_nem_elan_module_recv()
    int                  mpi_errno = MPI_SUCCESS;
    char                *ptr;
    
-   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : trying \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+//   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : trying \n", MPID_nem_mem_region.rank,elan_base->state->vp);
    
    if (!MPID_nem_queue_empty(MPID_nem_module_elan_free_queue))
      {	
 	MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
 	pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);
 	
-	fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : DQ'd cell %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,cell);
+	//fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : DQ'd cell %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,cell);
 	
-	ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,MPID_NEM_ELAN_LOOPS);
+	ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,1);
 	
-	fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+	//fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
 	
 	if (ptr != NULL)
 	  {	     
@@ -104,15 +104,18 @@ MPID_nem_elan_module_poll(MPID_nem_poll_dir_t in_or_out)
 {
    int mpi_errno = MPI_SUCCESS;
    
-   if (in_or_out == MPID_NEM_POLL_OUT)
-     {
-	MPID_nem_elan_module_send_from_queue();
-	MPID_nem_elan_module_recv();
-     }
-   else
-     {
-	MPID_nem_elan_module_recv();
-	MPID_nem_elan_module_send_from_queue();
+   if (MPID_nem_elan_freq > 0)
+     {	
+	if (in_or_out == MPID_NEM_POLL_OUT)
+	  {
+	     MPID_nem_elan_module_send_from_queue();
+	     MPID_nem_elan_module_recv();
+	  }
+	else
+	  {
+	     MPID_nem_elan_module_recv();
+	     MPID_nem_elan_module_send_from_queue();
+	  }
      }
    
    fn_exit:

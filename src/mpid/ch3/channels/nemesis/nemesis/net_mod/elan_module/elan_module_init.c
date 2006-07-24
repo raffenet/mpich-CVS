@@ -26,6 +26,7 @@ static int          min_node_id;
 static int          max_node_id;
 static int          my_ctxt_id;
 
+int MPID_nem_elan_freq = 0;
 int MPID_nem_module_elan_pendings_sends = 0;
 int MPID_nem_module_elan_pendings_recvs = 0 ;
 
@@ -152,15 +153,11 @@ int init_elan( MPIDI_PG_t *pg_p )
    /* Enable the network */
    elan_enable_network(elan_base->state);
 
-   fprintf(stdout,"[%i | nvpid %i] -- Elan Init done  -- Net enabled \n", MPID_nem_mem_region.rank,elan_base->state->vp);
-
    /* Allocate more than needed */
    rxq_ptr_array  = (ELAN_QUEUE_TX **)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(ELAN_QUEUE_TX *));   
    localq_ptr     = elan_allocQueue(elan_base->state);      
    localq_ptr_val = (ELAN_QUEUE **)MPIU_Malloc(sizeof(ELAN_QUEUE *));   
   *localq_ptr_val = localq_ptr ;
-   
-   fprintf(stdout,"[%i | nvpid %i] -- Init : rxq_ptr alloc ; localq_ptr alloc \n", MPID_nem_mem_region.rank,elan_base->state->vp);
    
    for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++) 
      rxq_ptr_array[index] = NULL ; 
@@ -170,8 +167,7 @@ int init_elan( MPIDI_PG_t *pg_p )
 							  MPID_NEM_NUM_CELLS,
 							  elan_queueMaxSlotSize(elan_base->state),
 							  MPID_NEM_ELAN_RAIL_NUM,flags);   
-
-   fprintf(stdout,"[%i | nvpid %i] -- Init : localq init for receive : %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,localq_ptr);
+   MPID_nem_elan_freq = 1 ;
    
    fn_exit:
      return mpi_errno;
@@ -222,21 +218,12 @@ MPID_nem_elan_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
    if( MPID_nem_mem_region.ext_procs > 0)
      {
 	init_elan(pg_p);
+	mpi_errno = MPID_nem_elan_module_get_business_card (bc_val_p, val_max_sz_p);
+	if (mpi_errno) MPIU_ERR_POP (mpi_errno);		
      }   
-
-   mpi_errno = MPID_nem_elan_module_get_business_card (bc_val_p, val_max_sz_p);
-   if (mpi_errno) MPIU_ERR_POP (mpi_errno);
    
    MPID_nem_process_recv_queue = proc_recv_queue;
    MPID_nem_process_free_queue = proc_free_queue;
-   
-   /*
-   status = elan_register_memory (MPID_nem_module_gm_port, (void *)proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);
-   MPIU_ERR_CHKANDJUMP1 (status != GM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gm_regmem", "**gm_regmem %d", status);
-   
-   status = elan_register_memory (MPID_nem_module_gm_port, (void *)module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
-   MPIU_ERR_CHKANDJUMP1 (status != GM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gm_regmem", "**gm_regmem %d", status);
-   */
    
    MPID_nem_module_elan_recv_queue = &_recv_queue;
    MPID_nem_module_elan_free_queue = &_free_queue;
@@ -266,12 +253,8 @@ int
   MPID_nem_elan_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
 {
    int mpi_errno = MPI_SUCCESS;
-
-   fprintf(stdout,"[%i | nvpid %i] -- Get biz card : putting in space  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,*localq_ptr_val);
    
    mpi_errno = MPIU_Str_add_binary_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_QUEUE_PTR_KEY, (char *)&(*localq_ptr_val), sizeof(ELAN_QUEUE *));
-
-   fprintf(stdout,"[%i | nvpid %i] -- Get biz card : done for   %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,localq_ptr);
    
    if (mpi_errno != MPIU_STR_SUCCESS)
      {	
@@ -285,6 +268,8 @@ int
 	  }	
 	goto fn_exit;
      }
+
+   MPIU_Free(localq_ptr_val);
    
    fn_exit:
        return mpi_errno;
@@ -339,23 +324,21 @@ MPID_nem_elan_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
    int           mpi_errno = MPI_SUCCESS;
    ELAN_QUEUE   *remoteq_ptr ; 
    ELAN_FLAGS    flags;
-   
-   //remoteq_ptr = (ELAN_QUEUE **)MPIU_Malloc(sizeof(ELAN_QUEUE *));
-   
-   mpi_errno = MPID_nem_elan_module_get_from_bc (business_card, &remoteq_ptr);
-   
-   fprintf(stdout,"[%i | nvpid %i] -- Get from bc : getting  %p  for %i\n", MPID_nem_mem_region.rank,elan_base->state->vp,remoteq_ptr,vc->pg_rank);
-   
-   /* --BEGIN ERROR HANDLING-- */   
-   if (mpi_errno) 
-     {	
-	MPIU_ERR_POP (mpi_errno);
+
+   if( MPID_nem_mem_region.ext_procs > 0)
+     {
+	mpi_errno = MPID_nem_elan_module_get_from_bc (business_card, &remoteq_ptr);
+	/* --BEGIN ERROR HANDLING-- */   
+	if (mpi_errno) 
+	  {	
+	     MPIU_ERR_POP (mpi_errno);
+	  }
+	/* --END ERROR HANDLING-- */
+	
+	rxq_ptr_array[vc->pg_rank] = elan_queueTxInit(elan_base->state,remoteq_ptr,MPID_NEM_ELAN_RAIL_NUM,flags);
+	vc->ch.rxq_ptr_array = rxq_ptr_array;   
      }
-   /* --END ERROR HANDLING-- */
-
-   rxq_ptr_array[vc->pg_rank] = elan_queueTxInit(elan_base->state,remoteq_ptr,MPID_NEM_ELAN_RAIL_NUM,flags);
-   vc->ch.rxq_ptr_array = rxq_ptr_array;   
-
+   
    fn_exit:   
        return mpi_errno;
    fn_fail:

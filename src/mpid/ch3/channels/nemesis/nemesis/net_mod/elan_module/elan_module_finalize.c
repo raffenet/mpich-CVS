@@ -16,13 +16,16 @@ int
 MPID_nem_elan_module_finalize()
 {
    int mpi_errno = MPI_SUCCESS;
-   
-   while(MPID_nem_module_elan_pendings_sends > 0)
+ 
+    if (MPID_nem_mem_region.ext_procs > 0)
      {
-	MPID_nem_elan_module_poll(MPID_NEM_POLL_OUT);
+	while(MPID_nem_module_elan_pendings_sends > 0)
+	  {
+	     MPID_nem_elan_module_poll(MPID_NEM_POLL_OUT);
+	  }
+	
+	elan_disable_network(elan_base->state);
      }
-
-   elan_disable_network(elan_base->state);
    
    fn_exit:
      return mpi_errno;
