@@ -10,8 +10,13 @@
 #include "mpid_nem_impl.h"
 #include <linux/types.h>
 
-extern int MPID_nem_module_elan_pendings_sends;
-extern int MPID_nem_module_elan_pendings_recvs;
+#define MPID_NEM_ELAN_LOOPS     ELAN_POLL_EVENT
+#define MPID_NEM_ELAN_RAIL_NUM  0
+#define MPID_NEM_ELAN_SLOT_SIZE 2048
+
+extern int             MPID_nem_module_elan_pendings_sends;
+extern int             MPID_nem_module_elan_pendings_recvs;
+extern ELAN_QUEUE_TX **rxq_ptr_array;
 
 /*
 static inline int

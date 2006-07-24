@@ -13,17 +13,18 @@
 #include "elan_module_impl.h"
 #include "elan_module.h"
 
-#define ELAN_CONTEXT_ID_OFFSET  2
-#define ELAN_ALLOC_SIZE         16 
-#define MPIDI_CH3I_NODE_ID_KEY  "node_id"
+#define MPID_NEM_ELAN_CONTEXT_ID_OFFSET  2
+#define MPID_NEM_ELAN_ALLOC_SIZE         16 
+#define MPIDI_CH3I_QUEUE_PTR_KEY         "q_ptr_val"
 
-/* elan_base is a reserved name in quadrics */
-static ELAN_BASE my_elan_base;
-static int      *node_ids;  
-static int       my_node_id;
-static int       min_node_id;
-static int       max_node_id;
-static int       my_ctxt_id;
+ELAN_QUEUE_TX     **rxq_ptr_array;
+static ELAN_QUEUE  *localq_ptr; 
+static ELAN_QUEUE **localq_ptr_val; 
+static int         *node_ids;  
+static int          my_node_id;
+static int          min_node_id;
+static int          max_node_id;
+static int          my_ctxt_id;
 
 int MPID_nem_module_elan_pendings_sends = 0;
 int MPID_nem_module_elan_pendings_recvs = 0 ;
@@ -51,7 +52,7 @@ int my_compar(const int *a, const int *b)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int init_elan( MPIDI_PG_t *pg_p )
 {
-   char            capability_str[ELAN_ALLOC_SIZE];
+   char            capability_str[MPID_NEM_ELAN_ALLOC_SIZE];
    int             mpi_errno = MPI_SUCCESS;
    char            file_name[256];
    char            line[255]; 
@@ -60,11 +61,12 @@ int init_elan( MPIDI_PG_t *pg_p )
    char            val[MPID_NEM_MAX_KEY_VAL_LEN];
    char           *kvs_name;
    FILE           *myfile;
-   ELAN_BASE      *base = NULL;
    int             grank;
    int             index; 
    int             pmi_errno;
    int             ret;
+   ELAN_BASE      *base = NULL;
+   ELAN_FLAGS      flags;
    
    /* Get My Node Id from relevant file */
    myfile = fopen("/proc/qsnet/elan3/device0/position","r");
@@ -129,19 +131,47 @@ int init_elan( MPIDI_PG_t *pg_p )
      max_node_id = node_ids[numprocs - 1] ;
    else
      max_node_id = my_node_id;
+
+   /* Quadrics needs contiguous nodes */
+   MPIU_Assert ( (max_node_id - min_node_id) == numprocs );
    
    /* Generate capability string */
-   MPIU_Snprintf(capability_str, ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
+   MPIU_Snprintf(capability_str, MPID_NEM_ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
 		 my_node_id,
-		 ELAN_CONTEXT_ID_OFFSET,
-		 ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
-		 ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
+		 MPID_NEM_ELAN_CONTEXT_ID_OFFSET,
+		 MPID_NEM_ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
+		 MPID_NEM_ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
 		 min_node_id,max_node_id);      
    elan_generateCapability (capability_str);    
    
    /* Init Elan */
    base = elan_baseInit(0);
-   my_elan_base = *base;
+   /* Are VPIDs correct? */
+   MPIU_Assert (elan_base->state->vp == MPID_nem_mem_region.rank);
+
+   /* Enable the network */
+   elan_enable_network(elan_base->state);
+
+   fprintf(stdout,"[%i | nvpid %i] -- Elan Init done  -- Net enabled \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+
+   /* Allocate more than needed */
+   rxq_ptr_array  = (ELAN_QUEUE_TX **)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(ELAN_QUEUE_TX *));   
+   localq_ptr     = elan_allocQueue(elan_base->state);      
+   localq_ptr_val = (ELAN_QUEUE **)MPIU_Malloc(sizeof(ELAN_QUEUE *));   
+  *localq_ptr_val = localq_ptr ;
+   
+   fprintf(stdout,"[%i | nvpid %i] -- Init : rxq_ptr alloc ; localq_ptr alloc \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+   
+   for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++) 
+     rxq_ptr_array[index] = NULL ; 
+
+   rxq_ptr_array[elan_base->state->vp] = elan_queueRxInit(elan_base->state,
+							  localq_ptr,
+							  MPID_NEM_NUM_CELLS,
+							  elan_queueMaxSlotSize(elan_base->state),
+							  MPID_NEM_ELAN_RAIL_NUM,flags);   
+
+   fprintf(stdout,"[%i | nvpid %i] -- Init : localq init for receive : %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,localq_ptr);
    
    fn_exit:
      return mpi_errno;
@@ -200,6 +230,14 @@ MPID_nem_elan_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
    MPID_nem_process_recv_queue = proc_recv_queue;
    MPID_nem_process_free_queue = proc_free_queue;
    
+   /*
+   status = elan_register_memory (MPID_nem_module_gm_port, (void *)proc_elements, sizeof (MPID_nem_cell_t) * num_proc_elements);
+   MPIU_ERR_CHKANDJUMP1 (status != GM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gm_regmem", "**gm_regmem %d", status);
+   
+   status = elan_register_memory (MPID_nem_module_gm_port, (void *)module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
+   MPIU_ERR_CHKANDJUMP1 (status != GM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gm_regmem", "**gm_regmem %d", status);
+   */
+   
    MPID_nem_module_elan_recv_queue = &_recv_queue;
    MPID_nem_module_elan_free_queue = &_free_queue;
    
@@ -229,7 +267,12 @@ int
 {
    int mpi_errno = MPI_SUCCESS;
 
-   mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_NODE_ID_KEY, my_node_id);
+   fprintf(stdout,"[%i | nvpid %i] -- Get biz card : putting in space  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,*localq_ptr_val);
+   
+   mpi_errno = MPIU_Str_add_binary_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_QUEUE_PTR_KEY, (char *)&(*localq_ptr_val), sizeof(ELAN_QUEUE *));
+
+   fprintf(stdout,"[%i | nvpid %i] -- Get biz card : done for   %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,localq_ptr);
+   
    if (mpi_errno != MPIU_STR_SUCCESS)
      {	
 	if (mpi_errno == MPIU_STR_NOMEM)
@@ -254,20 +297,21 @@ int
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_elan_module_get_from_bc (const char *business_card,int *node_id)
+MPID_nem_elan_module_get_from_bc (const char *business_card,ELAN_QUEUE **remoteq_ptr)
 {
    int mpi_errno = MPI_SUCCESS;
-   int tmp_node_id;
-   
-   mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_NODE_ID_KEY, &tmp_node_id);
-   if (mpi_errno != MPIU_STR_SUCCESS) 
-     {
+   int len;
+
+   mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_QUEUE_PTR_KEY,(char *)remoteq_ptr, sizeof(ELAN_QUEUE *), &len);
+   if ((mpi_errno != MPIU_STR_SUCCESS) || len != sizeof(ELAN_QUEUE *))
+     {	
+	/* FIXME: create a real error string for this */
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
      }
-      
+   
    fn_exit:
      return mpi_errno;
-   fn_fail:  
+  fn_fail:  
      goto fn_exit;
 }
 
@@ -292,18 +336,26 @@ MPID_nem_elan_module_connect_to_root (const char *business_card, MPIDI_VC_t *new
 int
 MPID_nem_elan_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
-   int mpi_errno = MPI_SUCCESS;
+   int           mpi_errno = MPI_SUCCESS;
+   ELAN_QUEUE   *remoteq_ptr ; 
+   ELAN_FLAGS    flags;
    
-  // mpi_errno = MPID_nem_mx_module_get_from_bc (business_card, &(vc->ch.node_ids[vc->pg_rank]));
+   //remoteq_ptr = (ELAN_QUEUE **)MPIU_Malloc(sizeof(ELAN_QUEUE *));
+   
+   mpi_errno = MPID_nem_elan_module_get_from_bc (business_card, &remoteq_ptr);
+   
+   fprintf(stdout,"[%i | nvpid %i] -- Get from bc : getting  %p  for %i\n", MPID_nem_mem_region.rank,elan_base->state->vp,remoteq_ptr,vc->pg_rank);
+   
    /* --BEGIN ERROR HANDLING-- */   
-   /*
    if (mpi_errno) 
      {	
 	MPIU_ERR_POP (mpi_errno);
      }
-    */
-    /* --END ERROR HANDLING-- */
-   
+   /* --END ERROR HANDLING-- */
+
+   rxq_ptr_array[vc->pg_rank] = elan_queueTxInit(elan_base->state,remoteq_ptr,MPID_NEM_ELAN_RAIL_NUM,flags);
+   vc->ch.rxq_ptr_array = rxq_ptr_array;   
+
    fn_exit:   
        return mpi_errno;
    fn_fail:
