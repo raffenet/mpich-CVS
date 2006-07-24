@@ -73,7 +73,7 @@ MPID_nem_elan_module_recv()
 	
 	//fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : DQ'd cell %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,cell);
 	
-	ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,1);
+	ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,ELAN_POLL_EVENT);
 	
 	//fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
 	
