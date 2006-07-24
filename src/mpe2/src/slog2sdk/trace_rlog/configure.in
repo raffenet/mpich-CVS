@@ -88,7 +88,7 @@ PAC_MAKE_IS_GNUMAKE
 PAC_MAKE_IS_BSD44
 PAC_MAKE_IS_OSF
 PAC_MAKE_VPATH
-if test ! -s src/trace_impl.c -a -z "$VPATH" ; then
+if test ! -s src/rlog.h -a -z "$VPATH" ; then
     AC_MSG_ERROR([No virtual MAKE path command found.
         You may need to set your make command
         The GNU make (sometimes available as gnumake) can be used.])
