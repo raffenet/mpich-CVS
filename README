@@ -386,10 +386,9 @@ and hence we have not included it in this release. If you need to use
 MPI on InfiniBand, we recommend using MVAPICH2 or MVAPICH from Ohio
 State Univ.   http://nowlab.cse.ohio-state.edu/projects/mpi-iba/
 
-
 The Nemesis channel is a new low-latency channel that uses shared
 memory for intra-node communication and various networks for
-inter-node communication.  It currently supports TCP and GM networks.
+inter-node communication.  It currently supports TCP, GM and MX networks.
 Other networks will be supported in the future.  The Nemesis channel
 may be selected using the --with-device=ch3:nemesis configure option.
 The default network is TCP.
@@ -398,6 +397,12 @@ To use the GM network, use the --with-device=ch3:nemesis:gm configure
 option.  If the GM include files and libraries are not in the normal
 search paths, you can specify them with the --with-gm-include= and
 --with-gm-lib= options, or the --with-gm= option if lib/ and include/
+are in the same directory.
+
+To use the MX network, use the --with-device=ch3:nemesis:mx configure
+option.  If the MX include files and libraries are not in the normal
+search paths, you can specify them with the --with-mx-include= and
+--with-mx-lib= options, or the --with-mx= option if lib/ and include/
 are in the same directory.
 
 Using the --enable-fast configure option significantly improves
