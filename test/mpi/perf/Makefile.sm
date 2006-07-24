@@ -1,0 +1,5 @@
+INCLUDES = -I../include -I${srcdir}/../include
+DEPADD = @MPILIBLOC@
+smvar_do_sharedlibs = 0
+
+transp-datatype_SOURCES = transp-datatype.c
