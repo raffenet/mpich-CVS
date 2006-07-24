@@ -18,8 +18,6 @@ EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv \
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
 hellow_SOURCES = hellow.c
-sr_SOURCES = sr.c
-srvec_SOURCES = srvec.c
 srtest_SOURCES = srtest.c
 child_SOURCES = child.c
 parent_SOURCES = parent.c
