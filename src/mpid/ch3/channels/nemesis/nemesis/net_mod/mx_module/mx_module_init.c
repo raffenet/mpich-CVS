@@ -176,11 +176,10 @@ MPID_nem_mx_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
    if( MPID_nem_mem_region.ext_procs > 0)
      {
 	init_mx(pg_p);
-     }   
-
-   mpi_errno = MPID_nem_mx_module_get_business_card (bc_val_p, val_max_sz_p);
-   if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
+	mpi_errno = MPID_nem_mx_module_get_business_card (bc_val_p, val_max_sz_p);
+	if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+     }
+   
    MPID_nem_process_recv_queue = proc_recv_queue;
    MPID_nem_process_free_queue = proc_free_queue;
    
@@ -304,22 +303,25 @@ MPID_nem_mx_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
    int mpi_errno = MPI_SUCCESS;
    int ret;
    
-   mpi_errno = MPID_nem_mx_module_get_from_bc (business_card, &vc->ch.remote_endpoint_id, &vc->ch.remote_nic_id);
-   /* --BEGIN ERROR HANDLING-- */   
-   if (mpi_errno) 
-     {	
-	MPIU_ERR_POP (mpi_errno);
-     }   
-   /* --END ERROR HANDLING-- */
+   if( MPID_nem_mem_region.ext_procs > 0)
+     {
+	mpi_errno = MPID_nem_mx_module_get_from_bc (business_card, &vc->ch.remote_endpoint_id, &vc->ch.remote_nic_id);
+	/* --BEGIN ERROR HANDLING-- */   
+	if (mpi_errno) 
+	  {	
+	     MPIU_ERR_POP (mpi_errno);
+	  }   
+	/* --END ERROR HANDLING-- */
+	
+	ret = mx_connect(MPID_nem_module_mx_local_endpoint,
+			 vc->ch.remote_nic_id,
+			 vc->ch.remote_endpoint_id,
+			 MPID_nem_module_mx_filter,
+			 MPID_nem_module_mx_timeout,
+			 &MPID_nem_module_mx_endpoints_addr[vc->pg_rank]);
+	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %s", mx_strerror (ret));
+     }
    
-   ret = mx_connect(MPID_nem_module_mx_local_endpoint,
-		    vc->ch.remote_nic_id,
-		    vc->ch.remote_endpoint_id,
-		    MPID_nem_module_mx_filter,
-		    MPID_nem_module_mx_timeout,
-		    &MPID_nem_module_mx_endpoints_addr[vc->pg_rank]);
-   MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_connect", "**mx_connect %s", mx_strerror (ret));
-
    fn_exit:
        return mpi_errno;
    fn_fail:

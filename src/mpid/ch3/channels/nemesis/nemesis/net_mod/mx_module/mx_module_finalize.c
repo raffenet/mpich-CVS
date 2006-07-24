@@ -16,15 +16,15 @@ int
 MPID_nem_mx_module_finalize()
 {
    int mpi_errno = MPI_SUCCESS;
-   
-   while(MPID_nem_module_mx_pendings_sends > 0)
-     {
-	MPID_nem_mx_module_poll(MPID_NEM_POLL_OUT);
-     }
-   
+
    if (MPID_nem_mem_region.ext_procs > 0)
      {
 	int ret ;
+	
+	while(MPID_nem_module_mx_pendings_sends > 0)
+	  {
+	     MPID_nem_mx_module_poll(MPID_NEM_POLL_OUT);
+	  }
 	ret = mx_close_endpoint(MPID_nem_module_mx_local_endpoint);
 	MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_close_endpoint", "**mx_close_endpoint %s", mx_strerror (ret));
 
