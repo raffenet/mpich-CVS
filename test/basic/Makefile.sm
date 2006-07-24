@@ -1,4 +1,6 @@
 srbtest_SOURCES = srbtest.c
+sr_SOURCES      = sr.c
+srvec_SOURCES   = srvec.c
 #
 # Replace the value of CC
 prefix          = @prefix@
