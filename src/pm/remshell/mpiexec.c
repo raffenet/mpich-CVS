@@ -386,6 +386,7 @@ int myspawn( ProcessWorld *pWorld, void *data )
  * 
  */
 
+#if 0
 /* ----------------------------------------------------------------------- */
 /* Convert the remote shell command into argv format                       */
 /* The command may be specified as a string with blanks separating the     */
@@ -447,3 +448,4 @@ int MPIE_GetRemshellArgv( char *argv[], int nargv )
 	argv[i] = remshell[i];
     return remargs;
 }
+#endif
