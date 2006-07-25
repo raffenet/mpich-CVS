@@ -19,15 +19,29 @@ extern int             MPID_nem_module_elan_pendings_sends;
 extern int             MPID_nem_module_elan_pendings_recvs;
 extern ELAN_QUEUE_TX **rxq_ptr_array;
 
-/*
+typedef struct MPID_nem_elan_cell
+{   
+   struct MPID_nem_elan_cell *next;
+   ELAN_EVENT                *elan_event;
+   MPID_nem_cell_ptr_t        cell_ptr;
+}
+MPID_nem_elan_cell_t, *MPID_nem_elan_cell_ptr_t;
+
+typedef struct MPID_nem_elan_event_queue
+{   
+   MPID_nem_elan_cell_ptr_t head;
+   MPID_nem_elan_cell_ptr_t tail;
+}
+MPID_nem_elan_event_queue_t, *MPID_nem_elan_event_queue_ptr_t;
+
 static inline int
-MPID_nem_elan_req_queue_empty ( MPID_nem_elan_req_queue_ptr_t  qhead )
+MPID_nem_elan_event_queue_empty ( MPID_nem_elan_event_queue_ptr_t  qhead )
 {   
    return qhead->head == NULL;
 }
 
 static inline void 
-MPID_nem_elan_req_queue_enqueue (MPID_nem_elan_req_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t element)
+MPID_nem_elan_event_queue_enqueue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t element)
 {   
    MPID_nem_elan_cell_ptr_t prev = qhead->tail;   
    if (prev == NULL)
@@ -42,7 +56,7 @@ MPID_nem_elan_req_queue_enqueue (MPID_nem_elan_req_queue_ptr_t qhead, MPID_nem_e
 }
 
 static inline void
-MPID_nem_elan_req_queue_dequeue (MPID_nem_elan_req_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t *e)
+MPID_nem_elan_event_queue_dequeue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t *e)
 {   
    register MPID_nem_elan_cell_ptr_t _e = qhead->head;   
    if(_e == NULL)
@@ -60,7 +74,11 @@ MPID_nem_elan_req_queue_dequeue (MPID_nem_elan_req_queue_ptr_t qhead, MPID_nem_e
 	*e = (MPID_nem_elan_cell_ptr_t)_e;
      }   
 }
-*/
+
+extern MPID_nem_elan_cell_ptr_t        MPID_nem_module_elan_cells;
+extern MPID_nem_elan_event_queue_ptr_t MPID_nem_module_elan_free_event_queue;
+extern MPID_nem_elan_event_queue_ptr_t MPID_nem_module_elan_pending_event_queue;
+
 extern MPID_nem_queue_ptr_t MPID_nem_module_elan_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_module_elan_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;

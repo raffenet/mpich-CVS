@@ -41,10 +41,19 @@ void mx__print_queue(MPID_nem_mx_req_queue_ptr_t qhead, int sens)
 inline int
 MPID_nem_elan_module_send_from_queue()
 {
-   int mpi_errno = MPI_SUCCESS;
+   MPID_nem_elan_cell_ptr_t elan_event_cell;
+   int                      mpi_errno = MPI_SUCCESS;
    
    if (MPID_nem_module_elan_pendings_sends > 0)   
      {	
+	if (elan_poll(MPID_nem_module_elan_pending_event_queue->head->elan_event,MPID_NEM_ELAN_LOOPS) == TRUE)
+	  {
+	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell);
+	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,elan_event_cell->cell_ptr);	 
+	     elan_event_cell->elan_event = NULL;
+	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell);
+	     MPID_nem_module_elan_pendings_sends--;	     
+	  }
      }
    fn_exit:
        return mpi_errno;
@@ -66,26 +75,29 @@ MPID_nem_elan_module_recv()
    
 //   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : trying \n", MPID_nem_mem_region.rank,elan_base->state->vp);
    
-   if (!MPID_nem_queue_empty(MPID_nem_module_elan_free_queue))
+   if (elan_queueRxPoll(rxq_ptr_array[MPID_nem_mem_region.rank],1) == TRUE )
      {	
-	MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
-	pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);
-	
-	//fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : DQ'd cell %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,cell);
-	
-	ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,ELAN_POLL_EVENT);
-	
-	//fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
-	
-	if (ptr != NULL)
-	  {	     
-	     elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
-	     MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+	if (!MPID_nem_queue_empty(MPID_nem_module_elan_free_queue))
+	  {	
+	     MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
+	     pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);
+	     
+	     //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : DQ'd cell %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,cell);
+	     
+	     ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,MPID_NEM_ELAN_LOOPS);
+	     
+	     //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+	     
+	     if (ptr != NULL)
+	       {	     
+		  elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
+		  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+	       }
+	     else
+	       {
+		  MPID_nem_module_elan_pendings_recvs++;
+	       }	
 	  }
-	else
-	  {
-	     MPID_nem_module_elan_pendings_recvs++;
-	  }	
      }
    
    fn_exit:
