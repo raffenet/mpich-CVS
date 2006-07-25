@@ -61,6 +61,12 @@ MPID_nem_elan_module_send_from_queue()
        goto fn_exit;   
 }
 
+
+static char                *curr_ptr;
+static int                  version = 0;
+static int                  chunks  = 0;
+static MPID_nem_cell_ptr_t  my_cell;
+  
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_elan_module_recv
 #undef FCNAME
@@ -72,32 +78,80 @@ MPID_nem_elan_module_recv()
    MPID_nem_pkt_t      *pkt       = NULL;   
    int                  mpi_errno = MPI_SUCCESS;
    char                *ptr;
+   int                  size;
+   int                  n_chunks;
    
-//   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : trying \n", MPID_nem_mem_region.rank,elan_base->state->vp);
    
-   if (elan_queueRxPoll(rxq_ptr_array[MPID_nem_mem_region.rank],1) == TRUE )
-     {	
-	if (!MPID_nem_queue_empty(MPID_nem_module_elan_free_queue))
-	  {	
-	     MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
-	     pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);
-	     
-	     //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : DQ'd cell %p \n", MPID_nem_mem_region.rank,elan_base->state->vp,cell);
-	     
-	     ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,MPID_NEM_ELAN_LOOPS);
-	     
-	     //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
-	     
-	     if (ptr != NULL)
-	       {	     
-		  elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
-		  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+   //   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : trying \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+
+   if(version)
+     {
+	do 
+	  {
+	     fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV expecting  %i chunks VERSION \n", MPID_nem_mem_region.rank,elan_base->state->vp,chunks);
+	     //if (elan_queueRxPoll(rxq_ptr_array[MPID_nem_mem_region.rank],ELAN_POLL_EVENT) == TRUE )
+	       {
+		  fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV GOT VERSION  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+		  curr_ptr += elan_queueMaxSlotSize(elan_base->state);
+		  ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],curr_ptr,MPID_NEM_ELAN_LOOPS);
+		  if (ptr != NULL)
+		    {
+		       elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
+		       chunks--;
+		    }
 	       }
+	     /*
+	     else
+	       {
+		  fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV EXIT  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+		  goto fn_exit;		    
+	       }
+	      */ 
+	  }
+	while(chunks > 0);
+	version = 0;
+	MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, my_cell);	
+     }   
+   else
+     {	
+	if (elan_queueRxPoll(rxq_ptr_array[MPID_nem_mem_region.rank],1) == TRUE )
+	  {	
+	     if (!MPID_nem_queue_empty(MPID_nem_module_elan_free_queue))
+	       {	
+		  MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
+		  pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);	
+		  ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,MPID_NEM_ELAN_LOOPS);
+		  
+		  //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  %p \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+		  
+		  if (ptr != NULL)
+		    {
+		       elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
+		       size = MPID_NEM_CELL_DLEN(cell) + MPID_NEM_MPICH2_HEAD_LEN;
+		       fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : size %i \n", MPID_nem_mem_region.rank,elan_base->state->vp,size);
+		       
+		       if (size <= elan_queueMaxSlotSize(elan_base->state))
+			 {
+			    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+			 }
+		       else
+			 {
+			    n_chunks = size/elan_queueMaxSlotSize(elan_base->state);
+			    if (size%elan_queueMaxSlotSize(elan_base->state))
+			      n_chunks++;
+			    version  = 1;
+			    curr_ptr = (char *)pkt;
+			    my_cell  = cell;
+			    chunks   = n_chunks - 1;
+			    fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV expecting  %i chunks \n", MPID_nem_mem_region.rank,elan_base->state->vp,n_chunks);
+			 }
+		    }
 	     else
 	       {
 		  MPID_nem_module_elan_pendings_recvs++;
-	       }	
+	       }
 	  }
+     }
      }
    
    fn_exit:

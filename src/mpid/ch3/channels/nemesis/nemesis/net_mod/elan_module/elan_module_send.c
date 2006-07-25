@@ -26,7 +26,7 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
    
    MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
 
-   //fprintf(stdout,"[%i | nvpid %i] -- ELAN SEND to %i : trying \n", MPID_nem_mem_region.rank,elan_base->state->vp,dest);
+   fprintf(stdout,"[%i | nvpid %i] -- ELAN SEND to %i : trying %i bytes\n", MPID_nem_mem_region.rank,elan_base->state->vp,dest,data_size);
 
    if (!MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_free_event_queue))
      {	  
