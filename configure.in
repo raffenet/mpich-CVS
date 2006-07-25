@@ -2515,10 +2515,13 @@ fi
 
 # Test for the alignment of structs containing only long doubles.
 if test "$pac_cv_have_long_double" = yes ; then
+    # Check for alignment of just float and double (no long doubles)
+    PAC_C_MAX_DOUBLE_FP_ALIGN
     PAC_C_MAX_LONGDOUBLE_FP_ALIGN
     # FIXME: If this alignment is not the same as that for all float types,
     # we need to do something else in the alignment rule code.
-    if test "$pac_cv_c_max_fp_align" != "$pac_cv_c_max_longdouble_fp_align" ; then
+    if test "$pac_cv_c_max_fp_align" != "$pac_cv_c_max_longdouble_fp_align" -o \
+            "$pac_cv_c_max_fp_align" != "$pac_cv_c_max_double_fp_align" ; then
         AC_MSG_WARN([Structures containing long doubles may be aligned differently from structures with floats or longs.  MPICH2 does not handle this case automatically and you should avoid assumed extents for structures containing float types.])
     fi
 fi

@@ -1761,6 +1761,90 @@ if test -z "$pac_cv_c_max_fp_align" ; then
     pac_cv_c_max_fp_align="unknown"
 fi
 ])
+dnl
+dnl
+dnl Return the floating point structure alignment in
+dnl pac_cv_c_max_double_fp_align.
+dnl
+dnl Possible values include:
+dnl	packed
+dnl	two
+dnl	four
+dnl	eight
+dnl
+dnl In addition, a "Could not determine alignment" and a "error!"
+dnl return is possible.  
+AC_DEFUN(PAC_C_MAX_DOUBLE_FP_ALIGN,[
+AC_CACHE_CHECK([for max C struct alignment of structs with doubles],
+pac_cv_c_max_double_fp_align,[
+AC_TRY_RUN([
+#include <stdio.h>
+#define DBG(a,b,c)
+int main( int argc, char *argv[] )
+{
+    FILE *cf;
+    int is_packed  = 1;
+    int is_two     = 1;
+    int is_four    = 1;
+    int is_eight   = 1;
+    struct { char a; float b; } char_float;
+    struct { float b; char a; } float_char;
+    struct { char a; double b; } char_double;
+    struct { double b; char a; } double_char;
+    int size, extent1, extent2;
+
+    size = sizeof(char) + sizeof(float);
+    extent1 = sizeof(char_float);
+    extent2 = sizeof(float_char);
+    if (size != extent1) is_packed = 0;
+    if ( (extent1 % 2) != 0 && (extent2 % 2) != 0) is_two = 0;
+    if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
+    if (sizeof(float) == 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
+	is_eight = 0;
+    DBG("char_float",size,extent1);
+
+    size = sizeof(char) + sizeof(double);
+    extent1 = sizeof(char_double);
+    extent2 = sizeof(double_char);
+    if (size != extent1) is_packed = 0;
+    if ( (extent1 % 2) != 0 && (extent2 % 2) != 0) is_two = 0;
+    if ( (extent1 % 4) != 0 && (extent2 % 4) != 0) is_four = 0;
+    if (sizeof(double) == 8 && (extent1 % 8) != 0 && (extent2 % 8) != 0)
+	is_eight = 0;
+    DBG("char_double",size,extent1);
+
+    if (is_eight) { is_four = 0; is_two = 0; }
+
+    if (is_four) is_two = 0;
+
+    /* Tabulate the results */
+    cf = fopen( "ctest.out", "w" );
+    if (is_packed + is_two + is_four + is_eight == 0) {
+	fprintf( cf, "Could not determine alignment\n" );
+    }
+    else {
+	if (is_packed + is_two + is_four + is_eight != 1) {
+	    fprintf( cf, "error!\n" );
+	}
+	else {
+	    if (is_packed) fprintf( cf, "packed\n" );
+	    if (is_two) fprintf( cf, "two\n" );
+	    if (is_four) fprintf( cf, "four\n" );
+	    if (is_eight) fprintf( cf, "eight\n" );
+	}
+    }
+    fclose( cf );
+    return 0;
+}],
+pac_cv_c_max_double_fp_align=`cat ctest.out`,
+pac_cv_c_max_double_fp_align="unknown",
+pac_cv_c_max_double_fp_align="$CROSS_STRUCT_FP_ALIGN")
+rm -f ctest.out
+])
+if test -z "$pac_cv_c_max_double_fp_align" ; then
+    pac_cv_c_max_double_fp_align="unknown"
+fi
+])
 AC_DEFUN(PAC_C_MAX_LONGDOUBLE_FP_ALIGN,[
 AC_CACHE_CHECK([for max C struct floating point alignment with long doubles],
 pac_cv_c_max_longdouble_fp_align,[
