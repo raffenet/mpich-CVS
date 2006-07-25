@@ -112,6 +112,13 @@ snap:
 	@version=snap-`date "+%Y%m%d%H%M"` ; \
 	$(MAKE) version=$${version} tag=HEAD doc=no dist-with-version
 
+#
+# Note on dist process
+# Some directories and files are not included with the distribution.
+# These may be old experimental versions or internal projects.
+# Some may have other copyrights which we wish to keep out of the "clean" 
+# code (Zeroconf.py is an example of this).
+#
 dist-with-version:
 	@if [ -z "$(version)" ] ; then \
 	    echo "Must invoke with make version=value tag=value dist-with-version" ;\
@@ -129,7 +136,9 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version}/src/mpid && rm -rf mm rdma globus)
 	( cd tmpdir/${PACKAGE}-${version}/doc && rm -rf notes develop )
 	( cd tmpdir/${PACKAGE}-${version}/src/pm && rm -rf forker rmpd ompd remshell )
+	( cd tmpdir/$(PACKAGE)-$(version)/src/pm/mpd && rm -f Zeroconf.py)
 	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels && rm -rf ib rdma gasnet)
+	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels/nemesis/nemesis/netmod && rm -rf elan_module newtcp_module )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && rm -rf archive )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
