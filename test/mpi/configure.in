@@ -784,6 +784,7 @@ fi
 iodir="#"
 if test "$enable_romio" != no ; then
     iodir=io
+    AC_DEFINE(HAVE_MPI_IO,1,[Define if MPI-IO (really ROMIO) is included])
 fi
 AC_SUBST(iodir)
 
@@ -910,6 +911,7 @@ AC_OUTPUT(maint/testmerge \
 	  errors/f77/Makefile \
 	  errors/f90/Makefile \
 	  manual/Makefile \
+	  perf/Makefile \
 	  testlist \
 	  cxx/testlist \
 	  f77/testlist \

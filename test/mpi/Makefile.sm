@@ -1,6 +1,6 @@
 SUBDIRS_otherlangs = f77 cxx f90
 SUBDIRS_threadsdir = threads
-SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual .
+SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf .
 
 testing:
 	./runtests -srcdir=$(srcdir) -tests=testlist \
