@@ -2513,6 +2513,16 @@ if test -n "$pac_cv_c_fp_align_nr" ; then
     AC_DEFINE_UNQUOTED(HAVE_MAX_FP_ALIGNMENT,$pac_cv_c_fp_align_nr,[Controls byte alignment of integer structures (for MPI structs)])
 fi
 
+# Test for the alignment of structs containing only long doubles.
+if test "$pac_cv_have_long_double" = yes ; then
+    PAC_C_MAX_LONGDOUBLE_FP_ALIGN
+    # FIXME: If this alignment is not the same as that for all float types,
+    # we need to do something else in the alignment rule code.
+    if test "$pac_cv_c_max_fp_align" != "$pac_cv_c_max_longdouble_fp_align" ; then
+        AC_MSG_WARN([Structures containing long doubles may be aligned differently from structures with floats or longs.  MPICH2 does not handle this case automatically and you should avoid assumed extents for structures containing float types.])
+    fi
+fi
+
 # Test for weird struct alignment rules that vary padding based on
 # size of leading type only.
 PAC_C_DOUBLE_POS_ALIGN
