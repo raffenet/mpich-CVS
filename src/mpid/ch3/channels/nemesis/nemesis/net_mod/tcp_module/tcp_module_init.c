@@ -53,17 +53,43 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	if (grank > MPID_nem_mem_region.rank)
 	{
 	    struct sockaddr_in temp;
-	    char              s[255];
-	    int               len2 = 255;
+	    char               s[255];
+	    int                len2 = 255;
+            int                low_port, high_port;
+            
+	    nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);
 
-	    nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);	  	    
-	    temp.sin_family      = AF_INET;
-	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
-	    temp.sin_port        = htons(port);	
+            /* find a port in the specified range */
+            /*     if the environment var is not set, low_port and high_port are unchanged */
+            low_port = high_port = 0;
+            MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
+            printf ("MPICH_PORT_RANGE = %d:%d\n", low_port, high_port);
+            /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available address */
+            for (port = low_port; port <= high_port; ++port)
+            {
+                memset ((void *)&temp, 0, sizeof(temp));
+                temp.sin_family      = AF_INET;
+                temp.sin_addr.s_addr = htonl(INADDR_ANY);
+                temp.sin_port        = htons(port);	
+                
+                printf ("trying %d\n", port);
 
-	    ret = bind(nodes[grank].desc, (struct sockaddr *)&temp, len);	  
+                ret = bind(nodes[grank].desc, (struct sockaddr *)&temp, len);
+                if (ret == -1)
+                {
+                    /* check for real error */
+                    MPIU_ERR_CHKANDJUMP3 (errno != EADDRINUSE && errno != EADDRNOTAVAIL, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
+                }
+                else
+                {
+                    printf ("OK %d\n", port);
+                    break;
+                }
+            }
+            /* check if an available port was found */
             MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
-	  
+    
+            
 	    ret = getsockname(nodes[grank].desc, 
 			      (struct sockaddr *)&(nodes[grank].sock_id), 
 			      &len);	 
@@ -92,11 +118,39 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	else if (grank < MPID_nem_mem_region.rank)
 	{
 	    struct sockaddr_in temp;
+            int                low_port, high_port;
+
 	    nodes[grank].desc   = socket(AF_INET, SOCK_STREAM, 0);
-	    temp.sin_family      = AF_INET;
-	    temp.sin_addr.s_addr = htonl(INADDR_ANY);
-	    temp.sin_port        = htons(port);
-	    ret = bind (nodes[grank].desc, (struct sockaddr *)&temp, len);
+
+            /* find a port in the specified range */
+            /*     if the environment var is not set, low_port and high_port are unchanged */
+            low_port = high_port = 0;
+            MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
+            printf ("MPICH_PORT_RANGE = %d:%d\n", low_port, high_port);
+            /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available address */
+            for (port = low_port; port <= high_port; ++port)
+            {
+                memset ((void *)&temp, 0, sizeof(temp));
+                temp.sin_family      = AF_INET;
+                temp.sin_addr.s_addr = htonl(INADDR_ANY);
+                temp.sin_port        = htons(port);
+
+                printf ("trying %d\n", port);
+                
+                ret = bind (nodes[grank].desc, (struct sockaddr *)&temp, len);
+                if (ret == -1)
+                {
+                    /* check for real error */
+                    MPIU_ERR_CHKANDJUMP3 (errno != EADDRINUSE && errno != EADDRNOTAVAIL, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
+                }
+                else
+                {
+                    printf ("OK %d\n", port);
+                    break;
+                }
+                
+            }
+            /* check if an available port was found */
             MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
 
 	    ret = getsockname(nodes[grank].desc,
@@ -123,8 +177,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    fprintf(stderr,"MASTER accepting sockets \n");
 #endif
 	    nodes[grank].desc = accept(nodes[grank].desc,
-						    (struct sockaddr *)&(nodes[grank].sock_id),
-						    &len);
+                                       (struct sockaddr *)&(nodes[grank].sock_id),
+                                       &len);
             MPIU_ERR_CHKANDJUMP2 (nodes[grank].desc == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|accept", "**sock|poll|accept %d %s", errno, strerror (errno));
 
 #ifdef TRACE  
