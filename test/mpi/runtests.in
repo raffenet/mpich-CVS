@@ -485,6 +485,13 @@ sub BuildMPIProgram {
 	if ($rc == 0) {
 	    $rc = 1;
 	}
+	# Add a line to the summary file describing the failure
+	# This will ensure that failures to build will end up 
+	# in the summary file (which is otherwise written by the
+	# RunMPIProgram step)
+	&RunPreMsg( $programname, $np, $curdir );
+	&RunTestFailed( "Failed to build $programname; $output" );
+	&RunPostMsg;
     }
     return $rc;
 }
