@@ -63,7 +63,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             /*     if the environment var is not set, low_port and high_port are unchanged */
             low_port = high_port = 0;
             MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
-            printf ("MPICH_PORT_RANGE = %d:%d\n", low_port, high_port);
+
             /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available address */
             for (port = low_port; port <= high_port; ++port)
             {
@@ -72,7 +72,6 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                 temp.sin_addr.s_addr = htonl(INADDR_ANY);
                 temp.sin_port        = htons(port);	
                 
-                printf ("trying %d\n", port);
 
                 ret = bind(nodes[grank].desc, (struct sockaddr *)&temp, len);
                 if (ret == -1)
@@ -82,7 +81,6 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                 }
                 else
                 {
-                    printf ("OK %d\n", port);
                     break;
                 }
             }
@@ -126,7 +124,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             /*     if the environment var is not set, low_port and high_port are unchanged */
             low_port = high_port = 0;
             MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
-            printf ("MPICH_PORT_RANGE = %d:%d\n", low_port, high_port);
+
             /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available address */
             for (port = low_port; port <= high_port; ++port)
             {
@@ -135,7 +133,6 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                 temp.sin_addr.s_addr = htonl(INADDR_ANY);
                 temp.sin_port        = htons(port);
 
-                printf ("trying %d\n", port);
                 
                 ret = bind (nodes[grank].desc, (struct sockaddr *)&temp, len);
                 if (ret == -1)
@@ -145,7 +142,6 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                 }
                 else
                 {
-                    printf ("OK %d\n", port);
                     break;
                 }
                 
