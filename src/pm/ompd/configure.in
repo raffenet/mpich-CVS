@@ -5,6 +5,15 @@ AC_PREREQ(2.59)
 # Autoconf header:
 rm -f ${srcdir}/mpdconf.h mpdconf.h
 AC_CONFIG_HEADER(mpdconf.h)
+AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*  
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+#ifndef MPDCONF_H_INCLUDED
+#define MPDCONF_H_INCLUDED
+])
+AH_BOTTOM([#endif])
 
 dnl Process configure arguments
 AC_ARG_ENABLE(echo,
