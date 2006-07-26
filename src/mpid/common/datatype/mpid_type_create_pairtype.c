@@ -177,6 +177,8 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
     new_dtp->alignsize       = MPIR_MAX(MPID_Datatype_get_basic_size(types[0]),
 					MPID_Datatype_get_basic_size(types[1]));
     /* place maximum on alignment based on padding rules */
+    /* There are some really wierd rules for structure alignment; 
+       these capture the ones of which we are aware. */
     switch(type) {
 	case MPI_SHORT_INT:
 	case MPI_LONG_INT:
@@ -186,9 +188,25 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 #endif
 	    break;
 	case MPI_FLOAT_INT:
-	case MPI_DOUBLE_INT:
-	case MPI_LONG_DOUBLE_INT:
 #ifdef HAVE_MAX_FP_ALIGNMENT
+	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
+						HAVE_MAX_FP_ALIGNMENT);
+#endif
+	    break;
+	case MPI_DOUBLE_INT:
+#ifdef HAVE_MAX_DOUBLE_FP_ALIGNMENT
+	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
+						HAVE_MAX_DOUBLE_FP_ALIGNMENT);
+#elif defined(HAVE_MAX_FP_ALIGNMENT)
+	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
+						HAVE_MAX_FP_ALIGNMENT);
+#endif
+	    break;
+	case MPI_LONG_DOUBLE_INT:
+#ifdef HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT
+	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
+					HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT);
+#else
 	    new_dtp->alignsize       = MPIR_MIN(new_dtp->alignsize,
 						HAVE_MAX_FP_ALIGNMENT);
 #endif

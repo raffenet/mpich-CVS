@@ -25,10 +25,19 @@ static int MPID_Type_struct_alignsize(int count,
  * It uses these configure-time defines to do its magic:
  * - HAVE_MAX_INTEGER_ALIGNMENT - maximum byte alignment of integers
  * - HAVE_MAX_FP_ALIGNMENT      - maximum byte alignment of floating points
+ * - HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT - maximum byte alignment with long
+ *                                   doubles (if different from FP_ALIGNMENT)
+ * - HAVE_MAX_DOUBLE_FP_ALIGNMENT - maximum byte alignment with doubles (if
+ *                                  long double is different from FP_ALIGNMENT)
  * - HAVE_DOUBLE_POS_ALIGNMENT  - indicates that structures with doubles
  *                                are aligned differently if double isn't
  *                                at displacement 0 (e.g. PPC32/64).
  * - HAVE_LLINT_POS_ALIGNMENT   - same as above, for MPI_LONG_LONG_INT
+ *
+ * The different FP, DOUBLE, LONG_DOUBLE alignment case are necessary for
+ * Cygwin on X86 (because long_double is 12 bytes, so double and long double
+ * have different natural alignments).  Linux on X86, however, does not have
+ * different rules for this case.
  */
 static int MPID_Type_struct_alignsize(int count,
 				      MPI_Datatype *oldtype_array,
@@ -55,7 +64,21 @@ static int MPID_Type_struct_alignsize(int count,
 		case MPI_FLOAT:
 		case MPI_DOUBLE:
 		case MPI_LONG_DOUBLE:
-#ifdef HAVE_MAX_FP_ALIGNMENT
+#if defined(HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT) && \
+    defined(HAVE_MAX_DOUBLE_FP_ALIGNMENT)
+		    if (oldtype_array[i] == MPI_LONG_DOUBLE) {
+			if (tmp_alignsize > HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT)
+			    tmp_alignsize = HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT;
+		    }
+		    else if (oldtype_array[i] == MPI_DOUBLE) {
+			if (tmp_alignsize > HAVE_MAX_DOUBLE_FP_ALIGNMENT)
+			    tmp_alignsize = HAVE_MAX_DOUBLE_FP_ALIGNMENT;
+		    }
+		    else {
+			if (tmp_alignsize > HAVE_MAX_FP_ALIGNMENT)
+			    tmp_alignsize = HAVE_MAX_FP_ALIGNMENT;
+		    }
+#elif defined(HAVE_MAX_FP_ALIGNMENT)
 		    if (tmp_alignsize > HAVE_MAX_FP_ALIGNMENT)
 			tmp_alignsize = HAVE_MAX_FP_ALIGNMENT;
 #endif		    
