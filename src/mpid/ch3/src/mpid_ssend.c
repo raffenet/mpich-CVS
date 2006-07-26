@@ -134,7 +134,8 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	if (dt_contig)
 	{
 	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-             "sending contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
+         "sending contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, 
+						data_sz));
 	    
 	    iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
 	    iov[1].MPID_IOV_LEN = data_sz;
