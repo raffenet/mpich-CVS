@@ -77,7 +77,7 @@ while ($file = readdir(DIR)) {
 closedir( DIR );
 
 # &CreateMakefile( "filelist", $outdir );
-if ($makeTemplate ne "" &&
+if (defined($makeTemplate) && $makeTemplate ne "" &&
     -s "$indir/$makeTemplate") {
     &ConvertMakefile( $indir, $outdir, $makeTemplate );
     if (defined($makeAppend) && -s "$outdir/$makeAppend") {
