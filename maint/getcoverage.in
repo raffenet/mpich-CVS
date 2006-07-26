@@ -17,20 +17,27 @@
 # The script in mpich2-tests/getcoverage will perform all of these steps 
 # (this script is not yet included with the MPICH2 distribution)
 #
-# TODO:
 # As an option, create HTML versions of the files with the uncovered code
 # highlighted with a different background color (e.g., pale red).  These
 # should be placed into the same directory structure as the original source
 # files, but with a different root ($annoteSrcDir)
 #
+# ToDo:
 # Another useful option for graphical output would be to keep track of the
 # percentage of covered lines and produce an "xdu"-style map of the 
 # coverage, with color indicating the fraction of coverage.
+#
+# The GNU tools sometimes incorrectly mark "break" statements within a 
+# case statement as not executed.  As break can also be used in a loop, where
+# it is an executable statement, we can't just ignore breaks, and we can't
+# determine which type the break is without parsing the program :(.
 #
 $includeFileInOutput = 0;
 $skipErrExits = 1;
 $outputUncovered = 1;
 @UnCalled = ();
+@TopFilenames = ();        # Array of files and directories provided on the
+                           # command line
 @CoveredFiles = ();        # Array of files that are ok
 # annoteSrcDir is where the annotation files are placed,
 # annoteBaseDir is the base file name that is stripped from the
@@ -56,7 +63,7 @@ $lineLeader2 = '^\s*[\{\}]?\s*';
 $lineLeader3 = '^\s*-:\s*\d+:\s*[\{\}]?\s*';
 #
 # This is the list of known block names.
-@BlockNames = ( "DEBUG", "ERROR HANDLING", "EXPERIMENTAL" );
+@BlockNames = ( "DEBUG", "ERROR HANDLING", "EXPERIMENTAL", "USEREXTENSION" );
 #
 # Keep track of coverage amounts
 $GrandTotal       = 0;
@@ -65,6 +72,8 @@ $GrandTotalMissed = 0;
 # gfilename is used to hold the current open file for READING, so
 # that error messages can be more specific
 $gFilename = "";
+
+# ----------------------------------------------------------------------------
 for (@ARGV) {
     if (/-annote=(.*)/) {
 	# Create an annotation of the source data in the specified root
@@ -89,6 +98,7 @@ for (@ARGV) {
 	my $indexdir = $1;
 	$indexfile = "$indexdir/index.htm";
 	$coveredindexfile = "$indexdir/covered.htm";
+	if (! -d $indexdir) { &MakeDirs( $indexfile ); }
 	next;
     }
     elsif (/-debug/) { 
@@ -96,7 +106,13 @@ for (@ARGV) {
 	next;
     }
 
-    my $filename = $_;
+    $TopFilenames[$#TopFilenames + 1] = $_;
+}
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+
+for my $filename (@TopFilenames) {
     if (-d $filename) {
 	# Expand the directory into a list of files.  If there are 
 	# subdirectories, expand them too (e.g., get a list of 
@@ -148,7 +164,10 @@ if ($annoteFiles && $indexfile ne "") {
     }
 }
 
-# Count the number of uncovered lines, and return that number.
+# ----------------------------------------------------------------------------
+# Here begin the support routines
+# ----------------------------------------------------------------------------
+# Count the number of uncovered lines, and return that number.
 sub CountUncoveredLines {
     my $filename = $_[0];
     my $missed_lines = 0;
@@ -258,34 +277,8 @@ L:  while (<FD>) {
     return ($missed_lines,$fileline);
 }
 
-# Get all of the .gcov files from the named directory, including any subdirs
-sub ExpandDir {
-    my $dir = $_[0];
-    my @otherdirs = ();
-    my @files = ();
-    opendir DIR, "$dir";
-    while ($filename = readdir DIR) {
-	if ($filename =~ /^\./ || $filename eq "CVS") {
-	    next;
-	}
-	elsif (-d "$dir/$filename") {
-	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
-	}
-	elsif ($filename =~ /(.*\.gcov)$/) {
-	    $files[$#files + 1] = "$dir/$filename";
-	}
-    }
-    closedir DIR;
-    # (almost) tail recurse on otherdirs (we've closed the directory handle,
-    # so we don't need to worry about it anymore)
-    foreach $dir (@otherdirs) {
-	@files = (@files, &ExpandDir( $dir ) );
-    }
-    return @files;
-}
-
-#
-# Annotate a file by placing the uncovered lines in bgcolor
+# ----------------------------------------------------------------------------
+# Annotate a file by placing the uncovered lines in bgcolor
 # AnnotateUncoveredLines( coveragefile, bgcolor, filenhandle )
 #
 # This uses a state machine to move between the states of:
@@ -298,15 +291,18 @@ sub ExpandDir {
 #             ERROR HANDLING   (error handling code)
 #             DEBUG            (debug code)
 #             EXPERIMENTAL     (experimental)
+#             USEREXTENSION    (code to enable user extensions)
 #          The uppercase names are the same as the @BlockNames.
-#          Currently, the skipcolors are 
+#          Currently, the skipcolors are all lightblue
 sub AnnotateUncoveredLines {
     my $filename = $_[0];
     my $bgcolor  = $_[1];
     my %skipcolors = ( "errcheck" => "lightblue",
 		       "ERROR HANDLING" => "lightblue",
 		       "DEBUG" => "lightblue", 
-		       "EXPERIMENTAL" => "lightblue" );
+		       "EXPERIMENTAL" => "lightblue",
+		       "USEREXTENSION" => "lightyellow", 
+		       );
     my $outfile  = $_[2];
     my $curstate = "init";    # Current state
     my $newstate;             # New state implied by the last line read
@@ -332,7 +328,15 @@ L2: while (<FD>) {
 	# Determine what state this line is in
 	# (gcc 3.3 only outputs 5 sharps, earlier versions use 6)
 	# The format of the line also changed
-	if (/^\s*\#\#\#\#\#\#?/) {
+	if ($skipErrExits && 
+	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
+	     /MPIU_ERR_SET/ || /MPIU_ERR_POP/ || /goto\s+fn_fail/ ||
+            /fn_fail:/ || /MPIR_Err_create_code/)) {
+	    # If requested, skip obvious error checking lines
+	    $newstate = "skip";
+	    $substate = "errcheck";
+	}
+	elsif (/^\s*######?/) {
 	    $newstate = "unex";
 	}
 	elsif (/^\s*\d+\s/ ||
@@ -352,8 +356,8 @@ L2: while (<FD>) {
 	}
 
 	# Special cases for blocks that we skip (mark them as executed) 
-	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
-	    /^\s*-:\s*\d+:\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
+	    /^\s*-:\s*\d+:\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    $newstate = "skip";
 	    $substate = "errcheck";
 	}
@@ -393,16 +397,16 @@ L2: while (<FD>) {
 	# Now, for the blocks that we skip, read them until we reach the
 	# end of the block
 	# Skip any error checking block
-	if (/^\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
-	    /^\s*-:\s*\d+:\s*\#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
+	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
+	    /^\s*-:\s*\d+:\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    my $sawend = 0;
 	    print "Skipping HAVE_ERROR_CHECKING\n" if $gDebug; 
 	    while (<FD>) {
 		if (!/^\s/) { next; }
 	        print $outfile &HTMLify($_);
-		if (/^\s+\#\s*endif/ || /^\s*\#\s*els/ ||
-		    /^\s*-:\s*\d+:\s*\#\s*endif/ || 
-		    /^\s*-:\s*\d+:\s*\#\s*els/) { 
+		if (/^\s+#\s*endif/ || /^\s*#\s*els/ ||
+		    /^\s*-:\s*\d+:\s*#\s*endif/ || 
+		    /^\s*-:\s*\d+:\s*#\s*els/) { 
 		    $sawend = 1;
 		    last; 
 		}
@@ -422,15 +426,6 @@ L2: while (<FD>) {
 	    }
 	}
 
-	# FIXME: Should this be enabled, and under what conditions?
-#	# If requested, skip obvious error checking lines
-#	if ($skipErrExits && 
-#	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
-#	     /MPIU_ERR_SET/ || /MPIU_ERR_POP/ || /goto\s+fn_fail/ ||
-#            /fn_fail:/ ||
-#	     /MPIR_Err_create_code/)) {
-#	    next;
-#	}
 
     }
     close (FD);
@@ -625,6 +620,32 @@ sub MakeDirs {
     }
     return 1;
 }
+# Get all of the .gcov files from the named directory, including any subdirs
+sub ExpandDir {
+    my $dir = $_[0];
+    my @otherdirs = ();
+    my @files = ();
+    opendir DIR, "$dir";
+    while ($filename = readdir DIR) {
+	if ($filename =~ /^\./ || $filename eq "CVS") {
+	    next;
+	}
+	elsif (-d "$dir/$filename") {
+	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
+	}
+	elsif ($filename =~ /(.*\.gcov)$/) {
+	    $files[$#files + 1] = "$dir/$filename";
+	}
+    }
+    closedir DIR;
+    # (almost) tail recurse on otherdirs (we've closed the directory handle,
+    # so we don't need to worry about it anymore)
+    foreach $dir (@otherdirs) {
+	@files = (@files, &ExpandDir( $dir ) );
+    }
+    return @files;
+}
+
 # --------------------------------------------------------------------------
 # HTMLify
 # Take an input line and make it value HTML
