@@ -155,7 +155,7 @@ int init_elan( MPIDI_PG_t *pg_p )
    /* Init Elan */
    base = elan_baseInit(0);
    /* From this point, we can use elan_base pointer, which is not declared anywhere */
-   /* (Quadrics stuff* */   
+   /* (Quadrics stuff)   */   
    /* Are VPIDs correct? */
    MPIU_Assert (elan_base->state->vp == MPID_nem_mem_region.rank);
 

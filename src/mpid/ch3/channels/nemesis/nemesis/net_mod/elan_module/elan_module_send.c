@@ -34,13 +34,13 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	
 	if (elan_poll(MPID_nem_module_elan_free_event_queue->head->elan_event,MPID_NEM_ELAN_LOOPS) == TRUE)
 	  {
-	     //fprintf(stdout,"[%i] -- ELAN SEND : Done \n", MPID_nem_mem_region.rank);
+	     fprintf(stdout,"[%i] -- ELAN SEND : Done \n", MPID_nem_mem_region.rank);
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);
 	     MPID_nem_module_elan_free_event_queue->head->elan_event = NULL ;
 	  }   
 	else
 	  {
-	     //fprintf(stdout,"[%i] -- ELAN SEND : Pending \n", MPID_nem_mem_region.rank);
+	     fprintf(stdout,"[%i] -- ELAN SEND : Pending \n", MPID_nem_mem_region.rank);
 	     MPID_nem_module_elan_pendings_sends++;
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
 	     elan_event_cell->cell_ptr = cell ;
