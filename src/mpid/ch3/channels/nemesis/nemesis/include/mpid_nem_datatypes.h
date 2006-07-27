@@ -42,7 +42,9 @@
 #else
 #define MPID_NEM_CELL_LEN           (64*1024)
 #endif 
-#define MPID_NEM_CELL_PAYLOAD_LEN   (MPID_NEM_CELL_LEN - sizeof(void *)) 
+#define MPID_NEM_CELL_PAYLOAD_LEN   (MPID_NEM_CELL_LEN - sizeof(void *))
+
+#define MPID_NEM_CALC_CELL_LEN(cellp) (sizeof(void *) + MPID_NEM_MPICH2_HEAD_LEN + MPID_NEM_CELL_DLEN (cell))
 
 #define MPID_NEM_ALIGNED(addr, bytes) ((((unsigned long)addr) & (((unsigned long)bytes)-1)) == 0)
 
@@ -130,12 +132,12 @@ typedef struct MPID_nem_abs_cell
 } MPID_nem_abs_cell_t;
 typedef MPID_nem_abs_cell_t *MPID_nem_abs_cell_ptr_t;
 
-
 #define MPID_NEM_CELL_TO_PACKET(cellp) (&(cellp)->pkt)
 #define MPID_NEM_PACKET_TO_CELL(packetp) \
     ((MPID_nem_cell_ptr_t) ((char*)(packetp) - (char *)MPID_NEM_CELL_TO_PACKET((MPID_nem_cell_ptr_t)0)))
 #define MPID_NEM_MIN_PACKET_LEN (sizeof (MPID_nem_pkt_header_t))
 #define MPID_NEM_MAX_PACKET_LEN (sizeof (MPID_nem_pkt_t))
+#define MPID_NEM_PACKET_LEN(pkt) (((pkt)->mpich2.datalen + MPID_NEM_MPICH2_HEAD_LEN)
 
 #define MPID_NEM_OPT_LOAD     16 
 #define MPID_NEM_OPT_SIZE     ((sizeof(MPIDI_CH3_Pkt_t)) + (MPID_NEM_OPT_LOAD))

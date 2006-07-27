@@ -29,20 +29,19 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     struct sockaddr_in saddr;
 
     /* set up listener socket */
-    saddr.sin_family      = AF_INET;
-    saddr.sin_addr.s_addr = htonl (INADDR_ANY);
-    saddr.sin_port        = htons (0);
-    
-    ret = bind (MPID_nem_tcp_module_listen_fd, (struct sockaddr *)&saddr, sizeof (saddr));
-    MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", ntohs (saddr.sin_port), errno, strerror (errno));
+    MPID_nem_tcp_module_listen_fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    MPIU_ERR_CHKANDJUMP2 (MPID_nem_tcp_module_listen_fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
+
+    mpi_errno = MPID_nem_newtcp_module_bind (MPID_nem_tcp_module_listen_fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     len = sizeof (saddr);
-    ret = getsockname (vc->ch.net.tcp.lmt_desc, (struct sockaddr *)&saddr, &len);
+    ret = getsockname (vc->ch.fd, (struct sockaddr *)&saddr, &len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
 
-    set_sockopts (vc->ch.net.tcp.lmt_desc);
+    set_sockopts (vc->ch.fd);
         
-    ret = listen (vc->ch.net.tcp.lmt_desc, SOMAXCONN);	      
+    ret = listen (vc->ch.fd, SOMAXCONN);	      
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", errno, strerror (errno));  
 
     /* create business card */
@@ -72,7 +71,6 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     return mpi_errno;
  fn_fail:
     goto fn_exit;
-
 }
 
 #undef FUNCNAME
@@ -135,9 +133,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
     char addr[MAX_HOST_NAME];
-    int port;
-    
-    /* for now, we're establishing a connection between the remote node statically */
+    int port;    
 
     mpi_errno = get_addr_port_from_bc (business_card, addr, MAX_HOST_NAME, &port);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -159,15 +155,25 @@ static int set_sockopts (int fd)
     int mpi_errno = MPI_SUCCESS;
     int option;
     int ret;
-    
+    int len;
+
+    /* I heard you have to read the options after setting them in some implementations */
     option = 0;
-    ret = setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(int));
+    len = sizeof(int);
+    ret = setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, len);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    ret = getsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, &len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
 
     option = 128*1024;
-    setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, sizeof(int));
+    len = sizeof(int);
+    setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-    setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, sizeof(int));
+    getsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, &len);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, len);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    getsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, &len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
 
  fn_exit:
@@ -200,5 +206,45 @@ static int get_addr_port_from_bc (const char *business_card, char addr[], int ma
     goto fn_exit;
 }
 
+/* MPID_nem_newtcp_module_bind -- if MPICH_PORT_RANGE is set, this
+   binds the socket to an available port number in the range.
+   Otherwise, it binds it to any addr and any port */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_bind
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_bind (int sockfd)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    struct sockaddr_in sin;
+    int port, low_port, high_port;
+    
+    low_port = 0;
+    high_port = 0;
+    MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
 
+    /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available port */
+    for (port = low_port; port <= high_port; ++port)
+    {
+        memset ((void *)&sin, 0, sizeof(sin));
+        sin.sin_family      = AF_INET;
+        sin.sin_addr.s_addr = htonl(INADDR_ANY);
+        sin.sin_port        = htons(port);
 
+        ret = bind (sockfd, (struct sockaddr *)&sin, sizeof(sin));
+        if (ret == 0)
+            break;
+        
+        /* check for real error */
+        MPIU_ERR_CHKANDJUMP3 (errno != EADDRINUSE && errno != EADDRNOTAVAIL, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
+    }
+    /* check if an available port was found */
+    MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, strerror (errno));
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+
+}

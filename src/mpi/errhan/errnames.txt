@@ -927,6 +927,7 @@ with MPI_Alloc_mem.
 **gm_no_port:unable to find a free GM port
 **not_in_local_ranks:cannot find our rank in the list of local processes
 **write %s:write to socket failed - %s
+**writev %s:writev to socket failed - %s
 **select:select failed
 **select %s:select failed - %s
 **read:read from socket failed
