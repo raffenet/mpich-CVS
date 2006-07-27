@@ -1,56 +1,17 @@
 ===================================================================================================================================
-				    TO DO BEFORE NEXT ALPHA RELEASE TO FRIENDLY TERAGRID USERS
+						TO DO FOR FIRST OFFICIAL RELEASE
 ===================================================================================================================================
-
-* discuss naming of topology attributes and constants with Nick  [BRT & NICK: 15 minutes]
-
-  - all MPICHX constants are maintained for backwards compatibility (see mpiddefs.h.in)
-
-  - the topology attribute keyval are now named MPIG_TOPOLOGY_DEPTHS_KEYVAL and MPIG_TOPOLOGY_COLORS_KEYVAL
-
-  - the topology level constants are now as follows:
-
-    - MPIG_TOPOLOGY_LEVEL_WAN -- communication across a wide area network
-
-    - MPIG_TOPOLOGY_LEVEL_LAN -- communication within a local area network
-
-    - (RESERVED) MPIG_TOPOLOGY_LEVEL_SAN -- communication within a system area network
-
-    - (RESERVED) MPIG_TOPOLOGY_LEVEL_HOST -- communication within a single host (e.g. shared memory)
-
-    - MPIG_TOPOLOGY_LEVEL_SUBJOB -- communication within a single subjob (presumably all communication occurs over the same SAN)
-
-      - "SUBJOB" replaced the original "HOST" level for two reasons.
-
-        - first, "HOST" suggests communication within a single machine (something with a single hostname), which for a cluster is
-          a single node, and therefore is too restrictive a term.
-
-        - second, the original topology discovery code considered two different subjobs not to be connected at the "HOST" level.
-          for this reason, the "SAN" level is inappropriate since two subjobs could be be running on the same cluster and yet
-          connected using the same fast internal network.  furthermore, two subjobs could be running on the same host and able to
-          communicate via shared memory, making the "HOST" level inappropriate as well.
-
-    - MPIG_TOPOLOGY_LEVEL_VMPI -- communication within a single subjob using an underlying vendor MPI library */
-
-    - (RESERVED) MPIG_TOPOLOGY_LEVEL_PROC -- communication within a single process (intra-process communication)
 
 * Web service version of mpig_pm interface  [NICK: ???, BRT: ???]
 
   - the interface to mpig_pm_get_app_num() has changed.  it now takes a business card so that the subjob id can be extracted for
     any process.  the topology discovery code required this feature in order to determine if two processes are part of the same
-    "SUBJOB" level (formerly called "HOST").
+    "SAN" level (formerly called "HOST").
 
   - integrate Nick's cancel code
 
 
 * finish mpig_pm implementation.  this involves updating mpig_pm modules to provide a vtable.  [BRT: 3 hours]
-
-* MPI_Comm_connect/accept  [1-2 days (includes additional debugging time)]
-
-  - fix finalize hang caused by pg ref count
-
-  - fix GPID so that MPI_Intercomm_create/merge work with communicators containing processes outside of MPI_COMM_WORLD
-    [BRT: 8-10 hours (includes testing of CH3 device)]
 
 
 * Vendor MPI  [6+ days]
@@ -73,16 +34,23 @@
 
   * Web services GT4 installation running on Nick's G5 for testing of multithread XIO and VMPI configuration  [NICK: ???]
 
+  - handle the case where the size of the vendor MPI's MPI_Aint differs from MPICH2's MPI_Aint (see below)
+
   * ... I feel like I am forgetting something important ...
 
 
-===================================================================================================================================
-						TO DO BEFORE OFFICIAL JULY RELEASE
-===================================================================================================================================
+* FIX CM_XIO progress engine code [12-16 hours]
 
-* XIO communication module bug fixes (threaded and nonthreaded)  [BRT: ???]
+  * don't allow a req to be enqueued twice on the rcq!  this happens with send cancel.  can it happen any other time?
 
-  * commit top-level changes delayed by outstanding bugs [BRT & BILL G.: 2 hours]
+  - don't return every time an unexpected message is received just so that MPI_Probe works
+  
+  - roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in a single call
+
+  o allow asynchronous errors to be return from through MPID_Progress_{wait,test,poke} [BRT: 2-3 additional hours]
+
+
+* commit top-level changes after getting approval [BRT & BILL G.: 2-4 hours]
 
 
 * Heterogenous data conversion [2-3 days]
@@ -104,18 +72,7 @@
     * create path from top-level MPI_Pack(), etc. routines to device  [NICK: 2-3 hours??? (with Rob R.)
 
 
- *  cross platform testing (by hand; test suites can't handle heterogeneous platforms): [BRT & NICK: 1+ days]
-
-
-* FIX CM_XIO progress engine code [12-16 hours]
-
-  * don't allow a req to be enqueued twice on the rcq!  this happens with send cancel.  can it happen any other time?
-
-  - don't return every time an unexpected message is received just so that MPI_Probe works
-  
-  - roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in a single call
-
-  o allow asynchronous errrors to be return from through MPID_Progress_{wait,test,poke} [BRT: 2-3 additional hours]
+*  cross platform testing (by hand; test suites can't handle heterogeneous platforms): [BRT & NICK: 1+ days]
 
 
 * adjust tunable parameters to more sane values (currently set to maximize code coverage during testing)  [BRT & NICK: 1 hour]
@@ -124,22 +81,30 @@
 * add real error text to errnames.txt  [BRT/NICK: 3 hours]
 
 
-- add UDT support to the XIO communication module  [BRT & NICK: 4 hours]
-
-
 - fix error reporting in XIO client-side connection establishment code (replace assert statement with real error messages)
   [BRT: 12-16 hours]
 
 
 ===================================================================================================================================
-				      OUSTANDING ITEMS TO BE ADDRESSED AFTER THE JUNE RELEASE
+				OUSTANDING ITEMS TO BE ADDRESSED AFTER THE FIRST OFFICIAL RELEASE
 ===================================================================================================================================
+
+* MPI_Comm_connect/accept  [1-2 days (includes additional debugging time)]
+
+  * complete disconnect/reconnect code in mpig_cm_xio_conn.i
+
+  * fix GPID so that MPI_Intercomm_create/merge work with communicators containing processes outside of MPI_COMM_WORLD
+    [BRT: 8-10 hours (includes testing of CH3 device)]
+
 
 o full visual inspection of error handling code, and fill in missing cases (particularly in CM XIO)
 
+
 o add vendor MPI bypass for calling the vendor MPI directly for special predefined communicators
 
+
 o clean up wrapping debugging output lines
+
 
 o update MPIG compiler scripts.  the current ones result in a few oddities while configuring MPIG.  presently, these oddities
   don't affect us because configure gives us what we need anyway, but that may not be true for all platforms.  here is one in
@@ -147,6 +112,7 @@ o update MPIG compiler scripts.  the current ones result in a few oddities while
 
   checking whether install breaks libraries... gcc: libconftest1.a: linker input file unused because linking not done
   no
+
 
 o modify compiler scripts to the following quote function.  it _should_ work better than present handling in the case statement.
 
@@ -158,10 +124,15 @@ o modify compiler scripts to the following quote function.  it _should_ work bet
           echo $params
       }
 
-o add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
+- add UDT support to the XIO communication module  [BRT & NICK: 4 hours]
+
+
+- add a mpiexec script that conforms to the MPI-2 and the expected MPICH2 extensions
+
 
 o singleton init.  does this even make sense for globus?  probably since a singleton process could the spawn other jobs and
   connect to services.  this might be useful for portals, etc.
+
 
 o change module initialization errors to FATAL
 
@@ -222,18 +193,6 @@ o change module initialization errors to FATAL
 ===================================================================================================================================
 							   MPICH2 Issues
 ===================================================================================================================================
-- need to create an intercommunicator for MPI_Comm_{connect,accept}
-
-  - this requires that we create a single context id that is common throughout the intercommuncator
-
-  - using the existing MPIR_Get_context_id, this does not seem possible since there is not mechanism for exchanging the context
-    id allocation bitmask between the connect/accept processes
-
-  - one solution is to include a callout to a user supplied routine after the NMPI_All_reduce() to exchange the bitmasks, then
-    perform another NMPI_All_reduce() after applying the remote bitmask to the local bitmask.  this would require exposing the
-    structure of a context id allocation bitmask.
-
-  * BRT will implement proposed solution
 
 - an mechanism is needed to allow the device to define the structure of a GPID.  see 'global process ids' email for the solution.
 
@@ -248,15 +207,6 @@ o change module initialization errors to FATAL
   MPI.  what should the interface and semantics be?  allowing the return of error codes would be useful.
 
   * NICK will talk to Rob R., but something similar to comm hooks
-
-- many things to commit.  need to set up a meeting with Bill to go through changes.
-
-  * BRT will meet with Bill
-
-- a mechanism for disabling long long and long double support in MPICH2 even if the compiler support those types.  the vendor MPI
-  may not support MPI_LONG_LONG or MPI_LONG_LONG_INT, and the Globus data conversion library doesn't support long double.
-
-  * DONE.  NEEDS TO BE COMMITTED.
 
 - a mechanism for specifying the size of MPI_Aint so that it matches the size used by the vendor MPI.  alternatively, we may be
   able to performs cast where appropriate, but this seems risky.  what if we renamed MPICH2's MPI_Aint to MPIG_Aint, and then let
