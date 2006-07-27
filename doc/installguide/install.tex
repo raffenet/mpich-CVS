@@ -130,7 +130,7 @@ For the default installation, you will need:
 \begin{enumerate}
 \item A copy of the distribution, \texttt{mpich2.tar.gz}.
 \item A C compiler.
-\item A fortran-77, Fortran-90, and/or C++ compiler if you wish to write
+\item A Fortran-77, Fortran-90, and/or C++ compiler if you wish to write
   MPI programs in any of these languages.
 \item Python 2.2 or later version, for building the default process
   management system, MPD.
@@ -140,7 +140,7 @@ For the default installation, you will need:
   \texttt{configure} step below complains.
 \item Any one of a number of Unix operating systems, such as IA32-Linux.
   MPICH2 is most extensively tested on Linux;  there remain some
-  difficulties on systems we do not currently have access to.  Our
+  difficulties on systems to which we do not currently have access.  Our
   \texttt{configure} script attempts to adapt MPICH2 to new systems. 
 \end{enumerate}
 Configure will check for these prerequisites and try to work around
@@ -187,6 +187,11 @@ clean and can be reused to build other copies on other machines.
 \begin{verbatim}
     mkdir /tmp/you/mpich2-1.0.4
 \end{verbatim}
+
+\item
+Choose any configure options.  See
+Section~\ref{sec:important-configure-options} for a description of the most
+important options to consider.  
 
 \item
 Configure MPICH2, specifying the installation directory, and running
@@ -283,18 +288,18 @@ into the file.
 (Of course use a different secret word than \verb+mr45-j9z+.)
 
 \item
-The first sanity check consists of bringing up a ring of one mpd on
-the local machine, testing one mpd command, and bringing the ``ring''
+The first sanity check consists of bringing up a ring of one MPD on
+the local machine, testing one MPD command, and bringing the ``ring''
 down. 
 \begin{verbatim}
     mpd & 
     mpdtrace
     mpdallexit
 \end{verbatim}
-The output of mpdtrace should be the hostname of the machine you are
+The output of \texttt{mpdtrace} should be the hostname of the machine you are
 running on.  The \texttt{mpdallexit} causes the mpd daemon to exit.
-If you encounter problems, you should check the troubleshooting section 
-of Appendix~\ref{app:mpd}.
+If you encounter problems, you should check Appendix~\ref{app:mpd} on
+troubleshooting MPD. 
 
 \item
 The next sanity check is to run a non-MPI program using the daemon.
@@ -304,7 +309,8 @@ The next sanity check is to run a non-MPI program using the daemon.
     mpdallexit
 \end{verbatim}
 This should print the name of the machine you are running on.  If not,
-you should check the troubleshooting section in Appendix~\ref{app:mpd}.
+you should check Appendix~\ref{app:mpd} on
+troubleshooting MPD.
 
 \item
 Now we will bring up a ring of \texttt{mpd}'s on a set of machines.  Create
@@ -331,13 +337,15 @@ Start the daemons on (some of) the hosts in the file \texttt{mpd.hosts}.
 \end{verbatim}
 The number to start can be less than 1 + number of hosts in the
 file, but cannot be greater than 1 + the number of hosts in the
-file.  One mpd is always started on the machine where \texttt{mpdboot} is
+file.  One \texttt{mpd} is always started on the machine where
+\texttt{mpdboot} is 
 run, and is counted in the number to start, whether or not it occurs
 in the file.  By default, \texttt{mpdboot} will only start one \texttt{mpd} per
 machine even if the machine name appears in the hosts file multiple times.
 The \texttt{-1} option can be used to override this behavior, but there is typically
 no reason for a user to need multiple mpds on a single host.
-The \texttt{-1} option exists mostly to support internal testing.
+The \texttt{-1} option (that's the digit one, not the letter el) exists mostly
+to support internal testing. 
 The \texttt{--help} option explains these as well as other useful
 options.  In particular, if your cluster has multiprocessor nodes, you
 might want to use the \texttt{--ncpus} argument described in 
@@ -350,8 +358,9 @@ of
 \end{verbatim}
 and if so move on to the next step.
 
-There is a workaround if you cannot get \texttt{mpdboot} to work because of
-difficulties with \texttt{ssh} or \texttt{rsh} setup.  You can start the daemons ``by
+There is a workaround if you cannot get \texttt{mpdboot} to work because of 
+difficulties with \texttt{ssh} or \texttt{rsh} setup.  You can start the
+daemons ``by 
 hand'' as follows:
 \begin{verbatim}
    mpd &            # starts the local daemon
@@ -472,17 +481,21 @@ installed MPICH2 and run an MPI example.
 \label{sec:non-default}
 
 A list of \texttt{configure} options is found in
-Section~\ref{configure-options}.  Here we comment on some of them.  This
-section needs much more work.
+Section~\ref{configure-options}.  Here we comment on some of them.  
+% FIXME: This section needs much more work.
 
 \subsubsection{The Most Important Configure Options}
+\label{sec:important-configure-options}
 \begin{description}
 \item[--prefix]Set the installation directories for MPICH2.  
 \item[--enable-debuginfo]Provide access to the message queues for
   debuggers such as Totalview.
 \item[--enable-g]Build MPICH2 with various debugging options.  This is
   of interest primarily to MPICH2 developers.  The options
-  \texttt{--enable-g=dbg,mem,log} are recommended in that case.
+\begin{verbatim}
+  --enable-g=dbg,mem,log
+\end{verbatim}
+ are recommended in that case.
 \item[--enable-fast]Configure MPICH2 for fastest performance at the
   expense of error reporting and other program development aids.  This
   is recommended only for getting the best performance out of proven
@@ -491,12 +504,17 @@ section needs much more work.
   program development tools (including the Jumpshot performance viewer)
 \item[--enable-sharedlibs]Build MPICH2 with shared libraries. 
   For example, 
-  \texttt{--enable-sharedlibs=gcc} for standard gcc on Linux  
-  \texttt{--enable-sharedlibs=osx-gcc} for Mac OS X or
-  \texttt{--enable-sharedlibs=solaris-cc} for cc on Solaris
+\begin{description}
+\item[\texttt{--enable-sharedlibs=gcc}]for standard gcc on Linux  
+\item[\texttt{--enable-sharedlibs=osx-gcc}]for Mac OS X or
+\item[\texttt{--enable-sharedlibs=solaris-cc}]for cc on Solaris
+\end{description}
 \item[--with-pm]Select the process manager.  The default is
   \texttt{mpd}; also useful is \texttt{gforker}.  You can build with
-  both process managers with \texttt{--with-pm=mpd:gforker}.
+  both process managers by specifying
+\begin{verbatim}
+  --with-pm=mpd:gforker
+\end{verbatim}
 \end{description}
 
 
@@ -507,7 +525,8 @@ For best results, it is important to force the Absoft Fortran compilers to
 make all routine names monocase.  In addition, if lower case is chosen 
 (this will match common use by many programs), you must also tell the the 
 Absoft compiles to append an underscore to global names in order to access 
-routines such as getarg (getarg is not used by MPICH2 but is used in some 
+routines such as \texttt{getarg} (\texttt{getarg} is not used by MPICH2 but is
+used in some 
 of the tests and is often used in application programs).  We recommend 
 configuring MPICH2 with the following options
 \begin{verbatim}
@@ -585,7 +604,7 @@ Other differences between MPICH1 and MPICH2 include the handling of
 process managers and the choice of communication device.
 
 For example, the new mpd has a new format and slightly different
-semantics for the -machinefile option.  Assume that you type this
+semantics for the \texttt{-machinefile} option.  Assume that you type this
 data into a file named \texttt{machfile}:
 \begin{verbatim}
     bp400:2
@@ -986,85 +1005,119 @@ To configure with the \texttt{gforker} process manager, use
 
 \section{Testing}
 \label{sec:testing}
-Running basic tests in the examples directory, the MPICH2 tests,
-obtaining and running the assorted test suites.  
+Once MPICH2 has been installed, you can test it by running some of the example
+programs in the \texttt{examples} directory.  A more thorough test can be run
+with the command \texttt{make testing}.  This will produce a summary on
+standard output, along with an XML version of the test results in 
+\texttt{mpich2/test/mpi}. In addition, running \texttt{make testing} from the
+top-level (\texttt{mpich2}) directory will run tests of the commands, such as
+\texttt{mpicc} and \texttt{mpiexec}, that are included with MPICH2.
 
+Other MPI test suites are available from
+\url{http://www.mcs.anl.gov/mpi/mpi-test/tsuite.html}.  As part of the MPICH2
+development, we run the MPICH1, MPICH2, C++, and Intel test suites every night
+and post the results on
+\url{http://www.mcs.anl.gov/mpi/mpich1/micronotes/mpich2-status/}.  Other
+tests are run on an occasional basis.  
 
-\subsection{Using the Intel Test Suite}
-\label{sec:intel}
+% \subsection{Using the Intel Test Suite}
+% \label{sec:intel}
 
-These instructions are local to our test environment at Argonne.
+% These instructions are local to our test environment at Argonne.
 
-How to run a select set of tests from the Intel test suite:
+% How to run a select set of tests from the Intel test suite:
 
-\begin{small}
-\begin{verbatim}
-1) checkout the Intel test suite (cvs co IntelMPITEST) (outside users
-   should access the most recent version of the test suite from the
-   test suite web page).
+% \begin{small}
+% \begin{verbatim}
+% 1) checkout the Intel test suite (cvs co IntelMPITEST) (outside users
+%    should access the most recent version of the test suite from the
+%    test suite web page).
 
-2) create a testing directory separate from the IntelMPITEST source
-directory
+% 2) create a testing directory separate from the IntelMPITEST source
+% directory
 
-3) cd into that testing directory
+% 3) cd into that testing directory
 
-4) make sure the process manager (e.g., mpd) is running
+% 4) make sure the process manager (e.g., mpd) is running
 
-5) run "<ITS_SRC_DIR>/configure --with-mpich2=<MPICH2_INSTALL_DIR>", where
-<ITS_SRC_DIR> is the path to the directory Intel test suite source (e.g.,
-/home/toonen/Projects/MPI-Tests/IntelMPITEST) and <MPICH2_INSTALL_DIR> is
-the directory containing your MPICH2 installation
+% 5) run "<ITS_SRC_DIR>/configure --with-mpich2=<MPICH2_INSTALL_DIR>", where
+% <ITS_SRC_DIR> is the path to the directory Intel test suite source (e.g.,
+% /home/toonen/Projects/MPI-Tests/IntelMPITEST) and <MPICH2_INSTALL_DIR> is
+% the directory containing your MPICH2 installation
 
-6) mkdir Test; cd Test
+% 6) mkdir Test; cd Test
 
-7) find tests in <ITS_SRC_DIR>/{c,fortran} that you are interested in
-running and place the test names in a file.  For example:
+% 7) find tests in <ITS_SRC_DIR>/{c,fortran} that you are interested in
+% running and place the test names in a file.  For example:
 
-% ( cd /home/toonen/Projects/MPI-Tests/IntelMPITEST/Test ; \
-    find {c,fortran} -name 'node.*' -print | grep 'MPI_Test' 
-    | sed -e 's-/node\..*$--' ) |& tee testlist
-Test/c/nonblocking/functional/MPI_Test
-Test/c/nonblocking/functional/MPI_Testall
-Test/c/nonblocking/functional/MPI_Testany
-Test/c/nonblocking/functional/MPI_Testsome
-Test/c/persist_request/functional/MPI_Test_p
-Test/c/persist_request/functional/MPI_Testall_p
-Test/c/persist_request/functional/MPI_Testany_p
-Test/c/persist_request/functional/MPI_Testsome_p
-Test/c/probe_cancel/functional/MPI_Test_cancelled_false
-Test/fortran/nonblocking/functional/MPI_Test
-Test/fortran/nonblocking/functional/MPI_Testall
-Test/fortran/nonblocking/functional/MPI_Testany
-Test/fortran/nonblocking/functional/MPI_Testsome
-Test/fortran/persist_request/functional/MPI_Test_p
-Test/fortran/persist_request/functional/MPI_Testall_p
-Test/fortran/persist_request/functional/MPI_Testany_p
-Test/fortran/persist_request/functional/MPI_Testsome_p
-Test/fortran/probe_cancel/functional/MPI_Test_cancelled_false
-%
+% % ( cd /home/toonen/Projects/MPI-Tests/IntelMPITEST/Test ; \
+%     find {c,fortran} -name 'node.*' -print | grep 'MPI_Test' 
+%     | sed -e 's-/node\..*$--' ) |& tee testlist
+% Test/c/nonblocking/functional/MPI_Test
+% Test/c/nonblocking/functional/MPI_Testall
+% Test/c/nonblocking/functional/MPI_Testany
+% Test/c/nonblocking/functional/MPI_Testsome
+% Test/c/persist_request/functional/MPI_Test_p
+% Test/c/persist_request/functional/MPI_Testall_p
+% Test/c/persist_request/functional/MPI_Testany_p
+% Test/c/persist_request/functional/MPI_Testsome_p
+% Test/c/probe_cancel/functional/MPI_Test_cancelled_false
+% Test/fortran/nonblocking/functional/MPI_Test
+% Test/fortran/nonblocking/functional/MPI_Testall
+% Test/fortran/nonblocking/functional/MPI_Testany
+% Test/fortran/nonblocking/functional/MPI_Testsome
+% Test/fortran/persist_request/functional/MPI_Test_p
+% Test/fortran/persist_request/functional/MPI_Testall_p
+% Test/fortran/persist_request/functional/MPI_Testany_p
+% Test/fortran/persist_request/functional/MPI_Testsome_p
+% Test/fortran/probe_cancel/functional/MPI_Test_cancelled_false
+% %
 
-8) run the tests using ../bin/mtest:
+% 8) run the tests using ../bin/mtest:
 
-% ../bin/mtest -testlist testlist -np 6 |& tee mtest.log
-%
+% % ../bin/mtest -testlist testlist -np 6 |& tee mtest.log
+% %
 
-NOTE: some programs hang if less they are run with less than 6 processes.
+% NOTE: some programs hang if less they are run with less than 6 processes.
 
-9) examine the summary.xml file.  look for '<STATUS>fail</STATUS>' to see if
-any failures occurred.  (search for '>fail<' works as well)
+% 9) examine the summary.xml file.  look for '<STATUS>fail</STATUS>' to see if
+% any failures occurred.  (search for '>fail<' works as well)
 
-\end{verbatim}
-\end{small}
+% \end{verbatim}
+% \end{small}
 
 \section{Benchmarking}
 \label{sec:benchmarking}
-netpipe, mpptest, others (SkaMPI).
+
+There are many benchmarking programs for MPI implementations.  Three that we
+use are \texttt{mpptest} (\url{http://www.mcs.anl.gov/mpi/mpptest}),
+\texttt{netpipe} (\url{http://www.scl.ameslab.gov/netpipe}), and
+\texttt{SkaMPI} (\url{http://liinwww.ira.uka.de/~skampi}).  Each of these has
+different strengths and weaknesses and reveals different properties of the MPI
+implementation.  
+
+In addition, the
+MPICH2 test suite contains a few programs to test for performance artifacts in
+the directory \texttt{test/mpi/perf}.  An example of a performance artifact is
+markedly different performance for the same operation when performed in two
+different ways.  For example, using an MPI datatype for a non-contiguous
+transfer should not be much slower than packing the data into a contiguous
+buffer, sending it as a contiguous buffer, and then unpacking it into the
+destination buffer.  An example of this from the MPI-1 standard illustrates
+the use of MPI datatypes to transpose a matrix ``on the fly,'' and one test in
+\texttt{test/mpi/perf} checks that the MPI implementation performs well in
+this case (MPICH2 1.0.4 does not pass this test; this problem will be fixed in
+a subsequent release of MPICH2).
 
 \section{MPE}
 \label{sec:mpe}
 
-This section describes what MPE is and its potentially separate installation.  It
-includes discussion of Java-related problems.
+MPICH2 comes with the same MPE (Multi-Processing Environment) tools that are
+included with MPICH1.  These include several trace libraries for recording the
+execution of MPI programs and the Jumpshot and SLOG tools for performance
+visualization.  The MPE tools are built and installed by default and should be
+available without requiring any additional steps.  MPE is documented in 
+a separate manual that covers the installation and use of MPE.
 
 \section{Windows Version}
 \label{sec:windows}
@@ -1158,19 +1211,17 @@ available options.
 \item
     build the sfortRelease mpich2 solution
 \item
-    build the channel of your choice.  The options are \texttt{shm}, \texttt{ssm}, \texttt{sshm}, \texttt{ib}, \texttt{essm}, and \texttt{mt}.  
+    build the channel of your choice.  The options are \texttt{sock},
+    \texttt{shm}, and \texttt{ssm}.   
 The shm channel is for small numbers of processes that will run on a single 
 machine using shared memory.  The shm channel should not be used for more 
-than about 8 processes.  The sshm (scalable shared memory) is for use with 
-more than 8 processes.  The \texttt{ssm} (sock shared memory) channel is for clusters 
+than about 8 processes.  The \texttt{ssm} (sock shared memory) channel is for
+    clusters  
 of smp nodes.  This channel should not be used if you plan to over-subscribe 
 the CPU's.  If you plan on launching more processes than you have processors 
-you should use the default \texttt{sock} channel or the \texttt{essm} channel.  The \texttt{ssm} channel 
+you should use the default \texttt{sock} channel.  The \texttt{ssm} channel 
 uses a polling progress engine that can perform poorly when multiple processes 
-compete for individual processors.  The \texttt{essm} channel is derived from the ssm channel
-with the addition of OS event objects to avoid spinning in the progress engine.  The \texttt{mt
-channel} is the multi-threaded socket channel.  The \texttt{ib} channel is for clusters with Infiniband
-interconnects from Mellanox.
+compete for individual processors.  
 
 \end{itemize}
 
@@ -1178,9 +1229,9 @@ interconnects from Mellanox.
 \label{sec:cygwin}
 
 MPICH2 can also be built under \texttt{cygwin} using the source
-distribution and the unix commands described in previous sections.  This
+distribution and the Unix commands described in previous sections.  This
 will not build the same libraries as described in this section.  It will 
-build a ``unix'' distribution that runs under \texttt{cygwin}.
+build a ``Unix'' distribution that runs under \texttt{cygwin}.
 
 \section{All Configure Options}
 \label{configure-options}
@@ -1222,18 +1273,6 @@ collected by the MPICH implementation.  level may be
     all     - Collect lots of data
     runtime - Runtime control of data collected
 The default is none.
---enable-threads=level - Control the level of thread support in the
-MPICH implementation.  The following levels are supported.
-    single - No threads (MPI_THREAD_SINGLE)
-    funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
-    serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
-    multiple:impl - Fully multi-threaded (MPI_THREAD_MULTIPLE)
-The default is funneled.  If enabled and no level is specified, the
-level is set to multiple.  If disabled, the level is set to single.
-When the level is set to multiple, an implementation may also be
-specified.  The following implementations are supported.
-    global_mutex - a single global lock guards access to all MPI functions.
-The default implementation is global_mutex.
 --enable-g=option - Control the level of debugging support in the MPICH
 implementation.  option may be a list of common separated names including
     none     - No debugging
@@ -1250,10 +1289,25 @@ implementation.  option may be a list of common separated names including
 --enable-f90 - Enable Fortran 90 bindings
 --enable-cxx - Enable C++ bindings
 --enable-romio - Enable ROMIO MPI I/O implementation
+--enable-debuginfo - Enable support for debuggers
 --enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
  such as the collectives, that may be implemented in terms of other MPI
  routines
 --enable-mpe - Build the MPE (MPI Parallel Environment) routines
+--enable-threads=level - Control the level of thread support in the
+MPICH implementation.  The following levels are supported.
+    single - No threads (MPI_THREAD_SINGLE)
+    funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
+    serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
+    multiple(:impl) - Fully multi-threaded (MPI_THREAD_MULTIPLE)
+The following implementations are supported.
+    global_mutex - a single global lock guards access to all MPI functions.
+The default implementation is global_mutex.
+For the ch3:sock channel, a separate build is no longer needed for thread-multiple.
+It is compiled by default and is selectable at run time with MPI_Init_thread.
+If MPI_Init_thread is not called, the default is funneled .
+For other channels, the --enable-threads option is not supported currently, and
+the default is funneled.
 --enable-weak-symbols - Use weak symbols to implement PMPI routines (default)
 --enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gcc     - Standard gcc and GNU ld options for creating shared libraries
@@ -1266,10 +1320,6 @@ Only gcc, osx-gcc, and solaris-cc are currently supported
 --enable-dependencies - Generate dependencies for sourcefiles.  This
             requires that the Makefile.in files are also created
             to support dependencies (see maint/updatefiles)
---enable-runtimevalues - Determine various parameters of the Fortran
-                         environment at run time, such as the values for
-                         .TRUE. and .FALSE. .  This allows a single MPICH
-                         library to be used with multiple Fortran compilers
 --enable-timer-type=name - Select the timer to use
 for MPI_Wtime and internal timestamps.  name may be one of
     gethrtime - Solaris timer (Solaris systems only)
@@ -1279,6 +1329,8 @@ for MPI_Wtime and internal timestamps.  name may be one of
     linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
     gcc_ia64_cycle - IPF ar.itc timer
 
+--enable-base-cache - Enable the use of a simple cache for the subsidieary
+                       configure scripts.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1305,10 +1357,6 @@ determine in a cross-compilation environment
                                mpd
                                file:directory (optional directory)
 
---with-cxxlibname=name  - Specify name of library containing C++ interface
-routines
---with-flibname=name  - Specify name of library containing Fortran interface
-routines
 --with-fwrapname=name  - Specify name of library containing Fortran interface
 routines
 --with-thread-package=package - Thread package to use.  Supported thread
@@ -1319,26 +1367,6 @@ packages include:
 If the option is not specified, the default package is ${MPE_THREAD_DEFAULT}.
 If the option is specified, but a package is not given, then the default
 is posix.
-
-Some influential environment variables:
-  CC          C compiler command
-  CFLAGS      C compiler flags
-  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
-              nonstandard directory <lib dir>
-  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
-              headers in a nonstandard directory <include dir>
-  F77         Fortran 77 compiler command
-  FFLAGS      Fortran 77 compiler flags
-  F90         Fortran 90 compiler command
-  F90FLAGS    Fortran 90 compiler flags
-  CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
-  CPP         C preprocessor
-
-Use these variables to override the choices made by `configure' or to help
-it to find libraries and programs with nonstandard names/locations.
-
-
 \end{verbatim}
 \end{small}
 
@@ -1453,7 +1481,8 @@ problem which will also be a problem later when you try to use mpd.
 Even if the experiment succeeded, but the hostname printed by the server
 was \emph{localhost}, then you will probably have problems later if you
 try to use mpd on n1 in conjunction with other hosts.  In either case,
-skip to the section ``Debugging host/network configuration problems.''
+skip to Section~\ref{sec:debug-host-net-config} ``Debugging host/network
+configuration problems.'' 
 
 If the experiment succeeded, then you should be ready to try mpd on
 this one host. To start an mpd, you will use the mpd command.  To run
@@ -1504,8 +1533,8 @@ On n2:
     n2 $  mpdcheck -c n1 3333
 \end{verbatim}
 
-If this experiment fails, skip to the section ``Debugging host/network
-configuration problems''.
+If this experiment fails, skip to Section~\ref{sec:debug-host-net-config}
+``Debugging host/network configuration problems''.
 
 Second, we will make sure that a server on n2 can service a client from n1.
 On n2:
@@ -1518,8 +1547,8 @@ On n2:
     n2 $  mpdcheck -c n2 7777
 \end{verbatim}
 
-If this experiment fails, skip to the section ``Debugging host/network
-configuration problems''.
+If this experiment fails, skip to Section~\ref{sec:debug-host-net-config}
+``Debugging host/network configuration problems''.
 
 If all went well, we are ready to try a pair of mpds on n1 and n2.
 First, make sure that all mpds have terminated on both n1 and n2.  Use
@@ -1615,6 +1644,8 @@ that uses them all each time.  Use mpdallexit after each test.
 
 
 \subsection{Debugging host/network configuration problems}
+\label{sec:debug-host-net-config}
+
 We use mpdcheck as our first attempt to debug host or network
 configuration problems.  If you run:
 \begin{verbatim}

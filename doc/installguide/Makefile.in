@@ -36,10 +36,16 @@ FTPDIR = /home/ftp/pub/mpi/mpich2
 #    directory that contains the source file), so we copy the source
 #    file.  If more source files are added, this step will need to 
 #    be changed
+install.tex: $(srcdir)/install.tex
+	@if cmp -s install.tex $(srcdir)/install.tex ; then : ; else \
+	cp $(srcdir)/install.tex install.tex ; fi
+
 install.aux: $(srcdir)/install.tex
 	latex $(srcdir)/install.tex
-install/install.html: install.aux $(srcdir)/install.tex
+install/install.html: install.aux install.tex $(srcdir)/install.tex
 	@if [ ! -s install.tex -a -s $(srcdir)/install.tex ] ; then \
+	     cp $(srcdir)/install.tex . ; \
+	elif cmp -s install.tex $(srcdir)/install.tex ; then : ; else \
 	     cp $(srcdir)/install.tex . ; \
 	fi
 	latex2html install.tex

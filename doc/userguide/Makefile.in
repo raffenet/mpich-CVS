@@ -35,10 +35,15 @@ FTPDIR = /home/ftp/pub/mpi/mpich2
 #    directory that contains the source file), so we copy the source
 #    file.  If more source files are added, this step will need to 
 #    be changed
-user.aux: $(srcdir)/user.tex
+user.tex: $(srcdir)/user.tex
+	@if cmp -s user.tex $(srcdir)/user.tex ; then : ; else \
+	cp $(srcdir)/user.tex user.tex ; fi
+
+user.aux: user.tex $(srcdir)/user.tex
 	latex $(srcdir)/user.tex
 user/user.html: user.aux $(srcdir)/user.tex $(srcdir)/user.bib
-	@if [ ! -s user.tex -a -s $(srcdir)/user.tex ] ; then cp $(srcdir)/user.tex . ; fi
+	@if [ ! -s user.tex -a -s $(srcdir)/user.tex ] ; then cp $(srcdir)/user.tex . ; \
+	elif cmp -s user.tex $(srcdir)/user.tex ; then : ; else cp $(srcdir)/user.tex . ; fi
 	latex2html user.tex
 
 #
