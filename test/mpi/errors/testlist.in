@@ -3,8 +3,8 @@ comm
 group
 errhan
 pt2pt
-spawn
-io
+@spawndir@
+@iodir@
 @f77dir@
 @cxxdir@
 @f90dir@
