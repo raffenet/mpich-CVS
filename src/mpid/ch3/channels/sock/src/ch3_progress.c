@@ -35,7 +35,9 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
             static struct MPIDI_CH3I_Progress_delay_queue_elem * MPIDI_CH3I_Progress_delay_queue_head = NULL;
             static struct MPIDI_CH3I_Progress_delay_queue_elem * MPIDI_CH3I_Progress_delay_queue_tail = NULL;
 #       else
-            MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
+            /* This value must be static so that it isn't an uninitialized
+	       common symbol */
+            static MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 #       endif
 #   endif
 #endif
