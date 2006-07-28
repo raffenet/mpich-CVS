@@ -12,6 +12,16 @@ FTPDIR = /home/ftp/pub/mpi/mpich2
 # link.  However, the -h test is not available in all shells,
 # so we allow the ln to fail without exiting make (the -f option for
 # ln is also non-standard, so we can't use that either)
+user.dvi: user.tex faqsum.tex $(srcdir)/user.bib
+	@-if [ ! -s ../mpiman.sty ] ; then \
+	(cd .. && ln -s $(srcdir)/../mpiman.sty mpiman.sty) ; fi
+	@if [ ! -s user.bib ] ; then \
+	 ln -s $(srcdir)/user.bib user.bib ; fi
+	-latex user.tex
+	-bibtex user.tex 
+	-latex user.tex
+	latex  user.tex
+
 .tex.dvi:
 	@-if [ ! -s ../mpiman.sty ] ; then \
 	(cd .. && ln -s $(srcdir)/../mpiman.sty mpiman.sty) ; fi
