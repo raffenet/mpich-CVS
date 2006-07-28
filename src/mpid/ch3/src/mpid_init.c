@@ -203,12 +203,10 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      */
     if (provided != NULL)
     {
-	/* FIXME: It should be possible to select a thread-safety level 
-	   lower than the configure level, avoiding the locks with a
-	   simple if test */
-	/* This should be min(requested,MPICH_THREAD_LEVEL) if runtime
+	/* This must be min(requested,MPICH_THREAD_LEVEL) if runtime
 	   control of thread level is available */
-	*provided = MPICH_THREAD_LEVEL;
+	*provided = (MPICH_THREAD_LEVEL < requested) ? 
+	    MPICH_THREAD_LEVEL : requested;
     }
 
   fn_exit:
