@@ -39,12 +39,15 @@ user.tex: $(srcdir)/user.tex
 	@if cmp -s user.tex $(srcdir)/user.tex ; then : ; else \
 	cp $(srcdir)/user.tex user.tex ; fi
 
-user.aux: user.tex $(srcdir)/user.tex
+user.aux: user.tex $(srcdir)/user.tex faqsum.tex
 	latex $(srcdir)/user.tex
-user/user.html: user.aux $(srcdir)/user.tex $(srcdir)/user.bib
+user/user.html: user.aux $(srcdir)/user.tex $(srcdir)/user.bib faqsum.tex
 	@if [ ! -s user.tex -a -s $(srcdir)/user.tex ] ; then cp $(srcdir)/user.tex . ; \
 	elif cmp -s user.tex $(srcdir)/user.tex ; then : ; else cp $(srcdir)/user.tex . ; fi
 	latex2html user.tex
+
+faqsum.tex: $(srcdir)/../faq/faq.txt $(srcdir)/../faq/faqbuild
+	mydir=`pwd` && (cd $(srcdir)/../faq && ./faqbuild -elatex=subsection -outfile=$$mydir/faqsum.tex)
 
 #
 # Here are some thoughts on using tohtml
