@@ -107,12 +107,12 @@ or with the environment variables \texttt{MPICH\_CC} etc. (this example assume
 If the compiler is compatible \emph{except} for the runtime libraries, then
  this same format works as long as a configuration file that describes the
  necessary runtime libraries is created and placed into the appropriate
- directory (the "\texttt{sysconfdir}" directory in configure terms).  See the
+ directory (the ``\texttt{sysconfdir}'' directory in configure terms).  See the
  installation manual for more details.
 \par
 In some cases, MPICH2 is able to build the Fortran interfaces in a way that
  supports multiple mappings of names from the Fortran source code to the
- object file.  This is done by using the "multiple weak symbol" support in
+ object file.  This is done by using the ``multiple weak symbol'' support in
  some environments.  For example, when using \texttt{gcc} under Linux, this is
  the default.
 
@@ -134,8 +134,8 @@ setenf F90 f90
  configure aborts
 %% Filename: fdzero
 %% End
-A: \texttt{FD\_ZERO} is part of the support for the select calls (see "man
-select" or "man 2 select" on Linux and many other Unix systems) .  What this
+A: \texttt{FD\_ZERO} is part of the support for the select calls (see ``man
+select'' or ``man 2 select'' on Linux and many other Unix systems) .  What this
 means is that your system (probably a Mac) has a broken version of the
 select call and related data types.  This is an OS bug; the only repair is to
 update the OS to get past this bug.  This test was added specifically to
@@ -188,9 +188,11 @@ See the
 %% Filename: cxxseek
 %% End
 Some users may get error messages such as
+\begin{small}
 \begin{verbatim}
     SEEK_SET is #defined but must not be for the C++ binding of MPI
 \end{verbatim}
+\end{small}
 The problem is that both \texttt{stdio.h} and the MPI C++ interface use
 \texttt{SEEK\_SET}, \texttt{SEEK\_CUR}, and \texttt{SEEK\_END}.  This is really a
 bug in the MPI-2 standard.  You can try adding 
@@ -208,8 +210,8 @@ etc. to be skipped).
 
 
 %% Heading: When building the ssm or sshm channel, I get the \
-error "mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory \
-operation specified to implement busy locks ***"
+error ``mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory \
+operation specified to implement busy locks ***''
 %% Filename: asmlocks
 %% End
 The ssm and sshm channels do not work on all platforms because they
@@ -321,16 +323,16 @@ any of the MPI-2 dynamic process functions to work.
 %% Filename: stdoutflush
 %% End
 A: Output to \texttt{stdout} and \texttt{stderr} may not be written
-from your process immediately after a 'printf' or 'fprintf' (or
-'PRINT' in Fortran) because, under Unix, such output is
+from your process immediately after a \texttt{printf} or \texttt{fprintf} (or
+\texttt{PRINT} in Fortran) because, under Unix, such output is
 \emph{buffered} unless the program believes that the output is to a
-terminal.  When the program is run by 'mpiexec', the C standard I/O
+terminal.  When the program is run by \texttt{mpiexec}, the C standard I/O
 library (and normally the Fortran runtime library) will buffer the
-output.  For C programmers, you can either use a call 'fflush(stdout)'
+output.  For C programmers, you can either use a call \texttt{fflush(stdout)}
 to force the output to be written or you can set no buffering by
 calling
 \begin{verbatim}
-   #include &lt;stdio.h&gt
+   #include <stdio.h>
    
    setvbuf( stdout, NULL, _IONBF, 0 );
 \end{verbatim}
@@ -356,5 +358,5 @@ where the argument is the Fortran logical unit number (here
 A: To run MPI programs in the background when using MPD, you need to
 redirect stdin from \texttt{/dev/null}. For example, 
 \begin{verbatim}
-    mpiexec -n 4 a.out < /dev/null \& 
+    mpiexec -n 4 a.out < /dev/null & 
 \end{verbatim}
