@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "newtcp_module_impl.h"
+#define NUM_PREALLOC_SENDQ 10
+
 MPID_nem_queue_ptr_t MPID_nem_tcp_module_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_tcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
@@ -27,7 +30,10 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     int mpi_errno = MPI_SUCCESS;
     int ret;
     struct sockaddr_in saddr;
-
+    int i;
+    MPID_nem_newtcp_module_send_q_element_t *sendq_e;
+    MPIU_CHKPMEM_DECL(1);
+  
     /* set up listener socket */
     MPID_nem_tcp_module_listen_fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     MPIU_ERR_CHKANDJUMP2 (MPID_nem_tcp_module_listen_fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
@@ -59,17 +65,31 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     MPID_nem_queue_init (MPID_nem_tcp_module_recv_queue);
     MPID_nem_queue_init (MPID_nem_tcp_module_free_queue);
 
-    for (index = 0; index < num_module_elements; ++index)
+    for (i = 0; i < num_module_elements; ++i)
     {
-	MPID_nem_queue_enqueue (MPID_nem_tcp_module_free_queue, &module_elements[index]);
+	MPID_nem_queue_enqueue (MPID_nem_tcp_module_free_queue, &module_elements[i]);
     }
 
     *module_recv_queue = MPID_nem_tcp_module_recv_queue;
     *module_free_queue = MPID_nem_tcp_module_free_queue;
 
+    /* preallocate sendq elements */
+    MPIU_CHKPMEM_MALLOC (sendq_e, MPID_nem_newtcp_module_send_q_element_t, NUM_PREALLOC_SENDQ * sizeof(send_queue_element_t), mpi_errno,
+                         "send queue element");
+    for (i = 0; i < NUM_PREALLOC_SENDQ; ++i)
+    {
+        Q_ENQUEUE (&MPID_nem_newtcp_module_free_buffers, sendq_e[i]);
+    }
+    
+    /* initialize receive tempbuf */
+    MPID_nem_newtcp_module_recv_tmpbuf.start = NULL;
+    MPID_nem_newtcp_module_recv_tmpbuf.len = 0;
+
+    MPIU_CHKPMEM_COMMIT();    
  fn_exit:
     return mpi_errno;
  fn_fail:
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 

@@ -9,7 +9,8 @@
 
 #define MAX_SEND_IOV 10
 
-struct {MPIDI_VC_t *head;} MPID_nem_send_list = {0};
+struct {MPIDI_VC_t *head;} MPID_nem_tcp_module_send_list = {0};
+struct {MPIDI_VC_t *head, *tail;} MPID_nem_newtcp_module_free_buffers = {0};
 
 #define ALLOC_Q_ELEMENT(e) do {                                                                                                 \
         if (Q_EMPTY (MPID_nem_newtcp_module_free_buffers))                                                                      \
@@ -39,7 +40,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     size_t offset;
     MPID_nem_pkt_t *pkt;
     MPID_nem_newtcp_module_send_q_element_t *e;
-    MPIU_CHKPMEM_DECL(1);
+    MPIU_CHKPMEM_DECL(2);
 
     pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell); /* cast away volatile */
 
@@ -80,7 +81,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     e->start = e->buf;
     
     Q_ENQUEUE_EMPTY (&vc_ch->send_queue, e);
-    VC_L_ADD (&MPID_nem_send_list, vc);
+    VC_L_ADD (&MPID_nem_tcp_module_send_list, vc);
     
  fn_exit:
     MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);
@@ -146,7 +147,7 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
 
         if (Q_EMPTY (vc_ch->send_queue))
         {
-            VC_L_REMOVE (&MPID_nem_send_list, vc);
+            VC_L_REMOVE (&MPID_nem_tcp_module_send_list, vc);
         }
 
         goto fn_exit;

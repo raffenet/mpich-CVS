@@ -71,6 +71,13 @@ typedef struct MPIDI_CH3I_VC
     } send_queue;
     struct MPIDI_VC *newtcp_sendl_next;
     struct MPIDI_VC *newtcp_sendl_prev;
+    struct
+    {
+        MPID_nem_cell_t *cell;
+        char *start;
+        int len;
+    } pending_recv;
+    
 #else
 #error One of the MPID_NEM_*_MODULE must be defined
 #endif

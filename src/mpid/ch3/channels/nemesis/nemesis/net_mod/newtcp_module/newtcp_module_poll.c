@@ -7,6 +7,8 @@
 #include "newtcp_module_impl.h"
 #include <errno.h>
 
+recv_overflow_buf_t MPID_nem_newtcp_module_recv_overflow_buf = {0};
+
 #undef FUNCNAME
 #define FUNCNAME send_progress
 #undef FCNAME
@@ -16,7 +18,7 @@ static inline int send_progress()
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t *vc;
     
-    for (vc = MPID_nem_send_list.head; vc; vc = vc->ch.newtcp_sendl_next)
+    for (vc = MPID_nem_tcp_module_send_list.head; vc; vc = vc->ch.newtcp_sendl_next)
     {
         mpi_errno = MPID_nem_newtcp_module_send_queue (vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -28,17 +30,6 @@ static inline int send_progress()
     goto fn_exit;
 }
 
-typedef struct tmpbuf
-{
-    char *start;
-    int len;
-    struct tmpbuf *next;
-    struct tmpbuf *prev;
-    char buf[MPID_NEM_MAX_PACKET_LEN];
-} tmpbuf_t;
-
-static struct {tmp_buf_t *head, *tail;} tmpbuf_list;
-    
 
 #undef FUNCNAME
 #define FUNCNAME recv_progress
@@ -51,53 +42,46 @@ static inline int recv_progress()
     MPIDI_VC_t *vc;
     MPID_nem_cell_ptr_t v_cell;
     MPID_nem_cell_t *cell; /* non-volatile cell */
-    tmpbuf_t *tb;
+    overflow_buf_t *tb;
 
-    /* Copy any packets in tmpbufs into cells first */
-    tb = L_HEAD (tmpbuf_list);
-    if (tb)
+    /* Copy any packets in overflow buf into cells first */
+    if (MPID_nem_newtcp_module_recv_overflow_buf.start)
     {
         while (!MPID_nem_queue_empty (MPID_nem_tcp_module_free_queue))
         {
             MPID_nem_pkt_t *pkt;
-            int pktlen;
+            int len;
 
-            pkt = tb->start;
-        
-            /* make sure we have at least one packet */
-            if (tb->len < MPID_NEM_MIN_PACKET_LEN || tb->len < MPID_NEM_PACKET_LEN (pkt))
-            {
-                tb = tb->next;
+            pkt = MPID_nem_newtcp_module_recv_overflow_buf.start;
+            len = (tb->len < MPID_NEM_MIN_PACKET_LEN || tb->len < MPID_NEM_PACKET_LEN (pkt)) ? tb->len : MPID_NEM_PACKET_LEN (pkt);
 
-                if (!tb)
-                    break; /* no more tmpbufs */
-
-                continue;
-            }
-
-            pktlen = MPID_NEM_PACKET_LEN (pkt);
-
-            /* copy packet into a free cell */
+            /* allocate a new cell and copy the packet (or fragment) into it */
             MPID_nem_queue_dequeue (MPID_nem_tcp_module_free_queue, v_cell);
             cell = (MPID_nem_cell_t *)v_cell; /* cast away volatile */
-            MPID_NEM_MEMCPY (cell->pkt, pkt, pktlen);
-
-            /* is this the last packet in this tmpbuf? */
-            if (tb->len == pktlen)
+            MPID_NEM_MEMCPY (cell->pkt, pkt, len);
+           
+            if (len < MPID_NEM_MIN_PACKET_LEN || len < MPID_NEM_PACKET_LEN (pkt))
             {
-                tmpbuf_t *tt = tb;
-                tb = tb->next;
-                L_REMOVE (&tmpbuf_list, tt);
+                /* this was just a packet fragment, attach the cell to the vc to be filled in later */
+                MPID_nem_newtcp_module_recv_overflow_buf.vc->ch.pending_recv.cell = cell;
+                MPID_nem_newtcp_module_recv_overflow_buf.vc->ch.pending_recv.end = (char *)(cell->pkt) + len;
+                MPID_nem_newtcp_module_recv_overflow_buf.vc->ch.pending_recv.len = len;
 
-                if (!tb)
-                    break; /* no more tmpbufs */
-
-                continue;
+                /* there are no more packets in the overflow buffer */
+                MPID_nem_newtcp_module_recv_overflow_buf.start = NULL;
+                break;
             }
 
-            /* point to the start of the next packet */
-            tb->start += pktlen;
-            tb->len -= pktlen;
+            /* update overflow buffer pointers */
+            MPID_nem_newtcp_module_recv_overflow_buf.start += len;
+            MPID_nem_newtcp_module_recv_overflow_buf.len -= len;
+            
+            if (MPID_nem_newtcp_module_recv_overflow_buf.len == 0)
+            {
+                /* there are no more packets in the overflow buffer */
+                MPID_nem_newtcp_module_recv_overflow_buf.start = NULL;
+                break;
+            }
         }
     }
     

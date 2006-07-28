@@ -13,7 +13,7 @@ extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;   
 
 extern int MPID_nem_tcp_module_listen_fd;
-extern struct {MPIDI_VC_t *head;} MPID_nem_send_list;
+extern struct {MPIDI_VC_t *head;} MPID_nem_tcp_module_send_list;
 
 typedef MPID_nem_newtcp_module_send_q_element
 {
@@ -22,6 +22,18 @@ typedef MPID_nem_newtcp_module_send_q_element
     char *start;                       /* pointer to next byte to send */
     char buf[MPID_NEM_MAX_PACKET_LEN]; /* data to be sent */
 } MPID_nem_newtcp_module_send_q_element_t;
+
+typedef struct recv_overflow_buf
+{
+    char *start;
+    int len;
+    MPIDI_VC_t *vc;
+    char buf[MPID_NEM_MAX_PACKET_LEN];
+} recv_overflow_buf_t;
+
+extern struct {MPIDI_VC_t *head, *tail;} MPID_nem_newtcp_module_free_buffers;
+
+extern recv_overflow_buf_t MPID_nem_newtcp_module_recv_overflow_buf;
 
 int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc);
 
