@@ -4415,6 +4415,39 @@ case $with_thread_package in
 	AC_SEARCH_LIBS(pthread_key_create,pthread,found=yes,found=no)
 	if test "$found" != "yes" ; then
 	   AC_MSG_ERROR([unable to find pthreads library])
+        elif test "$ac_cv_search_pthread_key_create" = "none required" ; then
+	    # Solaris provides a pthread library that does't work
+	    # in libc; you must link with -lpthread to get correct 
+	    # behavior.  Here is a simple test, based on a failure that
+	    # we observed
+	    AC_MSG_CHECKING([whether pthread routines without explicit lib are broken])
+	    AC_TRY_RUN([#include<pthread.h>
+int main() {
+    pthread_t id = pthread_self();
+    int       rc;
+    rc = pthread_equal( id, id );
+    if (rc) return 0;
+    return 1;}
+],pac_cv_lib_pthread_broken=no,pac_cv_lib_pthread_broken=yes,pac_cv_lib_pthread_broken=unknown)
+  	    AC_MSG_RESULT($pac_cv_lib_pthread_broken)
+	    if test "$pac_cv_lib_pthread_broken" = yes ; then
+                # Try again with -lpthread
+	        AC_MSG_CHECKING([whether pthread routines with explicit lib are broken])
+		saveLIBS=$LIBS
+		LIBS="$LIBS -lpthread"
+	        AC_TRY_RUN([#include<pthread.h>
+int main() {
+    pthread_t id = pthread_self();
+    int       rc;
+    rc = pthread_equal( id, id );
+    if (rc) return 0;
+    return 1;}
+],pac_cv_lib_pthread_broken_explicit=no,pac_cv_lib_pthread_broken_explicit=yes,pac_cv_lib_pthread_broken_explicit=unknown)
+  	    AC_MSG_RESULT($pac_cv_lib_pthread_broken_explicit)
+	    if test "$pac_cv_lib_pthread_broken_explicit" != no ; then
+	        LIBS=$saveLIBS
+            fi
+	fi
 	fi
 	THR_LIBS="$THR_LIBS -lpthread"
 	;;
