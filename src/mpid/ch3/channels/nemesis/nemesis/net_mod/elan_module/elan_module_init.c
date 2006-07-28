@@ -173,7 +173,7 @@ int init_elan( MPIDI_PG_t *pg_p )
 
    rxq_ptr_array[elan_base->state->vp] = elan_queueRxInit(elan_base->state,
 							  localq_ptr,
-							  MPID_NEM_NUM_CELLS,
+							  1024,//MPID_NEM_NUM_CELLS,
 							  elan_queueMaxSlotSize(elan_base->state),
 							  MPID_NEM_ELAN_RAIL_NUM,flags);   
    MPID_nem_elan_freq              = 1 ;

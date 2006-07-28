@@ -118,13 +118,22 @@ MPID_nem_elan_module_recv()
 	       {	
 		  MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
 		  pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);	
-		  ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,MPID_NEM_ELAN_LOOPS);
 		  
-		  fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait done  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+		  ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt,MPID_NEM_ELAN_LOOPS);		  
+		  fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait 1 done  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+		  elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
 		  
+		  
+		  ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],pkt+elan_queueMaxSlotSize(elan_base->state),MPID_NEM_ELAN_LOOPS);
+		  fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait 2 done  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+		  elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
+		  
+		  MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+		  
+		  /*
 		  if (ptr != NULL)
 		    {
-		       //elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
+		       elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);
 		       size = MPID_NEM_CELL_DLEN(cell) + MPID_NEM_MPICH2_HEAD_LEN;
 		       fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : size %i \n", MPID_nem_mem_region.rank,elan_base->state->vp,size);
 		       
@@ -148,6 +157,7 @@ MPID_nem_elan_module_recv()
 		    {
 		       MPID_nem_module_elan_pendings_recvs++;
 		    }
+		   */ 
 	       }
 	  }
      }
