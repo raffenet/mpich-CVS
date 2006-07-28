@@ -124,7 +124,7 @@ int mpig_topology_comm_destruct(MPID_Comm * comm);
 
 #define MPIG_TOPOLOGY_LEVEL_WAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_WAN)
 #define MPIG_TOPOLOGY_LEVEL_LAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_LAN)
-#define MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_SUBJOB)
+#define MPIG_TOPOLOGY_LEVEL_SAN_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_SAN)
 #define MPIG_TOPOLOGY_LEVEL_VMPI_MASK		((unsigned) 1 << MPIG_TOPOLOGY_LEVEL_VMPI)
 /**********************************************************************************************************************************
 						END TOPOLOGY INFORMATION SECTION
@@ -1422,11 +1422,11 @@ int mpig_pg_init(void);
 
 int mpig_pg_finalize(void);
 
-int mpig_pg_acquire_ref_locked(const char * pg_id, int pg_size, mpig_pg_t ** pg_p, bool_t * new_pg_p);
-
-void mpig_pg_commit(mpig_pg_t * pg);
+int mpig_pg_acquire_ref(const char * pg_id, int pg_size, bool_t locked, mpig_pg_t ** pg_p, bool_t * committed_p);
 
 void mpig_pg_release_ref(mpig_pg_t * pg);
+
+void mpig_pg_commit(mpig_pg_t * pg);
 
 /*
  *reference counting macros
@@ -1491,26 +1491,22 @@ void mpig_pg_release_ref(mpig_pg_t * pg);
 /*
  * thread saftey and release consistency macros
  */
-extern globus_mutex_t mpig_pg_global_mutex;
-
-#define mpig_pg_global_mutex_construct()	globus_mutex_init(&mpig_pg_global_mutex, NULL)
-#define mpig_pg_global_mutex_destruct()		globus_mutex_destroy(&mpig_pg_global_mutex)
-#define mpig_pg_global_mutex_lock()									\
-{													\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG - acquiring global mutex"));	\
-    globus_mutex_lock(&mpig_pg_global_mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG - global mutex acquired"));	\
+#define mpig_pg_mutex_construct(pg_)	globus_mutex_init(&(pg_)->mutex, NULL)
+#define mpig_pg_mutex_destruct(pg_)     globus_mutex_destroy(&(pg_)->mutex)
+#define mpig_pg_mutex_lock(pg_)									\
+{												\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,				\
+		       "PG - acquiring mutex: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (pg_)));	\
+    globus_mutex_lock(&(pg_)->mutex);								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,				\
+		       "PG - mutex acquired: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (pg_)));	\
 }
-#define mpig_pg_global_mutex_unlock()									\
-{													\
-    globus_mutex_unlock(&mpig_pg_global_mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG - global mutex released"));	\
+#define mpig_pg_mutex_unlock(pg_)								\
+{												\
+    globus_mutex_unlock(&(pg_)->mutex);								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,				\
+		       "PG - mutex released: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (pg_)));	\
 }
- 
-#define mpig_pg_mutex_construct(pg_)
-#define mpig_pg_mutex_destruct(pg_)
-#define mpig_pg_mutex_lock(pg_)		mpig_pg_global_mutex_lock()
-#define mpig_pg_mutex_unlock(pg_)	mpig_pg_global_mutex_unlock()
 #define mpig_pg_mutex_lock_conditional(pg_, cond_)	{if (cond_) mpig_pg_mutex_lock(pg_);}
 #define mpig_pg_mutex_unlock_conditional(pg_, cond_)	{if (cond_) mpig_pg_mutex_unlock(pg_);}
 /**********************************************************************************************************************************

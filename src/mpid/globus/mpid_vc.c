@@ -635,7 +635,7 @@ void mpig_vcrt_free_serialized_object(char * const str)
 typedef struct mpig_vcrt_deserialize_pg_table_entry
 {
     mpig_pg_t * pg;
-    bool_t new;
+    bool_t committed;
     bool_t locked;
 }
 mpig_vcrt_deserialize_pg_table_entry_t;
@@ -723,7 +723,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
     for (p = 0; p < pg_count; p++)
     {
 	pg_table[p].pg = NULL;
-	pg_table[p].new = FALSE;
+	pg_table[p].committed = FALSE;
 	pg_table[p].locked = FALSE;
     }
 
@@ -795,7 +795,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
          * committing the process group once any needed VCs within the process group have been initialized and the mutex on the
          * process group has been released.
 	 */
-	mpi_errno = mpig_pg_acquire_ref_locked(elem_str, pg_size, &pg_table[pg_index].pg, &pg_table[pg_index].new);
+	mpi_errno = mpig_pg_acquire_ref(elem_str, pg_size, TRUE, &pg_table[pg_index].pg, &pg_table[pg_index].committed);
 	if (mpi_errno)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: acquisition/creation of the process group "
@@ -978,6 +978,10 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 		
 		/* increment the reference count to reflect the addition of the VC to the VCRT (done below outside of the lock) */
 		mpig_vc_inc_ref_count(vc, &vc_was_inuse);
+		if (vc_was_inuse == FALSE)
+		{
+		    mpig_pg_inc_ref_count(pg_table[pg_index].pg);
+		}
 	    }
 	    mpig_vc_mutex_unlock(vc);
 	    vc_locked = FALSE;
@@ -999,11 +1003,13 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
     {
 	if (pg_table[p].pg != NULL)
 	{
-	    mpig_pg_mutex_unlock_conditional(pg, (pg_table[p].locked));
-	}
-	if (pg_table[p].new == TRUE)
-	{
-	    mpig_pg_commit(pg_table[p].pg);
+	    mpig_pg_mutex_unlock_conditional(pg_table[p].pg, pg_table[p].locked);
+	    mpig_pg_release_ref(pg_table[p].pg);
+	    
+	    if (pg_table[p].committed == FALSE)
+	    {
+		mpig_pg_commit(pg_table[p].pg);
+	    }
 	}
     }
     
@@ -1020,6 +1026,17 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	mpig_vc_mutex_unlock_conditional(vc, (vc_locked));
 	if (vcrt_acquired) mpig_vcrt_rc_rel(vcrt, FALSE);
 
+	/* mpig_vc_release_ref() may attempt to lock the mutex of the PG to which it belongs.  therefore, the mutex of each PG in
+	   use must be released. */
+	for (p = 0; p < pg_count; p++)
+	{
+	    if (pg_table[p].pg != NULL)
+	    {
+		mpig_pg_mutex_unlock_conditional(pg_table[p].pg, pg_table[p].locked);
+		pg_table[p].locked = FALSE;
+	    }
+	}
+	
 	for (p = 0; p < vcrt->size; p++)
 	{
 	    if (vcrt->vcr_table[p] != NULL) mpig_vc_release_ref(vcrt->vcr_table[p]);

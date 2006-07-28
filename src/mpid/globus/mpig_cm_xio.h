@@ -32,7 +32,7 @@
  */
 extern struct mpig_cm mpig_cm_xio_net_lan;
 extern struct mpig_cm mpig_cm_xio_net_wan;
-extern struct mpig_cm mpig_cm_xio_net_subjob;
+extern struct mpig_cm mpig_cm_xio_net_san;
 extern struct mpig_cm mpig_cm_xio_net_default;
 
 

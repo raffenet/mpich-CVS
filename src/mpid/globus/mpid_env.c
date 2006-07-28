@@ -19,7 +19,7 @@ MPIG_STATIC mpig_cm_t * const mpig_cm_table_array[] =
 {
     &mpig_cm_self,
     &mpig_cm_vmpi,
-    &mpig_cm_xio_net_subjob,
+    &mpig_cm_xio_net_san,
     &mpig_cm_xio_net_lan,
     &mpig_cm_xio_net_wan,
     &mpig_cm_xio_net_default,
@@ -42,7 +42,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpig_bc_t bc;
     mpig_bc_t * bcs = NULL;
     mpig_pg_t * pg = NULL;
-    bool_t new_pg;
+    bool_t pg_committed;
     const char * pg_id = NULL;
     char * lan_id = NULL;
     bool_t pg_locked = FALSE;
@@ -167,7 +167,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     
     /* acquire, creating if necessary, a reference to the process group object used to manage the virtual connection objects.  if
        creation was necessary, the virtual connection objects within the PG will be initialized at this time. */
-    mpi_errno = mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg, &new_pg);
+    mpi_errno = mpig_pg_acquire_ref(pg_id, pg_size, TRUE, &pg, &pg_committed);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_acquire_ref");
     pg_locked = TRUE;
     {    

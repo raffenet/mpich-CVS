@@ -20,6 +20,11 @@ int mpig_comm_destruct(MPID_Comm * comm);
 
 int mpig_comm_free_hook(MPID_Comm * comm);
 
+#define MPID_DEV_COMM_FUNC_HOOK(func_, old_comm_, new_comm_, mpi_errno_p_)	\
+{										\
+    *(mpi_errno_p_) = MPIG_ ## func_ ## _HOOK((old_comm_), (new_comm_));	\
+}
+
 #define MPID_Dev_comm_create_hook(comm_)		\
 {							\
     int mrc__;						\
@@ -34,25 +39,34 @@ int mpig_comm_free_hook(MPID_Comm * comm);
     if (mrc__) MPID_Abort(NULL, mrc__, 13, NULL);	\
 }
 
-#define MPID_Dev_comm_free_hook(comm_)			\
-{							\
-    int mrc__;						\
-    mrc__ = mpig_comm_free_hook(comm_);			\
-    if (mrc__) MPID_Abort(NULL, mrc__, 13, NULL);	\
-}
+#define MPIG_COMM_FREE_HOOK(old_comm_, new_comm_) mpig_comm_free_hook(old_comm_)
+#define MPIG_COMM_DISCONNECT_HOOK(old_comm_, new_comm_) mpig_comm_free_hook(old_comm_)
 
 #if defined(MPIG_VMPI)
 
 int mpig_comm_dup_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
-#define MPID_Dev_comm_dup_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
-    mpig_comm_free_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
 
-int mpig_intercomm_create_hook(MPID_Comm * local_comm, int local_leader, MPID_Comm * peer_comm, int remote_leader, int tag,
-    MPID_Comm * new_intercomm);
-#define MPID_Dev_intercomm_create_hook(orig_comm_, new_comm_, mpi_errno_p_)	\
-    mpig_intercomm_create_hook((orig_comm_), (new_comm_), (mpi_errno_p_))
+int mpig_comm_split_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
 
-#endif /* defined(MPIG_VMPI) */
+int mpig_intercomm_create_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
+
+int mpig_intercomm_merge_hook(MPID_Comm * orig_comm, MPID_Comm * new_comm);
+
+#define MPIG_COMM_DUP_HOOK(old_comm_, new_comm_) mpig_comm_dup_hook((old_comm_), (new_comm_))
+#define MPIG_COMM_CREATE_HOOK(old_comm_, new_comm_) mpig_comm_split_hook((old_comm_), (new_comm_))
+#define MPIG_COMM_SPLIT_HOOK(old_comm_, new_comm_) mpig_comm_split_hook((old_comm_), (new_comm_))
+#define MPIG_INTERCOMM_CREATE_HOOK(old_comm_, new_comm_) mpig_intercomm_create_hook((old_comm_), (new_comm_))
+#define MPIG_INTERCOMM_MERGE_HOOK(old_comm_, new_comm_) mpig_intercomm_merge_hook((old_comm_), (new_comm_))
+
+#else /* !defined(MPIG_VMPI) */
+
+#define MPIG_COMM_DUP_HOOK(comm_, new_comm_) (MPI_SUCCESS)
+#define MPIG_COMM_CREATE_HOOK(comm_, new_comm_) (MPI_SUCCESS)
+#define MPIG_COMM_SPLIT_HOOK(comm_, new_comm_) (MPI_SUCCESS)
+#define MPIG_INTERCOMM_CREATE_HOOK(comm_, new_comm_) (MPI_SUCCESS)
+#define MPIG_INTERCOMM_MERGE_HOOK(comm_, new_comm_) (MPI_SUCCESS)
+
+#endif /* #if/else defined(MPIG_VMPI) */
 
 /*
  * MT-RC-NOTE: this routine does not perform insure the pointer to the vtable in the VC and the the pointers within the function

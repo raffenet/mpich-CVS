@@ -142,7 +142,7 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
-	local_vct_len = strlen(local_vct_str);
+	local_vct_len = strlen(local_vct_str) + 1;
 
 	/* accept a new connection for the port */
 	mpi_errno = mpig_port_accept(port_name, &port_vc);
@@ -477,7 +477,7 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
-	local_vct_len = strlen(local_vct_str);
+	local_vct_len = strlen(local_vct_str) + 1;
 
 	/* connect to the provided port */
 	mpi_errno = mpig_port_connect(port_name, &port_vc);

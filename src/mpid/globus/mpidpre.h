@@ -359,6 +359,7 @@ mpig_comm_t;
     MPIG_COMM_CMS_DECL
 
 #define HAVE_DEV_COMM_HOOK
+#define HAVE_DEV_COMM_FUNC_HOOKS
 /**********************************************************************************************************************************
 						    END COMMUNICATOR SECTION
 **********************************************************************************************************************************/
@@ -604,8 +605,8 @@ typedef globus_mutex_t mpig_request_mutex_t;
 typedef struct mpig_process
 {
     /*
-     * Pointer to the the process group to which this process belongs, the size of the process group, and the rank of the
-     * processs within the process group.  Also he sizeof of the subjob to which this process belongs, and the rank of the
+     * pointer to the the process group to which this process belongs, the size of the process group, and the rank of the
+     * processs within the process group.  in addition, the size of the subjob to which this process belongs, and the rank of the
      * process within the subjob.
      *
      * NOTE: DONT NOT REORDER THESE FIELDS AS A STATIC INITIALIZER IN mpid_env.c SETS THEM BASED ON THEIR ORDER!
@@ -617,7 +618,6 @@ typedef struct mpig_process
 
     int my_sj_size;
     int my_sj_rank;
-    int my_sj_num;
 
     /* process id and hostname associated with the local process */
     char my_hostname[MPIG_PROCESSOR_NAME_SIZE];
@@ -924,8 +924,8 @@ typedef globus_mutex_t mpig_pg_mutex_t;
 
 typedef struct mpig_pg
 {
-    /* mutex to protect data and insure RC systems see updates -- replace by a global PG mutex */
-    /* mpig_pg_mutex_t mutex; */
+    /* mutex to protect data and insure RC systems see updates */
+    mpig_pg_mutex_t mutex;
 
     /* number of references to this PG object */
     int ref_count;

@@ -8,11 +8,11 @@
 
 #include "mpidimpl.h"
 
-globus_mutex_t mpig_pg_global_mutex;
+MPIG_STATIC globus_mutex_t mpig_pg_global_mutex;
 
 MPIG_STATIC mpig_pg_t * mpig_pg_list_head = NULL;
 MPIG_STATIC mpig_pg_t * mpig_pg_list_tail = NULL;
-globus_cond_t mpig_pg_list_cond;
+MPIG_STATIC globus_cond_t mpig_pg_list_cond;
 
 /* Local process ID counter for assigning a local ID to each virtual connection.  A local ID is necessary for the MPI_Group
    routines, implemented at the MPICH layer, to function properly.  MT-NOTE: in a multithreaded environment, acquiring a new lpid
@@ -22,10 +22,28 @@ MPIG_STATIC int mpig_pg_lpid_counter;
 
 
 /* internal function declarations */
-MPIG_STATIC int mpig_pg_create(const char * pg_id, int pg_rank, mpig_pg_t ** pgp);
+static int mpig_pg_create(const char * pg_id, int pg_rank, mpig_pg_t ** pgp);
 
-MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * pg);
+static void mpig_pg_destroy(mpig_pg_t * pg);
 
+
+/* mutex macros */
+#define mpig_pg_global_mutex_construct()	globus_mutex_init(&mpig_pg_global_mutex, NULL)
+#define mpig_pg_global_mutex_destruct()		globus_mutex_destroy(&mpig_pg_global_mutex)
+#define mpig_pg_global_mutex_lock()									\
+{													\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG Global - acquiring mutex"));	\
+    globus_mutex_lock(&mpig_pg_global_mutex);								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG Global - mutex acquired"));	\
+}
+#define mpig_pg_global_mutex_unlock()									\
+{													\
+    globus_mutex_unlock(&mpig_pg_global_mutex);								\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG Global - mutex released"));	\
+}
+#define mpig_pg_global_mutex_lock_conditional(cond_)	{if (cond_) mpig_pg_global_mutex_lock();}
+#define mpig_pg_global_mutex_unlock_conditional(cond_)	{if (cond_) mpig_pg_global_mutex_unlock();}
+ 
 
 /*
  * mpig_pg_init(void)
@@ -92,11 +110,12 @@ int mpig_pg_finalize(void)
 
 
 /*
- * <mpi_errno> mpig_pg_acquire_ref_locked([IN] pg_id, [IN] pg_size, [OUT] pg, [OUT] new_pg)
+ * <mpi_errno> mpig_pg_acquire_ref([IN] pg_id, [IN] pg_size, [IN] lock, [OUT] pg, [OUT] committed)
  *
- * NOTE: if new_pg is set to true, then the mpig_pg_commit() must eventually be called for the process group.  failure to call
- * mpig_pg_commit() will likely result in the program hanging in finalize as each VC will still have an outstanding reference
- * count associated with their creation.  See mpig_pg_create() and mpig_pg_commit() for more details.
+ * NOTE: if 'committed' is set to false, then the mpig_pg_commit() must eventually be called for the process group.  failure to
+ * call mpig_pg_commit() will likely result in the program hanging in finalize as each VC will still have an outstanding
+ * reference count associated with their creation.  mpig_pg_commit() may safely be called multiple times.  See mpig_pg_create()
+ * and mpig_pg_commit() for more details.
  *
  * MT-NOTE: to avoid deadlock, the mutex of a PG object should never be acquired while the mutex of a VC contained within that PG
  * object is being held.  should the need arise to acquire a VC mutex followed by the mutex of the PG containing that VC, lock
@@ -105,18 +124,20 @@ int mpig_pg_finalize(void)
  * upon.  Once the VC mutex has been released, be sure to call mpig_pg_release_ref() to release the extra PG reference.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_pg_acquire_ref_locked
-int mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p, bool_t * new_pg_p)
+#define FUNCNAME mpig_pg_acquire_ref
+int mpig_pg_acquire_ref(const char * const pg_id, const int pg_size, const bool_t lock, mpig_pg_t ** const pg_p,
+    bool_t * committed_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t pg_global_locked = FALSE;
     mpig_pg_t * pg;
+    bool_t pg_locked = FALSE;
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_pg_acquire_ref_locked);
+    MPIG_STATE_DECL(MPID_STATE_mpig_pg_acquire_ref);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_acquire_ref_locked);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_acquire_ref);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg_id=%s, pg_size=%d", pg_id, pg_size));
 
     mpig_pg_global_mutex_lock();
@@ -139,45 +160,54 @@ int mpig_pg_acquire_ref_locked(const char * const pg_id, const int pg_size, mpig
 	if (pg == NULL)
 	{
 	    /* no matching process group was found, so create a new one */
-	    *new_pg_p = TRUE;
 	    mpi_errno = mpig_pg_create(pg_id, pg_size, pg_p);
 	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_create", "**globus|pg_create %s %d",
 		pg_id, pg_size);
 	}
-	else
-	{
-	    *new_pg_p = FALSE;
-	}
 
-	/* increment the reference count to reflect reference being returned */
-	mpig_pg_inc_ref_count(*pg_p);
+	/* increment the reference count of the PG to reflect reference being returned.  keep the PG mutex locked if the calling
+	   routines requests a locked reference. */
+	mpig_pg_mutex_lock(*pg_p);
+	pg_locked = TRUE;
+	{
+	    mpig_pg_inc_ref_count(*pg_p);
+	    *committed_p = (*pg_p)->committed;
+	}
+	if (lock == FALSE)
+	{
+	    mpig_pg_mutex_unlock(*pg_p);
+	    pg_locked = FALSE;
+	}
     }
-    /* mpig_pg_global_mutex_unlock(); -- global mutex is left locked */
+    mpig_pg_global_mutex_unlock();
+    pg_global_locked = FALSE;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, (MPIG_PTR_CAST) pg, mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_acquire_ref_locked);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_acquire_ref);
     return mpi_errno;
     
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     {
-	if (pg_global_locked) mpig_pg_global_mutex_unlock();
+	mpig_pg_global_mutex_unlock_conditional(pg_global_locked);
+	mpig_pg_mutex_unlock_conditional(pg, (pg_locked));
 	goto fn_return;
     }
     /* --END ERROR HANDLING-- */
 }
-/* mpig_pg_acquire_ref_locked() */
+/* mpig_pg_acquire_ref() */
 
 
 /*
  * mpig_pg_commit([IN/MOD] pg)
  *
  * this routine should be called once the VCs of interest in a newly created process group have been properly initialized and
- * their reference counts increased.  one can detect the creation of a new process group by checking the 'new_pg' flag returned
- * by mpig_pg_acquire_ref_locked().  note: it is not necessary to initialize and increse the reference counts of all the VCs in
- * the PG before calling mpig_pg_commit(), just the ones that will be used.  see mpig_pg_create() for more details.
+ * their reference counts increased.  one can detect if a commit is required by checking the 'committed' flag returned by
+ * mpig_pg_acquire_ref().  note: it is not necessary to initialize and increse the reference counts of all the VCs in the PG
+ * before calling mpig_pg_commit(), just the ones that will be used.  mpig_pg_commit() may safely be called multiple times.  see
+ * mpig_pg_create() for more details.
  *
  * MT-NOTE: this routine assumes that the the process group module's globus mutex, the mutex of the specified PG, and the mutexes
  * associated with all VCs that are part of the PG are _NOT_ held by the current context.  if this assumption is violated, the
@@ -189,6 +219,8 @@ void mpig_pg_commit(mpig_pg_t * const pg)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int p;
+    bool_t pg_inuse = TRUE;
+	
     MPIG_STATE_DECL(MPID_STATE_mpig_pg_commit);
 
     MPIG_UNUSED_VAR(fcname);
@@ -196,7 +228,7 @@ void mpig_pg_commit(mpig_pg_t * const pg)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_commit);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
     
-    mpig_pg_global_mutex_lock();
+    mpig_pg_mutex_lock(pg);
     {
 	if (pg->committed == FALSE)
 	{
@@ -204,7 +236,6 @@ void mpig_pg_commit(mpig_pg_t * const pg)
 	    {
 		mpig_vc_t * const vc = &pg->vct[p];
 		bool_t vc_inuse;
-		bool_t pg_inuse;
 
 		mpig_vc_mutex_lock(vc);
 		{
@@ -226,16 +257,20 @@ void mpig_pg_commit(mpig_pg_t * const pg)
 		    mpig_pg_dec_ref_count(pg, &pg_inuse);
 		}
 	    }
-
-	    if (pg->ref_count == 0)
-	    {
-		mpig_pg_destroy(pg);
-	    }
-
+		
 	    pg->committed = TRUE;
 	}
     }
-    mpig_pg_global_mutex_unlock();
+    mpig_pg_mutex_unlock(pg);
+		
+    if (pg_inuse == FALSE)
+    {
+	mpig_pg_global_mutex_lock();
+	{
+	    mpig_pg_destroy(pg);
+	}
+	mpig_pg_global_mutex_unlock();
+    }
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
@@ -265,26 +300,31 @@ void mpig_pg_release_ref(mpig_pg_t * const pg)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_release_ref);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
     
-    mpig_pg_global_mutex_lock();
+    mpig_pg_mutex_lock(pg);
     {
-	/* mpig_pg_mutex_lock(pg); -- mpig_pg_global_mutex_lock() protects all PG objects */
+	mpig_pg_dec_ref_count(pg, &pg_inuse);
+
+	if (pg_inuse == FALSE)
 	{
-	    mpig_pg_dec_ref_count(pg, &pg_inuse);
-	    if (pg_inuse == FALSE)
-	    {
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT, "pg ref count is zero; destroying the pg: pg="
-		    MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
-		mpig_pg_destroy(pg);
-	    }
-	    else
-	    {
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT, "pg still active: pg=" MPIG_PTR_FMT
-		    ", ref_count=%d", (MPIG_PTR_CAST) pg, pg->ref_count));
-	    }
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT, "pg ref count is zero; destroying the pg: pg="
+		MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
 	}
-	/* mpig_pg_mutex_lock(pg); -- mpig_pg_global_mutex_unlock() protects all PG objects */
+	else
+	{
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT, "pg still active: pg=" MPIG_PTR_FMT
+		", ref_count=%d", (MPIG_PTR_CAST) pg, pg->ref_count));
+	}
     }
-    mpig_pg_global_mutex_unlock();
+    mpig_pg_mutex_unlock(pg);
+	
+    if (pg_inuse == FALSE)
+    {
+	mpig_pg_global_mutex_lock();
+	{
+	    mpig_pg_destroy(pg);
+	}
+	mpig_pg_global_mutex_unlock();
+    }
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
@@ -303,10 +343,12 @@ void mpig_pg_release_ref(mpig_pg_t * const pg)
  * them).  once the calling code has finished activating the desired VCs, mpig_pg_commit() should be called.  mpig_pg_commit()
  * decrements the reference count of each VC in the PG, and decrements the PG reference count each time a VC reference count
  * reaches zero.  once the commit has completed, the PG reference count will reflect only those VCs that are still active.
+ *
+ * MT-NOTE: this routine assume that the PG module's global mutex is held by the current context.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_create
-MPIG_STATIC int mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p)
+static int mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t ** const pg_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_pg_t * pg = NULL;
@@ -344,11 +386,6 @@ MPIG_STATIC int mpig_pg_create(const char * const pg_id, const int pg_size, mpig
     }
 
     /* add the new process group into the list of outstanding process group structures */
-    if (mpig_pg_list_head == NULL)
-    {
-	mpig_pg_list_head = pg;
-    }
-    
     if (mpig_pg_list_tail != NULL)
     {
 	mpig_pg_list_tail->next = pg;
@@ -381,13 +418,13 @@ MPIG_STATIC int mpig_pg_create(const char * const pg_id, const int pg_size, mpig
 
 
 /*
- * mpig_pg_create([IN/MOD] pg)
+ * mpig_pg_destroy([IN/MOD] pg)
  *
  * MT-NOTE: this routine assume that the PG module's global mutex is held by the current context.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pg_destroy
-MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * const pg)
+static void mpig_pg_destroy(mpig_pg_t * const pg)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_pg_t * pg_prev;
@@ -421,7 +458,7 @@ MPIG_STATIC void mpig_pg_destroy(mpig_pg_t * const pg)
 	    
 	    if (mpig_pg_list_tail == pg)
 	    {
-		mpig_pg_list_tail = NULL;
+		mpig_pg_list_tail = pg_prev;
 	    }
 	    
 	    break;

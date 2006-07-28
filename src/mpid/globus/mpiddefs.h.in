@@ -16,10 +16,9 @@ extern int mpig_topology_colors_keyval;
 /* topology levels (the order is relevant!) */
 #define MPIG_TOPOLOGY_LEVEL_WAN    0  /* communication across a wide area network */
 #define MPIG_TOPOLOGY_LEVEL_LAN    1  /* communication within a local area network */
-/* Reseverd: MPIG_TOPOLOGY_LEVEL_SAN -- communication within a system area network */
-/* Reserved: MPIG_TOPOLOGY_LEVEL_HOST -- communication within a single host (e.g. shared memory) */
-#define MPIG_TOPOLOGY_LEVEL_SUBJOB 2  /* communication within a subjob */
+#define MPIG_TOPOLOGY_LEVEL_SAN    2  /*  communication within a system area network */
 #define MPIG_TOPOLOGY_LEVEL_VMPI   3  /* communication within a single subjob using an underlying vendor MPI library */
+/* Reserved: MPIG_TOPOLOGY_LEVEL_HOST -- communication within a single host (e.g. shared memory) */
 /* Reserved: MPIG_TOPOLOGY_LEVEL_PROC -- communication within a single process (intra-process communication) */
 #define MPIG_TOPOLOGY_NUM_LEVELS   4  /* number of topology levels */
 
@@ -28,7 +27,7 @@ extern int mpig_topology_colors_keyval;
 #define MPICHX_TOPOLOGY_COLORS MPIG_TOPOLOGY_COLORS_KEYVAL
 #define MPICHX_WAN_LEVEL  MPIG_TOPOLOGY_LEVEL_WAN
 #define MPICHX_LAN_LEVEL  MPIG_TOPOLOGY_LEVEL_LAN
-#define MPICHX_HOST_LEVEL MPIG_TOPOLOGY_LEVEL_SUBJOB
+#define MPICHX_HOST_LEVEL MPIG_TOPOLOGY_LEVEL_SAN
 #define MPICHX_VMPI_LEVEL MPIG_TOPOLOGY_LEVEL_VMPI
 
 #if @MPIG_VMPI_DEFINED@ /* defined(MPIG_VMPI) */

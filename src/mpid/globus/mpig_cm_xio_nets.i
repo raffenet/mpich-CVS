@@ -52,7 +52,7 @@ static int mpig_cm_xio_net_wan_init(mpig_cm_t * cm, int * argc_p, char *** argv_
 
 static int mpig_cm_xio_net_lan_init(mpig_cm_t * cm, int * argc_p, char *** argv_p);
 
-static int mpig_cm_xio_net_subjob_init(mpig_cm_t * cm, int * argc_p, char *** argv_p);
+static int mpig_cm_xio_net_san_init(mpig_cm_t * cm, int * argc_p, char *** argv_p);
 
 static int mpig_cm_xio_net_default_init(mpig_cm_t * cm, int * argc_p, char *** argv_p);
 
@@ -109,23 +109,23 @@ mpig_cm_t mpig_cm_xio_net_lan =
     &mpig_cm_xio_net_lan_vtable
 };
 
-MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_subjob_vtable =
+MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_san_vtable =
 {
-    mpig_cm_xio_net_subjob_init,
+    mpig_cm_xio_net_san_init,
     mpig_cm_xio_net_finalize,
     mpig_cm_xio_net_add_contact_info,
     mpig_cm_xio_net_construct_vc_contact_info,
-    NULL, /* mpig_cm_xio_net_subjob_destruct_vc_contact_info */
+    NULL, /* mpig_cm_xio_net_san_destruct_vc_contact_info */
     mpig_cm_xio_net_select_comm_method,
     mpig_cm_xio_net_get_vc_compatability,
     mpig_cm_vtable_last_entry
 };
 
-mpig_cm_t mpig_cm_xio_net_subjob =
+mpig_cm_t mpig_cm_xio_net_san =
 {
     MPIG_CM_TYPE_XIO,
-    "XIO Subjob",
-    &mpig_cm_xio_net_subjob_vtable
+    "XIO SAN",
+    &mpig_cm_xio_net_san_vtable
 };
 
 MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_default_vtable =
@@ -523,27 +523,27 @@ static int mpig_cm_xio_net_lan_init(mpig_cm_t * cm, int * argc_p, char *** argv_
 
 
 /*
- * <mpi_errno> mpig_cm_xio_net_subjob_init([IN/MOD] cm, [IN/OUT] argc_p, [IN/OUT] argv_p)
+ * <mpi_errno> mpig_cm_xio_net_san_init([IN/MOD] cm, [IN/OUT] argc_p, [IN/OUT] argv_p)
  *
  * see the documentation of the mpig_cm vtable routines in mpidpre.h.
  */
 #undef FUNCNAME
-#define FUNCNAME mpig_cm_xio_net_subjob_init
-static int mpig_cm_xio_net_subjob_init(mpig_cm_t * cm, int * argc_p, char *** argv_p)
+#define FUNCNAME mpig_cm_xio_net_san_init
+static int mpig_cm_xio_net_san_init(mpig_cm_t * cm, int * argc_p, char *** argv_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_net_subjob_init)
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_net_san_init)
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_subjob_init);
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_san_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
 	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
 
     mpig_cm_xio_net_cm_construct(cm);
-    cm->cmu.xio.key_name = "XIO_SUBJOB";
-    cm->cmu.xio.topology_levels = MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK;
+    cm->cmu.xio.key_name = "XIO_SAN";
+    cm->cmu.xio.topology_levels = MPIG_TOPOLOGY_LEVEL_SAN_MASK;
     
     mpi_errno = mpig_cm_xio_net_init(cm, argc_p, argv_p);
     if (mpi_errno)
@@ -562,7 +562,7 @@ static int mpig_cm_xio_net_subjob_init(mpig_cm_t * cm, int * argc_p, char *** ar
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cmp=" MPIG_PTR_FMT
 	"cm=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_subjob_init);
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_san_init);
     return mpi_errno;
 
   fn_fail:
@@ -570,7 +570,7 @@ static int mpig_cm_xio_net_subjob_init(mpig_cm_t * cm, int * argc_p, char *** ar
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_xio_net_subjob_init() */
+/* mpig_cm_xio_net_san_init() */
 
 /*
  * <mpi_errno> mpig_cm_xio_net_default_init([IN/MOD] cm, [IN/OUT] argc_p, [IN/OUT] argv_p)
@@ -594,7 +594,7 @@ static int mpig_cm_xio_net_default_init(mpig_cm_t * cm, int * argc_p, char *** a
     mpig_cm_xio_net_cm_construct(cm);
     cm->cmu.xio.key_name = "XIO_DEFAULT";
     cm->cmu.xio.driver_name = MPIU_Strdup("tcp");
-    cm->cmu.xio.topology_levels = MPIG_TOPOLOGY_LEVEL_WAN_MASK | MPIG_TOPOLOGY_LEVEL_LAN_MASK | MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK;
+    cm->cmu.xio.topology_levels = MPIG_TOPOLOGY_LEVEL_WAN_MASK | MPIG_TOPOLOGY_LEVEL_LAN_MASK | MPIG_TOPOLOGY_LEVEL_SAN_MASK;
     
     mpi_errno = mpig_cm_xio_net_init(cm, argc_p, argv_p);
     if (mpi_errno)
@@ -845,7 +845,7 @@ static int mpig_cm_xio_net_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t *
        union until it decides to claim responsibility for the VC.  therefore, all extraction of information from the business
        card is done in mpig_cm_xio_select_comm_method(). */
 
-    /* set the topology information.  NOTE: this may seem a bit wacky since the WAN, LAN and SUBJOB levels may be set even if the
+    /* set the topology information.  NOTE: this may seem a bit wacky since the WAN, LAN and SAN levels may be set even if the
        XIO module is not responsible for the VC; however, the topology information is defined such that a level set if it is
        _possible_ for the module to perform the communication regardless of whether it does so or not. */
     vc->cms.topology_levels |= cm->cmu.xio.topology_levels;
@@ -1058,24 +1058,13 @@ static int mpig_cm_xio_net_get_vc_compatability(mpig_cm_t * const cm, const mpig
 	}
     }
 
-#if FALSE    
     if (levels_in & MPIG_TOPOLOGY_LEVEL_SAN_MASK & cm->cmu.xio.topology_levels)
     {
-	/* NOTE: the SAN level is currently unused.  however, should it ever be enabled, one cannot assume XIO is automatically
-	   able to communicate over the system area network.  that depends on the SAN and the XIO drivers available.  also, even
-	   if an XIO driver could be written, the XIO stream based interface may not be appropriate for the SAN and result in
-	   less than optimal performance.  instead, communication over the SAN may be handled via another MPIG communication
-	   module. */
-    }
-#endif
-    
-    if (levels_in & MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK & cm->cmu.xio.topology_levels)
-    {
-	/* FIXME: for now, the XIO communication module assumes that it can be used to communicate within the subjob.  this might
-	   not be the case on all systems. */
+	/* FIXME: for now, the XIO communication module assumes that it can always be used to communicate within the SAN.  this
+	   might not be the case on all systems. */
 	if (mpig_vc_get_pg(vc1) == mpig_vc_get_pg(vc2) && mpig_vc_get_app_num(vc1) == mpig_vc_get_app_num(vc2))
 	{
-	    *levels_out |= MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK;
+	    *levels_out |= MPIG_TOPOLOGY_LEVEL_SAN_MASK;
 	}
     }
     

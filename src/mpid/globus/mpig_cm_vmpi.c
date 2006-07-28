@@ -651,7 +651,7 @@ static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * co
 	/* set the topology information.  NOTE: this may seem a bit wacky since the VMPI level is set even if the VMPI module is
 	   not responsible for the VC; however, the topology information is defined such that a level set if it is _possible_ for
 	   the module to perform the communication regardless of whether it does so or not. */
-	vc->cms.topology_levels |= MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
+	vc->cms.topology_levels |= MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
 	if (vc->cms.topology_num_levels <= MPIG_TOPOLOGY_LEVEL_VMPI)
 	{
 	    vc->cms.topology_num_levels = MPIG_TOPOLOGY_LEVEL_VMPI + 1;
@@ -764,12 +764,12 @@ static int mpig_cm_vmpi_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * c
 
     *levels_out = 0;
 
-    if (levels_in & (MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK))
+    if (levels_in & MPIG_TOPOLOGY_LEVEL_VMPI_MASK)
     {
 	if (vc1->cms.vmpi.subjob_id != NULL && vc1->cms.vmpi.subjob_id != NULL &&
 	    strcmp(vc1->cms.vmpi.subjob_id, vc2->cms.vmpi.subjob_id) == 0)
 	{
-	    *levels_out |= levels_in & (MPIG_TOPOLOGY_LEVEL_SUBJOB_MASK | MPIG_TOPOLOGY_LEVEL_VMPI_MASK);
+	    *levels_out |= levels_in & MPIG_TOPOLOGY_LEVEL_VMPI_MASK;
 	}
     }
     

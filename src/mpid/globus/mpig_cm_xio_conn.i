@@ -808,7 +808,7 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
     mpig_endian_t endian;
     int df;
     mpig_pg_t * pg = NULL;
-    bool_t new_pg;
+    bool_t pg_committed;
     char * pg_id = NULL;
     size_t pg_id_size = 0;
     int pg_size = -1;
@@ -836,8 +836,10 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
     MPIU_Assert(mpig_databuf_get_remaining_bytes(tmp_vc_cmu->msgbuf) == 0);
 
     /* given the PG ID and rank, acquire a reference to the the process group object (creating it if necessary).  the reference
-       is associated with the temp VC. */
-    mpi_errno = mpig_pg_acquire_ref_locked(pg_id, pg_size, &pg, &new_pg);
+       is associated with the temp VC.  NOTE: the pg_committed flag should be ignored, and a PG should never be committed from
+       within this module.  the commit should only be performed by routines that are constructing VCRT objects that reference VCs
+       within the PG. */
+    mpi_errno = mpig_pg_acquire_ref(pg_id, pg_size, TRUE, &pg, &pg_committed);
     MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_acquire_ref",
 	"**globus|pg_acquire_ref %s %d", pg_id, pg_size);
     {
@@ -1027,7 +1029,7 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
     proc_vc_locked = FALSE;
 
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CEMT, "exiting: tmp_vc=" MPIG_PTR_FMT "proc_vc=" MPIG_PTR_FMT
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CEMT, "exiting: tmp_vc=" MPIG_PTR_FMT ", proc_vc=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) tmp_vc, (MPIG_PTR_CAST) proc_vc, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_server_handle_recv_open_proc_req);
     return mpi_errno;
@@ -1851,10 +1853,7 @@ static int mpig_cm_xio_client_connect_proc(mpig_vc_t * const proc_vc)
 
 	/* pg and pg_rank are stored in the temp VC so the proc VC can be located again later, adjusting the PG reference count
 	   accordingly.  MT-NOTE: the proc VC mutex must be released since the process group is locked below.  A thread should
-	   never attempt to acquire the mutex of a process group while holding the mutex of a VC belonging to that PG.  In fact,
-	   with current implementation, where the PG module uses a single global mutex, a thread should never attempt to acquire
-	   the mutex of any PG while holding the mutex of any VC.  temp VCs are exempt from this rule since they are not part of
-	   any PG. */
+	   never attempt to acquire the mutex of a process group while holding the mutex of a VC belonging to that PG. */
 	mpig_vc_mutex_unlock(proc_vc);
 	{
 	    mpig_pg_mutex_lock(pg);
@@ -2982,7 +2981,7 @@ static int mpig_cm_xio_disconnect_close_proc(mpig_vc_t * const vc)
     MPIU_Assertp(vc_cmu->handle != NULL);
 
     mpig_cm_xio_vc_inc_ref_count(vc, &vc_was_inuse);
-    MPIU_Assert(vc_was_inuse == FALSE);
+    MPIU_Assert(vc_was_inuse == FALSE || mpig_cm_xio_vc_has_failed(vc));
 
     if (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_CONNECTED)
     {
