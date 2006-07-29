@@ -461,7 +461,7 @@ MkDir $sbindir
 if [ -n "$sbinbuild_dir" ] ; then
     if [ -d $sbinbuild_dir ] ; then
          echo "Installing $pkgname system utility programs to $DESTDIR$sbindir"
-         InstallFile   $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
+         InstallFile    $sbinbuild_dir/mpecheckinstall  $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestlink      $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestexec      $sbindir $XMODE
          FixInstallFile $sbinbuild_dir/mpetestexeclog   $sbindir $XMODE
