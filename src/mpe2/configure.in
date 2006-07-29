@@ -9,6 +9,7 @@ dnl
 dnl
 AC_INIT()
 AC_PREREQ(2.52)
+AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_HEADER(mpe_conf.h)
 #
 echo "Configuring MPE Profiling System with $ac_configure_args"
