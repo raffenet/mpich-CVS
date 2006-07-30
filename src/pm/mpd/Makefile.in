@@ -106,6 +106,9 @@ Makefile: ${srcdir}/Makefile.in config.status
 
 # if configured with wrong prefix, use:
 #     make prefix=new_install_dir install
+# Note the conditional test for files in PYTHON_SOURCE; this is to allow
+# us to install Zeroconf if present (it is not part of the MPICH2 release
+# in order to avoid Copyright problems).
 install: all
 	@if [ ! -d $(DESTDIR)${bindir} ] ; then \
 	    echo "mkdir -p $(DESTDIR)${bindir} " ;\
@@ -118,6 +121,7 @@ install: all
 	fi
 	@echo "copying python files/links into " $(DESTDIR)${bindir}
 	-@for cmd in ${PYTHON_SOURCE} ; do \
+	    if [ ! -s $(srcdir)/$$cmd.py ] ; then continue ; fi ; \
 	    sed -e 's#/usr/bin/env python.*#/usr/bin/env ${PYTHON}#' ${srcdir}/$$cmd.py > $(DESTDIR)${bindir}/temp$$cmd.py ; \
 	    ${INSTALL} -m 755 $(DESTDIR)${bindir}/temp$$cmd.py $(DESTDIR)${bindir}/$$cmd.py; \
 	    ( rm -f $(DESTDIR)${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
