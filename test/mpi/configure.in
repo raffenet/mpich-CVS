@@ -915,8 +915,8 @@ AC_OUTPUT(maint/testmerge \
 	  errors/coll/Makefile \
 	  errors/comm/Makefile \
 	  errors/group/Makefile \
-	  errors/errhan/Makefile \
 	  errors/pt2pt/Makefile \
+	  errors/rma/Makefile \
 	  errors/spawn/Makefile \
 	  errors/io/Makefile \
 	  errors/cxx/Makefile \
@@ -931,4 +931,5 @@ AC_OUTPUT(maint/testmerge \
 	  f77/testlist \
 	  f90/testlist \
 	  errors/testlist \
+	  errors/cxx/testlist \
 	  )

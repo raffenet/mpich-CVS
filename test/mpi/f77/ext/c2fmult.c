@@ -42,6 +42,7 @@ int main( int argc, char *argv[] )
 	}
     }
     MPI_Cancel( &cRequest );
+    MPI_Request_free( &cRequest );
 
     if (rank == 0) {
 	if (errs) {

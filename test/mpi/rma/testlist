@@ -32,3 +32,7 @@ fetchandadd_am 7
 fetchandadd_tree_am 7
 accfence2_am 4
 nullpscw 7
+attrorderwin 1
+wincall 2
+baseattrwin 1
+fkeyvalwin 1
