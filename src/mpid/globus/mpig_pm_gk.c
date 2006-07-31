@@ -16,7 +16,6 @@
    mpig_pm_gk_init(). */
 #undef MPIG_PM_GK_ENABLE_DEBUG
 
-
 #if defined(MPIG_GLOBUS_DUROC_INSTALLED)
 
 #include "globus_duroc_runtime.h"
@@ -24,7 +23,78 @@
 #include "globus_gram_client.h"
 #include "globus_gram_myjob.h"
 
-/* inter-subjob and intra-subjob message tags */
+
+/*
+ * prototypes and data structures exposing the "gatekeeper" process management class
+ */
+static int mpig_pm_gk_init(mpig_pm_t * pm, bool_t * my_pm_p);
+
+static int mpig_pm_gk_finalize(mpig_pm_t * pm);
+
+static int mpig_pm_gk_abort(mpig_pm_t * pm, int exit_code);
+
+static int mpig_pm_gk_exchange_business_cards(mpig_pm_t * pm, mpig_bc_t * bc, mpig_bc_t ** bcs_p);
+
+static int mpig_pm_gk_free_business_cards(mpig_pm_t * pm, mpig_bc_t * bcs);
+
+static int mpig_pm_gk_get_pg_size(mpig_pm_t * pm, int * pg_size);
+
+static int mpig_pm_gk_get_pg_rank(mpig_pm_t * pm, int * pg_rank);
+
+static int mpig_pm_gk_get_pg_id(mpig_pm_t * pm, const char ** pg_id_p);
+
+static int mpig_pm_gk_get_app_num(mpig_pm_t * pm, const mpig_bc_t * bc, int * app_num);
+
+MPIG_STATIC mpig_pm_vtable_t mpig_pm_gk_vtable =
+{
+    mpig_pm_gk_init,
+    mpig_pm_gk_finalize,
+    mpig_pm_gk_abort,
+    mpig_pm_gk_exchange_business_cards,
+    mpig_pm_gk_free_business_cards,
+    mpig_pm_gk_get_pg_size,
+    mpig_pm_gk_get_pg_rank,
+    mpig_pm_gk_get_pg_id,
+    mpig_pm_gk_get_app_num,
+    mpig_pm_vtable_last_entry
+};
+
+mpig_pm_t mpig_pm_gk =
+{
+    "gatekeeper",
+    &mpig_pm_gk_vtable
+};
+
+
+/*
+ * prototypes for internal routines
+ */
+static int mpig_pm_gk_get_topology(int my_sj_rank, int my_sj_size, int * pg_size, int * pg_rank, int * sj_num, int * sj_index,
+    int ** sj_addrs);
+
+static int mpig_pm_gk_distribute_byte_array(int pg_size, int pg_rank, int sj_num, int my_sj_size, int my_sj_rank, 
+    const int * sj_duroc_addrs, const globus_byte_t * in_buf, int in_buf_len, globus_byte_t ** out_bufs, int * out_bufs_lens);
+
+static int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * rbuf, int * nbufs_p, globus_byte_t ** out_bufs,
+    int * out_bufs_lens);
+
+#if !defined(MPIG_VMPI)
+static int mpig_pm_gk_intra_subjob_send(int dest, const char * tag_base, int nbytes, const globus_byte_t * buf);
+
+static int mpig_pm_gk_intra_subjob_receive(const char * tag_base, int * nbytes, globus_byte_t ** buf);
+
+static int mpig_pm_gk_intra_subjob_bcast(int my_sj_size, int my_sj_rank, const char * tag_base, int * nbytes,
+    globus_byte_t ** buf);
+
+/* nbytes and buf are relevant only on the subjob master */
+static int mpig_pm_gk_intra_subjob_gather(int my_sj_size, int my_sj_rank, const globus_byte_t * in_buf, int in_buf_len,
+    const char * tag_base, int * nbytes, globus_byte_t ** buf);
+#endif
+
+
+/*
+ * inter-subjob and intra-subjob message tags
+ */
 #define MPIG_PM_GK_TAG_MAX_SIZE	64
 
 #define MPIG_PM_GK_TAG_SJ_MASTER_TO_PG_MASTER_TOPOLOGY	"sjm2pgm-t"
@@ -36,6 +106,9 @@
 #define MPIG_PM_GK_TAG_SJ_MASTER_TO_SJ_SLAVE_DATA	"sjm2sjs-d"
 
 
+/*
+ * internal data and state
+ */
 MPIG_STATIC enum
 {
     MPIG_PM_GK_STATE_UNINITIALIZED = 0,
@@ -85,34 +158,12 @@ MPIG_STATIC int mpig_pm_gk_vmpi_root = -1;
 #endif
 
 
-MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_rank, int my_sj_size, int * pg_size, int * pg_rank, int * sj_num, int * sj_index,
-    int ** sj_addrs);
-
-MPIG_STATIC int mpig_pm_gk_distribute_byte_array(int pg_size, int pg_rank, int sj_num, int my_sj_size, int my_sj_rank, 
-    const int * sj_duroc_addrs, const globus_byte_t * in_buf, int in_buf_len, globus_byte_t ** out_bufs, int * out_bufs_lens);
-
-MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * rbuf, int * nbufs_p, globus_byte_t ** out_bufs,
-    int * out_bufs_lens);
-
-#if !defined(MPIG_VMPI)
-MPIG_STATIC int mpig_pm_gk_intra_subjob_send(int dest, const char * tag_base, int nbytes, const globus_byte_t * buf);
-
-MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * tag_base, int * nbytes, globus_byte_t ** buf);
-
-MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(int my_sj_size, int my_sj_rank, const char * tag_base, int * nbytes,
-    globus_byte_t ** buf);
-
-/* nbytes and buf are relevant only on the subjob master */
-MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(int my_sj_size, int my_sj_rank, const globus_byte_t * in_buf, int in_buf_len,
-    const char * tag_base, int * nbytes, globus_byte_t ** buf);
-#endif
-
 /*
  * mpig_pm_gk_init()
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_init
-int mpig_pm_gk_init(void)
+int mpig_pm_gk_init(mpig_pm_t * const pm, bool_t * const my_pm_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     enum
@@ -127,6 +178,7 @@ int mpig_pm_gk_init(void)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_init);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -136,11 +188,9 @@ int mpig_pm_gk_init(void)
     mpig_pm_gk_sj_contact_str = globus_libc_getenv("GLOBUS_GRAM_JOB_CONTACT");
     if (mpig_pm_gk_sj_contact_str == NULL)
     {
-	/* XXX: *activated_p = FALSE; */
+	*my_pm_p = FALSE;
 	goto fn_return;
     }
-
-    /* XXX: *activated_p = TRUE; */
 
     /* XXX: move as much error checking as possible to mpig_pm.c */
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
@@ -229,6 +279,9 @@ int mpig_pm_gk_init(void)
 	mpig_debug_init();
     }
 #   endif
+
+    *my_pm_p = TRUE;
+
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_init);
@@ -261,7 +314,7 @@ int mpig_pm_gk_init(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_finalize
-int mpig_pm_gk_finalize(void)
+int mpig_pm_gk_finalize(mpig_pm_t * const pm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_result_t grc;
@@ -269,6 +322,7 @@ int mpig_pm_gk_finalize(void)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_finalize);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -319,7 +373,7 @@ int mpig_pm_gk_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_abort
-int mpig_pm_gk_abort(int exit_code)
+int mpig_pm_gk_abort(mpig_pm_t * const pm, int exit_code)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int n;
@@ -328,6 +382,7 @@ int mpig_pm_gk_abort(int exit_code)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_abort);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_abort);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -404,7 +459,7 @@ int mpig_pm_gk_abort(int exit_code)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_exchange_business_cards
-int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
+int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKLMEM_DECL(2);
@@ -420,6 +475,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_exchange_business_cards);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_exchange_business_cards);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc));
@@ -627,7 +683,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_free_business_cards
-int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
+int mpig_pm_gk_free_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bcs)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int p;
@@ -635,6 +691,7 @@ int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_free_business_cards);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_free_business_cards);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bcs=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bcs));
@@ -666,13 +723,14 @@ int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_size
-int mpig_pm_gk_get_pg_size(int * const pg_size)
+int mpig_pm_gk_get_pg_size(mpig_pm_t * const pm, int * const pg_size)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_pg_size);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_size);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -701,13 +759,14 @@ int mpig_pm_gk_get_pg_size(int * const pg_size)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_rank
-int mpig_pm_gk_get_pg_rank(int * const pg_rank)
+int mpig_pm_gk_get_pg_rank(mpig_pm_t * const pm, int * const pg_rank)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_pg_rank);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_rank);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -736,13 +795,14 @@ int mpig_pm_gk_get_pg_rank(int * const pg_rank)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_id
-int mpig_pm_gk_get_pg_id(const char ** const pg_id)
+int mpig_pm_gk_get_pg_id(mpig_pm_t * const pm, const char ** const pg_id)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_pg_id);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_id);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -771,7 +831,7 @@ int mpig_pm_gk_get_pg_id(const char ** const pg_id)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_app_num
-int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
+int mpig_pm_gk_get_app_num(mpig_pm_t * const pm, const mpig_bc_t * const bc, int * const app_num_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char * app_num_str = NULL;
@@ -782,6 +842,7 @@ int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_app_num);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_app_num);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -838,7 +899,7 @@ int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_topology
-MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * const pg_size, int * const my_pg_rank,
+static int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * const pg_size, int * const my_pg_rank,
     int * const sj_num, int * const my_rsl_index, int ** const sj_duroc_addrs)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1108,7 +1169,7 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_distribute_byte_array
-MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank, const int sj_num, const int my_sj_size,
+static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank, const int sj_num, const int my_sj_size,
     const int my_sj_rank, const int * const sj_duroc_addrs, const globus_byte_t * const in_buf, const int in_buf_len,
     globus_byte_t ** const out_bufs, int * const out_bufs_lens)
 {
@@ -1425,7 +1486,7 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_extract_byte_arrays
-MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf, int * const nbufs_p /* optional */,
+static int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf, int * const nbufs_p /* optional */,
     globus_byte_t ** const out_bufs,
     int * out_buf_lens)
 {
@@ -1494,7 +1555,7 @@ MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf,
 #if !defined(MPIG_VMPI)
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_send
-MPIG_STATIC int mpig_pm_gk_intra_subjob_send(const int dest, const char * const tag_base, const int nbytes,
+static int mpig_pm_gk_intra_subjob_send(const int dest, const char * const tag_base, const int nbytes,
     const globus_byte_t * const buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1572,7 +1633,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_send(const int dest, const char * const 
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_receive
-MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int * const rcvd_nbytes, globus_byte_t ** const buf)
+static int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int * const rcvd_nbytes, globus_byte_t ** const buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char tag_buf[MPIG_PM_GK_TAG_MAX_SIZE];
@@ -1722,7 +1783,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_bcast
-MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my_sj_rank, const char * const tag_base,
+static int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my_sj_rank, const char * const tag_base,
     int * rcvd_nbytes, globus_byte_t ** buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1792,7 +1853,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_gather
-MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int my_sj_rank, const globus_byte_t * in_buf,
+static int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int my_sj_rank, const globus_byte_t * in_buf,
     const int in_buf_len, const char * const tag_base, int * const rcvd_nbytes, globus_byte_t ** const buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1891,4 +1952,12 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 
 #endif /* !defined(MPIG_VMPI) */
 
-#endif /*# defined(MPIG_GLOBUS_DUROC_INSTALLED) */
+#else /* !defined(MPIG_GLOBUS_DUROC_INSTALLED) */
+
+mpig_pm_t mpig_pm_gk =
+{
+    "gatekeeper",
+    NULL
+};
+
+#endif /* #if/else defined(MPIG_GLOBUS_DUROC_INSTALLED) */

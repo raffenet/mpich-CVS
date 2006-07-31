@@ -1345,7 +1345,7 @@ void mpig_vc_release_ref(mpig_vc_t * const vc)
 
 
 /*
- * <void> mpig_vc_vtable_last_entry(none)
+ * <double> mpig_vc_vtable_last_entry(...)
  *
  * this routine serves as the last function in the VC function table.  its purpose is to help detect when a communication
  * module's VC table has not be updated when a function be added or removed from the table.  it is not fool proof as it requires

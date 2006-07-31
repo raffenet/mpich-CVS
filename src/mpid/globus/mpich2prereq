@@ -275,7 +275,7 @@ echo "${ECHO_T}done"
 #
 # function to extract globus settings from the previously created makefile
 #
-MPIG_MAKE=${MAKE:-make}
+MPIG_MAKE="${MAKE:-make} GLOBUS_FLAVOR_NAME=${with_globus_flavor}"
 mpig_get_globus_setting()
 {
     eval $1="\"`${MPIG_MAKE} -f ${MPIG_GLOBUS_SETTINGS_MK} $2 | sed -e 's/^ *//' -e 's/ *$//'`\""
@@ -446,7 +446,7 @@ fi
 
 if test "${enable_gcc_strict}" = "yes" ; then
     CPPFLAGS="${CPPFLAGS} -DMPIG_BUILDING_MPICH2"
-    MPIG_BUILD_CFLAGS=`echo ${MPIG_CFLAGS} | sed 's/-I/-isystem /'`
+    MPIG_BUILD_CFLAGS=`echo ${MPIG_CFLAGS} | sed "s,-I${GLOBUS_LOCATION},-isystem ${GLOBUS_LOCATION},g"`
     MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wunused -Wshadow"
     MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wmissing-declarations -Wcast-align -Wno-long-long -Wpointer-arith"
     MPIG_BUILD_CFLAGS="${MPIG_BUILD_CFLAGS} -Wconversion -Wsign-compare -Wwrite-strings"

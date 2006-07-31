@@ -75,7 +75,7 @@ char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif
 
 #define mpig_cm_get_name(cm_) ((cm_)->name)
 
-#define mpig_cm_get_vtable(cm_) ((cm_)->vtable)
+#define mpig_cm_get_vtable(cm_) ((const mpig_cm_vtable_t *)((cm_)->vtable))
 /**********************************************************************************************************************************
 						END COMMUNICATION MODULE SECTION
 **********************************************************************************************************************************/
@@ -1302,7 +1302,7 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
     (vc_)->vtable = (vtable_);			\
 }
 
-#define mpig_vc_get_vtable(vc_, func_) ((vc_)->vtable)
+#define mpig_vc_get_vtable(vc_, func_) ((const mpig_vc_vtable_t *)((vc_)->vtable))
 
 #define mpig_vc_set_pg_info(vc_, pg_, pg_rank_)	\
 {						\
@@ -1552,6 +1552,8 @@ struct MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int 
 /**********************************************************************************************************************************
 						BEGIN PROCESS MANAGEMENT SECTION
 **********************************************************************************************************************************/
+struct mpig_pm;
+
 int mpig_pm_init(void);
 
 int mpig_pm_finalize(void);
@@ -1570,65 +1572,54 @@ int mpig_pm_get_pg_id(const char ** pg_id_p);
 
 int mpig_pm_get_app_num(const mpig_bc_t * bc, int * app_num);
 
-
-int mpig_pm_gk_init(void);
-
-int mpig_pm_gk_finalize(void);
-
-int mpig_pm_gk_abort(int exit_code);
-
-int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
-
-int mpig_pm_gk_free_business_cards(mpig_bc_t * bcs);
-
-int mpig_pm_gk_get_pg_size(int * pg_size);
-
-int mpig_pm_gk_get_pg_rank(int * pg_rank);
-
-int mpig_pm_gk_get_pg_id(const char ** pg_id_p);
-
-int mpig_pm_gk_get_app_num(const mpig_bc_t * bc, int * app_num);
+float * mpig_pm_vtable_last_entry(double foo, int bar, const float * baz, short bif);
 
 
-int mpig_pm_ws_init(void);
+typedef int (*mpig_pm_init_fn_t)(struct mpig_pm * pm, bool_t * my_pm);
 
-int mpig_pm_ws_finalize(void);
+typedef int (*mpig_pm_finalize_fn_t)(struct mpig_pm * pm);
 
-int mpig_pm_ws_abort(int exit_code);
+typedef int (*mpig_pm_abort_fn_t)(struct mpig_pm * pm, int exit_code);
 
-int mpig_pm_ws_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
+typedef int (*mpig_pm_exchange_business_cards_fn_t)(struct mpig_pm * pm, mpig_bc_t * bc, mpig_bc_t ** bcs_p);
 
-int mpig_pm_ws_free_business_cards(mpig_bc_t * bcs);
+typedef int (*mpig_pm_free_business_cards_fn_t)(struct mpig_pm * pm, mpig_bc_t * bcs);
 
-int mpig_pm_ws_get_pg_size(int * pg_size);
+typedef int (*mpig_pm_get_pg_size_fn_t)(struct mpig_pm * pm, int * pg_size);
 
-int mpig_pm_ws_get_pg_rank(int * pg_rank);
+typedef int (*mpig_pm_get_pg_rank_fn_t)(struct mpig_pm * pm, int * pg_rank);
 
-int mpig_pm_ws_get_pg_id(const char ** pg_id_p);
+typedef int (*mpig_pm_get_pg_id_fn_t)(struct mpig_pm * pm, const char ** pg_id_p);
 
-int mpig_pm_ws_get_app_num(const mpig_bc_t * bc, int * app_num);
+typedef int (*mpig_pm_get_app_num_fn_t)(struct mpig_pm * pm, const mpig_bc_t * bc, int * app_num);
 
-#if 1
-#define mpig_pm_init mpig_pm_gk_init
-#define mpig_pm_finalize mpig_pm_gk_finalize
-#define mpig_pm_abort mpig_pm_gk_abort
-#define mpig_pm_exchange_business_cards mpig_pm_gk_exchange_business_cards
-#define mpig_pm_free_business_cards mpig_pm_gk_free_business_cards
-#define mpig_pm_get_pg_size mpig_pm_gk_get_pg_size
-#define mpig_pm_get_pg_rank mpig_pm_gk_get_pg_rank
-#define mpig_pm_get_pg_id mpig_pm_gk_get_pg_id
-#define mpig_pm_get_app_num mpig_pm_gk_get_app_num
-#else
-#define mpig_pm_init mpig_pm_ws_init
-#define mpig_pm_finalize mpig_pm_ws_finalize
-#define mpig_pm_abort mpig_pm_ws_abort
-#define mpig_pm_exchange_business_cards mpig_pm_ws_exchange_business_cards
-#define mpig_pm_free_business_cards mpig_pm_ws_free_business_cards
-#define mpig_pm_get_pg_size mpig_pm_ws_get_pg_size
-#define mpig_pm_get_pg_rank mpig_pm_ws_get_pg_rank
-#define mpig_pm_get_pg_id mpig_pm_ws_get_pg_id
-#define mpig_pm_get_app_num mpig_pm_ws_get_app_num
-#endif
+typedef float * (*mpig_pm_vtable_last_entry_fn_t)(double foo, int bar, const float * baz, short bif);
+
+
+typedef struct mpig_pm_vtable
+{
+    mpig_pm_init_fn_t init;
+    mpig_pm_finalize_fn_t finalize;
+    mpig_pm_abort_fn_t abort;
+    mpig_pm_exchange_business_cards_fn_t exchange_business_cards;
+    mpig_pm_free_business_cards_fn_t free_business_cards;
+    mpig_pm_get_pg_size_fn_t get_pg_size;
+    mpig_pm_get_pg_rank_fn_t get_pg_rank;
+    mpig_pm_get_pg_id_fn_t get_pg_id;
+    mpig_pm_get_app_num_fn_t get_app_num;
+    mpig_pm_vtable_last_entry_fn_t vtable_last_entry;
+}
+mpig_pm_vtable_t;
+
+typedef struct mpig_pm
+{
+    const char * name;
+    mpig_pm_vtable_t * vtable;
+}
+mpig_pm_t;
+
+#define mpig_pm_get_name(pm_) ((pm_)->name)
+#define mpig_pm_get_vtable(pm_) ((const mpig_pm_vtable_t *)((pm_)->vtable))
 /**********************************************************************************************************************************
 						 END PROCESS MANAGEMENT SECTION
 **********************************************************************************************************************************/
