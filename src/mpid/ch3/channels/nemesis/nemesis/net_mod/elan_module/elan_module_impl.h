@@ -13,6 +13,7 @@
 #define MPID_NEM_ELAN_LOOPS     ELAN_POLL_EVENT
 #define MPID_NEM_ELAN_RAIL_NUM  0
 #define MPID_NEM_ELAN_SLOT_SIZE 2048
+#define MPID_NEM_ELAN_NUM_SLOTS 1024
 
 extern int             MPID_nem_elan_freq;
 extern int             MPID_nem_elan_chunks;
