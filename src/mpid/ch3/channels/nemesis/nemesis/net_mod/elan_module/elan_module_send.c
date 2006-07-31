@@ -32,23 +32,26 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
      {
 	if (!MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_free_event_queue))
 	  {	  
-	     MPID_nem_module_elan_free_event_queue->head->elan_event = 
-	       elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);
-	     
-	     if (elan_poll(MPID_nem_module_elan_free_event_queue->head->elan_event,1) == TRUE)
-	       {
-		  //fprintf(stdout,"[%i] ==== ELAN SEND : Done ====\n", MPID_nem_mem_region.rank);
-		  MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);
-		  MPID_nem_module_elan_free_event_queue->head->elan_event = NULL ;
+	     previous_step:
+	       {		  
+		  MPID_nem_module_elan_free_event_queue->head->elan_event = 
+		    elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);
+		  
+		  if (elan_poll(MPID_nem_module_elan_free_event_queue->head->elan_event,1) == TRUE)
+		    {
+		       //fprintf(stdout,"[%i] ==== ELAN SEND : Done ====\n", MPID_nem_mem_region.rank);
+		       MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);
+		       MPID_nem_module_elan_free_event_queue->head->elan_event = NULL ;
+		    }	     
+		  else
+		    {
+		       //		  fprintf(stdout,"[%i] -- ELAN SEND : Pending \n", MPID_nem_mem_region.rank);
+		       MPID_nem_module_elan_pendings_sends++;
+		       MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
+		       elan_event_cell->cell_ptr = cell ;
+		       MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);	
+		    }
 	       }	     
-	     else
-	       {
-		  //		  fprintf(stdout,"[%i] -- ELAN SEND : Pending \n", MPID_nem_mem_region.rank);
-		  MPID_nem_module_elan_pendings_sends++;
-		  MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
-		  elan_event_cell->cell_ptr = cell ;
-		  MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);	
-	       }
 	  }
 	else
 	  {
@@ -59,7 +62,8 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	     elan_event_cell->elan_event = NULL;
 	     elan_event_cell->cell_ptr   = NULL ;
 	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell);
-	     MPID_nem_module_elan_pendings_sends--;	
+	     MPID_nem_module_elan_pendings_sends--;
+	     goto previous_step;
 	  }	
      }
    else
@@ -84,33 +88,35 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	     else
 	       size = slot_size; 	
 	     
-	     previous_step:
 	     if (!MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_free_event_queue))
 	       {
-		  MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);		  
-		  elan_event_cell->elan_event = 
-		    elan_queueTx(rxq_ptr_array[dest],dest,(char *)ptr,(size_t)size,MPID_NEM_ELAN_RAIL_NUM);		  
-		  current_event = elan_link(current_event,elan_event_cell->elan_event);
-		  
-		  if (index == (chunks - 1))
+		  previous_step2:
 		    {		       
-		       if (elan_poll(current_event,1) == TRUE)
-			 {
-			    fprintf(stdout,"[%i] ==== ELAN SEND : Done ====\n", MPID_nem_mem_region.rank);
-			    elan_event_cell->elan_event = NULL;
-			    elan_event_cell->cell_ptr   = NULL;			    
-			    MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell);			    
-			    MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);
-			 }	     
-		       else
-			 {
-			    fprintf(stdout,"[%i] -- ELAN SEND : Pending for chunk %i\n", MPID_nem_mem_region.rank,index);
-			    elan_event_cell->elan_event = current_event;
-			    elan_event_cell->cell_ptr   = cell ;			    
-			    MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);
-			    MPID_nem_module_elan_pendings_sends++;			    
+		       MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);		  
+		       elan_event_cell->elan_event = 
+			 elan_queueTx(rxq_ptr_array[dest],dest,(char *)ptr,(size_t)size,MPID_NEM_ELAN_RAIL_NUM);		  
+		       current_event = elan_link(current_event,elan_event_cell->elan_event);
+		       
+		       if (index == (chunks - 1))
+			 {		       
+			    if (elan_poll(current_event,1) == TRUE)
+			      {
+				 fprintf(stdout,"[%i] ==== ELAN SEND : Done ====\n", MPID_nem_mem_region.rank);
+				 elan_event_cell->elan_event = NULL;
+				 elan_event_cell->cell_ptr   = NULL;			    
+				 MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell);			    
+				 MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);
+			      }	     
+			    else
+			      {
+				 fprintf(stdout,"[%i] -- ELAN SEND : Pending for chunk %i\n", MPID_nem_mem_region.rank,index);
+				 elan_event_cell->elan_event = current_event;
+				 elan_event_cell->cell_ptr   = cell ;			    
+				 MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);
+				 MPID_nem_module_elan_pendings_sends++;			    
+			      }
 			 }
-		    }
+		    }		  
 	       }	     
 	     else
 	       {
@@ -122,7 +128,7 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 		  elan_event_cell->cell_ptr   = NULL ;
 		  MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell);
 		  MPID_nem_module_elan_pendings_sends--;
-		  goto previous_step;
+		  goto previous_step2;
 	       }
 	  }   
      }

@@ -51,6 +51,7 @@ MPID_nem_elan_module_send_from_queue()
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell);
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,elan_event_cell->cell_ptr);	 
 	     elan_event_cell->elan_event = NULL;
+	     elan_event_cell->cell_ptr   = NULL;
 	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell);
 	     MPID_nem_module_elan_pendings_sends--;	     
 	  }
