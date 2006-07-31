@@ -34,6 +34,8 @@ void mx__print_queue(MPID_nem_mx_req_queue_ptr_t qhead, int sens)
 }
 */
 
+#define TRACE 
+
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_elan_module_send_from_queue
 #undef FCNAME
@@ -46,8 +48,11 @@ MPID_nem_elan_module_send_from_queue()
    
    if (MPID_nem_module_elan_pendings_sends > 0)   
      {	
-	if (elan_poll(MPID_nem_module_elan_pending_event_queue->head->elan_event,1) == TRUE)
+	if (elan_poll(MPID_nem_module_elan_pending_event_queue->head->elan_event,10) == TRUE)
 	  {
+#ifdef TRACE
+	     fprintf(stdout,"[%i] ==== ELAN SEND FROM QUEUE : Done ====\n", MPID_nem_mem_region.rank);
+#endif
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell);
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,elan_event_cell->cell_ptr);	 
 	     elan_event_cell->elan_event = NULL;
@@ -62,6 +67,7 @@ MPID_nem_elan_module_send_from_queue()
        goto fn_exit;   
 }
 
+//#undef TRACE
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_elan_module_recv
@@ -79,9 +85,10 @@ MPID_nem_elan_module_recv()
    int                  n_chunks;
    int                  index; 
    int                  slot_size = elan_queueMaxSlotSize(elan_base->state);
-   
-//   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : entering \n", MPID_nem_mem_region.rank,elan_base->state->vp);
-   
+
+#ifdef TRACE
+   fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : entering \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+#endif
    if (elan_queueRxPoll(rxq_ptr_array[MPID_nem_mem_region.rank],ELAN_POLL_EVENT) == TRUE )
      {	
 	if (!MPID_nem_queue_empty(MPID_nem_module_elan_free_queue))
@@ -89,38 +96,37 @@ MPID_nem_elan_module_recv()
 	     MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
 	     pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);		     
 	     ptr = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],(char *)pkt,MPID_NEM_ELAN_LOOPS);		  
-	     //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait 0 done  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
-	     
-	     /*
-	     elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);	     
-	     MPIU_Assert((char* )ptr == (char *)pkt);
-	      */
+#ifdef TRACE 
+	     fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait 0 done  \n", MPID_nem_mem_region.rank,elan_base->state->vp);
+#endif	     
+	     //elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);	     
+	    // MPIU_Assert((char* )ptr == (char *)pkt);
 	     
 	     size = MPID_NEM_CELL_DLEN(cell) + MPID_NEM_MPICH2_HEAD_LEN;
 	     n_chunks = size/slot_size;
 	     if (size%slot_size)
 	       n_chunks++;
 	     
-	     //fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : size %i \n", MPID_nem_mem_region.rank,elan_base->state->vp,size);
+#ifdef TRACE
+	     fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : size %i \n", MPID_nem_mem_region.rank,elan_base->state->vp,size);
+#endif
 	     
 	     for(index = 1 ; index < n_chunks ; index++)
 	       {		  		       
 		  
 		  ptr = (char *)pkt + index*slot_size;
 		  ptr2 = elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],ptr,MPID_NEM_ELAN_LOOPS);
+#ifdef TRACE
 		  fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Wait %i done  \n", MPID_nem_mem_region.rank,elan_base->state->vp,index);		  		  
+#endif	  
 		  
-		  /*
-		  elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);		  
-		  MPIU_Assert((char* )ptr2 == (char *)ptr);
-		  */
+		  //elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);		  		  
+		  //MPIU_Assert((char* )ptr2 == (char *)ptr);
+		  
 	       }
+	     elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]);		  		  
 	     MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);     	  
 	  }
-	else
-	  {
-	     fprintf(stdout,"[%i | nvpid %i] -- ELAN RECV : Queue Empty !!!  \n", MPID_nem_mem_region.rank,elan_base->state->vp);		  		  
-	  }	
      }
    
    fn_exit:
