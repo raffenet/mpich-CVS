@@ -1,4 +1,4 @@
-F77INCLUDES = -I.
+F77INCLUDES = -I. -I../attr
 DEPADD = @MPILIBLOC@ ../util/mtestf.o
 smvar_do_sharedlibs = 0
 
@@ -23,7 +23,14 @@ winaccf_SOURCES    = winaccf.f
 winaccf_LDADD      = ../util/mtestf.o
 
 c2f2cwinf_SOURCES = c2f2cwin.c c2f2cwinf.f
-c2f2cwinf_LDADD = ../util/mtestf.o 
+c2f2cwinf_LDADD   = ../util/mtestf.o 
+
+baseattrwinf_SOURCES  = baseattrwinf.f
+baseattrwinf_LDADD    = ../util/mtestf.o
+winattrf_SOURCES      = winattrf.f
+winattrf_LDADD        = ../util/mtestf.o
+winattr2f_SOURCES     = winattr2f.f
+winattr2f_LDADD       = ../util/mtestf.o
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
