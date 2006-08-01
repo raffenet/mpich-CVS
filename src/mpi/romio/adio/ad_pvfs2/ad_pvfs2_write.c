@@ -137,7 +137,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     MPI_Offset total_bytes_written=0;
     static char myname[] = "ADIOI_PVFS2_WRITESTRIDED";
 
-    /* TODO: increase this to the maximum value */
+    /* note: don't increase this: several parts of PVFS2 now 
+     * assume this limit*/
 #define MAX_ARRAY_SIZE 64
 
     /* --BEGIN ERROR HANDLING-- */
@@ -213,14 +214,13 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		if (!(b_blks_wrote % MAX_ARRAY_SIZE) ||
 		    (b_blks_wrote == total_blks_to_write)) {
 
-		    /* in the case of the last read list call,
+		    /* in the case of the last write list call,
 		       adjust mem_list_count */
 		    if (b_blks_wrote == total_blks_to_write) {
 		        mem_list_count = total_blks_to_write % MAX_ARRAY_SIZE;
-			/* in case last read list call fills max arrays */
+			/* in case last write list call fills max arrays */
 			if (!mem_list_count) mem_list_count = MAX_ARRAY_SIZE;
 		    }
-
 		    err_flag = PVFS_Request_hindexed(mem_list_count, 
 						     mem_lengths, mem_offsets,
 						     PVFS_BYTE, &mem_req);
@@ -255,7 +255,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 					      &resp_io);
 		    total_bytes_written += resp_io.total_completed;
 		  
-		    /* in the case of error or the last read list call, 
+		    /* in the case of error or the last write list call, 
 		     * leave here */
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (err_flag) {
@@ -374,7 +374,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
         
 	mem_list_count = 1;
         
-	/* determine how many blocks in file to read */
+	/* determine how many blocks in file to write */
 	f_data_wrote = ADIOI_MIN(st_fwr_size, bufsize);
 	total_blks_to_write = 1;
 	j++;
@@ -393,7 +393,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	mem_offsets = buf;
 	mem_lengths = 0;
         
-	/* if at least one full readlist, allocate file arrays
+	/* if at least one full writelist, allocate file arrays
 	   at max array size and don't free until very end */
 	if (n_write_lists) {
 	    file_offsets = (int64_t*)ADIOI_Malloc(MAX_ARRAY_SIZE*
@@ -401,7 +401,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    file_lengths = (int32_t*)ADIOI_Malloc(MAX_ARRAY_SIZE*
 						  sizeof(int32_t));
 	}
-	/* if there's no full readlist allocate file arrays according
+	/* if there's no full writelist allocate file arrays according
 	   to needed size (extra_blks) */
 	else {
 	    file_offsets = (int64_t*)ADIOI_Malloc(extra_blks*
@@ -484,7 +484,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 
         } /* for (i=0; i<n_write_lists; i++) */
 
-        /* for file arrays smaller than MAX_ARRAY_SIZE (last read_list call) */
+        /* for file arrays smaller than MAX_ARRAY_SIZE (last write_list call) */
         if (extra_blks) {
             file_list_count = extra_blks;
             if(!i) {
@@ -562,30 +562,6 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	flat_buf = ADIOI_Flatlist;
 	while (flat_buf->type != datatype) flat_buf = flat_buf->next;
 
-        /* TODO: This will with any luck go away when we put in Avery's dtype io
-         * approach, but for now, this offset-length pair creating code
-         * (according to keenin) has problems when the first offset-length pair
-         * wants to carry out a zero-byte operation.  Should we encounter such
-         * a datatype, we will punt to the much slower, but correct naiive
-         * version.  The HDF5 parallel io tests (testphdf5) end up constructing
-         * this sort of type quite a bit */
- 
-        if (flat_buf->blocklens[0] == 0) {
-            int rank;
-            MPI_Comm_rank(fd->comm, &rank);
-            ADIOI_Delete_flattened(datatype);
-            /* can't call with 'offset', as that was modified earlier up in the
-             * region that computes offset, n_filetypes, fwr_size, and st_index
-             */
-            printf("[%d]: falling back to naive write\n", rank);
-            ADIOI_GEN_WriteStrided_naive(fd, buf, count, datatype, 
-                    file_ptr_type, initial_off, status, error_code);
-            return;
-        }
- 
- 
-
-
 	size_wrote = 0;
 	n_filetypes = st_n_filetypes;
 	fwr_size = st_fwr_size;
@@ -609,8 +585,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		   (new_buffer_write < bufsize-size_wrote)) {
 	        /* find mem_list_count and file_list_count such that both are
 		   less than MAX_ARRAY_SIZE, the sum of their lengths are
-		   equal, and the sum of all the data read and data to be
-		   read in the next immediate read list is less than
+		   equal, and the sum of all the data written and data to be
+		   written in the next immediate write list is less than
 		   bufsize */
 	        if(mem_list_count) {
 		    if((new_buffer_write + flat_buf->blocklens[k] + 
@@ -639,7 +615,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    new_file_write = 0;
 	    file_list_count = 0;
 	    while ((file_list_count < MAX_ARRAY_SIZE) && 
-		   (new_file_write < new_buffer_write)) {
+		   (new_file_write < new_buffer_write)) { 
 	        if(file_list_count) {
 		    if((new_file_write + flat_file->blocklens[j]) > 
 		       new_buffer_write) {
@@ -745,6 +721,33 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	        break;
 	} /* while (size_wrote < bufsize) */
 
+	/* one last check before we actually carry out the operation:
+	 * this code has hard-to-fix bugs when a noncontiguous file type has
+	 * such large pieces that the sum of the lengths of the memory type is
+	 * not larger than one of those pieces (and vice versa for large memory
+	 * types and many pices of file types.  In these cases, give up and
+	 * fall back to naive reads and writes.  The testphdf5 test created a
+	 * type with two very large memory regions and 600 very small file
+	 * regions.  The same test also created a type with one very large file
+	 * region and many (700) very small memory regions.  both cases caused
+	 * problems for this code */
+
+	if ( ( (file_list_count == 1) && 
+		    (new_file_write < flat_file->blocklens[0] ) ) ||
+		((mem_list_count == 1) && 
+		    (new_buffer_write < flat_buf->blocklens[0]) ) ||
+		((file_list_count == MAX_ARRAY_SIZE) && 
+		    (new_file_write < flat_buf->blocklens[0]) ) ||
+		( (mem_list_count == MAX_ARRAY_SIZE) &&
+		    (new_buffer_write < flat_file->blocklens[0])) )
+	{
+	    ADIOI_Delete_flattened(datatype);
+	    ADIOI_GEN_WriteStrided_naive(fd, buf, count, datatype,
+		    file_ptr_type, initial_off, status, error_code);
+	    return;
+	}
+
+
 	mem_offsets = (PVFS_size*)ADIOI_Malloc(max_mem_list*sizeof(PVFS_size));
 	mem_lengths = (int *)ADIOI_Malloc(max_mem_list*sizeof(int));
 	file_offsets = (int64_t *)ADIOI_Malloc(max_file_list*sizeof(int64_t));
@@ -771,8 +774,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		   (new_buffer_write < bufsize-size_wrote)) {
 	        /* find mem_list_count and file_list_count such that both are
 		   less than MAX_ARRAY_SIZE, the sum of their lengths are
-		   equal, and the sum of all the data read and data to be
-		   read in the next immediate read list is less than
+		   equal, and the sum of all the data written and data to be
+		   written in the next immediate write list is less than
 		   bufsize */
 	        if(mem_list_count) {
 		    if((new_buffer_write + flat_buf->blocklens[k] + 
@@ -859,7 +862,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    } /* while ((mem_list_count < MAX_ARRAY_SIZE) && 
 		 (new_buffer_write < bufsize-size_wrote)) */
 
-	    /*  fills the allocated readlist arrays  */
+	    /*  fills the allocated writelist arrays  */
 	    k = start_k;
 	    j = start_j;
 	    for (i=0; i<mem_list_count; i++) {	     
