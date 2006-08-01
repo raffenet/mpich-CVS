@@ -16,6 +16,7 @@ AH_BOTTOM([#endif])
 dnl
 echo "RUNNING CONFIGURE FOR THE MultiMethod DEVICE"
 dnl
+PAC_VPATH_CHECK()
 dnl
 PAC_ARG_CACHING
 dnl

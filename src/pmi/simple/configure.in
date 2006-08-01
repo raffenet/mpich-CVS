@@ -39,6 +39,8 @@ if test "$enable_pmiport" != "no" ; then
    enable_pmiport=yes
 fi
 
+PAC_VPATH_CHECK()
+
 PAC_LOAD_BASE_CACHE
 
 PAC_PROG_MAKE
