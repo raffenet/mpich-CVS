@@ -50,6 +50,7 @@ E*/
 int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
 
 
+#if 0
 /*E
   MPIDI_CH3_Init - Initialize the channel implementation.
 
@@ -75,7 +76,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
 E*/
 int MPIDI_CH3_Finalize(void);
 
-
+#endif
 /*E
   MPIDI_CH3_Get_parent_port - obtain the port name associated with the parent
 
@@ -93,6 +94,7 @@ int MPIDI_CH3_Finalize(void);
 E*/
 int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
 
+#if 0
 /*E
   MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A request object is allocated only if the send could not be
   completed immediately.
@@ -196,25 +198,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
 E*/
 int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int iov_n);
 
-
-/*E
-  MPIDI_CH3_Cancel_send - Attempt to cancel a send request by removing the request from the local send queue.
-
-  Input Parameters:
-+ vc - virtual connection over which to send the data 
-- sreq - pointer to the send request object
-
-  Output Parameters:
-. cancelled - TRUE if the send request was successful.  FALSE otherwise.
-
-  Return value:
-  An mpi error code.
-  
-  IMPLEMENTORS:
-  The send request may not be removed from the send queue if one or more bytes of the message have already been sent.
-E*/
-int MPIDI_CH3_Cancel_send(MPIDI_VC_t * vc, MPID_Request * sreq, int *cancelled);
-
+#endif
 
 /*E
   MPIDI_CH3_Request_create - Allocate and initialize a new request object.
@@ -375,6 +359,7 @@ int MPIDI_CH3_Comm_accept(char * port_name, int root, MPID_Comm * comm_ptr, MPID
 int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr, MPID_Comm ** newcomm);
 
 
+#if 0
 /*E
   MPIDI_CH3_Connection_terminate - terminate the underlying connection associated with the specified VC
 
@@ -390,7 +375,7 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc);
    for connecting to a process through a port, used in implementing
    MPID_Comm_connect and accept */
 int MPIDI_CH3_Connect_to_root(const char *, MPIDI_VC_t **);
-
+#endif
 
 /*E
   MPIDI_CH3_Abort - Abort this process.
@@ -405,6 +390,7 @@ E*/
 int MPIDI_CH3_Abort(int exit_code, char * error_msg);
 
 
+#if 0
 /*
  * Channel upcall prototypes
  */
@@ -462,6 +448,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);
 int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank );
 int MPIDI_CH3U_VC_WaitForClose( void );
 
+#endif
 
 /*E
   MPIDI_CH3U_Request_create - Initialize the channel device (ch3) component of a request.
@@ -487,6 +474,7 @@ E*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
 
+#if 0
 /* BEGIN EXPERIMENTAL BLOCK */
 
 /* The following functions enable RDMA capabilities in the CH3 device.
@@ -552,8 +540,9 @@ E*/
 int MPIDI_CH3_iStartRndvTransfer (MPIDI_VC_t * vc, MPID_Request * rreq);
 
 /* END EXPERIMENTAL BLOCK */
+#endif
 
-
+#if 0
 /*
  * Channel utility prototypes
  */
@@ -572,9 +561,13 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
 int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
+
+#endif
+#if 0
 void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sdt, int * smpi_errno,
 			    void * const rbuf, int rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
 int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
+
 
 
 /* FIXME: Move these prototypes into header files in the appropriate 
@@ -599,7 +592,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length);
 
 /* added by brad.  finalization related upcalls */
 int MPIDI_CH3U_Finalize_sshm(void);
-
+#endif
 
 
 /* Include definitions from the channel which require items defined by this file (mpidimpl.h) or the file it includes

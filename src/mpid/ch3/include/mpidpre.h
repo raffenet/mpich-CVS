@@ -34,11 +34,19 @@ typedef MPI_Aint MPIDI_msg_sz_t;
 #define MPIDI_MSG_SZ_FMT "%d"
 #endif
 
-/* Include definitions from the channel which must exist before items in this file (mpidimpl.h) or the file it includes
+/* Include definitions from the channel which must exist before items in this 
+   file (mpidimpl.h) or the file it includes
    (mpiimpl.h) can be defined. */
 #include "mpidi_ch3_pre.h"
 
 /* FIXME: Who defines this name */
+/* As of 8/1/06, no-one defined MSGS_UNORDERED.  We should consider 
+   moving support for unordered messages to a different part of the code
+   However, note that sequence numbers may be useful in other contexts, 
+   including identifying messages when multithreaded (for better profiling
+   tools) and handling cancellations (rather than relying on unique 
+   request ids) 
+*/
 #if defined (MPIDI_CH3_MSGS_UNORDERED)
 #define MPID_USE_SEQUENCE_NUMBERS
 #endif
@@ -57,6 +65,8 @@ typedef struct MPIDI_Message_match
 MPIDI_Message_match;
 #define MPIDI_TAG_UB (0x7fffffff)
 
+#include "mpidpkt.h"
+#if 0
 /*
  * MPIDI_CH3_Pkt_type_t
  *
@@ -315,6 +325,7 @@ typedef struct MPIDI_CH3_Pkt_send_container
 MPIDI_CH3_Pkt_send_container_t;
 #endif
 
+#endif
 /*
  * MPIDI_CH3_CA_t
  *
@@ -503,9 +514,14 @@ typedef enum MPIDI_VC_Event
 }
 MPIDI_VC_Event_t;
 
+#ifndef HAVE_MPIDI_VCRT
+#define HAVE_MPIDI_VCRT
 typedef struct MPIDI_VCRT * MPID_VCRT;
 typedef struct MPIDI_VC * MPID_VCR;
+#endif
 
+#ifndef DEFINED_REQ
+#define DEFINED_REQ
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_REQUEST_SEQNUM	\
         MPID_Seqnum_t seqnum;
@@ -587,10 +603,17 @@ MPID_REQUEST_DECL
 #define MPID_DEV_REQUEST_KIND_DECL MPIDI_CH3_REQUEST_KIND_DECL
 #endif
 
+#endif
+
+/* FIXME: This ifndef test is a temp until mpidpre is cleaned of
+   all items that do not belong (e.g., all items not needed by the
+   top layers of MPICH2) */
+#ifndef MPID_PROGRESS_STATE_DECL
 #if defined(MPIDI_CH3_PROGRESS_STATE_DECL)
 #   define MPID_PROGRESS_STATE_DECL MPIDI_CH3_PROGRESS_STATE_DECL
 #else
 #   define MPID_PROGRESS_STATE_DECL int foo;
+#endif
 #endif
 
 
