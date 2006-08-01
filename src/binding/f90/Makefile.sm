@@ -95,6 +95,7 @@ doc_MAN_SOURCES   = ${doc_sources}
 doc_LATEX_SOURCES = ${doc_sources}
 
 distclean-local:
+	rm -f lib${MPILIBNAME}f90.a
 	rm -f ../../../bin/mpif90
 	rm -f ../../../src/include/$(MPIMOD).$(MOD)
 	rm -f ../../../lib/lib${MPILIBNAME}f90.a
