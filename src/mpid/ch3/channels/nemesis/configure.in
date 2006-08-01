@@ -299,4 +299,4 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 
-AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile  nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/none_module/Makefile localdefs)
+AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile   nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile  nemesis/net_mod/none_module/Makefile localdefs)
