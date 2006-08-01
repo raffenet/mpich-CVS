@@ -46,29 +46,28 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 
     pkt->mpich2.datalen = datalen;
     pkt->mpich2.source  = MPID_nem_mem_region.rank;    
- 
-    if (!Q_EMPTY (vc_ch->send_queue))
+
+    if (!vc_is_connected (vc))
+    {
+        MPID_nem_newtcp_module_connection_progress (vc); /* try to get connected */
+        if (!vc_is_connected (vc))
+        {
+            goto enqueue_cell_and_exit;
+        }
+    }
+    
+     if (!Q_EMPTY (vc_ch->send_queue))
     {
         MPID_nem_newtcp_module_send_queue (vc); /* try to empty the queue */
         if (!Q_EMPTY (vc_ch->send_queue))
         {
-            ALLOC_Q_ELEMENT (&e);
-            MPID_NEM_MEMCPY (&e->buf, pkt, MPID_NEM_PACKET_LEN (pkt));
-            e->len = MPID_NEM_PACKET_LEN (pkt);
-            e->start = e->buf;
-            Q_ENQUEUE (&vc_ch->send_queue, e);
-
-            goto fn_exit;
+            goto enqueue_cell_and_exit;
         }
     }
 
     /* start sending the cell */
-    
-    do
-    {
-        offset = write (vc_ch->fd, pkt, MPID_NEM_PACKET_LEN (pkt));
-    }
-    while (offset == -1 && errno == EINTR);
+
+    CHECK_EINTR (offset, write (vc_ch->fd, pkt, MPID_NEM_PACKET_LEN (pkt)));
     MPIU_ERR_CHKANDJUMP1 (offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror (errno));
 
     if (offset == MPID_NEM_PACKET_LEN (pkt))
@@ -87,6 +86,14 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);
     MPIU_CHKPMEM_COMMIT();    
     return mpi_errno;
+ fn_enqueue_and_exit:
+    /* enqueue cell on send queue and exit */
+    ALLOC_Q_ELEMENT (&e);
+    MPID_NEM_MEMCPY (&e->buf, pkt, MPID_NEM_PACKET_LEN (pkt));
+    e->len = MPID_NEM_PACKET_LEN (pkt);
+    e->start = e->buf;
+    Q_ENQUEUE (&vc_ch->send_queue, e);
+    goto fn_exit;
  fn_fail:
     MPIU_CHKPMEM_REAP();
     return mpi_errno;
@@ -127,11 +134,7 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
     while (count < MAX_SEND_IOV && e->next);
 
     /* write iov */
-    do
-    {
-        bytes_sent = writev (vc_ch->fd, iov, count);
-    }
-    while (bytes_sent == -1 && errno == EINTR);
+    CHECK_EINTR (bytes_sent, writev (vc_ch->fd, iov, count));
     MPIU_ERR_CHKANDJUMP1 (bytes_sent == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
 
     /* remove pending sends that were sent */

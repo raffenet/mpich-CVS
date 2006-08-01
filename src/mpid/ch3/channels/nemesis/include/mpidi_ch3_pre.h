@@ -40,6 +40,8 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
 
+    enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
+
 #if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
 #error Error in definition of MPID_NEM_*_MODULE macros
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
@@ -74,7 +76,7 @@ typedef struct MPIDI_CH3I_VC
     struct
     {
         MPID_nem_cell_t *cell;
-        char *start;
+        char *end;
         int len;
     } pending_recv;
     
@@ -85,7 +87,6 @@ typedef struct MPIDI_CH3I_VC
        portion of the vc.  This is unused in nemesis and should be set
        to NULL */
     void *sendq_head;
-    int state;
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
