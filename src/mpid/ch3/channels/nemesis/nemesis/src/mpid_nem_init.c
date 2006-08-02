@@ -17,6 +17,8 @@ MPID_nem_mem_region_t MPID_nem_mem_region = {0};
 
 char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
 
+static MPID_nem_queue_ptr_t net_free_queue;
+
 #define MIN( a , b ) ((a) >  (b)) ? (b) : (a)
 #define MAX( a , b ) ((a) >= (b)) ? (a) : (b)
 
@@ -39,20 +41,20 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 int
 _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 {
-    int    mpi_errno       = MPI_SUCCESS;
-    int    pmi_errno;
-    int    num_procs       = pg_p->size;
-    pid_t  my_pid;
-    int    ret;
-    int    num_local;
-    int   *local_procs;
-    int    local_rank;
-    int    global_size;
-    int    index, index2, size;
-    int    i;
-    char  *publish_bc_orig = NULL;
-    char  *bc_val          = NULL;
-    int    val_max_remaining;
+    int                   mpi_errno       = MPI_SUCCESS;
+    int                   pmi_errno;
+    int                   num_procs       = pg_p->size;
+    pid_t                 my_pid;
+    int                   ret;
+    int                   num_local;
+    int                  *local_procs;
+    int                   local_rank;
+    int                   global_size;
+    int                   index, index2, size;
+    int                   i;
+    char                 *publish_bc_orig = NULL;
+    char                 *bc_val          = NULL;
+    int                   val_max_remaining;
     MPIU_CHKPMEM_DECL(5);
     
     /* Initialize the business card */
@@ -247,7 +249,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
                                               MPID_NEM_NUM_CELLS,
                                               MPID_nem_mem_region.net_elements, 
                                               MPID_NEM_NUM_CELLS, 
-                                              &MPID_nem_mem_region.net_free_queue,
+                                              &net_free_queue,
                                               ckpt_restart, pg_p, pg_rank,
                                               &bc_val, &val_max_remaining);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -256,7 +258,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     {
 	if (pg_rank == 0)
 	{
-	    MPID_nem_mem_region.net_free_queue = NULL;
+	    net_free_queue = NULL;
 	}
     }
 
@@ -264,7 +266,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
     {
 	index2 = MPID_nem_mem_region.ext_ranks[index];
-	MPID_nem_mem_region.FreeQ[index2] = MPID_nem_mem_region.net_free_queue;
+	MPID_nem_mem_region.FreeQ[index2] = net_free_queue;
 	MPID_nem_mem_region.RecvQ[index2] = NULL;
     }
 
@@ -527,7 +529,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     {
 	/* this vc is the result of a connect */
 	vc->ch.is_local = 0;
-	vc->ch.free_queue = MPID_nem_mem_region.net_free_queue;
+	vc->ch.free_queue = net_free_queue;
     }
     
     if (vc->ch.is_local)
