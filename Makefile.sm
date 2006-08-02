@@ -149,7 +149,7 @@ dist-with-version:
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
 	    ( cd tmpdir2 && ./configure --without-mpe --disable-f90 \
-              --disable-f77 --disable-cxx --disable-romio && \
+              --disable-f77 --disable-cxx && \
               ${MAKE} mandoc && ${MAKE} htmldoc && \
               ${MAKE} latexdoc ) >manlog.txt 2>&1 ; \
 	    if [ ! -d tmpdir2/man ] ; then echo "WARNING: unable to build manpages" ; \
