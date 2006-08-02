@@ -1486,7 +1486,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 				   specific_fmt, Argp );
 		}
 		else {
-		    ring_msg = user_ring_msg;
+		    MPIU_Strncpy( ring_msg, user_ring_msg, MPI_MAX_ERROR_STRING );
 		}
 	    }
 	    else if (generic_idx >= 0)
