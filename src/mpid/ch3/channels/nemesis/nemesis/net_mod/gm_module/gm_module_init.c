@@ -20,10 +20,8 @@ int MPID_nem_module_gm_num_recv_tokens = 0;
 
 struct gm_port *MPID_nem_module_gm_port = 0;
 
-static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
 
-MPID_nem_queue_ptr_t MPID_nem_module_gm_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_module_gm_free_queue = 0;
 
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
@@ -90,7 +88,7 @@ init_gm (int *boardId, int *portId, unsigned char unique_id[])
 /*
    int  
    MPID_nem_gm_module_init(MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, MPID_nem_cell_ptr_t proc_elements, int num_proc_elements,
-	          MPID_nem_cell_ptr_t module_elements, int num_module_elements, MPID_nem_queue_ptr_t *module_recv_queue,
+	          MPID_nem_cell_ptr_t module_elements, int num_module_elements,
 		  MPID_nem_queue_ptr_t *module_free_queue)
 
    IN
@@ -103,9 +101,6 @@ init_gm (int *boardId, int *portId, unsigned char unique_id[])
        ckpt_restart -- true if this is a restart from a checkpoint.  In a restart, the network needs to be brought up again, but
                        we want to keep things like sequence numbers.
    OUT
-   
-       recv_queue -- pointer to the recv queue for this module.  The process will add elements to this
-                     queue for the module to send
        free_queue -- pointer to the free queue for this module.  The process will return elements to
                      this queue
 */
@@ -119,7 +114,6 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 		MPID_nem_queue_ptr_t proc_free_queue, 
 		MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
 		MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
-		MPID_nem_queue_ptr_t *module_recv_queue,
 		MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart,
 		MPIDI_PG_t *pg_p, int pg_rank,
 		char **bc_val_p, int *val_max_sz_p)
@@ -145,10 +139,8 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     status = gm_register_memory (MPID_nem_module_gm_port, (void *)module_elements, sizeof (MPID_nem_cell_t) * num_module_elements);
     MPIU_ERR_CHKANDJUMP1 (status != GM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gm_regmem", "**gm_regmem %d", status);
 
-    MPID_nem_module_gm_recv_queue = &_recv_queue;
     MPID_nem_module_gm_free_queue = &_free_queue;
 
-    MPID_nem_queue_init (MPID_nem_module_gm_recv_queue);
     MPID_nem_queue_init (MPID_nem_module_gm_free_queue);
 
     MPID_nem_module_gm_num_send_tokens = gm_num_send_tokens (MPID_nem_module_gm_port);
@@ -167,7 +159,6 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 	--MPID_nem_module_gm_num_recv_tokens;
     }
 
-    *module_recv_queue = MPID_nem_module_gm_recv_queue;
     *module_free_queue = MPID_nem_module_gm_free_queue;
 
     MPID_nem_gm_module_send_queue.head = NULL;

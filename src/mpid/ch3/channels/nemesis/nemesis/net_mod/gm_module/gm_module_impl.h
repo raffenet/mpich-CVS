@@ -29,7 +29,6 @@ extern int MPID_nem_module_gm_num_recv_tokens;
 
 extern struct gm_port *MPID_nem_module_gm_port;
 
-extern MPID_nem_queue_ptr_t MPID_nem_module_gm_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_module_gm_free_queue;
 
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;

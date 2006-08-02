@@ -18,7 +18,6 @@ typedef MPID_nem_newtcp_module_send_q_element
 
 
 /* globals */
-extern MPID_nem_queue_ptr_t MPID_nem_tcp_module_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_tcp_module_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;

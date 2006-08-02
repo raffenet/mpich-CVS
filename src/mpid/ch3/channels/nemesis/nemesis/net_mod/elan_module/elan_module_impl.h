@@ -81,7 +81,6 @@ extern MPID_nem_elan_cell_ptr_t        MPID_nem_module_elan_cells;
 extern MPID_nem_elan_event_queue_ptr_t MPID_nem_module_elan_free_event_queue;
 extern MPID_nem_elan_event_queue_ptr_t MPID_nem_module_elan_pending_event_queue;
 
-extern MPID_nem_queue_ptr_t MPID_nem_module_elan_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_module_elan_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;

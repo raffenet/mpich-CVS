@@ -132,7 +132,7 @@ MPID_nem_gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
     int mpi_errno = MPI_SUCCESS;
     
     DO_PAPI3 (PAPI_reset (PAPI_EventSet));
-    if (MPID_nem_queue_empty (MPID_nem_module_gm_recv_queue) && MPID_nem_module_gm_num_send_tokens)
+    if (MPID_nem_module_gm_num_send_tokens)
     {
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
 	mpi_errno = send_cell (vc->ch.node_id, vc->ch.port_id, cell, datalen);

@@ -247,7 +247,6 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
                                               MPID_NEM_NUM_CELLS,
                                               MPID_nem_mem_region.net_elements, 
                                               MPID_NEM_NUM_CELLS, 
-                                              &MPID_nem_mem_region.net_recv_queue, 
                                               &MPID_nem_mem_region.net_free_queue,
                                               ckpt_restart, pg_p, pg_rank,
                                               &bc_val, &val_max_remaining);
@@ -257,7 +256,6 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     {
 	if (pg_rank == 0)
 	{
-	    MPID_nem_mem_region.net_recv_queue = NULL;
 	    MPID_nem_mem_region.net_free_queue = NULL;
 	}
     }
@@ -267,7 +265,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     {
 	index2 = MPID_nem_mem_region.ext_ranks[index];
 	MPID_nem_mem_region.FreeQ[index2] = MPID_nem_mem_region.net_free_queue;
-	MPID_nem_mem_region.RecvQ[index2] = MPID_nem_mem_region.net_recv_queue;
+	MPID_nem_mem_region.RecvQ[index2] = NULL;
     }
 
     

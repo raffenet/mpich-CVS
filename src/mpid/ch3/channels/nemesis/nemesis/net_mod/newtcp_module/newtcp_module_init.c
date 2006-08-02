@@ -7,13 +7,11 @@
 #include "newtcp_module_impl.h"
 #define NUM_PREALLOC_SENDQ 10
 
-MPID_nem_queue_ptr_t MPID_nem_tcp_module_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_tcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 int MPID_nem_tcp_module_listen_fd = 0;
 
-static MPID_nem_queue_t _recv_queue;
 static MPID_nem_queue_t _free_queue;
 
 static int set_sockopts (int fd);
@@ -24,7 +22,7 @@ static int get_addr_port_from_bc (const char *business_card, char addr[], int ma
 
 int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue,
                                  MPID_nem_cell_ptr_t proc_elements, int num_proc_elements, MPID_nem_cell_ptr_t module_elements,
-                                 int num_module_elements, MPID_nem_queue_ptr_t *module_recv_queue, MPID_nem_queue_ptr_t *module_free_queue,
+                                 int num_module_elements, MPID_nem_queue_ptr_t *module_free_queue,
                                  int ckpt_restart, MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -58,11 +56,9 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     MPID_nem_process_recv_queue = proc_recv_queue;
     MPID_nem_process_free_queue = proc_free_queue;
 
-    MPID_nem_tcp_module_recv_queue = &_recv_queue;
     MPID_nem_tcp_module_free_queue = &_free_queue;
 
     /* set up network module queues */
-    MPID_nem_queue_init (MPID_nem_tcp_module_recv_queue);
     MPID_nem_queue_init (MPID_nem_tcp_module_free_queue);
 
     for (i = 0; i < num_module_elements; ++i)
@@ -70,7 +66,6 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 	MPID_nem_queue_enqueue (MPID_nem_tcp_module_free_queue, &module_elements[i]);
     }
 
-    *module_recv_queue = MPID_nem_tcp_module_recv_queue;
     *module_free_queue = MPID_nem_tcp_module_free_queue;
 
     /* preallocate sendq elements */
