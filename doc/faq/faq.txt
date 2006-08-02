@@ -172,6 +172,29 @@ Fortran 95 compiler that used 64 bits for \emph{both} INTEGER and REAL would
 also conform to the Fortran standard.  However, such a compiler would need to
 use 128 bits for DOUBLE PRECISION quantities).
 
+%% Heading: When I run make, it fails immediately with many errors \
+beginning with ``sock.c:8:24: mpidu\_sock.h: No such file or directory \
+In file included from sock.c:9: \
+../../../../include/mpiimpl.h:91:21: mpidpre.h: No such file or directory \
+In file included from sock.c:9: \
+../../../../include/mpiimpl.h:1150: error: syntax error before "MPID\_VCRT" \
+../../../../include/mpiimpl.h:1150: warning: no semicolon at end of struct or union''
+%% Filename: cppflags
+%% End
+Check if you have set the envirnoment variable CPPFLAGS. If so, unset
+it and use CXXFLAGS instead. Then rerun configure and make.
+
+%% Heading: When building the ssm or sshm channel, I get the \
+error ``mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory \
+operation specified to implement busy locks ***''
+%% Filename: asmlocks
+%% End
+The ssm and sshm channels do not work on all platforms because they
+use special interprocess locks (often assembly) that may not work
+with some compilers or machine architectures. They work on Linux with
+gcc, Intel, and Pathscale compilers on various Intel
+architectures. They also work in Windows and Solaris environments.
+
 % ----------------------------------------------------------------------------
 %% Section: Windows version of MPICH2
 %% Heading: I am having trouble installing and using the Windows version of MPICH2
@@ -208,17 +231,6 @@ before \texttt{mpi.h} is included, or add the definition
 to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
 
-
-%% Heading: When building the ssm or sshm channel, I get the \
-error ``mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory \
-operation specified to implement busy locks ***''
-%% Filename: asmlocks
-%% End
-The ssm and sshm channels do not work on all platforms because they
-use special interprocess locks (often assembly) that may not work
-with some compilers or machine architectures. They work on Linux with
-gcc, Intel, and Pathscale compilers on various Intel
-architectures. They also work in Windows and Solaris environments.
 
 % ----------------------------------------------------------------------------
 %% Section: Running MPI Programs
@@ -304,7 +316,7 @@ ranks to appear on the same machine.  (In the default case, the same
 number of processes might well run on the machine, but their ranks would
 be different.)
 
-(A feature of the \texttt{--ncpus=<n>} argument is that it has the above effect only
+(A feature of the \texttt{--ncpus=[n]} argument is that it has the above effect only
 until all of the mpd's have started n processes at a time once;
 afterwards each mpd starts one process at a time.  This is in order to 
 balance the number of processes per machine to the extent possible.)
