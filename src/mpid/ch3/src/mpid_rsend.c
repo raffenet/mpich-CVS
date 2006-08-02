@@ -125,6 +125,15 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     }
     else
     {
+#if 0
+	MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
+	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
+	mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq, 
+						  MPIDI_CH3_PKT_READY_SEND,
+						  buf, count, datatype,
+						  data_sz, rank, tag, 
+						  comm, context_offset );
+#else
 	int iov_n;
 	    
 	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
@@ -176,6 +185,7 @@ int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    goto fn_exit;
 	    /* --END ERROR HANDLING-- */
 	}
+#endif
     }
 
   fn_exit:

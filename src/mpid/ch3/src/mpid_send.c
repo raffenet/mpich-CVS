@@ -20,7 +20,8 @@
 #define FUNCNAME MPID_Send
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, 
+	      int tag, MPID_Comm * comm, int context_offset,
 	      MPID_Request ** request)
 {
     MPIDI_msg_sz_t data_sz;
@@ -165,6 +166,15 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 	}
 	else
 	{
+#if 0
+	    MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
+	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
+	    mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq, 
+						      MPIDI_CH3_PKT_EAGER_SEND,
+						      buf, count, datatype,
+						      data_sz, rank, tag, 
+						      comm, context_offset );
+#else
 	    int iov_n;
 	    
 	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
@@ -216,128 +226,18 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 		goto fn_exit;
 		/* --END ERROR HANDLING-- */
 	    }
+#endif
 	}
     }
-    else
-    {
-	MPIDI_CH3_Pkt_t upkt;
-	MPIDI_CH3_Pkt_rndv_req_to_send_t * const rts_pkt = &upkt.rndv_req_to_send;
-#ifndef MPIDI_CH3_CHANNEL_RNDV
-	MPID_Request * rts_sreq;
-#endif
-
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-                    "sending rndv RTS, data_sz=" MPIDI_MSG_SZ_FMT, data_sz));
-	    
+    else {
 	MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
-	sreq->partner_request = NULL;
-	
-	/* FIXME - Since the request is never returned to the user and they can't do things like cancel it or wait on it, we may
-           not need to fill in all of the fields.  For example, it may be completely unnecessary to supply the matching
-           information.  Also, some of the fields can be set after the message has been sent.  These issues should be looked at
-           more closely when we are trying to squeeze those last few nanoseconds out of the code.  */
-	
-	MPIDI_Pkt_init(rts_pkt, MPIDI_CH3_PKT_RNDV_REQ_TO_SEND);
-	rts_pkt->match.rank = comm->rank;
-	rts_pkt->match.tag = tag;
-	rts_pkt->match.context_id = comm->context_id + context_offset;
-	rts_pkt->sender_req_id = sreq->handle;
-	rts_pkt->data_sz = data_sz;
-	
-	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
-	MPIDI_Pkt_set_seqnum(rts_pkt, seqnum);
-	MPIDI_Request_set_seqnum(sreq, seqnum);
-
-/* FIXME: What is MPIDI_CH3_CHANNEL_RNDV, who defines it, and why? */
-#ifdef MPIDI_CH3_CHANNEL_RNDV
-
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Rendezvous send using iStartRndvMsg");
-    
-	if (dt_contig) 
-	{
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-                              "  contiguous rndv data, data_sz="
-			      MPIDI_MSG_SZ_FMT, data_sz));
-		
-	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-	    
-	    sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char*)sreq->dev.user_buf + dt_true_lb);
-	    sreq->dev.iov[0].MPID_IOV_LEN = data_sz;
-	    sreq->dev.iov_count = 1;
-	}
-	else
-	{
-	    MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count,
-			      sreq->dev.datatype, &sreq->dev.segment, 0);
-	    sreq->dev.iov_count = MPID_IOV_LIMIT;
-	    sreq->dev.segment_first = 0;
-	    sreq->dev.segment_size = data_sz;
-	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &sreq->dev.iov[0],
-							 &sreq->dev.iov_count);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
-						 FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**ch3|loadsendiov", 0);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-	}
-
-	mpi_errno = MPIDI_CH3_iStartRndvMsg (vc, sreq, &upkt);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    MPIU_Object_set_ref(sreq, 0);
-	    MPIDI_CH3_Request_destroy(sreq);
-	    sreq = NULL;
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL,
-					     FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**ch3|rtspkt", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
-	
-#else
-
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    MPIU_Object_set_ref(sreq, 0);
-	    MPIDI_CH3_Request_destroy(sreq);
-	    sreq = NULL;
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
-	    goto fn_exit;
-	}
-	/* --END ERROR HANDLING-- */
-	if (rts_sreq != NULL)
-	{
-	    if (rts_sreq->status.MPI_ERROR != MPI_SUCCESS)
-	    {
-		MPIU_Object_set_ref(sreq, 0);
-		MPIDI_CH3_Request_destroy(sreq);
-		sreq = NULL;
-		mpi_errno = MPIR_Err_create_code(rts_sreq->status.MPI_ERROR, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
-		MPID_Request_release(rts_sreq);
-		goto fn_exit;
-	    }
-	    MPID_Request_release(rts_sreq);
-	}
-#endif
-	
-	/* FIXME: fill temporary IOV or pack temporary buffer after send to hide some latency.  This requires synchronization
-           because the CTS packet could arrive and be processed before the above iStartmsg completes (depending on the progress
-           engine, threads, etc.). */
-	
-	if (dt_ptr != NULL)
-	{
-	    /* sreq->dev.datatype_ptr = dt_ptr;
-	       MPID_Datatype_add_ref(dt_ptr);  -- no necessary for blocking send */
-	}
-
+	mpi_errno = MPIDI_CH3_RndvSend( &sreq, buf, count, datatype, dt_contig,
+					data_sz, rank, tag, comm, 
+					context_offset );
+	/* Note that we don't increase the ref cound on the datatype
+	   because this is a blocking call, and the calling routine 
+	   must wait until sreq completes */
     }
 
   fn_exit:

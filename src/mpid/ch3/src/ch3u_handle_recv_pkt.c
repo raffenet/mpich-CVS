@@ -184,9 +184,11 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t * pkt,
 		pc_cur = vc->msg_reorder_queue;
 		while (pc_cur != NULL)
 		{
-		    /* the current recv seqnum is subtracted from both the seqnums prior to comparision so as to remove any wrap
+		    /* the current recv seqnum is subtracted from both the 
+		       seqnums prior to comparision so as to remove any wrap
 		       around effects. */
-		    if (pc_new->pkt.seqnum - vc->seqnum_recv < pc_cur->pkt.seqnum - vc->seqnum_recv)
+		    if (pc_new->pkt.seqnum - vc->seqnum_recv < 
+			pc_cur->pkt.seqnum - vc->seqnum_recv)
 		    {
 			break;
 		    }
@@ -213,7 +215,8 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t * pkt,
 	case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
 	{
 	    /* --BEGIN ERROR HANDLING-- */
-	    /* FIXME: processing send cancel requests requires that we be aware of pkts in the reorder queue */
+	    /* FIXME: processing send cancel requests requires that we be 
+	       aware of pkts in the reorder queue */
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 					     "**ch3|ooocancelreq", 0);
 	    goto fn_exit;
@@ -249,11 +252,15 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 
     MPIU_DBG_STMT(CH3_OTHER,VERBOSE,MPIDI_DBG_Print_packet(pkt));
 
+    /* FIXME: We can turn this into something like
+
+       MPIU_ASSERT(pkt->type >= 0 && pkt->type <= MAX_PACKET_TYPE);
+       mpi_errno = MPIDI_CH3_ProgressFunctions[pkt->type](vc,pkt,rreqp);
+       
+       in the progress engine itself.  Then this routine is not necessary.
+    */
     switch(pkt->type)
     {
-	/* FIXME: This is not optimized for short messages, which 
-	   should have the data in the same packet when the data is
-	   particularly short (e.g., one 8 byte long word) */
 	case MPIDI_CH3_PKT_EAGER_SEND:
 	{
 	    mpi_errno = MPIDI_CH3_PktHandler_EagerSend( vc, pkt, rreqp );
@@ -601,6 +608,9 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
 /* ------------------------------------------------------------------------ */
 
 
+/* FIXME: This is not optimized for short messages, which 
+   should have the data in the same packet when the data is
+   particularly short (e.g., one 8 byte long word) */
 int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
 				    MPID_Request **rreqp )
 {
@@ -767,169 +777,6 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    *rreqp = NULL;
 	}
     }
- fn_fail:
-    return mpi_errno;
-}
-
-int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					MPID_Request **rreqp )
-{
-    MPID_Request * rreq;
-    int found;
-    MPIDI_CH3_Pkt_rndv_req_to_send_t * rts_pkt = &pkt->rndv_req_to_send;
-    int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
- "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
-	      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, 
-              rts_pkt->match.context_id, rts_pkt->data_sz));
-
-    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
-    if (rreq == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
-    }
-    
-    set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
-    
-    if (found)
-    {
-	MPID_Request * cts_req;
-	MPIDI_CH3_Pkt_t upkt;
-	MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
-	
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"posted request found");
-	
-	/* FIXME: What if the receive user buffer is not big enough to
-	   hold the data about to be cleared for sending? */
-	
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv CTS packet");
-	MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
-	cts_pkt->sender_req_id = rts_pkt->sender_req_id;
-	cts_pkt->receiver_req_id = rreq->handle;
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-				"**ch3|ctspkt");
-	}
-	if (cts_req != NULL) {
-	    MPID_Request_release(cts_req);
-	}
-    }
-    else
-    {
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unexpected request allocated");
-	
-	/*
-	 * A MPID_Probe() may be waiting for the request we just 
-	 * inserted, so we need to tell the progress engine to exit.
-	 *
-	 * FIXME: This will cause MPID_Progress_wait() to return to the
-	 * MPI layer each time an unexpected RTS packet is
-	 * received.  MPID_Probe() should atomically increment a
-	 * counter and MPIDI_CH3_Progress_signal_completion()
-	 * should only be called if that counter is greater than zero.
-	 */
-	MPIDI_CH3_Progress_signal_completion();
-    }
-    
-    *rreqp = NULL;
-
- fn_fail:
-    return mpi_errno;
-}
-
-int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					MPID_Request **rreqp )
-{
-    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &pkt->rndv_clr_to_send;
-    MPID_Request * sreq;
-    MPID_Request * rts_sreq;
-    MPIDI_CH3_Pkt_t upkt;
-    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &upkt.rndv_send;
-    int dt_contig;
-    MPI_Aint dt_true_lb;
-    MPIDI_msg_sz_t data_sz;
-    MPID_Datatype * dt_ptr;
-    MPID_IOV iov[MPID_IOV_LIMIT];
-    int iov_n;
-    int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received rndv CTS pkt");
-    
-    MPID_Request_get_ptr(cts_pkt->sender_req_id, sreq);
-    MPIU_DBG_PRINTF(("received cts, count=%d\n", sreq->dev.user_count));
-    
-    /* Release the RTS request if one exists.  
-       MPID_Request_fetch_and_clear_rts_sreq() needs to be atomic to 
-       prevent
-       cancel send from cancelling the wrong (future) request.  
-       If MPID_Request_fetch_and_clear_rts_sreq() returns a NULL
-       rts_sreq, then MPID_Cancel_send() is responsible for releasing 
-       the RTS request object. */
-    MPIDI_Request_fetch_and_clear_rts_sreq(sreq, &rts_sreq);
-    if (rts_sreq != NULL)
-    {
-	MPID_Request_release(rts_sreq);
-    }
-    
-    MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
-    rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
-    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rs_pkt;
-    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
-    
-    MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
-    
-    if (dt_contig) 
-    {
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-		    "sending contiguous rndv data, data_sz=" MPIDI_MSG_SZ_FMT, 
-					    data_sz));
-	
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-	
-	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);
-	iov[1].MPID_IOV_LEN = data_sz;
-	iov_n = 2;
-    }
-    else
-    {
-	MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment, 0);
-	iov_n = MPID_IOV_LIMIT - 1;
-	sreq->dev.segment_first = 0;
-	sreq->dev.segment_size = data_sz;
-	mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-	if (mpi_errno != MPI_SUCCESS)  {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
-				"**ch3|loadsendiov");
-	}
-	iov_n += 1;
-    }
-	    
-    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|senddata");
-    }
-    
-    *rreqp = NULL;
-
- fn_fail:
-    return mpi_errno;
-}
-
-int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-				   MPID_Request **rreqp )
-{
-    MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &pkt->rndv_send;
-    int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received rndv send (data) pkt");
-    MPID_Request_get_ptr(rs_pkt->receiver_req_id, *rreqp);
-    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
-			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_RNDV_SEND");
-    }
-	
  fn_fail:
     return mpi_errno;
 }

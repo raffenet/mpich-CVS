@@ -805,12 +805,14 @@ int MPIDU_CH3I_ShutdownListener( void );
 
 /* Channel defintitions */
 /*E
-  MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A request object is allocated only if the send could not be
-  completed immediately.
+  MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A r
+  equest object is allocated only if the send could not be completed 
+  immediately.
 
   Input Parameters:
 + vc - virtual connection to send the message over
-. pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to be sent
+. pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to 
+  be sent
 - pkt_sz - size of the packet substucture
 
   Output Parameters:
@@ -823,15 +825,19 @@ int MPIDU_CH3I_ShutdownListener( void );
   The packet structure may be allocated on the stack.
 
   IMPLEMETORS:
-  If the send can not be completed immediately, the CH3 packet structure must be stored internally until the request is complete.
+  If the send can not be completed immediately, the CH3 packet structure must 
+  be stored internally until the request is complete.
   
-  If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
+  If the send completes immediately, the channel implementation shold return 
+  NULL and must not call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_Request **sreq_ptr);
+int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, 
+			MPID_Request **sreq_ptr);
 
 
 /*E
-  MPIDI_CH3_iStartMsgv - A non-blocking request to send a CH3 packet and associated data.  A request object is allocated only if
+  MPIDI_CH3_iStartMsgv - A non-blocking request to send a CH3 packet and 
+  associated data.  A request object is allocated only if
   the send could not be completed immediately.
 
   Input Parameters:
@@ -846,26 +852,32 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID
   An mpi error code.
   
   NOTE:
-  The first element in the vector must point to the packet structure.   The packet structure and the vector may be allocated on
+  The first element in the vector must point to the packet structure.   The 
+  packet structure and the vector may be allocated on
   the stack.
 
   IMPLEMENTORS:
-  If the send can not be completed immediately, the CH3 packet structure and the vector must be stored internally until the
+  If the send can not be completed immediately, the CH3 packet structure and 
+  the vector must be stored internally until the
   request is complete.
   
-  If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
+  If the send completes immediately, the channel implementation shold return 
+  NULL and must not call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, MPID_Request **sreq_ptr);
+int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, 
+			 MPID_Request **sreq_ptr);
 
 
 /*E
-  MPIDI_CH3_iSend - A non-blocking request to send a CH3 packet using an existing request object.  When the send is complete
+  MPIDI_CH3_iSend - A non-blocking request to send a CH3 packet using an 
+  existing request object.  When the send is complete
   the channel implementation will call MPIDI_CH3U_Handle_send_req().
 
   Input Parameters:
 + vc - virtual connection over which to send the CH3 packet
 . sreq - pointer to the send request object
-. pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to be sent
+. pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to 
+  be sent
 - pkt_sz - size of the packet substucture
 
   Return value:
@@ -875,16 +887,21 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, MPID_Reques
   The packet structure may be allocated on the stack.
 
   IMPLEMETORS:
-  If the send can not be completed immediately, the packet structure must be stored internally until the request is complete.
+  If the send can not be completed immediately, the packet structure must be 
+  stored internally until the request is complete.
 
-  If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
+  If the send completes immediately, the channel implementation still must 
+  call MPIDI_CH3U_Handle_send_req().
 E*/
-int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz);
+int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, 
+		    MPIDI_msg_sz_t pkt_sz);
 
 
 /*E
-  MPIDI_CH3_iSendv - A non-blocking request to send a CH3 packet and associated data using an existing request object.  When
-  the send is complete the channel implementation will call MPIDI_CH3U_Handle_send_req().
+  MPIDI_CH3_iSendv - A non-blocking request to send a CH3 packet and 
+  associated data using an existing request object.  When
+  the send is complete the channel implementation will call 
+  MPIDI_CH3U_Handle_send_req().
 
   Input Parameters:
 + vc - virtual connection over which to send the CH3 packet and data
@@ -1140,6 +1157,14 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
   A MPI error class.
 E*/
 int MPIDI_CH3_Finalize(void);
+
+/* Routines in support of ch3 */
+
+/* Implement the send side of a rendevous send */
+int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count, 
+			MPI_Datatype datatype, int dt_contig, int data_sz, 
+			int rank, 
+			int tag, MPID_Comm * comm, int context_offset );
 
 /* Here are the packet handlers */
 int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 

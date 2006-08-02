@@ -96,6 +96,14 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 
     if (dt_contig)
     {
+#if 1
+	mpi_errno = MPIDI_CH3_EagerContigIsend( &sreq, 
+						MPIDI_CH3_PKT_READY_SEND,
+						(char*)buf + dt_true_lb, 
+						data_sz, rank, tag, 
+						comm, context_offset );
+
+#else
 	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
           "sending contiguous ready-mode message, data_sz=" MPIDI_MSG_SZ_FMT, 
 					    data_sz));
@@ -121,9 +129,23 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
+#endif
     }
     else
     {
+#if 1
+	mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq, 
+						  MPIDI_CH3_PKT_READY_SEND,
+						  buf, count, datatype,
+						  data_sz, rank, tag, 
+						  comm, context_offset );
+	if (sreq && sreq->dev.ca != MPIDI_CH3_CA_COMPLETE)
+	{
+	    sreq->dev.datatype_ptr = dt_ptr;
+	    MPID_Datatype_add_ref(dt_ptr);
+	}
+
+#else
 	int iov_n;
 	    
 	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
@@ -172,6 +194,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	    goto fn_exit;
 	    /* --END ERROR HANDLING-- */
 	}
+#endif
     }
  
   fn_exit:

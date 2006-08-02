@@ -80,7 +80,13 @@ void MPIDI_err_printf(char * func, char * fmt, ...)
    packet type, could be used.
    Also, these routines should not use MPIU_DBG_PRINTF, instead they should
    us a simple fprintf with a style allowance (so that the style checker
-   won't flag the use as a possible problem).  */
+   won't flag the use as a possible problem).  
+
+   This should switch to using a table of functions
+
+   MPIDI_PktPrintFunctions[pkt->type](stdout,pkt);
+
+*/
 
 #ifdef MPICH_DBG_OUTPUT
 void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
@@ -126,25 +132,15 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->ready_send.seqnum));
 #endif
 		break;
+
 	    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
-		MPIU_DBG_PRINTF((" type ......... REQ_TO_SEND\n"));
-		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->rndv_req_to_send.sender_req_id));
-		MPIU_DBG_PRINTF((" context_id ... %d\n", pkt->rndv_req_to_send.match.context_id));
-		MPIU_DBG_PRINTF((" tag .......... %d\n", pkt->rndv_req_to_send.match.tag));
-		MPIU_DBG_PRINTF((" rank ......... %d\n", pkt->rndv_req_to_send.match.rank));
-		MPIU_DBG_PRINTF((" data_sz ...... %d\n", pkt->rndv_req_to_send.data_sz));
-#ifdef MPID_USE_SEQUENCE_NUMBERS
-		MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->rndv_req_to_send.seqnum));
-#endif
+		MPIDI_CH3_PktPrint_RndvReqToSend( stdout, pkt );
 		break;
 	    case MPIDI_CH3_PKT_RNDV_CLR_TO_SEND:
-		MPIU_DBG_PRINTF((" type ......... CLR_TO_SEND\n"));
-		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->rndv_clr_to_send.sender_req_id));
-		MPIU_DBG_PRINTF((" recvr_reqid .. 0x%08X\n", pkt->rndv_clr_to_send.receiver_req_id));
+		MPIDI_CH3_PktPrint_RndvClrToSend( stdout, pkt );
 		break;
 	    case MPIDI_CH3_PKT_RNDV_SEND:
-		MPIU_DBG_PRINTF((" type ......... RNDV_SEND\n"));
-		MPIU_DBG_PRINTF((" recvr_reqid .. 0x%08X\n", pkt->rndv_send.receiver_req_id));
+		MPIDI_CH3_PktPrint_RndvSend( stdout, pkt );
 		break;
 
 	    case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
