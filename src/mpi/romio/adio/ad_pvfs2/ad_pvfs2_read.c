@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- 
- *     vim: ts=8 sts=4 sw=4 noexpandtab */
-/* 
+ *     vim: ts=8 sts=4 sw=4 noexpandtab 
+ * 
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
@@ -510,27 +510,6 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	flat_buf = ADIOI_Flatlist;
 	while (flat_buf->type != datatype) flat_buf = flat_buf->next;
 
-        /* TODO: This will hopefully go away when we put in Avery's dtype io
-         * approach, but for now, this offset-length pair creating code
-         * (according to keenin) has problems when the first offset-length pair
-         * wants to carry out a zero-byte operation.  Should we encounter such
-         * a datatype, we will punt to the much slower, but correct
-         * naiive version */
- 
-        if (flat_buf->blocklens[0] == 0) {
-            int rank;
-            MPI_Comm_rank(fd->comm, &rank);
-            printf("[%d]: falling back to naive read\n", rank);
-            /* can't call with 'offset', as that was modified earlier up in the
-             * region that computes offset, n_filetypes, fwr_size, and st_index
-             */
-            ADIOI_GEN_ReadStrided_naive(fd, buf, count, datatype, 
-                    file_ptr_type, initial_off, status, error_code);
-            return;
-        }
- 
-
-
 	size_read = 0;
 	n_filetypes = st_n_filetypes;
 	frd_size = st_frd_size;
@@ -688,6 +667,33 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    if (max_mem_list == MAX_ARRAY_SIZE)
 	        break;
 	} /* while (size_read < bufsize) */
+
+	/* one last check before we actually carry out the operation:
+	 * this code has hard-to-fix bugs when a noncontiguous file type has
+	 * such large pieces that the sum of the lengths of the memory type is
+	 * not larger than one of those pieces (and vice versa for large memory
+	 * types and many pices of file types.  In these cases, give up and
+	 * fall back to naive reads and writes.  The testphdf5 test created a
+	 * type with two very large memory regions and 600 very small file
+	 * regions.  The same test also created a type with one very large file
+	 * region and many (700) very small memory regions.  both cases caused
+	 * problems for this code */
+
+	if ( ( (file_list_count == 1) && 
+		    (new_file_read < flat_file->blocklens[0] ) ) ||
+		((mem_list_count == 1) && 
+		    (new_buffer_read < flat_buf->blocklens[0]) ) ||
+		((file_list_count == MAX_ARRAY_SIZE) && 
+		    (new_file_read < flat_buf->blocklens[0]) ) ||
+		( (mem_list_count == MAX_ARRAY_SIZE) &&
+		    (new_buffer_read < flat_file->blocklens[0])) )
+	{
+
+	    ADIOI_Delete_flattened(datatype);
+	    ADIOI_GEN_ReadStrided_naive(fd, buf, count, datatype,
+		    file_ptr_type, initial_off, status, error_code);
+	    return;
+	}
 
 	mem_offsets = (PVFS_size*)ADIOI_Malloc(max_mem_list*sizeof(PVFS_size));
 	mem_lengths = (int *)ADIOI_Malloc(max_mem_list*sizeof(int));
