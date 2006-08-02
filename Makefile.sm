@@ -118,6 +118,9 @@ snap:
 # These may be old experimental versions or internal projects.
 # Some may have other copyrights which we wish to keep out of the "clean" 
 # code (Zeroconf.py is an example of this).
+# 
+# Note that for the documentation, we need to configure with romio enabled
+# to ensure that the documentation pages are built
 #
 dist-with-version:
 	@if [ -z "$(version)" ] ; then \
@@ -149,7 +152,7 @@ dist-with-version:
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
 	    rm -f manlog.txt ; \
 	    ( cd tmpdir2 && ./configure --without-mpe --disable-f90 \
-              --disable-f77 --disable-cxx --disable-romio && \
+              --disable-f77 --disable-cxx && \
               ${MAKE} mandoc && ${MAKE} htmldoc && \
               ${MAKE} latexdoc ) >manlog.txt 2>&1 ; \
 	    if [ ! -d tmpdir2/man ] ; then echo "WARNING: unable to build manpages" ; \
