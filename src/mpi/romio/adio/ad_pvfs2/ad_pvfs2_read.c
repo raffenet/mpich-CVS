@@ -133,6 +133,17 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
+
+    /* the HDF5 tests showed a bug in this list processing code (see many many
+     * lines down below).  We added a workaround, but common HDF5 file types
+     * are actually contiguous and do not need the expensive workarond */
+    if (!filetype_is_contig) {
+	flat_file = ADIOI_Flatlist;
+	while (flat_buf->type != fd->filetype) flat_file = flat_file->next;
+	if (flat_file->count == 1)
+	    filetype_is_contig = 1;
+    }
+
     MPI_Type_size(fd->filetype, &filetype_size);
     if ( ! filetype_size ) {
 	*error_code = MPI_SUCCESS; 
