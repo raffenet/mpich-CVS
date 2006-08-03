@@ -177,9 +177,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc) {
 
         rc = connect(conn->fd, (SA*)addr, sizeof(SA)); 
         //connect should not be called with CHECK_EINTR macro
-        MPIU_ERR_CHKANDJUMP2 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
-                              "**sock_connect", "**sock_connect %s %d", strerror (errno),
-                              errno);
+        MPIU_ERR_CHKANDJUMP1 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
+                              "**sock_connect", "**sock_connect %d", errno);
         conn->state = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
         conn->vc = vc;
         conn->pending_event = 0; //clear pending events.
