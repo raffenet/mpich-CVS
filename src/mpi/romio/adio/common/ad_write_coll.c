@@ -215,8 +215,8 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
      * specific error code, we can still have that process report the
      * additional information */
 
-    old_error = error_code;
-    if (error_code != MPI_SUCCESS) error_code = MPI_ERR_IO;
+    old_error = *error_code;
+    if (error_code != MPI_SUCCESS) *error_code = MPI_ERR_IO;
 
     if (fd->hints->cb_nodes == 1) 
 	    MPI_Bcast(error_code, 1, MPI_INT, 
@@ -226,7 +226,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 			    MPI_MAX, fd->comm);
 
     if ( (old_error != MPI_SUCCESS) || (old_error != MPI_ERR_IO) )
-	    error_code = old_error;
+	    *error_code = old_error;
 
 
     if (!buftype_is_contig) ADIOI_Delete_flattened(datatype);
