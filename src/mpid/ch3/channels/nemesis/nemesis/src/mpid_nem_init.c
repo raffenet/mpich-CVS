@@ -55,7 +55,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     char                 *publish_bc_orig = NULL;
     char                 *bc_val          = NULL;
     int                   val_max_remaining;
-    MPIU_CHKPMEM_DECL(5);
+    MPIU_CHKPMEM_DECL(4);
     
     /* Initialize the business card */
     mpi_errno = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );

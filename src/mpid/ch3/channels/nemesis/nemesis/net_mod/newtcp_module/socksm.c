@@ -8,8 +8,8 @@
 #include "socksm.h"
 
 //FIXME - remove this. to be defined elsewhere
-#define MPIDI_CH3I_VC_STATE_DISCONNECTED 0
-#define MPIDI_CH3I_VC_STATE_CONNECTED 1
+#define MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED 0
+#define MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED 1
 
 typedef struct freenode {
     int index;
@@ -20,20 +20,25 @@ struct {
     freenode_t *head, *tail;
 } freeq = {NULL, NULL};
 
-int g_tbl_size = 0;
-int g_tbl_capacity = CONN_PLFD_TBL_INIT_SIZE;
-int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
+static int g_tbl_size = 0;
+static int g_tbl_capacity = CONN_PLFD_TBL_INIT_SIZE;
+static int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
 
-sockconn_t *g_conn_tbl = NULL;
-pollfd_t *g_plfd_tbl = NULL;
+static sockconn_t *g_conn_tbl = NULL;
+static pollfd_t *g_plfd_tbl = NULL;
 
-handler_func_t conn_state_handlers[CONN_STATE_SIZE];
+static handler_func_t conn_state_handlers[CONN_STATE_SIZE];
 
 void prog_sm() {
 }
 
+#undef FUNCNAME
+#define FUNCNAME alloc_conn_plfd_tbls
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int alloc_conn_plfd_tbls() {
     int i, mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL (1);
 
     g_tbl_size = g_tbl_capacity;
     //g_nactconns = 0;    
@@ -41,13 +46,17 @@ int alloc_conn_plfd_tbls() {
     MPIU_Assert(g_conn_tbl == NULL);
     MPIU_Assert(g_plfd_tbl == NULL);
 
-    g_conn_tbl = MPIU_Malloc(g_tbl_capacity, sizeof(sockconn_t));
-    MPIU_ERR_CHKANDJUMP (g_conn_tbl == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem");
-    g_plfd_tbl = MPIU_Malloc(g_tbl_capacity, sizeof(pollfd_t));
-    MPIU_ERR_CHKANDJUMP (g_plfd_tbl == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    MPIU_CHKPMEM_MALLOC (g_conn_tbl, sockconn_t *, g_tbl_capacity * sizeof(sockconn_t), mpi_errno, "connection table");
+    /*     g_conn_tbl = MPIU_Malloc(g_tbl_capacity, sizeof(sockconn_t)); */
+    /*     MPIU_ERR_CHKANDJUMP (g_conn_tbl == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem"); */
+    MPIU_CHKPMEM_MALLOC (g_plfd_tbl, pollfd_t *, g_tbl_capacity * sizeof(pollfd_t), mpi_errno, "pollfd table");
+    /*     g_plfd_tbl = MPIU_Malloc(g_tbl_capacity, sizeof(pollfd_t)); */
+    /*     MPIU_ERR_CHKANDJUMP (g_plfd_tbl == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem"); */
+    MPIU_CHKPMEM_COMMIT();
  fn_exit:
     return mpi_errno;
  fn_fail:
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 
@@ -59,14 +68,14 @@ int free_conn_plfd_tbls() {
 }
 
 /*
- FIXME: Consult Darius for efficient memcpy and whether doing this is worth overall.
+  FIXME: Consult Darius for efficient memcpy and whether doing this is worth overall.
 
- Reason for not doing realloc for both conn and plfd tables :
-   Either both the tables have to be expanded or both should remain the same size, if
-   enough memory could not be allocated, as we have only one set of variables to control
-   the size of the tables. Also, it is not useful to expand one table and leave the other
-   at the same size, 'coz of memory allocation failures.
- */
+  Reason for not doing realloc for both conn and plfd tables :
+  Either both the tables have to be expanded or both should remain the same size, if
+  enough memory could not be allocated, as we have only one set of variables to control
+  the size of the tables. Also, it is not useful to expand one table and leave the other
+  at the same size, 'coz of memory allocation failures.
+*/
 int expand_conn_plfd_tbls() {
     int mpi_errno = MPI_SUCCESS; 
     sockconn_t *new_conn_tbl = NULL;
@@ -104,7 +113,7 @@ int expand_conn_plfd_tbls() {
   free elements. If the free queue is empty, then it returns the next available slot
   in the tables. If the size of the slot is already full, then this expands the table
   and then returns the next available slot
- */
+*/
 int find_free_entry(int *index) {
     int mpi_errno = MPI_SUCCESS;
 
@@ -132,18 +141,18 @@ int find_free_entry(int *index) {
 }
 
 int init() {
-  conn_state_handlers[CONN_STATE_TC_C_CNTING] = state_tc_c_cnting_handler;
-  conn_state_handlers[CONN_STATE_TC_C_CNTD] = state_tc_c_cntd_handler;
-  conn_state_handlers[CONN_STATE_TC_C_RANKSENT] = state_c_ranksent_handler;
-  conn_state_handlers[CONN_STATE_TA_C_CNTD] = state_l_cntd_handler;
-  conn_state_handlers[CONN_STATE_TA_C_RANKRCVD] = state_l_rankrcvd_handler;
-  conn_state_handlers[CONN_STATE_TS_COMMRDY] = state_commrdy_handler;
+    conn_state_handlers[CONN_STATE_TC_C_CNTING] = state_tc_c_cnting_handler;
+    conn_state_handlers[CONN_STATE_TC_C_CNTD] = state_tc_c_cntd_handler;
+    conn_state_handlers[CONN_STATE_TC_C_RANKSENT] = state_c_ranksent_handler;
+    conn_state_handlers[CONN_STATE_TA_C_CNTD] = state_l_cntd_handler;
+    conn_state_handlers[CONN_STATE_TA_C_RANKRCVD] = state_l_rankrcvd_handler;
+    conn_state_handlers[CONN_STATE_TS_COMMRDY] = state_commrdy_handler;
 
-  conn_state_handlers[CONN_STATE_TS_D_DCNTING] = state_d_dcnting_handler;
-  conn_state_handlers[CONN_STATE_TS_D_REQSENT] = state_d_reqsent_handler;
-  conn_state_handlers[CONN_STATE_TS_D_REQRCVD] = state_d_reqrcvd_handler;
-  conn_state_handlers[CONN_STATE_TS_D_QUIESCENT] = state_d_quiescent_handler;
-  return 0;
+    conn_state_handlers[CONN_STATE_TS_D_DCNTING] = state_d_dcnting_handler;
+    conn_state_handlers[CONN_STATE_TS_D_REQSENT] = state_d_reqsent_handler;
+    conn_state_handlers[CONN_STATE_TS_D_REQRCVD] = state_d_reqrcvd_handler;
+    conn_state_handlers[CONN_STATE_TS_D_QUIESCENT] = state_d_quiescent_handler;
+    return 0;
 }
 
 int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc) {
@@ -153,7 +162,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc) {
     int mpi_errno = MPI_SUCCESS;
     freenode_t *node;
 
-    if (vc->ch.state == MPIDI_CH3I_VC_STATE_DISCONNECTED) {
+    if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED) {
         struct sockaddr_in sock_addr;
         socklen_t socklen = sizeof(SA_IN);
         int rc = 0;
@@ -185,7 +194,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc) {
         conn->handler = conn_state_handlers[conn->state];
         // FIXME trace state transitions
     }
-    else if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) {
+    else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
         switch(conn->state) {
         case CONN_STATE_TS_D_DCNTING:
             conn->state = CONN_STATE_TS_C_COMMRDY;
@@ -217,9 +226,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc) {
             conn->fd = CONN_INVALID_FD;
         }
         node = MPIU_Malloc(sizeof(freenode_t));
-        MPIU_ERR_CHKANDSTMT1(node == NULL, mpi_errno, MPI_ERR_OTHER, goto fn_exit, 
-                             "**nomem", "hole in the tables with index = %d not enqueued in"
-                             "the freeq", index);
+        MPIU_ERR_CHKANDSTMT (node == NULL, mpi_errno, MPI_ERR_OTHER, goto fn_exit, "**nomem");
         node->index = index;
         //Note: MPIU_ERR_CHKANDJUMP should not be used here as it will be recursive 
         //within fn_fail 
@@ -242,9 +249,9 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc) {
 
   //FIXME check whether a (different/new) error has to be reported stating the VC is already
   // disconnected.
-  if (vc->ch.state == MPIDI_CH3I_VC_STATE_DISCONNECTED)
+  if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED)
       goto fn_exit;
-  else if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) {
+  else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
       switch(conn->state) {
       case CONN_STATE_TC_C_CNTING:
           conn->pending_event = EVENT_DISCONNECT; // (N1)

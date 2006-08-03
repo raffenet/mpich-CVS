@@ -137,7 +137,7 @@ typedef MPID_nem_abs_cell_t *MPID_nem_abs_cell_ptr_t;
     ((MPID_nem_cell_ptr_t) ((char*)(packetp) - (char *)MPID_NEM_CELL_TO_PACKET((MPID_nem_cell_ptr_t)0)))
 #define MPID_NEM_MIN_PACKET_LEN (sizeof (MPID_nem_pkt_header_t))
 #define MPID_NEM_MAX_PACKET_LEN (sizeof (MPID_nem_pkt_t))
-#define MPID_NEM_PACKET_LEN(pkt) (((pkt)->mpich2.datalen + MPID_NEM_MPICH2_HEAD_LEN)
+#define MPID_NEM_PACKET_LEN(pkt) ((pkt)->mpich2.datalen + MPID_NEM_MPICH2_HEAD_LEN)
 
 #define MPID_NEM_OPT_LOAD     16 
 #define MPID_NEM_OPT_SIZE     ((sizeof(MPIDI_CH3_Pkt_t)) + (MPID_NEM_OPT_LOAD))

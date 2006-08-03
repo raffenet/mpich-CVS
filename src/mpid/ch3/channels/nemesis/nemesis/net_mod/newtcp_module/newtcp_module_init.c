@@ -5,12 +5,11 @@
  */
 
 #include "newtcp_module_impl.h"
-#define NUM_PREALLOC_SENDQ 10
 
-MPID_nem_queue_ptr_t MPID_nem_tcp_module_free_queue = 0;
+MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
-int MPID_nem_tcp_module_listen_fd = 0;
+int MPID_nem_newtcp_module_listen_fd = 0;
 
 static MPID_nem_queue_t _free_queue;
 
@@ -20,6 +19,10 @@ static int get_addr_port_from_bc (const char *business_card, char addr[], int ma
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue,
                                  MPID_nem_cell_ptr_t proc_elements, int num_proc_elements, MPID_nem_cell_ptr_t module_elements,
                                  int num_module_elements, MPID_nem_queue_ptr_t *module_free_queue,
@@ -27,25 +30,20 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
-    struct sockaddr_in saddr;
     int i;
     MPID_nem_newtcp_module_send_q_element_t *sendq_e;
     MPIU_CHKPMEM_DECL(1);
   
     /* set up listener socket */
-    MPID_nem_tcp_module_listen_fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    MPIU_ERR_CHKANDJUMP2 (MPID_nem_tcp_module_listen_fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
+    MPID_nem_newtcp_module_listen_fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    MPIU_ERR_CHKANDJUMP2 (MPID_nem_newtcp_module_listen_fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
 
-    mpi_errno = MPID_nem_newtcp_module_bind (MPID_nem_tcp_module_listen_fd);
+    mpi_errno = MPID_nem_newtcp_module_bind (MPID_nem_newtcp_module_listen_fd);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    len = sizeof (saddr);
-    ret = getsockname (vc->ch.fd, (struct sockaddr *)&saddr, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-
-    set_sockopts (vc->ch.fd);
+    set_sockopts (MPID_nem_newtcp_module_listen_fd);
         
-    ret = listen (vc->ch.fd, SOMAXCONN);	      
+    ret = listen (MPID_nem_newtcp_module_listen_fd, SOMAXCONN);	      
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", errno, strerror (errno));  
 
     /* create business card */
@@ -56,29 +54,21 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     MPID_nem_process_recv_queue = proc_recv_queue;
     MPID_nem_process_free_queue = proc_free_queue;
 
-    MPID_nem_tcp_module_free_queue = &_free_queue;
+    MPID_nem_newtcp_module_free_queue = &_free_queue;
 
     /* set up network module queues */
-    MPID_nem_queue_init (MPID_nem_tcp_module_free_queue);
+    MPID_nem_queue_init (MPID_nem_newtcp_module_free_queue);
 
     for (i = 0; i < num_module_elements; ++i)
     {
-	MPID_nem_queue_enqueue (MPID_nem_tcp_module_free_queue, &module_elements[i]);
+	MPID_nem_queue_enqueue (MPID_nem_newtcp_module_free_queue, &module_elements[i]);
     }
 
-    *module_free_queue = MPID_nem_tcp_module_free_queue;
+    *module_free_queue = MPID_nem_newtcp_module_free_queue;
 
-    /* preallocate sendq elements */
-    MPIU_CHKPMEM_MALLOC (sendq_e, MPID_nem_newtcp_module_send_q_element_t, NUM_PREALLOC_SENDQ * sizeof(send_queue_element_t), mpi_errno,
-                         "send queue element");
-    for (i = 0; i < NUM_PREALLOC_SENDQ; ++i)
-    {
-        Q_ENQUEUE (&MPID_nem_newtcp_module_free_buffers, sendq_e[i]);
-    }
     
-    /* initialize receive tempbuf */
-    MPID_nem_newtcp_module_recv_tmpbuf.start = NULL;
-    MPID_nem_newtcp_module_recv_tmpbuf.len = 0;
+    MPID_nem_newtcp_module_send_init();
+    MPID_nem_newtcp_module_poll_init();
 
     MPIU_CHKPMEM_COMMIT();    
  fn_exit:
@@ -97,8 +87,16 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     int mpi_errno = MPI_SUCCESS;
     int ret;
     struct sockaddr_in sock_id;
-    int sock_id_len = sizeof(sock_id);
+    int sock_id_len;
+    struct hostent *hp = NULL;
+    size_t len;
+    
 
+/*     hp = gethostbyname(MPID_nem_hostname); */
+/*     MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno); */
+
+
+    
     mpi_errno = MPIU_Str_add_string_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, MPID_nem_hostname);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -111,7 +109,8 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
 	return mpi_errno;
     }
 
-    ret = getsockname (MPID_nem_tcp_module_listen_fd, (struct sockaddr *)&sock_id, &len);	 
+    len = sizeof(sock_id);
+    ret = getsockname (MPID_nem_newtcp_module_listen_fd, (struct sockaddr *)&sock_id, &len);	 
     MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
     
     mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, sock_id.sin_port);
@@ -126,6 +125,8 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
 	return mpi_errno;
     }
 
+ fn_fail:
+ fn_exit:
     return mpi_errno;
 }
 
@@ -147,10 +148,9 @@ int MPID_nem_newtcp_module_connect_to_root (const char *business_card, MPIDI_VC_
 int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
-    char addr[MAX_HOST_NAME];
     int port;    
 
-    mpi_errno = get_addr_port_from_bc (business_card, addr, MAX_HOST_NAME, &port);
+    //    mpi_errno = get_addr_port_from_bc (business_card, addr, MAX_HOST_NAME, &port);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     
@@ -170,7 +170,7 @@ static int set_sockopts (int fd)
     int mpi_errno = MPI_SUCCESS;
     int option;
     int ret;
-    int len;
+    size_t len;
 
     /* I heard you have to read the options after setting them in some implementations */
     option = 0;

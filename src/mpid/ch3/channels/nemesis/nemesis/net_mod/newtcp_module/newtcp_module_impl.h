@@ -7,8 +7,20 @@
 #ifndef TCP_MODULE_IMPL_H
 #define TCP_MODULE_IMPL_H
 
+#include "mpid_nem_impl.h"
+#include "newtcp_module.h"
+#include <linux/types.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
+#include "newtcp_module_queue.h"
+#include "socksm.h"
+
 /* typedefs */
-typedef MPID_nem_newtcp_module_send_q_element
+typedef struct MPID_nem_newtcp_module_send_q_element
 {
     struct MPID_nem_newtcp_module_send_q_element *next;
     size_t len;                        /* number of bytes left to sent */
@@ -18,15 +30,16 @@ typedef MPID_nem_newtcp_module_send_q_element
 
 
 /* globals */
-extern MPID_nem_queue_ptr_t MPID_nem_tcp_module_free_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
-extern int MPID_nem_tcp_module_listen_fd;
-extern struct {MPIDI_VC_t *head;} MPID_nem_tcp_module_send_list;
-extern struct {MPIDI_VC_t *head, *tail;} MPID_nem_newtcp_module_free_buffers;
+extern int MPID_nem_newtcp_module_listen_fd;
+
 
 /* functions */
 int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc);
+int MPID_nem_newtcp_module_send_init();
+int MPID_nem_newtcp_module_poll_init();
 
 /* Macros */
 

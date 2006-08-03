@@ -1,18 +1,24 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #ifndef SOCKSM_H
 #define SOCKSM_H
 
 enum SOCK_CONSTS {  //more type safe than #define's
-  LISTENQLEN = 10,
-  POLL_CONN_TIME = 2
+    LISTENQLEN = 10,
+    POLL_CONN_TIME = 2
 };
 
 enum CONSTS {
-  CONN_PLFD_TBL_INIT_SIZE = 20;
-  CONN_PLFD_TBL_GROW_SIZE = 10;
-  CONN_INVALID_FD = -1,
-  NEGOMSG_DATA_LEN = 4, // Length of data during negotiatiion message exchanges.
-  SLEEP_INTERVAL = 1500,
-  PROGSM_TIMES = 20
+    CONN_PLFD_TBL_INIT_SIZE = 20,
+    CONN_PLFD_TBL_GROW_SIZE = 10,
+    CONN_INVALID_FD = -1,
+    NEGOMSG_DATA_LEN = 4, // Length of data during negotiatiion message exchanges.
+    SLEEP_INTERVAL = 1500,
+    PROGSM_TIMES = 20
 };
 
 #define M_(x) x
@@ -27,39 +33,39 @@ enum CONSTS {
     M_(LISTEN_STATE_LISTENING)
 
 /*
- CONN_STATE - Connection states of socket
- TC = Type connected (state of a socket that was issued a connect on)
- TA = Type Accepted (state of a socket returned by accept)
- TS = Type Shared (state of either TC or TA)
+  CONN_STATE - Connection states of socket
+  TC = Type connected (state of a socket that was issued a connect on)
+  TA = Type Accepted (state of a socket returned by accept)
+  TS = Type Shared (state of either TC or TA)
 
- C - Connection sub-states
- D - Disconnection sub-states
+  C - Connection sub-states
+  D - Disconnection sub-states
 */
 
-#define CONN_STATE_ \
-    M_(CONN_STATE_TS_CLOSED),                                           \
-    M_(CONN_STATE_TC_C_CNTING),                                         \
-    M_(CONN_STATE_TC_C_CNTD),                                           \
-    M_(CONN_STATE_TC_C_RANKSENT),                                       \
-    M_(CONN_STATE_TA_C_CNTD),                                           \
-    M_(CONN_STATE_TA_C_RANKRCVD),                                       \
-    M_(CONN_STATE_TS_COMMRDY),                                          \
-    M_(CONN_STATE_TS_D_DCNTING),                                        \
-    M_(CONN_STATE_TS_D_REQSENT),                                        \
-    M_(CONN_STATE_TS_D_REQRCVD),                                        \
+#define CONN_STATE_                             \
+    M_(CONN_STATE_TS_CLOSED),                   \
+    M_(CONN_STATE_TC_C_CNTING),                 \
+    M_(CONN_STATE_TC_C_CNTD),                   \
+    M_(CONN_STATE_TC_C_RANKSENT),               \
+    M_(CONN_STATE_TA_C_CNTD),                   \
+    M_(CONN_STATE_TA_C_RANKRCVD),               \
+    M_(CONN_STATE_TS_COMMRDY),                  \
+    M_(CONN_STATE_TS_D_DCNTING),                \
+    M_(CONN_STATE_TS_D_REQSENT),                \
+    M_(CONN_STATE_TS_D_REQRCVD),                \
     M_(CONN_STATE_TS_D_QUIESCENT)
 
 //REQ - Request, RSP - Response
 
 typedef enum CONN_TYPE {CONN_TYPE_, CONN_TYPE_SIZE} Conn_type_t;
-typedef enum MPIDI_CH3I_Listen_State {LISTEN_STATE_, LISTEN_STATE_SIZE} 
-  MPIDI_CH3I_Listen_State_t ;
+typedef enum MPID_nem_newtcp_module_Listen_State {LISTEN_STATE_, LISTEN_STATE_SIZE} 
+    MPID_nem_newtcp_module_Listen_State_t ;
 
-typedef enum MPIDI_CH3I_Conn_State {CONN_STATE_, CONN_STATE_SIZE} 
-  MPIDI_CH3I_Conn_State_t;
+typedef enum MPID_nem_newtcp_module_Conn_State {CONN_STATE_, CONN_STATE_SIZE} 
+    MPID_nem_newtcp_module_Conn_State_t;
 
 typedef enum sockconn_event {EVENT_CONNECT = 1, EVENT_DISCONNECT} 
-  sockconn_event_t;
+    sockconn_event_t;
 
 #undef M_
 #define M_(x) #x
@@ -83,13 +89,15 @@ typedef struct pollfd pollfd_t;
 typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const sc);
 
 struct sockconn{
-  int fd;
-  //enum CONN_TYPE conn_type; //FIXME: seems not used/needed
-  int pg_rank;
-  char *pg_id;
-  MPIDI_CH3I_Conn_State_t state;
-  MPIDI_VC *vc;
-  //Conn_type_t conn_type; // May be useful for debugging/analyzing purposes.
-  handler_func_t handler;
-  sockconn_event_t pending_event;
+    int fd;
+    //enum CONN_TYPE conn_type; //FIXME: seems not used/needed
+    int pg_rank;
+    char *pg_id;
+    MPID_nem_newtcp_module_Conn_State_t state;
+    MPIDI_VC_t *vc;
+    //Conn_type_t conn_type; // May be useful for debugging/analyzing purposes.
+    handler_func_t handler;
+    sockconn_event_t pending_event;
 };
+
+#endif

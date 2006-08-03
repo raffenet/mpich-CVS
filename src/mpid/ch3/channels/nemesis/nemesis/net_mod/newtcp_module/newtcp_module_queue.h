@@ -21,7 +21,7 @@
     } while (0)
 
 #define GENERIC_Q_ENQUEUE(qp, ep, next_field) do {              \
-        if (GENERIC_Q_EMPTY (*(q)))                             \
+        if (GENERIC_Q_EMPTY (*(qp)))                            \
             GENERIC_Q_ENQUEUE_EMPTY (qp, ep, next_field);       \
         else                                                    \
         {                                                       \
@@ -41,7 +41,7 @@
     } while (0)
 
 #define GENERIC_Q_ENQUEUE_MULTIPLE(qp, ep0, ep1, next_field) do {               \
-        if (GENERIC_Q_EMPTY (*(q)))                                             \
+        if (GENERIC_Q_EMPTY (*(qp)))                                             \
             GENERIC_Q_ENQUEUE_EMPTY_MULTIPLE (qp, ep0, ep1, next_field);        \
         else                                                                    \
         {                                                                       \
@@ -54,7 +54,7 @@
 #define GENERIC_Q_DEQUEUE(qp, ep, next_field) do {      \
         MPIU_Assert (!GENERIC_Q_EMPTY (*(qp)));         \
         *(ep) = (qp)->head;                             \
-        (qp)->head = *(ep)->next_field;                 \
+        (qp)->head = (*(ep))->next_field;               \
         if ((qp)->head == NULL)                         \
             (qp)->tail = NULL;                          \
     } while (0)
@@ -81,7 +81,7 @@
     } while (0)
 
 #define GENERIC_L_ADD(qp, ep, next_field, prev_field) do {              \
-        if (GENERIC_L_EMPTY (*(q)))                                     \
+        if (GENERIC_L_EMPTY (*(qp)))                                    \
             GENERIC_L_ADD_EMPTY (qp, ep, next_field, prev_field);       \
         else                                                            \
         {                                                               \
