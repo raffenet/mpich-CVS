@@ -1205,8 +1205,12 @@ int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 					  MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockGetUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 					MPID_Request ** );
-int MPICH_CH3_PktHandler_Close( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+					 MPID_Request ** );
+int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				MPID_Request ** );
+int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+				 MPID_Request ** );
 
 int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 					MPID_Request ** );
@@ -1215,6 +1219,26 @@ int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 #ifdef MPICH_DBG_OUTPUT
 int MPIDI_CH3_PktPrint_CancelSendReq( FILE *, MPIDI_CH3_Pkt_t * );
 int MPIDI_CH3_PktPrint_CancelSendResp( FILE *, MPIDI_CH3_Pkt_t * );
+int MPIDI_CH3_PktPrint_EagerSend( FILE *, MPIDI_CH3_Pkt_t * );
+int MPIDI_CH3_PktPrint_ReadySend( FILE *, MPIDI_CH3_Pkt_t * );
+int MPIDI_CH3_PktPrint_RndvReqToSend( FILE *, MPIDI_CH3_Pkt_t * );
+int MPIDI_CH3_PktPrint_RndvClrToSend( FILE *, MPIDI_CH3_Pkt_t * );
+int MPIDI_CH3_PktPrint_RndvSend( FILE *, MPIDI_CH3_Pkt_t * );
 #endif
+
+/* Routines to create packets (used in implementing MPI communications */
+int MPIDI_CH3_EagerNoncontigSend( MPID_Request **, int,  const void *, int, 
+				  MPI_Datatype, int, int, int, MPID_Comm *, 
+				  int );
+int MPIDI_CH3_EagerContigSend( MPID_Request **, int, const void *, int, int, 
+			       int, MPID_Comm *, int );
+int MPIDI_CH3_EagerContigShortSend( MPID_Request **, int, const void *, int, 
+				    int, int, MPID_Comm *, int );
+int MPIDI_CH3_EagerContigIsend( MPID_Request **, int, const void *, int, int, 
+				int, MPID_Comm *, int );
+
+
+int MPIDI_CH3_RndvSend( MPID_Request **, const void *, int, MPI_Datatype, 
+			int, int, int, int, MPID_Comm *, int );
 
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

@@ -7,6 +7,7 @@
 typedef enum MPIDI_CH3_Pkt_type
 {
     MPIDI_CH3_PKT_EAGER_SEND = 0,
+    MPIDI_CH3_PKT_EAGERSHORT_SEND,
     MPIDI_CH3_PKT_EAGER_SYNC_SEND,    /* FIXME: no sync eager */
     MPIDI_CH3_PKT_EAGER_SYNC_ACK,
     MPIDI_CH3_PKT_READY_SEND,
@@ -51,6 +52,18 @@ MPIDI_CH3_Pkt_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_ready_send_t;
+
+typedef struct MPIDI_CH3_Pkt_eagershort_send
+{
+    MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
+    MPIDI_Message_match match;
+    MPIDI_msg_sz_t data_sz;
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+    MPID_Seqnum_t seqnum;
+#endif
+    int  data[4];               /* FIXME: Experimental for now */
+}
+MPIDI_CH3_Pkt_eagershort_send_t;
 
 typedef struct MPIDI_CH3_Pkt_eager_sync_ack
 {
@@ -224,6 +237,7 @@ typedef union MPIDI_CH3_Pkt
 {
     MPIDI_CH3_Pkt_type_t type;
     MPIDI_CH3_Pkt_eager_send_t eager_send;
+    MPIDI_CH3_Pkt_eagershort_send_t eagershort_send;
     MPIDI_CH3_Pkt_eager_sync_send_t eager_sync_send;
     MPIDI_CH3_Pkt_eager_sync_ack_t eager_sync_ack;
     MPIDI_CH3_Pkt_eager_send_t ready_send;

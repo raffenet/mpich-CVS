@@ -108,61 +108,16 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
-	MPIDI_CH3_Pkt_t upkt;
-	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
-	MPID_IOV iov[MPID_IOV_LIMIT];
-	int iov_n;
-	
-	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
-	
-	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
-	eager_pkt->match.rank = comm->rank;
-	eager_pkt->match.tag = tag;
-	eager_pkt->match.context_id = comm->context_id + context_offset;
-	eager_pkt->sender_req_id = sreq->handle;
-	eager_pkt->data_sz = data_sz;
-	
-	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)eager_pkt;
-	iov[0].MPID_IOV_LEN = sizeof(*eager_pkt);
-	
 	if (dt_contig)
 	{
-#if 1
 	    mpi_errno = MPIDI_CH3_EagerContigIsend( &sreq, 
 						    MPIDI_CH3_PKT_EAGER_SEND,
 						    (char*)buf + dt_true_lb, 
 						    data_sz, rank, tag, 
 						    comm, context_offset );
-#else						    
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-                 "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
-						data_sz));
-	    
-	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-	    
-	    iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
-	    iov[1].MPID_IOV_LEN = data_sz;
-
-	    MPIDI_VC_FAI_send_seqnum(vc, seqnum);
-	    MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
-	    MPIDI_Request_set_seqnum(sreq, seqnum);
-	
-	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		MPIU_Object_set_ref(sreq, 0);
-		MPIDI_CH3_Request_destroy(sreq);
-		sreq = NULL;
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-#endif
 	}
 	else
 	{
-#if 1
 	    mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq, 
 						      MPIDI_CH3_PKT_EAGER_SEND,
 						      buf, count, datatype,
@@ -173,59 +128,6 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 		sreq->dev.datatype_ptr = dt_ptr;
 		MPID_Datatype_add_ref(dt_ptr);
 	    }
-#else
-	    /* FIXME: We do *not* want to use iovs for sending non-contiguous
-	       messages if (a) the total message is short (faster to pack)
-	       (b) the size of the individual blocks is small (faster to pack 
-	       than to create the iov).  This fixme applies to all send
-	       modes */
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-             "sending non-contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
-						data_sz));
-	    
-	    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
-	    sreq->dev.segment_first = 0;
-	    sreq->dev.segment_size = data_sz;
-	    
-	    iov_n = MPID_IOV_LIMIT - 1;
-	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-	    if (mpi_errno == MPI_SUCCESS)
-	    {
-		iov_n += 1;
-		
-		MPIDI_VC_FAI_send_seqnum(vc, seqnum);
-		MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
-		MPIDI_Request_set_seqnum(sreq, seqnum);
-	
-		mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    MPIU_Object_set_ref(sreq, 0);
-		    MPIDI_CH3_Request_destroy(sreq);
-		    sreq = NULL;
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-		    goto fn_exit;
-		}
-		/* --END ERROR HANDLING-- */
-		
-		if (sreq->dev.ca != MPIDI_CH3_CA_COMPLETE)
-		{
-		    sreq->dev.datatype_ptr = dt_ptr;
-		    MPID_Datatype_add_ref(dt_ptr);
-		}
-	    }
-	    else
-	    {
-		/* --BEGIN ERROR HANDLING-- */
-		MPIU_Object_set_ref(sreq, 0);
-		MPIDI_CH3_Request_destroy(sreq);
-		sreq = NULL;
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
-		goto fn_exit;
-		/* --END ERROR HANDLING-- */
-	    }
-#endif
 	}
     }
     else

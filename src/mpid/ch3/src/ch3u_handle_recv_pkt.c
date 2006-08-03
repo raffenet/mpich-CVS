@@ -244,7 +244,6 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t * pkt,
 int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, 
 				       MPID_Request ** rreqp)
 {
-    int type_size;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT);
 
@@ -607,43 +606,6 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
  *                                                                          */
 /* ------------------------------------------------------------------------ */
 
-
-/* FIXME: This is not optimized for short messages, which 
-   should have the data in the same packet when the data is
-   particularly short (e.g., one 8 byte long word) */
-int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-				    MPID_Request **rreqp )
-{
-    MPIDI_CH3_Pkt_eager_send_t * eager_pkt = &pkt->eager_send;
-    MPID_Request * rreq;
-    int found;
-    int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-	"received eager send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
-	eager_pkt->sender_req_id, eager_pkt->match.rank, 
-	eager_pkt->match.tag, eager_pkt->match.context_id));
-	    
-    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&eager_pkt->match, &found);
-    if (rreq == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
-    }
-    
-    set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
-    *rreqp = rreq;
-    /* FIXME: What is the logic here?  On an eager receive, the data
-       should be available already, and we should be optimizing
-       for short messages */
-    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
-			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
-    }
-
- fn_fail:
-    return mpi_errno;
-}
-
 int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					MPID_Request **rreqp )
 {
@@ -702,83 +664,20 @@ int MPIDI_CH3_PktHandler_EagerSyncAck( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 {
     MPIDI_CH3_Pkt_eager_sync_ack_t * esa_pkt = &pkt->eager_sync_ack;
     MPID_Request * sreq;
-    int mpi_errno = MPI_SUCCESS;
     
     MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
 	   "received eager sync ack pkt, sreq=0x%08x", esa_pkt->sender_req_id);
 	    
     MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
-    /* decrement CC (but don't mark data transfer as complete since the transfer could still be in progress) */
-    MPIDI_CH3U_Request_complete(sreq);  /* brad : seen this segfault in ssm dynamic process...? */
+    /* decrement CC (but don't mark data transfer as complete since the 
+       transfer could still be in progress) */
+
+    /* FIXME: This sometimes segfaults */
+    MPIDI_CH3U_Request_complete(sreq);  /* brad : seen this segfault in ssm 
+					   dynamic process...? */
     
     *rreqp = NULL;
     return MPI_SUCCESS;
-}
-
-int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-				    MPID_Request **rreqp )
-{
-    MPIDI_CH3_Pkt_ready_send_t * ready_pkt = &pkt->ready_send;
-    MPID_Request * rreq;
-    int found;
-    int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-	"received ready send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
-			   ready_pkt->sender_req_id, ready_pkt->match.rank, 
-                           ready_pkt->match.tag, ready_pkt->match.context_id));
-	    
-    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&ready_pkt->match, &found);
-    if (rreq == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
-    }
-    
-    set_request_info(rreq, ready_pkt, MPIDI_REQUEST_EAGER_MSG);
-    *rreqp = rreq;
-    if (found)
-    {
-	mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-			 "**ch3|postrecv",
-			 "**ch3|postrecv %s", "MPIDI_CH3_PKT_READY_SEND");
-	}
-    }
-    else
-    {
-	/* FIXME: an error packet should be sent back to the sender 
-	   indicating that the ready-send failed.  On the send
-	   side, the error handler for the communicator can be invoked
-	   even if the ready-send request has already
-	   completed. */
-	
-	/* We need to consume any outstanding associated data and 
-	   mark the request with an error. */
-	
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**rsendnomatch", "**rsendnomatch %d %d", ready_pkt->match.rank,
-						      ready_pkt->match.tag);
-	rreq->status.count = 0;
-	if (rreq->dev.recv_data_sz > 0)
-	{
-	    /* force read of extra data */
-	    rreq->dev.segment_first = 0;
-	    rreq->dev.segment_size = 0;
-	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
-	    if (mpi_errno != MPI_SUCCESS) {
-		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-				    "**ch3|loadrecviov");
-	    }
-	}
-	else
-	{
-	    /* mark data transfer as complete and decrement CC */
-	    MPIDI_CH3U_Request_complete(rreq);
-	    *rreqp = NULL;
-	}
-    }
- fn_fail:
-    return mpi_errno;
 }
 
 int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
@@ -982,7 +881,6 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     /* --END ERROR HANDLING-- */
 
- fn_fail:
     return mpi_errno;
 }
 
@@ -1144,7 +1042,6 @@ int MPIDI_CH3_PktHandler_LockGranted( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     MPIDI_CH3_Pkt_lock_granted_t * lock_granted_pkt = &pkt->lock_granted;
     MPID_Win *win_ptr;
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received lock granted pkt");
-    int mpi_errno = MPI_SUCCESS;
     
     MPID_Win_get_ptr(lock_granted_pkt->source_win_handle, win_ptr);
     /* set the lock_granted flag in the window */
@@ -1161,7 +1058,6 @@ int MPIDI_CH3_PktHandler_PtRMADone( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 {
     MPIDI_CH3_Pkt_pt_rma_done_t * pt_rma_done_pkt = &pkt->pt_rma_done;
     MPID_Win *win_ptr;
-    int mpi_errno = MPI_SUCCESS;
 
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received shared lock ops done pkt");
 
@@ -1460,8 +1356,11 @@ int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     return mpi_errno;
 }
 
-int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt )
+/* FIXME: we still need to implement flow control */
+int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+					 MPID_Request **rreqp)
 {
+    return MPI_SUCCESS;
 }
 
 int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
@@ -1530,8 +1429,11 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
  fn_fail:
     return mpi_errno;
 }
-int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt )
+
+int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+				 MPID_Request **rreqp)
 {
+    return MPI_SUCCESS;
 }
 
 

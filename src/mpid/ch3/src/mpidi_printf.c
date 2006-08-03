@@ -96,16 +96,12 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 	switch(pkt->type)
 	{
 	    case MPIDI_CH3_PKT_EAGER_SEND:
-		MPIU_DBG_PRINTF((" type ......... EAGER_SEND\n"));
-		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_send.sender_req_id));
-		MPIU_DBG_PRINTF((" context_id ... %d\n", pkt->eager_send.match.context_id));
-		MPIU_DBG_PRINTF((" tag .......... %d\n", pkt->eager_send.match.tag));
-		MPIU_DBG_PRINTF((" rank ......... %d\n", pkt->eager_send.match.rank));
-		MPIU_DBG_PRINTF((" data_sz ...... %d\n", pkt->eager_send.data_sz));
-#ifdef MPID_USE_SEQUENCE_NUMBERS
-		MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->eager_send.seqnum));
-#endif
+		MPIDI_CH3_PktPrint_EagerSend( stdout, pkt );
 		break;
+	    case MPIDI_CH3_PKT_READY_SEND:
+		MPIDI_CH3_PktPrint_ReadySend( stdout, pkt );
+		break;
+
 	    case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
 		MPIU_DBG_PRINTF((" type ......... EAGER_SYNC_SEND\n"));
 		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_sync_send.sender_req_id));
@@ -120,17 +116,6 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 	    case MPIDI_CH3_PKT_EAGER_SYNC_ACK:
 		MPIU_DBG_PRINTF((" type ......... EAGER_SYNC_ACK\n"));
 		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_sync_ack.sender_req_id));
-		break;
-	    case MPIDI_CH3_PKT_READY_SEND:
-		MPIU_DBG_PRINTF((" type ......... READY_SEND\n"));
-		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->ready_send.sender_req_id));
-		MPIU_DBG_PRINTF((" context_id ... %d\n", pkt->ready_send.match.context_id));
-		MPIU_DBG_PRINTF((" tag .......... %d\n", pkt->ready_send.match.tag));
-		MPIU_DBG_PRINTF((" rank ......... %d\n", pkt->ready_send.match.rank));
-		MPIU_DBG_PRINTF((" data_sz ...... %d\n", pkt->ready_send.data_sz));
-#ifdef MPID_USE_SEQUENCE_NUMBERS
-		MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->ready_send.seqnum));
-#endif
 		break;
 
 	    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:

@@ -128,7 +128,6 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
        iStartmsg completes (depending on the progress
        engine, threads, etc.). */
 
- fn_fail:
  fn_exit:
 
     return mpi_errno;
