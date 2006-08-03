@@ -150,7 +150,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     int mpi_errno = MPI_SUCCESS;
     int port;    
 
-    //    mpi_errno = get_addr_port_from_bc (business_card, addr, MAX_HOST_NAME, &port);
+    mpi_errno = get_addr_port_from_bc (business_card, addr, MAX_HOST_NAME, &port);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     
