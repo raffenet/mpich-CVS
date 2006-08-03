@@ -216,7 +216,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
      * additional information */
 
     old_error = *error_code;
-    if (error_code != MPI_SUCCESS) *error_code = MPI_ERR_IO;
+    if (*error_code != MPI_SUCCESS) *error_code = MPI_ERR_IO;
 
     if (fd->hints->cb_nodes == 1) 
 	    MPI_Bcast(error_code, 1, MPI_INT, 
@@ -225,7 +225,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 	    MPI_Allreduce(MPI_IN_PLACE, error_code, 1, MPI_INT, 
 			    MPI_MAX, fd->comm);
 
-    if ( (old_error != MPI_SUCCESS) || (old_error != MPI_ERR_IO) )
+    if ( (old_error != MPI_SUCCESS) && (old_error != MPI_ERR_IO) )
 	    *error_code = old_error;
 
 
