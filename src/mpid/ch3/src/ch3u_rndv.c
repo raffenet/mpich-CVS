@@ -314,6 +314,61 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 }
 
 /*
+ * This routine processes a rendezvous message once the message is matched.
+ * It is used in mpid_recv and mpid_irecv.
+ */
+int MPIDI_CH3_RecvRndv( MPIDI_VC_t * vc, MPID_Request *rreq )
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* A rendezvous request-to-send (RTS) message has arrived.  We need
+       to send a CTS message to the remote process. */
+#ifdef MPIDI_CH3_CHANNEL_RNDV
+    /* The channel will be performing the rendezvous */
+    
+    mpi_errno = MPIDI_CH3U_Post_data_receive(1/*found*/, &rreq);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+			     "**ch3|postrecv",
+			     "**ch3|postrecv %s",
+			     "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+    }
+    mpi_errno = MPIDI_CH3_iStartRndvTransfer (vc, rreq);
+
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+			    "**ch3|ctspkt");
+    }
+    
+#else
+    MPID_Request * cts_req;
+    MPIDI_CH3_Pkt_t upkt;
+    MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &upkt.rndv_clr_to_send;
+    
+    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+		 "rndv RTS in the request, sending rndv CTS");
+    
+    MPIDI_Pkt_init(cts_pkt, MPIDI_CH3_PKT_RNDV_CLR_TO_SEND);
+    cts_pkt->sender_req_id = rreq->dev.sender_req_id;
+    cts_pkt->receiver_req_id = rreq->handle;
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ctspkt");
+    }
+    if (cts_req != NULL)
+    {
+	/* FIXME: Ideally we could specify that a req not be returned.  
+	   This would avoid our having to decrement the
+	   reference count on a req we don't want/need. */
+	MPID_Request_release(cts_req);
+    }
+#endif
+
+ fn_fail:    
+    return mpi_errno;
+}
+
+/*
  * Define the routines that can print out the cancel packets if 
  * debugging is enabled.
  */
@@ -345,3 +400,4 @@ int MPIDI_CH3_PktPrint_RndvSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
     return MPI_SUCCESS;
 }
 #endif
+

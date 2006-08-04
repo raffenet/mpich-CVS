@@ -10,21 +10,6 @@
  * channel.  Do not include them in the MPID macros.
  */
 
-/* 
- * Note: Never define the feature set in a header file, since this changes
- * the language accepted by the C compiler and the contents of the headers
- * seen by the C preprocessor.  Defining any of these renders the work of
- * configure irrelevant.
- */
-#if 0
-#if !defined(_XOPEN_SOURCE)
-#define _XOPEN_SOURCE
-#endif
-#if !defined(_BSD_SOURCE)
-#define _BSD_SOURCE
-#endif
-#endif
-
 #if !defined(MPICH_MPIDIMPL_H_INCLUDED)
 #define MPICH_MPIDIMPL_H_INCLUDED
 
@@ -37,7 +22,6 @@
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #include "mpidpre.h"
 #endif
-/* #include "mpidpkt.h" */
 
 #if !defined(MPIDI_IOV_DENSITY_MIN)
 #   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
@@ -1240,5 +1224,16 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **, int, const void *, int, int,
 
 int MPIDI_CH3_RndvSend( MPID_Request **, const void *, int, MPI_Datatype, 
 			int, int, int, int, MPID_Comm *, int );
+
+int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **, const void *, int, 
+				      MPI_Datatype, int, int, MPI_Aint,
+				      int, int, MPID_Comm *, int );
+int MPIDI_CH3_EagerSyncZero(MPID_Request **, int, int, MPID_Comm *, int );
+
+/* Routines to ack packets, called in the receive routines when a 
+   message is matched */
+int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *, MPID_Request * );
+int MPIDI_CH3_RecvFromSelf( MPID_Request *, void *, int, MPI_Datatype );
+int MPIDI_CH3_RecvRndv( MPIDI_VC_t *, MPID_Request * );
 
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

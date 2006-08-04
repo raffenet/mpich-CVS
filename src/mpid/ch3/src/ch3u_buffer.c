@@ -205,3 +205,40 @@ void MPIDI_CH3U_Buffer_copy(
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
 }
+
+
+/*
+ * This routine is called by mpid_recv and mpid_irecv when a request
+ * matches a send-to-self message 
+ */
+int MPIDI_CH3_RecvFromSelf( MPID_Request *rreq, void *buf, int count, 
+			    MPI_Datatype datatype )
+{
+    MPID_Request * const sreq = rreq->partner_request;
+
+    if (sreq != NULL)
+    {
+	MPIDI_msg_sz_t data_sz;
+	
+	MPIDI_CH3U_Buffer_copy(sreq->dev.user_buf, sreq->dev.user_count,
+			       sreq->dev.datatype, &sreq->status.MPI_ERROR,
+			       buf, count, datatype, &data_sz, 
+			       &rreq->status.MPI_ERROR);
+	rreq->status.count = (int)data_sz;
+	MPID_Request_set_completed(sreq);
+	MPID_Request_release(sreq);
+    }
+    else
+    {
+	/* The sreq is missing which means an error occurred.  
+	   rreq->status.MPI_ERROR should have been set when the
+	   error was detected. */
+    }
+    
+    /* no other thread can possibly be waiting on rreq, so it is safe to 
+       reset ref_count and cc */
+    rreq->cc = 0;
+    MPIU_Object_set_ref(rreq, 1);
+
+    return MPI_SUCCESS;
+}

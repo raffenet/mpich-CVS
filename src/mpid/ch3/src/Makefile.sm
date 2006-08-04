@@ -13,6 +13,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     ch3u_rma_sync.c		\
     ch3u_rndv.c                 \
     ch3u_eager.c                \
+    ch3u_eagersync.c            \
     mpid_abort.c		\
     mpid_cancel_recv.c		\
     mpid_cancel_send.c		\
