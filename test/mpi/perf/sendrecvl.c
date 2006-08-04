@@ -1,3 +1,8 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 
 /* This program provides a simple test of send-receive performance between
    two (or more) processes.  This sometimes called head-to-head or
