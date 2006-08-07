@@ -16,6 +16,7 @@ typedef struct recv_overflow_buf
 } recv_overflow_buf_t;
 
 static recv_overflow_buf_t recv_overflow_buf;
+struct {MPIDI_VC_t *head;} MPID_nem_newtcp_module_send_list = {0}; //FIXME-Darius
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_poll_init
@@ -119,7 +120,6 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
         Q_DEQUEUE (&cell_queue, ((MPID_nem_abs_cell_t **)&cell));
         MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
     }
-
     
  fn_exit:
     return mpi_errno;
@@ -250,6 +250,22 @@ static inline int send_progress()
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_connpoll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPID_nem_newtcp_module_connpoll() //FIXME-Darius Add
+{
+    int mpi_errno = MPI_SUCCESS;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
+
 
 #undef FUNCNAME
 #define FUNCNAME recv_progress
@@ -316,6 +332,7 @@ static inline int recv_progress()
  fn_fail:
     goto fn_exit;
 }
+
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_poll

@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef TCP_MODULE_IMPL_H
-#define TCP_MODULE_IMPL_H
+#ifndef NEWTCP_MODULE_IMPL_H
+#define NEWTCP_MODULE_IMPL_H
 
 #include "mpid_nem_impl.h"
 #include "newtcp_module.h"
@@ -40,11 +40,29 @@ extern int MPID_nem_newtcp_module_listen_fd;
 int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc);
 int MPID_nem_newtcp_module_send_init();
 int MPID_nem_newtcp_module_poll_init();
+int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc);
+int MPID_nem_newtcp_module_set_sockopts (int fd);
+MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t 
+MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd);
 
 /* Macros */
 
-/* system call wrapper -- This retries the syscall each time it is interrupted.  Example usage:
-   instead of writing "ret = write(fd, buf, len);" use: "CHECK_EINTR(ret, write(fd, buf, len)); */
+/* system call wrapper -- This retries the syscall each time it is interrupted.  
+   Example usage:  instead of writing "ret = write(fd, buf, len);" 
+   use: "CHECK_EINTR(ret, write(fd, buf, len)); 
+ Caution:
+ (1) Some of the system calls have value-result parameters. Those system calls
+ should not be used within CHECK_EINTR macro or should be used with CARE.
+ For eg. accept, the last parameter (addrlen) is a value-result one. So, even if the
+ system call is interrupted, addrlen should be initialized to appropriate value before
+ calling it again.
+
+ (2) connect should not be called within a loop. In case, the connect is interrupted after
+ the TCP handshake is initiated, calling connect again will only fail. So, select/poll
+ should be called to check the status of the socket.
+ I don't know what will happen, if a connect is interrupted even before the system call
+ tries to initiate TCP handshake. No book/manual doesn't seem to explain this scenario.
+*/
 #define CHECK_EINTR(var, func) do {             \
         (var) = (func);                         \
     } while ((var) == -1 && errno == EINTR)
@@ -68,4 +86,4 @@ int MPID_nem_newtcp_module_poll_init();
 #define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.newtcp_sendl_next, ch.newtcp_sendl_prev)
 
 
-#endif /* TCP_MODULE_IMPL_H */
+#endif /* NEWTCP_MODULE_IMPL_H */

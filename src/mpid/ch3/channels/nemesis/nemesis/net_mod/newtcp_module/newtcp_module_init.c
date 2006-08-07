@@ -13,7 +13,6 @@ int MPID_nem_newtcp_module_listen_fd = 0;
 
 static MPID_nem_queue_t _free_queue;
 
-static int set_sockopts (int fd);
 static int get_addr_port_from_bc (const char *business_card, char addr[], int max_addr_len, int *port);
 
 #define MPIDI_CH3I_PORT_KEY "port"
@@ -41,7 +40,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     mpi_errno = MPID_nem_newtcp_module_bind (MPID_nem_newtcp_module_listen_fd);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    set_sockopts (MPID_nem_newtcp_module_listen_fd);
+    MPID_nem_newtcp_module_set_sockopts (MPID_nem_newtcp_module_listen_fd);
         
     ret = listen (MPID_nem_newtcp_module_listen_fd, SOMAXCONN);	      
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", errno, strerror (errno));  
@@ -148,49 +147,13 @@ int MPID_nem_newtcp_module_connect_to_root (const char *business_card, MPIDI_VC_
 int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
+    char addr[MAXHOSTNAMELEN];
     int port;    
 
-    mpi_errno = get_addr_port_from_bc (business_card, addr, MAX_HOST_NAME, &port);
+    mpi_errno = get_addr_port_from_bc (business_card, addr, MAXHOSTNAMELEN, &port);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-
-#undef FUNCNAME
-#define FUNCNAME set_sockopts
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int set_sockopts (int fd)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int option;
-    int ret;
-    size_t len;
-
-    /* I heard you have to read the options after setting them in some implementations */
-    option = 0;
-    len = sizeof(int);
-    ret = setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-    ret = getsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-
-    option = 128*1024;
-    len = sizeof(int);
-    setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-    getsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-    setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-    getsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-
  fn_exit:
     return mpi_errno;
  fn_fail:

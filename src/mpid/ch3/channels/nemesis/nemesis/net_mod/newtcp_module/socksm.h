@@ -7,10 +7,16 @@
 #ifndef SOCKSM_H
 #define SOCKSM_H
 
+#include <sys/poll.h>
+#include "newtcp_module_impl.h"
+
 enum SOCK_CONSTS {  //more type safe than #define's
     LISTENQLEN = 10,
     POLL_CONN_TIME = 2
 };
+
+typedef struct sockaddr_in SA_IN;
+typedef struct sockaddr SA;
 
 enum CONSTS {
     CONN_PLFD_TBL_INIT_SIZE = 20,
@@ -20,6 +26,12 @@ enum CONSTS {
     SLEEP_INTERVAL = 1500,
     PROGSM_TIMES = 20
 };
+
+typedef enum {
+    MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF, //either a socket error or EOF received from peer
+    MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED,
+    MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT // No poll event on socket
+}MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t;
 
 #define M_(x) x
 #define CONN_TYPE_ M_(TYPE_CONN), M_(TYPE_ACPT)
@@ -64,6 +76,9 @@ typedef enum MPID_nem_newtcp_module_Listen_State {LISTEN_STATE_, LISTEN_STATE_SI
 typedef enum MPID_nem_newtcp_module_Conn_State {CONN_STATE_, CONN_STATE_SIZE} 
     MPID_nem_newtcp_module_Conn_State_t;
 
+/*
+  Note: event numbering starts from 1, as 0 is assumed to be the state of all-events cleared
+ */
 typedef enum sockconn_event {EVENT_CONNECT = 1, EVENT_DISCONNECT} 
     sockconn_event_t;
 
@@ -86,7 +101,7 @@ struct sockconn;
 typedef struct sockconn sockconn_t;
 typedef struct pollfd pollfd_t;
 
-typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const sc);
+typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const conn);
 
 struct sockconn{
     int fd;
@@ -99,5 +114,8 @@ struct sockconn{
     handler_func_t handler;
     sockconn_event_t pending_event;
 };
+
+enum MSG_NAME {MSGNAME_RANK, MSGNAME_DISC};
+enum MSG_TYPE {MSGTYPE_REQ, MSGTYPE_INFO, MSGTYPE_ACK, MSGTYPE_NAK};
 
 #endif

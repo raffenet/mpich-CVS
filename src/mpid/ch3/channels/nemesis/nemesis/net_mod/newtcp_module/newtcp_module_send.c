@@ -56,6 +56,12 @@ int MPID_nem_newtcp_module_send_init()
     return mpi_errno;
 }
 
+//FIXME-Darius
+int vc_is_connected (MPIDI_VC_t *vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    return mpi_errno;
+}    
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send
