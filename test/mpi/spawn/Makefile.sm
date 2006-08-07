@@ -5,6 +5,7 @@ smvar_do_sharedlibs = 0
 
 namepub_SOURCES = namepub.c
 unpub_SOURCES = unpub.c
+lookup_name_SOURCES = lookup_name.c
 spawn1_SOURCES = spawn1.c
 spawninfo1_SOURCES = spawninfo1.c
 spawnminfo1_SOURCES = spawnminfo1.c
