@@ -35,35 +35,31 @@ MPID_Request * MPIDI_CH3_Request_create()
     req = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (req != NULL)
     {
-	MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
+	MPIU_DBG_MSG_P(CH3_CHANNEL,VERBOSE,
 		       "allocated request, handle=0x%08x", req->handle);
-#       if defined(HAVE_ERROR_CHECKING)
+#ifdef MPICH_DBG_OUTPUT
+	/*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
 	{
 	    int mpi_errno;
-	    
-	    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**invalid_handle",
-						 "**invalid_handle %d %p", req->handle, req);
-		MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	    }
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
 	}
-#       endif
-
+#endif
 	/* FIXME: This is too general; it initializes too much data */
 	MPIDI_CH3U_Request_create(req);
     }
     else
     {
 	/* FIXME: This fails to fail if debugging is turned off */
-	MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"unable to allocate a request");
+	MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"unable to allocate a request");
     }
     
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
     return req;
 }
 
-#ifndef MPIDI_CH3_Request_add_ref
+#if !defined(MPIDI_CH3_Request_add_ref)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Request_add_ref
 #undef FCNAME
@@ -71,42 +67,29 @@ MPID_Request * MPIDI_CH3_Request_create()
 void MPIDI_CH3_Request_add_ref(MPID_Request * req)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
-    
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
     
-#   if defined(HAVE_ERROR_CHECKING)
+#ifdef MPICH_DBG_OUTPUT
+    /*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
-	{
-	    int mpi_errno;
-	
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle",
-					     "**invalid_handle %d %p", req->handle, req);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	}
+	int mpi_errno;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
-#   endif
-	
+    else if (req->ref_count < 0) {
+	int mpi_errno;
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount",
+					 "**invalid_refcount %d %p %d", req->handle, req, req->ref_count);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
+    }
+#endif
     MPIU_Object_add_ref(req);
-    
-#   if defined(HAVE_ERROR_CHECKING)
-    {
-	if (req->ref_count < 0)
-	{
-	    int mpi_errno;
-	    
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount",
-					     "**invalid_refcount %d %p %d", req->handle, req, req->ref_count);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	}
-    }
-#   endif
-    
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
 }
-#endif 
+#endif
 
-#ifndef MPIDI_CH3_Request_release_ref
+#if !defined(MPIDI_CH3_Request_release_ref)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Request_release_ref
 #undef FCNAME
@@ -114,37 +97,28 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
 void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
-    
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
 
-#   if defined(HAVE_ERROR_CHECKING)
+#ifdef MPICH_DBG_OUTPUT
+    /*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
-	{
-	    int mpi_errno;
-
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle",
-					     "**invalid_handle %d %p", req->handle, req);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	}
+	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
-#   endif
-    
+#else
+    MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
+#endif
     MPIU_Object_release_ref(req, ref_count);
-    
-#   if defined(HAVE_ERROR_CHECKING)
+#ifdef MPICH_DBG_OUTPUT
+    if (req->ref_count < 0)
     {
-	if (req->ref_count < 0)
-	{
-	    int mpi_errno;
-	    
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount",
-					     "**invalid_refcount %d %p %d", req->handle, req, req->ref_count);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	}
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
-#   endif
-    
+#else
+    MPIU_Assert(req->ref_count >= 0);
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
 }
 #endif
@@ -158,30 +132,27 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_DESTROY);
-    MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
+    MPIU_DBG_MSG_P(CH3_CHANNEL,VERBOSE,
 		   "freeing request, handle=0x%08x", req->handle);
     
-#   if defined(HAVE_ERROR_CHECKING)
+#ifdef MPICH_DBG_OUTPUT
+    /*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
+    if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
-	{
-	    int mpi_errno;
-
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle",
-					     "**invalid_handle %d %p", req->handle, req);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	}
-	if (req->ref_count != 0)
-	{
-	    int mpi_errno;
-	    
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount",
-					     "**invalid_refcount %d %p %d", req->handle, req, req->ref_count);
-	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
-	}
+	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
-#   endif
-    
+    /*MPIU_Assert(req->ref_count == 0);*/
+    if (req->ref_count != 0)
+    {
+	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
+	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
+    }
+#endif
+
+    /* FIXME: We need a better way to handle these so that we
+       do not always need to initialize these fields and check them
+       when we destroy a request */
     if (req->comm != NULL) {
 	MPIR_Comm_release(req->comm);
     }
@@ -224,26 +195,26 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
     last = sreq->dev.segment_size;
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
      "pre-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
     MPIU_Assert(sreq->dev.segment_first < last);
     MPIU_Assert(last > 0);
     MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     MPID_Segment_pack_vector(&sreq->dev.segment, sreq->dev.segment_first, &last, iov, iov_n);
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
     "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
     MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
     
     if (last == sreq->dev.segment_size)
     {
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"remaining data loaded into IOV");
+	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data loaded into IOV");
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     }
     else if ((last - sreq->dev.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"more data loaded into IOV");
+	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"more data loaded into IOV");
 	sreq->dev.segment_first = last;
 	sreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
     }
@@ -251,7 +222,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
     {
 	MPIDI_msg_sz_t data_sz;
 	
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"low density.  using SRBuf.");
+	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"low density.  using SRBuf.");
 	    
 	data_sz = sreq->dev.segment_size - sreq->dev.segment_first;
 	if (!MPIDI_Request_get_srbuf_flag(sreq))
@@ -260,7 +231,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (sreq->dev.tmpbuf_sz == 0)
 	    {
-		MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"SRBuf allocation failure");
+		MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
@@ -270,11 +241,11 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 		    
 	last = (data_sz <= sreq->dev.tmpbuf_sz) ? sreq->dev.segment_size :
 	    sreq->dev.segment_first + sreq->dev.tmpbuf_sz;
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
                "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			  sreq->dev.segment_first, last));
 	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, sreq->dev.tmpbuf);
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
               "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->dev.segment_first, last));
 	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.tmpbuf;
@@ -282,12 +253,12 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	*iov_n = 1;
 	if (last == sreq->dev.segment_size)
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"remaining data packed into SRBuf");
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data packed into SRBuf");
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else 
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"more data packed into SRBuf");
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"more data packed into SRBuf");
 	    sreq->dev.segment_first = last;
 	    sreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	}
@@ -341,13 +312,13 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    MPIU_Assert(rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
 	    if (rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off == rreq->dev.recv_data_sz)
 	    {
-		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		  "updating rreq to read the remaining data into the SRBuf");
 		rreq->dev.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE;
 	    }
 	    else
 	    {
-		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		       "updating rreq to read more data into the SRBuf");
 		rreq->dev.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
 	    }
@@ -356,13 +327,13 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	
 	last = rreq->dev.segment_size;
 	rreq->dev.iov_count = MPID_IOV_LIMIT;
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
    "pre-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	MPIU_Assert(rreq->dev.segment_first < last);
 	MPIU_Assert(last > 0);
 	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
    "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= MPID_IOV_LIMIT);
@@ -383,13 +354,13 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 
 	if (last == rreq->dev.recv_data_sz)
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
      "updating rreq to read the remaining data directly into the user buffer");
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else if (last == rreq->dev.segment_size || (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 	     "updating rreq to read more data directly into the user buffer");
 	    rreq->dev.segment_first = last;
 	    rreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
@@ -407,7 +378,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    {
 		/* FIXME - we should drain the data off the pipe here, but we don't have a buffer to drain it into.  should this be
 		   a fatal error? */
-		MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"SRBuf allocation failure");
+		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
@@ -430,7 +401,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (rreq->dev.tmpbuf_sz == 0)
 	    {
-		MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"SRBuf allocation failure");
+		MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
@@ -440,14 +411,14 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 
 	if (data_sz <= rreq->dev.tmpbuf_sz)
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 	    "updating rreq to read overflow data into the SRBuf and complete");
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	}
 	else
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
+	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 	  "updating rreq to read overflow data into the SRBuf and reload IOV");
 	    rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.tmpbuf_sz;
 	    rreq->dev.segment_first += rreq->dev.tmpbuf_sz;
@@ -563,7 +534,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     else
     {
 	/* --BEGIN ERROR HANDLING-- */
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
       "receive buffer overflow; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", buf_sz="
 			  MPIDI_MSG_SZ_FMT, 
                 rreq->dev.recv_data_sz, userbuf_sz));
