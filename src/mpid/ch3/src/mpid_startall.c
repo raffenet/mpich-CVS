@@ -22,7 +22,7 @@
 /* This macro initializes all of the fields in a persistent request */
 #define MPIDI_Request_create_psreq(sreq_, mpi_errno_, FAIL_)		\
 {									\
-    (sreq_) = MPIDI_CH3_Request_create();				\
+    (sreq_) = MPID_Request_create();				\
     if ((sreq_) == NULL)						\
     {									\
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"send request allocation failed");\
@@ -107,7 +107,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 #if 0
 		MPID_Request * sreq;
 		
-		sreq = MPIDI_CH3_Request_create();
+		sreq = MPID_Request_create();
 		if (sreq != NULL)
 		{
 		    rc = MPIR_Bsend_isend(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
@@ -336,7 +336,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_RECV_INIT);
     
-    rreq = MPIDI_CH3_Request_create();
+    rreq = MPID_Request_create();
     if (rreq == NULL)
     {
 	/* --BEGIN ERROR HANDLING-- */

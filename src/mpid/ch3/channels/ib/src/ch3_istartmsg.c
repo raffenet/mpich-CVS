@@ -14,7 +14,7 @@
 { \
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST); \
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST); \
-    sreq = MPIDI_CH3_Request_create(); \
+    sreq = MPID_Request_create(); \
     /*MPIU_Assert(sreq != NULL);*/ \
     if (sreq == NULL) \
     { \
@@ -98,7 +98,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID
 	}
 	else
 	{
-	    sreq = MPIDI_CH3_Request_create();
+	    sreq = MPID_Request_create();
 	    if (sreq == NULL)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);

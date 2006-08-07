@@ -299,6 +299,9 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
        need to allocate a new request and add it to the posted queue */
     rreq = MPID_Request_create();
     if (rreq != NULL) {
+	/* FIXME: Why set the ref to 2?  should that be set in the create
+	   step (which already sets it to 1)?  Should the create step
+	   also set the type? */
 	MPIU_Object_set_ref(rreq, 2);
 	rreq->kind = MPID_REQUEST_RECV;
 	rreq->dev.match.tag = tag;

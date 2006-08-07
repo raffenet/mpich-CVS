@@ -22,15 +22,15 @@ MPIU_Object_alloc_t MPID_Request_mem = {
     MPID_REQUEST_PREALLOC };
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Request_create
+#define FUNCNAME MPID_Request_create
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3_Request_create()
+MPID_Request * MPID_Request_create()
 {
     MPID_Request * req;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_REQUEST_CREATE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_REQUEST_CREATE);
     
     req = MPIU_Handle_obj_alloc(&MPID_Request_mem);
     if (req != NULL)
@@ -46,8 +46,37 @@ MPID_Request * MPIDI_CH3_Request_create()
 	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
 	}
 #endif
-	/* FIXME: This is too general; it initializes too much data */
-	MPIDI_CH3U_Request_create(req);
+	/* FIXME: This makes request creation expensive.  We need to trim
+	   this to the basics, with additional setup for special-purpose 
+	   requests (think base class and inheritance).  For example, do we 
+	   *really* want to set the kind to UNDEFINED? And should the RMA 
+	   values be set only for RMA requests? */
+	MPIU_Object_set_ref(req, 1);
+	req->kind = MPID_REQUEST_UNDEFINED;
+	req->cc = 1;
+	req->cc_ptr = &req->cc;
+	/* FIXME: status fields meaningful only for receive, and even then
+	   should not need to be set. */
+	req->status.MPI_SOURCE = MPI_UNDEFINED;
+	req->status.MPI_TAG = MPI_UNDEFINED;
+	req->status.MPI_ERROR = MPI_SUCCESS;
+	req->status.count = 0;
+	req->status.cancelled = FALSE;
+	req->comm = NULL;
+	req->dev.datatype_ptr = NULL;
+	/* Masks and flags for channel device state in an MPID_Request */
+	req->dev.state = 0;
+	req->dev.cancel_pending = FALSE;
+	/* FIXME: RMA ops shouldn't need to be set except when creating a
+	   request for RMA operations */
+	req->dev.target_win_handle = MPI_WIN_NULL;
+	req->dev.source_win_handle = MPI_WIN_NULL;
+	req->dev.single_op_opt = 0;
+	req->dev.lock_queue_entry = NULL;
+	req->dev.dtype_info = NULL;
+	req->dev.dataloop = NULL;
+	req->dev.rdma_iov_count = 0;
+	req->dev.rdma_iov_offset = 0;
     }
     else
     {
@@ -55,7 +84,7 @@ MPID_Request * MPIDI_CH3_Request_create()
 	MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"unable to allocate a request");
     }
     
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_CREATE);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_REQUEST_CREATE);
     return req;
 }
 

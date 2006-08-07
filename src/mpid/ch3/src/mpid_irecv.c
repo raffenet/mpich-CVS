@@ -27,7 +27,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
     
     if (rank == MPI_PROC_NULL)
     {
-	rreq = MPIDI_CH3_Request_create();
+	rreq = MPID_Request_create();
 	if (rreq != NULL)
 	{
 	    MPIU_Object_set_ref(rreq, 1);

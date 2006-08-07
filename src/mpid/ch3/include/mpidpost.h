@@ -201,18 +201,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int i
 #endif
 
 /*E
-  MPIDI_CH3_Request_create - Allocate and initialize a new request object.
-
-  Return value:
-  A pointer to an initialized request object, or NULL if an error occurred.
-  
-  IMPLEMENTORS:
-  MPIDI_CH3_Request_create() must call MPIDI_CH3U_Request_create() after the request object has been allocated.
-E*/
-MPID_Request * MPIDI_CH3_Request_create(void);
-
-
-/*E
   MPIDI_CH3_Request_add_ref - Increment the reference count associated with a request object
 
   Input Parameters:
@@ -451,18 +439,6 @@ int MPIDI_CH3U_VC_WaitForClose( void );
 #endif
 
 /*E
-  MPIDI_CH3U_Request_create - Initialize the channel device (ch3) component of a request.
-
-  Input Parameters:
-. req - pointer to the request object
-
-  IMPLEMENTORS:
-  This routine must be called by MPIDI_CH3_Request_create().
-E*/
-void MPIDI_CH3U_Request_create(MPID_Request * req);
-
-
-/*E
   MPIDI_CH3U_Request_destroy - Free resources associated with the channel device (ch3) component of a request.
 
   Input Parameters:
@@ -631,7 +607,6 @@ int MPIDI_CH3U_Finalize_sshm(void);
 /*
  * Device level request management macros
  */
-#define MPID_Request_create() (MPIDI_CH3_Request_create())
 
 #define MPID_Request_add_ref(req_) MPIDI_CH3_Request_add_ref(req_)
 

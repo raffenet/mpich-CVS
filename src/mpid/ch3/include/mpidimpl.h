@@ -85,35 +85,6 @@ extern MPIDI_Process_t MPIDI_Process;
 /*---------------------
   BEGIN REQUEST SECTION
   ---------------------*/
-/* FIXME: This makes request creation expensive.  We need to trim
-   this to the basics, with additional setup for special-purpose requests 
-   (think base class and inheritance).  For example, do we *really*
-   want to set the kind to UNDEFINED? And should the RMA values 
-   be set only for RMA requests? */
-#define MPIDI_CH3U_Request_create(req_)				\
-{								\
-    MPIU_Object_set_ref((req_), 1);				\
-    (req_)->kind = MPID_REQUEST_UNDEFINED;			\
-    (req_)->cc = 1;						\
-    (req_)->cc_ptr = &(req_)->cc;				\
-    (req_)->status.MPI_SOURCE = MPI_UNDEFINED;			\
-    (req_)->status.MPI_TAG = MPI_UNDEFINED;			\
-    (req_)->status.MPI_ERROR = MPI_SUCCESS;			\
-    (req_)->status.count = 0;					\
-    (req_)->status.cancelled = FALSE;				\
-    (req_)->comm = NULL;					\
-    (req_)->dev.datatype_ptr = NULL;				\
-    MPIDI_Request_state_init((req_));				\
-    (req_)->dev.cancel_pending = FALSE;				\
-    (req_)->dev.target_win_handle = MPI_WIN_NULL;               \
-    (req_)->dev.source_win_handle = MPI_WIN_NULL;               \
-    (req_)->dev.single_op_opt = 0;                              \
-    (req_)->dev.lock_queue_entry = NULL;                        \
-    (req_)->dev.dtype_info = NULL;				\
-    (req_)->dev.dataloop = NULL;				\
-    (req_)->dev.rdma_iov_count = 0;				\
-    (req_)->dev.rdma_iov_offset = 0;				\
-}
 
 #define MPIDI_CH3U_Request_complete(req_)			\
 {								\
@@ -127,32 +98,26 @@ extern MPIDI_Process_t MPIDI_Process;
     }								\
 }
 
-#define MPIDI_Request_create_sreq(sreq_, mpi_errno_, FAIL_)			\
-{										\
-    (sreq_) = MPIDI_CH3_Request_create();					\
-    if ((sreq_) == NULL)							\
-    {										\
-	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));	\
-	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;					\
-	FAIL_;									\
-    }										\
-    										\
-    MPIU_Object_set_ref((sreq_), 2);						\
-    (sreq_)->kind = MPID_REQUEST_SEND;						\
-    (sreq_)->comm = comm;							\
-    MPIR_Comm_add_ref(comm);							\
-    (sreq_)->dev.match.rank = rank;						\
-    (sreq_)->dev.match.tag = tag;						\
-    (sreq_)->dev.match.context_id = comm->context_id + context_offset;		\
-    (sreq_)->dev.user_buf = (void *) buf;					\
-    (sreq_)->dev.user_count = count;						\
-    (sreq_)->dev.datatype = datatype;						\
-}
-
-/* Masks and flags for channel device state in an MPID_Request */
-#define MPIDI_Request_state_init(req_)		\
-{						\
-    (req_)->dev.state = 0;			\
+#define MPIDI_Request_create_sreq(sreq_, mpi_errno_, FAIL_)	\
+{								\
+    (sreq_) = MPID_Request_create();			\
+    if ((sreq_) == NULL)					\
+    {								\
+	MPIDI_DBG_PRINTF((15, FCNAME, "send request allocation failed"));\
+	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;			\
+	FAIL_;							\
+    }								\
+    								\
+    MPIU_Object_set_ref((sreq_), 2);				\
+    (sreq_)->kind = MPID_REQUEST_SEND;				\
+    (sreq_)->comm = comm;					\
+    MPIR_Comm_add_ref(comm);					\
+    (sreq_)->dev.match.rank = rank;				\
+    (sreq_)->dev.match.tag = tag;				\
+    (sreq_)->dev.match.context_id = comm->context_id + context_offset;	\
+    (sreq_)->dev.user_buf = (void *) buf;			\
+    (sreq_)->dev.user_count = count;				\
+    (sreq_)->dev.datatype = datatype;				\
 }
 
 #define MPIDI_REQUEST_MSG_MASK (0x3 << MPIDI_REQUEST_MSG_SHIFT)

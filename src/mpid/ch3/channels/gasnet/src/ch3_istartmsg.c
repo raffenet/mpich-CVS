@@ -55,7 +55,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
 	/* create a request */
-	sreq = MPIDI_CH3_Request_create();
+	sreq = MPID_Request_create();
 	MPIU_Assert(sreq != NULL);
 	MPIU_Object_set_ref(sreq, 2);
 	sreq->kind = MPID_REQUEST_SEND;

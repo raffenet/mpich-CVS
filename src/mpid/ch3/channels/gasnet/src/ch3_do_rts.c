@@ -51,7 +51,7 @@ int MPIDI_CH3_do_rts(MPIDI_VC_t *vc, MPID_Request *sreq,
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 	
-	rts_sreq = MPIDI_CH3_Request_create();
+	rts_sreq = MPID_Request_create();
 	MPIU_Assert(rts_sreq != NULL);	
 	sreq->kind = MPID_REQUEST_SEND;
 	

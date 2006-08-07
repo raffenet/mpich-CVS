@@ -19,7 +19,7 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
 
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
     
-    sreq = MPIDI_CH3_Request_create();
+    sreq = MPID_Request_create();
     /* --BEGIN ERROR HANDLING-- */
     if (sreq == NULL)
 	return NULL;
@@ -63,7 +63,7 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
  * request be allocated and the errror being returned in the status field of the request.
  */
 
-/* XXX - What do we do if MPIDI_CH3_Request_create() returns NULL???  If MPIDI_CH3_iStartMsgv() returns NULL, the calling code
+/* XXX - What do we do if MPID_Request_create() returns NULL???  If MPIDI_CH3_iStartMsgv() returns NULL, the calling code
    assumes the request completely successfully, but the reality is that we couldn't allocate the memory for a request.  This
    seems like a flaw in the CH3 API. */
 
@@ -173,7 +173,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 	    {
 		MPIU_DBG_MSG_D(CH3_CHANNEL,TYPICAL,
 			       "ERROR - MPIDU_Sock_writev failed, rc=%d", rc);
-		sreq = MPIDI_CH3_Request_create();
+		sreq = MPID_Request_create();
 		if (sreq == NULL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
@@ -239,7 +239,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
     {
 	/* Connection failed, so allocate a request and return an error. */
 	MPIU_DBG_VCUSE(vc,"ERROR - connection failed");
-	sreq = MPIDI_CH3_Request_create();
+	sreq = MPID_Request_create();
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);

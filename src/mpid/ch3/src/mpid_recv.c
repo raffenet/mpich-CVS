@@ -152,7 +152,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	   list of posted receive requests and populated with
            information supplied in the arguments. */
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"request allocated in posted queue");
-	
+
+	/* FIXME: We do not need to add a datatype reference if
+	   the request is blocking */
 	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	{
 	    MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);

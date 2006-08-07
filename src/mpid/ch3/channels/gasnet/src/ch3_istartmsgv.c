@@ -19,7 +19,7 @@ extern void *MPIDI_CH3_packet_buffer;
  * request.
  */
 
-/* XXX - What do we do if MPIDI_CH3_Request_create() returns NULL???
+/* XXX - What do we do if MPID_Request_create() returns NULL???
    If MPIDI_CH3_iStartMsgv() returns NULL, the calling code assumes
    the request completely successfully, but the reality is that we
    couldn't allocate the memory for a request.  This seems like a flaw
@@ -82,7 +82,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 
             /* Create a new request and save remaining portions of the
 	     * iov in it. */
- 	    sreq = MPIDI_CH3_Request_create();
+ 	    sreq = MPID_Request_create();
 	    MPIU_Assert(sreq != NULL);
 	    MPIU_Object_set_ref(sreq, 2);
 	    sreq->kind = MPID_REQUEST_SEND;
@@ -122,7 +122,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "request enqueued"));
 	/* create a request */
-	sreq = MPIDI_CH3_Request_create();
+	sreq = MPID_Request_create();
 	MPIU_Assert(sreq != NULL);
 	MPIU_Object_set_ref(sreq, 2);
 	sreq->kind = MPID_REQUEST_SEND;
