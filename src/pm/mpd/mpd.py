@@ -754,7 +754,7 @@ class MPD(object):
             else:
                 msg['cmd'] = 'pmi_unpublish_name'    # add pmi_
                 msg['src'] = self.myId
-                self.ring.rhsSocket.send_dict_msg(msg)
+                self.ring.rhsSock.send_dict_msg(msg)
         else:
             mpd_print(1, 'INVALID request from man msg=:%s:' % (msg) )
             msgToSend = { 'cmd' : 'invalid_request' }
