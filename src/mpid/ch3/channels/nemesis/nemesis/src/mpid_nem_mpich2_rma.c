@@ -392,7 +392,7 @@ MPID_nem_mpich2_register_memory (void *buf, int len)
     
     if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     {
-      //return MPID_nem_gm_module_register_mem (buf, len);
+	/*return MPID_nem_gm_module_register_mem (buf, len);*/
     }
     
     return mpi_errno;
@@ -409,7 +409,7 @@ MPID_nem_mpich2_deregister_memory (void *buf, int len)
     
     if (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
     {
-      //return MPID_nem_gm_module_deregister_mem (buf, len);
+	/*return MPID_nem_gm_module_deregister_mem (buf, len);*/
     }
 
     return mpi_errno;

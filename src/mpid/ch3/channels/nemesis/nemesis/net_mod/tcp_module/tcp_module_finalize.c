@@ -7,7 +7,7 @@
 #include "tcp_module_impl.h"
 #include <sched.h>
 
-//#define TRACE 
+/*#define TRACE */
 #define NEM_TCP_BUF_SIZE    MPID_NEM_OPT_HEAD_LEN
 #define NEM_TCP_MASTER_RANK 0
 
@@ -67,7 +67,7 @@ MPID_nem_tcp_module_finalize ()
 
 #ifdef TRACE 
         fprintf(stderr,"[%i] --- TCP END PENDING  4 : %i processes left \n",MPID_nem_mem_region.rank, MPID_nem_tcp_internal_vars.nb_procs);            
-#endif //TRACE 
+#endif /* TRACE */
 
     } 
 

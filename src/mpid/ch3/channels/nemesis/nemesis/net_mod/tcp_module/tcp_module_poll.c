@@ -6,7 +6,7 @@
 
 #include "tcp_module_impl.h"
 
-//#define TRACE 
+/* #define TRACE */
   
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_module_poll_send
@@ -141,7 +141,7 @@ MPID_nem_tcp_module_poll_recv( void )
 			MPID_nem_mem_region.rank, 
 			nodes[grank].desc,
 			index);
-		//MPID_nem_dump_queue( nodes[grank].internal_free_queue );
+		/*MPID_nem_dump_queue( nodes[grank].internal_free_queue );*/
 #endif	    
 
             main_routine :

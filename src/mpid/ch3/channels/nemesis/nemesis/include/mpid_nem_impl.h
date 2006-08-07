@@ -32,11 +32,11 @@ int MPID_nem_mpich2_init (int ckpt_restart);
    freed by the caller.*/
 int MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[]);
 /* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
-//int MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]);
+/*int MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]);*/
 int MPID_nem_attach_shared_memory (char **buf_p, const int length, const char handle[]);
 /* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
    the OS resource will be destroyed. */
-//int MPID_nem_remove_shared_memory (const char const handle[]);
+/*int MPID_nem_remove_shared_memory (const char const handle[]);*/
 int MPID_nem_remove_shared_memory (const char handle[]);
 /* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
 int MPID_nem_detach_shared_memory (const char *buf_p, const int length);

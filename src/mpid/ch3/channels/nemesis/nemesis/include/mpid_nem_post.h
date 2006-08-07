@@ -107,7 +107,7 @@ int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
 int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc);
 int MPID_nem_mpich2_enqueue_fastbox (int local_rank);
 int MPID_nem_mpich2_dequeue_fastbox (int local_rank);
-#endif //MPID_NEM_INLINE
+#endif /* MPID_NEM_INLINE */
 
 
 #endif /* MPID_NEM_POST_H */

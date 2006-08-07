@@ -14,7 +14,7 @@
     const char *p = (char *)src;					\
     char *q = (char *)dst;						\
     size_t nl = (size_t)(n) >> 2;					\
-    asm volatile ("cld ; rep ; movsl ; movl %3,%0 ; rep ; movsb"	\
+    __asm__ __volatile__ ("cld ; rep ; movsl ; movl %3,%0 ; rep ; movsb"	\
 		  : "+c" (nl), "+S" (p), "+D" (q)			\
 		  : "r" (n & 3) /* : "memory" is this needed?*/);	\
     (void *)dst;							\
@@ -61,7 +61,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     if (n)
     {
 
-	asm volatile ("mov %4, %%ecx\n"
+	__asm__ __volatile__ ("mov %4, %%ecx\n"
 		      ".set PREFETCHBLOCK, 1024\n" /* prefetch PREFETCHBLOCK number of 8-byte words */
 		      "lea (%%esi, %%ecx, 8), %%esi\n"
 		      "lea (%%edi, %%ecx, 8), %%edi\n"
@@ -129,7 +129,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     if (n)
     {
 
-	asm volatile ("mov %4, %%ecx\n"
+	__asm__ __volatile__ ("mov %4, %%ecx\n"
 		      "lea (%%esi, %%ecx, 8), %%esi\n"
 		      "lea (%%edi, %%ecx, 8), %%edi\n"
 
@@ -226,7 +226,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
     const char *p = (char *)src;						\
     char *q = (char *)dst;							\
     size_t nq = n >> 3;								\
-    asm volatile ("cld ; rep ; movsq ; movl %3,%%ecx ; rep ; movsb"		\
+    __asm__ __volatile__ ("cld ; rep ; movsq ; movl %3,%%ecx ; rep ; movsb"		\
 		  : "+c" (nq), "+S" (p), "+D" (q)				\
 		  : "r" ((uint32_t)(n & 7)) /* : "memory" is this needed? */);	\
   (void *)dst;									\
@@ -241,7 +241,7 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
     if (n32)
     {
 	//printf ("n32 = %ld\n", n32);
-	asm volatile (".align 16  \n"
+	__asm__ __volatile__ (".align 16  \n"
 		      "1:  \n"
 		      "mov (%1), %%r8  \n"
 		      "mov 8(%1), %%r9  \n"

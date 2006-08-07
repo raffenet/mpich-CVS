@@ -8,7 +8,7 @@
 
 #define DO_PAPI3(x) /*x */
 
-//#define TRACE 
+/* #define TRACE */
 
 #undef FUNCNAME
 #define FUNCNAME send_cell
