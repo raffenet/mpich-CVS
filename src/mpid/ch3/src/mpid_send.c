@@ -146,7 +146,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 	mpi_errno = MPIDI_CH3_RndvSend( &sreq, buf, count, datatype, dt_contig,
 					data_sz, rank, tag, comm, 
 					context_offset );
-	/* Note that we don't increase the ref cound on the datatype
+	/* Note that we don't increase the ref count on the datatype
 	   because this is a blocking call, and the calling routine 
 	   must wait until sreq completes */
     }

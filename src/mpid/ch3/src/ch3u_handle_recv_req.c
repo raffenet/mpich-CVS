@@ -5,6 +5,7 @@
  */
 
 #include "mpidimpl.h"
+#include "mpidrma.h"
 
 static int create_derived_datatype(MPID_Request * rreq, MPID_Datatype ** dtp);
 static int do_accumulate_op(MPID_Request * rreq);

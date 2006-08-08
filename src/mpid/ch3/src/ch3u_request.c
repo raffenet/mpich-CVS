@@ -52,31 +52,31 @@ MPID_Request * MPID_Request_create()
 	   *really* want to set the kind to UNDEFINED? And should the RMA 
 	   values be set only for RMA requests? */
 	MPIU_Object_set_ref(req, 1);
-	req->kind = MPID_REQUEST_UNDEFINED;
-	req->cc = 1;
-	req->cc_ptr = &req->cc;
+	req->kind		   = MPID_REQUEST_UNDEFINED;
+	req->cc			   = 1;
+	req->cc_ptr		   = &req->cc;
 	/* FIXME: status fields meaningful only for receive, and even then
 	   should not need to be set. */
-	req->status.MPI_SOURCE = MPI_UNDEFINED;
-	req->status.MPI_TAG = MPI_UNDEFINED;
-	req->status.MPI_ERROR = MPI_SUCCESS;
-	req->status.count = 0;
-	req->status.cancelled = FALSE;
-	req->comm = NULL;
-	req->dev.datatype_ptr = NULL;
+	req->status.MPI_SOURCE	   = MPI_UNDEFINED;
+	req->status.MPI_TAG	   = MPI_UNDEFINED;
+	req->status.MPI_ERROR	   = MPI_SUCCESS;
+	req->status.count	   = 0;
+	req->status.cancelled	   = FALSE;
+	req->comm		   = NULL;
+	req->dev.datatype_ptr	   = NULL;
 	/* Masks and flags for channel device state in an MPID_Request */
-	req->dev.state = 0;
-	req->dev.cancel_pending = FALSE;
+	req->dev.state		   = 0;
+	req->dev.cancel_pending	   = FALSE;
 	/* FIXME: RMA ops shouldn't need to be set except when creating a
 	   request for RMA operations */
 	req->dev.target_win_handle = MPI_WIN_NULL;
 	req->dev.source_win_handle = MPI_WIN_NULL;
-	req->dev.single_op_opt = 0;
-	req->dev.lock_queue_entry = NULL;
-	req->dev.dtype_info = NULL;
-	req->dev.dataloop = NULL;
-	req->dev.rdma_iov_count = 0;
-	req->dev.rdma_iov_offset = 0;
+	req->dev.single_op_opt	   = 0;
+	req->dev.lock_queue_entry  = NULL;
+	req->dev.dtype_info	   = NULL;
+	req->dev.dataloop	   = NULL;
+	req->dev.rdma_iov_count	   = 0;
+	req->dev.rdma_iov_offset   = 0;
     }
     else
     {

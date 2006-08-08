@@ -86,6 +86,62 @@ extern MPIDI_Process_t MPIDI_Process;
   BEGIN REQUEST SECTION
   ---------------------*/
 
+/*
+ * MPID_Requests
+ *
+ * MPI Requests are handles to MPID_Request structures.  These are used
+ * for most communication operations to provide a uniform way in which to
+ * define pending operations.  As such, they contain many fields that are 
+ * only used by some operations (logically, an MPID_Request is a union type).
+ *
+ * There are several kinds of requests.  They are
+ *    Send, Receive, RMA, User, Persistent
+ * In addition, send and RMA requests may be "incomplete"; this means that
+ * they have not sent their initial packet, and they may store additional
+ * data about the operation that will be used when the initial packet 
+ * can be sent.
+ *
+ * Also, requests that are used internally within blocking MPI routines
+ * (only Send and Receive requests) do not require references to
+ * (or increments of the reference counts) communicators or datatypes.
+ * Thus, freeing these requests also does not require testing or 
+ * decrementing these fields.
+ *
+ * Finally, we want to avoid multiple tests for a failure to allocate
+ * a request.  Thus, the request allocation macros will jump to fn_fail
+ * if there is an error.  This is akin to using a "throw" in C++.
+ * 
+ * For example, a posted (unmatched) receive queue entry needs only:
+ *     match info
+ *     buffer info (address, count, datatype)
+ *     if nonblocking, communicator (used for finding error handler)
+ *     if nonblocking, cancelled state
+ * Once matched, a receive queue entry also needs
+ *     actual match info
+ *     message type (eager, rndv, eager-sync)
+ *     completion state (is all data available)
+ *        If destination datatype is non-contiguous, it also needs
+ *        current unpack state.
+ * An unexpected message (in the unexpected receive queue) needs only:
+ *     match info
+ *     message type (eager, rndv, eager-sync)
+ *     if (eager, eager-sync), data
+ *     completion state (is all data available?)
+ * A send request requires only
+ *     message type (eager, rndv, eager-sync)
+ *     completion state (has all data been sent?)
+ *     canceled state
+ *     if nonblocking, communicator (used for finding error handler)
+ *     if the initial envelope is still pending (e.g., could not write yet)
+ *         match info
+ *     if the data is still pending (rndv or would not send eager)
+ *         buffer info (address, count, datatype)
+ * RMA requests require (what)?
+ * User (generalized) requests require
+ *     function pointers for operations
+ *     completion state
+ *     cancelled state
+ */
 #define MPIDI_CH3U_Request_complete(req_)			\
 {								\
     int incomplete__;						\

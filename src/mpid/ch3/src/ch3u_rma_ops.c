@@ -5,6 +5,7 @@
  */
 
 #include "mpidi_ch3_impl.h"
+#include "mpidrma.h"
 
 #define MPIDI_PASSIVE_TARGET_DONE_TAG  348297
 #define MPIDI_PASSIVE_TARGET_RMA_TAG 563924
