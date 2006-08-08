@@ -456,19 +456,57 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 /*---------------------------------
   BEGIN SEND/RECEIVE BUFFER SECTION
   ---------------------------------*/
+#if !defined(MPIDI_CH3U_Offsetof)
+#    define MPIDI_CH3U_Offsetof(struct_, field_) ((MPI_Aint) &((struct_*)0)->field_)
+#endif
+
 #if !defined(MPIDI_CH3U_SRBuf_size)
 #    define MPIDI_CH3U_SRBuf_size (256 * 1024)
+#endif
+
+typedef struct __MPIDI_CH3U_SRBuf_element {
+    struct __MPIDI_CH3U_SRBuf_element * next;
+    char                                buf[MPIDI_CH3U_SRBuf_size];
+} MPIDI_CH3U_SRBuf_element_t;
+
+extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
+
+#if !defined (MPIDI_CH3U_SRBuf_get)
+#   define MPIDI_CH3U_SRBuf_get(req_)                                   \
+    {                                                                   \
+        MPIDI_CH3U_SRBuf_element_t * tmp;                               \
+        if (!MPIDI_CH3U_SRBuf_pool) {                                   \
+             MPIDI_CH3U_SRBuf_pool =                                    \
+                MPIU_Malloc(sizeof(MPIDI_CH3U_SRBuf_element_t));        \
+            MPIDI_CH3U_SRBuf_pool->next = NULL;                         \
+        }                                                               \
+        tmp = MPIDI_CH3U_SRBuf_pool;                                    \
+        MPIDI_CH3U_SRBuf_pool = MPIDI_CH3U_SRBuf_pool->next;            \
+        tmp->next = NULL;                                               \
+        (req_)->dev.tmpbuf = tmp->buf;                                  \
+    }
+#endif
+
+#if !defined (MPIDI_CH3U_SRBuf_return)
+#   define MPIDI_CH3U_SRBuf_return(req_)                                \
+    {                                                                   \
+        MPIDI_CH3U_SRBuf_element_t * tmp;                               \
+        MPIU_Assert(MPIDI_Request_get_srbuf_flag(req_));                \
+        MPIDI_Request_set_srbuf_flag((req_), FALSE);                    \
+        tmp = (((MPI_Aint) ((req_)->dev.tmpbuf)) -                      \
+            ((MPI_Aint) MPIDI_CH3U_Offsetof(MPIDI_CH3U_SRBuf_element_t, buf))); \
+        tmp->next = MPIDI_CH3U_SRBuf_pool;                              \
+        MPIDI_CH3U_SRBuf_pool = tmp;                                    \
+    }
 #endif
 
 #if !defined(MPIDI_CH3U_SRBuf_alloc)
 #   define MPIDI_CH3U_SRBuf_alloc(req_, size_)				\
     {									\
-    int __size_to_alloc = (size_ < MPIDI_CH3U_SRBuf_size) ? \
-        size_ : MPIDI_CH3U_SRBuf_size;                      \
- 	(req_)->dev.tmpbuf = MPIU_Malloc(__size_to_alloc);	\
+        MPIDI_CH3U_SRBuf_get(req_);                                     \
  	if ((req_)->dev.tmpbuf != NULL)					\
  	{								\
- 	    (req_)->dev.tmpbuf_sz = __size_to_alloc;		\
+ 	    (req_)->dev.tmpbuf_sz = MPIDI_CH3U_SRBuf_size;		\
  	    MPIDI_Request_set_srbuf_flag((req_), TRUE);			\
  	}								\
  	else								\
@@ -479,12 +517,7 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 #endif
 
 #if !defined(MPIDI_CH3U_SRBuf_free)
-#   define MPIDI_CH3U_SRBuf_free(req_)				\
-    {								\
-    	MPIU_Assert(MPIDI_Request_get_srbuf_flag(req_));	\
-    	MPIDI_Request_set_srbuf_flag((req_), FALSE);		\
-    	MPIU_Free((req_)->dev.tmpbuf);				\
-    }
+#   define MPIDI_CH3U_SRBuf_free(req_) MPIDI_CH3U_SRBuf_return(req_)
 #endif
 /*-------------------------------
   END SEND/RECEIVE BUFFER SECTION
