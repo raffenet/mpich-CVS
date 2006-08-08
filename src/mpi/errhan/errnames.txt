@@ -962,6 +962,10 @@ with MPI_Alloc_mem.
 **mx_isend %s:mx_isend failed (%s)
 **mx_wait:mx_wait failed
 **mx_wait %s:mx_wait failed (%s)
+**inet_ntop:inet_ntop failed
+**inet_ntop %s:inet_ntop failed - %s
+**inet_pton:inet_pton failed
+**inet_pton %s:inet_pton failed - %s
 
 #
 # Globus device

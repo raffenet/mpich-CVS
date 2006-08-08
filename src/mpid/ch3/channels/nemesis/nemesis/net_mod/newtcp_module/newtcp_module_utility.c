@@ -6,7 +6,51 @@
 
 #include "newtcp_module_impl.h"
 
-//FIXME-Darius
+/* MPID_nem_newtcp_module_get_conninfo -- This function takes a VC
+   pointer as input and outputs the sockaddr, pg_id, and pg_rank of
+   the remote process associated with this VC.  [NOTE: I'm not sure
+   yet, if the pg_id parameters will be char* or char**.  I'd like to
+   avoid a copy on this.] */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_get_conninfo
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_get_conninfo (struct MPIDI_VC *vc, struct sockaddr_in *addr, char **pg_id, int *pg_rank)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    *addr = vc->ch.sock_id;
+    *pg_id = (char *)vc->pg->id;
+    *pg_rank = vc->pg_rank;
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+/* MPID_nem_newtcp_module_get_vc_from_conninfo -- This function takes
+   the pg_id and pg_rank and returns the corresponding VC. */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_get_vc_from_conninfo
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struct MPIDI_VC **vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_PG_t *pg;
+    
+    mpi_errno = MPIDI_PG_Find (pg_id, &pg);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    MPIU_ERR_CHKANDJUMP2 (pg_rank < 0 || pg_rank > MPIDI_PG_Get_size (pg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "invalid pg_rank");
+        
+    MPIDI_PG_Get_vc (pg, pg_rank, vc);
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
 
 #undef FUNCNAME
 #define FUNCNAME set_sockopts
@@ -80,7 +124,8 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
     }
     if (plfd->revents & POLLIN || plfd->revents & POLLOUT) {
         char buf[1];
-        int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0, n = sizeof(error);
+        int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0;
+        size_t n = sizeof(error);
 
         n = sizeof(error);
         if (getsockopt(plfd->fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) {

@@ -89,14 +89,18 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     int sock_id_len;
     struct hostent *hp = NULL;
     size_t len;
+    char ipaddr_str[INET_ADDRSTRLEN];
+    char *p;
+
+    /* The business card consists of the numeric ip address (represented as a string), and the port id */
     
+    hp = gethostbyname (MPID_nem_hostname); 
+    MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno); 
 
-/*     hp = gethostbyname(MPID_nem_hostname); */
-/*     MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno); */
-
-
+    p = inet_ntop (AF_INET, &hp->h_addr, ipaddr_str, sizeof(ipaddr_str));
+    MPIU_ERR_CHKANDJUMP1 (p == NULL, mpi_errno, MPI_ERR_OTHER, "**inet_ntop", "**inet_ntop %s", strerror (errno));
     
-    mpi_errno = MPIU_Str_add_string_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, MPID_nem_hostname);
+    mpi_errno = MPIU_Str_add_string_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, ipaddr_str);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
 	if (mpi_errno == MPIU_STR_NOMEM) {
@@ -147,12 +151,18 @@ int MPID_nem_newtcp_module_connect_to_root (const char *business_card, MPIDI_VC_
 int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
-    char addr[MAXHOSTNAMELEN];
+    in_addr_t *addr;
     int port;    
 
-    mpi_errno = get_addr_port_from_bc (business_card, addr, MAXHOSTNAMELEN, &port);
+    mpi_errno = get_addr_port_from_bc (business_card, &vc->ch.sock_id.sin_addr.s_addr, &port);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
+    vc->ch.fd = 0;
+    vc->ch.sc = NULL;
+    vc->ch.send_queue = {0};
+    vc->ch.newtcp_sendl_next = NULL;
+    vc->ch.newtcp_sendl_prev = NULL;
+    vc->ch.pending_recv = {0};
     
  fn_exit:
     return mpi_errno;
@@ -165,15 +175,19 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 #define FUNCNAME get_addr_port_from_bc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int get_addr_port_from_bc (const char *business_card, char addr[], int max_addr_len, int *port)
+static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, int *port)
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
     int len;
+    char ipaddr_str[INET_ADDRSTRLEN];
     int tmp_port_id;
     
-    ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_ADDR_KEY, addr, max_addr_len);
+    ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_ADDR_KEY, ipaddr_str, INET_ADDRSTRLEN);
     MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
+
+    ret = inet_pton (AF_INET, ipaddr_str, addr);
+    MPIU_ERR_CHKANDJUMP (ret <= 0, mpi_errno, MPI_ERR_OTHER, "**inet_pton");
 
     mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, port);
     MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");

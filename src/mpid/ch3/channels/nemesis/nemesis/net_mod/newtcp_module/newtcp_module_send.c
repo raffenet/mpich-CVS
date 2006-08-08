@@ -56,13 +56,6 @@ int MPID_nem_newtcp_module_send_init()
     return mpi_errno;
 }
 
-//FIXME-Darius
-int vc_is_connected (MPIDI_VC_t *vc)
-{
-    int mpi_errno = MPI_SUCCESS;
-    return mpi_errno;
-}    
-
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send
 #undef FCNAME
@@ -81,10 +74,10 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     pkt->mpich2.datalen = datalen;
     pkt->mpich2.source  = MPID_nem_mem_region.rank;    
 
-    if (!vc_is_connected (vc))
+    if (!MPID_nem_newtcp_module_vc_is_connected (vc))
     {
         MPID_nem_newtcp_module_connection_progress (vc); /* try to get connected */
-        if (!vc_is_connected (vc))
+        if (!MPID_nem_newtcp_module_vc_is_connected (vc))
         {
             goto enqueue_cell_and_exit;
         }
@@ -226,3 +219,23 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
     return mpi_errno;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_send_progress
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_send_progress()
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_VC_t *vc;
+    
+    for (vc = send_list.head; vc; vc = vc->ch.newtcp_sendl_next)
+    {
+        mpi_errno = MPID_nem_newtcp_module_send_queue (vc);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}

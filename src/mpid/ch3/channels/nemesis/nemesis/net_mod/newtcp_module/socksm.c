@@ -116,8 +116,8 @@ static int expand_conn_plfd_tbls()
                          mpi_errno, "expanded connection table");
     MPIU_CHKPMEM_MALLOC (new_plfd_tbl, pollfd_t *, new_capacity * sizeof(pollfd_t), 
                          mpi_errno, "expanded pollfd table");
-    memcpy(new_conn_tbl, g_conn_tbl, g_tbl_capacity * sizeof(sockconn_t));
-    memcpy(new_plfd_tbl, g_plfd_tbl, g_tbl_capacity * sizeof(pollfd_t));
+    MPID_NEM_MEMCPY (new_conn_tbl, g_conn_tbl, g_tbl_capacity * sizeof(sockconn_t));
+    MPID_NEM_MEMCPY (new_plfd_tbl, g_plfd_tbl, g_tbl_capacity * sizeof(pollfd_t));
     MPIU_Free(g_conn_tbl);
     MPIU_Free(g_plfd_tbl);
     g_conn_tbl = new_conn_tbl;

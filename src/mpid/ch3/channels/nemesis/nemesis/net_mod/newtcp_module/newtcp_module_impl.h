@@ -42,8 +42,8 @@ int MPID_nem_newtcp_module_send_init();
 int MPID_nem_newtcp_module_poll_init();
 int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc);
 int MPID_nem_newtcp_module_set_sockopts (int fd);
-MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t 
-MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd);
+MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd);
+int MPID_nem_newtcp_module_send_progress();
 
 /* Macros */
 
@@ -66,7 +66,6 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd);
 #define CHECK_EINTR(var, func) do {             \
         (var) = (func);                         \
     } while ((var) == -1 && errno == EINTR)
-
 
 /* Send queue macros */
 #define Q_EMPTY(q) GENERIC_Q_EMPTY (q)

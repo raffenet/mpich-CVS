@@ -71,8 +71,8 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
     int fd;
-    struct sockaddr_in sock_id; //FIXME-Darius Add
-    struct sockconn *sc; //FIXME-Darius Add
+    struct sockaddr_in sock_id;
+    struct sockconn *sc;
     struct
     {
         struct MPID_nem_newtcp_module_send_q_element *head;

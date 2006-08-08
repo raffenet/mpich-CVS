@@ -16,7 +16,6 @@ typedef struct recv_overflow_buf
 } recv_overflow_buf_t;
 
 static recv_overflow_buf_t recv_overflow_buf;
-struct {MPIDI_VC_t *head;} MPID_nem_newtcp_module_send_list = {0}; //FIXME-Darius
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_poll_init
@@ -127,6 +126,67 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     goto fn_exit;
 }
 
+/* receive_exactly_one_packet -- tries to receive the remaining part of this packet  */
+#undef FUNCNAME
+#define FUNCNAME receive_exactly_one_packet
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int receive_exactly_one_packet (MPIDI_VC_t *vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3I_VC *vc_ch = &vc->ch;
+    ssize_t bytes_recvd;
+    int len;
+
+    /* make sure we have at least the header */
+    if (vc_ch->pending_recv.len < MPID_NEM_MIN_PACKET_LEN)
+    {
+        CHECK_EINTR (bytes_recvd, read (vc_ch.fd, vc_ch->pending_recv.end, MPID_NEM_MIN_PACKET_LEN - vc_ch->pending_recv.len));
+        if (bytes_recvd == -1)
+        {
+            if (errno == EAGAIN)
+                goto fn_exit;
+            else
+                MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
+        }
+        vc_ch->pending_recv.len += bytes_recvd;
+
+        if (vc_ch->pending_recv.len < MPID_NEM_MIN_PACKET_LEN)
+        {
+            /* still haven't received the whole header */
+            goto fn_exit;
+        }
+    }
+
+    /* try to receive the rest of the packet */
+    if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
+    {
+        CHECK_EINTR (bytes_recvd, read (vc_ch.fd, vc_ch->pending_recv.end, len));
+        if (bytes_recvd == -1)
+        {
+            if (errno == EAGAIN)
+                goto fn_exit;
+            else
+                MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
+        }
+
+        if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
+        {
+            /* still haven't received the whole packet */
+            goto fn_exit;
+        }
+    }
+
+    /* got the whole packet, enqueue on recv queue */
+    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, vc_ch->pending_recv.cell);
+    vc_ch->pending_recv.cell = NULL;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 
 
 #undef FUNCNAME
@@ -144,15 +204,18 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 
     if (vc_ch->pending_recv.cell)
     {
-        MPIU_Assert (0); /* FIXME: if there are no free cells, we need
-                            to make sure we don't receive more than
-                            one packet into a pending_recv cell.  The
-                            problem is that if our overflow buffer is
-                            already full, we would have no place to
-                            copy the extra packets. --DARIUS*/
+        if (recv_overflow_buf.start != NULL && MPID_nem_queue_empty (MPID_nem_newtcp_module_free_queue))
+        {
+            /* This is a corner case that we handle less efficiently.  When we run out of cells, and the overflow_buf is in use,
+               if we receive more than one packet into this cell we would have no place to put the additional packets.  In this
+               case, we take the slow route and make sure to receive only the rest of this packet. */
+            mpi_errno = receive_exactly_one_packet (vc);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            goto fn_exit;
+        }
         
         /* there is a partially received pkt in tmp_cell, continue receiving into it */
-        CHECK_EINTR (bytes_recvd, read (vc->ch.fd, vc_ch->pending_recv.end, MPID_NEM_MAX_PACKET_LEN - vc_ch->pending_recv.len));
+        CHECK_EINTR (bytes_recvd, read (vc_ch.fd, vc_ch->pending_recv.end, MPID_NEM_MAX_PACKET_LEN - vc_ch->pending_recv.len));
         if (bytes_recvd == -1)
         {
             if (errno == EAGAIN)
@@ -227,28 +290,6 @@ int MPID_nem_newtcp_module_conn_est (struct pollfd *pfd, sockconn_t *sc)
  fn_exit:
     return mpi_errno;
 }
-
-#undef FUNCNAME
-#define FUNCNAME send_progress
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int send_progress()
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_VC_t *vc;
-    
-    for (vc = MPID_nem_newtcp_module_send_list.head; vc; vc = vc->ch.newtcp_sendl_next)
-    {
-        mpi_errno = MPID_nem_newtcp_module_send_queue (vc);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    }
-
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_connpoll
@@ -342,7 +383,7 @@ int MPID_nem_newtcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    mpi_errno = send_progress();
+    mpi_errno = MPID_nem_newtcp_module_send_progress();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     mpi_errno = recv_progress();

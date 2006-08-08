@@ -118,4 +118,6 @@ struct sockconn{
 enum MSG_NAME {MSGNAME_RANK, MSGNAME_DISC};
 enum MSG_TYPE {MSGTYPE_REQ, MSGTYPE_INFO, MSGTYPE_ACK, MSGTYPE_NAK};
 
+#define MPID_nem_newtcp_module_vc_is_connected(vc) ((vc)->ch.sc && (vc)->ch.sc->state == CONN_STATE_TS_COMMRDY)
+
 #endif
