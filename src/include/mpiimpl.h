@@ -1289,7 +1289,7 @@ typedef struct MPID_Request {
     MPI_Grequest_free_function   *free_fn;
     MPI_Grequest_query_function  *query_fn;
     void *grequest_extra_state;
-    MPID_Lang_t                  greq_lang;         /* langage that defined
+    MPID_Lang_t                  greq_lang;         /* language that defined
 						       the generalize req */
     
     /* Other, device-specific information */
