@@ -39,6 +39,8 @@
 #error Error in definition of MPID_NEM_*_MODULE macros
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
 #define MPID_NEM_CELL_LEN           (32*1024)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_ELAN_MODULE)
+#define MPID_NEM_CELL_LEN           (2*1024)
 #else
 #define MPID_NEM_CELL_LEN           (64*1024)
 #endif 
