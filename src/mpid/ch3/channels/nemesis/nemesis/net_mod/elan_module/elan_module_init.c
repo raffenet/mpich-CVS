@@ -168,6 +168,8 @@ int init_elan( MPIDI_PG_t *pg_p )
    for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++) 
      rxq_ptr_array[index] = NULL ; 
 
+   MPIU_Assert( MPID_NEM_CELL_PAYLOAD_LEN <= elan_queueMaxSlotSize(elan_base->state));
+   
    rxq_ptr_array[elan_base->state->vp] = elan_queueRxInit(elan_base->state,
 							  localq_ptr,
 							  MPID_NEM_ELAN_NUM_SLOTS,
