@@ -5,6 +5,9 @@
  */
 
 #include "newtcp_module_impl.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
@@ -13,7 +16,7 @@ int MPID_nem_newtcp_module_listen_fd = 0;
 
 static MPID_nem_queue_t _free_queue;
 
-static int get_addr_port_from_bc (const char *business_card, char addr[], int max_addr_len, int *port);
+static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, int *port);
 
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
@@ -90,7 +93,7 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     struct hostent *hp = NULL;
     size_t len;
     char ipaddr_str[INET_ADDRSTRLEN];
-    char *p;
+    const char *p;
 
     /* The business card consists of the numeric ip address (represented as a string), and the port id */
     
@@ -98,7 +101,7 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno); 
 
     p = inet_ntop (AF_INET, &hp->h_addr, ipaddr_str, sizeof(ipaddr_str));
-    MPIU_ERR_CHKANDJUMP1 (p == NULL, mpi_errno, MPI_ERR_OTHER, "**inet_ntop", "**inet_ntop %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (ret, mpi_errno, MPI_ERR_OTHER, "**inet_ntop", "**inet_ntop %s", strerror (errno));
     
     mpi_errno = MPIU_Str_add_string_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, ipaddr_str);
     if (mpi_errno != MPIU_STR_SUCCESS)
@@ -159,10 +162,12 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
     vc->ch.fd = 0;
     vc->ch.sc = NULL;
-    vc->ch.send_queue = {0};
+    vc->ch.send_queue.head = vc->ch.send_queue.tail = NULL;
     vc->ch.newtcp_sendl_next = NULL;
     vc->ch.newtcp_sendl_prev = NULL;
-    vc->ch.pending_recv = {0};
+    vc->ch.pending_recv.cell = NULL;
+    vc->ch.pending_recv.end = NULL;
+    vc->ch.pending_recv.len = 0;
     
  fn_exit:
     return mpi_errno;

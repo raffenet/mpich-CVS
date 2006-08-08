@@ -141,7 +141,7 @@ int receive_exactly_one_packet (MPIDI_VC_t *vc)
     /* make sure we have at least the header */
     if (vc_ch->pending_recv.len < MPID_NEM_MIN_PACKET_LEN)
     {
-        CHECK_EINTR (bytes_recvd, read (vc_ch.fd, vc_ch->pending_recv.end, MPID_NEM_MIN_PACKET_LEN - vc_ch->pending_recv.len));
+        CHECK_EINTR (bytes_recvd, read (vc_ch->fd, vc_ch->pending_recv.end, MPID_NEM_MIN_PACKET_LEN - vc_ch->pending_recv.len));
         if (bytes_recvd == -1)
         {
             if (errno == EAGAIN)
@@ -159,9 +159,9 @@ int receive_exactly_one_packet (MPIDI_VC_t *vc)
     }
 
     /* try to receive the rest of the packet */
-    if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
+    if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
     {
-        CHECK_EINTR (bytes_recvd, read (vc_ch.fd, vc_ch->pending_recv.end, len));
+        CHECK_EINTR (bytes_recvd, read (vc_ch->fd, vc_ch->pending_recv.end, len));
         if (bytes_recvd == -1)
         {
             if (errno == EAGAIN)
@@ -170,7 +170,7 @@ int receive_exactly_one_packet (MPIDI_VC_t *vc)
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
 
-        if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
+        if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
         {
             /* still haven't received the whole packet */
             goto fn_exit;
@@ -215,7 +215,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
         }
         
         /* there is a partially received pkt in tmp_cell, continue receiving into it */
-        CHECK_EINTR (bytes_recvd, read (vc_ch.fd, vc_ch->pending_recv.end, MPID_NEM_MAX_PACKET_LEN - vc_ch->pending_recv.len));
+        CHECK_EINTR (bytes_recvd, read (vc_ch->fd, vc_ch->pending_recv.end, MPID_NEM_MAX_PACKET_LEN - vc_ch->pending_recv.len));
         if (bytes_recvd == -1)
         {
             if (errno == EAGAIN)
