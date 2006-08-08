@@ -21,7 +21,7 @@ MPID_nem_elan_module_finalize()
      {
 	while(MPID_nem_module_elan_pendings_sends > 0)
 	  {
-	     fprintf(stdout,"[%i] ==================  END LOOP ================ \n", MPID_nem_mem_region.rank);
+	     fprintf(stdout,"[%i] ==================  END LOOP (%i pending sends)================ \n", MPID_nem_mem_region.rank,MPID_nem_module_elan_pendings_sends);
 	     MPID_nem_elan_module_poll(MPID_NEM_POLL_OUT);
 	  }
 	

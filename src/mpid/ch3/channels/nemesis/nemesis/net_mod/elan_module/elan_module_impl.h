@@ -8,6 +8,7 @@
 #define ELAN_MODULE_IMPL_H
 #include <elan.h>
 #include "mpid_nem_impl.h"
+
 #include <linux/types.h>
 
 #define MPID_NEM_ELAN_LOOPS     ELAN_POLL_EVENT
