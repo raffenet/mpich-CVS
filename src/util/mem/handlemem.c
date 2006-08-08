@@ -214,11 +214,11 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
     return 0;
 }
 
-/* FIXME: The alloc_start and alloc_complete routines should be removed.
-   They are used only in typeutil.c (in MPIR_Datatype_init, which is only 
+/* FIXME: The alloc_complete routine should be removed.
+   It is used only in typeutil.c (in MPIR_Datatype_init, which is only 
    executed from within the MPI_Init/MPI_Init_thread startup and hence is
-   guaranteed to be single threaded).  When used by the obj_alloc, they
-   add unnecessary overhead, particularly when MPI is single threaded */
+   guaranteed to be single threaded).  When used by the obj_alloc, it
+   adds unnecessary overhead, particularly when MPI is single threaded */
 
 void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
 				    int initialized)
@@ -260,7 +260,6 @@ void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
 void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 {
     MPIU_Handle_common *ptr;
-    int performed_initialize = 0;
 
     if (objmem->avail) {
 	ptr	      = objmem->avail;
@@ -268,11 +267,11 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 	/* FIXME: Clearing ptr->next is not necessary and is
 	   really a defensive move.  */
 	ptr->next     = 0;
-
 	/* ptr points to object to allocate */
     }
     else {
 	int objsize, objkind;
+	int performed_initialize = 0;
 
 	objsize = objmem->size;
 	objkind = objmem->kind;
@@ -309,6 +308,7 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 
 	    /* ptr points to object to allocate */
 	}
+	MPIU_Handle_obj_alloc_complete(objmem, performed_initialize);
     }
 
 #ifdef MPICH_DEBUG_HANDLES
@@ -316,7 +316,6 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 		     (unsigned) ptr, ptr->handle));
 #endif
 
-    MPIU_Handle_obj_alloc_complete(objmem, performed_initialize);
     return ptr;
 }   
 
