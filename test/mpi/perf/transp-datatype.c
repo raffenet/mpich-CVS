@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 	    if(myrank==0)
 		MPI_Send(&a[0][0],1,xpose,1,0,MPI_COMM_WORLD);
 	    else 
-		MPI_Recv(&b[0][0],1,xpose,0,0,MPI_COMM_WORLD,&status);
+		MPI_Recv(&b[0][0],SIZE*SIZE,MPI_DOUBLE,0,0,MPI_COMM_WORLD,&status);
 	}
     t2=MPI_Wtime();
     t=(t2-t1)/ITER;

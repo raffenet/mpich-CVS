@@ -407,10 +407,12 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 #if !defined(MPIDI_CH3U_SRBuf_alloc)
 #   define MPIDI_CH3U_SRBuf_alloc(req_, size_)				\
     {									\
- 	(req_)->dev.tmpbuf = MPIU_Malloc(MPIDI_CH3U_SRBuf_size);	\
+    int __size_to_alloc = (size_ < MPIDI_CH3U_SRBuf_size) ? \
+        size_ : MPIDI_CH3U_SRBuf_size;                      \
+ 	(req_)->dev.tmpbuf = MPIU_Malloc(size_);	\
  	if ((req_)->dev.tmpbuf != NULL)					\
  	{								\
- 	    (req_)->dev.tmpbuf_sz = MPIDI_CH3U_SRBuf_size;		\
+ 	    (req_)->dev.tmpbuf_sz = size_;		\
  	    MPIDI_Request_set_srbuf_flag((req_), TRUE);			\
  	}								\
  	else								\
