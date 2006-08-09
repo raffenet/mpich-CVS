@@ -18,7 +18,7 @@ user.dvi: user.tex faqsum.tex $(srcdir)/user.bib
 	@if [ ! -s user.bib ] ; then \
 	 ln -s $(srcdir)/user.bib user.bib ; fi
 	-latex user.tex
-	-bibtex user.tex 
+	-bibtex user 
 	-latex user.tex
 	latex  user.tex
 
