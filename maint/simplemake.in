@@ -15,6 +15,11 @@ $vpath_config = 0;   # set to 1 for @VPATH@
 $nocomments = 0;     # set to 1 to exclude comments from the source file
 $commonmake = "";    # Common entries for each generated Makefile
 $maint_targets = 1;  # set to 0 for distribution versions
+$maint_perf_targets = 0; # set to 1 to get extra targets to aid in 
+                         # performance tuning.  These may cause problems
+                         # if the generated files are sometimes used
+                         # in preference to the original source files,
+                         # so this is not the default
 $verbose = 0;        # set to 1 to get more information
 $am_a = "";          # set to _a for automake style input
 $do_dependencies = "dynamic"; # set to no, static, or dynamic to attempt
@@ -432,9 +437,15 @@ foreach $_ (@ARGV) {
     elsif (/-distrib/) {
 	# Turn off the maintenance targets in the distribution version
 	$maint_targets = 0;
+	$maint_perf_targets = 0;
 	$do_docs = 0;
 	# Use the robust sleep, not the fast perl version
 	$Sleep = $SleepSlow;
+    }
+    elsif (/-perftargets/) {
+	# This option enables any performance targets of interest to 
+	# maintainers (currently adds options to build asm (.s) files)
+	$maint_perf_targets = 1;
     }
     elsif (/-dos/) {
 	$newline = "\r\n";
@@ -1259,6 +1270,9 @@ sub DefaultRules {
     # given files.  Remove all default suffix rules
     if (scalar(%ext_seen)) {
 	$suffixes = ".o";
+	if ($maint_perf_targets && !($suffixes =~ /\.s/)) {
+	    $suffixes .= " .s";
+	}
 	if ($do_sharedlibs || $found_sharedlib) { 
 	    $suffixes .= " .lo";
 	}
@@ -1313,6 +1327,15 @@ sub DefaultRules {
 		print FD "\t$extrules{$extkey}$newline";
 	    }
 	}
+	# For maintainers, make it easy to create the asm versions
+	if ($maint_perf_targets) {
+	    $extkey = "$ext:s";
+	    if (defined($extrules{$extkey})) {
+		print FD ".$ext.s:$newline";
+		print FD "\t$extrules{$extkey}$newline";
+	    }
+	}
+
 	$extkey = "$ext:";
 	# We may want to make this conditional, only generating it
 	# when desired.
@@ -2342,7 +2365,34 @@ sub TargetClean {
 	# any existing irlog files
 	print FD "\t-${quietLine}rm -f *.irlog*$newline";
     }
-    
+
+    if ($maint_perf_targets) {
+	# In this case, we want to remove any generated asm files, 
+	# to prevent them from being used in preference to the 
+	# original (e.g., C) source file
+	my $input_sources;
+	if ($regular_sources =~ /\S/) {
+	    $input_sources = $regular_sources;
+	}
+	elsif (defined($makevars{'SOURCES'})) {
+	    $input_sources = $makevars{'SOURCES'};
+	}
+	if (defined($input_sources)) {
+	    my $clean_files = "";
+	    foreach my $file (split(/\s+/,$input_sources)) {
+		if ($file =~ /(.*)\.([^\.]+)/) {
+		    my $base = $1;
+		    my $ext  = $2;
+		    if ($ext ne "s") {
+			$clean_files .= " $base.s";
+		    }
+		}
+	    }
+	    if ($clean_files ne "") {
+		print FD "\t-${quietLine}rm -f $clean_files$newline";
+	    }
+	}
+    }
 
     # Finally, execute make clean in any subdirs
     &RecursiveOp( "clean" );
