@@ -26,7 +26,7 @@
 #error MPID_NEM_*_MODULEs are not defined!  Check for loop in include dependencies.
 #endif
 
-#if(MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE) //FIXME-Darius Add
+#if(MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE) /* FIXME-Darius Add */
     struct sockconn;
 #endif
 

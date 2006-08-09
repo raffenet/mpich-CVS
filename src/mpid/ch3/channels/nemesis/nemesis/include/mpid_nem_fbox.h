@@ -102,6 +102,6 @@ extern unsigned short        *MPID_nem_recv_seqno;
 	MPID_nem_curr_fbox_all_poll = MPID_nem_fboxq_elem_list;										\
 } while(0)
 
-#endif //MPID_NEM_FBOX_H
+#endif /* MPID_NEM_FBOX_H */
 
 

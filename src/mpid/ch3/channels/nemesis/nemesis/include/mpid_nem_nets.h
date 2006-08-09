@@ -33,4 +33,4 @@ extern MPID_nem_net_module_vc_init_t MPID_nem_net_module_vc_init;
 
 int MPID_nem_net_init(void);
 
-#endif //MPID_NEM_NETS_H
+#endif /* MPID_NEM_NETS_H */

@@ -4,6 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpidi_ch3_impl.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -11,7 +13,7 @@
 #include <sys/param.h>
 #endif
 
-#include "mpidpre.h"
+/* #include "mpidpre.h" */
 #include "mpid_nem_impl.h"
 
 void *MPIDI_CH3_packet_buffer = NULL;
