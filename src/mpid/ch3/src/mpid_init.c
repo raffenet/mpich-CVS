@@ -27,7 +27,7 @@ static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg );
 
 MPIDI_Process_t MPIDI_Process = { NULL };
-MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
+MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool = NULL;
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Init
