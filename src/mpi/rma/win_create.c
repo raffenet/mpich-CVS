@@ -114,6 +114,10 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
     mpi_errno = MPID_Win_create(base, size, disp_unit, info_ptr, comm_ptr, &win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    /* Initialize a few fields that have specific defaults */
+    win_ptr->name[0]    = 0;
+    win_ptr->errhandler = 0;
+
     /* return the handle of the window object to the user */
     *win = win_ptr->handle;
 
