@@ -103,19 +103,10 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		break;
 
 	    case MPIDI_CH3_PKT_EAGER_SYNC_SEND:
-		MPIU_DBG_PRINTF((" type ......... EAGER_SYNC_SEND\n"));
-		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_sync_send.sender_req_id));
-		MPIU_DBG_PRINTF((" context_id ... %d\n", pkt->eager_sync_send.match.context_id));
-		MPIU_DBG_PRINTF((" tag .......... %d\n", pkt->eager_sync_send.match.tag));
-		MPIU_DBG_PRINTF((" rank ......... %d\n", pkt->eager_sync_send.match.rank));
-		MPIU_DBG_PRINTF((" data_sz ...... %d\n", pkt->eager_sync_send.data_sz));
-#ifdef MPID_USE_SEQUENCE_NUMBERS
-		MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->eager_sync_send.seqnum));
-#endif
+		MPIDI_CH3_PktPrint_EagerSyncSend( stdout, pkt );
 		break;
 	    case MPIDI_CH3_PKT_EAGER_SYNC_ACK:
-		MPIU_DBG_PRINTF((" type ......... EAGER_SYNC_ACK\n"));
-		MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_sync_ack.sender_req_id));
+		MPIDI_CH3_PktPrint_EagerSyncAck( stdout, pkt );
 		break;
 
 	    case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND:
@@ -135,6 +126,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		MPIDI_CH3_PktPrint_CancelSendResp( stdout, pkt );
 		break;
 
+		/* FIXME: Move these RMA descriptions into the RMA code files */
 	    case MPIDI_CH3_PKT_PUT:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_PUT\n"));
 		MPIU_DBG_PRINTF((" addr ......... %p\n", pkt->put.addr));
@@ -226,6 +218,8 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 	    case MPIDI_CH3_PKT_FLOW_CNTL_UPDATE:
 		MPIU_DBG_PRINTF((" FLOW_CNTRL_UPDATE\n"));
 		break;
+
+		/* FIXME: Move these into the correct location (where is that?) */
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 	    case MPIDI_CH3_PKT_RTS_IOV:
 		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_RTS_IOV\n"));
@@ -252,8 +246,7 @@ void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt)
 		break;
 #endif
 	    case MPIDI_CH3_PKT_CLOSE:
-		MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_CLOSE\n"));
-		MPIU_DBG_PRINTF((" ack ......... %s\n", pkt->close.ack ? "TRUE" : "FALSE"));
+		MPIDI_CH3_PktPrint_Close( stdout, pkt );
 		break;
 	    
 	    default:

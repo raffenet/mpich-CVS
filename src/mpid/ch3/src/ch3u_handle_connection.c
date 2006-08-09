@@ -226,3 +226,81 @@ int MPIDI_CH3U_VC_WaitForClose( void )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
     return mpi_errno;
 }
+
+/* Here is the matching code that processes a close packet when it is 
+   received */
+int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
+				MPID_Request **rreqp )
+{
+    MPIDI_CH3_Pkt_close_t * close_pkt = &pkt->close;
+    int mpi_errno = MPI_SUCCESS;
+	    
+    if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
+    {
+	MPIDI_CH3_Pkt_t upkt;
+	MPIDI_CH3_Pkt_close_t * resp_pkt = &upkt.close;
+	MPID_Request * resp_sreq;
+	
+	MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CLOSE);
+	resp_pkt->ack = TRUE;
+	
+	MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"sending close(TRUE) to %d",
+		       vc->pg_rank);
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				"**ch3|send_close_ack");
+	}
+	
+	if (resp_sreq != NULL)
+	{
+	    MPID_Request_release(resp_sreq);
+	}
+    }
+    
+    if (close_pkt->ack == FALSE)
+    {
+	if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
+	{
+	    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
+			   "received close(FALSE) from %d, moving to CLOSE_ACKED.",
+			   vc->pg_rank);
+	    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
+	    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+	}
+	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
+	{
+	    MPIU_Assert(vc->state == MPIDI_VC_STATE_ACTIVE);
+	    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
+                     "received close(FALSE) from %d, moving to REMOTE_CLOSE.",
+				   vc->pg_rank);
+	    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_REMOTE_CLOSE);
+	    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
+	}
+    }
+    else
+    {
+	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
+                       "received close(TRUE) from %d, moving to CLOSE_ACKED.", 
+			       vc->pg_rank);
+	MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
+	MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
+	
+	vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+	mpi_errno = MPIDI_CH3_Connection_terminate(vc);
+    }
+    
+    *rreqp = NULL;
+
+ fn_fail:
+    return mpi_errno;
+}
+
+#ifdef MPICH_DBG_OUTPUT
+int MPIDI_CH3_PktPrint_Close( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
+{
+    MPIU_DBG_PRINTF((" type ......... MPIDI_CH3_PKT_CLOSE\n"));
+    MPIU_DBG_PRINTF((" ack ......... %s\n", pkt->close.ack ? "TRUE" : "FALSE"));
+    return MPI_SUCCESS;
+}
+#endif

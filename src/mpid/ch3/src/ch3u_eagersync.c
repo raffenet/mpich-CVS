@@ -200,3 +200,117 @@ int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *vc, MPID_Request *rreq )
  fn_fail:
     return mpi_errno;
 }
+
+/* 
+ * Here are the routines that are called by the progress engine to handle
+ * the various rendezvous message requests (cancel of sends is in 
+ * mpid_cancel_send.c).
+ */    
+
+#define set_request_info(rreq_, pkt_, msg_type_)		\
+{								\
+    (rreq_)->status.MPI_SOURCE = (pkt_)->match.rank;		\
+    (rreq_)->status.MPI_TAG = (pkt_)->match.tag;		\
+    (rreq_)->status.count = (pkt_)->data_sz;			\
+    (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;		\
+    (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;		\
+    MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);		\
+    MPIDI_Request_set_msg_type((rreq_), (msg_type_));		\
+}
+
+int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+					MPID_Request **rreqp )
+{
+    MPIDI_CH3_Pkt_eager_send_t * es_pkt = &pkt->eager_send;
+    MPID_Request * rreq;
+    int found;
+    int mpi_errno = MPI_SUCCESS;
+    
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+     "received eager sync send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
+	      es_pkt->sender_req_id, es_pkt->match.rank, es_pkt->match.tag, 
+              es_pkt->match.context_id));
+	    
+    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&es_pkt->match, &found);
+    if (rreq == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
+    }
+    
+    set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
+    *rreqp = rreq;
+    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+		    "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
+    }
+	    
+    if (found)
+    {
+	MPIDI_CH3_Pkt_t upkt;
+	MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt = &upkt.eager_sync_ack;
+	MPID_Request * esa_req;
+	
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending eager sync ack");
+	
+	MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
+	esa_pkt->sender_req_id = rreq->dev.sender_req_id;
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				"**ch3|syncack");
+	}
+	if (esa_req != NULL) {
+	    MPID_Request_release(esa_req);
+	}
+    }
+    else
+    {
+	MPIDI_Request_set_sync_send_flag(rreq, TRUE);
+    }
+ fn_fail:
+    return mpi_errno;
+}
+
+int MPIDI_CH3_PktHandler_EagerSyncAck( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+				       MPID_Request **rreqp )
+{
+    MPIDI_CH3_Pkt_eager_sync_ack_t * esa_pkt = &pkt->eager_sync_ack;
+    MPID_Request * sreq;
+    
+    MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,
+	   "received eager sync ack pkt, sreq=0x%08x", esa_pkt->sender_req_id);
+	    
+    MPID_Request_get_ptr(esa_pkt->sender_req_id, sreq);
+    /* decrement CC (but don't mark data transfer as complete since the 
+       transfer could still be in progress) */
+
+    /* FIXME: This sometimes segfaults */
+    MPIDI_CH3U_Request_complete(sreq);  /* brad : seen this segfault in ssm 
+					   dynamic process...? */
+    
+    *rreqp = NULL;
+    return MPI_SUCCESS;
+}
+
+#ifdef MPICH_DBG_OUTPUT
+int MPIDI_CH3_PktPrint_EagerSyncSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
+{
+    MPIU_DBG_PRINTF((" type ......... EAGER_SYNC_SEND\n"));
+    MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_sync_send.sender_req_id));
+    MPIU_DBG_PRINTF((" context_id ... %d\n", pkt->eager_sync_send.match.context_id));
+    MPIU_DBG_PRINTF((" tag .......... %d\n", pkt->eager_sync_send.match.tag));
+    MPIU_DBG_PRINTF((" rank ......... %d\n", pkt->eager_sync_send.match.rank));
+    MPIU_DBG_PRINTF((" data_sz ...... %d\n", pkt->eager_sync_send.data_sz));
+#ifdef MPID_USE_SEQUENCE_NUMBERS
+    MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->eager_sync_send.seqnum));
+#endif
+    return MPI_SUCCESS;
+}
+
+int MPIDI_CH3_PktPrint_EagerSyncAck( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
+{
+    MPIU_DBG_PRINTF((" type ......... EAGER_SYNC_ACK\n"));
+    MPIU_DBG_PRINTF((" sender_reqid . 0x%08X\n", pkt->eager_sync_ack.sender_req_id));
+    return MPI_SUCCESS;
+}
+#endif

@@ -485,7 +485,7 @@ int MPIDI_CH3_PktPrint_EagerSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 
 int MPIDI_CH3_PktPrint_EagerShortSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 {
-    int i, datalen;
+    int datalen;
     unsigned char *p = (unsigned char *)pkt->eagershort_send.data;
     MPIU_DBG_PRINTF((" type ......... EAGERSHORT_SEND\n"));
     MPIU_DBG_PRINTF((" context_id ... %d\n", pkt->eagershort_send.match.context_id));
@@ -497,11 +497,13 @@ int MPIDI_CH3_PktPrint_EagerShortSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 #endif
     datalen = pkt->eagershort_send.data_sz;
     if (datalen > 0) {
-	MPIU_DBG_PRINTF((" data ......... "));
+	char databytes[64+1];
+	int i;
+	if (datalen > 32) datalen = 32;
 	for (i=0; i<datalen; i++) {
-	    MPIU_DBG_PRINTF(("%2x"), p[i] );
+	    MPIU_Snprintf( &databytes[2*i], 64 - 2*i, "%2x", p[i] );
 	}
-	MPIU_DBG_PRINTF(("\n"));
+	MPIU_DBG_PRINTF((" data ......... %s\n"), databytes );
     }
 }
 
