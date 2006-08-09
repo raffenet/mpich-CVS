@@ -21,6 +21,7 @@ AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 ])
 AH_BOTTOM([#endif])
 
+AC_DEFINE(HAVE_MPIDI_CH3_CONF,1,[Define so that we can test whether the mpidi_ch3_conf.h file has been included])
 
 echo "RUNNING CONFIGURE FOR CH3 DEVICE"
 
