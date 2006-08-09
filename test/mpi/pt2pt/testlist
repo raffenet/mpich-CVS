@@ -1,6 +1,7 @@
 sendrecv1 4
 sendrecv2 2
-#pingping 2
+sendrecv3 2
+pingping 2
 bottom 2
 bsend1 1
 bsend2 1
