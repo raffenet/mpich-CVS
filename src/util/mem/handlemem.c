@@ -264,9 +264,9 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
     if (objmem->avail) {
 	ptr	      = objmem->avail;
 	objmem->avail = objmem->avail->next;
-	/* FIXME: Clearing ptr->next is not necessary and is
-	   really a defensive move.  */
-	ptr->next     = 0;
+	/* We do not clear ptr->next as we set it to an invalid pattern
+	   when doing memory debugging and we don't need to set it 
+	   for the production/default case */
 	/* ptr points to object to allocate */
     }
     else {
@@ -311,9 +311,18 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 	MPIU_Handle_obj_alloc_complete(objmem, performed_initialize);
     }
 
-#ifdef MPICH_DEBUG_HANDLES
-    MPIU_DBG_PRINTF(("Allocating handle %x (0x%08x)\n",
-		     (unsigned) ptr, ptr->handle));
+    MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,
+				     "Allocating handle %x (0x%08x)\n",
+				     (unsigned) ptr, ptr->handle));
+
+#ifdef USE_MEMORY_TRACING
+    /* We set the object to an invalid pattern.  This is similar to 
+       what is done by MPIU_trmalloc by default (except that trmalloc uses
+       0xda as the byte in the memset 
+    */
+    if (ptr) {
+	memset( &ptr->ref_count, 0xef, objmem->size-sizeof(int));
+    }
 #endif
 
     return ptr;
