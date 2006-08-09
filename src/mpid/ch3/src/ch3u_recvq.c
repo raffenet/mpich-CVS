@@ -218,7 +218,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
 					   int context_id, int * foundp)
 {
     int found;
-    MPID_Request * rreq, *prev_rreq;
+    MPID_Request *rreq, *prev_rreq;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_RECVQ_FDU_OR_AEP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_RECVQ_FDU_OR_AEP);
@@ -297,6 +297,14 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
     
     /* A matching request was not found in the unexpected queue, so we 
        need to allocate a new request and add it to the posted queue */
+#if 1
+    {int mpi_errno=0;
+     MPIDI_Request_create_rreq( rreq, mpi_errno, goto lock_exit );
+     rreq->dev.match.tag = tag;
+     rreq->dev.match.rank = source;
+     rreq->dev.match.context_id = context_id;
+     rreq->dev.next = NULL;
+#else
     rreq = MPID_Request_create();
     if (rreq != NULL) {
 	/* FIXME: Why set the ref to 2?  should that be set in the create
@@ -308,7 +316,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
 	rreq->dev.match.rank = source;
 	rreq->dev.match.context_id = context_id;
 	rreq->dev.next = NULL;
-	
+#endif	
 	if (recvq_posted_tail != NULL) {
 	    recvq_posted_tail->dev.next = rreq;
 	}
@@ -481,13 +489,19 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match,
 
     /* A matching request was not found in the posted queue, so we 
        need to allocate a new request and add it to the unexpected queue */
+#if 1
+    {int mpi_errno=0;
+     MPIDI_Request_create_rreq( rreq, mpi_errno, found=FALSE;goto lock_exit );
+	rreq->dev.match = *match;
+	rreq->dev.next = NULL;
+#else
     rreq = MPID_Request_create();
     if (rreq != NULL) {
 	MPIU_Object_set_ref(rreq, 2);
 	rreq->kind = MPID_REQUEST_RECV;
 	rreq->dev.match = *match;
 	rreq->dev.next = NULL;
-	
+#endif	
 	if (recvq_unexpected_tail != NULL) {
 	    recvq_unexpected_tail->dev.next = rreq;
 	}

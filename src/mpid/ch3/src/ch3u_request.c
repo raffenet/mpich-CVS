@@ -9,6 +9,11 @@
 /* This file contains two types of routines associated with requests: 
  * Routines to allocate and free requests
  * Routines to manage iovs on requests 
+ *
+ * Note that there are a number of macros that also manage requests defined
+ * in mpidimpl.h ; these are intended to optimize request creation for
+ * specific types of requests.  See the comments in mpidimpl.h for more
+ * details.
  */
 
 /* Routines and data structures for request allocation and deallocation */
@@ -21,6 +26,8 @@ MPIU_Object_alloc_t MPID_Request_mem = {
     0, 0, 0, 0, MPID_REQUEST, sizeof(MPID_Request), MPID_Request_direct,
     MPID_REQUEST_PREALLOC };
 
+/* See the comments above about request creation.  Some routines will
+   use macros in mpidimpl.h *instead* of this routine */
 #undef FUNCNAME
 #define FUNCNAME MPID_Request_create
 #undef FCNAME
