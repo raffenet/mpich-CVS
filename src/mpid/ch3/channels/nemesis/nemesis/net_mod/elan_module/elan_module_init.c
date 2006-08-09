@@ -138,6 +138,10 @@ int init_elan( MPIDI_PG_t *pg_p )
      max_node_id = my_node_id;
 
    /* Quadrics needs contiguous nodes */
+   fprintf(stdout,"[%i | %i] ==== ELAN INIT : %i Max_node_Id  ==== \n", MPID_nem_mem_region.rank,my_node_id,max_node_id);
+   fprintf(stdout,"[%i | %i] ==== ELAN INIT : %i Min_node_Id  ==== \n", MPID_nem_mem_region.rank,my_node_id,min_node_id);
+   fprintf(stdout,"[%i | %i] ==== ELAN INIT : %i Numprocs     ==== \n", MPID_nem_mem_region.rank,my_node_id,numprocs);
+   
    MPIU_Assert ( (max_node_id - min_node_id) == numprocs );
    
    /* Generate capability string */
