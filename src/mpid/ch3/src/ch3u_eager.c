@@ -503,7 +503,7 @@ int MPIDI_CH3_PktPrint_EagerShortSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 	for (i=0; i<datalen; i++) {
 	    MPIU_Snprintf( &databytes[2*i], 64 - 2*i, "%2x", p[i] );
 	}
-	MPIU_DBG_PRINTF((" data ......... %s\n"), databytes );
+	MPIU_DBG_PRINTF((" data ......... %s\n", databytes));
     }
 }
 

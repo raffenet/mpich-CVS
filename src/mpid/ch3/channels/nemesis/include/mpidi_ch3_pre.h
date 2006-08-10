@@ -26,6 +26,27 @@
 #error MPID_NEM_*_MODULEs are not defined!  Check for loop in include dependencies.
 #endif
 
+#if(MPID_NEM_NET_MODULE == MPID_NEM_SCTP_MODULE)
+
+    /* TODO make all of these _ and make all of these adjustable using env var */
+#define MPICH_SCTP_NUM_STREAMS 1
+#define _MPICH_SCTP_SOCKET_BUFSZ 233016  /* _ because not to confuse with env var */
+    /* TODO add port and no_nagle */
+
+    /* stream table */
+#define HAVE_NOT_SENT_PG_ID 0
+#define HAVE_SENT_PG_ID 1
+#define HAVE_NOT_RECV_PG_ID 0
+#define HAVE_RECV_PG_ID 1
+
+typedef struct MPID_nem_sctp_stream {
+    char have_sent_pg_id;
+    char have_recv_pg_id;
+} MPID_nem_sctp_stream_t;
+#endif
+    
+
+
 #if(MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE) /* FIXME-Darius Add */
     struct sockconn;
 #endif
@@ -69,6 +90,12 @@ typedef struct MPIDI_CH3I_VC
     int toread;
     struct MPID_nem_tcp_module_internal_queue *internal_recv_queue;
     struct MPID_nem_tcp_module_internal_queue *internal_free_queue;
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_SCTP_MODULE)
+    int fd;
+    MPID_nem_sctp_stream_t stream_table[MPICH_SCTP_NUM_STREAMS];
+    struct sockaddr_in to_address;
+    void * conn_pkt;
+    
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
     int fd;
     struct sockaddr_in sock_id;

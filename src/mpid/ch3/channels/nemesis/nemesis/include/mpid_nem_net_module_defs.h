@@ -15,5 +15,6 @@
 #define MPID_NEM_MX_MODULE    3
 #define MPID_NEM_ELAN_MODULE  4
 #define MPID_NEM_NEWTCP_MODULE  5
+#define MPID_NEM_SCTP_MODULE  6
 
 #endif
