@@ -36,9 +36,10 @@ int  MPID_nem_elan_module_lmt_start_recv (MPIDI_VC_t *src, struct iovec s_cookie
 int  MPID_nem_elan_module_lmt_send_post (struct iovec cookie);
 int  MPID_nem_elan_module_lmt_recv_post (struct iovec cookie);
 
+/*
+#define LMT_COMPLETE 0
+#define LMT_FAILURE 1
+#define LMT_AGAIN 2
+*/
 
-//#define LMT_COMPLETE 0
-//#define LMT_FAILURE 1
-//#define LMT_AGAIN 2
-
-#endif //ELAN_MODULE_H
+#endif /*ELAN_MODULE_H*/

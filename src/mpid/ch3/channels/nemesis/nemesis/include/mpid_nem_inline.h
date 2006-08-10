@@ -849,5 +849,5 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
     return MPI_SUCCESS;
 }
 
-#endif //_MPID_NEM_INLINE_H
+#endif /*_MPID_NEM_INLINE_H*/
 
