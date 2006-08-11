@@ -292,23 +292,6 @@ int MPID_nem_newtcp_module_conn_est (struct pollfd *pfd, sockconn_t *sc)
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_newtcp_module_connpoll
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPID_nem_newtcp_module_connpoll() //FIXME-Darius Add
-{
-    int mpi_errno = MPI_SUCCESS;
-
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-
-
-
-#undef FUNCNAME
 #define FUNCNAME recv_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)

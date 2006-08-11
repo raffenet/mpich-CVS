@@ -51,13 +51,6 @@ static handler_func_t sc_state_handlers[CONN_STATE_SIZE];
        IS_SAME_PGID(sc1->pg_id, sc2->pg_id) == 0)))
 
 #undef FUNCNAME
-#define FUNCNAME prog_sm
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-void prog_sm() {
-}
-
-#undef FUNCNAME
 #define FUNCNAME alloc_sc_plfd_tbls
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -97,8 +90,6 @@ static int free_sc_plfd_tbls()
 }
 
 /*
-  FIXME: Consult Darius for efficient memcpy and whether doing this is worth overall.
-
   Reason for not doing realloc for both sc and plfd tables :
   Either both the tables have to be expanded or both should remain the same size, if
   enough memory could not be allocated, as we have only one set of variables to control
@@ -347,12 +338,13 @@ static int recv_id_info(sockconn_t *const sc)
                           "**read", "**read %s", strerror (errno)); //FIXME-Z1
     if (pg_id_len == 0) {
         sc->is_same_pg = TRUE;
-        get_vc_from_id_info(&sc->vc, MPIDI_Process.my_pg->id, sc->pg_rank);
+        MPID_nem_newtcp_module_get_vc_from_conninfo (MPIDI_Process.my_pg->id, 
+                                                     sc->pg_rank,&sc->vc);
         sc->pg_id = NULL;
     }
     else {
         sc->is_same_pg = FALSE;
-        get_vc_from_id_info(&sc->vc, pg_id, sc->pg_rank);
+        MPID_nem_newtcp_module_get_vc_from_conninfo (pg_id, sc->pg_rank, &sc->vc);
         sc->pg_id = sc->vc->pg->id;
     }
 
@@ -506,7 +498,7 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         MPIU_Assert(0);
 
  fn_exit:
-    prog_sm();
+    MPID_nem_newtcp_module_connpoll();
     return mpi_errno;
  fn_fail:
     if (index != -1) {
@@ -573,7 +565,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     else
         MPIU_Assert(0);
  fn_exit:
-    prog_sm();
+    MPID_nem_newtcp_module_connpoll();
     return 0;
  fn_fail:
     goto fn_exit;
@@ -886,11 +878,36 @@ static int init()
     return 0;
 }
 
-//FIXME-Darius
+//FIXME-Danger
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_connection_progress
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
 {
-    return 0;
+    int mpi_errno = MPI_SUCCESS;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
+
+//FIXME-Danger
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_connpoll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_connpoll()
+{
+    int mpi_errno = MPI_SUCCESS;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME f
