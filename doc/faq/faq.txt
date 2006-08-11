@@ -172,7 +172,7 @@ Fortran 95 compiler that used 64 bits for \emph{both} INTEGER and REAL would
 also conform to the Fortran standard.  However, such a compiler would need to
 use 128 bits for DOUBLE PRECISION quantities).
 
-%% Heading: When I run make, it fails immediately with many errors \
+%% Heading: Q: When I run make, it fails immediately with many errors \
 beginning with ``sock.c:8:24: mpidu\_sock.h: No such file or directory \
 In file included from sock.c:9: \
 ../../../../include/mpiimpl.h:91:21: mpidpre.h: No such file or directory \
@@ -184,7 +184,7 @@ In file included from sock.c:9: \
 Check if you have set the envirnoment variable CPPFLAGS. If so, unset
 it and use CXXFLAGS instead. Then rerun configure and make.
 
-%% Heading: When building the ssm or sshm channel, I get the \
+%% Heading: Q: When building the ssm or sshm channel, I get the \
 error ``mpidu\_process\_locks.h:234:2: error: \#error *** No atomic memory \
 operation specified to implement busy locks ***''
 %% Filename: asmlocks
@@ -194,6 +194,31 @@ use special interprocess locks (often assembly) that may not work
 with some compilers or machine architectures. They work on Linux with
 gcc, Intel, and Pathscale compilers on various Intel
 architectures. They also work in Windows and Solaris environments.
+
+%% Heading: Q: When using the Intel Fortran 90 compiler (version 9), the make \
+fails with errors in compiling statement that reference \
+\texttt{MPI\_ADDRESS\_KIND}.
+%% Filename: ifortv9
+%% End
+Check the output of the configure step.  If configure claims that ifort is a
+cross compiler, the likely problem is that programs compiled and linked with
+ifort cannot be run because of a missing shared library.  Try to compile and 
+run the following program (named conftest.f90):
+\begin{verbatim}
+      program conftest
+      integer, dimension(10) :: n
+      end
+\end{verbatim}
+If this program fails to run, then the problem is that your installation of
+ifort either has an error or you need to add additional values to your
+environment variables (such as \texttt{LD\_LIBRARY\_PATH}).  Check your 
+installation documentation for the ifort compiler.  
+See 
+\url{http://softwareforums.intel.com/ISN/Community/en-US/search/SearchResults.aspx?q=libimf.so}
+for an example of problems of this kind that users are having with version 9
+of ifort.
+
+If you do not need Fortran 90, you can configure with \texttt{--disable-f90}.
 
 % ----------------------------------------------------------------------------
 %% Section: Windows version of MPICH2
