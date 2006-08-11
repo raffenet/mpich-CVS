@@ -60,21 +60,29 @@ MPE_CSOURCES     = clog_util.c clog_timer.c clog_uuid.c clog_commset.c \
                    clog_preamble.c clog_record.c clog_sync.c \
                    clog_block.c clog_buffer.c clog_merger.c \
                    clog_cache.c clog_joiner.c clog.c mpe_log.c
-MPE_COBJECTS     = $(MPE_CSOURCES:.c=.@OBJEXT@)
+MPE_P_COBJECTS   = $(MPE_CSOURCES:.c=.p@OBJEXT@)
+MPE_N_COBJECTS   = $(MPE_CSOURCES:.c=.n@OBJEXT@)
 
 MPE_WSOURCES     = mpe_logf.c
-MPE_WOBJECTS     = $(MPE_WSOURCES:.c=.@OBJEXT@)
+MPE_P_WOBJECTS   = $(MPE_WSOURCES:.c=.p@OBJEXT@)
+MPE_N_WOBJECTS   = $(MPE_WSOURCES:.c=.n@OBJEXT@)
+
+MPE_XSOURCES     = mpe_log_null.c
+MPE_P_XOBJECTS   = $(MPE_XSOURCES:.c=.p@OBJEXT@)
+MPE_N_XOBJECTS   = $(MPE_XSOURCES:.c=.n@OBJEXT@)
 
 MPE_SHLCOBJECTS  = $(MPE_COBJECTS:.@OBJEXT@=.lo)
 MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 
-.SUFFIXES: .c .@OBJEXT@ .lo .a @EXEEXT@
+.SUFFIXES: .c .@OBJEXT@ .p@OBJEXT@ .n@OBJEXT@ .lo .a @EXEEXT@
 
-.c.@OBJEXT@:
-	$(MPE_ICC) $(MPE_ICFLAGS) -c $<
+.c.p@OBJEXT@:
+	$(MPI_CC) $(CC_FLAGS) -c $<
+	mv $*.@OBJEXT@ $*.p@OBJEXT@
 
-.c.a:
-	$(MPE_ICC) $(MPE_ICFLAGS) -c $<
+.c.n@OBJEXT@:
+	$(CC) $(CC_FLAGS) -DCLOG_NOMPI -c $<
+	mv $*.@OBJEXT@ $*.n@OBJEXT@
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
@@ -89,7 +97,7 @@ default_all: default
 profile_all: 
 
 #
-default: clean
+default:
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a
 	$(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a
@@ -108,64 +116,50 @@ default: clean
 # is done once (e.g., a blip in the filesystem time can't be 
 # responsible if make works as Sun documents it).  To fix this, we
 # add all the objects to the library, not just the "recent" ones.
-${libbuild_dir}/lib$(PROF_LIBNAME).a: clean
-	@$(MAKE) $(MPE_COBJECTS) \
-	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}"
+${libbuild_dir}/lib$(PROF_LIBNAME).a: $(MPE_P_COBJECTS)
+	$(AR) $(ARFLAGS) $@ $(MPE_P_COBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
+	     $(MAKE) $(MPE_P_WOBJECTS) ; \
+	     $(AR) $(ARFLAGS) $@ $(MPE_P_WOBJECTS) ; \
 	 fi
-	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
 
-${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: clean
-	@$(MAKE) $(MPE_COBJECTS) \
-	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: $(MPE_N_COBJECTS)
+	$(AR) $(ARFLAGS) $@ $(MPE_N_COBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI" ; \
+	     $(MAKE) $(MPE_N_WOBJECTS) ; \
+	     $(AR) $(ARFLAGS) $@ $(MPE_N_WOBJECTS) ; \
 	 fi
-	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
 
 # -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_null.a
-${libbuild_dir}/lib$(PROF_LIBNAME)_null.a: clean
-	@$(MAKE) mpe_log_null.@OBJEXT@ \
-	 "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS} "
+${libbuild_dir}/lib$(PROF_LIBNAME)_null.a: $(MPE_P_XOBJECTS)
+	$(AR) $(ARFLAGS) $@ $(MPE_P_XOBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_ICC=${MPI_CC}" "MPE_ICFLAGS=${CC_FLAGS}" ; \
+	     $(MAKE) $(MPE_P_WOBJECTS) ; \
+	     $(AR) $(ARFLAGS) $@ $(MPE_P_WOBJECTS) ; \
 	 fi
-	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
 
 # -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_nompi_null.a
-${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: clean
-	@$(MAKE) mpe_log_null.@OBJEXT@ \
-	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: $(MPE_N_XOBJECTS)
+	$(AR) $(ARFLAGS) $@ $(MPE_N_XOBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) $(MPE_WOBJECTS) \
-	     "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI" ; \
+	     $(MAKE) $(MPE_N_WOBJECTS) ; \
+	     $(AR) $(ARFLAGS) $@ $(MPE_N_WOBJECTS) ; \
 	 fi
-	$(AR) $(ARFLAGS) $@ *.@OBJEXT@
 	$(RANLIB) $@
 
-${binbuild_dir}/clog2_print@EXEEXT@: clean
-	@$(MAKE) clog_print.@OBJEXT@ \
-	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
-	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.@OBJEXT@ \
+${binbuild_dir}/clog2_print@EXEEXT@: clog_print.n@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.n@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 
-${binbuild_dir}/clog2_join@EXEEXT@: clean
-	@$(MAKE) clog_join.@OBJEXT@ \
-	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
-	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_join.@OBJEXT@ \
+${binbuild_dir}/clog2_join@EXEEXT@: clog_join.n@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_join.n@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 
-${binbuild_dir}/clog2_repair@EXEEXT@: clean
-	@$(MAKE) clog_repair.@OBJEXT@ \
-	 "MPE_ICC=${CC}" "MPE_ICFLAGS=${CC_FLAGS} -DCLOG_NOMPI"
-	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_repair.@OBJEXT@ \
+${binbuild_dir}/clog2_repair@EXEEXT@: clog_repair.n@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_repair.n@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 
 #
@@ -173,13 +167,15 @@ ${binbuild_dir}/clog2_repair@EXEEXT@: clean
 # architecture or are otherwise damaged)
 rmlib:
 	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME).a 
+	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a
+	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a
 	@-$(RM) -f ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a 
 
 rmprog:
 	@-$(RM) -f $(EXECS)
 
 clean: rmprog
-	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
+	@-$(RM) -f ${srcdir}/*.*@OBJEXT@ *.*@OBJEXT@ *~ PI*
 
 distclean: clean rmlib
 	@-$(RM) -f Makefile
