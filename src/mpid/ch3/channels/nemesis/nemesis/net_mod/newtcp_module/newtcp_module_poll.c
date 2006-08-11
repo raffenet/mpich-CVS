@@ -23,16 +23,22 @@ static recv_overflow_buf_t recv_overflow_buf;
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_poll_init()
 {
-        int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
 
-        recv_overflow_buf.start = NULL;
-        recv_overflow_buf.len = 0;
+    recv_overflow_buf.start = NULL;
+    recv_overflow_buf.len = 0;
         
  fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
+
+int MPID_nem_newtcp_module_poll_finalize()
+{
+    return MPI_SUCCESS;
+}
+
 
 
 /* breakout_pkts -- This is called after receiving data into a cell.

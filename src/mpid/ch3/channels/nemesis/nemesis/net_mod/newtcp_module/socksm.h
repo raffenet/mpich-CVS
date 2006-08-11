@@ -98,13 +98,13 @@ extern const char *const CONN_STATE_STR[];
 #undef M_
 
 
-struct sockconn;
-typedef struct sockconn sockconn_t;
+struct MPID_nem_new_tcp_module_sockconn;
+typedef struct MPID_nem_new_tcp_module_sockconn sockconn_t;
 typedef struct pollfd pollfd_t;
 
 typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const conn);
 
-struct sockconn{
+struct MPID_nem_new_tcp_module_sockconn{
     int fd;    
     int is_same_pg;  //TRUE/FALSE - 
     //FIXME: see whether this can be removed, by using only pg_id = NULL or non-NULL

@@ -84,5 +84,11 @@ int MPID_nem_newtcp_module_send_progress();
 #define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.newtcp_sendl_next, ch.newtcp_sendl_prev)
 #define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.newtcp_sendl_next, ch.newtcp_sendl_prev)
 
+/* stack macros */
+#define S_EMPTY(s) GENERIC_S_EMPTY (s)
+#define S_TOP(s) GENERIC_S_TOP (s)
+#define S_PUSH(sp, ep) GENERIC_S_PUSH (sp, ep, next)
+#define S_PUSH_MULTIPLE(sp, ep0, ep1) GENERIC_S_PUSH_MULTIPLE (sp, ep0, ep1, next)
+#define S_POP(sp, ep) GENERIC_S_POP (sp, ep, next)
 
 #endif /* NEWTCP_MODULE_IMPL_H */

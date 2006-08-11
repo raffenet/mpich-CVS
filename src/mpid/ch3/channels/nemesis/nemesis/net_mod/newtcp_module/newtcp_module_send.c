@@ -10,23 +10,23 @@
 #define MAX_SEND_IOV 10
 
 struct {MPIDI_VC_t *head;} send_list = {0};
-struct {MPID_nem_newtcp_module_send_q_element_t *head, *tail;} free_buffers = {0};
+struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 
 #define ALLOC_Q_ELEMENT(e) do {                                                                                                         \
-        if (Q_EMPTY (free_buffers))                                                                                                     \
+        if (S_EMPTY (free_buffers))                                                                                                     \
         {                                                                                                                               \
             MPIU_CHKPMEM_MALLOC (*(e), MPID_nem_newtcp_module_send_q_element_t *, sizeof(MPID_nem_newtcp_module_send_q_element_t),      \
                                  mpi_errno, "send queue element");                                                                      \
         }                                                                                                                               \
         else                                                                                                                            \
         {                                                                                                                               \
-            Q_DEQUEUE (&free_buffers, e);                                                                                               \
+            S_POP (&free_buffers, e);                                                                                                   \
         }                                                                                                                               \
     } while (0)
 
 /* FREE_Q_ELEMENTS() frees a list if elements starting at e0 through e1 */
-#define FREE_Q_ELEMENTS(e0, e1) Q_ENQUEUE_MULTIPLE (&free_buffers, e0, e1)
-#define FREE_Q_ELEMENT(e) Q_ENQUEUE (&free_buffers, e) 
+#define FREE_Q_ELEMENTS(e0, e1) S_PUSH_MULTIPLE (&free_buffers, e0, e1)
+#define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e) 
 
 
 #undef FUNCNAME
@@ -37,15 +37,16 @@ int MPID_nem_newtcp_module_send_init()
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    MPID_nem_newtcp_module_send_q_element_t *sendq_e;
-    MPIU_CHKPMEM_DECL (1);
+    MPIU_CHKPMEM_DECL (NUM_PREALLOC_SENDQ);
     
     /* preallocate sendq elements */
-    MPIU_CHKPMEM_MALLOC (sendq_e, MPID_nem_newtcp_module_send_q_element_t *, NUM_PREALLOC_SENDQ * sizeof(MPID_nem_newtcp_module_send_q_element_t), mpi_errno,
-                         "send queue element");
     for (i = 0; i < NUM_PREALLOC_SENDQ; ++i)
     {
-        Q_ENQUEUE (&free_buffers, &sendq_e[i]);
+        MPID_nem_newtcp_module_send_q_element_t *e;
+        
+        MPIU_CHKPMEM_MALLOC (e, MPID_nem_newtcp_module_send_q_element_t *,
+                             sizeof(MPID_nem_newtcp_module_send_q_element_t), mpi_errno, "send queue element");
+        S_PUSH (&free_buffers, e);
     }
 
  fn_exit:
@@ -101,7 +102,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
         goto fn_exit; /* whole pkt has been sent, we're done */
 
     /* part of the pkt wasn't sent, enqueue it */
-    ALLOC_Q_ELEMENT (&e);
+    ALLOC_Q_ELEMENT (&e); /* may call MPIU_CHKPMEM_MALLOC */
     MPID_NEM_MEMCPY (&e->buf, (char *)pkt + offset, MPID_NEM_PACKET_LEN (pkt));
     e->len = MPID_NEM_PACKET_LEN (pkt) - offset;
     e->start = e->buf;
@@ -115,7 +116,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     return mpi_errno;
  enqueue_cell_and_exit:
     /* enqueue cell on send queue and exit */
-    ALLOC_Q_ELEMENT (&e);
+    ALLOC_Q_ELEMENT (&e); /* may call MPIU_CHKPMEM_MALLOC */
     MPID_NEM_MEMCPY (&e->buf, pkt, MPID_NEM_PACKET_LEN (pkt));
     e->len = MPID_NEM_PACKET_LEN (pkt);
     e->start = e->buf;
@@ -239,3 +240,25 @@ int MPID_nem_newtcp_module_send_progress()
  fn_fail:
     goto fn_exit;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_send_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_send_finalize()
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    while (!S_EMPTY (free_buffers))
+    {
+        MPID_nem_newtcp_module_send_q_element_t *e;
+        S_POP (&free_buffers, &e);
+        MPIU_Free (e);
+    }
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+

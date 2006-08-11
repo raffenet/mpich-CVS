@@ -102,4 +102,26 @@
             ((ep)->next_field)->prev_field  = (ep)->prev_field; \
     } while (0)
 
+
+/* Generic stack macros */
+#define GENERIC_S_EMPTY(s) ((s).top == NULL)
+
+#define GENERIC_S_TOP(s) ((s).top)
+
+#define GENERIC_S_PUSH(sp, ep, next_field) do { \
+        (ep)->next_field = (sp)->top;           \
+        (sp)->top = ep;                         \
+    } while (0)
+
+/* PUSH_MULTIPLE pushes a linked list of elements onto the stack.  It
+   assumes that ep0 is the head of the linked list and ep1 is at the tail */
+#define GENERIC_S_PUSH_MULTIPLE(sp, ep0, ep1, next_field) do {  \
+        (ep1)->next_field = (sp)->top;                          \
+        (sp)->top = ep0;                                        \
+    } while (0)
+
+#define GENERIC_S_POP(sp, ep, next_field) do {  \
+        *(ep) = (sp)->top;                      \
+        (sp)->top = (*(ep))->next_field;        \
+    } while (0)
 #endif /* TCP_MODULE_QUEUE_H */

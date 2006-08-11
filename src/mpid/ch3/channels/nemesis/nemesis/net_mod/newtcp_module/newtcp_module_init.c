@@ -34,7 +34,6 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     int ret;
     int i;
     MPID_nem_newtcp_module_send_q_element_t *sendq_e;
-    MPIU_CHKPMEM_DECL(1);
   
     /* set up listener socket */
     MPID_nem_newtcp_module_listen_fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -72,11 +71,9 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     MPID_nem_newtcp_module_send_init();
     MPID_nem_newtcp_module_poll_init();
 
-    MPIU_CHKPMEM_COMMIT();    
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 

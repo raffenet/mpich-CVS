@@ -47,8 +47,8 @@ typedef struct MPID_nem_sctp_stream {
     
 
 
-#if(MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE) /* FIXME-Darius Add */
-    struct sockconn;
+#if(MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
+    struct MPID_nem_new_tcp_module_sockconn;
 #endif
 
 struct MPID_nem_tcp_module_internal_queue;
@@ -99,7 +99,7 @@ typedef struct MPIDI_CH3I_VC
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
     int fd;
     struct sockaddr_in sock_id;
-    struct sockconn *sc;
+    struct MPID_nem_new_tcp_module_sockconn *sc;
     struct
     {
         struct MPID_nem_newtcp_module_send_q_element *head;
