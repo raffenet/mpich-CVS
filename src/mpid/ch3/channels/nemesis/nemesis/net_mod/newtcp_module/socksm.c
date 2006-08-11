@@ -630,7 +630,7 @@ static int state_tc_c_cntd_handler(const pollfd_t *const plfd, sockconn_t *const
         else {
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
                                              __LINE__,  MPI_ERR_OTHER, 
-                                             "**cannot send idinfo", 0);
+                                             "**fail", 0);
             //FIXME-Danger add error string
             goto fn_fail;
         }
