@@ -33,6 +33,7 @@ MPEDBG               = @MPEDBG@
 
 SHELL            = @SHELL@
 RM               = @RM@
+MV               = @MV@
 
 @VPATH@
 
@@ -74,16 +75,16 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 
 .c.p@OBJEXT@:
 	$(MPI_CC) $(CC_FLAGS) -c $<
-	mv $*.@OBJEXT@ $*.p@OBJEXT@
+	$(MV) $*.@OBJEXT@ $*.p@OBJEXT@
 
 .c.n@OBJEXT@:
 	$(CC) $(CC_FLAGS) -DMPE_NOMPI -c $<
-	mv $*.@OBJEXT@ $*.n@OBJEXT@
+	$(MV) $*.@OBJEXT@ $*.n@OBJEXT@
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
 	$(CC_SHL) $(CC_FLAGS) -c $< $(INC_DIR)
-	@mv $*.@OBJEXT@ $*.lo
+	@$(MV) $*.@OBJEXT@ $*.lo
 
 # default_all is the same as default, but without the RANLIB.  This
 # can speed up the build (ranlibs can take a LONG time).  profile_all 
