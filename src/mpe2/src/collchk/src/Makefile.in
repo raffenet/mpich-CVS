@@ -108,7 +108,7 @@ MPI_RMA_OBJ  = $(MPI_RMA_SRC:.c=.@OBJEXT@)
 .c.@OBJEXT@:
 	$(MPI_CC) $(CC_FLAGS) -c $<
 
-default: clean
+default:
 	$(MAKE) ${libbuild_dir}/lib$(COLLCHK_LIBNAME).a
 
 ${libbuild_dir}/lib$(COLLCHK_LIBNAME).a: $(UTIL_OBJ) $(MPI_CORE_OBJ)
@@ -136,9 +136,10 @@ rmlib:
 	@-$(RM) -f ${libbuild_dir}/lib$(COLLCHK_LIBNAME).a
 
 rmprog:
+	@-$(RM) -f $(EXECS)
 
 clean: rmprog
-	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ $(EXECS) PI*
+	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ PI*
 
 distclean: clean 
 	@-$(RM) -f Makefile
