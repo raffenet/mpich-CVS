@@ -11,15 +11,16 @@
 
 #include <linux/types.h>
 
-#define MPID_NEM_ELAN_LOOPS     ELAN_POLL_EVENT
-#define MPID_NEM_ELAN_RAIL_NUM  0
-#define MPID_NEM_ELAN_SLOT_SIZE 2048
-#define MPID_NEM_ELAN_NUM_SLOTS 1024
+
+#define MPID_NEM_ELAN_RAIL_NUM   0
+#define MPID_NEM_ELAN_SLOT_SIZE  MPID_NEM_CELL_PAYLOAD_LEN
+#define MPID_NEM_ELAN_NUM_SLOTS  1024
+#define MPID_NEM_ELAN_LOOPS_SEND 100
+#define MPID_NEM_ELAN_LOOPS_RECV 1
+// 100 2 
 
 extern int             MPID_nem_elan_freq;
-extern int             MPID_nem_elan_chunks;
 extern int             MPID_nem_module_elan_pendings_sends;
-extern int             MPID_nem_module_elan_pendings_recvs;
 extern ELAN_QUEUE_TX **rxq_ptr_array;
 
 typedef struct MPID_nem_elan_cell

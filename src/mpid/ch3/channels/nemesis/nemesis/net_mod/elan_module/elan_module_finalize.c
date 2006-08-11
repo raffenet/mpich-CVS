@@ -19,9 +19,8 @@ MPID_nem_elan_module_finalize()
  
     if (MPID_nem_mem_region.ext_procs > 0)
      {
-	while(MPID_nem_module_elan_pendings_sends > 0)
+	 while ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
 	  {
-	     fprintf(stdout,"[%i] ==================  END LOOP (%i pending sends)================ \n", MPID_nem_mem_region.rank,MPID_nem_module_elan_pendings_sends);
 	     MPID_nem_elan_module_poll(MPID_NEM_POLL_OUT);
 	  }
 	

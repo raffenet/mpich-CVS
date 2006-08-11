@@ -27,9 +27,7 @@ static int          max_node_id;
 static int          my_ctxt_id;
 
 int MPID_nem_elan_freq = 0;
-int MPID_nem_elan_num_frags = 0;
 int MPID_nem_module_elan_pendings_sends = 0;
-int MPID_nem_module_elan_pendings_recvs = 0 ;
 
 static MPID_nem_elan_event_queue_t _elan_free_event_q;
 static MPID_nem_elan_event_queue_t _elan_pending_event_q;
@@ -137,13 +135,6 @@ int init_elan( MPIDI_PG_t *pg_p )
    else
      max_node_id = my_node_id;
 
-   /* Quadrics needs contiguous nodes */
-   fprintf(stdout,"[%i | %i] ==== ELAN INIT : %i Max_node_Id  ==== \n", MPID_nem_mem_region.rank,my_node_id,max_node_id);
-   fprintf(stdout,"[%i | %i] ==== ELAN INIT : %i Min_node_Id  ==== \n", MPID_nem_mem_region.rank,my_node_id,min_node_id);
-   fprintf(stdout,"[%i | %i] ==== ELAN INIT : %i Numprocs     ==== \n", MPID_nem_mem_region.rank,my_node_id,numprocs);
-   
-   MPIU_Assert ( (max_node_id - min_node_id) == numprocs );
-   
    /* Generate capability string */
    MPIU_Snprintf(capability_str, MPID_NEM_ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
 		 my_node_id,
@@ -169,21 +160,19 @@ int init_elan( MPIDI_PG_t *pg_p )
    localq_ptr_val = (ELAN_QUEUE **)MPIU_Malloc(sizeof(ELAN_QUEUE *));   
   *localq_ptr_val = localq_ptr ;
    
+   /* For now, one Quadrics'cell equals to one Nemesis'cell */
+   MPIU_Assert( (MPID_NEM_ELAN_SLOT_SIZE) <= (elan_queueMaxSlotSize(elan_base->state)));
+   
    for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++) 
      rxq_ptr_array[index] = NULL ; 
-
-   MPIU_Assert( MPID_NEM_CELL_PAYLOAD_LEN <= elan_queueMaxSlotSize(elan_base->state));
-   
    rxq_ptr_array[elan_base->state->vp] = elan_queueRxInit(elan_base->state,
 							  localq_ptr,
 							  MPID_NEM_ELAN_NUM_SLOTS,
-							  MPID_NEM_CELL_PAYLOAD_LEN,//elan_queueMaxSlotSize(elan_base->state),
-							  MPID_NEM_ELAN_RAIL_NUM,flags);   
-   MPID_nem_elan_freq              = 1 ;
-   MPID_nem_elan_num_frags         = ((MPID_NEM_CELL_PAYLOAD_LEN)/(elan_queueMaxSlotSize(elan_base->state)));
-   if((((MPID_NEM_CELL_PAYLOAD_LEN)%(elan_queueMaxSlotSize(elan_base->state)))) > 0)
-      MPID_nem_elan_num_frags++;      
-   MPID_nem_module_elan_cells      = (MPID_nem_elan_cell_ptr_t)MPIU_Malloc(MPID_NEM_ELAN_NUM_SLOTS * sizeof(MPID_nem_elan_cell_t));   
+							  MPID_NEM_ELAN_SLOT_SIZE,
+							  MPID_NEM_ELAN_RAIL_NUM,
+							  flags);   
+   MPID_nem_elan_freq         = 1 ;
+   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Malloc(MPID_NEM_ELAN_NUM_SLOTS * sizeof(MPID_nem_elan_cell_t));   
    MPID_nem_module_elan_free_event_queue->head    = NULL;
    MPID_nem_module_elan_free_event_queue->tail    = NULL;   
    MPID_nem_module_elan_pending_event_queue->head = NULL;
@@ -338,8 +327,7 @@ MPID_nem_elan_module_connect_to_root (const char *business_card, MPIDI_VC_t *new
 int
 MPID_nem_elan_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
-   int           mpi_errno = MPI_SUCCESS;
-
+   int mpi_errno = MPI_SUCCESS;   
    if( MPID_nem_mem_region.ext_procs > 0)
      {
 	ELAN_QUEUE *remoteq_ptr ; 
@@ -355,8 +343,7 @@ MPID_nem_elan_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	
 	rxq_ptr_array[vc->pg_rank] = elan_queueTxInit(elan_base->state,remoteq_ptr,MPID_NEM_ELAN_RAIL_NUM,flags);
 	vc->ch.rxq_ptr_array = rxq_ptr_array;   
-     }
-   
+     }   
    fn_exit:   
        return mpi_errno;
    fn_fail:
