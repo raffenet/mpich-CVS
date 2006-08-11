@@ -27,10 +27,10 @@ static int g_tbl_size = 0;
 static int g_tbl_capacity = CONN_PLFD_TBL_INIT_SIZE;
 static int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
 
-static sockconn_t *g_conn_tbl = NULL;
+static sockconn_t *g_sc_tbl = NULL;
 static pollfd_t *g_plfd_tbl = NULL;
 
-static handler_func_t conn_state_handlers[CONN_STATE_SIZE];
+static handler_func_t sc_state_handlers[CONN_STATE_SIZE];
 
 #define IS_WRITEABLE(plfd)                      \
     (plfd->revents & POLLOUT) ? 1 : 0
@@ -41,9 +41,14 @@ static handler_func_t conn_state_handlers[CONN_STATE_SIZE];
 #define IS_READ_WRITEABLE(plfd)                                 \
     (plfd->revents & POLLIN && plfd->revents & POLLOUT) ? 1 : 0
 
-#define IS_SAME_CONNECTION(iconn, conn)                \
-    iconn->pg_rank == conn->pg_rank                 \
-        && (strcmp(iconn->pg_id, conn->pg_id) == 0)
+#define IS_SAME_PGID(id1, id2) \
+    (strcmp(id1, id2) == 0)
+
+#define IS_SAME_CONNECTION(sc1, sc2)                                    \
+    (sc1->pg_rank == sc2->pg_rank &&                                    \
+     ((sc1->is_same_pg && sc2->is_same_pg) ||                           \
+      (!sc1->is_same_pg && !sc2->is_same_pg &&                          \
+       IS_SAME_PGID(sc1->pg_id, sc2->pg_id) == 0)))
 
 #undef FUNCNAME
 #define FUNCNAME prog_sm
@@ -53,10 +58,10 @@ void prog_sm() {
 }
 
 #undef FUNCNAME
-#define FUNCNAME alloc_conn_plfd_tbls
+#define FUNCNAME alloc_sc_plfd_tbls
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int alloc_conn_plfd_tbls()
+static int alloc_sc_plfd_tbls()
 {
     int i, mpi_errno = MPI_SUCCESS;
     MPIU_CHKPMEM_DECL (2);
@@ -64,10 +69,10 @@ static int alloc_conn_plfd_tbls()
     g_tbl_size = g_tbl_capacity;
     //g_nactconns = 0;    
   
-    MPIU_Assert(g_conn_tbl == NULL);
+    MPIU_Assert(g_sc_tbl == NULL);
     MPIU_Assert(g_plfd_tbl == NULL);
 
-    MPIU_CHKPMEM_MALLOC (g_conn_tbl, sockconn_t *, g_tbl_capacity * sizeof(sockconn_t), 
+    MPIU_CHKPMEM_MALLOC (g_sc_tbl, sockconn_t *, g_tbl_capacity * sizeof(sockconn_t), 
                          mpi_errno, "connection table");
     MPIU_CHKPMEM_MALLOC (g_plfd_tbl, pollfd_t *, g_tbl_capacity * sizeof(pollfd_t), 
                          mpi_errno, "pollfd table");
@@ -80,13 +85,13 @@ static int alloc_conn_plfd_tbls()
 }
 
 #undef FUNCNAME
-#define FUNCNAME free_conn_plfd_tbls
+#define FUNCNAME free_sc_plfd_tbls
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int free_conn_plfd_tbls()
+static int free_sc_plfd_tbls()
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIU_Free(g_conn_tbl);
+    MPIU_Free(g_sc_tbl);
     MPIU_Free(g_plfd_tbl);
     return mpi_errno;
 }
@@ -94,33 +99,34 @@ static int free_conn_plfd_tbls()
 /*
   FIXME: Consult Darius for efficient memcpy and whether doing this is worth overall.
 
-  Reason for not doing realloc for both conn and plfd tables :
+  Reason for not doing realloc for both sc and plfd tables :
   Either both the tables have to be expanded or both should remain the same size, if
   enough memory could not be allocated, as we have only one set of variables to control
   the size of the tables. Also, it is not useful to expand one table and leave the other
   at the same size, 'coz of memory allocation failures.
 */
 #undef FUNCNAME
-#define FUNCNAME expand_conn_plfd_tbls
+#define FUNCNAME expand_sc_plfd_tbls
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int expand_conn_plfd_tbls()
+static int expand_sc_plfd_tbls()
 {
     int mpi_errno = MPI_SUCCESS; 
-    sockconn_t *new_conn_tbl = NULL;
+    sockconn_t *new_sc_tbl = NULL;
     pollfd_t *new_plfd_tbl = NULL;
     int new_capacity = g_tbl_capacity + g_tbl_grow_size, i;
     MPIU_CHKPMEM_DECL (2);
 
-    MPIU_CHKPMEM_MALLOC (new_conn_tbl, sockconn_t *, new_capacity * sizeof(sockconn_t), 
+    MPIU_CHKPMEM_MALLOC (new_sc_tbl, sockconn_t *, new_capacity * sizeof(sockconn_t), 
                          mpi_errno, "expanded connection table");
     MPIU_CHKPMEM_MALLOC (new_plfd_tbl, pollfd_t *, new_capacity * sizeof(pollfd_t), 
                          mpi_errno, "expanded pollfd table");
-    MPID_NEM_MEMCPY (new_conn_tbl, g_conn_tbl, g_tbl_capacity * sizeof(sockconn_t));
+
+    MPID_NEM_MEMCPY (new_sc_tbl, g_sc_tbl, g_tbl_capacity * sizeof(sockconn_t));
     MPID_NEM_MEMCPY (new_plfd_tbl, g_plfd_tbl, g_tbl_capacity * sizeof(pollfd_t));
-    MPIU_Free(g_conn_tbl);
+    MPIU_Free(g_sc_tbl);
     MPIU_Free(g_plfd_tbl);
-    g_conn_tbl = new_conn_tbl;
+    g_sc_tbl = new_sc_tbl;
     g_plfd_tbl = new_plfd_tbl;
     g_tbl_capacity = new_capacity;
     MPIU_CHKPMEM_COMMIT();    
@@ -161,7 +167,7 @@ static int find_free_entry(int *index)
     /*     } */
 
     if (g_tbl_size == g_tbl_capacity) {
-        mpi_errno = expand_conn_plfd_tbls();
+        mpi_errno = expand_sc_plfd_tbls();
         if (mpi_errno != MPI_SUCCESS)
             goto fn_fail;
     }
@@ -174,13 +180,262 @@ static int find_free_entry(int *index)
     goto fn_exit;
 }
 
+
+/*
+  Note: if a new state is added for validating, remeber to call this function within
+  debug assert in the corresponding state handler function.
+ */
+#undef FUNCNAME
+#define FUNCNAME is_valid_state
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int is_valid_state(sockconn_t *sc) {
+    int i, found = FALSE;
+
+    for(i = 0; i < g_tbl_size && !found; i++) {
+        sockconn_t *iter_sc = &g_sc_tbl[i];
+        MPID_nem_newtcp_module_Conn_State_t istate = iter_sc->state;
+        if (iter_sc != sc && iter_sc->fd != CONN_INVALID_FD 
+            && IS_SAME_CONNECTION(iter_sc, sc)) {
+            switch (sc->state) {
+            case CONN_STATE_TC_C_CNTD:
+                if (istate == CONN_STATE_TC_C_CNTING ||
+                    istate == CONN_STATE_TC_C_CNTD ||
+                    istate == CONN_STATE_TC_C_RANKSENT)
+                    found = TRUE;
+                break;
+            case CONN_STATE_TC_C_RANKSENT:
+                if (istate == CONN_STATE_TC_C_CNTING ||
+                    istate == CONN_STATE_TC_C_CNTD ||
+                    istate == CONN_STATE_TC_C_RANKSENT ||
+                    istate == CONN_STATE_TS_D_DCNTING ||
+                    istate == CONN_STATE_TS_D_REQSENT)
+                    found = TRUE;
+                break;                
+            }
+        }      
+    }
+
+    //if found, then the state of the connection is not valid. A bug in the state
+    //machine code.
+    return !found;
+}
+
+/* Note:
+   fnd_sc is returned only for certain states. If it is not returned for a state,
+   the handler function can simply pass NULL as the second argument.
+ */
+#undef FUNCNAME
+#define FUNCNAME found_better_sc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc) {
+    int i, found = FALSE;
+  
+    for(i = 0; i < g_tbl_size && !found; i++) {
+        sockconn_t *iter_sc = &g_sc_tbl[i];
+        MPID_nem_newtcp_module_Conn_State_t istate = iter_sc->state;
+        if (iter_sc != sc && iter_sc->fd != CONN_INVALID_FD 
+            && IS_SAME_CONNECTION(iter_sc, sc)) {
+            switch (sc->state) {
+            case CONN_STATE_TC_C_CNTD:
+                MPIU_Assert(fnd_sc == NULL);
+                if (istate == CONN_STATE_TS_COMMRDY || istate == CONN_STATE_TA_C_RANKRCVD)
+                    found = TRUE;
+                break;
+            case CONN_STATE_TA_C_RANKRCVD:
+                MPIU_Assert(fnd_sc != NULL);
+                if (istate == CONN_STATE_TS_COMMRDY || istate == CONN_STATE_TC_C_RANKSENT) {
+                    found = TRUE;
+                    *fnd_sc = iter_sc;
+                }
+                break;                
+                // Add code for other states here, if need be.
+            }
+        }
+    }
+        
+    return found;
+}
+
+#undef FUNCNAME
+#define FUNCNAME send_id_info
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int send_id_info(const sockconn_t *const sc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_nem_newtcp_module_idinfo_t id_info;
+    MPIDI_nem_newtcp_module_header_t hdr;
+    struct iovec iov[3];
+    int pg_id_len = 0, offset, buf_size, iov_cnt = 2;
+    
+    if (!sc->is_same_pg)
+        pg_id_len = strlen(MPIDI_Process.my_pg->id) + 1; //store ending NULL also
+    //FIXME better keep pg_id_len itself as part of MPIDI_Process.my_pg structure to
+    // avoid computing the length of string everytime this function is called.
+    
+    hdr.pkt_type = MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO;
+    hdr.datalen = sizeof(MPIDI_nem_newtcp_module_idinfo_t) + pg_id_len;    
+    id_info.pg_rank = MPIDI_Process.my_pg_rank;
+
+    iov[0].iov_base = &hdr;
+    iov[0].iov_len = sizeof(hdr);
+    iov[1].iov_base = &id_info;
+    iov[1].iov_len = sizeof(id_info);
+    buf_size = sizeof(hdr) + sizeof(id_info);
+
+    if (!sc->is_same_pg) {
+        iov[2].iov_base = MPIDI_Process.my_pg->id;
+        iov[2].iov_len = pg_id_len;
+        buf_size += pg_id_len;
+        ++iov_cnt;
+    }
+    
+    CHECK_EINTR (offset, writev(sc->fd, iov, iov_cnt));
+    MPIU_ERR_CHKANDJUMP1 (offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
+                          "**write", "**write %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (offset != buf_size, mpi_errno, MPI_ERR_OTHER, 
+                          "**write", "**write %s", strerror (errno)); 
+    //FIXME log appropriate error
+    //FIXME-Z1  socket is just connected and we are sending a few bytes. So, there should not
+    // be a problem of partial data only being written to. If partial data written,
+    // handle this.
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;    
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME recv_id_info
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int recv_id_info(sockconn_t *const sc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_nem_newtcp_module_header_t hdr;
+    int pg_id_len = 0, nread, iov_cnt = 1;
+    int hdr_len = sizeof(MPIDI_nem_newtcp_module_header_t);
+    struct iovec iov[2];
+    char *pg_id = NULL;
+    MPIU_CHKPMEM_DECL (1);
+
+    CHECK_EINTR (nread, read(sc->fd, &hdr, hdr_len));
+    MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
+                          "**read", "**read %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (nread != hdr_len, mpi_errno, MPI_ERR_OTHER,
+                          "**read", "**read %s", strerror (errno)); //FIXME-Z1
+    MPIU_Assert(hdr.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO);
+    MPIU_Assert(hdr.datalen != 0);
+    
+    iov[0].iov_base = (void *) &(sc->pg_rank);
+    iov[0].iov_len = sizeof(sc->pg_rank);
+    pg_id_len = hdr.datalen - sizeof(MPIDI_nem_newtcp_module_idinfo_t);
+    if (pg_id_len != 0) {
+        MPIU_CHKPMEM_MALLOC (pg_id, char *, pg_id_len, mpi_errno, "sockconn pg_id");
+        iov[1].iov_base = (void *)pg_id;
+        iov[1].iov_len = pg_id_len;
+        ++iov_cnt;
+    } 
+    CHECK_EINTR (nread, readv(sc->fd, iov, iov_cnt));
+    MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
+                          "**read", "**read %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (nread != hdr.datalen, mpi_errno, MPI_ERR_OTHER,
+                          "**read", "**read %s", strerror (errno)); //FIXME-Z1
+    if (pg_id_len == 0) {
+        sc->is_same_pg = TRUE;
+        get_vc_from_id_info(&sc->vc, MPIDI_Process.my_pg->id, sc->pg_rank);
+        sc->pg_id = NULL;
+    }
+    else {
+        sc->is_same_pg = FALSE;
+        get_vc_from_id_info(&sc->vc, pg_id, sc->pg_rank);
+        sc->pg_id = sc->vc->pg->id;
+    }
+
+ fn_exit:
+    MPIU_CHKPMEM_REAP();
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+/*
+  This function is used to send commands that don't have data but just only
+  the header.
+ */
+#undef FUNCNAME
+#define FUNCNAME send_cmd_pkt
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int send_cmd_pkt(int fd, MPIDI_nem_newtcp_module_pkt_type_t pkt_type)
+{
+    int mpi_errno = MPI_SUCCESS, offset;
+    MPIDI_nem_newtcp_module_header_t pkt;
+    int pkt_len = sizeof(MPIDI_nem_newtcp_module_header_t);
+    MPIU_Assert(pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK ||
+                pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK ||
+                pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ ||
+                pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK ||
+                pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK);
+
+    pkt.pkt_type = pkt_type;
+    pkt.datalen = 0;
+
+    CHECK_EINTR (offset, write(fd, &pkt, pkt_len));
+    MPIU_ERR_CHKANDJUMP1 (offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
+                          "**write", "**write %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (offset != pkt_len, mpi_errno, MPI_ERR_OTHER,
+                          "**write", "**write %s", strerror (errno)); //FIXME-Z1
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
+/*
+  This function is used to recv commands that don't have data but just only
+  the header.
+ */
+#undef FUNCNAME
+#define FUNCNAME recv_cmd_pkt
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int recv_cmd_pkt(int fd, MPIDI_nem_newtcp_module_pkt_type_t *pkt_type)
+{
+    int mpi_errno = MPI_SUCCESS, nread;
+    MPIDI_nem_newtcp_module_header_t pkt;
+    int pkt_len = sizeof(MPIDI_nem_newtcp_module_header_t);
+
+    CHECK_EINTR (nread, read(fd, &pkt, pkt_len));
+    MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
+                          "**read", "**read %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (nread != pkt_len, mpi_errno, MPI_ERR_OTHER,
+                          "**read", "**read %s", strerror (errno)); //FIXME-Z1
+    MPIU_Assert(pkt.datalen == 0);
+    MPIU_Assert(pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK ||
+                pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK ||
+                pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ ||
+                pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK ||
+                pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK);
+    *pkt_type = pkt.pkt_type;
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_connect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc) 
 {
-    sockconn_t *conn = NULL;
+    sockconn_t *sc = NULL;
     pollfd_t *plfd = NULL;
     int index = -1;
     int mpi_errno = MPI_SUCCESS;
@@ -195,7 +450,7 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         mpi_errno = find_free_entry(&index);
         if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
         
-        conn = &g_conn_tbl[index];
+        sc = &g_sc_tbl[index];
         plfd = &g_plfd_tbl[index];
 
         
@@ -203,55 +458,61 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         //if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
         sock_addr = &(vc->ch.sock_id);
 
-        CHECK_EINTR(conn->fd, socket(AF_INET, SOCK_STREAM, 0));
-        MPIU_ERR_CHKANDJUMP2(conn->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", 
+        CHECK_EINTR(sc->fd, socket(AF_INET, SOCK_STREAM, 0));
+        MPIU_ERR_CHKANDJUMP2(sc->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", 
                              "**sock_create %s %d", strerror(errno), errno);
-        mpi_errno = MPID_nem_newtcp_module_set_sockopts(conn->fd);
+        mpi_errno = MPID_nem_newtcp_module_set_sockopts(sc->fd);
         if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
 
-        rc = connect(conn->fd, (SA*)sock_addr, sizeof(SA)); 
+        rc = connect(sc->fd, (SA*)sock_addr, sizeof(SA)); 
         //connect should not be called with CHECK_EINTR macro
         MPIU_ERR_CHKANDJUMP1 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
                               "**sock_connect", "**sock_connect %d", errno);
-        conn->state = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
-        conn->pg_id = (char *)vc->pg->id; //FIXME remove cast later when not required
-        // FIXME Discuss life-time of pg_id. Here it is assumed to be lifetime of vc to 
-        // avoid copying back and forth
-        conn->pg_rank = vc->pg_rank;
-        conn->vc = vc;
-        conn->pending_event = 0; //clear pending events.
-        conn->handler = conn_state_handlers[conn->state];
+        sc->state = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
+        vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED;
+        sc->pg_rank = vc->pg_rank;
+        if (IS_SAME_PGID(sc->pg_id, MPIDI_Process.my_pg->id)) {
+            sc->is_same_pg = TRUE;
+            sc->pg_id = NULL;
+        }
+        else {
+            sc->is_same_pg = FALSE;
+            sc->pg_id = vc->pg->id;
+        }
+        sc->vc = vc;
+        sc->pending_event = 0; //clear pending events
+        sc->handler = sc_state_handlers[sc->state];
     }
     else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
-        switch(conn->state) {
+        switch(sc->state) {
         case CONN_STATE_TS_D_DCNTING:
-            conn->state = CONN_STATE_TS_COMMRDY;
-            conn->pending_event = 0;
+            sc->state = CONN_STATE_TS_COMMRDY;
+            sc->pending_event = 0;
             break;
         case CONN_STATE_TS_D_REQRCVD:
-            //send_cmdmsg(conn->fd, MSGNAME_DISC, MSGTYPE_NAK); //FIXME-IMP
-            conn->state = CONN_STATE_TS_COMMRDY;
-            conn->pending_event = 0;
+            //send_cmdmsg(sc->fd, MSGNAME_DISC, MSGTYPE_NAK); //FIXME-IMP
+            sc->state = CONN_STATE_TS_COMMRDY;
+            sc->pending_event = 0;
             break;
         case CONN_STATE_TS_D_REQSENT:
         case CONN_STATE_TS_D_QUIESCENT:
-            conn->pending_event = EVENT_CONNECT;
+            sc->pending_event = EVENT_CONNECT;
             break;
         default:
             break;
         }
     }
     else 
-        assert(0);
+        MPIU_Assert(0);
 
  fn_exit:
     prog_sm();
     return mpi_errno;
  fn_fail:
     if (index != -1) {
-        if (conn->fd != CONN_INVALID_FD) {
-            close(conn->fd);
-            conn->fd = CONN_INVALID_FD;
+        if (sc->fd != CONN_INVALID_FD) {
+            close(sc->fd);
+            sc->fd = CONN_INVALID_FD;
         }
         node = MPIU_Malloc(sizeof(freenode_t));
         MPIU_ERR_CHKANDSTMT(node == NULL, mpi_errno, MPI_ERR_OTHER, goto fn_exit, "**nomem");
@@ -269,7 +530,6 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
   the disconnect event is queued here. This is the only state a disconnect event is 
   queued. This event is handled in the CONN_STATE_TC_C_CNTD state handler function.
   FIXME: Make sure the pending event is handled in the CNTD state handler function.
-
 */
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_disconnect
@@ -277,17 +537,17 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
 {
-    sockconn_t *conn = NULL;
+    sockconn_t *sc = NULL;
     int mpi_errno = MPI_SUCCESS;
 
-    //FIXME check whether a (different/new) error has to be reported stating the VC is already
-    // disconnected.
+    //FIXME check whether a (different/new) error has to be reported stating the VC is 
+    // already disconnected.
     if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED)
         goto fn_exit;
     else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
-        switch(conn->state) {
+        switch(sc->state) {
         case CONN_STATE_TC_C_CNTING:
-            conn->pending_event = EVENT_DISCONNECT; // (N1)
+            sc->pending_event = EVENT_DISCONNECT; // (N1)
             break;
         case CONN_STATE_TC_C_CNTD:
         case CONN_STATE_TC_C_RANKSENT:
@@ -295,12 +555,12 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
             // No need to finish negotiations to move to CONN_STATE_TS_COMMRDY state.
             // Just close the connection from the current state ignoring the outstanding
             // negotiation messages.
-            conn->state = CONN_STATE_TS_D_QUIESCENT;
-            conn->handler = conn_state_handlers[conn->state];
+            sc->state = CONN_STATE_TS_D_QUIESCENT;
+            sc->handler = sc_state_handlers[sc->state];
             break;
         case CONN_STATE_TS_COMMRDY:
-            conn->state = CONN_STATE_TS_D_DCNTING;
-            conn->handler = conn_state_handlers[conn->state];
+            sc->state = CONN_STATE_TS_D_DCNTING;
+            sc->handler = sc_state_handlers[sc->state];
             break;
         case CONN_STATE_TS_D_DCNTING:
         case CONN_STATE_TS_D_REQSENT:
@@ -323,19 +583,19 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
 #define FUNCNAME state_tc_c_cnting_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
 
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED) {
-        conn->state = CONN_STATE_TC_C_CNTD;
-        conn->handler = conn_state_handlers[conn->state];
+        sc->state = CONN_STATE_TC_C_CNTD;
+        sc->handler = sc_state_handlers[sc->state];
     }
     else if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
-        conn->state = CONN_STATE_TS_D_QUIESCENT;
-        conn->handler = conn_state_handlers[conn->state];
+        sc->state = CONN_STATE_TS_D_QUIESCENT;
+        sc->handler = sc_state_handlers[sc->state];
         //FIXME: retry 'n' number of retries before signalling an error to VC layer.
     }
     else { //stat == MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT
@@ -358,99 +618,68 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
 }
 
 #undef FUNCNAME
-#define FUNCNAME is_valid_state
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int is_valid_state(sockconn_t *conn) {
-    int i, found = FALSE;
-
-    for(i = 0; i < g_tbl_size && !found; i++) {
-        sockconn_t *iconn = &g_conn_tbl[i];
-        MPID_nem_newtcp_module_Conn_State_t istate = iconn->state;
-        if (iconn != conn && iconn->fd != CONN_INVALID_FD 
-            && IS_SAME_CONNECTION(iconn, conn)) {
-            switch (conn->state) {
-            case CONN_STATE_TC_C_CNTD:
-                if (istate == CONN_STATE_TC_C_CNTING ||
-                    istate == CONN_STATE_TC_C_CNTD ||
-                    istate == CONN_STATE_TC_C_RANKSENT)
-                    found = TRUE;
-                break;
-            case CONN_STATE_TC_C_RANKSENT:
-                if (istate == CONN_STATE_TC_C_CNTING ||
-                    istate == CONN_STATE_TC_C_CNTD ||
-                    istate == CONN_STATE_TC_C_RANKSENT ||
-                    istate == CONN_STATE_TS_D_DCNTING ||
-                    istate == CONN_STATE_TS_D_REQSENT)
-                    found = TRUE;
-                break;
-            }
-        }      
-    }
-
-    //if found, then the state of the connection is not valid. A bug in the state
-    //machine code.
-    return !found;
-}
-
-#undef FUNCNAME
-#define FUNCNAME found_better_conn
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int found_better_conn(sockconn_t *conn) {
-    int i, found=FALSE;
-  
-    for(i = 0; i < g_tbl_size && !found; i++) {
-        sockconn_t *iconn = &g_conn_tbl[i];
-        MPID_nem_newtcp_module_Conn_State_t istate = iconn->state;
-        if (iconn != conn && iconn->fd != CONN_INVALID_FD 
-            && IS_SAME_CONNECTION(iconn, conn)) {
-            switch (conn->state) {
-            case CONN_STATE_TC_C_CNTD:
-                if (istate == CONN_STATE_TS_COMMRDY ||
-                    istate == CONN_STATE_TA_C_RANKRCVD)
-                    found = TRUE;
-                break;
-                // Add code for other states here, if need be.
-            }
-        }
-    }
-    return found;
-}
-
-#undef FUNCNAME
 #define FUNCNAME state_tc_c_cntd_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_tc_c_cntd_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_tc_c_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
-    assert(is_valid_state(conn));
-    if (found_better_conn(conn)) {
-        conn->state = CONN_STATE_TS_D_QUIESCENT;
-        conn->handler = conn_state_handlers[conn->state];
+
+    MPIU_Assert(is_valid_state(sc));
+    if (found_better_sc(sc, NULL)) {
+        sc->state = CONN_STATE_TS_D_QUIESCENT;
+        sc->handler = sc_state_handlers[sc->state];
+        goto fn_exit;
+    }
+    
+    if (IS_WRITEABLE(plfd)) {
+        if (send_id_info(sc) == MPI_SUCCESS)
+            sc->state = CONN_STATE_TC_C_RANKSENT;
+        else {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
+                                             __LINE__,  MPI_ERR_OTHER, 
+                                             "**cannot send idinfo", 0);
+            //FIXME-Danger add error string
+            goto fn_fail;
+        }
     }
     else {
-        if (IS_WRITEABLE(plfd) && send_rank(conn->fd) == 0)
-            conn->state = CONN_STATE_TC_C_RANKSENT;
-        else {
-            //Remain in the same state
-        }
+        //Remain in the same state
     }
  fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;
-
 }
 
 #undef FUNCNAME
 #define FUNCNAME state_c_ranksent_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_nem_newtcp_module_pkt_type_t pkt_type;
+    MPIU_Assert(is_valid_state(sc));
+
+    mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
+    if (mpi_errno != MPI_SUCCESS) {
+        sc->state = CONN_STATE_TS_D_QUIESCENT;
+        sc->handler = sc_state_handlers[sc->state];
+    }
+    else {
+        MPIU_Assert(pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK ||
+                    pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK);
+
+        if (pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK) {
+            sc->state = CONN_STATE_TS_COMMRDY;
+            sc->handler = sc_state_handlers[sc->state];
+        }
+        else { //pkt_type must be MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK
+            sc->state = CONN_STATE_TS_D_QUIESCENT;
+            sc->handler = sc_state_handlers[sc->state];
+        }
+    }    
 
  fn_exit:
     return mpi_errno;
@@ -463,37 +692,109 @@ static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *cons
 #define FUNCNAME state_l_cntd_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
+
+    stat = MPID_nem_newtcp_module_check_sock_status(plfd);
+    if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
+        sc->state = CONN_STATE_TS_D_QUIESCENT;
+        sc->handler = sc_state_handlers[sc->state];
+        goto fn_exit;
+    }
+
+    if (IS_READABLE(plfd)) {
+        if (recv_id_info(sc) == MPI_SUCCESS) {
+            sc->state = CONN_STATE_TS_D_QUIESCENT;
+            sc->handler = sc_state_handlers[sc->state];
+        }
+        else {
+            sc->state = CONN_STATE_TS_D_QUIESCENT;
+            sc->handler = sc_state_handlers[sc->state];
+        }
+    }
+    else {
+        //remain in same state
+    }
 
  fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 
+}
+
+/*
+  Returns TRUE, if the process(self) wins against the remote process
+  FALSE, otherwise
+ */
+#undef FUNCNAME
+#define FUNCNAME do_i_win
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int do_i_win(sockconn_t *sc)
+{
+    int win = FALSE;
+    if (sc->is_same_pg) {
+        if (MPIDI_Process.my_pg_rank > sc->pg_rank)
+            win = TRUE;
+    }
+    else {
+        if (strcmp(MPIDI_Process.my_pg->id, sc->pg_id) > 0)
+            win = TRUE;
+    }
+    return win;
 }
 
 #undef FUNCNAME
 #define FUNCNAME state_l_rankrcvd_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_l_rankrcvd_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_l_rankrcvd_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
+    sockconn_t *fnd_sc;
+    int snd_nak = FALSE;
 
+    stat = MPID_nem_newtcp_module_check_sock_status(plfd);
+    if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
+        sc->state = CONN_STATE_TS_D_QUIESCENT;
+        sc->handler = sc_state_handlers[sc->state];
+        goto fn_exit;
+    }
+    if (found_better_sc(sc, &fnd_sc)) {
+        if (fnd_sc->state == CONN_STATE_TS_COMMRDY)
+            snd_nak = TRUE;
+        else if (fnd_sc->state == CONN_STATE_TC_C_RANKSENT)
+            snd_nak = do_i_win(sc);
+    }
+    if (IS_WRITEABLE(plfd)) {
+        if (snd_nak) {
+            if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK) == MPI_SUCCESS) {
+                sc->state = CONN_STATE_TS_D_QUIESCENT;
+                sc->handler = sc_state_handlers[sc->state];
+            }
+        }
+        else {
+            if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK) == MPI_SUCCESS) {
+                sc->state = CONN_STATE_TS_COMMRDY;
+                sc->handler = sc_state_handlers[sc->state];
+            }
+        }
+    }
  fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;
-
 }
 
 #undef FUNCNAME
 #define FUNCNAME state_commrdy_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_commrdy_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_commrdy_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -508,7 +809,7 @@ static int state_commrdy_handler(const pollfd_t *const plfd, sockconn_t *const c
 #define FUNCNAME state_d_dcnting_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_d_dcnting_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_d_dcnting_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -523,7 +824,7 @@ static int state_d_dcnting_handler(const pollfd_t *const plfd, sockconn_t *const
 #define FUNCNAME state_d_reqsent_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_d_reqsent_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_d_reqsent_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -538,7 +839,7 @@ static int state_d_reqsent_handler(const pollfd_t *const plfd, sockconn_t *const
 #define FUNCNAME state_d_reqrcvd_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_d_reqrcvd_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_d_reqrcvd_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -553,9 +854,10 @@ static int state_d_reqrcvd_handler(const pollfd_t *const plfd, sockconn_t *const
 #define FUNCNAME state_d_quiescent_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_d_quiescent_handler(const pollfd_t *const plfd, sockconn_t *const conn)
+static int state_d_quiescent_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
+    //FIXME : vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
 
  fn_exit:
     return mpi_errno;
@@ -570,17 +872,17 @@ static int state_d_quiescent_handler(const pollfd_t *const plfd, sockconn_t *con
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int init()
 {
-    conn_state_handlers[CONN_STATE_TC_C_CNTING] = state_tc_c_cnting_handler;
-    conn_state_handlers[CONN_STATE_TC_C_CNTD] = state_tc_c_cntd_handler;
-    conn_state_handlers[CONN_STATE_TC_C_RANKSENT] = state_c_ranksent_handler;
-    conn_state_handlers[CONN_STATE_TA_C_CNTD] = state_l_cntd_handler;
-    conn_state_handlers[CONN_STATE_TA_C_RANKRCVD] = state_l_rankrcvd_handler;
-    conn_state_handlers[CONN_STATE_TS_COMMRDY] = state_commrdy_handler;
+    sc_state_handlers[CONN_STATE_TC_C_CNTING] = state_tc_c_cnting_handler;
+    sc_state_handlers[CONN_STATE_TC_C_CNTD] = state_tc_c_cntd_handler;
+    sc_state_handlers[CONN_STATE_TC_C_RANKSENT] = state_c_ranksent_handler;
+    sc_state_handlers[CONN_STATE_TA_C_CNTD] = state_l_cntd_handler;
+    sc_state_handlers[CONN_STATE_TA_C_RANKRCVD] = state_l_rankrcvd_handler;
+    sc_state_handlers[CONN_STATE_TS_COMMRDY] = state_commrdy_handler;
 
-    conn_state_handlers[CONN_STATE_TS_D_DCNTING] = state_d_dcnting_handler;
-    conn_state_handlers[CONN_STATE_TS_D_REQSENT] = state_d_reqsent_handler;
-    conn_state_handlers[CONN_STATE_TS_D_REQRCVD] = state_d_reqrcvd_handler;
-    conn_state_handlers[CONN_STATE_TS_D_QUIESCENT] = state_d_quiescent_handler;
+    sc_state_handlers[CONN_STATE_TS_D_DCNTING] = state_d_dcnting_handler;
+    sc_state_handlers[CONN_STATE_TS_D_REQSENT] = state_d_reqsent_handler;
+    sc_state_handlers[CONN_STATE_TS_D_REQRCVD] = state_d_reqrcvd_handler;
+    sc_state_handlers[CONN_STATE_TS_D_QUIESCENT] = state_d_quiescent_handler;
     return 0;
 }
 
@@ -589,3 +891,26 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
 {
     return 0;
 }
+
+#undef FUNCNAME
+#define FUNCNAME f
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int f()
+{
+    int mpi_errno = MPI_SUCCESS;
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+/*** General FIXME Questions 
+1. call the function MPID_nem_newtcp_module_check_sock_status in each 
+state handler. Or, in the poll-loop function itself, call ..._check_sock_status,
+before even calling the handler function. Safe. But, does it affect performance?
+
+2.
+***/
+

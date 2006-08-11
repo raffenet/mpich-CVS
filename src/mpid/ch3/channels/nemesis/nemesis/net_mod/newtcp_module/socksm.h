@@ -8,6 +8,7 @@
 #define SOCKSM_H
 
 #include <sys/poll.h>
+#include <stddef.h> 
 #include "newtcp_module_impl.h"
 
 enum SOCK_CONSTS {  //more type safe than #define's
@@ -104,19 +105,42 @@ typedef struct pollfd pollfd_t;
 typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const conn);
 
 struct sockconn{
-    int fd;
-    //enum CONN_TYPE conn_type; //FIXME: seems not used/needed
-    int pg_rank;
-    char *pg_id;
+    int fd;    
+    int is_same_pg;  //TRUE/FALSE - 
+    //FIXME: see whether this can be removed, by using only pg_id = NULL or non-NULL
+    // NULL = if same_pg and valid pointer if different pgs.
+
+    int pg_rank; // rank and id cached here to avoid chasing pointers in vc and vc->pg
+    char *pg_id; // MUST be used only if is_same_pg == FALSE
     MPID_nem_newtcp_module_Conn_State_t state;
     MPIDI_VC_t *vc;
-    //Conn_type_t conn_type; // May be useful for debugging/analyzing purposes.
+    //Conn_type_t conn_type; // Probably useful for debugging/analyzing purposes.
     handler_func_t handler;
     sockconn_event_t pending_event;
 };
 
-enum MSG_NAME {MSGNAME_RANK, MSGNAME_DISC};
-enum MSG_TYPE {MSGTYPE_REQ, MSGTYPE_INFO, MSGTYPE_ACK, MSGTYPE_NAK};
+typedef enum MPIDI_nem_newtcp_module_pkt_type {
+    MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO, // ID = rank + pg_id
+    MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK,
+    MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK,
+    MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ,
+    MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK,
+    MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK
+} MPIDI_nem_newtcp_module_pkt_type_t;
+    
+typedef struct MPIDI_nem_newtcp_module_header {
+    MPIDI_nem_newtcp_module_pkt_type_t pkt_type;
+    int datalen;
+} MPIDI_nem_newtcp_module_header_t;
+
+typedef struct MPIDI_nem_newtcp_module_idinfo {
+    int pg_rank;
+    // char pg_id[pg_id_len+1]; // Memory is dynamically allocated for pg_id_len+1
+    // Also, this is optional. Sent only, if the recipient belongs to a different pg.
+    // As long as another variable length field needs to be sent across(if at all required
+    // in the future), datalen of header itself is enough to find the offset of pg_id     
+    // in the packet to be sent.
+} MPIDI_nem_newtcp_module_idinfo_t;
 
 #define MPID_nem_newtcp_module_vc_is_connected(vc) ((vc)->ch.sc && (vc)->ch.sc->state == CONN_STATE_TS_COMMRDY)
 
