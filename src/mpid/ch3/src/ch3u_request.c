@@ -257,6 +257,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
     else
     {
 	MPIDI_msg_sz_t data_sz;
+	int i, iov_data_copied;
 	
 	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"low density.  using SRBuf.");
 	    
@@ -274,18 +275,25 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	    }
 	    /* --END ERROR HANDLING-- */
 	}
-		    
-	last = (data_sz <= sreq->dev.tmpbuf_sz) ? sreq->dev.segment_size :
-	    sreq->dev.segment_first + sreq->dev.tmpbuf_sz;
+
+	iov_data_copied = 0;
+	for (i = 0; i < *iov_n; i++) {
+	    memcpy((char*) sreq->dev.tmpbuf + iov_data_copied, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
+	    iov_data_copied += iov[i].MPID_IOV_LEN;
+	}
+	sreq->dev.segment_first = last;
+
+	last = (data_sz <= sreq->dev.tmpbuf_sz - iov_data_copied) ? sreq->dev.segment_size :
+	    sreq->dev.segment_first + sreq->dev.tmpbuf_sz - iov_data_copied;
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
                "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			  sreq->dev.segment_first, last));
-	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, sreq->dev.tmpbuf);
+	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, (char*) sreq->dev.tmpbuf + iov_data_copied);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
               "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->dev.segment_first, last));
 	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sreq->dev.tmpbuf;
-	iov[0].MPID_IOV_LEN = last - sreq->dev.segment_first;
+	iov[0].MPID_IOV_LEN = last - sreq->dev.segment_first + iov_data_copied;
 	*iov_n = 1;
 	if (last == sreq->dev.segment_size)
 	{

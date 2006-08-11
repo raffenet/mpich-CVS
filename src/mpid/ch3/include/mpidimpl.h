@@ -533,14 +533,14 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
     }
 #endif
 
-#if !defined (MPIDI_CH3U_SRBuf_return)
-#   define MPIDI_CH3U_SRBuf_return(req_)                                \
+#if !defined (MPIDI_CH3U_SRBuf_free)
+#   define MPIDI_CH3U_SRBuf_free(req_)                                  \
     {                                                                   \
         MPIDI_CH3U_SRBuf_element_t * tmp;                               \
         MPIU_Assert(MPIDI_Request_get_srbuf_flag(req_));                \
         MPIDI_Request_set_srbuf_flag((req_), FALSE);                    \
-        tmp = (((MPI_Aint) ((req_)->dev.tmpbuf)) -                      \
-            ((MPI_Aint) MPIDI_CH3U_Offsetof(MPIDI_CH3U_SRBuf_element_t, buf))); \
+        tmp = (MPIDI_CH3U_SRBuf_element_t *) (((MPI_Aint) ((req_)->dev.tmpbuf)) - \
+               ((MPI_Aint) MPIDI_CH3U_Offsetof(MPIDI_CH3U_SRBuf_element_t, buf))); \
         tmp->next = MPIDI_CH3U_SRBuf_pool;                              \
         MPIDI_CH3U_SRBuf_pool = tmp;                                    \
     }
@@ -560,10 +560,6 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
  	    (req_)->dev.tmpbuf_sz = 0;					\
  	}								\
     }
-#endif
-
-#if !defined(MPIDI_CH3U_SRBuf_free)
-#   define MPIDI_CH3U_SRBuf_free(req_) MPIDI_CH3U_SRBuf_return(req_)
 #endif
 /*-------------------------------
   END SEND/RECEIVE BUFFER SECTION
