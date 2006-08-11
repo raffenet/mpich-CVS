@@ -22,6 +22,9 @@ MPID_nem_sctp_module_finalize ()
 
     /* free associationID -> vc hash table */
     hash_free(MPID_nem_sctp_assocID_table);
+
+    mpi_errno = MPID_nem_sctp_module_send_finalize();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
  fn_exit:
     return mpi_errno;

@@ -9,6 +9,7 @@
 #include "mpid_nem_impl.h"
 #include "sctp_module.h"
 #include "all_hash.h"
+#include "sctp_module_queue.h"
 /* #include <linux/types.h> */ /* not needed for SCTP */
 /* #include <sys/types.h>  */ /* not needed for SCTP */
 #include <sys/socket.h>
@@ -24,23 +25,41 @@
 #define SCTP_POLL_FREQ_NO   -1
 #define SCTP_END_STRING "NEM_SCTP_MOD_FINALIZE"
 
-extern MPID_nem_queue_ptr_t MPID_nem_sctp_module_free_queue;
-extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
-extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
+/* typedefs */
 
-extern int MPID_nem_sctp_onetomany_fd; /* needed for all communication */
-extern int MPID_nem_sctp_port; /* needed for init and bizcards */
+/*   sendq */
+typedef struct MPID_nem_sctp_module_send_q_element
+{
+    struct MPID_nem_sctp_module_send_q_element *next;
+    size_t len;                        /* number of bytes left to sent */
+    char *start;                       /* pointer to next byte to send */
+    int stream;
+    char buf[MPID_NEM_MAX_PACKET_LEN]; /* data to be sent */
+} MPID_nem_sctp_module_send_q_element_t;
 
-/* hash table entry */
+/*   hash table entry */
 typedef struct hash_entry
 {
     sctp_assoc_t assoc_id;
     MPIDI_VC_t * vc;
 } MPID_nem_sctp_hash_entry;
 
-/* hash table for association ID -> VC */
+/* globals */
+
+/*   queues */
+extern MPID_nem_queue_ptr_t MPID_nem_sctp_module_free_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
+extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
+
+/*   ints */
+extern int MPID_nem_sctp_onetomany_fd; /* needed for all communication */
+extern int MPID_nem_sctp_port; /* needed for init and bizcards */
+
+/*   hash table for association ID -> VC */
 extern HASH* MPID_nem_sctp_assocID_table;
 
+
+/* functions */
 
 /* determine the stream # of a req. copied from UBC sctp channel so could be irrelevant */
 /*    we want to use context so that collectives don't
@@ -53,98 +72,26 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
 
 
 int MPID_nem_sctp_module_send_progress();
+int MPID_nem_sctp_module_send_init();
+int MPID_nem_sctp_module_send_finalize();
 
 
-extern MPID_nem_queue_ptr_t MPID_nem_module_sctp_free_queue;
-extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
-extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;   
+/* Send queue macros */
+#define Q_EMPTY(q) GENERIC_Q_EMPTY (q)
+#define Q_HEAD(q) GENERIC_Q_HEAD (q)
+#define Q_ENQUEUE_EMPTY(qp, ep) GENERIC_Q_ENQUEUE_EMPTY (qp, ep, next)
+#define Q_ENQUEUE(qp, ep) GENERIC_Q_ENQUEUE (qp, ep, next)
+#define Q_ENQUEUE_EMPTY_MULTIPLE(qp, ep0, ep1) GENERIC_Q_ENQUEUE_EMPTY_MULTIPLE (qp, ep0, ep1, next)
+#define Q_ENQUEUE_MULTIPLE(qp, ep0, ep1) GENERIC_Q_ENQUEUE_MULTIPLE (qp, ep0, ep1, next)
+#define Q_DEQUEUE(qp, ep) GENERIC_Q_DEQUEUE (qp, ep, next)
+#define Q_REMOVE_ELEMENTS(qp, ep0, ep1) GENERIC_Q_REMOVE_ELEMENTS (qp, ep0, ep1, next)
 
-/* below are from the original cp of tcp net mod so they might be irrelevant */
-
-/* #undef MPID_NEM_USE_MACROS */
-/* #ifndef MPID_NEM_USE_MACROS */
-/* static inline void */
-/* MPID_nem_sctp_internal_queue_enqueue (internal_queue_t *qhead, MPID_nem_cell_ptr_t element) */
-/* { */
-/*     MPID_nem_abs_cell_ptr_t abs_element = (MPID_nem_abs_cell_ptr_t)element; */
-/*     MPID_nem_abs_cell_ptr_t prev = qhead->tail;          */
-    
-/*     if (prev == NULL) */
-/*     { */
-/*         qhead->head = abs_element; */
-/*     } */
-/*     else */
-/*     { */
-/*         prev->next = abs_element; */
-/*     } */
-/*     qhead->tail = abs_element; */
-/* } */
-
-/* static inline int  */
-/* MPID_nem_sctp_internal_queue_empty (const internal_queue_t qhead) */
-/* { */
-/*     return qhead.head == NULL; */
-/* } */
-/* /\* Gets the head *\/ */
-/* static inline void  */
-/* MPID_nem_sctp_internal_queue_dequeue (internal_queue_t *qhead, MPID_nem_cell_ptr_t *e) */
-/* { */
-/*     register MPID_nem_abs_cell_ptr_t _e = qhead->head; */
-  
-/*     if(_e == NULL) */
-/*     { */
-/* 	*e = NULL; */
-/*     } */
-/*     else */
-/*     { */
-/* 	qhead->head  = _e->next; */
-/* 	if(qhead->head == NULL) */
-/* 	{   */
-/* 	    qhead->tail = NULL;   */
-/* 	} */
-/* 	_e->next = NULL; */
-/* 	*e = (MPID_nem_cell_ptr_t)_e; */
-/*     } */
-/* } */
-/* #else  /\*USE_MACROS *\/ */
-
-/* #define MPID_nem_sctp_internal_queue_enqueue(qhead, element) do {		\ */
-/*     MPID_nem_abs_cell_ptr_t abs_element = (MPID_nem_abs_cell_ptr_t)(element);	\ */
-/*     MPID_nem_cell_ptr_t prev = (qhead)->tail;					\ */
-/* 										\ */
-/*     if (prev == NULL)								\ */
-/*     {										\ */
-/*         (qhead)->head = abs_element;						\ */
-/*     }										\ */
-/*     else									\ */
-/*     {										\ */
-/*         prev->next = abs_element;						\ */
-/*     }										\ */
-/*     (qhead)->tail = abs_element;						\ */
-/* } while (0)  */
-
-/* #define MPID_nem_sctp_internal_queue_empty(qhead) ((qhead).head == NULL) */
-
-/* #define MPID_nem_sctp_internal_queue_dequeue(qhead, e)    do {	\ */
-/*     register MPID_nem_cell_ptr_t _e = (qhead)->head;	\ */
-/*     							\ */
-/*     if(_e == NULL)					\ */
-/*     {							\ */
-/*         *(e) = NULL;					\ */
-/*     }							\ */
-/*     else						\ */
-/*     {							\ */
-/*         (qhead)->head  = _e->next;			\ */
-/*         if((qhead)->head == NULL)			\ */
-/*         {						\ */
-/*             (qhead)->tail = NULL;			\ */
-/*         }						\ */
-/*         _e->next = NULL;				\ */
-/*         *(e) = (MPID_nem_cell_ptr_t)_e;			\ */
-/*     }							\ */
-/* } while(0)                                        */
-/* #endif /\* USE_MACROS *\/ */
+/* VC list macros */
+#define VC_L_EMPTY(q) GENERIC_L_EMPTY (q)
+#define VC_L_HEAD(q) GENERIC_L_HEAD (q)
+#define VC_L_ADD_EMPTY(qp, ep) GENERIC_L_ADD_EMPTY (qp, ep, ch.sctp_sendl_next, ch.sctp_sendl_prev)
+#define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.sctp_sendl_next, ch.sctp_sendl_prev)
+#define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.sctp_sendl_next, ch.sctp_sendl_prev)
 
 
-/* #define MPID_NEM_USE_MACROS */
 #endif /* SCTP_MODULE_IMPL_H */

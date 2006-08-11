@@ -95,6 +95,13 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_sctp_stream_t stream_table[MPICH_SCTP_NUM_STREAMS];
     struct sockaddr_in to_address;
     void * conn_pkt;
+    struct
+    {
+        struct MPID_nem_sctp_module_send_q_element *head;
+        struct MPID_nem_sctp_module_send_q_element *tail;
+    } send_queue;
+    struct MPIDI_VC *sctp_sendl_next;
+    struct MPIDI_VC *sctp_sendl_prev;
     
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
     int fd;
