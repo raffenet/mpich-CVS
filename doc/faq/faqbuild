@@ -229,9 +229,15 @@ sub ReadHeading {
     }
     if (! $foundEnd) {
 	print STDERR "Malformed heading entry; no %% End found\n";
+	if ($heading ne "") {
+	    print STDERR "Heading was $heading\n";
+	}
     }
     if ($shortfile eq "") {
 	print STDERR "Malformed heading entry; no %% Filename: found\n";
+	if ($heading ne "") {
+	    print STDERR "Heading was $heading\n";
+	}
     }
     return ($heading,$shortfile);
 }
