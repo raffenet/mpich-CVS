@@ -9,7 +9,7 @@
 #include "elan_module.h"
 #include "my_papi_defs.h"
 
-//#define TRACE 
+#define TRACE 
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_elan_module_send
@@ -26,7 +26,7 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
    
    MPIU_Assert (datalen <= MPID_NEM_MPICH2_DATA_LEN);
 #ifdef TRACE
-   fprintf(stdout,"[%i | nvpid %i] ==== ELAN SEND to %i : trying %i bytes  ==== \n", MPID_nem_mem_region.rank,elan_base->state->vp,dest,data_size);
+   fprintf(stdout,"[%i] ==== ELAN SEND to %i : trying %i bytes  ==== \n", MPID_nem_mem_region.rank,dest,data_size);
 #endif
    
    if ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
@@ -45,6 +45,8 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	  }	
 	else
 	  {
+	      elan__print_queue(MPID_nem_module_elan_free_event_queue,0);
+
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
 	     elan_event_cell->elan_event =
 	       elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);
@@ -56,18 +58,25 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
      {	
 	MPID_nem_module_elan_free_event_queue->head->elan_event = 
 	  elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);
+
+#ifdef TRACE 
+	fprintf(stdout,"[%i] ==== ELAN SEND : Calling POLL ==== \n", MPID_nem_mem_region.rank);
+#endif
+      	
 	if (elan_poll(MPID_nem_module_elan_free_event_queue->head->elan_event,MPID_NEM_ELAN_LOOPS_SEND) == TRUE)
 	  {
 	     MPID_nem_module_elan_free_event_queue->head->elan_event = NULL ;
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);	     
 #ifdef TRACE
-	     if(MPID_nem_mem_region.rank == 0) 
-	       fprintf(stdout,"[%i] ==== ELAN SEND : Done for SEQNO %i====\n", MPID_nem_mem_region.rank,MPID_NEM_CELL_SEQN(cell));
+	     fprintf(stdout,"[%i] ==== ELAN SEND : Done for SEQNO %i====\n", MPID_nem_mem_region.rank,MPID_NEM_CELL_SEQN(cell));
 #endif
 	  }
 	else
 	  {		  
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
+
+	     elan__print_queue(MPID_nem_module_elan_free_event_queue,0);
+	       
 	     elan_event_cell->cell_ptr = cell ;
 	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);
 #ifdef TRACE 

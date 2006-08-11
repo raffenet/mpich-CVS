@@ -172,7 +172,7 @@ int init_elan( MPIDI_PG_t *pg_p )
 							  MPID_NEM_ELAN_RAIL_NUM,
 							  flags);   
    MPID_nem_elan_freq         = 1 ;
-   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Malloc(MPID_NEM_ELAN_NUM_SLOTS * sizeof(MPID_nem_elan_cell_t));   
+   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc(MPID_NEM_ELAN_NUM_SLOTS, sizeof(MPID_nem_elan_cell_t));   
    MPID_nem_module_elan_free_event_queue->head    = NULL;
    MPID_nem_module_elan_free_event_queue->tail    = NULL;   
    MPID_nem_module_elan_pending_event_queue->head = NULL;
@@ -181,7 +181,10 @@ int init_elan( MPIDI_PG_t *pg_p )
      {
 	MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,&MPID_nem_module_elan_cells[index]);
      }
+   
 
+   elan__print_queue(MPID_nem_module_elan_free_event_queue,1);
+   
    fn_exit:
      return mpi_errno;
    fn_fail:

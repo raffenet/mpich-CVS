@@ -14,8 +14,8 @@
 
 #define MPID_NEM_ELAN_RAIL_NUM   0
 #define MPID_NEM_ELAN_SLOT_SIZE  MPID_NEM_CELL_PAYLOAD_LEN
-#define MPID_NEM_ELAN_NUM_SLOTS  1024
-#define MPID_NEM_ELAN_LOOPS_SEND 100
+#define MPID_NEM_ELAN_NUM_SLOTS  1
+#define MPID_NEM_ELAN_LOOPS_SEND 1
 #define MPID_NEM_ELAN_LOOPS_RECV 1
 // 100 2 
 
@@ -39,15 +39,16 @@ typedef struct MPID_nem_elan_event_queue
 MPID_nem_elan_event_queue_t, *MPID_nem_elan_event_queue_ptr_t;
 
 static inline int
-MPID_nem_elan_event_queue_empty ( MPID_nem_elan_event_queue_ptr_t  qhead )
+MPID_nem_elan_event_queue_empty ( MPID_nem_elan_event_queue_ptr_t qhead )
 {   
-   return qhead->head == NULL;
+   return (qhead->head == NULL);
 }
 
 static inline void 
 MPID_nem_elan_event_queue_enqueue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t element)
 {   
-   MPID_nem_elan_cell_ptr_t prev = qhead->tail;   
+   MPID_nem_elan_cell_ptr_t prev;
+   prev =  MPID_NEM_SWAP(&(qhead->head), element);   
    if (prev == NULL)
      {	
 	qhead->head = element;
@@ -56,27 +57,34 @@ MPID_nem_elan_event_queue_enqueue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_n
      {	
 	prev->next = element;
      }   
-   qhead->tail = element;
 }
+
 
 static inline void
 MPID_nem_elan_event_queue_dequeue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t *e)
 {   
-   register MPID_nem_elan_cell_ptr_t _e = qhead->head;   
-   if(_e == NULL)
-     {	
-	*e = NULL;
-     }   
+   register MPID_nem_elan_cell_ptr_t _e;
+   _e = qhead->head;   
+   if( _e->next != NULL)
+     {
+	qhead->head = _e->next;
+     }
    else
-     {	
-	qhead->head  = _e->next;
-	if(qhead->head == NULL)
-	  {	     
-	     qhead->tail = NULL;
-	  }	
-	_e->next = NULL;
-	*e = (MPID_nem_elan_cell_ptr_t)_e;
+     {
+	MPID_nem_elan_cell_ptr_t old_tail;
+	qhead->head = NULL;
+	old_tail = MPID_NEM_CAS( &(qhead->tail), _e, NULL);
+	if ( old_tail !=  _e)
+	  {
+	     while ((_e->next) == NULL)
+	       {		  
+		  SKIP;
+	       }	     
+	     qhead->head = _e->next;
+	  }
      }   
+   _e->next = NULL;
+   *e = _e;
 }
 
 extern MPID_nem_elan_cell_ptr_t        MPID_nem_module_elan_cells;
