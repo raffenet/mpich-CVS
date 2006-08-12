@@ -53,6 +53,7 @@ RM="@RM@"
 # File access mode
 MODE=0644
 XMODE=0755
+DMODE=0755
 replace=1
 # set failmode to soft to let failures accumulate
 failmode="hard"
@@ -104,6 +105,9 @@ for arg in "$@" ; do
         -xmode=*)
             XMODE=`echo $arg | sed -e 's/-xmode=//g'`
             ;;
+        -dmode=*)
+            DMODE=`echo $arg | sed -e 's/-dmode=//g'`
+            ;;
         -copymode=*)
             copymode=`echo $arg | sed -e 's/-copymode=//g'`
             ;;
@@ -121,8 +125,8 @@ Install ${pkgname} into $prefix.
 -prefix=path     - Destination directory.
 -uninstall=file  - File to append uninstall information to
 -mode=nnnn       - permission mode for regular files.  Default is $MODE .
--xmode=nnnn      - permission mode for execuables and directories.
-                   Default is $XMODE .
+-xmode=nnnn      - permission mode for execuables.  Default is $XMODE .
+-dmode=nnnn      - permission mode for directories.  Default is $DMODE .
 -copymode=xxx    - copy mode for files and directories.  Possible values are
                    {all, core, optional}.
 -noreplace       - Do not replace files found in the installation directory
@@ -173,11 +177,11 @@ elif [ -d $1 ] ; then
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 elif [ ! -f $1 ] ; then
-    echo "**File $1 does not exist (or is not a regular file)!"
+    echo "*** File $1 does not exist (or is not a regular file)! ***"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 elif [ "$1" = "$dest" ] ; then
-    echo "**File $1 is being installed to itself!"
+    echo "*** File $1 is being installed to itself! ***"
     errs=`expr $errs + 1`
     if [ $failmode = "hard" ] ; then exit 1 ; fi
 else
@@ -189,10 +193,14 @@ else
         echo "Replacing existing file $dest..."
         $Show $RM $dest
     fi
-    $Show $INSTALLER -m $mode $1 $dest
+    if [ "X$mode" != "X" ] ; then
+        $Show $INSTALLER -m $mode $1 $dest
+    else
+        $Show $INSTALLER $1 $dest
+    fi
     rc=$?
     if [ $rc != 0 ] ; then
-        echo "**Error installing file $1 to $dest with mode $mode**"
+        echo "*** Error installing file $1 to $dest with mode $mode. ***"
         errs=`expr $errs + 1`
         if [ $failmode = "hard" ] ; then exit $rc ; fi
     else
@@ -215,7 +223,7 @@ if [ -n "$1" -a -n "$2" ] ; then
         MkDir $2
         # use $4 as a local variable
         # & set it as the original PWD before "cd $1"
-        set $1 $2 ${3:-$MODE} `pwd`
+        set $1 $2 ${3:-"$MODE"} `pwd`
         cd $1
         for file in * ; do
             if [ -f $file ] ; then
@@ -254,7 +262,7 @@ if [ ! -d $dest ] ; then
             $Show "mkdir $path_to_date"
             rc=$?
             if [ $rc != 0 ] ; then
-                echo "**Error making directory $dest**"
+                echo "*** Error making directory $dest. ***"
                 errs=`expr $errs + 1`
                 if [ $failmode = "hard" ] ; then exit $rc ; fi
                 echo "Failed to create directory $path_to_date"
@@ -263,12 +271,14 @@ if [ ! -d $dest ] ; then
                 # Note that we store in inverse order
                 dirlist="$1 $dirlist"
             fi
-            $Show chmod $XMODE $path_to_date
-            rc=$?
-            if [ $rc != 0 ] ; then
-                echo "**Error setting mode to $XMODE on directory $path_to_date**"
-                errs=`expr $errs + 1`
-                if [ $chmodfailmode = "hard" ] ; then exit $rc ; fi
+            if [ "X$DMODE" != "X" ] ; then
+                $Show chmod $DMODE $path_to_date
+                rc=$?
+                if [ $rc != 0 ] ; then
+                    echo "*** Error setting mode to $DMODE on directory $path_to_date. ***"
+                    errs=`expr $errs + 1`
+                    if [ $chmodfailmode = "hard" ] ; then exit $rc ; fi
+                fi
             fi
         fi
     done
@@ -306,7 +316,7 @@ else
         $1 > $dest
         rc=$?
         if [ $rc != 0 ] ; then
-            echo "**Error fixing up file $dest**"
+            echo "*** Error fixing up file $dest. ***"
             errs=`expr $errs + 1`
             if [ $failmode = "hard" ] ; then exit $rc ; fi
         else
@@ -322,12 +332,14 @@ if [ -z "$3" ] ; then
 else
     mode=$3
 fi
-$Show chmod $mode $dest
-rc=$?
-if [ $rc != 0 ] ; then
-    echo "**Error setting mode on file $dest**"
-    errs=`expr $errs + 1`
-    if [ $failmode = "hard" ] ; then exit $rc ; fi
+if [ "X$mode" != "X" ] ; then
+    $Show chmod $mode $dest
+    rc=$?
+    if [ $rc != 0 ] ; then
+        echo "*** Error setting mode on file $dest. ***"
+        errs=`expr $errs + 1`
+        if [ $failmode = "hard" ] ; then exit $rc ; fi
+    fi
 fi
 }
 
@@ -456,7 +468,8 @@ if [ "$copymode" = "core" ] ; then
                   if [ -x ./sbin/install-package ] ; then \
                       ./sbin/install-package -prefix=$prefix \
                                              -uninstall=$UNINSTALLFILE \
-                                             -mode=$MODE -xmode=$XMODE ; \
+                                             -mode=$MODE -xmode=$XMODE \
+                                             -dmode=$DMODE ; \
                   fi )
             fi
         fi
@@ -471,7 +484,8 @@ if [ "$copymode" = "all" ] ; then
                   if [ -x ./sbin/install-package ] ; then \
                       ./sbin/install-package -prefix=$prefix \
                                              -uninstall=$UNINSTALLFILE \
-                                             -mode=$MODE -xmode=$XMODE ; \
+                                             -mode=$MODE -xmode=$XMODE \
+                                             -dmode=$DMODE ; \
                   fi )
             else
                 ( cd $binbuild_dir/../$pkg && \
@@ -479,7 +493,8 @@ if [ "$copymode" = "all" ] ; then
                        -a -d $DESTDIR$sharedir ] ; then \
                       ./sbin/install-package -prefix=$sharedir/$pkg \
                                              -uninstall=$UNINSTALLFILE \
-                                             -mode=$MODE -xmode=$XMODE ; \
+                                             -mode=$MODE -xmode=$XMODE \
+                                             -dmode=$DMODE ; \
                   fi )
             fi
         fi
