@@ -68,9 +68,9 @@ check : build_check
 ########  Installing
 install:
 	@if [ -n "$(PREFIX)" ] ; then \
-	     ./sbin/mpeinstall -prefix=$(PREFIX) ; \
+	     ./sbin/mpeinstall -prefix=$(PREFIX) -dmode="" ; \
 	 else \
-	     ./sbin/mpeinstall ; \
+	     ./sbin/mpeinstall -dmode="" ; \
 	 fi
 
 installcheck:
