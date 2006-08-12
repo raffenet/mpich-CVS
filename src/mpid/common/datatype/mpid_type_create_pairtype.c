@@ -226,6 +226,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 				      &(new_dtp->dataloop_size),
 				      &(new_dtp->dataloop_depth),
 				      MPID_DATALOOP_HOMOGENEOUS);
+#if defined(MPID_HAS_HETERO) || 1
     if (!err) {
 	/* heterogeneous dataloop representation */
 	err = MPID_Dataloop_create_struct(2,
@@ -237,6 +238,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 					  &(new_dtp->hetero_dloop_depth),
 					  0);
     }
+#endif /* MPID_HAS_HETERO */
     /* --BEGIN ERROR HANDLING-- */
     if (err) {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,

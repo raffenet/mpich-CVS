@@ -229,6 +229,7 @@ int MPID_Type_struct(int count,
 					  &(new_dtp->dataloop_depth),
 					  0);
 
+#if defined(MPID_HAS_HETERO) || 1
 	if (!err) {
 	    /* heterogeneous dataloop representation */
 	    err = MPID_Dataloop_create_struct(0,
@@ -240,6 +241,7 @@ int MPID_Type_struct(int count,
 					      &(new_dtp->hetero_dloop_depth),
 					      0);
 	}
+#endif /* MPID_HAS_HETERO */
 	/* --BEGIN ERROR HANDLING-- */
 	if (err) {
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
@@ -455,6 +457,7 @@ int MPID_Type_struct(int count,
 				      &(new_dtp->dataloop_size),
 				      &(new_dtp->dataloop_depth),
 				      MPID_DATALOOP_HOMOGENEOUS);
+#if defined(MPID_HAS_HETERO) || 1
     if (!err) {
 	/* heterogeneous dataloop representation */
 	err = MPID_Dataloop_create_struct(count,
@@ -466,6 +469,7 @@ int MPID_Type_struct(int count,
 					  &(new_dtp->hetero_dloop_depth),
 					  0);
     }
+#endif /* MPID_HAS_HETERO */
     /* --BEGIN ERROR HANDLING-- */
     if (err) {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,

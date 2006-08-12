@@ -90,6 +90,16 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->dataloop       = dlp;
 	new_dtp->dataloop_depth = old_dtp->dataloop_depth;
 	new_dtp->dataloop_size  = old_dtp->dataloop_size;
+
+#if defined(MPID_HAS_HETERO) || 1
+/* This file needs to set values to hetero_dloop, hetero_dloop_depth,
+   and hetero_dloop_size */
+/* #error 'This routine does not support heterogenous data representations' */
+	MPID_Dataloop_dup(old_dtp->dataloop, old_dtp->dataloop_size, 
+			  &new_dtp->hetero_dloop);
+	new_dtp->hetero_dloop_depth = old_dtp->hetero_dloop_depth;
+	new_dtp->hetero_dloop_size  = old_dtp->hetero_dloop_size;
+#endif
 	
 	*newtype = new_dtp->handle;
     }

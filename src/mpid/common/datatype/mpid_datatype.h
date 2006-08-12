@@ -103,22 +103,36 @@
     }									\
 }
 
+/*
+ * The following macro allows us to reference either the regular or 
+ * hetero value for the 3 fields (NULL,_size,_depth) in the
+ * MPID_Datatype structure.  This is used in the many
+ * macros that access fields of the datatype.  We need this macro
+ * to simplify the definition of the other macros in the case where
+ * MPID_HAS_HETERO is *not* defined.
+ */
+#if defined(MPID_HAS_HETERO) || 1
+#define MPID_GET_FIELD(hetero_,value_,fieldname_) \
+  if (!(hetero_))						\
+      value_ = ((MPID_Datatype *)ptr)->dataloop##fieldname_;	\
+  else value_ = ((MPID_Datatype *) ptr)->hetero_dloop##fieldname_;
+#else
+#define MPID_GET_FIELD(hetero_,value_,fieldname_) \
+      value_ = ((MPID_Datatype *)ptr)->dataloop##fieldname_
+#endif
+ 
 #define MPID_Datatype_get_loopdepth_macro(a,depth_,hetero_)		\
 {									\
     void *ptr;								\
     switch (HANDLE_GET_KIND(a)) {					\
         case HANDLE_KIND_DIRECT:					\
             ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
-            if (!(hetero_))						\
-                depth_ = ((MPID_Datatype *)ptr)->dataloop_depth;	\
-            else depth_ = ((MPID_Datatype *) ptr)->hetero_dloop_depth;	\
+            MPID_GET_FIELD(hetero_,depth_,_depth);                      \
             break;							\
         case HANDLE_KIND_INDIRECT:					\
             ptr = ((MPID_Datatype *)					\
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
-            if (!(hetero_))						\
-                depth_ = ((MPID_Datatype *)ptr)->dataloop_depth;	\
-            else depth_ = ((MPID_Datatype *) ptr)->hetero_dloop_depth;	\
+            MPID_GET_FIELD(hetero_,depth_,_depth);                      \
             break;							\
         case HANDLE_KIND_INVALID:					\
         case HANDLE_KIND_BUILTIN:					\
@@ -134,16 +148,12 @@
     switch (HANDLE_GET_KIND(a)) {					\
         case HANDLE_KIND_DIRECT:					\
             ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
-            if (!(hetero_))						\
-                depth_ = ((MPID_Datatype *)ptr)->dataloop_size;	\
-            else depth_ = ((MPID_Datatype *) ptr)->hetero_dloop_size;	\
+            MPID_GET_FIELD(hetero_,depth_,_size);                       \
             break;							\
         case HANDLE_KIND_INDIRECT:					\
             ptr = ((MPID_Datatype *)					\
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
-            if (!(hetero_))						\
-                depth_ = ((MPID_Datatype *)ptr)->dataloop_size;	\
-            else depth_ = ((MPID_Datatype *) ptr)->hetero_dloop_size;	\
+            MPID_GET_FIELD(hetero_,depth_,_size);                       \
             break;							\
         case HANDLE_KIND_INVALID:					\
         case HANDLE_KIND_BUILTIN:					\
@@ -159,16 +169,12 @@
     switch (HANDLE_GET_KIND(a)) {					\
         case HANDLE_KIND_DIRECT:					\
             ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
-            if (!(hetero_))						\
-                lptr_ = ((MPID_Datatype *) ptr)->dataloop;		\
-            else lptr_ = ((MPID_Datatype *) ptr)->hetero_dloop;	\
+            MPID_GET_FIELD(hetero_,lptr_,);                             \
             break;							\
         case HANDLE_KIND_INDIRECT:					\
             ptr = ((MPID_Datatype *)					\
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
-            if (!(hetero_))						\
-                lptr_ = ((MPID_Datatype *) ptr)->dataloop;		\
-            else lptr_ = ((MPID_Datatype *) ptr)->hetero_dloop;	\
+            MPID_GET_FIELD(hetero_,lptr_,);                             \
             break;							\
         case HANDLE_KIND_INVALID:					\
         case HANDLE_KIND_BUILTIN:					\
@@ -178,6 +184,7 @@
     }									\
 }
 
+#if defined(MPID_HAS_HETERO) || 1
 #define MPID_Datatype_get_hetero_loopptr_macro(a,lptr_)                \
 {                                                                    \
     void *ptr;                                                          \
@@ -198,6 +205,7 @@
             break;                                                      \
     }                                                                   \
 }
+#endif /* MPID_HAS_HETERO */
         
 #define MPID_Datatype_get_extent_macro(a,extent_)			    \
 {									    \
@@ -344,11 +352,11 @@ typedef struct MPID_Datatype {
     struct MPID_Dataloop *dataloop; /* might be optimized for homogenous */
     int                   dataloop_size;
     int                   dataloop_depth;
-
+#if defined(MPID_HAS_HETERO) || 1
     struct MPID_Dataloop *hetero_dloop; /* heterogeneous dataloop */
     int                   hetero_dloop_size;
     int                   hetero_dloop_depth;
-
+#endif /* MPID_HAS_HETERO */
     /* MPI-2 attributes and name */
     struct MPID_Attribute *attributes;
     char                  name[MPI_MAX_OBJECT_NAME];
