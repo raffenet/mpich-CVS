@@ -36,6 +36,10 @@ int main( int argc, char *argv[] )
 	
 	for (count = 1; count < 65000; count = count * 2) {
 	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
+
+		MTestPrintfMsg( 1, "Putting count = %d of sendtype %s\n", 
+				count, MTestGetDatatypeName( &sendtype ) );
+
 		/* Make sure that everyone has a recv buffer */
 		recvtype.InitBuf( &recvtype );
 
