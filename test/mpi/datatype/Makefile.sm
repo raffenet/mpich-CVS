@@ -88,3 +88,9 @@ contigstruct_SOURCES = contigstruct.c
 		 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
+
+# A special testing target to simplify running just the datatype tests
+testing:
+	../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml

@@ -53,3 +53,9 @@ nullpscw_SOURCES = nullpscw.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) )
+
+# A special testing target to simplify running just the rma tests
+testing:
+	../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml
