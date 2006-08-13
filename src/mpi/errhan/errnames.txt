@@ -494,6 +494,7 @@ with MPI_Alloc_mem.
 #
 # CH3 errors
 #
+**ch3|pktarraytoosmall: Size of the array of packet handlers is too small
 **ch3|badca %d:specified completion action in not known (%d)
 **ch3|badca:specified completion action in not known
 **ch3|badmsgtype %d:request contained an invalid message type (%d)
