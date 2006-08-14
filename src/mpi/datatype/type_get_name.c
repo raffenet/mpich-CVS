@@ -144,7 +144,9 @@ int MPIR_Datatype_init_names( void )
 			      "**typeinitfail", "**typeinitfail %d", i - 1 )
 	    }
 
-	    /* MPIU_dbg_printf("mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name ); */
+	    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
+		   "mpi_names[%d].name = %x\n", i, (int) mpi_names[i].name )); 
+	    
 	    MPIU_Strncpy( datatype_ptr->name, mpi_names[i].name, 
 			  MPI_MAX_OBJECT_NAME );
 	}
