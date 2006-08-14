@@ -8,7 +8,6 @@
 /* STATES:NO WARNINGS */
 
 #define MQSHM_END -1
-/* #define DBG_PRINT_SEND_RECEIVE */
 /* #define DBG_TEST_LOCKING */
 
 typedef struct mqshm_msg_t
@@ -201,29 +200,6 @@ int MPIDI_CH3I_mqshm_unlink(int id)
     return mpi_errno;
 }
 
-#ifdef DBG_PRINT_SEND_RECEIVE
-#define print_msgq(q_ptr_)									\
-{												\
-    MPIU_dbg_printf("msg_q: first = %d, last = %d, next_free = %d, num=%d\n",				\
-	   (q_ptr_)->first, (q_ptr_)->last, (q_ptr_)->next_free, (q_ptr_)->cur_num_messages);	\
-}
-
-#if 0
-static void print_msgq(mqshm_t *q_ptr)
-{
-    int i = q_ptr->first;
-    MPIU_dbg_printf("msg_q: first = %d, last = %d, next_free = %d\n",
-	   q_ptr->first, q_ptr->last, q_ptr->next_free);
-    while (i != MQSHM_END)
-    {
-	MPIU_dbg_printf("msg[%d].tag = %d\n", i, q_ptr->msg[i].tag);
-	i = q_ptr->msg[i].next;
-    }
-    fflush(stdout);
-}
-#endif
-#endif
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_mqshm_send
 #undef FCNAME
@@ -265,38 +241,35 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	if (index != MQSHM_END)
 	{
 	    q_ptr->next_free = q_ptr->msg[index].next;
-#ifdef DBG_PRINT_SEND_RECEIVE
-	    MPIU_dbg_printf("[%d] send: writing %d bytes to index %d with tag %d\n", MPIR_Process.comm_world->rank, length, index, tag);
-	    fflush(stdout);
-#endif
+	    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+	       "send: writing %d bytes to index %d with tag %d", 
+						  length, index, tag));
+
 	    memcpy(q_ptr->msg[index].data, buffer, length);
 	    q_ptr->msg[index].tag = tag;
 	    q_ptr->msg[index].length = length;
 	    q_ptr->msg[index].next = MQSHM_END;
 	    if (q_ptr->first == MQSHM_END)
 	    {
-#ifdef DBG_PRINT_SEND_RECEIVE
-		MPIU_dbg_printf("[%d] send: setting first and last to %d\n", MPIR_Process.comm_world->rank, index);
-		fflush(stdout);
-#endif
+		MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
+			       "send: setting first and last to %d", index);
 		q_ptr->first = index;
 		q_ptr->last = index;
 	    }
 	    else
 	    {
-#ifdef DBG_PRINT_SEND_RECEIVE
-		MPIU_dbg_printf("[%d] send: old_last = %d, new last = %d\n",
-		  MPIR_Process.comm_world->rank, q_ptr->last, index);
-		fflush(stdout);
-#endif
+		MPIU_DBG_MSG_FMT(CH3_CONNET,VERBOSE,(MPIU_DBG_FDEST,
+				 "send: old_last = %d, new last = %d",
+				 q_ptr->last, index));
 		q_ptr->msg[q_ptr->last].next = index;
 		q_ptr->last = index;
 	    }
 	    *num_sent = length;
 	    q_ptr->cur_num_messages++;
-#ifdef DBG_PRINT_SEND_RECEIVE
-	    print_msgq(q_ptr);
-#endif
+	    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,
+		(MPIU_DBG_FDEST,"msg_q: first = %d, last = %d, next_free = %d, num=%d",
+		 (q_ptr)->first, (q_ptr)->last, (q_ptr)->next_free, 
+		 (q_ptr)->cur_num_messages));
 #ifdef DBG_TEST_LOCKING
 	    q_ptr->inuse = 0;
 #endif
@@ -375,10 +348,9 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		/* remove the node from the queue */
 		if (q_ptr->first == index)
 		{
-#ifdef DBG_PRINT_SEND_RECEIVE
-		    MPIU_dbg_printf("[%d] recv(%d): removing index %d from the head\n", MPIR_Process.comm_world->rank, tag, index);
-		    fflush(stdout);
-#endif
+		    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+                                   "recv(%d): removing index %d from the head",
+                                    tag, index));
 		    q_ptr->first = q_ptr->msg[index].next;
 		    if (q_ptr->first == MQSHM_END)
 		    {
@@ -388,10 +360,9 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 		}
 		else
 		{
-#ifdef DBG_PRINT_SEND_RECEIVE
-		    MPIU_dbg_printf("[%d] recv(%d): removing index %d\n", MPIR_Process.comm_world->rank, tag, index);
-		    fflush(stdout);
-#endif
+		    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+                                  "recv(%d): removing index %d", 
+				   tag, index));
 		    q_ptr->msg[last_index].next = q_ptr->msg[index].next;
 		    if (index == q_ptr->last)
 		    {
@@ -408,9 +379,10 @@ int MPIDI_CH3I_mqshm_receive(const int id, const int tag, void *buffer, const in
 #ifdef DBG_TEST_LOCKING
 		q_ptr->inuse = 0;
 #endif
-#ifdef DBG_PRINT_SEND_RECEIVE
-		print_msgq(q_ptr);
-#endif
+		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,
+		    (MPIU_DBG_FDEST,"msg_q: first = %d, last = %d, next_free = %d, num=%d",
+		     (q_ptr)->first, (q_ptr)->last, (q_ptr)->next_free, 
+		     (q_ptr)->cur_num_messages));
 		MPIDU_Process_unlock(&q_ptr->lock);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_MQSHM_RECEIVE);
 		return mpi_errno;
