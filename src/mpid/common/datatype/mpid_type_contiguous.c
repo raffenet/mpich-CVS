@@ -206,9 +206,8 @@ int MPID_Type_contiguous(int count,
 
     *newtype = new_dtp->handle;
 
-#ifdef MPID_TYPE_ALLOC_DEBUG
-    MPIU_dbg_printf("contig type %x created.\n", new_dtp->handle);
-#endif
+    MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"contig type %x created.", 
+		   new_dtp->handle);
 
     return mpi_errno;
 }

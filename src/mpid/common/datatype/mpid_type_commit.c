@@ -69,6 +69,14 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 	MPIU_DBG_PRINTF(("# contig blocks = %d\n",
 			 (int) datatype_ptr->n_contig_blocks));
 
+#ifdef USE_MEMORY_TRACING
+	if ( ((unsigned int)datatype_ptr->hetero_dloop & 0xFFFFFFFF ) == 0xefefefef) {
+	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_FATAL,
+					      __FILE__, __LINE__, 
+					      MPI_ERR_OTHER, "**fail",
+					      "**fail %s", "hetero_dloop not set" );
+	}
+#endif
 #if 0
 	MPIDI_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
 #endif

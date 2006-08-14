@@ -248,5 +248,9 @@ int MPID_Type_vector(int count,
     /* --END ERROR HANDLING-- */
 
     *newtype = new_dtp->handle;
+
+    MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"vector type %x created.", 
+		   new_dtp->handle);
+
     return mpi_errno;
 }
