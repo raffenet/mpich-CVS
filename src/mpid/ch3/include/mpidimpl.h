@@ -1298,6 +1298,11 @@ int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 					MPID_Request ** );
 int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 					 MPID_Request ** );
+
+typedef int MPIDI_CH3_PktHandler_Fcn(MPIDI_VC_t *, MPIDI_CH3_Pkt_t*,
+				     MPID_Request ** );
+int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *[], int );
+
 #ifdef MPICH_DBG_OUTPUT
 int MPIDI_CH3_PktPrint_CancelSendReq( FILE *, MPIDI_CH3_Pkt_t * );
 int MPIDI_CH3_PktPrint_CancelSendResp( FILE *, MPIDI_CH3_Pkt_t * );
@@ -1336,4 +1341,33 @@ int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *, MPID_Request * );
 int MPIDI_CH3_RecvFromSelf( MPID_Request *, void *, int, MPI_Datatype );
 int MPIDI_CH3_RecvRndv( MPIDI_VC_t *, MPID_Request * );
 
+/* Handler routines to continuing after an IOV is processed (assigned to the
+   OnDataAvail field in the device part of a request) */
+int MPIDI_CH3_ReqHandler_UnpackUEBufComplete( MPIDI_VC_t *, MPID_Request *,
+					      int * );
+int MPIDI_CH3_ReqHandler_ReloadIOV( MPIDI_VC_t *, MPID_Request *, int * );
+
+int MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( MPIDI_VC_t *, MPID_Request *,
+					       int * );
+int MPIDI_CH3_ReqHandler_UnpackSRBufComplete( MPIDI_VC_t *, MPID_Request *,
+					      int * );
+int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *, 
+						   MPID_Request *, int * );
+int MPIDI_CH3_ReqHandler_PutAccumRespComplete( MPIDI_VC_t *, MPID_Request *,
+					       int * );
+int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *, 
+						     MPID_Request *,
+						     int * );
+int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *, MPID_Request *,
+						 int * );
+int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *, 
+						   MPID_Request *, int * );
+
+/* Send Handlers */
+int MPIDI_CH3_ReqHandler_SendReloadIOV( MPIDI_VC_t *vc, MPID_Request *sreq, 
+					int *complete );
+int MPIDI_CH3_ReqHandler_GetSendRespComplete( MPIDI_VC_t *, MPID_Request *,
+					      int * );
+
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */
+

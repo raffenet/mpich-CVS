@@ -220,4 +220,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq);
 int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq);
 
+int MPIDI_CH3I_SHM_Progress_init(void);
+
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

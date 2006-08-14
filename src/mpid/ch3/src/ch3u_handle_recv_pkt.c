@@ -254,7 +254,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 
     /* FIXME: We can turn this into something like
 
-       MPIU_ASSERT(pkt->type >= 0 && pkt->type <= MAX_PACKET_TYPE);
+       MPIU_Assert(pkt->type >= 0 && pkt->type <= MAX_PACKET_TYPE);
        mpi_errno = MPIDI_CH3_ProgressFunctions[pkt->type](vc,pkt,rreqp);
        
        in the progress engine itself.  Then this routine is not necessary.
@@ -408,7 +408,8 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 }
 
 /* FIXME: What does this routine do */
-/* This function is used in conjunction with MPIDI_CH3_iStartRndvTransfer */
+/* This function is used in conjunction with MPIDI_CH3_iStartRndvTransfer 
+   and even eager messages */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Post_data_receive
 #undef FCNAME
@@ -461,6 +462,8 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 	    data_sz = userbuf_sz;
 	}
 
+	/* FIXME: why not test that the data is no larger than the 
+	   receive buffer, instead of exactly the same size? */
 	if (dt_contig && data_sz == rreq->dev.recv_data_sz)
 	{
 	    /* user buffer is contiguous and large enough to store the
@@ -470,7 +473,21 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 	    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*)(rreq->dev.user_buf) + dt_true_lb);
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
+	    /* FIXME: We want to set the OnDataAvail to the appropriate 
+	       function, which depends on whether this is an RMA 
+	       request or a pt-to-pt request. */
+/*	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);*/
+#ifdef DBG_RMA
+	    if (MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_RECV) {
+		printf( "Changing OnDataAvail to null for request type %d\n",
+			MPIDI_Request_get_type(rreq) );
+		printf( "Old CA type is %d\n", rreq->dev.ca );
+		printf( "Request handle is %x\n", rreq->handle );
+		fflush(stdout);
+	    }
+#endif
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	    rreq->dev.OnDataAvail = 0;
 	}
 	else
 	{
@@ -495,7 +512,10 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
     }
     else /* if (!found) */
     {
-	/* TODO: to improve performance, allocate temporary buffer from a specialized buffer pool. */
+	/* FIXME: to improve performance, allocate temporary buffer from a 
+	   specialized buffer pool. */
+	/* FIXME: to avoid memory exhaustion, integrate buffer pool management
+	   with flow control */
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unexpected request allocated");
 		
 	rreq->dev.tmpbuf = MPIU_Malloc(rreq->dev.recv_data_sz);
@@ -506,6 +526,7 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 	rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.recv_data_sz;
 	rreq->dev.iov_count = 1;
 	rreq->dev.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
+	rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
 	rreq->dev.recv_pending_count = 2;
     }
 
@@ -655,7 +676,21 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    req->dev.recv_data_sz = type_size * put_pkt->count;
 		    
 	    *rreqp = req;
+#ifdef DBG_RMA
+	    printf( "Post data receive (put)\n" ); fflush(stdout);
+#endif
 	    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+	    /* FIXME:  Only change the handling of completion if
+	       post_data_receive reset the handler.  There should
+	       be a cleaner way to do this */
+	    if (!req->dev.OnDataAvail) {
+#ifdef DBG_RMA
+		printf( "Resetting OnDataAvail to resp complete\n" );
+		printf( "Request handle is %x\n", req->handle );
+		fflush(stdout);
+#endif
+		req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
+	    }
 	}
 	else
 	{
@@ -680,6 +715,7 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    req->dev.iov[1].MPID_IOV_LEN = put_pkt->dataloop_size;
 	    req->dev.iov_count = 2;
 	    req->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	    req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete;
 	    
 	    *rreqp = req;
 	}
@@ -713,6 +749,7 @@ int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     req->dev.target_win_handle = get_pkt->target_win_handle;
     req->dev.source_win_handle = get_pkt->source_win_handle;
     req->dev.ca = MPIDI_CH3_CA_COMPLETE;
+    /* req->dev.OnDataAvail = 0; */
     
     MPIDI_CH3I_DATATYPE_IS_PREDEFINED(get_pkt->datatype, predefined);
     if (predefined)
@@ -722,6 +759,7 @@ int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &upkt.get_resp;
 	
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetSendRespComplete;
 	req->kind = MPID_REQUEST_SEND;
 	
 	MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
@@ -753,7 +791,7 @@ int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	/* derived datatype. first get the dtype_info and dataloop. */
 	
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT);
-	
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete;
 	req->dev.user_buf = get_pkt->addr;
 	req->dev.user_count = get_pkt->count;
 	req->dev.datatype = MPI_DATATYPE_NULL;
@@ -799,6 +837,9 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     req->dev.recv_data_sz = type_size * req->dev.user_count;
     
     *rreqp = req;
+#ifdef DBG_RMA
+    printf( "Post data receive (get)\n" ); fflush(stdout);
+#endif
     mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -843,7 +884,8 @@ int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	req->dev.datatype = accum_pkt->datatype;
 
 	MPIR_Nest_incr();
-	mpi_errno = NMPI_Type_get_true_extent(accum_pkt->datatype, &true_lb, &true_extent);
+	mpi_errno = NMPI_Type_get_true_extent(accum_pkt->datatype, 
+					      &true_lb, &true_extent);
 	MPIR_Nest_decr();
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno)
@@ -872,12 +914,27 @@ int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	
 	MPID_Datatype_get_size_macro(accum_pkt->datatype, type_size);
 	req->dev.recv_data_sz = type_size * accum_pkt->count;
-                
+              
+#ifdef DBG_RMA  
+	printf( "Post data receive (accumulate)\n" ); fflush(stdout);
+#endif
 	mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+	/* FIXME:  Only change the handling of completion if
+	   post_data_receive reset the handler.  There should
+	   be a cleaner way to do this */
+	if (!req->dev.OnDataAvail) {
+#ifdef DBG_RMA
+	    printf( "Resetting ondataavail to PutAccumResp\n" );
+	    printf( "Request handle is %x\n", req->handle );
+	    fflush(stdout);
+#endif
+	    req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
+	}
     }
     else
     {
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT);
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete;
 	req->dev.datatype = MPI_DATATYPE_NULL;
                 
 	req->dev.dtype_info = (MPIDI_RMA_dtype_info *) 
@@ -1025,6 +1082,7 @@ int MPIDI_CH3_PktHandler_LockPutUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     {
 	/* do the put. for this optimization, only basic datatypes supported. */
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PUT_RESP);
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
 	req->dev.user_buf = lock_put_unlock_pkt->addr;
 	req->dev.source_win_handle = lock_put_unlock_pkt->source_win_handle;
 	req->dev.single_op_opt = 1;
@@ -1077,12 +1135,25 @@ int MPIDI_CH3_PktHandler_LockPutUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	new_ptr->pt_single_op->data_recd = 0;
 
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_PT_SINGLE_PUT);
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_SinglePutAccumComplete;
 	req->dev.user_buf = new_ptr->pt_single_op->data;
 	req->dev.lock_queue_entry = new_ptr;
     }
     
     *rreqp = req;
+    {
+    int (*fcn)( MPIDI_VC_t *, struct MPID_Request *, int * );
+    fcn = req->dev.OnDataAvail;
+#ifdef DBG_RMA
+    printf( "Post data receive (lock put unlock)\n" ); fflush(stdout);
+#endif
     mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+#ifdef DBG_RMA
+    printf( "Restoring ondatavail to %p\n", fcn );
+#endif
+    req->dev.OnDataAvail = fcn; }
+    
+    
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -1122,6 +1193,7 @@ int MPIDI_CH3_PktHandler_LockGetUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetSendRespComplete;
 	req->kind = MPID_REQUEST_SEND;
 	
 	MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
@@ -1271,7 +1343,21 @@ int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     req->dev.lock_queue_entry = new_ptr;
     
     *rreqp = req;
+#ifdef DBG_RMA
+    printf( "Post data receive (single put)\n" ); fflush(stdout);
+#endif
     mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+    /* FIXME:  Only change the handling of completion if
+       post_data_receive reset the handler.  There should
+       be a cleaner way to do this */
+    if (!req->dev.OnDataAvail) {
+#ifdef DBG_RMA
+	printf( "Resetting ondataavail to single put accum\n" );
+	printf( "Request handle is %x\n", req->handle );
+	fflush(stdout);
+#endif
+	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_SinglePutAccumComplete;
+    }
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
@@ -1298,3 +1384,70 @@ int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 }
 
 
+/* ------------------------------------------------------------------------- */
+/* This routine may be called within a channel to initialize an 
+   array of packet handler functions, indexed by packet type.
+   If this is used, then the function MPIDI_CH3U_Handle_ordered_recv_pkt
+   is not called; instead, the packet handler functions are called 
+   directly.
+
+   This function initializes an array so that the array may be private 
+   to the file that contains the progress function, if this is 
+   appropriate (this allows the compiler to reduce the cost in 
+   accessing the elements of the array in some cases).
+*/
+int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *pktArray[], 
+			       int arraySize  )
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* Check that the array is large enough */
+    if (arraySize < MPIDI_CH3_PKT_END_CH3) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_INTERN,"**ch3|pktarraytoosmall");
+	return mpi_errno;
+    }
+    pktArray[MPIDI_CH3_PKT_EAGER_SEND] = 
+	MPIDI_CH3_PktHandler_EagerSend;
+    pktArray[MPIDI_CH3_PKT_READY_SEND] = 
+	MPIDI_CH3_PktHandler_ReadySend;
+    pktArray[MPIDI_CH3_PKT_EAGER_SYNC_SEND] = 
+	MPIDI_CH3_PktHandler_EagerSyncSend;
+    pktArray[MPIDI_CH3_PKT_EAGER_SYNC_ACK] = 
+	MPIDI_CH3_PktHandler_EagerSyncAck;
+    pktArray[MPIDI_CH3_PKT_RNDV_REQ_TO_SEND] =
+	MPIDI_CH3_PktHandler_RndvReqToSend;
+    pktArray[MPIDI_CH3_PKT_RNDV_CLR_TO_SEND] = 
+	MPIDI_CH3_PktHandler_RndvClrToSend;
+    pktArray[MPIDI_CH3_PKT_RNDV_SEND] = 
+	MPIDI_CH3_PktHandler_RndvSend;
+    pktArray[MPIDI_CH3_PKT_CANCEL_SEND_REQ] = 
+	MPIDI_CH3_PktHandler_CancelSendReq;
+    pktArray[MPIDI_CH3_PKT_CANCEL_SEND_RESP] = 
+	MPIDI_CH3_PktHandler_CancelSendResp;
+    pktArray[MPIDI_CH3_PKT_PUT] = 
+	MPIDI_CH3_PktHandler_Put;
+    pktArray[MPIDI_CH3_PKT_ACCUMULATE] = 
+	MPIDI_CH3_PktHandler_Accumulate;
+    pktArray[MPIDI_CH3_PKT_GET] = 
+	MPIDI_CH3_PktHandler_Get;
+    pktArray[MPIDI_CH3_PKT_GET_RESP] = 
+	MPIDI_CH3_PktHandler_GetResp;
+    pktArray[MPIDI_CH3_PKT_LOCK] =
+	MPIDI_CH3_PktHandler_Lock;
+    pktArray[MPIDI_CH3_PKT_LOCK_GRANTED] =
+	MPIDI_CH3_PktHandler_LockGranted;
+    pktArray[MPIDI_CH3_PKT_PT_RMA_DONE] = 
+	MPIDI_CH3_PktHandler_PtRMADone;
+    pktArray[MPIDI_CH3_PKT_LOCK_PUT_UNLOCK] = 
+	MPIDI_CH3_PktHandler_LockPutUnlock;
+    pktArray[MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK] =
+	MPIDI_CH3_PktHandler_LockAccumUnlock;
+    pktArray[MPIDI_CH3_PKT_LOCK_GET_UNLOCK] = 
+	MPIDI_CH3_PktHandler_LockGetUnlock;
+    pktArray[MPIDI_CH3_PKT_CLOSE] =
+	MPIDI_CH3_PktHandler_Close;
+    pktArray[MPIDI_CH3_PKT_FLOW_CNTL_UPDATE] = 0;
+
+    return MPI_SUCCESS;
+}
+    

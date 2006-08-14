@@ -299,7 +299,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
        need to allocate a new request and add it to the posted queue */
 #if 1
     {int mpi_errno=0;
-     MPIDI_Request_create_rreq( rreq, mpi_errno, goto lock_exit );
+     MPIDI_Request_create_rreq( rreq, mpi_errno, found = FALSE;goto lock_exit );
      rreq->dev.match.tag = tag;
      rreq->dev.match.rank = source;
      rreq->dev.match.context_id = context_id;

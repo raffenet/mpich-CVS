@@ -14,6 +14,8 @@ int MPIDI_CH3I_active_flag = 0;
 
 MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL; 
 
+MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1];
+
 #if defined(USE_FIXED_SPIN_WAITS) || !defined(MPID_CPU_TICK)
 /****************************************/
 /*                                      */
@@ -1210,6 +1212,11 @@ int MPIDI_CH3I_Progress_init()
 
     /* establish non-blocking listener */
     mpi_errno = MPIDU_CH3I_SetupListener( MPIDI_CH3I_sock_set );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+    /* Initialize the code to handle incoming packets */
+    mpi_errno = MPIDI_CH3_PktHandler_Init( MPIDI_pktArray, 
+					   MPIDI_CH3_PKT_END_CH3+1 );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
  fn_exit:

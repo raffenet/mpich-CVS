@@ -31,6 +31,7 @@
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb; \
     sreq->dev.iov_count = 1; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
+    sreq->dev.OnDataAvail = 0;\
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
 

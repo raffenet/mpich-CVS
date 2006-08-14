@@ -43,6 +43,7 @@
     sreq->ch.iov_offset = offset; \
     sreq->dev.iov_count = count; \
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
+    sreq->dev.OnDataAvail = 0;\
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
 

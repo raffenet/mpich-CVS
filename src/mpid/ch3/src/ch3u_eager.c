@@ -258,6 +258,7 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **sreq_p,
 					data_sz));
 	    
     sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+    sreq->dev.OnDataAvail = 0;
     
     MPIDI_Pkt_init(eager_pkt, reqtype);
     eager_pkt->match.rank	= comm->rank;

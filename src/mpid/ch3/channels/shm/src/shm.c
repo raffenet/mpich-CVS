@@ -34,7 +34,20 @@ typedef int SHM_STATE;
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_CH3+1];
+
 /* shm functions */
+
+int MPIDI_CH3I_SHM_Progress_init(void)
+{
+    int mpi_errno;
+
+    /* Initialize the code to handle incoming packets */
+    mpi_errno = MPIDI_CH3_PktHandler_Init( pktArray, MPIDI_CH3_PKT_END_CH3+1 );
+
+    return mpi_errno;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_write
@@ -1257,7 +1270,16 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 		else
 #endif /* MPIDI_CH3_CHANNEL_RNDV */
 		{
+#if 1
+		    {
+			MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t*)mem_ptr;
+			mpi_errno = pktArray[pkt->type]( 
+			recv_vc_ptr, pkt, &recv_vc_ptr->ch.recv_active);
+
+		    }
+#else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vc_ptr->ch.recv_active);
+#endif
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "shared memory read progress unable to handle incoming packet");

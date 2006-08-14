@@ -13,6 +13,8 @@
 #endif
 #include "pmi.h"
 
+static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_CH3+1];
+
 #ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) do {} while (0)
 #endif
@@ -103,7 +105,13 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
                 MPIU_Assert (vc->ch.recv_active == NULL);
 
+#if 0
+		{ MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
+		mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
+		}
+#else		    
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
+#endif
 		if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                 
                 /* Channel fields don't get initialized on request creation, init them here */
@@ -130,8 +138,14 @@ int MPIDI_CH3I_Progress (int is_blocking)
                     /* This packet must be the first packet of a new message */
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
                     MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
-
+		    
+#if 0
+		    { MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
+		    mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
+		    }
+#else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
+#endif
 		    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                     
                     /* Channel fields don't get initialized on request creation, init them here */
@@ -1465,6 +1479,10 @@ int MPIDI_CH3I_Progress_init(void)
 	MPIDI_CH3I_sendq_head[i] = NULL;
 	MPIDI_CH3I_sendq_tail[i] = NULL;
     }
+
+    /* Initialize the code to handle incoming packets */
+    mpi_errno = MPIDI_CH3_PktHandler_Init( pktArray, MPIDI_CH3_PKT_END_CH3+1 );
+    
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
     return mpi_errno;
 }

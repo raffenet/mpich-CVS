@@ -12,6 +12,8 @@
 #include <string.h>
 #endif
 
+static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_CH3+1];
+
 /* FIXME: No-one defines this.  Should we remove it and all uses? */
 #undef USE_CH3I_PROGRESS_DELAY_QUEUE
 
@@ -306,6 +308,10 @@ int MPIDI_CH3I_Progress_init(void)
     /* establish non-blocking listener */
     mpi_errno = MPIDU_CH3I_SetupListener( MPIDI_CH3I_sock_set );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+    /* Initialize the code to handle incoming packets */
+    mpi_errno = MPIDI_CH3_PktHandler_Init( pktArray, MPIDI_CH3_PKT_END_CH3+1 );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
@@ -423,8 +429,13 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		if (conn->recv_active == NULL)
 		{
 		    MPIU_Assert(conn->pkt.type < MPIDI_CH3_PKT_END_CH3);
-			
+
+#if 1
+		    mpi_errno = pktArray[conn->pkt.type]( conn->vc, &conn->pkt,
+							  &rreq );
+#else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(conn->vc, &conn->pkt, &rreq);
+#endif
 		    if (mpi_errno != MPI_SUCCESS) {
 			MPIU_ERR_POP(mpi_errno);
 		    }

@@ -10,7 +10,8 @@
 #define FUNCNAME MPIDI_CH3U_Handle_send_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int *complete)
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, 
+			       int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
@@ -25,6 +26,10 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int *comple
 	{
             if (MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_GET_RESP)
 	    { 
+#if 1
+		mpi_errno = MPIDI_CH3_ReqHandler_GetSendRespComplete( 
+		    vc, sreq, complete );
+#else
                 if (sreq->dev.source_win_handle != MPI_WIN_NULL) {
                     MPID_Win *win_ptr;
                     /* Last RMA operation (get) from source. If active target RMA,
@@ -42,17 +47,27 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int *comple
                         mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
                     }
                 }
-            }
 
 	    /* mark data transfer as complete and decrement CC */
 	    MPIDI_CH3U_Request_complete(sreq);
 	    *complete = TRUE;
+#endif
+            }
+	    else {
+		/* mark data transfer as complete and decrement CC */
+		MPIDI_CH3U_Request_complete(sreq);
+		*complete = TRUE;
+	    }
 
 	    break;
 	}
 	
 	case MPIDI_CH3_CA_RELOAD_IOV:
 	{
+#if 1
+	    mpi_errno = MPIDI_CH3_ReqHandler_SendReloadIOV( vc, sreq, 
+							    complete );
+#else
 	    sreq->dev.iov_count = MPID_IOV_LIMIT;
 	    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, sreq->dev.iov, &sreq->dev.iov_count);
 	    /* --BEGIN ERROR HANDLING-- */
@@ -65,6 +80,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int *comple
 	    /* --END ERROR HANDLING-- */
 	    
 	    *complete = FALSE;
+#endif
 	    break;
 	}
 	/* --BEGIN ERROR HANDLING-- */
@@ -83,3 +99,58 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int *comple
     return mpi_errno;
 }
 
+/* ----------------------------------------------------------------------- */
+/* Here are the functions that implement the actions that are taken when 
+ * data is available for a send request (or other completion operations)
+ * These include "send" requests that are part of the RMA implementation.
+ */
+/* ----------------------------------------------------------------------- */
+
+int MPIDI_CH3_ReqHandler_GetSendRespComplete( MPIDI_VC_t *vc, 
+					      MPID_Request *sreq, 
+					      int *complete )
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (sreq->dev.source_win_handle != MPI_WIN_NULL) {
+	MPID_Win *win_ptr;
+	/* Last RMA operation (get) from source. If active target RMA,
+	   decrement window counter. If passive target RMA, 
+	   release lock on window and grant next lock in the 
+	   lock queue if there is any; no need to send rma done 
+	   packet since the last operation is a get. */
+	
+	MPID_Win_get_ptr(sreq->dev.target_win_handle, win_ptr);
+	if (win_ptr->current_lock_type == MPID_LOCK_NONE) {
+	    /* FIXME: MT: this has to be done atomically */
+	    win_ptr->my_counter -= 1;
+	}
+	else {
+	    mpi_errno = MPIDI_CH3I_Release_lock(win_ptr);
+	}
+    }
+
+    /* mark data transfer as complete and decrement CC */
+    MPIDI_CH3U_Request_complete(sreq);
+    *complete = TRUE;
+
+    return mpi_errno;
+}
+
+int MPIDI_CH3_ReqHandler_SendReloadIOV( MPIDI_VC_t *vc, MPID_Request *sreq, 
+					int *complete )
+{
+    int mpi_errno;
+
+    sreq->dev.iov_count = MPID_IOV_LIMIT;
+    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, sreq->dev.iov, 
+						 &sreq->dev.iov_count);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER,"**ch3|loadsendiov");
+    }
+	    
+    *complete = FALSE;
+
+ fn_fail:
+    return mpi_errno;
+}

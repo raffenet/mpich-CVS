@@ -15,6 +15,8 @@ static inline int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
 static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 
+extern MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1];
+
 #undef FUNCNAME
 #define FUNCNAME connection_post_sendq_req
 #undef FCNAME
@@ -186,7 +188,12 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		{
 		    MPIU_Assert(conn->pkt.type < MPIDI_CH3_PKT_END_CH3);
 			
+#if 1
+		    mpi_errno = MPIDI_pktArray[conn->pkt.type]( conn->vc, &conn->pkt,
+							  &rreq );
+#else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(conn->vc, &conn->pkt, &rreq);
+#endif
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
 		    {

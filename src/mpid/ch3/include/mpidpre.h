@@ -393,6 +393,12 @@ typedef struct MPIDI_Request {
        operation described by the iov has completed */
     MPIDI_CA_t ca;
 
+    /* OnDataAvail is the action to take when data is now available.
+       For example, when an operation described by an iov has 
+       completed.  This replaces the MPIDI_CA_t (completion action)
+       field unsed through MPICH2 1.0.4. */
+    int (*OnDataAvail)( MPIDI_VC_t *, struct MPID_Request *, int * );
+
     /* tmpbuf and tmpbuf_sz describe temporary storage used for things like 
        unexpected eager messages and packing/unpacking
        buffers.  tmpuf_off is the current offset into the temporary buffer. */

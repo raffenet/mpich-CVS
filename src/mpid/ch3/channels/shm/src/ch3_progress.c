@@ -75,6 +75,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     vc->ch.req->dev.iov_count = 1; \
     vc->ch.req->ch.iov_offset = 0; \
     vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
+    vc->ch.req->dev.OnDataAvail = MPIDI_CH3_SHM_ReqHandler_PktComplete;
     vc->ch.recv_active = vc->ch.req; \
     MPIDI_CH3I_SHM_post_read(vc, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
     MPIDI_FUNC_EXIT(MPID_STATE_POST_PKT_RECV); \
@@ -385,11 +386,14 @@ void MPIDI_CH3_Progress_end(MPID_Progress_state *state)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress_init()
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
+    mpi_errno = MPIDI_CH3I_SHM_Progress_init();
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_INIT);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 #undef FUNCNAME

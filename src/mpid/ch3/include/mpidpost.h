@@ -518,60 +518,8 @@ int MPIDI_CH3_iStartRndvTransfer (MPIDI_VC_t * vc, MPID_Request * rreq);
 /* END EXPERIMENTAL BLOCK */
 #endif
 
-#if 0
-/*
- * Channel utility prototypes
- */
-int MPIDI_CH3U_Recvq_FU(int, int, int, MPI_Status * );
-MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request, MPIDI_Message_match *);
-MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int, int, int, int * found);
-int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
-MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match);
-MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * found);
-
-void MPIDI_CH3U_Request_complete(MPID_Request * req);
-void MPIDI_CH3U_Request_increment_cc(MPID_Request * req, int * was_incomplete);
-void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * incomplete);
-
-int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n);
-int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
-int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
-int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
-
-#endif
-#if 0
-void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sdt, int * smpi_errno,
-			    void * const rbuf, int rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
-int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
-
-
-
-/* FIXME: Move these prototypes into header files in the appropriate 
-   util directories  */
-/* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be executed by two or more channels */
-int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
-                         char **bc_val_p, int *val_max_sz_p);                         
-int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
-                         char **bc_val_p, int *val_max_sz_p);
-
-int MPIDI_SHM_InitRWProc( pid_t, int * );
-int MPIDI_SHM_AttachProc( pid_t );
-int MPIDI_SHM_DetachProc( pid_t );
-int MPIDI_SHM_ReadProcessMemory( int, int, const char *, char *, size_t );
-
-/* added by brad.  business card related global and functions */
-/* FIXME: Make these part of the channel support headers */
-#define MAX_HOST_DESCRIPTION_LEN 256
-int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
-int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
-int MPIDI_CH3I_Get_business_card(char *value, int length);
-
-/* added by brad.  finalization related upcalls */
-int MPIDI_CH3U_Finalize_sshm(void);
-#endif
-
-
-/* Include definitions from the channel which require items defined by this file (mpidimpl.h) or the file it includes
+/* Include definitions from the channel which require items defined by this 
+   file (mpidimpl.h) or the file it includes
    (mpiimpl.h). */
 #include "mpidi_ch3_post.h"
 
@@ -582,7 +530,8 @@ int MPIDI_CH3U_Finalize_sshm(void);
  *
  * MT: The inc/dec of the completion counter must be atomic since the progress
  * engine could be completing the request in one
- * thread and the application could be cancelling the request in another thread.
+ * thread and the application could be cancelling the request in another 
+ * thread.
  */
 /* NOTE: If a fine-grain thread sync model is used, this macro will need 
    to ensure that it is thread-atomic */

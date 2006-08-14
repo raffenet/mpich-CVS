@@ -57,6 +57,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 		       MPIDI_MSG_SZ_FMT, data_sz);
 		
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.OnDataAvail = 0;
 	
 	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char*)sreq->dev.user_buf + dt_true_lb);
 	sreq->dev.iov[0].MPID_IOV_LEN = data_sz;
@@ -265,6 +266,7 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					    data_sz));
 	
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.OnDataAvail = 0;
 	
 	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);
 	iov[1].MPID_IOV_LEN = data_sz;
@@ -326,7 +328,7 @@ int MPIDI_CH3_RecvRndv( MPIDI_VC_t * vc, MPID_Request *rreq )
 #ifdef MPIDI_CH3_CHANNEL_RNDV
     /* The channel will be performing the rendezvous */
     
-    mpi_errno = MPIDI_CH3U_Post_data_receive(1/*found*/, &rreq);
+    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, &rreq);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
 			     "**ch3|postrecv",
