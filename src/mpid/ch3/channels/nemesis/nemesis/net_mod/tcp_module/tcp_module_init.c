@@ -90,6 +90,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 			      (struct sockaddr *)&(nodes[grank].sock_id), 
 			      &len);	 
             MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
+
+            printf ("[%d] bound to port %d\n", MPID_nem_mem_region.rank, ntohs(nodes[grank].sock_id.sin_port));//DARIUS
 	  
 	    ret = listen(nodes[grank].desc, SOMAXCONN);	      
             MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", strerror (errno), errno);
@@ -151,6 +153,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 			      (struct sockaddr *)&(nodes[grank].sock_id),
 			      &len);
             MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
+            printf ("[%d] bound to port %d\n", MPID_nem_mem_region.rank, ntohs(nodes[grank].sock_id.sin_port));//DARIUS
 	}
     }
     pmi_errno = PMI_Barrier();
@@ -174,6 +177,14 @@ static int init_tcp (MPIDI_PG_t *pg_p)
                                        (struct sockaddr *)&(nodes[grank].sock_id),
                                        &len);
             MPIU_ERR_CHKANDJUMP2 (nodes[grank].desc == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|accept", "**sock|poll|accept %d %s", errno, strerror (errno));
+            printf ("[%d] accept from port %d\n", MPID_nem_mem_region.rank, ntohs(nodes[grank].sock_id.sin_port));//DARIUS
+            {
+                struct sockaddr_in sid;
+                size_t sidlen = sizeof(sid);
+                getsockname(nodes[grank].desc, (struct sockaddr *)&sid, &sidlen);
+                printf ("[%d] accept with port %d\n", MPID_nem_mem_region.rank, ntohs(sid.sin_port));//DARIUS
+            }
+            
 
 #ifdef TRACE  
 	    fprintf(stderr,"[%i] ====> ACCEPT DONE for GRANK %i\n",MPID_nem_mem_region.rank,grank);    
@@ -204,6 +215,13 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	    
 	    ret = connect(nodes[grank].desc,(struct sockaddr *)&master, sizeof(master));
             MPIU_ERR_CHKANDJUMP4 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock_connect", "**sock_connect %s %d %s %d", s, port_num, strerror (errno), errno);
+            printf ("[%d] connect to port %d\n", MPID_nem_mem_region.rank, ntohs(master.sin_port));//DARIUS
+            {
+                struct sockaddr_in sid;
+                size_t sidlen = sizeof(sid);
+                getsockname(nodes[grank].desc, (struct sockaddr *)&sid, &sidlen);
+                printf ("[%d] connect with port %d\n", MPID_nem_mem_region.rank, ntohs(sid.sin_port));//DARIUS
+            }
 #ifdef TRACE
 	    fprintf(stderr,"====> CONNECT DONE : %i\n", ret);	      	 
 #endif

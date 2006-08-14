@@ -42,48 +42,13 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	int remaining_n_iov = n_iov;
 
         MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "iSendv");
-        MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-            int total = 0;
-            int i;
-            int complete;
-            for (i = 0; i < n_iov; ++i)
-                total += iov[i].MPID_IOV_LEN;
-            complete = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-            MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   + len=%d%s", total, complete ? " " : "+"));
-        });
 	mpi_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc, &again);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	while (!again && remaining_n_iov > 0)
 	{
-            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                int total = 0;
-                int i;
-                int complete;
-                for (i = 0; i < remaining_n_iov; ++i)
-                    total += remaining_iov[i].MPID_IOV_LEN;
-                complete = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                    sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-                MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   + len=%d%s", total, complete ? " " : "+"));
-            });
-
 	    mpi_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc, &again);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	}
-
-        MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-            int total = 0;
-            int i;
-            int complete;
-            for (i = 0; i < remaining_n_iov; ++i)
-                total += remaining_iov[i].MPID_IOV_LEN;
-            complete = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-            MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   - len=%d%s", total, complete ? " " : "+"));
-        });
 
 	if (again)
 	{
@@ -122,17 +87,6 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 		MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
 		MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
 		MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
-                MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                    int total = 0;
-                    int i;
-                    int complete;
-                    for (i = 0; i < sreq->dev.iov_count; ++i)
-                        total += sreq->dev.iov[sreq->ch.iov_offset + i].MPID_IOV_LEN;
-                    complete = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                        sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-                    MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, ".... len=%d%s", total, complete ? " " : "+"));
-                });
 	    }
             else
             {

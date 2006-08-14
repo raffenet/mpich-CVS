@@ -141,27 +141,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		    payload_len -= sizeof (MPIDI_CH3_Pkt_t);
                     MPIU_Assert (!rreq || rreq->ch.iov_offset == 0);
 		}
-	    }
-
-            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE,
-            {
-                if (rreq)
-                {
-                    int total = 0;
-                    int i;
-                    int reload;
-                    for (i = 0; i < rreq->dev.iov_count; ++i)
-                        total += rreq->dev.iov[rreq->ch.iov_offset + i].MPID_IOV_LEN;
-                    reload = rreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV || rreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-                    MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "RReq len=%d%s %p", total, reload ? "+" : " ", rreq));
-                }
-                else
-                {
-                    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "No RRequest   ");
-                }
-            });
-            
+	    }            
 	    
 	    if (rreq)
 	    {
@@ -207,17 +187,6 @@ int MPIDI_CH3I_Progress (int is_blocking)
 			{
                             rreq->ch.iov_offset = 0;
                             MPIU_Assert (rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
-                            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                                int total = 0;
-                                int i;
-                                int reload;
-                                for (i = 0; i < rreq->dev.iov_count; ++i)
-                                    total += rreq->dev.iov[rreq->ch.iov_offset + i].MPID_IOV_LEN;
-                                reload = rreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                                    rreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-                                MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, ".... len=%d%s", total, reload ? "+" : " "));
-                            });
                         }
 			else
 			{
@@ -281,32 +250,10 @@ int MPIDI_CH3I_Progress (int is_blocking)
 
 	    do 
 	    {
-                MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                    int total = 0;
-                    int i;
-                    int reload;
-                    for (i = 0; i < _n_iov; ++i)
-                        total += _iov[i].MPID_IOV_LEN;
-                    reload = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                        sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-                    MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   + len=%d%s", total, reload ? "+" : " "));
-                });
 		mpi_errno = MPID_nem_mpich2_sendv (&_iov, &_n_iov, sreq->ch.vc, &again);
                 if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	    }
 	    while (!again && _n_iov > 0);
-            MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                int total = 0;
-                int i;
-                int reload;
-                for (i = 0; i < _n_iov; ++i)
-                    total += _iov[i].MPID_IOV_LEN;
-                reload = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                    sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                
-                MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "   - len=%d%s", total, reload ? "+" : " "));
-            });
 
 	    if (again)
 	    {
@@ -334,17 +281,6 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		{
 		    sreq->ch.iov_offset = 0;
                     MPIU_Assert (sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
-                    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                        int total = 0;
-                        int i;
-                        int reload;
-                        for (i = 0; i < sreq->dev.iov_count; ++i)
-                            total += sreq->dev.iov[sreq->ch.iov_offset + i].MPID_IOV_LEN;
-                        reload = sreq->dev.ca == MPIDI_CH3_CA_RELOAD_IOV ||
-                            sreq->dev.ca == MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
-                    
-                        MPIU_DBG_MSG_FMT (CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, ".... len=%d%s", total, reload ? "+" : " "));
-                    });
 		}
 	    }
 	}

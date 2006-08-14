@@ -170,7 +170,6 @@ struct MPIDI_CH3I_Request			\
                 (req)->dev.iov[i].MPID_IOV_LEN));				\
     MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov_count = %d\n",			\
 			 (req)->dev.iov_count));				\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.ca = %d\n", (req)->dev.ca));		\
     MPIDI_DBG_PRINTF((55, FCNAME, "  dev.state = 0x%x\n", (req)->dev.state));	\
     MPIDI_DBG_PRINTF((55, FCNAME, "    type = %d\n",				\
 		      MPIDI_Request_get_type(req)));				\
