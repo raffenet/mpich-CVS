@@ -1,8 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- 
  *  vim: ts=8 sts=4 sw=4 noexpandtab 
  *
- *   $Id$
- *
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */

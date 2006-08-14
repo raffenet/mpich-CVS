@@ -1168,19 +1168,65 @@ fi
 save_libs=$LIBS
 LIBS=
 #
-# Some systems need pthreads to get AIO to work
+# Some systems need pthreads to get AIO to work.  However, we don't want
+# to add pthreads just because it is there, as that can cause problems
+# with some implementations of pthreads and compilers (e.g., gcc version 3
+# would fail if there was an int a[100000] on the stack if the application
+# was *linked* with pthreads, but would succeed if the application was
+# *not linked* with pthreads.
 #
 if test "x$disable_aio" = "xno" ; then
-    AC_SEARCH_LIBS(pthread_create,pthread,
-        ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-        MPI_LIB="$MPI_LIB $LIBS"
-        )
+    foundPTHREAD=no
+
+    # Do we have aio_write in aio or rt?
+    saveLIBS=$LIBS
     LIBS=
-    AC_SEARCH_LIBS(aio_write,aio rt,
-        ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-        MPI_LIB="$MPI_LIB $LIBS"
-        aio_write_found=yes
-    )
+    AC_SEARCH_LIBS(aio_write,aio rt,foundAIO=yes,foundAIO=no)
+    if test "$foundAIO" = yes ; then
+        AIOLIBS=$LIBS
+        LIBS="$saveLIBS $LIBS"
+    else
+        LIBS="$saveLIBS"
+    fi
+
+    # If not, try finding pthread_create first, and if found, try the
+    # test again.
+    if test "$foundAIO" = no ; then 
+        saveLIBS=$LIBS
+	LIBS=
+        AC_SEARCH_LIBS(pthread_create,pthread,foundPTHREAD=yes,
+	foundPTHREAD=no)
+        if test "$foundPTHREAD" = yes ; then
+            AC_SEARCH_LIBS(aio_write,aio rt,foundAIO=yes,foundAIO=no)
+	    
+	    if test "$foundAIO" = yes ; then
+	        AIO_LIBS=$LIBS
+		LIBS="$saveLIBS $LIBS"
+	    else
+                LIBS=$saveLIBS
+            fi
+        else
+	    LIBS=$saveLIBS
+        fi
+    fi
+
+
+    if test "$foundAIO" = yes ; then
+        ROMIO_LIBLIST="$ROMIO_LIBLIST $AIOLIBS"
+        MPI_LIB="$MPI_LIB $AIOLIBS"
+	aio_write_found=yes
+    fi
+ 
+dnl    AC_SEARCH_LIBS(pthread_create,pthread,
+dnl        ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+dnl        MPI_LIB="$MPI_LIB $LIBS"
+dnl        )
+dnl    LIBS=
+dnl    AC_SEARCH_LIBS(aio_write,aio rt,
+dnl        ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+dnl        MPI_LIB="$MPI_LIB $LIBS"
+dnl        aio_write_found=yes
+dnl    )
 fi
 LIBS=$save_libs
 

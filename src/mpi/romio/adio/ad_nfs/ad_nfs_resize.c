@@ -5,7 +5,7 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#include "adio.h"
+#include "ad_nfs.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
