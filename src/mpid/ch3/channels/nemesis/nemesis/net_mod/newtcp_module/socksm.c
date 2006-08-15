@@ -456,6 +456,7 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
     int mpi_errno = MPI_SUCCESS;
     freenode_t *node;
 
+    printf("MPID_nem_newtcp_module_connect Enter\n");
     if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED) {
         struct sockaddr_in *sock_addr;
         socklen_t socklen = sizeof(SA_IN);
@@ -530,6 +531,7 @@ static int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
 
  fn_exit:
     MPID_nem_newtcp_module_connpoll();
+    printf("MPID_nem_newtcp_module_connect Exit\n");
     return mpi_errno;
  fn_fail:
     if (index != -1) {
@@ -939,10 +941,10 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
 }
 
 #undef FUNCNAME
-#define FUNCNAME init
+#define FUNCNAME MPID_nem_newtcp_module_init_sm
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int init()
+int MPID_nem_newtcp_module_init_sm()
 {
     sc_state_handlers[CONN_STATE_TC_C_CNTING] = state_tc_c_cnting_handler;
     sc_state_handlers[CONN_STATE_TC_C_CNTD] = state_tc_c_cntd_handler;
@@ -955,6 +957,8 @@ static int init()
     sc_state_handlers[CONN_STATE_TS_D_REQSENT] = state_d_reqsent_handler;
     sc_state_handlers[CONN_STATE_TS_D_REQRCVD] = state_d_reqrcvd_handler;
     sc_state_handlers[CONN_STATE_TS_D_QUIESCENT] = state_d_quiescent_handler;
+
+    alloc_sc_plfd_tbls();
     return 0;
 }
 
@@ -970,6 +974,9 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
     sockconn_t *sc;
     
     sc = vc->ch.sc;
+    if (sc == NULL)
+        goto fn_exit;
+
     plfd = &g_plfd_tbl[sc->index];
 
     CHECK_EINTR(n, poll(plfd, 1, 0));
