@@ -7,7 +7,7 @@
 ## NOTE: we do NOT allow this pgm to run via mpdroot
 
 """
-usage: mpdcleanup [-h] [-v] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] [-k "killcmd"] [-n <num_from_hostsfile>]
+usage: mpdcleanup [-h] [-v] [-f <hostsfile>] [-r <rshcmd>] [-u <user>] [-c <cleancmd>] [-k 'killcmd'] [-n <num_from_hostsfile>]
    or: mpdcleanup [--help] [--verbose] [--file=<hostsfile>] [--rsh=<rshcmd>] [--user=<user>]
                   [--clean=<cleancmd>] [--kill="killcmd"]
 Removes the Unix socket on local (the default) and remote machines
