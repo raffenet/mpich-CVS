@@ -228,8 +228,7 @@ static int init_sctp (MPIDI_PG_t *pg_p)
                             &MPID_nem_sctp_socket_bufsz,                            
                             &evnts, &MPID_nem_sctp_onetomany_fd,
                             &MPID_nem_sctp_port) == -1) {
-        mpi_errno = -99; /* FIXME define error code */
-        goto fn_fail;
+        MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**internrc"); /* FIXME define error code */
     }
 
     /* setup association ID -> VC hash table */
@@ -238,8 +237,7 @@ static int init_sctp (MPIDI_PG_t *pg_p)
                                             INT4_MAX, 0);
     if(MPID_nem_sctp_assocID_table == 0)
     {
-        mpi_errno = -99;  /* FIXME define error code */
-        goto fn_fail;
+        MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**nomem") ;  /* FIXME define error code */
     }    
     
  fn_exit:
@@ -416,22 +414,19 @@ static int get_sockaddr_in_from_bc (const char *business_card, struct sockaddr_i
         p = (unsigned char *)(info->h_addr_list[0]);
         MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
                        p[0], p[1], p[2], p[3] );
-    } else {
-        mpi_errno = -99; /* FIXME create error code */
-        goto fn_fail; 
+    } else { 
+       MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**internrc"); /* FIXME create error code */
     }
     
     /* create ifaddr */
     int rc = inet_pton( AF_INET, (const char *)ifname, ifaddr );        
     if (rc == 0) {
         /* ifname was not valid */
-        mpi_errno = -99; /* FIXME create error code */
-        goto fn_fail;
+        MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**internrc", "inet_pton = %d", rc); /* FIXME create error code */
     }
     else if (rc < 0) {
         /* af_inet not supported */
-        mpi_errno = -99; /* FIXME create error code */
-        goto fn_fail;           
+        MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**internrc", "inet_pton < 0 (%d)", rc); /* FIXME create error code */
     }
     
     /* setup final sockaddr_in */

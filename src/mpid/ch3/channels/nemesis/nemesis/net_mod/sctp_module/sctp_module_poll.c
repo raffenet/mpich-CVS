@@ -7,6 +7,14 @@
 #include "sctp_module_impl.h"
 
 
+/* design assumes only one partial delivery happens at once, as is the case
+ *  in most stacks (and defined in the standard, I think)
+ */
+static char partial_msg_buf[MPID_NEM_MAX_PACKET_LEN];
+static char partial_msg_tmpbuf[MPID_NEM_MAX_PACKET_LEN];
+static int partial_msg_sz = 0;
+static int partial_msg_in_progress = 0;
+
 #undef FUNCNAME
 #define FUNCNAME send_progress
 #undef FCNAME
@@ -45,8 +53,10 @@ static inline int recv_progress()
     struct sockaddr from;
     socklen_t fromlen = sizeof(from);
     int msg_flags;
+    int sz;
     MPID_nem_sctp_hash_entry *result;
     MPID_nem_sctp_hash_entry  lresult;
+    char *buf_ptr;
     
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t *vc;
@@ -62,17 +72,17 @@ static inline int recv_progress()
         MPID_nem_queue_dequeue (MPID_nem_sctp_module_free_queue, &v_cell);
         cell = (MPID_nem_cell_t *)v_cell; /* cast away volatile */
         
-        if(sctp_recvmsg(MPID_nem_sctp_onetomany_fd,
+        if((sz = sctp_recvmsg(MPID_nem_sctp_onetomany_fd,
                         MPID_NEM_CELL_TO_PACKET (cell),
                         MPID_NEM_MAX_PACKET_LEN, &from,
-                        &fromlen, &sri, &msg_flags)  == -1)
+                        &fromlen, &sri, &msg_flags))  == -1)
         {
             if(errno == EAGAIN) {
                 /* don't want to waste the cell so enqueue it on the module free Q */
                 MPID_nem_queue_enqueue (MPID_nem_sctp_module_free_queue, v_cell);
                 break;
-            } else {
-                ; /* TODO handle real errors */
+            } else { 
+                MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**internrc"); /* FIXME define error code */
             }
         }
         else
@@ -81,12 +91,49 @@ static inline int recv_progress()
             
             if(msg_flags != MSG_EOR)
             {
-                /* TODO partial delivery */;
+                if(!msg_flags) {
+                    /* partial delivery */
+
+                    buf_ptr = partial_msg_buf;
+                    if(!partial_msg_in_progress) {
+                        /* first time seeing partial read */
+                        partial_msg_sz = sz;                        
+                        
+                    } else {
+                        /* the last sctp_recvmsg was a partial read too */
+                        buf_ptr += partial_msg_sz;
+                        partial_msg_sz += sz;
+                    }
+                    /* cp to partial message buffer */
+                    memcpy(buf_ptr, MPID_NEM_CELL_TO_PACKET (cell), sz);
+                    buf_ptr += sz; /* for the case when MSG_EOR is found */
+                    partial_msg_in_progress++;
+
+                    /* don't want to waste the cell so enqueue it on the module free Q */
+                    MPID_nem_queue_enqueue (MPID_nem_sctp_module_free_queue, v_cell);
+                    
+                } else {
+                    /* unknown msg_flags */
+                    MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN,
+                                               "**internrc",
+                                               "msg_flags for recv is %d",
+                                               msg_flags); /* FIXME create error code */
+                }
             }
             else
             {
-                /* standard case */
-                    
+                /* standard case (w/ MSG_EOR) */
+
+                if(partial_msg_in_progress) {
+                    /* MSG_EOR finally found */
+                    /* need to assemble full msg in buf then cp back to cell */
+                    memcpy(buf_ptr, MPID_NEM_CELL_TO_PACKET (cell), sz);
+                    memcpy(MPID_NEM_CELL_TO_PACKET (cell), partial_msg_buf,
+                           partial_msg_sz + sz);
+                    partial_msg_in_progress = 0;
+                    partial_msg_sz = 0;
+                }
+                
                 /* Look at association ID to see if this is
                  *  a new association.
                  */

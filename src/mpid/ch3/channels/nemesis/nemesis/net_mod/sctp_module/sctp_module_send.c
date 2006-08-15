@@ -189,9 +189,10 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
     mpi_errno = send_sctp_pkt(vc, pkt, stream, &sent);
     if(mpi_errno != MPI_SUCCESS)
         goto fn_fail;
-    if(!sent)
+    if(!sent) {
+        VC_L_ADD (&send_list, vc);
         goto enqueue_cell_and_exit; /* didn't send so add to Q to send later */
-
+    }
 
 
     /* pre-sendQ code*/
