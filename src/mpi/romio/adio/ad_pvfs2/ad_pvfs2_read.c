@@ -675,8 +675,6 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	        max_mem_list = mem_list_count;
 	    if (max_file_list < file_list_count)
 	        max_file_list = file_list_count;
-	    if (max_mem_list == MAX_ARRAY_SIZE)
-	        break;
 	} /* while (size_read < bufsize) */
 
 	/* one last check before we actually carry out the operation:
