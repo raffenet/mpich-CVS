@@ -51,6 +51,11 @@
         }                                                                       \
     } while (0)
 
+//FIXME-Darius. Why not write a DEQUEUE like the one below commented. Why not 
+// have a pointer to element instead of pointer to pointer, as this is just a 
+// macro. If there is a strong reason, change the name of the variable to epp
+// and add a comment that a pointer to pointer to element is expected.
+// Being a macro, I would think it is good to keep enqueue and dequeue similar.
 #define GENERIC_Q_DEQUEUE(qp, ep, next_field) do {      \
         MPIU_Assert (!GENERIC_Q_EMPTY (*(qp)));         \
         *(ep) = (qp)->head;                             \
@@ -58,6 +63,15 @@
         if ((qp)->head == NULL)                         \
             (qp)->tail = NULL;                          \
     } while (0)
+
+/* #define GENERIC_Q_DEQUEUE(qp, ep, next_field) do {      \ */
+/*         MPIU_Assert (!GENERIC_Q_EMPTY (*(qp)));         \ */
+/*         (ep) = (qp)->head;                              \ */
+/*         (qp)->head = ((ep))->next_field;                \ */
+/*         if ((qp)->head == NULL)                         \ */
+/*             (qp)->tail = NULL;                          \ */
+/*     } while (0) */
+
 
 /* remove the elements from the top of the queue starting with ep0 through ep1 */
 #define GENERIC_Q_REMOVE_ELEMENTS(qp, ep0, ep1, next_field) do {        \

@@ -141,3 +141,25 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
  fn_exit:
     return rc;
 }
+
+
+int MPID_nem_newtcp_module_is_sock_connected(int fd)
+{
+    int rc = FALSE;
+    char buf[1];
+    int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0;
+    size_t n = sizeof(error);
+
+    n = sizeof(error);
+    if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) {
+        rc = FALSE; // error
+        goto fn_exit;
+    }
+    ret_recv = recv(fd, buf, buf_len, MSG_PEEK);
+    if (ret_recv == 0 || ret_recv == -1)
+        rc = FALSE; // error or EOF
+    else
+        rc = TRUE; // CONNECTED
+ fn_exit:
+    return rc;
+}

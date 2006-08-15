@@ -173,7 +173,6 @@ static int find_free_entry(int *index)
     int mpi_errno = MPI_SUCCESS;
     freenode_t *node;
 
-    //FIXME-Danger Uncomment
     if (!Q_EMPTY(freeq)) {
         Q_DEQUEUE(&freeq, ((freenode_t **)&node)); 
         *index = node->index;
@@ -1006,8 +1005,8 @@ int MPID_nem_newtcp_module_connpoll()
                           "**poll", "**poll %s", strerror (errno));
     if (n == 1) {
         if (g_lstn_plfd.revents == POLLERR) //FIXME (N1)
-            MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**poll error on listener fd"); 
-            //FIXME-Danger Add error string
+            MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail"); 
+        //FIXME-Danger Add error string. actual string "**poll error on listener fd"
         else if (g_lstn_plfd.revents == POLLIN)
             g_lstn_sc.handler(&g_lstn_plfd, &g_lstn_sc);
     }

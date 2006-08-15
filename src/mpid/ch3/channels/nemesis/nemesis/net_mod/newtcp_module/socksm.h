@@ -23,6 +23,7 @@ enum CONSTS {
     CONN_PLFD_TBL_INIT_SIZE = 20,
     CONN_PLFD_TBL_GROW_SIZE = 10,
     CONN_INVALID_FD = -1,
+    CONN_INVALID_RANK = -1,
     NEGOMSG_DATA_LEN = 4, // Length of data during negotiatiion message exchanges.
     SLEEP_INTERVAL = 1500,
     PROGSM_TIMES = 20
@@ -105,14 +106,18 @@ typedef struct pollfd pollfd_t;
 typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const conn);
 
 struct MPID_nem_new_tcp_module_sockconn{
-    int fd;    
+    int fd;
+    int index;
     int is_same_pg;  //TRUE/FALSE - 
     //FIXME: see whether this can be removed, by using only pg_id = NULL or non-NULL
     // NULL = if same_pg and valid pointer if different pgs.
 
     int pg_rank; // rank and id cached here to avoid chasing pointers in vc and vc->pg
     char *pg_id; // MUST be used only if is_same_pg == FALSE
-    MPID_nem_newtcp_module_Conn_State_t state;
+    union {
+        MPID_nem_newtcp_module_Conn_State_t cstate;
+        MPID_nem_newtcp_module_Listen_State_t lstate; 
+    }state;
     MPIDI_VC_t *vc;
     //Conn_type_t conn_type; // Probably useful for debugging/analyzing purposes.
     handler_func_t handler;
