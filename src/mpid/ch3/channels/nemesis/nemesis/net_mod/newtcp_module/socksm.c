@@ -529,17 +529,18 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         MPIU_ERR_CHKANDJUMP2(sc->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", 
                              "**sock_create %s %d", strerror(errno), errno);
         plfd->fd = sc->fd;
+        plfd->events = POLLOUT;
         mpi_errno = MPID_nem_newtcp_module_set_sockopts(sc->fd);
         if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
 
-        rc = connect(sc->fd, (SA*)sock_addr, sizeof(SA)); 
+        rc = connect(sc->fd, (SA*)sock_addr, sizeof(*sock_addr)); 
         //connect should not be called with CHECK_EINTR macro
         MPIU_ERR_CHKANDJUMP1 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
                               "**sock_connect", "**sock_connect %d", errno);
         sc->state.cstate = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
         vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED;
         sc->pg_rank = vc->pg_rank;
-        if (IS_SAME_PGID(sc->pg_id, MPIDI_Process.my_pg->id)) {
+        if (IS_SAME_PGID(vc->pg->id, MPIDI_Process.my_pg->id)) {
             sc->is_same_pg = TRUE;
             sc->pg_id = NULL;
         }
@@ -699,7 +700,7 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
 #define FUNCNAME state_tc_c_cntd_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int state_tc_c_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc)
+static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -713,6 +714,7 @@ static int state_tc_c_cntd_handler(const pollfd_t *const plfd, sockconn_t *const
     }
     
     if (IS_WRITEABLE(plfd)) {
+        plfd->events = POLLIN | POLLOUT;
         if (send_id_info(sc) == MPI_SUCCESS)
             sc->state.cstate = CONN_STATE_TC_C_RANKSENT;
         else {
