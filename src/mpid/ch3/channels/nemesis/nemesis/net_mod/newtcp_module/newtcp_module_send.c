@@ -77,7 +77,10 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 
     if (!MPID_nem_newtcp_module_vc_is_connected (vc))
     {
-        MPID_nem_newtcp_module_connection_progress (vc); /* try to get connected */
+        //MPID_nem_newtcp_module_connection_progress (vc); /* try to get connected */
+        MPID_nem_newtcp_module_connect (vc);
+        // FIXME define the use of this and above commented function
+
         if (!MPID_nem_newtcp_module_vc_is_connected (vc))
         {
             goto enqueue_cell_and_exit;

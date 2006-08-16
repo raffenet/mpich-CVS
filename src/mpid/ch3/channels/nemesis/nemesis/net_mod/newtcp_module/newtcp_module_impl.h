@@ -40,6 +40,7 @@ extern int MPID_nem_newtcp_module_listen_fd;
 int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc);
 int MPID_nem_newtcp_module_send_init();
 int MPID_nem_newtcp_module_poll_init();
+int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc);
 int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc);
 int MPID_nem_newtcp_module_connpoll();
 int MPID_nem_newtcp_module_init_sm();
