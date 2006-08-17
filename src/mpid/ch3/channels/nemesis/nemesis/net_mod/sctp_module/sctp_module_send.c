@@ -7,6 +7,7 @@
 #include "sctp_module_impl.h"
 
 #define NUM_PREALLOC_SENDQ 10
+/* int errno_save; */
 
 struct {MPIDI_VC_t *head;} send_list = {0};
 struct {MPID_nem_sctp_module_send_q_element_t *head, *tail;} free_buffers = {0};
@@ -33,12 +34,17 @@ static MPID_nem_pkt_t *conn_pkt_p = &conn_pkt;
 static int conn_pkt_is_set = 0;
 
 /* common sctp send code */
+#undef FUNCNAME
+#define FUNCNAME send_sctp_pkt
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int send_sctp_pkt(MPIDI_VC_t *vc, MPID_nem_pkt_t *pkt, int stream, int *sent)
 {
     int mpi_errno = MPI_SUCCESS;
     int len;
     int ret;
-
+/*     int errno_save; */
+    
     *sent = 0; /* glass half empty */
 
     /* need to find out if we have to send the connection packet for this stream */
@@ -72,8 +78,11 @@ static int send_sctp_pkt(MPIDI_VC_t *vc, MPID_nem_pkt_t *pkt, int stream, int *s
                            0, 0, stream, 0, 0);        
 
         if(ret == -1) {
-            if(errno != EAGAIN)
-                mpi_errno = -99; /* FIXME get real error code */                
+/*             errno_save = errno; */
+            if(errno != EAGAIN) {  /* TODO might need to modify this */
+/*                 printf("conn_pkt sctp_sendmsg problem (errno %d)\n", errno_save); */
+                MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**internrc"); /* FIXME define error code */
+            }
             goto fn_exit;
         }
 
@@ -86,8 +95,11 @@ static int send_sctp_pkt(MPIDI_VC_t *vc, MPID_nem_pkt_t *pkt, int stream, int *s
                        (struct sockaddr *)&(vc->ch.to_address), sizeof(struct sockaddr_in),
                        0, 0, stream, 0, 0);
     if(ret == -1) {
-        if(errno != EAGAIN)
-            mpi_errno = -99; /* FIXME get real error code */                
+/*         errno_save = errno; */
+        if(errno != EAGAIN) {
+/*             printf("data_pkt sctp_sendmsg problem (errno %d)\n", errno_save); */
+            MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**internrc"); /* FIXME define error code */
+        }
         goto fn_exit;
     } else {
         *sent = 1;
@@ -157,7 +169,7 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
                      */
     int ret;
     int len;
-    int errno_save;
+/*     int errno_save; */
     MPID_nem_pkt_t *pkt;
     MPID_nem_sctp_module_send_q_element_t *e;
     MPIU_CHKPMEM_DECL(1);
@@ -267,6 +279,8 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
     goto fn_exit;   
  fn_fail:
     MPIU_CHKPMEM_REAP();
+    MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);    /* tmp fix */
+/*     if(errno_save != ECHRNG && errno_save != EPERM)   printf("errno is %d\n", errno_save); */
     return mpi_errno;
 }
 
@@ -289,7 +303,7 @@ int MPID_nem_sctp_module_send_queue (MPIDI_VC_t *vc)
 
     /* walk through VC's send_queue calling sctp_sendmsg */
     
-    /* construct iov of pending sends */
+
     count = 0;
     e_last = NULL;
     e = Q_HEAD (vc_ch->send_queue);
