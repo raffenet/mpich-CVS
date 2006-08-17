@@ -529,8 +529,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
 
         rc = connect(sc->fd, (SA*)sock_addr, sizeof(*sock_addr)); 
         //connect should not be called with CHECK_EINTR macro
-        MPIU_ERR_CHKANDJUMP1 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
-                              "**sock_connect", "**sock_connect %d", errno);
+        MPIU_ERR_CHKANDJUMP2 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
+                              "**sock_connect", "**sock_connect %d %s", errno, strerror (errno));
         sc->state.cstate = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
         sc->handler = sc_state_handlers[sc->state.cstate];
         vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED;

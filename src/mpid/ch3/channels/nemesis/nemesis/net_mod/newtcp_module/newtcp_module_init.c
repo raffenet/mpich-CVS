@@ -17,7 +17,7 @@ extern pollfd_t g_lstn_plfd;
 
 static MPID_nem_queue_t _free_queue;
 
-static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, int *port);
+static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, in_port_t *port);
 extern int state_listening_handler(const pollfd_t *const a_plfd, sockconn_t *const a_sc);
 
 #define MPIDI_CH3I_PORT_KEY "port"
@@ -180,8 +180,10 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     in_addr_t *addr;
     int port;    
 
-    mpi_errno = get_addr_port_from_bc (business_card, &vc->ch.sock_id.sin_addr.s_addr, 
-                                       (int *)&vc->ch.sock_id.sin_port);
+    memset (&vc->ch.sock_id, 0, sizeof(vc->ch.sock_id));
+    vc->ch.sock_id.sin_family = AF_INET;
+    
+    mpi_errno = get_addr_port_from_bc (business_card, &vc->ch.sock_id.sin_addr.s_addr, &vc->ch.sock_id.sin_port);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     vc->ch.fd = 0;
@@ -204,14 +206,14 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 #define FUNCNAME get_addr_port_from_bc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, int *port)
+static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, in_port_t *port)
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
     int len;
     char ipaddr_str[INET_ADDRSTRLEN];
     int tmp_port_id;
-    
+
     ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_ADDR_KEY, ipaddr_str, INET_ADDRSTRLEN);
     MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
      //DEL-LATER printf("get_addr_port_from_bc buscard=%s ipaddrstr=%s\n",business_card, ipaddr_str);
@@ -220,7 +222,7 @@ static int get_addr_port_from_bc (const char *business_card, in_addr_t *addr, in
     //DEL-LATER printf("get_addr_port_from_bc ret=%d\n", ret);
     MPIU_ERR_CHKANDJUMP (ret <= 0, mpi_errno, MPI_ERR_OTHER, "**inet_pton");
 
-    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, port);
+    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, (int *)port);
     //DEL-LATER printf("get_addr_port_from_bc mpi_errno=%d port=%d\n", mpi_errno, *port);
     MPIU_ERR_CHKANDJUMP (mpi_errno != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");
 

@@ -78,7 +78,8 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     if (!MPID_nem_newtcp_module_vc_is_connected (vc))
     {
         //MPID_nem_newtcp_module_connection_progress (vc); /* try to get connected */
-        MPID_nem_newtcp_module_connect (vc);
+        mpi_errno = MPID_nem_newtcp_module_connect (vc);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         // FIXME define the use of this and above commented function
 
         if (!MPID_nem_newtcp_module_vc_is_connected (vc))
@@ -89,7 +90,8 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     
      if (!Q_EMPTY (vc_ch->send_queue))
     {
-        MPID_nem_newtcp_module_send_queue (vc); /* try to empty the queue */
+        mpi_errno = MPID_nem_newtcp_module_send_queue (vc); /* try to empty the queue */
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         if (!Q_EMPTY (vc_ch->send_queue))
         {
             goto enqueue_cell_and_exit;

@@ -166,7 +166,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
     }
     else
     {
-        MPID_nem_net_module_send (vc, el, size);
+        mpi_errno = MPID_nem_net_module_send (vc, el, size);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues12));
     DO_PAPI (PAPI_reset (PAPI_EventSet));    
@@ -294,7 +295,8 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
     }
     else
     {
-        MPID_nem_net_module_send (vc, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+        mpi_errno = MPID_nem_net_module_send (vc, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
 #ifdef PREFETCH_CELL
@@ -478,7 +480,8 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
     }
     else
     {
-        MPID_nem_net_module_send (vc, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+        mpi_errno = MPID_nem_net_module_send (vc, el, MPID_NEM_MPICH2_DATA_LEN - payload_len);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
 #ifdef PREFETCH_CELL
@@ -601,6 +604,10 @@ int MPID_nem_mpich2_enqueue_fastbox (int local_rank)
   expected from the sender of that cell
   We only check these for processes in COMM_WORLD (i.e. the ones initially allocated)
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_recv_seqno_matches
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
 MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
 {
@@ -617,6 +624,10 @@ MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead)
   sets cell to the received cell, or NULL if there is nothing to receive. in_fbox is true iff the cell was found in a fbox
   the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_test_recv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
@@ -643,7 +654,8 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
     {
-	MPID_nem_network_poll (MPID_NEM_POLL_IN);
+	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
@@ -676,7 +688,8 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 	}
     });
-    
+
+ fn_fail:
     return mpi_errno;
 
  fbox_l:
@@ -693,17 +706,24 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
   sets cell to the received cell, or NULL if there is nothing to receive. in_fbox is true iff the cell was found in a fbox
   the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_test_recv_wait
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout)
 {
+    int mpi_errno = MPI_SUCCESS;
+    
 #ifdef USE_FASTBOX
     poll_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-      {
-	MPID_nem_network_poll (MPID_NEM_POLL_IN);
-      }
+    {
+	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
 
     while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ)))
     {
@@ -721,14 +741,15 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
  exit_l:
     
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-	if (*cell)
-	{
-	    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
-	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
-	}
-    });
-    
-    return MPI_SUCCESS;
+            if (*cell)
+            {
+                MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
+                MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
+            }
+        });
+
+ fn_fail:
+    return mpi_errno;
 
  fbox_l:
     *in_fbox = 1;
@@ -742,9 +763,14 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
   waits until there is something to receive, then sets cell to the received cell. in_fbox is true iff the cell was found in a fbox
   the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_blocking_recv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
+    int mpi_errno = MPI_SUCCESS;
 #ifndef ENABLE_NO_SCHED_YIELD
     int pollcount = 0;
 #endif
@@ -760,7 +786,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	MPIU_Assert ((*cell)->pkt.mpich2.seqno == MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source]);
 	++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
 	*in_fbox = 0;
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
 #endif
     
@@ -771,7 +797,8 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
    
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
     {
-	MPID_nem_network_poll (MPID_NEM_POLL_IN);
+	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
     while (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
@@ -785,7 +812,8 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
 	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
 	{
-	    MPID_nem_network_poll (MPID_NEM_POLL_IN);
+	    mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	}
 #ifndef ENABLE_NO_SCHED_YIELD
 	if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
@@ -819,7 +847,8 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
 
-    return MPI_SUCCESS;
+ fn_fail:
+    return mpi_errno;
 
  fbox_l:
     *in_fbox = 1;
@@ -831,9 +860,14 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 
   releases the cell back to the subsystem to be used for subsequent receives
 */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mpich2_release_cell
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 {
+    int mpi_errno = MPI_SUCCESS;
     DO_PAPI (PAPI_reset (PAPI_EventSet));
 #ifdef ENABLED_CHECKPOINTING
     if (cell->pkt.header.type == MPID_NEM_PKT_CKPT_REPLAY)
@@ -841,12 +875,12 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 	if (!MPID_nem_ckpt_message_log)
 	    /* this is the last replayed message */
 	    MPID_nem_ckpt_free_msg_log();
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
 #endif
     MPID_nem_queue_enqueue (vc->ch.free_queue, cell);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9));
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 #endif /*_MPID_NEM_INLINE_H*/

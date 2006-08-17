@@ -806,6 +806,7 @@ with MPI_Alloc_mem.
 **sock_closed:socket closed
 **sock_connect:connect failed
 **sock_connect %d:connect failed (errno %d)
+**sock_connect %d %s:connect failed - %s (errno %d)
 **sock_connect %s %d %d:unable to connect to %s on port %d, error %d
 **sock_connect %s %d %s %d:unable to connect to %s on port %d, %s (errno %d)
 **sock_create:unable to create a socket
