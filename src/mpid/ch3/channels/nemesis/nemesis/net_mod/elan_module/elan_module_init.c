@@ -181,10 +181,7 @@ int init_elan( MPIDI_PG_t *pg_p )
      {
 	MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,&MPID_nem_module_elan_cells[index]);
      }
-   
 
-   elan__print_queue(MPID_nem_module_elan_free_event_queue,1);
-   
    fn_exit:
      return mpi_errno;
    fn_fail:
@@ -235,12 +232,10 @@ MPID_nem_elan_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
      }   
    
    MPID_nem_process_recv_queue = proc_recv_queue;
-   MPID_nem_process_free_queue = proc_free_queue;
+   MPID_nem_process_free_queue = proc_free_queue;   
    
    MPID_nem_module_elan_free_queue = &_free_queue;
-   
    MPID_nem_queue_init (MPID_nem_module_elan_free_queue);
-   
    for (index = 0; index < num_module_elements; ++index)
      {
 	MPID_nem_queue_enqueue (MPID_nem_module_elan_free_queue, &module_elements[index]);
