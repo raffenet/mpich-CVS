@@ -9,7 +9,6 @@
 #include "newtcp_module_impl.h"
 #include "socksm.h"
 
-
 // FIXME trace/log all the state transitions
 
 //FIXME - remove this. to be defined elsewhere
@@ -55,10 +54,10 @@ static handler_func_t sc_state_handlers[CONN_STATE_SIZE];
       (!sc1->is_same_pg && !sc2->is_same_pg &&                          \
        IS_SAME_PGID(sc1->pg_id, sc2->pg_id) == 0)))
 
-#define INIT_SC_ENTRY(sc, ind)                \
+#define INIT_SC_ENTRY(sc, ind)                  \
     {                                           \
         sc->fd = CONN_INVALID_FD;               \
-        sc->index = ind;                      \
+        sc->index = ind;                        \
         sc->vc = NULL;                          \
     }
 
@@ -68,6 +67,7 @@ static handler_func_t sc_state_handlers[CONN_STATE_SIZE];
         plfd->events = POLLIN | POLLOUT;                      \
     }
 
+/*
 #define DBG_PRINT_CSTATE_ENTER(sc)                                      \
     {                                                                   \
         printf("SM Enter:: rank=%d state=%s\n", sc->pg_rank,            \
@@ -82,26 +82,16 @@ static handler_func_t sc_state_handlers[CONN_STATE_SIZE];
 
 #define DBG_PRINT_LSTATE_ENTER(sc)                                      \
     {                                                                   \
-        printf("SM Enter::  state=%s\n",                                \
-               LISTEN_STATE_STR[sc->state.cstate]);                     \
+        printf("LSM Enter::  state=%s\n",                               \
+               LISTEN_STATE_STR[sc->state.lstate]);                     \
     }
 
 #define DBG_PRINT_LSTATE_EXIT(sc)                                       \
     {                                                                   \
-        printf("SM Exit:: state=%s\n",                                  \
-               LISTEN_STATE_STR[sc->state.cstate]);                     \
+        printf("LSM Exit:: state=%s\n",                                 \
+               LISTEN_STATE_STR[sc->state.lstate]);                     \
     }
-
-#define DBG_PRINT_FUNC_ENTER(FCNAME)            \
-    {                                           \
-        printf(FCNAME " Enter\n");             \
-    }
- 
-#define DBG_PRINT_FUNC_EXIT(FCNAME)             \
-    {                                           \
-        printf(FCNAME " Exit\n");              \
-    }
-
+*/
 
 #undef FUNCNAME
 #define FUNCNAME alloc_sc_plfd_tbls
@@ -112,10 +102,8 @@ static int alloc_sc_plfd_tbls()
     int i, mpi_errno = MPI_SUCCESS;
     MPIU_CHKPMEM_DECL (2);
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
-    g_tbl_size = g_tbl_capacity;
-    //g_nactconns = 0;    
-  
+    MPIDI_NEMTCP_FUNC_ENTER;
+    MPIDI_NEMTCP_FUNC_ENTER(FCNAME);
     MPIU_Assert(g_sc_tbl == NULL);
     MPIU_Assert(g_plfd_tbl == NULL);
 
@@ -130,7 +118,7 @@ static int alloc_sc_plfd_tbls()
     }
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
-    DBG_PRINT_FUNC_EXIT(FCNAME);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
@@ -145,10 +133,10 @@ static int free_sc_plfd_tbls()
 {
     int mpi_errno = MPI_SUCCESS;
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_FUNC_ENTER;
     MPIU_Free(g_sc_tbl);
     MPIU_Free(g_plfd_tbl);
-    DBG_PRINT_FUNC_EXIT(FCNAME);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
 }
 
@@ -171,7 +159,7 @@ static int expand_sc_plfd_tbls()
     int new_capacity = g_tbl_capacity + g_tbl_grow_size, i;
     MPIU_CHKPMEM_DECL (2);
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_FUNC_ENTER;
     MPIU_CHKPMEM_MALLOC (new_sc_tbl, sockconn_t *, new_capacity * sizeof(sockconn_t), 
                          mpi_errno, "expanded connection table");
     MPIU_CHKPMEM_MALLOC (new_plfd_tbl, pollfd_t *, new_capacity * sizeof(pollfd_t), 
@@ -190,7 +178,7 @@ static int expand_sc_plfd_tbls()
     g_tbl_capacity = new_capacity;
     MPIU_CHKPMEM_COMMIT();    
  fn_exit:
-    DBG_PRINT_FUNC_EXIT(FCNAME);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
@@ -217,7 +205,7 @@ static int find_free_entry(int *index)
     int mpi_errno = MPI_SUCCESS;
     freenode_t *node;
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_FUNC_ENTER;
     if (!Q_EMPTY(freeq)) {
         Q_DEQUEUE(&freeq, ((freenode_t **)&node)); 
         *index = node->index;
@@ -234,7 +222,7 @@ static int find_free_entry(int *index)
     ++g_tbl_size;
 
  fn_exit:
-    DBG_PRINT_FUNC_EXIT(FCNAME);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -252,7 +240,7 @@ static int find_free_entry(int *index)
 int is_valid_state(sockconn_t *sc) {
     int i, found = FALSE;
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_FUNC_ENTER;
     for(i = 0; i < g_tbl_size && !found; i++) {
         sockconn_t *iter_sc = &g_sc_tbl[i];
         MPID_nem_newtcp_module_Conn_State_t istate = iter_sc->state.cstate;
@@ -279,7 +267,7 @@ int is_valid_state(sockconn_t *sc) {
 
     //if found, then the state of the connection is not valid. A bug in the state
     //machine code.
-    DBG_PRINT_FUNC_EXIT(FCNAME);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return !found;
 }
 
@@ -294,7 +282,7 @@ int is_valid_state(sockconn_t *sc) {
 static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc) {
     int i, found = FALSE;
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);  
+    MPIDI_NEMTCP_FUNC_ENTER;
     for(i = 0; i < g_tbl_size && !found; i++) {
         sockconn_t *iter_sc = &g_sc_tbl[i];
         MPID_nem_newtcp_module_Conn_State_t istate = iter_sc->state.cstate;
@@ -318,7 +306,7 @@ static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc) {
         }
     }
 
-    DBG_PRINT_FUNC_EXIT(FCNAME);        
+    MPIDI_NEMTCP_FUNC_EXIT;        
     return found;
 }
 
@@ -333,7 +321,10 @@ static int send_id_info(const sockconn_t *const sc)
     MPIDI_nem_newtcp_module_header_t hdr;
     struct iovec iov[3];
     int pg_id_len = 0, offset, buf_size, iov_cnt = 2;
-    
+
+    MPIDI_NEMTCP_FUNC_ENTER;
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "my->pg_rank=%d, sc->pg_rank=%d"
+                                             , MPIDI_Process.my_pg_rank, sc->pg_rank));
     if (!sc->is_same_pg)
         pg_id_len = strlen(MPIDI_Process.my_pg->id) + 1; //store ending NULL also
     //FIXME better keep pg_id_len itself as part of MPIDI_Process.my_pg structure to
@@ -367,6 +358,7 @@ static int send_id_info(const sockconn_t *const sc)
     // handle this.
 
  fn_exit:
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;    
@@ -506,7 +498,9 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
     int mpi_errno = MPI_SUCCESS;
     freenode_t *node;
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_STATE_DECL;
+    //MPIU_DBG_MSG(NEM_SOCK_DET, TYPICAL, FCNAME "checking DBG_MSG Enter");
+    MPIDI_NEMTCP_FUNC_ENTER;
     if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED) {
         struct sockaddr_in *sock_addr;
         socklen_t socklen = sizeof(SA_IN);
@@ -538,6 +532,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         MPIU_ERR_CHKANDJUMP1 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
                               "**sock_connect", "**sock_connect %d", errno);
         sc->state.cstate = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
+        sc->handler = sc_state_handlers[sc->state.cstate];
         vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED;
         sc->pg_rank = vc->pg_rank;
         if (IS_SAME_PGID(vc->pg->id, MPIDI_Process.my_pg->id)) {
@@ -551,12 +546,12 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         sc->vc = vc;
         vc->ch.sc = sc;
         sc->pending_event = 0; //clear pending events
-        sc->handler = sc_state_handlers[sc->state.cstate];
     }
     else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
         switch(sc->state.cstate) {
         case CONN_STATE_TS_D_DCNTING:
             sc->state.cstate = CONN_STATE_TS_COMMRDY;
+            sc->handler = sc_state_handlers[sc->state.cstate];
             sc->pending_event = 0;
             break;
         case CONN_STATE_TS_D_REQRCVD:
@@ -582,7 +577,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
 
  fn_exit:
     MPID_nem_newtcp_module_connpoll();
-    DBG_PRINT_FUNC_EXIT(FCNAME);
+    //MPIU_DBG_MSG(NEM_SOCK_DET, TYPICAL, "checking DBG_MSG Exit");
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     if (index != -1) {
@@ -616,7 +612,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     sockconn_t *sc = NULL;
     int mpi_errno = MPI_SUCCESS;
 
-    DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_FUNC_ENTER;
     //FIXME check whether a (different/new) error has to be reported stating the VC is 
     // already disconnected.
     if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED)
@@ -651,7 +647,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
         MPIU_Assert(0);
  fn_exit:
     MPID_nem_newtcp_module_connpoll();
-    return 0;
+    return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
@@ -665,7 +661,7 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
    
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED) {
         sc->state.cstate = CONN_STATE_TC_C_CNTD;
@@ -689,7 +685,7 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
         */
     }
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -704,7 +700,7 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     MPIU_Assert(is_valid_state(sc));
 
     if (sc->pending_event == EVENT_DISCONNECT || found_better_sc(sc, NULL)) {
@@ -714,9 +710,12 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     }
     
     if (IS_WRITEABLE(plfd)) {
+        MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "inside if (IS_WRITEABLE(plfd))");
         plfd->events = POLLIN | POLLOUT;
-        if (send_id_info(sc) == MPI_SUCCESS)
+        if (send_id_info(sc) == MPI_SUCCESS) {
             sc->state.cstate = CONN_STATE_TC_C_RANKSENT;
+            sc->handler = sc_state_handlers[sc->state.cstate];
+        }
         else {
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
                                              __LINE__,  MPI_ERR_OTHER, 
@@ -729,7 +728,7 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
         //Remain in the same state
     }
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -744,7 +743,7 @@ static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *cons
     int mpi_errno = MPI_SUCCESS;
     MPIDI_nem_newtcp_module_pkt_type_t pkt_type;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     MPIU_Assert(is_valid_state(sc));
     if (IS_READABLE(plfd)) {
         mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
@@ -768,7 +767,7 @@ static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *cons
     }
 
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -784,7 +783,7 @@ static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
         sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
@@ -807,7 +806,7 @@ static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc
     }
 
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -847,7 +846,7 @@ static int state_l_rankrcvd_handler(const pollfd_t *const plfd, sockconn_t *cons
     sockconn_t *fnd_sc;
     int snd_nak = FALSE;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
         sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
@@ -876,7 +875,7 @@ static int state_l_rankrcvd_handler(const pollfd_t *const plfd, sockconn_t *cons
         }
     }
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -889,10 +888,10 @@ static int state_l_rankrcvd_handler(const pollfd_t *const plfd, sockconn_t *cons
 static int state_commrdy_handler(const pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
 
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -907,7 +906,7 @@ static int state_d_dcnting_handler(const pollfd_t *const plfd, sockconn_t *const
 {
     int mpi_errno = MPI_SUCCESS;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     if (IS_WRITEABLE(plfd)) {
         if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ) == MPI_SUCCESS) {
             sc->state.cstate = CONN_STATE_TS_D_REQSENT;
@@ -915,7 +914,7 @@ static int state_d_dcnting_handler(const pollfd_t *const plfd, sockconn_t *const
         }
     }
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -931,7 +930,7 @@ static int state_d_reqsent_handler(const pollfd_t *const plfd, sockconn_t *const
     int mpi_errno = MPI_SUCCESS;
     MPIDI_nem_newtcp_module_pkt_type_t pkt_type;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     if (IS_READABLE(plfd)) {
         mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
         if (mpi_errno != MPI_SUCCESS) {
@@ -949,7 +948,7 @@ static int state_d_reqsent_handler(const pollfd_t *const plfd, sockconn_t *const
         }
     }
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -963,7 +962,7 @@ static int state_d_reqrcvd_handler(const pollfd_t *const plfd, sockconn_t *const
 {
     int mpi_errno = MPI_SUCCESS;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     if (IS_WRITEABLE(plfd)) {
         if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK) == MPI_SUCCESS) {
             sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
@@ -972,7 +971,7 @@ static int state_d_reqrcvd_handler(const pollfd_t *const plfd, sockconn_t *const
     }
 
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -988,7 +987,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     int mpi_errno = MPI_SUCCESS, rc;
     freenode_t *node;
 
-    DBG_PRINT_CSTATE_ENTER(sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     CHECK_EINTR(rc, close(sc->fd));
     MPIU_ERR_CHKANDJUMP1 (rc == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
                           "**close", "**close %s", strerror (errno));
@@ -1007,7 +1006,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
         Q_ENQUEUE(&freeq, node);
     }
  fn_exit:
-    DBG_PRINT_CSTATE_EXIT(sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -1080,7 +1079,7 @@ int MPID_nem_newtcp_module_connpoll()
 {
     int mpi_errno = MPI_SUCCESS, n, i;
     
-    //DBG_PRINT_FUNC_ENTER(FCNAME);
+    MPIDI_NEMTCP_FUNC_ENTER;
     CHECK_EINTR(n, poll(&g_lstn_plfd, 1, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
                           "**poll", "**poll %s", strerror (errno));
@@ -1103,7 +1102,7 @@ int MPID_nem_newtcp_module_connpoll()
             it_sc->handler(it_plfd, it_sc);
     }
  fn_exit:
-    //DBG_PRINT_FUNC_EXIT(FCNAME);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -1140,7 +1139,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
     socklen_t len;
     SA_IN rmt_addr;
 
-    DBG_PRINT_LSTATE_ENTER(l_sc);
+    MPIDI_NEMTCP_FUNC_ENTER;
     while (1) {
         len = sizeof(SA_IN);
         if ((connfd = accept(l_sc->fd, (SA *) &rmt_addr, &len)) < 0) {
@@ -1164,12 +1163,13 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
                 
                 sc->pg_rank = CONN_INVALID_RANK;
                 sc->state.cstate = CONN_STATE_TA_C_CNTD;                
+                sc->handler = sc_state_handlers[sc->state.cstate];
             }
         }
     }
 
  fn_exit:
-    DBG_PRINT_LSTATE_EXIT(l_sc);
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
