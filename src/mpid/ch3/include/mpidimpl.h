@@ -154,6 +154,13 @@ extern MPIDI_Process_t MPIDI_Process;
     }								\
 }
 
+
+/* If the channel doesn't initialize anything in the request, 
+   provide a dummy */
+#ifndef MPIDI_CH3_REQUEST_INIT
+#define MPIDI_CH3_REQUEST_INIT(a_)
+#endif
+
 /* FIXME: Why does a send request need the match information?
    Is that for debugging information?  In case the initial envelope
    cannot be sent? Ditto for the dev.user_buf, count, and datatype 
@@ -220,6 +227,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (rreq_)->dev.state = 0;                                     \
     (rreq_)->dev.cancel_pending = FALSE;                        \
     (rreq_)->dev.datatype_ptr = NULL;                           \
+     MPIDI_CH3_REQUEST_INIT(rreq_);\
 }
 
 #define MPIDI_REQUEST_MSG_MASK (0x3 << MPIDI_REQUEST_MSG_SHIFT)

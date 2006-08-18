@@ -1059,6 +1059,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			rreq->dev.iov[1].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 			rreq->dev.iov_count = 2;
 			rreq->ch.req = NULL;
+			rreq->ch.iov_offset = 0;
 			recv_vc_ptr->ch.recv_active = rreq;
 		    }
 		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_CTS_IOV)
@@ -1080,6 +1081,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			rreq->dev.iov[0].MPID_IOV_LEN = sreq->dev.rdma_iov_count * sizeof(MPID_IOV);
 			rreq->dev.iov_count = 1;
 			rreq->ch.req = sreq;
+			rreq->ch.iov_offset = 0;
 			recv_vc_ptr->ch.recv_active = rreq;
 			/*MPIDI_CH3I_SHM_post_read(recv_vc_ptr, &sreq->ch.rdma_iov, sreq->ch.rdma_iov_count * sizeof(MPID_IOV), NULL);*/
 		    }
@@ -1103,6 +1105,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			    rreq->dev.iov[0].MPID_IOV_LEN = sreq->dev.rdma_iov_count * sizeof(MPID_IOV);
 			    rreq->dev.iov_count = 1;
 			    rreq->ch.req = sreq;
+			    rreq->ch.iov_offset = 0;
 			    recv_vc_ptr->ch.recv_active = rreq;
 			}
 			else if ( ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_RECV )
@@ -1123,6 +1126,7 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 			    sreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.rdma_iov_count * sizeof(MPID_IOV);
 			    sreq->dev.iov_count = 1;
 			    sreq->ch.req = rreq;
+			    sreq->ch.iov_offset = 0;
 			    recv_vc_ptr->ch.recv_active = sreq;
 			}
 			else

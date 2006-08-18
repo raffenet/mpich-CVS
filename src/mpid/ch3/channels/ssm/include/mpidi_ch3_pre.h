@@ -272,6 +272,12 @@ struct MPIDI_CH3I_Request						\
     struct MPID_Request *req;						\
 } ch;
 
+/* Use MPIDI_CH3_REQUEST_INIT to initialize the channel-specific fields
+   in the request */
+#define MPIDI_CH3_REQUEST_INIT(req_) \
+    (req_)->ch.iov_offset=0;\
+    (req_)->ch.req=NULL
+
 typedef struct MPIDI_CH3I_Progress_state
 {
     int completion_count;

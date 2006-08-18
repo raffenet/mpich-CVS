@@ -84,6 +84,9 @@ MPID_Request * MPID_Request_create()
 	req->dev.dataloop	   = NULL;
 	req->dev.rdma_iov_count	   = 0;
 	req->dev.rdma_iov_offset   = 0;
+#ifdef MPIDI_CH3_REQUEST_INIT
+	MPIDI_CH3_REQUEST_INIT(req);
+#endif
     }
     else
     {
