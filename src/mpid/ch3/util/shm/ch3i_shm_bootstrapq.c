@@ -258,7 +258,7 @@ int MPIDI_CH3I_mqshm_send(const int id, const void *buffer, const int length, co
 	    }
 	    else
 	    {
-		MPIU_DBG_MSG_FMT(CH3_CONNET,VERBOSE,(MPIU_DBG_FDEST,
+		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
 				 "send: old_last = %d, new last = %d",
 				 q_ptr->last, index));
 		q_ptr->msg[q_ptr->last].next = index;
