@@ -21,7 +21,7 @@ static void MPIU_Print_handle( int handle );
    C comment convention should be used of course.)  The usage is described
    below.
 
-    // Declarations begin here
+   // Declarations begin here
    // Static declaration of the information about the block
    // Define the number of preallocated entries # omitted)
    define MPID_<OBJ>_PREALLOC 256
@@ -318,7 +318,7 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 #ifdef USE_MEMORY_TRACING
     /* We set the object to an invalid pattern.  This is similar to 
        what is done by MPIU_trmalloc by default (except that trmalloc uses
-       0xda as the byte in the memset 
+       0xda as the byte in the memset)
     */
     if (ptr) {
 	memset( &ptr->ref_count, 0xef, objmem->size-sizeof(int));
