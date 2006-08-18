@@ -9,6 +9,8 @@
 #if !defined(MPICH2_MPIDPOST_H_INCLUDED)
 #define MPICH2_MPIDPOST_H_INCLUDED
 
+/* STATES:NO WARNINGS */
+
 #include "mpiallstates.h"
 
 /**********************************************************************************************************************************
