@@ -14,7 +14,10 @@ int MPIDI_CH3I_active_flag = 0;
 
 MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL; 
 
-MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1];
+/* We initialize this array with a zero to prevent problems with systems
+   that insist on making uninitialized global variables unshared common
+   symbols */
+MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1] = { 0 };
 
 #if defined(USE_FIXED_SPIN_WAITS) || !defined(MPID_CPU_TICK)
 /****************************************/
