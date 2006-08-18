@@ -1987,7 +1987,7 @@ sub RecursiveOp {
 	    # Skip . and any empty names
 	    if ($dir ne "." && $dir =~ /\S/) {
 		if ($checkForMakefile) {
-		    print FD "\t\tif [ -s \$\$dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
+		    print FD "\tif [ -s $dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
 		}
 		else {
 		    print FD "\t(cd $dir && \$(MAKE) $target )$newline";
@@ -2020,7 +2020,7 @@ sub RecursiveOpForOptionalDirs {
 	    foreach my $dir (@sdirs) {
 		if ($dir ne "." && $dir =~ /\S/) {
 		    if ($checkForMakefile) {
-			print FD "\tif [ -s \$\$dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
+			print FD "\tif [ -s $dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
 		    }
 		    else {
 			print FD "\t(cd $dir && \$(MAKE) $target )$newline";
@@ -2408,6 +2408,8 @@ sub TargetClean {
     print FD "$newline";
     
     print FD "distclean-xxx:$newline";
+    # RecursiveOp uses extra_dirs,subdirs; the "1" forces it to check
+    # for the existence of the Makefile
     &RecursiveOp( "distclean", "", 1 );
     # Remove any local files last (in case this file is one of them)
     $rmfile = "";
