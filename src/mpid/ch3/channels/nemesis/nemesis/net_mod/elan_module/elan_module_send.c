@@ -11,7 +11,7 @@
 
 //#define TRACE 
 
-static int my__seqno = 0;
+static unsigned short my__seqno = 0;
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_elan_module_send
@@ -37,34 +37,35 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	  {
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell);
 #ifdef TRACE
-	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending FREE Q Event is Empty !!!==== \n", MPID_nem_mem_region.rank);
+	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending FREE Q Event is Empty waiting for event @ %p !!!==== \n", MPID_nem_mem_region.rank,elan_event_cell->elan_event);
 	     //elan__print_queue(MPID_nem_module_elan_pending_event_queue,0);
 #endif
 
 	     elan_wait(elan_event_cell->elan_event,ELAN_WAIT_EVENT);
 
 #ifdef TRACE
-	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending , WAIT DONE==== \n", MPID_nem_mem_region.rank);
+	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending , WAIT DONE  ==== \n", MPID_nem_mem_region.rank);
 #endif
 	     elan_event_cell->elan_event = 
 	       elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);	     
 	     elan_event_cell->cell_ptr = cell ;
 	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);
 #ifdef TRACE
-	     //elan__print_queue(MPID_nem_module_elan_pending_event_queue,1);
+	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending event AFTER WAIT  @ %p ==== \n", MPID_nem_mem_region.rank,elan_event_cell->elan_event);
+	     elan__print_queue(MPID_nem_module_elan_pending_event_queue,1);
 #endif 	     
 	  }	
 	else
 	  {
-#ifdef TRACE 
-	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending ==== \n", MPID_nem_mem_region.rank);
-	     //elan__print_queue(MPID_nem_module_elan_free_event_queue,0);
-#endif 
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
 	     elan_event_cell->elan_event =
 	       elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);
 	     elan_event_cell->cell_ptr = cell ;
 	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);
+#ifdef TRACE
+	     fprintf(stdout,"[%i] ==== ELAN SEND : Direct Pending event @ %p ==== \n", MPID_nem_mem_region.rank,elan_event_cell->elan_event);
+	     elan__print_queue(MPID_nem_module_elan_pending_event_queue,1);
+#endif   
 	  }	     	
      }   
    else
@@ -72,7 +73,7 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 #ifdef TRACE
 	//elan__print_queue(MPID_nem_module_elan_free_event_queue,0);
 #endif 
-	
+
 	MPID_nem_module_elan_free_event_queue->head->elan_event = 
 	  elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)data_size,MPID_NEM_ELAN_RAIL_NUM);
 
@@ -93,16 +94,16 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	     MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_free_event_queue,&elan_event_cell);
 
 #ifdef TRACE
-	    // elan__print_queue(MPID_nem_module_elan_free_event_queue,0);
+	     elan__print_queue(MPID_nem_module_elan_free_event_queue,0);
 #endif
 	     
 	     elan_event_cell->cell_ptr = cell ;
 	     MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);
 #ifdef TRACE 
-	     //elan__print_queue(MPID_nem_module_elan_pending_event_queue,1);
-	     fprintf(stdout,"[%i] ==== ELAN SEND : Pending after POLL ==== \n", MPID_nem_mem_region.rank);
+	     fprintf(stdout,"[%i] ==== ELAN SEND : Pending after POLL event @ %p ==== \n", MPID_nem_mem_region.rank,elan_event_cell->elan_event);
+	     elan__print_queue(MPID_nem_module_elan_pending_event_queue,1);
 #endif
-	  }	  
+	  }
      }
    
    fn_exit:
