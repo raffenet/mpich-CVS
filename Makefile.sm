@@ -168,6 +168,8 @@ dist-with-version:
 	    rm -rf tmpdir2 ; \
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
+	( cd tmpdir/${PACKAGE}-${version} && find . -name 'CVS' -print | \
+	    xargs -r rm -rf )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
 	rm -rf tmpdir
