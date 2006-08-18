@@ -4,6 +4,7 @@ smvar_do_sharedlibs   = 0
 MOD              = @F90MODEXT@
 MPIMOD           = @MPIMODNAME@
 MPICONSTMOD      = @MPICONSTMODNAME@
+MPISIZEOFMOD     = @MPISIZEOFMODNAME@
 F90INCFLAG       = @F90INCFLAG@
 F90EXT           = @F90EXT@
 F90_COMPILE_MODS = $(F90_COMPILE) 
@@ -30,7 +31,8 @@ all-preamble: $(MPIMOD).$(MOD)
 # We need the MPI constants in a separate module for some of the
 # interface definitions (the ones that need MPI_ADDRESS_KIND or
 # MPI_OFFSET_KIND)
-$(MPIMOD).$(MOD): $(MPICONSTMOD).$(MOD) $(srcdir)/mpi.f90 mpifnoext.h
+$(MPIMOD).$(MOD): $(MPICONSTMOD).$(MOD) $(MPISIZEOFMOD).$(MOD) \
+		  $(srcdir)/mpi.f90 mpifnoext.h
 	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
@@ -65,6 +67,25 @@ $(MPICONSTMOD).$(MOD): $(srcdir)/mpi_constants.f90 mpifnoext.h
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
 	        rm -f mpi_constants.$(F90EXT) ; \
+	    fi ; \
+	fi
+
+$(MPISIZEOFMOD).$(MOD): mpi_sizeofs.f90 mpifnoext.h
+	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
+	    rm -f mpimod.pc mpimod.pcl ; \
+	    echo "mpimod.pc" > mpimod.pcl ; \
+	    echo $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c mpi_sizeofs.f90 ; \
+	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c mpi_sizeofs.f90 ; \
+	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
+	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
+	else \
+	    if [ "$(F90EXT)" != "f90" ] ; then \
+	        ln -sf mpi_sizeofs.f90 mpi_sizeofs.$(F90EXT) ; \
+	    fi ; \
+	    echo $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
+	    $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
+	    if [ "$(F90EXT)" != "f90" ] ; then \
+	        rm -f mpi_sizeofs.$(F90EXT) ; \
 	    fi ; \
 	fi
 

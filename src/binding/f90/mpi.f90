@@ -3,8 +3,10 @@
 !     See COPYRIGHT in top-level directory.
 !
        MODULE MPI
+       USE MPI_SIZEOFS
        IMPLICIT NONE
        INCLUDE 'mpifnoext.h'
+
        INTERFACE
         SUBROUTINE MPI_INIT(IERROR)
         INTEGER IERROR

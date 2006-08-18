@@ -1641,6 +1641,12 @@ if test "$enable_f90" = "yes" ; then
     fi
 fi
 
+# Set defaults for these values so that the Makefile in src/bindings/f90
+# is valid even if f90 is not enabled (this is necessary for the 
+# distclean target)
+MPIMODNAME=mpi
+MPICONSTMODNAME=mpi_constants
+MPISIZEOFMODNAME=mpi_sizeofs
 if test "$enable_f90" = "yes" ; then
     # Determine characteristics of the Fortran 90 compiler
     # Find a Fortran 90 compiler.  Sets F90
@@ -1674,12 +1680,15 @@ if test "$enable_f90" = "yes" ; then
     if test "$pac_cv_f90_module_case" = "upper" ; then
         MPIMODNAME=MPI
         MPICONSTMODNAME=MPI_CONSTANTS
+	MPISIZEOFMODNAME=MPI_SIZEOFS
     else
         MPIMODNAME=mpi
         MPICONSTMODNAME=mpi_constants
+	MPISIZEOFMODNAME=mpi_sizeofs
     fi
     AC_SUBST(MPIMODNAME)
     AC_SUBST(MPICONSTMODNAME)
+    AC_SUBST(MPISIZEOFMODNAME)
     if test -z "$modincdir" ; then
         # The default module include dir is the same as the include dir
         modincdir=$includedir
@@ -3718,6 +3727,32 @@ EOF
     # If other "kinds" are supported, MPI_SIZEOF needs to identify 
     # those as well.  This is very difficult to do in a general way.
 
+    # To start with, we use the sizes determined for the Fortran 77 values.
+    # These must be the same as for the Fortran 90 values.
+    CROSS_F90_SIZEOF_INTEGER=${CROSS_F90_SIZEOF_INTEGER:-0}
+    CROSS_F90_SIZEOF_REAL=${CROSS_F90_SIZEOF_REAL:-0}
+    CROSS_F90_SIZEOF_DOUBLE_PRECISION=${CROSS_F90_SIZEOF_DOUBLE_PRECISION:-0}
+    SIZEOF_F90_INTEGER=$CROSS_F90_SIZEOF_INTEGER
+    SIZEOF_F90_REAL=$CROSS_F90_SIZEOF_REAL
+    SIZEOF_F90_CHARACTER=1
+    SIZEOF_F90_DOUBLE_PRECISION=$CROSS_F90_SIZEOF_DOUBLE_PRECISION
+    if test "$SIZEOF_F77_INTEGER" -gt 0 -a "$SIZEOF_F90_INTEGER" = "0" ; then
+        SIZEOF_F90_INTEGER=$SIZEOF_F77_INTEGER
+    fi
+    if test "$SIZEOF_F77_REAL" -gt 0 -a "$SIZEOF_F90_REAL" = "0" ; then
+        SIZEOF_F90_REAL=$SIZEOF_F77_REAL
+    fi
+    if test "$SIZEOF_F77_DOUBLE_PRECISION" -gt 0 -a \
+       "$SIZEOF_F90_DOUBLE_PRECISION" = "0" ; then
+        SIZEOF_F90_DOUBLE_PRECISION=$SIZEOF_F77_DOUBLE_PRECISION
+    fi
+    AC_SUBST(SIZEOF_F90_INTEGER)
+    AC_SUBST(SIZEOF_F90_REAL)
+    AC_SUBST(SIZEOF_F90_DOUBLE_PRECISION)
+    AC_SUBST(SIZEOF_F90_CHARACTER)
+
+    # 
+
     AC_LANG_C
 fi
 # ----------------------------------------------------------------------------
@@ -5074,6 +5109,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f77/mpif.h \
 	  src/binding/f77/setbotf.f \
 	  src/binding/f90/Makefile \
+	  src/binding/f90/mpi_sizeofs.f90 \
           src/env/mpicc \
 	  src/env/mpicc.conf \
 	  src/env/mpicc.bash \
