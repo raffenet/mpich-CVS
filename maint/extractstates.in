@@ -125,6 +125,7 @@ foreach my $dir (split(/\s/,$dirs)) {
 # values.  This gives us one more opportunity to detect duplicate or 
 # mismatched values
 %allKeys = ();
+%allKeysLoc = ();
 foreach my $key (keys(%allInfo)) {
      # Split line into value
      my $val = "";
@@ -134,14 +135,18 @@ foreach my $key (keys(%allInfo)) {
           $val = $2;
       }
      if (defined($allKeys{$key})) {
-	 if ($allKeys{$key} ne $val) {
+         my $valForKey = $allKeys{$key};
+	 if ($valForKey ne $val) {
 	     print STDERR "\nInconsistent values for keys:\n";
-	     print STDERR "$allInfo{$origKey}: $origKey -> $val\n";
-	     print STDERR "also to $key -> $allKeys{$key}\n";
+	     print STDERR "In $allInfo{$origKey}, have\n";
+             print STDERR" $key -> $val\n";
+	     print STDERR "also to $key -> $valForKey\n";
+             print STDERR "seen in $allKeysLoc{$key} .\n";
              print STDERR "Using $key -> $val\n";
 	 }
      }
      $allKeys{$key} = $val;
+     $allKeysLoc{$key} = $allInfo{$origKey};
 }
 #
 
