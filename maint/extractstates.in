@@ -181,14 +181,6 @@ print DH "/* -*- Mode: C; c-basic-offset:4 ; -*- */
 #ifndef MPIALLSTATES_H_INCLUDED
 #define MPIALLSTATES_H_INCLUDED\n";
 
-# print the enum of states
-print DH "enum MPID_TIMER_STATE {\n";
-foreach my $key (sort(keys(%allKeys))) {
-    print DH "\t$key,\n";
-}
-print DH "\tMPID_NUM_TIMER_STATES };\n";
-print DH "#endif\n";
-close DH;
 
 # Create the description of the states
 # This roughly reproduces the describe_states.c file
@@ -302,9 +294,8 @@ sub findStateDecl {
 		$processed .= $1;
 		$_ = $2;
 		if (/.*\*\/(.*)/) {
-		    $processed .= $1;
 		    $inComment = 0;
-		    $_ = 2;
+		    $_ = $1;
 		}
 		else {
 		    $inComment = 1;
