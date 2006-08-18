@@ -9,7 +9,7 @@
 
 #include <sys/poll.h>
 #include <stddef.h> 
-#include "newtcp_module_impl.h"
+//#include "newtcp_module_impl.h"
 
 enum SOCK_CONSTS {  //more type safe than #define's
     LISTENQLEN = 10,
