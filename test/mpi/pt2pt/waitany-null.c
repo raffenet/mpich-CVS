@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	    fprintf(stderr, " Found %d errors\n", toterrs);
 	}
 	else {
-	    printf(" No errors\n");
+	    printf(" No Errors\n");
 	}
     }
     MPI_Finalize();
