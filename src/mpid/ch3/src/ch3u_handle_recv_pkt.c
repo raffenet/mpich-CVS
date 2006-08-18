@@ -84,9 +84,9 @@ int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
  * lock the VC.  If simultaneous upcalls are a possible, the calling routine 
  * for serializing the calls.
  */
-int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt);
 int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt);
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
+int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt);
 #define MPIDI_CH3U_Handle_unordered_recv_pkt MPIDI_CH3U_Handle_recv_pkt
 #else
 #define MPIDI_CH3U_Handle_ordered_recv_pkt MPIDI_CH3U_Handle_recv_pkt 
@@ -236,7 +236,7 @@ int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t * pkt,
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_UNORDERED_RECV_PKT);
     return mpi_errno;
 }
-#endif
+#endif /* defined(MPIDI_CH3_MSGS_UNORDERED) */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Handle_ordered_recv_pkt
@@ -407,9 +407,11 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
     return mpi_errno;
 }
 
-/* FIXME: What does this routine do */
-/* This function is used in conjunction with MPIDI_CH3_iStartRndvTransfer 
-   and even eager messages */
+/* 
+ * This function is used to post a receive operation on a request for the 
+ * next data to arrive.  In turn, this request is attached to a virtual
+ * connection.
+ */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Post_data_receive
 #undef FCNAME
@@ -532,6 +534,130 @@ int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp)
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Post_data_receive_found
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
+{
+    int dt_contig;
+    MPI_Aint dt_true_lb;
+    MPIDI_msg_sz_t userbuf_sz;
+    MPID_Datatype * dt_ptr;
+    MPIDI_msg_sz_t data_sz;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_FOUND);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_FOUND);
+
+    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"posted request found");
+	
+    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+		
+    if (rreq->dev.recv_data_sz <= userbuf_sz) {
+	data_sz = rreq->dev.recv_data_sz;
+    }
+    else {
+	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+               "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
+					    MPIDI_MSG_SZ_FMT,
+				 rreq->dev.recv_data_sz, userbuf_sz));
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
+							  "**truncate", "**truncate %d %d %d %d", rreq->status.MPI_SOURCE,
+							  rreq->status.MPI_TAG, rreq->dev.recv_data_sz, userbuf_sz );
+	rreq->status.count = userbuf_sz;
+	data_sz = userbuf_sz;
+    }
+
+    /* FIXME: why not test that the data is no larger than the 
+       receive buffer, instead of exactly the same size? */
+    if (dt_contig && data_sz == rreq->dev.recv_data_sz)
+    {
+	/* user buffer is contiguous and large enough to store the
+	   entire message */
+	/* FIXME: So why don't we move it *now* ? */
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"IOV loaded for contiguous read");
+	rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char*)(rreq->dev.user_buf) + dt_true_lb);
+	rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
+	rreq->dev.iov_count = 1;
+	/* FIXME: We want to set the OnDataAvail to the appropriate 
+	   function, which depends on whether this is an RMA 
+	   request or a pt-to-pt request. */
+	/*	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);*/
+#ifdef DBG_RMA
+	if (MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_RECV) {
+	    printf( "Changing OnDataAvail to null for request type %d\n",
+		    MPIDI_Request_get_type(rreq) );
+	    printf( "Old CA type is %d\n", rreq->dev.ca );
+	    printf( "Request handle is %x\n", rreq->handle );
+	    fflush(stdout);
+	}
+#endif
+	rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	rreq->dev.OnDataAvail = 0;
+    }
+    else {
+	/* user buffer is not contiguous or is too small to hold
+	   the entire message */
+	int mpi_errno;
+	
+	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"IOV loaded for non-contiguous read");
+	MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &rreq->dev.segment, 0);
+	rreq->dev.segment_first = 0;
+	rreq->dev.segment_size = data_sz;
+	mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS) {
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+					     "**ch3|loadrecviov", 0);
+	    goto fn_exit;
+	}
+	/* --END ERROR HANDLING-- */
+    }
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_FOUND);
+    return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Post_data_receive_unexpected
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreq)
+{
+    int dt_contig;
+    MPI_Aint dt_true_lb;
+    MPIDI_msg_sz_t userbuf_sz;
+    MPID_Datatype * dt_ptr;
+    MPIDI_msg_sz_t data_sz;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_UNEXPECTED);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_UNEXPECTED);
+
+    /* FIXME: to improve performance, allocate temporary buffer from a 
+       specialized buffer pool. */
+    /* FIXME: to avoid memory exhaustion, integrate buffer pool management
+       with flow control */
+    MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unexpected request allocated");
+    
+    rreq->dev.tmpbuf = MPIU_Malloc(rreq->dev.recv_data_sz);
+    /* FIXME: No test for malloc failure ! */
+    rreq->dev.tmpbuf_sz = rreq->dev.recv_data_sz;
+    
+    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.tmpbuf;
+    rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.recv_data_sz;
+    rreq->dev.iov_count = 1;
+    rreq->dev.ca = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
+    rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
+    rreq->dev.recv_pending_count = 2;
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_UNEXPECTED);
     return mpi_errno;
 }
 

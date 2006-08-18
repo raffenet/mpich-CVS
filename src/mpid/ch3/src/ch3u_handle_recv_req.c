@@ -54,7 +54,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq,
     goto fn_exit;
  }
 #endif  
-  
+
+#if 0  
     switch(rreq->dev.ca)
     {
 	case MPIDI_CH3_CA_COMPLETE:
@@ -148,6 +149,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq,
 	}
 	/* --END ERROR HANDLING-- */
     }
+
+#endif
 
   fn_exit:
     in_routine = FALSE;

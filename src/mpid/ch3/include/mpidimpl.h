@@ -1052,12 +1052,16 @@ int MPIDI_CH3_Connect_to_root(const char *, MPIDI_VC_t **);
   An mpi error code.
 
   Notes:
-  This is the handler function to be called when the channel receives a rndv rts packet.
-  After this function is called the channel is returned a request and a found flag.  The channel may set any channel
-  specific fields in the request at this time.  Then the channel should call MPIDI_CH3U_Post_data_receive() and 
+  This is the handler function to be called when the channel receives a rndv 
+  rts packet.
+  After this function is called the channel is returned a request and a found
+  flag.  The channel may set any channel
+  specific fields in the request at this time.  Then the channel should call 
+  MPIDI_CH3U_Post_data_receive() and 
   MPIDI_CH3_iStartRndvTransfer() if the found flag is set.
 E*/
-int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, int *foundp);
+int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, 
+				    MPID_Request ** rreqp, int *foundp);
 
 /*E
   MPIDI_CH3_iStartRndvMsg - This function is used to initiate a rendezvous
@@ -1120,6 +1124,8 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
 void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sdt, int * smpi_errno,
 			    void * const rbuf, int rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
 int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
+int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreqp);
+int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreqp);
 
 
 
