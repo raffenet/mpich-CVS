@@ -37,8 +37,10 @@ int main( int argc, char *argv[] )
 	for (count = 1; count < 65000; count = count * 2) {
 	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
 
-		MTestPrintfMsg( 1, "Putting count = %d of sendtype %s\n", 
-				count, MTestGetDatatypeName( &sendtype ) );
+		MTestPrintfMsg( 1, 
+		       "Putting count = %d of sendtype %s receive type %s\n", 
+				count, MTestGetDatatypeName( &sendtype ),
+				MTestGetDatatypeName( &recvtype ) );
 
 		/* Make sure that everyone has a recv buffer */
 		recvtype.InitBuf( &recvtype );
@@ -55,7 +57,7 @@ int main( int argc, char *argv[] )
 		    sendtype.InitBuf( &sendtype );
 		    
 		    err = MPI_Put( sendtype.buf, sendtype.count, 
-				    sendtype.datatype, dest, 0, 
+				   sendtype.datatype, dest, 0, 
 				   recvtype.count, recvtype.datatype, win );
 		    if (err) {
 			errs++;
