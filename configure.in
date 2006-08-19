@@ -3736,15 +3736,16 @@ EOF
     SIZEOF_F90_REAL=$CROSS_F90_SIZEOF_REAL
     SIZEOF_F90_CHARACTER=1
     SIZEOF_F90_DOUBLE_PRECISION=$CROSS_F90_SIZEOF_DOUBLE_PRECISION
-    if test "$SIZEOF_F77_INTEGER" -gt 0 -a "$SIZEOF_F90_INTEGER" = "0" ; then
-        SIZEOF_F90_INTEGER=$SIZEOF_F77_INTEGER
+    if test "$pac_cv_f77_sizeof_integer" -gt 0 -a \
+	    "$SIZEOF_F90_INTEGER" = "0" ; then
+        SIZEOF_F90_INTEGER=$pac_cv_f77_sizeof_integer
     fi
-    if test "$SIZEOF_F77_REAL" -gt 0 -a "$SIZEOF_F90_REAL" = "0" ; then
-        SIZEOF_F90_REAL=$SIZEOF_F77_REAL
+    if test "$pac_cv_f77_sizeof_real" -gt 0 -a "$SIZEOF_F90_REAL" = "0" ; then
+        SIZEOF_F90_REAL=$pac_cv_f77_sizeof_real
     fi
-    if test "$SIZEOF_F77_DOUBLE_PRECISION" -gt 0 -a \
+    if test "$pac_cv_f77_sizeof_double_precision" -gt 0 -a \
        "$SIZEOF_F90_DOUBLE_PRECISION" = "0" ; then
-        SIZEOF_F90_DOUBLE_PRECISION=$SIZEOF_F77_DOUBLE_PRECISION
+        SIZEOF_F90_DOUBLE_PRECISION=$pac_cv_f77_sizeof_double_precision
     fi
     AC_SUBST(SIZEOF_F90_INTEGER)
     AC_SUBST(SIZEOF_F90_REAL)
