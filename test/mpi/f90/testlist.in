@@ -5,7 +5,7 @@ ext
 info
 init
 @iodir@
-#misc
+misc
 pt2pt
 datatype
 @rmadir@
