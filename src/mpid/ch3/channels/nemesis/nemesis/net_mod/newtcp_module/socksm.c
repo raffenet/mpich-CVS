@@ -530,26 +530,26 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         MPIU_ERR_CHKANDJUMP2(sc->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", 
                              "**sock_create %s %d", strerror(errno), errno);
         plfd->fd = sc->fd;
-        plfd->events = POLLOUT;
+        mpi_errno = MPID_nem_newtcp_module_set_sockopts(sc->fd);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
         mpi_errno = MPID_nem_newtcp_module_set_sockopts(sc->fd);
         if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
-        
-        {                   
-            char dbg_ipaddr_str[INET_ADDRSTRLEN], *dbg_p;
-            dbg_p = inet_ntop (AF_INET, &sock_addr->sin_addr, dbg_ipaddr_str, 
-                               sizeof(dbg_ipaddr_str));
-            if (dbg_p) {
-                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "connecting to %s:%d", dbg_ipaddr_str, sock_addr->sin_port));
-            }
-            else {
-                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "error in inet_ntop"));
-            }
-        }
+
         rc = connect(sc->fd, (SA*)sock_addr, sizeof(*sock_addr)); 
         //connect should not be called with CHECK_EINTR macro
         MPIU_ERR_CHKANDJUMP2 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
                               "**sock_connect", "**sock_connect %d %s", errno, strerror (errno));
-        sc->state.cstate = (rc == 0) ? CONN_STATE_TC_C_CNTD : CONN_STATE_TC_C_CNTING;
+        
+        if (rc == 0) {
+            sc->state.cstate = CONN_STATE_TC_C_CNTD;
+            //plfd->events = POLLOUT;
+        }
+        else {
+            sc->state.cstate = CONN_STATE_TC_C_CNTING;
+            //plfd->events = POLLIN | POLLOUT; // checking for connectedness requires both
+        }
+        
         sc->handler = sc_state_handlers[sc->state.cstate];
         vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED;
         sc->pg_rank = vc->pg_rank;
@@ -570,6 +570,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         switch(sc->state.cstate) {
         case CONN_STATE_TS_D_DCNTING:
             sc->state.cstate = CONN_STATE_TS_COMMRDY;
+            //plfd->events = POLLIN | POLLOUT;
             sc->handler = sc_state_handlers[sc->state.cstate];
             sc->pending_event = 0;
             break;
@@ -578,6 +579,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
                 if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK) 
                     == MPI_SUCCESS) {
                     sc->state.cstate = CONN_STATE_TS_COMMRDY;
+                    //plfd->events = POLLIN | POLLOUT;
                     sc->handler = sc_state_handlers[sc->state.cstate];
                     sc->pending_event = 0;
                 }
@@ -647,6 +649,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
             // Just close the connection from the current state ignoring the outstanding
             // negotiation messages.
             sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
+            //plfd->events = POLLOUT; // In quiescent state, no further reading. just close.
             sc->handler = sc_state_handlers[sc->state.cstate];
             break;
         case CONN_STATE_TS_COMMRDY:
@@ -682,6 +685,7 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
    
     MPIDI_NEMTCP_FUNC_ENTER;
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
+
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED) {
         sc->state.cstate = CONN_STATE_TC_C_CNTD;
         sc->handler = sc_state_handlers[sc->state.cstate];
@@ -730,7 +734,7 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     
     if (IS_WRITEABLE(plfd)) {
         MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "inside if (IS_WRITEABLE(plfd))");
-        plfd->events = POLLIN | POLLOUT;
+        //plfd->events = POLLIN | POLLOUT;
         if (send_id_info(sc) == MPI_SUCCESS) {
             sc->state.cstate = CONN_STATE_TC_C_RANKSENT;
             sc->handler = sc_state_handlers[sc->state.cstate];
@@ -1166,7 +1170,9 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
     MPIDI_NEMTCP_FUNC_ENTER;
     while (1) {
         len = sizeof(SA_IN);
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "before accept"));
         if ((connfd = accept(l_sc->fd, (SA *) &rmt_addr, &len)) < 0) {
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "after accept, connfd=%d, errno=%d", connfd, errno));
             if (errno == EINTR)
                 continue;
             else if (errno == EWOULDBLOCK)
@@ -1185,9 +1191,12 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
                 sc = &g_sc_tbl[index];
                 plfd = &g_plfd_tbl[index];
                 
+                sc->fd = plfd->fd = connfd;
+                MPID_nem_newtcp_module_set_sockopts(connfd);
                 sc->pg_rank = CONN_INVALID_RANK;
                 sc->state.cstate = CONN_STATE_TA_C_CNTD;                
                 sc->handler = sc_state_handlers[sc->state.cstate];
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, added to table, connfd=%d", connfd));
             }
         }
     }
@@ -1224,3 +1233,20 @@ Check the set/use of sc->vc->ch.sc in connect side and accept side sequence of
 events properly. This may be helpful in optimizing the code.
 
 ***/
+
+
+/* FIXME Some debug logging code for logging, delete after NEM_SOCK is stable
+
+        
+        {                   
+            char dbg_ipaddr_str[INET_ADDRSTRLEN], *dbg_p;
+            dbg_p = inet_ntop (AF_INET, (struct in_addr *)&sock_addr->sin_addr, dbg_ipaddr_str, 
+                               sizeof(dbg_ipaddr_str));
+            if (dbg_p) {
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "connecting to %s:%d", dbg_ipaddr_str, sock_addr->sin_port));
+            }
+            else {
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "error in inet_ntop"));
+            }
+        }
+*/

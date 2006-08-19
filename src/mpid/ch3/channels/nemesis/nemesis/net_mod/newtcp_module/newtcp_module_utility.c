@@ -52,6 +52,10 @@ int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struc
     goto fn_exit;
 }
 
+//FIXME some flags need to be set only for listener fd and some only for the connection fd.
+// make this two functions and call for appropriate fd's. If done so, remember to call the 
+// function for connection fd for the fd returned by accept also.
+
 #undef FUNCNAME
 #define FUNCNAME set_sockopts
 #undef FCNAME
@@ -59,7 +63,7 @@ int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struc
 int MPID_nem_newtcp_module_set_sockopts (int fd)
 {
     int mpi_errno = MPI_SUCCESS;
-    int option;
+    int option, flags;
     int ret;
     size_t len;
 
@@ -80,6 +84,16 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
     getsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, &len);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+
+    flags = fcntl(fd, F_GETFL, 0);
+    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
+    ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+
+    flags = fcntl(fd, F_GETFL, 0);
+    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    ret = fcntl(fd, F_SETFL, flags | SO_REUSEADDR);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
 
  fn_exit:
