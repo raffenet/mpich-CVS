@@ -239,19 +239,24 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     
     set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
-    *rreqp = rreq;
-    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
-		    "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
-    }
-	    
     if (found)
     {
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_eager_sync_ack_t * const esa_pkt = &upkt.eager_sync_ack;
 	MPID_Request * esa_req;
-	
+
+	if (rreq->dev.recv_data_sz == 0) {
+	    MPIDI_CH3U_Request_complete(rreq);
+	    *rreqp = NULL;
+	}
+	else {
+	    *rreqp = rreq;
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq );
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+		    "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
+	    }
+	}
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending eager sync ack");
 	
 	MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
@@ -267,6 +272,18 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     else
     {
+	if (rreq->dev.recv_data_sz == 0) {
+	    MPIDI_CH3U_Request_complete(rreq);
+	    *rreqp = NULL;
+	}
+	else {
+	    *rreqp = rreq;
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_unexpected( rreq );
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+		    "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
+	    }
+	}
 	MPIDI_Request_set_sync_send_flag(rreq, TRUE);
     }
  fn_fail:

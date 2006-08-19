@@ -334,14 +334,26 @@ int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     
     set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
-    *rreqp = rreq;
-    /* FIXME: What is the logic here?  On an eager receive, the data
-       should be available already, and we should be optimizing
-       for short messages */
-    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+    if (rreq->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(rreq);
+	*rreqp = NULL;
+    }
+    else {
+	/* FIXME: What is the logic here?  On an eager receive, the data
+	   should be available already, and we should be optimizing
+	   for short messages */
+	*rreqp = rreq;
+	if (found) {
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq );
+	}
+	else {
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_unexpected( rreq );
+	}
+
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
+	}
     }
 
  fn_fail:
@@ -381,16 +393,23 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     /* FIXME: What is the logic here?  On an eager receive, the data
        should be available already, and we should be optimizing
        for short messages */
-    if (found) {
-	
+
+    if (rreq->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(req);
+	*rreqp = NULL;
     }
     else {
-    }
+	if (found) {
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq );
+	}
+	else {
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_unexpected( rreq );
+	}
 
-    mpi_errno = MPIDI_CH3U_Post_data_receive(found, rreqp);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
+	}
     }
 
  fn_fail:
@@ -418,14 +437,20 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     
     set_request_info(rreq, ready_pkt, MPIDI_REQUEST_EAGER_MSG);
-    *rreqp = rreq;
-    if (found)
-    {
-	mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
-			 "**ch3|postrecv",
-			 "**ch3|postrecv %s", "MPIDI_CH3_PKT_READY_SEND");
+    if (found) {
+	if (rreq->dev.recv_data_sz == 0) {
+	    MPIDI_CH3U_Request_complete(rreq);
+	    *rreqp = NULL;
+	}
+	else {
+	    *rreqp = rreq;
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_found(rreq);
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
+				     "**ch3|postrecv",
+				     "**ch3|postrecv %s", 
+				     "MPIDI_CH3_PKT_READY_SEND");
+	    }
 	}
     }
     else
@@ -446,6 +471,7 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	if (rreq->dev.recv_data_sz > 0)
 	{
 	    /* force read of extra data */
+	    *rreqp = rreq;
 	    rreq->dev.segment_first = 0;
 	    rreq->dev.segment_size = 0;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);

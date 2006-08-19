@@ -302,13 +302,21 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 {
     MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &pkt->rndv_send;
     int mpi_errno = MPI_SUCCESS;
+    MPID_Request *req;
     
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received rndv send (data) pkt");
     MPID_Request_get_ptr(rs_pkt->receiver_req_id, *rreqp);
-    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+    req = *rreqp;
+    if (req->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(req);
+	*rreqp = NULL;
+    }
+    else {
+	mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_RNDV_SEND");
+	}
     }
 	
  fn_fail:
@@ -328,18 +336,24 @@ int MPIDI_CH3_RecvRndv( MPIDI_VC_t * vc, MPID_Request *rreq )
 #ifdef MPIDI_CH3_CHANNEL_RNDV
     /* The channel will be performing the rendezvous */
     
-    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, &rreq);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-			     "**ch3|postrecv",
-			     "**ch3|postrecv %s",
-			     "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+    if (req->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(req);
+	*rreqp = NULL;
+    }
+    else {
+	mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
+				 "**ch3|postrecv",
+				 "**ch3|postrecv %s",
+				 "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+	}
     }
     mpi_errno = MPIDI_CH3_iStartRndvTransfer (vc, rreq);
 
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-			    "**ch3|ctspkt");
+				"**ch3|ctspkt");
     }
     
 #else

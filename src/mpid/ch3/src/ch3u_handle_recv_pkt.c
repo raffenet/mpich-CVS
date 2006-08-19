@@ -629,11 +629,6 @@ fn_exit:
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreq)
 {
-    int dt_contig;
-    MPI_Aint dt_true_lb;
-    MPIDI_msg_sz_t userbuf_sz;
-    MPID_Datatype * dt_ptr;
-    MPIDI_msg_sz_t data_sz;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE_UNEXPECTED);
 
@@ -801,21 +796,27 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					 type_size);
 	    req->dev.recv_data_sz = type_size * put_pkt->count;
 		    
-	    *rreqp = req;
 #ifdef DBG_RMA
 	    printf( "Post data receive (put)\n" ); fflush(stdout);
 #endif
-	    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-	    /* FIXME:  Only change the handling of completion if
-	       post_data_receive reset the handler.  There should
-	       be a cleaner way to do this */
-	    if (!req->dev.OnDataAvail) {
+	    if (req->dev.recv_data_sz == 0) {
+		MPIDI_CH3U_Request_complete( req );
+		*rreqp = NULL;
+	    }
+	    else {
+		*rreqp = req;
+		mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+		/* FIXME:  Only change the handling of completion if
+		   post_data_receive reset the handler.  There should
+		   be a cleaner way to do this */
+		if (!req->dev.OnDataAvail) {
 #ifdef DBG_RMA
-		printf( "Resetting OnDataAvail to resp complete\n" );
-		printf( "Request handle is %x\n", req->handle );
-		fflush(stdout);
+		    printf( "Resetting OnDataAvail to resp complete\n" );
+		    printf( "Request handle is %x\n", req->handle );
+		    fflush(stdout);
 #endif
-		req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
+		    req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
+		}
 	    }
 	}
 	else
@@ -846,13 +847,10 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    *rreqp = req;
 	}
 	
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_PUT");
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER,"**ch3|postrecv",
+			  "**ch3|postrecv %s", "MPIDI_CH3_PKT_PUT");
 	}
-	/* --END ERROR HANDLING-- */
 
     }
  fn_fail:
@@ -962,19 +960,21 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     MPID_Datatype_get_size_macro(req->dev.datatype, type_size);
     req->dev.recv_data_sz = type_size * req->dev.user_count;
     
-    *rreqp = req;
 #ifdef DBG_RMA
     printf( "Post data receive (get)\n" ); fflush(stdout);
 #endif
-    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_GET_RESP");
+    if (req->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete( req );
+	*rreqp = NULL;
     }
-    /* --END ERROR HANDLING-- */
-
+    else {
+	*rreqp = req;
+	mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER,"**ch3|postrecv", 
+			  "**ch3|postrecv %s", "MPIDI_CH3_PKT_GET_RESP");
+	}
+    }
     return mpi_errno;
 }
 
@@ -1044,17 +1044,23 @@ int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 #ifdef DBG_RMA  
 	printf( "Post data receive (accumulate)\n" ); fflush(stdout);
 #endif
-	mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-	/* FIXME:  Only change the handling of completion if
-	   post_data_receive reset the handler.  There should
-	   be a cleaner way to do this */
-	if (!req->dev.OnDataAvail) {
+	if (req->dev.recv_data_sz == 0) {
+	    MPIDI_CH3U_Request_complete(req);
+	    *rreqp = NULL;
+	}
+	else {
+	    mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+	    /* FIXME:  Only change the handling of completion if
+	       post_data_receive reset the handler.  There should
+	       be a cleaner way to do this */
+	    if (!req->dev.OnDataAvail) {
 #ifdef DBG_RMA
-	    printf( "Resetting ondataavail to PutAccumResp\n" );
-	    printf( "Request handle is %x\n", req->handle );
-	    fflush(stdout);
+		printf( "Resetting ondataavail to PutAccumResp\n" );
+		printf( "Request handle is %x\n", req->handle );
+		fflush(stdout);
 #endif
-	    req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
+		req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;
+	    }
 	}
     }
     else
@@ -1266,18 +1272,23 @@ int MPIDI_CH3_PktHandler_LockPutUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	req->dev.lock_queue_entry = new_ptr;
     }
     
-    *rreqp = req;
-    {
-    int (*fcn)( MPIDI_VC_t *, struct MPID_Request *, int * );
-    fcn = req->dev.OnDataAvail;
 #ifdef DBG_RMA
     printf( "Post data receive (lock put unlock)\n" ); fflush(stdout);
 #endif
-    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
+    if (req->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(req);
+	*rreqp = NULL;
+    }
+    else {
+	int (*fcn)( MPIDI_VC_t *, struct MPID_Request *, int * );
+	fcn = req->dev.OnDataAvail;
+	mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
 #ifdef DBG_RMA
-    printf( "Restoring ondatavail to %p\n", fcn );
+	printf( "Restoring ondatavail to %p\n", fcn );
 #endif
-    req->dev.OnDataAvail = fcn; }
+	req->dev.OnDataAvail = fcn; 
+	*rreqp = req;
+    }
     
     
     /* --BEGIN ERROR HANDLING-- */
@@ -1472,25 +1483,28 @@ int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 #ifdef DBG_RMA
     printf( "Post data receive (single put)\n" ); fflush(stdout);
 #endif
-    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, rreqp);
-    /* FIXME:  Only change the handling of completion if
-       post_data_receive reset the handler.  There should
-       be a cleaner way to do this */
-    if (!req->dev.OnDataAvail) {
+    if (req->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(req);
+	*rreqp = NULL;
+    }
+    else {
+	mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+	/* FIXME:  Only change the handling of completion if
+	   post_data_receive reset the handler.  There should
+	   be a cleaner way to do this */
+	if (!req->dev.OnDataAvail) {
 #ifdef DBG_RMA
-	printf( "Resetting ondataavail to single put accum\n" );
-	printf( "Request handle is %x\n", req->handle );
-	fflush(stdout);
+	    printf( "Resetting ondataavail to single put accum\n" );
+	    printf( "Request handle is %x\n", req->handle );
+	    fflush(stdout);
 #endif
-	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_SinglePutAccumComplete;
+	    req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_SinglePutAccumComplete;
+	}
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER,"**ch3|postrecv", 
+		  "**ch3|postrecv %s", "MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK");
+	}
     }
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-					 "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_LOCK_ACCUM_UNLOCK");
-    }
-    /* --END ERROR HANDLING-- */
  fn_fail:
     return mpi_errno;
 }

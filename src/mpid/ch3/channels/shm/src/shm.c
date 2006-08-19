@@ -1425,20 +1425,25 @@ int MPIDI_CH3I_SHM_wait(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc
 
 			if (found)
 			{
-			    mpi_errno = MPIDI_CH3U_Post_data_receive(TRUE, &rreq);
-			    /* --BEGIN ERROR HANDLING-- */
-			    if (mpi_errno != MPI_SUCCESS)
-			    {
-				mpi_errno = MPIR_Err_create_code (mpi_errno, MPIR_ERR_FATAL,
-				    FCNAME, __LINE__,
-				    MPI_ERR_OTHER,
-				    "**ch3|postrecv",
-				    "**ch3|postrecv %s",
-				    "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WAIT);
-				return mpi_errno;
+			    if (rreq->dev.recv_data_sz == 0) {
+				MPIDI_CH3U_Request_complete(rreq);
+				rreq = NULL;
+			    }
+			    else {
+				mpi_errno = MPIDI_CH3U_Post_data_receive_found(rreq);
+				/* --BEGIN ERROR HANDLING-- */
+				if (mpi_errno != MPI_SUCCESS)
+				    {
+					MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER,
+						      "**ch3|postrecv",
+						      "**ch3|postrecv %s",
+				      "MPIDI_CH3_PKT_RNDV_REQ_TO_SEND");
+					MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+					return mpi_errno;
+				    }
 			    }
 			    /* --END ERROR HANDLING-- */
+
 			    mpi_errno = MPIDI_CH3_iStartRndvTransfer(recv_vc_ptr, rreq);
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
