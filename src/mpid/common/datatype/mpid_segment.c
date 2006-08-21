@@ -466,14 +466,13 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
     el_size = MPID_Datatype_get_basic_size(el_type);
     size = *blocks_p * (DLOOP_Offset) el_size;
 
-#ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("\t[contig to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d]\n",
+    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
+             "\t[contig to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d]\n",
 		    (unsigned) rel_off,
 		    (unsigned) bufp,
 		    paramp->u.pack_vector.index,
 		    el_size,
-		    (int) *blocks_p);
-#endif
+		    (int) *blocks_p));
     
     last_idx = paramp->u.pack_vector.index - 1;
     if (last_idx >= 0) {
@@ -542,8 +541,8 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
     basic_size = MPID_Datatype_get_basic_size(el_type);
     blocks_left = *blocks_p;
 
-#ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("\t[vector to vec: do=%d, dp=%x, len=%d, ind=%d, ct=%d, blksz=%d, str=%d, blks=%d]\n",
+    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
+	     "\t[vector to vec: do=%d, dp=%x, len=%d, ind=%d, ct=%d, blksz=%d, str=%d, blks=%d]\n",
 		    (unsigned) rel_off,
 		    (unsigned) bufp,
 		    paramp->u.pack_vector.length,
@@ -551,8 +550,7 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
 		    count,
 		    blksz,
 		    stride,
-		    (int) *blocks_p);
-#endif
+		    (int) *blocks_p));
 
     for (i=0; i < count && blocks_left > 0; i++) {
 	int last_idx;

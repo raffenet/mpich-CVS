@@ -35,9 +35,7 @@
   @*/
 void MPID_Datatype_free(MPID_Datatype *ptr)
 {
-#ifdef MPID_TYPE_ALLOC_DEBUG
-    MPIU_dbg_printf("type %x freed.\n", ptr->handle);
-#endif
+    MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"type %x freed.", ptr->handle);
 
     /* before freeing the contents, check whether the pointer is not
        null because it is null in the case of a datatype shipped to the target
