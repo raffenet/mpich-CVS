@@ -55,7 +55,6 @@ int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struc
 //FIXME some flags need to be set only for listener fd and some only for the connection fd.
 // make this two functions and call for appropriate fd's. If done so, remember to call the 
 // function for connection fd for the fd returned by accept also.
-
 #undef FUNCNAME
 #define FUNCNAME set_sockopts
 #undef FCNAME
@@ -67,7 +66,9 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     int ret;
     size_t len;
 
+    fprintf(stdout, FCNAME " Enter\n"); fflush(stdout);
     /* I heard you have to read the options after setting them in some implementations */
+
     option = 0;
     len = sizeof(int);
     ret = setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, len);
@@ -85,22 +86,25 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
     getsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, &len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-
-    flags = fcntl(fd, F_GETFL, 0);
-    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
-    ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
-
+    
     flags = fcntl(fd, F_GETFL, 0);
     MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
     ret = fcntl(fd, F_SETFL, flags | SO_REUSEADDR);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    
+    flags = fcntl(fd, F_GETFL, 0);
+    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
+    ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
 
  fn_exit:
+    fprintf(stdout, FCNAME " Exit\n"); fflush(stdout);
     return mpi_errno;
  fn_fail:
+    fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno);
     goto fn_exit;
 }
+
 
 /*
   MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF : connection failed
@@ -127,13 +131,19 @@ know whether the connect is still not complete after a non-blocking connect is i
 TODO: Make this a macro for performance, if needed based on the usage.
 */
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_check_sock_status
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t 
 MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
 {
     int rc = MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT;
 
+    MPIDI_NEMTCP_FUNC_ENTER;
     if (plfd->revents & POLLERR) {
         rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF;
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "POLLERR on socket"));
         goto fn_exit;
     }
     if (plfd->revents & POLLIN || plfd->revents & POLLOUT) {
@@ -144,19 +154,41 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
         n = sizeof(error);
         if (getsockopt(plfd->fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) {
             rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; // (N1)
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, strerror(error)));
             goto fn_exit;
         }
-        ret_recv = recv(plfd->fd, buf, buf_len, MSG_PEEK);
-        if (ret_recv == 0 || ret_recv == -1)
+        CHECK_EINTR(ret_recv, recv(plfd->fd, buf, buf_len, MSG_PEEK));
+        if (ret_recv == 0)
             rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; //(N2)
         else
             rc = MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED;
+        //FIXME check for ret_recv == -1, but it has some problem when the socket is
+        // initially connected. It returns -1 always. Either that has to be analyzed
+        // and fixed or don't check for error here. We have already checked for
+        // socket errors enough above.
+
+/*        ret_recv = recv(plfd->fd, buf, buf_len, MSG_PEEK); */
+/*         if (ret_recv == 0 || ret_recv == -1) */
+/*             rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; //(N2) */
+/*         else */
+/*             rc = MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED; */
+
+/*         if (ret_recv == 0) { */
+/*             MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. rcvd EOF")); */
+/*         } */
+/*         else if (ret_recv == -1) { */
+/*             MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. socket error=%d:%s", error, strerror(error))); */
+/*         } */
     }
  fn_exit:
+    MPIDI_NEMTCP_FUNC_EXIT;
     return rc;
 }
 
-
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_is_sock_connected
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_is_sock_connected(int fd)
 {
     int rc = FALSE;
@@ -164,16 +196,36 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
     int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0;
     size_t n = sizeof(error);
 
+    MPIDI_NEMTCP_FUNC_ENTER;
     n = sizeof(error);
     if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) {
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, strerror(error)));
         rc = FALSE; // error
         goto fn_exit;
     }
-    ret_recv = recv(fd, buf, buf_len, MSG_PEEK);
-    if (ret_recv == 0 || ret_recv == -1)
-        rc = FALSE; // error or EOF
+
+    CHECK_EINTR(ret_recv, recv(plfd->fd, buf, buf_len, MSG_PEEK));
+    if (ret_recv == 0)
+        rc = FALSE;
     else
-        rc = TRUE; // CONNECTED
+        rc = TRUE;
+    //FIXME check for ret_recv == -1, but it has some problem when the socket is
+    // initially connected. It returns -1 always. Either that has to be analyzed
+    // and fixed or don't check for error here. We have already checked for
+    // socket errors enough above.
+
+/*     ret_recv = recv(fd, buf, buf_len, MSG_PEEK); */
+/*     if (ret_recv == 0 || ret_recv == -1) */
+/*         rc = FALSE; // error or EOF */
+/*     else */
+/*         rc = TRUE; // CONNECTED */
+/*     if (ret_recv == 0) { */
+/*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. rcvd EOF")); */
+/*     } */
+/*     else if (ret_recv == -1) { */
+/*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. socket error=%d:%s", error, strerror(error))); */
+/*     } */
  fn_exit:
+    MPIDI_NEMTCP_FUNC_EXIT;
     return rc;
 }

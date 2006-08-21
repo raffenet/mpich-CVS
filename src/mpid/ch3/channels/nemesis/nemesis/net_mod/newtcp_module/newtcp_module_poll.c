@@ -282,7 +282,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 /* MPID_nem_newtcp_module_conn_est -- this function is called when the
    connection is finally extablished to send any pending sends */
 #undef FUNCNAME
-#define FUNCNAME recv_progress
+#define FUNCNAME MPID_nem_newtcp_module_conn_est
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_conn_est (struct pollfd *pfd, sockconn_t *sc)
@@ -309,6 +309,7 @@ static inline int recv_progress()
     MPID_nem_cell_ptr_t v_cell;
     MPID_nem_cell_t *cell; /* non-volatile cell */
 
+    MPIDI_NEMTCP_FUNC_ENTER;
     /* Copy any packets from overflow buf into cells first */
     if (recv_overflow_buf.start)
     {
@@ -358,8 +359,10 @@ static inline int recv_progress()
 
 
  fn_exit:
+    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure"));
     goto fn_exit;
 }
 

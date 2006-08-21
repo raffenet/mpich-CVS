@@ -48,14 +48,14 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     MPIDI_NEMTCP_FUNC_ENTER;
     g_lstn_plfd.fd = g_lstn_sc.fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     MPIU_ERR_CHKANDJUMP2 (g_lstn_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
-    
+
+    mpi_errno = MPID_nem_newtcp_module_set_sockopts (g_lstn_sc.fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
     g_lstn_plfd.events = POLLIN;
     mpi_errno = MPID_nem_newtcp_module_bind (g_lstn_sc.fd);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    mpi_errno = MPID_nem_newtcp_module_set_sockopts (g_lstn_sc.fd);
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        
     ret = listen (g_lstn_sc.fd, SOMAXCONN);	      
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", errno, strerror (errno));  
     g_lstn_sc.state.lstate = LISTEN_STATE_LISTENING;
@@ -64,9 +64,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     /* create business card */
     mpi_errno = MPID_nem_newtcp_module_get_business_card (bc_val_p, val_max_sz_p);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "bus card = %s",
-                                             *bc_val_p));
-    fprintf(stdout, "bus card = %s\n", *bc_val_p); fflush(stdout);
+
     /* save references to queues */
     MPID_nem_process_recv_queue = proc_recv_queue;
     MPID_nem_process_free_queue = proc_free_queue;
@@ -93,7 +91,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno);
     goto fn_exit;
 }
 
@@ -126,12 +124,12 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
 
     p = inet_ntop (AF_INET, (struct in_addr *)hp->h_addr, ipaddr_str, sizeof(ipaddr_str));
 
-/*     if (p) */
-/*         printf("MPID_nem_newtcp_module_get_business_card. inet_ntop ipaddrstr=%s, \n",  */
-/*                ipaddr_str); */
-/*     else */
-/*         printf("MPID_nem_newtcp_module_get_business_card. inet_ntop errno=%d err=%s, \n",  */
-/*                errno, strerror(errno)); */
+    if (p)
+        printf("MPID_nem_newtcp_module_get_business_card. inet_ntop ipaddrstr=%s, \n", 
+               ipaddr_str);
+    else
+        printf("MPID_nem_newtcp_module_get_business_card. inet_ntop errno=%d err=%s, \n", 
+               errno, strerror(errno));
 
     MPIU_ERR_CHKANDJUMP1 (p == NULL, mpi_errno, MPI_ERR_OTHER, "**inet_ntop", "**inet_ntop %s", strerror (errno));
     
@@ -164,9 +162,10 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
         MPIDI_NEMTCP_FUNC_EXIT;
         return mpi_errno;
     }
+    printf("MPID_nem_newtcp_module_get_business_card. port=%d\n", sock_id.sin_port);
  fn_fail:
  fn_exit:
-    fprintf(stdout, "MPID_nem_newtcp_module_get_business_card Exit, mpi_errno=%d \n", mpi_errno); fflush(stdout);
+    fprintf(stdout, "MPID_nem_newtcp_module_get_business_card Exit, mpi_errno=%d\n", mpi_errno); fflush(stdout);
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
 }
@@ -219,6 +218,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno);
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
@@ -253,6 +253,7 @@ static int get_addr_port_from_bc (const char *business_card, struct in_addr *add
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno);
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
@@ -303,6 +304,7 @@ int MPID_nem_newtcp_module_bind (int sockfd)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno);
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }

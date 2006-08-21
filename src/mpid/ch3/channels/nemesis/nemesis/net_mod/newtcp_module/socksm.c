@@ -121,6 +121,7 @@ static int alloc_sc_plfd_tbls()
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -181,6 +182,7 @@ static int expand_sc_plfd_tbls()
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -224,6 +226,7 @@ static int find_free_entry(int *index)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -419,6 +422,7 @@ static int recv_id_info(sockconn_t *const sc)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -455,6 +459,7 @@ static int send_cmd_pkt(int fd, MPIDI_nem_newtcp_module_pkt_type_t pkt_type)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -490,6 +495,7 @@ static int recv_cmd_pkt(int fd, MPIDI_nem_newtcp_module_pkt_type_t *pkt_type)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -533,9 +539,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         mpi_errno = MPID_nem_newtcp_module_set_sockopts(sc->fd);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-        mpi_errno = MPID_nem_newtcp_module_set_sockopts(sc->fd);
-        if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
-
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "connecting to 0x%08X:%d", sock_addr->sin_addr.s_addr, sock_addr->sin_port));
         rc = connect(sc->fd, (SA*)sock_addr, sizeof(*sock_addr)); 
         //connect should not be called with CHECK_EINTR macro
         MPIU_ERR_CHKANDJUMP2 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
@@ -614,6 +618,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         //within fn_fail 
         Q_ENQUEUE(&freeq, node);
     }
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -671,6 +676,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -711,6 +717,7 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 
 }
@@ -754,6 +761,7 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -793,6 +801,7 @@ static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *cons
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 
 }
@@ -816,7 +825,7 @@ static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc
 
     if (IS_READABLE(plfd)) {
         if (recv_id_info(sc) == MPI_SUCCESS) {
-            sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
+            sc->state.cstate = CONN_STATE_TA_C_RANKRCVD;
             sc->handler = sc_state_handlers[sc->state.cstate];
         }
         else {
@@ -832,6 +841,7 @@ static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 
 }
@@ -901,6 +911,7 @@ static int state_l_rankrcvd_handler(const pollfd_t *const plfd, sockconn_t *cons
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -940,6 +951,7 @@ static int state_d_dcnting_handler(const pollfd_t *const plfd, sockconn_t *const
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 
 }
@@ -974,6 +986,7 @@ static int state_d_reqsent_handler(const pollfd_t *const plfd, sockconn_t *const
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -997,6 +1010,7 @@ static int state_d_reqrcvd_handler(const pollfd_t *const plfd, sockconn_t *const
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 
 }
@@ -1032,6 +1046,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -1085,6 +1100,7 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
  fn_exit:
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -1110,10 +1126,10 @@ int MPID_nem_newtcp_module_connpoll()
                           "**poll", "**poll %s", strerror (errno));
     if (n == 1) {
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "listen fd poll event"));
-        if (g_lstn_plfd.revents == POLLERR) //FIXME (N1)
+        if (g_lstn_plfd.revents & POLLERR) //FIXME (N1)
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail"); 
         //FIXME-Danger Add error string. actual string "**poll error on listener fd"
-        else if (g_lstn_plfd.revents == POLLIN)
+        else if (g_lstn_plfd.revents & POLLIN)
             g_lstn_sc.handler(&g_lstn_plfd, &g_lstn_sc);
     }
 
@@ -1172,7 +1188,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
         len = sizeof(SA_IN);
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "before accept"));
         if ((connfd = accept(l_sc->fd, (SA *) &rmt_addr, &len)) < 0) {
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "after accept, connfd=%d, errno=%d", connfd, errno));
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "after accept, connfd=%d, errno=%d:%s ", connfd, errno, strerror(errno)));
             if (errno == EINTR)
                 continue;
             else if (errno == EWOULDBLOCK)
@@ -1198,6 +1214,9 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
                 sc->handler = sc_state_handlers[sc->state.cstate];
                 MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, added to table, connfd=%d", connfd));
             }
+            else {
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, sock not connected, connfd=%d", connfd));
+            }
         }
     }
 
@@ -1205,6 +1224,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -1219,7 +1239,7 @@ static int f()
 
  fn_exit:
     return mpi_errno;
- fn_fail:
+ fn_fail:    
     goto fn_exit;
 }
 
@@ -1231,6 +1251,7 @@ and possibly other handler functions, see whether you can use sc->vc->ch.state
 and sc->vc->ch.sc. 
 Check the set/use of sc->vc->ch.sc in connect side and accept side sequence of
 events properly. This may be helpful in optimizing the code.
+2. Make sure all system calls are called within CHECK_EINTR macro
 
 ***/
 
