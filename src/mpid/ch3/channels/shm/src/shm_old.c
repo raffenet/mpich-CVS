@@ -156,3 +156,39 @@ int shmi_readv_unex(MPIDI_VC_t *vc_ptr)
 }
 
 #endif /* USE_SHM_UNEX */
+
+/* This block is from read_progress in the first (for (;;)) loop */
+#ifdef USE_SHM_UNEX
+	MPIDI_VC_t *temp_vc_ptr;
+	if (MPIDI_CH3I_Process.unex_finished_list)
+	{
+	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", MPIDI_CH3I_Process.unex_finished_list->ch.read.total));
+
+	    *num_bytes_ptr = MPIDI_CH3I_Process.unex_finished_list->ch.read.total;
+	    *vc_pptr = MPIDI_CH3I_Process.unex_finished_list;
+	    /* remove this vc from the finished list */
+	    temp_vc_ptr = MPIDI_CH3I_Process.unex_finished_list;
+	    MPIDI_CH3I_Process.unex_finished_list = MPIDI_CH3I_Process.unex_finished_list->ch.unex_finished_next;
+	    temp_vc_ptr->ch.unex_finished_next = NULL;
+
+	    *shm_out = SHM_WAIT_READ;
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+	    return MPI_SUCCESS;
+	}
+#endif /* USE_SHM_UNEX */
+
+/* dead code */
+#ifdef USE_SHM_UNEX
+		/* Should we buffer unexpected messages or leave them in the shmem queue? */
+		/*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, 0, num_bytes);*/
+#endif
+
+#ifdef USE_SHM_UNEX
+    if (vc->ch.unex_list)
+	shmi_read_unex(vc);
+#endif
+
+#ifdef USE_SHM_UNEX
+    if (vc->ch.unex_list)
+	shmi_readv_unex(vc);
+#endif

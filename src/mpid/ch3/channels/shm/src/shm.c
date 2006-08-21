@@ -120,7 +120,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 #endif
     int i;
     unsigned int total = 0;
-    unsigned int num_bytes;
+    unsigned int num_bytes = 0;
     unsigned int cur_avail, dest_avail;
     unsigned char *cur_pos, *dest_pos;
     int index;
@@ -797,20 +797,20 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out)
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     void *mem_ptr;
     char *iter_ptr;
     int num_bytes;
     unsigned int offset;
     MPIDI_VC_t *recv_vc_ptr;
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
-    int i;
+    MPIDI_CH3I_SHM_Queue_t *shm_ptr;
     register int index, working;
-#ifdef USE_SHM_UNEX
-    MPIDI_VC_t *temp_vc_ptr;
-#endif
+    int i;
+#ifdef MPIDI_CH3_CHANNEL_RNDV
     MPID_Request *sreq, *rreq;
     int complete;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
@@ -818,23 +818,6 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 
     for (;;) 
     {
-#ifdef USE_SHM_UNEX
-	if (MPIDI_CH3I_Process.unex_finished_list)
-	{
-	    MPIDI_DBG_PRINTF((60, FCNAME, "returning previously received %d bytes", MPIDI_CH3I_Process.unex_finished_list->ch.read.total));
-
-	    *num_bytes_ptr = MPIDI_CH3I_Process.unex_finished_list->ch.read.total;
-	    *vc_pptr = MPIDI_CH3I_Process.unex_finished_list;
-	    /* remove this vc from the finished list */
-	    temp_vc_ptr = MPIDI_CH3I_Process.unex_finished_list;
-	    MPIDI_CH3I_Process.unex_finished_list = MPIDI_CH3I_Process.unex_finished_list->ch.unex_finished_next;
-	    temp_vc_ptr->ch.unex_finished_next = NULL;
-
-	    *shm_out = SHM_WAIT_READ;
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
-	    return MPI_SUCCESS;
-	}
-#endif /* USE_SHM_UNEX */
 
 	working = FALSE;
 
@@ -844,19 +827,21 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 	    if (vc->pg_rank == i)
 		continue;
 
-	    index = vc->ch.shm[i].head_index;
+	    shm_ptr = &vc->ch.shm[i];
+
+	    index = shm_ptr->head_index;
+	    pkt_ptr = &shm_ptr->packet[index];
 
 	    /* if the packet at the head index is available, the queue is empty */
-	    if (vc->ch.shm[i].packet[index].avail == MPIDI_CH3I_PKT_EMPTY)
+	    if (pkt_ptr->avail == MPIDI_CH3I_PKT_EMPTY)
 		continue;
 	    MPID_READ_BARRIER(); /* no loads after this line can occur before the avail flag has been read */
 
 	    working = TRUE;
+	    MPIU_DBG_PRINTF(("MPIDI_CH3I_SHM_read_progress: reading from queue %p\n", shm_ptr));
 
-	    pkt_ptr = &vc->ch.shm[i].packet[index];
 	    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
-	    /*mem_ptr = (void*)vc->ch.shm[i].packet[index].cur_pos;*/
-	    num_bytes = vc->ch.shm[i].packet[index].num_bytes;
+	    num_bytes = pkt_ptr->num_bytes;
 	    MPIDI_PG_Get_vc(vc->pg, i, &recv_vc_ptr);
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
@@ -1081,7 +1066,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 			    pkt_ptr->offset = 0;
 			    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 			    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-			    vc->ch.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+			    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
 			}
 			/* return from the wait */
 			*num_bytes_ptr = 0;
@@ -1139,7 +1124,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
 		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-		    vc->ch.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		    continue;
 		}
 		if (recv_vc_ptr->ch.recv_active == NULL)
@@ -1147,13 +1133,9 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 	    }
 
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes\n", num_bytes));
-	    /*MPIDI_DBG_PRINTF((60, FCNAME, "shm_read_progress(recv finished %d bytes)", num_bytes));*/
+	    /*MPIDI_DBG_PRINTF((60, FCNAME, "shm_read_progress(recv finished %d bytes)\n", num_bytes));*/
 	    if (!(recv_vc_ptr->ch.shm_state & SHM_READING_BIT))
 	    {
-#ifdef USE_SHM_UNEX
-		/* Should we buffer unexpected messages or leave them in the shmem queue? */
-		/*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, 0, num_bytes);*/
-#endif
 		continue;
 	    }
 	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", recv_vc_ptr->ch.read.total, num_bytes, recv_vc_ptr->ch.read.total + num_bytes));
@@ -1194,21 +1176,28 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 			num_bytes = 0;
 		    }
 		}
-		offset = (unsigned char*)iter_ptr - (unsigned char*)mem_ptr;
+		offset = (unsigned int)((unsigned char*)iter_ptr - (unsigned char*)mem_ptr);
 		recv_vc_ptr->ch.read.total += offset;
 		if (num_bytes == 0)
 		{
-		    /* put the shm buffer back in the queue */
-		    vc->ch.shm[i].packet[index].offset = 0;
+		    /* put the shmem buffer back in the queue */
+		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
-		    vc->ch.shm[i].packet[index].avail = MPIDI_CH3I_PKT_EMPTY;
-		    vc->ch.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
+#ifdef MPICH_DBG_OUTPUT
+		    /*MPIU_Assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    if (&shm_ptr->packet[index] != pkt_ptr)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+			return mpi_errno;
+		    }
+#endif
+		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		}
 		else
 		{
-		    /* save the unused but received data */
-		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, offset, num_bytes);*/
-		    /* OR */
 		    /* update the head of the shmem queue */
 		    pkt_ptr->offset += (pkt_ptr->num_bytes - num_bytes);
 		    pkt_ptr->num_bytes = num_bytes;
@@ -1351,12 +1340,11 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 		if ((unsigned int)num_bytes > recv_vc_ptr->ch.read.bufflen)
 		{
 		    /* copy the received data */
+		    MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", recv_vc_ptr->ch.read.bufflen, shm_ptr, index));
 		    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		    memcpy(recv_vc_ptr->ch.read.buffer, mem_ptr, recv_vc_ptr->ch.read.bufflen);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-		    MPIU_DBG_PRINTF(("c:shm_read_progress: %d bytes read from packet %d offset %d\n", recv_vc_ptr->ch.read.bufflen, index, pkt_ptr->offset));
 		    recv_vc_ptr->ch.read.total = recv_vc_ptr->ch.read.bufflen;
-		    /*shmi_buffer_unex_read(recv_vc_ptr, pkt_ptr, mem_ptr, recv_vc_ptr->ch.read.bufflen, num_bytes - recv_vc_ptr->ch.read.bufflen);*/
 		    pkt_ptr->offset += recv_vc_ptr->ch.read.bufflen;
 		    pkt_ptr->num_bytes = num_bytes - recv_vc_ptr->ch.read.bufflen;
 		    recv_vc_ptr->ch.read.bufflen = 0;
@@ -1364,19 +1352,29 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 		else
 		{
 		    /* copy the received data */
+		    MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", num_bytes, shm_ptr, index));
 		    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 		    memcpy(recv_vc_ptr->ch.read.buffer, mem_ptr, num_bytes);
 		    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-		    MPIU_DBG_PRINTF(("d:shm_read_progress: %d bytes read from packet %d offset %d\n", num_bytes, index, pkt_ptr->offset));
 		    recv_vc_ptr->ch.read.total += num_bytes;
 		    /* advance the user pointer */
 		    recv_vc_ptr->ch.read.buffer = (char*)(recv_vc_ptr->ch.read.buffer) + num_bytes;
 		    recv_vc_ptr->ch.read.bufflen -= num_bytes;
-		    /* put the shm buffer back in the queue */
-		    vc->ch.shm[i].packet[index].offset = 0;
+		    /* put the shmem buffer back in the queue */
+		    pkt_ptr->offset = 0;
 		    MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
-		    vc->ch.shm[i].packet[index].avail = MPIDI_CH3I_PKT_EMPTY;
-		    vc->ch.shm[i].head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
+#ifdef MPICH_DBG_OUTPUT
+		    /*MPIU_Assert(&shm_ptr->packet[index] == pkt_ptr);*/
+		    if (&shm_ptr->packet[index] != pkt_ptr)
+		    {
+			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
+			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+			return mpi_errno;
+		    }
+#endif
+		    shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		    MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
 		}
 		if (recv_vc_ptr->ch.read.bufflen == 0)
 		{
@@ -1400,8 +1398,9 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 	}
     }
 
+/*    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0); */
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /* non-blocking functions */
@@ -1422,10 +1421,6 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*rfn)(int,
     vc->ch.read.use_iov = FALSE;
     vc->ch.shm_state |= SHM_READING_BIT;
     vc->ch.shm_reading_pkt = FALSE;
-#ifdef USE_SHM_UNEX
-    if (vc->ch.unex_list)
-	shmi_read_unex(vc);
-#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
     return MPI_SUCCESS;
 }
@@ -1479,10 +1474,6 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(i
     vc->ch.read.use_iov = TRUE;
     vc->ch.shm_state |= SHM_READING_BIT;
     vc->ch.shm_reading_pkt = FALSE;
-#ifdef USE_SHM_UNEX
-    if (vc->ch.unex_list)
-	shmi_readv_unex(vc);
-#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     return MPI_SUCCESS;
 }
