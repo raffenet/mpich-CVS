@@ -9,9 +9,9 @@
 
 #include <sys/poll.h>
 #include <stddef.h> 
-//#include "newtcp_module_impl.h"
+/*#include "newtcp_module_impl.h"*/
 
-enum SOCK_CONSTS {  //more type safe than #define's
+enum SOCK_CONSTS {  /* more type safe than #define's */
     LISTENQLEN = 10,
     POLL_CONN_TIME = 2
 };
@@ -24,7 +24,7 @@ enum CONSTS {
     CONN_PLFD_TBL_GROW_SIZE = 10,
     CONN_INVALID_FD = -1,
     CONN_INVALID_RANK = -1,
-    NEGOMSG_DATA_LEN = 4, // Length of data during negotiatiion message exchanges.
+    NEGOMSG_DATA_LEN = 4, /* Length of data during negotiatiion message exchanges. */
     SLEEP_INTERVAL = 1500,
     PROGSM_TIMES = 20
 };

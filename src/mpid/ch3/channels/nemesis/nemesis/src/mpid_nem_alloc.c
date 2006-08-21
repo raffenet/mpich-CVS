@@ -5,9 +5,8 @@
  */
 
 #include "mpid_nem_impl.h"
+#include <stdlib.h>
 #include <unistd.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <errno.h>
 
 #undef FUNCNAME
@@ -108,10 +107,7 @@ int MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg, 
    
     MPIU_Assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );   
 
- fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -125,7 +121,6 @@ int MPID_nem_check_alloc (int num_processes)
     int rank    = MPID_nem_mem_region.local_rank;
     int address = 0;
     int base, found, index;
-    int ret;
     
     pmi_errno = PMI_Barrier();
     MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
@@ -358,7 +353,7 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
     {
         ret = write (fd, "", 1);
     }
-    while (ret == -1 && errno == EINTR || ret == 0);
+    while ((ret == -1 && errno == EINTR) || ret == 0);
     MPIU_ERR_CHKANDSTMT2 (ret == -1, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "lseek", strerror (errno));
 
     /* mmap the file */

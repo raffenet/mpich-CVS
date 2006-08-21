@@ -204,7 +204,7 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
         goto fn_exit;
     }
 
-    CHECK_EINTR(ret_recv, recv(plfd->fd, buf, buf_len, MSG_PEEK));
+    CHECK_EINTR(ret_recv, recv(fd, buf, buf_len, MSG_PEEK));
     if (ret_recv == 0)
         rc = FALSE;
     else
