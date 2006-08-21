@@ -7,6 +7,8 @@
 #include "mpidi_ch3_impl.h"
 #include <stdio.h>
 
+/* STATES:NO WARNINGS */
+
 /*#undef USE_IOV_LEN_2_SHORTCUT*/
 #define USE_IOV_LEN_2_SHORTCUT
 
@@ -87,7 +89,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 #endif
     int i;
     unsigned int total = 0;
-    unsigned int num_bytes=0;
+    unsigned int num_bytes = 0;
     unsigned int cur_avail, dest_avail;
     unsigned char *cur_pos, *dest_pos;
     int index;
@@ -145,7 +147,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
     }
 #endif
 
-    dest_pos = writeq->packet[index].data;
+    dest_pos = (unsigned char *)(writeq->packet[index].data);
     dest_avail = MPIDI_CH3I_PACKET_SIZE;
     writeq->packet[index].num_bytes = 0;
     for (i=0; i<n; i++)
@@ -171,7 +173,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	    MPID_WRITE_BARRIER();
 	    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
-	    cur_pos = (char *) iov[i].MPID_IOV_BUF + dest_avail;
+	    cur_pos = (unsigned char *)iov[i].MPID_IOV_BUF + dest_avail;
 	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
 	    while (cur_avail)
 	    {
@@ -200,7 +202,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 		    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 		}
 	    }
-	    dest_pos = writeq->packet[index].data + num_bytes;
+	    dest_pos = (unsigned char *)(writeq->packet[index].data) + num_bytes;
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE - num_bytes;
 	}
 	if (dest_avail == 0)
@@ -217,7 +219,7 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 		return MPI_SUCCESS;
 	    }
-	    dest_pos = writeq->packet[index].data;
+	    dest_pos = (unsigned char *)(writeq->packet[index].data);
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE;
 	    writeq->packet[index].num_bytes = 0;
 	}
@@ -235,87 +237,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
     return MPI_SUCCESS;
-}
-
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_SHM_read
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_read(MPIDI_VC_t * recv_vc_ptr, void *buf, int len, int *num_bytes_ptr)
-{
-    int mpi_errno = MPI_SUCCESS;
-    void *mem_ptr;
-    int num_bytes;
-    MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
-    MPIDI_CH3I_SHM_Queue_t *shm_ptr;
-    register int index;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_READ);
-    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_READ);
-
-    shm_ptr = recv_vc_ptr->ch.read_shmq;
-    if (shm_ptr == NULL)
-    {
-	*num_bytes_ptr = 0;
-	goto fn_exit;
-    }
-    index = shm_ptr->head_index;
-    pkt_ptr = &shm_ptr->packet[index];
-
-    /* if the packet at the head index is available, the queue is empty */
-    if (pkt_ptr->avail == MPIDI_CH3I_PKT_EMPTY)
-    {
-	*num_bytes_ptr = 0;
-	goto fn_exit;
-    }
-    MPID_READ_BARRIER(); /* no loads after this line can occur before the avail flag has been read */
-
-    MPIU_DBG_PRINTF(("MPIDI_CH3I_SHM_read_progress: reading from queue %p\n", shm_ptr));
-
-    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
-    num_bytes = pkt_ptr->num_bytes;
-
-    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes", num_bytes));
-    if (num_bytes > len)
-    {
-	/* copy the received data */
-	MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", recv_vc_ptr->ch.read.bufflen, shm_ptr, index));
-	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	memcpy(buf, mem_ptr, len);
-	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	*num_bytes_ptr = len;
-	pkt_ptr->offset += len;
-	pkt_ptr->num_bytes = num_bytes - len;
-    }
-    else
-    {
-	/* copy the received data */
-	MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", num_bytes, shm_ptr, index));
-	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	memcpy(buf, mem_ptr, num_bytes);
-	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	*num_bytes_ptr = num_bytes;
-	/* put the shmem buffer back in the queue */
-	pkt_ptr->offset = 0;
-	MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
-	pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
-#ifdef MPICH_DBG_OUTPUT
-	/*MPIU_Assert(&shm_ptr->packet[index] == pkt_ptr);*/
-	if (&shm_ptr->packet[index] != pkt_ptr)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
-	    goto fn_exit;
-	}
-#endif
-	shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
-    }
-
-fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ);
-    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -342,7 +263,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
     MPID_Request * reload_sreq;
 #ifndef HAVE_WINDOWS_H
-    int n, status;
+    int n;
     OFF_T uOffset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
@@ -354,15 +275,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     reload_pkt->sreq = sreq->handle;
 
 #ifndef HAVE_WINDOWS_H
-    if (ptrace(PTRACE_ATTACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace attach failed", errno);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
-	return mpi_errno;
-    }
-    if (waitpid(vc->ch.nSharedProcessID, &status, WUNTRACED) != vc->ch.nSharedProcessID)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "waitpid failed", errno);
+    mpi_errno = MPIDI_SHM_AttachProc( vc->ch.nSharedProcessID );
+    if (mpi_errno) {
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 	return mpi_errno;
     }
@@ -420,7 +334,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		if (uOffset != OFF_T_CAST(rbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
-		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+		    MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 		    return mpi_errno;
 		}
@@ -431,7 +345,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    if (num_written == -1)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "write failed", errno);
-			ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+			MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			return mpi_errno;
 		    }
@@ -514,9 +428,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    if ( (i != (send_count - 1)) || (sbuf_len != 0) )
 		    {
 #ifndef HAVE_WINDOWS_H
-			if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+			mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+			if (mpi_errno) {
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			    return mpi_errno;
 			}
@@ -554,9 +467,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	}
 
 #ifndef HAVE_WINDOWS_H
-	if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+	mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+	if (mpi_errno) {
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 	    return mpi_errno;
 	}
@@ -632,7 +544,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
     MPID_Request * reload_rreq;
 #ifndef HAVE_WINDOWS_H
-    int n, status;
+    int n;
     OFF_T uOffset;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
@@ -645,15 +557,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     reload_pkt->rreq = rreq->handle;
 
 #ifndef HAVE_WINDOWS_H
-    if (ptrace(PTRACE_ATTACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace attach failed", errno);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
-	return mpi_errno;
-    }
-    if (waitpid(vc->ch.nSharedProcessID, &status, WUNTRACED) != vc->ch.nSharedProcessID)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "waitpid failed", errno);
+    mpi_errno = MPIDI_SHM_AttachProc( vc->ch.nSharedProcessID );
+    if (mpi_errno) {
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 	return mpi_errno;
     }
@@ -708,7 +613,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		if (uOffset != OFF_T_CAST(sbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
-		    ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+		    MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 		    return mpi_errno;
 		}
@@ -719,7 +624,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    if (num_read == -1)
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "read failed", errno);
-			ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0);
+			MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 			return mpi_errno;
 		    }
@@ -752,9 +657,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    if ( (i != (recv_count - 1)) || (rbuf_len != 0) )
 		    {
 #ifndef HAVE_WINDOWS_H
-			if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-			{
-			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+			mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+			if (mpi_errno) {
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 			    return mpi_errno;
 			}
@@ -793,9 +697,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	}
 
 #ifndef HAVE_WINDOWS_H
-	if (ptrace(PTRACE_DETACH, vc->ch.nSharedProcessID, 0, 0) != 0)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace detach failed", errno);
+	mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+	if (mpi_errno) {
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 	    return mpi_errno;
 	}
@@ -850,6 +753,86 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
     return mpi_errno;
 #endif
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_SHM_read
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_SHM_read(MPIDI_VC_t * recv_vc_ptr, void *buf, int len, int *num_bytes_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    void *mem_ptr;
+    int num_bytes;
+    MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
+    MPIDI_CH3I_SHM_Queue_t *shm_ptr;
+    register int index;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_READ);
+    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_READ);
+
+    shm_ptr = recv_vc_ptr->ch.read_shmq;
+    if (shm_ptr == NULL)
+    {
+	*num_bytes_ptr = 0;
+	goto fn_exit;
+    }
+    index = shm_ptr->head_index;
+    pkt_ptr = &shm_ptr->packet[index];
+
+    /* if the packet at the head index is available, the queue is empty */
+    if (pkt_ptr->avail == MPIDI_CH3I_PKT_EMPTY)
+    {
+	*num_bytes_ptr = 0;
+	goto fn_exit;
+    }
+    MPID_READ_BARRIER(); /* no loads after this line can occur before the avail flag has been read */
+
+    MPIU_DBG_PRINTF(("MPIDI_CH3I_SHM_read_progress: reading from queue %p\n", shm_ptr));
+
+    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
+    num_bytes = pkt_ptr->num_bytes;
+
+    MPIDI_DBG_PRINTF((60, FCNAME, "read %d bytes", num_bytes));
+    if (num_bytes > len)
+    {
+	/* copy the received data */
+	MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", recv_vc_ptr->ch.read.bufflen, shm_ptr, index));
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
+	memcpy(buf, mem_ptr, len);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	*num_bytes_ptr = len;
+	pkt_ptr->offset += len;
+	pkt_ptr->num_bytes = num_bytes - len;
+    }
+    else
+    {
+	/* copy the received data */
+	MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", num_bytes, shm_ptr, index));
+	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
+	memcpy(buf, mem_ptr, num_bytes);
+	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	*num_bytes_ptr = num_bytes;
+	/* put the shmem buffer back in the queue */
+	pkt_ptr->offset = 0;
+	MPID_READ_WRITE_BARRIER(); /* the writing of the flag cannot occur before the reading of the last piece of data */
+	pkt_ptr->avail = MPIDI_CH3I_PKT_EMPTY;
+#ifdef MPICH_DBG_OUTPUT
+	/*MPIU_Assert(&shm_ptr->packet[index] == pkt_ptr);*/
+	if (&shm_ptr->packet[index] != pkt_ptr)
+	{
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pkt_ptr", "**pkt_ptr %p %p", &shm_ptr->packet[index], pkt_ptr);
+	    goto fn_exit;
+	}
+#endif
+	shm_ptr->head_index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
+	MPIDI_DBG_PRINTF((60, FCNAME, "read_shmq head = %d", shm_ptr->head_index));
+    }
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ);
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -1467,7 +1450,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 	}
     }
 
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
     return mpi_errno;
 }

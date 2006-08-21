@@ -234,10 +234,10 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     MPIDI_DBG_PRINTF((50, FCNAME, "entering, blocking=%s", is_blocking ? "true" : "false"));
     do
     {
-	mpi_errno = MPIDI_CH3I_SHM_wait(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &wait_result);
+	mpi_errno = MPIDI_CH3I_SHM_read_progress(MPIDI_CH3I_Process.vc, 0, &vc_ptr, &num_bytes, &wait_result);
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_wait", 0);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_read_progress", 0);
 	    goto fn_exit;
 	}
 	switch (wait_result)
@@ -267,7 +267,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    spin_count++;
 	    break;
 	case SHM_WAIT_READ:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes read", num_bytes));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes read", num_bytes));
 	    spin_count = 1;
 #ifdef USE_SLEEP_YIELD
 	    MPIDI_Sleep_yield_count = 0;
@@ -284,7 +284,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    }
 	    break;
 	case SHM_WAIT_WRITE:
-	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_wait reported %d bytes written", num_bytes));
+	    MPIDI_DBG_PRINTF((50, FCNAME, "MPIDI_CH3I_SHM_read_progress reported %d bytes written", num_bytes));
 	    spin_count = 1;
 #ifdef USE_SLEEP_YIELD
 	    MPIDI_Sleep_yield_count = 0;
@@ -303,7 +303,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	case SHM_WAIT_WAKEUP:
 	    break;
 	default:
-	    /*MPIDI_err_printf(FCNAME, "MPIDI_CH3I_SHM_wait returned an unknown operation code\n");*/
+	    /*MPIDI_err_printf(FCNAME, "MPIDI_CH3I_SHM_read_progress returned an unknown operation code\n");*/
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shm_op", "**shm_op %d", wait_result);
 	    goto fn_exit;
 	    /*
@@ -316,7 +316,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    */
 	}
 
-	/* pound on the write queues since shm_wait currently does not return SHM_WAIT_WRITE */
+	/* pound on the write queues since shm_read_progress currently does not return SHM_WAIT_WRITE */
 	for (i=0; i<MPIDI_PG_Get_size(MPIDI_CH3I_Process.vc->pg); i++)
 	{
 	    MPIDI_PG_Get_vc(MPIDI_CH3I_Process.vc->pg, i, &vc_ptr);

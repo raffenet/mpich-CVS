@@ -407,6 +407,7 @@ int MPIDI_CH3U_Handle_ordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
     return mpi_errno;
 }
 
+#if 0
 /* 
  * This function is used to post a receive operation on a request for the 
  * next data to arrive.  In turn, this request is attached to a virtual
@@ -536,6 +537,7 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_POST_DATA_RECEIVE);
     return mpi_errno;
 }
+#endif /* 0 for post_data_receive */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Post_data_receive_found
@@ -555,7 +557,8 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
 
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"posted request found");
 	
-    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, 
+			    dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
 		
     if (rreq->dev.recv_data_sz <= userbuf_sz) {
 	data_sz = rreq->dev.recv_data_sz;
@@ -565,15 +568,15 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
                "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
 					    MPIDI_MSG_SZ_FMT,
 				 rreq->dev.recv_data_sz, userbuf_sz));
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
-							  "**truncate", "**truncate %d %d %d %d", rreq->status.MPI_SOURCE,
-							  rreq->status.MPI_TAG, rreq->dev.recv_data_sz, userbuf_sz );
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
+		     "**truncate", "**truncate %d %d %d %d", 
+		     rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, 
+		     rreq->dev.recv_data_sz, userbuf_sz );
 	rreq->status.count = userbuf_sz;
 	data_sz = userbuf_sz;
     }
 
-    /* FIXME: why not test that the data is no larger than the 
-       receive buffer, instead of exactly the same size? */
     if (dt_contig && data_sz == rreq->dev.recv_data_sz)
     {
 	/* user buffer is contiguous and large enough to store the

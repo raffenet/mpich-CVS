@@ -31,14 +31,16 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
     int total = 0;
     int length;
     int index;
+    MPIDI_CH3I_SHM_Queue_t * writeq;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    index = vc->ch.write_shmq->tail_index;
-    if (vc->ch.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+    writeq = vc->ch.write_shmq;
+    index = writeq->tail_index;
+    if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
     {
 	*num_bytes_ptr = total;
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -49,21 +51,22 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
     while (len)
     {
 	length = min(len, MPIDI_CH3I_PACKET_SIZE);
-	/*vc->ch.write_shmq->packet[index].offset = 0; the reader guarantees this is reset to zero */
-	vc->ch.write_shmq->packet[index].num_bytes = length;
+	/*writeq->packet[index].offset = 0; the reader guarantees this is reset to zero */
+	writeq->packet[index].num_bytes = length;
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	memcpy(vc->ch.write_shmq->packet[index].data, buf, length);
+	memcpy(writeq->packet[index].data, buf, length);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	MPIU_DBG_PRINTF(("shm_write: %d bytes in packet %d\n", writeq->packet[index].num_bytes, index));
 	MPID_WRITE_BARRIER();
-	vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+	writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 	buf = (char *) buf + length;
 	total += length;
 	len -= length;
 
 	index = (index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	if (vc->ch.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+	if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
 	{
-	    vc->ch.write_shmq->tail_index = index;
+	    writeq->tail_index = index;
 	    *num_bytes_ptr = total;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
@@ -71,7 +74,7 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
 	}
     }
 
-    vc->ch.write_shmq->tail_index = index;
+    writeq->tail_index = index;
     *num_bytes_ptr = total;
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
@@ -89,18 +92,20 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 #endif
     int i;
     unsigned int total = 0;
-    unsigned int num_bytes= 0;
+    unsigned int num_bytes = 0;
     unsigned int cur_avail, dest_avail;
     unsigned char *cur_pos, *dest_pos;
     int index;
+    MPIDI_CH3I_SHM_Queue_t * writeq;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-    index = vc->ch.write_shmq->tail_index;
-    if (vc->ch.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+    writeq = vc->ch.write_shmq;
+    index = writeq->tail_index;
+    if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
     {
 	*num_bytes_ptr = 0;
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -108,36 +113,37 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	return MPI_SUCCESS;
     }
 
-    MPIU_DBG_PRINTF(("writing to write_shmq %p\n", vc->ch.write_shmq));
+    MPIU_DBG_PRINTF(("writing to write_shmq %p\n", writeq));
 #ifdef USE_IOV_LEN_2_SHORTCUT
     if (n == 2 && (iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN) < MPIDI_CH3I_PACKET_SIZE)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN, vc->ch.write_shmq, index));
+	MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN, writeq, index));
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	memcpy(vc->ch.write_shmq->packet[index].data, 
+	memcpy(writeq->packet[index].data, 
 	       iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	memcpy(&vc->ch.write_shmq->packet[index].data[iov[0].MPID_IOV_LEN],
+	memcpy(&writeq->packet[index].data[iov[0].MPID_IOV_LEN],
 	       iov[1].MPID_IOV_BUF, iov[1].MPID_IOV_LEN);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	vc->ch.write_shmq->packet[index].num_bytes = 
+	writeq->packet[index].num_bytes = 
 	    iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN;
-	total = vc->ch.write_shmq->packet[index].num_bytes;
+	total = writeq->packet[index].num_bytes;
 	MPID_WRITE_BARRIER();
-	vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+	writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 #ifdef MPICH_DBG_OUTPUT
-	/*MPIU_Assert(index == vc->ch.write_shmq->tail_index);*/
-	if (index != vc->ch.write_shmq->tail_index)
+	/*MPIU_Assert(index == writeq->tail_index);*/
+	if (index != writeq->tail_index)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq_index", "**shmq_index %d %d", index, vc->ch.write_shmq->tail_index);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmq_index", "**shmq_index %d %d", index, writeq->tail_index);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 	    return mpi_errno;
 	}
 #endif
-	vc->ch.write_shmq->tail_index =
-	    (vc->ch.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", vc->ch.write_shmq->tail_index));
+	writeq->tail_index =
+	    (writeq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
+	MPIU_DBG_PRINTF(("shm_writev - %d bytes in packet %d\n", writeq->packet[index].num_bytes, index));
 	*num_bytes_ptr = total;
 	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
@@ -145,40 +151,42 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
     }
 #endif
 
-    dest_pos = (unsigned char *)(vc->ch.write_shmq->packet[index].data);
+    dest_pos = (unsigned char *)(writeq->packet[index].data);
     dest_avail = MPIDI_CH3I_PACKET_SIZE;
-    vc->ch.write_shmq->packet[index].num_bytes = 0;
+    writeq->packet[index].num_bytes = 0;
     for (i=0; i<n; i++)
     {
 	if (iov[i].MPID_IOV_LEN <= dest_avail)
 	{
 	    total += iov[i].MPID_IOV_LEN;
-	    vc->ch.write_shmq->packet[index].num_bytes += iov[i].MPID_IOV_LEN;
+	    writeq->packet[index].num_bytes += iov[i].MPID_IOV_LEN;
 	    dest_avail -= iov[i].MPID_IOV_LEN;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", iov[i].MPID_IOV_LEN, vc->ch.write_shmq, index));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", iov[i].MPID_IOV_LEN, writeq, index));
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	    MPIU_DBG_PRINTF(("shm_writev: +%d=%d bytes in packet %d\n", iov[i].MPID_IOV_LEN, writeq->packet[index].num_bytes, index));
 	    dest_pos += iov[i].MPID_IOV_LEN;
 	}
 	else
 	{
 	    total += dest_avail;
-	    vc->ch.write_shmq->packet[index].num_bytes = MPIDI_CH3I_PACKET_SIZE;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", dest_avail, vc->ch.write_shmq, index));
+	    writeq->packet[index].num_bytes = MPIDI_CH3I_PACKET_SIZE;
+	    MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", dest_avail, writeq, index));
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy(dest_pos, iov[i].MPID_IOV_BUF, dest_avail);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	    MPIU_DBG_PRINTF(("shm_writev: +%d=%d bytes in packet %d\n", dest_avail, writeq->packet[index].num_bytes, index));
 	    MPID_WRITE_BARRIER();
-	    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
-	    cur_pos = (unsigned char*)iov[i].MPID_IOV_BUF + dest_avail;
+	    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+	    cur_pos = (unsigned char *)(iov[i].MPID_IOV_BUF) + dest_avail;
 	    cur_avail = iov[i].MPID_IOV_LEN - dest_avail;
 	    while (cur_avail)
 	    {
-		index = vc->ch.write_shmq->tail_index = 
-		    (vc->ch.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-		MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", vc->ch.write_shmq->tail_index));
-		if (vc->ch.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+		index = writeq->tail_index = 
+		    (writeq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+		MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
+		if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
 		{
 		    *num_bytes_ptr = total;
 		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
@@ -186,49 +194,50 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 		    return MPI_SUCCESS;
 		}
 		num_bytes = min(cur_avail, MPIDI_CH3I_PACKET_SIZE);
-		vc->ch.write_shmq->packet[index].num_bytes = num_bytes;
-		MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", num_bytes, vc->ch.write_shmq, index));
+		writeq->packet[index].num_bytes = num_bytes;
+		MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", num_bytes, writeq, index));
 		MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-		memcpy(vc->ch.write_shmq->packet[index].data, cur_pos, num_bytes);
+		memcpy(writeq->packet[index].data, cur_pos, num_bytes);
 		MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+		MPIU_DBG_PRINTF(("shm_writev: +%d=%d bytes in packet %d\n", num_bytes, writeq->packet[index].num_bytes, index));
 		total += num_bytes;
 		cur_pos += num_bytes;
 		cur_avail -= num_bytes;
 		if (cur_avail)
 		{
 		    MPID_WRITE_BARRIER();
-		    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+		    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 		}
 	    }
-	    dest_pos = (unsigned char *)(vc->ch.write_shmq->packet[index].data) + num_bytes;
+	    dest_pos = (unsigned char *)(writeq->packet[index].data) + num_bytes;
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE - num_bytes;
 	}
 	if (dest_avail == 0)
 	{
 	    MPID_WRITE_BARRIER();
-	    vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
-	    index = vc->ch.write_shmq->tail_index = 
-		(vc->ch.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", vc->ch.write_shmq->tail_index));
-	    if (vc->ch.write_shmq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
+	    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+	    index = writeq->tail_index = 
+		(writeq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+	    MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
+	    if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
 	    {
 		*num_bytes_ptr = total;
 		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 		return MPI_SUCCESS;
 	    }
-	    dest_pos = (unsigned char *)(vc->ch.write_shmq->packet[index].data);
+	    dest_pos = (unsigned char *)(writeq->packet[index].data);
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE;
-	    vc->ch.write_shmq->packet[index].num_bytes = 0;
+	    writeq->packet[index].num_bytes = 0;
 	}
     }
     if (dest_avail < MPIDI_CH3I_PACKET_SIZE)
     {
 	MPID_WRITE_BARRIER();
-	vc->ch.write_shmq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
-	vc->ch.write_shmq->tail_index = 
-	    (vc->ch.write_shmq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", vc->ch.write_shmq->tail_index));
+	writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
+	writeq->tail_index = 
+	    (writeq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
+	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
     }
 
     *num_bytes_ptr = total;
@@ -1103,7 +1112,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 		recv_vc_ptr = recv_vc_ptr->ch.shm_next_reader;
 		continue;
 	    }
-	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d", recv_vc_ptr->ch.read.total, num_bytes, recv_vc_ptr->ch.read.total + num_bytes));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "read update, total = %d + %d = %d\n", recv_vc_ptr->ch.read.total, num_bytes, recv_vc_ptr->ch.read.total + num_bytes));
 	    if (recv_vc_ptr->ch.read.use_iov)
 	    {
 		iter_ptr = mem_ptr;
@@ -1112,7 +1121,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 		    if ((int)recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN <= num_bytes)
 		    {
 			/* copy the received data */
-			MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN, shm_ptr, index));
+			MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]\n", recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN, shm_ptr, index));
 			MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 			memcpy(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF, iter_ptr,
 			    recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_LEN);
@@ -1126,7 +1135,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 		    else
 		    {
 			/* copy the received data */
-			MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]", num_bytes, shm_ptr, index));
+			MPIDI_DBG_PRINTF((60, FCNAME, "reading %d bytes from read_shmq %08p packet[%d]\n", num_bytes, shm_ptr, index));
 			MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 			memcpy(recv_vc_ptr->ch.read.iov[recv_vc_ptr->ch.read.index].MPID_IOV_BUF, iter_ptr, num_bytes);
 			MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
@@ -1372,8 +1381,7 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*rfn)(int,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
-    MPIDI_DBG_PRINTF((60, FCNAME, "posting read of %d bytes", len));
-    /*printf("...\n");fflush(stdout);*/
+    MPIDI_DBG_PRINTF((60, FCNAME, "posting a read of %d bytes", len));
     vc->ch.read.total = 0;
     vc->ch.read.buffer = buf;
     vc->ch.read.bufflen = len;
@@ -1390,9 +1398,6 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*rfn)(int,
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(int, void*))
 {
-#ifdef MPICH_DBG_OUTPUT
-    int i;
-#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 #ifdef USE_SHM_IOV_COPY
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
@@ -1415,6 +1420,7 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(i
 #ifdef MPICH_DBG_OUTPUT
     if (n > 1)
     {
+	int i;
 	for (i=0; i<n; i++)
 	{
 	    MPIU_DBG_PRINTF(("iov[%d].len = %d\n", i, iov[i].MPID_IOV_LEN));

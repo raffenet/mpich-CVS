@@ -29,9 +29,6 @@
 
 #define MPIDI_MAX_SHM_NAME_LENGTH 100
 
-#define SHM_SUCCESS    0
-#define SHM_FAIL      -1
-
 #ifdef HAVE_SHARED_PROCESS_READ
 typedef struct MPIDI_CH3I_Shared_process
 {

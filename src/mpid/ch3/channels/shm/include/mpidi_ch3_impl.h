@@ -116,6 +116,13 @@
 #endif
 #define MPID_SHMEM_PER_PROCESS          1048576
 
+/* FIXME: The ssm channel uses these names instead.  We'll switch to them 
+   eventually (since there is a great deal of commonality between the ssm and
+   shm code, and that commonality should be reflected in common support 
+   routines) */
+#define MPIDI_CH3I_PKT_EMPTY            MPIDI_CH3I_PKT_AVAILABLE
+#define MPIDI_CH3I_PKT_FILLED           MPIDI_CH3I_PKT_USED
+
 
 /* This structure uses the avail field to signal that the data is available for reading.
    The code fills the data and then sets the avail field.
