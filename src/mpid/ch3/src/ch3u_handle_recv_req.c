@@ -648,6 +648,10 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     ptrdiff = (MPI_Aint)((char *) (new_dtp->dataloop) - (char *)
                          (dtype_info->dataloop));
     
+    /* FIXME: Temp to avoid SEGV when memory tracing */
+    new_dtp->hetero_dloop = 0;
+
+
     MPID_Dataloop_update(new_dtp->dataloop, ptrdiff);
 
     new_dtp->contents = NULL;

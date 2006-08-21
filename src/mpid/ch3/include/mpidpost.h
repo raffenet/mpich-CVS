@@ -16,199 +16,7 @@
  * Channel API prototypes
  */
 
-/* FIXME: *E is the "enum" doctext structure comment marker; these should be
- *@ instead.  Also, these may be out of date; not all of these are referenced
- * (They should all be used in the ch3/src directory; otherwise they're not
- * part of the channel API). In addition, routine descriptions belong where
- * the function is implemented (the .c file), not where the header is 
- * prototyped (the .h file) because changes to the behavior of the function
- * should be captured when the code is edited, and having the comment block
- * with the function definition instead of the prototype makes this more 
- * likely. 
- */
-
-
-/*E
-  MPIDI_CH3_Pre_init - Allows the channel to initialize before PMI_init is called, and allows the
-  channel to optionally set the rank, size, and whether this process has a parent.
-
-  Output Parameters:
-+ setvals - boolean value that is true if this function set has_parent, rank, and size
-. has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
-. rank - rank of this process in the process group
-- size - number of processes in the process group
-
-  Return value:
-  A MPI error code.
-
-  Notes:
-  This function is optional, and is used only when HAVE_CH3_PRE_INIT is defined.  It is called by
-  CH3 before PMI_Init.  If the function sets setvals to TRUE, CH3 will not use PMI to get the rank,
-  size, etc.
-E*/
-
-int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
-
-
-#if 0
-/*E
-  MPIDI_CH3_Init - Initialize the channel implementation.
-
-  Input Parameters:
-+ has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
-. pg_ptr - the new process group representing MPI_COMM_WORLD
-- pg_rank - my rank in the process group
-
-  Return value:
-  A MPI error code.
-
-  Notes:
-  MPID_Init has called 'PMI_Init' and created the process group structure 
-  before this routine is called.
-E*/
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
-
-/*E
-  MPIDI_CH3_Finalize - Shutdown the channel implementation.
-
-  Return value:
-  A MPI error class.
-E*/
-int MPIDI_CH3_Finalize(void);
-
-#endif
-/*E
-  MPIDI_CH3_Get_parent_port - obtain the port name associated with the parent
-
-  Output Parameters:
-.  parent_port_name - the port name associated with the parent communicator
-
-  Return value:
-  A MPI error code.
-  
-  NOTE:
-  'MPIDI_CH3_Get_parent_port' should only be called if the initialization
-  (in the current implementation, done with the static function 
-  'InitPGFromPMI' in 'mpid_init.c') has determined that this process
-  in fact has a parent.
-E*/
-int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
-
-#if 0
-/*E
-  MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A request object is allocated only if the send could not be
-  completed immediately.
-
-  Input Parameters:
-+ vc - virtual connection to send the message over
-. pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to be sent
-- pkt_sz - size of the packet substucture
-
-  Output Parameters:
-. sreq_ptr - send request or NULL if the send completed immediately
-
-  Return value:
-  An mpi error code.
-  
-  NOTE:
-  The packet structure may be allocated on the stack.
-
-  IMPLEMETORS:
-  If the send can not be completed immediately, the CH3 packet structure must be stored internally until the request is complete.
-  
-  If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
-E*/
-int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, MPID_Request **sreq_ptr);
-
-
-/*E
-  MPIDI_CH3_iStartMsgv - A non-blocking request to send a CH3 packet and associated data.  A request object is allocated only if
-  the send could not be completed immediately.
-
-  Input Parameters:
-+ vc - virtual connection to send the message over
-. iov - a vector of a structure contains a buffer pointer and length
-- iov_n - number of elements in the vector
-
-  Output Parameters:
-. sreq_ptr - send request or NULL if the send completed immediately
-
-  Return value:
-  An mpi error code.
-  
-  NOTE:
-  The first element in the vector must point to the packet structure.   The packet structure and the vector may be allocated on
-  the stack.
-
-  IMPLEMENTORS:
-  If the send can not be completed immediately, the CH3 packet structure and the vector must be stored internally until the
-  request is complete.
-  
-  If the send completes immediately, the channel implementation shold return NULL and must not call MPIDI_CH3U_Handle_send_req().
-E*/
-int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, MPID_Request **sreq_ptr);
-
-
-/*E
-  MPIDI_CH3_iSend - A non-blocking request to send a CH3 packet using an existing request object.  When the send is complete
-  the channel implementation will call MPIDI_CH3U_Handle_send_req().
-
-  Input Parameters:
-+ vc - virtual connection over which to send the CH3 packet
-. sreq - pointer to the send request object
-. pkt - pointer to a MPIDI_CH3_Pkt_t structure containing the substructure to be sent
-- pkt_sz - size of the packet substucture
-
-  Return value:
-  An mpi error code.
-  
-  NOTE:
-  The packet structure may be allocated on the stack.
-
-  IMPLEMETORS:
-  If the send can not be completed immediately, the packet structure must be stored internally until the request is complete.
-
-  If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
-E*/
-int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_sz_t pkt_sz);
-
-
-/*E
-  MPIDI_CH3_iSendv - A non-blocking request to send a CH3 packet and associated data using an existing request object.  When
-  the send is complete the channel implementation will call MPIDI_CH3U_Handle_send_req().
-
-  Input Parameters:
-+ vc - virtual connection over which to send the CH3 packet and data
-. sreq - pointer to the send request object
-. iov - a vector of a structure contains a buffer pointer and length
-- iov_n - number of elements in the vector
-
-  Return value:
-  An mpi error code.
-  
-  NOTE:
-  The first element in the vector must point to the packet structure.   The packet structure and the vector may be allocated on
-  the stack.
-
-  IMPLEMENTORS:
-  If the send can not be completed immediately, the packet structure and the vector must be stored internally until the request is
-  complete.
-
-  If the send completes immediately, the channel implementation still must call MPIDI_CH3U_Handle_send_req().
-E*/
-int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int iov_n);
-
-#endif
-
-/*E
-  MPIDI_CH3_Request_add_ref - Increment the reference count associated with a request object
-
-  Input Parameters:
-. req - pointer to the request object
-E*/
-void MPIDI_CH3_Request_add_ref(MPID_Request * req);
-
-/*E
+/*@
   MPIDI_CH3_Request_release_ref - Decrement the reference count associated with a request object.
 
   Input Parameters:
@@ -216,11 +24,11 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req);
 
   Output Parameters:
 . inuse - TRUE if the object is still inuse; FALSE otherwise.
-E*/
+@*/
 void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * inuse);
 
 
-/*E
+/*@
   MPIDI_CH3_Request_destroy - Release resources in use by an existing request object.
 
   Input Parameters:
@@ -228,11 +36,11 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * inuse);
 
   IMPLEMENTORS:
   MPIDI_CH3_Request_destroy() must call MPIDI_CH3U_Request_destroy() before request object is freed.
-E*/
+@*/
 void MPIDI_CH3_Request_destroy(MPID_Request * req);
 
 
-/*E
+/*@
   MPIDI_CH3_Progress_start - Mark the beginning of a progress epoch.
 
   Input Parameters:
@@ -260,16 +68,19 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req);
 .ve
 
   IMPLEMENTORS:
-  A multi-threaded implementation might save the current value of a request completion counter in the state.
-E*/
+  A multi-threaded implementation might save the current value of a request 
+  completion counter in the state.
+@*/
 void MPIDI_CH3_Progress_start(MPID_Progress_state * state);
 
 
-/*E
-  MPIDI_CH3_Progress_wait - Give the channel implementation an opportunity to make progress on outstanding communication requests.
+/*@
+  MPIDI_CH3_Progress_wait - Give the channel implementation an opportunity to 
+  make progress on outstanding communication requests.
 
   Input Parameters:
-. state - pointer to the same MPID_Progress_state object passed to MPIDI_CH3_Progress_start
+. state - pointer to the same MPID_Progress_state object passed to 
+  MPIDI_CH3_Progress_start
 
   Return value:
   An MPI error code.
@@ -278,51 +89,58 @@ void MPIDI_CH3_Progress_start(MPID_Progress_state * state);
   MPIDI_CH3_Progress_start/end() need to be called.
   
   IMPLEMENTORS:
-  A multi-threaded implementation would return immediately if the a request had been completed between the call to
-  MPIDI_CH3_Progress_start() and MPIDI_CH3_Progress_wait().  This could be implemented by checking a request completion counter
-  in the progress state against a global counter, and returning if they did not match.
-E*/
+  A multi-threaded implementation would return immediately if the a request 
+  had been completed between the call to
+  MPIDI_CH3_Progress_start() and MPIDI_CH3_Progress_wait().  This could be 
+  implemented by checking a request completion counter
+  in the progress state against a global counter, and returning if they did 
+  not match.
+@*/
 int MPIDI_CH3_Progress_wait(MPID_Progress_state * state);
 
 
-/*E
+/*@
   MPIDI_CH3_Progress_end - Mark the end of a progress epoch.
   
   Input Parameters:
-. state - pointer to the same MPID_Progress_state object passed to MPIDI_CH3_Progress_start
+. state - pointer to the same MPID_Progress_state object passed to 
+  MPIDI_CH3_Progress_start
 
   Return value:
   An MPI error code.
-E*/
+@*/
 void MPIDI_CH3_Progress_end(MPID_Progress_state * state);
 
 
-/*E
-  MPIDI_CH3_Progress_test - Give the channel implementation an opportunity to make progress on outstanding communication requests.
+/*@
+  MPIDI_CH3_Progress_test - Give the channel implementation an opportunity to 
+  make progress on outstanding communication requests.
 
   Return value:
   An MPI error code.
   
   NOTE:
   This function implicitly marks the beginning and end of a progress epoch.
-E*/
+@*/
 int MPIDI_CH3_Progress_test(void);
 
 
-/*E
-  MPIDI_CH3_Progress_poke - Give the channel implementation a moment of opportunity to make progress on outstanding communication.
+/*@
+  MPIDI_CH3_Progress_poke - Give the channel implementation a moment of 
+  opportunity to make progress on outstanding communication.
 
   Return value:
   An mpi error code.
   
   IMPLEMENTORS:
-  This routine is similar to MPIDI_CH3_Progress_test but may not be as thorough in its attempt to satisfy all outstanding
+  This routine is similar to MPIDI_CH3_Progress_test but may not be as 
+  thorough in its attempt to satisfy all outstanding
   communication.
-E*/
+@*/
 int MPIDI_CH3_Progress_poke(void);
 
 
-/*E
+/*@
   MPIDI_CH3_Progress_signal_completion - Inform the progress engine that a 
   pending request has completed.
 
@@ -332,12 +150,10 @@ int MPIDI_CH3_Progress_poke(void);
   multi-threaded environment, the request completion counter must be atomically
   incremented, and any threaded blocking in the
   progress engine must be woken up when a request is completed.
-E*/
+@*/
 void MPIDI_CH3_Progress_signal_completion(void);
 
 int MPIDI_CH3_Open_port(char *port_name);
-
-int MPIDI_GetTagFromPort( const char *, int * );
 
 int MPIDI_CH3_Comm_spawn_multiple(int count, char ** commands, char *** argvs, int * maxprocs, MPID_Info ** info_ptrs, int root,
                                   MPID_Comm * comm_ptr, MPID_Comm ** intercomm, int * errcodes);
@@ -347,176 +163,18 @@ int MPIDI_CH3_Comm_accept(char * port_name, int root, MPID_Comm * comm_ptr, MPID
 int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr, MPID_Comm ** newcomm);
 
 
-#if 0
-/*E
-  MPIDI_CH3_Connection_terminate - terminate the underlying connection associated with the specified VC
-
-  Input Parameters:
-. vc - virtual connection
-
-  Return value:
-  An MPI error code
-E*/
-int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc);
-
-/* MPIDI_CH3_Connect_to_root (really connect to peer) - channel routine
-   for connecting to a process through a port, used in implementing
-   MPID_Comm_connect and accept */
-int MPIDI_CH3_Connect_to_root(const char *, MPIDI_VC_t **);
-#endif
-
-/*E
-  MPIDI_CH3_Abort - Abort this process.
-
-  Input Parameters:
-+ exit_code - exit code to be returned by the process
-- error_msg - error message to print
-
-  Return value:
-  This function should not return.
-E*/
-int MPIDI_CH3_Abort(int exit_code, char * error_msg);
-
-
-#if 0
-/*
- * Channel upcall prototypes
- */
-
-/*E
-  MPIDI_CH3U_Handle_recv_pkt- Handle a freshly received CH3 packet.
-
-  Input Parameters:
-+ vc - virtual connection over which the packet was received
-- pkt - pointer to the CH3 packet
-
-  Output Parameter:
-. rreqp - receive request defining data to be received; may be NULL
-
-  NOTE:
-  Multiple threads may not simultaneously call this routine with the same 
-  virtual connection.  This constraint eliminates the
-  need to lock the VC and thus improves performance.  If simultaneous upcalls 
-  for a single VC are a possible, then the calling
-  routine must serialize the calls (perhaps by locking the VC).  Special 
-  consideration may need to be given to packet ordering
-  if the channel has made guarantees about ordering.
-E*/
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
-
-/*E
-  MPIDI_CH3U_Handle_recv_req - Process a receive request for which all of the data has been received (and copied) into the
-  buffers described by the request's IOV.
-
-  Input Parameters:
-+ vc - virtual connection over which the data was received
-- rreq - pointer to the receive request object
-
-  Output Parameter:
-. complete - data transfer for the request has completed
-E*/
-int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, int * complete);
-
-
-/*E
-  MPIDI_CH3U_Handle_send_req - Process a send request for which all of the data described the request's IOV has been completely
-  buffered and/or sent.
-
-  Input Parameters:
-+ vc - virtual connection over which the data was sent
-- sreq - pointer to the send request object
-
-  Output Parameter:
-. complete - data transfer for the request has completed
-E*/
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, int * complete);
-
-int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);
-
-int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank );
-int MPIDI_CH3U_VC_WaitForClose( void );
-
-#endif
-
-/*E
-  MPIDI_CH3U_Request_destroy - Free resources associated with the channel device (ch3) component of a request.
+/*@
+  MPIDI_CH3U_Request_destroy - Free resources associated with the channel 
+  device (ch3) component of a request.
 
   Input Parameters:
 . req - pointer to the request object
 
   IMPLEMENTORS:
   This routine must be called by MPIDI_CH3_Request_destroy().
-E*/
+@*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
-
-#if 0
-/* BEGIN EXPERIMENTAL BLOCK */
-
-/* The following functions enable RDMA capabilities in the CH3 device.
- * These functions may change in future releases.
- * There usage is protected in the code by #ifdef MPIDI_CH3_CHANNEL_RNDV
- */
-
-/*E
-  MPIDI_CH3U_Handle_recv_rndv_pkt - This function is used by RDMA enabled channels to handle a rts packet.
-
-  Input Parameters:
-+ vc - virtual connection over which the packet was received
-- pkt - pointer to the CH3 packet
-
-  Output Parameters:
-+ rreqp - request pointer
-- foundp - found
-
-  Return value:
-  An mpi error code.
-
-  Notes:
-  This is the handler function to be called when the channel receives a rndv rts packet.
-  After this function is called the channel is returned a request and a found flag.  The channel may set any channel
-  specific fields in the request at this time.  Then the channel should call MPIDI_CH3U_Post_data_receive() and 
-  MPIDI_CH3_iStartRndvTransfer() if the found flag is set.
-E*/
-int MPIDI_CH3U_Handle_recv_rndv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp, int *foundp);
-
-/*E
-  MPIDI_CH3_iStartRndvMsg - This function is used to initiate a rendezvous
-  send.
-
-  NOTE: An "rts packet" is provided which must be passed to
-  handle_recv_rndv_pkt on the remote side.  The first iov is also provided
-  so the channel can register buffers, etc., if neccessary.
-
-  Input Parameters:
-+ vc - virtual connection over which the rendezvous will be performed
-. sreq - pointer to the send request object
-- rts_pkt - CH3 packet to be delivered to CH3 on remote side
-
-  Return value:
-  An mpi error code.
-
-  IMPLEMENTORS:
-E*/
-int MPIDI_CH3_iStartRndvMsg (MPIDI_VC_t * vc, MPID_Request * sreq, MPIDI_CH3_Pkt_t * rts_pkt);
-
-/*E
-  MPIDI_CH3_iStartRndvTransfer - This function is used to indicate that a previous
-  rendezvous rts has been matched and data transfer can commence.
-
-  Input Parameters:
-+ vc - virtual connection over which the rendezvous will be performed
-- rreq - pointer to the receive request object
-
-  Return value:
-  An mpi error code.
-
-  IMPLEMENTORS:
-E*/
-int MPIDI_CH3_iStartRndvTransfer (MPIDI_VC_t * vc, MPID_Request * rreq);
-
-/* END EXPERIMENTAL BLOCK */
-#endif
 
 /* Include definitions from the channel which require items defined by this 
    file (mpidimpl.h) or the file it includes
@@ -557,7 +215,9 @@ int MPIDI_CH3_iStartRndvTransfer (MPIDI_VC_t * vc, MPID_Request * rreq);
  * Device level request management macros
  */
 
-#define MPID_Request_add_ref(req_) MPIDI_CH3_Request_add_ref(req_)
+/* We only export release and set completed on requests, since 
+ * other uses (such as incrementing the ref count) are done solely 
+ * by the device */
 
 #define MPID_Request_release(req_)			\
 {							\

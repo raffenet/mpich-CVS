@@ -112,11 +112,24 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Read operation complete */
+#if 1
+	    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+	    reqFn = req->dev.OnDataAvail;
+	    if (!reqFn) {
+		MPIDI_CH3U_Request_complete(req);
+		complete = TRUE;
+	    }
+	    else {
+		mpi_errno = reqFn( vc, req, &complete );
+		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	    }
+#else
 	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req, &complete);
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    }
+#endif
 	    if (complete)
 	    {
 		post_pkt_recv(vc);
@@ -133,7 +146,8 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 	MPIDI_DBG_PRINTF((65, FCNAME, "Read args were iov=%x, count=%d",
 	    req->dev.iov, req->dev.iov_count));
     }
-    
+
+ fn_fail:    
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
     return mpi_errno;

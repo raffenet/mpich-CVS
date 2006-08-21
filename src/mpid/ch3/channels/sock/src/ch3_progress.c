@@ -477,10 +477,23 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
 			    {
+#if 1
+				int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+				reqFn = rreq->dev.OnDataAvail;
+				if (!reqFn) {
+				    MPIDI_CH3U_Request_complete(rreq);
+				    complete = TRUE;
+				}
+				else {
+				    mpi_errno = reqFn( conn->vc, rreq, &complete );
+				    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+				}
+#else
 				mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq, &complete);
 				if (mpi_errno != MPI_SUCCESS) {
 				    MPIU_ERR_POP(mpi_errno);
 				}
+#endif
 
 				if (complete)
 				{
@@ -517,10 +530,23 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		}
 		else /* incoming data */
 		{
+#if 1
+		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+		    reqFn = rreq->dev.OnDataAvail;
+		    if (!reqFn) {
+			MPIDI_CH3U_Request_complete(rreq);
+			complete = TRUE;
+		    }
+		    else {
+			mpi_errno = reqFn( conn->vc, rreq, &complete );
+			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		    }
+#else
 		    mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq, &complete);
 		    if (mpi_errno != MPI_SUCCESS) {
 			MPIU_ERR_POP(mpi_errno);
 		    }
+#endif
 			
 		    if (complete)
 		    {
@@ -556,10 +582,23 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
 			    {
+#if 1
+				int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+				reqFn = rreq->dev.OnDataAvail;
+				if (!reqFn) {
+				    MPIDI_CH3U_Request_complete(rreq);
+				    complete = TRUE;
+				}
+				else {
+				    mpi_errno = reqFn( conn->vc, rreq, &complete );
+				    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+				}
+#else
 				mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq, &complete);
 				if (mpi_errno != MPI_SUCCESS) {
 				    MPIU_ERR_POP(mpi_errno);
 				}
+#endif
 
 				if (complete)
 				{
