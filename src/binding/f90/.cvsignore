@@ -3,6 +3,7 @@ Makefile
 Makefile.in
 mpi.f90
 mpimod.pcl
+mpi_sizeofs.f90
 .deps
 *.mod
 *.MOD
