@@ -24,6 +24,14 @@ $xmlOutputContinue = 0;
 # testoutput is used to keep a copy of all output in case there is an
 # error and XML output containing the messages is desired.
 $testoutput = "";
+
+# Set a default for the timeout 
+# (The stdintest has hung sometimes; a correctly functioning mpiexec
+# will abort when this timelimit is exceeded)
+if (!defined($ENV{"MPITEST_TIMEOUT"})) {
+    $ENV{"MPITEST_TIMEOUT"} = 20;
+}
+
 # -------------------------------------------------------------------------
 if (defined($ENV{'XMLFILE'})) {
     $xmlOutput = 1;
