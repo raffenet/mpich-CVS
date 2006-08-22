@@ -1026,7 +1026,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     MPIDI_NEMTCP_FUNC_ENTER;
     CHECK_EINTR(rc, close(sc->fd));
     MPIU_ERR_CHKANDJUMP1 (rc == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
-          "**close", "**close of socket failed - %s", strerror (errno));
+          "**close", "**close %s", strerror (errno));
     sc->fd = plfd->fd = CONN_INVALID_FD;
     if (sc->vc) {
         sc->vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
@@ -1092,7 +1092,7 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
 
     CHECK_EINTR(n, poll(plfd, 1, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
-                          "**poll", "**poll of socket fds failed - %s", strerror (errno));
+                          "**poll", "**poll %s", strerror (errno));
     if (n == 1)
         sc->handler(plfd, sc);
 
@@ -1193,7 +1193,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
             else if (errno == EWOULDBLOCK)
                 break; /*  no connection in the listen queue. get out of here.(N1) */
             MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER,
-                                  "**sock_accept", "**sock_accept %d", errno);
+                                  "**sock_accept", "**sock_accept %s", strerror(errno));
         }
         else {
             int index;

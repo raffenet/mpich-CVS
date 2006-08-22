@@ -968,8 +968,9 @@ with MPI_Alloc_mem.
 **inet_ntop %s:inet_ntop failed - %s
 **inet_pton:inet_pton failed
 **inet_pton %s:inet_pton failed - %s
-**close of socket failed - %s
-**poll of socket fds failed - %s
+**close %s:close of socket failed - %s
+**poll %s:poll of socket fds failed - %s
+**sock_accept %d:accept of socket fd failed - %s
 
 #
 # Globus device
