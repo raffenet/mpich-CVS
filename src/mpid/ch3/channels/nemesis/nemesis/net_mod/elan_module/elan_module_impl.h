@@ -6,16 +6,17 @@
 
 #ifndef ELAN_MODULE_IMPL_H
 #define ELAN_MODULE_IMPL_H
+
 #include <elan.h>
 #include "mpid_nem_impl.h"
 #include <linux/types.h>
 
-#define MPID_NEM_ELAN_SLOT_SIZE        MPID_NEM_CELL_PAYLOAD_LEN
-#define MPID_NEM_ELAN_NUM_SLOTS        MPID_NEM_NUM_CELLS
-#define MPID_NEM_ELAN_MAX_NUM_SLOTS    1024
-#define MPID_NEM_ELAN_LOOPS_SEND       2
-#define MPID_NEM_ELAN_LOOPS_RECV       1
-#define MPID_NEM_ELAN_RAIL_NUM         0
+#define MPID_NEM_ELAN_SLOT_SIZE     MPID_NEM_CELL_PAYLOAD_LEN
+#define MPID_NEM_ELAN_NUM_SLOTS     MPID_NEM_NUM_CELLS
+#define MPID_NEM_ELAN_MAX_NUM_SLOTS 1024
+#define MPID_NEM_ELAN_LOOPS_SEND    2
+#define MPID_NEM_ELAN_LOOPS_RECV    1
+#define MPID_NEM_ELAN_RAIL_NUM      0
 
 extern int             MPID_nem_elan_freq;
 extern int             MPID_nem_module_elan_pendings_sends;
@@ -66,7 +67,6 @@ MPID_nem_elan_event_queue_enqueue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_n
      }   
    qhead->tail = element;
 }
-
 
 static inline void
 MPID_nem_elan_event_queue_dequeue (MPID_nem_elan_event_queue_ptr_t qhead, MPID_nem_elan_cell_ptr_t *e)
