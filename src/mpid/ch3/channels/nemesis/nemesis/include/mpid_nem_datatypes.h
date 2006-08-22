@@ -22,7 +22,7 @@
 
 #define MPID_NEM_OFFSETOF(struc, field) ((int)(&((struc *)0)->field))
 #define MPID_NEM_CACHE_LINE_LEN 64
-#define MPID_NEM_NUM_CELLS      32
+#define MPID_NEM_NUM_CELLS      64 
 
 #ifndef MPID_NEM_NET_MODULE
 #error MPID_NEM_NET_MODULE undefined
@@ -40,7 +40,7 @@
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)
 #define MPID_NEM_CELL_LEN           (32*1024)
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_ELAN_MODULE)
-#define MPID_NEM_CELL_LEN           (2*1024)
+#define MPID_NEM_CELL_LEN            (2*1024)
 #else
 #define MPID_NEM_CELL_LEN           (64*1024)
 #endif 
@@ -58,9 +58,9 @@
 
 #define MPID_NEM_FBOX_SOURCE(cell) (MPID_nem_mem_region.local_procs[(cell)->pkt.mpich2.source])
 #define MPID_NEM_CELL_SOURCE(cell) ((cell)->pkt.mpich2.source)
-#define MPID_NEM_CELL_DEST(cell) ((cell)->pkt.mpich2.dest)
-#define MPID_NEM_CELL_DLEN(cell) ((cell)->pkt.mpich2.datalen)
-#define MPID_NEM_CELL_SEQN(cell) ((cell)->pkt.mpich2.seqno)
+#define MPID_NEM_CELL_DEST(cell)   ((cell)->pkt.mpich2.dest)
+#define MPID_NEM_CELL_DLEN(cell)   ((cell)->pkt.mpich2.datalen)
+#define MPID_NEM_CELL_SEQN(cell)   ((cell)->pkt.mpich2.seqno)
 
 #define MPID_NEM_MPICH2_HEAD_LEN sizeof(MPID_nem_pkt_header_t)
 #define MPID_NEM_MPICH2_DATA_LEN (MPID_NEM_CELL_PAYLOAD_LEN - MPID_NEM_MPICH2_HEAD_LEN)
@@ -146,7 +146,7 @@ typedef MPID_nem_abs_cell_t *MPID_nem_abs_cell_ptr_t;
 #define MPID_NEM_OPT_HEAD_LEN ((MPID_NEM_MPICH2_HEAD_LEN) + (MPID_NEM_OPT_SIZE))
 
 #define MPID_NEM_PACKET_OPT_LEN(pkt) \
-    ((pkt)->mpich2.datalen < MPID_NEM_OPT_SIZE) ? (MPID_NEM_OPT_HEAD_LEN) : ((pkt)->mpich2.datalen + (MPID_NEM_MPICH2_HEAD_LEN))
+    ((pkt)->mpich2.datalen < MPID_NEM_OPT_SIZE) ? (MPID_NEM_OPT_HEAD_LEN) : (MPID_NEM_PACKET_LEN(pkt)))
 
 #define MPID_NEM_PACKET_PAYLOAD(pkt) ((pkt)->mpich2.payload)
 
