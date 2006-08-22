@@ -23,7 +23,7 @@ MPID_nem_elan_module_finalize()
 	  {
 	     MPID_nem_elan_module_poll(MPID_NEM_POLL_OUT);
 	  }
-	
+
 	elan_disable_network(elan_base->state);
 	MPIU_Free(rxq_ptr_array);
 	MPIU_Free(MPID_nem_module_elan_cells);

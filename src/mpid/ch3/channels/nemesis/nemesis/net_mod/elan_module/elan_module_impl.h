@@ -8,15 +8,14 @@
 #define ELAN_MODULE_IMPL_H
 #include <elan.h>
 #include "mpid_nem_impl.h"
-
 #include <linux/types.h>
 
-
-#define MPID_NEM_ELAN_RAIL_NUM   0
-#define MPID_NEM_ELAN_SLOT_SIZE  MPID_NEM_CELL_PAYLOAD_LEN
-#define MPID_NEM_ELAN_NUM_SLOTS  1
-#define MPID_NEM_ELAN_LOOPS_SEND 1
-#define MPID_NEM_ELAN_LOOPS_RECV 1
+#define MPID_NEM_ELAN_SLOT_SIZE        MPID_NEM_CELL_PAYLOAD_LEN
+#define MPID_NEM_ELAN_NUM_SLOTS        MPID_NEM_NUM_CELLS
+#define MPID_NEM_ELAN_MAX_NUM_SLOTS    1024
+#define MPID_NEM_ELAN_LOOPS_SEND       2
+#define MPID_NEM_ELAN_LOOPS_RECV       1
+#define MPID_NEM_ELAN_RAIL_NUM         0
 
 extern int             MPID_nem_elan_freq;
 extern int             MPID_nem_module_elan_pendings_sends;
@@ -27,6 +26,7 @@ typedef struct MPID_nem_elan_cell
    struct MPID_nem_elan_cell *next;
    ELAN_EVENT                *elan_event;
    MPID_nem_cell_ptr_t        cell_ptr;
+   int                        to_proceed;
 }
 MPID_nem_elan_cell_t, *MPID_nem_elan_cell_ptr_t;
 
@@ -36,6 +36,14 @@ typedef struct MPID_nem_elan_event_queue
    MPID_nem_elan_cell_ptr_t tail;
 }
 MPID_nem_elan_event_queue_t, *MPID_nem_elan_event_queue_ptr_t;
+
+#define MPID_NEM_ELAN_SET_CELL(event_cell_ptr,event_ptr,cell,proceed) \
+   (event_cell_ptr)->elan_event = (event_ptr); \
+   (event_cell_ptr)->cell_ptr   = (cell);      \
+   (event_cell_ptr)->to_proceed = (proceed) ; 
+
+#define MPID_NEM_ELAN_RESET_CELL(event_cell_ptr) \
+   MPID_NEM_ELAN_SET_CELL(event_cell_ptr,NULL,NULL,0)
 
 static inline int
 MPID_nem_elan_event_queue_empty ( MPID_nem_elan_event_queue_ptr_t qhead )

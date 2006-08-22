@@ -41,9 +41,12 @@ MPID_nem_queue_ptr_t            MPID_nem_process_recv_queue      = 0;
 MPID_nem_queue_ptr_t            MPID_nem_process_free_queue      = 0;
 
 static 
-int my_compar(const int *a, const int *b)
+int my_compar(const void *a, const void *b)
 {
-   if ( *a <= *b ) 
+   int _a = *(int *)a;
+   int _b = *(int *)b;
+   
+   if ( _a <= _b ) 
      return -1;
    else
      return 1;
@@ -64,6 +67,7 @@ int init_elan( MPIDI_PG_t *pg_p )
    char            val[MPID_NEM_MAX_KEY_VAL_LEN];
    char           *kvs_name;
    FILE           *myfile;
+   int             ncells;
    int             grank;
    int             index; 
    int             pmi_errno;
@@ -159,29 +163,37 @@ int init_elan( MPIDI_PG_t *pg_p )
    localq_ptr     = elan_allocQueue(elan_base->state);      
    localq_ptr_val = (ELAN_QUEUE **)MPIU_Malloc(sizeof(ELAN_QUEUE *));   
   *localq_ptr_val = localq_ptr ;
-   
+	   
    /* For now, one Quadrics'cell equals to one Nemesis'cell */
    MPIU_Assert( (MPID_NEM_ELAN_SLOT_SIZE) <= (elan_queueMaxSlotSize(elan_base->state)));
    
    for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++) 
      rxq_ptr_array[index] = NULL ; 
+   
+   ncells = MPID_NEM_ELAN_NUM_SLOTS*numprocs;
+   if(ncells > MPID_NEM_ELAN_MAX_NUM_SLOTS)
+     ncells = MPID_NEM_ELAN_MAX_NUM_SLOTS;
+   
    rxq_ptr_array[elan_base->state->vp] = elan_queueRxInit(elan_base->state,
 							  localq_ptr,
-							  MPID_NEM_ELAN_NUM_SLOTS,
+							  ncells,
 							  MPID_NEM_ELAN_SLOT_SIZE,
 							  MPID_NEM_ELAN_RAIL_NUM,
 							  flags);   
-   MPID_nem_elan_freq         = 1 ;
-   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc(MPID_NEM_ELAN_NUM_SLOTS, sizeof(MPID_nem_elan_cell_t));   
+   ncells = (MPID_NEM_ELAN_NUM_SLOTS/numprocs) ;
+   if(!ncells)
+     ncells++;
+   MPID_nem_elan_freq  = 1 ;
+   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc(ncells, sizeof(MPID_nem_elan_cell_t));
    MPID_nem_module_elan_free_event_queue->head    = NULL;
    MPID_nem_module_elan_free_event_queue->tail    = NULL;   
    MPID_nem_module_elan_pending_event_queue->head = NULL;
    MPID_nem_module_elan_pending_event_queue->tail = NULL;   
-   for (index = 0; index < MPID_NEM_ELAN_NUM_SLOTS ; ++index)
+   for (index = 0; index < ncells ; ++index)
      {
 	MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,&MPID_nem_module_elan_cells[index]);
      }
-
+   
    fn_exit:
      return mpi_errno;
    fn_fail:
