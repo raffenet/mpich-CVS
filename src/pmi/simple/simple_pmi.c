@@ -107,6 +107,12 @@ int PMI_Init( int *spawned )
     /* setvbuf(stdout,0,_IONBF,0); */
     setbuf(stdout,NULL);
     /* PMIU_printf( 1, "PMI_INIT\n" ); */
+
+    /* Get the value of PMI_DEBUG from the environment if possible, since
+       we may have set it to help debug the setup process */
+    p = getenv( "PMI_DEBUG" );
+    if (p) PMI_debug = atoi( p );
+
     if ( ( p = getenv( "PMI_FD" ) ) )
 	PMI_fd = atoi( p );
 #ifdef USE_PMI_PORT
@@ -918,12 +924,19 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx, char *k
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], errmsg[PMIU_MAXLINE];
+    int err;
 
     MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=init pmi_version=%d pmi_subversion=%d\n",
 		   PMI_VERSION, PMI_SUBVERSION );
 
     PMIU_writeline( PMI_fd, buf );
-    PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+    buf[0] - 0;   /* Ensure buffer is empty if read fails */
+    err = PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+    if (err < 0) {
+	PMIU_printf( 1, "Error reading initack on %d\n", PMI_fd );
+	perror( "Error on readline:" );
+	PMI_Abort(-1, "Above error when reading after init\n" );
+    }
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "response_to_init", PMIU_MAXLINE ) != 0 ) {
