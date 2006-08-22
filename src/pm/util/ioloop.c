@@ -167,6 +167,9 @@ int MPIE_IOLoop( int timeoutSeconds )
 	    }
 	}
 	if (maxfd < 0) break;
+	
+	DBG_PRINTF(("Calling select with readfds = %x writefds = %x\n",
+		    *(int *)&readfds, *(int*)&writefds));
 	MPIE_SYSCALL(nfds,select,( maxfd + 1, &readfds, &writefds, 0, &tv ));
 	if (nfds < 0 && (errno == EINTR || errno == 0)) {
 	    /* Continuing through EINTR */
@@ -180,6 +183,7 @@ int MPIE_IOLoop( int timeoutSeconds )
 	    /* FIXME: an EINTR may also mean that a process has exited 
 	       (SIGCHILD).  If all processes have exited, we may want to 
 	       exit */
+	    DBG_PRINTF(("errno = EINTR in select\n"));
 	    continue;
 	}
 	if (nfds < 0) {
@@ -189,9 +193,11 @@ int MPIE_IOLoop( int timeoutSeconds )
 	}
 	if (nfds == 0) { 
 	    /* Timeout from select */
+	    DBG_PRINTF(("Timeout in select\n"));
 	    return IOLOOP_TIMEOUT;
 	}
 	/* nfds > 0 */
+	DBG_PRINTF(("Found some fds to process (n = %d)\n",nfds));
 	for (fd=0; fd<=maxfd; fd++) {
 	    if (FD_ISSET( fd, &writefds )) {
 		handler = handlesByFD[fd].handler;
@@ -219,6 +225,7 @@ int MPIE_IOLoop( int timeoutSeconds )
 	    }
 	}
     }
+    DBG_PRINTF(("Returning from IOLOOP handler\n"));
     return 0;
 }
 

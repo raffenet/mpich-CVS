@@ -221,6 +221,7 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 
     /* Get the new socket */
     MPIE_SYSCALL(newfd,accept,( fd, &sock, &addrlen ));
+    DBG_PRINTF(("Acquired new socket in accept (fd = %d)\n", newfd ));
     if (newfd < 0) return newfd;
 
 #ifdef FOO
@@ -281,6 +282,7 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 	/* An alternative would be to dynamically assign the ranks
 	   as processes come in (but we'd still need to use the 
 	   PMI_ID to identify the ProcessApp) */
+	DBG_PRINTF(("Found an invalid id\n" ));
 	return -1;
     }
 
@@ -321,8 +323,9 @@ int PMIServSetupPort( ProcessUniverse *pUniv, char *portString, int portLen )
 }
 /* This is a signal-safe routine, used to terminate the use of the port
    within the ioloop */
-int PMIServEndPort( )
+int PMIServEndPort( void )
 {
+    DBG_PRINTF(("deregistering listenerfd %d\n", listenfd ));
     MPIE_IODeregister( listenfd );
     return 0;
 }

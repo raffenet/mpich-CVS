@@ -198,6 +198,7 @@ int MPIE_ProcessGetExitStatus( int *signaled )
     ProcessState *pState;
     int          i, rc = 0, sig = 0;
 
+    DBG_PRINTF(("Getting exit status\n"));
     world = pUniv.worlds;
     while (world) {
 	app = world->apps;
@@ -215,6 +216,8 @@ int MPIE_ProcessGetExitStatus( int *signaled )
 	}
 	world = world->nextWorld;
     }
+
+    DBG_PRINTF(("Done getting exit status\n" ));
     *signaled = sig;
     return rc;
 }
@@ -520,6 +523,7 @@ static void handle_sigchild( int sig )
 	    /* Let the universe know that there are fewer processes */
 	    pUniv.nLive--;
 	    if (pUniv.nLive == 0) {
+		DBG_PRINTF(("All children have exited\n"));
 		/* Invoke any special code for handling all processes
 		   exited (e.g., terminate a listener socket) */
 		if (pUniv.OnNone) { (*pUniv.OnNone)(); }
@@ -527,6 +531,7 @@ static void handle_sigchild( int sig )
 	}
 	else {
 	    /* Remember this process id and exit status for later */
+	    DBG_PRINTF(("An unknown process (pid = %d) has exited\n", pid ));
 	    unexpectedExit[nUnexpected].pid  = pid;
 	    unexpectedExit[nUnexpected].stat = prog_stat;
 	}
@@ -569,6 +574,7 @@ int MPIE_WaitForProcesses( ProcessUniverse *pUniv, int timeout )
     ProcessState *pState;
     int           i, nactive;
 
+    DBG_PRINTF(("Waiting for processes\n"));
     /* Determine the number of processes that we have left to wait on */
     TimeoutInit( timeout );
     nactive = 0;
@@ -587,6 +593,8 @@ int MPIE_WaitForProcesses( ProcessUniverse *pUniv, int timeout )
 	    world = world->nextWorld;
 	}
     } while (nactive > 0 && TimeoutGetRemaining() > 0);
+
+    DBG_PRINTF(("Done waiting for processes\n"));
 
     return 0;
 }
@@ -751,6 +759,7 @@ int MPIE_SignalWorld( ProcessWorld *world, int signum )
 	    pid = pState[i].pid;
 	    if (pid > 0 && pState[i].status != PROCESS_GONE) {
 		/* Ignore error returns */
+		DBG_PRINTF(("Sending signal %d to pid %d\n",signum,pid));
 		kill( pid, signum );
 	    }
 	}
@@ -765,6 +774,7 @@ int MPIE_SignalWorld( ProcessWorld *world, int signum )
  @*/
 int MPIE_KillWorld( ProcessWorld *world )
 {
+    DBG_PRINTF(("Entering KillWorld\n"));
     MPIE_SignalWorld( world, SIGINT );
 
     /* We should wait here to give time for the processes to exit */

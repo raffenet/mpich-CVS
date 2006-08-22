@@ -37,7 +37,7 @@
    PMI commands, including spawn.  Another "input" is the expiration of the
    specified timelimit for the run, if any.
 
-   7. Process rundown commands and handle any abnormal tErmination.  
+   7. Process rundown commands and handle any abnormal termination.  
 
    8. Wait for any processes to exit; gather the exit status and reason
    for exit (if abnormal, such as signaled with SEGV or BUS)
@@ -107,7 +107,6 @@ int main( int argc, char *argv[], char *envp[] )
     int          erc = 0;  /* Other (exceptional) return codes */
     int          reason, signaled = 0;
     SetupInfo    s;
-    int          fdPMI;
     char         portString[MAX_PORT_STRING];
 
     /* MPIE_ProcessInit initializes the global pUniv */
@@ -150,8 +149,12 @@ int main( int argc, char *argv[], char *envp[] )
 
     /* Get the common port for creating PMI connections to the created
        processes */
-    PMIServGetPort( &fdPMI, portString, sizeof(portString) );
-    MPIE_IORegister( fdPMI, IO_READ, PMIServAcceptFromPort, 0 );
+    rc = PMIServSetupPort( &pUniv, portString, sizeof(portString) );
+    if (rc) {
+	MPIU_Error_printf( "Unable to setup port for listener\n" );
+	exit(1);
+    }
+    s.pmiinfo.portName = portString;
 
 #ifdef USE_MPI_STAGE_EXECUTABLES
     /* Hook for later use in staging executables */
@@ -160,8 +163,6 @@ int main( int argc, char *argv[], char *envp[] )
 	if (!rc) ...;
     }
 #endif
-
-    s.pmiinfo.portName = 0;
 
     PMIServInit(myspawn,&s);
     s.pmiinfo.pWorld = &pUniv.worlds[0];
@@ -246,6 +247,7 @@ int mypreamble( void *data, ProcessState *pState )
 int mypostfork( void *predata, void *data, ProcessState *pState )
 {
     SetupInfo *s = (SetupInfo *)predata;
+    int curarg=0;
 
     IOLabelSetupInClient( &s->labelinfo );
     PMISetupInClient( 1, &s->pmiinfo );
@@ -262,22 +264,37 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 	int j;
 
 	/* Insert into app->args */
-	newargs = (const char **) malloc( app->nArgs + 3 );
+	newargs = (const char **) malloc( (app->nArgs + 10 + 1) * 
+					  sizeof(char *) );
 	if (!pState->hostname) {
 	    MPIU_Error_printf( "No hostname avaliable for %s\n", app->exename );
 	    exit(1);
 	}
-	newargs[0] = pState->hostname;
-	newargs[1] = app->exename;
-	for (j=0; j<app->nArgs; j++) {
-	    newargs[j+2] = app->args[j];
+	curarg = 0;
+	newargs[curarg++] = pState->hostname;
+	newargs[curarg++] = strdup( "setenv" );
+	newargs[curarg++] = strdup( "PMI_PORT" );
+	newargs[curarg++] = strdup( s->pmiinfo.portName ); 
+	newargs[curarg++] = strdup( ";" );
+	if (1) {
+	    /* Use this to help debug the connection process */
+	    newargs[curarg++] = strdup( "setenv" );
+	    newargs[curarg++] = strdup( "PMI_DEBUG" );
+	    newargs[curarg++] = strdup( "1" );
+	    newargs[curarg++] = strdup( ";" );
 	}
-	newargs[j+2] = 0;
+	newargs[curarg++] = app->exename;
+	for (j=0; j<app->nArgs; j++) {
+	    newargs[j+curarg] = app->args[j];
+	}
+	newargs[j+curarg] = 0;
 	app->exename = strdup( "/usr/bin/ssh" );
 
 	app->args = newargs;
-	app->nArgs += 2;
+	app->nArgs += curarg;
 
+	printf( "cmd = %s\n", app->exename ); fflush(stdout);
+	printf( "Number of args = %d\n", app->nArgs );
 	for (j=0; j<app->nArgs; j++) {
 	    printf( "argv[%d] = %s\n", j, app->args[j] ); fflush(stdout);
 	}
@@ -285,12 +302,6 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 
     return 0;
 }
-
-/*
-int myexec( void *predata, void *data, ProcessState *pState, char *argv[] )
-{
-}
-*/
 
 /* Close one side of the pipe pair and register a handler for the I/O */
 int mypostamble( void *predata, void *data, ProcessState *pState )
