@@ -132,7 +132,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
-    return total > 0 ? MPI_SUCCESS : SHM_WAIT_TIMEOUT;
+    return total > 0 ? MPI_SUCCESS : -1 /* SHM_WAIT_TIMEOUT */;
 }
 
 

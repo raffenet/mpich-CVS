@@ -35,20 +35,40 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_CH3+1];
+/* 
+ * Here are the two choices that we need to make to allow this 
+ * file to be used by several channels.
+ *
+ * First, is it part of a multi-method channel (e.g., ssm) or part of a
+ * single method channel (e.g. shm)?
+ *
+ * Define MPIDI_CH3_SHM_SHARES_PKTARRAY if it is shared
+ *
+ * Second, how are the receive queues arranged?  Are they
+ * in a list (scalable, by active connection) or 
+ * are they in an array of pointers?
+ *
+ * Define MPIDI_CH3_SHM_SCALABLE_READQUEUES if they are in a list
+ */
 
 /* shmem functions */
+
+#ifdef MPIDI_CH3_SHM_SHARES_PKTARRAY
+extern MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1];
+#else
+static MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1];
 
 int MPIDI_CH3I_SHM_Progress_init(void)
 {
     int mpi_errno;
 
     /* Initialize the code to handle incoming packets */
-    mpi_errno = MPIDI_CH3_PktHandler_Init( pktArray, MPIDI_CH3_PKT_END_CH3+1 );
+    mpi_errno = MPIDI_CH3_PktHandler_Init( MPIDI_pktArray, 
+					   MPIDI_CH3_PKT_END_CH3+1 );
 
     return mpi_errno;
 }
-
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_write
@@ -818,9 +838,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 
     for (;;) 
     {
-
 	working = FALSE;
-
+#ifdef MPIDI_CH3_SHM_SCALABLE_READQUEUES
+	for (recv_vc_ptr=vc; recv_vc_ptr; 
+	     recv_vc_ptr = recv_vc_ptr->ch.shm_next_reader )
+	{
+	    shm_ptr = recv_vc_ptr->ch.read_shmq;
+	    if (shm_ptr == NULL)
+		continue;
+#else
 	for (i=0; i<MPIDI_PG_Get_size(vc->pg); i++)
 	{
 	    /* skip over the vc to myself */
@@ -828,7 +854,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 		continue;
 
 	    shm_ptr = &vc->ch.shm[i];
-
+	    MPIDI_PG_Get_vc(vc->pg, i, &recv_vc_ptr);
+#endif
 	    index = shm_ptr->head_index;
 	    pkt_ptr = &shm_ptr->packet[index];
 
@@ -842,13 +869,12 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 
 	    mem_ptr = (void*)(pkt_ptr->data + pkt_ptr->offset);
 	    num_bytes = pkt_ptr->num_bytes;
-	    MPIDI_PG_Get_vc(vc->pg, i, &recv_vc_ptr);
 
 	    if (recv_vc_ptr->ch.shm_reading_pkt)
 	    {
 		MPIU_DBG_PRINTF(("shm_read_progress: reading %d byte header from shm packet %d offset %d size %d\n", sizeof(MPIDI_CH3_Pkt_t), index, pkt_ptr->offset, num_bytes));
 #ifdef MPIDI_CH3_CHANNEL_RNDV
-		if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type > MPIDI_CH3_PKT_END_CH3)
+		if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type >= MPIDI_CH3_PKT_RTS_IOV)
 		{
 		    if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_RTS_IOV)
 		    {
@@ -1088,8 +1114,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 #if 1
 		    {
 			MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t*)mem_ptr;
-			mpi_errno = pktArray[pkt->type]( 
-			recv_vc_ptr, pkt, &recv_vc_ptr->ch.recv_active);
+			mpi_errno = MPIDI_pktArray[pkt->type]( 
+			    recv_vc_ptr, pkt, &recv_vc_ptr->ch.recv_active);
 
 		    }
 #else		    
@@ -1379,7 +1405,6 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 		if (recv_vc_ptr->ch.read.bufflen == 0)
 		{
 		    MPIU_Assert(recv_vc_ptr->ch.recv_active->kind < MPID_LAST_REQUEST_KIND);
-
 		    recv_vc_ptr->ch.shm_state &= ~SHM_READING_BIT;
 		    *num_bytes_ptr = recv_vc_ptr->ch.read.total;
 		    *vc_pptr = recv_vc_ptr;
@@ -1388,7 +1413,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 		    return MPI_SUCCESS;
 		}
 	    }
-	}
+	} /* that for on recv_vc_ptr, way, way above */
 
 	if (millisecond_timeout == 0 && !working)
 	{
@@ -1396,9 +1421,9 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
 	    return MPI_SUCCESS;
 	}
-    }
+    } /* while forever */
 
-/*    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0); */
+    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
     return mpi_errno;
 }
@@ -1437,7 +1462,7 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(i
 #endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
-
+    
     /* FIXME */
     /* Remove this stripping code after the updated segment code no longer
        produces iov's with empty buffers */

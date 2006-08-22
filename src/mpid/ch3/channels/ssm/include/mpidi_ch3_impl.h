@@ -124,6 +124,11 @@
 #define MPIDI_CH3I_YIELD_COUNT_DEFAULT  5000
 #define MPIDI_CH3I_MSGQ_ITERATIONS 250
 
+/* For these next two defines, see the ch3_shm.c file in 
+   ch3/util/shmbase */
+#define MPIDI_CH3_SHM_SHARES_PKTARRAY     1
+#define MPIDI_CH3_SHM_SCALABLE_READQUEUES 1
+
 /* This structure uses the avail field to signal that the data is available for reading.
    The code fills the data and then sets the avail field.
    This assumes that declaring avail to be volatile causes the compiler to insert a
@@ -323,15 +328,21 @@ int MPIDI_CH3I_BootstrapQ_detach(MPIDI_CH3I_BootstrapQ queue);
 int MPIDI_CH3I_BootstrapQ_send_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, int length);
 int MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_CH3I_BootstrapQ queue, void *buffer, int length, int *num_bytes_ptr, BOOL blocking);
 
-#define SHM_WAIT_TIMEOUT 10101010
-#define SHM_FAIL        -1
+typedef enum shm_wait_e
+{
+SHM_WAIT_TIMEOUT,
+SHM_WAIT_READ,
+SHM_WAIT_WRITE,
+SHM_WAIT_WAKEUP
+} shm_wait_t;
+
 
 int MPIDI_CH3I_SHM_Get_mem(int size, MPIDI_CH3I_Shmem_block_request_result *pOutput);
 int MPIDI_CH3I_SHM_Get_mem_named(int size, MPIDI_CH3I_Shmem_block_request_result *pInOutput);
 int MPIDI_CH3I_SHM_Attach_to_mem(MPIDI_CH3I_Shmem_block_request_result *pInput, MPIDI_CH3I_Shmem_block_request_result *pOutput);
 int MPIDI_CH3I_SHM_Unlink_mem(MPIDI_CH3I_Shmem_block_request_result *p);
 int MPIDI_CH3I_SHM_Release_mem(MPIDI_CH3I_Shmem_block_request_result *p);
-int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr);
+int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr,shm_wait_t *shm_out);
 int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*read_progress_update)(int, void*));
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*read_progress_update)(int, void*));
 int MPIDI_CH3I_SHM_write(MPIDI_VC_t *vc, void *buf, int len, int *num_bytes_ptr);

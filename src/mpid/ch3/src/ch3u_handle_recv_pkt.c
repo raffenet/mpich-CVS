@@ -818,6 +818,9 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 #ifdef DBG_RMA
     printf( "Post data receive (get)\n" ); fflush(stdout);
 #endif
+    /* FIXME: It is likely that this cannot happen (never perform
+       a get with a 0-sized item).  In that case, change this
+       to an MPIU_Assert (and do the same for accumulate and put) */
     if (req->dev.recv_data_sz == 0) {
 	MPIDI_CH3U_Request_complete( req );
 	*rreqp = NULL;

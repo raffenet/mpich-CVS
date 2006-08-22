@@ -10,7 +10,6 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3i_get_business_card.c    \
  ch3_progress.c              \
  ch3_shm_memory.c            \
- ch3_shm.c                   \
  ch3_progress_shm.c          \
  ch3_progress_sock.c         \
  ch3_progress_connect.c

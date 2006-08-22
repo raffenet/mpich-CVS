@@ -8,7 +8,6 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_istartmsgv.c \
  ch3_progress.c \
  shm_memory.c \
- shm.c \
  ch3_open_port.c \
  ch3_istartrndvmsg.c \
  ch3_istartrndvtransfer.c
