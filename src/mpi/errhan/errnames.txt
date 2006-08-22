@@ -828,7 +828,7 @@ with MPI_Alloc_mem.
 **wsasock %s %d:WSAStartup failed, %s (errno %d)
 **post_write:Unable to post a write
 **post_write %p %p:Unable to post a write (%p %p)
-**sock_accept:Unable to accept a socket connection
+#**sock_accept:Unable to accept a socket connection
 **sock_writev:Unable to write an iovec to a socket
 **sock_write:Unable to write to a socket
 
@@ -973,7 +973,7 @@ with MPI_Alloc_mem.
 **poll:poll of socket fds failed
 **poll %s:poll of socket fds failed - %s
 **sock_accept:accept of socket fd failed
-**sock_accept %d:accept of socket fd failed - %s
+**sock_accept %s:accept of socket fd failed - %s
 
 #
 # Globus device
