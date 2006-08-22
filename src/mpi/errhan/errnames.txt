@@ -968,8 +968,11 @@ with MPI_Alloc_mem.
 **inet_ntop %s:inet_ntop failed - %s
 **inet_pton:inet_pton failed
 **inet_pton %s:inet_pton failed - %s
+**close:close of socket failed
 **close %s:close of socket failed - %s
+**poll:poll of socket fds failed
 **poll %s:poll of socket fds failed - %s
+**sock_accept:accept of socket fd failed
 **sock_accept %d:accept of socket fd failed - %s
 
 #
