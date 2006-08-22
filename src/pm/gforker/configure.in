@@ -36,6 +36,7 @@ AC_ARG_ENABLE(echo,
 dnl
 AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],,
 enable_strict=no)
+AC_ARG_ENABLE(allowport[--enable-allowport - Turn on use of a port for communicating with the processes started by mpiexec],,enable_allowport=yes)
 dnl
 dnl
 dnl Set single for now
@@ -233,6 +234,9 @@ elif test "$ac_cv_func_signal" = "yes" ; then
     AC_DEFINE(USE_SIGNAL,1,[Define if signal should be used to set signals])
 fi
 dnl
+if test "$enable_allowport" = "yes" ; then
+   AC_DEFINE(MPIEXEC_ALLOW_PORT,1,[Define if a port may be used to communicate with the processes])
+fi
 dnl Setup other replaceable values
 MPILIBNAME=${MPILIBNAME:-"mpich"}
 dnl
