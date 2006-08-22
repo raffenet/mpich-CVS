@@ -97,4 +97,4 @@ extern MPID_nem_queue_ptr_t MPID_nem_module_elan_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 
-#endif //ELAN_MODULE_IMPL_H
+#endif /*ELAN_MODULE_IMPL_H */
