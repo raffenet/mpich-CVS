@@ -52,9 +52,6 @@ int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struc
     goto fn_exit;
 }
 
-//FIXME some flags need to be set only for listener fd and some only for the connection fd.
-// make this two functions and call for appropriate fd's. If done so, remember to call the 
-// function for connection fd for the fd returned by accept also.
 #undef FUNCNAME
 #define FUNCNAME set_sockopts
 #undef FCNAME
@@ -153,23 +150,23 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
 
         n = sizeof(error);
         if (getsockopt(plfd->fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) {
-            rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; // (N1)
+            rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; /*  (N1) */
             MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, strerror(error)));
             goto fn_exit;
         }
         CHECK_EINTR(ret_recv, recv(plfd->fd, buf, buf_len, MSG_PEEK));
         if (ret_recv == 0)
-            rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; //(N2)
+            rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; /* (N2) */
         else
             rc = MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED;
-        //FIXME check for ret_recv == -1, but it has some problem when the socket is
-        // initially connected. It returns -1 always. Either that has to be analyzed
-        // and fixed or don't check for error here. We have already checked for
-        // socket errors enough above.
+/*         FIXME check for ret_recv == -1, but it has some problem when the socket is */
+/*          initially connected. It returns -1 always. Either that has to be analyzed */
+/*          and fixed or don't check for error here. We have already checked for */
+/*          socket errors enough above. */
 
 /*        ret_recv = recv(plfd->fd, buf, buf_len, MSG_PEEK); */
 /*         if (ret_recv == 0 || ret_recv == -1) */
-/*             rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; //(N2) */
+/*             rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF; (N2) */
 /*         else */
 /*             rc = MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED; */
 
@@ -200,7 +197,7 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
     n = sizeof(error);
     if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) {
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, strerror(error)));
-        rc = FALSE; // error
+        rc = FALSE; /*  error */
         goto fn_exit;
     }
 
@@ -209,16 +206,16 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
         rc = FALSE;
     else
         rc = TRUE;
-    //FIXME check for ret_recv == -1, but it has some problem when the socket is
-    // initially connected. It returns -1 always. Either that has to be analyzed
-    // and fixed or don't check for error here. We have already checked for
-    // socket errors enough above.
+/*     FIXME check for ret_recv == -1, but it has some problem when the socket is */
+/*      initially connected. It returns -1 always. Either that has to be analyzed */
+/*      and fixed or don't check for error here. We have already checked for */
+/*      socket errors enough above. */
 
 /*     ret_recv = recv(fd, buf, buf_len, MSG_PEEK); */
 /*     if (ret_recv == 0 || ret_recv == -1) */
-/*         rc = FALSE; // error or EOF */
+/*         rc = FALSE;  error or EOF */
 /*     else */
-/*         rc = TRUE; // CONNECTED */
+/*         rc = TRUE;  CONNECTED */
 /*     if (ret_recv == 0) { */
 /*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. rcvd EOF")); */
 /*     } */

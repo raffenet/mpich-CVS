@@ -51,6 +51,7 @@
         }                                                                       \
     } while (0)
 
+
 #define GENERIC_Q_DEQUEUE(qp, epp, next_field) do {     \
         MPIU_Assert (!GENERIC_Q_EMPTY (*(qp)));         \
         *(epp) = (qp)->head;                            \

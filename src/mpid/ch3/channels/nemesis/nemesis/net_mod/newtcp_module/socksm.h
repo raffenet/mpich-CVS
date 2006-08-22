@@ -9,7 +9,6 @@
 
 #include <sys/poll.h>
 #include <stddef.h> 
-/*#include "newtcp_module_impl.h"*/
 
 enum SOCK_CONSTS {  /* more type safe than #define's */
     LISTENQLEN = 10,
@@ -30,18 +29,18 @@ enum CONSTS {
 };
 
 typedef enum {
-    MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF, //either a socket error or EOF received from peer
+    MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF, /* either a socket error or EOF received from peer */
     MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED,
-    MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT // No poll event on socket
+    MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT /*  No poll event on socket */
 }MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t;
 
 #define M_(x) x
 #define CONN_TYPE_ M_(TYPE_CONN), M_(TYPE_ACPT)
 
-// Note :  '_' denotes sub-states
-// For example, CSO_DISCCONNECTING_DISCREQSENT, CSO_DISCONNECTING_DISCRSPRCVD are sub-states
-// of CSO_DISCONNECTING
-// LSO - Listening SOcket states
+/*  Note :  '_' denotes sub-states */
+/*  For example, CSO_DISCCONNECTING_DISCREQSENT, CSO_DISCONNECTING_DISCRSPRCVD are sub-states */
+/*  of CSO_DISCONNECTING */
+/*  LSO - Listening SOcket states */
 #define LISTEN_STATE_                           \
     M_(LISTEN_STATE_CLOSED),                    \
     M_(LISTEN_STATE_LISTENING)
@@ -69,7 +68,7 @@ typedef enum {
     M_(CONN_STATE_TS_D_REQRCVD),                \
     M_(CONN_STATE_TS_D_QUIESCENT)
 
-//REQ - Request, RSP - Response
+/* REQ - Request, RSP - Response */
 
 typedef enum CONN_TYPE {CONN_TYPE_, CONN_TYPE_SIZE} Conn_type_t;
 typedef enum MPID_nem_newtcp_module_Listen_State {LISTEN_STATE_, LISTEN_STATE_SIZE} 
@@ -108,24 +107,24 @@ typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const con
 struct MPID_nem_new_tcp_module_sockconn{
     int fd;
     int index;
-    int is_same_pg;  //TRUE/FALSE - 
-    //FIXME: see whether this can be removed, by using only pg_id = NULL or non-NULL
-    // NULL = if same_pg and valid pointer if different pgs.
+    int is_same_pg;  /* TRUE/FALSE -  */
+/*     FIXME: see whether this can be removed, by using only pg_id = NULL or non-NULL */
+/*      NULL = if same_pg and valid pointer if different pgs. */
 
-    int pg_rank; // rank and id cached here to avoid chasing pointers in vc and vc->pg
-    char *pg_id; // MUST be used only if is_same_pg == FALSE
+    int pg_rank; /*  rank and id cached here to avoid chasing pointers in vc and vc->pg */
+    char *pg_id; /*  MUST be used only if is_same_pg == FALSE */
     union {
         MPID_nem_newtcp_module_Conn_State_t cstate;
         MPID_nem_newtcp_module_Listen_State_t lstate; 
     }state;
     MPIDI_VC_t *vc;
-    //Conn_type_t conn_type; // Probably useful for debugging/analyzing purposes.
+    /* Conn_type_t conn_type;  Probably useful for debugging/analyzing purposes. */
     handler_func_t handler;
     sockconn_event_t pending_event;
 };
 
 typedef enum MPIDI_nem_newtcp_module_pkt_type {
-    MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO, // ID = rank + pg_id
+    MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO, /*  ID = rank + pg_id */
     MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK,
     MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK,
     MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ,
@@ -140,11 +139,12 @@ typedef struct MPIDI_nem_newtcp_module_header {
 
 typedef struct MPIDI_nem_newtcp_module_idinfo {
     int pg_rank;
-    // char pg_id[pg_id_len+1]; // Memory is dynamically allocated for pg_id_len+1
-    // Also, this is optional. Sent only, if the recipient belongs to a different pg.
-    // As long as another variable length field needs to be sent across(if at all required
-    // in the future), datalen of header itself is enough to find the offset of pg_id     
-    // in the packet to be sent.
+/*      Commented intentionally */
+/*        char pg_id[pg_id_len+1];  Memory is dynamically allocated for pg_id_len+1 */
+/*      Also, this is optional. Sent only, if the recipient belongs to a different pg. */
+/*      As long as another variable length field needs to be sent across(if at all required */
+/*      in the future), datalen of header itself is enough to find the offset of pg_id      */
+/*      in the packet to be sent. */
 } MPIDI_nem_newtcp_module_idinfo_t;
 
 

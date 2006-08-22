@@ -9,9 +9,9 @@
 #include "newtcp_module_impl.h"
 #include "socksm.h"
 
-// FIXME trace/log all the state transitions
+/* FIXME trace/log all the state transitions */
 
-//FIXME - remove this. to be defined elsewhere
+/* FIXME - remove this. to be defined elsewhere */
 #define MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED 0
 #define MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED 1
 
@@ -267,8 +267,8 @@ int is_valid_state(sockconn_t *sc) {
         }      
     }
 
-    //if found, then the state of the connection is not valid. A bug in the state
-    //machine code.
+/*     if found, then the state of the connection is not valid. A bug in the state */
+/*     machine code. */
     MPIDI_NEMTCP_FUNC_EXIT;
     return !found;
 }
@@ -303,7 +303,7 @@ static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc) {
                     *fnd_sc = iter_sc;
                 }
                 break;                
-                // Add code for other states here, if need be.
+                /* Add code for other states here, if need be. */
             }
         }
     }
@@ -328,9 +328,10 @@ static int send_id_info(const sockconn_t *const sc)
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "my->pg_rank=%d, sc->pg_rank=%d"
                                              , MPIDI_Process.my_pg_rank, sc->pg_rank));
     if (!sc->is_same_pg)
-        pg_id_len = strlen(MPIDI_Process.my_pg->id) + 1; //store ending NULL also
-    //FIXME better keep pg_id_len itself as part of MPIDI_Process.my_pg structure to
-    // avoid computing the length of string everytime this function is called.
+        pg_id_len = strlen(MPIDI_Process.my_pg->id) + 1; 
+/*     store ending NULL also */
+/*     FIXME better keep pg_id_len itself as part of MPIDI_Process.my_pg structure to */
+/*     avoid computing the length of string everytime this function is called. */
     
     hdr.pkt_type = MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO;
     hdr.datalen = sizeof(MPIDI_nem_newtcp_module_idinfo_t) + pg_id_len;    
@@ -354,10 +355,10 @@ static int send_id_info(const sockconn_t *const sc)
                           "**write", "**write %s", strerror (errno));
     MPIU_ERR_CHKANDJUMP1 (offset != buf_size, mpi_errno, MPI_ERR_OTHER, 
                           "**write", "**write %s", strerror (errno)); 
-    //FIXME log appropriate error
-    //FIXME-Z1  socket is just connected and we are sending a few bytes. So, there should not
-    // be a problem of partial data only being written to. If partial data written,
-    // handle this.
+/*     FIXME log appropriate error */
+/*     FIXME-Z1  socket is just connected and we are sending a few bytes. So, there should not */
+/*     be a problem of partial data only being written to. If partial data written, */
+/*     handle this. */
 
  fn_exit:
     MPIDI_NEMTCP_FUNC_EXIT;
@@ -387,7 +388,7 @@ static int recv_id_info(sockconn_t *const sc)
     MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
                           "**read", "**read %s", strerror (errno));
     MPIU_ERR_CHKANDJUMP1 (nread != hdr_len, mpi_errno, MPI_ERR_OTHER,
-                          "**read", "**read %s", strerror (errno)); //FIXME-Z1
+                          "**read", "**read %s", strerror (errno));  /* FIXME-Z1 */
     MPIU_Assert(hdr.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_INFO);
     MPIU_Assert(hdr.datalen != 0);
     
@@ -404,7 +405,7 @@ static int recv_id_info(sockconn_t *const sc)
     MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
                           "**read", "**read %s", strerror (errno));
     MPIU_ERR_CHKANDJUMP1 (nread != hdr.datalen, mpi_errno, MPI_ERR_OTHER,
-                          "**read", "**read %s", strerror (errno)); //FIXME-Z1
+                          "**read", "**read %s", strerror (errno)); /* FIXME-Z1 */
     if (pg_id_len == 0) {
         sc->is_same_pg = TRUE;
         MPID_nem_newtcp_module_get_vc_from_conninfo (MPIDI_Process.my_pg->id, 
@@ -454,7 +455,7 @@ static int send_cmd_pkt(int fd, MPIDI_nem_newtcp_module_pkt_type_t pkt_type)
     MPIU_ERR_CHKANDJUMP1 (offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
                           "**write", "**write %s", strerror (errno));
     MPIU_ERR_CHKANDJUMP1 (offset != pkt_len, mpi_errno, MPI_ERR_OTHER,
-                          "**write", "**write %s", strerror (errno)); //FIXME-Z1
+                          "**write", "**write %s", strerror (errno)); /* FIXME-Z1 */
  fn_exit:
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
@@ -483,7 +484,7 @@ static int recv_cmd_pkt(int fd, MPIDI_nem_newtcp_module_pkt_type_t *pkt_type)
     MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
                           "**read", "**read %s", strerror (errno));
     MPIU_ERR_CHKANDJUMP1 (nread != pkt_len, mpi_errno, MPI_ERR_OTHER,
-                          "**read", "**read %s", strerror (errno)); //FIXME-Z1
+                          "**read", "**read %s", strerror (errno)); /* FIXME-Z1 */
     MPIU_Assert(pkt.datalen == 0);
     MPIU_Assert(pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK ||
                 pkt.pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK ||
@@ -512,7 +513,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
     freenode_t *node;
 
     MPIDI_NEMTCP_STATE_DECL;
-    //MPIU_DBG_MSG(NEM_SOCK_DET, TYPICAL, FCNAME "checking DBG_MSG Enter");
+    /* MPIU_DBG_MSG(NEM_SOCK_DET, TYPICAL, FCNAME "checking DBG_MSG Enter"); */
     MPIDI_NEMTCP_FUNC_ENTER;
     if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED) {
         struct sockaddr_in *sock_addr;
@@ -524,12 +525,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
         
         sc = &g_sc_tbl[index];
-        plfd = &g_plfd_tbl[index];
+        plfd = &g_plfd_tbl[index];        
 
-        
-        //mpi_errno = MPID_nem_newtcp_module_get_conninfo(vc, &sock_addr); 
-        //if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
-        //FIXME-Danger. Above call required or sock_id of vc can be used as below directly?
         sock_addr = &(vc->ch.sock_id);
 
         CHECK_EINTR(sc->fd, socket(AF_INET, SOCK_STREAM, 0));
@@ -541,17 +538,17 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
 
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "connecting to 0x%08X:%d", sock_addr->sin_addr.s_addr, sock_addr->sin_port));
         rc = connect(sc->fd, (SA*)sock_addr, sizeof(*sock_addr)); 
-        //connect should not be called with CHECK_EINTR macro
+        /* connect should not be called with CHECK_EINTR macro */
         MPIU_ERR_CHKANDJUMP2 (rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER,
                               "**sock_connect", "**sock_connect %d %s", errno, strerror (errno));
         
         if (rc == 0) {
             sc->state.cstate = CONN_STATE_TC_C_CNTD;
-            //plfd->events = POLLOUT;
+            /* plfd->events = POLLOUT; */
         }
         else {
             sc->state.cstate = CONN_STATE_TC_C_CNTING;
-            //plfd->events = POLLIN | POLLOUT; // checking for connectedness requires both
+            /* plfd->events = POLLIN | POLLOUT;  checking for connectedness requires both */
         }
         
         sc->handler = sc_state_handlers[sc->state.cstate];
@@ -567,14 +564,14 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         }
         sc->vc = vc;
         vc->ch.sc = sc;
-        sc->pending_event = 0; //clear pending events
+        sc->pending_event = 0; /* clear pending events */
     }
     else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
         sc = vc->ch.sc;
         switch(sc->state.cstate) {
         case CONN_STATE_TS_D_DCNTING:
             sc->state.cstate = CONN_STATE_TS_COMMRDY;
-            //plfd->events = POLLIN | POLLOUT;
+            /* plfd->events = POLLIN | POLLOUT; */
             sc->handler = sc_state_handlers[sc->state.cstate];
             sc->pending_event = 0;
             break;
@@ -583,7 +580,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
                 if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK) 
                     == MPI_SUCCESS) {
                     sc->state.cstate = CONN_STATE_TS_COMMRDY;
-                    //plfd->events = POLLIN | POLLOUT;
+                    /* plfd->events = POLLIN | POLLOUT; */
                     sc->handler = sc_state_handlers[sc->state.cstate];
                     sc->pending_event = 0;
                 }
@@ -601,7 +598,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         MPIU_Assert(0);
 
  fn_exit:
-    //MPID_nem_newtcp_module_connpoll(); //FIXME-Imp should be called?
+    /* MPID_nem_newtcp_module_connpoll(); FIXME-Imp should be called? */
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
@@ -614,8 +611,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         node = MPIU_Malloc(sizeof(freenode_t));      
         MPIU_ERR_CHKANDSTMT(node == NULL, mpi_errno, MPI_ERR_OTHER, goto fn_exit, "**nomem");
         node->index = index;
-        //Note: MPIU_ERR_CHKANDJUMP should not be used here as it will be recursive 
-        //within fn_fail 
+/*         Note: MPIU_ERR_CHKANDJUMP should not be used here as it will be recursive  */
+/*         within fn_fail */ 
         Q_ENQUEUE(&freeq, node);
     }
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
@@ -638,23 +635,23 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     int mpi_errno = MPI_SUCCESS;
 
     MPIDI_NEMTCP_FUNC_ENTER;
-    //FIXME check whether a (different/new) error has to be reported stating the VC is 
-    // already disconnected.
+/*     FIXME check whether a (different/new) error has to be reported stating the VC is  */
+/*      already disconnected. */
     if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED)
         goto fn_exit;
     else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
         switch(sc->state.cstate) {
         case CONN_STATE_TC_C_CNTING:
-            sc->pending_event = EVENT_DISCONNECT; // (N1)
+            sc->pending_event = EVENT_DISCONNECT; /*  (N1) */
             break;
         case CONN_STATE_TC_C_CNTD:
         case CONN_STATE_TC_C_RANKSENT:
         case CONN_STATE_TA_C_RANKRCVD:
-            // No need to finish negotiations to move to CONN_STATE_TS_COMMRDY state.
-            // Just close the connection from the current state ignoring the outstanding
-            // negotiation messages.
+/*              No need to finish negotiations to move to CONN_STATE_TS_COMMRDY state. */
+/*              Just close the connection from the current state ignoring the outstanding */
+/*              negotiation messages. */
             sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
-            //plfd->events = POLLOUT; // In quiescent state, no further reading. just close.
+/*             plfd->events = POLLOUT; In quiescent state, no further reading. just close. */
             sc->handler = sc_state_handlers[sc->state.cstate];
             break;
         case CONN_STATE_TS_COMMRDY:
@@ -664,7 +661,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
         case CONN_STATE_TS_D_DCNTING:
         case CONN_STATE_TS_D_REQSENT:
         case CONN_STATE_TS_D_REQRCVD:
-        case CONN_STATE_TS_D_QUIESCENT: // already disconnecting. nothing more to do
+        case CONN_STATE_TS_D_QUIESCENT: /*  already disconnecting. nothing more to do */
         default:
             break;
         }
@@ -672,7 +669,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     else
         MPIU_Assert(0);
  fn_exit:
-    //MPID_nem_newtcp_module_connpoll(); //FIXME-Imp should be called?
+/*     MPID_nem_newtcp_module_connpoll(); FIXME-Imp should be called? */
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
@@ -699,9 +696,9 @@ static int state_tc_c_cnting_handler(const pollfd_t *const plfd, sockconn_t *con
     else if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
         sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
         sc->handler = sc_state_handlers[sc->state.cstate];
-        //FIXME: retry 'n' number of retries before signalling an error to VC layer.
+        /* FIXME: retry 'n' number of retries before signalling an error to VC layer. */
     }
-    else { //stat == MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT
+    else { /* stat == MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT */
         /*
           Still connecting... let it. While still connecting, even if
           a duplicate connection exists and this connection can be closed, it can get
@@ -741,7 +738,7 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     
     if (IS_WRITEABLE(plfd)) {
         MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "inside if (IS_WRITEABLE(plfd))");
-        //plfd->events = POLLIN | POLLOUT;
+        /* plfd->events = POLLIN | POLLOUT; */
         if (send_id_info(sc) == MPI_SUCCESS) {
             sc->state.cstate = CONN_STATE_TC_C_RANKSENT;
             sc->handler = sc_state_handlers[sc->state.cstate];
@@ -750,12 +747,12 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME,
                                              __LINE__,  MPI_ERR_OTHER, 
                                              "**fail", 0);
-            //FIXME-Danger add error string  actual string : "**cannot send idinfo"
+            /* FIXME-Danger add error string  actual string : "**cannot send idinfo" */
             goto fn_fail;
         }
     }
     else {
-        //Remain in the same state
+        /* Remain in the same state */
     }
  fn_exit:
     MPIDI_NEMTCP_FUNC_EXIT;
@@ -790,7 +787,7 @@ static int state_c_ranksent_handler(const pollfd_t *const plfd, sockconn_t *cons
                 sc->state.cstate = CONN_STATE_TS_COMMRDY;
                 sc->handler = sc_state_handlers[sc->state.cstate];
             }
-            else { //pkt_type must be MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK
+            else { /* pkt_type must be MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK */
                 sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
                 sc->handler = sc_state_handlers[sc->state.cstate];
             }
@@ -834,7 +831,7 @@ static int state_l_cntd_handler(const pollfd_t *const plfd, sockconn_t *const sc
         }
     }
     else {
-        //remain in same state
+        /* remain in same state */
     }
 
  fn_exit:
@@ -924,6 +921,8 @@ static int state_commrdy_handler(const pollfd_t *const plfd, sockconn_t *const s
     int mpi_errno = MPI_SUCCESS;
     MPIDI_NEMTCP_FUNC_ENTER;
 
+    if (IS_READABLE(plfd))
+        MPID_nem_newtcp_module_recv_handler(plfd, sc);
  fn_exit:
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
@@ -1027,7 +1026,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     MPIDI_NEMTCP_FUNC_ENTER;
     CHECK_EINTR(rc, close(sc->fd));
     MPIU_ERR_CHKANDJUMP1 (rc == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
-                          "**close", "**close %s", strerror (errno));
+          "**close", "**close of socket failed - %s", strerror (errno));
     sc->fd = plfd->fd = CONN_INVALID_FD;
     if (sc->vc) {
         sc->vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
@@ -1093,7 +1092,7 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
 
     CHECK_EINTR(n, poll(plfd, 1, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
-                          "**poll", "**poll %s", strerror (errno));
+                          "**poll", "**poll of socket fds failed - %s", strerror (errno));
     if (n == 1)
         sc->handler(plfd, sc);
 
@@ -1126,9 +1125,9 @@ int MPID_nem_newtcp_module_connpoll()
                           "**poll", "**poll %s", strerror (errno));
     if (n == 1) {
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "listen fd poll event"));
-        if (g_lstn_plfd.revents & POLLERR) //FIXME (N1)
+        if (g_lstn_plfd.revents & POLLERR) /* FIXME (N1) */
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail"); 
-        //FIXME-Danger Add error string. actual string "**poll error on listener fd"
+        /* FIXME-Danger Add error string. actual string "**poll error on listener fd" */
         else if (g_lstn_plfd.revents & POLLIN)
             g_lstn_sc.handler(&g_lstn_plfd, &g_lstn_sc);
     }
@@ -1176,7 +1175,7 @@ int MPID_nem_newtcp_module_connpoll()
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc)
-        // listener fd poll struct and sockconn structure
+        /*  listener fd poll struct and sockconn structure */
 {
     int mpi_errno = MPI_SUCCESS;
     int n, connfd;
@@ -1192,7 +1191,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
             if (errno == EINTR)
                 continue;
             else if (errno == EWOULDBLOCK)
-                break; // no connection in the listen queue. get out of here.(N1)
+                break; /*  no connection in the listen queue. get out of here.(N1) */
             MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER,
                                   "**sock_accept", "**sock_accept %d", errno);
         }
@@ -1201,7 +1200,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
             pollfd_t *plfd;
             sockconn_t *sc;
 
-            if (MPID_nem_newtcp_module_is_sock_connected(connfd)) { //(N2)
+            if (MPID_nem_newtcp_module_is_sock_connected(connfd)) { /* (N2) */
                 mpi_errno = find_free_entry(&index);
                 if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);        
                 sc = &g_sc_tbl[index];
@@ -1228,7 +1227,7 @@ int state_listening_handler(const pollfd_t *const l_plfd, sockconn_t *const l_sc
     goto fn_exit;
 }
 
-//FIXME-Danger Delete later.
+/* FIXME-Danger Delete later. */
 #undef FUNCNAME
 #define FUNCNAME f
 #undef FCNAME

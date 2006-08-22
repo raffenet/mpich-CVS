@@ -20,8 +20,6 @@ static MPID_nem_queue_t _free_queue;
 static int get_addr_port_from_bc (const char *business_card, struct in_addr *addr, in_port_t *port);
 extern int state_listening_handler(const pollfd_t *const a_plfd, sockconn_t *const a_sc);
 
-//extern int MPIU_DBG_ActiveClasses; //FIXME nasty kludge. Important to fix.FIXME-DELLATER
-//extern int MPIU_DBG_MaxLevel;  //FIXME nasty kludge. Important to fix.
 
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
@@ -40,8 +38,6 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     int i;
     MPID_nem_newtcp_module_send_q_element_t *sendq_e;
     MPIDI_NEMTCP_STATE_DECL;  
-    //MPIU_DBG_ActiveClasses = 0x30000; //FIXME-DELLATER
-    //MPIU_DBG_MaxLevel = 200;
 
     /* set up listener socket */
     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout);
@@ -114,13 +110,13 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout);
     /* The business card consists of the numeric ip address (represented as a string), and the port id */
     
-    //printf("MPID_nem_newtcp_module_get_business_card Enter. host=%s\n", MPID_nem_hostname);
+    /*printf("MPID_nem_newtcp_module_get_business_card Enter. host=%s\n", MPID_nem_hostname);*/
     hp = gethostbyname (MPID_nem_hostname); 
     
     MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno); 
-    MPIU_ERR_CHKANDJUMP (hp->h_addrtype != AF_INET, mpi_errno, MPI_ERR_OTHER, "**gethostbyname"); //FIXME add error string "**gethostbyname returned other than AF_INET type address"
+    MPIU_ERR_CHKANDJUMP (hp->h_addrtype != AF_INET, mpi_errno, MPI_ERR_OTHER, "**gethostbyname"); /*FIXME add error string "**gethostbyname returned other than AF_INET type address"*/
     
-    //printf("MPID_nem_newtcp_module_get_business_card. gethostbyname success \n");
+    /* printf("MPID_nem_newtcp_module_get_business_card. gethostbyname success \n"); */
 
     p = inet_ntop (AF_INET, (struct in_addr *)hp->h_addr, ipaddr_str, sizeof(ipaddr_str));
 
