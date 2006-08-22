@@ -209,6 +209,7 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     if (o_status.error != 0)
     { 
 	ADIOI_Free(pvfs2_fs);
+	fd->fs_ptr = NULL;
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					   MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
