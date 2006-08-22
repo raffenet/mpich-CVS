@@ -41,7 +41,7 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 	 fprintf(stdout,"[%i] ==== ELAN SEND : Calling POLL for event %p==== \n", MPID_nem_mem_region.rank,elan_event_ptr);
 	 #endif
 	 */	
-	if (elan_poll(elan_event_ptr,MPID_NEM_ELAN_LOOPS_SEND) == TRUE)
+	if (elan_poll(elan_event_ptr,2*MPID_NEM_ELAN_LOOPS_SEND) == TRUE)
 	  {
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,cell);	     
 	     /*

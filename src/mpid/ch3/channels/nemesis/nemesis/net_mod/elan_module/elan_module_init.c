@@ -180,16 +180,13 @@ int init_elan( MPIDI_PG_t *pg_p )
 							  MPID_NEM_ELAN_SLOT_SIZE,
 							  MPID_NEM_ELAN_RAIL_NUM,
 							  flags);   
-   ncells = (MPID_NEM_ELAN_NUM_SLOTS/numprocs) ;
-   if(!ncells)
-     ncells++;
    MPID_nem_elan_freq  = 1 ;
-   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc(ncells, sizeof(MPID_nem_elan_cell_t));
+   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc( MPID_NEM_ELAN_NUM_SLOTS, sizeof(MPID_nem_elan_cell_t));
    MPID_nem_module_elan_free_event_queue->head    = NULL;
    MPID_nem_module_elan_free_event_queue->tail    = NULL;   
    MPID_nem_module_elan_pending_event_queue->head = NULL;
    MPID_nem_module_elan_pending_event_queue->tail = NULL;   
-   for (index = 0; index < ncells ; ++index)
+   for (index = 0; index < MPID_NEM_ELAN_NUM_SLOTS ; ++index)
      {
 	MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,&MPID_nem_module_elan_cells[index]);
      }
