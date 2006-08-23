@@ -77,7 +77,7 @@ int MPIR_Bcast (
   static const char FCNAME[] = "MPIR_Bcast";
   MPI_Status status;
   int        rank, comm_size, src, dst;
-  int        relative_rank, mask, tmp_buf_size;
+  int        relative_rank, mask;
   int        mpi_errno = MPI_SUCCESS;
   int scatter_size, nbytes=0, curr_size, recv_size = 0, send_size;
   int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous;
@@ -111,32 +111,41 @@ int MPIR_Bcast (
       is_homogeneous = 0;
 #endif
 
-  if (is_contig && is_homogeneous)
+  MPID_Datatype_get_size_macro(datatype, type_size);
+  nbytes = type_size * count;
+
+  if (!is_contig || !is_homogeneous)
   {
-      /* contiguous and homogeneous */
-      MPID_Datatype_get_size_macro(datatype, type_size);
-      nbytes = type_size * count;
-  }
-  else
-  {
-      mpi_errno = NMPI_Pack_size(1, datatype, comm, &tmp_buf_size);
-      if (mpi_errno != MPI_SUCCESS) {
-	  MPIU_ERR_POP(mpi_errno);
+      /* FIXME: Neither MPI_Type_size() nor MPI_Pack_size() are
+       * required to give the accurate size of the datatype according
+       * to the MPI specification. However, in the current
+       * implementation, both give accurate values, so either of them
+       * can be used. If this assumption changes, this code needs to
+       * be fixed.
+       *
+       * When heterogeneity support is enabled, it is possible that
+       * MPI_Pack() does not do a straight forward packing. In this
+       * case, MPI_Pack_size() will continue to give an accurate value
+       * of the packed size, but MPI_Type_size() might give an
+       * inaccurate result. On the other hand, MPI_Pack_size() can
+       * become very expensive, depending on the implementation,
+       * especially for heterogeneous systems. We want to use
+       * MPI_Type_size() wherever possible, and MPI_Pack_size() in
+       * other places.
+       */
+      if (!is_homogeneous) {
+	  mpi_errno = NMPI_Pack_size(1, datatype, comm, &type_size);
+	  if (mpi_errno != MPI_SUCCESS) {
+	      MPIU_ERR_POP(mpi_errno);
+	  }
       }
-      /* calculate the value of nbytes, the size in packed
-         representation of the buffer to be broadcasted. We can't
-         simply multiply tmp_buf_size by count because tmp_buf_size
-         is an upper bound on the amount of memory required. (For
-         example, for a single integer, MPICH-1 returns pack_size=12.)
-         Therefore, we actually pack some data into tmp_buf, see by
-         how much 'position' is incremented, and multiply that by count. */
-      nbytes = tmp_buf_size * count;
+
       tmp_buf = MPIU_Malloc(nbytes);
       /* --BEGIN ERROR HANDLING-- */
       if (!tmp_buf)
       {
           mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
-					    "**nomem %d", tmp_buf_size );
+					    "**nomem %d", type_size );
           return mpi_errno;
       }
       /* --END ERROR HANDLING-- */
