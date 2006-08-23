@@ -513,11 +513,18 @@ static void handle_sigchild( int sig )
 	DBG_PRINTF(("Found process %d in sigchld handler\n", pid ) );
 	pState = MPIE_FindProcessByPid( pid );
 	if (pState) {
+	    ProcessStatus_t pstatus = pState->status;  /* Original status */
 	    MPIE_ProcessSetExitStatus( pState, prog_stat );
 	    pState->status = PROCESS_GONE;
-	    if (pState->exitStatus.exitReason != EXIT_NORMAL) {
+	    /* If the exit wasn't NORMAL *AND* it didn't exit without
+	       finalize but never called PMI, invoke the OnAbend. */
+	    if (pState->exitStatus.exitReason != EXIT_NORMAL && 
+		!(pState->exitStatus.exitReason == EXIT_NOFINALIZE &&
+		 pstatus == PROCESS_ALIVE)) {
 		/* Not a normal exit.  We may want to abort all 
 		   remaining processes */
+		DBG_PRINTF(("Calling OnAbend because exitReason was not normal (was %d)\n",
+			    pState->exitStatus.exitReason ));
 		MPIE_OnAbend( &pUniv );
 	    }
 	    /* Let the universe know that there are fewer processes */
@@ -769,11 +776,18 @@ int MPIE_SignalWorld( ProcessWorld *world, int signum )
 }
     
 
+/* We use inKillWorld to avoid invoking KillWorld while within KillWorld.
+   This could happen if kill world is called outside of the sigchild handler,
+   which (as a result of the kill action) may invoke KillWorld if the 
+*/
+static int inKillWorld = 0;
 /*@
   MPIE_KillWorld - Kill all of the processes in a world
  @*/
 int MPIE_KillWorld( ProcessWorld *world )
 {
+    if (inKillWorld) return 0;
+    inKillWorld=1;
     DBG_PRINTF(("Entering KillWorld\n"));
     MPIE_SignalWorld( world, SIGINT );
 
@@ -781,6 +795,7 @@ int MPIE_KillWorld( ProcessWorld *world )
     sleep( 1 );
     MPIE_SignalWorld( world, SIGQUIT );
 
+    inKillWorld=0;
     return 0;
 }
 
@@ -871,7 +886,7 @@ int MPIE_ForwardSignal( int sig )
 
 /*
  * This routine contains the action to take on an abnormal exit from
- * a managed procese.  The normal action is to kill all of the other processes 
+ * a managed process.  The normal action is to kill all of the other processes 
  */
 int MPIE_OnAbend( ProcessUniverse *p )
 {

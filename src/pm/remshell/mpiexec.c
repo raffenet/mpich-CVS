@@ -169,14 +169,12 @@ int main( int argc, char *argv[], char *envp[] )
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals(); 
     if (!pUniv.fromSingleton) {
-	printf( "About to fork\n" );fflush(stdout);
 	MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
 			mypostfork, 0, mypostamble, 0 );
-	printf( "Done with fork\n" );fflush(stdout);
     }
     else {
 	/* FIXME: The singleton code goes here */
-	fprintf( stderr, "Singleton init not supported\n" );
+	MPIU_Error_printf( "Singleton init not supported\n" );
 	exit(1);
     }
     reason = MPIE_IOLoop( pUniv.timeout );
@@ -235,7 +233,7 @@ int mypreamble( void *data, ProcessState *pState )
     int       rc;
 
     IOLabelSetupFDs( &s->labelinfo );
-    rc = PMISetupSockets( 0, &s->pmiinfo );
+    rc = PMISetupSockets( 1, &s->pmiinfo );
     /* We must use communication over the socket, rather than the 
        environment, to pass initialization data */
     pState->initWithEnv = 0;
@@ -261,26 +259,36 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
     {
 	ProcessApp *app = pState->app;
 	const char **newargs = 0;
+	char *pmiDebugStr = 0;
 	int j;
+	char rankStr[12];
 
 	/* Insert into app->args */
-	newargs = (const char **) malloc( (app->nArgs + 10 + 1) * 
+	newargs = (const char **) malloc( (app->nArgs + 14 + 1) * 
 					  sizeof(char *) );
 	if (!pState->hostname) {
 	    MPIU_Error_printf( "No hostname avaliable for %s\n", app->exename );
 	    exit(1);
 	}
+
+	snprintf( rankStr, sizeof(rankStr)-1, "%d", pState->id );
+	rankStr[12-1] = 0;
 	curarg = 0;
 	newargs[curarg++] = pState->hostname;
 	newargs[curarg++] = strdup( "setenv" );
 	newargs[curarg++] = strdup( "PMI_PORT" );
 	newargs[curarg++] = strdup( s->pmiinfo.portName ); 
 	newargs[curarg++] = strdup( ";" );
-	if (1) {
+	newargs[curarg++] = strdup( "setenv" );
+	newargs[curarg++] = strdup( "PMI_ID" );
+	newargs[curarg++] = strdup( rankStr ); 
+	newargs[curarg++] = strdup( ";" );
+	pmiDebugStr = getenv( "PMI_DEBUG" );
+	if (pmiDebugStr) {
 	    /* Use this to help debug the connection process */
 	    newargs[curarg++] = strdup( "setenv" );
 	    newargs[curarg++] = strdup( "PMI_DEBUG" );
-	    newargs[curarg++] = strdup( "1" );
+	    newargs[curarg++] = strdup( pmiDebugStr );
 	    newargs[curarg++] = strdup( ";" );
 	}
 	newargs[curarg++] = app->exename;
@@ -293,10 +301,12 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 	app->args = newargs;
 	app->nArgs += curarg;
 
-	printf( "cmd = %s\n", app->exename ); fflush(stdout);
-	printf( "Number of args = %d\n", app->nArgs );
-	for (j=0; j<app->nArgs; j++) {
-	    printf( "argv[%d] = %s\n", j, app->args[j] ); fflush(stdout);
+	if (MPIE_Debug) {
+	    printf( "cmd = %s\n", app->exename ); fflush(stdout);
+	    printf( "Number of args = %d\n", app->nArgs );
+	    for (j=0; j<app->nArgs; j++) {
+		printf( "argv[%d] = %s\n", j, app->args[j] ); fflush(stdout);
+	    }
 	}
     }
 

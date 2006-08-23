@@ -213,7 +213,7 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
 {
     int             newfd;
     struct sockaddr sock;
-    socklen_t       addrlen;
+    socklen_t       addrlen = sizeof(sock);
     int             id;
     ProcessUniverse *univ = (ProcessUniverse *)data;
     ProcessWorld    *pWorld = univ->worlds;
@@ -222,7 +222,10 @@ int PMIServAcceptFromPort( int fd, int rdwr, void *data )
     /* Get the new socket */
     MPIE_SYSCALL(newfd,accept,( fd, &sock, &addrlen ));
     DBG_PRINTF(("Acquired new socket in accept (fd = %d)\n", newfd ));
-    if (newfd < 0) return newfd;
+    if (newfd < 0) {
+	DBG(perror("Error on accept: " ));
+	return newfd;
+    }
 
 #ifdef FOO
     /* Mark this fd as non-blocking */
