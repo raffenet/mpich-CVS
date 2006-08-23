@@ -152,12 +152,6 @@ if test "${nemesis_network}" == "elan" ; then
     AC_CHECK_LIB(elan, elan_baseInit, , [
         AC_MSG_ERROR(['elan library not found.  Did you specify --with-elan= or --with-elan-lib=? or --with-qsnet-include=?'])
     ])
-    AC_CHECK_HEADER([elanctrl.h], , [
-        AC_MSG_ERROR(['elanctrl.h not found.  Did you specify --with-elan= or --with-elan-include=?'])
-    ])
-    AC_CHECK_LIB(elanctrl, elanctrl_open, , [
-        AC_MSG_ERROR(['elanctrl library not found.  Did you specify --with-elan-lib=?'])
-    ])
 fi;
 
 AC_ARG_WITH(sctp, [--with-sctp=path - specify path where sctp include directory and lib directory can be found],
