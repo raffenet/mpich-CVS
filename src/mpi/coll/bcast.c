@@ -111,35 +111,40 @@ int MPIR_Bcast (
       is_homogeneous = 0;
 #endif
 
-  MPID_Datatype_get_size_macro(datatype, type_size);
+  /* FIXME: Neither MPI_Type_size() nor MPI_Pack_size() are required
+   * to give the accurate size of the datatype according to the MPI
+   * specification. However, in the current implementation, both give
+   * accurate values, so either of them can be used. If this
+   * assumption changes, this code needs to be fixed.
+   *
+   * When heterogeneity support is enabled, it is possible that
+   * MPI_Pack() does not do a straight forward packing. In this case,
+   * MPI_Pack_size() will continue to give an accurate value of the
+   * packed size, but MPI_Type_size() might give an inaccurate
+   * result. On the other hand, MPI_Pack_size() can become very
+   * expensive, depending on the implementation, especially for
+   * heterogeneous systems. We want to use MPI_Type_size() wherever
+   * possible, and MPI_Pack_size() in other places.
+   */
+  if (is_contig) {
+      MPID_Datatype_get_size_macro(datatype, type_size);
+  }
+  else if (is_homogeneous) {
+      mpi_errno = NMPI_Type_size(datatype, &type_size);
+      if (mpi_errno != MPI_SUCCESS) {
+	  MPIU_ERR_POP(mpi_errno);
+      }
+  }
+  else {
+      mpi_errno = NMPI_Pack_size(1, datatype, comm, &type_size);
+      if (mpi_errno != MPI_SUCCESS) {
+	  MPIU_ERR_POP(mpi_errno);
+      }
+  }
   nbytes = type_size * count;
 
   if (!is_contig || !is_homogeneous)
   {
-      /* FIXME: Neither MPI_Type_size() nor MPI_Pack_size() are
-       * required to give the accurate size of the datatype according
-       * to the MPI specification. However, in the current
-       * implementation, both give accurate values, so either of them
-       * can be used. If this assumption changes, this code needs to
-       * be fixed.
-       *
-       * When heterogeneity support is enabled, it is possible that
-       * MPI_Pack() does not do a straight forward packing. In this
-       * case, MPI_Pack_size() will continue to give an accurate value
-       * of the packed size, but MPI_Type_size() might give an
-       * inaccurate result. On the other hand, MPI_Pack_size() can
-       * become very expensive, depending on the implementation,
-       * especially for heterogeneous systems. We want to use
-       * MPI_Type_size() wherever possible, and MPI_Pack_size() in
-       * other places.
-       */
-      if (!is_homogeneous) {
-	  mpi_errno = NMPI_Pack_size(1, datatype, comm, &type_size);
-	  if (mpi_errno != MPI_SUCCESS) {
-	      MPIU_ERR_POP(mpi_errno);
-	  }
-      }
-
       tmp_buf = MPIU_Malloc(nbytes);
       /* --BEGIN ERROR HANDLING-- */
       if (!tmp_buf)
