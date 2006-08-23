@@ -47,11 +47,11 @@ MPID_nem_elan_module_send_from_queue()
    
    if ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
      {	
-	ELAN_EVENT              *elan_event_ptr   = NULL;
 	MPID_nem_elan_cell_ptr_t elan_event_cell  = NULL;
+	int                      num_tries        = MPID_NEM_NUM_CELLS ; 
 	
 	elan_event_cell = MPID_nem_module_elan_pending_event_queue->head ;  	
-	while(1)
+	while ( num_tries > 0)
 	  {
 	     if(elan_event_cell->to_proceed)
 	       {
@@ -60,71 +60,32 @@ MPID_nem_elan_module_send_from_queue()
 		  
 		  elan_event_cell->elan_event = 
 		    elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)(MPID_NEM_PACKET_LEN(pkt)),MPID_NEM_ELAN_RAIL_NUM);
-		  /*
-		   #ifdef TRACE
-		   fprintf(stdout,"[%i] ================ ELAN SEND FROM QUEUE : EVENT CREATED %p  ============= \n", MPID_nem_mem_region.rank,elan_event_cell->elan_event);
-		   #endif      
-		   */ 
-		  if(elan_poll(elan_event_cell->elan_event,MPID_NEM_ELAN_LOOPS_SEND) == TRUE)
-		    {
-		       MPID_nem_elan_cell_ptr_t elan_event_cell2 = NULL;
-		       /*
-			#ifdef TRACE
-			fprintf(stdout,"[%i] ================ ELAN SEND FROM QUEUE : POLL OK  ============= \n", MPID_nem_mem_region.rank);
-			#endif
-			*/ 
-		       MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell2);
-		       MPID_NEM_ELAN_RESET_CELL( elan_event_cell2 );
-		       MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell2);		       		       
-		       
-		       if ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
-			 elan_event_cell = MPID_nem_module_elan_pending_event_queue->head ;
-		       else
-			 goto fn_exit;
-		    }
+		  elan_event_cell->to_proceed = 0;		  
+	       }
+
+	     if(elan_poll(elan_event_cell->elan_event,MPID_NEM_ELAN_LOOPS_SEND) == TRUE)
+	       {
+		  MPID_nem_elan_cell_ptr_t elan_event_cell2 = NULL;
+		  
+		  MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell2);
+		  MPID_nem_queue_enqueue (MPID_nem_process_free_queue,elan_event_cell2->cell_ptr);	 
+		  MPID_NEM_ELAN_RESET_CELL( elan_event_cell2 );
+		  MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell2);
+		  
+		  if ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
+		    {			    
+		       elan_event_cell = MPID_nem_module_elan_pending_event_queue->head ;
+		       --num_tries;
+		    }		       
 		  else
-		    {
-		       /*
-			#ifdef TRACE
-			fprintf(stdout,"[%i] ================ ELAN SEND FROM QUEUE : POLL NOT OK  ============= \n", MPID_nem_mem_region.rank);
-			#endif
-			*/ 
-		       elan_event_cell->to_proceed = 0;
+		    {			    
 		       goto fn_exit;
-		    }		  
+		    }		       
 	       }
 	     else
-	       {		  
-		  if(elan_poll(elan_event_cell->elan_event,MPID_NEM_ELAN_LOOPS_SEND) == TRUE)
-		    {
-		       MPID_nem_elan_cell_ptr_t elan_event_cell2 = NULL;
-		       
-		       MPID_nem_elan_event_queue_dequeue(MPID_nem_module_elan_pending_event_queue,&elan_event_cell2);
-		       /*
-			#ifdef TRACE
-			fprintf(stdout,"[%i] ==== ELAN SEND FROM QUEUE : Done with SEQNO %i====\n",
-			MPID_nem_mem_region.rank,MPID_NEM_CELL_SEQN(elan_event_cell2->cell_ptr));
-			#endif
-			*/ 		       
-		       MPID_nem_queue_enqueue (MPID_nem_process_free_queue,elan_event_cell2->cell_ptr);	 
-		       MPID_NEM_ELAN_RESET_CELL( elan_event_cell2 );
-		       MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_free_event_queue,elan_event_cell2);
-		       
-		       if ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
-			 elan_event_cell = MPID_nem_module_elan_pending_event_queue->head ;
-		       else
-			 goto fn_exit;
-		    }
-		  else
-		    {
-		       /*
-			#ifdef TRACE
-			fprintf(stdout,"[%i] ================ ELAN SEND FROM QUEUE : POLL NOT OK 2  ============= \n", MPID_nem_mem_region.rank);
-			#endif
-			*/ 
-		       goto fn_exit;
-		    }		  
-	       }
+	       {
+		  goto fn_exit;
+	       }		  
 	  }
      }
 
