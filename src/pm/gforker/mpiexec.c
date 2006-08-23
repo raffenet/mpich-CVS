@@ -139,6 +139,9 @@ int main( int argc, char *argv[], char *envp[] )
 	MPIE_SetupSingleton( &pUniv );
     }
 
+    /* Here is where we would choose the hosts for the job; as gforker
+       uses same machine on which it runs, we don't perform this step */
+
     if (MPIE_Debug) MPIE_PrintProcessUniverse( stdout, &pUniv );
 
     DBG_PRINTF( ("timeout_seconds = %d\n", pUniv.timeout) );
@@ -278,7 +281,6 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 
     IOLabelSetupInClient( &s->labelinfo );
     PMISetupInClient( usePort, &s->pmiinfo );
-/*    setvbuf(stdout,NULL,_IOLBF,0); */
 
     return 0;
 }
