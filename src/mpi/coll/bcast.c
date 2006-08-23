@@ -130,7 +130,8 @@ int MPIR_Bcast (
          example, for a single integer, MPICH-1 returns pack_size=12.)
          Therefore, we actually pack some data into tmp_buf, see by
          how much 'position' is incremented, and multiply that by count. */
-      tmp_buf = MPIU_Malloc(tmp_buf_size);
+      nbytes = tmp_buf_size * count;
+      tmp_buf = MPIU_Malloc(nbytes);
       /* --BEGIN ERROR HANDLING-- */
       if (!tmp_buf)
       {
@@ -140,11 +141,11 @@ int MPIR_Bcast (
       }
       /* --END ERROR HANDLING-- */
 
+      /* TODO: Pipeline the packing and communication */
       position = 0;
-      NMPI_Pack(buffer, 1, datatype, tmp_buf, tmp_buf_size,
-                &position, comm);
-      MPIU_Free(tmp_buf);
-      nbytes = position * count;
+      if (rank == root)
+	  NMPI_Pack(buffer, count, datatype, tmp_buf, nbytes,
+		    &position, comm);
   }
 
   relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
@@ -187,8 +188,12 @@ int MPIR_Bcast (
 	  {
               src = rank - mask; 
               if (src < 0) src += comm_size;
-              mpi_errno = MPIC_Recv(buffer,count,datatype,src,
-                                   MPIR_BCAST_TAG,comm,MPI_STATUS_IGNORE);
+	      if (!is_contig || !is_homogeneous)
+		  mpi_errno = MPIC_Recv(tmp_buf,nbytes,MPI_BYTE,src,
+					MPIR_BCAST_TAG,comm,MPI_STATUS_IGNORE);
+	      else
+		  mpi_errno = MPIC_Recv(buffer,count,datatype,src,
+					MPIR_BCAST_TAG,comm,MPI_STATUS_IGNORE);
               if (mpi_errno != MPI_SUCCESS) {
 		  MPIU_ERR_POP(mpi_errno);
 	      }
@@ -215,8 +220,12 @@ int MPIR_Bcast (
 	  {
               dst = rank + mask;
               if (dst >= comm_size) dst -= comm_size;
-              mpi_errno = MPIC_Send (buffer,count,datatype,dst,
-                                     MPIR_BCAST_TAG,comm); 
+	      if (!is_contig || !is_homogeneous)
+		  mpi_errno = MPIC_Send(tmp_buf,nbytes,MPI_BYTE,dst,
+					MPIR_BCAST_TAG,comm);
+	      else
+		  mpi_errno = MPIC_Send(buffer,count,datatype,dst,
+					MPIR_BCAST_TAG,comm); 
               if (mpi_errno != MPI_SUCCESS) {
 		  MPIU_ERR_POP(mpi_errno);
 	      }
@@ -248,26 +257,6 @@ int MPIR_Bcast (
 	      MPIU_ERR_POP(mpi_errno);
 	  }
           tmp_buf = (char *) buffer + true_lb;
-      }
-      else
-      {
-          /* noncontiguous or heterogeneous. pack into temporary buffer. */
-          tmp_buf = MPIU_Malloc(nbytes);
-	  /* --BEGIN ERROR HANDLING-- */
-          if (!tmp_buf)
-	  {
-              mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
-						"**nomem %d", nbytes );
-              return mpi_errno;
-          }
-	  /* --END ERROR HANDLING-- */
-
-          if (rank == root)
-	  {
-              position = 0;
-              NMPI_Pack(buffer, count, datatype, tmp_buf, nbytes,
-                        &position, comm);
-          }
       }
 
       scatter_size = (nbytes + comm_size - 1)/comm_size; /* ceiling division */
@@ -553,17 +542,17 @@ int MPIR_Bcast (
           MPIU_Free(recvcnts);
           MPIU_Free(displs);
       }
+  }
 
-      if (!is_contig || !is_homogeneous)
+  if (!is_contig || !is_homogeneous)
+  {
+      if (rank != root)
       {
-          if (rank != root)
-	  {
-              position = 0;
-              NMPI_Unpack(tmp_buf, nbytes, &position, buffer, count,
-                          datatype, comm);
-          }
-          MPIU_Free(tmp_buf);
+	  position = 0;
+	  NMPI_Unpack(tmp_buf, nbytes, &position, buffer, count,
+		      datatype, comm);
       }
+      MPIU_Free(tmp_buf);
   }
 
  fn_exit:
