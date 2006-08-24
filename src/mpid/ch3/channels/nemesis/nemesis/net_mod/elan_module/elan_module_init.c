@@ -155,7 +155,6 @@ int init_elan( MPIDI_PG_t *pg_p )
    /* Init Elan */
    base = elan_baseInit(0);
    /* From this point, we can use elan_base pointer, which is not declared anywhere */
-   /* (Quadrics stuff)   */   
    
    MPID_nem_elan_vpids = (int *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(int));
    for (index = 0 ; index < MPID_nem_mem_region.num_procs ; index++)

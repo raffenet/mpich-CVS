@@ -39,14 +39,14 @@ void elan__print_queue(MPID_nem_elan_event_queue_ptr_t qhead, int sens)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 inline int
-MPID_nem_elan_module_send_from_queue()
+MPID_nem_elan_module_send_from_queue( void )
 {   
    int mpi_errno = MPI_SUCCESS;
    
    if ( !MPID_nem_elan_event_queue_empty(MPID_nem_module_elan_pending_event_queue))
      {	
 	MPID_nem_elan_cell_ptr_t elan_event_cell  = NULL;
-	int                      num_tries        = MPID_NEM_NUM_CELLS ; 
+	int                      num_tries        = MPID_NEM_NUM_CELLS ;
 	
 	elan_event_cell = MPID_nem_module_elan_pending_event_queue->head ;  	
 	while ( num_tries > 0)
@@ -99,7 +99,7 @@ MPID_nem_elan_module_send_from_queue()
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 inline int 
-MPID_nem_elan_module_recv()
+MPID_nem_elan_module_recv( void )
 {
    int mpi_errno = MPI_SUCCESS;
    
