@@ -59,7 +59,7 @@ MPID_nem_elan_module_send_from_queue()
 		  int             dest = MPID_NEM_CELL_DEST(elan_event_cell->cell_ptr);
 		  
 		  elan_event_cell->elan_event = 
-		    elan_queueTx(rxq_ptr_array[dest],dest,(char *)pkt,(size_t)(MPID_NEM_PACKET_LEN(pkt)),MPID_NEM_ELAN_RAIL_NUM);
+		    elan_queueTx(rxq_ptr_array[dest],MPID_nem_elan_vpids[dest],(char *)pkt,(size_t)(MPID_NEM_PACKET_LEN(pkt)),MPID_NEM_ELAN_RAIL_NUM);
 		  elan_event_cell->to_proceed = 0;		  
 	       }
 
@@ -112,21 +112,14 @@ MPID_nem_elan_module_recv()
      {
 	MPID_nem_cell_ptr_t  cell = NULL;
 	MPID_nem_pkt_t      *pkt  = NULL;   
-	/*char                *ptr  = NULL ;*/
-	/*	
-	 #ifdef TRACE
-	 fprintf(stdout,"[%i] ================ ELAN RECV : QUEUE POLL DONE : got msg ============== \n", MPID_nem_mem_region.rank);
-	 #endif
-	 */
 	
 	MPID_nem_queue_dequeue (MPID_nem_module_elan_free_queue, &cell);
 	pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);	     	     	     
-	/*ptr = */ 
 	elan_queueRxWait(rxq_ptr_array[MPID_nem_mem_region.rank],(char *)pkt,ELAN_WAIT_EVENT);	     	     
 	/* elan_queueRxComplete(rxq_ptr_array[MPID_nem_mem_region.rank]); */
+
 	/*
 	 #ifdef TRACE
-	 MPIU_Assert((char* )ptr == (char *)pkt);
 	 fprintf(stdout,"[%i] -- ELAN RECV : size %i \n\t\t-- ELAN RECV : dest %i \n\t\t-- ELAN RECV : seqno %i \n", 
 	 MPID_nem_mem_region.rank,(MPID_NEM_CELL_DLEN(cell) + MPID_NEM_MPICH2_HEAD_LEN),MPID_NEM_CELL_DEST(cell),MPID_NEM_CELL_SEQN(cell));
 	 if(MPID_NEM_CELL_SEQN(cell) > 0)
@@ -145,14 +138,6 @@ MPID_nem_elan_module_recv()
 	 */ 
 	MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);	     	     
      }	
-   /*
-    else
-    {
-    #ifdef TRACE
-    fprintf(stdout,"[%i] >>>>>>>>>>>>>>>>>>>> ELAN RECV : ELAN FREE Q EMPTY or res NULL  >>>>>>>>>>>>>>>>>>>>\n", MPID_nem_mem_region.rank);
-    #endif	     
-    }
-    */
    fn_exit:
        return mpi_errno;
    fn_fail:
