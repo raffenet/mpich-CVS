@@ -22,6 +22,7 @@ extern int             MPID_nem_elan_freq;
 extern int             MPID_nem_module_elan_pendings_sends;
 extern int            *MPID_nem_elan_vpids; 
 extern ELAN_QUEUE_TX **rxq_ptr_array;
+extern ELAN_QUEUE_TX  *mpid_nem_elan_recv_queue_ptr;
 
 typedef struct MPID_nem_elan_cell
 {   

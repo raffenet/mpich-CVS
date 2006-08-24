@@ -9,7 +9,6 @@
 #include "elan_module.h"
 #include "my_papi_defs.h"
 
-/*#define TRACE*/
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_elan_module_send
@@ -57,12 +56,11 @@ MPID_nem_elan_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 		  int             dest = vc->lpid;
 
 		  elan_event_cell->elan_event = 
-		    elan_queueTx(rxq_ptr_array[dest],,MPID_nem_elan_vpids[dest],(char *)pkt,(size_t)(MPID_NEM_PACKET_LEN(pkt)),MPID_NEM_ELAN_RAIL_NUM);
+		    elan_queueTx(rxq_ptr_array[dest],MPID_nem_elan_vpids[dest],(char *)pkt,(size_t)(MPID_NEM_PACKET_LEN(pkt)),MPID_NEM_ELAN_RAIL_NUM);
 	       }
 	     elan_wait(elan_event_cell->elan_event,ELAN_WAIT_EVENT);
 	     MPID_nem_queue_enqueue (MPID_nem_process_free_queue,elan_event_cell->cell_ptr);	     	     
-	  }	
-	
+	  }		
 	MPID_NEM_ELAN_SET_CELL( elan_event_cell , NULL , cell, 1);
 	MPID_nem_elan_event_queue_enqueue(MPID_nem_module_elan_pending_event_queue,elan_event_cell);	
      }   

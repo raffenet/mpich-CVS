@@ -20,6 +20,7 @@
 #define MPID_NEM_ELAN_CONTEXT_ID_OFFSET  2
 
 ELAN_QUEUE_TX     **rxq_ptr_array;
+ELAN_QUEUE_TX      *mpid_nem_elan_recv_queue_ptr;
 static ELAN_QUEUE  *localq_ptr; 
 static ELAN_QUEUE **localq_ptr_val; 
 static int         *node_ids;  
@@ -186,8 +187,9 @@ int init_elan( MPIDI_PG_t *pg_p )
 							      MPID_NEM_ELAN_SLOT_SIZE,
 							      MPID_NEM_ELAN_RAIL_NUM,
 							      flags);   
-   MPID_nem_elan_freq  = 1 ;
-   MPID_nem_module_elan_cells = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc( MPID_NEM_ELAN_NUM_SLOTS, sizeof(MPID_nem_elan_cell_t));
+   mpid_nem_elan_recv_queue_ptr = rxq_ptr_array[MPID_nem_mem_region.rank] ;     
+   MPID_nem_elan_freq           = 1 ;
+   MPID_nem_module_elan_cells   = (MPID_nem_elan_cell_ptr_t)MPIU_Calloc( MPID_NEM_ELAN_NUM_SLOTS, sizeof(MPID_nem_elan_cell_t));
    MPID_nem_module_elan_free_event_queue->head    = NULL;
    MPID_nem_module_elan_free_event_queue->tail    = NULL;   
    MPID_nem_module_elan_pending_event_queue->head = NULL;
