@@ -6,3 +6,4 @@ config.*
 remshellconf.h.in
 remshellconf.h
 autom4te*
+mpiexec
