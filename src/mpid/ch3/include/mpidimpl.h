@@ -1287,7 +1287,11 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);
 
 int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank );
 int MPIDI_CH3U_VC_WaitForClose( void );
+#ifdef MPIDI_CH3_HAS_CHANNEL_CLOSE
 int MPIDI_CH3_Channel_close( void );
+#else
+#define MPIDI_CH3_Channel_close( )   MPI_SUCCESS
+#endif
 
 /*@
   MPIDI_CH3_Pre_init - Allows the channel to initialize before PMI_init is 

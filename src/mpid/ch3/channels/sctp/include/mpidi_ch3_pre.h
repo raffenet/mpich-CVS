@@ -9,6 +9,8 @@
 
 #include "sctp_common.h"
 
+#define MPIDI_CH3_HAS_CHANNEL_CLOSE
+
 /* Thes0e macros unlock shared code */
 /* #define MPIDI_CH3_USES_SOCK */
 #define MPIDI_CH3_USES_ACCEPTQ
