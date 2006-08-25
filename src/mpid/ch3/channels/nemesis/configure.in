@@ -53,14 +53,68 @@ AC_CHECK_LIB(gm, gm_init, , [
     fi;
 ])
 
+AC_ARG_WITH(mx, [--with-mx=path - specify path where mx include directory and lib directory can be found],
+if test "${with_mx}" != "yes" -a "${with_mx}" != "no" ; then
+    LDFLAGS="$LDFLAGS -L${with_mx}/lib"
+    CPPFLAGS="$CPPFLAGS -I${with_mx}/include"
+fi,)
+AC_ARG_WITH(mx-include, [--with-mx-include=path - specify path to mx include directory],
+if test "${with_mx_include}" != "yes" -a "${with_mx_include}" != "no" ; then
+    CPPFLAGS="$CPPFLAGS -I${with_mx_include}"
+fi,)
+AC_ARG_WITH(mx-lib, [--with-mx-lib=path - specify path to mx lib directory],
+if test "${with_mx_lib}" != "yes" -a "${with_mx_lib}" != "no" ; then
+    LDFLAGS="$LDFLAGS -L${with_mx_lib}"
+fi,)
+
+if test "${nemesis_network}" == "mx" ; then
+    AC_CHECK_HEADER([myriexpress.h], , [
+        AC_MSG_ERROR(['myriexpress.h not found.  Did you specify --with-mx= or --with-mx-include=?'])
+    ])
+    #mx_init is a macro, switch to mx_finalize to find the symbol
+    AC_CHECK_LIB(myriexpress, mx_finalize, , [
+        AC_MSG_ERROR(['myriexpress library not found.  Did you specify --with-mx= or --with-mx-lib=?'])
+    ])
+fi;
+
+AC_ARG_WITH(elan, [--with-elan=path - specify path where elan include directory and lib directory can be found],
+if test "${with_elan}" != "yes" -a "${with_elan}" != "no" ; then
+    LDFLAGS="$LDFLAGS -L${with_elan}/lib"
+    CPPFLAGS="$CPPFLAGS -I${with_elan}/include"
+fi,)
+AC_ARG_WITH(elan-include, [--with-elan-include=path - specify path to elan include directory],
+if test "${with_elan_include}" != "yes" -a "${with_elan_include}" != "no" ; then
+    CPPFLAGS="$CPPFLAGS -I${with_elan_include}"
+fi,)
+AC_ARG_WITH(elan-lib, [--with-elan-lib=path - specify path to elan lib directory],
+if test "${with_elan_lib}" != "yes" -a "${with_elan_lib}" != "no" ; then
+    LDFLAGS="$LDFLAGS -L${with_elan_lib}"
+fi,)
+AC_ARG_WITH(qsnet-include, [--with-qsnet-include=path - specify path to qsnet include directory],
+if test "${with_qsnet_include}" != "yes" -a "${with_qsnet_include}" != "no" ; then
+    CPPFLAGS="$CPPFLAGS -I${with_qsnet_include}"
+fi,)
+
+if test "${nemesis_network}" == "elan" ; then
+    AC_CHECK_HEADER([elan.h], , [
+        AC_MSG_ERROR(['elan.h not found.  Did you specify --with-elan= or --with-elan-include=? or --with-qsnet-include=?'])
+    ])
+    AC_CHECK_LIB(elan, elan_baseInit, , [
+        AC_MSG_ERROR(['elan library not found.  Did you specify --with-elan= or --with-elan-lib=? or --with-qsnet-include=?'])
+    ])
+fi;
 
 case "${nemesis_network}" in
+     elan )			  
+          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_ELAN_MODULE, [Choose elan, gm, mx, tcp, or no network])		;;
      gm )
-          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_GM_MODULE, [Choose gm, tcp, or no network]) ;;
+          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_GM_MODULE, [Choose elan, gm, mx, tcp, or no network]) ;;
+     mx )
+          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_MX_MODULE, [Choose elan, gm, mx, tcp, or no network]) ;;     
      tcp )
-          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_TCP_MODULE, [Choose gm, tcp, or no network]) ;;
+          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_TCP_MODULE, [Choose elan, gm, mx, tcp, or no network]) ;;
      * )
-          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_NO_MODULE, [Choose gm, tcp, or no network]) ;;
+          AC_DEFINE(MPID_NEM_NET_MODULE, MPID_NEM_NO_MODULE, [Choose elan, gm, mx, tcp, or no network]) ;;
 esac
 
 AC_ARG_WITH(papi, [--with-papi[=path] - specify path where papi include and lib directories can be found],, with_papi=no)
