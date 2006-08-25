@@ -714,6 +714,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 				(unsigned) cur_elmp, cur_sp);
 #endif
 		DLOOP_SEGMENT_POP_AND_MAYBE_EXIT;
+		cur_elmp->may_require_reloading = 1;
 	    }
 	    else {
 		/* new block.  for indexed and struct reset orig_block.
