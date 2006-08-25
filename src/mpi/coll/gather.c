@@ -57,6 +57,7 @@ int MPIR_Gather (
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
+    int is_contig;
     int mask, sendtype_size, recvtype_size, src, dst, position;
 #ifdef MPID_HAS_HETERO
     int tmp_buf_size;
@@ -65,6 +66,7 @@ int MPIR_Gather (
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
+    MPID_Datatype *dtp;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -92,16 +94,45 @@ int MPIR_Gather (
     
     if (is_homogeneous)
     {
+
         /* communicator is homogeneous. no need to pack buffer. */
 
         if (rank == root)
 	{
-            MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+	    if (HANDLE_GET_KIND(recvtype) == HANDLE_KIND_BUILTIN)
+		is_contig = 1;
+	    else {
+		MPID_Datatype_get_ptr(recvtype, dtp);
+		is_contig = dtp->is_contig;
+	    }
+
+	    if (is_contig) {
+		MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+	    }
+	    else {
+		mpi_errno = NMPI_Type_size(recvtype, &recvtype_size);
+		if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	    }
+
             nbytes = recvtype_size * recvcnt;
         }
         else
 	{
-            MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+	    if (HANDLE_GET_KIND(sendtype) == HANDLE_KIND_BUILTIN)
+		is_contig = 1;
+	    else {
+		MPID_Datatype_get_ptr(sendtype, dtp);
+		is_contig = dtp->is_contig;
+	    }
+
+	    if (is_contig) {
+		MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+	    }
+	    else {
+		mpi_errno = NMPI_Type_size(sendtype, &sendtype_size);
+		if (mpi_errno != MPI_SUCCESS) return mpi_errno;
+	    }
+
             nbytes = sendtype_size * sendcnt;
         }
 
