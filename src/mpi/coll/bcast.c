@@ -126,14 +126,8 @@ int MPIR_Bcast (
    * heterogeneous systems. We want to use MPI_Type_size() wherever
    * possible, and MPI_Pack_size() in other places.
    */
-  if (is_contig) {
+  if (is_homogeneous) {
       MPID_Datatype_get_size_macro(datatype, type_size);
-  }
-  else if (is_homogeneous) {
-      mpi_errno = NMPI_Type_size(datatype, &type_size);
-      if (mpi_errno != MPI_SUCCESS) {
-	  MPIU_ERR_POP(mpi_errno);
-      }
   }
   else {
       mpi_errno = NMPI_Pack_size(1, datatype, comm, &type_size);
