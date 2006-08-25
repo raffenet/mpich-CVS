@@ -41,6 +41,17 @@ typedef struct MPIDI_CH3I_VC
 
     union 
     {
+	 struct MPIDI_CH3_VC_ELAN
+	 {
+	    void *rxq_ptr_array;
+	    int   vpid; 
+	 } elan;
+	 struct MPIDI_CH3_VC_MX
+	 {
+	    unsigned int       remote_endpoint_id; /* uint32_t equivalent */
+	    unsigned long long remote_nic_id;      /* uint64_t equivalent */
+	     
+	 } mx;
         struct MPIDI_CH3_VC_GM
         {
             unsigned port_id;
@@ -63,7 +74,8 @@ typedef struct MPIDI_CH3I_VC
 /*             int toread; */
 /*             struct MPID_nem_tcp_module_internal_queue *internal_recv_queue; */
 /*             struct MPID_nem_tcp_module_internal_queue *internal_free_queue; */
-        } tcp;
+        } tcp;	
+
     } net;
 
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
