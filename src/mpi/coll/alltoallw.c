@@ -61,6 +61,7 @@ int MPIR_Alltoallw (
     MPI_Request *reqarray;
     int dst, rank;
     MPI_Comm comm;
+    int outstanding_requests;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -85,41 +86,50 @@ int MPIR_Alltoallw (
     }
     /* --END ERROR HANDLING-- */
 
+    outstanding_requests = 0;
     for ( i=0; i<comm_size; i++ ) { 
         dst = (rank+i) % comm_size;
-        mpi_errno = MPIC_Irecv((char *)recvbuf+rdispls[dst], 
-                               recvcnts[dst], recvtypes[dst], dst,
-                               MPIR_ALLTOALLW_TAG, comm,
-                               &reqarray[i]);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    return mpi_errno;
+	if (recvcnts[dst]) {
+	    mpi_errno = MPIC_Irecv((char *)recvbuf+rdispls[dst], 
+				   recvcnts[dst], recvtypes[dst], dst,
+				   MPIR_ALLTOALLW_TAG, comm,
+				   &reqarray[outstanding_requests]);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
+
+	    outstanding_requests++;
 	}
-	/* --END ERROR HANDLING-- */
     }
 
     for ( i=0; i<comm_size; i++ ) { 
         dst = (rank+i) % comm_size;
-        mpi_errno = MPIC_Isend((char *)sendbuf+sdispls[dst], 
-                               sendcnts[dst], sendtypes[dst], dst,
-                               MPIR_ALLTOALLW_TAG, comm,
-                               &reqarray[i+comm_size]);
-	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    return mpi_errno;
+	if (sendcnts[dst]) {
+	    mpi_errno = MPIC_Isend((char *)sendbuf+sdispls[dst], 
+				   sendcnts[dst], sendtypes[dst], dst,
+				   MPIR_ALLTOALLW_TAG, comm,
+				   &reqarray[outstanding_requests]);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (mpi_errno)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
+
+	    outstanding_requests++;
 	}
-	/* --END ERROR HANDLING-- */
     }
 
-    mpi_errno = NMPI_Waitall(2*comm_size, reqarray, starray);
+    mpi_errno = NMPI_Waitall(outstanding_requests, reqarray, starray);
 
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno == MPI_ERR_IN_STATUS) {
-        for (i=0; i<2*comm_size; i++) {
+        for (i=0; i<outstanding_requests; i++) {
             if (starray[i].MPI_ERROR != MPI_SUCCESS) 
                 mpi_errno = starray[i].MPI_ERROR;
         }
