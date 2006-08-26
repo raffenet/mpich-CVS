@@ -169,7 +169,8 @@ int main (int argc, char ** argv)
 	}
 
 #ifdef SINGLETON_KICK
-#warning  using singleton workaround
+/* #warning isn't standard C, so we comment out this directive */
+/* #warning  using singleton workaround */
 	{
 		int *usize, aflag;
 		MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_UNIVERSE_SIZE, 
