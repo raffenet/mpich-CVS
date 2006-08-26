@@ -20,6 +20,7 @@ autom4te.cache
 rlogconf.*
 printrlog
 printirlog
+pprintirlog
 irlog2rlog
 *.ncb
 *.suo

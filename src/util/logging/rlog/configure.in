@@ -98,6 +98,7 @@ dnl
 dnl AC_PROG_MAKE_SET
 PAC_PROG_MAKE
 dnl
+AC_PATH_PROG(PERL,perl)
 dnl     check for compiler characteristics
 dnl PAC_PROG_C_WEAK_SYMBOLS
 AC_C_CONST
@@ -163,4 +164,4 @@ dnl Other autoconf variables that may be imported from the calling environment
 AC_SUBST(DOCTEXT)
 
 dnl Generate the Makefiles from Makefile.in
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile pprintirlog)
