@@ -64,7 +64,7 @@ Only gcc, osx-gcc, and solaris-cc are currently supported],
 dnl
 CC_SHL=true
 C_LINK_SHL=true
-SHLIB_EXT=so
+SHLIB_EXT=unknown
 SHLIB_FROM_LO=no
 SHLIB_INSTALL='$(INSTALL_PROGRAM)'
 case "$enable_sharedlibs" in 
@@ -91,6 +91,7 @@ case "$enable_sharedlibs" in
     # May need -fPIC 
     CC_SHL='${CC} -fpic'
     C_LINKPATH_SHL="-Wl,-rpath -Wl,"
+    SHLIB_EXT=so
     # We need to test that this isn't osx.  The following is a 
     # simple hack
     osname=`uname -s`
@@ -159,6 +160,7 @@ dnl Other, such as solaris-cc
     C_LINK_SHL='${CC} -G -xcode=pic32'
     CC_SHL='${CC} -xcode=pic32'
     C_LINKPATH_SHL="-R"
+    SHLIB_EXT=so
     enable_sharedlibs="solaris-cc"
     ;;
 
@@ -168,6 +170,7 @@ dnl Other, such as solaris-cc
     C_LINK_SHL='${CC} -shared'
     CC_SHL='${CC} -fPIC'
     C_LINKPATH_SHL="-R"
+    SHLIB_EXT=so
     enable_sharedlibs="solaris-gcc"
     ;;
 
@@ -176,6 +179,7 @@ dnl Other, such as solaris-cc
     CC_SHL='${CC} -qmkshrobj'
     C_LINKPATH_SHL="-Wl,-rpath -Wl,"
     C_LINK_SHL='${CC} -shared -qmkshrobj'
+    SHLIB_EXT=so
     # Note that the full line should be more like
     # $CLINKER -shared -qmkshrobj -Wl,-h,$libbase.$slsuffix -o ../shared/$libbase.$slsuffix *.o $OtherLibs
     # for the appropriate values of $libbase and $slsuffix
@@ -188,6 +192,19 @@ dnl Other, such as solaris-cc
     enable_sharedlibs=no
     ;;  
 esac
+# Not all systems use .so as the extension for shared libraries (cygwin
+# and OSX are two important examples).  If we did not set the SHLIB_EXT,
+# then try and determine it.  We need this to properly implement
+# clean steps that look for libfoo.$SHLIB_EXT .
+if test "$SHLIB_EXT" = "unknown" ; then
+    osname=`uname -s`
+    case $osname in 
+        *Darwin*|*darwin*) SHLIB_EXT=dylib
+        ;;	
+        *CYGWIN*|*cygwin*) SHLIB_EXT=dll
+        ;;
+   esac
+fi
 AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(C_LINKPATH_SHL)
