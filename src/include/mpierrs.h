@@ -474,6 +474,8 @@
 
 #define MPIU_ERR_SETANDJUMP2(err_,class_,gmsg_,smsg_,arg1_,arg2_) \
      MPIU_ERR_SETANDSTMT2(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_)
+#define MPIU_ERR_SETFATALANDJUMP2(err_,class_,gmsg_,smsg_,arg1_,arg2_) \
+     MPIU_ERR_SETFATALANDSTMT2(err_,class_,goto fn_fail,gmsg_,smsg_,arg1_,arg2_)
 #define MPIU_ERR_CHKANDSTMT2(cond_,err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_) \
     {if (cond_) { MPIU_ERR_SETANDSTMT2(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_); }}
 #define MPIU_ERR_CHKANDJUMP2(cond_,err_,class_,gmsg_,smsg_,arg1_,arg2_) \
