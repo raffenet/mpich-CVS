@@ -164,4 +164,6 @@ dnl Other autoconf variables that may be imported from the calling environment
 AC_SUBST(DOCTEXT)
 
 dnl Generate the Makefiles from Makefile.in
+AC_OUTPUT_COMMANDS([chmod a+x pprintirlog])
 AC_OUTPUT(Makefile pprintirlog)
+
