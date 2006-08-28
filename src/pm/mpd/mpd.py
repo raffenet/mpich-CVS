@@ -239,6 +239,7 @@ class MPD(object):
         self.allExiting    = 0    # for mpdallexit (for first loop for graceful exit)
         self.exiting       = 0    # for mpdexit or mpdallexit
         self.kvs_cntr      = 0    # for mpdman
+        self.pulse_cntr    = 0
         rc = self.ring.enter_ring(lhsHandler=self.handle_lhs_input,
                                   rhsHandler=self.handle_rhs_input)
         if rc < 0:
@@ -286,6 +287,29 @@ class MPD(object):
                     sys.exit(-1)
             if self.exiting:
                 break
+            if rv[0] == 0:
+                if self.pulse_cntr == 0  and  self.ring.rhsSock:
+                    self.ring.rhsSock.send_dict_msg({'cmd':'pulse'})
+                self.pulse_cntr += 1
+            if self.pulse_cntr >= 3:
+                if self.ring.rhsSock:  # rhs must have disappeared
+                    self.streamHandler.del_handler(self.ring.rhsSock)
+                    self.ring.rhsSock.close()
+                    self.ring.rhsSock = 0
+                if self.ring.lhsSock:
+                    self.streamHandler.del_handler(self.ring.lhsSock)
+                    self.ring.lhsSock.close()
+                    self.ring.lhsSock = 0
+                mpd_print(1,'no pulse_ack from rhs; re-entering ring')
+                rc = self.ring.reenter_ring(lhsHandler=self.handle_lhs_input,
+                                            rhsHandler=self.handle_rhs_input,
+                                            ntries=16)
+                if rc == 0:
+                    mpd_print(1,'back in ring')
+		else:
+                    mpd_print(1,'failed to reenter ring')
+                    sys.exit(-1)
+                self.pulse_cntr = 0
         mpd_close_zc()  # only does something if we have zc
     def usage(self):
         print __doc__
@@ -1039,7 +1063,7 @@ class MPD(object):
                     sys.exit(-1)
             return
         if msg['cmd'] == 'pulse_ack':
-            self.pulse_ctr = 0
+            self.pulse_cntr = 0
         elif msg['cmd'] == 'mpdexiting':    # for mpdexit
             if self.ring.rhsSock:
                 self.streamHandler.del_handler(self.ring.rhsSock)
