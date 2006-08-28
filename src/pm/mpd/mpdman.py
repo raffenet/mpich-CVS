@@ -834,7 +834,7 @@ class MPDMan(object):
             self.streamHandler.del_handler(sock)
             self.spawnedChildSocks.remove(sock)
             sock.close()
-        elif msg['cmd'] == 'job_started'  or  msg['cmd'] == 'job_terminated':
+        elif msg['cmd'] == 'job_started':
             pass
         elif msg['cmd'] == 'client_exit_status':
             if self.myRank == 0:
