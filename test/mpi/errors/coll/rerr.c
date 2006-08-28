@@ -9,10 +9,14 @@
 /* Very simple test that Allreduce detects invalid (datatype,operation)
    pair */
 
+int verbose = 0;
+
 int main( int argc, char *argv[] )
 {
     int a, b, ierr, errs=0, toterrs;
     int rank;
+    char      str[MPI_MAX_ERROR_STRING+1];
+    int       slen;
 
     MPI_Init( &argc, &argv );
     
