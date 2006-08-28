@@ -169,8 +169,8 @@ def mpd_sockpair():
     sock1.close()
     return (sock2,sock3)
 
-def mpd_which(execName):
-    for d in os.environ['PATH'].split(os.pathsep):
+def mpd_which(execName,user_path=os.environ['PATH']):
+    for d in user_path.split(os.pathsep):
         fpn = os.path.join(d,execName)
         if os.path.isdir(fpn):  # follows symlinks; dirs can have execute permission
             continue
