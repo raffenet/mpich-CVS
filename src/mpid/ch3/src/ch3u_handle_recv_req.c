@@ -465,6 +465,8 @@ int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *vc,
 						 int *complete )
 {
     int mpi_errno = MPI_SUCCESS;
+    MPID_Win *win_ptr;
+    MPIDI_Win_lock_queue *lock_queue_entry, *curr_ptr, **curr_ptr_ptr;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_SINGLEPUTACCUMCOMPLETE);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_SINGLEPUTACCUMCOMPLETE);
@@ -473,9 +475,6 @@ int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *vc,
        optimization where the lock was not acquired in 
        ch3u_handle_recv_pkt. Try to acquire the lock and do the 
        operation. */
-    
-    MPID_Win *win_ptr;
-    MPIDI_Win_lock_queue *lock_queue_entry, *curr_ptr, **curr_ptr_ptr;
     
     MPID_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
     
