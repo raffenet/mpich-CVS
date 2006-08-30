@@ -368,7 +368,7 @@ MPIDI_DEV_WIN_DECL
 typedef struct MPIDI_Request {
     MPIDI_Message_match match;
 
-    /* TODO - user_buf, user_count, and datatype needed to process 
+    /* user_buf, user_count, and datatype needed to process 
        rendezvous messages. */
     void * user_buf;
     int user_count;
@@ -386,6 +386,7 @@ typedef struct MPIDI_Request {
     /* iov and iov_count define the data to be transferred/received */
     MPID_IOV iov[MPID_IOV_LIMIT];
     int iov_count;
+
     /* FIXME: RDMA values are specific to some channels? */
     MPID_IOV rdma_iov[MPID_IOV_LIMIT];
     int rdma_iov_count;
@@ -401,6 +402,15 @@ typedef struct MPIDI_Request {
        completed.  This replaces the MPIDI_CA_t (completion action)
        field unsed through MPICH2 1.0.4. */
     int (*OnDataAvail)( MPIDI_VC_t *, struct MPID_Request *, int * );
+    /* OnFinal is used in the following case:
+       OnDataAvail is set to a function, and that function has processed
+       all of the data.  At that point, the OnDataAvail function can
+       reset OnDataAvail to OnFinal.  This is normally used when processing
+       non-contiguous data, where there is one more action to take (such
+       as a get-response) when processing of the non-contiguous data 
+       completes. This value need not be initialized unless OnDataAvail
+       is set to a non-null value (and then only in certain cases) */
+    int (*OnFinal)( MPIDI_VC_t *, struct MPID_Request *, int * );
 
     /* tmpbuf and tmpbuf_sz describe temporary storage used for things like 
        unexpected eager messages and packing/unpacking

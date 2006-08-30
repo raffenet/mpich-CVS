@@ -228,7 +228,8 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
 #define FUNCNAME MPIDI_CH3U_Request_load_send_iov
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n)
+int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, 
+				     MPID_IOV * const iov, int * const iov_n)
 {
     MPIDI_msg_sz_t last;
     int mpi_errno = MPI_SUCCESS;
@@ -242,7 +243,8 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
     MPIU_Assert(sreq->dev.segment_first < last);
     MPIU_Assert(last > 0);
     MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
-    MPID_Segment_pack_vector(&sreq->dev.segment, sreq->dev.segment_first, &last, iov, iov_n);
+    MPID_Segment_pack_vector(&sreq->dev.segment, sreq->dev.segment_first, 
+			     &last, iov, iov_n);
     MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
     "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 		      sreq->dev.segment_first, last, *iov_n));
@@ -252,7 +254,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
     {
 	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data loaded into IOV");
 	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-	sreq->dev.OnDataAvail = 0;
+	sreq->dev.OnDataAvail = sreq->dev.OnFinal;
     }
     else if ((last - sreq->dev.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
@@ -306,7 +308,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data packed into SRBuf");
 	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-	    sreq->dev.OnDataAvail = 0;
+	    sreq->dev.OnDataAvail = sreq->dev.OnFinal;
 	}
 	else 
 	{
@@ -421,6 +423,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 /*	    printf( "cleared ca line 419\n" ); fflush(stdout); */
 /*	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV); */
+	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
 	}
 	else if (last == rreq->dev.segment_size || (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)
@@ -485,6 +488,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 /*	    printf( "cleared ca line 482\n" ); fflush(stdout);*/
 	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
+	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
 	}
 	else

@@ -510,6 +510,9 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         (*request)->dev.segment_size = rma_op->origin_count * origin_type_size;
 	    
         iov_n = MPID_IOV_LIMIT - iovcnt;
+	/* On the initial load of a send iov req, set the OnFinal action (null
+	   for point-to-point) */
+	(*request)->dev.OnFinal = 0;
         mpi_errno = MPIDI_CH3U_Request_load_send_iov(*request,
                                                      &iov[iovcnt],
                                                      &iov_n); 
@@ -1826,6 +1829,9 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         request->dev.segment_size = rma_op->origin_count * origin_type_size;
 	    
         iov_n = MPID_IOV_LIMIT - iovcnt;
+	/* On the initial load of a send iov req, set the OnFinal action (null
+	   for point-to-point) */
+	request->dev.OnFinal = 0;
         mpi_errno = MPIDI_CH3U_Request_load_send_iov(request,
                                                      &iov[iovcnt],
                                                      &iov_n); 

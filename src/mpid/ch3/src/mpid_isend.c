@@ -97,7 +97,8 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	    MPIU_Object_set_ref(sreq, 0);
 	    MPIDI_CH3_Request_destroy(sreq);
 	    sreq = NULL;
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+			 __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
@@ -105,7 +106,8 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
     
-    /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
+    /* FIXME: flow control: limit number of outstanding eager messsages 
+       containing data and need to be buffered by the receiver */
 
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {

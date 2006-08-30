@@ -84,14 +84,12 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
     writeq = vc->ch.write_shmq;
     index = writeq->tail_index;
     if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
     {
 	*num_bytes_ptr = total;
-	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
 	return MPI_SUCCESS;
     }
@@ -116,7 +114,6 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
 	{
 	    writeq->tail_index = index;
 	    *num_bytes_ptr = total;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
 	    return MPI_SUCCESS;
 	}
@@ -124,7 +121,6 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
 
     writeq->tail_index = index;
     *num_bytes_ptr = total;
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE);
     return MPI_SUCCESS;
 }
@@ -150,13 +146,11 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     writeq = vc->ch.write_shmq;
     index = writeq->tail_index;
     if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
     {
 	*num_bytes_ptr = 0;
-	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 	return MPI_SUCCESS;
     }
@@ -193,7 +187,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
 	MPIU_DBG_PRINTF(("shm_writev - %d bytes in packet %d\n", writeq->packet[index].num_bytes, index));
 	*num_bytes_ptr = total;
-	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 	return MPI_SUCCESS;
     }
@@ -237,7 +230,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 		if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
 		{
 		    *num_bytes_ptr = total;
-		    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 		    return MPI_SUCCESS;
 		}
@@ -270,7 +262,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	    if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
 	    {
 		*num_bytes_ptr = total;
-		MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
 		return MPI_SUCCESS;
 	    }
@@ -289,7 +280,6 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
     }
 
     *num_bytes_ptr = total;
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITEV);
     return MPI_SUCCESS;
 }
@@ -531,7 +521,22 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 #endif
 
 	/* update the sender's request */
+#if 1
+	{ 
+	    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+	    reqFn = sreq->dev.OnDataAvail;
+	    if (!reqFn) {
+		MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+		MPIDI_CH3U_Request_complete(sreq);
+		complete = TRUE;
+	    }
+	    else {
+		mpi_errno = reqFn( vc, sreq, &complete );
+	    }
+	}
+#else
 	mpi_errno = MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+#endif
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma write");
@@ -979,7 +984,23 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 			{
 			    /*printf("received reload send packet.\n");fflush(stdout);*/
 			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq, sreq);
+#if 1
+			    { 
+				int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+				reqFn = sreq->dev.OnDataAvail;
+				if (!reqFn) {
+				    MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+				    MPIDI_CH3U_Request_complete(sreq);
+				    complete = TRUE;
+				}
+				else {
+				    mpi_errno = reqFn( recv_vc_ptr, sreq, &complete );
+				}
+			    }
+
+#else
 			    mpi_errno = MPIDI_CH3U_Handle_send_req(recv_vc_ptr, sreq, &complete);
+#endif
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
 				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update send request after receiving a reload packet");

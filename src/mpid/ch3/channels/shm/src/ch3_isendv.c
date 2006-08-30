@@ -133,7 +133,24 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	    if (offset == n_iov)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+#if 1
+		{ 
+		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+		    reqFn = sreq->dev.OnDataAvail;
+		    if (!reqFn) {
+			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+			MPIDI_CH3U_Request_complete(sreq);
+			complete = TRUE;
+		    }
+		    else {
+			mpi_errno = reqFn( vc, sreq, &complete );
+			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		    }
+		}
+
+#else
 		MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+#endif
 		if (!complete)
 		{
 		    sreq->ch.iov_offset = 0;

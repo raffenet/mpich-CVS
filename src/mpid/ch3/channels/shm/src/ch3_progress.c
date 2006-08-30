@@ -186,7 +186,22 @@ static inline int handle_written(MPIDI_VC_t * vc)
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
 		/* Write operation complete */
+#if 1
+		{ 
+		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+		    reqFn = req->dev.OnDataAvail;
+		    if (!reqFn) {
+			MPIU_Assert(MPIDI_Request_get_type(req) != MPIDI_REQUEST_TYPE_GET_RESP);
+			MPIDI_CH3U_Request_complete(req);
+			complete = TRUE;
+		    }
+		    else {
+			mpi_errno = reqFn( vc, req, &complete );
+		    }
+		}
+#else
 		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req, &complete);
+#endif
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);

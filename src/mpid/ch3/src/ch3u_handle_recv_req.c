@@ -21,31 +21,16 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq,
 {
     static int in_routine = FALSE;
     int mpi_errno = MPI_SUCCESS;
+    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
-#if 0
-    MPIDI_STATE_DECL(MPID_STATE_CH3_CA_COMPLETE);
-#endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
 
     MPIU_Assert(in_routine == FALSE);
     in_routine = TRUE;
 
-/* Eventually, we'll use this code instead of the case statement */
-#if 1
- {
-    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
     reqFn = rreq->dev.OnDataAvail;
     if (!reqFn) {
-#ifdef DBG_RMA
-	if (MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_RECV) {
-	    printf( "Request type is %d\n", 
-		    MPIDI_Request_get_type(rreq) );
-	    printf( "ca type is %d\n", rreq->dev.ca );
-	    fflush(stdout);
-	}
-#endif
-	
 	MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
 	MPIDI_CH3U_Request_complete(rreq);
 	*complete = TRUE;
@@ -53,106 +38,6 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq,
     else {
         mpi_errno = reqFn( vc, rreq, complete );
     }
-    goto fn_exit;
- }
-#endif  
-
-#if 0  
-    switch(rreq->dev.ca)
-    {
-	case MPIDI_CH3_CA_COMPLETE:
-	{
-	    MPIDI_FUNC_ENTER(MPID_STATE_CH3_CA_COMPLETE)
-	    /* FIXME: put ONC operations into their own completion action */
-	    
-	    if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV)
-	    {
-                /* mark data transfer as complete and decrement CC */
-		MPIDI_CH3U_Request_complete(rreq);
-		*complete = TRUE;
-	    }
-            else if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP) ||
-                     (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP))
-	    {
-		mpi_errno - MPIDI_CH3_ReqHandler_PutAccumRespComplete( 
-		    vc, rreq, complete );
-            }
-
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT)
-	    {
-		mpi_errno = MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete(
-		    vc, rreq, complete );
-            }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT)
-	    {
-		mpi_errno = MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( 
-		    vc, rreq, complete );
-            }
-            else if (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT)
-	    {
-		mpi_errno = MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete(
-		    vc, rreq, complete );
-            }
-            else if ((MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_PUT) ||
-                     (MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_PT_SINGLE_ACCUM))
-	    {
-		mpi_errno = MPIDI_CH3_ReqHandler_SinglePutAccumComplete( 
-		    vc, rreq, complete );
-            }
-	    /* --BEGIN ERROR HANDLING-- */
-	    else
-	    {
-		/* We shouldn't reach this code because the only other request types are sends */
-		MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
-		MPIDI_CH3U_Request_complete(rreq);
-		*complete = TRUE;
-	    }
-	    /* --END ERROR HANDLING-- */
-	    
-	    MPIDI_FUNC_EXIT(MPID_STATE_CH3_CA_COMPLETE)
-	    break;
-	}
-	
-	case MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE:
-	{
-	    mpi_errno = MPIDI_CH3_ReqHandler_UnpackUEBufComplete( 
-		vc, rreq, complete );
-	    break;
-	}
-	
-	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE:
-	{
-	    mpi_errno = MPIDI_CH3_ReqHandler_UnpackSRBufComplete( 
-		vc, rreq, complete );
-	    break;
-	}
-	
-	case MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV:
-	{
-	    mpi_errno = MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( vc, rreq, 
-								  complete );
-	    break;
-	}
-	
-	case MPIDI_CH3_CA_RELOAD_IOV:
-	{
-	    mpi_errno = MPIDI_CH3_ReqHandler_ReloadIOV( vc, rreq, complete );
-	    break;
-	}
-
-	/* --BEGIN ERROR HANDLING-- */
-	default:
-	{
-	    *complete = TRUE;
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
-			     FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|badca",
-			     "**ch3|badca %d", rreq->dev.ca);
-	    break;
-	}
-	/* --END ERROR HANDLING-- */
-    }
-
-#endif
 
   fn_exit:
     in_routine = FALSE;
@@ -271,7 +156,6 @@ int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *vc,
     
     /* update request to get the data */
     MPIDI_Request_set_type(rreq, MPIDI_REQUEST_TYPE_PUT_RESP);
-/*    rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutAccumRespComplete;*/
     rreq->dev.datatype = new_dtp->handle;
     rreq->dev.recv_data_sz = new_dtp->size * rreq->dev.user_count; 
     
@@ -408,6 +292,7 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     sreq->kind = MPID_REQUEST_SEND;
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_GET_RESP);
     sreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetSendRespComplete;
+    sreq->dev.OnFinal     = MPIDI_CH3_ReqHandler_GetSendRespComplete;
     sreq->dev.user_buf = rreq->dev.user_buf;
     sreq->dev.user_count = rreq->dev.user_count;
     sreq->dev.datatype = new_dtp->handle;
@@ -429,6 +314,7 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     sreq->dev.segment_size = new_dtp->size * sreq->dev.user_count;
     
     iov_n = MPID_IOV_LIMIT - 1;
+    /* Note that the OnFinal handler was set above */
     mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
     if (mpi_errno == MPI_SUCCESS)
     {
@@ -1138,6 +1024,7 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
     MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
     req->kind = MPID_REQUEST_SEND;
     req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetSendRespComplete;
+    req->dev.OnFinal     = MPIDI_CH3_ReqHandler_GetSendRespComplete;
     
     MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
     get_resp_pkt->request_handle = lock_queue->pt_single_op->request_handle;

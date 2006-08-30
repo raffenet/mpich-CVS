@@ -54,8 +54,6 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
-    MPIU_DBG_PRINTF(("ch3_isend\n"));
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
 #ifdef MPICH_DBG_OUTPUT
     if (pkt_sz > sizeof(MPIDI_CH3_Pkt_t))
     {
@@ -87,7 +85,23 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
 	    if (nb == pkt_sz)
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+#if 1
+		{ 
+		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+		    reqFn = sreq->dev.OnDataAvail;
+		    if (!reqFn) {
+			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+			MPIDI_CH3U_Request_complete(sreq);
+			complete = TRUE;
+		    }
+		    else {
+			mpi_errno = reqFn( vc, sreq, &complete );
+			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		    }
+		}
+#else
 		MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+#endif
 		if (!complete)
 		{
 		    sreq->ch.iov_offset = 0;
@@ -123,7 +137,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
     return mpi_errno;
 }

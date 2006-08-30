@@ -70,6 +70,9 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 	sreq->dev.iov_count = MPID_IOV_LIMIT;
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
+	/* One the initial load of a send iov req, set the OnFinal action (null
+	   for point-to-point) */
+	sreq->dev.OnFinal = 0;
 	mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &sreq->dev.iov[0],
 						     &sreq->dev.iov_count);
 	/* --BEGIN ERROR HANDLING-- */
@@ -278,6 +281,9 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	iov_n = MPID_IOV_LIMIT - 1;
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
+	/* One the initial load of a send iov req, set the OnFinal action (null
+	   for point-to-point) */
+	sreq->dev.OnFinal = 0;
 	mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
 	if (mpi_errno != MPI_SUCCESS)  {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 

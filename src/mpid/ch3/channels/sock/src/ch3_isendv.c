@@ -70,7 +70,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
-	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
+	/* Connection already formed.  If send queue is empty attempt to send 
+	   data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    MPIU_Size_t nb;
@@ -81,11 +82,14 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	    
 	    MPIU_DBG_PKT(vc->ch.conn,(MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF,
 			 "isendv");
-	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
+	    /* MT - need some signalling to lock down our right to use the 
+	       channel, thus insuring that the progress engine does
                also try to write */
 
-	    /* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
-               as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
+	    /* FIXME: the current code only agressively writes the first IOV.  
+	       Eventually it should be changed to agressively write
+               as much as possible.  Ideally, the code would be shared between 
+	       the send routines and the progress engine. */
 	    rc = MPIDU_Sock_writev(vc->ch.sock, iov, n_iov, &nb);
 	    if (rc == MPI_SUCCESS)
 	    {
@@ -129,7 +133,23 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		{
 		    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		      "write complete, calling MPIDI_CH3U_Handle_send_req()");
+#if 1
+		{ 
+		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+		    reqFn = sreq->dev.OnDataAvail;
+		    if (!reqFn) {
+			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+			MPIDI_CH3U_Request_complete(sreq);
+			complete = TRUE;
+		    }
+		    else {
+			mpi_errno = reqFn( vc, sreq, &complete );
+			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		    }
+		}
+#else
 		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
+#endif
 		    if (!complete)
 		    {
 			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
@@ -212,6 +232,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
     }
     /* --END ERROR HANDLING-- */
 
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
 }
