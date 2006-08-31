@@ -17,6 +17,10 @@
 #define USE_ERR_CODE_VALIST
 
 #include "mpiimpl.h"
+/* errcodes.h contains the macros used to access fields within an error
+   code and a description of the bits in an error code.  A brief
+   version of that description is included below */
+
 #include "errcodes.h"
 
 /* defmsg is generated automatically from the source files and contains
@@ -64,11 +68,19 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen,
  *
  * A major subgroup in this section is the code to handle the instance-specific
  * messages (MPICH_ERROR_MSG_ALL only).  
- * 
+ *
+ * An MPI error code is made up of a number of fields (see errcodes.h)
+ * These ar 
+ *   is-dynamic? specific-msg-sequence# specific-msg-index 
+ *                                            generic-code is-fatal? class
+ *
+ * There are macros (defined in errcodes.h) that define these fields, 
+ * their sizes, and masks and shifts that may be used to extract them.
  */
 
 /* A few prototypes.  These routines are called from the MPIR_Err_return 
    routines.  checkValidErrcode depends on the MPICH_ERROR_MSG_LEVEL */
+
 static int checkValidErrcode( int error_class, const char fcname[], 
 			      int *errcode );
 static void handleFatalError( MPID_Comm *comm_ptr, 
@@ -389,11 +401,13 @@ static int checkValidErrcode( int error_class, const char fcname[],
 /* Check that an encoded error code is valid. Return 0 if valid, positive, 
    non-zero if invalid.  Value indicates reason; see 
    ErrcodeInvalidReasonStr() */
-#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC
-#else
+
+#if MPICH_ERROR_MSG_LEVEL <= MPICH_ERROR_MSG_GENERIC
 /* This is the shortened version when there are no error messages */
 static int checkErrcodeIsValid( int errcode )
 {
+    /* MPICH_ERR_LAST_CLASS is the last of the *predefined* error classes. */
+    /* FIXME: Should this check against dynamically-created error classes? */
     if (errcode < 0 || errcode >= MPICH_ERR_LAST_CLASS) {
 	return 3;
     }
@@ -402,6 +416,8 @@ static int checkErrcodeIsValid( int errcode )
 static const char *ErrcodeInvalidReasonStr( int reason )
 {
     const char *str = 0;
+
+    /* FIXME: These strings need to be internationalized */
     switch (reason) {
     case 3:
 	str = "Message class is out of range";

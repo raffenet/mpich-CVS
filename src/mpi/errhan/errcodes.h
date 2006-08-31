@@ -18,7 +18,8 @@ int MPIR_Err_add_code( int );
    
    An error code is organized as
 
-   is-dynamic? specific-msg-sequence# specific-msg-index generic-code is-fatal? class
+   is-dynamic? specific-msg-sequence# specific-msg-index 
+                                             generic-code is-fatal? class
 
    where
    class: The MPI error class (including dynamically defined classes)
