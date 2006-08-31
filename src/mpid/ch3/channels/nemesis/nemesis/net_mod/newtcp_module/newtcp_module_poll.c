@@ -7,6 +7,7 @@
 #include "newtcp_module_impl.h"
 #include <errno.h>
 
+
 typedef struct recv_overflow_buf
 {
     char *start;
@@ -28,10 +29,7 @@ int MPID_nem_newtcp_module_poll_init()
     recv_overflow_buf.start = NULL;
     recv_overflow_buf.len = 0;
         
- fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 int MPID_nem_newtcp_module_poll_finalize()
@@ -39,7 +37,7 @@ int MPID_nem_newtcp_module_poll_finalize()
     return MPI_SUCCESS;
 }
 
-
+static int receive_exactly_one_packet (MPIDI_VC_t *vc);
 
 /* breakout_pkts -- This is called after receiving data into a cell.
    If there were multiple packets received into this cell, this
@@ -64,7 +62,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_t *cell = (MPID_nem_cell_t *) v_cell;; /* non-volatile cell */
-    struct {MPID_nem_abs_cell_t *head, *tail;} cell_queue;
+    struct {MPID_nem_abs_cell_t *head, *tail;} cell_queue = {0};
     MPID_nem_pkt_t *next_pkt;
 
     if (len < MPID_NEM_MIN_PACKET_LEN || len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
@@ -122,14 +120,14 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     /* enqueue the received cells onto the process receive queue */
     while (!Q_EMPTY (cell_queue))
     {
-        Q_DEQUEUE (&cell_queue, ((MPID_nem_abs_cell_t **)&cell));
-        MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+        MPID_nem_abs_cell_t *acell;
+        
+        Q_DEQUEUE (&cell_queue, &acell);
+        MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, (MPID_nem_cell_t *)acell);
     }
     
  fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 /* receive_exactly_one_packet -- tries to receive the remaining part of this packet  */
@@ -137,12 +135,11 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
 #define FUNCNAME receive_exactly_one_packet
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int receive_exactly_one_packet (MPIDI_VC_t *vc)
+static int receive_exactly_one_packet (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
     ssize_t bytes_recvd;
-    int len;
 
     /* make sure we have at least the header */
     if (vc_ch->pending_recv.len < MPID_NEM_MIN_PACKET_LEN)
@@ -167,7 +164,8 @@ int receive_exactly_one_packet (MPIDI_VC_t *vc)
     /* try to receive the rest of the packet */
     if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
     {
-        CHECK_EINTR (bytes_recvd, read (vc_ch->fd, vc_ch->pending_recv.end, len));
+        CHECK_EINTR (bytes_recvd, read (vc_ch->fd, vc_ch->pending_recv.end,
+                                        MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)) - vc_ch->pending_recv.len));
         if (bytes_recvd == -1)
         {
             if (errno == EAGAIN)
@@ -293,7 +291,6 @@ int MPID_nem_newtcp_module_conn_est (struct pollfd *pfd, sockconn_t *sc)
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
  fn_fail:    
- fn_exit:
     return mpi_errno;
 }
 
@@ -301,11 +298,9 @@ int MPID_nem_newtcp_module_conn_est (struct pollfd *pfd, sockconn_t *sc)
 #define FUNCNAME recv_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int recv_progress()
+static inline int recv_progress (void)
 {
     int mpi_errno = MPI_SUCCESS;
-    ssize_t bytes_recvd;
-    MPIDI_VC_t *vc;
     MPID_nem_cell_ptr_t v_cell;
     MPID_nem_cell_t *cell; /* non-volatile cell */
 
@@ -331,7 +326,7 @@ static inline int recv_progress()
             if (len < MPID_NEM_MIN_PACKET_LEN || len < MPID_NEM_PACKET_LEN (pkt))
             {
                 /* this was just a packet fragment, attach the cell to the vc to be filled in later */
-                MPIU_Assert (vc->ch.pending_recv.cell == NULL);
+                MPIU_Assert (recv_overflow_buf.vc->ch.pending_recv.cell == NULL);
                 recv_overflow_buf.vc->ch.pending_recv.cell = cell;
                 recv_overflow_buf.vc->ch.pending_recv.end = (char *)(&cell->pkt) + len;
                 recv_overflow_buf.vc->ch.pending_recv.len = len;

@@ -49,6 +49,14 @@ MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t MPID_nem_newtcp_module_check_sock_status(co
 int MPID_nem_newtcp_module_send_progress (void);
 int MPID_nem_newtcp_module_poll_finalize (void);
 int MPID_nem_newtcp_module_send_finalize (void);
+int MPID_nem_newtcp_module_bind (int sockfd);
+int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc);
+int MPID_nem_newtcp_module_conn_est (struct pollfd *pfd, sockconn_t *sc);
+int MPID_nem_newtcp_module_get_conninfo (struct MPIDI_VC *vc, struct sockaddr_in *addr, char **pg_id, int *pg_rank);
+int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struct MPIDI_VC **vc);
+int MPID_nem_newtcp_module_is_sock_connected(int fd);
+int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc);
+int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const l_plfd, sockconn_t *const l_sc);
 
 /* Macros */
 

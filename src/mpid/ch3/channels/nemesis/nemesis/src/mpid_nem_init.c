@@ -12,7 +12,7 @@
 #ifdef MEM_REGION_IN_HEAP
 MPID_nem_mem_region_t *MPID_nem_mem_region_ptr = 0;
 #else /* MEM_REGION_IN_HEAP */
-MPID_nem_mem_region_t MPID_nem_mem_region = {0};
+MPID_nem_mem_region_t MPID_nem_mem_region = {{0}};
 #endif /* MEM_REGION_IN_HEAP */
 
 char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
@@ -48,7 +48,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int                   ret;
     int                   num_local;
     int                  *local_procs;
-    int                   local_rank;
+    int                   local_rank = -1;
     int                   global_size;
     int                   index, index2, size;
     int                   i;

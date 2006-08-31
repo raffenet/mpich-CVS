@@ -23,6 +23,7 @@ int MPID_nem_seg_create(MPID_nem_seg_ptr_t, int, int num_local, int local_rank, 
 int MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
 int MPID_nem_check_alloc(int);
 int MPID_nem_mpich2_init (int ckpt_restart);
+int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_again);
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPI_SUCCESS)
 

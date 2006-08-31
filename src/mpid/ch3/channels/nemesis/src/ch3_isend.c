@@ -19,7 +19,7 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 {
     int mpi_errno = MPI_SUCCESS;
     int complete;
-    int again;
+    int again = 0;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 

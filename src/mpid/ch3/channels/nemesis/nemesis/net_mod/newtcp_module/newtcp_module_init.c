@@ -18,8 +18,6 @@ extern pollfd_t g_lstn_plfd;
 static MPID_nem_queue_t _free_queue;
 
 static int get_addr_port_from_bc (const char *business_card, struct in_addr *addr, in_port_t *port);
-extern int state_listening_handler(const pollfd_t *const a_plfd, sockconn_t *const a_sc);
-
 
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
@@ -36,7 +34,6 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     int mpi_errno = MPI_SUCCESS;
     int ret;
     int i;
-    MPID_nem_newtcp_module_send_q_element_t *sendq_e;
     MPIDI_NEMTCP_STATE_DECL;  
 
     /* set up listener socket */
@@ -55,7 +52,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     ret = listen (g_lstn_sc.fd, SOMAXCONN);	      
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", errno, strerror (errno));  
     g_lstn_sc.state.lstate = LISTEN_STATE_LISTENING;
-    g_lstn_sc.handler = state_listening_handler;
+    g_lstn_sc.handler = MPID_nem_newtcp_module_state_listening_handler;
 
     /* create business card */
     mpi_errno = MPID_nem_newtcp_module_get_business_card (bc_val_p, val_max_sz_p);
@@ -100,7 +97,6 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     int mpi_errno = MPI_SUCCESS;
     int ret;
     struct sockaddr_in sock_id;
-    int sock_id_len;
     struct hostent *hp = NULL;
     size_t len;
     char ipaddr_str[INET_ADDRSTRLEN];
@@ -160,7 +156,6 @@ int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p
     }
     printf("MPID_nem_newtcp_module_get_business_card. port=%d\n", sock_id.sin_port);
  fn_fail:
- fn_exit:
     fprintf(stdout, "MPID_nem_newtcp_module_get_business_card Exit, mpi_errno=%d\n", mpi_errno); fflush(stdout);
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
@@ -187,7 +182,6 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
     struct in_addr addr;
-    int port;    
 
     MPIDI_NEMTCP_FUNC_ENTER;
     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout);
@@ -228,9 +222,7 @@ static int get_addr_port_from_bc (const char *business_card, struct in_addr *add
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
-    int len;
     char ipaddr_str[INET_ADDRSTRLEN];
-    int tmp_port_id;
     
     MPIDI_NEMTCP_FUNC_ENTER;
     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout);
@@ -276,6 +268,7 @@ int MPID_nem_newtcp_module_bind (int sockfd)
     MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
 
     /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available port */
+    ret = 0;
     for (port = low_port; port <= high_port; ++port)
     {
         memset ((void *)&sin, 0, sizeof(sin));

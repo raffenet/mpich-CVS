@@ -41,9 +41,9 @@ inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
     fprintf(stdout,"Cell[%i  @ %p (rel %p), next @ %p (rel %p)]\n ",
 	    mark,
 	    cell,
-	    MPID_NEM_ABS_TO_REL (cell), 
+	    MPID_NEM_ABS_TO_REL (cell).p, 
 	    MPID_NEM_REL_TO_ABS (cell->next),
-	    cell->next );
+	    cell->next.p );
   
     fprintf(stdout,"%i  [Source:%i] [dest : %i] [dlen : %i] [seqno : %i]\n",
 	    mark,

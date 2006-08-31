@@ -127,7 +127,6 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
 int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    int ret;
     MPIDI_VC_t * vc;
     MPIU_CHKPMEM_DECL (1);
     
@@ -166,5 +165,5 @@ const char *MPIDI_CH3_VC_GetStateString(int state)
 /* We don't initialize before calling MPIDI_CH3_VC_Init */
 int MPIDI_CH3_PG_Init (MPIDI_PG_t *pg_p)
 {
-    return;
+    return MPI_SUCCESS;
 }

@@ -20,7 +20,7 @@ extern void *MPIDI_CH3_packet_buffer;
 int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int again;
+    int again = 0;
     int j;
     int complete;
     

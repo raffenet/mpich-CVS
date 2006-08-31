@@ -102,7 +102,8 @@ struct MPID_nem_new_tcp_module_sockconn;
 typedef struct MPID_nem_new_tcp_module_sockconn sockconn_t;
 typedef struct pollfd pollfd_t;
 
-typedef int (*handler_func_t) (const pollfd_t *const plfd, sockconn_t *const conn);
+/* FIXME: should plfd really be const const?  Some handlers may need to change the plfd entry. */
+typedef int (*handler_func_t) (pollfd_t *const plfd, sockconn_t *const conn);
 
 struct MPID_nem_new_tcp_module_sockconn{
     int fd;

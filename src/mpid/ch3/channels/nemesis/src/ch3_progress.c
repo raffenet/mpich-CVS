@@ -70,11 +70,11 @@ int MPIDI_CH3I_Progress (int is_blocking)
 
     do
     {
-	MPID_Request *sreq;
-	MPID_Request *rreq;
-	MPID_nem_cell_ptr_t cell;
-	int           in_fbox;
-	MPIDI_VC_t   *vc;
+	MPID_Request        *sreq;
+	MPID_Request        *rreq;
+	MPID_nem_cell_ptr_t  cell;
+	int                  in_fbox = 0;
+	MPIDI_VC_t          *vc;
 
 	/* make progress receiving */
 	/* check queue */
@@ -255,7 +255,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	{
 	    MPID_IOV *_iov;
 	    int _n_iov;
-	    int again;
+	    int again = 0;
 	    
             MPIU_Assert (sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
             

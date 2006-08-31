@@ -10,15 +10,15 @@
 #include <mpimem.h>
 
 #if defined(HAVE_GCC_AND_PENTIUM_ASM)
-#define asm_memcpy(dst, src, n) ({					\
-    const char *p = (char *)src;					\
-    char *q = (char *)dst;						\
-    size_t nl = (size_t)(n) >> 2;					\
-    __asm__ __volatile__ ("cld ; rep ; movsl ; movl %3,%0 ; rep ; movsb"	\
-		  : "+c" (nl), "+S" (p), "+D" (q)			\
-		  : "r" (n & 3) /* : "memory" is this needed?*/);	\
-    (void *)dst;							\
-})
+#define asm_memcpy(dst, src, n) ({                                                      \
+            const char *p = (char *)(src);                                              \
+            char *q = (char *)(dst);                                                    \
+            size_t nl = (size_t)(n) >> 2;                                               \
+            __asm__ __volatile__ ("cld ; rep ; movsl ; movl %3,%0 ; rep ; movsb"	\
+                                  : "+c" (nl), "+S" (p), "+D" (q)			\
+                                  : "r" (n & 3) /* : "memory" is this needed?*/);	\
+            (void *)(dst);                                                              \
+        })
 
 /*
    nt_memcpy (dst, src, len)
@@ -222,15 +222,15 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
                                  : asm_memcpy (a, b, c))
 
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
-#define asm_memcpy(dst, src, n) ({						\
-    const char *p = (char *)src;						\
-    char *q = (char *)dst;							\
-    size_t nq = n >> 3;								\
-    __asm__ __volatile__ ("cld ; rep ; movsq ; movl %3,%%ecx ; rep ; movsb"		\
-		  : "+c" (nq), "+S" (p), "+D" (q)				\
-		  : "r" ((uint32_t)(n & 7)) /* : "memory" is this needed? */);	\
-  (void *)dst;									\
-})
+#define asm_memcpy(dst, src, n) ({                                                              \
+            const char *p = (char *)(src);                                                      \
+            char *q = (char *)(dst);                                                            \
+            size_t nq = n >> 3;                                                                 \
+            __asm__ __volatile__ ("cld ; rep ; movsq ; movl %3,%%ecx ; rep ; movsb"             \
+                                  : "+c" (nq), "+S" (p), "+D" (q)                               \
+                                  : "r" ((uint32_t)(n & 7)) /* : "memory" is this needed? */);	\
+            (void *)(dst);                                                                      \
+        })
 
 static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t n)
 {
@@ -282,7 +282,7 @@ void *volatile_memcpy (volatile void *dst, volatile void *src, size_t n)
 /* #define MPID_NEM_MEMCPY(a,b,c) memcpy (a, b, c) */
 
 #else
-#define MPID_NEM_MEMCPY(dst, src, n) do { volatile void *d = dst; volatile void *s = src; memcpy((void *)d, (void *)s, n); }while (0)
+#define MPID_NEM_MEMCPY(dst, src, n) do { volatile void *d = (dst); volatile void *s = (src); memcpy((void *)d, (void *)s, n); }while (0)
 #endif
 
 #endif /* MPID_MEMDEFS_H */

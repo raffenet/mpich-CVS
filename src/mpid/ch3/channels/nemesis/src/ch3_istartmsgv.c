@@ -34,7 +34,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
-    int again;
+    int again = 0;
     int j;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 

@@ -49,7 +49,6 @@ int MPID_nem_newtcp_module_send_init()
         S_PUSH (&free_buffers, e);
     }
 
- fn_exit:
     MPIU_CHKPMEM_COMMIT();
     return mpi_errno;
  fn_fail:
@@ -263,9 +262,6 @@ int MPID_nem_newtcp_module_send_finalize()
         MPIU_Free (e);
     }
     
- fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 

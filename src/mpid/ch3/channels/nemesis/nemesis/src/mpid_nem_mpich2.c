@@ -165,13 +165,13 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
     else
 	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
-#endif /*ENABLED_CHECKPOINTING */
 
- return_success:
     *try_again = 0;
     return MPI_SUCCESS;
  return_again:
     *try_again = 1;
+    return MPI_SUCCESS;
+#endif /*ENABLED_CHECKPOINTING */
     return MPI_SUCCESS;
 }
 

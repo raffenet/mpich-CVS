@@ -23,10 +23,7 @@ int MPID_nem_newtcp_module_get_conninfo (struct MPIDI_VC *vc, struct sockaddr_in
     *pg_id = (char *)vc->pg->id;
     *pg_rank = vc->pg_rank;
     
- fn_exit:
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 /* MPID_nem_newtcp_module_get_vc_from_conninfo -- This function takes

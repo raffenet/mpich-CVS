@@ -27,7 +27,7 @@
 int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_Request **sreq_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int again;
+    int again = 0;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
