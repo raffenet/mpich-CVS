@@ -4,7 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h" 
-#include "stdio.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 /* This does a transpose with a get operation, fence, and derived
