@@ -31,22 +31,25 @@
    __asm__ __volatile__ ( "lock; incl %0"				\
                          : "=m" (*count_ptr) :: "memory", "cc" )
 
-#define MPID_Atomic_decr_flag( count_ptr, nzflag )					\
-   __asm__ __volatile__ ( "xor %%eax,%%eax; lock; decl %0 ; setnz %%al"			\
-                         : "=m" (*count_ptr) , "=a" (nzflag) :: "memory", "cc" )
+#define MPID_Atomic_decr_flag( count_ptr, nzflag )			\
+   __asm__ __volatile__ ( "xor %%eax,%%eax; lock; decl %0 ; setnz %%al"	\
+                        : "=m" (*count_ptr) , "=a" (nzflag) :: "memory", "cc" )
 
-#define MPID_Atomic_fetch_and_incr(count_ptr_, count_old_)						\
-    __asm__ __volatile__ ("0: movl %0, %%eax;"								\
-			  "movl %%eax, %%ebx;"								\
-			  "incl %%ebx;"									\
-			  "lock; cmpxchgl %%ebx, %0;"							\
-			  "jnz 0b;"									\
-			  "movl %%eax, %1"								\
+#define MPID_Atomic_fetch_and_incr(count_ptr_, count_old_)	\
+    __asm__ __volatile__ ("0: movl %0, %%eax;"			\
+			  "movl %%eax, %%ebx;"			\
+			  "incl %%ebx;"				\
+			  "lock; cmpxchgl %%ebx, %0;"		\
+			  "jnz 0b;"				\
+			  "movl %%eax, %1"			\
 			  : "+m" (*count_ptr_), "=q" (count_old_) :: "memory", "cc", "eax", "ebx")
 
-/* The Intel Pentium Pro has a bug that can result in out-of-order stores.  The rest of the Intel x86 processors perform writes
-   in order, with the exception of the non-temporal SSE instructions which we don't use.  The IDT WinChip can be configured to
-   perform out-of-order writes.  FIXME: Should this be a configure time or runtime decision?  Right now it is neither and we
+/* The Intel Pentium Pro has a bug that can result in out-of-order stores.  
+   The rest of the Intel x86 processors perform writes
+   in order, with the exception of the non-temporal SSE instructions which we 
+   don't use.  The IDT WinChip can be configured to
+   perform out-of-order writes.  FIXME: Should this be a configure time or 
+   runtime decision?  Right now it is neither and we
    assume stores are ordered for x86 processors. */
 #if !defined(HAVE_X86_OOOSTORE)
 #define MPID_Atomic_write_barrier()		\
