@@ -65,15 +65,15 @@
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, 
+		     int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
     int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
-    MPIU_DBG_PRINTF(("ch3_isendv\n"));
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
+
 #ifdef MPICH_DBG_OUTPUT
     if (n_iov > MPID_IOV_LIMIT)
     {
@@ -88,22 +88,27 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	return mpi_errno;
     }
 #endif
-    /* The SHM implementation uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The SHM implementation uses a fixed length header, the size of which is 
+       the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
     
-    /* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
+    /* Connection already formed.  If send queue is empty attempt to send data,
+       queuing any unsent data. */
     if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
     {
 	int nb;
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
 	
-	/* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
+	/* MT - need some signalling to lock down our right to use the channel,
+	   thus insuring that the progress engine does
 	   also try to write */
 	
-	/* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
-	   as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
+	/* FIXME: the current code only agressively writes the first IOV.  
+	   Eventually it should be changed to agressively write
+	   as much as possible.  Ideally, the code would be shared between the
+	   send routines and the progress engine. */
 	
 	mpi_errno = (n_iov > 1) ?
 	    MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb) :
@@ -180,7 +185,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     
-    MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
 }

@@ -1805,18 +1805,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
 	    MPIU_THREAD_CHECK_END
 	}
-#       elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
-	{
-	    /* FIXME: this code is an experiment and is not even close to correct. */
-	    if (MPIU_Monitor_closet_get_occupany_count(MPIR_Process.global_closet) == 0)
-	    {
-		MPIU_Monitor_exit(&MPIR_Process.global_monitor);
-	    }
-	    else
-	    {
-		MPIU_Monitor_continue(&MPIR_Process.global_monitor, &MPIR_Process.global_closet);
-	    }
-	}
 #       else
 #           error selected multi-threaded implementation is not supported
 #       endif
@@ -1840,10 +1828,6 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		MPIU_THREAD_CHECK_BEGIN 
 		MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
 		MPIU_THREAD_CHECK_END
-	    }
-#           elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
-	    {
-		MPIU_Monitor_enter(&MPIR_Process.global_monitor);
 	    }
 #           else
 #               error selected multi-threaded implementation is not supported

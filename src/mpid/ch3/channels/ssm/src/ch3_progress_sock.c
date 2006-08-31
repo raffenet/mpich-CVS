@@ -171,11 +171,12 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (event->error != MPI_SUCCESS)
 	    {
-		/* FIXME: the following should be handled by the close protocol */
+		/* FIXME: the following should be handled by the close 
+		   protocol */
 		if (!shutting_down || MPIR_ERR_GET_CLASS(event->error) != MPIDU_SOCK_ERR_CONN_CLOSED)
 		{
-		    mpi_errno = MPIR_Err_create_code(event->error, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-		    goto fn_exit;
+		    mpi_errno = event->error;
+		    MPIU_ERR_POP(mpi_errno);
 		}
 		    
 		break;
@@ -194,14 +195,9 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 #else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(conn->vc, &conn->pkt, &rreq);
 #endif
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-							 "**fail", NULL);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    /* --END ERROR HANDLING-- */
 
 		    if (rreq == NULL)
 		    {
@@ -209,14 +205,9 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			{
 			    /* conn->recv_active = NULL;  -- already set to NULL */
 			    mpi_errno = connection_post_recv_pkt(conn);
-			    /* --BEGIN ERROR HANDLING-- */
-			    if (mpi_errno != MPI_SUCCESS)
-			    {
-				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
-				    "**fail", NULL);
-				goto fn_exit;
+			    if (mpi_errno != MPI_SUCCESS) {
+				MPIU_ERR_POP(mpi_errno);
 			    }
-			    /* --END ERROR HANDLING-- */
 			}
 		    }
 		    else
@@ -228,19 +219,21 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				
 			    iovp = rreq->dev.iov;
 			    
-			    mpi_errno = MPIDU_Sock_readv(conn->sock, iovp, rreq->dev.iov_count, &nb);
+			    mpi_errno = MPIDU_Sock_readv(conn->sock, iovp, 
+						   rreq->dev.iov_count, &nb);
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS)
 			    {
 				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 								 "**ch3|sock|immedread", "ch3|sock|immedread %p %p %p",
 								 rreq, conn, conn->vc);
-				goto fn_exit;
+				goto fn_fail;
 			    }
 			    /* --END ERROR HANDLING-- */
 
-			    MPIDI_DBG_PRINTF((55, FCNAME, "immediate readv, vc=0x%p nb=%d, rreq=0x%08x",
-					      conn->vc, rreq->handle, nb));
+			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+    (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=%d, rreq=0x%08x",
+     conn->vc, nb, rreq->handle));
 
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
 			    {
@@ -257,35 +250,27 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				}
 #else
 				mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq, &complete);
-				/* --BEGIN ERROR HANDLING-- */
-				if (mpi_errno != MPI_SUCCESS)
-				{
-				    mpi_errno = MPIR_Err_create_code(
-					mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-				    goto fn_exit;
+				if (mpi_errno != MPI_SUCCESS) {
+				    MPIU_ERR_POP(mpi_errno);
 				}
-				/* --END ERROR HANDLING-- */
 #endif
 
 				if (complete)
 				{
 				    /* conn->recv_active = NULL; -- already set to NULL */
 				    mpi_errno = connection_post_recv_pkt(conn);
-				    /* --BEGIN ERROR HANDLING-- */
-				    if (mpi_errno != MPI_SUCCESS)
-				    {
-					mpi_errno = MPIR_Err_create_code(
-					    mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", NULL);
-					goto fn_exit;
+				    if (mpi_errno != MPI_SUCCESS) {
+					MPIU_ERR_POP(mpi_errno);
 				    }
-				    /* --END ERROR HANDLING-- */
 
 				    break;
 				}
 			    }
 			    else
 			    {
-				MPIDI_DBG_PRINTF((55, FCNAME, "posting readv, vc=0x%p, rreq=0x%08x", conn->vc, rreq->handle));
+				MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+        (MPIU_DBG_FDEST,"posting readv, vc=%p, rreq=0x%08x", 
+	 conn->vc, rreq->handle));
 				conn->recv_active = rreq;
 				mpi_errno = MPIDU_Sock_post_readv(conn->sock, iovp, rreq->dev.iov_count, NULL);
 				/* --BEGIN ERROR HANDLING-- */
@@ -294,7 +279,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				    mpi_errno = MPIR_Err_create_code(
 					mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|postread",
 					"ch3|sock|postread %p %p %p", rreq, conn, conn->vc);
-				    goto fn_exit;
+				    goto fn_fail;
 				}
 				/* --END ERROR HANDLING-- */
 
@@ -318,28 +303,18 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    }
 #else
 		    mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq, &complete);
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-							 "**fail", NULL);
-			goto fn_exit;
+		    if (mpi_errno != MPI_SUCCESS) {
+			MPIU_ERR_POP(mpi_errno);
 		    }
-		    /* --END ERROR HANDLING-- */
 #endif
 
 		    if (complete)
 		    {
 			conn->recv_active = NULL;
 			mpi_errno = connection_post_recv_pkt(conn);
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
-							     "**fail", NULL);
-			    goto fn_exit;
+			if (mpi_errno != MPI_SUCCESS) {
+			    MPIU_ERR_POP(mpi_errno);
 			}
-			/* --END ERROR HANDLING-- */
 		    }
 		    else /* more data to be read */
 		    {
@@ -357,12 +332,13 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 								 "**ch3|sock|immedread", "ch3|sock|immedread %p %p %p",
 								 rreq, conn, conn->vc);
-				goto fn_exit;
+				goto fn_fail;
 			    }
 			    /* --END ERROR HANDLING-- */
 
-			    MPIDI_DBG_PRINTF((55, FCNAME, "immediate readv, vc=0x%p nb=%d, rreq=0x%08x",
-					      conn->vc, rreq->handle, nb));
+			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+        (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=%d, rreq=0x%08x",
+	 conn->vc, rreq->handle, nb));
 				
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
 			    {
@@ -379,35 +355,27 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				}
 #else
 				mpi_errno = MPIDI_CH3U_Handle_recv_req(conn->vc, rreq, &complete);
-				/* --BEGIN ERROR HANDLING-- */
-				if (mpi_errno != MPI_SUCCESS)
-				{
-				    mpi_errno = MPIR_Err_create_code(
-					mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-				    goto fn_exit;
+				if (mpi_errno != MPI_SUCCESS) {
+				    MPIU_ERR_POP(mpi_errno);
 				}
-				/* --END ERROR HANDLING-- */
 #endif
 
 				if (complete)
 				{
 				    conn->recv_active = NULL;
 				    mpi_errno = connection_post_recv_pkt(conn);
-				    /* --BEGIN ERROR HANDLING-- */
-				    if (mpi_errno != MPI_SUCCESS)
-				    {
-					mpi_errno = MPIR_Err_create_code(
-					    mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**fail", NULL);
-					goto fn_exit;
+				    if (mpi_errno != MPI_SUCCESS) {
+					MPIU_ERR_POP(mpi_errno);
 				    }
-				    /* --END ERROR HANDLING-- */
 
 				    break;
 				}
 			    }
 			    else
 			    {
-				MPIDI_DBG_PRINTF((55, FCNAME, "posting readv, vc=0x%p, rreq=0x%08x", conn->vc, rreq->handle));
+				MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+     (MPIU_DBG_FDEST,"posting readv, vc=%p, rreq=0x%08x", 
+      conn->vc, rreq->handle));
 				/* conn->recv_active = rreq;  -- already set to current request */
 				mpi_errno = MPIDU_Sock_post_readv(conn->sock, iovp, rreq->dev.iov_count, NULL);
 				/* --BEGIN ERROR HANDLING-- */
@@ -416,7 +384,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				    mpi_errno = MPIR_Err_create_code(
 					mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|postread",
 					"ch3|sock|postread %p %p %p", rreq, conn, conn->vc);
-				    goto fn_exit;
+				    goto fn_fail;
 				}
 				/* --END ERROR HANDLING-- */
 
@@ -428,6 +396,10 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    }
 	    else if (conn->state == CONN_STATE_OPEN_LRECV_DATA)
 	    {
+#if 1
+		mpi_errno = MPIDI_CH3_Sockconn_handle_connopen_event( conn );
+#else
+		
 		MPIDI_PG_t * pg;
 		int pg_rank;
 		MPIDI_VC_t * vc;
@@ -508,6 +480,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
                     
 		conn->state = CONN_STATE_OPEN_LSEND;
 		mpi_errno = connection_post_send_pkt(conn);
+#endif
 		/* --BEGIN ERROR HANDLING-- */
 		if (mpi_errno != MPI_SUCCESS)
 		{
@@ -854,8 +827,13 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 	case MPIDU_SOCK_OP_CONNECT:
 	{
-	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event->user_ptr;
 
+#if 1
+	    mpi_errno = MPIDI_CH3_Sockconn_handle_connect_event( 
+		(MPIDI_CH3I_Connection_t *) event->user_ptr, event->error );
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#else
+	    MPIDI_CH3I_Connection_t * conn = (MPIDI_CH3I_Connection_t *) event->user_ptr;
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (event->error != MPI_SUCCESS)
 	    {
@@ -900,7 +878,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		}
 		/* --END ERROR HANDLING-- */
 	    }
-
+#endif
 	    break;
 	}
 

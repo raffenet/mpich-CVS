@@ -99,7 +99,7 @@ int MPIDI_CH3_EagerNoncontigSend( MPID_Request **sreq_p,
 }
 
 /* Send a contiguous eager message.  We'll want to optimize (and possibly
-   inline) this 
+   inline) this.
 
    Make sure that buf is at the beginning of the data to send; 
    adjust by adding dt_true_lb if necessary 
@@ -142,25 +142,22 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
     MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
     
     mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, sreq_p);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
     }
-    /* --END ERROR HANDLING-- */
+
     sreq = *sreq_p;
     if (sreq != NULL)
     {
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
     }
-    
+
+ fn_fail:
  fn_exit:
     return mpi_errno;
 }
 
-#if 0
 /* Send a short contiguous eager message.  We'll want to optimize (and possibly
    inline) this 
 
@@ -216,23 +213,19 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
 
     mpi_errno = MPIDI_CH3_iStartMsg(vc, eagershort_pkt, sizeof(*eagershort_pkt),
 				    &sreq );
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-	goto fn_exit;
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
     }
-    /* --END ERROR HANDLING-- */
     if (sreq != NULL)
     {
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
     }
-    
+
+ fn_fail:    
  fn_exit:
     return mpi_errno;
 }
-#endif
 
 /* Send a contiguous eager message that can be cancelled (e.g., 
    a nonblocking eager send).  We'll want to optimize (and possibly
@@ -403,10 +396,15 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	*rreqp = NULL;
     }
     else {
+#error 'these must be fixed to not use post_data_receive_xxx '
 	if (found) {
+	    /* Make sure that we handle the general (non-contiguous)
+	       datatypes correctly while optimizing for the 
+	       special case */
 	    mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq );
 	}
 	else {
+	    /* This is easy; copy the data into a temporary buffer */
 	    mpi_errno = MPIDI_CH3U_Post_data_receive_unexpected( rreq );
 	}
 
@@ -550,4 +548,5 @@ int MPIDI_CH3_PktPrint_ReadySend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
     MPIU_DBG_PRINTF((" seqnum ....... %d\n", pkt->ready_send.seqnum));
 #endif
 }
-#endif
+
+#endif /* MPICH_DBG_OUTPUT */

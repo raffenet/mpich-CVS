@@ -1187,7 +1187,7 @@ int MPIDI_CH3I_Progress_init()
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
     /* FIXME: copied from sock
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -1253,7 +1253,7 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDU_Sock_finalize();
 
     /* FIXME: copied from sock
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
     }

@@ -11,8 +11,6 @@
 #include <string.h>
 #endif
 
-#undef USE_CH3I_PROGRESS_DELAY_QUEUE
-
 /* myct: added for SCTP */
 #include "sctp_common.h"
 
@@ -23,25 +21,8 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
     volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
 
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-#       if defined(USE_CH3I_PROGRESS_DELAY_QUEUE)
-            struct MPIDI_CH3I_Progress_delay_queue_elem
-	    {
-		unsigned int count;
-		volatile int flag;
-		MPID_Thread_cond_t cond;
-		struct MPIDI_CH3I_Progress_delay_queue_elem * next;
-	    };
-
-            static struct MPIDI_CH3I_Progress_delay_queue_elem * MPIDI_CH3I_Progress_delay_queue_head = NULL;
-            static struct MPIDI_CH3I_Progress_delay_queue_elem * MPIDI_CH3I_Progress_delay_queue_tail = NULL;
-#       else
-            MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
-#       endif
+MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 #   endif
-#endif
-
-
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
     static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
     static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
 #endif
@@ -289,7 +270,7 @@ int MPIDI_CH3I_Progress_init(int pg_size)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -370,7 +351,7 @@ int MPIDI_CH3I_Progress_finalize(void)
     /* myct: finalize hash table */
     hash_free(MPIDI_CH3I_assocID_table);
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX && !defined(USE_CH3I_PROGRESS_DELAY_QUEUE))
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -694,73 +675,12 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 {
     int mpi_errno = MPI_SUCCESS;
     
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
-#	error This is so not right.  But what is the correct technique?
-	
-	if (MPIU_Monitor_closet_get_occupancy_count(MPIR_Process.global_closet) > 0)
+	while (completion_count == MPIDI_CH3I_progress_completion_count)
 	{
-	    MPIU_Monitor_continue(MPIR_Process.global_monitor, MPIR_Process.global_closet);
-	    MPIU_Monitor_enter(MPIR_Process.global_monitor);
-	    if (completion_count != MPIDI_CH3I_progress_completion_count)
-	    {
-		goto impl_exit;
-	    }
+	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_Process.global_mutex);
 	}
-		    
-	MPIU_Monitor_delay(MPIR_Process.global_monitor, MPIR_Process.global_closet);
-
-      impl_exit:
-	{
-	}
-    }
-#   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-    {
-#	if defined(USE_CH3I_PROGRESS_DELAY_QUEUE)
-	{
-	    int rc;
-	    struct MPIDI_CH3I_Progress_delay_queue_elem dq_elem;
-	
-	    dq_elem.count = completion_count;
-	    dq_elem.flag = FALSE;
-    
-	    dq_elem.next = NULL;
-	    MPIDI_CH3I_Progress_delay_queue_tail->next = &dq_elem;
-	    MPIDI_CH3I_Progress_delay_queue_tail = &dq_elem;
-	    if (MPIDI_CH3I_Progress_delay_queue_head == NULL)
-	    {
-		MPIDI_CH3I_Progress_delay_queue_head = &dq_elem;
-	    }
-
-	    rc = MPID_Thread_cond_create(&dq_elem.cond, NULL);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (rc != 0)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", NULL);
-		goto impl_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-    
-	    do
-	    {
-		MPID_Thread_cond_wait(&dq_elem.cond, &MPIR_Process.global_mutex);
-	    }
-	    while(dq_elem.flag == FALSE);
-	    
-	    MPID_Thread_cond_destroy(&dq_elem.cond, NULL);
-	    
-	  impl_exit:
-	    {
-	    }
-	}
-#	else
-	{
-	    while (completion_count == MPIDI_CH3I_progress_completion_count)
-	    {
-		MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_Process.global_mutex);
-	    }
-	}
-#       endif
     }
 #   endif
     
@@ -777,38 +697,9 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 {
     int mpi_errno = MPI_SUCCESS;
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MONITOR)
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
-#	error This is so not right.  But what is the correct technique?
-	if (MPIU_Monitor_closet_get_occupancy(MPIR_Process.global_closet) > 0)
-	{
-	    MPIU_Monitor_continue(MPIR_Process.global_monitor, MPIR_Process.global_closet);
-	}
-	else
-	{
-	    MPIU_Monitor_exit(MPIR_Process.global_monitor);
-	}
-    }
-#   elif (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-    {
-#	if defined(USE_CH3I_PROGRESS_DELAY_QUEUE)
-	{
-	    struct MPIDI_CH3I_Progress_delay_queue_elem * dq_elem;
-	    
-	    dq_elem = MPIDI_CH3I_Progress_delay_queue_head;
-	    while(dq_elem != NULL && dq_elem->count != completion_count)
-	    {
-		dq_elem->flag = TRUE;
-		MPID_Thread_cond_signal(&dq_elem->cond);
-		dq_elem = dq_elem->next;
-	    }
-	    MPIDI_CH3I_Progress_delay_queue_head = dq_elem;
-	}
-#	else
-	{
-	    MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
-	}
-#	endif
+	MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
     }
 #   endif
     

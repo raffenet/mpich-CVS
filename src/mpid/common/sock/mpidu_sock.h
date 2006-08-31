@@ -36,6 +36,12 @@ The actual meaning of these error classes is defined by each function.
 Module:
 Utility-Sock
 D*/
+/* FIXME: This is not the right way to add error values to an MPICH module.
+   Note that (a) the last class values are not respected by the error handling
+   code, (b) the entire point of codes and classes is to provide a 
+   natural grouping of codes to a class, (c) this approach can only be used 
+   by one module and hence breaks any component design, and (d) this is 
+   what the MPI dynamic error codes and classes was designed for. */
 #define MPIDU_SOCK_SUCCESS		MPI_SUCCESS
 #define MPIDU_SOCK_ERR_FAIL		MPICH_ERR_LAST_CLASS + 1
 #define MPIDU_SOCK_ERR_INIT		MPICH_ERR_LAST_CLASS + 2
