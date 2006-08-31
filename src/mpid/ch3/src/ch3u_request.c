@@ -359,18 +359,23 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	       could force the use of the SRBuf only 
 	       when (rreq->dev.tmpbuf_off > 0)... */
 	    
-	    data_sz = rreq->dev.segment_size - rreq->dev.segment_first - rreq->dev.tmpbuf_off;
+	    data_sz = rreq->dev.segment_size - rreq->dev.segment_first - 
+		rreq->dev.tmpbuf_off;
 	    MPIU_Assert(data_sz > 0);
 	    tmpbuf_sz = rreq->dev.tmpbuf_sz - rreq->dev.tmpbuf_off;
 	    if (data_sz > tmpbuf_sz)
 	    {
 		data_sz = tmpbuf_sz;
 	    }
-	    rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) rreq->dev.tmpbuf + rreq->dev.tmpbuf_off);
+	    rreq->dev.iov[0].MPID_IOV_BUF = 
+		(MPID_IOV_BUF_CAST)((char *) rreq->dev.tmpbuf + 
+				    rreq->dev.tmpbuf_off);
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.iov_count = 1;
-	    MPIU_Assert(rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
-	    if (rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off == rreq->dev.recv_data_sz)
+	    MPIU_Assert(rreq->dev.segment_first + data_sz + 
+			rreq->dev.tmpbuf_off <= rreq->dev.recv_data_sz);
+	    if (rreq->dev.segment_first + data_sz + rreq->dev.tmpbuf_off == 
+		rreq->dev.recv_data_sz)
 	    {
 		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		  "updating rreq to read the remaining data into the SRBuf");
@@ -394,11 +399,13 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	MPIU_Assert(rreq->dev.segment_first < last);
 	MPIU_Assert(last > 0);
-	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
+	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first,
+				   &last, rreq->dev.iov, &rreq->dev.iov_count);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
    "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
-	MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= MPID_IOV_LIMIT);
+	MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= 
+		    MPID_IOV_LIMIT);
 
 	/* --BEGIN ERROR HANDLING-- */
 	if (rreq->dev.iov_count == 0)
@@ -407,8 +414,9 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	       the datatype and the amount of data received.  Adjust
 	       the segment info so that the remaining data is received and 
 	       thrown away. */
-	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
-							  "**dtypemismatch", 0);
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+		       MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
+		       "**dtypemismatch", 0);
 	    rreq->status.count = (int)rreq->dev.segment_first;
 	    rreq->dev.segment_size = rreq->dev.segment_first;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
@@ -421,12 +429,11 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
      "updating rreq to read the remaining data directly into the user buffer");
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-/*	    printf( "cleared ca line 419\n" ); fflush(stdout); */
-/*	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV); */
 	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
 	}
-	else if (last == rreq->dev.segment_size || (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)
+	else if (last == rreq->dev.segment_size || 
+		 (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 	     "updating rreq to read more data directly into the user buffer");
@@ -436,11 +443,13 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	}
 	else
 	{
-	    /* Too little data would have been received using an IOV.  We will start receiving data into a SRBuf and unpacking it
+	    /* Too little data would have been received using an IOV.  
+	       We will start receiving data into a SRBuf and unpacking it
 	       later. */
 	    MPIU_Assert(MPIDI_Request_get_srbuf_flag(rreq) == FALSE);
 	    
-	    MPIDI_CH3U_SRBuf_alloc(rreq, rreq->dev.segment_size - rreq->dev.segment_first);
+	    MPIDI_CH3U_SRBuf_alloc(rreq, 
+			    rreq->dev.segment_size - rreq->dev.segment_first);
 	    rreq->dev.tmpbuf_off = 0;
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (rreq->dev.tmpbuf_sz == 0)
@@ -449,7 +458,8 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 		   don't have a buffer to drain it into.  should this be
 		   a fatal error? */
 		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"SRBuf allocation failure");
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+			      FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -473,7 +483,8 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    if (rreq->dev.tmpbuf_sz == 0)
 	    {
 		MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"SRBuf allocation failure");
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+			       FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -486,7 +497,6 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    "updating rreq to read overflow data into the SRBuf and complete");
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
 	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
-/*	    printf( "cleared ca line 482\n" ); fflush(stdout);*/
 	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
 	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;

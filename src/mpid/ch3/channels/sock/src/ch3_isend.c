@@ -10,7 +10,8 @@
 #define FUNCNAME update_request
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Size_t nb)
+static void update_request(MPID_Request * sreq, void * hdr, 
+			   MPIDI_msg_sz_t hdr_sz, MPIU_Size_t nb)
 {
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
 
@@ -27,33 +28,27 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
 #define FUNCNAME MPIDI_CH3_iSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz)
+int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, 
+		    MPIDI_msg_sz_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
+    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
-#ifdef MPICH_DBG_OUTPUT
-    /* --BEGIN ERROR HANDLING-- */
-    if (hdr_sz > sizeof(MPIDI_CH3_Pkt_t))
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISEND);
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
-#endif
+    MPIU_Assert( hdr_sz <= sizeof(MPIDI_CH3_Pkt_t) );
 
-    /* The sock channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The sock channel uses a fixed length header, the size of which is the 
+       maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     MPIU_DBG_STMT(CH3_CHANNEL,VERBOSE,
 		  MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr));
 
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
-	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
+	/* Connection already formed.  If send queue is empty attempt to send 
+	   data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    MPIU_Size_t nb;
@@ -62,7 +57,8 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 			 "send queue empty, attempting to write");
 	    MPIU_DBG_PKT(vc->ch.conn,hdr,"isend");
-	    /* MT: need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
+	    /* MT: need some signalling to lock down our right to use the 
+	       channel, thus insuring that the progress engine does
                also try to write */
 	    rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb);
 	    if (rc == MPI_SUCCESS)
@@ -74,39 +70,32 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 		{
 		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
           "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb);
-#if 1
-		{ 
-		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
-			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
 			MPIDI_CH3U_Request_complete(sreq);
-			complete = TRUE;
 		    }
 		    else {
+			int complete;
 			mpi_errno = reqFn( vc, sreq, &complete );
 			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-		    }
-		}
-#else
-
-		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-#endif
-		    if (!complete)
-		    {
-			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
+			if (!complete) {
+			    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+					     (MPIU_DBG_FDEST,
                     "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
-			vc->ch.conn->send_active = sreq;
-			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-							     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
-							     sreq, vc->ch.conn, vc);
+			    vc->ch.conn->send_active = sreq;
+			    mpi_errno = MPIDU_Sock_post_writev(
+				vc->ch.conn->sock, sreq->dev.iov, 
+				sreq->dev.iov_count, NULL);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+								 "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+								 sreq, vc->ch.conn, vc);
+			    }
+			    /* --END ERROR HANDLING-- */
 			}
-			/* --END ERROR HANDLING-- */
 		    }
 		}
 		else
@@ -118,8 +107,10 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 		    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
      (MPIU_DBG_FDEST,"posting write, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 		    vc->ch.conn->send_active = sreq;
-		    mpi_errno = MPIDU_Sock_post_write(vc->ch.conn->sock, sreq->dev.iov[0].MPID_IOV_BUF,
-						      sreq->dev.iov[0].MPID_IOV_LEN, sreq->dev.iov[0].MPID_IOV_LEN, NULL);
+		    mpi_errno = MPIDU_Sock_post_write(vc->ch.conn->sock, 
+					  sreq->dev.iov[0].MPID_IOV_BUF,
+				          sreq->dev.iov[0].MPID_IOV_LEN, 
+					  sreq->dev.iov[0].MPID_IOV_LEN, NULL);
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS)
 		    {
@@ -141,11 +132,13 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 	    {
 		MPIU_DBG_MSG_D(CH3_CHANNEL,TYPICAL,
 			       "MPIDU_Sock_write failed, rc=%d", rc);
-		/* Connection just failed. Mark the request complete and return an error. */
+		/* Connection just failed. Mark the request complete and 
+		   return an error. */
 		MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_FAILED);
 		/* FIXME: Shouldn't the vc->state also change? */
 		vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
-		/* TODO: Create an appropriate error message based on the return value (rc) */
+		/* FIXME: Create an appropriate error message based on the 
+		   return value (rc) */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 		 /* MT -CH3U_Request_complete() performs write barrier */
 		MPIDI_CH3U_Request_complete(sreq);
@@ -166,12 +159,9 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_
 	update_request(sreq, hdr, hdr_sz, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	if (mpi_errno) {
+	    MPIU_ERR_POP(mpi_errno);
 	}
-	/* --END ERROR HANDLING-- */
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

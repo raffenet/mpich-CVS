@@ -510,8 +510,7 @@ int MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( MPIDI_VC_t *vc,
     MPIDI_CH3U_Request_unpack_srbuf(rreq);
     mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETFATALANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**ch3|loadrecviov",
-	 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV");
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|loadrecviov" );
     }
     *complete = FALSE;
  fn_fail:
@@ -533,8 +532,7 @@ int MPIDI_CH3_ReqHandler_ReloadIOV( MPIDI_VC_t *vc, MPID_Request *rreq,
 
     mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETFATALANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**ch3|loadrecviov",
-			 "**ch3|loadrecviov %s", "MPIDI_CH3_CA_RELOAD_IOV");
+	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|loadrecviov");
     }
     *complete = FALSE;
  fn_fail:
@@ -600,7 +598,6 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     
     /* FIXME: Temp to avoid SEGV when memory tracing */
     new_dtp->hetero_dloop = 0;
-
 
     MPID_Dataloop_update(new_dtp->dataloop, ptrdiff);
 
@@ -767,11 +764,16 @@ int MPIDI_CH3I_Release_lock(MPID_Win *win_ptr)
     if (win_ptr->shared_lock_ref_cnt == 0) {
 
 	/* This function needs to be reentrant even in the single-threaded case
-           because when going through the lock queue, the do_simple_get called in the 
-	   lock-get-unlock case may itself cause a request to complete, and this function
-           may again get called in the completion action in ch3u_handle_send_req.c. To
-           handle this possibility, we use an entered_flag. If the flag is not 0, we simply
-	   increment the entered_count and return. The loop through the lock queue is repeated 
+           because when going through the lock queue, the do_simple_get 
+	   called in the 
+	   lock-get-unlock case may itself cause a request to complete, and 
+	   this function
+           may again get called in the completion action in 
+	   ch3u_handle_send_req.c. To
+           handle this possibility, we use an entered_flag. If the flag is 
+	   not 0, we simply
+	   increment the entered_count and return. The loop through the lock 
+	   queue is repeated 
 	   if the entered_count has changed while we are in the loop.
 	 */
 	if (entered_flag != 0) {

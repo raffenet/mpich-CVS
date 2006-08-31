@@ -38,31 +38,20 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, 
+		     MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
+    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
-#ifdef MPICH_DBG_OUTPUT
-    /* --BEGIN ERROR HANDLING-- */
-    if (n_iov > MPID_IOV_LIMIT)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
-	return mpi_errno;
-    }
-    if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
-	return mpi_errno;
-    }
-    /* --END ERROR HANDLING-- */
-#endif
 
-    /* The sock channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    MPIU_Assert(n_iov <= MPID_IOV_LIMIT);
+    MPIU_Assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t))
+
+    /* The sock channel uses a fixed length header, the size of which is the 
+       maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIU_DBG_STMT(CH3_CHANNEL,VERBOSE,
 	 MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF));
@@ -114,8 +103,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 			MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
     (MPIU_DBG_FDEST,"posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 			vc->ch.conn->send_active = sreq;
-			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov + offset,
-							   sreq->dev.iov_count - offset, NULL);
+			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, 
+					   sreq->dev.iov + offset,
+					   sreq->dev.iov_count - offset, NULL);
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
@@ -133,38 +123,31 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		{
 		    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		      "write complete, calling MPIDI_CH3U_Handle_send_req()");
-#if 1
-		{ 
-		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
-			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
 			MPIDI_CH3U_Request_complete(sreq);
-			complete = TRUE;
 		    }
 		    else {
+			int complete;
 			mpi_errno = reqFn( vc, sreq, &complete );
 			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-		    }
-		}
-#else
-		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-#endif
-		    if (!complete)
-		    {
-			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
+			if (!complete) {
+			    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
     (MPIU_DBG_FDEST,"posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
-			vc->ch.conn->send_active = sreq;
-			mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-							     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
-							     sreq, vc->ch.conn, vc);
+			    vc->ch.conn->send_active = sreq;
+			    mpi_errno = MPIDU_Sock_post_writev(
+				vc->ch.conn->sock, sreq->dev.iov, 
+				sreq->dev.iov_count, NULL);
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno != MPI_SUCCESS)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+								 "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+								 sreq, vc->ch.conn, vc);
+			    }
+			    /* --END ERROR HANDLING-- */
 			}
-			/* --END ERROR HANDLING-- */
 		    }
 		}
 	    }
@@ -185,7 +168,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		/* FIXME: Shouldn't the vc->state also change? */
 
 		vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
-		/* TODO: Create an appropriate error message based on the return value (rc) */
+		/* TODO: Create an appropriate error message based on the 
+		   return value (rc) */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 		 /* MT - CH3U_Request_complete performs write barrier */
 		MPIDI_CH3U_Request_complete(sreq);
@@ -206,12 +190,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	update_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+	if (mpi_errno) {
+	    MPIU_ERR_POP(mpi_errno);
 	}
-	/* --END ERROR HANDLING-- */
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
