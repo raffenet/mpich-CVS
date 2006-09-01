@@ -43,7 +43,7 @@
 
 Notes:
 The indices are displacements, and are based on a zero origin.  A common error
-is to do something like to following
+is to do something like the following
 .vb
     integer a(100)
     integer blens(10), indices(10)
