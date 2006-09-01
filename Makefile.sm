@@ -253,7 +253,7 @@ INSTALL_SUBDIRS = src/util/thread src/env @bindings_dirs@ @other_install_dirs@
 install-preamble:
 	@if [ "@ENABLE_SHLIB@" = none ] ; then\
              found=no ; \
-	     for file in ${libdir}/lib*${MPILIBNAME}.so ; do \
+	     for file in ${libdir}/lib*${MPILIBNAME}.@SHLIB_EXT@ ; do \
                  if [ -f $$file ] ; then \
 		     echo "Remove $$file and rerun ${MAKE} install" ; \
 		     found=yes ; \
