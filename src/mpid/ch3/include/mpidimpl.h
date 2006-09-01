@@ -918,8 +918,8 @@ int MPIDU_CH3I_ShutdownListener( void );
   If the send can not be completed immediately, the CH3 packet structure must 
   be stored internally until the request is complete.
   
-  If the send completes immediately, the channel implementation shold return 
-  NULL and must not call MPIDI_CH3U_Handle_send_req().
+  If the send completes immediately, the channel implementation should return 
+  NULL.
 @*/
 int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz, 
 			MPID_Request **sreq_ptr);
@@ -951,8 +951,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz,
   the vector must be stored internally until the
   request is complete.
   
-  If the send completes immediately, the channel implementation shold return 
-  NULL and must not call MPIDI_CH3U_Handle_send_req().
+  If the send completes immediately, the channel implementation should return 
+  NULL.
 @*/
 int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, 
 			 MPID_Request **sreq_ptr);
@@ -961,7 +961,9 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n,
 /*@
   MPIDI_CH3_iSend - A non-blocking request to send a CH3 packet using an 
   existing request object.  When the send is complete
-  the channel implementation will call MPIDI_CH3U_Handle_send_req().
+  the channel implementation will call the OnDataAvail routine in the
+  request, if any (if not, the channel implementation will mark the 
+  request as complete).
 
   Input Parameters:
 + vc - virtual connection over which to send the CH3 packet
@@ -981,7 +983,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n,
   stored internally until the request is complete.
 
   If the send completes immediately, the channel implementation still must 
-  call MPIDI_CH3U_Handle_send_req().
+  invoke the OnDataAvail routine in the request, if any; otherwise, is 
+  must set the request as complete.
 @*/
 int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, 
 		    MPIDI_msg_sz_t pkt_sz);
@@ -990,8 +993,8 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt,
 /*@
   MPIDI_CH3_iSendv - A non-blocking request to send a CH3 packet and 
   associated data using an existing request object.  When
-  the send is complete the channel implementation will call 
-  MPIDI_CH3U_Handle_send_req().
+  the send is complete the channel implementation will call the
+  OnDataAvail routine in the request, if any.
 
   Input Parameters:
 + vc - virtual connection over which to send the CH3 packet and data
@@ -1012,8 +1015,8 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt,
   vector must be stored internally until the request is
   complete.
 
-  If the send completes immediately, the channel implementation still must call
-  MPIDI_CH3U_Handle_send_req().
+  If the send completes immediately, the channel implementation still must 
+  call the OnDataAvail routine in the request, if any.
 @*/
 int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, 
 		     int iov_n);
@@ -1265,22 +1268,6 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Requ
 . complete - data transfer for the request has completed
 @*/
 int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, 
-			       int * complete);
-
-
-/*@
-  MPIDI_CH3U_Handle_send_req - Process a send request for which all of the 
-  data described the request's IOV has been completely
-  buffered and/or sent.
-
-  Input Parameters:
-+ vc - virtual connection over which the data was sent
-- sreq - pointer to the send request object
-
-  Output Parameter:
-. complete - data transfer for the request has completed
-@*/
-int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, 
 			       int * complete);
 
 int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);

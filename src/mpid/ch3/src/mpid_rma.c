@@ -27,8 +27,6 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
 
-    MPIU_UNREFERENCED_ARG(info);
-
     /* Check to see if we need to setup channel-specific functions
        for handling the RMA operations */
     if (setupRMAFunctions) {

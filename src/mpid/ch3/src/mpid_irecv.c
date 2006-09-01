@@ -42,7 +42,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	goto fn_exit;
     }
 
-    rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(rank, tag, comm->context_id + context_offset, &found);
+    rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(
+	rank, tag, comm->context_id + context_offset, &found);
     if (rreq == NULL)
     {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_NO_MEM, "**nomem");

@@ -69,9 +69,10 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
 		if (nb == hdr_sz)
 		{
 		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
-          "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb);
+                     "write complete %d bytes, calling OnDataAvail fcn", nb);
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
+			MPIU_Assert(MPIDI_Request_get_type(sreq)!=MPIDI_REQUEST_TYPE_GET_RESP);
 			MPIDI_CH3U_Request_complete(sreq);
 		    }
 		    else {

@@ -307,6 +307,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     MPIDI_CH3_Pkt_t pkt;
     MPIDI_CH3_Pkt_rdma_reload_t * reload_pkt = &pkt.reload;
     MPID_Request * reload_sreq;
+    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 #ifndef HAVE_WINDOWS_H
     int n;
     OFF_T uOffset;
@@ -521,27 +522,20 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 #endif
 
 	/* update the sender's request */
-#if 1
-	{ 
-	    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-	    reqFn = sreq->dev.OnDataAvail;
-	    if (!reqFn) {
-		MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
-		MPIDI_CH3U_Request_complete(sreq);
-		complete = TRUE;
-	    }
-	    else {
-		mpi_errno = reqFn( vc, sreq, &complete );
-	    }
+	reqFn = sreq->dev.OnDataAvail;
+	if (!reqFn) {
+	    MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+	    MPIDI_CH3U_Request_complete(sreq);
+	    complete = TRUE;
 	}
-#else
-	mpi_errno = MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-#endif
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma write");
-	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
-	    return mpi_errno;
+	else {
+	    mpi_errno = reqFn( vc, sreq, &complete );
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update request after rdma write");
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
+		return mpi_errno;
+	    }
 	}
 
 	if (complete || (riov_offset == recv_count))
@@ -984,7 +978,6 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 			{
 			    /*printf("received reload send packet.\n");fflush(stdout);*/
 			    MPID_Request_get_ptr(((MPIDI_CH3_Pkt_rdma_reload_t*)mem_ptr)->sreq, sreq);
-#if 1
 			    { 
 				int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 				reqFn = sreq->dev.OnDataAvail;
@@ -995,18 +988,15 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 				}
 				else {
 				    mpi_errno = reqFn( recv_vc_ptr, sreq, &complete );
+				    if (mpi_errno != MPI_SUCCESS)
+				    {
+					mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update send request after receiving a reload packet");
+					MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
+					return mpi_errno;
+				    }
 				}
 			    }
 
-#else
-			    mpi_errno = MPIDI_CH3U_Handle_send_req(recv_vc_ptr, sreq, &complete);
-#endif
-			    if (mpi_errno != MPI_SUCCESS)
-			    {
-				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "unable to update send request after receiving a reload packet");
-				MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_READ_PROGRESS);
-				return mpi_errno;
-			    }
 			    if (!complete)
 			    {
 				/* send a new iov */

@@ -37,7 +37,6 @@
 int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -127,42 +126,35 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		}
 		if (offset == n_iov)
 		{
-		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-#if 1
-		{ 
 		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
 			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
 			MPIDI_CH3U_Request_complete(sreq);
-			complete = TRUE;
 		    }
 		    else {
+			int complete;
 			mpi_errno = reqFn( vc, sreq, &complete );
 			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-		    }
-		}
-#else
-		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-#endif
-		    if (!complete)
-		    {
-			sreq->ch.iov_offset = 0;
-			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-			if (vc->ch.bShm)
-			{
-			    vc->ch.send_active = sreq;
-			}
-			else
-			{
-			    MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
-			    vc->ch.conn->send_active = sreq;
-			    mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
-			    if (mpi_errno != MPI_SUCCESS)
+			if (!complete) {
+			    sreq->ch.iov_offset = 0;
+			    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+			    if (vc->ch.bShm)
 			    {
-				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-				    "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
-				    sreq, vc->ch.conn, vc);
+				vc->ch.send_active = sreq;
+			    }
+			    else
+			    {
+				MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
+				vc->ch.conn->send_active = sreq;
+				mpi_errno = MPIDU_Sock_post_writev(vc->ch.conn->sock, sreq->dev.iov, sreq->dev.iov_count, NULL);
+				if (mpi_errno != MPI_SUCCESS)
+				{
+				    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+								     "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p",
+								     sreq, vc->ch.conn, vc);
+				}
 			    }
 			}
 		    }

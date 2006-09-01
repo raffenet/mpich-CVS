@@ -14,7 +14,8 @@
 #include "pmi.h"
 
 
-/*  MPIDI_CH3U_Finalize_sshm - does scalable shared memory specific channel finalization
+/*  MPIDI_CH3U_Finalize_sshm - does scalable shared memory specific channel 
+    finalization
  */
 
 /* FIXME: Should this be registered as a finalize handler?  Should there be
@@ -57,9 +58,10 @@ int MPIDI_CH3U_Finalize_sshm()
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**finalize_boot");
     }
     
-    /* brad : added for dynamic processes in ssm.  needed because the vct's can't be freed
-     *         earlier since the vc's themselves are still needed here to walk though and
-     *         free their member fields.
+    /* brad : added for dynamic processes in ssm.  needed because the vct's 
+     * can't be freed
+     * earlier since the vc's themselves are still needed here to walk though 
+     * and free their member fields.
      */
     MPIDI_PG_Iterate_reset();
     MPIDI_PG_Get_next(&pg);
