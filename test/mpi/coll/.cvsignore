@@ -38,6 +38,7 @@ rerr
 bcast2
 bcast3
 exscan2
+exscan
 icallgather
 icallgatherv
 icallreduce
