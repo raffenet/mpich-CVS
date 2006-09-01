@@ -92,8 +92,8 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_CH3_CHANNEL   = 0x4000,
 		      MPIU_DBG_CH3_OTHER     = 0x8000,
 		      MPIU_DBG_CH3           = 0xf000,   /* alias for all Ch3*/
-              MPIU_DBG_NEM_SOCK_FUNC = 0x10000,
-              MPIU_DBG_NEM_SOCK_DET  = 0x20000,
+                      MPIU_DBG_NEM_SOCK_FUNC = 0x10000,
+                      MPIU_DBG_NEM_SOCK_DET  = 0x20000,
 		      MPIU_DBG_ALL           = (~0) };   /* alias for all */
 
 extern int MPIU_DBG_ActiveClasses;
