@@ -69,7 +69,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 		     int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -137,42 +136,37 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 	    }
 	    if (offset == n_iov)
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
-#if 1
-		{ 
-		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-		    reqFn = sreq->dev.OnDataAvail;
-		    if (!reqFn) {
-			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
-			MPIDI_CH3U_Request_complete(sreq);
-			complete = TRUE;
-		    }
-		    else {
-			mpi_errno = reqFn( vc, sreq, &complete );
-			if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-		    }
-		}
+		int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 
-#else
-		MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-#endif
-		if (!complete)
-		{
-		    sreq->ch.iov_offset = 0;
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->ch.send_active = sreq;
-		}
-		else
-		{
+		reqFn = sreq->dev.OnDataAvail;
+		if (!reqFn) {
+		    MPIDI_CH3U_Request_complete(sreq);
 		    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+		}
+		else {
+		    int complete;
+		    mpi_errno = reqFn( vc, sreq, &complete );
+		    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		    if (!complete)
+		    {
+			sreq->ch.iov_offset = 0;
+			MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
+			vc->ch.send_active = sreq;
+		    }
+		    else
+		    {
+			vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+		    }
 		}
 	    }
 	}
 	else
 	{
-	    /* Connection just failed.  Mark the request complete and return an error. */
+	    /* Connection just failed.  Mark the request complete and return 
+	       an error. */
 	    /*vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;*/
-	    /* TODO: Create an appropriate error message based on the value of errno */
+	    /* TODO: Create an appropriate error message based on the value of 
+	       errno */
 	    sreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmwrite", 0);
 	    /* MT - CH3U_Request_complete performs write barrier */
 	    MPIDI_CH3U_Request_complete(sreq);

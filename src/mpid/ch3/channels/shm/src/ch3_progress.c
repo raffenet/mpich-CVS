@@ -92,17 +92,13 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
-    int complete;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
     
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-
     req = vc->ch.recv_active;
     if (req == NULL)
     {
-	MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
 	MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
 	return MPI_SUCCESS;
     }
@@ -112,32 +108,24 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 	if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	{
 	    /* Read operation complete */
-#if 1
+
 	    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 	    reqFn = req->dev.OnDataAvail;
 	    if (!reqFn) {
 		MPIDI_CH3U_Request_complete(req);
-		complete = TRUE;
-	    }
-	    else {
-		mpi_errno = reqFn( vc, req, &complete );
-		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-	    }
-#else
-	    mpi_errno = MPIDI_CH3U_Handle_recv_req(vc, req, &complete);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	    }
-#endif
-	    if (complete)
-	    {
 		post_pkt_recv(vc);
 	    }
-	    else
-	    {
-		vc->ch.recv_active = req;
-		mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, req->dev.iov, req->dev.iov_count, NULL);
+	    else {
+		int complete;
+		mpi_errno = reqFn( vc, req, &complete );
+		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		if (complete) {
+		    post_pkt_recv(vc);
+		}
+		else {
+		    vc->ch.recv_active = req;
+		    mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, req->dev.iov, req->dev.iov_count, NULL);
+		}
 	    }
 	}
     }
@@ -148,7 +136,7 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
     }
 
  fn_fail:    
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
+
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
     return mpi_errno;
 }
@@ -161,23 +149,20 @@ static inline int handle_written(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
     int nb;
-    int complete;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_WRITTEN);
     
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
     while (vc->ch.send_active != NULL)
     {
 	MPID_Request * req = vc->ch.send_active;
 
-	/*MPIDI_DBG_PRINTF((60, FCNAME, "calling shm_writev"));*/
-	mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**handle_written", 0);
-	    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
-	    return mpi_errno;
+	mpi_errno = MPIDI_CH3I_SHM_writev(
+	    vc, req->dev.iov + req->ch.iov_offset, 
+	    req->dev.iov_count - req->ch.iov_offset, &nb);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				     "**handle_written");
 	}
 	MPIDI_DBG_PRINTF((60, FCNAME, "shm_writev returned %d", nb));
 
@@ -185,32 +170,21 @@ static inline int handle_written(MPIDI_VC_t * vc)
 	{
 	    if (MPIDI_CH3I_Request_adjust_iov(req, nb))
 	    {
+		int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 		/* Write operation complete */
-#if 1
-		{ 
-		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-		    reqFn = req->dev.OnDataAvail;
-		    if (!reqFn) {
-			MPIU_Assert(MPIDI_Request_get_type(req) != MPIDI_REQUEST_TYPE_GET_RESP);
-			MPIDI_CH3U_Request_complete(req);
-			complete = TRUE;
-		    }
-		    else {
-			mpi_errno = reqFn( vc, req, &complete );
-		    }
-		}
-#else
-		mpi_errno = MPIDI_CH3U_Handle_send_req(vc, req, &complete);
-#endif
-		if (mpi_errno != MPI_SUCCESS)
-		{
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
-		    return mpi_errno;
-		}
-		if (complete)
-		{
+
+		reqFn = req->dev.OnDataAvail;
+		if (!reqFn) {
+		    MPIDI_CH3U_Request_complete(req);
 		    MPIDI_CH3I_SendQ_dequeue(vc);
+		}
+		else {
+		    int complete;
+		    mpi_errno = reqFn( vc, req, &complete );
+		    if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+		    if (complete) {
+			MPIDI_CH3I_SendQ_dequeue(vc);
+		    }
 		}
 		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
 	    }
@@ -222,18 +196,10 @@ static inline int handle_written(MPIDI_VC_t * vc)
 	}
     }
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
-
+ fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_WRITTEN);
     return mpi_errno;
 }
-
-#if 0
-void MPIDI_CH3_Progress_start(MPID_Progress_state *state)
-{
-    /* MT - This function is empty for the single-threaded implementation */
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress
