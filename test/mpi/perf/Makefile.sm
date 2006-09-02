@@ -4,3 +4,11 @@ smvar_do_sharedlibs = 0
 
 transp-datatype_SOURCES = transp-datatype.c
 sendrecvl_SOURCES       = sendrecvl.c
+twovec_SOURCES          = twovec.c
+
+# A special testing target to simplify running just the performance tests
+testing:
+	../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml
+
