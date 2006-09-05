@@ -10,6 +10,10 @@
 /* Generic queue macros -- "next_field" should be set to the name of
    the next pointer field in the element (e.g., "ch.newtcp_sendq_next") */
 
+#define PRINT_QUEUE(qp, next_field) do {        \
+    } while(0)       
+        
+
 #define GENERIC_Q_EMPTY(q) ((q).head == NULL)
 
 #define GENERIC_Q_HEAD(q) ((q).head)
@@ -18,6 +22,7 @@
         MPIU_Assert (GENERIC_Q_EMPTY (*(qp)));                  \
         (qp)->head = (qp)->tail = ep;                           \
         (ep)->next_field = NULL;                                \
+        PRINT_QUEUE (qp, next_field);                           \
     } while (0)
 
 #define GENERIC_Q_ENQUEUE(qp, ep, next_field) do {              \
@@ -28,6 +33,7 @@
             (qp)->tail->next_field = (qp)->tail = ep;           \
             (ep)->next_field = NULL;                            \
         }                                                       \
+        PRINT_QUEUE (qp, next_field);                           \
     } while (0)
 
 /* the _MULTIPLE routines assume that ep0 is the head and ep1 is the
@@ -41,7 +47,7 @@
     } while (0)
 
 #define GENERIC_Q_ENQUEUE_MULTIPLE(qp, ep0, ep1, next_field) do {               \
-        if (GENERIC_Q_EMPTY (*(qp)))                                             \
+        if (GENERIC_Q_EMPTY (*(qp)))                                            \
             GENERIC_Q_ENQUEUE_EMPTY_MULTIPLE (qp, ep0, ep1, next_field);        \
         else                                                                    \
         {                                                                       \

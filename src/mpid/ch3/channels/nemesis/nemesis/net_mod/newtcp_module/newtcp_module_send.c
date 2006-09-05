@@ -28,6 +28,7 @@ struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 #define FREE_Q_ELEMENTS(e0, e1) S_PUSH_MULTIPLE (&free_buffers, e0, e1)
 #define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e) 
 
+static int send_queued (MPIDI_VC_t *vc);
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send_init
@@ -84,24 +85,28 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 
         if (!MPID_nem_newtcp_module_vc_is_connected (vc))
         {
+            /*printf ("  vc not connected, enqueuing %d\n", MPID_NEM_PACKET_LEN (pkt));*/
             goto enqueue_cell_and_exit;
         }
     }
     
-     if (!Q_EMPTY (vc_ch->send_queue))
+    if (!Q_EMPTY (vc_ch->send_queue))
     {
-        mpi_errno = MPID_nem_newtcp_module_send_queue (vc); /* try to empty the queue */
+        mpi_errno = send_queued (vc); /* try to empty the queue */
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         if (!Q_EMPTY (vc_ch->send_queue))
         {
+            /*printf ("  send queue not empty, enqueuing %d\n", MPID_NEM_PACKET_LEN (pkt));*/
             goto enqueue_cell_and_exit;
         }
     }
 
     /* start sending the cell */
 
-    CHECK_EINTR (offset, write (vc_ch->fd, pkt, MPID_NEM_PACKET_LEN (pkt)));
+    CHECK_EINTR (offset, write (vc_ch->sc->fd, pkt, MPID_NEM_PACKET_LEN (pkt)));
     MPIU_ERR_CHKANDJUMP1 (offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror (errno));
+    /*if (offset != -1)
+      printf("  write  %d (%d)\n", offset, MPID_NEM_PACKET_LEN (pkt));*/
 
     if (offset == MPID_NEM_PACKET_LEN (pkt))
         goto fn_exit; /* whole pkt has been sent, we're done */
@@ -111,6 +116,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     MPID_NEM_MEMCPY (&e->buf, (char *)pkt + offset, MPID_NEM_PACKET_LEN (pkt));
     e->len = MPID_NEM_PACKET_LEN (pkt) - offset;
     e->start = e->buf;
+    /*printf ("  enqueuing %d\n", e->len);*/
     
     Q_ENQUEUE_EMPTY (&vc_ch->send_queue, e);
     VC_L_ADD (&send_list, vc);
@@ -134,10 +140,10 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_newtcp_module_send_queue
+#define FUNCNAME send_queued
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
+static int send_queued (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
@@ -147,8 +153,7 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
     ssize_t bytes_sent;
     ssize_t bytes_queued;    
 
-    if (Q_EMPTY (vc_ch->send_queue))
-        goto fn_exit;
+    MPIU_Assert (!Q_EMPTY (vc_ch->send_queue));
 
     /* construct iov of pending sends */
     bytes_queued = 0;
@@ -165,15 +170,26 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
         e_last = e;
         e = e->next;
     }
-    while (count < MAX_SEND_IOV && e->next);
+    while (count < MAX_SEND_IOV && e);
 
     /* write iov */
-    CHECK_EINTR (bytes_sent, writev (vc_ch->fd, iov, count));
+    CHECK_EINTR (bytes_sent, writev (vc_ch->sc->fd, iov, count));
     MPIU_ERR_CHKANDJUMP1 (bytes_sent == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
+
+    /*if (bytes_sent != -1)
+    {
+        int i;
+        
+        printf("  writev %d (", bytes_sent);
+        for (i = 0; i < count; ++i)
+            printf ("%d ", iov[i].MPID_IOV_LEN);
+        printf (")\n");
+        }*/
+    
 
     /* remove pending sends that were sent */
 
-    if (bytes_sent == 0) /* nothing was sent */
+    if (bytes_sent <= 0) /* nothing was sent */
         goto fn_exit;
 
     e_first = Q_HEAD (vc_ch->send_queue);
@@ -192,8 +208,11 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
     
     e_last = NULL;
     e = Q_HEAD (vc_ch->send_queue);
-    do
-    {
+    while (1)
+    {        
+        MPIU_Assert (bytes_sent);
+        MPIU_Assert (e);
+        
         if (e->len < bytes_sent)
         {
             bytes_sent -= e->len;
@@ -212,7 +231,6 @@ int MPID_nem_newtcp_module_send_queue (MPIDI_VC_t *vc)
             break;
         }
     }
-    while (count < MAX_SEND_IOV && e->next);
 
     if (e_last != NULL) /* did we send at least one queued send? */
     {
@@ -237,7 +255,7 @@ int MPID_nem_newtcp_module_send_progress()
     
     for (vc = send_list.head; vc; vc = vc->ch.newtcp_sendl_next)
     {
-        mpi_errno = MPID_nem_newtcp_module_send_queue (vc);
+        mpi_errno = send_queued (vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
@@ -262,6 +280,27 @@ int MPID_nem_newtcp_module_send_finalize()
         MPIU_Free (e);
     }
     
+    return mpi_errno;
+}
+
+/* MPID_nem_newtcp_module_conn_est -- this function is called when the
+   connection is finally extablished to send any pending sends */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_conn_est
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (!Q_EMPTY (vc->ch.send_queue))
+    {
+        VC_L_ADD (&send_list, vc);
+        mpi_errno = send_queued (vc);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
+
+ fn_fail:    
     return mpi_errno;
 }
 

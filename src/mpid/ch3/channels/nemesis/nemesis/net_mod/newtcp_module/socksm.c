@@ -591,6 +591,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
             /* plfd->events = POLLIN | POLLOUT; */
             sc->handler = sc_state_handlers[sc->state.cstate];
             sc->pending_event = 0;
+            sc->vc->ch.sc = sc;
+            MPID_nem_newtcp_module_conn_est (vc);
             break;
         case CONN_STATE_TS_D_REQRCVD:
             if (IS_WRITEABLE(plfd)) {
@@ -600,6 +602,8 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
                     /* plfd->events = POLLIN | POLLOUT; */
                     sc->handler = sc_state_handlers[sc->state.cstate];
                     sc->pending_event = 0;
+                    sc->vc->ch.sc = sc;
+                    MPID_nem_newtcp_module_conn_est (vc);
                 }
             }
             break;
@@ -804,6 +808,8 @@ static int state_c_ranksent_handler(pollfd_t *const plfd, sockconn_t *const sc)
             if (pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK) {
                 sc->state.cstate = CONN_STATE_TS_COMMRDY;
                 sc->handler = sc_state_handlers[sc->state.cstate];
+                sc->vc->ch.sc = sc;
+                MPID_nem_newtcp_module_conn_est (sc->vc);
             }
             else { /* pkt_type must be MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK */
                 sc->state.cstate = CONN_STATE_TS_D_QUIESCENT;
@@ -919,6 +925,7 @@ static int state_l_rankrcvd_handler(pollfd_t *const plfd, sockconn_t *const sc)
                 sc->state.cstate = CONN_STATE_TS_COMMRDY;
                 sc->vc->ch.sc = sc;
                 sc->handler = sc_state_handlers[sc->state.cstate];
+                MPID_nem_newtcp_module_conn_est (sc->vc);
             }
         }
     }
@@ -1048,14 +1055,15 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     MPIDI_NEMTCP_FUNC_ENTER;
     CHECK_EINTR(rc, close(sc->fd));
     MPIU_ERR_CHKANDJUMP1 (rc == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
-          "**close", "**close %s", strerror (errno));
+                          "**close", "**close %s", strerror (errno));
     sc->fd = plfd->fd = CONN_INVALID_FD;
-    if (sc->vc) {
+    if (sc->vc && sc->vc->ch.sc == sc) /* this vc may be connecting/accepting with another sc e.g., this sc lost the tie-breaker */
+    {
         sc->vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
         if (sc->pending_event != EVENT_CONNECT)
             sc->vc->ch.sc = NULL;
     }
-    if (sc->pending_event == EVENT_CONNECT)
+    if (sc->vc && sc->vc->ch.sc == sc && sc->pending_event == EVENT_CONNECT)
         MPID_nem_newtcp_module_connect(sc->vc);
     else {
         node = MPIU_Malloc(sizeof(freenode_t));      

@@ -105,7 +105,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_VC *sctp_sendl_prev;
     
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
-    int fd;
     struct sockaddr_in sock_id;
     struct MPID_nem_new_tcp_module_sockconn *sc;
     struct

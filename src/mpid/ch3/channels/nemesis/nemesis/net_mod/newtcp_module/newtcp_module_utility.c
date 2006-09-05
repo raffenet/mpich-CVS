@@ -60,7 +60,7 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     int ret;
     size_t len;
 
-    fprintf(stdout, FCNAME " Enter\n"); fflush(stdout);
+/*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     /* I heard you have to read the options after setting them in some implementations */
 
     option = 0;
@@ -92,10 +92,10 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
 
  fn_exit:
-    fprintf(stdout, FCNAME " Exit\n"); fflush(stdout);
+/*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
     return mpi_errno;
  fn_fail:
-    fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno);
+/*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
     goto fn_exit;
 }
 
@@ -198,27 +198,37 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
         goto fn_exit;
     }
 
+    {
+        /* FIXME: why isn't this already non-blocking? */
+        int ret, flags;
+        flags = fcntl(fd, F_GETFL, 0);
+        MPIU_Assert(flags != -1)
+        ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+        MPIU_Assert(flags != -1)
+    }
+
+
     CHECK_EINTR(ret_recv, recv(fd, buf, buf_len, MSG_PEEK));
     if (ret_recv == 0)
         rc = FALSE;
     else
         rc = TRUE;
-/*     FIXME check for ret_recv == -1, but it has some problem when the socket is */
-/*      initially connected. It returns -1 always. Either that has to be analyzed */
-/*      and fixed or don't check for error here. We have already checked for */
-/*      socket errors enough above. */
+    /*     FIXME check for ret_recv == -1, but it has some problem when the socket is */
+    /*      initially connected. It returns -1 always. Either that has to be analyzed */
+    /*      and fixed or don't check for error here. We have already checked for */
+    /*      socket errors enough above. */
 
-/*     ret_recv = recv(fd, buf, buf_len, MSG_PEEK); */
-/*     if (ret_recv == 0 || ret_recv == -1) */
-/*         rc = FALSE;  error or EOF */
-/*     else */
-/*         rc = TRUE;  CONNECTED */
-/*     if (ret_recv == 0) { */
-/*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. rcvd EOF")); */
-/*     } */
-/*     else if (ret_recv == -1) { */
-/*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. socket error=%d:%s", error, strerror(error))); */
-/*     } */
+    /*     ret_recv = recv(fd, buf, buf_len, MSG_PEEK); */
+    /*     if (ret_recv == 0 || ret_recv == -1) */
+    /*         rc = FALSE;  error or EOF */
+    /*     else */
+    /*         rc = TRUE;  CONNECTED */
+    /*     if (ret_recv == 0) { */
+    /*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. rcvd EOF")); */
+    /*     } */
+    /*     else if (ret_recv == -1) { */
+    /*         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. socket error=%d:%s", error, strerror(error))); */
+    /*     } */
  fn_exit:
     MPIDI_NEMTCP_FUNC_EXIT;
     return rc;
