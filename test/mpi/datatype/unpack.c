@@ -5,6 +5,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 char correct_buf[] = {'a', '_', 'b', 'c', '_', '_', '_', '_', 'd', '_', 
 		      'e', 'f', 'g', '_', 'h', 'i', 'j', '_', 'k', 'l',
