@@ -1327,7 +1327,7 @@ EOF
          pac_cv_prog_f90_and_c_stdio_libs=none
     else
          # Try again with -lSystemStubs
-         tmpcmd='${F90-f90} $FFLAGS -o conftest conftest.f conftestc.o -lSystemStubs 1>&AC_FD_CC'
+         tmpcmd='${F90-f90} $FFLAGS -o conftest conftest.$f90_ext conftestc.o -lSystemStubs 1>&AC_FD_CC'
          if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
              pac_cv_prog_f90_and_c_stdio_libs="-lSystemStubs"
          fi
