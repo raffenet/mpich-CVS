@@ -65,8 +65,10 @@ build_check:
 
 check : build_check
 
+FORCE_TARGET:
+
 ########  Installing
-install:
+install: FORCE_TARGET
 	@if [ -n "$(PREFIX)" ] ; then \
 	     ./sbin/mpeinstall -prefix=$(PREFIX) -dmode="" ; \
 	 else \
