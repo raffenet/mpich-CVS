@@ -24,8 +24,10 @@ int main(int argc, char **argv)
 
     int blk_arr[COUNT] = {1, 2};
     int dsp_arr[COUNT] = {0, 2};
+    int errs = 0;
 
-    MPI_Init(&argc, &argv);
+
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 
@@ -68,6 +70,7 @@ int main(int argc, char **argv)
 
     if (memcmp(mem_buf, correct_buf, 2 * mem_dtype_ext)) {
 	    printf("Unpacked buffer does not match expected buffer\n");
+	    errs++;
     }
     else if (!myid) {
 	    printf(" No Errors\n");
@@ -75,6 +78,7 @@ int main(int argc, char **argv)
 
     MPI_Type_free(&mem_dtype);
 
+    MTest_Finalize(errs);
     MPI_Finalize();
 
     return 0;
