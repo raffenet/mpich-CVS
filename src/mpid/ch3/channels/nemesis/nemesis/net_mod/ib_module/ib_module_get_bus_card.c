@@ -1,3 +1,7 @@
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include <stdio.h>
 
 #include "mpidimpl.h"

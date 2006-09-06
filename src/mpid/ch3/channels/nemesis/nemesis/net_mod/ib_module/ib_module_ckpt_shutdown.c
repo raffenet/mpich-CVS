@@ -1,3 +1,7 @@
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include <stdio.h>
 
 int MPID_nem_ib_module_ckpt_shutdown (void)

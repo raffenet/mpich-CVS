@@ -1,3 +1,7 @@
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #ifndef _IB_DEVICE_H
 #define _IB_DEVICE_H
 

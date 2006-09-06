@@ -1,3 +1,7 @@
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
 #include "mpidimpl.h"
 #include "ib_module_priv.h"
 #include "ib_utils.h"
