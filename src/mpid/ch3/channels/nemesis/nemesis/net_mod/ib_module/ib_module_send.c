@@ -10,6 +10,11 @@
 #include "ib_module_cm.h"
 #include "ib_utils.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_send
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+
 int MPID_nem_ib_module_send (MPIDI_VC_t *vc, 
         MPID_nem_cell_ptr_t cell, 
         int datalen)
@@ -27,7 +32,8 @@ int MPID_nem_ib_module_send (MPIDI_VC_t *vc,
 
         /* Process queued sends */
         while(!MPID_nem_ib_module_queue_empty(
-                    (MPID_nem_ib_module_queue_t *) vc->ch.ib_send_queue) && 
+                    (MPID_nem_ib_module_queue_t *) 
+                    vc->ch.ib_send_queue) && 
                 vc->ch.avail_send_wqes) {
 
             MPID_nem_ib_module_queue_dequeue(

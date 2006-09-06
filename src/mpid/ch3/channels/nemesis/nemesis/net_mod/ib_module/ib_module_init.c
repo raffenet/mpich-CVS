@@ -165,14 +165,18 @@ static int init_ib_ctxt(void)
                 NEM_IB_DBG("Opening port %u", j);
 
                 MPID_nem_ib_module_get_port_prop(
-                        MPID_nem_ib_ctxt_ptr->ib_dev[i].context, (uint8_t) j,
-                        &(MPID_nem_ib_ctxt_ptr->ib_dev[i].ib_port[curr_port].port_attr));
-                MPID_nem_ib_ctxt_ptr->ib_dev[i].ib_port[curr_port].port_num = j;
+                        MPID_nem_ib_ctxt_ptr->ib_dev[i].context, 
+                        (uint8_t) j,
+                        &(MPID_nem_ib_ctxt_ptr->
+                            ib_dev[i].ib_port[curr_port].port_attr));
+                MPID_nem_ib_ctxt_ptr->
+                    ib_dev[i].ib_port[curr_port].port_num = j;
 
                 curr_port++;
 
                 if(curr_port >= 
-                        MPID_nem_ib_ctxt_ptr->ib_dev[i].n_active_ports) {
+                        MPID_nem_ib_ctxt_ptr->
+                        ib_dev[i].n_active_ports) {
                     break;
                 }
             }
@@ -246,10 +250,12 @@ static int init_ib_cm_ctxt(MPID_nem_ib_device_ptr_t dev_ptr,
     struct ibv_qp_init_attr init_attr;
     struct ibv_qp_attr attr;
 
-    MPID_nem_ib_cm_ctxt_ptr = MPIU_Malloc(sizeof(MPID_nem_ib_cm_ctxt_t));
+    MPID_nem_ib_cm_ctxt_ptr = 
+        MPIU_Malloc(sizeof(MPID_nem_ib_cm_ctxt_t));
 
     if (NULL == MPID_nem_ib_cm_ctxt_ptr) {
-        MPIU_CHKMEM_SETERR (mpi_errno, sizeof (MPID_nem_ib_cm_ctxt_t), 
+        MPIU_CHKMEM_SETERR (mpi_errno, 
+                sizeof (MPID_nem_ib_cm_ctxt_t), 
                 "IB Module CM structure");
 
     }
@@ -260,7 +266,6 @@ static int init_ib_cm_ctxt(MPID_nem_ib_device_ptr_t dev_ptr,
 
     dev_ptr = &MPID_nem_ib_ctxt_ptr->ib_dev[0];
     
-    ctxt_ptr->size = pg_p->size;
     ctxt_ptr->rank = pg_rank;
 
     ctxt_ptr->context = dev_ptr->context;
@@ -280,10 +285,14 @@ static int init_ib_cm_ctxt(MPID_nem_ib_device_ptr_t dev_ptr,
     init_attr.recv_cq = dev_ptr->cq;
     init_attr.srq     = dev_ptr->srq;
     init_attr.cap.max_recv_wr = 0;
-    init_attr.cap.max_send_wr = MPID_nem_ib_dev_param_ptr->max_send_wr;
-    init_attr.cap.max_send_sge = MPID_nem_ib_dev_param_ptr->max_send_sge;
-    init_attr.cap.max_recv_sge = MPID_nem_ib_dev_param_ptr->max_srq_recv_sge;
-    init_attr.cap.max_inline_data = MPID_nem_ib_dev_param_ptr->max_inline_size;
+    init_attr.cap.max_send_wr = 
+        MPID_nem_ib_dev_param_ptr->max_send_wr;
+    init_attr.cap.max_send_sge = 
+        MPID_nem_ib_dev_param_ptr->max_send_sge;
+    init_attr.cap.max_recv_sge = 
+        MPID_nem_ib_dev_param_ptr->max_srq_recv_sge;
+    init_attr.cap.max_inline_data = 
+        MPID_nem_ib_dev_param_ptr->max_inline_size;
     init_attr.qp_type = IBV_QPT_RC;
 
     ctxt_ptr->rc_qp_init_attr = init_attr;
@@ -308,10 +317,12 @@ static int init_ib_cm_ctxt(MPID_nem_ib_device_ptr_t dev_ptr,
     memset(&attr, 0, sizeof(struct ibv_qp_attr));
     attr.qp_state = IBV_QPS_RTR;
     attr.path_mtu = MPID_nem_ib_dev_param_ptr->path_mtu;
-    attr.max_dest_rd_atomic = MPID_nem_ib_dev_param_ptr->max_dst_rd_atomic;
+    attr.max_dest_rd_atomic = 
+        MPID_nem_ib_dev_param_ptr->max_dst_rd_atomic;
     attr.min_rnr_timer = MPID_nem_ib_dev_param_ptr->min_rnr_timer;
     attr.ah_attr.sl = MPID_nem_ib_dev_param_ptr->sl;
-    attr.ah_attr.src_path_bits = MPID_nem_ib_dev_param_ptr->src_path_bits;
+    attr.ah_attr.src_path_bits = 
+        MPID_nem_ib_dev_param_ptr->src_path_bits;
     attr.ah_attr.port_num = 1;
     attr.ah_attr.static_rate = MPID_nem_ib_dev_param_ptr->static_rate;
 

@@ -23,7 +23,8 @@ void async_thread(void *context)
     while (1) {
 
         do {    
-            ret = ibv_get_async_event((struct ibv_context *) context, &event);
+            ret = ibv_get_async_event((struct ibv_context *) 
+                    context, &event);
 
             if (ret && errno != EINTR) {
                 NEM_IB_ERR("Error getting asynchronous event!\n");
@@ -70,11 +71,14 @@ void async_thread(void *context)
                             MPID_nem_ib_dev_param_ptr->srq_limit);
 
                 post_new = 
-                    MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_n_posted - post_new;
+                    MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_n_posted - 
+                    post_new;
 
-                srq_attr.max_wr = MPID_nem_ib_dev_param_ptr->max_srq_wr;
+                srq_attr.max_wr = 
+                    MPID_nem_ib_dev_param_ptr->max_srq_wr;
                 srq_attr.max_sge = 1;
-                srq_attr.srq_limit = MPID_nem_ib_dev_param_ptr->srq_limit;
+                srq_attr.srq_limit = 
+                    MPID_nem_ib_dev_param_ptr->srq_limit;
 
                 if (MPID_nem_ib_module_modify_srq(
                             MPID_nem_ib_ctxt_ptr->ib_dev[0].srq, 
@@ -134,7 +138,8 @@ uint32_t MPID_nem_ib_module_refill_srq(
     if(post_count > 0) {
 
         /* Post all of them in a list */
-        ret = MPID_nem_ib_module_post_srq(MPID_nem_ib_ctxt_ptr->ib_dev[0].srq,
+        ret = MPID_nem_ib_module_post_srq(
+                MPID_nem_ib_ctxt_ptr->ib_dev[0].srq,
                 &ce_root->desc.u.r_wr);
 
         if(ret) {
@@ -149,6 +154,12 @@ uint32_t MPID_nem_ib_module_refill_srq(
 
     return post_count;
 }
+
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_poll
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 
 int MPID_nem_ib_module_poll (MPID_nem_poll_dir_t in_or_out)
 {

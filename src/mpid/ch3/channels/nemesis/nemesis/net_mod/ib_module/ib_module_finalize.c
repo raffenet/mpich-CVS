@@ -9,6 +9,11 @@
 #include "ib_device.h"
 #include "ib_module_cm.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_finalize
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+
 int MPID_nem_ib_module_finalize (void)
 {
     int mpi_errno = MPI_SUCCESS;

@@ -21,10 +21,11 @@ int MPID_nem_ib_module_get_business_card (char **bc_val_p,
     int mpi_errno = MPI_SUCCESS;
 
     mpi_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p,
-            MPID_NEM_IB_UD_QPN_KEY, MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num);
+            MPID_NEM_IB_UD_QPN_KEY, 
+            MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num);
 
-    if(mpi_errno != MPIU_STR_SUCCESS)
-    {
+    if(mpi_errno != MPIU_STR_SUCCESS) {
+
         if(mpi_errno == MPIU_STR_NOMEM) {
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         } else {  
@@ -34,10 +35,11 @@ int MPID_nem_ib_module_get_business_card (char **bc_val_p,
     }
 
     mpi_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p,
-            MPID_NEM_IB_LID_KEY, MPID_nem_ib_cm_ctxt_ptr->port_attr.lid);
+            MPID_NEM_IB_LID_KEY, 
+            MPID_nem_ib_cm_ctxt_ptr->port_attr.lid);
 
-    if(mpi_errno != MPIU_STR_SUCCESS)
-    {
+    if(mpi_errno != MPIU_STR_SUCCESS) {
+
         if(mpi_errno == MPIU_STR_NOMEM) {
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         } else {  
@@ -47,11 +49,12 @@ int MPID_nem_ib_module_get_business_card (char **bc_val_p,
     }
 
     mpi_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p,
-            MPID_NEM_IB_GUID_KEY, (char *) &MPID_nem_ib_cm_ctxt_ptr->guid, 
+            MPID_NEM_IB_GUID_KEY, 
+            (char *) &MPID_nem_ib_cm_ctxt_ptr->guid, 
             sizeof(uint64_t));
 
-    if(mpi_errno != MPIU_STR_SUCCESS)
-    {
+    if(mpi_errno != MPIU_STR_SUCCESS) {
+
         if(mpi_errno == MPIU_STR_NOMEM) {
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         } else {  
@@ -60,8 +63,9 @@ int MPID_nem_ib_module_get_business_card (char **bc_val_p,
         return mpi_errno;
     }
 
-    NEM_IB_DBG("Get bus card: val_max_sz %d, ud_qpn %u, lid %u, guid %lu",
-            *val_max_sz_p, MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num,
+    NEM_IB_DBG("Get bus card: val_max_sz %d, "
+            "ud_qpn %u, lid %u, guid %lu",
+             *val_max_sz_p, MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num,
              MPID_nem_ib_cm_ctxt_ptr->port_attr.lid,
              MPID_nem_ib_cm_ctxt_ptr->guid);
 

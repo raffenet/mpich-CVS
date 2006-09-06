@@ -86,7 +86,6 @@ typedef struct {
 } MPID_nem_ib_cm_remote_id_t, *MPID_nem_ib_cm_remote_id_ptr_t;
 
 typedef struct {
-    int                         size;
     int                         rank;
     struct ibv_device           *nic;
     uint64_t                    guid;
