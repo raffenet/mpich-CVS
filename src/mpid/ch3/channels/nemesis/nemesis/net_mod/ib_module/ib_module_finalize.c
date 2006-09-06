@@ -4,7 +4,6 @@
  */
 #define _GNU_SOURCE
 #include "mpidimpl.h"
-#include "mpid_nem.h"
 #include "ib_module.h"
 #include "ib_module_impl.h"
 #include "ib_device.h"

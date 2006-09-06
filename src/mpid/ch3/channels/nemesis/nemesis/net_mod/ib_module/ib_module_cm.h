@@ -10,7 +10,6 @@
 #include <pthread.h>
 #include <errno.h>
 
-#include "mpid_nem.h"
 #include "ib_utils.h"
 
 typedef struct {

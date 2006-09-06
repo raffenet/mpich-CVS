@@ -3,7 +3,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpidimpl.h"
-#include "mpid_nem.h"
 #include "ib_utils.h"
 
 

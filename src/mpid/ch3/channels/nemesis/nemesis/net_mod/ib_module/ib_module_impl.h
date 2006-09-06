@@ -5,7 +5,6 @@
 #ifndef _IB_MODULE_IMPL_H
 #define _IB_MODULE_IMPL_H
 
-#include "mpid_nem.h"
 #include "ib_utils.h"
 #include <infiniband/verbs.h>
 
