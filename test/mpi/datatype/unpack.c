@@ -7,6 +7,25 @@
 #include <stdio.h>
 #include "mpitest.h"
 
+/* Test sent in by Avery Ching to report a bug in MPICH2. 
+   Adding it as a regression test. */
+
+static void print_char_buf(char *buf_name, char *buf, int buf_len)
+{
+    int i;
+
+    printf("print_char_buf: %s\n", buf_name);
+    for (i = 0; i < buf_len; i++)
+    {
+        printf("%c ", buf[i]);
+        if (((i + 1) % 10) == 0)
+            printf("\n");
+        else if (((i + 1) % 5) == 0)
+            printf("  ");
+    }
+    printf("\n");
+}
+
 char correct_buf[] = {'a', '_', 'b', 'c', '_', '_', '_', '_', 'd', '_', 
 		      'e', 'f', 'g', '_', 'h', 'i', 'j', '_', 'k', 'l',
 		      '_', '_', '_', '_', 'm', '_', 'n', 'o', 'p', '_',
@@ -63,18 +82,19 @@ int main(int argc, char **argv)
     for (i = 0; i < mem_buf_sz; i++)
 	unpack_buf[i] = 'a' + i;
     
+    /* print_char_buf("mem_buf before unpack", mem_buf, 2 * mem_dtype_ext); */
+
     MPI_Unpack(unpack_buf, unpack_buf_sz, &buf_pos,
 	       mem_buf, 2, mem_dtype, MPI_COMM_SELF);
+    /* Note: Unpack without a Pack is not technically correct, but should work
+     * with MPICH2. */
 
-    /* Unpack without a Pack is not technically correct. We use this
-     * test to catch one of the bugs reported by Avery Ching. */
+    /* print_char_buf("mem_buf after unpack", mem_buf, 2 * mem_dtype_ext);
+       print_char_buf("correct buffer should be", correct_buf, 2 * mem_dtype_ext); */
 
     if (memcmp(mem_buf, correct_buf, 2 * mem_dtype_ext)) {
 	    printf("Unpacked buffer does not match expected buffer\n");
 	    errs++;
-    }
-    else if (!myid) {
-	    printf(" No Errors\n");
     }
 
     MPI_Type_free(&mem_dtype);

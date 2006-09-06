@@ -63,7 +63,7 @@ localpack_SOURCES = localpack.c
 lbub_SOURCES = lbub.c
 
 unpack_SOURCES = unpack.c
-gaddress_LDADD = ../util/mtest.o
+unpack_LDADD = ../util/mtest.o
 
 zeroparms_SOURCES = zeroparms.c
 gaddress_SOURCES = gaddress.c
