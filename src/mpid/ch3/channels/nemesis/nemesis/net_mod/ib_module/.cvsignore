@@ -17,3 +17,4 @@ localdefs
 *.cache
 .deps
 .state-cache
+.libstamp*

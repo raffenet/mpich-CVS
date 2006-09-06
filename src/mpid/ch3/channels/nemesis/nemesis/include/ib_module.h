@@ -1,3 +1,8 @@
+/*
+ *  (C) 2006 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 #ifndef IB_MODULE_H
 #define IB_MODULE_H
 
