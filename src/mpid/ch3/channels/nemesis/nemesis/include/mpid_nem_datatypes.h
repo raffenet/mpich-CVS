@@ -22,7 +22,11 @@
 
 #define MPID_NEM_OFFSETOF(struc, field) ((int)(&((struc *)0)->field))
 #define MPID_NEM_CACHE_LINE_LEN 64
+#if (MPID_NEM_NET_MODULE == MPID_NEM_IB_MODULE)
+#define MPID_NEM_NUM_CELLS      128
+#else
 #define MPID_NEM_NUM_CELLS      64 
+#endif
 
 #ifndef MPID_NEM_NET_MODULE
 #error MPID_NEM_NET_MODULE undefined
@@ -41,6 +45,8 @@
 #define MPID_NEM_CELL_LEN           (32*1024)
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_ELAN_MODULE)
 #define MPID_NEM_CELL_LEN            (2*1024)
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_IB_MODULE)
+#define MPID_NEM_CELL_LEN            (6*1024)
 #else
 #define MPID_NEM_CELL_LEN           (64*1024)
 #endif 

@@ -102,6 +102,29 @@ if test "${nemesis_network}" == "gm" ; then
     ])
 fi;
 
+AC_ARG_WITH(ib, [--with-ib=path - specify path where InfiniBand include directory and lib directory can be found],
+if test "${with_ib}" != "yes" -a "${with_ib}" != "no" ; then
+    LDFLAGS="$LDFLAGS -L${with_ib}/lib -L${with_ib}/lib64"
+    CPPFLAGS="$CPPFLAGS -I${with_ib}/include"
+fi,)
+AC_ARG_WITH(ib-include, [--with-ib-include=path - specify path to InfiniBand include directory],
+if test "${with_ib_include}" != "yes" -a "${with_ib_include}" != "no" ; then
+    CPPFLAGS="$CPPFLAGS -I${with_ib_include}"
+fi,)
+AC_ARG_WITH(ib-lib, [--with-ib-lib=path - specify path to InfiniBand lib directory],
+if test "${with_ib_lib}" != "yes" -a "${with_ib_lib}" != "no" ; then
+    LDFLAGS="$LDFLAGS -L${with_ib_lib}"
+fi,)
+
+if test "${nemesis_network}" == "ib" ; then 
+    AC_CHECK_HEADER([verbs.h], , [
+        AC_MSG_ERROR(['verbs.h not found.  Did you specify --with-ib= or --with-ib-include=?'])
+    ])
+    AC_CHECK_LIB(ibverbs, ibv_open_device, , [
+        AC_MSG_ERROR(['InfiniBand library not found.  Did you specify --with-ib= or --with-ib-lib=?'])
+    ])
+fi;
+
 AC_ARG_WITH(mx, [--with-mx=path - specify path where mx include directory and lib directory can be found],
 if test "${with_mx}" != "yes" -a "${with_mx}" != "no" ; then
     LDFLAGS="$LDFLAGS -L${with_mx}/lib"

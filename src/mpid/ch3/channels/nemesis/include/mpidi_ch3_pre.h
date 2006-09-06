@@ -26,6 +26,11 @@
 #error MPID_NEM_*_MODULEs are not defined!  Check for loop in include dependencies.
 #endif
 
+#if (MPID_NEM_NET_MODULE == MPID_NEM_IB_MODULE)
+#include <stdint.h>
+#include <infiniband/verbs.h>
+#endif
+
 #if(MPID_NEM_NET_MODULE == MPID_NEM_SCTP_MODULE)
 
     /* TODO make all of these _ and make all of these adjustable using env var */
@@ -120,7 +125,19 @@ typedef struct MPIDI_CH3I_VC
         char *end;
         int len;
     } pending_recv;
-    
+
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_IB_MODULE)
+    uint32_t  ud_qpn;
+    uint16_t  ud_dlid;
+    uint64_t  node_guid;
+    struct ibv_ah *ud_ah;
+    int conn_status;
+    struct ibv_qp *qp;
+    struct MPID_nem_ib_module_queue_t *ib_send_queue;
+    struct MPID_nem_ib_module_queue_t *ib_recv_queue;
+    uint32_t  avail_send_wqes;
+    char   in_queue;
+
 #else
 #error One of the MPID_NEM_*_MODULE must be defined
 #endif

@@ -3,7 +3,7 @@ if test -z "${channel_args}" ; then
     nemesis_network="tcp"
 else
     case "${channel_args}" in
-	elan | gm | mx | tcp | newtcp | sctp | none )
+	elan | gm | mx | tcp | newtcp | sctp | ib | none )
 	    nemesis_network=${channel_args}
 	    ;;
 	* )
