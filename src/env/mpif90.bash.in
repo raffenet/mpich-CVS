@@ -15,6 +15,7 @@
 #    MPI_LDFLAGS        - Any special flags needed to link
 #    MPILIBNAME         - Name of the MPI library
 #    MPI_OTHERLIBS      - Other libraries needed in order to link 
+#    F90_OTHER_LIBS     - Yet more libraries, needed just with F90
 #    
 # We assume that (a) the C compiler can both compile and link programs
 # We use MPI_xxx so that the user may continue to use CFLAGS, LIBS, etc
@@ -60,7 +61,7 @@ MPI_F90FLAGS="@MPI_F90FLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
 PMPILIBNAME="@PMPILIBNAME@"
-MPI_OTHERLIBS="@LIBS@"
+MPI_OTHERLIBS="@LIBS@ @F90_OTHER_LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
 # MPIVERSION is the version of the MPICH2 library for which mpif90 is intended
 MPIVERSION="@VERSION@"

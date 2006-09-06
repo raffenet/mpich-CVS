@@ -1196,7 +1196,8 @@ fi
 AC_LANG_RESTORE
 ])
 dnl
-dnl
+dnl Check to see if a C program can be linked when using the libraries
+dnl needed by C programs
 dnl
 AC_DEFUN(PAC_PROG_F77_CHECK_FLIBS,
 [AC_MSG_CHECKING([whether C can link with $FLIBS])
@@ -1230,6 +1231,11 @@ if test "$runs" = "no" ; then
     FLIBS="$pac_ldirs $pac_other $keep_libs"
 fi
 ])
+dnl
+dnl Check to see if Fortran supports the new-style character declarations.
+dnl Some compilers issue warnings for the old-style, so we may want to 
+dnl use the new form if it is available.
+dnl
 AC_DEFUN(PAC_PROG_F77_NEW_CHAR_DECL,[
 AC_CACHE_CHECK([whether Fortran supports new-style character declarations],
 pac_cv_prog_f77_new_char_decl,[
@@ -1294,4 +1300,59 @@ cat > conftest1.f <<EOF
 EOF
 rm conftest*
 ])
+dnl
+dnl Test for extra libraries needed when linking C routines that use
+dnl stdio with Fortran.  This test was created for OSX, which 
+dnl sometimes requires -lSystemStubs.  If another library is needed,
+dnl add it to F77_OTHER_LIBS
+AC_DEFUN([PAC_PROG_F77_AND_C_STDIO_LIBS],[
+    # To simply the code in the cache_check macro, chose the routine name
+    # first, in case we need it
+    confname=conf1_
+    case "$pac_cv_prog_f77_name_mangle" in
+    "lower underscore")       confname=conf1_ ;;
+    lower)                    confname=conf1  ;;
+    "upper stdcall")          confname=CONF1  ;;
+    upper)                    confname=CONF1  ;;
+    "lower doubleunderscore") confname=conf1  ;;
+    "mixed underscore")       confname=conf1_ ;;
+    mixed)                    confname=conf1  ;;
+    esac
 
+    AC_CACHE_CHECK([what libraries are needed to link Fortran programs with C routines that use stdio],pac_cv_prog_f77_and_c_stdio_libs,[
+    rm -f conftest*
+    cat >conftest.f <<EOF
+        program main
+        call conf1(0)
+        end
+EOF
+    cat >conftestc.c <<EOF
+#include <stdio.h>
+int $confname( int a )
+{ printf( "The answer is %d\n", a ); fflush(stdout); return 0; }
+EOF
+    tmpcmd='${CC-cc} -c $CFLAGS conftestc.c 1>&AC_FD_CC'
+    if AC_TRY_EVAL(tmpcmd) && test -s conftestc.o ; then
+        :
+    else
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftestc.c >&AC_FD_CC 
+    fi
+
+    tmpcmd='${F77-f77} $FFLAGS -o conftest conftest.f conftestc.o 1>&AC_FD_CC'
+    if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
+         pac_cv_prog_f77_and_c_stdio_libs=none
+    else
+         # Try again with -lSystemStubs
+         tmpcmd='${F77-f77} $FFLAGS -o conftest conftest.f conftestc.o -lSystemStubs 1>&AC_FD_CC'
+         if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
+             pac_cv_prog_f77_and_c_stdio_libs="-lSystemStubs"
+         fi
+    fi
+
+    rm -f conftest*
+])
+if test "$pac_cv_prog_f77_and_c_stdio_libs" != none ; then
+    F77_OTHER_LIBS="$F77_OTHER_LIBS $pac_cv_prog_f77_and_c_stdio_libs"    
+fi
+])

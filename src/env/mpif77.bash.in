@@ -15,6 +15,7 @@
 #    MPI_LDFLAGS        - Any special flags needed to link
 #    MPILIBNAME         - Name of the MPI library
 #    MPI_OTHERLIBS      - Other libraries needed in order to link 
+#    F77_OTHER_LIBS     - Yet more libraries, needed just with F77
 #    
 #    
 # We assume that (a) the C compiler can both compile and link programs
@@ -47,7 +48,7 @@ MPI_FFLAGS="@MPI_FFLAGS@"
 MPI_LDFLAGS="@MPI_LDFLAGS@"
 MPILIBNAME="@MPILIBNAME@"
 PMPILIBNAME="@PMPILIBNAME@"
-MPI_OTHERLIBS="@LIBS@"
+MPI_OTHERLIBS="@LIBS@ @F77_OTHER_LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
 #
 # MPIVERSION is the version of the MPICH2 library for which mpif77 is intended

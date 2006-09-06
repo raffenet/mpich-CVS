@@ -1286,3 +1286,57 @@ else
     ifelse([$2],,:,[$2])
 fi
 ])
+AC_DEFUN([PAC_PROG_F90_AND_C_STDIO_LIBS],[
+    # To simply the code in the cache_check macro, chose the routine name
+    # first, in case we need it
+    confname=conf1_
+    case "$pac_cv_prog_f77_name_mangle" in
+    "lower underscore")       confname=conf1_ ;;
+    lower)                    confname=conf1  ;;
+    "upper stdcall")          confname=CONF1  ;;
+    upper)                    confname=CONF1  ;;
+    "lower doubleunderscore") confname=conf1  ;;
+    "mixed underscore")       confname=conf1_ ;;
+    mixed)                    confname=conf1  ;;
+    esac
+
+    AC_CACHE_CHECK([what libraries are needed to link Fortran90 programs with C routines that use stdio],pac_cv_prog_f90_and_c_stdio_libs,[
+    pac_cv_prog_f90_and_c_stdio_libs=unknown
+    rm -f conftest*
+    f90_ext=${ac_f90ext-f90}
+    cat >conftest.$f90_ext <<EOF
+        program main
+        call conf1(0)
+        end
+EOF
+    cat >conftestc.c <<EOF
+#include <stdio.h>
+int $confname( int a )
+{ printf( "The answer is %d\n", a ); fflush(stdout); return 0; }
+EOF
+    tmpcmd='${CC-cc} -c $CFLAGS conftestc.c 1>&AC_FD_CC'
+    if AC_TRY_EVAL(tmpcmd) && test -s conftestc.o ; then
+        :
+    else
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftestc.c >&AC_FD_CC 
+    fi
+
+    tmpcmd='${F90-f90} $F90FLAGS -o conftest conftest.$f90_ext conftestc.o 1>&AC_FD_CC'
+    if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
+         pac_cv_prog_f90_and_c_stdio_libs=none
+    else
+         # Try again with -lSystemStubs
+         tmpcmd='${F90-f90} $FFLAGS -o conftest conftest.f conftestc.o -lSystemStubs 1>&AC_FD_CC'
+         if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
+             pac_cv_prog_f90_and_c_stdio_libs="-lSystemStubs"
+         fi
+    fi
+
+    rm -f conftest*
+])
+if test "$pac_cv_prog_f90_and_c_stdio_libs" != none -a \
+        "$pac_cv_prog_f90_and_c_stdio_libs" != unknown ; then
+    F90_OTHER_LIBS="$F90_OTHER_LIBS $pac_cv_prog_f90_and_c_stdio_libs"    
+fi
+])

@@ -1361,6 +1361,10 @@ if test "$enable_f77" = yes ; then
     PAC_PROG_F77_LINKER_WITH_C
     # For name mangle, we need the library flags
     PAC_PROG_F77_NAME_MANGLE
+    # Check whether additional libraries are needed when linking with C
+    PAC_PROG_F77_AND_C_STDIO_LIBS
+    AC_SUBST(F77_OTHER_LIBS)
+
     # Warn about mixed name mangling, since many of the tests will fail
     if test "$pac_cv_prog_f77_name_mangle" = "mixed" ; then
         AC_MSG_WARN([The compiler $F77 uses mixed case names.  Fortran is monocase
@@ -1749,6 +1753,11 @@ EOF
         ;;
     esac
     AC_SUBST(F90CPP)
+
+    # Check whether additional libraries are needed when linking with C
+    PAC_PROG_F90_AND_C_STDIO_LIBS
+    AC_SUBST(F90_OTHER_LIBS)
+
     # ------------------------------------------------
     # ------------------------------------------------
     # Here are the commands to substitute the compilers to be used to create
