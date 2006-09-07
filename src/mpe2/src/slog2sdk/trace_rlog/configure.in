@@ -95,10 +95,6 @@ if test ! -s src/rlog.h -a -z "$VPATH" ; then
 fi
 AC_SUBST(MAKE)
 
-dnl Checking for working INSTALL
-AC_PROG_INSTALL
-PAC_PROG_CHECK_INSTALL_WORKS
-
 # Check if --without-java is specified
 if test "$JDK_TOPDIR" = "no" ; then
     PAC_MSG_ERROR($enable_softerror, [--without-java is specified, exit!])
@@ -215,6 +211,11 @@ AC_SUBST(JVMFLAGS)
 JAC_CHECK_CYGPATH(JPATH_START, JPATH_FINAL)
 AC_SUBST(JPATH_START)
 AC_SUBST(JPATH_FINAL)
+
+dnl Checking for working INSTALL
+AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
+PAC_PROG_INSTALL_BREAKS_LIBS
 
 CPRP=cp
 RM="rm -f"

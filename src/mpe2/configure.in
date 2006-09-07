@@ -71,10 +71,6 @@ if test ! -s include/mpe.h -a -z "$VPATH" ; then
 	The GNU make (sometimes available as gnumake) can be used.] )
 fi
 
-dnl checking for working INSTALL
-AC_PROG_INSTALL
-PAC_PROG_CHECK_INSTALL_WORKS
-
 dnl CPRP is the version of cp that accepts -r and -p arguments.
 MKDIR=mkdir
 CPRP=cp
@@ -443,6 +439,11 @@ fi
 
 dnl  check for "ln -s" exists.  It is for install program, mpeinstall
 AC_PROG_LN_S
+
+dnl checking for working INSTALL
+AC_PROG_INSTALL
+PAC_PROG_CHECK_INSTALL_WORKS
+PAC_PROG_INSTALL_BREAKS_LIBS
 
 dnl
 dnl MPE_CFLAGS/MPE_FFLAGS are used to pass MPE-modified CFLAGS/FFLAGS
