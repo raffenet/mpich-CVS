@@ -54,7 +54,7 @@ int MPID_nem_ib_module_finalize (void)
                     }
                 }
 
-                //pthread_cancel(MPID_nem_ib_ctxt_ptr->ib_dev[i].async_thread);
+                pthread_cancel(MPID_nem_ib_ctxt_ptr->ib_dev[i].async_thread);
 
                 mpi_errno = ibv_destroy_srq
                     (MPID_nem_ib_ctxt_ptr->ib_dev[i].srq);

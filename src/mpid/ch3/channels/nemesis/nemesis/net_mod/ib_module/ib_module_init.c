@@ -528,7 +528,6 @@ int MPID_nem_ib_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 
     /* Enable watch for SRQ events */
 
-#if 0
     ret = MPID_nem_ib_module_modify_srq(
             MPID_nem_ib_ctxt_ptr->ib_dev[0].srq,
             MPID_nem_ib_dev_param_ptr->max_srq_wr,
@@ -540,7 +539,6 @@ int MPID_nem_ib_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     pthread_create(&MPID_nem_ib_ctxt_ptr->ib_dev[0].async_thread,
             NULL, (void *) async_thread, 
             MPID_nem_ib_ctxt_ptr->ib_dev[0].context);
-#endif
 
     *module_free_queue = MPID_nem_module_ib_free_queue;
 

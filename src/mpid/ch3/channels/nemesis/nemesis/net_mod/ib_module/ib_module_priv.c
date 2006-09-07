@@ -6,6 +6,91 @@
 #include "ib_module_priv.h"
 #include "ib_utils.h"
 
+static char ib_err_string[32];
+
+/**
+ * MPID_nem_ib_module_get_wc_err_string - 
+ *     Places the correct error string
+ *     according to wc->status.
+ *
+ * @err_code: Work Request completion status (IN)
+ */
+
+static void MPID_nem_ib_module_get_wc_err_string(int err_code)
+{
+    switch(err_code) {
+
+        case IBV_WC_SUCCESS:
+            MPIU_Strncpy(ib_err_string, "Success", 32);
+            break;
+        case IBV_WC_LOC_LEN_ERR:
+            MPIU_Strncpy(ib_err_string, "Local length error", 32);
+            break;
+        case IBV_WC_LOC_QP_OP_ERR:
+            MPIU_Strncpy(ib_err_string, "Local QP op error", 32);
+            break;
+        case IBV_WC_LOC_EEC_OP_ERR:
+            MPIU_Strncpy(ib_err_string, "Local EEC op error", 32);
+            break;
+        case IBV_WC_LOC_PROT_ERR:
+            MPIU_Strncpy(ib_err_string, "Local prot error", 32);
+            break;
+        case IBV_WC_WR_FLUSH_ERR:
+            MPIU_Strncpy(ib_err_string, "WR flush error", 32);
+            break;
+        case IBV_WC_MW_BIND_ERR:
+            MPIU_Strncpy(ib_err_string, "Memory window bind error", 32);
+            break;
+        case IBV_WC_BAD_RESP_ERR:
+            MPIU_Strncpy(ib_err_string, "Bad responder error", 32);
+            break;
+        case IBV_WC_LOC_ACCESS_ERR:
+            MPIU_Strncpy(ib_err_string, "Local access error", 32);
+            break;
+        case IBV_WC_REM_INV_REQ_ERR:
+            MPIU_Strncpy(ib_err_string, "Remote invokation error", 32);
+            break;
+        case IBV_WC_REM_ACCESS_ERR:
+            MPIU_Strncpy(ib_err_string, "Remote access error", 32);
+            break;
+        case IBV_WC_REM_OP_ERR:
+            MPIU_Strncpy(ib_err_string, "Remote op error", 32);
+            break;
+        case IBV_WC_RETRY_EXC_ERR:
+            MPIU_Strncpy(ib_err_string, "Retry exceeded error", 32);
+            break;
+        case IBV_WC_RNR_RETRY_EXC_ERR:
+            MPIU_Strncpy(ib_err_string, "RNR retry exceeded error", 32);
+            break;
+        case IBV_WC_LOC_RDD_VIOL_ERR:
+            MPIU_Strncpy(ib_err_string, "Local RDD violation error", 32);
+            break;
+        case IBV_WC_REM_INV_RD_REQ_ERR:
+            MPIU_Strncpy(ib_err_string, "Remote inv read req error", 32);
+            break;
+        case IBV_WC_REM_ABORT_ERR:
+            MPIU_Strncpy(ib_err_string, "Remote abort error", 32);
+            break;
+        case IBV_WC_INV_EECN_ERR:
+            MPIU_Strncpy(ib_err_string, "Invoke EECN error", 32);
+            break;
+        case IBV_WC_INV_EEC_STATE_ERR:
+            MPIU_Strncpy(ib_err_string, "Invoke EEC state err", 32);
+            break;
+        case IBV_WC_FATAL_ERR:
+            MPIU_Strncpy(ib_err_string, "Fatal error", 32);
+            break;
+        case IBV_WC_RESP_TIMEOUT_ERR:
+            MPIU_Strncpy(ib_err_string, "Responder timeout error", 32);
+            break;
+        case IBV_WC_GENERAL_ERR:
+            MPIU_Strncpy(ib_err_string, "General error", 32);
+            break;
+        default:
+            MPIU_Strncpy(ib_err_string, "Unknown Error", 32);
+    }
+}
+
 /**
  * open_hca - Opens an IB HCA
  *
@@ -224,6 +309,11 @@ fn_fail:
  * technically getting port attributes shouldn't fail.
  */
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_is_port_active
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+
 int MPID_nem_ib_module_is_port_active(struct ibv_context *ctxt,
         uint8_t port_num)
 {
@@ -247,16 +337,10 @@ int MPID_nem_ib_module_is_port_active(struct ibv_context *ctxt,
     return 0;
 }
 
-/**
- * MPID_nem_ib_module_is_port_active - Finds out if a particular
- *  port is active or not. 
- *
- * @ctxt: Context of IB device (IN)
- * @port_num: Port number to be checked (IN)
- *
- * Notes: this function is called after opening a device, so
- * technically getting port attributes shouldn't fail.
- */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_get_port_prop
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 
 int MPID_nem_ib_module_get_port_prop(struct ibv_context *ctxt,
         uint8_t port_num, struct ibv_port_attr *attr)
@@ -267,6 +351,11 @@ int MPID_nem_ib_module_get_port_prop(struct ibv_context *ctxt,
 
     return ret;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_reg_mem
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 
 int MPID_nem_ib_module_reg_mem(struct ibv_pd *pd,
         void *addr,
@@ -292,6 +381,11 @@ int MPID_nem_ib_module_reg_mem(struct ibv_pd *pd,
     }
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_post_srq
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+
 int MPID_nem_ib_module_post_srq(struct ibv_srq *srq,
         struct ibv_recv_wr *r_wr)
 {
@@ -304,6 +398,11 @@ int MPID_nem_ib_module_post_srq(struct ibv_srq *srq,
 
     return ret;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_post_send
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 
 int MPID_nem_ib_module_post_send(struct ibv_qp *qp,
         struct ibv_send_wr *s_wr)
@@ -318,10 +417,15 @@ int MPID_nem_ib_module_post_send(struct ibv_qp *qp,
     return ret;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_poll_cq
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+
 int MPID_nem_ib_module_poll_cq(struct ibv_cq *cq, 
         struct ibv_wc *wc)
 {
-    int ret;
+    int ret = 0;
 
     ret = ibv_poll_cq(cq, 1, wc);
 
@@ -335,7 +439,11 @@ int MPID_nem_ib_module_poll_cq(struct ibv_cq *cq,
 
         if(IBV_WC_SUCCESS != wc->status) {
 
-            NEM_IB_ERR("Got completion with error, code %d", wc->status);
+            MPID_nem_ib_module_get_wc_err_string(wc->status);
+
+            NEM_IB_ERR("Got completion with error, id %lu, error %s", 
+                    wc->wr_id, ib_err_string);
+
             ret = -1;
 
         } else {
@@ -343,13 +451,15 @@ int MPID_nem_ib_module_poll_cq(struct ibv_cq *cq,
             ret = 1;
         }
 
-    } else {
-
-        ret = 0;
     }
 
     return ret;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_ib_module_modify_srq
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 
 int MPID_nem_ib_module_modify_srq(
             struct ibv_srq *srq,

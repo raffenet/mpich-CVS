@@ -147,13 +147,13 @@ int MPID_nem_ib_module_get_cell(
 
         *e = qe->data;
 
-        (*e)->vc = NULL;
-
         MPIU_Assert(NULL != (*e));
+
+        (*e)->vc = NULL;
 
     } else {
 
-        NEM_IB_DBG("Ran out of cells, allocating new ones");
+        NEM_IB_ERR("Ran out of cells, allocating new ones");
 
         mpi_errno = MPID_nem_ib_module_add_cells(
                 MPID_nem_ib_dev_param_ptr->sec_pool_size);
