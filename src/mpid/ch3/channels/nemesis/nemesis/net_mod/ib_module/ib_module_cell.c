@@ -90,6 +90,8 @@ int MPID_nem_ib_module_init_cell_pool(int n)
         MPIU_ERR_POP(mpi_errno);
     }
 
+    pthread_spin_init(&pool->lock, 0);
+
 fn_exit:
     return mpi_errno;
 fn_fail:
@@ -138,6 +140,8 @@ int MPID_nem_ib_module_get_cell(
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_ib_module_queue_elem_t *qe;
 
+    pthread_spin_lock(&MPID_nem_ib_module_cell_pool.lock);
+
     if(!MPID_nem_ib_module_queue_empty(
                 MPID_nem_ib_module_cell_pool.queue)) {
 
@@ -153,7 +157,7 @@ int MPID_nem_ib_module_get_cell(
 
     } else {
 
-        NEM_IB_ERR("Ran out of cells, allocating new ones");
+        NEM_IB_DBG("Ran out of cells, allocating new ones");
 
         mpi_errno = MPID_nem_ib_module_add_cells(
                 MPID_nem_ib_dev_param_ptr->sec_pool_size);
@@ -175,6 +179,8 @@ int MPID_nem_ib_module_get_cell(
         MPIU_Assert(NULL != (*e));
     }
 
+    pthread_spin_unlock(&MPID_nem_ib_module_cell_pool.lock);
+
 fn_exit:
     return mpi_errno;
 fn_fail:
@@ -192,9 +198,13 @@ void MPID_nem_ib_module_return_cell(
 {
     ce->vc = NULL;
 
+    pthread_spin_lock(&MPID_nem_ib_module_cell_pool.lock);
+
     MPID_nem_ib_module_queue_enqueue(
             MPID_nem_ib_module_cell_pool.queue,
             ce->qe);
+
+    pthread_spin_unlock(&MPID_nem_ib_module_cell_pool.lock);
 }
 
 #undef FUNCNAME

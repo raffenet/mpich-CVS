@@ -5,6 +5,7 @@
 #ifndef _IB_MODULE_IMPL_H
 #define _IB_MODULE_IMPL_H
 
+#define _GNU_SOURCE
 #include "ib_utils.h"
 #include <infiniband/verbs.h>
 
@@ -38,6 +39,7 @@ typedef struct {
 typedef struct _ib_cell_pool {
     MPID_nem_ib_module_queue_t          *queue;
     int                                 ncells;
+    pthread_spinlock_t                 lock;
 } MPID_nem_ib_module_cell_pool_t;
 
 extern MPID_nem_ib_module_cell_pool_t MPID_nem_ib_module_cell_pool;
