@@ -58,10 +58,9 @@ void async_thread(void *context)
 
                 NEM_IB_DBG("Got SRQ Limit event");
 
-                pthread_spin_lock(
+post_new_bufs:  pthread_spin_lock(
                         &MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_post_lock);
-
-                /* Need to post more to the SRQ */
+#if 1
                 post_new = MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_n_posted;
 
                 MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_n_posted +=
@@ -70,9 +69,16 @@ void async_thread(void *context)
                             MPID_nem_ib_dev_param_ptr->max_srq_wr -
                             MPID_nem_ib_dev_param_ptr->srq_limit);
 
-                post_new = 
-                    MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_n_posted - 
-                    post_new;
+                post_new = MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_n_posted - post_new;
+
+                pthread_spin_unlock(
+                        &MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_post_lock);
+
+                if (0 == post_new) {
+                    NEM_IB_DBG("Posting ZERO buffers");
+                    sched_yield();
+                    goto post_new_bufs;
+                }
 
                 srq_attr.max_wr = 
                     MPID_nem_ib_dev_param_ptr->max_srq_wr;
@@ -86,9 +92,8 @@ void async_thread(void *context)
                             MPID_nem_ib_dev_param_ptr->srq_limit)) {
                     NEM_IB_ERR("Possibly FATAL, cannot modify SRQ\n");
                 }       
+#endif
 
-                pthread_spin_unlock(
-                        &MPID_nem_ib_ctxt_ptr->ib_dev[0].srq_post_lock);
 
                 break;  
             default:

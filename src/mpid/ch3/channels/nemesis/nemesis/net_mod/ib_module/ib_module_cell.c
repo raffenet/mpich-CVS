@@ -196,9 +196,10 @@ fn_fail:
 void MPID_nem_ib_module_return_cell(
         MPID_nem_ib_module_cell_elem_t *ce)
 {
-    ce->vc = NULL;
-
     pthread_spin_lock(&MPID_nem_ib_module_cell_pool.lock);
+
+    ce->vc = NULL;
+    ce->nem_cell = NULL;
 
     MPID_nem_ib_module_queue_enqueue(
             MPID_nem_ib_module_cell_pool.queue,

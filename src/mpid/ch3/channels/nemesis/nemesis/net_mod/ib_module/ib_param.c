@@ -38,7 +38,7 @@ int MPID_nem_ib_module_init_dev_param()
     MPID_nem_ib_dev_param_ptr->max_srq_wr = 512;
     MPID_nem_ib_dev_param_ptr->srq_limit = 30;
     MPID_nem_ib_dev_param_ptr->srq_n_preserve = 100;
-    MPID_nem_ib_dev_param_ptr->max_send_wr = 128;
+    MPID_nem_ib_dev_param_ptr->max_send_wr = 32;
     MPID_nem_ib_dev_param_ptr->max_inline_size = 128;
     MPID_nem_ib_dev_param_ptr->path_mtu = IBV_MTU_2048;
     MPID_nem_ib_dev_param_ptr->max_dst_rd_atomic = 4;
