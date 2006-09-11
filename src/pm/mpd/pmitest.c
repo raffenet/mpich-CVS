@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     printf("%d: recvd msg=:%s:\n",pmi_rank,msg_recvd);
 
 
+#define TEST_THESE
 #ifdef TEST_THESE
     strcpy(msg_to_send,"cmd=get_maxes\n");
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
 	
     sprintf(msg_to_send,"cmd=get kvsname=%s key=ralph\n", kvsname);
     write(pmi_sock,msg_to_send,strlen(msg_to_send));
-    printf("sent get for appnum (likely 0)\n");
+    printf("sent get for key ralph\n");
     n = read(pmi_sock,msg_recvd,1024);
     if (n >= 0)
         msg_recvd[n] = '\0';
