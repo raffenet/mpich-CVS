@@ -1211,25 +1211,6 @@ int MPIDI_CH3I_Get_business_card(char *value, int length);
 /* added by brad.  finalization related upcalls */
 int MPIDI_CH3U_Finalize_sshm(void);
 
-/*E
-  MPIDI_CH3_Cancel_send - Attempt to cancel a send request by removing the 
-  request from the local send queue.
-
-  Input Parameters:
-+ vc - virtual connection over which to send the data 
-- sreq - pointer to the send request object
-
-  Output Parameters:
-. cancelled - TRUE if the send request was successful.  FALSE otherwise.
-
-  Return value:
-  An mpi error code.
-  
-  IMPLEMENTORS:
-  The send request may not be removed from the send queue if one or more bytes 
-  of the message have already been sent.
-E*/
-int MPIDI_CH3_Cancel_send(MPIDI_VC_t * vc, MPID_Request * sreq, int *cancelled);
 /*
  * Channel upcall prototypes
  */
