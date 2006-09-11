@@ -154,7 +154,9 @@ P$(SHLIBNAME).la: $(MPIO_TMP_LOPOBJECTS) $(MPIO_EXTRA_TMP_LOPOBJECTS)
 	$(AR) $(SHLIBNAME).la $(MPIO_LOPOBJECTS) $(MPIO_EXTRA_LOPOBJECTS)
 # --------------------------------------------------------------------------
 clean:
-	@rm -f *.o *.lo
+	@rm -f *.o *.lo *.gcno *.gcda *.bb *.bbg
+	@rm -f ${srcdir}/*.gcno ${srcdir}/*.gcda 
+	@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg
 
 # MPICH2 documentation targets
 master_top_srcdir = @master_top_srcdir@

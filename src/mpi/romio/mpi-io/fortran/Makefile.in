@@ -105,4 +105,6 @@ P$(SHLIBNAME).la: $(MPIO_TMP_LOPFOBJECTS)
 # --------------------------------------------------------------------------
 
 clean: 
-	@rm -f *.o *.lo
+	@rm -f *.o *.lo *.gcno *.gcda *.bb *.bbg
+	@rm -f ${srcdir}/*.gcno ${srcdir}/*.gcda 
+	@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg

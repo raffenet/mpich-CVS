@@ -62,7 +62,9 @@ Turning off Fortran (-nof77 being assumed)])
     if test -n "$FORTRANNAMES" ; then
         WDEF="-D$FORTRANNAMES"
     fi
-    rm -f confftest.f confftest.o
+    # Delete confftest files with any extension.  This catches the case
+    # where auxillary files, such as coverage files, are removed.
+    rm -f confftest.*
     ])dnl
 dnl
 define(PAC_GET_SPECIAL_SYSTEM_INFO,[

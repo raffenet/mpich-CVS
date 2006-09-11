@@ -140,6 +140,8 @@ rmprog:
 
 clean: rmprog
 	@-$(RM) -f *.@OBJEXT@ ${srcdir}/*.@OBJEXT@ *~ PI*
+	@-$(RM) -f *.gcno *.gcda *.bb *.bbg
+	@-$(RM) -f ${srcdir}/*.gcno ${scrdir}/*.gcda
 
 distclean: clean rmlib
 	@-$(RM) -f Makefile

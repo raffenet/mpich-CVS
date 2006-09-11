@@ -37,4 +37,6 @@ $(LIBNAME): $(MPIO_FOBJECTS)
 	$(RANLIB) $(LIBNAME) 
 
 clean: 
-	@rm -f *.o
+	@rm -f *.o *.lo *.gcno *.gcda *.bb *.bbg
+	@rm -f ${srcdir}/*.gcno ${srcdir}/*.gcda 
+	@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg

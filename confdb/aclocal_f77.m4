@@ -1320,6 +1320,7 @@ AC_DEFUN([PAC_PROG_F77_AND_C_STDIO_LIBS],[
     esac
 
     AC_CACHE_CHECK([what libraries are needed to link Fortran programs with C routines that use stdio],pac_cv_prog_f77_and_c_stdio_libs,[
+    pac_cv_prog_f77_and_c_stdio_libs=unknown
     rm -f conftest*
     cat >conftest.f <<EOF
         program main
@@ -1352,7 +1353,8 @@ EOF
 
     rm -f conftest*
 ])
-if test "$pac_cv_prog_f77_and_c_stdio_libs" != none ; then
+if test "$pac_cv_prog_f77_and_c_stdio_libs" != none -a \
+        "$pac_cv_prog_f77_and_c_stdio_libs" != unknown ; then
     F77_OTHER_LIBS="$F77_OTHER_LIBS $pac_cv_prog_f77_and_c_stdio_libs"    
 fi
 ])
