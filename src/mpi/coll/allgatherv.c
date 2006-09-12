@@ -419,7 +419,7 @@ int MPIR_Allgatherv (
                                               curr_cnt, MPI_BYTE, dst,
                                               MPIR_ALLGATHERV_TAG,  
                                               ((char *)tmp_buf + recv_offset),
-                                              nbytes*total_count, MPI_BYTE, dst,
+                                              tmp_buf_size-recv_offset, MPI_BYTE, dst,
                                               MPIR_ALLGATHERV_TAG, comm, &status);
                     /* for convenience, recv is posted for a bigger amount
                        than will be sent */ 
@@ -499,7 +499,7 @@ int MPIR_Allgatherv (
                                  (dst < tree_root + nprocs_completed) &&
                                  (rank >= tree_root + nprocs_completed)) {
                             mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
-                                                  nbytes*total_count, MPI_BYTE,
+                                                  tmp_buf_size-offset, MPI_BYTE,
                                                   dst,
                                                   MPIR_ALLGATHERV_TAG,
                                                   comm, &status); 
@@ -609,7 +609,7 @@ int MPIR_Allgatherv (
             mpi_errno = MPIC_Sendrecv(tmp_buf, curr_cnt, recvtype, dst,
                                       MPIR_ALLGATHERV_TAG,
                                   ((char *)tmp_buf + curr_cnt*recvtype_extent),
-                                      total_count, recvtype,
+                                      total_count - curr_cnt, recvtype,
                                       src, MPIR_ALLGATHERV_TAG, comm, &status);
 	    /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno)
@@ -639,7 +639,7 @@ int MPIR_Allgatherv (
             mpi_errno = MPIC_Sendrecv(tmp_buf, send_cnt, recvtype,
                                       dst, MPIR_ALLGATHERV_TAG,
                                   ((char *)tmp_buf + curr_cnt*recvtype_extent),
-                                      total_count, recvtype,
+                                      total_count - curr_cnt, recvtype,
                                       src, MPIR_ALLGATHERV_TAG, comm,
                                       MPI_STATUS_IGNORE);
 	    /* --BEGIN ERROR HANDLING-- */
