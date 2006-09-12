@@ -3520,8 +3520,8 @@ sub TargetInstall {
 \t            echo \"$this_install_choice \$\$name2 \${DESTDIR}\${$dir}/\$\$name/\$\$name2\" ; \\
 \t            $this_install_choice \$\$name2 \${DESTDIR}\${$dir}/\$\$name/\$\$name2 ; \\
 \t        else \\
-\t            echo \"cp -rp \$\$name \${DESTDIR}\${$dir}/\$\$name\" ; \\
-\t            cp -rp \$\$name \${DESTDIR}\${$dir}/\$\$name ; \\
+\t            echo \"cp -rp \$\$name2 \${DESTDIR}\${$dir}/\$\$name\" ; \\
+\t            cp -rp \$\$name2 \${DESTDIR}\${$dir}/\$\$name ; \\
 \t        fi \\
 \t    done ) ; \\
 \t  else \\
