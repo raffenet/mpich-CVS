@@ -1,4 +1,4 @@
-#! @PERL@
+#! @PERL@ -w
 # -*- Mode: perl; -*-
 #
 # This script extracts information from files produced by gcov showing what
@@ -52,6 +52,7 @@ $annoteBaseDir = "";
 %AnnoteFilesToOrig = (); # Map from annoted file key to original name (used for
                          # indexing into AnnoteMissed)
 $gDebug = 0;
+$gDebugDetail = 0;
 
 # The line leaders are used to provide a common set of expressions to match
 # the begining of a line.  This matches the output from the gcov tools.
@@ -138,6 +139,7 @@ for my $filename (@TopFilenames) {
 	$GrandTotal       += $total_lines;
 	$GrandTotalMissed += $missed_lines;
 	$AnnoteMissed{$filename} = "$missed_lines;$total_lines";
+	print "$filename - $missed_lines missed lines\n" if $gDebug;
 	if ($missed_lines) {
 	    print "$missed_lines line(s) not covered by tests in $filename\n";
 	    &WriteAnnoteFile( $filename );
@@ -175,7 +177,7 @@ sub CountUncoveredLines {
     my $linecount    = 0;    # Line in the coverage file
     my $fileline     = 0;    # Line in the original file
     my $lastLineOut  = -1;
-    my $lineincr, $filelineincr; # Used to update linecount,fileline
+    my ($lineincr, $filelineincr); # Used to update linecount,fileline
     my $oldLine;
     my $lastLine;
 
@@ -374,7 +376,7 @@ L2: while (<FD>) {
 
 	# If there is a change in state, generate the correct code
 	if ($newstate ne $curstate) {
-	    print "Newstate = $newstate\n" if $gDebug;
+	    print STDERR "Newstate = $newstate\n" if $gDebugDetail;
 	    if ($curstate ne "init") {
 		# Finish off the current state
 		print $outfile "</PRE></TD></TR>$newline";
@@ -400,7 +402,7 @@ L2: while (<FD>) {
 	if (/^\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/ ||
 	    /^\s*-:\s*\d+:\s*#\s*ifdef\s+HAVE_ERROR_CHECKING/) {
 	    my $sawend = 0;
-	    print "Skipping HAVE_ERROR_CHECKING\n" if $gDebug; 
+	    print STDERR "Skipping HAVE_ERROR_CHECKING\n" if $gDebugDetail; 
 	    while (<FD>) {
 		if (!/^\s/) { next; }
 	        print $outfile &HTMLify($_);
@@ -441,7 +443,9 @@ L2: while (<FD>) {
 # with key the base filename (e.g., foo.c) and the value the
 # full directory path (e.g., $annoteSrcDir/foo.c.htm)
 sub WriteAnnoteFile {
-    my $filename =$_[0];
+    my $filename = $_[0];
+
+    print "Writing (if $annoteFiles) annotated file $filename\n" if $gDebug;
     if ($annoteFiles) {
 	# Make a file name
 	my $basefile = $filename;
@@ -449,13 +453,19 @@ sub WriteAnnoteFile {
 	$basefile =~ s/$annoteBaseDir//;
 	my $OUTFD = OUTFD;
 	my $rc = &MakeDirs( "$annoteSrcDir/$basefile" );
+	if ($rc == 0) {
+	    print STDERR "Could not create directories $annoteSrcDir/$basefile\n";
+	    return;
+	}
+	print STDERR "Opening $annoteSrcDir/$basefile.htm\n" if $gDebug;
 	$rc = open( $OUTFD, ">$annoteSrcDir/$basefile.htm" );
 	if ($rc != 0) {
 	    $AnnoteFilesMap{$basefile} = "$annoteSrcDir/$basefile.htm";
 	    $AnnoteFilesToOrig{$basefile} = $filename;
+	    print STDERR "Saving $filename as AnnoteFilesToOrig{$basefile}\n" if $gDebug;
 	    $newline = "\r\n";
-	    print $OUTFD "<HTML><HEAD>$newline";
-	    print $OUTFD "<TITLE>Coverage for $file</TITLE>$newline";
+	    print $OUTFD "<HTML><HEAD>$newline" || die "writing header";
+	    print $OUTFD "<TITLE>Coverage for $filename</TITLE>$newline";
 	    print $OUTFD "</HEAD>$newline";
 	    print $OUTFD "<BODY BGCOLOR=\"FFFFFF\">$newline";
 	    &AnnotateUncoveredLines( $filename, "red", $OUTFD );
@@ -523,6 +533,10 @@ sub WriteAnnoteFileMap {
 	if ($annoteWebPrefix ne "") {
 	    $target =~ s/$annoteSrcDir/$annoteWebPrefix/;
 	}
+	else {
+	    # make the reference relative
+	    $target =~ s/$annoteSrcDir\///;
+	}
 
 	# Compare dirname to curprefix; start a new table if
 	# necessary
@@ -589,7 +603,12 @@ sub WriteCoveredFileMap {
 # 	my $file = $sortedfiles[$i];
 # 	print IFD "$file\n";
 #     }
-    &OutputFileTable( IFD, "sortedfiles" );
+    # This both avoids calling OutputFileTable if the array is empty
+    # and keeps Perl from issuing a warning about sortedfiles having 
+    # only one use.
+    if ($#sortedfiles >= 0) {
+        &OutputFileTable( IFD, "sortedfiles", "" );
+    }
     print IFD "</BODY></HTML>$newline";
     close( IFD );
 }
@@ -602,12 +621,12 @@ sub MakeDirs {
     my $filename = $_[0];
     
     my @subdirs = split(/\//, $filename );
-    print "Size of subdirs is $#subdirs\n" if $debug;
+    print STDERR "Size of subdirs is $#subdirs\n" if $gDebugDetail;
     my $curdir = $subdirs[0];
     if ($curdir eq "") { $curdir = "/"; }
     my $rc = 0;
     for($i=1; $i<=$#subdirs; $i++) {
-	print "Making $curdir\n" if $debug;
+	print STDERR "Making $curdir\n" if $gDebugDetail;
 	if (! -d $curdir) {
 	    $rc = mkdir $curdir;
 	    if (!$rc) { 
@@ -688,8 +707,14 @@ sub OutputFileTable {
 	}
 
 	# Clean up target
-	if ($annoteWebPrefix ne "" && $target ne "") {
-	    $target =~ s/$annoteSrcDir/$annoteWebPrefix/;
+	if (defined($target) && $target ne "") {
+	    if ($annoteWebPrefix ne "") {
+		$target =~ s/$annoteSrcDir/$annoteWebPrefix/;
+	    }
+	    else {
+		# make the reference relative
+		$target =~ s/$annoteSrcDir\///;
+	    }
 	}
 
 	# Compare dirname to curprefix; start a new table if
@@ -710,10 +735,13 @@ sub OutputFileTable {
 	    print $IFD "<TR WIDTH=100%>\n";
 	}
 	my $label = $basename;
-	my $origFileName = $AnnoteFilesToOrig{$names[$i]};
-	if (defined($AnnoteMissed{$origFileName})) {
-	    my ($missed,$total) = split(/;/,$AnnoteMissed{$origFileName});
-	    $label = "$label ($missed)";
+#	my $origFileName = $AnnoteFilesToOrig{$names[$i]};
+	my $origFileName = $AnnoteFilesToOrig{$file};
+	if (defined($origFileName)) {
+            if (defined($AnnoteMissed{$origFileName})) {
+	        my ($missed,$total) = split(/;/,$AnnoteMissed{$origFileName});
+	        $label = "$label ($missed)";
+	    }
 	}
 	if ($target ne "") {
 	    print $IFD "<TD><A HREF=\"$target\">$label</A></TD>\n";
@@ -761,7 +789,7 @@ sub skipBlockAndAnnotate {
     my ($outfile,$blockName) = @_;
 
     my $sawend=0;
-    print "Skipping BEGIN $blockName\n" if $gDebug; 
+    print STDERR "Skipping BEGIN $blockName\n" if $gDebugDetail; 
     while (<FD>) {
 	if (/^\s/) { print $outfile &HTMLify($_); }
 	if (/^$lineLeader2\/\*\s+--END $blockName--\s+\*\// ||

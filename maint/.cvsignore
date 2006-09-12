@@ -6,6 +6,7 @@ checkbuilds
 findfixme
 getstates
 getcoverage
+createcoverage
 showsizes
 getcross
 f77tof90
