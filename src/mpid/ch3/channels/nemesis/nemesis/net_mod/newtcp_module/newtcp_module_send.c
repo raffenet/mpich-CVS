@@ -12,11 +12,14 @@
 struct {MPIDI_VC_t *head;} send_list = {0};
 struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 
+static int num_elements = 0;//DARIUS
+
 #define ALLOC_Q_ELEMENT(e) do {                                                                                                         \
         if (S_EMPTY (free_buffers))                                                                                                     \
         {                                                                                                                               \
             MPIU_CHKPMEM_MALLOC (*(e), MPID_nem_newtcp_module_send_q_element_t *, sizeof(MPID_nem_newtcp_module_send_q_element_t),      \
                                  mpi_errno, "send queue element");                                                                      \
+            ++num_elements;/*DARIUS */                                                                                                  \
         }                                                                                                                               \
         else                                                                                                                            \
         {                                                                                                                               \
@@ -136,6 +139,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     goto fn_exit;
  fn_fail:
     MPIU_CHKPMEM_REAP();
+    printf ("num_elements = %d\n", num_elements);//DARIUS    
     return mpi_errno;
 }
 

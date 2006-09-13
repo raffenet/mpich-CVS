@@ -67,6 +67,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
 
     if (len < MPID_NEM_MIN_PACKET_LEN || len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
     {
+        MPIU_Assert (vc_ch->pending_recv.cell == NULL);
         vc_ch->pending_recv.cell = cell;
         vc_ch->pending_recv.end = (char *)MPID_NEM_CELL_TO_PACKET (cell) + len;
         vc_ch->pending_recv.len = len;
@@ -75,6 +76,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     }
 
     /* there is more than one packet in this cell */
+    vc_ch->pending_recv.cell = NULL;
 
     /* we can't enqueue the cell onto the process recv queue yet
        because we haven't copied all of the additional packets out yet
@@ -94,6 +96,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
         
         if (len < MPID_NEM_MIN_PACKET_LEN || len < MPID_NEM_PACKET_LEN (next_pkt))
         {
+            MPIU_Assert (vc_ch->pending_recv.cell == NULL);
             MPID_NEM_MEMCPY (MPID_NEM_CELL_TO_PACKET (cell), next_pkt, len);
             vc_ch->pending_recv.cell = cell;
             vc_ch->pending_recv.end = (char *)MPID_NEM_CELL_TO_PACKET (cell) + len;
@@ -115,6 +118,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     }
 
     /* we ran out of free cells, copy into overflow buffer */
+    MPIU_Assert (vc->ch.pending_recv.cell == NULL);
     MPIU_Assert (recv_overflow_buf.start == NULL);
     MPID_NEM_MEMCPY (recv_overflow_buf.buf, next_pkt, len);
     recv_overflow_buf.start = recv_overflow_buf.buf;
@@ -241,19 +245,25 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
-
-        /* fast path: single packet case */
-        if (vc_ch->pending_recv.len + bytes_recvd >= MPID_NEM_MIN_PACKET_LEN &&
-            vc_ch->pending_recv.len + bytes_recvd == MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
+        vc_ch->pending_recv.len += bytes_recvd;
+        
+        if (vc_ch->pending_recv.len >= MPID_NEM_MIN_PACKET_LEN)
         {
-            MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, vc_ch->pending_recv.cell);
-            vc_ch->pending_recv.cell = NULL;
-            /*printf (" recvd whole pkt\n");*/
-            goto fn_exit;
+            /* fast path: single packet case */
+            if (vc_ch->pending_recv.len == MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
+            {
+                MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, vc_ch->pending_recv.cell);
+                vc_ch->pending_recv.cell = NULL;
+                /*printf (" recvd whole pkt\n");*/
+                goto fn_exit;
+            }
+            else if (vc_ch->pending_recv.len > MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
+            {
+                /* received more than one packet */
+                mpi_errno = breakout_pkts (vc, vc_ch->pending_recv.cell, vc_ch->pending_recv.len);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            }
         }
-    
-        mpi_errno = breakout_pkts (vc, vc_ch->pending_recv.cell, vc_ch->pending_recv.len + bytes_recvd);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
     else if (!MPID_nem_queue_empty (MPID_nem_newtcp_module_free_queue))
     {
