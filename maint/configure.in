@@ -21,13 +21,11 @@ AC_SUBST(abs_mpich2srcdir)
 
 # Does xargs need the -r option to handle the case where the input 
 # is empty (gnu utils do, Mac OSX does not accept -r)
-set -x
 xargs_out=`echo "" | xargs ls | wc -l | sed -e 's/ //g'`
 if test "$xargs_out" != "0" ; then
     XARGS_NODATA_OPT=-r
 fi
 AC_SUBST(XARGS_NODATA_OPT)
-set +x
 
 AC_OUTPUT_COMMANDS([chmod a+x simplemake checkbuilds getcoverage genstates clmake f77tof90 extractstrings extractstates extractfixme createcoverage])
 # We have to redefine the variables that autoconf always substitutes and that
