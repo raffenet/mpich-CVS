@@ -17,7 +17,7 @@ mpich2-build-uninstall: uninstall
 
 # A special alternate installation target when using multiple process managers
 install-alt: mpiexec
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpiexec ${bindir}/mpiexec.remshell
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpiexec $(DESTDIR)${bindir}/mpiexec.remshell
 
 doc_sources = mpiexec.txt
 DOCDESTDIRS = html:www/www1,man:man/man1,latex:doc/refman
