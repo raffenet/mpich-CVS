@@ -9,3 +9,4 @@ typem2f90.f90
 typesnamef90.f90
 typesubf90.f90
 gaddressf90.f90
+indtype
