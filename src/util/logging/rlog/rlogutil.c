@@ -114,7 +114,8 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    /*printf("type: RLOG_HEADER_SECTION, length: %d\n", length);*/
 	    if (length != sizeof(RLOG_FILE_HEADER))
 	    {
-		MPIU_Error_printf("error in header size %d != %d\n", length, sizeof(RLOG_FILE_HEADER));
+		MPIU_Error_printf("error in header size %d != %d\n", length, 
+				  (int)sizeof(RLOG_FILE_HEADER));
 	    }
 	    if (ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f))
 	    {
