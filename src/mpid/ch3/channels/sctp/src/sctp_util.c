@@ -9,7 +9,8 @@ void print_SCTP_event(struct MPIDU_Sctp_event * eventp);
 int inline MPIDU_Sctp_post_writev(MPIDI_VC_t* vc, MPID_Request* sreq, int offset,
 				  MPIDU_Sock_progress_update_func_t fn, int stream_no);
 
-inline static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
+
+int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
 {
     MPID_IOV * const iov = *iovp;
     const int count = *countp;
@@ -255,11 +256,22 @@ void inline MPIDU_Sctp_stream_init(MPIDI_VC_t* vc, MPID_Request* req, int stream
 int MPIDU_Sctp_writev(MPIDI_VC_t* vc, struct iovec* ldata,int iovcnt, int stream, int ppid, 
 		      MPIU_Size_t* nb) {
 
+    return MPIDU_Sctp_writev_fd(vc->ch.fd, &(vc->ch.to_address), ldata, iovcnt, stream, ppid, nb);
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sctp_writev_fd
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
+                         int iovcnt, int stream, int ppid, MPIU_Size_t* nb)
+{
   int byte_sent, r, nwritten =0, i, sz = 0;
   int mpi_errno = MPI_SUCCESS;
   static struct iovec cdata[MPID_IOV_LIMIT];
   struct iovec *data = cdata;
-  struct sockaddr_in* to = (struct sockaddr_in *) &(vc->ch.to_address);
+/*   struct sockaddr_in* to = (struct sockaddr_in *) &(vc->ch.to_address); */
 
   MPIU_Assert(iovcnt > 0);
 
@@ -272,12 +284,12 @@ int MPIDU_Sctp_writev(MPIDI_VC_t* vc, struct iovec* ldata,int iovcnt, int stream
   do {
     if(sz <= CHUNK)/*MPIDI_CH3_EAGER_MAX_MSG_SIZE)  FIXME */ {
       /* a short/eager message */
-      r = sctp_writev(vc->ch.fd, data, iovcnt,
+      r = sctp_writev(fd, data, iovcnt,
 		      (struct sockaddr *) to, sizeof(*to), ppid, 0, stream, 0, 0);
     } else {
       byte_sent = (CHUNK > data->iov_len) ? data->iov_len : CHUNK;
       
-      r = sctp_sendmsg(vc->ch.fd, data->iov_base, byte_sent, (struct sockaddr *) to,
+      r = sctp_sendmsg(fd, data->iov_base, byte_sent, (struct sockaddr *) to,
 		       sizeof(*to), ppid, 0, stream, 0, 0);
       
     }
@@ -419,7 +431,9 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq)
         case MPIDI_CH3_PKT_CANCEL_SEND_REQ:
         case MPIDI_CH3_PKT_RNDV_REQ_TO_SEND :
         {
-	  MPIU_Assert(pkt->eager_send.match.context_id <= 2048);
+	  MPIU_Assert(pkt->eager_send.match.context_id <= 2048 ||
+                      pkt->eager_send.match.context_id == 4095 || /* used in ch3u_port.c */
+                      pkt->eager_send.match.context_id == 4096); /* used in ch3u_port.c */
 	  MPIU_Assert(pkt->eager_send.match.context_id >= 0);
 	  stream = Req_Stream_from_match(pkt->eager_send.match);
         }
@@ -428,7 +442,9 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq)
         case MPIDI_CH3_PKT_RNDV_SEND :
         {
 	  MPIU_Assert(sreq);
-	  MPIU_Assert(sreq->dev.match.context_id <= 2048);
+	  MPIU_Assert(sreq->dev.match.context_id <= 2048 ||
+                      pkt->eager_send.match.context_id == 4095 || /* used in ch3u_port.c */
+                      pkt->eager_send.match.context_id == 4096); /* used in ch3u_port.c */
 	  MPIU_Assert(sreq->dev.match.context_id >= 0);
 	  stream = Req_Stream_from_match(sreq->dev.match);
         }

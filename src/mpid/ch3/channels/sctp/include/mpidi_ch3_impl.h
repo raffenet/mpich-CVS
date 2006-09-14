@@ -50,6 +50,11 @@ int sendq_total;
 
 extern int MPIDI_CH3I_listener_port;
 
+/* used for dynamic processes */
+int MPIDI_CH3I_has_connect_ack_outstanding;
+MPIDI_VC_t * MPIDI_CH3I_connecting_vc;
+int MPIDI_CH3I_using_tmp_vc;
+
 /* myct: determine the stream # of a req */
 /* brad : want to avoid stream zero (since it's invalid in SCTP) as well as the highest
  *    stream number in case we ever want to have a control stream.
@@ -198,7 +203,8 @@ typedef enum MPIDU_Sctp_op
     MPIDU_SCTP_OP_READ,
     MPIDU_SCTP_OP_WRITE,
     MPIDU_SCTP_OP_CLOSE,
-    MPIDU_SCTP_OP_WAKEUP
+    MPIDU_SCTP_OP_WAKEUP,
+    MPIDU_SCTP_OP_ACCEPT
 } MPIDU_Sctp_op_t;
 
 typedef struct MPIDU_Sctp_event
@@ -240,6 +246,8 @@ void print_SCTP_event(struct MPIDU_Sctp_event * eventp);
 /* myct: for send queue */
 void MPIDU_Sctp_stream_init(MPIDI_VC_t* vc, MPID_Request* req, int stream);
 
+int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
+                         int iovcnt, int stream, int ppid, MPIU_Size_t* nb);
 int MPIDU_Sctp_writev(MPIDI_VC_t* vc, struct iovec* data,int iovcnt, 
 		      int stream, int ppid, MPIU_Size_t* nb);
 int MPIDU_Sctp_write(MPIDI_VC_t* vc, void* buf, MPIU_Size_t len, 
@@ -253,6 +261,12 @@ inline int MPIDU_Sctp_post_writev(MPIDI_VC_t* vc, MPID_Request* sreq, int offset
 
 inline int MPIDU_Sctp_post_write(MPIDI_VC_t* vc, MPID_Request* sreq, MPIU_Size_t minlen, 
 			  MPIU_Size_t maxlen, MPIDU_Sock_progress_update_func_t fn, int stream_no);
+
+/* duplicate static existed so made this non-static */
+int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
+/* used in ch3_init.c and ch3_progress.c . sock equivalents in util/sock */
+int MPIDU_Sctp_wait(int fd, int timeout, MPIDU_Sctp_event_t * event);
+int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event);
 
 
 /* BUFFER management routines/structs */

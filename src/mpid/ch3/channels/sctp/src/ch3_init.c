@@ -12,6 +12,8 @@
 static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
                          char **publish_bc_p, char **bc_key_p, 
 				char **bc_val_p, int *val_max_sz_p);
+static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name, 
+                                          MPIDI_VC_t ** new_vc);
 
 
 /*
@@ -108,12 +110,127 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     return 0;
 }
 
-/* Select the routine that uses sockets to connect two communicators
+/* Select the routine that uses sctp to connect two communicators
    using a socket */
 int MPIDI_CH3_Connect_to_root(const char * port_name, 
 			      MPIDI_VC_t ** new_vc)
 {
-    return MPI_SUCCESS;
+    return MPIDI_CH3I_Connect_to_root_sctp( port_name, new_vc );
+}
+
+static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name, 
+			      MPIDI_VC_t ** new_vc)
+{
+    int nb, mpi_errno = MPI_SUCCESS;
+    char host_description[MAX_HOST_DESCRIPTION_LEN];
+    int port, port_name_tag;
+    MPIDU_Sock_ifaddr_t ifaddr;
+    struct sockaddr_in to_address;
+    int hasIfaddr = 0;
+
+    MPIDU_Sctp_event_t event2;
+    
+    union MPIDI_CH3_Pkt conn_acc_pkt, *pkt;
+    int iov_cnt = 2;
+    MPID_IOV conn_acc_iov[iov_cnt];
+    char bizcard[MPI_MAX_PORT_NAME];            
+    MPID_IOV* iovp = conn_acc_iov;
+
+    
+    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Connect to root with portstring %s",
+		   port_name );
+
+    /* obtain the sockaddr_in from the business card */
+    mpi_errno = my_MPIDU_Sock_get_conninfo_from_bc( port_name, host_description,
+						 sizeof(host_description),
+						 &port, &ifaddr, &hasIfaddr );
+    if (mpi_errno) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    giveMeSockAddr(ifaddr.ifaddr, port, &to_address);
+
+    /* handle the port_name_tag */
+    mpi_errno = MPIDI_GetTagFromPort(port_name, &port_name_tag);
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_port_name_tag");
+    }
+    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"port tag %d",port_name_tag);
+
+    /*------ begin TODO put into function (same in ch3_progress.c) */
+    /* function will take port_name_tag, ack & to_address, in the least */
+
+    mpi_errno = MPIDI_CH3I_Get_business_card(bizcard, MPI_MAX_PORT_NAME);
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS) {
+        goto fn_fail;
+    }
+    /* --END ERROR HANDLING-- */
+    
+    /* get the conn_acc_pkt ready */
+    MPIDI_Pkt_init(&conn_acc_pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT); 
+    conn_acc_pkt.sc_conn_accept.bizcard_len = (int) strlen(bizcard) + 1; 
+    conn_acc_pkt.sc_conn_accept.port_name_tag = port_name_tag;
+    conn_acc_pkt.sc_conn_accept.ack = 0; /* this is NOT an ACK */
+
+    /* get the iov ready */
+    conn_acc_iov[0].MPID_IOV_BUF = (void *) &conn_acc_pkt;
+    conn_acc_iov[0].MPID_IOV_LEN = sizeof(conn_acc_pkt);
+    conn_acc_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) bizcard;
+    conn_acc_iov[1].MPID_IOV_LEN = conn_acc_pkt.sc_conn_accept.bizcard_len;
+
+    /* write on control stream now. */ 
+    for(;;) {
+        
+        mpi_errno = MPIDU_Sctp_writev_fd(MPIDI_CH3I_onetomany_fd, &to_address, iovp,
+                             iov_cnt, MPICH_SCTP_CTL_STREAM, 0, &nb );
+        /* --BEGIN ERROR HANDLING-- */
+        if (mpi_errno != MPI_SUCCESS) {
+            goto fn_fail;
+        }
+        /* --END ERROR HANDLING-- */
+
+        /* deliberately avoid nb < 0 */
+        if(nb > 0 && adjust_iov(&iovp, &iov_cnt, nb)) { /* static in ch3_progress.c */
+            /* done sending */
+            break;
+        }
+    }
+    /*------ end TODO put into function (same in ch3_progress.c) */
+    
+    /*  progress (reads), then handle VC upon receiving ACK  */        
+    MPIDI_CH3I_has_connect_ack_outstanding++;
+    /*  we will be using this VC for the tmp VC within connect/accept. ensure the
+     *   one-to-many fd isn't closed. (connect side)
+     */
+    MPIDI_CH3I_using_tmp_vc++;
+    
+    /* FIXME - MT - can concurrent connect/accept's happen? (will this variable be > 1 ?) */
+    while(MPIDI_CH3I_has_connect_ack_outstanding) {
+        
+        mpi_errno = MPIDU_Sctp_wait(MPIDI_CH3I_onetomany_fd, MPIDU_SCTP_INFINITE_TIME,
+                                    &event2);
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            MPIU_Assert(MPIR_ERR_GET_CLASS(mpi_errno) != MPIDU_SOCK_ERR_TIMEOUT);
+            MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**progress_sock_wait");
+            goto fn_fail;
+        }
+        
+        mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(&event2);
+        if (mpi_errno != MPI_SUCCESS) {
+            MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+                                            "**ch3|sock|handle_sock_event");
+        }
+    }
+    
+    /* VC retrieved (and initialized) in progress above */
+    *new_vc = MPIDI_CH3I_connecting_vc;
+     
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;    
 }
 
 /* This "upcall" is (temporarily?) a static here, and may be in ch3/util later. */
@@ -139,7 +256,7 @@ static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
        not, why not? */
     sendq_total = 0;    
     for (p = 0; p < pg_size; p++) {
-	MPIDI_CH3_VC_Init(&(pg_p->vct[p]));
+	MPIDI_CH3_VC_Init(&(pg_p->vct[p]));  /* TODO check success */
     }    
 
     /* This function actually will work for SCTP if we use the MPIDI_CH3I_listener_port */

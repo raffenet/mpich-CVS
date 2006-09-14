@@ -1099,7 +1099,9 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
     mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
 #endif
+#ifndef MPIDI_CH3_CHANNEL_FREES_TMP_VC
     MPIU_Free(new_vc);
+#endif    
  fn_fail:
     return mpi_errno;
 }

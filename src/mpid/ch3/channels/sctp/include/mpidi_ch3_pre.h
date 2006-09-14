@@ -10,10 +10,13 @@
 #include "sctp_common.h"
 
 #define MPIDI_CH3_HAS_CHANNEL_CLOSE
+#define MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
+#define MPIDI_CH3_CHANNEL_FREES_TMP_VC
 
-/* Thes0e macros unlock shared code */
+/* These macros unlock shared code */
 /* #define MPIDI_CH3_USES_SOCK */
 #define MPIDI_CH3_USES_ACCEPTQ
+
 
 /*
  * Features needed or implemented by the channel
@@ -28,6 +31,7 @@
    packets be made part of the util/sock support? */
 #define MPIDI_CH3_PKT_ENUM			\
 MPIDI_CH3I_PKT_SC_OPEN_REQ,			\
+MPIDI_CH3I_PKT_SC_CONN_ACCEPT,		        \
 MPIDI_CH3I_PKT_SC_CLOSE
 
 /* FIXME - We need a little security here to avoid having a random port scan 
@@ -58,7 +62,9 @@ MPIDI_CH3I_Pkt_sc_close_t;      \
 typedef struct			\
 {				\
     MPIDI_CH3_Pkt_type_t type;	\
+    int bizcard_len;	        \
     int port_name_tag; 		\
+    int ack;                    \
 }				\
 MPIDI_CH3I_Pkt_sc_conn_accept_t;
 
@@ -112,7 +118,11 @@ SCTP_Stream_state_t;
 
 #define MPICH_SCTP_NUM_STREAMS MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT + 1
 
-#define MPICH_SCTP_CTL_STREAM 1
+#define MPICH_SCTP_CTL_STREAM 0
+
+#define MPIDU_SCTP_INFINITE_TIME -1
+
+/* TODO sept 12 : these comments are out of date (and wrong)! */
 
 /* We want to allocated one more so that stream zero isn't a special case since
  *  it is not allowed in SCTP.  We define a new constant in case we want to ever use
@@ -189,6 +199,8 @@ typedef struct MPIDI_CH3I_VC
     union MPIDI_CH3_Pkt* pkt;
 
     unsigned short send_init_count;
+
+    sctp_assoc_t sinfo_assoc_id;
 
     void * sendq_head; /* FIXME this is called in mpid_vc.c */
 }
