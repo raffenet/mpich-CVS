@@ -1,7 +1,7 @@
                       MPE (Multi-Processing Environment)
                       ----------------------------------
 
-                          Version 2.4.1. May, 2006
+                          Version 2.4.2. Sept, 2006
 
                     Mathematics and Computer Science Division
                            Argonne National Laboratory
@@ -386,6 +386,14 @@ Linking an MPI application with the collective and datatype checking library
 as follows
 
 mpicc -o mpi_pgm *.o -L<mpe2_libdir> -lmpe_collchk.
+
+Or using compiler wrappers (more details in next section), e.g.
+
+(with mpich2's compiler wrapper)
+mpicc -mpe=mpicheck -o mpi_pgm *.o
+
+(with MPE's compiler wrapper)
+mpecc -mpe=mpicheck -o mpi_pgm *.o
 
 
 Convenient Compiler Wrappers
