@@ -478,7 +478,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     MPI_Comm_connect( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm );
     MPI_Comm_accept( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm )
                               ],
-                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         if test "$mpe_link_ok" = "yes" ; then
             AC_MSG_RESULT(yes)
             AC_MSG_CHECKING( [for the C version of PMPI_Comm_connect/accept()] )
@@ -488,11 +488,44 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     PMPI_Comm_connect( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm );
     PMPI_Comm_accept( port, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm )
                                   ],
-                                  [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+            [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
             if test "$mpe_link_ok" = "yes" ; then
                 AC_MSG_RESULT(yes)
                 AC_DEFINE( HAVE_MPI_SPAWN, 1,
                            [Define if MPI-SPAWN is available] )
+
+                dnl Start of Checking of MPI2 Naming Service
+                AC_MSG_CHECKING( [for the C version of MPI_Publish/Lookup_name()] )
+                PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                                      [ char *port ],
+                                      [
+    MPI_Publish_name( "mpe_port_name", MPI_INFO_NULL, port );
+    MPI_Lookup_name( "mpe_port_name", MPI_INFO_NULL, port );
+    MPI_Unpublish_name( "mpe_port_name", MPI_INFO_NULL, port );
+                                      ],
+                [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+                if test "$mpe_link_ok" = "yes" ; then
+                    AC_MSG_RESULT(yes)
+                    AC_MSG_CHECKING( [for the C version of PMPI_Publish/Lookup_name()] )
+                    PAC_MPI_LINK_CC_FUNC($MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+                                         [ char *port ],
+                                         [
+    PMPI_Publish_name( "mpe_port_name", MPI_INFO_NULL, port );
+    PMPI_Lookup_name( "mpe_port_name", MPI_INFO_NULL, port );
+    PMPI_Unpublish_name( "mpe_port_name", MPI_INFO_NULL, port );
+                                         ],
+                    [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+                    if test "$mpe_link_ok" = "yes" ; then
+                        AC_MSG_RESULT(yes)
+                        AC_DEFINE( HAVE_MPI_NAMING, 1,
+                                   [Define if MPI Naming Service is available] )
+                    else
+                        AC_MSG_RESULT(no)
+                    fi
+                else
+                    AC_MSG_RESULT(no)
+                fi
+                dnl End of Checking of MPI2 Naming Service
             else
                 AC_MSG_RESULT(no)
             fi

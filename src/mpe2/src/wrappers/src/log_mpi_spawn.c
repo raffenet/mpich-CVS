@@ -312,26 +312,6 @@ int MPI_Comm_get_name( MPI_Comm comm, char *comm_name, int *resultlen )
     return returnVal;
 }
 
-int MPI_Lookup_name( char *service_name, MPI_Info info, char *port_name )
-{
-    int  returnVal;
-    MPE_LOG_STATE_DECL
-
-    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_LOOKUP_NAME_ID)
-
-#if defined( MAKE_SAFE_PMPI_CALL )
-    MPE_LOG_OFF
-#endif
-    returnVal = PMPI_Lookup_name( service_name, info, port_name );
-#if defined( MAKE_SAFE_PMPI_CALL )
-    MPE_LOG_ON
-#endif
-
-    MPE_LOG_STATE_END(MPE_COMM_NULL)
-
-    return returnVal;
-}
-
 int MPI_Open_port( MPI_Info info, char *port_name )
 {
     int  returnVal;
@@ -363,6 +343,27 @@ int MPI_Close_port( char *port_name )
     MPE_LOG_OFF
 #endif
     returnVal = PMPI_Close_port( port_name );
+#if defined( MAKE_SAFE_PMPI_CALL )
+    MPE_LOG_ON
+#endif
+
+    MPE_LOG_STATE_END(MPE_COMM_NULL)
+
+    return returnVal;
+}
+
+#if defined( HAVE_MPI_NAMING )
+int MPI_Lookup_name( char *service_name, MPI_Info info, char *port_name )
+{
+    int  returnVal;
+    MPE_LOG_STATE_DECL
+
+    MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_LOOKUP_NAME_ID)
+
+#if defined( MAKE_SAFE_PMPI_CALL )
+    MPE_LOG_OFF
+#endif
+    returnVal = PMPI_Lookup_name( service_name, info, port_name );
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
@@ -411,4 +412,5 @@ int MPI_Unpublish_name( char *service_name, MPI_Info info, char *port_name )
 
     return returnVal;
 }
+#endif    /* Endof if defined( HAVE_MPI_NAMING ) */
 
