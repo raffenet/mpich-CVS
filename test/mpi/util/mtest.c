@@ -132,8 +132,22 @@ void MTestSleep( int sec )
  * Datatypes
  *
  * Eventually, this could read a description of a file.  For now, we hard 
- * code the choices
+ * code the choices.
  *
+ * Each kind of datatype has the following functions:
+ *    MTestTypeXXXInit     - Initialize a send buffer for that type
+ *    MTestTypeXXXInitRecv - Initialize a receive buffer for that type
+ *    MTestTypeXXXFree     - Free any buffers associate with that type
+ *    MTestTypeXXXCheckbuf - Check that the buffer contains the expected data
+ * These routines work with (nearly) any datatype that is of type XXX, 
+ * allowing the test codes to create a variety of contiguous, vector, and
+ * indexed types, then test them by calling these routines.
+ *
+ * Available types (for the XXX) are
+ *    Contig   - Simple contiguous buffers
+ *    Vector   - Simple strided "vector" type
+ *    Indexed  - Indexed datatype.  Only for a count of 1 instance of the 
+ *               datatype
  */
 static int datatype_index = 0;
 
@@ -375,10 +389,10 @@ static int MTestTypeVectorCheckbuf( MTestDatatype *mtype )
     return err;
 }
 #endif
-#if 0
 /* ------------------------------------------------------------------------ */
 /* Datatype routines for indexed block datatypes                            */
 /* ------------------------------------------------------------------------ */
+
 /* 
  * Setup a buffer for one copy of an indexed datatype. 
  */
@@ -412,10 +426,15 @@ static void *MTestTypeIndexedInit( MTestDatatype *mtype )
 	   We require that the base type is a contiguous type */
 	k = 0;
 	for (i=0; i<mtype->nelm; i++) {
+	    int b;
 	    /* Compute the offset: */
 	    offset = mtype->displs[i] * mtype->basesize;
-	    for (j=0; j<mtype->basesize; j++) {
-		p[offset+j] = 0xff ^ (k++ & 0xff);
+	    /* For each element in the block */
+	    for (b=0; b<mtype->index[i]; b++) {
+		for (j=0; j<mtype->basesize; j++) {
+		    p[offset+j] = 0xff ^ (k++ & 0xff);
+		}
+		offset += mtype->basesize;
 	    }
 	}
     }
@@ -433,7 +452,7 @@ static void *MTestTypeIndexedInit( MTestDatatype *mtype )
  * Setup indexed buffers for 1 copy of a datatype.  Initialize for
  * reception (e.g., set initial data to detect failure)
  */
-static void *MTestTypeIndexInitRecv( MTestDatatype *mtype )
+static void *MTestTypeIndexedInitRecv( MTestDatatype *mtype )
 {
     MPI_Aint totsize;
     int      merr;
@@ -468,17 +487,19 @@ static void *MTestTypeIndexInitRecv( MTestDatatype *mtype )
     return mtype->buf;
 }
 
-static void *MTestTypeIndexFree( MTestDatatype *mtype )
+static void *MTestTypeIndexedFree( MTestDatatype *mtype )
 {
     if (mtype->buf) {
 	free( mtype->buf );
 	free( mtype->displs );
+	free( mtype->index );
 	mtype->buf    = 0;
 	mtype->displs = 0;
+	mtype->index  = 0;
     }
     return 0;
 }
-static int MTestTypeIndexCheckbuf( MTestDatatype *mtype )
+static int MTestTypeIndexedCheckbuf( MTestDatatype *mtype )
 {
     unsigned char *p;
     unsigned char expected;
@@ -511,7 +532,7 @@ static int MTestTypeIndexCheckbuf( MTestDatatype *mtype )
     }
     return err;
 }
-#endif /* 0 */
+
 /* ------------------------------------------------------------------------ */
 /* Routines to select a datatype and associated buffer create/fill/check    */
 /* routines                                                                 */
@@ -528,6 +549,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 		       int count )
 {
     int merr;
+    int i;
 
     sendtype->InitBuf	  = 0;
     sendtype->FreeBuf	  = 0;
@@ -537,6 +559,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
     sendtype->printErrors = 0;
     recvtype->InitBuf	  = 0;
     recvtype->FreeBuf	  = 0;
+
     recvtype->CheckBuf	  = 0;
     recvtype->datatype	  = 0;
     recvtype->isBasic	  = 0;
@@ -591,7 +614,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
     case 5:
 	/* vector send type and contiguous receive type */
 	/* These sizes are in bytes (see the VectorInit code) */
-	sendtype->stride   = 3 * sizeof(int);
+ 	sendtype->stride   = 3 * sizeof(int);
 	sendtype->blksize  = sizeof(int);
 	sendtype->nelm     = recvtype->count;
 
@@ -603,7 +626,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	merr = MPI_Type_set_name( sendtype->datatype, "int-vector" );
 	if (merr) MTestPrintError( merr );
 	sendtype->count    = 1;
-	recvtype->datatype = MPI_INT;
+ 	recvtype->datatype = MPI_INT;
 	recvtype->isBasic  = 1;
 	sendtype->InitBuf  = MTestTypeVectorInit;
 	recvtype->InitBuf  = MTestTypeContigInitRecv;
@@ -612,8 +635,79 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	sendtype->CheckBuf = 0;
 	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
-#if 0
+
     case 6:
+	/* Indexed send using many small blocks and contig receiv */
+	sendtype->blksize  = sizeof(int);
+	sendtype->nelm     = recvtype->count;
+	sendtype->basesize = sizeof(int);
+	sendtype->displs   = (int *)malloc( sendtype->nelm * sizeof(int) );
+	sendtype->index    = (int *)malloc( sendtype->nelm * sizeof(int) );
+	if (!sendtype->displs || !sendtype->index) {
+	    MTestError( "Out of memory in type init\n" );
+	}
+	for (i=0; i<sendtype->nelm; i++) {
+	    sendtype->index[i]   = 1;
+	    sendtype->displs[i]  = 2*i;
+	}
+	merr = MPI_Type_indexed( sendtype->nelm,
+				 sendtype->index, sendtype->displs, 
+				 MPI_INT, &sendtype->datatype );
+	if (merr) MTestPrintError( merr );
+        merr = MPI_Type_commit( &sendtype->datatype );
+	if (merr) MTestPrintError( merr );
+	merr = MPI_Type_set_name( sendtype->datatype, "int-indexed(1-int)" );
+	if (merr) MTestPrintError( merr );
+	sendtype->count    = 1;
+	sendtype->InitBuf  = MTestTypeIndexedInit;
+	sendtype->FreeBuf  = MTestTypeIndexedFree;
+	sendtype->CheckBuf = 0;
+
+ 	recvtype->datatype = MPI_INT;
+	recvtype->isBasic  = 1;
+	recvtype->count    = count;
+	recvtype->InitBuf  = MTestTypeContigInitRecv;
+	recvtype->FreeBuf  = MTestTypeContigFree;
+	recvtype->CheckBuf = MTestTypeContigCheckbuf;
+	break;
+
+    case 7:
+	/* Indexed send using 2 large blocks and contig receiv */
+	sendtype->blksize  = sizeof(int);
+	sendtype->nelm     = 2;
+	sendtype->basesize = sizeof(int);
+	sendtype->displs   = (int *)malloc( sendtype->nelm * sizeof(int) );
+	sendtype->index    = (int *)malloc( sendtype->nelm * sizeof(int) );
+	if (!sendtype->displs || !sendtype->index) {
+	    MTestError( "Out of memory in type init\n" );
+	}
+	sendtype->index[0]   = (recvtype->count + 1) / 2;
+	sendtype->displs[0]  = 0;
+	sendtype->index[1]   = (recvtype->count + 1) / 2;
+	sendtype->displs[1]  = sendtype->index[0] + 1;
+
+	merr = MPI_Type_indexed( sendtype->nelm,
+				 sendtype->index, sendtype->displs, 
+				 MPI_INT, &sendtype->datatype );
+	if (merr) MTestPrintError( merr );
+        merr = MPI_Type_commit( &sendtype->datatype );
+	if (merr) MTestPrintError( merr );
+	merr = MPI_Type_set_name( sendtype->datatype, "int-indexed(2 blocks)" );
+	if (merr) MTestPrintError( merr );
+	sendtype->count    = 1;
+	sendtype->InitBuf  = MTestTypeIndexedInit;
+	sendtype->FreeBuf  = MTestTypeIndexedFree;
+	sendtype->CheckBuf = 0;
+
+ 	recvtype->datatype = MPI_INT;
+	recvtype->isBasic  = 1;
+	recvtype->count    = sendtype->index[0] + sendtype->index[1];
+	recvtype->InitBuf  = MTestTypeContigInitRecv;
+	recvtype->FreeBuf  = MTestTypeContigFree;
+	recvtype->CheckBuf = MTestTypeContigCheckbuf;
+	break;
+#if 0
+    case 8:
 	/* vector recv type and contiguous send type */
 	/* These sizes are in bytes (see the VectorInit code) */
 	recvtype->stride   = 4 * sizeof(int);
@@ -637,7 +731,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->CheckBuf = MTestTypeVectorCheckbuf;
 	sendtype->CheckBuf = 0;
 	break;
-    case 7:
+    case 9:
 	/* contig send and block indexed recv */
 	/* Make indexes 5*((count-1) - i), for i=0, ..., count-1, i.e., 
 	   every 5th element, but starting from the end. */
@@ -672,7 +766,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->CheckBuf = MTestTypeIndexedCheckBuf;
 	sendtype->CheckBuf = 0;
 	break;
-    case 8: 
+    case 10: 
 	/* index send and vector recv (using shorts) */
 	break;
 #endif
