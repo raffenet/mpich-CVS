@@ -384,15 +384,23 @@ int MPIE_CheckEnv( ProcessUniverse *pUniv,
 	PMISetDebug( 1 );
     }
 
-    /* Check for stdio buffering controls */
+    /* Check for stdio buffering controls.  Set the default to none
+       as that preserves the behavior of the user's program.
+    */
     s = getenv( "MPIEXEC_STDOUTBUF" );
     if (s) {
 	rc = MPIE_StdioSetMode( stdout, s );
+    }
+    else {
+	MPIE_StdioSetMode( stdout, "none" );
     }
 
     s = getenv( "MPIEXEC_STDERRBUF" );
     if (s) {
 	rc = MPIE_StdioSetMode( stderr, s );
+    }
+    else {
+	MPIE_StdioSetMode( stderr, "none" );
     }
 
     if (processEnv) {
