@@ -4,6 +4,8 @@
 *.bbg
 *.da
 *.gcov
+*.gcda
+*.gcno
 Makefile.in
 Makefile
 dup

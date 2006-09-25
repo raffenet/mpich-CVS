@@ -11,3 +11,5 @@ gtranks
 .deps
 *ebug
 *elease
+*.gcda
+*.gcno

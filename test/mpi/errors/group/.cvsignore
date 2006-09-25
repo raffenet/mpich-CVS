@@ -3,5 +3,7 @@ Makefile.in
 Makefile
 *.o
 *.vcproj
+*.gcda
+*.gcno
 Debug*
 Release*

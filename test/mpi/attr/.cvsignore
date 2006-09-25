@@ -20,3 +20,5 @@ fkeyvalwin
 *ebug
 *elease
 *.vcproj
+*.gcda
+*.gcno

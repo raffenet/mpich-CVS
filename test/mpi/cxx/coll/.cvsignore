@@ -4,6 +4,8 @@ Makefile
 *ebug*
 *elease*
 *.vcproj
+*.gcda
+*.gcno
 uallreduce
 ureduce
 uscan

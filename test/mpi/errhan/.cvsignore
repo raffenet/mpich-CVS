@@ -9,3 +9,5 @@ errring
 .deps
 *ebug
 *elease
+*.gcda
+*.gcno

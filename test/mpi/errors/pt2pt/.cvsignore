@@ -5,3 +5,5 @@ Makefile
 *.vcproj
 Debug*
 Release*
+*.gcda
+*.gcno

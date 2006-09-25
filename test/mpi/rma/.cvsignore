@@ -31,3 +31,5 @@ wintest
 .deps
 *ebug
 *elease
+*.gcda
+*.gcno

@@ -50,3 +50,5 @@ Makefile
 *ebug*
 *elease*
 *.vcproj
+*.gcda
+*.gcno

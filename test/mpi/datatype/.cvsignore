@@ -18,3 +18,5 @@ zeroparms
 .deps
 *ebug
 *elease
+*.gcda
+*.gcno

@@ -12,6 +12,8 @@ Makefile
 *.bbg
 *.da
 *.gcov
+*.gcda
+*.gcno
 bcasttest
 allred
 alltoallv
