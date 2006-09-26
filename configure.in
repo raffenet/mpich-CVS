@@ -992,7 +992,11 @@ dnl     WAIT UNTIL WE INCLUDE A DEVICE
 dnl     AC_MSG_ERROR([Device $device_name is unknown)]
     AC_MSG_WARN([Device $device_name is unknown])
 elif test ! -x $devicedir/configure ; then
-    AC_MSG_WARN([Device $device_name has no configure])
+    if test -s $devicedir/configure ; then
+        AC_MSG_WARN([The configure in $devicedir exists but is not executable])
+    else
+        AC_MSG_WARN([Device $device_name has no configure])
+    fi
     device_name=""
 else 
     # Add the device to the configure list
@@ -1063,7 +1067,11 @@ for pm_name in $pm_names ; do
         AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
 	hasError=yes
     elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure ; then
-        AC_MSG_WARN([pm $pm_name has no configure])
+        if test -s $use_top_srcdir/src/pm/$pm_name/configure ; then
+	    AC_MSG_WARN([The configure in $use_top_srcdir/src/pm/$pm_name exists but is not executable])
+        else
+            AC_MSG_WARN([pm $pm_name has no configure])
+        fi
         pm_name=""
 	hasError=yes
     else
@@ -4786,7 +4794,12 @@ AC_SUBST(MPI_2COMPLEX)
 AC_SUBST(MPI_2DOUBLE_COMPLEX)
 AC_SUBST(MPI_FINT)
 
-# FIXME: Temporary values for MPI_Offset (need help from IO subsystem)
+# If ROMIO was successfully configured, then ROMIO will have exported the
+# definition of MPI_OFFSET_TYPE through its localdefs file (created by the
+# ROMIO configure in src/mpi/romio/localdefs).  If MPI_OFFSET_TYPE was not
+# defined, this code attempts to find a good choice for MPI_OFFSET_TYPE
+# (As the offset type is used for File operations, the specific type
+# really doesn't matter if ROMIO doesn't provide it).
 if test -n "$MPI_OFFSET_TYPE" ; then
     # We got the value from the ROMIO configure
     MPI_OFFSET="$MPI_OFFSET_TYPE"
@@ -4853,6 +4866,9 @@ AC_SUBST(MPI_OFFSET)
 #
 # FIXME: we need an explanation of why we need both MPI_OFFSET and 
 # MPI_OFFSET_TYPEDEF.   Why is MPI_OFFSET_TYPEDEF necessary?
+# This appears to be used by the Windows "winconfigure.wsf" which is used
+# to create a multiline definition using an #ifdef check on USE_GCC 
+# We may wish to use a different approach
 MPI_OFFSET_TYPEDEF="typedef $MPI_OFFSET MPI_Offset;"
 AC_SUBST(MPI_OFFSET_TYPEDEF)
 #
@@ -4886,7 +4902,8 @@ recommend that you set both F77 and F90 to the same compiler and reconfigure.])
 fi
 AC_SUBST(FORTRAN_MPI_OFFSET)
 #
-dnl Temporary value for extra status information, from device subsystem
+dnl Extra status information, from device subsystem, to be included in the
+dnl declaration of MPI_Status in mpi.h.in
 AC_SUBST(EXTRA_STATUS_DECL)
 
 # -----------------------------------------------------------------------------
