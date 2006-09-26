@@ -7,3 +7,5 @@ config.*
 autom4te*
 pmutilconf.h*
 .libstamp*
+*.gcda
+*.gcno
