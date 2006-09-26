@@ -6,6 +6,8 @@ Makefile.in
 *.bbg
 *.da
 *.gcov
+*.gcda
+*.gcno
 .deps
 .libs
 .libstamp*

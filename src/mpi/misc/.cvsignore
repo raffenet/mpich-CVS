@@ -6,6 +6,8 @@
 *.bbg
 *.da
 *.gcov
+*.gcda
+*.gcno
 Makefile
 Makefile.in
 .deps

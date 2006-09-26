@@ -11,6 +11,8 @@ autom4te.cache
 *.bbg
 *.da
 *.gcov
+*.gcda
+*.gcno
 Makefile
 Makefile.in
 timerconf.h.in

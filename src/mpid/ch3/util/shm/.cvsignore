@@ -6,3 +6,6 @@ Makefile.in
 *.lo
 *.o
 .state-cache
+*.gcov
+*.gcda
+*.gcno

@@ -23,6 +23,8 @@ autom4te.cache
 *.bbg
 *.da
 *.gcov
+*.gcda
+*.gcno
 *.log
 *.htm
 cov.dat
