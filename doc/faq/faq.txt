@@ -45,6 +45,23 @@ A: MPI stands for Message Passing Interface.
 The CH comes from Chameleon, the portability layer used in the original 
 MPICH to provide portability to the existing message-passing systems.
 
+%% Heading: Q: Can MPI be used to program multicore systems?
+%% Filename: multicore
+%% End
+A: There are two common ways to use MPI with multicore processors or
+multiprocessor nodes:
+
+Use one MPI process per core (here, a core is defined as a program
+counter and some set of arithmetic, logic, and load/store units). 
+
+Use one MPI process per node (here, a node is defined as a collection
+of cores that share a single address space).  Use threads or
+compiler-provided parallelism to exploit the multiple cores.  OpenMP
+may be used with MPI; the loop-level parallelism of OpenMP may be used
+with any implementation of MPI (you do not need an MPI that supports
+\texttt{MPI\_THREAD\_MULTIPLE} when threads are used only for computational
+tasks). This is sometimes called the hybrid programming model.
+
 % ----------------------------------------------------------------------------
 %% Section: Building MPICH2
 %% Heading: Q: What is the difference between the MPD and SMPD process managers?
