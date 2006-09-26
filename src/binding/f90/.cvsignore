@@ -7,6 +7,9 @@ mpi_sizeofs.f90
 .deps
 *.mod
 *.MOD
+*.gcov
+*.gcda
+*.gcno
 .libs
 .state-cache
 mpifnoext.h

@@ -1,3 +1,8 @@
 cmdtests
 Makefile.in
 Makefile
+*.gcda
+*.gcno
+stdintest
+stdiotest
+checkenv1

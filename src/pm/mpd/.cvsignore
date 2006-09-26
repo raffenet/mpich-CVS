@@ -1,5 +1,8 @@
 pmitest0
 *.pyc
+*.gcov
+*.gcda
+*.gcno
 configure
 configure.lineno
 config.status

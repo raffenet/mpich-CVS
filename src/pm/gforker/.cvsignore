@@ -7,3 +7,6 @@ forkerconf.h.in
 forkerconf.h
 mpiexec
 autom4te*
+*.gcov
+*.gcda
+*.gcno
