@@ -76,8 +76,8 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 
 		      /* prefetch 2 cachelines at a time (128 bytes) */
 		      "2:\n" /* prefetch loop */
-		      "mov (%%esi, %%ecx, 8), %%ebx\n"
-		      "mov 64(%%esi, %%ecx, 8), %%ebx\n"
+		      "mov (%%esi, %%ecx, 8), %%edx\n"
+		      "mov 64(%%esi, %%ecx, 8), %%edx\n"
 		      "add $16, %%ecx\n" 
 		  
 		      "dec %%eax\n"
@@ -118,7 +118,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 		      "emms\n"
 		      : "=D" (dummy_dst), "=S" (dummy_src)
 		      : "0" (dst), "1" (src), "g" (n >> 3)
-		      : "eax", "ebx", "ecx"/* , "memory" is this needed? */);
+		      : "eax", "edx", "ecx"/* , "memory" is this needed? */);
 
 	src = (char *)src + n;
 	dst = (char *)dst + n;
@@ -143,8 +143,8 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 
 		      /* prefetch all data to be copied 2 cachelines at a time (128 bytes)*/
 		      "1:\n" /* prefetch loop */
-		      "mov (%%esi, %%ecx, 8), %%ebx\n"
-		      "mov 64(%%esi, %%ecx, 8), %%ebx\n"
+		      "mov (%%esi, %%ecx, 8), %%edx\n"
+		      "mov 64(%%esi, %%ecx, 8), %%edx\n"
 		      "add $16, %%ecx\n"
 		  
 		      "dec %%eax\n"
@@ -184,7 +184,7 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
 		      "emms\n"
 		      : "=D" (dummy_dst), "=S" (dummy_src) 
 		      : "0" (dst), "1" (src), "g" (n >> 3)
-		      : "eax", "ebx", "ecx" /* , "memory" is this needed? */);
+		      : "eax", "edx", "ecx" /* , "memory" is this needed? */);
 	src = (char *)src + n;
 	dst = (char *)dst + n;
     }
