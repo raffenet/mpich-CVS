@@ -1843,10 +1843,12 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 	    
 	    if (ErrorRing[ring_idx].id == ring_id)
 	    {
+		/* FIXME: Don't use Snprint to append a string ! */
 		MPIU_Snprintf(str, maxlen, "%s", ErrorRing[ring_idx].location);
 		len = (int)strlen(str);
 		maxlen -= len;
 		str += len;
+		/* FIXME: Do not use Snprint to append a string ! */
 		for (i=0; i<max_location_len - (int)strlen(ErrorRing[ring_idx].location) - 2; i++)
 		{
 		    if (MPIU_Snprintf(str, maxlen, "."))
@@ -1937,6 +1939,8 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 	goto fn_exit;
     }
 
+    /* FIXME: The following code is broken as described above (if the errcode
+       is not valid, then this code is just going to cause more problems) */
     {
 	int generic_idx;
 	
