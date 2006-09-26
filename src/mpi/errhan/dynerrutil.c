@@ -16,7 +16,7 @@
  * so that applications that do not use the MPI-2 routines to create new
  * error codes will not load any of this code.  
  * 
- * ROMIO will be customized to provide error messages with the same tools
+ * ROMIO has been customized to provide error messages with the same tools
  * as the rest of MPICH2 and will not rely on the dynamically assigned
  * error classes.  This leaves all of the classes and codes for the user.
  *
@@ -74,6 +74,7 @@ static void MPIR_Init_err_dyncodes( void )
 {
     int i;
 
+    /* FIXME: Does this need a thread-safe init? */
     not_initialized = 0;
     
     for (i=0; i<ERROR_MAX_NCLASS; i++) {
@@ -105,7 +106,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
     int errcode, errclass;
     size_t msg_len;
     char *str;
-    static char FCNAME[] = "MPIR_Err_set_msg";
+    static const char FCNAME[] = "MPIR_Err_set_msg";
 
     /* --BEGIN ERROR HANDLING-- */
     if (not_initialized) {
