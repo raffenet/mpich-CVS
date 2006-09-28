@@ -99,6 +99,8 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
      * we wait until we hold the last reference count to
      * ensure that all communication has completed.
      */
+    /* FIXME - I am not sure if the ref_count on the communicator ever gets 
+       incremented, so this may be of no use  */
     if (comm_ptr->ref_count > 1)
     {
 	MPID_Progress_state progress_state;

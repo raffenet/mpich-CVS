@@ -81,6 +81,10 @@ int MPID_Finalize(void)
 	MPIU_ERR_POP(mpi_errno);
     }
 
+/* commenting out the close protocol and simply using PMI_Barrier until MPI_Comm_disconnect
+   correctly disconnects all VCs */
+
+#if 0
     /* FIXME: The close actions should use the same code as the other
        connection close code */
     MPIDI_PG_Close_VCs();
@@ -88,6 +92,10 @@ int MPID_Finalize(void)
      * Wait for all VCs to finish the close protocol
      */
     mpi_errno = MPIDI_CH3U_VC_WaitForClose();
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#endif
+
+    mpi_errno = PMI_Barrier();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     /* FIXME: Progress finalize should be in CH3_Finalize */
