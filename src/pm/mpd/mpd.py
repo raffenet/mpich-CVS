@@ -1084,6 +1084,7 @@ class MPD(object):
                 return
             self.ring.rhsSock = MPDSock(name='rhs')
             self.ring.rhsSock.connect((self.ring.rhsIfhn,self.ring.rhsPort))
+            self.pulse_cntr = 0
             if not self.ring.rhsSock:
                 mpd_print(1,'handle_rhs_input failed to obtain rhs socket')
                 return
@@ -1107,6 +1108,7 @@ class MPD(object):
                (not msg.has_key('cmd')) or  \
                (msg['cmd'] != 'OK_to_enter_as_lhs'):
                 mpd_print(1, 'NOT OK to enter ring; msg=:%s:' % (msg) )
+            self.streamHandler.set_handler(self.ring.rhsSock,self.handle_rhs_input)
             mpd_print(0000,"GOT CONN TO %s %s" % (self.ring.rhsIfhn,self.ring.rhsPort))
         else:
             mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
