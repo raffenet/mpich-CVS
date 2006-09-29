@@ -19,16 +19,6 @@
 #include "newtcp_module_queue.h"
 #include "socksm.h"
 
-/* typedefs */
-typedef struct MPID_nem_newtcp_module_send_q_element
-{
-    struct MPID_nem_newtcp_module_send_q_element *next;
-    size_t len;                        /* number of bytes left to sent */
-    char *start;                       /* pointer to next byte to send */
-    char buf[MPID_NEM_MAX_PACKET_LEN]; /* data to be sent */
-} MPID_nem_newtcp_module_send_q_element_t;
-
-
 /* globals */
 extern MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;

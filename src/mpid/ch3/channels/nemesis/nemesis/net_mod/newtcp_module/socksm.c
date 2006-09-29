@@ -1124,7 +1124,10 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
                           "**poll", "**poll %s", strerror (errno));
     if (n == 1)
-        sc->handler(plfd, sc);
+    {
+        mpi_errno = sc->handler(plfd, sc);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
 
  fn_exit:
     return mpi_errno;
@@ -1153,26 +1156,39 @@ int MPID_nem_newtcp_module_connpoll()
     CHECK_EINTR(n, poll(&g_lstn_plfd, 1, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
                           "**poll", "**poll %s", strerror (errno));
-    if (n == 1) {
+    if (n == 1)
+    {
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "listen fd poll event"));
         if (g_lstn_plfd.revents & POLLERR) /* FIXME (N1) */
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail"); 
         /* FIXME-Danger Add error string. actual string "**poll error on listener fd" */
         else if (g_lstn_plfd.revents & POLLIN)
-            g_lstn_sc.handler(&g_lstn_plfd, &g_lstn_sc);
+        {
+            mpi_errno = g_lstn_sc.handler(&g_lstn_plfd, &g_lstn_sc);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+        }
     }
 
     CHECK_EINTR(n, poll(g_plfd_tbl, g_tbl_size, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
                           "**poll", "**poll %s", strerror (errno));
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "some sc fd poll event"));
-    for(i = 0; i < g_tbl_size; i++) {
+    for(i = 0; i < g_tbl_size; i++)
+    {
         pollfd_t *it_plfd = &g_plfd_tbl[i];
         sockconn_t *it_sc = &g_sc_tbl[i];
 
         if (it_plfd->fd != CONN_INVALID_FD && it_plfd->revents != 0)
-            it_sc->handler(it_plfd, it_sc);
+        {
+            MPIU_Assert ((it_plfd->revents & POLLHUP) == 0);
+            MPIU_Assert ((it_plfd->revents & POLLERR) == 0);
+            MPIU_Assert ((it_plfd->revents & POLLNVAL) == 0);
+
+            mpi_errno = it_sc->handler(it_plfd, it_sc);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+        }
     }
+    
  fn_exit:
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;

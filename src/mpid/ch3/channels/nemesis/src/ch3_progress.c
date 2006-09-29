@@ -81,12 +81,13 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	  
 	if (!MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] && !MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE) && is_blocking)
 	{
-	    MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
+	    mpi_errno = MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
 	}
 	else
 	{
-	    MPID_nem_mpich2_test_recv (&cell, &in_fbox);
+	    mpi_errno = MPID_nem_mpich2_test_recv (&cell, &in_fbox);
 	}
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
 	if (cell)
 	{
@@ -196,7 +197,8 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		    }
 		    else
 		    {				       
-			MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
+			mpi_errno = MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
+                        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 			if (!complete)
 			{
                             rreq->ch.iov_offset = 0;

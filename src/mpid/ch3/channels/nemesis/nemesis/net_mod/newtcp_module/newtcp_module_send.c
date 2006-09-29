@@ -6,15 +6,29 @@
 
 #include "newtcp_module_impl.h"
 
+#define printf(x...) do {} while(0)
+
 #define NUM_PREALLOC_SENDQ 10
 #define MAX_SEND_IOV 10
+
+typedef struct MPID_nem_newtcp_module_send_q_element
+{
+    struct MPID_nem_newtcp_module_send_q_element *next;
+    size_t len;                        /* number of bytes left to send */
+    char *start;                       /* pointer to next byte to send */
+    MPID_nem_cell_ptr_t cell;
+    /*     char buf[MPID_NEM_MAX_PACKET_LEN];*/ /* data to be sent */
+} MPID_nem_newtcp_module_send_q_element_t;
 
 struct {MPIDI_VC_t *head;} send_list = {0};
 struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 
 static int num_elements = 0;//DARIUS
+static int num_alloced = 0;//DARIUS
+static int num_freed = 0;//DARIUS
 
 #define ALLOC_Q_ELEMENT(e) do {                                                                                                         \
+        ++num_alloced; /*DARIUS */                                                                                                      \
         if (S_EMPTY (free_buffers))                                                                                                     \
         {                                                                                                                               \
             MPIU_CHKPMEM_MALLOC (*(e), MPID_nem_newtcp_module_send_q_element_t *, sizeof(MPID_nem_newtcp_module_send_q_element_t),      \
@@ -29,7 +43,7 @@ static int num_elements = 0;//DARIUS
 
 /* FREE_Q_ELEMENTS() frees a list if elements starting at e0 through e1 */
 #define FREE_Q_ELEMENTS(e0, e1) S_PUSH_MULTIPLE (&free_buffers, e0, e1)
-#define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e) 
+#define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e)
 
 static int send_queued (MPIDI_VC_t *vc);
 
@@ -92,6 +106,12 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
             goto enqueue_cell_and_exit;
         }
     }
+
+/*     while(!Q_EMPTY (vc_ch->send_queue))//DARIUS */
+/*     { */
+/*         mpi_errno = send_queued (vc); /\* try to empty the queue *\/ */
+/*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
+/*     } */
     
     if (!Q_EMPTY (vc_ch->send_queue))
     {
@@ -107,39 +127,54 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     /* start sending the cell */
 
     CHECK_EINTR (offset, write (vc_ch->sc->fd, pkt, MPID_NEM_PACKET_LEN (pkt)));
-    MPIU_ERR_CHKANDJUMP1 (offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror (errno));
+    MPIU_Assert (offset != 0);//DARIUS
+    MPIU_ERR_CHKANDJUMP (offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
+    if (offset == -1)
+    {
+        if (errno == EAGAIN)
+            offset = 0;
+        else
+            MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror (errno));
+    }
+    
     /*if (offset != -1)
       printf("  write  %d (%d)\n", offset, MPID_NEM_PACKET_LEN (pkt));*/
 
     if (offset == MPID_NEM_PACKET_LEN (pkt))
+    {
+        printf ("sent %d (%d)\n", MPID_NEM_PACKET_LEN (pkt), pkt->header.seqno);//DARIUS
+        MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);
         goto fn_exit; /* whole pkt has been sent, we're done */
-
+    }
+    
+    printf ("sent %d of %d (%d)\n", offset, MPID_NEM_PACKET_LEN (pkt), pkt->header.seqno);//DARIUS
     /* part of the pkt wasn't sent, enqueue it */
     ALLOC_Q_ELEMENT (&e); /* may call MPIU_CHKPMEM_MALLOC */
-    MPID_NEM_MEMCPY (&e->buf, (char *)pkt + offset, MPID_NEM_PACKET_LEN (pkt));
+    e->cell = cell;
     e->len = MPID_NEM_PACKET_LEN (pkt) - offset;
-    e->start = e->buf;
+    e->start = (char *)pkt + offset;
     /*printf ("  enqueuing %d\n", e->len);*/
     
     Q_ENQUEUE_EMPTY (&vc_ch->send_queue, e);
     VC_L_ADD (&send_list, vc);
     
  fn_exit:
-    MPID_nem_queue_enqueue (MPID_nem_process_free_queue, cell);
     MPIU_CHKPMEM_COMMIT();    
     MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  enqueue_cell_and_exit:
     /* enqueue cell on send queue and exit */
     ALLOC_Q_ELEMENT (&e); /* may call MPIU_CHKPMEM_MALLOC */
-    MPID_NEM_MEMCPY (&e->buf, pkt, MPID_NEM_PACKET_LEN (pkt));
+    e->cell = cell;
     e->len = MPID_NEM_PACKET_LEN (pkt);
-    e->start = e->buf;
+    e->start = (char *)pkt;
     Q_ENQUEUE (&vc_ch->send_queue, e);
     goto fn_exit;
  fn_fail:
     MPIU_CHKPMEM_REAP();
     printf ("num_elements = %d\n", num_elements);//DARIUS    
+    printf ("num_alloced = %d\n", num_alloced);//DARIUS    
+    printf ("num_freed = %d\n", num_freed);//DARIUS    
     return mpi_errno;
 }
 
@@ -178,7 +213,9 @@ static int send_queued (MPIDI_VC_t *vc)
 
     /* write iov */
     CHECK_EINTR (bytes_sent, writev (vc_ch->sc->fd, iov, count));
+    MPIU_Assert (bytes_sent != 0);//DARIUS
     MPIU_ERR_CHKANDJUMP1 (bytes_sent == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP (bytes_sent == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
 
     /*if (bytes_sent != -1)
     {
@@ -196,20 +233,8 @@ static int send_queued (MPIDI_VC_t *vc)
     if (bytes_sent <= 0) /* nothing was sent */
         goto fn_exit;
 
-    e_first = Q_HEAD (vc_ch->send_queue);
-    if (bytes_sent == bytes_queued) /* everything was sent */
-    {
-        Q_REMOVE_ELEMENTS (&vc_ch->send_queue, e_first, e_last);
-        FREE_Q_ELEMENTS (e_first, e_last);
-
-        if (Q_EMPTY (vc_ch->send_queue))
-        {
-            VC_L_REMOVE (&send_list, vc);
-        }
-
-        goto fn_exit;
-    }
-    
+    printf ("packets sent\n");//DARIUS
+    e_first = Q_HEAD (vc_ch->send_queue);    
     e_last = NULL;
     e = Q_HEAD (vc_ch->send_queue);
     while (1)
@@ -219,18 +244,23 @@ static int send_queued (MPIDI_VC_t *vc)
         
         if (e->len < bytes_sent)
         {
+            printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (&e->cell->pkt), e->cell->pkt.header.seqno);//DARIUS
+            MPID_nem_queue_enqueue (MPID_nem_process_free_queue, e->cell);
             bytes_sent -= e->len;
             e_last = e;
             e = e->next;
         }
         else if (e->len > bytes_sent)
         {
+            printf ("  %d leftover\n", bytes_sent);//DARIUS
             e->len -= bytes_sent;
             e->start += bytes_sent;
             break;
         }
         else /* (e->len == bytes_sent) */
         {
+            printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (&e->cell->pkt), e->cell->pkt.header.seqno);//DARIUS
+            MPID_nem_queue_enqueue (MPID_nem_process_free_queue, e->cell);
             e_last = e;
             break;
         }
@@ -240,7 +270,10 @@ static int send_queued (MPIDI_VC_t *vc)
     {
         Q_REMOVE_ELEMENTS (&vc_ch->send_queue, e_first, e_last);
         FREE_Q_ELEMENTS (e_first, e_last);
+        if (Q_EMPTY (vc_ch->send_queue))
+            VC_L_REMOVE (&send_list, vc);
     }
+
     
  fn_exit:
     return mpi_errno;
@@ -296,6 +329,8 @@ int MPID_nem_newtcp_module_send_finalize()
 int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    printf ("*** connected *** %d\n", vc->ch.sc->fd); //DARIUS    
 
     if (!Q_EMPTY (vc->ch.send_queue))
     {
