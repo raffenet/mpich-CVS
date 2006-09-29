@@ -18,15 +18,12 @@ int MPID_nem_finalize()
     int rank = MPID_nem_mem_region.rank;
 
     /* this test is not the right one */
-    while (! MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[rank] ))
-    {
-	/*MPID_nem_dump_queue( MPID_nem_mem_region.RecvQ[rank] );*/
-	exit(0);
-	SKIP;
-    }
+/*     MPIU_Assert(MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[rank])); */
     
-    MPID_nem_net_module_finalize();
-    MPID_nem_detach_shared_memory (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
+    mpi_errno = MPID_nem_net_module_finalize();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    mpi_errno = MPID_nem_detach_shared_memory (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
 #ifdef PAPI_MONITOR
     my_papi_close();
