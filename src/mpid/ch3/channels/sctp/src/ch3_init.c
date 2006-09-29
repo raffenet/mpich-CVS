@@ -121,9 +121,12 @@ int MPIDI_CH3_Connect_to_root(const char * port_name,
 static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name, 
 			      MPIDI_VC_t ** new_vc)
 {
-    int nb, mpi_errno = MPI_SUCCESS;
+    int tmp_fd, no_nagle, port, real_port, mpi_errno = MPI_SUCCESS;
+    struct sctp_event_subscribe evnts;
+    MPIU_Size_t nb;
     char host_description[MAX_HOST_DESCRIPTION_LEN];
-    int port, port_name_tag;
+    int port_name_tag;
+    int bufsz = 233016;
     MPIDU_Sock_ifaddr_t ifaddr;
     struct sockaddr_in to_address;
     int hasIfaddr = 0;
@@ -136,6 +139,21 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
     char bizcard[MPI_MAX_PORT_NAME];            
     MPID_IOV* iovp = conn_acc_iov;
 
+
+    /* prepare a new socket for connect/accept */
+    no_nagle = 1;
+    port = 0;
+    bzero(&evnts, sizeof(evnts));
+    evnts.sctp_data_io_event=1;
+
+    if(sctp_open_dgm_socket2(MPICH_SCTP_NUM_STREAMS,
+			     0, 5, port, no_nagle,
+			     &bufsz, &evnts, &tmp_fd,
+                             &real_port) == -1) {
+        /* FIXME define error code */
+        goto fn_fail;
+    }
+    
     
     MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Connect to root with portstring %s",
 		   port_name );
@@ -156,15 +174,20 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
     }
     MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"port tag %d",port_name_tag);
 
-    /*------ begin TODO put into function (same in ch3_progress.c) */
-    /* function will take port_name_tag, ack & to_address, in the least */
 
+    /* store port temporarily so bizcard func works. put new tmp port in to pass to
+     *  the accept side.
+     */
+    port = MPIDI_CH3I_listener_port;
+    MPIDI_CH3I_listener_port = real_port;
     mpi_errno = MPIDI_CH3I_Get_business_card(bizcard, MPI_MAX_PORT_NAME);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) {
+        /* FIXME define error code */
         goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
+    MPIDI_CH3I_listener_port = port; /* restore */
     
     /* get the conn_acc_pkt ready */
     MPIDI_Pkt_init(&conn_acc_pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT); 
@@ -178,7 +201,12 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
     conn_acc_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) bizcard;
     conn_acc_iov[1].MPID_IOV_LEN = conn_acc_pkt.sc_conn_accept.bizcard_len;
 
-    /* write on control stream now. */ 
+    /* write on control stream now. send on the existing onetomany socket. the 
+     *  other side won't add this to the hash because of the pkt's type.  we
+     *  don't want the onetomany sockets to get caught up in the VC close
+     *  protocol when the tmp VC is killed (so we don't want to mix the new
+     *  tmp fd with the "standard" ones).
+     */ 
     for(;;) {
         
         mpi_errno = MPIDU_Sctp_writev_fd(MPIDI_CH3I_onetomany_fd, &to_address, iovp,
@@ -195,19 +223,15 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
             break;
         }
     }
-    /*------ end TODO put into function (same in ch3_progress.c) */
-    
-    /*  progress (reads), then handle VC upon receiving ACK  */        
-    MPIDI_CH3I_has_connect_ack_outstanding++;
-    /*  we will be using this VC for the tmp VC within connect/accept. ensure the
-     *   one-to-many fd isn't closed. (connect side)
-     */
-    MPIDI_CH3I_using_tmp_vc++;
-    
-    /* FIXME - MT - can concurrent connect/accept's happen? (will this variable be > 1 ?) */
-    while(MPIDI_CH3I_has_connect_ack_outstanding) {
+
+    /* for dynamic procs, we only progress on one fd... */
+    MPIU_Assert(MPIDI_CH3I_dynamic_tmp_vc == NULL);
+    MPIDI_CH3I_dynamic_tmp_fd = tmp_fd;
+
+    /* block on tmp_fd until conn_acc_pkt is ACK'd */
+    while(MPIDI_CH3I_dynamic_tmp_vc == NULL) {
         
-        mpi_errno = MPIDU_Sctp_wait(MPIDI_CH3I_onetomany_fd, MPIDU_SCTP_INFINITE_TIME,
+        mpi_errno = MPIDU_Sctp_wait(tmp_fd, MPIDU_SCTP_INFINITE_TIME,
                                     &event2);
         if (mpi_errno != MPI_SUCCESS)
         {
@@ -215,17 +239,21 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
             MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**progress_sock_wait");
             goto fn_fail;
         }
-        
+
+        /* inside handle_sctp_event, it changes
+         *  the read to an accept and calls itself recursively which ultimately sets
+         *  the value of MPIDI_CH3I_dynamic_tmp_vc.
+         */
         mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(&event2);
         if (mpi_errno != MPI_SUCCESS) {
             MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
-                                            "**ch3|sock|handle_sock_event");
+                                "**ch3|sock|handle_sock_event");
         }
     }
     
-    /* VC retrieved (and initialized) in progress above */
-    *new_vc = MPIDI_CH3I_connecting_vc;
-     
+
+    *new_vc = MPIDI_CH3I_dynamic_tmp_vc;
+
 
  fn_exit:
     return mpi_errno;
@@ -252,8 +280,6 @@ static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 			     "**pmi_get_size %d", pmi_errno);
     }
 
-    /* FIXME: This should probably be the same as MPIDI_VC_InitSock.  If
-       not, why not? */
     sendq_total = 0;    
     for (p = 0; p < pg_size; p++) {
 	MPIDI_CH3_VC_Init(&(pg_p->vct[p]));  /* TODO check success */

@@ -120,7 +120,7 @@ int MPIDU_Sctp_event_dequeue(struct MPIDU_Sctp_event * eventp)
     
     // myct: check if queue is empty
     if(eventq_head == NULL || eventq_head->size <= 0) {
-      mpi_errno = -1;
+      mpi_errno--;
       eventp->op_type = 100;
       return mpi_errno;
     }
@@ -227,6 +227,10 @@ void inline MPIDU_Sctp_stream_init(MPIDI_VC_t* vc, MPID_Request* req, int stream
     {
       /* myct: don't put it in sendQ, but directly in Global_SendQ */
       SEND_CONNECTED(vc, stream) = MPIDI_CH3I_VC_STATE_CONNECTING;
+
+      /* need to update state for upcalls to close protocol to fully work, and barriers */
+      if(vc->state == MPIDI_VC_STATE_INACTIVE)
+          vc->state = MPIDI_VC_STATE_ACTIVE;
 
       // should be the connection request 
       MPIDU_Sctp_post_writev(vc, conn_req, 0, NULL, stream);

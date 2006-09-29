@@ -240,8 +240,6 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
     
     MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to CONN_STATE_CLOSING");
 
-    // myct: common these out for now, because connection struct is changed
-    //vc->ch.conn->state = CONN_STATE_CLOSING;
     mpi_errno = MPIDU_Sctp_post_close(vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -275,23 +273,23 @@ int MPIDI_CH3I_Progress_init(int pg_size)
 #   endif
 
     MPIDI_CH3I_onetomany_fd = -1;
-    MPIDI_CH3I_has_connect_ack_outstanding = 0;
-    MPIDI_CH3I_connecting_vc = NULL;
-    MPIDI_CH3I_using_tmp_vc = 0;
+    MPIDI_CH3I_dynamic_tmp_vc = NULL;
+    MPIDI_CH3I_dynamic_tmp_fd = -1;
+    
     
     mpi_errno = MPIDU_Sctp_init();
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    /* brad : need to initialize eventq */
+    /* initialize eventq */
     eventq_head = NULL;
     eventq_tail = NULL;
     
-    /* myct: initialize hash table */
+    /* initialize hash table */
     MPIDI_CH3I_assocID_table = hash_init(pg_size, sizeof(MPIDI_CH3I_Hash_entry), INT4_MAX, 0);
 
-    /* myct: initialize global sendQ */
+    /* initialize global sendQ */
     Global_SendQ_init();
 
   fn_exit:
@@ -317,7 +315,14 @@ int MPIDI_CH3I_Progress_finalize(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-    /* brad : no concept of listener for SCTP.  one-to-many socket already closed here. */
+    
+    /* added code to close one-to-many socket here to simplify MPIDI_CH3_Channel_close */
+    if (close(MPIDI_CH3I_onetomany_fd) == -1) {    
+        mpi_errno--;/*FIXME need new error code */
+        goto fn_fail;
+    }    
+
+    /* no concept of listener for SCTP  */
     
     /* Shut down the listener */
 /*     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock); */
@@ -412,13 +417,13 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             int stream = event-> sri.sinfo_stream;
 	    int num_bytes = event-> num_bytes;
             /* see if this is a new association */
-            
-            if((result = hash_find(MPIDI_CH3I_assocID_table, 
-				   (int4) event->sri.sinfo_assoc_id)) == NULL)
+
+            result = hash_find(MPIDI_CH3I_assocID_table, (int4) event->sri.sinfo_assoc_id);
+
+            if((result == NULL) && (MPIDI_CH3I_onetomany_fd == event->fd) )
             {
                 /* new association */
                 
-		/* May 3, Hmm, local allocation? */
                 result = &lresult;
                 result->assoc_id = event->sri.sinfo_assoc_id;
                 
@@ -428,17 +433,14 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 		MPIDI_PG_t * pg;
 		MPIDI_CH3_Pkt_t * pkt = event->user_ptr;
 		char * data_ptr = event->user_ptr;
-
-		/* a new association so the first message must contain the pg_id, or
-		 *  our protocol has been broken...
-		 */
-                
+              
                 if(pkt->type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
                 {
-                    /*  a connect is being initiated by the other side  */
+                    /*  a connect is being initiated by the other side, and we've never seen
+                     *   this association.
+                     */
                     
-                    /* need to handle it now so hash entry exists for subsequent mgss. so that
-                     *  this is done instantaneously, change the type to ACCEPT and call
+                    /* so that this is done instantaneously, change the type to ACCEPT and call
                      *  this recursively (this way we can put the accept code in its own place)
                      */
                     event->op_type = MPIDU_SCTP_OP_ACCEPT;
@@ -446,11 +448,10 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 
                     goto fn_exit;
                 }
-/* 		if(pkt->type != MPIDI_CH3I_PKT_SC_OPEN_REQ) { */
-/*                     complete = 1; */
-/*                     while(complete); */
-/*                     printf("pkt->type = %d (open %d)", pkt->type, MPIDI_CH3I_PKT_SC_OPEN_REQ); */
-/*                 } */
+
+		/* a new association so the first message must contain the pg_id, or
+		 *  our protocol has been broken...
+		 */
 		MPIU_Assert(pkt->type == MPIDI_CH3I_PKT_SC_OPEN_REQ);
 
                                 
@@ -475,31 +476,60 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             else
             {
                 /* we have seen this association before */
-                MPIDI_VC_t * vc = result-> vc;
-		MPIDI_CH3_Pkt_t * pkt = NULL;
+                MPIDI_VC_t * vc;
+                MPIDI_CH3_Pkt_t * pkt =  event->user_ptr;
+
+                if(MPIDI_CH3I_dynamic_tmp_fd == event->fd)
+                {
+                    if(MPIDI_CH3I_dynamic_tmp_vc == NULL &&
+                       pkt-> type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
+                    {
+                        /*  the other side is ack'ing our connect.  */
+
+                        /* TODO assert received on control stream? */
+                        
+                        /*  process this instantaneously. Change the type to ACCEPT
+                         *  and call this recursively (this way we can put the
+                         *  accept code in its own place)
+                         */
+                        event->op_type = MPIDU_SCTP_OP_ACCEPT;
+                        mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(event);
+
+                        goto fn_exit;
+                    }
+                    else
+                    {
+                        /* FIXME is it possible for tmp_vc to be non-NULL and pkt
+                         *         to be an accept pkt?
+                         */
+                        
+                        /* in the middle of an MPI_Connect/Accept, so use tmp_vc */
+                        vc = MPIDI_CH3I_dynamic_tmp_vc;
+                    }
+                }                
+                else
+                {
+                    /* business as usual */
+                    vc = result-> vc;
+                }
+
                 char* adv_buffer = (char*) event-> user_ptr;
 
 		/* VC cannot be NULL */
-		MPIU_Assert(vc != NULL);
-     
-		/* NOTE : if we ever use control stream, then we need to put
-		 *  the appropriate code here.
-		 */
+		MPIU_Assert(vc != NULL);    
                     
-		/* myct: whatever in the adv_buffer is not control packet */
+		/* whatever is in the adv_buffer is not control packet */
 		MPID_Request* rreq = RECV_ACTIVE(vc, stream);
 		MPID_IOV* iovp;
 			
 		int actual_bytes_read = event-> num_bytes;
 
-		// myct: recv active is NULL, we are waiting for a pkt/(pkt+msg)
+		// if recv active is NULL, we are waiting for a pkt/(pkt+msg)
 		if(rreq == NULL) {
-		    /* FIXME brad : what if not a full pkt? */
+		    /* FIXME brad : what if not a full pkt (!MSG_EOR)? */
 		    
 		    MPIU_Assert(num_bytes >= sizeof(MPIDI_CH3_Pkt_t));
 			
-		    pkt = event->user_ptr;
-
 		    /* if it's connection PKT, discard */
 		    if(pkt-> type == MPIDI_CH3I_PKT_SC_OPEN_REQ) 
 			break;
@@ -507,18 +537,9 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
                     /* need to do ACCEPT stuff if this is an initial pkt */
                     if(pkt-> type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
                     {
-                        /*  a connect is being initiated by the other side  */
-
-                        /* TODO assert received on control stream? */
-                        
-                        /* hash entry already exists but process
-                         *  this instantaneously. Change the type to ACCEPT
-                         *  and call this recursively (this way we can put the
-                         *  accept code in its own place)
-                         */
+                        /* I don't know if this can happen here... */
                         event->op_type = MPIDU_SCTP_OP_ACCEPT;
                         mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(event);
-
                         goto fn_exit;
                     }
 		    
@@ -528,11 +549,11 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 			MPIU_ERR_POP(mpi_errno);
 		    }
 		    
-		    /* brad : rreq can equal NULL (e.g. in close protocol), so need to
+		    /*  rreq can equal NULL (e.g. in close protocol), so need to
 		     *    break cases apart to avoid dereferencing a NULL ptr
 		     */
 		    if(rreq) {	
-			// myct: minus the size of envelope
+			/* minus the size of envelope */
 			actual_bytes_read -= sizeof(*pkt); 
 			adv_buffer += sizeof(*pkt);
 		    }
@@ -576,8 +597,6 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 	    }
 	    
 	    if (complete){
-		/* brad : dQ'd in scheduling... need to reset active
-		   MPIDI_CH3I_SendQ_dequeue_x(vc, stream_no); */
 		
 		if(MPIDI_CH3I_VC_STATE_CONNECTING == SEND_CONNECTED(vc, stream_no)) {
 		    SEND_CONNECTED(vc, stream_no) = MPIDI_CH3I_VC_STATE_CONNECTED;
@@ -598,12 +617,12 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 	    } else /* more data to send */ {
 		printf("this part not tested yet\n");
 			
-		// myct: force to finish sending the send active one!!
+		/* force to finish sending the send active one!! */
 		for(;;){
 		    iovp = sreq->dev.iov;  /* FIXME connection_iov? */
 			
-		    //mpi_errno = MPIDU_Sock_writev(conn->sock, iovp, sreq->dev.iov_count, &nb);
-		    mpi_errno = MPIDU_Sctp_writev(vc, iovp, sreq->dev.iov_count, stream_no, 0, &nb);
+		    mpi_errno = MPIDU_Sctp_writev(vc, iovp, sreq->dev.iov_count,
+                                                  stream_no, 0, &nb);
 			
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (mpi_errno != MPI_SUCCESS) {
@@ -624,21 +643,19 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 			}
 			
 			if (complete) {
-			    /* brad : dQ'd in scheduling... need to reset active    MPIDI_CH3I_SendQ_dequeue_x(vc, stream_no); */
+			    /*  need to reset active  */
 			    SEND_ACTIVE(vc, stream_no) = NULL;
-			    //mpi_errno = connection_post_sendq_req(conn);
-			    if (mpi_errno != MPI_SUCCESS) {
-				MPIU_ERR_POP(mpi_errno);
-			    }
+                            
 			    break;
 			}
 		    }
 		    else
 			{
 			    MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
-			    // put it back to sendQ
-			    /* myct: the offset is wrong, needs to be changed */
-			    MPIDU_Sctp_post_writev(vc, sreq, sreq->dev.iov_count, NULL, stream_no);
+			    /* put it back to sendQ */
+			    /* the offset is wrong, needs to be changed */
+			    MPIDU_Sctp_post_writev(vc, sreq, sreq->dev.iov_count,
+                                                   NULL, stream_no);
 			    
 			    /* --BEGIN ERROR HANDLING-- */
 			    if (mpi_errno != MPI_SUCCESS) {
@@ -653,10 +670,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 			}
 		}
 	    } 
-            
-            
-	    /* bibo */
-
+                        
 	    break;
 	}
 	    	    
@@ -674,7 +688,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
                 MPIU_Free(vc->ch.pkt);
             vc->ch.pkt = NULL;
 
-            /* TODO brad : add asserts? */
+            /* TODO  add asserts? */
             	    
 	    break;
 	}
@@ -693,112 +707,114 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
         MPIDI_CH3_Pkt_t * pkt = event->user_ptr;
         char * data_ptr = event->user_ptr;
         
-        MPIU_Assert(pkt->type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT);                                
+        char host_description[MAX_HOST_DESCRIPTION_LEN];
+        int port;
+        MPIDU_Sock_ifaddr_t ifaddr;
+        int hasIfaddr = 0;
         
-        result = hash_find(MPIDI_CH3I_assocID_table, 
-                           (int4) event->sri.sinfo_assoc_id);
-        if(result != NULL)
+        MPIU_Assert(pkt->type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
+
+        /* allocate tmp VC.  this VC is used to exchange PG info w/ dynamic procs */
+        vc = (MPIDI_VC_t *) MPIU_Malloc(sizeof(MPIDI_VC_t));
+        /* --BEGIN ERROR HANDLING-- */
+        if (vc == NULL)
         {
-            /* if this is NOT a new assocID, we've seen this PG but the two procs could
-             *  contain different PGs themselves in their bizcard cache, so the exchange
-             *  still occurs.
-             */
-            vc = result->vc;
-        } else {
-            /* if this is a new assocID, then it's a new PG (FIXME: NOT TRUE!) and we need a new VC malloc'd */
-            
-            char host_description[MAX_HOST_DESCRIPTION_LEN];
-            int port;
-            MPIDU_Sock_ifaddr_t ifaddr;
-            int hasIfaddr = 0;
-
-            
-            /* allocate tmp VC.  this VC is used to exchange PG info w/ dynamic procs */
-            vc = (MPIDI_VC_t *) MPIU_Malloc(sizeof(MPIDI_VC_t));
-            /* --BEGIN ERROR HANDLING-- */
-            if (vc == NULL)
-            {
-                mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
-                                                 __LINE__, MPI_ERR_OTHER,
-                                                 "**nomem", NULL);
-                goto fn_exit;
-            }
-
-            /* VC marked as temporary (that what a NULL PG means) */
-            MPIDI_VC_Init(vc, NULL, 0);
-            MPIDI_CH3_VC_Init(vc);  /* TODO check success */
-            
-            /* data after pkt contains bizcard */
-            data_ptr += sizeof(MPIDI_CH3_Pkt_t);
-            
-            mpi_errno = my_MPIDU_Sock_get_conninfo_from_bc( data_ptr, host_description,
-                                                            sizeof(host_description),
-                                                            &port, &ifaddr, &hasIfaddr );
-
-            if(mpi_errno) {
-                MPIU_ERR_POP(mpi_errno);
-            }
-
-            // myct: save the sockaddr_in, we need this anyways
-            giveMeSockAddr(ifaddr.ifaddr, port, &vc->ch.to_address);
-
-            
-            /* TODO handle port_name_tag? */
-            
-            /* put temporarily in hash. remove in MPIDI_CH3_Cleanup_after_connection
-             *  so that we can put an entry in the hash containing a VC with a legit PG
-             *  field (because this tmp connection will have the same assocID as the
-             *  "real" connection will).
-             *  NOTE: if this is a reused VC, then don't remove in Cleanup
-             */
-            result = &lresult;
-            result->assoc_id = event->sri.sinfo_assoc_id;
-            result->vc = vc;        
-            vc->ch.sinfo_assoc_id = result->assoc_id;
-            hash_insert(MPIDI_CH3I_assocID_table, result);
-    
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
+                                             __LINE__, MPI_ERR_OTHER,
+                                             "**nomem", NULL);
+            goto fn_exit;
         }
 
-        /* set the port_name_tag on this VC for verification later */
-        vc->ch.port_name_tag = pkt->sc_conn_accept.port_name_tag;
-            
-        if(pkt->sc_conn_accept.ack) {
-            /* for now we decrement so that progress inside connect_to_root
-             *  stops. we need a way to access this VC there, so we set this
-             *  global. it may break in MT...
-             */
-            MPIDI_CH3I_has_connect_ack_outstanding--;
-            MPIDI_CH3I_connecting_vc = vc;
-            /* alternatively, if concerned about MT, could have a
-             *  connectq that will be ref'd in connect_to_root that
-             *  would match on port_name_tag as the acceptq does...
-             */            
-            
-        } else {
-            /* go ahead and send the ACK now on the control stream */
+        /* VC marked as temporary (that what a NULL PG means) */
+        MPIDI_VC_Init(vc, NULL, 0);
+        MPIDI_CH3_VC_Init(vc);  /* TODO check success */
 
-            union MPIDI_CH3_Pkt conn_acc_pkt, *pkt2;
-            int nb, iov_cnt = 2;
+        /* set the port_name_tag on this VC for verification later */
+        vc->ch.port_name_tag = pkt->sc_conn_accept.port_name_tag;        
+            
+        /* data after pkt contains bizcard */
+        data_ptr += sizeof(MPIDI_CH3_Pkt_t);
+            
+        mpi_errno = my_MPIDU_Sock_get_conninfo_from_bc( data_ptr, host_description,
+                                                        sizeof(host_description),
+                                                        &port, &ifaddr, &hasIfaddr );
+        if(mpi_errno) {
+            MPIU_ERR_POP(mpi_errno);
+        }
+
+        /*  save the sockaddr_in of new VC */
+        giveMeSockAddr(ifaddr.ifaddr, port, &vc->ch.to_address);
+               
+        
+        if(pkt->sc_conn_accept.ack) {
+            /* this is the connect side */
+            
+            /* the fd was opened already, so that we could pass the SCTP port # to
+             *  the accept side in the initial bizcard.
+             */
+            vc->ch.fd = MPIDI_CH3I_dynamic_tmp_fd;
+
+            /* set so connect_to_root returns the correct VC */
+            MPIDI_CH3I_dynamic_tmp_vc = vc;            
+
+        } else {
+            /* this is the accept side */
+
+            /* the accept side may not have called MPI_Accept at this point and may
+             *  have just been in the progress engine and received the accept request.
+             *  Currently, we go ahead and create the new socket and ack to the
+             *  connector with this new sockets info.  However, MPIDI_CH3I_dynamic_tmp_fd
+             *  should not be set until this is dequeued from the acceptQ... which occurs
+             *  in MPIDI_CH3_Complete_unidirectional_connection2
+             */
+            
+            int tmp_fd, no_nagle, suggested_port, real_port;
+            struct sctp_event_subscribe evnts;
+            MPIU_Size_t nb;
+
+            union MPIDI_CH3_Pkt conn_acc_pkt;
+            int iov_cnt = 2;
             MPID_IOV conn_acc_iov[iov_cnt];
             char bizcard[MPI_MAX_PORT_NAME];            
             MPID_IOV* iovp = conn_acc_iov;
+            
+            /* open new socket */            
+            no_nagle = 1;
+            suggested_port = 0;
+            bzero(&evnts, sizeof(evnts));
+            evnts.sctp_data_io_event=1;
+            if(sctp_open_dgm_socket2(MPICH_SCTP_NUM_STREAMS,
+                                     0, 5, suggested_port, no_nagle,
+                                     &MPIDU_Sctpi_socket_bufsz, &evnts, &tmp_fd,
+                                     &real_port) == -1) {
+                /* FIXME define error code */
+                goto fn_fail;
+            }
+            vc->ch.fd = tmp_fd;
 
-            /*  we will be using this VC for the tmp VC within connect/accept. ensure the
-             *   one-to-many fd isn't closed. (accept side)
+            /*  the global tmp_fd shouldn't be set until dequeued from the accept
+             *   queue since we only allow one to occur at a time (and like
+             *   multiple_ports, they may happen out of order). now done in
+             *   MPIDI_CH3_Complete_unidirectional_connection2
              */
-            MPIDI_CH3I_using_tmp_vc++;
-            
-            
-            /*------ begin TODO put into function (pasted from ch3_init.c) */
-            /* function will take port_name_tag, ack & to_address, in the least */
+/*             MPIDI_CH3I_dynamic_tmp_fd = tmp_fd; */
 
+
+            /* store port temporarily so bizcard func works. put new tmp port in to
+             *  pass to the connect side.
+             */
+            suggested_port = MPIDI_CH3I_listener_port;
+            MPIDI_CH3I_listener_port = real_port;
             mpi_errno = MPIDI_CH3I_Get_business_card(bizcard, MPI_MAX_PORT_NAME);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS) {
+                /* FIXME define error code */
                 goto fn_fail;
             }
             /* --END ERROR HANDLING-- */
-            
+            MPIDI_CH3I_listener_port = suggested_port; /* restore */
+
+    
             /* get the conn_acc_pkt ready */
             MPIDI_Pkt_init(&conn_acc_pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT); 
             conn_acc_pkt.sc_conn_accept.bizcard_len = (int) strlen(bizcard) + 1; 
@@ -811,10 +827,10 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             conn_acc_iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) bizcard;
             conn_acc_iov[1].MPID_IOV_LEN = conn_acc_pkt.sc_conn_accept.bizcard_len;
 
-            /* write on control stream now. */ 
+            /* send conn_acc_pkt (ack=1) from my new fd to other side's new fd */
             for(;;) {
         
-                mpi_errno = MPIDU_Sctp_writev_fd(MPIDI_CH3I_onetomany_fd,
+                mpi_errno = MPIDU_Sctp_writev_fd(tmp_fd,
                                                  &vc->ch.to_address, iovp,
                                                  iov_cnt, MPICH_SCTP_CTL_STREAM, 0, &nb );
                 /* --BEGIN ERROR HANDLING-- */
@@ -829,13 +845,12 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
                     break;
                 }
             }
-            /*------ end TODO put into function (pasted from ch3_init.c) */
             
-            
+                
             /* put into acceptq and signal completion so upcalls in ch3u_port.c work */
             MPIDI_CH3I_Acceptq_enqueue(vc);
-	    MPIDI_CH3_Progress_signal_completion();            
-        }
+	    MPIDI_CH3_Progress_signal_completion();
+        }      
                         
         break;        
     }
@@ -923,7 +938,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 
     int hasIfaddr = 0;
     int rc;
-    //MPIDI_CH3I_Connection_t * conn = 0;
+
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
@@ -966,11 +981,12 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
             MPIU_ERR_POP(mpi_errno);
         }
 
-        // myct: save the sockaddr_in, we need this anyways
+        /* save the sockaddr_in */
         giveMeSockAddr(ifaddr.ifaddr, port, &vc->ch.to_address);
     }
 
-    // myct: setup the connection packet, and initialize iov arrays
+    /* setup the connection packet, and initialize iov arrays */
+    
     vc->ch.pkt = (void*) MPIU_Malloc(sizeof(MPIDI_CH3_Pkt_t));
     if (vc->ch.pkt == NULL)
     {
@@ -1018,6 +1034,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 /* end MPIDI_CH3I_VC_post_connect() */
 
 /* myct: doesn't need this. we don't have anything dynamically allocated */
+/* brad: don't understand this comment... */
 
 #undef FUNCNAME
 #define FUNCNAME stream_post_sendq_req
@@ -1043,7 +1060,7 @@ static inline int stream_post_sendq_req(MPIDI_VC_t * vc, int stream)
         
     MPIDI_FUNC_EXIT(MPID_STATE_STREAM_POST_SENDQ_REQ);
     return mpi_errno;
-} /* myct: this func is used */
+}
 
 
 #undef FUNCNAME
@@ -1072,6 +1089,7 @@ static inline void connection_post_send_pkt_and_pgid(MPIDI_VC_t * vc, int stream
 }
 
 /* duplicate existed in sctp_util.c so made it non-static */
+
 /* #undef FUNCNAME */
 /* #define FUNCNAME adjust_iov */
 /* #undef FCNAME */
@@ -1198,6 +1216,10 @@ static int schedule_func(){
     int blocked = FALSE;
 
     buf_sz = MPIDU_Sctpi_socket_bufsz;
+
+    /* can't block if we don't know where things are coming from... */
+    if(MPIDI_CH3I_dynamic_tmp_fd != -1)
+        timeout = 0;
     
     /* buffer stuff */
     BufferNode_t* bf_node = NULL;
@@ -1246,6 +1268,12 @@ static int schedule_func(){
         
 	sctp_setblock(fd, FALSE);
 
+        /* read from dynamic_fd if it is exists and hasn't been tried already */
+        if(MPIDI_CH3I_dynamic_tmp_fd != -1 && fd != MPIDI_CH3I_dynamic_tmp_fd) {
+            fd = MPIDI_CH3I_dynamic_tmp_fd;
+            continue;
+        }
+
 	/* WRITE LOOP begins */
 
 	q_tail = Global_SendQ.tail;
@@ -1255,7 +1283,7 @@ static int schedule_func(){
 	    Global_SendQ_dequeue(req);
 
 	    if(req) {
-		/* myct: assertion */
+
 		MPIU_Assert(SEND_ACTIVE(req->ch.vc, req->ch.stream) == req);
 	   
 		/* keep sending until EAGAIN */
@@ -1276,7 +1304,9 @@ static int schedule_func(){
 		
 		sz = (sz < 0)? 0 : sz;
 
-		/* adjust iov here, if it's done, enqueue event, else keep it in global sendQ */
+		/* adjust iov here, if it's done, enqueue event, else keep it
+                 *  in global sendQ
+                 */
 		if(adjust_posted_iov(iov_ptr, sz)) {
 		    mpi_errno = MPIDU_Sctp_event_enqueue(MPIDU_SCTP_OP_WRITE,
 							 sz, NULL, vc->ch.fd, vc, NULL,
@@ -1285,7 +1315,7 @@ static int schedule_func(){
 		    MPIDI_DBG_PRINTF((50, FCNAME, "wrote: %d bytes @ strm: %d", sz, req->ch.stream));
 		}
 		else {
-		    // myct: need to put it back to globalSendQ, doesn't need to post again
+		    /* myct: need to put it back to globalSendQ, doesn't need to post again*/
 		    Global_SendQ_enqueue(vc, req, stream_loop);
 		}
 	    }
@@ -1327,9 +1357,9 @@ static inline int adjust_posted_iov(SCTP_IOV* post_ptr, MPIU_Size_t nb) {
 			      nb);
     } else {
 	min_bytes = POST_BUF_MIN(post_ptr);
-	//printf("NOT iov: %d %d\n", min_bytes, event->num_bytes);
+
 	if(min_bytes == nb) {
-	    /* sent complete */
+	    /* send complete */
 	    complete = 1;
 	} else {
 	    POST_BUF(post_ptr) += nb;
@@ -1470,12 +1500,21 @@ int MPIDI_CH3_Pending(MPIDI_VC_t* vc) {
 int MPIDI_CH3_Channel_close( void )
 {
     /* When called, Outstanding_close_ops in ch3u_handle_connection should be zero */
+    /* WARNING! : Outstanding_close_ops can be zero prematurely if MPI_Comm_disconnect
+     *              is called.
+     */
     int mpi_errno = MPI_SUCCESS;
-    
+
+    /* sept29: is this code dated now that close is moved to MPIDI_CH3I_Progress_finalize ? */
+       
     /* still have items in the sendQ so handle them before close */
-    while(sendq_total)
+    while(sendq_total)  /* FIXME might need to be more sophisticated with multiple fd's */
+                        /*    For example, if the sendq_total is non-zero, we could have
+                         *    writes outstanding on multiple fd's (the "normal" one and
+                         *    the tmp one used for dynamic procs)
+                         */
     {
-        printf("sendQ not empty\n");
+/*         printf("sendQ not empty\n"); */
         int mpi_errno = MPI_SUCCESS;
         MPIDU_Sctp_event_t event2;
         mpi_errno = MPIDU_Sctp_wait(MPIDI_CH3I_onetomany_fd, MPIDU_SCTP_INFINITE_TIME,
@@ -1486,30 +1525,68 @@ int MPIDI_CH3_Channel_close( void )
             MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**progress_sock_wait");
             goto fn_fail;
         }
-        mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(&event2);  /* recursive */
+        mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(&event2);
         if (mpi_errno != MPI_SUCCESS) {
             MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
                                             "**ch3|sock|handle_sock_event");
         }
     }
                    
-    if(MPIDI_CH3I_using_tmp_vc) {
-        /* when using a tmp VC for dynamic processes, we don't want close
-         *  protocol to close the single one-to-many socket
+    if(MPIDI_CH3I_dynamic_tmp_vc) {
+        /*  be sure to not close prematurely when a close pkt is received from
+         *  a recently disconnected VC on the main onetomany socket
          */
-        MPIDI_CH3I_using_tmp_vc--;
+        if(MPIDI_CH3I_dynamic_tmp_vc->state == MPIDI_VC_STATE_INACTIVE) {
+            
+        /* when using a tmp VC for dynamic processes, close the socket
+         *  and reset variables since we only do one connect/accept pair at a time.
+         */
+            close(MPIDI_CH3I_dynamic_tmp_fd); /* FIXME check for errors */
+            MPIDI_CH3I_dynamic_tmp_vc = NULL;
+            MPIDI_CH3I_dynamic_tmp_fd = -1;
+        }
     }
     /* close single one-to-many socket when all close ops are receieved on
-     *  "normal" VC usage
+     *  "normal" VC usage.  only close this if all VCs in all PGs are INACTIVE
      */
-    else if(close(MPIDI_CH3I_onetomany_fd) == -1)
+    else
     {
-        mpi_errno--;/*FIXME need new error code */
-        goto fn_fail;
+        /* moved to MPIDI_CH3I_Progress_finalize */
+        
+/*         MPIDI_PG_t * pg; */
+/*         MPIDI_VC_t * vc; */
+/*         int i, pg_size; */
+
+/*         MPIDI_PG_Iterate_reset(); */
+/*         MPIDI_PG_Get_next(&pg); */
+/*         while(pg) { */
+/*             i=0; */
+/*             pg_size = pg->size; */
+/*             while(i < pg_size) { */
+/*                 if(pg->vct[i].state != MPIDI_VC_STATE_INACTIVE) */
+/*                 { */
+/*                     goto fn_exit;  /\* exit and don't close *\/ */
+/*                 } */
+/*                 i++; */
+/*             } */
+/*             MPIDI_PG_Get_next(&pg); */
+/*         } */
+
+/*         /\* FIXME - this will close the socket if all VCs are inactive */
+/*          *            and we're not in finalize.  This should only happen */
+/*          *            in finalize so this should be moved to */
+/*          *            MPIDI_CH3I_Progress_finalize */
+/*          *\/ */
+/*         if (close(MPIDI_CH3I_onetomany_fd) == -1) {     */
+/*             mpi_errno--;/\*FIXME need new error code *\/ */
+/*             goto fn_fail; */
+/*         } */
     }
-    
- fn_fail:
+
+ fn_exit:
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 

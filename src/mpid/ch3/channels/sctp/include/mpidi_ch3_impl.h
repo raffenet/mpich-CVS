@@ -51,9 +51,9 @@ int sendq_total;
 extern int MPIDI_CH3I_listener_port;
 
 /* used for dynamic processes */
-int MPIDI_CH3I_has_connect_ack_outstanding;
-MPIDI_VC_t * MPIDI_CH3I_connecting_vc;
-int MPIDI_CH3I_using_tmp_vc;
+MPIDI_VC_t * MPIDI_CH3I_dynamic_tmp_vc;
+int MPIDI_CH3I_dynamic_tmp_fd;
+
 
 /* myct: determine the stream # of a req */
 /* brad : want to avoid stream zero (since it's invalid in SCTP) as well as the highest
