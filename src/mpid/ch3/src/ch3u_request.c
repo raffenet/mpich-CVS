@@ -98,6 +98,9 @@ MPID_Request * MPID_Request_create()
     return req;
 }
 
+/* Removing this routine; it was only used in cancel send, and is 
+   nothing but an Object_add_ref */
+#if 0
 #if !defined(MPIDI_CH3_Request_add_ref)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Request_add_ref
@@ -127,7 +130,10 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
 }
 #endif
+#endif /* 0 */
 
+#if 0 /* Removing this routine as well, only used within 
+	 the MPID_Request_release macro */
 #if !defined(MPIDI_CH3_Request_release_ref)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Request_release_ref
@@ -161,7 +167,11 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
 }
 #endif
-
+#endif /* 0 */
+/* FIXME: We need a lighter-weight version of this to avoid all of the
+   extra checks.  One posibility would be a single, no special case (no 
+   comm, datatype, or srbuff to check) and a more general (check everything)
+   version.  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Request_destroy
 #undef FCNAME

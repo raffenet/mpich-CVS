@@ -10,6 +10,7 @@
 /* #define MPIDI_CH3_EAGER_MAX_MSG_SIZE (1500 - sizeof(MPIDI_CH3_Pkt_t)) */
 #define MPIDI_CH3_EAGER_MAX_MSG_SIZE   (128*1024)
 
+#if 0
 /*
  * Channel level request management macros
  */
@@ -25,6 +26,7 @@
     MPIU_Object_release_ref(req, req_ref_count);                        \
     MPIU_Assert(req->ref_count >= 0);                                   \
 }
+#endif
 
 /*
  * MPIDI_CH3_Progress_signal_completion() is used to notify the progress

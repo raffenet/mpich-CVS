@@ -17,6 +17,7 @@
 #endif
 
 
+#if 0
 /*
  * Channel level request management macros
  */
@@ -32,7 +33,7 @@
     MPIU_Object_release_ref((req_), (req_ref_count_));			\
     MPIU_Assert((req_)->ref_count >= 0);				\
 }
-
+#endif
 
 /*
  * MPIDI_CH3_Progress_signal_completion() is used to notify the progress

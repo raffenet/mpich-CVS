@@ -10,12 +10,12 @@
 #define FUNCNAME create_request
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offset, MPIU_Size_t nb)
+static MPID_Request * create_request(MPID_IOV * iov, int iov_count, 
+				     int iov_offset, MPIU_Size_t nb)
 {
     MPID_Request * sreq;
     int i;
     MPIDI_STATE_DECL(MPID_STATE_CREATE_REQUEST);
-    /*MPIDI_STATE_DECL(MPID_STATE_MEMCPY);*/
 
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
     
@@ -27,22 +27,12 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind = MPID_REQUEST_SEND;
     
-    /*
-    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-    memcpy(sreq->dev.iov, iov, iov_count * sizeof(MPID_IOV));
-    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-    */
     for (i = 0; i < iov_count; i++)
     {
 	sreq->dev.iov[i] = iov[i];
     }
     if (iov_offset == 0)
     {
-	/*
-	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN);
-	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	*/
 	MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt;
@@ -58,25 +48,34 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count, int iov_offs
 }
 
 /*
- * MPIDI_CH3_iStartMsgv() attempts to send the message immediately.  If the entire message is successfully sent, then NULL is
- * returned.  Otherwise a request is allocated, the iovec and the first buffer pointed to by the iovec (which is assumed to be a
- * MPIDI_CH3_Pkt_t) are copied into the request, and a pointer to the request is returned.  An error condition also results in a
- * request be allocated and the errror being returned in the status field of the request.
+ * MPIDI_CH3_iStartMsgv() attempts to send the message immediately.  If the 
+ * entire message is successfully sent, then NULL is
+ * returned.  Otherwise a request is allocated, the iovec and the first buffer 
+ * pointed to by the iovec (which is assumed to be a
+ * MPIDI_CH3_Pkt_t) are copied into the request, and a pointer to the request 
+ * is returned.  An error condition also results in a
+ * request be allocated and the errror being returned in the status field of 
+ * the request.
  */
 
-/* XXX - What do we do if MPID_Request_create() returns NULL???  If MPIDI_CH3_iStartMsgv() returns NULL, the calling code
-   assumes the request completely successfully, but the reality is that we couldn't allocate the memory for a request.  This
+/* XXX - What do we do if MPID_Request_create() returns NULL???  
+   If MPIDI_CH3_iStartMsgv() returns NULL, the calling code
+   assumes the request completely successfully, but the reality is that we 
+   couldn't allocate the memory for a request.  This
    seems like a flaw in the CH3 API. */
 
-/* NOTE - The completion action associated with a request created by CH3_iStartMsgv() is alway MPIDI_CH3_CA_COMPLETE.  This
-   implies that CH3_iStartMsgv() can only be used when the entire message can be described by a single iovec of size
+/* NOTE - The completion action associated with a request created by 
+   CH3_iStartMsgv() is alway MPIDI_CH3_CA_COMPLETE.  This
+   implies that CH3_iStartMsgv() can only be used when the entire message can 
+   be described by a single iovec of size
    MPID_IOV_LIMIT. */
     
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Request ** sreq_ptr)
+int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, 
+			 MPID_Request ** sreq_ptr)
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
@@ -84,29 +83,18 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-#ifdef MPICH_DBG_OUTPUT
-    /* --BEGIN ERROR HANDLING-- */
-    if (n_iov > MPID_IOV_LIMIT)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	goto fn_exit;
-    }
-    if (iov[0].MPID_IOV_LEN > sizeof(MPIDI_CH3_Pkt_t))
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
-#endif
+    MPIU_Assert( n_iov <= MPID_IOV_LIMIT);
 
-    /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The SOCK channel uses a fixed length header, the size of which is the 
+       maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIU_DBG_STMT(CH3_CHANNEL,VERBOSE,
 	   MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF));
     
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
-	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
+	/* Connection already formed.  If send queue is empty attempt to send 
+	   data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    int rc;
@@ -116,7 +104,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reques
 			 "send queue empty, attempting to write");
 	    MPIU_DBG_PKT(vc->ch.conn,(MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF,"isend");
 	    
-	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
+	    /* MT - need some signalling to lock down our right to use the 
+	       channel, thus insuring that the progress engine does
                also try to write */
 	    rc = MPIDU_Sock_writev(vc->ch.sock, iov, n_iov, &nb);
 	    if (rc == MPI_SUCCESS)

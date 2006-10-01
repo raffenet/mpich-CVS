@@ -16,6 +16,7 @@
  * Channel API prototypes
  */
 
+#if 0
 /*@
   MPIDI_CH3_Request_release_ref - Decrement the reference count associated with a request object.
 
@@ -26,7 +27,7 @@
 . inuse - TRUE if the object is still inuse; FALSE otherwise.
 @*/
 void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * inuse);
-
+#endif
 
 /*@
   MPIDI_CH3_Request_destroy - Release resources in use by an existing request object.
@@ -221,10 +222,10 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
 #define MPID_Request_release(req_)			\
 {							\
-    int ref_count;					\
+    int inuse;					        \
 							\
-    MPIDI_CH3_Request_release_ref((req_), &ref_count);	\
-    if (ref_count == 0)					\
+    MPIU_Object_release_ref((req_), &inuse);	        \
+    if (inuse == 0)					\
     {							\
 	MPIDI_CH3_Request_destroy(req_);		\
     }							\
