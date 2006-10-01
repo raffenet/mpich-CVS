@@ -4,7 +4,12 @@
 # This script extracts information from files produced by gcov showing what
 # parts of each file have *not* been executed by the test programs.
 # 
-# To create a coverage report, use the following steps:
+# Normally, this script should *not* be used directly; instead, use
+#     maint/createcoverage
+# The createcoverave script uses this (getcoverage) script to create the 
+# coverage information.
+# 
+# To create a coverage report using this script, use the following steps:
 #
 # configure --enable-coverage <other options>
 # make 
@@ -76,7 +81,22 @@ $gFilename = "";
 
 # ----------------------------------------------------------------------------
 for (@ARGV) {
-    if (/-annote=(.*)/) {
+    if (/-webpages=(.*)/) {
+	# Create the coverage in default web pages for the device
+	# named as an argument (e.g., maint/getcoverage -webpages=ch3:sock)
+	my $device = $1;
+	my $weblocbase = "@abs_mpich2srcdir@/www/coverage";
+	my $webloc     = $weblocbase . "/$device";
+	$annoteSrcDir = $webloc;
+	$annoteFiles  = 1;
+	$annoteWebPrefix = "";
+	$indexdir = $webloc;
+	$indexfile = "$indexdir/index.htm";
+	$coveredindexfile = "$indexdir/covered.htm";
+	if (! -d $indexdir) { &MakeDirs( $indexfile ); }
+	next; 
+    }
+    elsif (/-annote=(.*)/) {
 	# Create an annotation of the source data in the specified root
 	# directory
 	$annoteSrcDir = $1;
@@ -591,6 +611,7 @@ sub WriteAnnoteFileMap {
 # This needs to be updated
 sub WriteCoveredFileMap {
     my $filename = $_[0];
+    my $newline = "\r\n";
 
     open ( IFD, ">$filename" ) || die "Cannot open $filename\n";
 

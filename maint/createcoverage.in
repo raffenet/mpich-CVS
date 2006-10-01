@@ -40,7 +40,7 @@ test_io=yes
 testNames="intel mpich1 mpich2 cxx io"
 build_mpich=yes
 alltest=yes
-update_web=no
+update_web=yes
 quiet=no
 #
 # Process args to see if we are running only a subset of the steps, 
@@ -114,6 +114,9 @@ for arg ; do
     blddir=`echo A$arg | sed -e 's/A-blddir=//'`
     ;;
 
+    -noupdateweb)
+    update_web=no
+    ;;
     -updateweb)
     update_web=yes
     ;;
@@ -126,7 +129,7 @@ for arg ; do
 createcoverage [ -srcdir=sourcedir ] [ -blddir=builddir ] 
                [ -test=onetest ] [ -notest=skiptest ]
                [ -device=device ] [ -nobuild ] [ -quiet ] [ -pm=pm ]
-               [ -updateweb ] [ -webdir=webdir ]
+               [ -[no]updateweb ] [ -webdir=webdir ]
      sourcedir   - Directory containing the source  for MPICH2.
                    Default is $srcdir
      blddir      - Directory where the coverage tests should be built.
