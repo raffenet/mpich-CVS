@@ -4,3 +4,5 @@ Makefile
 .libstamp*
 *.lo
 .*-cache
+*.gcda
+*.gcno

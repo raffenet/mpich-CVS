@@ -2,6 +2,8 @@ Makefile
 .deps
 *.bb
 *.bbg
+*.gcda
+*.gcno
 .libs
 .libstamp*
 *.lo

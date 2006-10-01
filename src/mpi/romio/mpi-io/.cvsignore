@@ -3,6 +3,8 @@ Makefile
 *.o
 *.bb
 *.bbg
+*.gcda
+*.gcno
 .libs
 .libstamp*
 *.lo
