@@ -448,6 +448,7 @@ static void *MTestTypeIndexedInit( MTestDatatype *mtype )
     return mtype->buf;
 }
 
+#if 0
 /* 
  * Setup indexed buffers for 1 copy of a datatype.  Initialize for
  * reception (e.g., set initial data to detect failure)
@@ -486,6 +487,7 @@ static void *MTestTypeIndexedInitRecv( MTestDatatype *mtype )
     }
     return mtype->buf;
 }
+#endif
 
 static void *MTestTypeIndexedFree( MTestDatatype *mtype )
 {
@@ -499,6 +501,7 @@ static void *MTestTypeIndexedFree( MTestDatatype *mtype )
     }
     return 0;
 }
+#if 0
 static int MTestTypeIndexedCheckbuf( MTestDatatype *mtype )
 {
     unsigned char *p;
@@ -532,6 +535,7 @@ static int MTestTypeIndexedCheckbuf( MTestDatatype *mtype )
     }
     return err;
 }
+#endif
 
 /* ------------------------------------------------------------------------ */
 /* Routines to select a datatype and associated buffer create/fill/check    */
