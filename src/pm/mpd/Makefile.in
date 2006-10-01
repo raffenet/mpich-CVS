@@ -169,6 +169,37 @@ mpich2-mpdroot.o: ${srcdir}/mpdroot.c ${srcdir}/mpdroot.h mpdconf.h
 	${C_COMPILE} -c mpich2-mpdroot.c
 	rm -f mpich2-mpdroot.c
 
+# A special alternate installation target when using multiple process managers
+# MPICH2 expects this, but it only needs to install enough to run mpiexec
+# The purpose of this target is to allow users to use mpiexec.mpd to run
+# MPICH2 programs using the MPD process manager when they configure MPICH2
+# to build multiple process managers.
+install-alt: mpiexec.py
+	@echo "copying python files/links into " $(DESTDIR)${bindir}
+	@if [ ! -d $(DESTDIR)${bindir} ] ; then \
+	    echo "mkdir -p $(DESTDIR)${bindir} " ;\
+	    mkdir -p $(DESTDIR)${bindir} ;\
+	fi   
+	for cmd in ${PYTHON_SOURCE} ; do \
+	    if [ ! -s $(srcdir)/$$cmd.py ] ; then continue ; fi ; \
+	    sed -e 's#/usr/bin/env python.*#/usr/bin/env ${PYTHON}#' ${srcdir}/$$cmd.py > $(DESTDIR)${bindir}/temp$$cmd.py ; \
+	    ${INSTALL} -m 755 $(DESTDIR)${bindir}/temp$$cmd.py $(DESTDIR)${bindir}/$$cmd.py; \
+	    ( rm -f $(DESTDIR)${bindir}/temp$$cmd.py >/dev/null 2>&1 || exit 0 ) ; \
+	done
+	cd $(DESTDIR)${bindir} && rm -f mpd
+	cd $(DESTDIR)${bindir} && @LN_S@ mpd.py mpd
+	cd $(DESTDIR)${bindir} && rm -f mpdboot
+	cd $(DESTDIR)${bindir} && @LN_S@ mpdboot.py mpdboot
+	for cmd in ${CMDS} ; do \
+	    if [ $$cmd = "mpiexec" ] ; then continue ; fi ; \
+	    ( cd $(DESTDIR)${bindir} && rm -f $$cmd ; ) ; \
+	    ( cd $(DESTDIR)${bindir} && @LN_S@ $$cmd.py $$cmd ; ) \
+	done
+	( rm -f $(DESTDIR)${bindir}/mpdrun >/dev/null 2>&1 || exit 0 )
+	( rm -f $(DESTDIR)${bindir}/mpdrun.py >/dev/null 2>&1 || exit 0 )
+	mv -f $(DESTDIR)${bindir}/mpiexec.py $(DESTDIR)${bindir}/mpiexec.mpd
+	cd $(DESTDIR)${bindir} && @LN_S@ mpiexec.mpd mpdrun
+
 # Empty dependencies target (MPICH2 wants this target)
 dependencies:
 # Empty documentations targets (MPICH2 wants this target)

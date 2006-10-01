@@ -262,10 +262,19 @@ install-preamble:
 	     if [ $$found != no ] ; then exit 1 ; fi ;\
 	fi
 
+# Install optional features which require special actions:
+#   The debugger interface (the "Totalview" DLL)
+#   The "other" process managers when more that one are built
 install-local:
 	-if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	    $(INSTALL_DATA) src/mpi/debugger/libtvmpich2.@SHLIB_EXT@ \
 			${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
+	-if [ -n "@other_pm_names@" ] ; then \
+	    for pm in @other_pm_names@ /dev/null ; do \
+		if [ -d src/pm/$$pm ] ; then \
+		     (cd src/pm/$$pm && $(MAKE) install-alt ) ; fi ; \
+	    done ; \
+	fi
 
 # 
 # The install-examples target may be used if you want to install the cpi
