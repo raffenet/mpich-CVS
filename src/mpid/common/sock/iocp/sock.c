@@ -735,7 +735,8 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
 #define FUNCNAME MPIDU_Sock_get_host_description
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_get_host_description(char * host_description, int len)
+int MPIDU_Sock_get_host_description(int myRank, 
+				    char * host_description, int len)
 {
     int mpi_errno;
     char hostname[100];
@@ -754,7 +755,7 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
     env = getenv("MPICH_INTERFACE_HOSTNAME");
     if (env != NULL && *env != '\0')
     {
-	MPIU_Strncpy(hostname, env, 100);
+	MPIU_Strncpy(hostname, env, sizeof(hostname));
     }
     else
     {

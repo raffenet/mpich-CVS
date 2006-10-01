@@ -145,28 +145,35 @@ int MPIDU_Sock_finalize(void);
 
 
 /*@
-MPIDU_Sock_get_host_description - obtain a description of the host's communication capabilities
+MPIDU_Sock_get_host_description - obtain a description of the host's 
+communication capabilities
 
 Input Parameters:
-+ host_description - character array in which the function can store a string describing the communication capabilities of the host
++ myRank - Rank of this process in its MPI_COMM_WORLD.  This can be used
+  to find environment variables that are specific for this process.
+. host_description - character array in which the function can store a string 
+  describing the communication capabilities of the host
 - len - length of the character array
 
 Return value: a MPI error code with a Sock extended error class
 + MPI_SUCCESS - description successfully obtained and placed in host_description
 . MPIDU_SOCK_ERR_INIT - Sock module not initialized
 . MPIDU_SOCK_ERR_BAD_LEN - len parameter is less than zero
-. MPIDU_SOCK_ERR_BAD_HOST - host_description parameter not big enough to store required information
+. MPIDU_SOCK_ERR_BAD_HOST - host_description parameter not big enough to 
+  store required information
 . MPIDU_SOCK_ERR_NOMEM - unable to allocate required memory
 - MPIDU_SOCK_ERR_FAIL - unable to obtain network interface information from OS
 
 Notes:
-The host description string returned by the function is defined by the implementation and should not be interpreted by the
-application.  This string is to be supplied to MPIDU_Sock_post_connect() when one wishes to form a connection with this host.
+The host description string returned by the function is defined by the 
+implementation and should not be interpreted by the
+application.  This string is to be supplied to MPIDU_Sock_post_connect() when 
+one wishes to form a connection with this host.
 
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_get_host_description(char * host_description, int len);
+int MPIDU_Sock_get_host_description(int myRank, char * host_description, int len);
 
 
 /*@

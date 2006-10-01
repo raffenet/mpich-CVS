@@ -44,7 +44,8 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
 #define FUNCNAME MPIDU_Sock_get_host_description
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIDU_Sock_get_host_description(char * host_description, int len)
+int MPIDU_Sock_get_host_description(int myRank, 
+				    char * host_description, int len)
 {
     char * env_hostname;
     int rc;
@@ -69,13 +70,17 @@ int MPIDU_Sock_get_host_description(char * host_description, int len)
        name?  What if a different interface is needed? */
     /* Use hostname supplied in environment variable, if it exists */
     env_hostname = getenv("MPICH_INTERFACE_HOSTNAME");
-#if 0
+
     if (!env_hostname) {
-	/* FIXME: Try to get the environment variable that uses the rank 
-	   in comm world, i.e., MPICH_INTERFACE_HOSTNAME_R_%d.  For 
-	   this, we'll need to know the rank for this process. */
+	/* See if there is a per-process name for the interfaces (e.g.,
+	   the process manager only delievers the same values for the 
+	   environment to each process */
+	char namebuf[1024];
+	MPIU_Snprintf( namebuf, sizeof(namebuf), 
+		       "MPICH_INTERFACE_HOSTNAME_R_%d", myRank );
+	env_hostname = getenv( namebuf );
     }
-#endif
+
     if (env_hostname != NULL)
     {
 	rc = MPIU_Strncpy(host_description, env_hostname, len);
