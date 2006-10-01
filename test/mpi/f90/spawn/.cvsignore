@@ -14,3 +14,5 @@ spawnargvf90
 spawnf90
 spawnmult2f90
 spawnmultf90
+*.gcda
+*.gcno

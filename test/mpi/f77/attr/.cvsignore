@@ -6,3 +6,5 @@ attraints.h
 *ebug*
 *elease*
 *.vfproj
+*.gcda
+*.gcno

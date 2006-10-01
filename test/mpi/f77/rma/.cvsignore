@@ -5,3 +5,5 @@ addsize.h
 *ebug*
 *elease*
 *.vfproj
+*.gcda
+*.gcno

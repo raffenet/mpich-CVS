@@ -6,3 +6,5 @@ infotest
 Makefile.in
 Makefile
 testlist
+*.gcda
+*.gcno

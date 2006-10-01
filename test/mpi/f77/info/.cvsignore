@@ -5,3 +5,5 @@ infotest
 *ebug*
 *elease*
 *.vfproj
+*.gcda
+*.gcno

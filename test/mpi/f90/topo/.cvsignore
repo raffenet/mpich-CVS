@@ -3,3 +3,5 @@ Makefile.sm
 Makefile
 testlist
 cartcrf90.f90
+*.gcda
+*.gcno

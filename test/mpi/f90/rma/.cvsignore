@@ -20,4 +20,5 @@ winscale1f90
 winscale2f90
 c2f2cwinf90.f90
 c2f902cwin.c
-
+*.gcda
+*.gcno

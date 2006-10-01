@@ -4,6 +4,8 @@ Makefile
 *ebug*
 *elease*
 *.vfproj
+*.gcda
+*.gcno
 type1aint.h
 connaccf
 namepubf

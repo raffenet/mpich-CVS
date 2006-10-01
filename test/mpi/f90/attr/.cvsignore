@@ -13,3 +13,5 @@ Makefile.sm
 Makefile
 Makefile.in
 testlist
+*.gcda
+*.gcno

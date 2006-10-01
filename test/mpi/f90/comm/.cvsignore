@@ -5,3 +5,5 @@ testlist
 commerrf90.f90
 commnamef90.f90
 *.o
+*.gcda
+*.gcno

@@ -24,5 +24,7 @@ Makefile
 Makefile.sm
 testlist
 *.o
+*.gcda
+*.gcno
 ioharness.defn
 ioharness.tlt

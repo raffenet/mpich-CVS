@@ -5,3 +5,5 @@ typeaints.h
 *ebug*
 *elease*
 *.vfproj
+*.gcda
+*.gcno

@@ -6,3 +6,5 @@ testlist
 *ebug*
 *elease*
 *.vfproj
+*.gcda
+*.gcno
