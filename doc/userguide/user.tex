@@ -784,7 +784,7 @@ exited if there is an abnormal exit
 \end{description}
 
 In addition to the commandline argments, the \texttt{gforker} \texttt{mpiexec}
-provides a number of environment variable that can be used to control the
+provides a number of environment variables that can be used to control the
 behavior of \texttt{mpiexec}:
 
 \begin{description}
@@ -813,6 +813,13 @@ which \texttt{MPI\_COMM\_WORLD} in MPI jobs that involve multiple
 \texttt{MPI\_Comm\_connect}). 
 \item[\texttt{MPIEXEC\_PREFIX\_STDERR}]Like \texttt{MPIEXEC\_PREFIX\_STDOUT},
 but for standard error. 
+\item[\texttt{MPIEXEC\_STDOUTBUF}]Sets the buffering mode for standard
+  output.  Valid  values are \texttt{NONE} (no buffering),
+  \texttt{LINE} (buffering by lines), and \texttt{BLOCK} (buffering by
+  blocks of characters; the size of the block is implementation
+  defined).  The default is \texttt{NONE}. 
+\item[\texttt{MPIEXEC\_STDERRBUF}]Like \texttt{MPIEXEC\_STDOUTBUF},
+  but for standard error. 
 \end{description}
 
 \subsection{Restrictions of the remshell Process Management Environment}
