@@ -374,7 +374,8 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
 #define FUNCNAME MPIDI_CH3U_Get_business_card_sock
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
+int MPIDI_CH3U_Get_business_card_sock(int myRank, 
+				      char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
     int port;
@@ -383,13 +384,15 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_GET_BUSINESS_CARD_SOCK);
 
-    mpi_errno = MPIDU_Sock_get_host_description(host_description, MAX_HOST_DESCRIPTION_LEN);
+    mpi_errno = MPIDU_Sock_get_host_description( myRank, 
+				  host_description, MAX_HOST_DESCRIPTION_LEN);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_description");
     }
 
     port = MPIDI_CH3I_listener_port;
-    mpi_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, port);
+    mpi_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p, 
+				     MPIDI_CH3I_PORT_KEY, port);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -402,7 +405,8 @@ int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p)
     }
     /* --END ERROR HANDLING-- */
     
-    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
+    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, 
+			   MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {

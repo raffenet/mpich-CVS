@@ -839,7 +839,7 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 
 int MPIDI_CH3I_Progress_finalize(void);
 
-/* Function that may be used to provide buisness card info */
+/* Function that may be used to provide business card info */
 int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p);
 /* Function to free the storage allocated by MPIDI_CH3I_BCInit */
 int MPIDI_CH3I_BCFree( char *publish_bc );
@@ -851,9 +851,6 @@ int MPIDI_PG_SetConnInfo( int rank, const char *connString );
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the 
    macros require their declarations. */
 
-/* Access the business card (used in mpid_port) */
-int MPIDI_CH3I_Get_business_card(char *value, int length);
-
 /* Perform channel-specific initialization of a virtural connection */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
 
@@ -864,7 +861,6 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
 /* from util/sock */
 int MPIDI_VC_InitSock( MPIDI_VC_t *);
 int MPIDI_CH3I_Connect_to_root_sock(const char *, MPIDI_VC_t **);
-int MPIDI_CH3U_Get_business_card_sock(char **, int *);
 
 
 int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * );
@@ -1204,9 +1200,10 @@ int MPIDI_SHM_ReadProcessMemory( int, int, const char *, char *, size_t );
 /* added by brad.  business card related global and functions */
 /* FIXME: Make these part of the channel support headers */
 #define MAX_HOST_DESCRIPTION_LEN 256
-int MPIDI_CH3U_Get_business_card_sock(char **bc_val_p, int *val_max_sz_p);
+int MPIDI_CH3U_Get_business_card_sock(int myRank, 
+				      char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
-int MPIDI_CH3I_Get_business_card(char *value, int length);
+int MPIDI_CH3I_Get_business_card(int myRank, char *value, int length);
 
 /* added by brad.  finalization related upcalls */
 int MPIDI_CH3U_Finalize_sshm(void);

@@ -231,6 +231,7 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
     static int port_name_tag=0;   /* this tag is incremented and added to the 
 				     business card, which is then returned 
 				     as the port name */
+    int myRank = MPIR_Process.comm_world->rank;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_OPEN_PORT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_OPEN_PORT);
@@ -253,7 +254,7 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
        connections between processes that are started separately (e.g.,
        may not use shared memory).  We may need a channel-specific 
        function to create an exportable connection string.  */
-    mpi_errno = MPIDI_CH3I_Get_business_card(port_name, len);
+    mpi_errno = MPIDI_CH3I_Get_business_card(myRank, port_name, len);
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_OPEN_PORT);

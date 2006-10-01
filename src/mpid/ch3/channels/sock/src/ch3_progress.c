@@ -374,9 +374,9 @@ void MPIDI_CH3I_Progress_wakeup(void)
 #define FUNCNAME MPIDI_CH3I_Get_business_card
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Get_business_card(char *value, int length)
+int MPIDI_CH3I_Get_business_card(int myRank, char *value, int length)
 {
-    return MPIDI_CH3U_Get_business_card_sock(&value, &length);
+    return MPIDI_CH3U_Get_business_card_sock(myRank, &value, &length);
 }
 
 

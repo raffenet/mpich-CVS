@@ -70,7 +70,8 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	pg_p->vct[p].ch.conn = NULL;
     }    
 
-    mpi_errno = MPIDI_CH3U_Get_business_card_sock(bc_val_p, val_max_sz_p);
+    mpi_errno = MPIDI_CH3U_Get_business_card_sock(pg_rank, 
+						  bc_val_p, val_max_sz_p);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
     }
