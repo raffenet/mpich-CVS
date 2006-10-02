@@ -27,7 +27,7 @@ int MPID_nem_ib_module_send (MPIDI_VC_t *vc,
         MPID_nem_cell_ptr_t cell, 
         int datalen);
 
-int MPID_nem_ib_module_get_business_card (char **bc_val_p, 
+int MPID_nem_ib_module_get_business_card (int my_rank, char **bc_val_p, 
         int *val_max_sz_p);
 
 int MPID_nem_ib_module_ckpt_shutdown (void);

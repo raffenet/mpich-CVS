@@ -19,7 +19,7 @@ MPID_nem_dummy_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 }
 
 int
-MPID_nem_dummy_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
+MPID_nem_dummy_module_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     MPIU_Assertp (0);
     return 0;

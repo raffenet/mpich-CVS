@@ -562,9 +562,9 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
 
 int
-MPID_nem_get_business_card (char *value, int length)
+MPID_nem_get_business_card (int my_rank, char *value, int length)
 {
-    return MPID_nem_net_module_get_business_card (&value, &length);    
+    return MPID_nem_net_module_get_business_card (my_rank, &value, &length);    
 }
 
 int MPID_nem_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)

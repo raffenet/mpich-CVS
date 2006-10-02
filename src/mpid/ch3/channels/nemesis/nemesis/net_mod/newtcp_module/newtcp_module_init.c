@@ -55,7 +55,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     g_lstn_sc.handler = MPID_nem_newtcp_module_state_listening_handler;
 
     /* create business card */
-    mpi_errno = MPID_nem_newtcp_module_get_business_card (bc_val_p, val_max_sz_p);
+    mpi_errno = MPID_nem_newtcp_module_get_business_card (pg_rank, bc_val_p, val_max_sz_p);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* save references to queues */
@@ -92,7 +92,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 #define FUNCNAME MPID_nem_newtcp_module_get_business_card
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
+int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;

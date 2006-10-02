@@ -444,7 +444,7 @@ int MPID_nem_ib_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     }
 
     mpi_errno = MPID_nem_ib_module_get_business_card
-        (bc_val_p, val_max_sz_p);
+        (pg_rank, bc_val_p, val_max_sz_p);
     if(mpi_errno) {
         MPIU_ERR_POP(mpi_errno);
     }

@@ -127,7 +127,7 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     mpi_errno = init_gm (&board_id, &port_id, unique_id);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    mpi_errno = MPID_nem_gm_module_get_business_card (bc_val_p, val_max_sz_p);
+    mpi_errno = MPID_nem_gm_module_get_business_card (pg_rank, bc_val_p, val_max_sz_p);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     MPID_nem_process_recv_queue = proc_recv_queue;
@@ -190,7 +190,7 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_gm_module_get_business_card (char **bc_val_p, int *val_max_sz_p)
+MPID_nem_gm_module_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
 
