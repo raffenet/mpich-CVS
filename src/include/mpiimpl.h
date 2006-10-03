@@ -3214,7 +3214,8 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
 int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 
 
-/* Include definitions from the device which require items defined by this file (mpiimpl.h). */
+/* Include definitions from the device which require items defined by this 
+   file (mpiimpl.h). */
 #include "mpidpost.h"
 
 /* ------------------------------------------------------------------------- */
