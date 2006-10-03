@@ -101,8 +101,6 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.pkt = NULL;
     vc->ch.pg_id = NULL;
 
-    sendq_total = 0;
-
     vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
 
     vc->ch.send_init_count = 0;
