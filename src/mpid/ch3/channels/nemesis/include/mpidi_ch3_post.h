@@ -28,24 +28,6 @@
 }
 #endif
 
-/*
- * MPIDI_CH3_Progress_signal_completion() is used to notify the progress
- * engine that a completion has occurred.  The multi-threaded version will need
- * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
- */
-extern volatile unsigned int MPIDI_CH3I_progress_completions;
-
-#if !defined(MPICH_IS_THREADED)
-#define MPIDI_CH3_Progress_signal_completion()	\
-{						\
-    MPIDI_CH3I_progress_completions++;		\
-}
-#else
-#error Multi-threaded MPIDI_CH3_Progress_notify_completion() not implemented.
-/* XXX - this routine need to wake up any threads blocking in the progress
-   engine */
-#endif
-
 #if !defined(MPICH_IS_THREADED)
 #define MPIDI_CH3_Progress_start(state)
 #define MPIDI_CH3_Progress_end(state)

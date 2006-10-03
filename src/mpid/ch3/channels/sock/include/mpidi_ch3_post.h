@@ -17,55 +17,6 @@
 #endif
 
 
-#if 0
-/*
- * Channel level request management macros
- */
-#define MPIDI_CH3_Request_add_ref(req_)					\
-{									\
-    MPIU_Assert(HANDLE_GET_MPI_KIND((req_)->handle) == MPID_REQUEST);	\
-    MPIU_Object_add_ref(req_);						\
-}
-
-#define MPIDI_CH3_Request_release_ref(req_, req_ref_count_)		\
-{									\
-    MPIU_Assert(HANDLE_GET_MPI_KIND((req_)->handle) == MPID_REQUEST);	\
-    MPIU_Object_release_ref((req_), (req_ref_count_));			\
-    MPIU_Assert((req_)->ref_count >= 0);				\
-}
-#endif
-
-/*
- * MPIDI_CH3_Progress_signal_completion() is used to notify the progress
- * engine that a completion has occurred.  The multi-threaded version will need
- * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
- */
-extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
-#ifdef MPICH_IS_THREADED
-    extern volatile int MPIDI_CH3I_progress_blocked;
-    extern volatile int MPIDI_CH3I_progress_wakeup_signalled;
-
-    void MPIDI_CH3I_Progress_wakeup(void);
-#endif
-
-#ifndef MPICH_IS_THREADED
-#   define MPIDI_CH3_Progress_signal_completion()	\
-    {							\
-        MPIDI_CH3I_progress_completion_count++;		\
-    }
-#else
-#   define MPIDI_CH3_Progress_signal_completion()			\
-    {									\
-	MPIDI_CH3I_progress_completion_count++;				\
-	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)\
-	{								\
-	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;		\
-	    MPIDI_CH3I_Progress_wakeup();				\
-	}								\
-    }
-#endif
-
-
 /*
  * CH3 Progress routines (implemented as macros for performanace)
  */

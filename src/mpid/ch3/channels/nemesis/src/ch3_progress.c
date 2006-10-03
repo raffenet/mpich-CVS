@@ -34,7 +34,7 @@ MPID_Request ** const MPID_Recvq_posted_tail_ptr = 0;
 MPID_Request ** const MPID_Recvq_unexpected_tail_ptr = 0;
 #endif
 
-volatile unsigned int MPIDI_CH3I_progress_completions = 0;
+volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 
 struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
@@ -61,7 +61,7 @@ void MPIDI_CH3_Progress_start (MPID_Progress_state * state)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress (int is_blocking)
 {
-    unsigned completions = MPIDI_CH3I_progress_completions;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
     int mpi_errno = MPI_SUCCESS;
     int complete;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -301,7 +301,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	    }
 	}
     }
-    while (completions == MPIDI_CH3I_progress_completions && is_blocking);
+    while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
     
 
  fn_exit:
