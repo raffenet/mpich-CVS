@@ -506,7 +506,7 @@
 {								\
     if (MPIR_Process.initialized != MPICH_WITHIN_MPI)		\
     {								\
-	MPIR_Err_preinit();					\
+	MPIR_Err_preOrPostInit();				\
     }                                                           \
 }
 #else
