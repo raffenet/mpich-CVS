@@ -38,6 +38,8 @@ MTEST_THREAD_RETURN_TYPE dup_thread(void *p)
     MPI_Recv( buffer, 0, MPI_INT, rank, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
     
     MPI_Comm_free( &comm3 );
+    /* Tell the main thread that we're done */
+    MPI_Send( buffer, 0, MPI_INT, rank, 2, MPI_COMM_WORLD );
 
     return (MTEST_THREAD_RETURN_TYPE)0;
 }
@@ -90,6 +92,7 @@ int main( int argc, char *argv[] )
     /* Tell the threads to exit after we've created our new comm */
     MPI_Barrier( comm4 );
     MPI_Ssend( buffer, 0, MPI_INT, rank, 1, MPI_COMM_WORLD );
+    MPI_Recv( buffer, 0, MPI_INT, rank, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
 
     MPI_Comm_free( &comm4 );
 
