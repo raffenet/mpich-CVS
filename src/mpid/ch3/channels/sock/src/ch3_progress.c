@@ -575,7 +575,6 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				    complete = TRUE;
 				}
 				else {
-				    int complete;
 				    mpi_errno = reqFn( conn->vc, rreq, &complete );
 				    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 				}
@@ -652,7 +651,6 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    complete = TRUE;
 		}
 		else {
-		    int complete;
 		    mpi_errno = reqFn( conn->vc, sreq, &complete );
 		    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 		}
@@ -701,7 +699,6 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 				complete = TRUE;
 			    }
 			    else {
-				int complete;
 				mpi_errno = reqFn( conn->vc, sreq, &complete );
 				if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 			    }
