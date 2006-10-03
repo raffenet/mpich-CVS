@@ -1046,7 +1046,7 @@ if test -n "$with_pvfs2" ; then
 		FILE_SYSTEM="pvfs2 $FILE_SYSTEM"
 		file_system_pvfs2=1
 	else
-		AC_MSG_ERROR(Cannot findd pvfs2-config in $with_pvfs2)
+		AC_MSG_ERROR(Cannot find pvfs2-config in $with_pvfs2)
 	fi
 elif which pvfs2-config ; then 
 	CFLAGS="$CFLAGS $(pvfs2-config --cflags)"
