@@ -112,7 +112,7 @@ int MPIR_Err_combine_codes(int, int);
 
 int MPIR_Err_is_fatal(int);
 void MPIR_Err_init(void);
-void MPIR_Err_preinit( void );
+void MPIR_Err_preOrPostInit( void );
 
 /* FIXME: This comment is incorrect because the routine was improperly modified
    to take an additional argument (the MPIR_Err_get_class_string_func_t).  

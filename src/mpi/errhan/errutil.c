@@ -172,10 +172,19 @@ void MPIR_Nest_decr_export( void )
    to call if MPI has not been initialized (MPIR_Err_preinit) and to 
    determine if an error code represents a fatal error (MPIR_Err_is_fatal). */
 /* ------------------------------------------------------------------------- */
-/* Special error handler to call if we are not yet initialized */
-void MPIR_Err_preinit( void )
+/* Special error handler to call if we are not yet initialized, or if we
+   have finalized */
+void MPIR_Err_preOrPostInit( void )
 {
-    MPIU_Error_printf("Error encountered before initializing MPICH\n");
+    if (MPIR_Process.initialized == MPICH_PRE_INIT) {
+	MPIU_Error_printf("Attempting to use an MPI routine before initializing MPICH\n");
+    }
+    else if (MPIR_Process.initialized == MPICH_POST_FINALIZED) {
+	MPIU_Error_printf("Attempting to use an MPI routine after finalizing MPICH\n");
+    }
+    else {
+	MPIU_Error_printf("Internal Error: Unknown state of MPI (neither initialized nor finalized)\n" );
+    }
     exit(1);
 }
 
