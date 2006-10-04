@@ -76,15 +76,15 @@ int main( int argc, char *argv[] )
         port = ntohs(servaddr.sin_port);
         MPI_Get_processor_name(hostname, &namelen);
 
-        MPI_Send(hostname, namelen+1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
-        MPI_Send(&port, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-
         err = listen(listenfd, 5);
         if (err < 0) {
 	    errs++;
             printf("listen failed\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
+
+        MPI_Send(hostname, namelen+1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(&port, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
 
         clilen = sizeof(cliaddr);
 
