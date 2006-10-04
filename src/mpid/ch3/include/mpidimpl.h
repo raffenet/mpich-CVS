@@ -839,6 +839,56 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 
 int MPIDI_CH3I_Progress_finalize(void);
 
+/*@
+  MPIDI_CH3_Progress_signal_completion - Inform the progress engine that a 
+  pending request has completed.
+
+  IMPLEMENTORS:
+  In a single-threaded environment, this routine can be implemented by
+  incrementing a request completion counter.  In a
+  multi-threaded environment, the request completion counter must be atomically
+  incremented, and any threaded blocking in the
+  progress engine must be woken up when a request is completed.
+
+  Notes on the implementation:
+
+  This code is designed to support one particular model of thread-safety.
+  It is common to many of the channels and was moved into this file because
+  the MPIDI_CH3_Progress_signal_completion reference is used by the 
+  macro the implements MPID_Request_set_completed.  Note that there is 
+  a function version of MPID_Request_set_completed for use by greq_complete.c
+
+@*/
+void MPIDI_CH3_Progress_signal_completion(void);
+
+/*
+ * MPIDI_CH3_Progress_signal_completion() is used to notify the progress
+ * engine that a completion has occurred.  The multi-threaded version will need
+ * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
+ */
+extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
+
+#ifndef MPICH_IS_THREADED
+#   define MPIDI_CH3_Progress_signal_completion()	\
+    {							\
+        MPIDI_CH3I_progress_completion_count++;		\
+    }
+#else
+    extern volatile int MPIDI_CH3I_progress_blocked;
+    extern volatile int MPIDI_CH3I_progress_wakeup_signalled;
+
+    void MPIDI_CH3I_Progress_wakeup(void);
+#   define MPIDI_CH3_Progress_signal_completion()			\
+    {									\
+	MPIDI_CH3I_progress_completion_count++;				\
+	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)\
+	{								\
+	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;		\
+	    MPIDI_CH3I_Progress_wakeup();				\
+	}								\
+    }
+#endif
+
 /* Function that may be used to provide business card info */
 int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p);
 /* Function to free the storage allocated by MPIDI_CH3I_BCInit */
