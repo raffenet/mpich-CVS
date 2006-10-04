@@ -225,7 +225,7 @@ int MPIDI_CH3_RecvFromSelf( MPID_Request *rreq, void *buf, int count,
 			       buf, count, datatype, &data_sz, 
 			       &rreq->status.MPI_ERROR);
 	rreq->status.count = (int)data_sz;
-	MPID_Request_set_completed(sreq);
+	MPID_REQUEST_SET_COMPLETED(sreq);
 	MPID_Request_release(sreq);
     }
     else

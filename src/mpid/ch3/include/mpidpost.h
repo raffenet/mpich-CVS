@@ -128,59 +128,6 @@ int MPIDI_CH3_Progress_test(void);
 int MPIDI_CH3_Progress_poke(void);
 
 
-/*@
-  MPIDI_CH3_Progress_signal_completion - Inform the progress engine that a 
-  pending request has completed.
-
-  IMPLEMENTORS:
-  In a single-threaded environment, this routine can be implemented by
-  incrementing a request completion counter.  In a
-  multi-threaded environment, the request completion counter must be atomically
-  incremented, and any threaded blocking in the
-  progress engine must be woken up when a request is completed.
-
-  Notes on the implementation:
-
-  This code is designed to support one particular model of thread-safety.
-  It is common to many of the channels and was moved into this file because
-  the MPIDI_CH3_Progress_signal_completion reference is used by the 
-  macro the implements MPID_Request_set_completed.  Note that this may
-  be overkill as MPID_Request_set_completed is only called from
-  mpi/pt2pt/greq_complete.c (and routines within the ch3 implementation).
-  As such, we should consider exporting a routine version of 
-  MPID_Request_set_completed, and use a macro version, 
-  MPID_REQUEST_SET_COMPLETED, within ch3.
-
-@*/
-void MPIDI_CH3_Progress_signal_completion(void);
-
-/*
- * MPIDI_CH3_Progress_signal_completion() is used to notify the progress
- * engine that a completion has occurred.  The multi-threaded version will need
- * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
- */
-extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
-
-#ifndef MPICH_IS_THREADED
-#   define MPIDI_CH3_Progress_signal_completion()	\
-    {							\
-        MPIDI_CH3I_progress_completion_count++;		\
-    }
-#else
-    extern volatile int MPIDI_CH3I_progress_blocked;
-    extern volatile int MPIDI_CH3I_progress_wakeup_signalled;
-
-    void MPIDI_CH3I_Progress_wakeup(void);
-#   define MPIDI_CH3_Progress_signal_completion()			\
-    {									\
-	MPIDI_CH3I_progress_completion_count++;				\
-	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)\
-	{								\
-	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;		\
-	    MPIDI_CH3I_Progress_wakeup();				\
-	}								\
-    }
-#endif
 
 int MPIDI_CH3_Open_port(char *port_name);
 
@@ -204,6 +151,9 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr, MPI
 @*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
+/* This variable is used in the definitions of the MPID_Progress_xxx macros,
+   and must be available to the routines in src/mpi */
+extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 
 /* Include definitions from the channel which require items defined by this 
    file (mpidimpl.h) or the file it includes
@@ -259,7 +209,8 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
     }							\
 }
 
-#define MPID_Request_set_completed(req_)	\
+/* MPID_Request_set_completed (the function) is defined in ch3u_request.c */
+#define MPID_REQUEST_SET_COMPLETED(req_)	\
 {						\
     *(req_)->cc_ptr = 0;			\
     MPIDI_CH3_Progress_signal_completion();	\

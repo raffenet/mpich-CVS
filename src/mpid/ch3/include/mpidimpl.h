@@ -866,7 +866,6 @@ void MPIDI_CH3_Progress_signal_completion(void);
  * engine that a completion has occurred.  The multi-threaded version will need
  * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
  */
-extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 
 #ifndef MPICH_IS_THREADED
 #   define MPIDI_CH3_Progress_signal_completion()	\

@@ -675,3 +675,12 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
     return mpi_errno;
 }
+
+/* 
+ * Export the function to set a request as completed for use by
+ * the generalized request functions in mpich2/src/pt2pt/greq_complete.c
+ */
+void MPID_Request_set_completed( MPID_Request *req )
+{
+    MPID_REQUEST_SET_COMPLETED(req);
+}

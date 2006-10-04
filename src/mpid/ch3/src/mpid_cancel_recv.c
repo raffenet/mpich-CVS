@@ -24,7 +24,7 @@ int MPID_Cancel_recv(MPID_Request * rreq)
 		       "request 0x%08x cancelled", rreq->handle);
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
-	MPID_Request_set_completed(rreq);
+	MPID_REQUEST_SET_COMPLETED(rreq);
 	MPID_Request_release(rreq);
     }
     else
