@@ -1038,24 +1038,18 @@ FILE_SYSTEM="testfs $FILE_SYSTEM"
 #   LIBS, and LDFLAGS accordingly
 # - as a fallback, use CFLAGS, LIBS, and LDFLAGS passed in by the user
 
-if test -n "$with_pvfs2" ; then
-	if test -x "$with_pvfs2"/bin/pvfs2-config ; then
-		CFLAGS="$CFLAGS $($with_pvfs2/bin/pvfs2-config --cflags)"
-		LIBS="$LIBS $($with_pvfs2/bin/pvfs2-config --libs)"
-		ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-		FILE_SYSTEM="pvfs2 $FILE_SYSTEM"
-		file_system_pvfs2=1
-	else
-		AC_MSG_ERROR(Cannot find pvfs2-config in $with_pvfs2)
-	fi
-elif which pvfs2-config ; then 
-	CFLAGS="$CFLAGS $(pvfs2-config --cflags)"
-	LIBS="$LIBS $(pvfs2-config --libs)"
+AC_PATH_PROG(PVFS2_CONFIG, pvfs2-config, notfound, [$PATH:${with_pvfs2}/bin])
+if test $PVFS2_CONFIG != "notfound" ; then
+	CFLAGS="$CFLAGS $( $PVFS2_CONFIG --cflags)"
+	LIBS="$LIBS $( $PVFS2_CONFIG --libs)"
 	ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
 	FILE_SYSTEM="pvfs2 $FILE_SYSTEM"
 	file_system_pvfs2=1
 fi
 
+if test "$PVFS2_CONFIG" = "notfound" -a -n "$with_pvfs2" ; then
+	AC_MSG_ERROR([pvfs2-config not found in $with_pvfs2])
+fi
 
 #
 # Print list of configured file systems
