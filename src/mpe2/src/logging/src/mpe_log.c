@@ -905,7 +905,7 @@ int MPE_Log_sync_clocks( void )
 
     clog_syncer = CLOG_Stream->syncer;
     if ( clog_syncer->is_ok_to_sync == CLOG_BOOL_TRUE ) {
-        local_timediff = CLOG_Sync_update_timediffs( clog_syncer );
+        local_timediff = CLOG_Sync_run( clog_syncer );
         CLOG_Buffer_set_timeshift( CLOG_Buffer, local_timediff,
                                    CLOG_BOOL_TRUE );
     }

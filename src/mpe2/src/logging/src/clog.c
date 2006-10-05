@@ -99,13 +99,17 @@ void CLOG_Local_finalize( CLOG_Stream_t *stream )
 {
     const CLOG_CommIDs_t *commIDs;
           CLOG_Buffer_t  *buffer;
+          CLOG_Sync_t    *syncer;
           CLOG_Time_t     local_timediff;
 
-    if ( stream->syncer->world_rank == 0 ) {
-        if ( stream->syncer->is_ok_to_sync == CLOG_BOOL_TRUE )
-            printf( "Enabling the synchronization of the clocks...\n" );
+    syncer = stream->syncer;
+    if ( syncer->world_rank == 0 ) {
+        if ( syncer->is_ok_to_sync == CLOG_BOOL_TRUE ) {
+            printf( "Enabling the %s clock synchronization...\n",
+                    CLOG_Sync_print_type( syncer ) );
+        }
         else
-            printf( "Disabling the synchronization of the clocks...\n" );
+            printf( "Disabling the clock synchronization...\n" );
     }
 
     buffer  = stream->buffer;
@@ -123,7 +127,7 @@ void CLOG_Local_finalize( CLOG_Stream_t *stream )
     }
 
     if ( stream->syncer->is_ok_to_sync == CLOG_BOOL_TRUE ) {
-        local_timediff = CLOG_Sync_update_timediffs( stream->syncer );
+        local_timediff = CLOG_Sync_run( stream->syncer );
         CLOG_Buffer_set_timeshift( buffer, local_timediff, CLOG_BOOL_FALSE );
     }
     CLOG_Sync_free( &(stream->syncer) );
