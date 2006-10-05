@@ -268,7 +268,33 @@ MPE_DELETE_LOCALFILE:  The boolean value determines whether to delete the
                        overwritten to MPE/MPI internal data structures.
 
 MPE_CLOCKS_SYNC: The boolean value determines the behavior of
-                 MPE_Log_sync_clocks()
+                 MPE_Log_sync_clocks() and the default clock synchronization
+                 at the end of logging.  Users may way to force MPE
+                 clock synchronization when the MPI implementation has
+                 buggy clock synchronization mechanism, e.g. BG/L MPI's
+                 clock synchronization is wrong at np=64, 192, 156.
+
+MPE_SYNC_ALGORITHM: specifies the clock synchronization algorithm.  The
+                    accepted values are "DEFAULT", "SEQ", "BITREE" 
+                    and "ALTNGBR".
+                    SEQ: a O(N) steps algorithm and is non-scalable and slowest
+                         but is also the most accurate.
+                    BITREE: a O(log2(N)) steps algorithm, scalable and much
+                            faster than SEQ but less accurate than SEQ.
+                            A good compromise.
+                    ALTNGBR: a O(1) steps algorithm, perfectly parallel
+                             is the fastest of 3 algorithms supported.
+                             It is also the least accurate.
+                    DEFAULT: uses SEQ when the number of processes <= 16.
+                             uses BITREE when number of processes > 16.
+
+MPE_SYNC_FREQUENCY: specifies the number of iterations of selected clock
+                    synchronization.  In general, the higher of
+                    MPI_SYNC_FREQUENCY, the higher the probability of
+                    obtaining a accurate measurement of all the clocks,
+                    i.e. less error.  Keep in mind, this is generally
+                    not a guarantee and is highly dependent of the system
+                    noise.  The default is 3.
 
 MPE_LOGFILE_PREFIX: specifies the filename prefix of the output logfile.
                     The file extension will be determined by the output
