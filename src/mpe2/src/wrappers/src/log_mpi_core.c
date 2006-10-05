@@ -456,7 +456,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
                                                       new_comm ); \
             is_mpelog_on = 1; \
             MPE_Log_commIDs_intracomm( commIDs, 0, comm_etype, new_commIDs ); \
-            MPE_LOG_SOLO_EVENT( new_commIDs,MPE_COMM_INIT_ID ) \
+            MPE_LOG_SOLO_EVENT( new_commIDs, MPE_COMM_INIT_ID ) \
         } \
         else { \
             MPE_Log_commIDs_nullcomm( commIDs, 0, comm_etype ); \
