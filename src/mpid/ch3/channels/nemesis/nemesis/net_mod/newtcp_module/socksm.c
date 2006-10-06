@@ -1094,6 +1094,7 @@ int MPID_nem_newtcp_module_init_sm()
     sc_state_handlers[CONN_STATE_TS_COMMRDY] = state_commrdy_handler;
 
     sc_state_handlers[CONN_STATE_TS_D_DCNTING] = state_d_dcnting_handler;
+
     sc_state_handlers[CONN_STATE_TS_D_REQSENT] = state_d_reqsent_handler;
     sc_state_handlers[CONN_STATE_TS_D_REQRCVD] = state_d_reqrcvd_handler;
     sc_state_handlers[CONN_STATE_TS_D_QUIESCENT] = state_d_quiescent_handler;
@@ -1215,6 +1216,8 @@ int MPID_nem_newtcp_module_connpoll()
   if the connection is closed by the peer, accept will still be successful. So, soon 
   after accept, check whether the new fd is really connected (i.e neither reset nor
   EOF received from peer).
+  Now, it is decided not to check for this condition at this point. After all, in the next
+  state, anyhow we can close the socket, if we receive an EOF.
 */
 #undef FUNCNAME
 #define FUNCNAME state_listening_handler
@@ -1246,22 +1249,17 @@ int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const l_plfd, sockc
             pollfd_t *plfd;
             sockconn_t *sc;
 
-            if (MPID_nem_newtcp_module_is_sock_connected(connfd)) { /* (N2) */
-                mpi_errno = find_free_entry(&index);
-                if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);        
-                sc = &g_sc_tbl[index];
-                plfd = &g_plfd_tbl[index];
-                
-                sc->fd = plfd->fd = connfd;
-                MPID_nem_newtcp_module_set_sockopts(connfd);
-                sc->pg_rank = CONN_INVALID_RANK;
-                sc->state.cstate = CONN_STATE_TA_C_CNTD;                
-                sc->handler = sc_state_handlers[sc->state.cstate];
-                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, added to table, connfd=%d", connfd));
-            }
-            else {
-                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, sock not connected, connfd=%d", connfd));
-            }
+	    MPID_nem_newtcp_module_set_sockopts(connfd); /* (N2) */
+	    mpi_errno = find_free_entry(&index);
+	    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);        
+	    sc = &g_sc_tbl[index];
+	    plfd = &g_plfd_tbl[index];
+            
+	    sc->fd = plfd->fd = connfd;
+	    sc->pg_rank = CONN_INVALID_RANK;
+	    sc->state.cstate = CONN_STATE_TA_C_CNTD;                
+	    sc->handler = sc_state_handlers[sc->state.cstate];
+	    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, added to table, connfd=%d", connfd));        
         }
     }
 
