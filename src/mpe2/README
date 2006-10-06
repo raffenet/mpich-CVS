@@ -271,8 +271,9 @@ MPE_CLOCKS_SYNC: The boolean value determines the behavior of
                  MPE_Log_sync_clocks() and the default clock synchronization
                  at the end of logging.  Users may way to force MPE
                  clock synchronization when the MPI implementation has
-                 buggy clock synchronization mechanism, e.g. BG/L MPI's
-                 clock synchronization is wrong at np=64, 192, 156.
+                 buggy clock synchronization mechanism, e.g. Some versions
+                 of BG/L MPI's MPI_WTIME_IS_GLOBAL is incorrectly set
+                 to true when 64-ways or 256-ways partition is used.
 
 MPE_SYNC_ALGORITHM: specifies the clock synchronization algorithm.  The
                     accepted values are "DEFAULT", "SEQ", "BITREE" 
