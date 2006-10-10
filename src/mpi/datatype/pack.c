@@ -129,14 +129,24 @@ int MPI_Pack(void *inbuf,
 	MPID_Datatype_get_size_macro(datatype, tmp_sz);
 
 	if (tmp_sz * incount > outcount - *position) {
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-					     MPIR_ERR_RECOVERABLE,
-					     FCNAME,
-					     __LINE__,
-					     MPI_ERR_ARG,
-					     "**arg",
-					     0);
-	    goto fn_fail;
+	    if (*position < 0) {
+		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_ARG,
+				     "**argposneg","**argposneg %d",
+				     *position)
+	    }
+	    else if (outcount < 0) {
+		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
+				     "**argneg %s %d","outcount",outcount);
+	    }
+	    else if (incount < 0) {
+		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
+				     "**argneg %s %d","incount",incount);
+	    }
+	    else {
+		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argpackbuf",
+				     "**argpackbuf %d %d", tmp_sz * incount, 
+				     outcount - *position );
+	    }
 	}
 	MPID_END_ERROR_CHECKS;
     }

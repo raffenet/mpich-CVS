@@ -259,6 +259,9 @@ Fortran integer (value is %ld)
  distribution
 **argposneg:Value of position must be nonnegative
 **argposneg %d:Value of position is %d but must be nonnegative
+**argpackbuf:Pack buffer is too small for data
+**argpackbuf %d %d:Size of data to pack (%d bytes) is larger than remaining \
+ space in pack buffer (%d bytes)
 **unknown:Unknown error.  Please file a bug report.
 **truncate:Message truncated
 **truncate %d %d:Message truncated; %d bytes received but buffer size is %d
