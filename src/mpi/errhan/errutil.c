@@ -936,7 +936,11 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 	{
 	case (int)'s':
 	    s = va_arg(list, char *);
-	    MPIU_Strncpy(str, s, maxlen);
+	    if (s) 
+	        MPIU_Strncpy(str, s, maxlen);
+            else {
+		MPIU_Strncpy(str, "<NULL>", maxlen );
+	    }
 	    break;
 	case (int)'d':
 	    d = va_arg(list, int);
