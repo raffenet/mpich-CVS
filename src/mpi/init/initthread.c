@@ -102,6 +102,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     int thread_provided;
     MPIU_THREADPRIV_DECL;
 
+    /* FIXME: Move to os-dependent interface? */
 #ifdef HAVE_WINDOWS_H
     /* prevent the process from bringing up an error message window if mpich 
        asserts */
@@ -214,8 +215,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* Call any and all MPID_Init type functions */
     /* FIXME: The call to err init should be within an ifdef
        HAVE_ ERROR_CHECKING block (as must all uses of Err_create_code) */
-    MPIR_Err_init();
     MPID_Wtime_init();
+#ifdef USE_DBG_LOGGING
+    MPIU_DBG_PreInit( argc, argv );
+#endif
+    MPIR_Err_init();
     MPIR_Datatype_init();
 
     MPIU_THREADPRIV_GET;
@@ -279,7 +283,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* MPIU_trid( 1 ); */
 #endif
 #ifdef USE_DBG_LOGGING
-    MPIU_DBG_Init( argc, argv, MPIR_Process.comm_world->rank );
+    MPIU_DBG_Init( argc, argv, has_args, has_env, 
+		   MPIR_Process.comm_world->rank );
 #endif
 
     /* FIXME: There is no code for this comment */

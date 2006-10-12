@@ -326,12 +326,13 @@ void MPIU_dump_dbg_memlog(FILE * fp)
  */
 int MPIU_DBG_ActiveClasses = 0;
 int MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
-static int mpiu_dbg_initialized = 0;
+static int mpiu_dbg_initialized = 0;  /* 0, 1 (preinit), or 2 (init) */
 static FILE *MPIU_DBG_fp = 0;
 static char *filePattern = "-stdout-"; /* "log%d.log"; */
 static char *defaultFilePattern = "dbg@W%w-@%d@T-%t@.log";
 static int worldNum  = 0;
 static int worldRank = -1;
+static int whichRank = -1;             /* all ranks */
 static int threadID  = 0;
 static double timeOrigin = 0.0;
 
@@ -441,6 +442,7 @@ static const MPIU_DBG_ClassName MPIU_Classnames[] = {
     { MPIU_DBG_CH3,           "CH3",           "ch3" },
     { MPIU_DBG_NEM_SOCK_FUNC, "NEM_SOCK_FUNC", "nem_sock_func"},
     { MPIU_DBG_NEM_SOCK_DET,  "NEM_SOCK_DET",  "nem_sock_det"},
+    { MPIU_DBG_VC,            "VC",            "vc"},
     { MPIU_DBG_ALL,           "ALL",           "all" }, 
     { 0,                      0,               0 }
 };
@@ -456,59 +458,14 @@ static const char *MPIU_LCLevelname[] = { "terse", "typical", "verbose", 0 };
 /* 
  * Initialize the DBG_MSG system.  This is called during MPI_Init to process
  * command-line arguments as well as checking the MPICH_DBG environment
- * variables.
+ * variables.  The initialization is split into two steps: a preinit and an 
+ * init. This makes it possible to enable most of the features before calling 
+ * MPID_Init, where a significant amount of the initialization takes place.
  */
-int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
+
+static int MPIU_DBG_ProcessArgs( int *argc_p, char ***argv_p )
 {
-    char *s = 0;
-    char *sOut = 0;
-    int  i, rc;
-    MPID_Time_t t;
-    long  whichRank = -1;  /* All ranks */
-
-    /* if the DBG_MSG system was already initialized, say by the device, then
-       return immediately */
-    if (mpiu_dbg_initialized != 0) return 0;
-
-    /* Check to see if any debugging was selected.  The order of these
-       tests is important, as they allow general defaults to be set,
-       followed by more specific modifications */
-    /* First, the environment variables */
-
-    s = getenv( "MPICH_DBG" );
-    if (s) {
-	/* Set the defaults */
-	MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
-	MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
-	if (strncmp(s,"FILE",4) == 0) {
-	    filePattern = defaultFilePattern;
-	}
-    }
-    s = getenv( "MPICH_DBG_LEVEL" );
-    if (s) {
-	rc = SetDBGLevel( s, MPIU_Levelname );
-	if (rc) 
-	    MPIU_DBG_Usage( "MPICH_DBG_LEVEL", "TERSE, TYPICAL, VERBOSE" );
-    }
-
-    s = getenv( "MPICH_DBG_CLASS" );
-    rc = setDBGClass( s );
-    if (rc) 
-	MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
-
-    s = getenv( "MPICH_DBG_FILENAME" );
-    if (s) {
-	filePattern = MPIU_Strdup( s );
-    }
-
-    s = getenv( "MPICH_DBG_RANK" );
-    if (s) {
-	whichRank = strtol( s, &sOut, 10 );
-	if (s == sOut) {
-	    MPIU_DBG_Usage( "MPICH_DBG_RANK", 0 );
-	    whichRank = -1;
-	}
-    }
+    int i, rc;
 
     /* Here's where we do the same thing with the command-line options */
     if (argc_p) {
@@ -558,6 +515,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 		else if (strncmp( s, "-rank", 5 ) == 0) {
 		    char *p = s + 5;
 		    if (*p == '=' && p[1] != 0) {
+			char *sOut;
 			p++;
 			whichRank = strtol( p, &sOut, 10 );
 			if (p == sOut) {
@@ -574,6 +532,102 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 	    }
 	}
     }
+    return MPI_SUCCESS;
+}
+
+static int MPIU_DBG_ProcessEnv( void )
+{
+    char *s;
+    int rc;
+
+    s = getenv( "MPICH_DBG" );
+    if (s) {
+	/* Set the defaults */
+	MPIU_DBG_MaxLevel = MPIU_DBG_TYPICAL;
+	MPIU_DBG_ActiveClasses = MPIU_DBG_ALL;
+	if (strncmp(s,"FILE",4) == 0) {
+	    filePattern = defaultFilePattern;
+	}
+    }
+    s = getenv( "MPICH_DBG_LEVEL" );
+    if (s) {
+	rc = SetDBGLevel( s, MPIU_Levelname );
+	if (rc) 
+	    MPIU_DBG_Usage( "MPICH_DBG_LEVEL", "TERSE, TYPICAL, VERBOSE" );
+    }
+
+    s = getenv( "MPICH_DBG_CLASS" );
+    rc = setDBGClass( s );
+    if (rc) 
+	MPIU_DBG_Usage( "MPICH_DBG_CLASS", 0 );
+
+    s = getenv( "MPICH_DBG_FILENAME" );
+    if (s) {
+	filePattern = MPIU_Strdup( s );
+    }
+
+    s = getenv( "MPICH_DBG_RANK" );
+    if (s) {
+	char *sOut;
+	whichRank = strtol( s, &sOut, 10 );
+	if (s == sOut) {
+	    MPIU_DBG_Usage( "MPICH_DBG_RANK", 0 );
+	    whichRank = -1;
+	}
+    }
+    return MPI_SUCCESS;
+}
+
+/*
+ * Attempt to initialize the logging system.  This works only if MPID_Init
+ * is not responsible for updating the environment and/or command-line
+ * arguments. 
+ */
+int MPIU_DBG_PreInit( int *argc_p, char ***argv_p )
+{
+    MPID_Time_t t;
+
+    /* if the DBG_MSG system was already initialized, say by the device, then
+       return immediately */
+    if (mpiu_dbg_initialized != 0) return 0;
+
+    /* Check to see if any debugging was selected.  The order of these
+       tests is important, as they allow general defaults to be set,
+       followed by more specific modifications */
+    /* First, the environment variables */
+    MPIU_DBG_ProcessEnv();
+
+    MPIU_DBG_ProcessArgs( argc_p, argv_p );
+
+    MPID_Wtime( &t );
+    MPID_Wtime_todouble( &t, &timeOrigin );
+
+    mpiu_dbg_initialized = 1;
+
+    return MPI_SUCCESS;
+}
+
+int MPIU_DBG_Init( int *argc_p, char ***argv_p, int has_args, int has_env, 
+		   int wrank )
+{
+    /* if the DBG_MSG system was already initialized, say by the device, then
+       return immediately */
+    if (mpiu_dbg_initialized == 2) return 0;
+
+    /* Check to see if any debugging was selected.  The order of these
+       tests is important, as they allow general defaults to be set,
+       followed by more specific modifications. */
+    /* Both of these may have already been set in the PreInit call; 
+       if the command line and/or environment variables are set before
+       MPID_Init, then don't call the routines to check those values 
+       (as they were already handled in DBG_PreInit) */
+    /* First, the environment variables */
+    if (!has_env) 
+	MPIU_DBG_ProcessEnv();
+    /* Now the command-line arguments */
+    if (!has_args) 
+	MPIU_DBG_ProcessArgs( argc_p, argv_p );
+
     worldRank = wrank;
 
     if (whichRank >= 0 && whichRank != wrank) {
@@ -581,10 +635,7 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int wrank )
 	MPIU_DBG_ActiveClasses = 0;
     }
 
-    MPID_Wtime( &t );
-    MPID_Wtime_todouble( &t, &timeOrigin );
-
-    mpiu_dbg_initialized = 1;
+    mpiu_dbg_initialized = 2;
     return 0;
 }
 

@@ -74,7 +74,7 @@ enum MPIU_DBG_LEVEL { MPIU_DBG_TERSE   = 0,
 		      MPIU_DBG_TYPICAL = 50,
 		      MPIU_DBG_VERBOSE = 99 };
 /* Any change in MPIU_DBG_CLASS must be matched by changes in 
-   MPIU_Classname and MPIU_Classbits in src/util/dbg/dbg_printf.c */
+   MPIU_Classnames in src/util/dbg/dbg_printf.c */
 enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_RMA           = 0x2,
 		      MPIU_DBG_THREAD        = 0x4,
@@ -94,12 +94,14 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_CH3           = 0xf000,   /* alias for all Ch3*/
                       MPIU_DBG_NEM_SOCK_FUNC = 0x10000,
                       MPIU_DBG_NEM_SOCK_DET  = 0x20000,
+		      MPIU_DBG_VC            = 0x40000,
 		      MPIU_DBG_ALL           = (~0) };   /* alias for all */
 
 extern int MPIU_DBG_ActiveClasses;
 extern int MPIU_DBG_MaxLevel;
 int MPIU_DBG_Outevent(const char *, int, int, int, const char *, ...) 
                                         ATTRIBUTE((format(printf,5,6)));
-int MPIU_DBG_Init( int *, char ***, int );
+int MPIU_DBG_Init( int *, char ***, int, int, int );
+int MPIU_DBG_PreInit( int *, char *** );
 
 #endif
