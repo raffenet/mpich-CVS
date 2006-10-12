@@ -50,7 +50,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /* FIXME: These should not be unreferenced (they should be used!) */
     MPIU_UNREFERENCED_ARG(argc);
     MPIU_UNREFERENCED_ARG(argv);
-    MPIU_UNREFERENCED_ARG(requested);
 
     /*
      * Initialize the device's process information structure
