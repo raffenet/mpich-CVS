@@ -49,6 +49,8 @@ MPID_Request ** const MPID_Recvq_posted_head_ptr     = &recvq_posted_head;
 MPID_Request ** const MPID_Recvq_unexpected_head_ptr = &recvq_unexpected_head;
 #endif
 
+/* FIXME: If this routine is only used by probe/iprobe, then we don't need
+   to set the cancelled field in status (only set for nonblocking requests) */
 /*
  * MPIDI_CH3U_Recvq_FU()
  *
@@ -56,6 +58,7 @@ MPID_Request ** const MPID_Recvq_unexpected_head_ptr = &recvq_unexpected_head;
  * true if one is found, false otherwise.  If the status arguement is
  * not MPI_STATUS_IGNORE, return information about the request in that
  * parameter.  This routine is used by mpid_probe and mpid_iprobe.
+ *
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Recvq_FU
