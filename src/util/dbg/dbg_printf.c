@@ -437,6 +437,7 @@ static const MPIU_DBG_ClassName MPIU_Classnames[] = {
     { MPIU_DBG_CH3_CONNECT,   "CH3_CONNECT",   "ch3_connect" },
     { MPIU_DBG_CH3_PROGRESS,  "CH3_PROGRESS",  "ch3_progress" },
     { MPIU_DBG_CH3_CHANNEL,   "CH3_CHANNEL",   "ch3_channel" },
+    { MPIU_DBG_CH3_OTHER,     "CH3_OTHER",     "ch3_other" },
     { MPIU_DBG_CH3,           "CH3",           "ch3" },
     { MPIU_DBG_NEM_SOCK_FUNC, "NEM_SOCK_FUNC", "nem_sock_func"},
     { MPIU_DBG_NEM_SOCK_DET,  "NEM_SOCK_DET",  "nem_sock_det"},
