@@ -76,6 +76,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	}
 	else
 	{
+	    sreq->status.cancelled = FALSE; 
 	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
                "send-to-self cancellation failed, sreq=0x%08x, rreq=0x%08x",
 						sreq->handle, rreq->handle));
@@ -205,6 +206,10 @@ int MPID_Cancel_send(MPID_Request * sreq)
     return mpi_errno;
 }
 
+/*
+ * Handler routines called when cancel send packets arrive
+ */
+
 int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					MPID_Request **rreqp )
 {
@@ -224,7 +229,7 @@ int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     rreq = MPIDI_CH3U_Recvq_FDU(req_pkt->sender_req_id, &req_pkt->match);
     if (rreq != NULL)
     {
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"message cancelled");
+	MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"message cancelled");
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG && rreq->dev.recv_data_sz > 0)
 	{
 	    MPIU_Free(rreq->dev.tmpbuf);
@@ -283,11 +288,12 @@ int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    MPIDI_CH3U_Request_decrement_cc(sreq, &cc);
 	}
 		
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"message cancelled");
+	MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"message cancelled");
     }
     else
     {
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"unable to cancel message");
+	sreq->status.cancelled = FALSE; 
+	MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"unable to cancel message");
     }
     
     MPIDI_CH3U_Request_complete(sreq);

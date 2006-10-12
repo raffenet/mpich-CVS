@@ -27,6 +27,7 @@ icsend_SOURCES       = icsend.c
 rqstatus_SOURCES     = rqstatus.c
 greq1_SOURCES        = greq1.c
 scancel_SOURCES      = scancel.c
+scancel2_SOURCES     = scancel2.c
 rcancel_SOURCES      = rcancel.c
 pscancel_SOURCES     = pscancel.c
 sendrecv1_SOURCES    = sendrecv1.c
