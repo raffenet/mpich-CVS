@@ -17,8 +17,8 @@ int MPID_nem_newtcp_module_finalize()
     int mpi_errno = MPI_SUCCESS;
     int ret;
     
-    MPID_nem_newtcp_module_poll_finalize();
     MPID_nem_newtcp_module_send_finalize();
+    MPID_nem_newtcp_module_poll_finalize();
      
     if (g_lstn_sc.fd)
     {

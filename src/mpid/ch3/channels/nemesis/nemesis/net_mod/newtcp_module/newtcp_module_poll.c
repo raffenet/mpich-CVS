@@ -25,7 +25,7 @@
 //#define MPID_nem_queue_dequeue(Q, C) _dequeue (Q,C,__LINE__)
 
 //#define printf(x...) do {printf (x); sched_yield(); }while (0)
-#define printf(x...) do {} while(0)
+//#define printf(x...) do {} while(0)
 
 //#undef MPIU_Assert
 /* #define MPIU_Assert(x) do {                                                     \ */
@@ -93,7 +93,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     struct {MPID_nem_abs_cell_t *head, *tail;} cell_queue = {0};
     MPID_nem_pkt_t *next_pkt;
 
-    printf ("breakout\n");//DARIUS
+/*     printf ("breakout\n");//DARIUS */
     
     if (len < MPID_NEM_MIN_PACKET_LEN || len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
     {
@@ -103,12 +103,12 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
         vc_ch->pending_recv.end = (char *)MPID_NEM_CELL_TO_PACKET (cell) + len;
         vc_ch->pending_recv.len = len;
         MPIU_Assert (vc_ch->pending_recv.len < MPID_NEM_MAX_PACKET_LEN);
-        {//DARIUS
-            if (len >= MPID_NEM_MIN_PACKET_LEN)
-                printf ("  %d leftover (of %d)\n", len, MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)));
-            else
-                printf ("  %d leftover\n", len);
-        }       
+        /* {//DARIUS */
+/*             if (len >= MPID_NEM_MIN_PACKET_LEN) */
+/*                 printf ("  %d leftover1 (of %d)\n", len, MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell))); */
+/*             else */
+/*                 printf ("  %d leftover1\n", len); */
+/*         } */       
         /*        printf (" recvd pkt fragment got %d of %d\n", len, MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)));*/
         goto fn_exit;
     }
@@ -122,7 +122,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
        separate queue now, and queue them onto the process recv queue
        once were all done. */
     //printf ("CELL_QUEUE ENQUEUE %p\n", cell);//DARIUS
-    printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)), cell->pkt.header.seqno);//DARIUS
+/*     printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)), cell->pkt.header.seqno);//DARIUS */
     Q_ENQUEUE_EMPTY (&cell_queue, (MPID_nem_abs_cell_t *)cell);
     len -= MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell));
     next_pkt = (MPID_nem_pkt_t *)((char *)MPID_NEM_CELL_TO_PACKET (cell) + MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)));
@@ -144,12 +144,12 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
             vc_ch->pending_recv.len = len;
             MPIU_Assert (vc_ch->pending_recv.len < MPID_NEM_MAX_PACKET_LEN);
             
-            {//DARIUS
-                if (len >= MPID_NEM_MIN_PACKET_LEN)
-                    printf ("  %d leftover (of %d)\n", len, MPID_NEM_PACKET_LEN (next_pkt));
-                else
-                    printf ("  %d leftover\n", len);
-            }
+            /* {//DARIUS */
+/*                 if (len >= MPID_NEM_MIN_PACKET_LEN) */
+/*                     printf ("  %d leftover2 (of %d)\n", len, MPID_NEM_PACKET_LEN (next_pkt)); */
+/*                 else */
+/*                     printf ("  %d leftover2\n", len); */
+/*             } */
             goto enqueue_and_exit;
         }
 
@@ -157,7 +157,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
         
         MPID_NEM_MEMCPY (MPID_NEM_CELL_TO_PACKET (cell), next_pkt, MPID_NEM_PACKET_LEN (next_pkt));
         //        printf ("CELL_QUEUE ENQUEUE %p\n", cell);//DARIUS
-        printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)), cell->pkt.header.seqno);//DARIUS
+/*         printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)), cell->pkt.header.seqno);//DARIUS */
         Q_ENQUEUE (&cell_queue, (MPID_nem_abs_cell_t *)cell);
         len -= MPID_NEM_PACKET_LEN (next_pkt);
         next_pkt = (MPID_nem_pkt_t *)((char *)next_pkt + MPID_NEM_PACKET_LEN (next_pkt));
@@ -179,25 +179,25 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
     recv_overflow_buf.start = recv_overflow_buf.buf;
     recv_overflow_buf.len = len;
     recv_overflow_buf.vc = vc;
-    {//DARIUS
-        int l = len;
-        char *p = recv_overflow_buf.start;
+    /* {//DARIUS */
+/*         int l = len; */
+/*         char *p = recv_overflow_buf.start; */
 
-        printf ("overflow packets\n");
-        while (l >= MPID_NEM_MIN_PACKET_LEN && l >= MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p))
-        {
-            printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p), ((MPID_nem_pkt_t *)p)->header.seqno);
-            l -= MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p);
-            p += MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p);
-        }
-        if (l > 0)
-        {
-            if (l >= MPID_NEM_MIN_PACKET_LEN)
-                printf ("  %d leftover (of %d)\n", l, MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p));
-            else
-                printf ("  %d leftover\n", l);
-        }
-    }
+/*         printf ("overflow packets\n"); */
+/*         while (l >= MPID_NEM_MIN_PACKET_LEN && l >= MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p)) */
+/*         { */
+/*             printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p), ((MPID_nem_pkt_t *)p)->header.seqno); */
+/*             l -= MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p); */
+/*             p += MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p); */
+/*         } */
+/*         if (l > 0) */
+/*         { */
+/*             if (l >= MPID_NEM_MIN_PACKET_LEN) */
+/*                 printf ("  %d leftover3 (of %d)\n", l, MPID_NEM_PACKET_LEN ((MPID_nem_pkt_t *)p)); */
+/*             else */
+/*                 printf ("  %d leftover3\n", l); */
+/*         } */
+/*     } */
     
     
     
@@ -210,6 +210,7 @@ static inline int breakout_pkts (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t v_cell, int
         //        printf ("CELL_QUEUE DEQUEUE %p\n", acell);//DARIUS
         Q_DEQUEUE (&cell_queue, &acell);
         MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, (MPID_nem_cell_t *)acell);
+/*         printf ("  enqueue (%d)\n", acell->pkt.header.seqno);//DARIUS */
     }
     
  fn_exit:
@@ -240,15 +241,16 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
             
             if (bytes_recvd == 0)
             {
-                printf ("*** 0 READ RETURNED EOF *** %d %d\n", vc_ch->sc->fd, MPID_NEM_MIN_PACKET_LEN - vc_ch->pending_recv.len); goto fn_exit;//MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed"); DARIUS
+               MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed");
             }
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
-        /*        if (bytes_recvd != -1)
-                  printf("  read  %d\n", bytes_recvd);*/
+/*         if (bytes_recvd != -1) //DARIUS */
+/*             printf("  read  %d (%u)\n", bytes_recvd, *((char *)vc_ch->pending_recv.end));//DARIUS */
 
         vc_ch->pending_recv.len += bytes_recvd;
+        vc_ch->pending_recv.end += bytes_recvd;
 
         if (vc_ch->pending_recv.len < MPID_NEM_MIN_PACKET_LEN)
         {
@@ -265,8 +267,8 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
         CHECK_EINTR (bytes_recvd, recv (vc_ch->sc->fd, vc_ch->pending_recv.end,
                                         MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)) -
                                         vc_ch->pending_recv.len, 0));
-        /*        if (bytes_recvd != -1)
-                  printf("  read  %d\n", bytes_recvd);*/
+/*         if (bytes_recvd != -1)//DARIUS */
+/*             printf("  read  %d (%d)\n", bytes_recvd, *((char *)vc_ch->pending_recv.end));//DARIUS */
         if (bytes_recvd <= 0)
         {
             if (bytes_recvd == -1 && errno == EAGAIN) /* handle this fast */
@@ -274,13 +276,14 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
             
             if (bytes_recvd == 0)
             {
-                printf ("*** 1 READ RETURNED EOF *** %d %d\n", vc_ch->sc->fd, MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)) - vc_ch->pending_recv.len);  goto fn_exit;//MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed"); DARIUS
+                MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed"); 
             }
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
         
         vc_ch->pending_recv.len += bytes_recvd;
+        vc_ch->pending_recv.end += bytes_recvd;
         
         if (vc_ch->pending_recv.len < MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
         {
@@ -292,7 +295,8 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
 
     /* got the whole packet, enqueue on recv queue */
     MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, vc_ch->pending_recv.cell);
-    vc_ch->pending_recv.cell = NULL;
+/*     printf ("enqueue1 (%d)\n", vc_ch->pending_recv.cell->pkt.header.seqno);//DARIUS */
+   vc_ch->pending_recv.cell = NULL;
 
  fn_exit:
     MPIU_Assert (vc_ch->pending_recv.cell == NULL || vc_ch->pending_recv.len < MPID_NEM_MAX_PACKET_LEN);
@@ -330,8 +334,8 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
         
         /* there is a partially received pkt in tmp_cell, continue receiving into it */
         CHECK_EINTR (bytes_recvd, recv (sc->fd, vc_ch->pending_recv.end, MPID_NEM_MAX_PACKET_LEN - vc_ch->pending_recv.len, 0));
-        /*if (bytes_recvd != -1)
-          printf("  read  %d into tmp_cell\n", bytes_recvd);*/
+/*         if (bytes_recvd != -1)//DARIUS */
+/*             printf("read %d into tmp_cell (%d)\n", bytes_recvd, *((char *)vc_ch->pending_recv.end));//DARIUS */
         if (bytes_recvd <= 0)
         {
             if (bytes_recvd == -1 && errno == EAGAIN) /* handle this fast */
@@ -339,12 +343,13 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             
             if (bytes_recvd == 0)
             {
-                printf ("*** 2 READ RETURNED EOF *** %d %d\n", sc->fd, MPID_NEM_MAX_PACKET_LEN - vc_ch->pending_recv.len);  goto fn_exit;//MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed"); DARIUS
+                MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed");
             }
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
         vc_ch->pending_recv.len += bytes_recvd;
+        vc_ch->pending_recv.end += bytes_recvd;
        
         if (vc_ch->pending_recv.len >= MPID_NEM_MIN_PACKET_LEN)
         {
@@ -353,6 +358,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             if (vc_ch->pending_recv.len == MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (vc_ch->pending_recv.cell)))
             {
                 MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, vc_ch->pending_recv.cell);
+/*                 printf ("enqueue2 %d (%d)\n", vc_ch->pending_recv.len, vc_ch->pending_recv.cell->pkt.header.seqno);//DARIUS */
                 vc_ch->pending_recv.cell = NULL;
                 /*printf (" recvd whole pkt\n");*/
                 MPIU_Assert (vc_ch->pending_recv.cell == NULL || vc_ch->pending_recv.len < MPID_NEM_MAX_PACKET_LEN);
@@ -376,8 +382,8 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
         cell = (MPID_nem_cell_t *)v_cell; /* cast away volatile */
             
         CHECK_EINTR (bytes_recvd, recv (sc->fd, MPID_NEM_CELL_TO_PACKET (cell), MPID_NEM_MAX_PACKET_LEN, 0));
-        /*        if (bytes_recvd != -1)
-                  printf("  read  %d\n", bytes_recvd);*/
+/*         if (bytes_recvd != -1)//DARIUS */
+/*             printf("  read  %d (%d)\n", bytes_recvd, *((char *)MPID_NEM_CELL_TO_PACKET (cell)));//DARIUS */
         if (bytes_recvd <= 0)
         {
             if (bytes_recvd == -1 && errno == EAGAIN) /* handle this fast */
@@ -385,7 +391,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             
             if (bytes_recvd == 0)
             {
-                printf ("*** 3 READ RETURNED EOF *** %d %d\n", sc->fd, MPID_NEM_MAX_PACKET_LEN);  goto fn_exit;//MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed"); DARIUS
+                MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed");
             }
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
@@ -396,6 +402,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             bytes_recvd == MPID_NEM_PACKET_LEN (MPID_NEM_CELL_TO_PACKET (cell)))
         {
             MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);
+/*             printf ("enqueue3 (%d)\n", cell->pkt.header.seqno);//DARIUS */
             /*            printf (" recvd whole pkt\n");*/
             goto fn_exit;
         }
@@ -460,6 +467,7 @@ static inline int recv_progress (void)
             }
 
             MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, v_cell);
+/*             printf ("enqueue4 (%d)\n", v_cell->pkt.header.seqno);//DARIUS */
 
             /* update overflow buffer pointers */
             recv_overflow_buf.start += len;
