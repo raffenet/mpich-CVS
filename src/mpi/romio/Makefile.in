@@ -88,7 +88,7 @@ mpiolib:
 
 profile: 
 	@if [ "@HAVE_WEAK_SYMBOLS@" = 0 ] ; then \
-	    $(MAKE) clean ;\
+	    echo foo$(MAKE) clean ;\
 	   for dir in $(MPIO_DIRS) $(EXTRA_SRC_DIRS) ;\
               do \
                echo " " ;\
@@ -100,7 +100,7 @@ profile:
                     echo "Make failed in directory $$dir" ; exit 1 ;\
                 fi ;\
             done ;\
-	   $(MAKE) clean ;\
+	   echo foo$(MAKE) clean ;\
 	fi
 
 # FIXME: This should look at the enabled File systems
