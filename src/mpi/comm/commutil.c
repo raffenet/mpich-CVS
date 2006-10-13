@@ -560,7 +560,7 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
     int mpi_errno = MPI_SUCCESS;
     int inuse;
     
-    MPIU_Object_release_ref( comm_ptr, &inuse);
+    MPIU_Object_release_ref( comm_ptr, &inuse );
     if (!inuse) {
 
 	/* Remove the attributes, executing the attribute delete routine.  
