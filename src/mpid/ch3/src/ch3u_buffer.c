@@ -11,7 +11,13 @@
 #endif
 
 /* FIXME: Explain this routine .
-Used by mpid_irecv, mpid_recv, mpidi_isend_self */
+Used indirectly by mpid_irecv, mpid_recv (through MPIDI_CH3_RecvFromSelf) and 
+ in mpidi_isend_self.c */
+
+/* This routine appears to handle copying data from one buffer (described by
+ the usual MPI triple (buf,count,datatype) to another, as is needed in send 
+ and receive from self.  We may want to put all of the "from self" routines
+ into a single file, and make MPIDI_CH3U_Buffer_copy static to this file. */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Buffer_copy
