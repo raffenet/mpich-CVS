@@ -431,7 +431,8 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
        to eliminate reliance on fragile DNS services. Note that this is
        also more scalable, since the DNS server may serialize address 
        requests.  On most systems, asking for the host info of yourself
-       is resolved locally (i.e., perfectly parallel).
+       is resolved locally (i.e., perfectly parallel).  Regrettably, not
+       all systems do this (e.g., some versions of FreeBSD).
     */
 #ifndef HAVE_WINDOWS_H
     {
@@ -1118,6 +1119,7 @@ static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
+
     /* post send of next request on the send queue */
     conn->send_active = MPIDI_CH3I_SendQ_head(conn->vc); /* MT */
     if (conn->send_active != NULL)
