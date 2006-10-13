@@ -97,10 +97,11 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
     /*
      * Since outstanding I/O bumps the reference count on the communicator, 
      * we wait until we hold the last reference count to
-     * ensure that all communication has completed.
+     * ensure that all communication has completed.  The reference count
+     * is 1 when the communicator is created, and it is incremented
+     * only for pending communication operations (and decremented when
+     * those complete).
      */
-    /* FIXME - I am not sure if the ref_count on the communicator ever gets 
-       incremented, so this may be of no use  */
     if (comm_ptr->ref_count > 1)
     {
 	MPID_Progress_state progress_state;
