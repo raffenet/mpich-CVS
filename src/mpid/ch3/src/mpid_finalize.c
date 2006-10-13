@@ -72,6 +72,12 @@ int MPID_Finalize(void)
       * 
       */
     
+/* commenting out the close protocol and simply using MPI_Barrier until 
+   MPI_Comm_disconnect correctly disconnects all VCs */
+
+    mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
     mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -80,9 +86,6 @@ int MPID_Finalize(void)
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-
-/* commenting out the close protocol and simply using PMI_Barrier until MPI_Comm_disconnect
-   correctly disconnects all VCs */
 
 #if 0
     /* FIXME: The close actions should use the same code as the other
@@ -94,9 +97,6 @@ int MPID_Finalize(void)
     mpi_errno = MPIDI_CH3U_VC_WaitForClose();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 #endif
-
-    mpi_errno = PMI_Barrier();
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     /* FIXME: Progress finalize should be in CH3_Finalize */
     mpi_errno = MPIDI_CH3I_Progress_finalize();
