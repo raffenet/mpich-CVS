@@ -18,6 +18,10 @@
 
 #include "pmi.h"
 
+/* Define the name of the kvs key used to provide the port name to the
+   children */
+#define PARENT_PORT_KVSKEY "PARENT_ROOT_PORT_NAME"
+
 /* FIXME: We can avoid this is we define PMI as using MPI info values */
 static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
 {
@@ -172,7 +176,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	}
 	/* --END ERROR HANDLING-- */
 
-        preput_keyval_vector.key = "PARENT_ROOT_PORT_NAME";
+        preput_keyval_vector.key = PARENT_PORT_KVSKEY;
         preput_keyval_vector.val = port_name;
 
 	/* Spawn the processes */
@@ -234,6 +238,10 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 
 /* FIXME: We need a finalize handler to perform MPIU_Free(parent_port_name)
    if it is allocated */
+
+/* This function is used only with mpid_init to set up the parent communicator
+   if there is one.  The routine should be in this file because the parent 
+   port name is setup with the "preput" arguments to PMI_Spawn_multiple */
 static char *parent_port_name = 0;    /* Name of parent port if this
 					 process was spawned (and is root
 					 of comm world) or null */
@@ -249,12 +257,10 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
 
     if (parent_port_name == NULL)
     {
+	char *kvsname = NULL;
 	/* We can always use PMI_KVS_Get on our own process group */
-	/* FIXME: we may want to put this within the mpidi_pg.c file
-	   as a special method on the process group (to hide the connData
-	   item) */
-	mpi_errno = PMI_KVS_Get(MPIDI_Process.my_pg->connData,
-				  "PARENT_ROOT_PORT_NAME", val, sizeof(val));
+	MPIDI_PG_GetConnKVSname( &kvsname );
+	mpi_errno = PMI_KVS_Get( kvsname, PARENT_PORT_KVSKEY, val, sizeof(val));
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
