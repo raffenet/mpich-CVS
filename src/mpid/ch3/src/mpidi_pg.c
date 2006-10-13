@@ -65,13 +65,6 @@ int MPIDI_PG_Finalize(void)
 	}
     }
 
-    /* ifdefing out this check because the list will not be NULL in 
-       Ch3_finalize because
-       one additional reference is retained in MPIDI_Process.my_pg. 
-       That reference is released
-       only after ch3_finalize returns. If I release it before ch3_finalize, 
-       the ssm channel crashes. */
-
     /* Free the storage associated with the process groups */
     MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
     pg = MPIDI_PG_list;
@@ -84,6 +77,13 @@ int MPIDI_PG_Finalize(void)
 	pg     = pgNext;
     }
     MPIDI_Process.my_pg = NULL;
+
+    /* ifdefing out this check because the list will not be NULL in 
+       Ch3_finalize because
+       one additional reference is retained in MPIDI_Process.my_pg. 
+       That reference is released
+       only after ch3_finalize returns. If I release it before ch3_finalize, 
+       the ssm channel crashes. */
 
 #if 0
 
@@ -579,12 +579,16 @@ static int connToStringKVS( char **buf_p, int *slen, MPIDI_PG_t *pg )
 	rc = getConnInfoKVS( i, buf, MPIDI_MAX_KVS_VALUE_LEN, pg );
 #ifndef USE_PERSISTENT_SHARED_MEMORY
 	/* FIXME: This is a hack to avoid including shared-memory 
-	   queue names in the buisness card that may be used
+	   queue names in the business card that may be used
 	   by processes that were not part of the same COMM_WORLD. 
 	   To fix this, the shared memory channels should look at the
 	   returned connection info and decide whether to use 
 	   sockets or shared memory by determining whether the
 	   process is in the same MPI_COMM_WORLD. */
+	/* FIXME: The more general problem is that the connection information
+	   needs to include some information on the range of validity (e.g.,
+	   all processes, same comm world, particular ranks), and that
+	   representation needs to be scalable */
 /*	printf( "Adding key %s value %s\n", key, val ); */
 	{
 	char *p = strstr( buf, "$shm_host" );
