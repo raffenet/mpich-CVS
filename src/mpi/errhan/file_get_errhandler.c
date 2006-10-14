@@ -86,7 +86,7 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
     else {
 	MPID_Errhandler_get_ptr( eh, e );
     }
-    MPIU_Object_add_ref( e );
+    MPIR_Errhandler_add_ref( e );
     *errhandler = e->handle;
 
 #else

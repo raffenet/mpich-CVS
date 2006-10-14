@@ -138,7 +138,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    new_p->value	 = attribute_val;
 	    new_p->post_sentinal = 0;
 	    new_p->next		 = p->next;
-	    MPIU_Object_add_ref( keyval_ptr );
+	    MPIR_Keyval_add_ref( keyval_ptr );
 	    p->next		 = new_p;
 	    break;
 	}
@@ -154,7 +154,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	new_p->value	     = attribute_val;
 	new_p->post_sentinal = 0;
 	new_p->next	     = 0;
-	MPIU_Object_add_ref( keyval_ptr );
+	MPIR_Keyval_add_ref( keyval_ptr );
 	*old_p		     = new_p;
     }
     

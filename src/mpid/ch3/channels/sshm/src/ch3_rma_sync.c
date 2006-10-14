@@ -92,7 +92,7 @@ int MPIDI_CH3_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     win_ptr->exposure_epoch_grp_ranks_in_win = ranks_in_win;
     win_ptr->exposure_epoch_grp_ptr = group_ptr;
     
-    MPIU_Object_add_ref( group_ptr );
+    MPIR_Group_add_ref( group_ptr );
     
  fn_exit:
     MPIU_CHKLMEM_FREEALL();
@@ -174,7 +174,7 @@ int MPIDI_CH3_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     win_ptr->access_epoch_grp_ranks_in_win = ranks_in_win;
     win_ptr->access_epoch_grp_ptr = group_ptr;
 
-    MPIU_Object_add_ref( group_ptr );
+    MPIR_Group_add_ref( group_ptr );
 
  fn_exit:
     MPIU_CHKLMEM_FREEALL();

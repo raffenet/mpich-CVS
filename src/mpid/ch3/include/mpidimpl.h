@@ -389,8 +389,6 @@ int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t, MPIDI_PG_Destroy_fn_t);
 int MPIDI_PG_Finalize(void);
 int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** ppg);
 int MPIDI_PG_Destroy(MPIDI_PG_t * pg);
-void MPIDI_PG_Add_ref(MPIDI_PG_t * pg);
-void MPIDI_PG_Release_ref(MPIDI_PG_t * pg, int * inuse);
 int MPIDI_PG_Find(void * id, MPIDI_PG_t ** pgp);
 int MPIDI_PG_Id_compare(void *id1, void *id2);
 int MPIDI_PG_Get_next(MPIDI_PG_t ** pgp);
@@ -410,15 +408,17 @@ void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 /* CH3_PG_Init allows the channel to pre-initialize the process group */
 int MPIDI_CH3_PG_Init( MPIDI_PG_t * );
 
-/* FIXME: It would be simpler if we used MPIU_Object_add_ref etc. uniformly,
-   rather than defining separate routines */
-#define MPIDI_PG_Add_ref(pg_)			\
+#define MPIDI_PG_add_ref(pg_)			\
 {						\
     MPIU_Object_add_ref(pg_);			\
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr process group %p ref count to %d",pg_,pg_->ref_count));\
 }
-#define MPIDI_PG_Release_ref(pg_, inuse_)	\
+#define MPIDI_PG_release_ref(pg_, inuse_)	\
 {						\
     MPIU_Object_release_ref(pg_, inuse_);	\
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr process group %p ref count to %d",pg_,pg_->ref_count));\
 }
 /* FIXME: What is the difference between get_vcr and get_vc? */
 #define MPIDI_PG_Get_vc(pg_, rank_, vcp_)		\
@@ -502,6 +502,17 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 #else
 #    define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)
 #endif
+
+#define MPIDI_VC_add_ref( _vc )                                 \
+    { MPIU_Object_add_ref( _vc );                               \
+      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,        \
+         "Incr VC %p ref count to %d",_vc,_vc->ref_count));}
+
+#define MPIDI_VC_release_ref( _vc, _inuse ) \
+   { MPIU_Object_release_ref( _vc, _inuse ); \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr VC %p ref count to %d",_vc,_vc->ref_count));}
+
 /*------------------------------
   END VIRTUAL CONNECTION SECTION
   ------------------------------*/

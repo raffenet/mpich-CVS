@@ -69,7 +69,7 @@ int MPIDI_CH3U_Finalize_sshm()
     while(pg_next)
     {
         /* the last one is the original and handled in mpid_finalize.c  */
-        MPIDI_PG_Release_ref(pg, &inuse);
+        MPIDI_PG_release_ref(pg, &inuse);
         if (inuse == 0)
         {
             MPIDI_PG_Destroy(pg);

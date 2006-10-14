@@ -87,7 +87,7 @@ int MPI_Errhandler_free(MPI_Errhandler *errhandler)
 
     /* ... body of routine ...  */
     
-    MPIU_Object_release_ref( errhan_ptr,&in_use);
+    MPIR_Errhandler_release_ref( errhan_ptr,&in_use);
     if (!in_use) {
 	MPIU_Handle_obj_free( &MPID_Errhandler_mem, errhan_ptr );
     }

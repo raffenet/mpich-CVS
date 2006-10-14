@@ -88,7 +88,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
                                 */
     MPIDI_Process.my_pg_rank = pg_rank;
     /* FIXME: Why do we add a ref to pg here? */
-    MPIDI_PG_Add_ref(pg);
+    MPIDI_PG_add_ref(pg);
 
     /*
      * Initialize the MPI_COMM_WORLD object

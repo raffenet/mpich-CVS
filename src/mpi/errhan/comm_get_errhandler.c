@@ -94,7 +94,7 @@ int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler *errhandler)
     }
     else {
 	*errhandler = comm_ptr->errhandler->handle;
-	MPIU_Object_add_ref(comm_ptr->errhandler);
+	MPIR_Errhandler_add_ref(comm_ptr->errhandler);
     }
     
     /* ... end of body of routine ... */

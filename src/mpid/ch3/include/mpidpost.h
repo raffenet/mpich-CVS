@@ -202,7 +202,7 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 {							\
     int inuse;					        \
 							\
-    MPIU_Object_release_ref((req_), &inuse);	        \
+    MPIR_Request_release_ref((req_), &inuse);	        \
     if (inuse == 0)					\
     {							\
 	MPIDI_CH3_Request_destroy(req_);		\

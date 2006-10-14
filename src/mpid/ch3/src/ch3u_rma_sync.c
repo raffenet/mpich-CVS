@@ -881,7 +881,7 @@ int MPIDI_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
     }
     
     win_ptr->start_group_ptr = group_ptr;
-    MPIU_Object_add_ref( group_ptr );
+    MPIR_Group_add_ref( group_ptr );
     win_ptr->start_assert = assert;
     
  fn_exit:

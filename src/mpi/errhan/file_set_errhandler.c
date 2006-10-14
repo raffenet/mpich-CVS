@@ -109,14 +109,14 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 	}
 
 	if (old_errhandler_ptr) {
-	    MPIU_Object_release_ref(old_errhandler_ptr,&in_use);
+	    MPIR_Errhandler_release_ref(old_errhandler_ptr,&in_use);
 	    if (!in_use) {
 		MPID_Errhandler_free( old_errhandler_ptr );
 	    }
 	}
     }
 
-    MPIU_Object_add_ref(errhan_ptr);
+    MPIR_Errhandler_add_ref(errhan_ptr);
     MPIR_ROMIO_Set_file_errhand( file, errhandler );
 #else
     /* Dummy in case ROMIO is not defined */

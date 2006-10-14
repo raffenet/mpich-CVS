@@ -125,7 +125,7 @@ int MPI_Comm_remote_group(MPI_Comm comm, MPI_Group *group)
 	comm_ptr->remote_group   = group_ptr;
     }
     *group = comm_ptr->remote_group->handle;
-    MPIU_Object_add_ref( comm_ptr->remote_group );
+    MPIR_Group_add_ref( comm_ptr->remote_group );
     
     /* ... end of body of routine ... */
 

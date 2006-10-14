@@ -127,7 +127,7 @@ int MPI_Win_delete_attr(MPI_Win win, int win_keyval)
 	    /* We found the attribute.  Remove it from the list */
 	    *old_p = p->next;
 	    /* Decrement the use of the keyval */
-	    MPIU_Object_release_ref( p->keyval, &in_use);
+	    MPIR_Keyval_release_ref( p->keyval, &in_use);
 	    if (!in_use)
 	    {
 		MPIU_Handle_obj_free( &MPID_Keyval_mem, p->keyval );

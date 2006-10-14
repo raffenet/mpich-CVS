@@ -92,7 +92,7 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
     
     if (win_ptr->errhandler) {
 	*errhandler = win_ptr->errhandler->handle;
-	MPIU_Object_add_ref(win_ptr->errhandler);
+	MPIR_Errhandler_add_ref(win_ptr->errhandler);
     }
     else {
 	/* Use the default */

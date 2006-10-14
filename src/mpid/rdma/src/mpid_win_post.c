@@ -121,7 +121,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 #   endif
 
     win_ptr->post_group_ptr = group_ptr;
-    MPIU_Object_add_ref( group_ptr );
+    MPIR_Group_add_ref( group_ptr );
 
 #   if !defined(MPICH_SINGLE_THREADED)
     {

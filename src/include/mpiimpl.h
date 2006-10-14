@@ -814,6 +814,15 @@ extern MPIU_Object_alloc_t MPID_Errhandler_mem;
 /* Preallocated errhandler objects */
 extern MPID_Errhandler MPID_Errhandler_builtin[];
 extern MPID_Errhandler MPID_Errhandler_direct[];
+
+#define MPIR_Errhandler_add_ref( _errhand ) \
+    { MPIU_Object_add_ref( _errhand );      \
+      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr errhandler %p ref count to %d",_errhand,_errhand->ref_count));}
+#define MPIR_Errhandler_release_ref( _errhand, _inuse ) \
+     { MPIU_Object_release_ref( _errhand, _inuse ); \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr errhandler %p ref count to %d",_errhand,_errhand->ref_count));}
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
@@ -968,6 +977,16 @@ typedef struct MPID_Keyval {
 #endif
 } MPID_Keyval;
 
+#define MPIR_Keyval_add_ref( _keyval ) \
+    { MPIU_Object_add_ref( _keyval );                   \
+      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr keyval %p ref count to %d",_keyval,_keyval->ref_count));}
+
+#define MPIR_Keyval_release_ref( _keyval, _inuse ) \
+    { MPIU_Object_release_ref( _keyval, _inuse );        \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr keyval %p ref count to %d",_keyval,_keyval->ref_count));}
+
 /* Attributes need no ref count or handle, but since we want to use the
    common block allocator for them, we must provide those elements 
 */
@@ -1083,6 +1102,17 @@ extern MPIU_Object_alloc_t MPID_Group_mem;
 #define MPID_GROUP_N_BUILTIN 1
 extern MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN];
 extern MPID_Group MPID_Group_direct[];
+
+#define MPIR_Group_add_ref( _group ) \
+    { MPIU_Object_add_ref( _group );                    \
+      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr group %p ref count to %d",_group,_group->ref_count));}
+
+#define MPIR_Group_release_ref( _group, _inuse ) \
+     { MPIU_Object_release_ref( _group, _inuse ); \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr group %p ref count to %d",_group,_group->ref_count));}
+
 /* ------------------------------------------------------------------------- */
 
 /*E
@@ -1189,10 +1219,19 @@ typedef struct MPID_Comm {
 #endif
 } MPID_Comm;
 extern MPIU_Object_alloc_t MPID_Comm_mem;
-void MPIR_Comm_add_ref(MPID_Comm *);
+
 int MPIR_Comm_release(MPID_Comm *);
 
-#define MPIR_Comm_add_ref(_comm) MPIU_Object_add_ref((_comm))
+#define MPIR_Comm_add_ref(_comm) \
+    { MPIU_Object_add_ref((_comm));                     \
+      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr comm %p ref count to %d",_comm,_comm->ref_count));}
+
+#define MPIR_Comm_release_ref( _comm, _inuse ) \
+     { MPIU_Object_release_ref( _comm, _inuse );         \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr comm %p ref count to %d",_comm,_comm->ref_count));}
+
 /* Preallocated comm objects */
 #define MPID_COMM_N_BUILTIN 2
 extern MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
@@ -1300,6 +1339,16 @@ typedef struct MPID_Request {
 extern MPIU_Object_alloc_t MPID_Request_mem;
 /* Preallocated request objects */
 extern MPID_Request MPID_Request_direct[];
+
+#define MPIR_Request_add_ref( _req ) \
+    { MPIU_Object_add_ref( _req );                      \
+      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr request %p ref count to %d",_req,_req->ref_count));}
+
+#define MPIR_Request_release_ref( _req, _inuse ) \
+     { MPIU_Object_release_ref( _req, _inuse );          \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr request %p ref count to %d",_req,_req->ref_count));}
 
 /* These macros allow us to implement a sendq when debugger support is
    selected.  As there is extra overhead for this, we only do this
@@ -1609,6 +1658,12 @@ typedef struct MPID_Op {
 extern MPID_Op MPID_Op_builtin[MPID_OP_N_BUILTIN];
 extern MPID_Op MPID_Op_direct[];
 extern MPIU_Object_alloc_t MPID_Op_mem;
+
+#define MPIR_Op_release_ref( _op, _inuse ) \
+    { MPIU_Object_release_ref( _op, _inuse ); \
+       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Decr MPI_Op %p ref count to %d",_op,_op->ref_count));}
+
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */

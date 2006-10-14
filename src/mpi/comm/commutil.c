@@ -539,7 +539,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     /* Inherit the error handler (if any) */
     newcomm_ptr->errhandler = comm_ptr->errhandler;
     if (comm_ptr->errhandler) {
-	MPIU_Object_add_ref( comm_ptr->errhandler );
+	MPIR_Errhandler_add_ref( comm_ptr->errhandler );
     }
 
     /* Notify the device of the new communicator */
@@ -560,7 +560,7 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
     int mpi_errno = MPI_SUCCESS;
     int inuse;
     
-    MPIU_Object_release_ref( comm_ptr, &inuse );
+    MPIR_Comm_release_ref( comm_ptr, &inuse );
     if (!inuse) {
 
 	/* Remove the attributes, executing the attribute delete routine.  
@@ -616,7 +616,7 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	else {
 	    /* If the user attribute free function returns an error,
 	       then do not free the communicator */
-	    MPIU_Object_add_ref( comm_ptr );
+	    MPIR_Comm_add_ref( comm_ptr );
 	}
     }
 

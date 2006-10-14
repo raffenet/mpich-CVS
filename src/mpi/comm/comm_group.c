@@ -132,7 +132,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
        communicators */
 
     *group = comm_ptr->local_group->handle;
-    MPIU_Object_add_ref( comm_ptr->local_group );
+    MPIR_Group_add_ref( comm_ptr->local_group );
 
     /* ... end of body of routine ... */
 

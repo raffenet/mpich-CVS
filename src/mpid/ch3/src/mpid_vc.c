@@ -87,6 +87,8 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_ADD_REF);
     MPIU_Object_add_ref(vcrt);
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,
+         "Incr VCRT %p ref count to %d",vcrt,vcrt->ref_count));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_ADD_REF);
     return MPI_SUCCESS;
 }
@@ -105,6 +107,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
 
     MPIU_Object_release_ref(vcrt, &in_use);
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,
+         "Decr VCRT %p ref count to %d",vcrt,vcrt->ref_count));
     if (!in_use)
     {
 	int i, inuse;
@@ -121,14 +125,14 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	{
 	    MPIDI_VC_t * const vc = vcrt->vcr_table[i];
 	    
-	    MPIU_Object_release_ref(vc, &in_use);
+	    MPIDI_VC_release_ref(vc, &in_use);
 	    if (!in_use)
 	    {
 		/* If the VC is myself then skip the close message */
 		if (vc->pg == MPIDI_Process.my_pg && 
 		    vc->pg_rank == MPIDI_Process.my_pg_rank)
 		{
-                    MPIDI_PG_Release_ref(vc->pg, &inuse);
+                    MPIDI_PG_release_ref(vc->pg, &inuse);
                     if (inuse == 0)
                     {
                         MPIDI_PG_Destroy(vc->pg);
@@ -142,7 +146,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		}
 		else
 		{
-                    MPIDI_PG_Release_ref(vc->pg, &inuse);
+                    MPIDI_PG_release_ref(vc->pg, &inuse);
                     if (inuse == 0)
                     {
                         MPIDI_PG_Destroy(vc->pg);
@@ -193,6 +197,8 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCR_DUP);
     MPIU_Object_add_ref(orig_vcr);
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
+         "Incr VCR %p ref count to %d",orig_vcr,orig_vcr->ref_count));
     *new_vcr = orig_vcr;
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCR_DUP);
     return MPI_SUCCESS;

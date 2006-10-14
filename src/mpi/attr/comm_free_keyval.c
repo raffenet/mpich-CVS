@@ -92,7 +92,7 @@ int MPI_Comm_free_keyval(int *comm_keyval)
 
     /* ... body of routine ...  */
     
-    MPIU_Object_release_ref( keyval_ptr, &in_use);
+    MPIR_Keyval_release_ref( keyval_ptr, &in_use);
     if (!in_use) {
 	MPIU_Handle_obj_free( &MPID_Keyval_mem, keyval_ptr );
     }

@@ -100,14 +100,14 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
     
     if (win_ptr->errhandler != NULL) {
 	if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
-	    MPIU_Object_release_ref(win_ptr->errhandler,&in_use);
+	    MPIR_Errhandler_release_ref(win_ptr->errhandler,&in_use);
 	    if (!in_use) {
 		MPID_Errhandler_free( win_ptr->errhandler );
 	    }
 	}
     }
     
-    MPIU_Object_add_ref(errhan_ptr);
+    MPIR_Errhandler_add_ref(errhan_ptr);
     win_ptr->errhandler = errhan_ptr;
     
     /* ... end of body of routine ... */

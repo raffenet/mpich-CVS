@@ -110,7 +110,8 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     *op	             = op_ptr->handle;
     op_ptr->language = MPID_LANG_C;
     op_ptr->kind     = commute ? MPID_OP_USER : MPID_OP_USER_NONCOMMUTE;
-    op_ptr->function.c_function = (void (*)(const void *, void *, const int *, const MPI_Datatype *))function;
+    op_ptr->function.c_function = (void (*)(const void *, void *, 
+				   const int *, const MPI_Datatype *))function;
     MPIU_Object_set_ref(op_ptr,1);
     
     /* ... end of body of routine ... */

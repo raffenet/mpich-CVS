@@ -66,7 +66,7 @@ int MPIDI_PG_Finalize(void)
     }
 
     /* Free the storage associated with the process groups */
-    MPIDI_PG_Release_ref(MPIDI_Process.my_pg, &inuse);
+    MPIDI_PG_release_ref(MPIDI_Process.my_pg, &inuse);
     pg = MPIDI_PG_list;
     while (pg) {
 	pgNext = pg->next;
@@ -888,9 +888,9 @@ int MPIDI_PG_Dup_vcr( MPIDI_PG_t *pg, int rank, MPIDI_VC_t **vc_p )
        process group */
     /* FIXME: This should be a fetch and increment for thread-safety */
     if (vc->ref_count == 0) {
-	MPIU_Object_add_ref(pg);
+	MPIDI_PG_add_ref(pg);
     }
-    MPIU_Object_add_ref(vc);
+    MPIDI_VC_add_ref(vc);
     *vc_p = vc;
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_DUP_VCR);
@@ -930,7 +930,7 @@ int MPIDI_PG_Close_VCs( void )
 	    /* If the VC is myself then skip the close message */
 	    if (pg == MPIDI_Process.my_pg && i == MPIDI_Process.my_pg_rank) {
                 if (vc->ref_count != 0) {
-                    MPIDI_PG_Release_ref(pg, &inuse);
+                    MPIDI_PG_release_ref(pg, &inuse);
                 }
 		continue;
 	    }
@@ -956,7 +956,7 @@ int MPIDI_PG_Close_VCs( void )
 	    {
                 if (vc->state == MPIDI_VC_STATE_INACTIVE && vc->ref_count != 0) {
 		    /* FIXME: If the reference count for the vc is not 0, something is wrong */
-                    MPIDI_PG_Release_ref(pg, &inuse);
+                    MPIDI_PG_release_ref(pg, &inuse);
                 }
 
 		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,

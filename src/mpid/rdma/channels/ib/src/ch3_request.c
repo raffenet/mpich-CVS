@@ -55,7 +55,7 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
     assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
-    MPIU_Object_add_ref(req);
+    MPIR_Request_add_ref(req);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_ADD_REF);
 }
 #endif
@@ -70,7 +70,7 @@ void MPIDI_CH3_Request_release_ref(MPID_Request * req, int * ref_count)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
     assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);
-    MPIU_Object_release_ref(req, ref_count);
+    MPIR_Request_release_ref(req, ref_count);
     assert(req->ref_count >= 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQUEST_RELEASE_REF);
 }

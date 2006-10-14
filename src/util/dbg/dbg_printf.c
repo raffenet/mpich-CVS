@@ -443,6 +443,7 @@ static const MPIU_DBG_ClassName MPIU_Classnames[] = {
     { MPIU_DBG_NEM_SOCK_FUNC, "NEM_SOCK_FUNC", "nem_sock_func"},
     { MPIU_DBG_NEM_SOCK_DET,  "NEM_SOCK_DET",  "nem_sock_det"},
     { MPIU_DBG_VC,            "VC",            "vc"},
+    { MPIU_DBG_REFCOUNT,      "REFCOUNT",      "refcount"},
     { MPIU_DBG_ALL,           "ALL",           "all" }, 
     { 0,                      0,               0 }
 };

@@ -302,7 +302,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 	    new_p->keyval        = p->keyval;
 	    *(next_new_attr_ptr) = new_p;
 	    /* Remember that we need this keyval */
-	    MPIU_Object_add_ref(p->keyval);
+	    MPIR_Keyval_add_ref(p->keyval);
 	    
 	    new_p->pre_sentinal  = 0;
 	    new_p->value 	 = new_value;

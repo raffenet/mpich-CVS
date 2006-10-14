@@ -68,7 +68,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 			   of the associated process group.  */
 			/* FIXME: This should be done when the reference 
 			   count of the vc is first decremented */
-			MPIDI_PG_Release_ref(vc->pg, &inuse);
+			MPIDI_PG_release_ref(vc->pg, &inuse);
 			if (inuse == 0) {
 			    MPIDI_PG_Destroy(vc->pg);
 			}

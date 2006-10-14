@@ -168,7 +168,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	{
 	    /* The reference count is incremented only if the request was 
 	       complete before the increment. */
-	    MPIU_Object_add_ref( sreq );
+	    MPIR_Request_add_ref( sreq );
 	}
 
 	MPIDI_Pkt_init(csr_pkt, MPIDI_CH3_PKT_CANCEL_SEND_REQ);

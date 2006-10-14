@@ -50,7 +50,7 @@ PMPI_LOCAL int MPIR_Ibsend_free( void *extra )
 	/* Note that this should mean that the request was 
 	   cancelled (that would have decremented the ref count)
 	 */
-        MPIU_Object_release_ref( ibsend_info->req, &inuse );
+        MPIR_Request_release_ref( ibsend_info->req, &inuse );
     }
 
     MPIU_Free( ibsend_info );
@@ -198,7 +198,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 			 MPIR_Ibsend_cancel, ibinfo, request );
     /* The request is immediately complete because the MPIR_Bsend_isend has
        already moved the data out of the user's buffer */
-    MPIU_Object_add_ref( request_ptr );
+    MPIR_Request_add_ref( request_ptr );
     NMPI_Grequest_complete( *request );
     MPIR_Nest_decr();
     /* ... end of body of routine ... */

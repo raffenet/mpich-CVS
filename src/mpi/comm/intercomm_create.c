@@ -548,7 +548,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     /* Inherit the error handler (if any) */
     newcomm_ptr->errhandler = comm_ptr->errhandler;
     if (comm_ptr->errhandler) {
-	MPIU_Object_add_ref( comm_ptr->errhandler );
+	MPIR_Errhandler_add_ref( comm_ptr->errhandler );
     }
 	
     /* Notify the device of this new communicator */

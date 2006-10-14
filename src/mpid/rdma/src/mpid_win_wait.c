@@ -287,7 +287,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
     MPIU_Free(nops_from_proc);
     NMPI_Group_free(&win_grp);
     
-    MPIU_Object_release_ref(win_ptr->post_group_ptr,&i);
+    MPIR_Group_release_ref(win_ptr->post_group_ptr,&i);
     if (!i) {
         /* Only if refcount is 0 do we actually free. */
         MPIU_Free( win_ptr->post_group_ptr->lrank_to_lpid );

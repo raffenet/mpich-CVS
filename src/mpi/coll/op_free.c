@@ -84,7 +84,7 @@ int MPI_Op_free(MPI_Op *op)
     
     /* ... body of routine ...  */
     
-    MPIU_Object_release_ref( op_ptr, &in_use);
+    MPIR_Op_release_ref( op_ptr, &in_use);
     if (!in_use) {
 	MPIU_Handle_obj_free( &MPID_Op_mem, op_ptr );
     }

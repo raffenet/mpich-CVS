@@ -102,14 +102,14 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
        which is builtin and can never be freed. */
     if (comm_ptr->errhandler != NULL) {
 	if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
-	    MPIU_Object_release_ref(comm_ptr->errhandler,&in_use);
+	    MPIR_Errhandler_release_ref(comm_ptr->errhandler,&in_use);
 	    if (!in_use) {
 		MPID_Errhandler_free( comm_ptr->errhandler );
 	    }
 	}
     }
     
-    MPIU_Object_add_ref(errhan_ptr);
+    MPIR_Errhandler_add_ref(errhan_ptr);
     comm_ptr->errhandler = errhan_ptr;
     
     /* ... end of body of routine ... */
