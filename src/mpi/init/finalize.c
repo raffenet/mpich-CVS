@@ -67,6 +67,7 @@ void MPIR_Add_finalize( int (*f)( void * ), void *extra_data, int priority )
 	fstack_max_priority = priority;
 }
 
+/* Invoke the registered callbacks */
 PMPI_LOCAL void MPIR_Call_finalize_callbacks( int min_prio, int max_prio )
 {
     int i, j;
@@ -113,7 +114,6 @@ int MPI_Finalize( void )
     int rank=0;
 #endif
     MPID_MPI_FINALIZE_STATE_DECL(MPID_STATE_MPI_FINALIZE);
-
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
