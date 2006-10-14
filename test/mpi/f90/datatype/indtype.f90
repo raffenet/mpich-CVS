@@ -59,20 +59,20 @@
 !       displacement = 0
             j=1
             do i=1, 7
-	        print*,'sndbuf(',i,j,') = ',sndbuf(i,j)
+               print*,'sndbuf(',i,j,') = ',sndbuf(i,j)
             enddo
 
 !       displacement = 10
             j=11
             do i=1,7
-	        print*,'sndbuf(',i,j,') = ',sndbuf(i,j)
+               print*,'sndbuf(',i,j,') = ',sndbuf(i,j)
             enddo
             print*,' '
 
 ! Values received
             do j=1,count
                 do i=1,7
-	            print*,'rcvbuf(',i,j,') = ',rcvbuf(i,j)
+                    print*,'rcvbuf(',i,j,') = ',rcvbuf(i,j)
                 enddo
             enddo
         endif
@@ -81,24 +81,26 @@
         do j=1,2
            do i=1,7
              if (rcvbuf(i,j) .ne. sndbuf(i,1)) then
-	        print*,'ERROR in rcvbuf(',i,j,')'
-		errs = errs+1
-	     endif
+                print*,'ERROR in rcvbuf(',i,j,')'
+                print*,'Received ', rcvbuf(i,j),' expected ',sndbuf(i,11)
+                errs = errs+1
+             endif
            enddo
         enddo
 
         do j=3,4
            do i=1,7
               if (rcvbuf(i,j) .ne. sndbuf(i,11)) then
-	        print*,'ERROR in rcvbuf(',i,j,')'
-		errs = errs+1
-	      endif
+                print*,'ERROR in rcvbuf(',i,j,')'
+                print*,'Received ', rcvbuf(i,j),' expected ',sndbuf(i,11)
+                errs = errs+1
+              endif
            enddo
         enddo
 
 !
          if (errs == 0) then
-      	     print*,' No Errors'
+            print*,' No Errors'
          else
             print*,'**',errs,' errors found.'
          endif
