@@ -91,7 +91,9 @@ int MPID_Finalize(void)
 	MPIU_ERR_POP(mpi_errno);
     }
 
-#if 0
+    /* Re-enabling the close step because many tests are failing
+     * without it, particularly under gforker */
+#if 1
     /* FIXME: The close actions should use the same code as the other
        connection close code */
     MPIDI_PG_Close_VCs();
