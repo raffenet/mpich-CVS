@@ -20,6 +20,7 @@
 int MPID_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIU_THREADPRIV_DECL;                        /* Required for Nest_incr */
     MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
@@ -75,7 +76,10 @@ int MPID_Finalize(void)
 /* commenting out the close protocol and simply using MPI_Barrier until 
    MPI_Comm_disconnect correctly disconnects all VCs */
 
+    MPIU_THREADPRIV_GET;
+    MPIR_Nest_incr();
     mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
+    MPIR_Nest_decr();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
     mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
