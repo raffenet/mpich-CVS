@@ -139,7 +139,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 					   &newcomm_ptr->attributes );
 	if (mpi_errno)
 	{
-	    /* The error code returned here should reflect the error code
+	    /* FIXME: The error code returned here should reflect the error code
 	       determined by the user routine called during the
 	       attribute duplication step.  Adding additional text to the 
 	       message associated with the code is allowable; changing the
