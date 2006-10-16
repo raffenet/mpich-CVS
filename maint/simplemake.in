@@ -4277,7 +4277,7 @@ sub GcovClean {
     if ($maint_targets) {
 	print FD "\t-${quietLine}rm -f \${srcdir}/*.bb \${srcdir}/*.bbg \${srcdir}/*.da$newline";
 	print FD "\t-${quietLine}rm -f \${srcdir}/*.gcda \${srcdir}/*.gcno$newline";
-	print FD "\t-${quietLine}rm -f *.bb *.bbg *.da *.gcda *.gcno$newline";
+	print FD "\t-${quietLine}rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno$newline";
     }
 }
 
