@@ -940,6 +940,10 @@ static void MPIE_InstallSigHandler( int sig, void (*handler)(int) )
 #endif
 }
 
+void MPIE_IgnoreSigPipe( void )
+{
+    MPIE_InstallSigHandler( SIGPIPE, SIG_IGN );
+}
 /* 
  * Setup pUniv for a singleton init.  That is a single pWorld with a 
  * single app containing a single process.

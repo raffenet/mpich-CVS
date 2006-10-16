@@ -176,6 +176,8 @@ int main( int argc, char *argv[], char *envp[] )
     s.pmiinfo.pWorld = &pUniv.worlds[0];
     PMISetupNewGroup( pUniv.worlds[0].nProcess, 0 );
     MPIE_ForwardCommonSignals();
+    MPIE_IgnoreSigPipe();
+    
     if (!pUniv.fromSingleton) {
 	MPIE_ForkProcesses( &pUniv.worlds[0], envp, mypreamble, &s,
 			    mypostfork, 0, mypostamble, 0 );
