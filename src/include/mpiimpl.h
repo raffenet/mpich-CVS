@@ -1220,7 +1220,14 @@ typedef struct MPID_Comm {
 } MPID_Comm;
 extern MPIU_Object_alloc_t MPID_Comm_mem;
 
-int MPIR_Comm_release(MPID_Comm *);
+/* MPIR_Comm_release is a helper routine that releases references to a comm.
+   The second arg is false unless this is called as part of 
+   MPI_Comm_disconnect .
+
+   Question: Should this only be called if the ref count on the 
+   comm is zero, thus avoiding a function call in the typical case?
+*/
+int MPIR_Comm_release(MPID_Comm *, int );
 
 #define MPIR_Comm_add_ref(_comm) \
     { MPIU_Object_add_ref((_comm));                     \
@@ -3238,14 +3245,22 @@ int MPID_Get_universe_size(int  * universe_size);
   MPID_VCRT_Create - Create a virtual connection reference table
   @*/
 int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr);
+
 /*@
   MPID_VCRT_Add_ref - Add a reference to a VCRT
   @*/
 int MPID_VCRT_Add_ref(MPID_VCRT vcrt);
+
 /*@
   MPID_VCRT_Release - Release a reference to a VCRT
+  
+  Notes:
+  The 'isDisconnect' argument allows this routine to handle the special
+  case of 'MPI_Comm_disconnect', which needs to take special action
+  if all references to a VC are removed.
   @*/
-int MPID_VCRT_Release(MPID_VCRT vcrt);
+int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect);
+
 /*@
   MPID_VCRT_Get_ptr - 
   @*/

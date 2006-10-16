@@ -132,8 +132,10 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     /* FIXME: We need a better way to handle these so that we
        do not always need to initialize these fields and check them
        when we destroy a request */
+    /* FIXME: We need a way to call these routines ONLY when the 
+       related ref count has become zero. */
     if (req->comm != NULL) {
-	MPIR_Comm_release(req->comm);
+	MPIR_Comm_release(req->comm, 0);
     }
 
     if (req->dev.datatype_ptr != NULL) {

@@ -194,40 +194,6 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_VC_WaitForClose
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-/*@
-  MPIDI_CH3U_VC_WaitForClose - Wait for all virtual connections to close
-  @*/
-int MPIDI_CH3U_VC_WaitForClose( void )
-{
-    MPID_Progress_state progress_state;
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
-
-    MPID_Progress_start(&progress_state);
-    while(MPIDI_Outstanding_close_ops > 0) {
-	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Waiting for %d close operations",
-		       MPIDI_Outstanding_close_ops);
-	mpi_errno = MPID_Progress_wait(&progress_state);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPID_Progress_end(&progress_state);
-	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**ch3|close_progress");
-	    break;
-	}
-	/* --END ERROR HANDLING-- */
-    }
-    MPID_Progress_end(&progress_state);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
-    return mpi_errno;
-}
-
 /* Here is the matching code that processes a close packet when it is 
    received */
 int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
@@ -305,3 +271,43 @@ int MPIDI_CH3_PktPrint_Close( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
     return MPI_SUCCESS;
 }
 #endif
+
+/* 
+ * This routine can be called to progress until all pending close operations
+ * (initiated in the SendClose routine above) are completed.  It is 
+ * used in MPID_Finalize and MPID_Comm_disconnect.
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_VC_WaitForClose
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+/*@
+  MPIDI_CH3U_VC_WaitForClose - Wait for all virtual connections to close
+  @*/
+int MPIDI_CH3U_VC_WaitForClose( void )
+{
+    MPID_Progress_state progress_state;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
+
+    MPID_Progress_start(&progress_state);
+    while(MPIDI_Outstanding_close_ops > 0) {
+	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Waiting for %d close operations",
+		       MPIDI_Outstanding_close_ops);
+	mpi_errno = MPID_Progress_wait(&progress_state);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPID_Progress_end(&progress_state);
+	    MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**ch3|close_progress");
+	    break;
+	}
+	/* --END ERROR HANDLING-- */
+    }
+    MPID_Progress_end(&progress_state);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_WAITFORCLOSE);
+    return mpi_errno;
+}
+

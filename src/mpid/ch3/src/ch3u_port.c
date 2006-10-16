@@ -143,8 +143,10 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 
     if (rank == root)
     {
-	/* Establish a communicator to communicate with the root on the other side. */
-	mpi_errno = MPIDI_Create_inter_root_communicator_connect(port_name, &tmp_comm, &new_vc);
+	/* Establish a communicator to communicate with the root on the 
+	   other side. */
+	mpi_errno = MPIDI_Create_inter_root_communicator_connect(
+	    port_name, &tmp_comm, &new_vc);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
@@ -281,7 +283,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
         }
 
         /* All communication with remote root done. Release the communicator. */
-        MPIR_Comm_release(tmp_comm);
+        MPIR_Comm_release(tmp_comm,0);
     }
 
     /*printf("connect:barrier\n");fflush(stdout);*/
@@ -899,7 +901,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
         }
 
         /* All communication with remote root done. Release the communicator. */
-        MPIR_Comm_release(tmp_comm);
+        MPIR_Comm_release(tmp_comm,0);
     }
 
     MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
@@ -940,6 +942,7 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
 
     MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
+
     /* WDG-old code allocated a context id that was then discarded */
     mpi_errno = MPIR_Comm_create(&tmp_comm);
     if (mpi_errno != MPI_SUCCESS) {
@@ -947,7 +950,11 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     }
     /* fill in all the fields of tmp_comm. */
 
-    tmp_comm->context_id = 4095;  /* FIXME - we probably need a unique context_id. */
+    /* FIXME: Should we allocate a new context id each time ? If
+       so, how do we make sure that each process in this tmp_comm
+       has the same context id? */
+    tmp_comm->context_id = 4095;  
+                /* FIXME - we probably need a unique context_id. */
     tmp_comm->remote_size = 1;
 
     /* Fill in new intercomm */
@@ -957,7 +964,8 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     tmp_comm->local_comm   = NULL;
     tmp_comm->is_low_group = is_low_group;
 
-    /* No pg structure needed since vc has already been set up (connection has been established). */
+    /* No pg structure needed since vc has already been set up 
+       (connection has been established). */
 
     /* Point local vcr, vcrt at those of commself_ptr */
     tmp_comm->local_vcrt = commself_ptr->vcrt;
@@ -977,7 +985,8 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
     }
-    
+
+    /* FIXME: Why do we do a dup here? */
     MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
 
     *comm_pptr = tmp_comm;

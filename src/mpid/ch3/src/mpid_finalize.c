@@ -82,11 +82,11 @@ int MPID_Finalize(void)
     MPIR_Nest_decr();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
-    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
+    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt,0);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
+    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_world->vcrt,0);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }

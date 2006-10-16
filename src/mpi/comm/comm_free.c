@@ -114,7 +114,7 @@ int MPI_Comm_free(MPI_Comm *comm)
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIR_Comm_release(comm_ptr);
+    mpi_errno = MPIR_Comm_release(comm_ptr, 0);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     *comm = MPI_COMM_NULL;

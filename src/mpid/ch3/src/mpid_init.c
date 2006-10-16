@@ -21,7 +21,8 @@ char *MPIU_DBG_parent_str = "?";
 /* FIXME: the PMI init function should ONLY do the PMI operations, not the 
    process group or bc operations.  These should be in a separate routine */
 #include "pmi.h"
-static int InitPG( int *has_args, int *has_env, int *has_parent, 
+static int InitPG( int *argc_p, char ***argv_p,
+		   int *has_args, int *has_env, int *has_parent, 
 		   int *pg_rank_p, MPIDI_PG_t **pg_p );
 static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
 static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg );
@@ -47,10 +48,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
 
-    /* FIXME: These should not be unreferenced (they should be used!) */
-    MPIU_UNREFERENCED_ARG(argc);
-    MPIU_UNREFERENCED_ARG(argv);
-
     /*
      * Initialize the device's process information structure
      */
@@ -68,7 +65,8 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /*
      * Perform channel-independent PMI initialization
      */
-    mpi_errno = InitPG( has_args, has_env, &has_parent, &pg_rank, &pg );
+    mpi_errno = InitPG( argc, argv, 
+			has_args, has_env, &has_parent, &pg_rank, &pg );
 
     /*
      * Let the channel perform any necessary initialization
@@ -83,8 +81,9 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 
     /* FIXME: Why are pg_size and pg_rank handled differently? */
     pg_size = MPIDI_PG_Get_size(pg);
-    MPIDI_Process.my_pg = pg;  /* brad : this is rework for shared memories because they need this set earlier
-                                *         for getting the business card
+    MPIDI_Process.my_pg = pg;  /* brad : this is rework for shared memories 
+				* because they need this set earlier
+                                * for getting the business card
                                 */
     MPIDI_Process.my_pg_rank = pg_rank;
     /* FIXME: Why do we add a ref to pg here? */
@@ -225,7 +224,8 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
  * process group structures.
  * 
  */
-static int InitPG( int *has_args, int *has_env, int *has_parent, 
+static int InitPG( int *argc, char ***argv, 
+		   int *has_args, int *has_env, int *has_parent, 
 		   int *pg_rank_p, MPIDI_PG_t **pg_p )
 {
     int pmi_errno;
@@ -329,7 +329,8 @@ static int InitPG( int *has_args, int *has_env, int *has_parent,
     /*
      * Initialize the process group tracking subsystem
      */
-    mpi_errno = MPIDI_PG_Init(MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
+    mpi_errno = MPIDI_PG_Init(argc, argv, 
+			     MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**dev|pg_init");
     }

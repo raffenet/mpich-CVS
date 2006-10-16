@@ -75,8 +75,15 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     return mpi_errno;
 }
 
-/* FIXME: Use the Object/ref routines instead of defining new routines */
+/*@
+  MPID_VCRT_Add_ref - Add a reference to a VC reference table
 
+  Notes:
+  This is called when a communicator duplicates its group of processes.
+  It is used in 'commutil.c' and in routines to create communicators from
+  dynamic process operations.  It does not change the state of any of the
+  virtural connections (VCs).
+  @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Add_ref
 #undef FCNAME
@@ -94,11 +101,18 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 }
 
 /* FIXME: What should this do?  See proc group and vc discussion */
+
+/*@
+  MPID_VCRT_Release - Release a reference to a VC reference table
+
+  Notes:
+  
+  @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Release
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_VCRT_Release(MPID_VCRT vcrt)
+int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
 {
     int in_use;
     int mpi_errno = MPI_SUCCESS;
@@ -109,8 +123,13 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     MPIU_Object_release_ref(vcrt, &in_use);
     MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,
          "Decr VCRT %p ref count to %d",vcrt,vcrt->ref_count));
-    if (!in_use)
-    {
+    
+    /* If this VC reference table is no longer in use, we can
+       decrement the reference count of each of the VCs.  If the
+       count on the VCs goes to zero, then we can decrement the
+       ref count on the process group and so on. 
+    */
+    if (!in_use) {
 	int i, inuse;
 
 	/* FIXME: Need a better way to define how vc's are closed that 
@@ -126,6 +145,16 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 	    MPIDI_VC_t * const vc = vcrt->vcr_table[i];
 	    
 	    MPIDI_VC_release_ref(vc, &in_use);
+	    /* The rule for disconnect that we use is that if
+	       MPI_Comm_disconnect removes the last reference to this
+	       VC, we fully remove the VC.  This is not quite what the
+	       MPI standard says, but this is sufficient to give the 
+	       expected behavior for most user programs that
+	       use MPI_Comm_disconnect */
+	    if (isDisconnect && vc->ref_count == 1) {
+		MPIDI_VC_release_ref(vc, &in_use);
+	    }
+
 	    if (!in_use)
 	    {
 		/* If the VC is myself then skip the close message */
@@ -142,6 +171,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
 		
 		/* FIXME: the correct test is ACTIVE or REMOTE_CLOSE */
 		if (vc->state != MPIDI_VC_STATE_INACTIVE) {
+		    /* printf( "Sending close to vc[%d]\n", i ); */
 		    MPIDI_CH3U_VC_SendClose( vc, i );
 		}
 		else
@@ -173,6 +203,15 @@ int MPID_VCRT_Release(MPID_VCRT vcrt)
     */
 }
 
+/*@
+  MPID_VCRT_Get_ptr - Return a pointer to the array of VCs for this 
+  reference table
+
+  Notes:
+  This routine is always used with MPID_VCRT_Create and should be 
+  combined with it.
+
+  @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Get_ptr
 #undef FCNAME
@@ -187,6 +226,20 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
     return MPI_SUCCESS;
 }
 
+/*@
+  MPID_VCR_Dup - Duplicate a virtual connection reference 
+
+  Notes:
+  If the VC is being used for the first time in a VC reference
+  table, the reference count is set to two, not one, in order to
+  distinquish between freeing a communicator with 'MPI_Comm_free' and
+  'MPI_Comm_disconnect', and the reference count on the process group
+  is incremented (to indicate that the process group is in use).
+  While this has no effect on the process group of 'MPI_COMM_WORLD',
+  it is important for process groups accessed through 'MPI_Comm_spawn'
+  or 'MPI_Comm_connect/MPI_Comm_accept'.
+  
+  @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCR_Dup
 #undef FCNAME
@@ -196,7 +249,17 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     MPIDI_STATE_DECL(MPID_STATE_MPID_VCR_DUP);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCR_DUP);
-    MPIU_Object_add_ref(orig_vcr);
+
+    /* We are allowed to create a vc that belongs to no process group 
+     as part of the initial connect/accept action, so in that case,
+     ignore the pg ref count update */
+    if (orig_vcr->ref_count == 0 && orig_vcr->pg) {
+	MPIU_Object_set_ref( orig_vcr, 2 );
+	MPIDI_PG_add_ref( orig_vcr->pg );
+    }
+    else {
+	MPIU_Object_add_ref(orig_vcr);
+    }
     MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
          "Incr VCR %p ref count to %d",orig_vcr,orig_vcr->ref_count));
     *new_vcr = orig_vcr;
@@ -204,6 +267,9 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     return MPI_SUCCESS;
 }
 
+/*@
+  MPID_VCR_Get_lpid - Get the local process ID for a given VC reference
+  @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCR_Get_lpid
 #undef FCNAME
@@ -332,6 +398,15 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
     return mpi_errno;
 }
 
+/*@
+  MPID_VCR_CommFromLpids - Create a new communicator from a given set
+  of lpids.  
+
+  Notes:
+  This is used to create a communicator that is not a subset of some
+  existing communicator, for example, in a 'MPI_Comm_spawn' or 
+  'MPI_Comm_connect/MPI_Comm_accept'.
+ @*/
 #undef FUNCNAME
 #define FUNCNAME MPID_VCR_CommFromLpids
 #undef FCNAME
@@ -394,6 +469,8 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 
 	/* printf( "about to dup vc %x for lpid = %d in another pg\n", 
 	   (int)vc, lpids[i] ); */
+	/* Note that his will increment the ref count for the associate
+	   PG if necessary.  */
 	MPID_VCR_Dup( vc, &newcomm_ptr->vcr[i] );
     }
     return 0;

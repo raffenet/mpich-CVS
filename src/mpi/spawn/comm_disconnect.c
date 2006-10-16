@@ -121,7 +121,7 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
 	MPID_Progress_end(&progress_state);
     }
     
-    mpi_errno = MPIR_Comm_release(comm_ptr);
+    mpi_errno = MPID_Comm_disconnect(comm_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     *comm = MPI_COMM_NULL;

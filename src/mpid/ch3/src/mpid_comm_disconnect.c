@@ -41,11 +41,20 @@ int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
        from the step that caused the connection steps to be initiated.  
        Possibility: if the send queue is not empty, the ref count should
        be higher.  */
+    /* FIXME: This doesn't work yet */
+    /*
     mpi_errno = MPIDI_CH3U_Comm_FinishPending( comm_ptr );
+    */
 
     /* it's more than a comm_release, but ok for now */
     /* FIXME: Describe what more might be required */
-    mpi_errno = MPIR_Comm_release(comm_ptr);
+    /* MPIU_PG_Printall( stdout ); */
+    mpi_errno = MPIR_Comm_release(comm_ptr,1);
+    /* If any of the VCs were released by this Comm_release, wait
+     for those close operations to complete */
+    MPIDI_CH3U_VC_WaitForClose();
+    /* MPIU_PG_Printall( stdout ); */
+
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_COMM_DISCONNECT);
     return mpi_errno;

@@ -46,11 +46,6 @@ MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
 
-/* FIXME: When we're sure that this works as a file-local variable, remote 
-   it */
-/* extern volatile int MPIDI_Outstanding_close_ops; */
-
-
 /*----------------------
   BEGIN DATATYPE SECTION
   ----------------------*/
@@ -385,7 +380,8 @@ extern MPIDI_Process_t MPIDI_Process;
 typedef int (*MPIDI_PG_Compare_ids_fn_t)(void * id1, void * id2);
 typedef int (*MPIDI_PG_Destroy_fn_t)(MPIDI_PG_t * pg);
 
-int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t, MPIDI_PG_Destroy_fn_t);
+int MPIDI_PG_Init( int *, char ***, 
+		   MPIDI_PG_Compare_ids_fn_t, MPIDI_PG_Destroy_fn_t);
 int MPIDI_PG_Finalize(void);
 int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** ppg);
 int MPIDI_PG_Destroy(MPIDI_PG_t * pg);

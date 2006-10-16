@@ -554,7 +554,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 /* Release a reference to a communicator.  If there are no pending
    references, delete the communicator and recover all storage and 
    context ids */
-int MPIR_Comm_release(MPID_Comm * comm_ptr)
+int MPIR_Comm_release(MPID_Comm * comm_ptr, int isDisconnect)
 {
     static const char FCNAME[] = "MPIR_Comm_release";
     int mpi_errno = MPI_SUCCESS;
@@ -583,17 +583,18 @@ int MPIR_Comm_release(MPID_Comm * comm_ptr)
 	    MPID_Dev_comm_destroy_hook(comm_ptr);
 	    
 	    /* Free the VCRT */
-	    mpi_errno = MPID_VCRT_Release(comm_ptr->vcrt);
+	    mpi_errno = MPID_VCRT_Release(comm_ptr->vcrt, isDisconnect);
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_POP(mpi_errno);
 	    }
             if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-                mpi_errno = MPID_VCRT_Release(comm_ptr->local_vcrt);
+                mpi_errno = MPID_VCRT_Release(
+		    comm_ptr->local_vcrt, isDisconnect);
 		if (mpi_errno != MPI_SUCCESS) {
 		    MPIU_ERR_POP(mpi_errno);
 		}
                 if (comm_ptr->local_comm) 
-                    MPIR_Comm_release(comm_ptr->local_comm);
+                    MPIR_Comm_release(comm_ptr->local_comm, isDisconnect );
             }
 
 	    /* Free the context value */

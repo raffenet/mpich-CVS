@@ -259,7 +259,7 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 	MPIU_ERR_POP(mpi_errno);
     }
 
-  fn_exit:
+ fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;

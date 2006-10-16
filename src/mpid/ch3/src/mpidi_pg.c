@@ -15,6 +15,9 @@ static MPIDI_PG_t * MPIDI_PG_iterator_next = NULL;
 static MPIDI_PG_Compare_ids_fn_t MPIDI_PG_Compare_ids_fn;
 static MPIDI_PG_Destroy_fn_t MPIDI_PG_Destroy_fn;
 
+/* Set verbose to 1 to record changes to the process group structure. */
+static int verbose = 0;
+
 /* Key track of the process group corresponding to the MPI_COMM_WORLD 
    of this process */
 static MPIDI_PG_t *pg_world = NULL;
@@ -25,13 +28,36 @@ static MPIDI_PG_t *pg_world = NULL;
 #define FUNCNAME MPIDI_PG_Init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn, 
+int MPIDI_PG_Init(int *argc_p, char ***argv_p, 
+		  MPIDI_PG_Compare_ids_fn_t compare_ids_fn, 
 		  MPIDI_PG_Destroy_fn_t destroy_fn)
 {
     int mpi_errno = MPI_SUCCESS;
+    char *p;
     
     MPIDI_PG_Compare_ids_fn = compare_ids_fn;
     MPIDI_PG_Destroy_fn     = destroy_fn;
+
+    /* Check for debugging options.  We yse MPICHD_DBG and -mpichd-dbg 
+       to avoid confusion with the code in src/util/dbg/dbg_printf.c */
+    p = getenv( "MPICHD_DBG_PG" );
+    if (p && ( strcmp( p, "YES" ) == 0 || strcmp( p, "yes" ) == 0) )
+	verbose = 1;
+    if (argc_p && argv_p) {
+	int argc = *argc_p, i;
+	char **argv = *argv_p;
+	for (i=1; i<=argc && argv[i]; i++) {
+	    if (strcmp( "-mpichd-dbg-pg", argv[i] ) == 0) {
+		int j;
+		verbose = 1;
+		for (j=i; j<=argc && argv[i]; j++) {
+		    argv[j] = argv[j+1];
+		}
+		*argc_p = argc - 1;
+		break;
+	    }
+	}
+    }
 
     return mpi_errno;
 }
@@ -52,6 +78,11 @@ int MPIDI_PG_Finalize(void)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_FINALIZE);
+
+    /* Print the state of the process groups */
+    if (verbose) {
+	MPIU_PG_Printall( stdout );
+    }
 
     /* FIXME - straighten out the use of PG_Finalize - no use after 
        PG_Finalize */
@@ -129,12 +160,18 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     MPIU_CHKPMEM_MALLOC(pg->vct,MPIDI_VC_t *,sizeof(MPIDI_VC_t)*vct_sz,
 			mpi_errno,"pg->vct");
 
+    if (verbose) {
+	fprintf( stdout, "Creating a process group of size %d\n", vct_sz );
+	fflush(stdout);
+    }
+
     pg->handle = 0;
-    /* FIXME: This reference count may be too large, depending on 
-       what communicator is associated with the process group. */
-    MPIU_Object_set_ref(pg, vct_sz);
+    /* The reference count indicates the number of vc's that are or 
+       have been in use and not disconnected. It starts at zero,
+       except for MPI_COMM_WORLD. */
+    MPIU_Object_set_ref(pg, 0);
     pg->size = vct_sz;
-    pg->id = pg_id;
+    pg->id   = pg_id;
     
     for (p = 0; p < vct_sz; p++)
     {
@@ -164,6 +201,7 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 
     /* The first process group is always the world group */
     if (!pg_world) { pg_world = pg; }
+
     /* Add pg's at the tail so that comm world is always the first pg */
     pg->next = 0;
     if (!MPIDI_PG_list)
@@ -226,6 +264,10 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		printf("[%s%d]freeing vc%d - %p (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, i, &pg->vct[i], pg->id);fflush(stdout);
 	    }
 	    */
+	    if (verbose) {
+		fprintf( stdout, "Destroying process group %s\n", 
+			 (char *)pg->id ); fflush(stdout);
+	    }
 	    MPIDI_PG_Destroy_fn(pg);
 	    MPIU_Free(pg->vct);
 	    MPIU_Free(pg);
@@ -885,10 +927,12 @@ int MPIDI_PG_Dup_vcr( MPIDI_PG_t *pg, int rank, MPIDI_VC_t **vc_p )
     vc = &pg->vct[rank];
     /* Increase the reference count of the vc.  If the reference count 
        increases from 0 to 1, increase the reference count of the 
-       process group */
+       process group *and* the reference count of the vc (this
+       allows us to distinquish between Comm_free and Comm_disconnect) */
     /* FIXME: This should be a fetch and increment for thread-safety */
     if (vc->ref_count == 0) {
 	MPIDI_PG_add_ref(pg);
+	MPIDI_VC_add_ref(vc);
     }
     MPIDI_VC_add_ref(vc);
     *vc_p = vc;
@@ -999,4 +1043,6 @@ int MPIU_PG_Printall( FILE *fp )
 	fflush(fp);
 	pg = pg->next;
     }
+
+    return 0;
 }
