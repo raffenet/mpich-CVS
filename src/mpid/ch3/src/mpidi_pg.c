@@ -955,7 +955,8 @@ int MPIDI_PG_Close_VCs( void )
 	    else
 	    {
                 if (vc->state == MPIDI_VC_STATE_INACTIVE && vc->ref_count != 0) {
-		    /* FIXME: If the reference count for the vc is not 0, something is wrong */
+		    /* FIXME: If the reference count for the vc is not 0,
+		       something is wrong */
                     MPIDI_PG_release_ref(pg, &inuse);
                 }
 
@@ -975,3 +976,27 @@ int MPIDI_PG_Close_VCs( void )
     return mpi_errno;
 }
 
+/*
+ * This routine may be called to print the contents (including states and
+ * reference counts) for process groups.
+ */
+int MPIU_PG_Printall( FILE *fp )
+{
+    MPIDI_PG_t *pg;
+    int         i;
+		  
+    pg = MPIDI_PG_list;
+
+    fprintf( fp, "Process groups:\n" );
+    while (pg) {
+	fprintf( fp, "size = %d, refcount = %d, id = %s\n", 
+		 pg->size, pg->ref_count, (char *)pg->id );
+	for (i=0; i<pg->size; i++) {
+	    fprintf( fp, "\tVCT rank = %d, refcount = %d, lpid = %d, state = %d \n", 
+		     pg->vct[i].pg_rank, pg->vct[i].ref_count,
+		     pg->vct[i].lpid, (int)pg->vct[i].state );
+	}
+	fflush(fp);
+	pg = pg->next;
+    }
+}
