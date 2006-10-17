@@ -82,7 +82,9 @@ int MPI_Pack_external(char *datarep,
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
 	    /* NOTE: inbuf could be null (MPI_BOTTOM) */
-	    MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
+	    if (incount > 0) {
+		MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
+	    }
 	    MPIR_ERRTEST_ARGNULL(position, "position", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
@@ -103,7 +105,10 @@ int MPI_Pack_external(char *datarep,
 #   endif /* HAVE_ERROR_CHECKING */
     
     /* ... body of routine ... */
-    
+    if (incount == 0) {
+	goto fn_exit;
+    }
+
     segp = MPID_Segment_alloc();
     /* --BEGIN ERROR HANDLING-- */
     if (segp == NULL)

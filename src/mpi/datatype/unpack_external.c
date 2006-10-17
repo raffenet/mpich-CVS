@@ -77,7 +77,9 @@ int MPI_Unpack_external(char *datarep,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_ARGNULL(inbuf, "input buffer", mpi_errno);
+	    if (insize > 0) {
+		MPIR_ERRTEST_ARGNULL(inbuf, "input buffer", mpi_errno);
+	    }
 	    /* NOTE: outbuf could be MPI_BOTTOM; don't test for NULL */
 	    MPIR_ERRTEST_COUNT(insize, mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
@@ -101,6 +103,9 @@ int MPI_Unpack_external(char *datarep,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    if (insize == 0) {
+	goto fn_exit;
+    }
     
     segp = MPID_Segment_alloc();
     MPIU_ERR_CHKANDJUMP1((segp == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");

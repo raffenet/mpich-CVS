@@ -40,14 +40,14 @@
 .  int *position - position
 -  MPI_Comm comm - communicator
 
-   Notes (from the specifications):
+  Notes (from the specifications):
 
-   The input value of position is the first location in the output buffer to be
-   used for packing.  position is incremented by the size of the packed message,
-   and the output value of position is the first location in the output buffer
-   following the locations occupied by the packed message.  The comm argument is
-   the communicator that will be subsequently used for sending the packed
-   message.
+  The input value of position is the first location in the output buffer to be
+  used for packing.  position is incremented by the size of the packed message,
+  and the output value of position is the first location in the output buffer
+  following the locations occupied by the packed message.  The comm argument is
+  the communicator that will be subsequently used for sending the packed
+  message.
 
 
 .N Fortran
@@ -97,7 +97,9 @@ int MPI_Pack(void *inbuf,
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
 	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
 	    /* NOTE: inbuf could be null (MPI_BOTTOM) */
-	    MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
+	    if (incount > 0) {
+		MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
+	    }
 	    MPIR_ERRTEST_ARGNULL(position, "position", mpi_errno);
             /* Validate comm_ptr */
 	    /* If comm_ptr is not valid, it will be reset to null */
@@ -153,6 +155,9 @@ int MPI_Pack(void *inbuf,
 #endif /* HAVE_ERROR_CHECKING */
     
     /* ... body of routine ... */
+    if (incount == 0) {
+	goto fn_exit;
+    }
     
     /* TODO: CHECK RETURN VALUES?? */
     /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
