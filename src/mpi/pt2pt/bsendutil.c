@@ -156,8 +156,10 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 		 but the Intel test wants MPI_ERR_BUFFER, and it seems
 		 to violate the principle of least surprise to not use
 		 MPI_ERR_BUFFER for errors with the Buffer */
-		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_attach", __LINE__, MPI_ERR_BUFFER, 
-					     "**bsendbufsmall", "**bsendbufsmall %d %d", buffer_size, MPI_BSEND_OVERHEAD );
+		return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+		    "MPIR_Bsend_attach", __LINE__, MPI_ERR_BUFFER, 
+		    "**bsendbufsmall", 
+                    "**bsendbufsmall %d %d", buffer_size, MPI_BSEND_OVERHEAD );
 	    }
 	}
 	MPID_END_ERROR_CHECKS;
@@ -203,6 +205,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 int MPIR_Bsend_detach( void *bufferp, int *size )
 {
     if (BsendBuffer.pending) {
+	/* FIXME: This is the wrong error text (notimpl) */
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
              "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**notimpl", 0 );
     }
@@ -450,7 +453,7 @@ static void MPIR_Bsend_check_active( void )
 	next_active = active->next;
 
 	if (active->kind == IBSEND) {
-	    /* We handle ibsend specially to allow for the uesr
+	    /* We handle ibsend specially to allow for the user
 	       to attempt and cancel the request. Also, to allow
 	       for a cancel attempt (which must be attempted before
 	       a successful test or wait), we only start
@@ -459,6 +462,13 @@ static void MPIR_Bsend_check_active( void )
 	    flag = 0;
 	    if (active->request->ref_count == 1) {
 		NMPI_Test(&r, &flag, MPI_STATUS_IGNORE );
+	    }
+	    else {
+		/* We need to invoke the progress engine in case we 
+		 need to advance other, incomplete communication.  */
+		MPID_Progress_state progress_state;
+		MPID_Progress_start(&progress_state);
+		MPID_Progress_end(&progress_state);
 	    }
 	}
 	else {

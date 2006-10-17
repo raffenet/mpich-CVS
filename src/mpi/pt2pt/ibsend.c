@@ -18,8 +18,6 @@
 #endif
 /* -- End Profiling Symbol Block */
 
-/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
-   the MPI routines */
 typedef struct {
     MPID_Request *req;
     int           cancelled;
@@ -28,10 +26,12 @@ typedef struct {
 PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status );
 PMPI_LOCAL int MPIR_Ibsend_free( void *extra );
 PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete );
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Ibsend
 #define MPI_Ibsend PMPI_Ibsend
-
 
 PMPI_LOCAL int MPIR_Ibsend_query( void *extra, MPI_Status *status )
 {
@@ -64,6 +64,9 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
     MPIU_THREADPRIV_DECL;
 
     /* FIXME: There should be no unreferended args! */
+    /* Note that this value should always be 1 because 
+       Grequest_complete is called on this request when it is
+       created */
     MPIU_UNREFERENCED_ARG(complete);
 
     MPIU_THREADPRIV_GET;
@@ -199,6 +202,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     /* The request is immediately complete because the MPIR_Bsend_isend has
        already moved the data out of the user's buffer */
     MPIR_Request_add_ref( request_ptr );
+    /* Request count is now 2 (set to 1 in Grequest_start) */
     NMPI_Grequest_complete( *request );
     MPIR_Nest_decr();
     /* ... end of body of routine ... */
