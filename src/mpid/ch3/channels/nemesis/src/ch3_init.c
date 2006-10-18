@@ -157,10 +157,27 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
     goto fn_exit;
 }
 
-const char *MPIDI_CH3_VC_GetStateString(int state)
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+#ifdef USE_DBG_LOGGING
+const char * MPIDI_CH3_VC_GetStateString( int state )
 {
-    return "";
+    const char *name = "unknown";
+    static char asdigits[20];
+    
+    switch (state) {
+    case MPIDI_CH3I_VC_STATE_UNCONNECTED: name = "CH3I_VC_STATE_UNCONNECTED"; break;
+    case MPIDI_CH3I_VC_STATE_CONNECTING:  name = "CH3I_VC_STATE_CONNECTING"; break;
+    case MPIDI_CH3I_VC_STATE_CONNECTED:   name = "CH3I_VC_STATE_CONNECTED"; break;
+    case MPIDI_CH3I_VC_STATE_FAILED:      name = "CH3I_VC_STATE_FAILED"; break;
+    default:
+	MPIU_Snprintf( asdigits, sizeof(asdigits), "%d", state );
+	asdigits[20-1] = 0;
+	name = (const char *)asdigits;
+    }
+    return name;
 }
+#endif
+#endif
 
 /* We don't initialize before calling MPIDI_CH3_VC_Init */
 int MPIDI_CH3_PG_Init (MPIDI_PG_t *pg_p)

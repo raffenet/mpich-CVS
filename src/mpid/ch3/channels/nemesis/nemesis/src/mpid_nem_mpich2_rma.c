@@ -160,7 +160,7 @@ MPID_nem_mpich2_win_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 	if ((*s_iov)->iov_len > (*d_iov)->iov_len)
 	{
 	    len = (*d_iov)->iov_len;	    
-	    MPID_NEM_MEMCPY ((*d_iov)->iov_base + diff, (*s_iov)->iov_base, len);
+	    MPID_NEM_MEMCPY ((char*)((*d_iov)->iov_base) + diff, (*s_iov)->iov_base, len);
 
 	    (*s_iov)->iov_base = (char *)(*s_iov)->iov_base + len;
 	    (*s_iov)->iov_len =- len;	    
@@ -174,7 +174,7 @@ MPID_nem_mpich2_win_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 	else if ((*s_iov)->iov_len > (*d_iov)->iov_len)
 	{
 	    len = (*s_iov)->iov_len;	    
-	    MPID_NEM_MEMCPY ((*d_iov)->iov_base + diff, (*s_iov)->iov_base, len);
+	    MPID_NEM_MEMCPY ((char*)((*d_iov)->iov_base) + diff, (*s_iov)->iov_base, len);
 
 	    ++(*s_iov);
 	    --(*s_niov);
@@ -185,7 +185,7 @@ MPID_nem_mpich2_win_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 	else
 	{
 	    len = (*s_iov)->iov_len;	    
-	    MPID_NEM_MEMCPY ((*d_iov)->iov_base + diff, (*s_iov)->iov_base, len);
+	    MPID_NEM_MEMCPY ((char*)((*d_iov)->iov_base) + diff, (*s_iov)->iov_base, len);
 
 	    ++(*s_iov);
 	    --(*s_niov);
@@ -249,7 +249,7 @@ MPID_nem_mpich2_win_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 	if ((*d_iov)->iov_len > (*s_iov)->iov_len)
 	{
 	    len = (*s_iov)->iov_len;	    
-	    MPID_NEM_MEMCPY ((*d_iov)->iov_base + diff, (*s_iov)->iov_base, len);
+	    MPID_NEM_MEMCPY ((char*)((*d_iov)->iov_base) + diff, (*s_iov)->iov_base, len);
 
 	    (*d_iov)->iov_base = (char *)(*d_iov)->iov_base + len;
 	    (*d_iov)->iov_len =- len;	    
@@ -263,7 +263,7 @@ MPID_nem_mpich2_win_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 	else if ((*d_iov)->iov_len > (*s_iov)->iov_len)
 	{
 	    len = (*d_iov)->iov_len;	    
-	    MPID_NEM_MEMCPY ((*d_iov)->iov_base + diff, (*s_iov)->iov_base, len);
+	    MPID_NEM_MEMCPY ((char*)((*d_iov)->iov_base) + diff, (*s_iov)->iov_base, len);
 
 	    ++(*d_iov);
 	    --(*d_niov);
@@ -274,7 +274,7 @@ MPID_nem_mpich2_win_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 	else
 	{
 	    len = (*d_iov)->iov_len;	    
-	    MPID_NEM_MEMCPY ((*d_iov)->iov_base + diff, (*s_iov)->iov_base, len);
+	    MPID_NEM_MEMCPY ((char*)((*d_iov)->iov_base) + diff, (*s_iov)->iov_base, len);
 
 	    ++(*d_iov);
 	    --(*d_niov);
@@ -458,7 +458,7 @@ MPID_nem_mpich2_putv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		   int *completion_ctr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int len;
+    /* int len;*/
     
     if (MPID_NEM_IS_LOCAL (proc))
     {
@@ -565,7 +565,7 @@ MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_iov, i
 		   int *completion_ctr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int len;
+    /* int len; */
 
     if (MPID_NEM_IS_LOCAL (proc))
     {

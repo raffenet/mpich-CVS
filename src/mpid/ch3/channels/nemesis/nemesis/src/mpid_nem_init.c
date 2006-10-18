@@ -46,8 +46,8 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int                   num_procs       = pg_p->size;
     pid_t                 my_pid;
     int                   ret;
-    int                   num_local;
-    int                  *local_procs;
+    int                   num_local = -1;
+    int                  *local_procs = NULL;
     int                   local_rank = -1;
     int                   global_size;
     int                   index, index2, size;

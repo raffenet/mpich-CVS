@@ -15,10 +15,9 @@ int MPID_nem_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
-    int rank = MPID_nem_mem_region.rank;
 
     /* this test is not the right one */
-/*     MPIU_Assert(MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[rank])); */
+/*     MPIU_Assert(MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[MPID_nem_mem_region.rank])); */
     
     mpi_errno = MPID_nem_net_module_finalize();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
