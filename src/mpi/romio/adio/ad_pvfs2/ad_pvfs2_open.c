@@ -111,7 +111,7 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
 	}
     } else if (access_mode & ADIO_EXCL) {
 	/* lookup should not succeed if opened with EXCL */
-	o_status->error = -PVFS_EEXIST
+	o_status->error = -PVFS_EEXIST;
 	return;
     } else {
 	o_status->object_ref = resp_lookup.ref;
