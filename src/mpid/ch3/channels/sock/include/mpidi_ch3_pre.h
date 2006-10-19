@@ -88,7 +88,6 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3I_VC_state_t state;
     MPIDU_Sock_t sock;
     struct MPIDI_CH3I_Connection * conn;
-    int port_name_tag;
 }
 MPIDI_CH3I_VC;
 

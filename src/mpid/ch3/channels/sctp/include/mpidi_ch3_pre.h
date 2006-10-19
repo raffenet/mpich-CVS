@@ -172,8 +172,6 @@ typedef struct MPIDI_CH3I_VC
      */    
     MPIDI_CH3I_VC_state_t state;
 
-    int port_name_tag;
- 
     /* myct: stream table, each stream is independent */
     struct MPIDI_CH3I_SCTP_Stream stream_table[MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT];
     

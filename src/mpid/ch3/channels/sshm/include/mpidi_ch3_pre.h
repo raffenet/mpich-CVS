@@ -208,7 +208,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * req;
     MPIDI_CH3I_VC_state_t state;
     int shm_read_connected;
-    int port_name_tag;
     MPIDI_CH3I_Shmem_block_request_result shm_write_queue_info, shm_read_queue_info;
     int shm_reading_pkt;
     int shm_state;

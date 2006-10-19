@@ -4,10 +4,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/* FIXME: This could go into util/port as a general utility routine */
-/* FIXME: This is needed/used only if dynamic processes are supported 
-   (e.g., another reason to place it into util/port) */
-
 #include "mpidi_ch3_impl.h"
 
 /*
@@ -52,6 +48,14 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 			      MPID_Comm *intercomm );
 static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
 					  MPIDI_VC_t *vc_ptr, int is_low_group);
+/* ------------------------------------------------------------------------- */
+
+/* 
+ * These next two routines are used to create a virtual connection
+ * (VC) and a temporary intercommunicator that can be used to 
+ * communicate between the two "root" processes for the 
+ * connect and accept.
+ */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Create_inter_root_communicator_connect
@@ -82,17 +86,6 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    /* FIXME: Who sets?  Why? Where is this defined? Document */
-    /* channels/sshm/include/mpidi_ch3_pre.h defines this */
-#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-    /* If the VC creates non-duplex connections then the acceptor will
-     * need to connect back to form the other half of the connection. */
-    /* FIXME: A hook should not be such a specific function; instead,
-       it should invoke a function pointer defined in the channel 
-       interface structure */
-    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( connect_vc );
-#endif
-
     *comm_pptr = tmp_comm;
     *vc_pptr = connect_vc;
 
@@ -103,7 +96,73 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
     goto fn_exit;
 }
 
+/* Creates a communicator for the purpose of communicating with one other 
+   process (the root of the other group).  It also returns the virtual
+   connection */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_Create_inter_root_communicator_accept
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_Create_inter_root_communicator_accept(const char *port_name, 
+						MPID_Comm **comm_pptr, 
+						MPIDI_VC_t **vc_pptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Comm *tmp_comm;
+    MPIDI_VC_t *new_vc = NULL;
+    MPID_Progress_state progress_state;
+    int port_name_tag;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
+
+    /* extract the tag from the port_name */
+    mpi_errno = MPIDI_GetTagFromPort( port_name, &port_name_tag);
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+
+    /* FIXME: Describe the algorithm used here, and what routine 
+       is user on the other side of this connection */
+    /* dequeue the accept queue to see if a connection with the
+       root on the connect side has been formed in the progress
+       engine (the connection is returned in the form of a vc). If
+       not, poke the progress engine. */
+
+    MPID_Progress_start(&progress_state);
+    for(;;)
+    {
+	MPIDI_CH3I_Acceptq_dequeue(&new_vc, port_name_tag);
+	if (new_vc != NULL)
+	{
+	    break;
+	}
+
+	mpi_errno = MPID_Progress_wait(&progress_state);
+	/* --BEGIN ERROR HANDLING-- */
+	if (mpi_errno)
+	{
+	    MPID_Progress_end(&progress_state);
+	    MPIU_ERR_POP(mpi_errno);
+	}
+	/* --END ERROR HANDLING-- */
+    }
+    MPID_Progress_end(&progress_state);
+
+    mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, new_vc, 0);
+
+    *comm_pptr = tmp_comm;
+    *vc_pptr = new_vc;
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
+    return mpi_errno;
+
+fn_fail:
+    goto fn_exit;
+}
+
+/* ------------------------------------------------------------------------- */
 /*
    MPIDI_Comm_connect()
 
@@ -191,9 +250,9 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    n_remote_pgs = recv_ints[0];
+    n_remote_pgs     = recv_ints[0];
     remote_comm_size = recv_ints[1];
-    context_id = recv_ints[2];
+    context_id	     = recv_ints[2];
     MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
 			n_remote_pgs * sizeof(MPIDI_PG_t*),
 			mpi_errno,"remote_pg");
@@ -261,7 +320,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     }
     
     intercomm = *newcomm;
-    intercomm->context_id = context_id;
+    intercomm->context_id   = context_id;
     intercomm->is_low_group = 1;
 
     mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 
@@ -647,81 +706,6 @@ static int SendPGtoPeerAndFree( MPID_Comm *tmp_comm, int *sendtag_p,
 }
 
 /* ---------------------------------------------------------------------- */
-/* Creates a communicator for the purpose of communicating with one other 
-   process (the root of the other group).  It also returns the virtual
-   connection */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_Create_inter_root_communicator_accept
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPIDI_Create_inter_root_communicator_accept(const char *port_name, 
-						MPID_Comm **comm_pptr, 
-						MPIDI_VC_t **vc_pptr)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *tmp_comm;
-    MPIDI_VC_t *new_vc = NULL;
-    MPID_Progress_state progress_state;
-    int port_name_tag;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
-
-    /* FIXME: This code should parallel the MPIDI_CH3_Connect_to_root
-       code used in the MPIDI_Create_inter_root_communicator_connect */
-    /* extract the tag from the port_name */
-    mpi_errno = MPIDI_GetTagFromPort( port_name, &port_name_tag);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-
-    /* FIXME: Describe the algorithm used here, and what routine 
-       is user on the other side of this connection */
-    /* dequeue the accept queue to see if a connection with the
-       root on the connect side has been formed in the progress
-       engine (the connection is returned in the form of a vc). If
-       not, poke the progress engine. */
-
-    MPID_Progress_start(&progress_state);
-    for(;;)
-    {
-	MPIDI_CH3I_Acceptq_dequeue(&new_vc, port_name_tag);
-	if (new_vc != NULL)
-	{
-	    break;
-	}
-
-	mpi_errno = MPID_Progress_wait(&progress_state);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno)
-	{
-	    MPID_Progress_end(&progress_state);
-	    MPIU_ERR_POP(mpi_errno);
-	}
-	/* --END ERROR HANDLING-- */
-    }
-    MPID_Progress_end(&progress_state);
-
-    mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, new_vc, 0);
-
-    /* If the VC creates non-duplex connections then the acceptor will
-     * need to connect back to form the other half of the connection. */
-    /* FIXME: See other HOOK fixme */
-#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection2( new_vc );
-#endif
-
-    *comm_pptr = tmp_comm;
-    *vc_pptr = new_vc;
-
-fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
-    return mpi_errno;
-
-fn_fail:
-    goto fn_exit;
-}
-
 /*
  * MPIDI_Comm_accept()
 
@@ -926,6 +910,7 @@ fn_fail:
     goto fn_exit;
 }
 
+/* ------------------------------------------------------------------------- */
 /* This is a utility routine used to initialize temporary communicators
    used in connect/accept operations */
 #undef FUNCNAME
@@ -950,6 +935,7 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     }
     /* fill in all the fields of tmp_comm. */
 
+    /* FIXME: Why do we need a tmp_comm and a context id ? */
     /* FIXME: Should we allocate a new context id each time ? If
        so, how do we make sure that each process in this tmp_comm
        has the same context id? */
@@ -968,6 +954,7 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
        (connection has been established). */
 
     /* Point local vcr, vcrt at those of commself_ptr */
+    /* FIXME: Explain why */
     tmp_comm->local_vcrt = commself_ptr->vcrt;
     MPID_VCRT_Add_ref(commself_ptr->vcrt);
     tmp_comm->local_vcr  = commself_ptr->vcr;
@@ -990,6 +977,18 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
 
     *comm_pptr = tmp_comm;
+
+    /* FIXME: Who sets?  Why? Where is this defined? Document.  
+     Why is this not done as part of the VC initialization? */
+    /* channels/sshm/include/mpidi_ch3_pre.h defines this */
+#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
+    /* If the VC creates non-duplex connections then the acceptor will
+     * need to connect back to form the other half of the connection. */
+    /* FIXME: A hook should not be such a specific function; instead,
+       it should invoke a function pointer defined in the channel 
+       interface structure */
+    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( vc_ptr );
+#endif
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
@@ -1078,6 +1077,7 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 }
 
 /* Free new_vc. It was explicitly allocated in MPIDI_CH3_Connect_to_root. */
+/* FIXME: The free and the create routines should be in the same file */
 #undef FUNCNAME
 #define FUNCNAME FreeNewVC
 #undef FCNAME
@@ -1115,6 +1115,11 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
     return mpi_errno;
 }
 
+/* ------------------------------------------------------------------------- */
+/*
+ * 
+ */
+
 /* FIXME: What is an Accept queue and who uses it?  
    Is this part of the connect/accept support?  
    These routines appear to be called by channel progress routines; 
@@ -1130,6 +1135,7 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
 typedef struct MPIDI_CH3I_Acceptq_s
 {
     struct MPIDI_VC *vc;
+    int             port_name_tag;
     struct MPIDI_CH3I_Acceptq_s *next;
 }
 MPIDI_CH3I_Acceptq_t;
@@ -1140,7 +1146,7 @@ static MPIDI_CH3I_Acceptq_t * acceptq_head=0;
 #define FUNCNAME MPIDI_CH3I_Acceptq_enqueue
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc, int port_name_tag )
 {
     int mpi_errno=MPI_SUCCESS;
     MPIDI_CH3I_Acceptq_t *q_item;
@@ -1159,8 +1165,10 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc)
     }
     /* --END ERROR HANDLING-- */
 
-    q_item->vc = vc;
+    q_item->vc		  = vc;
+    q_item->port_name_tag = port_name_tag;
 
+    /* FIXME: Stack or queue? */
     MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=%p:Enqueuing accept connection",vc);
     q_item->next = acceptq_head;
     acceptq_head = q_item;
@@ -1188,9 +1196,10 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
     *vc = NULL;
     q_item = acceptq_head;
     prev = q_item;
+
     while (q_item != NULL)
     {
-	if (q_item->vc->ch.port_name_tag == port_name_tag)
+	if (q_item->port_name_tag == port_name_tag)
 	{
 	    *vc = q_item->vc;
 

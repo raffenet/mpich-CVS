@@ -732,7 +732,7 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns * );
 
 /* Utility routines provided in src/ch3u_port.c for working with connection
    queues */
-int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc);
+int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc, int port_name_tag);
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
 int MPIDI_CH3I_Acceptq_init(void);
 /*--------------------------

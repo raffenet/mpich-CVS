@@ -488,6 +488,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
 		{
 		    MPIDI_VC_t *vc; 
+		    int port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
 
 		    vc = (MPIDI_VC_t *) MPIU_Malloc(sizeof(MPIDI_VC_t));
 		    /* --BEGIN ERROR HANDLING-- */
@@ -505,10 +506,12 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    /* Initialize the sock fields */
 		    vc->ch.sendq_head = NULL;
 		    vc->ch.sendq_tail = NULL;
+		    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
 		    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 		    vc->ch.sock = conn->sock;
 		    vc->ch.conn = conn;
 		    conn->vc = vc;
+
 		    /* Initialize the shm fields */
 		    vc->ch.recv_active = NULL;
 		    vc->ch.send_active = NULL;
@@ -519,11 +522,10 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    vc->ch.shm_state = 0;
 		    vc->ch.shm_next_reader = NULL;
 		    vc->ch.shm_next_writer = NULL;
-		    vc->ch.bShm = FALSE;
 		    vc->ch.shm_read_connected = 0;
+		    vc->ch.bShm = FALSE;
 
-		    vc->ch.port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
-                    
+
 		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 		    conn->pkt.sc_open_resp.ack = TRUE;
                         
@@ -539,7 +541,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    /* --END ERROR HANDLING-- */
 
 		    /* ENQUEUE vc */
-		    MPIDI_CH3I_Acceptq_enqueue(vc);
+		    MPIDI_CH3I_Acceptq_enqueue(vc, port_name_tag);
 
 		}
 		else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_RESP)

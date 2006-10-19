@@ -672,7 +672,8 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
     }
     else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT) {
 	MPIDI_VC_t *vc; 
-	
+	int port_name_tag;
+
 	vc = (MPIDI_VC_t *) MPIU_Malloc(sizeof(MPIDI_VC_t));
 	/* --BEGIN ERROR HANDLING-- */
 	if (vc == NULL) {
@@ -694,9 +695,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	vc->ch.sock = conn->sock;
 	vc->ch.conn = conn;
 	conn->vc = vc;
-	
-	/* FIXME: What is the tag for? */
-	vc->ch.port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
+	port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
 	
 	MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
 	conn->pkt.sc_open_resp.ack = TRUE;
@@ -711,7 +710,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	}
 	
 	/* ENQUEUE vc */
-	MPIDI_CH3I_Acceptq_enqueue(vc);
+	MPIDI_CH3I_Acceptq_enqueue(vc, port_name_tag);
 
     }
     else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_RESP) {
@@ -939,7 +938,7 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
 /* ----------------------------------------------------------------------- */
 /* FIXME: What does this do? */
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_VC_post_connect
+#define FUNCNAME MPIDI_CH3I_VC_post_sockconnect
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)

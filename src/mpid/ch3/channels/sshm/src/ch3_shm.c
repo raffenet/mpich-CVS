@@ -1125,8 +1125,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *recv_vc_ptr, int millisecond_timeou
 #endif /* MPIDI_CH3_CHANNEL_RNDV */
 		if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
 		{
-		    recv_vc_ptr->ch.port_name_tag = ((MPIDI_CH3_Pkt_t*)mem_ptr)->sc_conn_accept.port_name_tag;
-		    MPIDI_CH3I_Acceptq_enqueue(recv_vc_ptr);
+		    int port_name_tag = ((MPIDI_CH3_Pkt_t*)mem_ptr)->sc_conn_accept.port_name_tag;
+		    MPIDI_CH3I_Acceptq_enqueue(recv_vc_ptr,port_name_tag);
 		    MPIDI_CH3I_progress_completion_count++;
 		    MPIDI_CH3I_SHM_Remove_vc_references(recv_vc_ptr);
 		    recv_vc_ptr = NULL;

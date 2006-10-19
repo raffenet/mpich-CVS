@@ -735,6 +735,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    }
 	    else /* finished writing internal packet header */
 	    {
+		/* the connection is not active yet */
 		mpi_errno = MPIDI_CH3_Sockconn_handle_connwrite( conn );
 		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 	    }

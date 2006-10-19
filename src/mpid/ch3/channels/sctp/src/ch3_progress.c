@@ -729,9 +729,6 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
         MPIDI_VC_Init(vc, NULL, 0);
         MPIDI_CH3_VC_Init(vc);  /* TODO check success */
 
-        /* set the port_name_tag on this VC for verification later */
-        vc->ch.port_name_tag = pkt->sc_conn_accept.port_name_tag;        
-            
         /* data after pkt contains bizcard */
         data_ptr += sizeof(MPIDI_CH3_Pkt_t);
             
@@ -769,6 +766,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
              */
             
             int tmp_fd, no_nagle, suggested_port, real_port;
+	    int port_name_tag;
             struct sctp_event_subscribe evnts;
             MPIU_Size_t nb;
 
@@ -819,6 +817,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             MPIDI_Pkt_init(&conn_acc_pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT); 
             conn_acc_pkt.sc_conn_accept.bizcard_len = (int) strlen(bizcard) + 1; 
             conn_acc_pkt.sc_conn_accept.port_name_tag = pkt->sc_conn_accept.port_name_tag;
+            port_name_tag = pkt->sc_conn_accept.port_name_tag);
             conn_acc_pkt.sc_conn_accept.ack = 1; /* this IS an ACK */
 
             /* get the iov ready */
@@ -848,7 +847,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             
                 
             /* put into acceptq and signal completion so upcalls in ch3u_port.c work */
-            MPIDI_CH3I_Acceptq_enqueue(vc);
+            MPIDI_CH3I_Acceptq_enqueue(vc,port_name_tag);
 	    MPIDI_CH3_Progress_signal_completion();
         }      
                         
