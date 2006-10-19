@@ -359,6 +359,8 @@ int MPIDI_PG_Iterate_reset()
 
 #ifdef MPIDI_DEV_IMPLEMENTS_KVS
 
+/* PG_To_string is used in the implementation of connect/accept (and 
+   hence in spawn) in ch3u_port.c */
 /* Note: Allocated memory that is returned in str_ptr.  The user of
    this routine must free that data */
 #undef FUNCNAME
