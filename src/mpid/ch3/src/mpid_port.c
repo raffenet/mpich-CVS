@@ -7,10 +7,13 @@
 #include "mpidimpl.h"
 
 static int setupPortFunctions = 1;
+
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 static int MPIDI_Open_port(MPID_Info *, char *);
 
-/* Define the functions that are used to implement the port operations */
+/* Define the functions that are used to implement the port operations.
+   There is no "close port function in the default implementation 
+   (hence the 0 in the portFns structure) */
 static MPIDI_PortFns portFns = { MPIDI_Open_port, 0, 
 				 MPIDI_Comm_accept, 
 				 MPIDI_Comm_connect };
@@ -46,8 +49,6 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
-    /* FIXME: if this routine is not called within a critical section,
-       this initialization should be made thread-safe */
     if (setupPortFunctions) {
 	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
@@ -60,15 +61,12 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
        those channels will set the function pointer to NULL */
     if (portFns.OpenPort) {
 	mpi_errno = portFns.OpenPort( info_ptr, port_name );
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_POP(mpi_errno);
+	}
     }
     else {
 	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**notimpl" );
-    }
-
-    /* FIXME: The only purpose of this call is to add this function
-       to the stack of routines involved in this error */
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
     }
 
  fn_fail:
@@ -200,6 +198,7 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 
 /* ------------------------------------------------------------------------- */
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+
 /*
  * Here are the routines that provide some of the default implementations
  * for the Port routines.
@@ -208,13 +207,12 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
  * is used to separate different MPI Port values.  That tag value is
  * extracted with MPIDI_GetTagFromPort
  * MPIDI_GetTagFromPort - Routine to return the tag associated with a port.
+ *
+ * The port_name_tag is used in the connect and accept messages that 
+ * are used in the connect/accept protocol that is implemented in the
+ * ch3u_port.c file.
  */
-/*
- * The routines that use this form of port name should be in the 
- * same place (i.e., the routines to encode and decode the port strings
- * should be in the same file so that their relationship to each other is
- * clear)
- */
+
 #define MPIDI_CH3I_PORT_NAME_TAG_KEY "tag"
 
 /*
@@ -241,9 +239,8 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
 			MPIDI_CH3I_PORT_NAME_TAG_KEY, port_name_tag++);
     /* FIXME: MPIU_xxx routines should return regular mpi error codes */
     if (mpi_errno != MPIU_STR_SUCCESS) {
-	/* FIXME: We can't use mpi_errno because it isn't a valid mpich2 error code */
-	mpi_errno = MPI_ERR_OTHER;
-	MPIU_ERR_POP(mpi_errno);
+	mpi_errno = MPI_SUCCESS;
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**argstr_port_name_tag");
     }
 
     /* This works because Get_business_card uses the same MPIU_Str_xxx 
@@ -275,7 +272,8 @@ int MPIDI_GetTagFromPort( const char *port_name, int *port_name_tag )
 				     port_name_tag);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
-	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**argstr_port_name_tag");
+	mpi_errno = MPI_SUCCESS;
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**argstr_no_port_name_tag");
     }
     return mpi_errno;
 }
