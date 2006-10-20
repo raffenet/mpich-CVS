@@ -1,0 +1,23 @@
+#! /bin/sh
+file=`pwd`/test-port
+mpiexec=@bindir@/mpiexec
+
+rm -f $file
+
+nconn=100
+if [ -n "$1" ] ; then
+    nconn=$1
+fi
+nstarted=1
+while [ $nstarted -lt $nconn ] ; do
+    #echo "Starting $nstarted"
+    $mpiexec -n 1 ./testconnect $file $nconn $nstarted &
+    echo "Started process $! (num $nstarted)"
+    nstarted=`expr $nstarted + 1`
+    if [ -n "$2" ] ; then
+         sleep $2
+    fi
+done
+#echo "Starting $nstarted"
+$mpiexec -n 1 ./testconnect $file $nconn $nstarted
+wait

@@ -7,6 +7,8 @@
 Makefile.in
 Makefile
 singjoin
+testconnect
+manyconnect
 .deps
 *ebug
 *elease
