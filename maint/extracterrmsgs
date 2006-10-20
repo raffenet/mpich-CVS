@@ -18,6 +18,7 @@ require "$maintdir/parse.sub";
 
 $debug = 0;
 $careful = 0;        # Set careful to 1 to flag unused messages
+$carefulFilename = "";
 $showfiles = 0;
 $quiet = 0;
 $build_test_pgm = 1;
@@ -36,6 +37,10 @@ foreach $arg (@ARGV) {
     elsif( $arg =~ /-quiet/) { $quiet = 1; }
     elsif( $arg =~ /-notest/) { $build_test_pgm = 0; }
     elsif( $arg =~ /-outfile=(.*)/) { $outfile = $1; }
+    elsif( $arg =~ /-careful=(.*)/) {
+	$careful = 1;
+	$carefulFilename = $1;
+    }
     elsif( $arg =~ /-careful/) { $careful = 1; }
     elsif( $arg =~ /-strict/)  { $gStrict = 1; }
     elsif( $arg =~ /-skip=(.*)/) { $skipFiles{$1} = 1; }
@@ -95,12 +100,20 @@ if ($build_test_pgm && -d "test/mpi/errhan") {
 #
 # Generate a list of unused keys
 if ($careful) {
+    my $OUTFD = STDERR;
+    if ($carefulFilename ne "") {
+	$OUTFD = "ERRFD";
+	open $OUTFD, ">$carefulFilename" || die "Cannot open $carefulFilename";
+    }
     foreach $shortname (keys(%longnames)) {
 	if (!defined($longnamesUsed{$shortname}) ||
 	    $longnamesUsed{$shortname} < 1) {
 	    $loc = $longnamesDefined{$shortname};
-	    print STDERR "Name $shortname is defined in $loc but never used\n";
+	    print $OUTFD "Name $shortname is defined in $loc but never used\n";
 	}
+    }
+    if ($carefulFilename ne "") {
+	close $OUTFD;
     }
 }
 
@@ -148,7 +161,9 @@ sub CreateErrMsgMapping {
     my $linecount = 0;
     while (<FD>) {
 	$linecount++;
+	# Skip Comments
 	if (/^\s*\#/) { next; }
+	# Read entire error message (allow \ at end of line to continue)
 	if (/^\s*(\*\*[^:]*):(.*)$/) {
 	    my $name = $1;
 	    my $repl = $2;
@@ -165,6 +180,12 @@ sub CreateErrMsgMapping {
 		$repl .= $inline;
 		$repl =~ s/[\r\n]*$//g; # remove newlines
 	    }
+
+	    # Check that the name and the replacement text at least
+	    # partially match as to format specifiers
+	    # (They should have exactly the same pattern, i.e., 
+	    # if the name has %d %x in is, the replacement should 
+	    # have %d %x, in that order)
 	    my $namehasformat = ($name =~ /%/);
 	    my $replhasformat = ($repl =~ /%/);
 	    if ($namehasformat != $replhasformat) {
@@ -544,6 +565,8 @@ sub ProcessFile
 	%KnownErrRoutines = ( 'MPIR_Err_create_code'      => '5:3:1:1', 
 			      'MPIO_Err_create_code'      => '5:3:1:0', 
 			      'MPIU_ERR_SET'              => '2:-1:0:1',
+			      'MPIU_ERR_SET1'             => '2:-1:1:1',
+			      'MPIU_ERR_SET2'             => '2:-1:2:1',
 			      'MPIU_ERR_SETANDSTMT'       => '3:-1:0:1',
 			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0:1',
 			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1:1', 

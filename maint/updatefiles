@@ -279,7 +279,10 @@ if [ $do_geterrmsgs = "yes" ] ; then
         echo "Extracting the error messages..."
         rm -rf .tmp
         rm -f .err
-        maint/extracterrmsgs -skip=src/util/multichannel/mpi.c `cat maint/errmsgdirs` > .tmp 2>.err
+	rm -f unusederr.txt
+        maint/extracterrmsgs -careful=unusederr.txt \
+	    -skip=src/util/multichannel/mpi.c `cat maint/errmsgdirs` > \
+	    .tmp 2>.err
         # (error here is ok)
         update_errdefs=yes
         if [ -s .err ] ; then 
@@ -299,6 +302,10 @@ Error message files in src/mpi/errhan were not updated."
         else
             # Incase it exists but has zero size
             rm -f .err
+        fi
+	if [ -s unusederr.txt ] ; then
+	    echo "There are unused error message texts in src/mpi/errhan/errnames.txt"
+	    echo "See the file unusederr.txt for the complete list"
         fi
         if [ -s .tmp -a "$update_errdefs" = "yes" ] ; then
             mv .tmp src/mpi/errhan/defmsg.h
