@@ -110,7 +110,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * req;
     int reading_pkt;
     MPIDI_CH3I_VC_state_t state;
-    int port_name_tag;
 } MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;

@@ -59,7 +59,6 @@ typedef struct MPID_nem_sctp_stream {
 struct MPID_nem_tcp_module_internal_queue;
 typedef struct MPIDI_CH3I_VC
 {
-    int port_name_tag;
     int pg_rank;
     struct MPID_Request *recv_active;
 

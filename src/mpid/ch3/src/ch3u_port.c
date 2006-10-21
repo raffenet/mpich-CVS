@@ -21,10 +21,12 @@
    no code and some compilers may warn about an "empty translation unit */
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 
+/* FIXME: pg_translation is used for ? */
 typedef struct pg_translation {
     int pg_index;    /* index of a process group (index in pg_node) */
     int pg_rank;     /* rank in that process group */
 } pg_translation;
+
 
 typedef struct pg_node {
     int  index;            /* Internal index of process group 
@@ -48,6 +50,56 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 			      MPID_Comm *intercomm );
 static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
 					  MPIDI_VC_t *vc_ptr, int is_low_group);
+/* ------------------------------------------------------------------------- */
+/*
+ * Structure of this file and the connect/accept algorithm:
+ *
+ * Here are the steps involved in implementating MPI_Comm_connect and
+ * MPI_Comm_accept.  These same steps are used withing MPI_Comm_spawn
+ * and MPI_Comm_spawn_multiple.
+ *
+ * First, the connecting process establishes a connection (not a virtual
+ * connection!) to the designated accepting process.  
+ * This makes use of the usual (channel-specific) connection code.  
+ * Once this connection is established, the connecting process sends a packet 
+ * (type MPIDI_CH3I_PKT_SC_CONN_ACCEPT) to the accepting process.
+ * This packet contains a "port_tag_name", which is a value that
+ * is used to separate different MPI port names (values from MPI_Open_port)
+ * on the same process (this is a way to multiplex many MPI port names on 
+ * a single communication connection port).
+ *
+ * At this point, the accepting process creates a virtual connection (VC)
+ * for this connection, initializes it, sends a packet back with the type
+ * MPIDI_CH3I_PKT_SC_OPEN_RESP.  In addition, the connection is saved in 
+ * an accept queue with the port_tag_name.
+ *
+ * On the accepting side, the process waits until the progress engine
+ * inserts the connect request into the accept queue (this is done with the
+ * routine MPIDI_CH3I_Acceptq_dequeue).  This routine returns the matched
+ * virtual connection (VC).
+ *
+ * Once both sides have established there VC, they both invoke
+ * MPIDI_CH3I_Initialize_tmp_comm to create a temporary intercommunicator.
+ * A temporary intercommunicator is constructed so that we can use
+ * MPI routines to send the other information that we need to complete
+ * the connect/accept operation (described below).
+ *
+ * The above is implemented with the routines
+ *   MPIDI_Create_inter_root_communicator_connect
+ *   MPIDI_Create_inter_root_communicator_accept
+ *   MPIDI_CH3I_Initialize_tmp_comm
+ *
+ * At this point, the two "root" processes of the communicators that are 
+ * connecting can use MPI communication.  They must then exchange the
+ * following information:
+ *
+ *    The size of the "remote" communicator
+ *    Description of all process groups; that is, all of the MPI_COMM_WORLDs
+ *    that they know.  
+ *    The shared context id that will be used
+ *
+ * 
+ */
 /* ------------------------------------------------------------------------- */
 
 /* 
@@ -150,6 +202,9 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
     MPID_Progress_end(&progress_state);
 
     mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, new_vc, 0);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
 
     *comm_pptr = tmp_comm;
     *vc_pptr = new_vc;
@@ -158,6 +213,94 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
     return mpi_errno;
 
+fn_fail:
+    goto fn_exit;
+}
+
+/* This is a utility routine used to initialize temporary communicators
+   used in connect/accept operations, and is only used in the above two 
+   routines */
+#undef FUNCNAME
+#define FUNCNAME  MPIDI_CH3I_Initialize_tmp_comm
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
+					  MPIDI_VC_t *vc_ptr, int is_low_group)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Comm *tmp_comm, *commself_ptr;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
+
+    MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
+
+    /* WDG-old code allocated a context id that was then discarded */
+    mpi_errno = MPIR_Comm_create(&tmp_comm);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    /* fill in all the fields of tmp_comm. */
+
+    /* FIXME: Should we allocate a new context id each time ? If
+       so, how do we make sure that each process in this tmp_comm
+       has the same context id? */
+    tmp_comm->context_id = 4095;  
+    tmp_comm->recvcontext_id = tmp_comm->context_id;
+
+        /* FIXME - we probably need a unique context_id. */
+    tmp_comm->remote_size = 1;
+
+    /* Fill in new intercomm */
+    tmp_comm->local_size   = 1;
+    tmp_comm->rank         = 0;
+    tmp_comm->comm_kind    = MPID_INTERCOMM;
+    tmp_comm->local_comm   = NULL;
+    tmp_comm->is_low_group = is_low_group;
+
+    /* No pg structure needed since vc has already been set up 
+       (connection has been established). */
+
+    /* Point local vcr, vcrt at those of commself_ptr */
+    /* FIXME: Explain why */
+    tmp_comm->local_vcrt = commself_ptr->vcrt;
+    MPID_VCRT_Add_ref(commself_ptr->vcrt);
+    tmp_comm->local_vcr  = commself_ptr->vcr;
+
+    /* No pg needed since connection has already been formed. 
+       FIXME - ensure that the comm_release code does not try to
+       free an unallocated pg */
+
+    /* Set up VC reference table */
+    mpi_errno = MPID_VCRT_Create(tmp_comm->remote_size, &tmp_comm->vcrt);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_vcrt");
+    }
+    mpi_errno = MPID_VCRT_Get_ptr(tmp_comm->vcrt, &tmp_comm->vcr);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
+    }
+
+    /* FIXME: Why do we do a dup here? */
+    MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
+
+    *comm_pptr = tmp_comm;
+
+    /* FIXME: Who sets?  Why? Where is this defined? Document.  
+     Why is this not done as part of the VC initialization? */
+    /* channels/sshm/include/mpidi_ch3_pre.h defines this */
+#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
+    /* If the VC creates non-duplex connections then the acceptor will
+     * need to connect back to form the other half of the connection. */
+    /* FIXME: A hook should not be such a specific function; instead,
+       it should invoke a function pointer defined in the channel 
+       interface structure */
+    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( vc_ptr );
+#endif
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
+    return mpi_errno;
 fn_fail:
     goto fn_exit;
 }
@@ -253,6 +396,13 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     n_remote_pgs     = recv_ints[0];
     remote_comm_size = recv_ints[1];
     context_id	     = recv_ints[2];
+    /* FIXME: This is a temporary patch to detect problems in 
+       setting up a new communicator */
+    mpi_errno = MPIR_Register_contextid( context_id );
+    if (mpi_errno) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    
     MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
 			n_remote_pgs * sizeof(MPIDI_PG_t*),
 			mpi_errno,"remote_pg");
@@ -321,6 +471,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     
     intercomm = *newcomm;
     intercomm->context_id   = context_id;
+    intercomm->recvcontext_id = context_id;
     intercomm->is_low_group = 1;
 
     mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 
@@ -755,6 +906,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     if ((*newcomm)->context_id == 0) {
 	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanycomm" );
     }
+    (*newcomm)->recvcontext_id = (*newcomm)->context_id;
     
     rank = comm_ptr->rank;
     local_comm_size = comm_ptr->local_size;
@@ -911,91 +1063,6 @@ fn_fail:
 }
 
 /* ------------------------------------------------------------------------- */
-/* This is a utility routine used to initialize temporary communicators
-   used in connect/accept operations */
-#undef FUNCNAME
-#define FUNCNAME  MPIDI_CH3I_Initialize_tmp_comm
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
-					  MPIDI_VC_t *vc_ptr, int is_low_group)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *tmp_comm, *commself_ptr;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
-
-    MPID_Comm_get_ptr( MPI_COMM_SELF, commself_ptr );
-
-    /* WDG-old code allocated a context id that was then discarded */
-    mpi_errno = MPIR_Comm_create(&tmp_comm);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    /* fill in all the fields of tmp_comm. */
-
-    /* FIXME: Why do we need a tmp_comm and a context id ? */
-    /* FIXME: Should we allocate a new context id each time ? If
-       so, how do we make sure that each process in this tmp_comm
-       has the same context id? */
-    tmp_comm->context_id = 4095;  
-                /* FIXME - we probably need a unique context_id. */
-    tmp_comm->remote_size = 1;
-
-    /* Fill in new intercomm */
-    tmp_comm->local_size   = 1;
-    tmp_comm->rank         = 0;
-    tmp_comm->comm_kind    = MPID_INTERCOMM;
-    tmp_comm->local_comm   = NULL;
-    tmp_comm->is_low_group = is_low_group;
-
-    /* No pg structure needed since vc has already been set up 
-       (connection has been established). */
-
-    /* Point local vcr, vcrt at those of commself_ptr */
-    /* FIXME: Explain why */
-    tmp_comm->local_vcrt = commself_ptr->vcrt;
-    MPID_VCRT_Add_ref(commself_ptr->vcrt);
-    tmp_comm->local_vcr  = commself_ptr->vcr;
-
-    /* No pg needed since connection has already been formed. 
-       FIXME - ensure that the comm_release code does not try to
-       free an unallocated pg */
-
-    /* Set up VC reference table */
-    mpi_errno = MPID_VCRT_Create(tmp_comm->remote_size, &tmp_comm->vcrt);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_vcrt");
-    }
-    mpi_errno = MPID_VCRT_Get_ptr(tmp_comm->vcrt, &tmp_comm->vcr);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_getptr");
-    }
-
-    /* FIXME: Why do we do a dup here? */
-    MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
-
-    *comm_pptr = tmp_comm;
-
-    /* FIXME: Who sets?  Why? Where is this defined? Document.  
-     Why is this not done as part of the VC initialization? */
-    /* channels/sshm/include/mpidi_ch3_pre.h defines this */
-#ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-    /* If the VC creates non-duplex connections then the acceptor will
-     * need to connect back to form the other half of the connection. */
-    /* FIXME: A hook should not be such a specific function; instead,
-       it should invoke a function pointer defined in the channel 
-       interface structure */
-    mpi_errno = MPIDI_CH3_Complete_unidirectional_connection( vc_ptr );
-#endif
-
-fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_INITIALIZE_TMP_COMM);
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
 
 /* This routine initializes the new intercomm, setting up the
    VCRT and other common structures.  The is_low_group and context_id
@@ -1141,6 +1208,8 @@ typedef struct MPIDI_CH3I_Acceptq_s
 MPIDI_CH3I_Acceptq_t;
 
 static MPIDI_CH3I_Acceptq_t * acceptq_head=0;
+static int maxAcceptQueueSize = 0;
+static int AcceptQueueSize    = 0;
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Acceptq_enqueue
@@ -1167,6 +1236,11 @@ int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc, int port_name_tag )
 
     q_item->vc		  = vc;
     q_item->port_name_tag = port_name_tag;
+
+    /* Keep some statistics on the accept queue */
+    AcceptQueueSize++;
+    if (AcceptQueueSize > maxAcceptQueueSize) 
+	maxAcceptQueueSize = AcceptQueueSize;
 
     /* FIXME: Stack or queue? */
     MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=%p:Enqueuing accept connection",vc);
@@ -1209,6 +1283,7 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 		prev->next = q_item->next;
 
 	    MPIU_Free(q_item);
+	    AcceptQueueSize--;
 	    break;;
 	}
 	else
@@ -1224,23 +1299,6 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_DEQUEUE);
     return mpi_errno;
-}
-
-/* This routine is called by the ch3_init.c files in various channels */
-/* FIXME: We might want to make this part of a larger init step.  For 
-   example, should this be part of the listener setup? A connect/accept
-   init?  */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Acceptq_init
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Acceptq_init(void)
-{
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_ACCEPTQ_INIT);
-    return MPI_SUCCESS;
 }
 
 #else  /* MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS is defined */
