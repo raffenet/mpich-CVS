@@ -244,8 +244,12 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
 
     /* FIXME: Should we allocate a new context id each time ? If
        so, how do we make sure that each process in this tmp_comm
-       has the same context id? */
-    tmp_comm->context_id = 4095;  
+       has the same context id? 
+       We can make sure by sending the context id using non-MPI
+       communication (e.g., with the initial connection packet)
+       before switching to MPI communication.
+    */
+    tmp_comm->context_id     = 4095;  
     tmp_comm->recvcontext_id = tmp_comm->context_id;
 
         /* FIXME - we probably need a unique context_id. */
@@ -326,10 +330,10 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 		       MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
     int mpi_errno=MPI_SUCCESS;
-    int j, i, rank, recv_ints[3], send_ints[2], context_id;
+    int j, i, rank, recv_ints[3], send_ints[3], context_id;
     int remote_comm_size=0;
     MPID_Comm *tmp_comm = NULL, *intercomm;
-    MPIDI_VC_t *new_vc;
+    MPIDI_VC_t *new_vc = NULL;
     int sendtag=100, recvtag=100, n_remote_pgs;
     int n_local_pgs=1, local_comm_size;
     pg_translation *local_translation = NULL, *remote_translation = NULL;
@@ -339,6 +343,18 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_CONNECT);
+
+    /* Create the new intercommunicator here. We need to send the
+       context id to the other side. */
+    mpi_errno = MPIR_Comm_create(newcomm);
+    if (mpi_errno) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    (*newcomm)->recvcontext_id = MPIR_Get_contextid( comm_ptr );
+    if ((*newcomm)->recvcontext_id == 0) {
+	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanycomm" );
+    }
+    /* (*newcomm)->context_id = (*newcomm)->recvcontext_id; */
 
     rank = comm_ptr->rank;
     local_comm_size = comm_ptr->local_size;
@@ -373,11 +389,12 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 
         send_ints[0] = n_local_pgs;
         send_ints[1] = local_comm_size;
+        send_ints[2] = (*newcomm)->recvcontext_id;
 
 	MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
 		  "sending two ints, %d and %d, and receiving 3 ints", 
                   send_ints[0], send_ints[1]));
-        mpi_errno = MPIC_Sendrecv(send_ints, 2, MPI_INT, 0,
+        mpi_errno = MPIC_Sendrecv(send_ints, 3, MPI_INT, 0,
                                   sendtag++, recv_ints, 3, MPI_INT,
                                   0, recvtag++, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
@@ -396,6 +413,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     n_remote_pgs     = recv_ints[0];
     remote_comm_size = recv_ints[1];
     context_id	     = recv_ints[2];
+#if 0
     /* FIXME: This is a temporary patch to detect problems in 
        setting up a new communicator */
     mpi_errno = MPIR_Register_contextid( context_id );
@@ -403,6 +421,8 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	MPIU_ERR_POP(mpi_errno);
     }
     
+#endif
+
     MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
 			n_remote_pgs * sizeof(MPIDI_PG_t*),
 			mpi_errno,"remote_pg");
@@ -462,17 +482,12 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     }
 #endif
 
-    /* create and fill in the new intercommunicator */
-    /* WDG - old call allocated a context id that was then discarded */
-    mpi_errno = MPIR_Comm_create(newcomm);
-    if (mpi_errno) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    
-    intercomm = *newcomm;
-    intercomm->context_id   = context_id;
+    intercomm                 = *newcomm;
+    intercomm->context_id     = context_id;
+#if 0
     intercomm->recvcontext_id = context_id;
-    intercomm->is_low_group = 1;
+#endif
+    intercomm->is_low_group   = 1;
 
     mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 
 				   remote_translation, remote_pg, intercomm );
@@ -880,12 +895,12 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 		      MPID_Comm *comm_ptr, MPID_Comm **newcomm)
 {
     int mpi_errno=MPI_SUCCESS;
-    int i, j, rank, recv_ints[2], send_ints[3];
+    int i, j, rank, recv_ints[3], send_ints[3], context_id;
     int remote_comm_size=0;
     MPID_Comm *tmp_comm = NULL, *intercomm;
     MPIDI_VC_t *new_vc = NULL;
-    int n_local_pgs=1, n_remote_pgs;
     int sendtag=100, recvtag=100, local_comm_size;
+    int n_local_pgs=1, n_remote_pgs;
     pg_translation *local_translation = NULL, *remote_translation = NULL;
     pg_node *pg_list = NULL;
     MPIDI_PG_t **remote_pg = NULL;
@@ -896,17 +911,15 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 
     /* Create the new intercommunicator here. We need to send the
        context id to the other side. */
-    /* FIXME: There is a danger that the context id won't be unique
-       on the other side of this connection */
     mpi_errno = MPIR_Comm_create(newcomm);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-    (*newcomm)->context_id = MPIR_Get_contextid( comm_ptr );
-    if ((*newcomm)->context_id == 0) {
+    (*newcomm)->recvcontext_id = MPIR_Get_contextid( comm_ptr );
+    if ((*newcomm)->recvcontext_id == 0) {
 	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanycomm" );
     }
-    (*newcomm)->recvcontext_id = (*newcomm)->context_id;
+    /*    (*newcomm)->context_id = (*newcomm)->recvcontext_id; */
     
     rank = comm_ptr->rank;
     local_comm_size = comm_ptr->local_size;
@@ -939,11 +952,11 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 
         send_ints[0] = n_local_pgs;
         send_ints[1] = local_comm_size;
-        send_ints[2] = (*newcomm)->context_id;
+        send_ints[2] = (*newcomm)->recvcontext_id;
 
 	/*printf("accept:sending 3 ints, %d, %d, %d, and receiving 2 ints\n", send_ints[0], send_ints[1], send_ints[2]);fflush(stdout);*/
         mpi_errno = MPIC_Sendrecv(send_ints, 3, MPI_INT, 0,
-                                  sendtag++, recv_ints, 2, MPI_INT,
+                                  sendtag++, recv_ints, 3, MPI_INT,
                                   0, recvtag++, tmp_comm->handle,
                                   MPI_STATUS_IGNORE);
         if (mpi_errno != MPI_SUCCESS) {
@@ -960,6 +973,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 
     n_remote_pgs = recv_ints[0];
     remote_comm_size = recv_ints[1];
+    context_id = recv_ints[2];
     MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
 			n_remote_pgs * sizeof(MPIDI_PG_t*),
 			mpi_errno,"remote_pg");
@@ -1015,7 +1029,8 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 
 
     /* Now fill in newcomm */
-    intercomm = *newcomm;
+    intercomm               = *newcomm;
+    intercomm->context_id   = context_id;
     intercomm->is_low_group = 0;
 
     mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 

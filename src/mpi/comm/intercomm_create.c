@@ -217,7 +217,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *peer_comm_ptr = NULL;
-    int context_id, final_context_id;
+    int context_id, final_context_id, recvcontext_id;
     int remote_size, *remote_lpids=0, *remote_gpids=0, singlePG;
     int local_size, *local_gpids=0, *local_lpids=0;
     int comm_info[3];
@@ -417,8 +417,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPIU_DBG_MSG_FMT(COMM,VERBOSE,
           (MPIU_DBG_FDEST,"About to get contextid (commsize=%d) on %d",
 		  comm_ptr->local_size, comm_ptr->rank ));
-    context_id = MPIR_Get_contextid( comm_ptr );
-    if (context_id == 0) {
+    recvcontext_id = MPIR_Get_contextid( comm_ptr );
+    if (recvcontext_id == 0) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**toomanycomm");
     }
     MPIU_DBG_MSG(COMM,VERBOSE,"Got contextid");
@@ -431,10 +431,11 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     if (comm_ptr->rank == local_leader) {
 	int remote_context_id;
 
-	NMPI_Sendrecv( &context_id, 1, MPI_INT, remote_leader, tag,
+	NMPI_Sendrecv( &recvcontext_id, 1, MPI_INT, remote_leader, tag,
 		       &remote_context_id, 1, MPI_INT, remote_leader, tag, 
 		       peer_comm, MPI_STATUS_IGNORE );
 	
+#if 0
 	/* We need to do something with the context ids.  For 
 	   MPI1, we can just take the min of the two context ids and
 	   use that value.  For MPI2, we'll need to have separate
@@ -443,6 +444,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	    final_context_id = remote_context_id;
 	else 
 	    final_context_id = context_id;
+#else
+	final_context_id = remote_context_id;
+#endif
 
 	/* Now, send all of our local processes the remote_lpids, 
 	   along with the final context id */
@@ -508,6 +512,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     }
 
 
+#if 0
     /* If we did not choose this context, free it.  We won't do this
        once we have MPI2 intercomms (at least, not for intercomms that
        are not subsets of MPI_COMM_WORLD) - FIXME */
@@ -515,6 +520,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	MPIR_Free_contextid( context_id );
     }
 
+#endif
 
     /* At last, we now have the information that we need to build the 
        intercommunicator */
@@ -528,7 +534,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
     /* FIXME: Here's where we separate the send and receive context id */
     newcomm_ptr->context_id	= final_context_id;
-    newcomm_ptr->recvcontext_id	= final_context_id;
+    newcomm_ptr->recvcontext_id	= recvcontext_id;
     newcomm_ptr->remote_size	= remote_size;
     newcomm_ptr->local_size	= comm_ptr->local_size;
     newcomm_ptr->rank		= comm_ptr->rank;

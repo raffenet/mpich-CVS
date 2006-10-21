@@ -134,6 +134,8 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
        seems to have fixed that problem, but this isn't the right answer. */
 /*    printf( "intercomm context ids; %d %d\n",
       intercomm_ptr->context_id, intercomm_ptr->recvcontext_id ); */
+    /* We use the recvcontext id for both contextids for the localcomm 
+     because the localcomm is an intra (not inter) communicator */
     localcomm_ptr->context_id	  = intercomm_ptr->recvcontext_id + 1;
     localcomm_ptr->recvcontext_id = intercomm_ptr->recvcontext_id + 1;
 
@@ -439,9 +441,11 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 #define FUNCNAME MPIR_Get_intercomm_contextid
 #undef FCNAME
 #define FCNAME "MPIR_Get_intercomm_contextid"
-int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
+int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr, int *context_id, 
+				  int *recvcontext_id )
 {
-    int context_id, remote_context_id, final_context_id;
+    int mycontext_id, remote_context_id, final_context_id;
+    int mpi_errno = MPI_SUCCESS;
     int tag = 31567; /* FIXME  - we need an internal tag or 
 		        communication channel.  Can we use a different
 		        context instead?.  Or can we use the tag 
@@ -459,10 +463,9 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 
     /*printf( "local comm size is %d and intercomm local size is %d\n",
       comm_ptr->local_comm->local_size, comm_ptr->local_size );*/
-    context_id = MPIR_Get_contextid( comm_ptr->local_comm );
-    if (context_id == 0) {
-	MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_GET_INTERCOMM_CONTEXTID);
-	return 0;
+    mycontext_id = MPIR_Get_contextid( comm_ptr->local_comm );
+    if (mycontext_id == 0) {
+	goto fn_fail;
     }
 
     MPIU_THREADPRIV_GET;
@@ -471,10 +474,11 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
        exchange data */
     remote_context_id = -1;
     if (comm_ptr->rank == 0) {
-	MPIC_Sendrecv( &context_id, 1, MPI_INT, 0, tag,
+	MPIC_Sendrecv( &mycontext_id, 1, MPI_INT, 0, tag,
 		       &remote_context_id, 1, MPI_INT, 0, tag, 
 		       comm_ptr->handle, MPI_STATUS_IGNORE );
 
+#if 0
 	/* FIXME : We need to do something with the context ids.  For 
 	   MPI1, we can just take the min of the two context ids and
 	   use that value.  For MPI2, we'll need to have separate
@@ -483,6 +487,9 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 	    final_context_id = remote_context_id;
 	else 
 	    final_context_id = context_id;
+#else
+	final_context_id = remote_context_id;
+#endif
     }
 
     /* Make sure that all of the local processes now have this
@@ -491,6 +498,7 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
     NMPI_Bcast( &final_context_id, 1, MPI_INT, 
 		0, comm_ptr->local_comm->handle );
     MPIR_Nest_decr();
+#if 0
     /* FIXME : If we did not choose this context, free it.  We won't do this
        once we have MPI2 intercomms (at least, not for intercomms that
        are not subsets of MPI_COMM_WORLD) */
@@ -499,10 +507,14 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr )
 	MPIR_Free_contextid( context_id );
 	/* printf( "Done with free\n" ); */
     }
+#endif
     /* printf( "intercomm context = %d\n", final_context_id ); */
 
+    *context_id = final_context_id;
+    *recvcontext_id = mycontext_id;
+ fn_fail:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_GET_INTERCOMM_CONTEXTID);
-    return final_context_id;
+    return mpi_errno;
 }
 
 #undef FUNCNAME
@@ -603,7 +615,7 @@ int MPIR_Register_contextid( int context_id )
 int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
 {
     int mpi_errno = MPI_SUCCESS;
-    int new_context_id;
+    int new_context_id, new_recvcontext_id;
     MPID_Comm *newcomm_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPIR_COMM_COPY);
 
@@ -615,13 +627,16 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
        use the appropriate algorithm to get a new context id.  Be careful
        of intercomms here */
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	new_context_id = MPIR_Get_intercomm_contextid( comm_ptr );
+	mpi_errno = 
+	    MPIR_Get_intercomm_contextid( 
+		 comm_ptr, &new_context_id, &new_recvcontext_id );
     }
     else {
 	new_context_id = MPIR_Get_contextid( comm_ptr );
+	new_recvcontext_id = new_context_id;
     }
     /* --BEGIN ERROR HANDLING-- */
-    if (new_context_id == 0) {
+    if (new_context_id == 0 || mpi_errno != MPI_SUCCESS) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
                "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	goto fn_fail;
@@ -640,7 +655,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     if (mpi_errno) goto fn_fail;
 
     newcomm_ptr->context_id     = new_context_id;
-    newcomm_ptr->recvcontext_id = new_context_id;
+    newcomm_ptr->recvcontext_id = new_recvcontext_id;
 
     /* Save the kind of the communicator */
     newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
