@@ -469,7 +469,10 @@ with MPI_Alloc_mem.
 **badcase:INTERNAL ERROR: unexpected value in case statement
 **badcase %d:INTERNAL ERROR: unexpected value in case statement (value=%d)
 **node_root_rank:Unable to get the node root rank
-
+**contextIdInUse:Context id already in use
+**contextIdInUse %d:Context id %d already in use
+**contextIdNotInUse:Context id to be freed is not in use
+**contextIdNotInUse %d:Context id %d to be freed is not in use
 # Duplicates?
 #**argnull:Invalid null parameter
 #**argnull %s:Invalid null parameter %s

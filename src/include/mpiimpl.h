@@ -1135,6 +1135,12 @@ typedef enum MPID_Comm_kind_t {
   This should be sufficient for most applications.  However, extending
   this to a 32-bit (or longer) integer should be easy.
 
+  There are two context ids.  One is used for sending and one for 
+  receiving.  In the case of an Intracommunicator, they are the same
+  context id.  They differ in the case of intercommunicators, where 
+  they may come from processes in different comm worlds (in the
+  case of MPI-2 dynamic process intercomms).  
+
   The virtual connection table is an explicit member of this structure.
   This contains the information used to contact a particular process,
   indexed by the rank relative to this communicator.
@@ -1176,7 +1182,8 @@ typedef enum MPID_Comm_kind_t {
 typedef struct MPID_Comm { 
     int           handle;        /* value of MPI_Comm for this structure */
     volatile int  ref_count;
-    int16_t       context_id;    /* Assigned context id */
+    int16_t       context_id;    /* Send context id.  See notes */
+    int16_t       recvcontext_id;/* Assigned context id */
     int           remote_size;   /* Value of MPI_Comm_(remote)_size */
     int           rank;          /* Value of MPI_Comm_rank */
     MPID_VCRT     vcrt;          /* virtual connecton reference table */

@@ -194,10 +194,11 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	mpi_errno = MPIR_Comm_create( &newcomm_ptr );
 	if (mpi_errno) goto fn_fail;
 
-	newcomm_ptr->context_id  = new_context_id;
-	newcomm_ptr->remote_size = new_size;
-	newcomm_ptr->local_size  = new_size;
-	newcomm_ptr->comm_kind   = MPID_INTRACOMM;
+	newcomm_ptr->context_id	    = new_context_id;
+	newcomm_ptr->recvcontext_id = new_context_id;
+	newcomm_ptr->remote_size    = new_size;
+	newcomm_ptr->local_size	    = new_size;
+	newcomm_ptr->comm_kind	    = MPID_INTRACOMM;
     
 	/* Step 4: Order the processes by their key values.  Sort the
 	   list that is stored in table.  To simplify the sort, we 

@@ -203,10 +203,11 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     if (mpi_errno) goto fn_fail;
 
     new_size = comm_ptr->local_size + comm_ptr->remote_size;
-    newcomm_ptr->context_id   = comm_ptr->context_id + 2; /* See below */
-    newcomm_ptr->remote_size  = newcomm_ptr->local_size   = new_size;
-    newcomm_ptr->rank         = -1;
-    newcomm_ptr->comm_kind    = MPID_INTRACOMM;
+    newcomm_ptr->context_id	= comm_ptr->recvcontext_id + 2; /* See below */
+    newcomm_ptr->recvcontext_id	= comm_ptr->recvcontext_id + 2;
+    newcomm_ptr->remote_size	= newcomm_ptr->local_size   = new_size;
+    newcomm_ptr->rank		= -1;
+    newcomm_ptr->comm_kind	= MPID_INTRACOMM;
 
     /* Now we know which group comes first.  Build the new vcr 
        from the existing vcrs */
@@ -246,7 +247,8 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 			"**toomanycomm" );
 
     /* printf( "Resetting contextid\n" ); fflush( stdout ); */
-    newcomm_ptr->context_id = new_context_id;
+    newcomm_ptr->context_id	= new_context_id;
+    newcomm_ptr->recvcontext_id	= new_context_id;
 
     /* Notify the device of this new communicator */
     MPID_Dev_comm_create_hook( newcomm_ptr );

@@ -175,35 +175,37 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        (partially) initialize predefined communicators.  comm_parent is
        intially NULL and will be allocated by the device if the process group
        was started using one of the MPI_Comm_spawn functions. */
-    MPIR_Process.comm_world		  = MPID_Comm_builtin + 0;
-    MPIR_Process.comm_world->handle	  = MPI_COMM_WORLD;
+    MPIR_Process.comm_world		    = MPID_Comm_builtin + 0;
+    MPIR_Process.comm_world->handle	    = MPI_COMM_WORLD;
     MPIU_Object_set_ref( MPIR_Process.comm_world, 1 );
-    MPIR_Process.comm_world->context_id	  = 0; /* XXX */
-    MPIR_Process.comm_world->attributes	  = NULL;
-    MPIR_Process.comm_world->local_group  = NULL;
-    MPIR_Process.comm_world->remote_group = NULL;
-    MPIR_Process.comm_world->comm_kind	  = MPID_INTRACOMM;
+    MPIR_Process.comm_world->context_id	    = 0; /* XXX */
+    MPIR_Process.comm_world->recvcontext_id = 0;
+    MPIR_Process.comm_world->attributes	    = NULL;
+    MPIR_Process.comm_world->local_group    = NULL;
+    MPIR_Process.comm_world->remote_group   = NULL;
+    MPIR_Process.comm_world->comm_kind	    = MPID_INTRACOMM;
     /* This initialization of the comm name could be done only when 
        comm_get_name is called */
     MPIU_Strncpy(MPIR_Process.comm_world->name, "MPI_COMM_WORLD",
 		 MPI_MAX_OBJECT_NAME);
-    MPIR_Process.comm_world->errhandler	  = NULL; /* XXX */
-    MPIR_Process.comm_world->coll_fns	  = NULL; /* XXX */
-    MPIR_Process.comm_world->topo_fns     = NULL; /* XXX */
+    MPIR_Process.comm_world->errhandler	    = NULL; /* XXX */
+    MPIR_Process.comm_world->coll_fns	    = NULL; /* XXX */
+    MPIR_Process.comm_world->topo_fns	    = NULL; /* XXX */
     
-    MPIR_Process.comm_self		 = MPID_Comm_builtin + 1;
-    MPIR_Process.comm_self->handle	 = MPI_COMM_SELF;
+    MPIR_Process.comm_self		    = MPID_Comm_builtin + 1;
+    MPIR_Process.comm_self->handle	    = MPI_COMM_SELF;
     MPIU_Object_set_ref( MPIR_Process.comm_self, 1 );
-    MPIR_Process.comm_self->context_id	 = 4; /* XXX */
-    MPIR_Process.comm_self->attributes	 = NULL;
-    MPIR_Process.comm_self->local_group	 = NULL;
-    MPIR_Process.comm_self->remote_group = NULL;
-    MPIR_Process.comm_self->comm_kind	 = MPID_INTRACOMM;
+    MPIR_Process.comm_self->context_id	    = 4; /* XXX */
+    MPIR_Process.comm_self->recvcontext_id  = 4; /* XXX */
+    MPIR_Process.comm_self->attributes	    = NULL;
+    MPIR_Process.comm_self->local_group	    = NULL;
+    MPIR_Process.comm_self->remote_group    = NULL;
+    MPIR_Process.comm_self->comm_kind	    = MPID_INTRACOMM;
     MPIU_Strncpy(MPIR_Process.comm_self->name, "MPI_COMM_SELF",
 		 MPI_MAX_OBJECT_NAME);
-    MPIR_Process.comm_self->errhandler	 = NULL; /* XXX */
-    MPIR_Process.comm_self->coll_fns	 = NULL; /* XXX */
-    MPIR_Process.comm_self->topo_fns     = NULL; /* XXX */
+    MPIR_Process.comm_self->errhandler	    = NULL; /* XXX */
+    MPIR_Process.comm_self->coll_fns	    = NULL; /* XXX */
+    MPIR_Process.comm_self->topo_fns	    = NULL; /* XXX */
 
     MPIR_Process.comm_parent = NULL;
 

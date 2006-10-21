@@ -377,6 +377,9 @@
 #define MPIU_ERR_POPFATAL(err_) \
     MPIU_ERR_SETFATALANDSTMT(err_,MPI_ERR_OTHER,goto fn_fail,"**fail")
 
+/* If you add any macros to this list, make sure that you update
+ maint/extracterrmsgs to handle the additional macros (see the hash 
+ KnownErrRoutines in that script) */
 #ifdef HAVE_ERROR_CHECKING
 #define MPIU_ERR_SET(err_,class_,msg_) \
     err_ = MPIR_Err_create_code( err_,MPIR_ERR_RECOVERABLE,FCNAME,\

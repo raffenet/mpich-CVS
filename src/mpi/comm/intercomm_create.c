@@ -526,13 +526,15 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     mpi_errno = MPIR_Comm_create( &newcomm_ptr );
     if (mpi_errno) goto fn_fail;
 
-    newcomm_ptr->context_id   = final_context_id;
-    newcomm_ptr->remote_size  = remote_size;
-    newcomm_ptr->local_size   = comm_ptr->local_size;
-    newcomm_ptr->rank         = comm_ptr->rank;
-    newcomm_ptr->comm_kind    = MPID_INTERCOMM;
-    newcomm_ptr->local_comm   = 0;
-    newcomm_ptr->is_low_group = is_low_group;
+    /* FIXME: Here's where we separate the send and receive context id */
+    newcomm_ptr->context_id	= final_context_id;
+    newcomm_ptr->recvcontext_id	= final_context_id;
+    newcomm_ptr->remote_size	= remote_size;
+    newcomm_ptr->local_size	= comm_ptr->local_size;
+    newcomm_ptr->rank		= comm_ptr->rank;
+    newcomm_ptr->comm_kind	= MPID_INTERCOMM;
+    newcomm_ptr->local_comm	= 0;
+    newcomm_ptr->is_low_group	= is_low_group;
 
     mpi_errno = MPID_VCR_CommFromLpids( newcomm_ptr, remote_size, remote_lpids );
     if (mpi_errno) goto fn_fail;

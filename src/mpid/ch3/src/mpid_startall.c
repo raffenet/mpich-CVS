@@ -322,7 +322,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
     MPIR_Comm_add_ref(comm);
     rreq->dev.match.rank = rank;
     rreq->dev.match.tag = tag;
-    rreq->dev.match.context_id = comm->context_id + context_offset;
+    rreq->dev.match.context_id = comm->recvcontext_id + context_offset;
     rreq->dev.user_buf = (void *) buf;
     rreq->dev.user_count = count;
     rreq->dev.datatype = datatype;

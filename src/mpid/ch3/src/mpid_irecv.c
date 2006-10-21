@@ -23,7 +23,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 
     MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
 			"rank=%d, tag=%d, context=%d", 
-			rank, tag, comm->context_id + context_offset));
+			rank, tag, comm->recvcontext_id + context_offset));
     
     if (rank == MPI_PROC_NULL)
     {
@@ -43,7 +43,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
     }
 
     rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(
-	rank, tag, comm->context_id + context_offset, &found);
+	rank, tag, comm->recvcontext_id + context_offset, &found);
     if (rreq == NULL)
     {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_NO_MEM, "**nomem");
