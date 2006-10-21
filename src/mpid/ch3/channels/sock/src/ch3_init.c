@@ -27,9 +27,6 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
 
-    mpi_errno = MPIDI_CH3I_Acceptq_init();
-    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
-
     mpi_errno = MPIDI_CH3I_Progress_init();
     if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
 
