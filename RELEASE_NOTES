@@ -63,6 +63,21 @@
 			Issues for Developers
 -------------------------------------------------------------------------------
 
+- In order to handle the construction of intercommunicators in the dynamic
+  process case, the context id in MPID_Comm has been split into a receive 
+  and a send context id.  In the case of intracommunicators (e.g.,
+  MPI_COMM_WORLD), these two context id values are the same.  The send
+  context is still the context_id field in the MPID_Comm structure; 
+  the receive context is now recvcontext_id .  This makes the total number
+  of changes relatively small; only in a few places in the ADI3 code 
+  (primarily the MPID_Recv, MPID_Irecv, and persisistent receive request
+  routines) are changes needed.  
+
+-------------------------------------------------------------------------------
+                        Issues From Previous Releases (1.0.4)
+-------------------------------------------------------------------------------
+
+
 - MPE2, which is distributed as part of MPICH2, requires autoconf 2.52 or
   higher.  By default, MPICH2 and MPE use the autoconf programs in one's path.
   The environment variables AUTOCONF and AUTOHEADER can be set to specify
@@ -72,3 +87,4 @@
   "make dist".  In order to handle incompatibilities between different
   minor versions of autoconf, we've selected autoconf 2.59 as the version
   required for MPE2 and MPICH2.
+
