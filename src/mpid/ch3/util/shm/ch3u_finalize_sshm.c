@@ -63,19 +63,21 @@ int MPIDI_CH3U_Finalize_sshm()
      * earlier since the vc's themselves are still needed here to walk though 
      * and free their member fields.
      */
+
     MPIDI_PG_Iterate_reset();
     MPIDI_PG_Get_next(&pg);
-    MPIDI_PG_Get_next(&pg_next);
-    while(pg_next)
+    /* This Get_next causes us to skip the process group associated with
+       out MPI_COMM_WORLD.  */
+    MPIDI_PG_Get_next(&pg);
+    while(pg)
     {
-        /* the last one is the original and handled in mpid_finalize.c  */
+	MPIDI_PG_Get_next(&pg_next);
         MPIDI_PG_release_ref(pg, &inuse);
         if (inuse == 0)
         {
             MPIDI_PG_Destroy(pg);
         }
         pg = pg_next;
-        MPIDI_PG_Get_next(&pg_next);        
     }
     
     return mpi_errno;
