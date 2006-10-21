@@ -966,14 +966,14 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 
     /* broadcast the received info to local processes */
     /*printf("accept:broadcasting 2 ints - %d and %d\n", recv_ints[0], recv_ints[1]);fflush(stdout);*/
-    mpi_errno = MPIR_Bcast(recv_ints, 2, MPI_INT, root, comm_ptr);
+    mpi_errno = MPIR_Bcast(recv_ints, 3, MPI_INT, root, comm_ptr);
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    n_remote_pgs = recv_ints[0];
+    n_remote_pgs     = recv_ints[0];
     remote_comm_size = recv_ints[1];
-    context_id = recv_ints[2];
+    context_id       = recv_ints[2];
     MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
 			n_remote_pgs * sizeof(MPIDI_PG_t*),
 			mpi_errno,"remote_pg");
