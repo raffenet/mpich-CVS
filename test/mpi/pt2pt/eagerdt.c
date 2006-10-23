@@ -17,7 +17,7 @@ int main( int argc, char *argv[] )
     int errs = 0;
     int rank, size, dest, source;
     int i, indices[40];
-    int extent;
+    MPI_Aint extent;
     int *buf, *bufs[MAX_MSGS];
     MPI_Comm      comm;
     MPI_Datatype  dtype;
