@@ -99,12 +99,8 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 	    MPIR_ERRTEST_ARGNULL( source, "source", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( dest, "dest", mpi_errno );
 	    MPIR_ERRTEST_ARGNEG( direction, "direction", mpi_errno );
-/* Nothing in the standard indicates that a zero displacement is not valid
-	    if (displ == 0) {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_ARG,
-						  "**cartshiftzero", 0 );
-	    }
-*/
+	    /* Nothing in the standard indicates that a zero displacement 
+	       is not valid, so we don't check for a zero shift */
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
