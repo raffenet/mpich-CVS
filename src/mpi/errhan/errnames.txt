@@ -53,7 +53,6 @@ also the value at index %d
 **cartdim:Size of Cartesian grid is larger than the size of the communicator
 **cartdim %d %d:Size of the communicator (%d) is smaller than the size of the \
  Cartesian topology (%d)
-**cartshiftzero:Displacement must be non-zero
 **edgeoutrange:Edge index in graph topology is out of range
 **edgeoutrange %d %d %d:Edge index edges[%d] is %d but must be nonnegative \
  and less than %d
@@ -161,9 +160,9 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 #
 **typeinitbadmem:builtin datatype handle references invalid memory
 **typeinitbadmem %d:%dth builtin datatype handle references invalid memory
-**typeinitfail:Did not initialize name for all of the predefined datatypes"
+**typeinitfail:Did not initialize name for all of the predefined datatypes
 **typeinitfail %d:Did not initialize name for all of the predefined datatypes \
- (only did first %d)"
+ (only did first %d)
 **typeinitminmaxloc: Could not determine pointer for predefined minloc or \
  maxloc type.  Initialization of those names failed.
 
