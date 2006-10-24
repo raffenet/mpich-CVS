@@ -291,6 +291,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
      * operations.  
      */
 
+    /*printf( "comm_ptr->rank = %d, local_leader = %d\n", comm_ptr->rank,
+      local_leader ); fflush(stdout);*/
     if (comm_ptr->rank == local_leader) {
 
 	MPID_Comm_get_ptr( peer_comm, peer_comm_ptr );
@@ -315,12 +317,18 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		/* Check that the local leader and the remote leader are 
 		   different processes.  This test requires looking at
 		   the lpid for the two ranks in their respective 
-		   communicators */
-		/* FIXME: Why is this test commented out ? */
-/*		if (local_leader == remote_leader) {
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_RANK,
-						      "**ranksdistinct", 0 );
-						      }*/
+		   communicators.  However, an easy test is for 
+		   the same ranks in an intracommunicator; we only
+		   need the lpid comparison for intercommunicators */
+		/* FIXME: This comparison needs to use lpids because the
+		 local_leader is in comm_ptr and remote_leader is in 
+		peer_comm */
+#if 0
+		if (0 && peer_comm_ptr->comm_kind == MPID_INTRACOMM &&
+		    local_leader == remote_leader) {
+		    MPIU_ERR_SET(mpi_errno,MPI_ERR_RANK,"**ranksdistinct");
+		}
+#endif
 		if (mpi_errno) goto fn_fail;
 	    }
 	    MPID_END_ERROR_CHECKS;
@@ -336,6 +344,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	/* Exchange information with my peer.  Use sendrecv */
 	local_size = comm_ptr->local_size;
 
+	/* printf( "About to sendrecv in intercomm_create\n" ); fflush(stdout); */
 	MPIU_DBG_MSG_FMT(COMM,VERBOSE,
              (MPIU_DBG_FDEST,"rank %d sendrecv to rank %d", 
               peer_comm_ptr->rank, remote_leader));
