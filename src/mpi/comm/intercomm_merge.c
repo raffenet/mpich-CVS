@@ -203,8 +203,16 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     if (mpi_errno) goto fn_fail;
 
     new_size = comm_ptr->local_size + comm_ptr->remote_size;
-    newcomm_ptr->context_id	= comm_ptr->recvcontext_id + 2; /* See below */
-    newcomm_ptr->recvcontext_id	= comm_ptr->recvcontext_id + 2;
+    /* FIXME: For the intracomm, we need a consistent context id.  
+       That means that one of the two groups needs to use 
+       the recvcontext_id and the other must use the context_id */
+    if (local_high) {
+	newcomm_ptr->context_id	= comm_ptr->recvcontext_id + 2; /* See below */
+    }
+    else {
+	newcomm_ptr->context_id	= comm_ptr->context_id + 2; /* See below */
+    }
+    newcomm_ptr->recvcontext_id	= newcomm_ptr->context_id;
     newcomm_ptr->remote_size	= newcomm_ptr->local_size   = new_size;
     newcomm_ptr->rank		= -1;
     newcomm_ptr->comm_kind	= MPID_INTRACOMM;
