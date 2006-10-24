@@ -189,13 +189,21 @@ sub CreateErrMsgMapping {
 	    my $namehasformat = ($name =~ /%/);
 	    my $replhasformat = ($repl =~ /%/);
 	    if ($namehasformat != $replhasformat) {
-		print STDERR "Warning: format control usage in $name and $repl do not agree in errnames.txt\n";
+		print STDERR "Warning: format control usage in $name and $repl do not agree in $sourcefile\n";
 	    }
 #	    if (!defined($longnames{"\"$name\""}))
 #	    {
 #		$longnames{"\"$name\""} = $repl;
 #		$longnamesDefined{"\"$name\""} = "$sourcefile:$linecount";
 #	    }
+	    # Check that the replacement text doesn't include a unquoted
+	    # double quote
+	    if ($repl =~ /(.)\"/) {
+		my $prechar = $1;
+		if ($1 ne "\\") {
+		    print STDERR "Warning: Replacement text for $name contains an unescaped double quote: $repl\n";
+		}
+	    }
 	    if (!defined($longnames{$name}))
 	    {
 		$longnames{$name} = $repl;
@@ -569,10 +577,13 @@ sub ProcessFile
 			      'MPIU_ERR_SET2'             => '2:-1:2:1',
 			      'MPIU_ERR_SETANDSTMT'       => '3:-1:0:1',
 			      'MPIU_ERR_SETFATALANDSTMT'  => '3:-1:0:1',
+			      'MPIU_ERR_SETFATALANDJUMP'  => '2:-1:0:1',
 			      'MPIU_ERR_SETANDSTMT1'      => '3:-1:1:1', 
 			      'MPIU_ERR_SETFATALANDSTMT1' => '3:-1:1:1', 
+			      'MPIU_ERR_SETFATALANDJUMP1' => '2:-1:1:1',
 			      'MPIU_ERR_SETANDSTMT2'      => '3:-1:1:1', 
-			      'MPIU_ERR_SETFATALANDSTMT2' => '3:-1:1:1', 
+			      'MPIU_ERR_SETFATALANDSTMT2' => '3:-1:1:1',
+			      'MPIU_ERR_SETFATALANDJUMP2' => '2:-1:1:1',
 			      'MPIU_ERR_SETANDSTMT3'      => '3:-1:1:1', 
 			      'MPIU_ERR_SETFATALANDSTMT3' => '3:-1:1:1', 
 			      'MPIU_ERR_SETANDSTMT4'      => '3:-1:1:1', 
@@ -592,6 +603,7 @@ sub ProcessFile
 			      'MPIU_ERR_CHKANDJUMP2'      => '3:-1:1:1',
 			      'MPIU_ERR_CHKANDJUMP3'      => '3:-1:1:1',
 			      'MPIU_ERR_CHKANDJUMP4'      => '3:-1:1:1',
+			      'MPIR_ERRTEST_VALID_HANDLE' => '4:-1:0:1',
 			      );
 	while (/(MPI[OUR]_E[A-Za-z0-9_]+)\s*(\(.*)$/) {
 	    my $routineName = $1;
