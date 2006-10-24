@@ -998,9 +998,6 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                         recvtype, comm_ptr); 
         else {
             /* intracommunicator */
-/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );*/
             mpi_errno = MPIR_Allgatherv_inter(sendbuf, sendcount, 
 					      sendtype, recvbuf,
 					      recvcounts, displs,

@@ -383,9 +383,6 @@ int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls,
                                        rdispls, recvtype, comm_ptr);
         else {
             /* intercommunicator */
-	    /* mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME ); */
             mpi_errno = MPIR_Alltoallv_inter(sendbuf, sendcnts, sdispls,
                                              sendtype, recvbuf, recvcnts,
                                              rdispls, recvtype, comm_ptr);

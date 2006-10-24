@@ -320,13 +320,6 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
     }
     else
     {
-        /* if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );
-	}
-	else 
-        */
 	MPIU_THREADPRIV_DECL;
 	MPIU_THREADPRIV_GET;
         

@@ -736,10 +736,6 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                                      comm_ptr); 
         else {
             /* intercommunicator */ 
-/*	    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM, 
-					      "**intercommcoll",
-					      "**intercommcoll %s", FCNAME );*/
             mpi_errno = MPIR_Scatter_inter(sendbuf, sendcnt, sendtype,
                                            recvbuf, recvcnt, recvtype, root,
                                            comm_ptr); 
