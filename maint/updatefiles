@@ -38,6 +38,10 @@ do_genstates=yes
 do_makefiles=yes
 do_smpdversion=yes
 
+# Allow MAKE to be set from the environment
+MAKE=${MAKE-make}
+
+
 # List of steps that we will consider
 # (We do not include depend because the values for depend are not just yes/no)
 AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles smpdversion"
@@ -523,7 +527,13 @@ if [ $do_build_configure = yes ] ; then
 	    find . -name configure -print | grep -v maint/configure | xargs rm -f
 	    # If we don't delete the autom4te.cache files, bugs in 
 	    # autoconf may fail to correctly update configure
-	    find . -name autom4te.cache | xargs -r rm -f
+	    # Gah. Some xargs don't accept -r, other break if there is no
+	    # input.  To avoid that, we do this in two steps: first the
+	    # find, then the rm (if there are any files)
+	    rm -f .atmp
+	    find . -name autom4te.cache > .atmp 2>/dev/null
+	    if [ -s .atmp ] ; then xargs rm -f < .atmp ; fi
+	    rm -f .atmp
 	    date > maint/conftimestamp
 	else
 	    # We can't us a status check here because find will always
@@ -600,10 +610,10 @@ if [ $do_build_configure = yes ] ; then
 		        -e "s%@srcdir@%.%g" \
 		        -e '/include .*alldeps/d' \
 		        -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
-		        if make -q -f mf.tmp configure >mf.out 2>&1 ; then \
+		        if ${MAKE} -q -f mf.tmp configure >mf.out 2>&1 ; then \
                     : ; else \
 	            echo "Found $dir/configure.in; executing make configure target" ; \
-	            make -f mf.tmp configure ; fi ; rm -f mf.tmp  \
+	            ${MAKE} -f mf.tmp configure ; fi ; rm -f mf.tmp  \
 	            )
 		    # Newer versions of test support -nt, which is
 		    # filea newer-than fileb.  If this doesn't 
