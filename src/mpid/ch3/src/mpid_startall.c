@@ -73,7 +73,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    case MPIDI_REQUEST_TYPE_RECV:
 	    {
 		rc = MPID_Irecv(preq->dev.user_buf, preq->dev.user_count, preq->dev.datatype, preq->dev.match.rank,
-		    preq->dev.match.tag, preq->comm, preq->dev.match.context_id - preq->comm->context_id,
+		    preq->dev.match.tag, preq->comm, preq->dev.match.context_id - preq->comm->recvcontext_id,
 		    &preq->partner_request);
 		break;
 	    }
