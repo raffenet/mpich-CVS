@@ -866,7 +866,6 @@ int MPIDI_CH3I_Progress_finalize(void);
   a function version of MPID_Request_set_completed for use by greq_complete.c
 
 @*/
-void MPIDI_CH3_Progress_signal_completion(void);
 
 /*
  * MPIDI_CH3_Progress_signal_completion() is used to notify the progress
