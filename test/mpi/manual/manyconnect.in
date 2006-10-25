@@ -1,6 +1,8 @@
 #! /bin/sh
 file=`pwd`/test-port
-mpiexec=@bindir@/mpiexec
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+mpiexec="@bindir@/mpiexec"
 
 rm -f $file
 

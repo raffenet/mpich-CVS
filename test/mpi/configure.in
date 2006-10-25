@@ -847,6 +847,7 @@ export ETAGSADD
 
 AC_OUTPUT_COMMANDS([chmod a+x maint/testmerge])
 AC_OUTPUT_COMMANDS([chmod a+x runtests])
+AC_OUTPUT_COMMANDS([chmod a+x manual/manyconnect])
 dnl Note that this format for AC_OUTPUT can cause problems for autoconf
 dnl run under cygwin
 AC_OUTPUT(maint/testmerge \
@@ -935,6 +936,7 @@ AC_OUTPUT(maint/testmerge \
 	  errors/f77/Makefile \
 	  errors/f90/Makefile \
 	  manual/Makefile \
+	  manual/manyconnect \
 	  perf/Makefile \
 	  testlist \
 	  cxx/testlist \
