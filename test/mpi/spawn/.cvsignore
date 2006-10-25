@@ -9,6 +9,8 @@
 Makefile.in
 Makefile
 namepub
+disconnect3
+spaiccreate
 .deps
 *ebug
 *elease

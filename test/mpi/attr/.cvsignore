@@ -22,3 +22,4 @@ fkeyvalwin
 *.vcproj
 *.gcda
 *.gcno
+summary.xml

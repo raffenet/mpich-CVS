@@ -27,4 +27,4 @@ testing:
 	./cmdtests
 
 clean-local:
-	-rm -f err.txt out.log out.txt stdintest sdtiotest a.out
+	-rm -f err.txt out.log out.txt stdintest stdintest2 sdtiotest a.out
