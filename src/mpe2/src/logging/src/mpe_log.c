@@ -913,6 +913,18 @@ int MPE_Log_sync_clocks( void )
 }
 
 
+void MPE_Log_thread_sync( int local_thread_count )
+{
+     int max_thread_count;
+#if !defined( CLOG_NOMPI )
+     PMPI_Allreduce( &local_thread_count, &max_thread_count, 1, MPI_INT,
+                     MPI_MAX, MPI_COMM_WORLD );
+#else
+     max_thread_count = local_thread_count;
+#endif
+     CLOG_Stream->buffer->preamble->max_thread_count = max_thread_count;
+}
+
 /* Declare clog_merged_filename same as CLOG_Merger_t.out_filename */
 static char clog_merged_filename[ CLOG_PATH_STRLEN ] = "0";
 
@@ -921,7 +933,7 @@ static char clog_merged_filename[ CLOG_PATH_STRLEN ] = "0";
 
     Notes:
     MPE_Finish_log() & MPE_Init_log() are NOT needed when liblmpe.a is linked
-    because MPI_Finalize) would have called MPE_Finish_log() already.
+    because MPI_Finalize() would have called MPE_Finish_log() already.
     liblmpe.a will be included in the final executable if it is linked with
     either "mpicc -mpe=mpilog" or "mpecc -mpilog"
 

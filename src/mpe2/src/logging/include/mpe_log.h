@@ -172,6 +172,9 @@ int MPE_Start_log( void );
 /* stop logging events */
 int MPE_Stop_log( void );
 
+/* Synchronize thread related data to all processes */
+void MPE_Log_thread_sync( int local_thread_count );
+
 /* write out data to a file */
 int MPE_Finish_log( const char *filename );
 
