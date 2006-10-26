@@ -49,6 +49,9 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * );
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
 void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn);
 
+/* Routines to get the socket address */
+int MPIDU_CH3U_GetSockInterfaceAddr( int, char *, int, MPIDU_Sock_ifaddr_t * );
+
 /* Return a string for the connection state */
 #ifdef USE_DBG_LOGGING
 const char * MPIDI_Conn_GetStateString(int);

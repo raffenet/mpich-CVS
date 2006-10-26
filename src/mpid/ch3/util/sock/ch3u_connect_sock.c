@@ -378,21 +378,37 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
 				      char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    int port;
-    char host_description[MAX_HOST_DESCRIPTION_LEN];
+    MPIDU_Sock_ifaddr_t ifaddr;
+    char ifname[MAX_HOST_DESCRIPTION_LEN];
+    char *bc_orig = *bc_val_p;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_GET_BUSINESS_CARD_SOCK);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_GET_BUSINESS_CARD_SOCK);
 
+#if 0
     mpi_errno = MPIDU_Sock_get_host_description( myRank, 
 				  host_description, MAX_HOST_DESCRIPTION_LEN);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_description");
     }
 
-    port = MPIDI_CH3I_listener_port;
+    printf( "Host description is %s\n", host_description );
+#endif
+    MPIDU_CH3U_GetSockInterfaceAddr( myRank, ifname, sizeof(ifname), &ifaddr );
+
+#if 0
+    { int i;
+	printf( "Host name from GetSockInterface is %s\n", ifname );
+	printf( "ifaddr is " );
+	for (i=0; i<ifaddr.len; i++) {
+	    printf ("%02x", ifaddr.ifaddr[i] );
+	}
+	printf( "\n" );
+    }
+#endif
+
     mpi_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p, 
-				     MPIDI_CH3I_PORT_KEY, port);
+			     MPIDI_CH3I_PORT_KEY, MPIDI_CH3I_listener_port);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -406,7 +422,7 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
     /* --END ERROR HANDLING-- */
     
     mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, 
-			   MPIDI_CH3I_HOST_DESCRIPTION_KEY, host_description);
+			   MPIDI_CH3I_HOST_DESCRIPTION_KEY, ifname );
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
@@ -434,12 +450,13 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
        is resolved locally (i.e., perfectly parallel).  Regrettably, not
        all systems do this (e.g., some versions of FreeBSD).
     */
+#if 0
 #ifndef HAVE_WINDOWS_H
     {
 	struct hostent *info;
 	char ifname[256];
 	unsigned char *p;
-	info = gethostbyname( host_description );
+	info = gethostbyname( ifname );
 	if (info && info->h_addr_list) {
 	    p = (unsigned char *)(info->h_addr_list[0]);
 	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
@@ -460,6 +477,36 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
 	}
     }
 #endif
+#endif 
+
+    {
+	char ifname[256];
+	unsigned char *p;
+	if (ifaddr.len > 0 && ifaddr.type == AF_INET) {
+	    p = (unsigned char *)(ifaddr.ifaddr);
+	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
+			   p[0], p[1], p[2], p[3] );
+	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
+	    mpi_errno = MPIU_Str_add_string_arg( bc_val_p, 
+						 val_max_sz_p, 
+						 MPIDI_CH3I_IFNAME_KEY,
+						 ifname );
+	    if (mpi_errno != MPIU_STR_SUCCESS) {
+		if (mpi_errno == MPIU_STR_NOMEM) {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
+		}
+		else {
+		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard");
+		}
+	    }
+	}
+    }
+    
+    if (0) {
+	fprintf( stdout, "business card is %s\n", bc_orig );
+	fflush(stdout);
+    }
+
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_GET_BUSINESS_CARD_SOCK);
     return mpi_errno;
@@ -813,7 +860,8 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
     else {
 	/* head to head situation */
 	if (pg == MPIDI_Process.my_pg) {
-	    /* the other process is in the same comm_world; just compare the ranks */
+	    /* the other process is in the same comm_world; just compare the 
+	       ranks */
 	    if (MPIR_Process.comm_world->rank < pg_rank) {
 		/* accept connection */
 		MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
@@ -834,7 +882,8 @@ int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * conn )
 	    }
 	}
 	else {
-	    /* the two processes are in different comm_worlds; compare their unique pg_ids. */
+	    /* the two processes are in different comm_worlds; compare their 
+	       unique pg_ids. */
 	    if (strcmp(MPIDI_Process.my_pg->id, pg->id) < 0) {
 		/* accept connection */
 		MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
