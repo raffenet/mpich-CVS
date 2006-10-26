@@ -6,7 +6,7 @@ MPI_CLINKER = $(MPI_CC)
 #
 MPI_INC     = @MPI_INC@
 MPI_LIBS    = @MPI_LIBS@
-CLFGAS      = @CFLAGS@
+CFLAGS      = @CFLAGS@
 MPE_GRAPH   = @MPE_GRAPHICS@
 MPE_INCDIR  = @includebuild_dir@
 MPE_LIBDIR  = @libbuild_dir@
