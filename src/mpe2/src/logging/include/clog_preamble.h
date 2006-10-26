@@ -22,6 +22,7 @@ typedef struct {
     unsigned int  block_size;
     unsigned int  num_buffered_blocks;
     unsigned int  max_comm_world_size;
+    unsigned int  max_thread_count;
     unsigned int  known_eventID_start;
     unsigned int  user_eventID_start;
     unsigned int  known_solo_eventID_start;

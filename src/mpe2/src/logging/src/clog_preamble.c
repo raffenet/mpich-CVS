@@ -58,6 +58,7 @@ CLOG_Preamble_t *CLOG_Preamble_create( void )
     preamble->block_size                = 0;
     preamble->num_buffered_blocks       = 0;
     preamble->max_comm_world_size       = 0;
+    preamble->max_thread_count          = 0;
     preamble->known_eventID_start       = 0;
     preamble->user_eventID_start        = 0;
     preamble->known_solo_eventID_start  = 0;
@@ -100,6 +101,8 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
     num_procs = 1;
 #endif
     preamble->max_comm_world_size  = num_procs;
+    /* There is alway at least 1 thread, i.e. main thread */
+    preamble->max_thread_count     = 1;
 
     strcpy( preamble->version, CLOG_VERSION );
 
@@ -269,6 +272,17 @@ void CLOG_Preamble_write( const CLOG_Preamble_t *preamble,
     value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
                                     "Max MPI_COMM_WORLD Size Value" );
+
+    /* Write the maximum thread count */
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
+                                    "max_thread_count=",
+                                    "Max Thread Count Title" );
+    snprintf( value_str, CLOG_PREAMBLE_STRLEN, "%d",
+              preamble->max_thread_count );
+    /* just in case, there isn't \0 in value_str  */
+    value_str[ CLOG_PREAMBLE_STRLEN-1 ] = '\0';
+    buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail, value_str,
+                                    "Max Thread Count Value" );
 
     /* Write the CLOG_KNOWN_EVENTID_START */
     buf_ptr = CLOG_Util_strbuf_put( buf_ptr, buf_tail,
@@ -489,6 +503,14 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr, "Max Thread Count Title" );
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
+                                    buf_ptr, "Max Thread Count Value" );
+    preamble->max_thread_count    = (unsigned int) atoi( value_str );
+
+    buf_ptr = CLOG_Util_strbuf_get( value_str,
+                                    &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG_KNOWN_EVENTID_START Title" );
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -604,6 +626,8 @@ void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
                      preamble->block_size );
     fprintf( stream, "max_comm_world_size = %d\n",
                      preamble->max_comm_world_size );
+    fprintf( stream, "max_thread_count = %d\n",
+                     preamble->max_thread_count );
     fprintf( stream, "known_eventID_start = %d\n",
                      preamble->known_eventID_start );
     fprintf( stream, "user_eventID_start = %d\n",
@@ -632,6 +656,7 @@ void CLOG_Preamble_copy( const CLOG_Preamble_t *src, CLOG_Preamble_t *dest )
     dest->num_buffered_blocks       = src->num_buffered_blocks;
     dest->block_size                = src->block_size;
     dest->max_comm_world_size       = src->max_comm_world_size;
+    dest->max_thread_count          = src->max_thread_count;
     dest->known_eventID_start       = src->known_eventID_start;
     dest->user_eventID_start        = src->user_eventID_start;
     dest->known_solo_eventID_start  = src->known_solo_eventID_start;
@@ -649,6 +674,9 @@ void CLOG_Preamble_sync(       CLOG_Preamble_t *parent,
      /* Determine max_comm_world_size for out_cache's preamble */
      if ( child->max_comm_world_size > parent->max_comm_world_size )
          parent->max_comm_world_size = child->max_comm_world_size;
+     /* Determine max_thread_count for out_cache's preamble */
+     if ( child->max_thread_count > parent->max_thread_count )
+         parent->max_thread_count = child->max_thread_count;
      /* Determine maximum block_size */
      if ( child->block_size > parent->block_size )
          parent->block_size  = child->block_size;
