@@ -26,8 +26,13 @@
                  (for debugging). 
                  Changed CLOG_Preamble_t's comm_world_size to
                  max_comm_world_size.
+   Version 2.44: Added a max_thread_count in CLOG_Preamble for thread-safe
+                 support.  The variable shows the maximum local threads
+                 (per process) among processes recorded in the logfile
+                 and is used to generate unique LineID in the YaxisViewMap
+                 in clog2TOslog2
 */
-#define CLOG_VERSION          "CLOG-02.43"
+#define CLOG_VERSION          "CLOG-02.44"
 
 #include "clog_buffer.h"
 #include "clog_sync.h"
