@@ -38,7 +38,7 @@ int MPIDI_PG_Init(int *argc_p, char ***argv_p,
     MPIDI_PG_Compare_ids_fn = compare_ids_fn;
     MPIDI_PG_Destroy_fn     = destroy_fn;
 
-    /* Check for debugging options.  We yse MPICHD_DBG and -mpichd-dbg 
+    /* Check for debugging options.  We use MPICHD_DBG and -mpichd-dbg 
        to avoid confusion with the code in src/util/dbg/dbg_printf.c */
     p = getenv( "MPICHD_DBG_PG" );
     if (p && ( strcmp( p, "YES" ) == 0 || strcmp( p, "yes" ) == 0) )
