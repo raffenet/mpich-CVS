@@ -212,7 +212,7 @@ private class ContentIterator implements Iterator
     private MixedDataInputStream   blk_ins;
     private long                   total_bytesize;
 
-    private CommLineIDMap          commlineIDmap;
+    private CommProcThdIDMap       cptIDmap;
     private Map                    evtdefs;
     private List                   topos;
     private ObjDef                 statedef;
@@ -241,9 +241,10 @@ private class ContentIterator implements Iterator
 
     public ContentIterator( int kindID )
     {
-        // Map to hold (CommLineID's lineID, CommLineID) pairs. 
-        commlineIDmap  = new CommLineIDMap();
-        commlineIDmap.initialize();
+        int max_thread_count = InputLog.super.getPreamble().getMaxThreadCount();
+        // Map to hold (CommProcThdID's gthdLineID, CommProcThdID) pairs. 
+        cptIDmap  = new CommProcThdIDMap( max_thread_count );
+        cptIDmap.initialize();
 
         InputLog.this.next_avail_kindID  = kindID;
 
@@ -347,7 +348,7 @@ private class ContentIterator implements Iterator
     public boolean hasNext()
     {
         ObjMethod       evt_pairing, obj_meth1, obj_meth2;
-        CommLineID      commlineID;
+        CommProcThdID   commlineID;
         int             bytes_read;
         int             bare_etype, cargo_etype, msg_etype;
         int             rectype;
@@ -459,7 +460,7 @@ private class ContentIterator implements Iterator
                             }
 
                             if ( drawobj != null ) {
-                                commlineIDmap.setCommLineIDUsed( drawobj );
+                                cptIDmap.setCommProcThdIDUsed( drawobj );
                                 InputLog.this.next_avail_kindID
                                 = Kind.PRIMITIVE_ID;
                                 return true;
@@ -499,7 +500,7 @@ private class ContentIterator implements Iterator
                             }
 
                             if ( drawobj != null ) {
-                                commlineIDmap.setCommLineIDUsed( drawobj );
+                                cptIDmap.setCommProcThdIDUsed( drawobj );
                                 InputLog.this.next_avail_kindID
                                 = Kind.PRIMITIVE_ID;
                                 return true;
@@ -538,7 +539,7 @@ private class ContentIterator implements Iterator
                             }
 
                             if ( drawobj != null ) {
-                                commlineIDmap.setCommLineIDUsed( drawobj );
+                                cptIDmap.setCommProcThdIDUsed( drawobj );
                                 InputLog.this.next_avail_kindID
                                 = Kind.PRIMITIVE_ID;
                                 return true;
@@ -552,8 +553,7 @@ private class ContentIterator implements Iterator
                     case RecComm.RECTYPE:
                         bytes_read = comm.readFromDataStream( blk_ins );
                         total_bytesize += bytes_read;
-                        commlineID = new CommLineID( comm );
-                        commlineIDmap.addCommLineID( commlineID );
+                        cptIDmap.addComm( comm );
                         break;
                     case RecSrc.RECTYPE:
                         bytes_read = src.skipBytesFromDataStream( blk_ins );
@@ -604,8 +604,8 @@ private class ContentIterator implements Iterator
 
     public List getYCoordMapList()
     {
-        commlineIDmap.finish();
-        return commlineIDmap.createYCoordMapList();
+        cptIDmap.finish();
+        return cptIDmap.createYCoordMapList();
     }
 
     public long getTotalBytesRead()
