@@ -502,7 +502,7 @@ void CLOG_CommSet_merge( CLOG_CommSet_t *commset )
         recv_table_count  = commset->count;
     else
         recv_table_count  = 0;
-    MPI_Bcast( &recv_table_count, 1, MPI_INT, 0, MPI_COMM_WORLD );
+    PMPI_Bcast( &recv_table_count, 1, MPI_INT, 0, MPI_COMM_WORLD );
 
     /* Allocate a buffer for root process's commset->table */
     recv_table_size  = recv_table_count * sizeof(CLOG_CommIDs_t);
@@ -516,7 +516,7 @@ void CLOG_CommSet_merge( CLOG_CommSet_t *commset )
 
     if ( comm_world_rank == 0 )
         memcpy( recv_table, commset->table, recv_table_size );
-    MPI_Bcast( recv_table, recv_table_size, MPI_CHAR, 0, MPI_COMM_WORLD );
+    PMPI_Bcast( recv_table, recv_table_size, MPI_CHAR, 0, MPI_COMM_WORLD );
 
     /* Make local_IDs in CLOG_CommSet_t's table[] to globally unique integers */
     if (    CLOG_CommSet_sync_IDs( commset, recv_table_count, recv_table )
