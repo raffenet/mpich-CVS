@@ -12,7 +12,7 @@ package logformat.clog2;
 public class Const
 {
     // Current Version ID
-           static final String    VERSION         = "CLOG-02.43";
+           static final String    VERSION         = "CLOG-02.44";
 
     /*
        Older Version IDs, COMPAT_VERSIONS, that are compataible to VERSION.
@@ -37,6 +37,11 @@ public class Const
                      the timestamps by using the timeshift events, 3) a repair
                      program can fixup the broken/unfinish local clog2 file
                      (for debugging).
+       VERSION 2.44: Added a max_thread_count in CLOG_Preamble for thread-safe
+                     support.  The variable shows the maximum local threads
+                     (per process) among processes recorded in the logfile
+                     and is used to generate unique LineID in the YaxisViewMap
+                     in clog2TOslog2
     */
            static final String[]  COMPAT_VERSIONS = {};
 

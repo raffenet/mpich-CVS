@@ -38,6 +38,9 @@ public class Preamble
     //  this correspond to CLOG_Premable_t.max_comm_world_size
     private              String   max_world_size_title;
     private              int      max_world_size;
+    //  this correspond to CLOG_Premable_t.max_thread_count
+    private              String   max_thread_count_title;
+    private              int      max_thread_count;
     //  this correspond to CLOG_Premable_t.known_eventID_start
     private              String   known_eventID_start_title;
     private              int      known_eventID_start;
@@ -98,6 +101,9 @@ public class Preamble
             max_world_size_title            = tokens.nextToken().trim();
             max_world_size                  = Integer.parseInt(
                                               tokens.nextToken().trim() );
+            max_thread_count_title          = tokens.nextToken().trim();
+            max_thread_count                = Integer.parseInt(
+                                              tokens.nextToken().trim() );
             known_eventID_start_title       = tokens.nextToken().trim();
             known_eventID_start             = Integer.parseInt(
                                               tokens.nextToken().trim() );
@@ -137,8 +143,8 @@ public class Preamble
             return false;
         }
 
-        /* Set the const in (comm,rank) -> lineID transformation */
-        LineID.setCommRank2LineIDxForm( max_world_size );
+        /* Set the constants in (icomm,rank,thread) -> lineID transformation */
+        LineID.setCommRank2LineIDxForm( max_world_size, max_thread_count );
 
         return true;
     }
@@ -177,6 +183,9 @@ public class Preamble
     public int getMaxCommWorldSize()
     { return max_world_size; }
 
+    public int getMaxThreadCount()
+    { return max_thread_count; }
+
     public int getKnownEventIDStart()
     { return known_eventID_start; }
 
@@ -212,6 +221,7 @@ public class Preamble
                 + block_size_title + block_size + "\n"
                 + num_blocks_title + num_blocks + "\n"
                 + max_world_size_title + max_world_size + "\n"
+                + max_thread_count_title + max_thread_count + "\n"
                 + known_eventID_start_title + known_eventID_start + "\n"
                 + user_eventID_start_title + user_eventID_start + "\n"
                 + known_solo_eventID_start_title + known_solo_eventID_start+"\n"
