@@ -74,9 +74,9 @@ void CLOG_Uuid_generate( CLOG_Uuid_t uuid )
 #endif
 
     /* Can't use CLOG_Timer_get() as CLOG_Timer_start() has been called yet */
-    time  = MPI_Wtime();
+    time  = PMPI_Wtime();
 
-    MPI_Get_processor_name( processor_name, &namelen );
+    PMPI_Get_processor_name( processor_name, &namelen );
 
     ptr  = &uuid[0];
     memcpy( ptr, &random_number, sizeof(CLOG_int32_t) );
