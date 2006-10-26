@@ -67,6 +67,9 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
      */
     mpi_errno = InitPG( argc, argv, 
 			has_args, has_env, &has_parent, &pg_rank, &pg );
+    if (mpi_errno) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ch3_init");
+    }
 
     /*
      * Let the channel perform any necessary initialization
@@ -402,6 +405,9 @@ int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p )
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
     
+    /* Add a null to simplify looking at the bc */
+    **bc_val_p = 0;
+
   fn_exit:
     return mpi_errno;
 
