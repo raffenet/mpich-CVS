@@ -446,7 +446,15 @@ static PMIKVSpace *fPMIKVSAllocate( void )
 	MPIU_Internal_error_printf( "too many kvs's\n" );
 	return 0;
     }
-    MPIU_Snprintf( (char *)(kvs->kvsname), MAXNAMELEN, "kvs_%d", kvsnum++ );
+    /* We include the pid of the PMI server as a way to allow multiple
+       PMI servers to coexist.  This is needed to support connect/accept
+       operations when multiple mpiexec's are used, and the KVS space
+       is served directly by mpiexec (it should really have the 
+       hostname as well, just to avoid getting the same pid on two
+       different hosts, but this is probably good enough for most
+       uses) */
+    MPIU_Snprintf( (char *)(kvs->kvsname), MAXNAMELEN, "kvs_%d_%d", 
+		   (int)getpid(), kvsnum++ );
     kvs->pairs     = 0;
     kvs->lastByIdx = 0;
     kvs->lastIdx   = -1;
