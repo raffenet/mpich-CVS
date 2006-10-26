@@ -116,7 +116,7 @@ int MPIDU_Sock_get_host_description(int myRank,
 	/* --END ERROR HANDLING-- */
     }
 
-  fn_exit:
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_HOST_DESCRIPTION);
     return mpi_errno;
 }
