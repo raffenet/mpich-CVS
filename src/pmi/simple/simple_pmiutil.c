@@ -95,39 +95,55 @@ void PMIU_printf( int print_flag, char *fmt, ... )
     }
 }
 
-/* This function reads until it finds a newline character.  It returns the number of
-   characters read, including the newline character.  The newline character is stored
-   in buf, as in fgets.  It does not supply a string-terminating null character.
-*/
+#define MAX_READLINE 1024
+/* 
+ * Return the next newline-terminated string of maximum length maxlen.
+ * This is a buffered version, and reads from fd as necessary.  A
+ */
 int PMIU_readline( int fd, char *buf, int maxlen )
 {
-    int n, rc;
-    char c, *ptr;
+    static char readbuf[MAX_READLINE];
+    static char *nextChar = 0, *lastChar = 0;
+    static int  lastErrno = 0;
+    int curlen, n;
+    char *p, ch;
 
-    ptr = buf;
-    for ( n = 1; n < maxlen; n++ ) {
-      again:
-	rc = read( fd, &c, 1 );
-	if ( rc == 1 ) {
-	    *ptr++ = c;
-	    if ( c == '\n' )	/* note \n is stored, like in fgets */
+    p      = buf;
+    curlen = 1;    /* Make room for the null */
+    while (curlen < maxlen) {
+	if (nextChar == lastChar) {
+	    do {
+		n = read( fd, readbuf, sizeof(buf) );
+	    } while (n == -1 && errno == EINTR);
+	    if (n == 0) {
+		/* EOF */
 		break;
+	    }
+	    else if (n < 0) {
+		/* Error.  Return a negative value if there is no
+		   data.  Save the errno in case we need to return it
+		   later. */
+		lastErrno = errno;
+		if (curlen == 1) {
+		    curlen = 0;
+		}
+		break;
+	    }
+	    nextChar = readbuf;
+	    lastChar = readbuf + n;
 	}
-	else if ( rc == 0 ) {
-	    if ( n == 1 )
-		return( 0 );	/* EOF, no data read */
-	    else
-		break;		/* EOF, some data read */
-	}
-	else {
-	    if ( errno == EINTR )
-		goto again;
-	    return ( -1 );	/* error, errno set by read */
-	}
+	
+	ch   = *nextChar++;
+	*p++ = ch;
+	curlen++;
+	if (ch == '\n') break;
     }
-    *ptr = 0;			/* null terminate, like fgets */
-    PMIU_printf( 0, " received :%s:\n", buf );
-    return( n );
+
+    /* We null terminate the string for convenience in printing */
+    *p = 0;
+
+    /* Return the number of characters, not counting the null */
+    return curlen-1;
 }
 
 int PMIU_writeline( int fd, char *buf )	
