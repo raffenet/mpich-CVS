@@ -15,14 +15,14 @@ int ADIOI_TESTFS_ReadDone(ADIO_Request *request, ADIO_Status *status, int
 
     *error_code = MPI_SUCCESS;
 
+    MPI_Comm_size((*request)->fd->comm, &nprocs);
+    MPI_Comm_rank((*request)->fd->comm, &myrank);
     if (*request == ADIO_REQUEST_NULL) {
 	FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_ReadDone called on ADIO_REQUEST_NULL\n", 
 		myrank, nprocs);
 	return 1;
     }
 
-    MPI_Comm_size((*request)->fd->comm, &nprocs);
-    MPI_Comm_rank((*request)->fd->comm, &myrank);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_ReadDone called on %s\n", 
 	    myrank, nprocs, (*request)->fd->filename);
 

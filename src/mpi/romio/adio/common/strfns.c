@@ -163,6 +163,7 @@ char *ADIOI_Strdup( const char *str )
  * We need an snprintf replacement for systems without one
  */
 #ifndef HAVE_SNPRINTF
+#include <ctype.h>
 /* FIXME: Really need a check for varargs.h vs stdarg.h */
 #include <stdarg.h>
 /* 
@@ -272,7 +273,7 @@ int ADIOI_Snprintf( char *str, size_t size, const char *format, ... )
 		char *t = tmp;
 		/* Get the argument, of integer type */
 		val = va_arg( list, int );
-		sprintf( tmp, "%p", val );
+		sprintf( tmp, "%p", (void *)val );
 		if (width > 0) {
 		    int tmplen = strlen(tmp);
 		    /* If a width was specified, pad with spaces on the
