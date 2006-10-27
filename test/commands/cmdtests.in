@@ -382,7 +382,11 @@ if (-x "stdintest") {
     }
     close TFD;
 
-    system "$mpiexec ./stdintest <in.txt 2>err.txt 1>out.txt";
+    $rc = system "$mpiexec ./stdintest <in.txt 2>err.txt 1>out.txt";
+    if ($rc != 0) {
+	&ReportError( "Program stdintest failed with return $rc" );
+	$errors ++;
+    }
     # Compare the expected output
     if (-s "out.txt") {
 	&CheckEchoedOutput;
@@ -401,7 +405,11 @@ if (-x "stdintest") {
 
     # Try with a parallel job
     &Announce( "$mpiexec -n 3 ./stdintest <in.txt 2>err.txt 1>out.txt" );
-    system "$mpiexec -n 3 ./stdintest <in.txt 2>err.txt 1>out.txt";
+    $rc = system "$mpiexec -n 3 ./stdintest <in.txt 2>err.txt 1>out.txt";
+    if ($rc != 0) {
+	&ReportError( "Program stdintest (3 processes) failed with return $rc" );
+	$errors ++;
+    }
     # Compare the expected output
     if (-s "out.txt") {
 	&CheckEchoedOutput;
@@ -440,7 +448,11 @@ if (-x "stdintest2") {
 	print TFD "This is line $i\n";
     }
     close TFD;
-    system "$mpiexec ./stdintest2 <in.txt 2>err.txt 1>out.txt";
+    $rc = system "$mpiexec ./stdintest2 <in.txt 2>err.txt 1>out.txt";
+    if ($rc != 0) {
+	&ReportError( "Program stdintest2 failed with return $rc" );
+	$errors ++;
+    }
     # Compare the expected output
     if (-s "out.txt") {
 	# Check for No Errors ONLY
