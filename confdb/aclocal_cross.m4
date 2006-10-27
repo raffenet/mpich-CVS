@@ -112,7 +112,12 @@ if test "X$pac_save_level" = "X" ; then
     if test -n "$CXX" ; then
         AC_LANG_SAVE
         AC_LANG_CPLUSPLUS
-        AC_TRY_COMPILER([int main(){return(0);}], ac_cv_prog_cxx_works, ac_cv_prog_cxx_cross)
+        if test "$pac_cross_compiling" = "yes" ; then
+            ac_cv_prog_cxx_cross=yes
+            ac_cv_prog_cxx_works=yes
+        else 
+            AC_TRY_COMPILER([int main(){return(0);}], ac_cv_prog_cxx_works, ac_cv_prog_cxx_cross)
+ 	fi    
         AC_LANG_RESTORE
     fi
     # Ignore Fortran 90 if we aren't using it.
