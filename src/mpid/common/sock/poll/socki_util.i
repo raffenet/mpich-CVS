@@ -14,12 +14,17 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
 
 static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, const int count, int * const offsetp);
 
-static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU_Sock ** sockp);
+static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, 
+				  struct MPIDU_Sock ** sockp);
 static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock);
 
-static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, enum MPIDU_Sock_op op, MPIU_Size_t num_bytes,
+static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, 
+				     enum MPIDU_Sock_op op, 
+				     MPIU_Size_t num_bytes,
 				     void * user_ptr, int error);
-static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, int * set_elem, struct MPIDU_Sock_event * eventp);
+static int inline MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, 
+					    int * set_elem, 
+					    struct MPIDU_Sock_event * eventp);
 
 static void MPIDU_Socki_free_eventq_mem(void);
 
@@ -74,7 +79,7 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
         }							\
     }
 #else /* MPICH_IS_THREADED */
-/* FIXME: Does this need a runtime check on wether threads are in use? */
+/* FIXME: Does this need a runtime check on whether threads are in use? */
 #   define MPIDU_SOCKI_POLLFD_OP_SET(pollfd_, pollinfo_, op_)		\
     {									\
 	(pollinfo_)->pollfd_events |= (op_);				\

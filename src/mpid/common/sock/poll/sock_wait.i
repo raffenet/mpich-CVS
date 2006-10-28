@@ -6,11 +6,16 @@
  */
 
 
-static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static int MPIDU_Socki_handle_write(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
-static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo);
+static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, 
+				      struct pollinfo * const pollinfo);
+static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, 
+				      struct pollinfo * const pollinfo);
+static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, 
+				   struct pollinfo * const pollinfo);
+static int MPIDU_Socki_handle_write(struct pollfd * const pollfd, 
+				    struct pollinfo * const pollinfo);
+static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, 
+				      struct pollinfo * const pollinfo);
 
 /*
  * MPIDU_Sock_wait()
@@ -276,7 +281,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		}
 	    }
 
-	    /* According to Stevens, some errors are reported as normal data (POLLIN) and some are reported with POLLERR. */
+	    /* According to Stevens, some errors are reported as normal data 
+	       (POLLIN) and some are reported with POLLERR. */
 	    if (pollfd->revents & POLLERR)
 	    {
 		mpi_errno = MPIDU_Socki_handle_pollerr(pollfd, pollinfo);
@@ -291,7 +297,8 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 	    {
 		if (pollinfo->type == MPIDU_SOCKI_TYPE_COMMUNICATION)
 		{ 
-		    if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RW || pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO)
+		    if (pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RW || 
+			pollinfo->state == MPIDU_SOCKI_STATE_CONNECTED_RO)
 		    {
 			mpi_errno = MPIDU_Socki_handle_read(pollfd, pollinfo);
 			/* --BEGIN ERROR HANDLING-- */
