@@ -11,9 +11,11 @@ static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set);
 int MPIDI_Sock_update_sock_set( struct MPIDU_Sock_set *, int );
 #endif
 
-static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, char * fcname, int line, int * conn_failed);
+static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, 
+		     int os_errno, char * fcname, int line, int * conn_failed);
 
-static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, const int count, int * const offsetp);
+static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, 
+				  const int count, int * const offsetp);
 
 static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, 
 				  struct MPIDU_Sock ** sockp);
@@ -58,7 +60,7 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 }
 
 /* FIXME: These need to separate the operations from the thread-related
-   synchronization to ensure that the code that is indepent of 
+   synchronization to ensure that the code that is independent of 
    threads is always the same.  Also, the thread-level check needs 
    to be identical to all others, and there should be an option,
    possibly embedded within special thread macros, to allow
@@ -150,6 +152,9 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 /*
  * Validation tests
  */
+/* FIXME: Are these really optional?  Based on their definitions, it looks
+   like they should only be used when debugging the code.  */
+#ifdef USE_SOCK_VERIFY
 #define MPIDU_SOCKI_VERIFY_INIT(mpi_errno_, fail_label_)		\
 {								        \
     if (MPIDU_Socki_initialized <= 0)					\
@@ -330,6 +335,18 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 	goto fail_label_;						\
     }									\
 }
+#else
+/* Use minimal to no checking */
+#define MPIDU_SOCKI_VERIFY_INIT(mpi_errno_,fail_label_)
+#define MPIDU_SOCKI_VALIDATE_SOCK_SET(sock_set_,mpi_errno_,fail_label_)
+#define MPIDU_SOCKI_VALIDATE_SOCK(sock_,mpi_errno_,fail_label_)
+#define MPIDU_SOCKI_VERIFY_CONNECTED_READABLE(pollinfo_,mpi_errno_,fail_label_)
+#define MPIDU_SOCKI_VERIFY_CONNECTED_WRITABLE(pollinfo_,mpi_errno_,fail_label_)
+#define MPIDU_SOCKI_VALIDATE_FD(pollinfo_,mpi_errno_,fail_label_)
+#define MPIDU_SOCKI_VERIFY_NO_POSTED_READ(pollfd_,pollinfo_,mpi_errno,fail_label_)
+#define MPIDU_SOCKI_VERIFY_NO_POSTED_WRITE(pollfd_,pollinfo_,mpi_errno,fail_label_)
+
+#endif
 
 
 #ifdef MPICH_IS_THREADED
@@ -948,3 +965,4 @@ static void MPIDU_Socki_free_eventq_mem(void)
 
     MPIDI_FUNC_EXIT(MPID_STATE_SOCKI_FREE_EVENTQ_MEM);
 }
+
