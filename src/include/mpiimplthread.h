@@ -22,7 +22,10 @@
 #endif
 
 /*
- * Define possible thread implementations that could be selected at configure time
+ * Define possible thread implementations that could be selected at 
+ * configure time.  
+ * 
+ * These mean what ?
  */
 #define MPICH_THREAD_IMPL_NOT_IMPLEMENTED -1
 #define MPICH_THREAD_IMPL_NONE 1
