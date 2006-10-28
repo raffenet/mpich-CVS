@@ -5,6 +5,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* Make sure that we can properly ensure atomic access to the poll routine */
+#ifdef MPICH_IS_THREADED
+#if (USE_THREAD_IMPL != MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+#error selected multi-threaded implementation is not supported
+#endif
+#endif
+
 
 static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, 
 				      struct pollinfo * const pollinfo);
@@ -43,13 +50,13 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 
     for (;;)
     { 
-	int elem;
+	int elem=0;   /* Keep compiler happy */
 	int n_fds;
 	int n_elems;
 	int found_active_elem = FALSE;
-	
-	if (MPIDU_Socki_event_dequeue(sock_set, &elem, eventp) == MPI_SUCCESS)
-	{
+
+	mpi_errno = MPIDU_Socki_event_dequeue(sock_set, &elem, eventp);
+	if (mpi_errno == MPI_SUCCESS) {
 	    struct pollinfo * pollinfo;
 	    int flags;
 	    
@@ -102,6 +109,21 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 	    }
 #	    else /* MPICH_IS_THREADED */
 	    {
+		/* If we've enabled runtime checking of the thread level,
+		 then test for that and if we are *not* multithreaded, 
+		 just use the same code as above.  Otherwise, use 
+		 multithreaded code (and we don't then need the 
+		 MPIU_THREAD_CHECK_BEGIN/END macros) */
+#ifdef HAVE_RUNTIME_THREADCHECK
+		if (!MPIR_Process.isThreaded) {
+		    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
+		    n_fds = poll(sock_set->pollfds, sock_set->poll_array_elems, 
+				 millisecond_timeout);
+		    MPIDI_FUNC_EXIT(MPID_STATE_POLL);
+		}
+		else
+#endif
+		{    
 		/*
 		 * First try a non-blocking poll to see if any immediate 
 		 * progress can be made.  This avoids the lock manipulation
@@ -117,85 +139,36 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		
 		    sock_set->pollfds_active = sock_set->pollfds;
 		    
-#                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-		    {
-			/* Release the lock so that other threads may make 
-			   progress while this thread waits for something to 
-			   do */
-			MPIU_THREAD_CHECK_BEGIN 
-			MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
-			MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
-			MPIU_THREAD_CHECK_END
-		    }
-#                   else
-#                       error selected multi-threaded implementation is not supported
-#                   endif
+		    /* Release the lock so that other threads may make 
+		       progress while this thread waits for something to 
+		       do */
+		    MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
+		    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
 			    
 		    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
-		    n_fds = poll(sock_set->pollfds_active, pollfds_active_elems, millisecond_timeout);
+		    n_fds = poll(sock_set->pollfds_active, 
+				 pollfds_active_elems, millisecond_timeout);
 		    MPIDI_FUNC_EXIT(MPID_STATE_POLL);
 		    
-#                   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-		    {
-			/* Reaquire the lock before processing any of the 
-			   information returned from poll */
-			MPIU_THREAD_CHECK_BEGIN 
-			MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
-			MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
-			MPIU_THREAD_CHECK_END
-		    }
-#                   else
-#                       error selected multi-threaded implementation is not supported
-#                   endif
+		    /* Reaquire the lock before processing any of the 
+		       information returned from poll */
+		    MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
+		    MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
 
 		    /*
 		     * Update pollfds array if changes were posted while we 
 		     * were blocked in poll
 		     */
-		    if (sock_set->pollfds_updated)
-		    { 
-			for (elem = 0; elem < sock_set->poll_array_elems; elem++)
-			{
-			    sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
-			    if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) != 0)
-			    {
-				sock_set->pollfds[elem].fd = sock_set->pollinfos[elem].fd;
-			    }
-			    else
-			    {
-				sock_set->pollfds[elem].fd = -1;
-			    }
-
-			    if (elem < pollfds_active_elems)
-			    {
-				if (sock_set->pollfds_active == sock_set->pollfds)
-				{
-				    sock_set->pollfds[elem].revents &= ~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events;
-				}
-				else 
-				{
-				    sock_set->pollfds[elem].revents = sock_set->pollfds_active[elem].revents &
-					(~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events);				
-				}
-			    }
-			    else   
-			    {
-				sock_set->pollfds[elem].revents = 0;
-			    }
-			}
-
-			if (sock_set->pollfds_active != sock_set->pollfds)
-			{
-			    MPIU_Free(sock_set->pollfds_active);
-			}
-
-			sock_set->pollfds_updated = FALSE;
+		    if (sock_set->pollfds_updated) {
+			mpi_errno = MPIDI_Sock_update_sock_set( 
+				       sock_set, pollfds_active_elems );
 		    }
 
 		    sock_set->pollfds_active = NULL;
 		    sock_set->wakeup_posted = FALSE;
 		}
-	    }
+		} /* else !MPIR_Process.isThreaded */
+	    } 
 #	    endif /* MPICH_IS_THREADED */
 
 	    if (n_fds > 0)

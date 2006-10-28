@@ -8,6 +8,7 @@
 
 #ifdef MPICH_IS_THREADED
 static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set);
+int MPIDI_Sock_update_sock_set( struct MPIDU_Sock_set *, int );
 #endif
 
 static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, char * fcname, int line, int * conn_failed);
@@ -365,6 +366,52 @@ static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
     return MPIDU_SOCK_SUCCESS;
 }
 /* end MPIDU_Socki_wakeup() */
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_Sock_update_sock_set
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIDI_Sock_update_sock_set( struct MPIDU_Sock_set *sock_set, 
+				int pollfds_active_elems )
+{
+    int mpi_errno = MPI_SUCCESS;
+    int elem;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_SOCK_UPDATE_SOCK_SET);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_SOCK_UPDATE_SOCK_SET);
+    for (elem = 0; elem < sock_set->poll_array_elems; elem++) {
+	sock_set->pollfds[elem].events = sock_set->pollinfos[elem].pollfd_events;
+	if ((sock_set->pollfds[elem].events & (POLLIN | POLLOUT)) != 0) {
+	    sock_set->pollfds[elem].fd = sock_set->pollinfos[elem].fd;
+	}
+	else {
+	    sock_set->pollfds[elem].fd = -1;
+	}
+
+	if (elem < pollfds_active_elems) {
+	    if (sock_set->pollfds_active == sock_set->pollfds) {
+		sock_set->pollfds[elem].revents &= ~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events;
+	    }
+	    else {
+		sock_set->pollfds[elem].revents = sock_set->pollfds_active[elem].revents &
+		    (~(POLLIN | POLLOUT) | sock_set->pollfds[elem].events);				
+	    }
+	}
+	else {
+	    sock_set->pollfds[elem].revents = 0;
+	}
+    }
+
+    if (sock_set->pollfds_active != sock_set->pollfds) {
+	MPIU_Free(sock_set->pollfds_active);
+    }
+
+    sock_set->pollfds_updated = FALSE;
+
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_SOCK_UPDATE_SOCK_SET);
+    return mpi_errno;
+
+}
 
 #endif /* (MPICH_IS_THREADED) */
     
