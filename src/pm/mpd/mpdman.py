@@ -240,7 +240,9 @@ class MPDMan(object):
                     self.universeSize = msg['ring_ncpus']
                 self.ring.rhsSock.send_dict_msg(msg)
             ## NOTE: if you spawn a non-MPI job, it may not send this msg
-            ## in which case the pgm will hang
+            ## in which case the pgm will hang; the reason for this is that
+            ## mpich2 does an Accept after the PMI_Spawn_multiple and a non-mpi
+            ## pgm will never do the expected Connect.
             self.stdoutToConSock = MPDSock(name='stdout_to_console')
             self.stdoutToConSock.connect((self.conIfhn,self.conPort))
             if self.spawned:
