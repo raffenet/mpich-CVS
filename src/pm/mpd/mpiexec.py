@@ -923,14 +923,15 @@ def handle_man_input(sock,streamHandler):
     elif not msg.has_key('cmd'):
         mpd_print(1,'mpiexec: from man, invalid msg=:%s:' % (msg) )
         sys.exit(-1)
-    elif msg['cmd'] == 'execution_problem':
-        # print 'rank %d (%s) in job %s failed to find executable %s' % \
-              # ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
-        host = msg['src'].split('_')[0]
-        reason = unquote(msg['reason'])
-        print 'problem with execution of %s  on  %s:  %s ' % \
-              (msg['exec'],host,reason)
-        # keep going until all man's finish
+    elif msg['cmd'] == 'startup_status':
+        if msg['rc'] != 0:
+            # print 'rank %d (%s) in job %s failed to find executable %s' % \
+                  # ( msg['rank'], msg['src'], msg['jobid'], msg['exec'] )
+            host = msg['src'].split('_')[0]
+            reason = unquote(msg['reason'])
+            print 'problem with execution of %s  on  %s:  %s ' % \
+                  (msg['exec'],host,reason)
+            # don't stop ; keep going until all top-level mans finish
     elif msg['cmd'] == 'job_aborted_early':
         print 'rank %d in job %s caused collective abort of all ranks' % \
               ( msg['rank'], msg['jobid'] )

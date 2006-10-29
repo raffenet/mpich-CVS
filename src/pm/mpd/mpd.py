@@ -739,7 +739,7 @@ class MPD(object):
                 if msg['spawner_mpd'] == self.myId:
                     spawnerManPid = msg['spawner_manpid']
                     spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
-                    msgToSend = { 'cmd' : 'spawn_result', 'rc' : 0, 'reason' : '' }
+                    msgToSend = { 'cmd' : 'spawn_done_by_mpd', 'rc' : 0, 'reason' : '' }
                     spawnerManSock.send_dict_msg(msgToSend)
                 else:
                     self.ring.rhsSock.send_dict_msg(msg)
@@ -801,21 +801,29 @@ class MPD(object):
                     if msg['cmd'] == 'spawn':
                         self.spawnInProgress = 0
                     if self.conSock:
-                        msgToSend = {'cmd' : 'mpdrun_ack',
-                                     'ringsize' : self.currRingSize,
-                                     'ring_ncpus' : self.currRingNCPUs}
+                        msgToSend = { 'cmd' : 'mpdrun_ack',
+                                      'ringsize' : self.currRingSize,
+                                      'ring_ncpus' : self.currRingNCPUs}
                         self.conSock.send_dict_msg(msgToSend)
                     return
                 if not msg['first_loop']  and  msg['nstarted_on_this_loop'] == 0:
                     if msg.has_key('jobid'):
-                        msgToSend = {'cmd' : 'abortjob', 'src' : self.myId,
-                                     'jobid' : msg['jobid'],
-                                     'reason' : 'some_procs_not_started'}
-                        self.ring.rhsSock.send_dict_msg(msgToSend)
+                        if msg['cmd'] == 'mpdrun':
+                            msgToSend = { 'cmd' : 'abortjob', 'src' : self.myId,
+                                          'jobid' : msg['jobid'],
+                                          'reason' : 'some_procs_not_started' }
+                            self.ring.rhsSock.send_dict_msg(msgToSend)
+                        else:  # spawn
+                            msgToSend = { 'cmd' : 'startup_status', 'rc' : -1,
+                                          'reason' : 'some_procs_not_started' }
+                            jobid = msg['jobid']
+                            manPid = msg['spawner_manpid']
+                            manSock = self.activeJobs[jobid][manPid]['socktoman']
+                            manSock.send_dict_msg(msgToSend)
                     if self.conSock:
-                        msgToSend = {'cmd' : 'job_failed',
-                                     'reason' : 'some_procs_not_started',
-                                     'remaining_hosts' : msg['hosts']}
+                        msgToSend = { 'cmd' : 'job_failed',
+                                      'reason' : 'some_procs_not_started',
+                                      'remaining_hosts' : msg['hosts'] }
                         self.conSock.send_dict_msg(msgToSend)
                     return
                 msg['first_loop'] = 0
@@ -1028,7 +1036,7 @@ class MPD(object):
                     jobid = msg['jobid']
                     spawnerManPid = msg['spawner_manpid']
                     spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
-                    msgToSend = { 'cmd' : 'spawn_result', 'rc' : 0, 'reason' : '' }
+                    msgToSend = { 'cmd' : 'spawn_done_by_mpd', 'rc' : 0, 'reason' : '' }
                     spawnerManSock.send_dict_msg(msgToSend)
                 else:
                     self.ring.rhsSock.send_dict_msg(msg)
@@ -1072,7 +1080,6 @@ class MPD(object):
             # connect to new rhs
             self.ring.rhsIfhn = msg['rhsifhn']
             self.ring.rhsPort = int(msg['rhsport'])
-            mpd_print(0000,"TRYING TO CONN TO %s %s" % (self.ring.rhsIfhn,self.ring.rhsPort))
             if self.ring.rhsIfhn == self.myIfhn  and  self.ring.rhsPort == self.parmdb['MPD_LISTEN_PORT']:
                 rv = self.ring.connect_rhs(rhsHost=self.ring.rhsIfhn,
                                            rhsPort=self.ring.rhsPort,
@@ -1109,7 +1116,6 @@ class MPD(object):
                (msg['cmd'] != 'OK_to_enter_as_lhs'):
                 mpd_print(1, 'NOT OK to enter ring; msg=:%s:' % (msg) )
             self.streamHandler.set_handler(self.ring.rhsSock,self.handle_rhs_input)
-            mpd_print(0000,"GOT CONN TO %s %s" % (self.ring.rhsIfhn,self.ring.rhsPort))
         else:
             mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
         return
