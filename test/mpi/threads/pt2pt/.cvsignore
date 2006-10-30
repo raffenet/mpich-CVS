@@ -9,6 +9,8 @@
 Makefile.in
 Makefile
 threaded_sr
+alltoall
+sendselfth
 .deps
 *ebug
 *elease
