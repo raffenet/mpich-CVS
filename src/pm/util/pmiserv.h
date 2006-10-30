@@ -13,6 +13,7 @@
  * pmi server package
  */
 
+#define MAX_READLINE 1024
 /* 
    The basic item is the PMIProcess, which contains the fd used to 
    communicate with the PMI client code, a pointer to the PMI Group 
@@ -21,6 +22,9 @@
 */
 typedef struct PMIProcess {
     int                  fd;             /* fd to client */
+    char                 readBuf[MAX_READLINE];
+    char                *nextChar, *endChar;
+ 
     struct PMIGroup     *group;          /* PMI group to which this process 
 					    belongs */
     struct ProcessState *pState;         /* ProcessState */
