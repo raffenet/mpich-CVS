@@ -5,6 +5,17 @@
  */
 
 /*********************** PMI implementation ********************************/
+/*
+ * This file implements the client-side of the PMI interface.
+ *
+ * Note that the PMI client code must not print error messages (except 
+ * when an abort is required) because MPI error handling is based on
+ * reporting error codes to which messages are attached.  
+ *
+ * In v2, we should require a PMI client interface to use MPI error codes
+ * to provide better integration with MPICH2.  
+ */
+/***************************************************************************/
 
 #include "pmiconf.h" 
 
@@ -591,7 +602,10 @@ int PMI_Unpublish_name( const char service_name[] )
 	if (err == PMI_SUCCESS) {
 	    PMIU_getval( "info", buf, PMIU_MAXLINE );
 	    if ( strcmp(buf,"ok") != 0 ) {
+		/* FIXME: Do correct error reporting */
+		/*
 	        PMIU_printf( 1, "unpublish failed; reason = %s\n", buf );
+		*/
 	        return( PMI_FAIL );
 	    }
 	}
@@ -618,6 +632,7 @@ int PMI_Lookup_name( const char service_name[], char port[] )
 	if (err == PMI_SUCCESS) {
 	    PMIU_getval( "info", buf, PMIU_MAXLINE );
 	    if ( strcmp(buf,"ok") != 0 ) {
+		/* FIXME: Do correct error reporting */
 		/****
 	        PMIU_printf( 1, "lookup failed; reason = %s\n", buf );
 		****/
@@ -656,14 +671,23 @@ int PMI_Spawn_multiple(int count,
 
     for (spawncnt=0; spawncnt < count; spawncnt++)
     {
-	/* FIXME: Check for buf too short */
-        MPIU_Snprintf(buf, PMIU_MAXLINE, 
-		      "mcmd=spawn\nnprocs=%d\nexecname=%s\n",
-	          maxprocs[spawncnt], cmds[spawncnt] );
+        rc = MPIU_Snprintf(buf, PMIU_MAXLINE, 
+			   "mcmd=spawn\nnprocs=%d\nexecname=%s\n",
+			   maxprocs[spawncnt], cmds[spawncnt] );
+	if (rc < 0) {
+	    return PMI_FAIL;
+	}
 
-	MPIU_Snprintf(tempbuf, PMIU_MAXLINE,"totspawns=%d\nspawnssofar=%d\n",
-		      count, spawncnt+1);
-	MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+	rc = MPIU_Snprintf(tempbuf, PMIU_MAXLINE,
+			   "totspawns=%d\nspawnssofar=%d\n",
+			   count, spawncnt+1);
+	if (rc < 0) { 
+	    return PMI_FAIL;
+	}
+	rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+	if (rc != 0) {
+	    return PMI_FAIL;
+	}
 
         argcnt = 0;
         if ((argvs != NULL) && (argvs[spawncnt] != NULL)) {
@@ -673,77 +697,96 @@ int PMI_Spawn_multiple(int count,
 		   may contain both = and <space> (and even tab!).
 		   Also, command line args may be quite long, leading to 
 		   errors when PMIU_MAXLINE is exceeded */
-		/* FIXME: Check for tempbuf too short */
-                MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s\n",
-			      i+1,argvs[spawncnt][i]);
-		/* FIXME: Check for error (buf too short for line) */
-                MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+                rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s\n",
+				   i+1,argvs[spawncnt][i]);
+		if (rc < 0) {
+		    return PMI_FAIL;
+		}
+                rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+		if (rc != 0) {
+		    return PMI_FAIL;
+		}
                 argcnt++;
             }
         }
-	/* FIXME: Check for tempbuf too short */
-        MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d\n",argcnt);
-	/* FIXME: Check for error (buf too short for line) */
-        MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+        rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d\n",argcnt);
+	if (rc < 0) {
+	    return PMI_FAIL;
+	}
+        rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+	if (rc != 0) {
+	    return PMI_FAIL;
+	}
     
-/*        snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d ",preput_num);
-        strcat(buf,tempbuf);
-        for (i=0; i < preput_num; i++)
-        {
-	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_%d=%s:%s ",
-	    i,preput_keys[i],preput_vals[i]);
-*/ /* FIXME: Check for error (buf too short for line) *//*
-	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
-        }
-*/
-
-	/* FIXME: Check for tempbuf too short */
-        MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d\n", 
-		      preput_keyval_size);
-	/* FIXME: Check for error (buf too short for line) */
-        MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
-        for (i=0; i < preput_keyval_size; i++)
-        { 
-	    /* FIXME: Check for tempbuf too short */
-	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_key_%d=%s\n",
-			  i,preput_keyval_vector[i].key);
-	    /* FIXME: Check for error (buf too short for line) */
-	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
-	    /* FIXME: Check for tempbuf too short */
-	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_val_%d=%s\n",
-			  i,preput_keyval_vector[i].val);
-	    /* FIXME: Check for error (buf too short for line) */
-	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+        rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_num=%d\n", 
+			   preput_keyval_size);
+	if (rc < 0) {
+	    return PMI_FAIL;
+	}
+        rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+	if (rc != 0) {
+	    return PMI_FAIL;
+	}
+        for (i=0; i < preput_keyval_size; i++) {
+	    rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_key_%d=%s\n",
+			       i,preput_keyval_vector[i].key);
+	    if (rc < 0) {
+		return PMI_FAIL;
+	    }
+	    rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    if (rc != 0) {
+		return PMI_FAIL;
+	    }
+	    rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"preput_val_%d=%s\n",
+			       i,preput_keyval_vector[i].val);
+	    if (rc < 0) {
+		return PMI_FAIL;
+	    }
+	    rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    if (rc != 0) {
+		return PMI_FAIL;
+	    }
         } 
-	/* FIXME: Check for tempbuf too short */
-        MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_num=%d\n", 
-		      info_keyval_sizes[spawncnt]);
-	/* FIXME: Check for error (buf too short for line) */
-        MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+        rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_num=%d\n", 
+			   info_keyval_sizes[spawncnt]);
+	if (rc < 0) {
+	    return PMI_FAIL;
+	}
+        rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE);
+	if (rc != 0) {
+	    return PMI_FAIL;
+	}
 	for (i=0; i < info_keyval_sizes[spawncnt]; i++)
 	{
-	    /* FIXME: Check for tempbuf too short */
-	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_key_%d=%s\n",
-			  i,info_keyval_vectors[spawncnt][i].key);
-	    /* FIXME: Check for error (buf too short for line) */
-	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
-	    /* FIXME: Check for tempbuf too short */
-	    MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_val_%d=%s\n",
-			  i,info_keyval_vectors[spawncnt][i].val);
-	    /* FIXME: Check for error (buf too short for line) */
-	    MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_key_%d=%s\n",
+			       i,info_keyval_vectors[spawncnt][i].key);
+	    if (rc < 0) {
+		return PMI_FAIL;
+	    }
+	    rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    if (rc != 0) {
+		return PMI_FAIL;
+	    }
+	    rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"info_val_%d=%s\n",
+			       i,info_keyval_vectors[spawncnt][i].val);
+	    if (rc < 0) {
+		return PMI_FAIL;
+	    }
+	    rc = MPIU_Strnapp(buf,tempbuf,PMIU_MAXLINE); 
+	    if (rc != 0) {
+		return PMI_FAIL;
+	    }
 	}
 
-	/* FIXME: Check for error (buf too short for line) */
-        MPIU_Strnapp(buf, "endcmd\n", PMIU_MAXLINE);
-	DBG_PRINTF( ( "About to writeline %s\n", buf ) );
+        rc = MPIU_Strnapp(buf, "endcmd\n", PMIU_MAXLINE);
+	if (rc != 0) {
+	    return PMI_FAIL;
+	}
         PMIU_writeline( PMI_fd, buf );
     }
-    DBG_PRINTF( ( "About to readline\n" ) );
+
     PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
-    DBG_PRINTF( ( "About to parse\n" ) );
     PMIU_parse_keyvals( buf ); 
-    DBG_PRINTF( ( "About to getval\n" ) );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "spawn_result", PMIU_MAXLINE ) != 0 ) {
 	PMIU_printf( 1, "got unexpected response to spawn :%s:\n", buf );
