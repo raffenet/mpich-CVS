@@ -113,7 +113,7 @@ int PMIU_readline( int fd, char *buf, int maxlen )
     while (curlen < maxlen) {
 	if (nextChar == lastChar) {
 	    do {
-		n = read( fd, readbuf, sizeof(buf) );
+		n = read( fd, readbuf, sizeof(readbuf)-1 );
 	    } while (n == -1 && errno == EINTR);
 	    if (n == 0) {
 		/* EOF */
@@ -131,6 +131,11 @@ int PMIU_readline( int fd, char *buf, int maxlen )
 	    }
 	    nextChar = readbuf;
 	    lastChar = readbuf + n;
+	    /* Add a null at the end just to make it easier to print
+	       the read buffer */
+	    readbuf[n] = 0;
+	    /* FIXME: Make this an optional output */
+	    /* printf( "Readline %s\n", readbuf ); */
 	}
 	
 	ch   = *nextChar++;
