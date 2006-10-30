@@ -106,13 +106,24 @@ int PMIU_readline( int fd, char *buf, int maxlen )
     static char *nextChar = 0, *lastChar = 0;  /* lastChar is really one past 
 						  last char */
     static int  lastErrno = 0;
+    static int lastfd = -1;
     int curlen, n;
     char *p, ch;
+
+    /* Note: On the client side, only one thread at a time should 
+       be calling this, and there should only be a single fd.  
+       Server side code should not use this routine (see the 
+       replacement version in src/pm/util/pmiserv.c) */
+    if (nextChar != lastChar && fd != lastfd) {
+	MPIU_Internal_error_printf( "Panic - buffer inconsistent\n" );
+	return -1;
+    }
 
     p      = buf;
     curlen = 1;    /* Make room for the null */
     while (curlen < maxlen) {
 	if (nextChar == lastChar) {
+	    lastfd = fd;
 	    do {
 		n = read( fd, readbuf, sizeof(readbuf)-1 );
 	    } while (n == -1 && errno == EINTR);
@@ -165,7 +176,10 @@ int PMIU_writeline( int fd, char *buf )
 	    PMIU_printf( 1, "write_line: message string doesn't end in newline: :%s:\n",
 		       buf );
     else {
-	n = write( fd, buf, size );
+	do {
+	    n = write( fd, buf, size );
+	} while (n == -1 && errno == EINTR);
+
 	if ( n < 0 ) {
 	    PMIU_printf( 1, "write_line error; fd=%d buf=:%s:\n", fd, buf );
 	    perror("system msg for write_line failure ");
