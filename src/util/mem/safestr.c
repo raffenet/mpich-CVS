@@ -46,6 +46,10 @@
     Thus, this routine may be used anywhere 'strcpy' is used, without any
     performance cost related to large values of 'maxlen'.
 
+    If there is insufficient space in the destination, the destination is
+    still null-terminated, to avoid potential failures in routines that neglect
+    to check the error code return from this routine.
+
   Module:
   Utility
   @*/
@@ -64,10 +68,14 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
 	*d_ptr = 0;
 	return 0;
     }
-    else
+    else {
+	/* Force a null at the end of the string (gives better safety 
+	   in case the user fails to check the error code) */
+	dest[n-1] = 0;
 	/* We may want to force an error message here, at least in the
 	   debugging version */
 	return 1;
+    }
 }
 
 /* Append src to dest, but only allow dest to contain n characters (including
