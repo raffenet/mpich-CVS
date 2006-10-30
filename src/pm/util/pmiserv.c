@@ -322,6 +322,7 @@ int PMIServHandleInput( int fd, int rdwr, void *extra )
 	PMIU_parse_keyvals( inbuf );
 	cmdtype = PMIGetCommand( cmd, sizeof(cmd) );
 	DBG_PRINTFCOND(pmidebug,( "cmd = %s\n", cmd ));
+	/* Look for the command and execute the related function */
 	p = pmiCommands;
 	while (p->handler) {
 	    if (strncmp( cmd, p->cmdName, MAXPMICMD ) == 0) {
@@ -1319,4 +1320,10 @@ int PMIReadLine( int fd, char *buf, int maxlen )
     return rc;
 }
 #endif
+/* ------------------------------------------------------------------------- */
+/* 
+ * To handle multiple incoming command streams, we need to have a separate
+ * states buffered input (replacing PMIU_readline from the client-side
+ * code)
+ */
 /* ------------------------------------------------------------------------- */
