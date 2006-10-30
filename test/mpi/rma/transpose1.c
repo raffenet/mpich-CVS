@@ -5,6 +5,7 @@
  */
 #include "mpi.h" 
 #include "stdio.h"
+#include <stdlib.h>
 #include "mpitest.h"
 
 /* transposes a matrix using put, fence, and derived datatypes. Uses

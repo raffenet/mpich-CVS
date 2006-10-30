@@ -5,6 +5,7 @@
  */
 #include "mpi.h" 
 #include "stdio.h"
+#include <stdlib.h>
 #include "mpitest.h"
 
 /* This does a transpose-cum-accumulate operation. Uses  vector and
