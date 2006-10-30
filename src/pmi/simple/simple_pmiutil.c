@@ -103,7 +103,8 @@ void PMIU_printf( int print_flag, char *fmt, ... )
 int PMIU_readline( int fd, char *buf, int maxlen )
 {
     static char readbuf[MAX_READLINE];
-    static char *nextChar = 0, *lastChar = 0;
+    static char *nextChar = 0, *lastChar = 0;  /* lastChar is really one past 
+						  last char */
     static int  lastErrno = 0;
     int curlen, n;
     char *p, ch;
