@@ -20,3 +20,9 @@ userioerr_SOURCES = userioerr.c
 # Add the temporary files that might be left behind by the test programs
 clean-local:
 	-@rm -f testfile testfile.?
+
+# A special testing target to simplify running just the io tests
+testing:
+	../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml
