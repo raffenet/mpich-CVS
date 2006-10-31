@@ -372,8 +372,8 @@ static int InitPG( int *argc, char ***argv,
     if (pg) {
 	MPIDI_PG_Destroy( pg );
     }
-    /* --END ERROR HANDLING-- */
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /*
