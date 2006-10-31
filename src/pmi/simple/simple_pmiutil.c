@@ -34,7 +34,8 @@
 #define MAXVALLEN 1024
 #define MAXKEYLEN   32
 
-/* These are not the keyvals in the keyval space that is part of the PMI specification.
+/* These are not the keyvals in the keyval space that is part of the 
+   PMI specification.
    They are just part of this implementation's internal utilities.
 */
 struct PMIU_keyval_pairs {
@@ -52,6 +53,8 @@ void PMIU_Set_rank( int PMI_rank )
 {
     MPIU_Snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
 }
+
+/* Note that vfprintf is part of C89 */
 
 /* style: allow:fprintf:1 sig:0 */
 /* style: allow:vfprintf:1 sig:0 */
