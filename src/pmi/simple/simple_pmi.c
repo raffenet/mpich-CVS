@@ -98,6 +98,7 @@ static int PMII_Set_from_port( int, int );
 static int PMII_Connect_to_pm( char *, int );
 
 static int GetResponse( const char [], const char [], int );
+static int getPMIFD( int * );
 
 #ifdef USE_PMI_PORT
 static int PMII_singinit(void);
@@ -114,7 +115,7 @@ int PMI_Init( int *spawned )
 {
     char *p;
     int notset = 1;
-    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+    int rc;
 
     /* FIXME: Why is setvbuf commented out? */
     /* FIXME: What if the output should be fully buffered (directed to file)?
@@ -128,60 +129,10 @@ int PMI_Init( int *spawned )
     p = getenv( "PMI_DEBUG" );
     if (p) PMI_debug = atoi( p );
 
-    if ( ( p = getenv( "PMI_FD" ) ) )
-	PMI_fd = atoi( p );
-#ifdef USE_PMI_PORT
-    else if ( ( p = getenv( "PMI_PORT" ) ) ) {
-	int portnum;
-	char hostname[MAXHOSTNAME+1];
-	char *pn, *ph;
-	int id = 0;
-
-	/* Connect to the indicated port (in format hostname:portnumber) 
-	   and get the fd for the socket */
-	
-	/* Split p into host and port */
-	pn = p;
-	ph = hostname;
-	while (*pn && *pn != ':' && (ph - hostname) < MAXHOSTNAME) {
-	    *ph++ = *pn++;
-	}
-	*ph = 0;
-
-	if (PMI_debug) {
-	    DBG_PRINTF( ("Connecting to %s\n", p) );
-	}
-	if (*pn == ':') {
-	    portnum = atoi( pn+1 );
-	    /* FIXME: Check for valid integer after : */
-	    /* This routine only gets the fd to use to talk to 
-	       the process manager. The handshake below is used
-	       to setup the initial values */
-	    PMI_fd = PMII_Connect_to_pm( hostname, portnum );
-	    if (PMI_fd < 0) {
-		PMIU_printf( 1, "Unable to connect to %s on %d\n", 
-			     hostname, portnum );
-		return -1;
-	    }
-	}
-	else {
-	    PMIU_printf( 1, "unable to decode hostport from %s\n", p );
-	    return PMI_FAIL;
-	}
-
-	/* We should first handshake to get size, rank, debug. */
-	p = getenv( "PMI_ID" );
-	if (p) {
-	    id = atoi( p );
-	    /* PMII_Set_from_port sets up the values that are delivered
-	       by enviroment variables when a separate port is not used */
-	    PMII_Set_from_port( PMI_fd, id );
-	    notset = 0;
-	}
-    }
-#endif
-    else {
-	PMI_fd = -1;
+    /* Get the fd for PMI commands; if none, we're a singleton */
+    rc = getPMIFD(&notset);
+    if (rc) {
+	return rc;
     }
 
     if ( PMI_fd == -1 ) {
@@ -192,6 +143,7 @@ int PMI_Init( int *spawned )
 	*spawned = 0;
 	
 	PMI_initialized = SINGLETON_INIT_BUT_NO_PM;
+	/* 256 is picked as the minimum allowed length by the PMI servers */
 	PMI_kvsname_max = 256;
 	PMI_keylen_max  = 256;
 	PMI_vallen_max  = 256;
@@ -199,7 +151,7 @@ int PMI_Init( int *spawned )
 	return( 0 );
     }
 
-    /* If size, rank, and debug not set from a communication port,
+    /* If size, rank, and debug are not set from a communication port,
        use the environment */
     if (notset) {
 	if ( ( p = getenv( "PMI_SIZE" ) ) )
@@ -231,6 +183,11 @@ int PMI_Init( int *spawned )
     if ( ( p = getenv( "PMI_TOTALVIEW" ) ) )
 	PMI_totalview = atoi( p );
     if ( PMI_totalview ) {
+	char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+	/* FIXME: This should use a cmd/response rather than a expecting the
+	   server to set a value in this and only this case */
+	/* FIXME: And it most ceratainly should not happen *before* the
+	   initialization handshake */
 	PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
 	PMIU_parse_keyvals( buf );
 	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
@@ -243,6 +200,8 @@ int PMI_Init( int *spawned )
 
     PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
 
+    /* FIXME: This is something that the PM should tell the process,
+       rather than deliver it through the environment */
     if ( ( p = getenv( "PMI_SPAWNED" ) ) )
 	PMI_spawned = atoi( p );
     else
@@ -502,7 +461,7 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
     rc = MPIU_Snprintf( buf, PMIU_MAXLINE, 
 			"cmd=put kvsname=%s key=%s value=%s\n",
 			kvsname, key, value);
-    if (rc != 0) return PMI_FAIL;
+    if (rc < 0) return PMI_FAIL;
     err = GetResponse( buf, "put_result", 1 );
     return err;
 }
@@ -530,7 +489,7 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[],
 
     rc = MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", 
 			kvsname, key );
-    if (rc != 0) return PMI_FAIL;
+    if (rc < 0) return PMI_FAIL;
 
     err = GetResponse( buf, "get_result", 0 );
     if (err == PMI_SUCCESS) {
@@ -869,8 +828,11 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx,
     int  rc, err;
 
     /* FIXME: Check for tempbuf too short */
-    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=getbyidx kvsname=%s idx=%d\n", 
-		   kvsname, idx  );
+    rc = MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=getbyidx kvsname=%s idx=%d\n", 
+			kvsname, idx  );
+    if (rc < 0) {
+	return PMI_FAIL;
+    }
     err = GetResponse( cmd, "getbyidx_results", 0 );
     if (err == PMI_SUCCESS) {
 	PMIU_getval( "rc", buf, PMIU_MAXLINE );
@@ -1110,7 +1072,7 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
 static int PMII_Set_from_port( int fd, int id )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
-    int err;
+    int err, rc;
 
     /* We start by sending a startup message to the server */
 
@@ -1119,8 +1081,10 @@ static int PMII_Set_from_port( int fd, int id )
     }
     /* Handshake and initialize from a port */
 
-    /* FIXME: Check for tempbuf too short */
-    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
+    rc = MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=initack pmiid=%d\n", id );
+    if (rc < 0) {
+	return PMI_FAIL;
+    }
     PMIU_printf( PMI_debug, "writing on fd %d line :%s:\n", fd, buf );
     err = PMIU_writeline( fd, buf );
     if (err) {
@@ -1218,7 +1182,32 @@ static int PMII_Set_from_port( int fd, int id )
  * than the much simpler case of allowing MPI programs to run with an 
  * MPI_COMM_WORLD of size 1 without an mpiexec or process manager).
  *
- * 
+ * The process starts when either the client or the process manager contacts
+ * the other.  If the client starts, it sends a singinit command and
+ * waits for the server to respond with its own singinit command.
+ * If the server start, it send a singinit command and waits for the 
+ * client to respond with its own singinit command
+ *
+ * client sends singinit with these required values
+ *   pmi_version=<value of PMI_VERSION>
+ *   pmi_subversion=<value of PMI_SUBVERSION>
+ *
+ * and these optional values
+ *   stdio=[yes|no]
+ *   authtype=[none|shared|<other-to-be-defined>]
+ *   authstring=<string>
+ *
+ * server sends singinit with the same required and optional values as
+ * above.
+ *
+ * At this point, the protocol is now the same in both cases, and has the
+ * following components:
+ *
+ * server sends singinit_info with these required fields
+ *   versionok=[yes|no]
+ *   stdio=[yes|no]
+ *   kvsname=<string>
+ *
  */
 /* ------------------------------------------------------------------------- */
 /* This is a special routine used to re-initialize PMI when it is in 
@@ -1238,6 +1227,8 @@ static int PMII_singinit(void)
     struct sockaddr_in sin;
     socklen_t len;
 
+    /* Create a socket on which to allow an mpiexec to connect back to
+       us */
     sin.sin_family	= AF_INET;
     sin.sin_addr.s_addr	= INADDR_ANY;
     sin.sin_port	= htons(0);    /* anonymous port */
@@ -1245,9 +1236,10 @@ static int PMII_singinit(void)
     rc = bind(singinit_listen_sock, (struct sockaddr *)&sin ,sizeof(sin));
     len = sizeof(struct sockaddr_in);
     rc = getsockname( singinit_listen_sock, (struct sockaddr *) &sin, &len ); 
-    MPIU_Snprintf(port_c, 8, "%d",ntohs(sin.sin_port));
+    MPIU_Snprintf(port_c, sizeof(port_c), "%d",ntohs(sin.sin_port));
     rc = listen(singinit_listen_sock, 5);
 
+    /* Launch the mpiexec process with the name of this port */
     pid = fork();
     if (pid < 0) {
 	perror("PMII_singinit: fork failed");
@@ -1260,7 +1252,7 @@ static int PMII_singinit(void)
 	/* FIXME: Use a valid hostname */
 	newargv[3] = "default_interface";  /* default interface name, for now */
 	newargv[4] = "default_key";   /* default authentication key, for now */
-	MPIU_Snprintf(charpid, 8, "%d",getpid());
+	MPIU_Snprintf(charpid, sizeof(charpid), "%d",getpid());
 	newargv[5] = charpid;
 	newargv[6] = NULL;
 	rc = execvp(newargv[0],newargv);
@@ -1272,16 +1264,57 @@ static int PMII_singinit(void)
     }
     else
     {
-	pmi_sock = accept_one_connection(singinit_listen_sock);
-	PMI_fd = pmi_sock;
-	/* FIXME: These need to be optional, since not all systems
-	   may choose to intercept STDIO */
-	stdin_sock  = accept_one_connection(singinit_listen_sock);
-	dup2(stdin_sock, 0);
-	stdout_sock = accept_one_connection(singinit_listen_sock);
-	dup2(stdout_sock,1);
-	stderr_sock = accept_one_connection(singinit_listen_sock);
-	dup2(stderr_sock,2);
+	char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+	char *p;
+	int connectStdio = 0;
+
+	/* Allow one connection back from the created mpiexec program */
+	PMI_fd =  accept_one_connection(singinit_listen_sock);
+	if (PMI_fd < 0) {
+	    PMIU_printf( 1, "Failed to establish singleton init connection\n" );
+	    return PMI_FAIL;
+	}
+	/* Execute the singleton init protocol */
+	rc = PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_parse_keyvals( buf );
+	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
+	if (strcmp( cmd, "singinit" ) != 0) {
+	    PMIU_printf( 1, "unexpected command from PM: %s\n", cmd );
+	    return PMI_FAIL;
+	}
+	p = PMIU_getval( "version", cmd, PMIU_MAXLINE );
+	/* Check version */
+	p = PMIU_getval( "stdio", cmd, PMIU_MAXLINE );
+	p = PMIU_getval( "authtype", cmd, PMIU_MAXLINE );
+	p = PMIU_getval( "authstring", cmd, PMIU_MAXLINE );
+	
+	/* If we're successful, send back our own singinit */
+	rc = MPIU_Snprintf( buf, PMIU_MAXLINE, 
+     "cmd=singinit pmi_version=%d pmi_subversion=%d stdio=yes authtype=none\n",
+			PMI_VERSION, PMI_SUBVERSION );
+	if (rc < 0) {
+	    return PMI_FAIL;
+	}
+	rc = GetResponse( buf, "singinit_info", 0 );
+	if (rc != 0) {
+	    return PMI_FAIL;
+	}
+	p = PMIU_getval( "stdio", cmd, PMIU_MAXLINE );
+	if (p && strcmp( cmd, "yes" ) == 0) {
+	    connectStdio = 1;
+	}
+	p = PMIU_getval( "kvsname", cmd, PMIU_MAXLINE );
+	
+	if (connectStdio) {
+	    /* FIXME: These need to be optional, since not all systems
+	       may choose to intercept STDIO */
+	    stdin_sock  = accept_one_connection(singinit_listen_sock);
+	    dup2(stdin_sock, 0);
+	    stdout_sock = accept_one_connection(singinit_listen_sock);
+	    dup2(stdout_sock,1);
+	    stderr_sock = accept_one_connection(singinit_listen_sock);
+	    dup2(stderr_sock,2);
+	}
     }
     return(0);
 }
@@ -1347,47 +1380,63 @@ static int accept_one_connection(int list_sock)
 #endif
 /* end USE_PMI_PORT */
 
-#if 0
 /* Get the FD to use for PMI operations.  If a port is used, rather than 
    a pre-established FD (i.e., via pipe), this routine will handle the 
-   initial handshake.  */
-static int getPMIFD( void )
+   initial handshake.  
+*/
+static int getPMIFD( int *notset )
 {
     char *p;
+
+    /* Set the default */
+    PMI_fd = -1;
     
     p = getenv( "PMI_FD" );
 
     if (p) {
 	PMI_fd = atoi( p );
+	return 0;
     }
+
 #ifdef USE_PMI_PORT
-    else if ( ( p = getenv( "PMI_PORT" ) ) ) {
+    p = getenv( "PMI_PORT" );
+    if (p) {
 	int portnum;
-	char hostname[MAXHOSTNAME];
-	char *pn;
+	char hostname[MAXHOSTNAME+1];
+	char *pn, *ph;
 	int id = 0;
+
 	/* Connect to the indicated port (in format hostname:portnumber) 
 	   and get the fd for the socket */
 	
 	/* Split p into host and port */
-	pn = strchr( p, ':' );
+	pn = p;
+	ph = hostname;
+	while (*pn && *pn != ':' && (ph - hostname) < MAXHOSTNAME) {
+	    *ph++ = *pn++;
+	}
+	*ph = 0;
 
 	if (PMI_debug) {
 	    DBG_PRINTF( ("Connecting to %s\n", p) );
 	}
-	if (pn) {
-	    MPIU_Strncpy( hostname, p, (pn - p) );
-	    hostname[(pn-p)] = 0;
+	if (*pn == ':') {
 	    portnum = atoi( pn+1 );
 	    /* FIXME: Check for valid integer after : */
 	    /* This routine only gets the fd to use to talk to 
 	       the process manager. The handshake below is used
 	       to setup the initial values */
 	    PMI_fd = PMII_Connect_to_pm( hostname, portnum );
+	    if (PMI_fd < 0) {
+		PMIU_printf( 1, "Unable to connect to %s on %d\n", 
+			     hostname, portnum );
+		return -1;
+	    }
 	}
-	/* FIXME: If PMI_PORT specified but either no valid value or
-	   fd is -1, give an error return */
-	if (PMI_fd < 0) return -1;
+	else {
+	    PMIU_printf( 1, "unable to decode hostport from %s\n", p );
+	    return PMI_FAIL;
+	}
 
 	/* We should first handshake to get size, rank, debug. */
 	p = getenv( "PMI_ID" );
@@ -1396,12 +1445,12 @@ static int getPMIFD( void )
 	    /* PMII_Set_from_port sets up the values that are delivered
 	       by enviroment variables when a separate port is not used */
 	    PMII_Set_from_port( PMI_fd, id );
-	    notset = 0;
+	    *notset = 0;
 	}
+	return 0;
     }
 #endif
-    else {
-	PMI_fd = -1;
-    }
+
+    /* Singleton init case - its ok to return success with no fd set */
+    return 0;
 }
-#endif

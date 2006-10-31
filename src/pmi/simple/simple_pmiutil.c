@@ -224,18 +224,23 @@ int PMIU_parse_keyvals( char *st )
 	    p++;
 	if ( *p == ' ' || *p == '\n' || *p == '\0' ) {
 	    PMIU_printf( 1,
-	       "PMIU_parse_keyvals: unexpected key delimiter at character %d in %s\n",
+       "PMIU_parse_keyvals: unexpected key delimiter at character %d in %s\n",
 		       p - st, st );
 	    return( -1 );
 	}
-        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].key, keystart, MAXKEYLEN );
-	PMIU_keyval_tab[PMIU_keyval_tab_idx].key[p - keystart] = '\0'; /* store key */
+	/* Null terminate the key */
+	*p = 0;
+	/* store key */
+        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].key, keystart, 
+		      MAXKEYLEN );
 
 	valstart = ++p;			/* start of value */
 	while ( *p != ' ' && *p != '\n' && *p != '\0' )
 	    p++;
-        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart, MAXVALLEN );
-	PMIU_keyval_tab[PMIU_keyval_tab_idx].value[p - valstart] = '\0'; /* store value */
+	/* store value */
+        MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart, 
+		      MAXVALLEN );
+	PMIU_keyval_tab[PMIU_keyval_tab_idx].value[p - valstart] = '\0'; 
 	PMIU_keyval_tab_idx++;
 	if ( *p == ' ' )
 	    continue;
@@ -253,12 +258,15 @@ void PMIU_dump_keyvals( void )
 
 char *PMIU_getval( const char *keystr, char *valstr, int vallen )
 {
-    int i;
+    int i, rc;
     
     for (i = 0; i < PMIU_keyval_tab_idx; i++) {
 	if ( strcmp( keystr, PMIU_keyval_tab[i].key ) == 0 ) { 
-	    MPIU_Strncpy( valstr, PMIU_keyval_tab[i].value, vallen - 1 );
-	    valstr[vallen - 1] = '\0';
+	    rc = MPIU_Strncpy( valstr, PMIU_keyval_tab[i].value, vallen );
+	    if (rc != 0) {
+		PMIU_printf( 1, "MPIU_Strncpy failed in PMIU_getval\n" );
+		return NULL;
+	    }
 	    return valstr;
        } 
     }
