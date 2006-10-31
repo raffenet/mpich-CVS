@@ -74,6 +74,7 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
 	dest[n-1] = 0;
 	/* We may want to force an error message here, at least in the
 	   debugging version */
+	/*printf( "failure in copying %s with length %d\n", src, n ); */
 	return 1;
     }
 }
