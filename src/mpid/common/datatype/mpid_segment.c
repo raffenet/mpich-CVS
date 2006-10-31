@@ -1133,7 +1133,16 @@ static int MPID_Segment_vector_pack_to_buf(DLOOP_Offset *blocks_p,
 	       (int) *blocks_p);
 #endif
 
-    if (basic_size == 8) {
+    /* FIXME: Some CPUs require aligned data when using longer types,
+       using int64_t failed on SPARC when using the gcc compiler, probably
+       because gcc make good use of the longer move instructions at the
+       default optimization level.  The fixme here is to arrange these
+       so that weaker alignments can still be used, e.g., a basic size of
+       8 can use the code for length 4 when the alignment is by 4s.
+       Note also that unaligned moves, even when supported, are often slower
+       than aligned moves */
+    if (basic_size == 8 && ((MPI_Aint)(cbufp) & 0x7) == 0 && 
+	((MPI_Aint)(paramp->u.pack.pack_buffer) & 0x7) == 0) {
 	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, stride, int64_t, blksz, whole_count);
 	MPIDI_COPY_FROM_VEC(cbufp, paramp->u.pack.pack_buffer, 0, int64_t, blocks_left, 1);
     }
