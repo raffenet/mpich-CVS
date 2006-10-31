@@ -235,7 +235,7 @@ void *MPIU_trmalloc( unsigned int a, int lineno, const char fname[] )
     head->id       = TRid;
     head->lineno   = lineno;
     if ((l = (int)strlen( fname )) > TR_FNAME_LEN-1 ) fname += (l - (TR_FNAME_LEN-1));
-    MPIU_Strncpy( head->fname, fname, (TR_FNAME_LEN-1) );
+    MPIU_Strncpy( head->fname, fname, TR_FNAME_LEN );
     head->fname[TR_FNAME_LEN-1]= 0;
     head->cookie   = COOKIE_VALUE;
     nend           = (unsigned long *)(new + nsize);
@@ -350,7 +350,7 @@ called in %s at line %d\n", world_rank, (long)a + sizeof(TrSPACE),
     *nend		   = ALREADY_FREED;
     head->freed_lineno = line;
     if ((l = (int)strlen( file )) > TR_FNAME_LEN-1 ) file += (l - (TR_FNAME_LEN-1));
-    MPIU_Strncpy( head->freed_fname, file, (TR_FNAME_LEN-1) );
+    MPIU_Strncpy( head->freed_fname, file, TR_FNAME_LEN );
 
     allocated -= head->size;
     frags     --;
