@@ -49,7 +49,7 @@
 #include "mpimem.h"
 
 /* Temporary debug definitions */
-#if 0
+#if 1
 #define DBG_PRINTF(args) printf args ; fflush(stdout)
 #else
 #define DBG_PRINTF(args)
@@ -74,10 +74,11 @@ static int PMI_rank = 0;
    to values higher than 2 when singleton_init by a process manager.
    All values higher than 1 invlove a PM in some way.
 */
-#define SINGLETON_INIT_BUT_NO_PM 1
-#define NORMAL_INIT_WITH_PM      2
-#define SINGLETON_INIT_WITH_PM   3
-static int PMI_initialized = 0;
+typedef enum { PMI_UNINITIALIZED = 0, 
+               SINGLETON_INIT_BUT_NO_PM = 1,
+	       NORMAL_INIT_WITH_PM,
+	       SINGLETON_INIT_WITH_PM } PMIState;
+static PMIState PMI_initialized = PMI_UNINITIALIZED;
 
 /* ALL GLOBAL VARIABLES MUST BE INITIALIZED TO AVOID POLLUTING THE 
    LIBRARY WITH COMMON SYMBOLS */
@@ -132,31 +133,41 @@ int PMI_Init( int *spawned )
 #ifdef USE_PMI_PORT
     else if ( ( p = getenv( "PMI_PORT" ) ) ) {
 	int portnum;
-	char hostname[MAXHOSTNAME];
-	char *pn;
+	char hostname[MAXHOSTNAME+1];
+	char *pn, *ph;
 	int id = 0;
+
 	/* Connect to the indicated port (in format hostname:portnumber) 
 	   and get the fd for the socket */
 	
 	/* Split p into host and port */
-	pn = strchr( p, ':' );
+	pn = p;
+	ph = hostname;
+	while (*pn && *pn != ':' && (ph - hostname) < MAXHOSTNAME) {
+	    *ph++ = *pn++;
+	}
+	*ph = 0;
 
 	if (PMI_debug) {
 	    DBG_PRINTF( ("Connecting to %s\n", p) );
 	}
-	if (pn) {
-	    MPIU_Strncpy( hostname, p, (pn - p) );
-	    hostname[(pn-p)] = 0;
+	if (*pn == ':') {
 	    portnum = atoi( pn+1 );
 	    /* FIXME: Check for valid integer after : */
 	    /* This routine only gets the fd to use to talk to 
 	       the process manager. The handshake below is used
 	       to setup the initial values */
 	    PMI_fd = PMII_Connect_to_pm( hostname, portnum );
+	    if (PMI_fd < 0) {
+		PMIU_printf( 1, "Unable to connect to %s on %d\n", 
+			     hostname, portnum );
+		return -1;
+	    }
 	}
-	/* FIXME: If PMI_PORT specified but either no valid value or
-	   fd is -1, give an error return */
-	if (PMI_fd < 0) return -1;
+	else {
+	    PMIU_printf( 1, "unable to decode hostport from %s\n", p );
+	    return PMI_FAIL;
+	}
 
 	/* We should first handshake to get size, rank, debug. */
 	p = getenv( "PMI_ID" );
@@ -289,8 +300,7 @@ int PMI_Get_universe_size( int *size)
     /* Connect to the PM if we haven't already */
     if (PMIi_InitIfSingleton() != 0) return -1;
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM)  {
 	err = GetResponse( "cmd=get_universe_size\n", "universe_size", 0 );
 	if (err == PMI_SUCCESS) {
 	    PMIU_getval( "size", size_c, PMIU_MAXLINE );
@@ -309,8 +319,7 @@ int PMI_Get_appnum( int *appnum )
     int  err;
     char appnum_c[PMIU_MAXLINE];
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
 	err = GetResponse( "cmd=get_appnum\n", "appnum", 0 );
 	if (err == PMI_SUCCESS) {
 	    PMIU_getval( "appnum", appnum_c, PMIU_MAXLINE );
@@ -330,8 +339,7 @@ int PMI_Barrier( )
 {
     int err = PMI_SUCCESS;
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
 	err = GetResponse( "cmd=barrier_in\n", "barrier_out", 0 );
     }
 
@@ -357,8 +365,7 @@ int PMI_Finalize( )
 {
     int err = PMI_SUCCESS;
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
 	err = GetResponse( "cmd=finalize\n", "finalize_ack", 0 );
 	shutdown( PMI_fd, SHUT_RDWR );
 	close( PMI_fd );
@@ -481,18 +488,21 @@ int PMI_KVS_Put( const char kvsname[], const char key[], const char value[] )
 {
     char buf[PMIU_MAXLINE];
     int  err = PMI_SUCCESS;
+    int  rc;
 
     /* This is a special hack to support singleton initialization */
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
-	/* FIXME: Check for truncation */
-	MPIU_Strncpy(cached_singinit_key,key,PMI_keylen_max);
-	MPIU_Strncpy(cached_singinit_val,value,PMI_vallen_max);
+	rc = MPIU_Strncpy(cached_singinit_key,key,PMI_keylen_max);
+	if (rc != 0) return PMI_FAIL;
+	rc = MPIU_Strncpy(cached_singinit_val,value,PMI_vallen_max);
+	if (rc != 0) return PMI_FAIL;
 	return 0;
     }
     
-    /* FIXME: Check for tempbuf too short */
-    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=put kvsname=%s key=%s value=%s\n",
-	      kvsname, key, value);
+    rc = MPIU_Snprintf( buf, PMIU_MAXLINE, 
+			"cmd=put kvsname=%s key=%s value=%s\n",
+			kvsname, key, value);
+    if (rc != 0) return PMI_FAIL;
     err = GetResponse( buf, "put_result", 1 );
     return err;
 }
@@ -518,9 +528,10 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[],
        which MPICH2 uses PMI, this is where the test needs to be. */
     if (PMIi_InitIfSingleton() != 0) return -1;
 
-    /* FIXME: Check for tempbuf too short */
-    MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", 
-		   kvsname, key );
+    rc = MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", 
+			kvsname, key );
+    if (rc != 0) return PMI_FAIL;
+
     err = GetResponse( buf, "get_result", 0 );
     if (err == PMI_SUCCESS) {
 	PMIU_getval( "rc", buf, PMIU_MAXLINE );
@@ -565,8 +576,7 @@ int PMI_Publish_name( const char service_name[], const char port[] )
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err;
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
         MPIU_Snprintf( cmd, PMIU_MAXLINE, 
 		       "cmd=publish_name service=%s port=%s\n",
 		       service_name, port );
@@ -594,8 +604,7 @@ int PMI_Unpublish_name( const char service_name[] )
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err = PMI_SUCCESS;
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
         MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=unpublish_name service=%s\n", 
 		       service_name );
 	err = GetResponse( cmd, "unpublish_result", 0 );
@@ -624,8 +633,7 @@ int PMI_Lookup_name( const char service_name[], char port[] )
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err;
 
-    if ( PMI_initialized > 1)  /* Ignore SINGLETON_INIT_BUT_NO_PM */
-    {
+    if ( PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
         MPIU_Snprintf( cmd, PMIU_MAXLINE, "cmd=lookup_name service=%s\n", 
 		       service_name );
 	err = GetResponse( cmd, "lookup_result", 0 );
@@ -894,25 +902,32 @@ static int PMII_iter( const char *kvsname, const int idx, int *next_idx,
 static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE], errmsg[PMIU_MAXLINE];
-    int err;
+    int err, rc;
 
-    MPIU_Snprintf( buf, PMIU_MAXLINE, 
-		   "cmd=init pmi_version=%d pmi_subversion=%d\n",
-		   PMI_VERSION, PMI_SUBVERSION );
+    rc = MPIU_Snprintf( buf, PMIU_MAXLINE, 
+			"cmd=init pmi_version=%d pmi_subversion=%d\n",
+			PMI_VERSION, PMI_SUBVERSION );
+    if (rc < 0) {
+	return PMI_FAIL;
+    }
 
-    PMIU_writeline( PMI_fd, buf );
+    rc = PMIU_writeline( PMI_fd, buf );
+    if (rc != 0) {
+	PMIU_printf( 1, "Unable to write to PMI_fd\n" );
+	return PMI_FAIL;
+    }
     buf[0] = 0;   /* Ensure buffer is empty if read fails */
     err = PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
     if (err < 0) {
 	PMIU_printf( 1, "Error reading initack on %d\n", PMI_fd );
 	perror( "Error on readline:" );
-	PMI_Abort(-1, "Above error when reading after init\n" );
+	PMI_Abort(-1, "Above error when reading after init" );
     }
     PMIU_parse_keyvals( buf );
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "response_to_init", PMIU_MAXLINE ) != 0 ) {
 	MPIU_Snprintf(errmsg, PMIU_MAXLINE, 
-		      "got unexpected response to init :%s:\n", buf );
+		      "got unexpected response to init :%s:", buf );
 	PMI_Abort( -1, errmsg );
     }
     else {
@@ -922,7 +937,7 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
             PMIU_getval( "pmi_version", buf, PMIU_MAXLINE );
             PMIU_getval( "pmi_subversion", buf1, PMIU_MAXLINE );
 	    MPIU_Snprintf(errmsg, PMIU_MAXLINE, 
-			  "pmi_version mismatch; client=%d.%d mgr=%s.%s\n",
+			  "pmi_version mismatch; client=%d.%d mgr=%s.%s",
 			  PMI_VERSION, PMI_SUBVERSION, buf, buf1 );
 	    PMI_Abort( -1, errmsg );
         }
@@ -964,14 +979,17 @@ static int GetResponse( const char request[], const char expectedCmd[],
     }
     n = PMIU_readline( PMI_fd, recvbuf, sizeof(recvbuf) );
     if (n <= 0) {
+	PMIU_printf( 1, "readline failed\n" );
 	return PMI_FAIL;
     }
     err = PMIU_parse_keyvals( recvbuf );
     if (err) {
+	PMIU_printf( 1, "parse_kevals failed %d\n", err );
 	return err;
     }
     p = PMIU_getval( "cmd", cmdName, sizeof(cmdName) );
     if (!p) {
+	PMIU_printf( 1, "getval cmd failed\n" );
 	return PMI_FAIL;
     }
     if (strcmp( expectedCmd, cmdName ) != 0) {
@@ -984,7 +1002,7 @@ static int GetResponse( const char request[], const char expectedCmd[],
 	    PMIU_getval( "msg", cmdName, PMIU_MAXLINE );
 	    PMIU_printf( 1, "Command %s failed, reason='%s'\n", 
 			 request, cmdName );
-	    return( -1 );
+	    return PMI_FAIL;
 	}
     }
 
@@ -1035,6 +1053,7 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
     
     hp = gethostbyname( hostname );
     if (!hp) {
+	PMIU_printf( 1, "Unable to get host entry for %s\n", hostname );
 	return -1;
     }
     
@@ -1050,6 +1069,7 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
     
     fd = socket( AF_INET, SOCK_STREAM, TCP );
     if (fd < 0) {
+	PMIU_printf( 1, "Unable to get AF_INET socket\n" );
 	return -1;
     }
     
@@ -1062,6 +1082,7 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
     if (connect( fd, (struct sockaddr *)&sa, sizeof(sa) ) < 0) {
 	switch (errno) {
 	case ECONNREFUSED:
+	    PMIU_printf( 1, "connect failed with connection refused\n" );
 	    /* (close socket, get new socket, try again) */
 	    if (q_wait)
 		close(fd);
@@ -1074,9 +1095,11 @@ static int PMII_Connect_to_pm( char *hostname, int portnum )
 	    break;
 	    
 	case ETIMEDOUT: /* timed out */
+	    PMIU_printf( 1, "connect failed with timeout\n" );
 	    return -1;
 
 	default:
+	    PMIU_printf( 1, "connect failed with errno %d\n", errno );
 	    return -1;
 	}
     }
@@ -1186,7 +1209,18 @@ static int PMII_Set_from_port( int fd, int id )
     return 0;
 }
 
-
+/* ------------------------------------------------------------------------- */
+/* 
+ * Singleton Init.
+ * 
+ * MPI-2 allows processes to become MPI processes and then make MPI calls,
+ * such as MPI_Comm_spawn, that require a process manager (this is different 
+ * than the much simpler case of allowing MPI programs to run with an 
+ * MPI_COMM_WORLD of size 1 without an mpiexec or process manager).
+ *
+ * 
+ */
+/* ------------------------------------------------------------------------- */
 /* This is a special routine used to re-initialize PMI when it is in 
    the singleton init case.  That is, the executable was started without 
    mpiexec, and PMI_Init returned as if there was only one process.
@@ -1204,9 +1238,9 @@ static int PMII_singinit(void)
     struct sockaddr_in sin;
     socklen_t len;
 
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = INADDR_ANY;
-    sin.sin_port = htons(0);    /* anonymous port */
+    sin.sin_family	= AF_INET;
+    sin.sin_addr.s_addr	= INADDR_ANY;
+    sin.sin_port	= htons(0);    /* anonymous port */
     singinit_listen_sock = socket(AF_INET, SOCK_STREAM, 0);
     rc = bind(singinit_listen_sock, (struct sockaddr *)&sin ,sizeof(sin));
     len = sizeof(struct sockaddr_in);
@@ -1215,13 +1249,11 @@ static int PMII_singinit(void)
     rc = listen(singinit_listen_sock, 5);
 
     pid = fork();
-    if (pid < 0)
-    {
+    if (pid < 0) {
 	perror("PMII_singinit: fork failed");
 	exit(-1);
     }
-    else if (pid == 0)
-    {
+    else if (pid == 0) {
 	newargv[0] = "mpiexec";
 	newargv[1] = "-pmi_args";
 	newargv[2] = port_c;
@@ -1235,7 +1267,7 @@ static int PMII_singinit(void)
 	perror("PMII_singinit: execv failed");
 	PMIU_printf(1, "  This singleton init program attempted to access some feature\n");
 	PMIU_printf(1, "  for which process manager support was required, e.g. spawn or universe_size.\n");
-	PMIU_printf(1, "  But, the necessary mpiexec is not in your path.\n");
+	PMIU_printf(1, "  But the necessary mpiexec is not in your path.\n");
 	return(-1);
     }
     else
@@ -1275,7 +1307,9 @@ static int PMIi_InitIfSingleton(void)
     PMI_rank	    = 0;
     PMI_debug	    = 0;
     PMI_spawned	    = 0;
+
     PMII_getmaxes( &PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max );
+
     /* FIXME: We need to support a distinct kvsname for each 
        process group */
     PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
@@ -1317,7 +1351,7 @@ static int accept_one_connection(int list_sock)
 /* Get the FD to use for PMI operations.  If a port is used, rather than 
    a pre-established FD (i.e., via pipe), this routine will handle the 
    initial handshake.  */
-int getPMIFD( void )
+static int getPMIFD( void )
 {
     char *p;
     
