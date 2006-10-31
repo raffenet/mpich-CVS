@@ -47,7 +47,6 @@ int main(int argc, char **argv)
     int dsp_arr[COUNT] = {0, 2};
     int errs = 0;
 
-
     MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -63,7 +62,7 @@ int main(int argc, char **argv)
     MPI_Type_size(mem_dtype, &mem_dtype_sz);
     MPI_Type_extent(mem_dtype, &mem_dtype_ext);
 
-    mem_buf_sz = 2 * mem_dtype_ext;
+    mem_buf_sz    = 2 * mem_dtype_ext;
     unpack_buf_sz = 2 * mem_dtype_sz;
 
     if ((mem_buf = (char *) malloc(mem_buf_sz)) == NULL)
@@ -80,7 +79,7 @@ int main(int argc, char **argv)
 	return -1;
     }
     
-    for (i = 0; i < mem_buf_sz; i++)
+    for (i = 0; i < unpack_buf_sz; i++)
 	unpack_buf[i] = 'a' + i;
     
     /* print_char_buf("mem_buf before unpack", mem_buf, 2 * mem_dtype_ext); */
@@ -94,8 +93,8 @@ int main(int argc, char **argv)
        print_char_buf("correct buffer should be", correct_buf, 2 * mem_dtype_ext); */
 
     if (memcmp(mem_buf, correct_buf, 2 * mem_dtype_ext)) {
-	    printf("Unpacked buffer does not match expected buffer\n");
-	    errs++;
+	printf("Unpacked buffer does not match expected buffer\n");
+	errs++;
     }
 
     MPI_Type_free(&mem_dtype);
