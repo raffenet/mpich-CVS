@@ -1266,6 +1266,44 @@ int PMI_Init_port_connection( int fd )
     return pmiid;
 }
 
+/* Implement the singleton init handshake.  See the discussion in 
+   simplepmi.c for the protocol */
+int PMI_Init_singleton_connection( int fd )
+{
+    char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
+    int  rc, version, subversion;
+    
+    /* We start with the singinit command, wait for the singinit from
+       the client, and then send the singinit_info */
+    MPIU_Snprintf( buf, PMIU_MAXLINE, 
+   "cmd=singinit pmiversion=%d pmisubversion=%d stdio=no authtype=none\n",
+	   PMI_VERSION, PMI_SUBVERSION );
+    PMIWriteLine( fd, buf );
+    PMIReadLine( fd, buf, PMIU_MAXLINE );
+    PMIU_parse_keyvals( buf );
+    PMIU_getval( "cmd", cmd, MAXPMICMD );
+    if (strcmp(cmd,"singinit")) {
+	PMIU_printf( 1, "Unexpected cmd %s\n", cmd );
+	return -1;
+    }
+    /* Could look at authtype */
+    /* FIXME kvs name */
+    /* check version compatibility with PMI client library */
+    PMIU_getval( "pmi_version", version, PMIU_MAXLINE );
+    PMIU_getval( "pmi_subversion", subversion, PMIU_MAXLINE );
+    if (PMI_VERSION == atoi(version) && PMI_SUBVERSION >= atoi(subversion))
+	rc = 0;
+    else
+	rc = -1;
+
+    MPIU_Snprintf( buf, PMIU_MAXLINE,
+		   "cmd=singinit_info versionok=%s stdio=no kvsname=%s\n",
+		   (rc == 0) ? "yes" : "no", "kvs_0" );
+    PMIWriteLine( fd, buf );
+
+    return 0;
+}
+
 /* Handle the default info values */
 static int fPMIInfoKey( ProcessApp *app, const char key[], const char val[] )
 {
