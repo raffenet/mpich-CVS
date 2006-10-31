@@ -116,6 +116,8 @@ int main( int argc, char *argv[], char *envp[] )
     MPIE_ProcessInit();
     /* Set a default for the universe size */
     pUniv.size = 64;
+    /* Tell the PMI untility routines that we are the server */
+    PMIU_SetServer();
 
     /* Set defaults for any arguments that are options.  Also check the
        environment for special options, such as debugging.  Set 
@@ -202,6 +204,7 @@ int main( int argc, char *argv[], char *envp[] )
 	pState = pUniv.worlds[0].apps->pState;
 	/* FIXME: The following should be a single routine in pmiport */
 	pmiprocess = PMISetupNewProcess( newfd, pState );
+	PMI_Init_singleton_connection( newfd );
 	PMI_Init_port_connection( newfd );
 	PMI_Init_remote_proc( newfd, pmiprocess );
 	printf( "Done with init_remote_proc\n" );

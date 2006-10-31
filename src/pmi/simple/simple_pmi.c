@@ -88,6 +88,8 @@ static int PMI_vallen_max = 0;
 
 static int PMI_iter_next_idx = 0;
 static int PMI_debug = 0;
+static int PMI_debug_init = 1;    /* Set this to true to debug the init
+				     handshakes */
 static int PMI_spawned = 0;
 
 /* Function prototypes for internal routines */
@@ -1239,6 +1241,8 @@ static int PMII_singinit(void)
     MPIU_Snprintf(port_c, sizeof(port_c), "%d",ntohs(sin.sin_port));
     rc = listen(singinit_listen_sock, 5);
 
+    PMIU_printf( PMI_debug_init, "Starting mpiexec with %s\n", port_c );
+
     /* Launch the mpiexec process with the name of this port */
     pid = fork();
     if (pid < 0) {
@@ -1276,17 +1280,20 @@ static int PMII_singinit(void)
 	}
 	/* Execute the singleton init protocol */
 	rc = PMIU_readline( PMI_fd, buf, PMIU_MAXLINE );
+	PMIU_printf( PMI_debug_init, "Singinit: read %s\n", buf );
+
 	PMIU_parse_keyvals( buf );
 	PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
 	if (strcmp( cmd, "singinit" ) != 0) {
 	    PMIU_printf( 1, "unexpected command from PM: %s\n", cmd );
 	    return PMI_FAIL;
 	}
-	p = PMIU_getval( "version", cmd, PMIU_MAXLINE );
-	/* Check version */
-	p = PMIU_getval( "stdio", cmd, PMIU_MAXLINE );
 	p = PMIU_getval( "authtype", cmd, PMIU_MAXLINE );
-	p = PMIU_getval( "authstring", cmd, PMIU_MAXLINE );
+	if (p && strcmp( cmd, "none" ) != 0) {
+	    PMIU_printf( 1, "unsupported authentication method %s\n", cmd );
+	    return PMI_FAIL;
+	}
+	/* p = PMIU_getval( "authstring", cmd, PMIU_MAXLINE ); */
 	
 	/* If we're successful, send back our own singinit */
 	rc = MPIU_Snprintf( buf, PMIU_MAXLINE, 
@@ -1295,19 +1302,24 @@ static int PMII_singinit(void)
 	if (rc < 0) {
 	    return PMI_FAIL;
 	}
+	PMIU_printf( PMI_debug_init, "GetResponse with %s\n", buf );
+
 	rc = GetResponse( buf, "singinit_info", 0 );
 	if (rc != 0) {
+	    PMIU_printf( 1, "GetResponse failed\n" );
 	    return PMI_FAIL;
 	}
 	p = PMIU_getval( "stdio", cmd, PMIU_MAXLINE );
 	if (p && strcmp( cmd, "yes" ) == 0) {
+	    PMIU_printf( PMI_debug_init, "PM agreed to connect stdio\n" );
 	    connectStdio = 1;
 	}
 	p = PMIU_getval( "kvsname", cmd, PMIU_MAXLINE );
+	PMIU_printf( PMI_debug_init, "kvsname to use is %s\n", cmd );
 	
 	if (connectStdio) {
-	    /* FIXME: These need to be optional, since not all systems
-	       may choose to intercept STDIO */
+	    PMIU_printf( PMI_debug_init, 
+			 "Accepting three connections for stdin, out, err\n" );
 	    stdin_sock  = accept_one_connection(singinit_listen_sock);
 	    dup2(stdin_sock, 0);
 	    stdout_sock = accept_one_connection(singinit_listen_sock);
@@ -1315,8 +1327,9 @@ static int PMII_singinit(void)
 	    stderr_sock = accept_one_connection(singinit_listen_sock);
 	    dup2(stderr_sock,2);
 	}
+	PMIU_printf( PMI_debug_init, "Done with singinit handshake\n" );
     }
-    return(0);
+    return 0;
 }
 
 /* Promote PMI to a fully initialized version if it was started as

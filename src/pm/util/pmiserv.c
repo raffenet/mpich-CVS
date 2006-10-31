@@ -1276,7 +1276,7 @@ int PMI_Init_singleton_connection( int fd )
     /* We start with the singinit command, wait for the singinit from
        the client, and then send the singinit_info */
     MPIU_Snprintf( buf, PMIU_MAXLINE, 
-   "cmd=singinit pmiversion=%d pmisubversion=%d stdio=no authtype=none\n",
+   "cmd=singinit pmi_version=%d pmi_subversion=%d stdio=no authtype=none\n",
 	   PMI_VERSION, PMI_SUBVERSION );
     PMIWriteLine( fd, buf );
     PMIReadLine( fd, buf, PMIU_MAXLINE );
