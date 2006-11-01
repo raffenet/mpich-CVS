@@ -600,10 +600,10 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
                                     buf_ptr,
                                     "CLOG commIDs_table_file_offset Sub" );
     fptr_rmdr = (unsigned int) atoi( value_str );
-    if ( fptr_giga > 0 )
-        preamble->commtable_fptr = fptr_giga * fptr_unit + fptr_rmdr;
-    else
-        preamble->commtable_fptr = fptr_rmdr;
+    preamble->commtable_fptr = fptr_rmdr;
+    if ( fptr_giga > 0 ) {
+        preamble->commtable_fptr += (CLOG_int64_t) fptr_unit * fptr_giga;
+    }
 }
 
 void CLOG_Preamble_print( const CLOG_Preamble_t *preamble, FILE *stream )
