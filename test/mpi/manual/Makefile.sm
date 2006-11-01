@@ -1,4 +1,4 @@
 smvar_do_sharedlibs = 0
 
-singjoin_SOURCES: singjoin.c
-testconnect_SOURCES: testconnect.c
+singjoin_SOURCES    = singjoin.c
+testconnect_SOURCES = testconnect.c
