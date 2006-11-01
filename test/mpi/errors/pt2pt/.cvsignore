@@ -1,4 +1,5 @@
 proberank
+truncmsg2
 Makefile.in
 Makefile
 *.o
