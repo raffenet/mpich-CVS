@@ -346,7 +346,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
    "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
-	MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov_count <= 
+	MPIU_Assert(rreq->dev.iov_count >= 0 && rreq->dev.iov_count <= 
 		    MPID_IOV_LIMIT);
 
 	/* --BEGIN ERROR HANDLING-- */
