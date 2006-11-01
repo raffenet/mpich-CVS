@@ -119,7 +119,7 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
 	       passed that point */
 	    /* FIXME: The real fix is to change MPIU_Strncpy to 
 	       set the null at the end (always!) and return an error
-	       if it had to truncate the result.
+	       if it had to truncate the result. */
 	    /* value[valuelen] = '\0'; */
 	    *flag = 1;
 	    break;

@@ -489,7 +489,7 @@ int MPIDI_CH3_ReqHandler_UnpackSRBufComplete( MPIDI_VC_t *vc,
 	MPIDI_CH3U_Request_complete(rreq);
 	*complete = TRUE;
     }
- fn_fail:
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_REQHANDLER_UNPACKSRBUFCOMPLETE);
     return mpi_errno;
 }

@@ -154,7 +154,6 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
     }
 
  fn_fail:
- fn_exit:
     return mpi_errno;
 }
 
@@ -223,7 +222,6 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
     }
 
  fn_fail:    
- fn_exit:
     return mpi_errno;
 }
 

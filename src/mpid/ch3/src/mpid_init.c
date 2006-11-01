@@ -39,8 +39,8 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 {
     int mpi_errno = MPI_SUCCESS;
     int has_parent;
-    MPIDI_PG_t * pg;
-    int pg_rank;
+    MPIDI_PG_t * pg=NULL;
+    int pg_rank=-1;
     int pg_size;
     MPID_Comm * comm;
     int p;

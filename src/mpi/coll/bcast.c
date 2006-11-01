@@ -84,7 +84,7 @@ int MPIR_Bcast (
   int relative_dst, dst_tree_root, my_tree_root, send_offset;
   int recv_offset, tree_root, nprocs_completed, offset, position;
   int *recvcnts, *displs, left, right, jnext, pof2, comm_size_is_pof2;
-  void *tmp_buf;
+  void *tmp_buf=NULL;
   MPI_Comm comm;
   MPID_Datatype *dtp;
   MPI_Aint true_extent, true_lb;

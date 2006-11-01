@@ -320,7 +320,6 @@ int MPIDI_CH3I_Progress_init(void)
 int MPIDI_CH3I_Progress_finalize(void)
 {
     int mpi_errno;
-    MPID_Progress_state progress_state;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);

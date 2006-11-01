@@ -197,7 +197,7 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
     Factors factors[MAX_FACTORS];
     int chosen[MAX_DIMS];
     int i, j, mpi_errno;
-    int dims_needed, dims_product, nfactors, ndivisors;
+    int dims_needed, dims_product, nfactors, ndivisors=0;
     
     /* Find the number of unspecified dimensions in dims and the product
        of the positive values in dims */
