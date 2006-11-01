@@ -53,6 +53,10 @@ void PMIU_Set_rank( int PMI_rank )
 {
     MPIU_Snprintf( PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank );
 }
+void PMIU_SetServer( void )
+{
+    MPIU_Strncpy( PMIU_print_id, "server", PMIU_IDSIZE );
+}
 
 /* Note that vfprintf is part of C89 */
 

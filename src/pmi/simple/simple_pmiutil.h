@@ -11,6 +11,7 @@
 
 /* prototypes for PMIU routines */
 void PMIU_Set_rank( int PMI_rank );
+void PMIU_SetServer( void );
 void PMIU_printf( int print_flag, char *fmt, ... );
 int  PMIU_readline( int fd, char *buf, int max );
 int  PMIU_writeline( int fd, char *buf );
