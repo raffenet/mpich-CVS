@@ -9,6 +9,7 @@ Makefile
 singjoin
 testconnect
 manyconnect
+test-port
 .deps
 *ebug
 *elease

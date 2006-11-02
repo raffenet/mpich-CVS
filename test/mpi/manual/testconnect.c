@@ -125,7 +125,17 @@ int main( int argc, char ** argv ) {
 
     while( size < totalSize ) {
         MPI_Comm_accept( port, MPI_INFO_NULL, 0, comm, &tmp );
+	if (doPrint) {
+	    printf( "[%d] accept-side: about to perform intercomm merge\n",
+		    myNum );
+	    fflush(stdout);
+	}
         MPI_Intercomm_merge( tmp, 0, &comm );
+	if (doPrint) {
+	    printf( "[%d] accept-side: about to perform intercomm merge\n",
+		    myNum );
+	    fflush(stdout);
+	}
         MPI_Comm_rank( comm, &cachedRank );
         MPI_Comm_free( &tmp );
         MPI_Comm_size( comm, &size );

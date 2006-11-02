@@ -10,7 +10,11 @@ nconn=100
 if [ -n "$1" ] ; then
     nconn=$1
 fi
-nstarted=1
+# Start one and sleep to avoid problems with two processes opening the
+# test-port file for writing
+$mpiexec -n 1 ./testconnect $file $nconn 1 &
+sleep 1
+nstarted=2
 while [ $nstarted -lt $nconn ] ; do
     #echo "Starting $nstarted"
     $mpiexec -n 1 ./testconnect $file $nconn $nstarted &
