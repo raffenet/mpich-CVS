@@ -217,7 +217,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *peer_comm_ptr = NULL;
-    int context_id, final_context_id, recvcontext_id;
+    int final_context_id, recvcontext_id;
     int remote_size, *remote_lpids=0, *remote_gpids=0, singlePG;
     int local_size, *local_gpids=0, *local_lpids=0;
     int comm_info[3];
@@ -344,7 +344,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	/* Exchange information with my peer.  Use sendrecv */
 	local_size = comm_ptr->local_size;
 
-	/* printf( "About to sendrecv in intercomm_create\n" ); fflush(stdout); */
+	/* printf( "About to sendrecv in intercomm_create\n" );fflush(stdout);*/
 	MPIU_DBG_MSG_FMT(COMM,VERBOSE,
              (MPIU_DBG_FDEST,"rank %d sendrecv to rank %d", 
               peer_comm_ptr->rank, remote_leader));
@@ -368,9 +368,12 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	MPIU_CHKLMEM_MALLOC(local_lpids,int*,local_size*sizeof(int),
 			    mpi_errno,"local_lpids");
 
-	MPID_GPID_GetAllInComm( comm_ptr, local_size, local_gpids, 
-				&singlePG );
-
+	mpi_errno = MPID_GPID_GetAllInComm( comm_ptr, local_size, local_gpids, 
+					    &singlePG );
+	if (mpi_errno) {
+	    MPIR_Nest_decr();
+	    goto fn_fail;
+	}
 	/* Exchange the lpid arrays */
 	NMPI_Sendrecv( local_gpids, 2*local_size, MPI_INT, 
 		       remote_leader, tag,
@@ -378,15 +381,19 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		       remote_leader, tag, peer_comm, MPI_STATUS_IGNORE );
 
 	/* Convert the remote gpids to the lpids */
-	mpi_errno = 
-	    MPID_GPID_ToLpidArray( remote_size, remote_gpids, remote_lpids );
+	mpi_errno = MPID_GPID_ToLpidArray( remote_size, 
+					   remote_gpids, remote_lpids );
 	if (mpi_errno) {
 	    MPIR_Nest_decr();
 	    goto fn_fail;
 	}
 
 	/* Get our own lpids */
-	MPID_LPID_GetAllInComm( comm_ptr, local_size, local_lpids );
+	mpi_errno = MPID_LPID_GetAllInComm( comm_ptr, local_size, local_lpids );
+	if (mpi_errno) {
+	    MPIR_Nest_decr();
+	    goto fn_fail;
+	}
 	
 #       ifdef HAVE_ERROR_CHECKING
 	{
@@ -444,18 +451,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		       &remote_context_id, 1, MPI_INT, remote_leader, tag, 
 		       peer_comm, MPI_STATUS_IGNORE );
 	
-#if 0
-	/* We need to do something with the context ids.  For 
-	   MPI1, we can just take the min of the two context ids and
-	   use that value.  For MPI2, we'll need to have separate
-	   send and receive context ids - FIXME */
-	if (remote_context_id < context_id) 
-	    final_context_id = remote_context_id;
-	else 
-	    final_context_id = context_id;
-#else
 	final_context_id = remote_context_id;
-#endif
 
 	/* Now, send all of our local processes the remote_lpids, 
 	   along with the final context id */
@@ -503,11 +499,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 				   remote_size, remote_gpids, local_leader );
 				   
 #endif
-#if 0
-    MPID_PG_ForwardPGInfo( peer_comm_ptr, 
-			   comm_ptr, remote_size, remote_gpids, 
-			   local_leader );
-#endif
 
     /* Finally, if we are not the local leader, we need to 
        convert the remote gpids to local pids.  This must be done
@@ -520,16 +511,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	if (mpi_errno) { MPIR_Nest_decr(); goto fn_fail; }
     }
 
-
-#if 0
-    /* If we did not choose this context, free it.  We won't do this
-       once we have MPI2 intercomms (at least, not for intercomms that
-       are not subsets of MPI_COMM_WORLD) - FIXME */
-    if (final_context_id != context_id) {
-	MPIR_Free_contextid( context_id );
-    }
-
-#endif
 
     /* At last, we now have the information that we need to build the 
        intercommunicator */

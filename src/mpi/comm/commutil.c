@@ -412,6 +412,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 
     MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_GET_CONTEXTID);
+
     return context_id;
 }
 #endif
