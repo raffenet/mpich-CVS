@@ -88,7 +88,7 @@ static int PMI_vallen_max = 0;
 
 static int PMI_iter_next_idx = 0;
 static int PMI_debug = 0;
-static int PMI_debug_init = 1;    /* Set this to true to debug the init
+static int PMI_debug_init = 0;    /* Set this to true to debug the init
 				     handshakes */
 static int PMI_spawned = 0;
 
@@ -110,6 +110,7 @@ static int PMIi_InitIfSingleton(void);
 static int accept_one_connection(int);
 static char cached_singinit_key[PMIU_MAXLINE];
 static char cached_singinit_val[PMIU_MAXLINE];
+static char singinit_kvsname[256];
 
 /******************************** Group functions *************************/
 
@@ -345,6 +346,8 @@ int PMI_Abort(int exit_code, const char error_msg[])
 
 /*FIXME: need to return an error if the value of the kvs name returned is 
   truncated because it is larger than length */
+/* FIXME: My name should be cached rather than re-acquired, as it is
+   unchanging (after singleton init) */
 int PMI_KVS_Get_my_name( char kvsname[], int length )
 {
     int err;
@@ -355,7 +358,8 @@ int PMI_KVS_Get_my_name( char kvsname[], int length )
 	   process group */
 	/* FIXME: Should the length be length (from the arg list) 
 	   instead of PMIU_MAXLINE? */
-	MPIU_Strncpy( kvsname, "singinit_kvs_0", PMIU_MAXLINE ); 
+	MPIU_Snprintf( kvsname, PMIU_MAXLINE, "singinit_kvs_%d_0", 
+		       (int)getpid() );
 	return 0;
     }
     err = GetResponse( "cmd=get_my_kvsname\n", "my_kvsname", 0 );
@@ -402,9 +406,11 @@ int PMI_Get_id_length_max( int *length )
 
 int PMI_Get_id( char id_str[], int length )
 {
-    return PMI_KVS_Get_my_name( id_str, length );
+    int rc = PMI_KVS_Get_my_name( id_str, length );
+    return rc;
 }
 
+/* FIXME: What is this function?  How is it defined and used? */
 int PMI_Get_kvs_domain_id( char id_str[], int length )
 {
     return PMI_KVS_Get_my_name( id_str, length );
@@ -888,10 +894,12 @@ static int PMII_getmaxes( int *kvsname_max, int *keylen_max, int *vallen_max )
 	PMI_Abort(-1, "Above error when reading after init" );
     }
     PMIU_parse_keyvals( buf );
+    cmd[0] = 0;
     PMIU_getval( "cmd", cmd, PMIU_MAXLINE );
     if ( strncmp( cmd, "response_to_init", PMIU_MAXLINE ) != 0 ) {
 	MPIU_Snprintf(errmsg, PMIU_MAXLINE, 
-		      "got unexpected response to init :%s:", buf );
+		      "got unexpected response to init :%s: (full line = %s)",
+		      cmd, buf  );
 	PMI_Abort( -1, errmsg );
     }
     else {
@@ -1224,7 +1232,7 @@ static int PMII_Set_from_port( int fd, int id )
 static int PMII_singinit(void)
 {
     int pid, rc;
-    int singinit_listen_sock, pmi_sock, stdin_sock, stdout_sock, stderr_sock;
+    int singinit_listen_sock, stdin_sock, stdout_sock, stderr_sock;
     char *newargv[8], charpid[8], port_c[8];
     struct sockaddr_in sin;
     socklen_t len;
@@ -1314,8 +1322,9 @@ static int PMII_singinit(void)
 	    PMIU_printf( PMI_debug_init, "PM agreed to connect stdio\n" );
 	    connectStdio = 1;
 	}
-	p = PMIU_getval( "kvsname", cmd, PMIU_MAXLINE );
-	PMIU_printf( PMI_debug_init, "kvsname to use is %s\n", cmd );
+	p = PMIU_getval( "kvsname", singinit_kvsname, sizeof(singinit_kvsname) );
+	PMIU_printf( PMI_debug_init, "kvsname to use is %s\n", 
+		     singinit_kvsname );
 	
 	if (connectStdio) {
 	    PMIU_printf( PMI_debug_init, 
@@ -1344,6 +1353,8 @@ static int PMIi_InitIfSingleton(void)
     /* We only try to init as a singleton the first time */
     firstcall = 0;
 
+    /* First, start (if necessary) an mpiexec, connect to it, 
+       and start the singleton init handshake */
     rc = PMII_singinit();
 
     if (rc < 0)
@@ -1358,7 +1369,7 @@ static int PMIi_InitIfSingleton(void)
 
     /* FIXME: We need to support a distinct kvsname for each 
        process group */
-    PMI_KVS_Put( "singinit_kvs_0", cached_singinit_key, cached_singinit_val );
+    PMI_KVS_Put( singinit_kvsname, cached_singinit_key, cached_singinit_val );
 
     return 0;
 }
@@ -1457,7 +1468,7 @@ static int getPMIFD( int *notset )
 	    id = atoi( p );
 	    /* PMII_Set_from_port sets up the values that are delivered
 	       by enviroment variables when a separate port is not used */
-	    PMII_Set_from_port( PMI_fd, id );
+ 	    PMII_Set_from_port( PMI_fd, id );
 	    *notset = 0;
 	}
 	return 0;

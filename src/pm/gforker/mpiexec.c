@@ -139,6 +139,7 @@ int main( int argc, char *argv[], char *envp[] )
 	/* The MPI process is already running.  We create a simple entry
 	   for a single process rather than creating the process */
 	MPIE_SetupSingleton( &pUniv );
+	/* The handshake to synchronize with the process happens below */
     }
 
     /* Here is where we would choose the hosts for the job; as gforker
@@ -204,10 +205,19 @@ int main( int argc, char *argv[], char *envp[] )
 	pState = pUniv.worlds[0].apps->pState;
 	/* FIXME: The following should be a single routine in pmiport */
 	pmiprocess = PMISetupNewProcess( newfd, pState );
-	PMI_Init_singleton_connection( newfd );
-	PMI_Init_port_connection( newfd );
-	PMI_Init_remote_proc( newfd, pmiprocess );
-	printf( "Done with init_remote_proc\n" );
+
+	PMI_InitSingletonConnection( newfd, pmiprocess );
+	/* PMI_Init_port_connection is used with regular (as opposed to
+	   singleton init) and is used to get the pmiid among other 
+	   items.  It isn't needed (and the commands aren't sent by the 
+	   client) in the singleton case */
+	/*	PMI_Init_port_connection( newfd ); */
+
+	/* Init_remote_proc initiates the process of setting the rank and 
+	   debug flags.  This also isn't needed for the singleton init
+	   case */
+	/* PMI_Init_remote_proc( newfd, pmiprocess ); */
+	/* Ready to handle new input */
 	MPIE_IORegister( newfd, IO_READ, PMIServHandleInput, 
 			 pmiprocess );
     }

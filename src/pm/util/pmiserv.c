@@ -1257,7 +1257,7 @@ int PMI_Init_port_connection( int fd )
     PMIU_parse_keyvals( message );
     PMIU_getval( "cmd", cmd, MAXPMICMD );
     if (strcmp(cmd,"initack")) {
-	PMIU_printf( 1, "Unexpected cmd %s\n", cmd );
+	PMIU_printf( 1, "Unexpected cmd %s, expected initack\n", cmd );
 	return -1;
     }
     PMIU_getval( "pmiid", cmd, MAXPMICMD );
@@ -1268,10 +1268,11 @@ int PMI_Init_port_connection( int fd )
 
 /* Implement the singleton init handshake.  See the discussion in 
    simplepmi.c for the protocol */
-int PMI_Init_singleton_connection( int fd )
+int PMI_InitSingletonConnection( int fd, PMIProcess *pmiprocess )
 {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
-    int  rc, version, subversion;
+    int  rc;
+    char version[PMIU_MAXLINE], subversion[PMIU_MAXLINE];
     
     /* We start with the singinit command, wait for the singinit from
        the client, and then send the singinit_info */
@@ -1287,7 +1288,6 @@ int PMI_Init_singleton_connection( int fd )
 	return -1;
     }
     /* Could look at authtype */
-    /* FIXME kvs name */
     /* check version compatibility with PMI client library */
     PMIU_getval( "pmi_version", version, PMIU_MAXLINE );
     PMIU_getval( "pmi_subversion", subversion, PMIU_MAXLINE );
@@ -1295,10 +1295,10 @@ int PMI_Init_singleton_connection( int fd )
 	rc = 0;
     else
 	rc = -1;
-
+    
     MPIU_Snprintf( buf, PMIU_MAXLINE,
 		   "cmd=singinit_info versionok=%s stdio=no kvsname=%s\n",
-		   (rc == 0) ? "yes" : "no", "kvs_0" );
+		   (rc == 0) ? "yes" : "no",  pmiprocess->group->kvs );
     PMIWriteLine( fd, buf );
 
     return 0;

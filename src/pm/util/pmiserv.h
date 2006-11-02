@@ -108,7 +108,7 @@ int PMISetupSockets( int, PMISetup * );
 int PMISetupInClient( int, PMISetup * );
 int PMISetupFinishInServer( int, PMISetup *, ProcessState * );
 int PMISetupNewGroup( int, PMIKVSpace * );
-
+int PMI_InitSingletonConnection( int, PMIProcess * );
 int PMIServHandleInput( int, int, void * );
 
 /* Setup for initialization with a port */
