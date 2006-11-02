@@ -25,6 +25,8 @@ void MPIU_SetTimeout( int seconds )
     struct timeval tzero;
 
     if (seconds > 0) {
+	tzero.tv_sec	      = 0;
+	tzero.tv_usec	      = 0;
 	tval.tv_sec	      = seconds;
 	tval.tv_usec	      = 0;
 	timelimit.it_interval = tzero;       /* Only one alarm */
