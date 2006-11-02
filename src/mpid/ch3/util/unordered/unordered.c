@@ -1,3 +1,14 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+/*
+ * This is code for handling unordered delivery of packets.  It is currently 
+ * unused but saved for reference.
+ */
+
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
 int MPIDI_CH3U_Handle_unordered_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt);
 #define MPIDI_CH3U_Handle_unordered_recv_pkt MPIDI_CH3U_Handle_recv_pkt
