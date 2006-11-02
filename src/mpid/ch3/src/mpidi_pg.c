@@ -382,6 +382,7 @@ int MPIDI_PG_To_string(MPIDI_PG_t *pg_ptr, char **str_ptr, int *lenStr)
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_INTERN,"**noConnInfoToString");
     }
 
+    /*printf( "PgToString: Pg string is %s\n", *str_ptr ); fflush(stdout);*/
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_TO_STRING);
     return mpi_errno;
@@ -412,6 +413,8 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CREATE_FROM_STRING);
 
+    /*printf( "PgCreateFromString: Creating pg from %s\n", str ); 
+      fflush(stdout); */
     /* The pg_id is at the beginning of the string, so we can just pass
        it to the find routine */
     /* printf( "Looking for pg with id %s\n", str );fflush(stdout); */
@@ -571,6 +574,10 @@ static int getConnInfoKVS( int rank, char *buf, int bufsize, MPIDI_PG_t *pg )
     }
     pmi_errno = PMI_KVS_Get(pg->connData, key, buf, bufsize );
     if (pmi_errno) {
+	MPIDI_PG_CheckForSingleton();
+	pmi_errno = PMI_KVS_Get(pg->connData, key, buf, bufsize );
+    }
+    if (pmi_errno) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_get");
     }
 
@@ -607,6 +614,11 @@ static int connToStringKVS( char **buf_p, int *slen, MPIDI_PG_t *pg )
 
     for (i=0; i<pg->size; i++) {
 	rc = getConnInfoKVS( i, buf, MPIDI_MAX_KVS_VALUE_LEN, pg );
+	if (rc) {
+	    MPIU_Internal_error_printf( 
+		    "Panic: getConnInfoKVS failed for %s (rc=%d)\n", 
+		    (char *)pg->id, rc );
+	}
 #ifndef USE_PERSISTENT_SHARED_MEMORY
 	/* FIXME: This is a hack to avoid including shared-memory 
 	   queue names in the business card that may be used
@@ -753,6 +765,14 @@ static int connToString( char **buf_p, int *slen, MPIDI_PG_t *pg )
     str = string;
 
     pg_id = pg->id;
+    /* FIXME: This is a hack, and it doesn't even work */
+    /*    MPIDI_PrintConnStrToFile( stdout, __FILE__, __LINE__, 
+	  "connToString: pg id is", (char *)pg_id );*/
+    /* This is intended to cause a process to transition from a singleton
+       to a non-singleton. */
+    if (strstr( pg_id, "singinit_kvs" ) == pg_id) {
+	PMI_Get_id( pg->id, 256 );
+    }
     while (*pg_id) str[len++] = *pg_id++;
     str[len++] = 0;
     
@@ -850,6 +870,29 @@ int MPIDI_PrintConnStr( const char *file, int line,
 	while (*str) str++;
 	str++;
     }
+    return 0;
+}
+int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line, 
+			      const char *label, const char *str )
+{
+    int pg_size, i;
+
+    fprintf( fd, "ConnStr from %s(%d); %s\n\t%s\n", file, line, label, str );
+    
+    /* Skip the pg id */
+    while (*str) str++; str++;
+
+    fprintf( fd, "\t%s\n", str );
+    /* Determine the size of the pg */
+    pg_size = atoi( str );
+    while (*str) str++; str++;
+
+    for (i=0; i<pg_size; i++) {
+	fprintf( fd, "\t%s\n", str ); 
+	while (*str) str++;
+	str++;
+    }
+    fflush(stdout);
     return 0;
 }
 #endif
@@ -953,7 +996,8 @@ int MPIDI_PG_Close_VCs( void )
     while (pg) {
 	int i, inuse;
 
-	MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Closing vcs for pg %s",(char *)pg->id );
+	MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Closing vcs for pg %s",
+		       (char *)pg->id );
 
 
 	for (i = 0; i < pg->size; i++)
@@ -970,7 +1014,9 @@ int MPIDI_PG_Close_VCs( void )
 	    if (vc->state == MPIDI_VC_STATE_ACTIVE || 
 		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
 #ifdef MPIDI_CH3_USES_SSHM
-		 /* FIXME: Remove this IFDEF */
+		/* FIXME: Remove this IFDEF */
+		/* FIXME: There should be no vc->ch.xxx refs in this code 
+		   (those are channel-only fields) */
 		/* sshm queues are uni-directional.  A VC that is connected 
 		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
 		 * so that a connection will be formed on the first write.  
@@ -1033,4 +1079,16 @@ int MPIU_PG_Printall( FILE *fp )
     }
 
     return 0;
+}
+
+int MPIDI_PG_CheckForSingleton( void )
+{
+    if (strstr((char*)pg_world->id,"singinit_kvs") == (char *)pg_world->id) {
+	char buf[256];
+	/* Force an enroll */
+	PMI_KVS_Get( "foobar", "foobar", buf, sizeof(buf) );
+	PMI_Get_id( pg_world->id, 256 );
+	PMI_KVS_Get_my_name( pg_world->connData, 256 );
+    }
+    return MPI_SUCCESS;
 }

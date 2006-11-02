@@ -558,6 +558,11 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     MPIDI_STATE_DECL(MPID_STATE_EXTRACTLOCALPGINFO);
 
     MPIDI_FUNC_ENTER(MPID_STATE_EXTRACTLOCALPGINFO);
+
+    /* If we are in the case of singleton-init, we may need to reset the
+       id string for comm world.  We do this before doing anything else */
+    MPIDI_PG_CheckForSingleton();
+
     local_comm_size = comm_p->local_size;
 
     /* Make a list of the local communicator's process groups and encode 

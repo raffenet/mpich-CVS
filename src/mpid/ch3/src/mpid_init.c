@@ -313,7 +313,10 @@ static int InitPG( int *argc, char ***argv,
 	if (pg_id == NULL) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
 	}
-    
+
+	/* Note in the singleton init case, the pg_id is a dummy.
+	   We'll want to replace this value if we join an 
+	   Process manager */
 	pmi_errno = PMI_Get_id(pg_id, pg_id_sz);
 	if (pmi_errno != PMI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_get_id",

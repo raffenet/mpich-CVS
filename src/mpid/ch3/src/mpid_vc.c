@@ -367,6 +367,7 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 	    MPIDI_PG_Get_next( &pg );
 	    if (!pg) {
 		/* Internal error.  This gpid is unknown on this process */
+		printf("No matching pg foung for id = %d\n", pgid );
 		lpid[i] = -1;
 		MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
 			      "**unknowngpid %d %d", gpid[0], gpid[1] );
