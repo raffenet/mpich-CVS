@@ -298,6 +298,10 @@ if test "$pac_cv_have_long_long" = yes ; then
     AC_DEFINE(HAVE_LONG_LONG,1,[Define if compiler supports long long])
 fi
 #
+# Check for const and restrict (used in some of the performance tests)
+AC_C_CONST
+PAC_C_RESTRICT
+
 # General headers
 AC_CHECK_HEADERS(unistd.h stdarg.h string.h stdlib.h memory.h)
 
