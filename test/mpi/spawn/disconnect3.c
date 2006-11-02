@@ -78,7 +78,8 @@ int main(int argc, char *argv[])
 	    IF_VERBOSE(("sending int\n"));
 	    i = DATA_VALUE;
 	    MPI_Send(&i, 1, MPI_INT, RECEIVER_RANK, DATA_TAG, intercomm);
-	    MPI_Recv(&data, 1, MPI_INT, RECEIVER_RANK, DATA_TAG, intercomm, &status);
+	    MPI_Recv(&data, 1, MPI_INT, RECEIVER_RANK, DATA_TAG, intercomm, 
+		     &status);
 	    if (data != i)
 	    {
 		errs++;
@@ -126,7 +127,8 @@ int main(int argc, char *argv[])
 	MPI_Comm_disconnect(&intercomm);
 
 	/* Send the errs back to the master process */
-	/* Errors cannot be sent back to the parent because there is no communicator connected to the parent */
+	/* Errors cannot be sent back to the parent because there is no 
+	   communicator connected to the parent */
 	/*MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );*/
     }
 

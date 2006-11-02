@@ -32,15 +32,18 @@ int main(int argc, char **argv)
 
     /* perform some tests */
     err = builtin_float_test();
-    if (err && verbose) fprintf(stderr, "%d errors in builtin float test.\n", err);
+    if (err && verbose) fprintf(stderr, "%d errors in builtin float test.\n", 
+				err);
     errs += err;
 
     err = vector_of_vectors_test();
-    if (err && verbose) fprintf(stderr, "%d errors in vector of vectors test.\n", err);
+    if (err && verbose) fprintf(stderr, 
+				"%d errors in vector of vectors test.\n", err);
     errs += err;
 
     err = optimizable_vector_of_basics_test();
-    if (err && verbose) fprintf(stderr, "%d errors in vector of basics test.\n", err);
+    if (err && verbose) fprintf(stderr, 
+				"%d errors in vector of basics test.\n", err);
     errs += err;
 
     /* print message and exit */
@@ -80,8 +83,9 @@ int builtin_float_test(void)
 
 /* vector_of_vectors_test()
  *
- * Builds a vector of a vector of ints.  Assuming an int array of size 9 integers,
- * and treating the array as a 3x3 2D array, this will grab the corners.
+ * Builds a vector of a vector of ints.  Assuming an int array of size 9 
+ * integers, and treating the array as a 3x3 2D array, this will grab the
+ * corners.
  *
  * Returns the number of errors encountered.
  */
@@ -105,7 +109,8 @@ int vector_of_vectors_test(void)
 			  &inner_vector);
     if (err != MPI_SUCCESS) {
 	errs++;
-	if (verbose) fprintf(stderr, "error in MPI call; aborting after %d errors\n",
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
 			     errs+1);
 	return errs;
     }
@@ -117,7 +122,8 @@ int vector_of_vectors_test(void)
 			  &outer_vector);
     if (err != MPI_SUCCESS) {
 	errs++;
-	if (verbose) fprintf(stderr, "error in MPI call; aborting after %d errors\n",
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
 			     errs+1);
 	return errs;
     }
@@ -229,7 +235,8 @@ int optimizable_vector_of_basics_test(void)
 
     if (sizeofint != 4) {
 	errs++;
-	if (verbose) fprintf(stderr, "size of external32 MPI_INT = %d; should be %d\n",
+	if (verbose) fprintf(stderr, 
+			     "size of external32 MPI_INT = %d; should be %d\n",
 			     (int) sizeofint, 4);
     }
 
@@ -292,7 +299,8 @@ int optimizable_vector_of_basics_test(void)
 
     if (position != sizeoftype) {
 	errs++;
-	if (verbose) fprintf(stderr, "position = %ld; should be %ld (unpack)\n",
+	if (verbose) fprintf(stderr, 
+			     "position = %ld; should be %ld (unpack)\n",
 			     (long) position, (long) sizeoftype);
     }
 

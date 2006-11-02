@@ -90,7 +90,8 @@ int main(int argc, char **argv)
      * with MPICH2. */
 
     /* print_char_buf("mem_buf after unpack", mem_buf, 2 * mem_dtype_ext);
-       print_char_buf("correct buffer should be", correct_buf, 2 * mem_dtype_ext); */
+       print_char_buf("correct buffer should be", 
+                       correct_buf, 2 * mem_dtype_ext); */
 
     if (memcmp(mem_buf, correct_buf, 2 * mem_dtype_ext)) {
 	printf("Unpacked buffer does not match expected buffer\n");

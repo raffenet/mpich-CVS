@@ -71,7 +71,8 @@ int main(int argc, char *argv[])
 	IF_VERBOSE(("disconnecting child communicator\n"));
 	MPI_Comm_disconnect(&intercomm);
 
-	/* Errors cannot be sent back to the parent because there is no communicator connected to the children
+	/* Errors cannot be sent back to the parent because there is no 
+	   communicator connected to the children
 	for (i=0; i<rsize; i++)
 	{
 	    MPI_Recv( &err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE );
@@ -94,7 +95,8 @@ int main(int argc, char *argv[])
 	MPI_Comm_disconnect(&intercomm);
 
 	/* Send the errs back to the master process */
-	/* Errors cannot be sent back to the parent because there is no communicator connected to the parent */
+	/* Errors cannot be sent back to the parent because there is no 
+	   communicator connected to the parent */
 	/*MPI_Ssend( &errs, 1, MPI_INT, 0, 1, intercomm );*/
     }
 

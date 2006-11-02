@@ -49,7 +49,9 @@ MPID_Request * MPID_Request_create()
 	if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
 	{
 	    int mpi_errno;
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+		       FCNAME, __LINE__, MPI_ERR_OTHER, 
+		       "**invalid_handle", "**invalid_handle %d", req->handle);
 	    MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
 	}
 #endif
@@ -118,13 +120,17 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
     /*MPIU_Assert(HANDLE_GET_MPI_KIND(req->handle) == MPID_REQUEST);*/
     if (HANDLE_GET_MPI_KIND(req->handle) != MPID_REQUEST)
     {
-	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_handle", "**invalid_handle %d", req->handle);
+	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+                      FCNAME, __LINE__, MPI_ERR_OTHER, 
+                      "**invalid_handle", "**invalid_handle %d", req->handle);
 	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
     /*MPIU_Assert(req->ref_count == 0);*/
     if (req->ref_count != 0)
     {
-	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
+	int mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
+                       FCNAME, __LINE__, MPI_ERR_OTHER, 
+              "**invalid_refcount", "**invalid_refcount %d", req->ref_count);
 	MPID_Abort(MPIR_Process.comm_world, mpi_errno, -1, NULL);
     }
 #endif
@@ -220,7 +226,8 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	    if (sreq->dev.tmpbuf_sz == 0)
 	    {
 		MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"SRBuf allocation failure");
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+                                FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -234,12 +241,14 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	}
 	sreq->dev.segment_first = last;
 
-	last = (data_sz <= sreq->dev.tmpbuf_sz - iov_data_copied) ? sreq->dev.segment_size :
+	last = (data_sz <= sreq->dev.tmpbuf_sz - iov_data_copied) ? 
+	    sreq->dev.segment_size :
 	    sreq->dev.segment_first + sreq->dev.tmpbuf_sz - iov_data_copied;
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
                "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			  sreq->dev.segment_first, last));
-	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, (char*) sreq->dev.tmpbuf + iov_data_copied);
+	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, 
+			  (char*) sreq->dev.tmpbuf + iov_data_copied);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
               "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->dev.segment_first, last));
@@ -486,17 +495,20 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	tmpbuf_last = (int)rreq->dev.segment_size;
     }
     last = tmpbuf_last;
-    MPID_Segment_unpack(&rreq->dev.segment, rreq->dev.segment_first, &last, rreq->dev.tmpbuf);
+    MPID_Segment_unpack(&rreq->dev.segment, rreq->dev.segment_first, 
+			&last, rreq->dev.tmpbuf);
     if (last == 0 || last == rreq->dev.segment_first)
     {
 	/* --BEGIN ERROR HANDLING-- */
-	/* If no data can be unpacked, then we have a datatype processing problem.  Adjust the segment info so that the remaining
+	/* If no data can be unpacked, then we have a datatype processing 
+	   problem.  Adjust the segment info so that the remaining
 	   data is received and thrown away. */
 	rreq->status.count = (int)rreq->dev.segment_first;
 	rreq->dev.segment_size = rreq->dev.segment_first;
 	rreq->dev.segment_first += tmpbuf_last;
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
-						      "**dtypemismatch", 0);
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+		       MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
+		       "**dtypemismatch", 0);
 	/* --END ERROR HANDLING-- */
     }
     else if (tmpbuf_last == rreq->dev.segment_size)
@@ -504,13 +516,16 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	/* --BEGIN ERROR HANDLING-- */
 	if (last != tmpbuf_last)
 	{
-	    /* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic datatype.
-	       Note: the segment_first field is set to segment_last so that if this is a truncated message, extra data will be read
+	    /* received data was not entirely consumed by unpack() because too
+	       few bytes remained to fill the next basic datatype.
+	       Note: the segment_first field is set to segment_last so that if
+	       this is a truncated message, extra data will be read
 	       off the pipe. */
 	    rreq->status.count = (int)last;
 	    rreq->dev.segment_size = last;
 	    rreq->dev.segment_first = tmpbuf_last;
-	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
+	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+		  MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 							  "**dtypemismatch", 0);
 	}
 	/* --END ERROR HANDLING-- */
@@ -520,7 +535,8 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	rreq->dev.tmpbuf_off = (int)(tmpbuf_last - last);
 	if (rreq->dev.tmpbuf_off > 0)
 	{
-	    /* move any remaining data to the beginning of the buffer.  Note: memmove() is used since the data regions could
+	    /* move any remaining data to the beginning of the buffer.  
+	       Note: memmove() is used since the data regions could
                overlap. */
 	    memmove(rreq->dev.tmpbuf, (char *) rreq->dev.tmpbuf + (last - rreq->dev.segment_first), rreq->dev.tmpbuf_off);
 	}
@@ -553,7 +569,8 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_UNPACK_UEBUF);
 
-    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, 
+			    dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
     
     if (rreq->dev.recv_data_sz <= userbuf_sz)
     {
@@ -563,13 +580,15 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     {
 	/* --BEGIN ERROR HANDLING-- */
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
-      "receive buffer overflow; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", buf_sz="
-			  MPIDI_MSG_SZ_FMT, 
+      "receive buffer overflow; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT 
+	      ", buf_sz=" MPIDI_MSG_SZ_FMT, 
                 rreq->dev.recv_data_sz, userbuf_sz));
 	unpack_sz = userbuf_sz;
 	rreq->status.count = (int)userbuf_sz;
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
-						      "**truncate", "**truncate %d %d", rreq->dev.recv_data_sz, userbuf_sz);
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+		 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
+		 "**truncate", "**truncate %d %d", 
+                 rreq->dev.recv_data_sz, userbuf_sz);
 	/* --END ERROR HANDLING-- */
     }
 
@@ -577,8 +596,10 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
     {
 	if (dt_contig)
 	{
-	    /* TODO - check that amount of data is consistent with datatype.  In other words, if we were to use Segment_unpack()
-	       would last = unpack?  If not we should return an error (unless configured with --enable-fast) */
+	    /* TODO - check that amount of data is consistent with datatype.  
+	       In other words, if we were to use Segment_unpack()
+	       would last = unpack?  If not we should return an error 
+	       (unless configured with --enable-fast) */
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	    memcpy((char *)rreq->dev.user_buf + dt_true_lb, rreq->dev.tmpbuf, unpack_sz);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
@@ -588,17 +609,20 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	    MPID_Segment seg;
 	    MPIDI_msg_sz_t last;
 
-	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &seg, 0);
+	    MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
+			      rreq->dev.datatype, &seg, 0);
 	    last = unpack_sz;
 	    MPID_Segment_unpack(&seg, 0, &last, rreq->dev.tmpbuf);
 	    if (last != unpack_sz)
 	    {
 		/* --BEGIN ERROR HANDLING-- */
-		/* received data was not entirely consumed by unpack() because too few bytes remained to fill the next basic
+		/* received data was not entirely consumed by unpack() 
+		   because too few bytes remained to fill the next basic
 		   datatype */
 		rreq->status.count = (int)last;
-		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
-							      "**dtypemismatch", 0);
+		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
+			 "**dtypemismatch", 0);
 		/* --END ERROR HANDLING-- */
 	    }
 	}
