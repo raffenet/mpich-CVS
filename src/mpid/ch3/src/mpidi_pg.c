@@ -458,32 +458,18 @@ fn_fail:
 #include <ctype.h>
 #endif
 
+/*
+ * Convert a process group id into a number.  We use a simple process that
+ * simple combines all of the characters in the id.  If the PM uses similar
+ * names containing an incrementing count, then this number should be
+ * distinct.  It would really be best if the PM could give us this value.
+ */
 void MPIDI_PG_IdToNum( MPIDI_PG_t *pg, int *id )
 {
     const char *p = (const char *)pg->id;
     int pgid = 0;
 
-    while (*p && !isdigit(*p)) p++;
-    if (!*p) {
-	p = (const char *)pg->id;
-	while (*p) {
-	    pgid += *p - ' ';
-	}
-	pgid = pgid ^ 0x100;
-    }
-    else {
-	/* mpd uses (pid_num) as part of the kvs name, so
-	   we skip over - and _ */
-	while (*p) {
-	    if (isdigit(*p)) {
-		pgid = pgid * 10 + (*p - '0');
-	    }
-	    else if (*p != '-' && *p != '_') {
-		break;
-	    }
-	    p++;
-	}
-    }
+    while (*p) { pgid += *p++ - ' '; pgid &= 0x7ffffff; }
     *id = pgid;
 }
 #else
