@@ -50,7 +50,14 @@ typedef struct MPID_nem_sctp_stream {
 } MPID_nem_sctp_stream_t;
 #endif
     
-
+typedef enum MPIDI_CH3I_VC_state
+{
+    MPIDI_CH3I_VC_STATE_UNCONNECTED,
+    MPIDI_CH3I_VC_STATE_CONNECTING,
+    MPIDI_CH3I_VC_STATE_CONNECTED,
+    MPIDI_CH3I_VC_STATE_FAILED
+}
+MPIDI_CH3I_VC_state_t;
 
 #if(MPID_NEM_NET_MODULE == MPID_NEM_NEWTCP_MODULE)
     struct MPID_nem_new_tcp_module_sockconn;
