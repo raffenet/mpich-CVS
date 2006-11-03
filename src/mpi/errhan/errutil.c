@@ -1854,44 +1854,35 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 		break;
 	    }
 	    
-	    if (ErrorRing[ring_idx].id == ring_id)
-	    {
-		/* FIXME: Don't use Snprint to append a string ! */
+	    if (ErrorRing[ring_idx].id == ring_id) {
+		int nchrs;
 		MPIU_Snprintf(str, maxlen, "%s", ErrorRing[ring_idx].location);
-		len = (int)strlen(str);
+		len     = (int)strlen(str);
 		maxlen -= len;
-		str += len;
-		/* FIXME: Do not use Snprint to append a string ! */
-		for (i=0; i<max_location_len - (int)strlen(ErrorRing[ring_idx].location) - 2; i++)
-		{
-		    if (MPIU_Snprintf(str, maxlen, "."))
-		    {
-			maxlen--;
-			str++;
-		    }
-		}
-		if (MPIU_Snprintf(str, maxlen, ":"))
-		{
+		str    += len;
+		nchrs   = max_location_len - 
+		    (int)strlen(ErrorRing[ring_idx].location) - 2;
+		while (nchrs > 0 && maxlen > 0) {
+		    *str++ = '.';
+		    nchrs--;
 		    maxlen--;
-		    str++;
 		}
-		if (MPIU_Snprintf(str, maxlen, " "))
-		{
+		if (maxlen > 0) {
+		    *str++ = ':';
 		    maxlen--;
-		    str++;
+		}
+		if (maxlen > 0) {
+		    *str++ = ' ';
+		    maxlen--;
 		}
 		
 		if (MPIR_Err_chop_error_stack)
 		{
 		    cur_pos = ErrorRing[ring_idx].msg;
 		    len = (int)strlen(cur_pos);
-		    if (len == 0)
-		    {
-			if (MPIU_Snprintf(str, maxlen, "\n"))
-			{
-			    maxlen--;
-			    str++;
-			}
+		    if (len == 0 && maxlen > 0) {
+			*str++ = '\n';
+			maxlen--;
 		    }
 		    while (len)
 		    {
@@ -1899,6 +1890,7 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 			{
 			    if (len > maxlen)
 				break;
+			    /* FIXME: Don't use Snprint to append a string ! */
 			    MPIU_Snprintf(str, MPIR_Err_chop_width - 1 - max_location_len, "%s", cur_pos);
 			    str[MPIR_Err_chop_width - 1 - max_location_len] = '\n';
 			    cur_pos += MPIR_Err_chop_width - 1 - max_location_len;
@@ -1931,12 +1923,6 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 		    maxlen -= len;
 		    str += len;
 		}
-		/*
-		  MPIU_Snprintf(str, maxlen, "%s: %s\n", ErrorRing[ring_idx].location, ErrorRing[ring_idx].msg);
-		  len = (int)strlen(str);
-		  maxlen -= len;
-		  str += len;
-		*/
 		errcode = ErrorRing[ring_idx].prev_error;
 	    }
 	    else
@@ -1981,7 +1967,8 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 	
 	if (error_class <= MPICH_ERR_LAST_CLASS)
 	{
-	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", get_class_msg(ERROR_GET_CLASS(errcode)));
+	    MPIU_Snprintf(str, maxlen, "(unknown)(): %s\n", 
+			  get_class_msg(ERROR_GET_CLASS(errcode)));
 	    len = (int)strlen(str);
 	    maxlen -= len;
 	    str += len;
@@ -1989,7 +1976,9 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 	else
 	{
 	    /* FIXME: Not internationalized */
-	    MPIU_Snprintf(str, maxlen, "Error code contains an invalid class (%d)\n", error_class);
+	    MPIU_Snprintf(str, maxlen, 
+			  "Error code contains an invalid class (%d)\n",
+			  error_class);
 	    len = (int)strlen(str);
 	    maxlen -= len;
 	    str += len;
@@ -2006,7 +1995,7 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 }
 
 static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining, 
-			     MPIR_Err_get_class_string_func_t fn )
+				 MPIR_Err_get_class_string_func_t fn )
 {
     int len;
 
@@ -2045,7 +2034,8 @@ static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining,
 		if (ErrorRing[ring_idx].id == ring_id) {
 		    /* just keep clobbering old values until the 
 		       end of the stack is reached */
-		    MPIU_Snprintf(msg, num_remaining, ", %s", ErrorRing[ring_idx].msg);
+		    MPIU_Snprintf(msg, num_remaining, ", %s", 
+				  ErrorRing[ring_idx].msg);
 		    msg[num_remaining - 1] = '\0';
 		    errorcode = ErrorRing[ring_idx].prev_error;
 		}
