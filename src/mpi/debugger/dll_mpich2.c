@@ -420,6 +420,8 @@ typedef struct communicator_t
   struct communicator_t * next;
   group_t *               group;		/* Translations */
   int                     context_id;		/* To catch changes */
+  int                     recvcontext_id;       /* May also be needed for 
+						   matchine */
   int                     present;
   mqs_communicator        comm_info;		/* Info needed at the higher level */
 } communicator_t;
@@ -568,8 +570,8 @@ static int fetch_receive (mqs_process *proc, mpich_process_info *p_info,
 {
     mqs_image * image          = dbgr_get_image (proc);
     mpich_image_info *i_info   = (mpich_image_info *)dbgr_get_image_info (image);
-    communicator_t   *comm   = p_info->current_communicator;
-    int16_t wanted_context = comm->recvcontext_id;
+    communicator_t   *comm     = p_info->current_communicator;
+    int16_t wanted_context     = comm->recvcontext_id;
     mqs_taddr_t base           = fetch_pointer (proc, p_info->next_msg, p_info);
 
     while (base != 0) {
