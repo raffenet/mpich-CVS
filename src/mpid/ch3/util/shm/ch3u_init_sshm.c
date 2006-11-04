@@ -378,15 +378,30 @@ int MPIDI_VC_InitShm( MPIDI_VC_t *vc )
 
 /* Return the number of processors, or one if the number cannot be 
    determined */
+#if defined(HAVE_SYS_SYSCTL_H) && defined(HAVE_SYSCTL) && \
+    !defined(_POSIX_C_SOURCE)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#define USE_SYSCTL
+#endif
+
 static int getNumProcessors( void )
 {
 #ifdef HAVE_WINDOWS_H
     SYSTEM_INFO info;
     GetSystemInfo(&info);
     return info.dwNumberOfProcessors;
-#elif defined(HAVE_SYSCONF)
+#elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     int num_cpus;
     num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    return num_cpus;
+#elif defined(USE_SYSCTL) && defined(CTL_HW) && defined(HW_NCPU)
+    int num_cpus, rc, len=sizeof(int);
+    int mib[2];
+    mib[0] = CTL_HW;
+    mib[1] = HW_NCPU;
+    rc = sysctl( mib, 2, &num_cpus, &len, (void *)0, 0 );
+    if (rc != 0) num_cpus = 1;
     return num_cpus;
 #else
     return 1;
