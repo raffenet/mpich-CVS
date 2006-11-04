@@ -1317,6 +1317,11 @@ static int PMII_singinit(void)
 	    PMIU_printf( 1, "GetResponse failed\n" );
 	    return PMI_FAIL;
 	}
+	p = PMIU_getval( "versionok", cmd, PMIU_MAXLINE );
+	if (p && strcmp( cmd, "yes" ) != 0) {
+	    PMIU_printf( 1, "Process manager needs a different PMI version\n" );
+	    return PMI_FAIL;
+	}
 	p = PMIU_getval( "stdio", cmd, PMIU_MAXLINE );
 	if (p && strcmp( cmd, "yes" ) == 0) {
 	    PMIU_printf( PMI_debug_init, "PM agreed to connect stdio\n" );
