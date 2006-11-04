@@ -44,29 +44,22 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
     {
-	mpi_errno = MPIDI_Isend_self(buf, count, datatype, rank, tag, comm, context_offset, MPIDI_REQUEST_TYPE_SEND, &sreq);
+	mpi_errno = MPIDI_Isend_self(buf, count, datatype, rank, tag, comm, 
+				     context_offset, MPIDI_REQUEST_TYPE_SEND, 
+				     &sreq);
 
 	/* In the single threaded case, sending to yourself will cause 
 	   deadlock.  Note that in the runtime-thread case, this check
 	   will not be made (long-term FIXME) */
 #       ifndef MPICH_IS_THREADED
 	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (sreq != NULL && sreq->cc != 0)
-	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						 "**dev|selfsenddeadlock", 0);
-		goto fn_exit;
+	    if (sreq != NULL && sreq->cc != 0) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
+				    "**dev|selfsenddeadlock");
 	    }
-	    /* --END ERROR HANDLING-- */
 	}
 #	endif
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	}
-	/* --END ERROR HANDLING-- */
+	if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
 	goto fn_exit;
     }
 
@@ -75,7 +68,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 	goto fn_exit;
     }
 
-    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, 
+			    dt_true_lb);
 
     MPIDI_Comm_get_vc(comm, rank, &vc);
     
@@ -95,15 +89,17 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
 	MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
 	
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, eager_pkt, sizeof(*eager_pkt), &sreq);
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, eager_pkt, sizeof(*eager_pkt), 
+					&sreq);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
-	    /* FIXME: this is a fatal error because a sequence number has already been allocated.  If sequence numbers are not
-	       being used then this could be a recoverable error.  A check needs to be added that sets the error to fatal or
+	    /* FIXME: this is a fatal error because a sequence number has 
+	       already been allocated.  If sequence numbers are not
+	       being used then this could be a recoverable error.  A check 
+	       needs to be added that sets the error to fatal or
 	       recoverable depending on the use of sequence numbers. */
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-	    goto fn_exit;
+	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
 	}
 	/* --END ERROR HANDLING-- */
 	if (sreq != NULL)
@@ -117,20 +113,19 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 	goto fn_exit;
     }
     
-    /* FIXME: flow control: limit number of outstanding eager messsages containing data and need to be buffered by the receiver */
+    /* FIXME: flow control: limit number of outstanding eager messsages 
+       containing data and need to be buffered by the receiver */
 
-    if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	MPIDI_CH3_EAGER_MAX_MSG_SIZE)
-    {
-	if (dt_contig)
-	{
+    if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	
+	MPIDI_CH3_EAGER_MAX_MSG_SIZE) {
+	if (dt_contig) {
 	    mpi_errno = MPIDI_CH3_EagerContigSend( &sreq, 
 						   MPIDI_CH3_PKT_EAGER_SEND,
 						   (char *)buf + dt_true_lb,
 						   data_sz, rank, tag, comm, 
 						   context_offset );
 	}
-	else
-	{
+	else {
 	    MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 	    mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq, 
@@ -151,7 +146,8 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 	   must wait until sreq completes */
     }
 
-  fn_exit:
+ fn_fail:
+ fn_exit:
     *request = sreq;
 
     MPIU_DBG_STMT(CH3_OTHER,VERBOSE,

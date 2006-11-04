@@ -74,7 +74,12 @@ MPIDI_Message_match;
 */
 #include "mpidpkt.h"
 /*
- * MPIDI_CH3_CA_t
+ * THIS IS OBSOLETE AND UNUSED, BUT RETAINED FOR ITS DESCRIPTIONS OF THE
+ * VARIOUS STATES.  Note that this is not entirely accurate, as the 
+ * CA_COMPLETE state could depend on the packet type (e.g., for RMA 
+ * operations).
+ *
+ * MPIDI_CA_t
  *
  * An enumeration of the actions to perform when the requested I/O operation 
  * has completed.
@@ -113,19 +118,6 @@ MPIDI_Message_match;
  * internal to the channel instance and must be handled
  * by the channel instance.
  */
-typedef enum MPIDI_CA
-{
-    MPIDI_CH3_CA_COMPLETE,
-    MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE,
-    MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE,
-    MPIDI_CH3_CA_RELOAD_IOV,
-    MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV,
-    MPIDI_CH3_CA_END_CH3
-# if defined(MPIDI_CH3_CA_ENUM)
-    , MPIDI_CH3_CA_ENUM
-# endif
-}
-MPIDI_CA_t;
 
 /*S
   MPIDI_PG_t - Process group description
@@ -338,14 +330,10 @@ typedef struct MPIDI_Request {
     int rdma_iov_offset;
     MPI_Request rdma_request;
 
-    /* ca (completion action) identifies the action to take once the 
-       operation described by the iov has completed */
-    MPIDI_CA_t ca;
-
     /* OnDataAvail is the action to take when data is now available.
        For example, when an operation described by an iov has 
        completed.  This replaces the MPIDI_CA_t (completion action)
-       field unsed through MPICH2 1.0.4. */
+       field used through MPICH2 1.0.4. */
     int (*OnDataAvail)( MPIDI_VC_t *, struct MPID_Request *, int * );
     /* OnFinal is used in the following case:
        OnDataAvail is set to a function, and that function has processed

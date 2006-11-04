@@ -68,7 +68,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     }
     else
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**nomem");
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
@@ -374,7 +374,7 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 		return mpi_errno;
 	    }
 	    MPIDI_PG_IdToNum( pg, &pgid );
-/*	    printf( "Pg id = %d in %s\n", pgid, (char *)pg->id );fflush(stdout); */
+
 	    if (pgid == gpid[0]) {
 		/* found the process group.  gpid[1] is the rank in 
 		   this process group */
@@ -642,3 +642,22 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm *comm_ptr )
     return mpi_errno;
 }
 
+/* ----------------------------------------------------------------------- */
+/* Routines to initialize a VC */
+
+/* FIXME: Should this fully initialize the vc_ entry? */
+/* Make lpid_counter static and local to this routine/file */
+int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
+{
+    vc->state = MPIDI_VC_STATE_INACTIVE;
+    MPIU_Object_set_ref(vc, 0);
+    vc->handle  = MPID_VCONN;
+    vc->pg      = pg;
+    vc->pg_rank = rank;
+    vc->lpid = MPIDI_Process.lpid_counter++;
+    MPIDI_VC_Init_seqnum_send(vc);
+    MPIDI_VC_Init_seqnum_recv(vc);
+    MPIU_DBG_PrintVCState(vc);
+
+    return MPI_SUCCESS;
+}

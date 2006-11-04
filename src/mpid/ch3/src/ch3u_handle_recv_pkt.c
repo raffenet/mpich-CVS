@@ -181,7 +181,6 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
 	/* FIXME: We want to set the OnDataAvail to the appropriate 
 	   function, which depends on whether this is an RMA 
 	   request or a pt-to-pt request. */
-	rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	rreq->dev.OnDataAvail = 0;
     }
     else {
@@ -232,7 +231,6 @@ int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreq)
     rreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rreq->dev.tmpbuf;
     rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.recv_data_sz;
     rreq->dev.iov_count = 1;
-    rreq->dev.ca          = MPIDI_CH3_CA_UNPACK_UEBUF_AND_COMPLETE;
     rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
     rreq->dev.recv_pending_count = 2;
 
@@ -441,7 +439,6 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    req->dev.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dataloop;
 	    req->dev.iov[1].MPID_IOV_LEN = put_pkt->dataloop_size;
 	    req->dev.iov_count = 2;
-	    req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete;
 	    
 	    *rreqp = req;
@@ -480,7 +477,6 @@ int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     req = MPID_Request_create();
     req->dev.target_win_handle = get_pkt->target_win_handle;
     req->dev.source_win_handle = get_pkt->source_win_handle;
-    req->dev.ca = MPIDI_CH3_CA_COMPLETE;
     
     MPIDI_CH3I_DATATYPE_IS_PREDEFINED(get_pkt->datatype, predefined);
     if (predefined)
@@ -691,7 +687,6 @@ int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	req->dev.iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)req->dev.dataloop;
 	req->dev.iov[1].MPID_IOV_LEN = accum_pkt->dataloop_size;
 	req->dev.iov_count = 2;
-	req->dev.ca = MPIDI_CH3_CA_COMPLETE;
     }
 
     if (mpi_errno != MPI_SUCCESS) {
@@ -969,7 +964,6 @@ int MPIDI_CH3_PktHandler_LockGetUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	req->dev.target_win_handle = lock_get_unlock_pkt->target_win_handle;
 	req->dev.source_win_handle = lock_get_unlock_pkt->source_win_handle;
 	req->dev.single_op_opt = 1;
-	req->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	
 	MPIDI_Request_set_type(req, MPIDI_REQUEST_TYPE_GET_RESP); 
 	req->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetSendRespComplete;

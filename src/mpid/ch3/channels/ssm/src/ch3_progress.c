@@ -6,6 +6,11 @@
 
 #include "ch3i_progress.h"
 
+/*
+ * This file contains multiple implementations of the progress routine;
+ * they are selected based on the style of polling that is desired.
+ */
+
 int MPIDI_CH3I_shm_read_active = 0;
 int MPIDI_CH3I_shm_write_active = 0;
 int MPIDI_CH3I_sock_read_active = 0;
@@ -47,11 +52,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     static int spin_count = 1;
     static int msg_queue_count = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
-#ifdef USE_SLEEP_YIELD
-    MPIDI_STATE_DECL(MPID_STATE_MPIDU_SLEEP_YIELD);
-#else
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_YIELD);
-#endif
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
@@ -112,42 +113,22 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	    }
 	}
 
-#if 0
-	if (bShmProgressMade) /* This variable is not determined correctly */
-	{
-	    spin_count = 1;
-#ifdef USE_SLEEP_YIELD
-	    MPIDI_Sleep_yield_count = 0;
-#endif
-	    continue;
-	}
-#endif
-
+	/* FIXME: It looks like this is a relic of code to occassional
+	 call sleep to implement a yield.  As no code defined the
+	 use sleep yield macro, that code was removed, exposing this odd
+	 construction. */
 	if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
 	{
-#ifdef USE_SLEEP_YIELD
-	    if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitYieldCount)
-	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SLEEP_YIELD);
-		MPIDU_Sleep_yield();
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SLEEP_YIELD);
-	    }
-	    else
-	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
-		MPIDU_Yield();
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
-	    }
-#else
 	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 	    MPIDU_Yield();
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	    spin_count = 1;
-#endif
 	}
-	/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
-	   macros around them but this one does not? */
-	else MPIDU_Yield(); /* always yield for now */
+	else {
+	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
+	    MPIDU_Yield();
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
+	}
 	spin_count++;
 
 	if (spin_count > (MPIDI_Process.my_pg->ch.nShmWaitSpinCount >> 1) )
@@ -172,23 +153,25 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    goto fn_exit;
 		}
 		mpi_errno = MPI_SUCCESS;
-		/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
-		   macros around them but this one does not? */
+		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	    }
 	}
 
-	if (((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0) || !is_blocking)
+	if (((msg_queue_count++ % MPIDI_CH3I_MSGQ_ITERATIONS) == 0) || 
+	    !is_blocking)
 	{
 	    /* check for new shmem queue connection requests */
-	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), &num_bytes, FALSE);
+	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(
+                   MPIDI_Process.my_pg->ch.bootstrapQ, &info, 
+		   sizeof(info), &num_bytes, FALSE);
 	    if (rc != MPI_SUCCESS)
 	    {
 		mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
 		goto fn_exit;
 	    }
 #ifdef MPICH_DBG_OUTPUT
-	    /*MPIU_Assert(num_bytes == 0 || num_bytes == sizeof(info));*/
 	    if (num_bytes != 0 && num_bytes != sizeof(info))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);
@@ -207,7 +190,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		fflush(stdout);
 		*/
 		/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
-		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, &vc_ptr->ch.shm_read_queue_info);
+		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, 
+					    &vc_ptr->ch.shm_read_queue_info);
 		if (rc != MPI_SUCCESS)
 		{
 		    mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**attach_to_mem", "**attach_to_mem %d", vc_ptr->ch.shm_read_queue_info.error);
@@ -225,7 +209,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 #endif
 		if (mpi_errno) { return mpi_errno; }
 #endif
-		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
+		/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ 
+		/* we are read connected but not write connected */
 		vc_ptr->ch.shm_read_connected = 1;
 		vc_ptr->ch.bShm = TRUE;
 		vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;/*info.info.addr;*/
@@ -241,14 +226,11 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 fn_exit:
 #ifdef MPICH_DBG_OUTPUT
     count = MPIDI_CH3I_progress_completion_count - completions;
-    if (is_blocking)
-    {
+    if (is_blocking) {
 	MPIDI_DBG_PRINTF((50, FCNAME, "exiting, count=%d", count));
     }
-    else
-    {
-	if (count > 0)
-	{
+    else {
+	if (count > 0) {
 	    MPIDI_DBG_PRINTF((50, FCNAME, "exiting (non-blocking), count=%d", count));
 	}
     }
@@ -269,75 +251,10 @@ fn_exit:
 #define MPIDI_CH3I_UPDATE_ITERATIONS    10
 #define MPID_SINGLE_ACTIVE_FACTOR      100
 
-/* FIXME: What is this routine for?  Who uses it? Why is it not a static function? */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Message_queue_progress
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Message_queue_progress()
-{
-    MPIDI_CH3I_Shmem_queue_info info;
-    int num_bytes;
-    MPIDI_VC_t *vc_ptr;
-    int mpi_errno;
-
-    /* check for new shmem queue connection requests */
-    /*printf("<%dR>", MPIR_Process.comm_world->rank);fflush(stdout);*/
-    mpi_errno = MPIDI_CH3I_BootstrapQ_recv_msg(
-	MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), 
-	&num_bytes, FALSE);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
-	return mpi_errno;
-    }
-#ifdef MPICH_DBG_OUTPUT
-    /*MPIU_Assert(num_bytes == 0 || num_bytes == sizeof(info));*/
-    if (num_bytes != 0 && num_bytes != sizeof(info))
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);
-	return mpi_errno;
-    }
-#endif
-    if (num_bytes)
-    {
-	MPIDI_PG_t *pg;
-
-	MPIDI_PG_Find(info.pg_id, &pg);
-	MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
-	/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
-	/*printf("rank %d attaching to shm(%s) from rank %d\n", MPIR_Process.comm_world->rank, info.info.name, info.pg_rank);fflush(stdout);*/
-	mpi_errno = MPIDI_CH3I_SHM_Attach_to_mem(
-	    &info.info, &vc_ptr->ch.shm_read_queue_info);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ch.shm_read_queue_info.error);
-	    return mpi_errno;
-	}
-	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
-#ifdef HAVE_SHARED_PROCESS_READ
-#ifdef HAVE_WINDOWS_H
-	mpi_errno = MPIDI_SHM_InitRWProc( info.pid, 
-					  &vc_ptr->ch.hSharedProcessHandle );
-#else
-	vc_ptr->ch.nSharedProcessID = info.pid;
-	mpi_errno = MPIDI_SHM_InitRWProc( info.pid, 
-			       &vc_ptr->ch.nSharedProcessFileDescriptor );
-#endif
-	if (mpi_errno) { return mpi_errno; }
-#endif
-	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
-	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
-	vc_ptr->ch.bShm = TRUE;
-	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
-	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
-	vc_ptr->ch.shm_reading_pkt = TRUE;
-	/* add this VC to the global list to be shm_waited on */
-	/*printf("vc added to reading list.\n");fflush(stdout);*/
-	MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
-    }
-    return MPI_SUCCESS;
-}
+/* Define this macro to include the definition of the message queue 
+   progress routine */
+#define NEEDS_MESSAGE_QUEUE_PROGRESS
+static int MPIDI_CH3I_Message_queue_progress( void );
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Progress_test
@@ -346,11 +263,13 @@ int MPIDI_CH3I_Message_queue_progress()
 int MPIDI_CH3_Progress_test()
 {
     /* This function has a problem that is #if 0'd out.
-     * The commented out code causes test to only probe the message queue for connection attempts
-     * every MPIDI_CH3I_MSGQ_ITERATIONS iterations.  This can delay shm connection formation for 
-     * codes that call test infrequently.
-     * But the uncommented code also has the problem that the overhead of checking the message queue
-     * is incurred with every call to test.
+     * The commented out code causes test to only probe the message queue for
+     * connection attempts
+     * every MPIDI_CH3I_MSGQ_ITERATIONS iterations.  This can delay shm
+     * connection formation for codes that call test infrequently.
+     * But the uncommented code also has the problem that the overhead of 
+     * checking the message queue is incurred with every call to test.
+
      */
     int mpi_errno = MPI_SUCCESS;
     int rc;
@@ -426,7 +345,8 @@ int MPIDI_CH3_Progress_test()
     if (msgqIter++ == MPIDI_CH3I_MSGQ_ITERATIONS)
     {
 	msgqIter = 0;
-	/*printf("[%d] calling message queue progress from test.\n", MPIR_Process.comm_world->rank);fflush(stdout);*/
+	/*printf("[%d] calling message queue progress from test.\n", 
+	  MPIR_Process.comm_world->rank);fflush(stdout);*/
 	mpi_errno = MPID_CH3I_Message_queue_progress();
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -480,7 +400,6 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state *state)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
 
-    MPIDI_DBG_PRINTF((50, FCNAME, "entering"));
     do
     {
 	/* make progress on the shared memory queues */
@@ -565,18 +484,9 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state *state)
 		    vc_ptr = vc_ptr->ch.shm_next_writer;
 		}
 	    }
-/*
-	    if (spin_count++ >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
-	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
-		MPIDU_Yield();
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
-		spin_count = 1;
-	    }
-*/
-	    /* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
-	       macros around them but this one does not? */
+	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 	    MPIDU_Yield();
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	}
 after_shm_loop:
 	if (shmIter == shmReps)
@@ -616,9 +526,9 @@ skip_shm_loop:
 		}
 		/* comment out this line to test the error functions */
 		mpi_errno = MPI_SUCCESS;
-		/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
-		   macros around them but this one does not? */
+		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	    }
 	    if (completions != MPIDI_CH3I_progress_completion_count)
 	    {
@@ -764,72 +674,10 @@ fn_exit:
 #define MPIDI_CH3I_UPDATE_ITERATIONS    10
 #define MPID_SINGLE_ACTIVE_FACTOR      100
 
-/* FIXME: What is this routine for?  Who uses it? Why is it not a static function? */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Message_queue_progress
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Message_queue_progress()
-{
-    MPIDI_CH3I_Shmem_queue_info info;
-    int num_bytes;
-    MPIDI_VC_t *vc_ptr;
-    int rc, mpi_errno;
-
-    /* check for new shmem queue connection requests */
-    rc = MPIDI_CH3I_BootstrapQ_recv_msg(
-	MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), 
-	&num_bytes, FALSE);
-    if (rc != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(rc, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**boot_recv", 0);
-	return mpi_errno;
-    }
-#ifdef MPICH_DBG_OUTPUT
-    /*MPIU_Assert(num_bytes == 0 || num_bytes == sizeof(info));*/
-    if (num_bytes != 0 && num_bytes != sizeof(info))
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**bootqmsg", "**bootqmsg %d", num_bytes);
-	return mpi_errno;
-    }
-#endif
-    if (num_bytes)
-    {
-	MPIDI_PG_t *pg;
-
-	MPIDI_PG_Find(info.pg_id, &pg);
-	MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
-	/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
-	rc = MPIDI_CH3I_SHM_Attach_to_mem(
-	    &info.info, &vc_ptr->ch.shm_read_queue_info);
-	if (rc != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIDI_CH3I_SHM_Attach_to_mem", "**MPIDI_CH3I_SHM_Attach_to_mem %d", vc_ptr->ch.shm_read_queue_info.error); /*"MPIDI_CH3I_SHM_Attach_to_mem failed, error %d\n", vc_ptr->ch.shm_read_queue_info.error);*/
-	    return mpi_errno;
-	}
-	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
-#ifdef HAVE_SHARED_PROCESS_READ
-#ifdef HAVE_WINDOWS_H
-	mpi_errno = MPIDI_SHM_InitRWProc( info.pid, 
-					  &vc_ptr->ch.hSharedProcessHandle );
-#else
-	vc_ptr->ch.nSharedProcessID = info.pid;
-	mpi_errno = MPIDI_SHM_InitRWProc( info.pid, 
-				&vc_ptr->ch.nSharedProcessFileDescriptor );
-#endif
-	if (mpi_errno) { return mpi_errno; }
-#endif
-	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ /* we are read connected but not write connected */
-	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
-	vc_ptr->ch.bShm = TRUE;
-	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
-	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
-	vc_ptr->ch.shm_reading_pkt = TRUE;
-	/* add this VC to the global list to be shm_waited on */
-	MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
-    }
-    return MPI_SUCCESS;
-}
+/* Define this macro to include the definition of the message queue 
+   progress routine */
+#define NEEDS_MESSAGE_QUEUE_PROGRESS
+static int MPIDI_CH3I_Message_queue_progress( void );
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress
@@ -955,18 +803,9 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    vc_ptr = vc_ptr->ch.shm_next_writer;
 		}
 	    }
-	    /*
-	    if (spin_count++ >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
-	    {
-		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
-		MPIDU_Yield();
-		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
-		spin_count = 1;
-	    }
-	    */
-	    /* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
-	       macros around them but this one does not? */
+	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 	    MPIDU_Yield();
+	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	}
 after_shm_loop:
 	if (shmIter == shmReps)
@@ -1005,9 +844,9 @@ skip_shm_loop:
 		    goto fn_exit;
 		}
 		mpi_errno = MPI_SUCCESS;
-		/* FIXME: Why do the other yields have MPIDI_FUNC_ENTER/EXIT 
-		   macros around them but this one does not? */
+		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
+		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
 	    }
 	    if (completions != MPIDI_CH3I_progress_completion_count)
 	    {
@@ -1241,7 +1080,6 @@ int MPIDI_CH3I_Progress_finalize()
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
     /* Shut down the listener */
     MPIDU_CH3I_ShutdownListener();
@@ -1261,7 +1099,80 @@ int MPIDI_CH3I_Progress_finalize()
     */
 
 fn_exit:
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     return mpi_errno;
 }
+
+#ifdef NEEDS_MESSAGE_QUEUE_PROGRESS
+
+/* FIXME: What is this routine for?  */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Message_queue_progress
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_CH3I_Message_queue_progress( void )
+{
+    MPIDI_CH3I_Shmem_queue_info info;
+    int num_bytes;
+    MPIDI_VC_t *vc_ptr;
+    int mpi_errno;
+
+    /* check for new shmem queue connection requests */
+    /*printf("<%dR>", MPIR_Process.comm_world->rank);fflush(stdout);*/
+    mpi_errno = MPIDI_CH3I_BootstrapQ_recv_msg(
+	MPIDI_Process.my_pg->ch.bootstrapQ, &info, sizeof(info), 
+	&num_bytes, FALSE);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**boot_recv");
+	return mpi_errno;
+    }
+#ifdef MPICH_DBG_OUTPUT
+    if (num_bytes != 0 && num_bytes != sizeof(info)) {
+	MPIU_ERR_SETFATAL1(mpi_errno,MPI_ERR_OTHER,
+			   "**bootqmsg", "**bootqmsg %d", num_bytes);
+	return mpi_errno;
+    }
+#endif
+    if (num_bytes)
+    {
+	MPIDI_PG_t *pg;
+
+	MPIDI_PG_Find(info.pg_id, &pg);
+	MPIDI_PG_Get_vc(pg, info.pg_rank, &vc_ptr);
+	/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
+	mpi_errno = MPIDI_CH3I_SHM_Attach_to_mem(
+	    &info.info, &vc_ptr->ch.shm_read_queue_info);
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETFATAL1(mpi_errno,MPI_ERR_OTHER,
+			       "**MPIDI_CH3I_SHM_Attach_to_mem", 
+			       "**MPIDI_CH3I_SHM_Attach_to_mem %d", 
+			       vc_ptr->ch.shm_read_queue_info.error);
+	    return mpi_errno;
+	}
+	MPIU_DBG_PRINTF(("attached to queue from process %d\n", info.pg_rank));
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+	mpi_errno = MPIDI_SHM_InitRWProc( info.pid, 
+					  &vc_ptr->ch.hSharedProcessHandle );
+#else
+	vc_ptr->ch.nSharedProcessID = info.pid;
+	mpi_errno = MPIDI_SHM_InitRWProc( info.pid, 
+			       &vc_ptr->ch.nSharedProcessFileDescriptor );
+#endif
+	if (mpi_errno) { return mpi_errno; }
+#endif
+	/*vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;*/ 
+	/* we are read connected but not write connected */
+	vc_ptr->vc_ptr->ch.shm_read_connected = 1;
+	vc_ptr->ch.bShm = TRUE;
+	vc_ptr->ch.read_shmq = vc_ptr->ch.shm_read_queue_info.addr;
+	MPIU_DBG_PRINTF(("read_shmq = %p\n", vc_ptr->ch.read_shmq));
+	vc_ptr->ch.shm_reading_pkt = TRUE;
+	/* add this VC to the global list to be shm_waited on */
+	/*printf("vc added to reading list.\n");fflush(stdout);*/
+	MPIDI_CH3I_SHM_Add_to_reader_list(vc_ptr);
+    }
+    return MPI_SUCCESS;
+}
+
+#endif

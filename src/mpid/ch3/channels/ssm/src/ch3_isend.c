@@ -77,7 +77,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt, MPIDI_msg_
 		if (nb == pkt_sz)
 		{ 
 		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes, calling MPIDI_CH3U_Handle_send_req()", nb));
+		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete %d bytes", nb));
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
 			MPIDI_CH3U_Request_complete(sreq);

@@ -252,7 +252,6 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **sreq_p,
 	       "sending contiguous eager message, data_sz=" MPIDI_MSG_SZ_FMT,
 					data_sz));
 	    
-    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     sreq->dev.OnDataAvail = 0;
     
     MPIDI_Pkt_init(eager_pkt, reqtype);

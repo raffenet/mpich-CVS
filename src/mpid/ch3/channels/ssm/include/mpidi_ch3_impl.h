@@ -164,6 +164,10 @@ MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
+/* The following define a few different modes of progress, often varying 
+   what the process does while waiting for messages to arrive, and how often
+   it checks each source of messages (since shared memory is so much faster
+   than sockets) */
 /*#define USE_FIXED_ACTIVE_PROGRESS*/
 /*#define USE_FIXED_SPIN_WAITS*/
 #ifndef MPID_CPU_TICK

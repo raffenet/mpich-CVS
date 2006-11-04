@@ -67,13 +67,6 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	/* Message was found in the unexepected queue */
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"request found in unexpected queue");
 
-	/* FIXME: We do not need the vc unless we are performing
-	   a rendezvous (or synchronous eager(!!!)) send.  This code should 
-	   instead be optimized for the low-latency case of an eager 
-	   message, already received first, and then handle the more
-	   expensive case of rendezvous messages separately. */
-	MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
-
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
 	    int recv_pending;
@@ -83,6 +76,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 
 	    if (MPIDI_Request_get_sync_send_flag(rreq))
 	    {
+		MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
 		mpi_errno = MPIDI_CH3_EagerSyncAck( vc, rreq );
 		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    }
@@ -123,6 +117,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
 	{
+	    MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
 	    mpi_errno = MPIDI_CH3_RecvRndv( vc, rreq );
 	    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
@@ -158,7 +153,8 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"request allocated in posted queue");
 
 	/* FIXME: We do not need to add a datatype reference if
-	   the request is blocking */
+	   the request is blocking.  This is currently added because
+	   of the actions that are taken when a request is freed. */
 	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	{
 	    MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);

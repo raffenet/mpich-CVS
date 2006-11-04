@@ -201,14 +201,12 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
     if (last == sreq->dev.segment_size)
     {
 	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data loaded into IOV");
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	sreq->dev.OnDataAvail = sreq->dev.OnFinal;
     }
     else if ((last - sreq->dev.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
 	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"more data loaded into IOV");
 	sreq->dev.segment_first = last;
-	sreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	sreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_SendReloadIOV;
     }
     else
@@ -258,14 +256,12 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	if (last == sreq->dev.segment_size)
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data packed into SRBuf");
-	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    sreq->dev.OnDataAvail = sreq->dev.OnFinal;
 	}
 	else 
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"more data packed into SRBuf");
 	    sreq->dev.segment_first = last;
-	    sreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	    sreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_SendReloadIOV;
 	}
     }
@@ -330,14 +326,12 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    {
 		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		  "updating rreq to read the remaining data into the SRBuf");
-		rreq->dev.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_COMPLETE;
 		rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackSRBufComplete;
 	    }
 	    else
 	    {
 		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 		       "updating rreq to read more data into the SRBuf");
-		rreq->dev.ca = MPIDI_CH3_CA_UNPACK_SRBUF_AND_RELOAD_IOV;
 		rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV;
 	    }
 	    goto fn_exit;
@@ -379,7 +373,6 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
      "updating rreq to read the remaining data directly into the user buffer");
-	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
 	}
@@ -389,7 +382,6 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 	     "updating rreq to read more data directly into the user buffer");
 	    rreq->dev.segment_first = last;
-	    rreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	    rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_ReloadIOV;
 	}
 	else
@@ -447,7 +439,6 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,
 	    "updating rreq to read overflow data into the SRBuf and complete");
 	    rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
-	    rreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	    MPIU_Assert(MPIDI_Request_get_type(rreq) == MPIDI_REQUEST_TYPE_RECV);
 	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
@@ -458,7 +449,6 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	  "updating rreq to read overflow data into the SRBuf and reload IOV");
 	    rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.tmpbuf_sz;
 	    rreq->dev.segment_first += rreq->dev.tmpbuf_sz;
-	    rreq->dev.ca = MPIDI_CH3_CA_RELOAD_IOV;
 	    rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_ReloadIOV;
 	}
 	

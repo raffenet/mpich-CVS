@@ -18,7 +18,7 @@
  */
 
 /* FIXME: If dynamic processes are not supported, this file will contain
-   no code and some compilers may warn about an "empty translation unit */
+   no code and some compilers may warn about an "empty translation unit" */
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 
 /* FIXME: pg_translation is used for ? */
@@ -413,15 +413,6 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     n_remote_pgs     = recv_ints[0];
     remote_comm_size = recv_ints[1];
     context_id	     = recv_ints[2];
-#if 0
-    /* FIXME: This is a temporary patch to detect problems in 
-       setting up a new communicator */
-    mpi_errno = MPIR_Register_contextid( context_id );
-    if (mpi_errno) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    
-#endif
 
     MPIU_CHKLMEM_MALLOC(remote_pg,MPIDI_PG_t**,
 			n_remote_pgs * sizeof(MPIDI_PG_t*),
@@ -484,9 +475,6 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 
     intercomm                 = *newcomm;
     intercomm->context_id     = context_id;
-#if 0
-    intercomm->recvcontext_id = context_id;
-#endif
     intercomm->is_low_group   = 1;
 
     mpi_errno = SetupNewIntercomm( comm_ptr, remote_comm_size, 
@@ -808,7 +796,7 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 
     /* Free pg_list */
     pg_list = pg_head;
-#if 1   /* used to try and detect an error */
+
     /* FIXME: We should use the PG destroy function for this, and ensure that
        the PG fields are valid for that function */
     while (pg_list) {
@@ -820,7 +808,6 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
 	MPIU_Free( pg_list );
 	pg_list = pg_next;
     }
-#endif
 
  fn_exit:
     MPIU_CHKLMEM_FREEALL();

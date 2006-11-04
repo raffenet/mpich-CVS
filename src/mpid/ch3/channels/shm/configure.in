@@ -61,7 +61,7 @@ dnl AC_DEFINE(HAVE_SHARED_PROCESS_READ,,[Define to use /proc directory for share
 dnl AC_DEFINE(MPIDI_CH3_CHANNEL_RNDV,,[Define to use rdma channel functions])
 dnl AC_DEFINE(USE_RDMA_GET,,[Define to use rdma get mechanisms])
 
-AC_CHECK_FUNCS( sysconf shmget shmat shmdt shmctl mmap )
+AC_CHECK_FUNCS( sysconf sysctl shmget shmat shmdt shmctl mmap )
 
 save_libs=$LIBS
 LIBS=
@@ -122,6 +122,7 @@ AC_CHECK_HEADERS(				\
     sys/socket.h netinet/in.h \
     fcntl.h sys/mman.h \
     sys/ptrace.h \
+    sys/sysctl.h \
 )
 
 AC_MSG_CHECKING([for x86 mfence instruction])

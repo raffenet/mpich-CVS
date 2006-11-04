@@ -313,14 +313,37 @@ extern MPIDI_Process_t MPIDI_Process;
     	(sreq_)->partner_request = NULL;				\
     }
 
+/* Note: In the current implementation, the mpid_xsend.c routines that
+   make use of MPIDI_VC_FAI_send_seqnum are all protected by the 
+   SINGLE_CS_ENTER/EXIT macros, so all uses of this macro are 
+   alreay within a critical section when needed.  If/when we move to
+   a finer-grain model, we'll need to examine whether this requires
+   a separate lock. */
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
 #   define MPIDI_Request_set_seqnum(req_, seqnum_)	\
     {							\
     	(req_)->dev.seqnum = (seqnum_);			\
     }
+#   define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)	\
+    {							\
+	(seqnum_out_) = (vc_)->seqnum_send++;		\
+    }
+#   define MPIDI_Pkt_set_seqnum(pkt_, seqnum_)	\
+    {						\
+    	(pkt_)->seqnum = (seqnum_);		\
+    }
+#   define MPIDI_VC_Init_seqnum_send(vc_)	\
+    {						\
+    	(vc_)->seqnum_send = 0;			\
+    }
 #else
 #   define MPIDI_Request_set_seqnum(req_, seqnum_)
+#   define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)
+#   define MPIDI_Pkt_set_seqnum(pkt_, seqnum_)
+#   define MPIDI_VC_Init_seqnum_send(vc_)
 #endif
+
+
 /*-------------------
   END REQUEST SECTION
   -------------------*/
@@ -359,14 +382,6 @@ extern MPIDI_Process_t MPIDI_Process;
     }
 #endif
 
-#if defined(MPID_USE_SEQUENCE_NUMBERS)
-#   define MPIDI_Pkt_set_seqnum(pkt_, seqnum_)	\
-    {						\
-    	(pkt_)->seqnum = (seqnum_);		\
-    }
-#else
-#   define MPIDI_Pkt_set_seqnum(pkt_, seqnum_)
-#endif
 /*------------------
   END PACKET SECTION
   ------------------*/
@@ -442,19 +457,9 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 /*--------------------------------
   BEGIN VIRTUAL CONNECTION SECTION
   --------------------------------*/
-#define MPIDI_VC_Get_next_lpid(lpid_ptr_)		\
-    {							\
-    	*(lpid_ptr_) = MPIDI_Process.lpid_counter++;	\
-    }
 
-#if defined(MPID_USE_SEQUENCE_NUMBERS)
-#   define MPIDI_VC_Init_seqnum_send(vc_)	\
-    {						\
-    	(vc_)->seqnum_send = 0;			\
-    }
-#else
-#   define MPIDI_VC_Init_seqnum_send(vc_)
-#endif
+/* Initialize a new VC */
+int MPIDI_VC_Init( MPIDI_VC_t *, MPIDI_PG_t *, int );
 
 #if defined(MPIDI_CH3_MSGS_UNORDERED)
 #   define MPIDI_VC_Init_seqnum_recv(vc_);	\
@@ -466,38 +471,7 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 #   define MPIDI_VC_Init_seqnum_recv(vc_);
 #endif
 
-/* FIXME: Should this fully initialize the vc_ entry? */
-/* FIXME: Make this into a routine (initializing/creating 
-   connections are rare and expensive; no need to use a macro.
-   In addition, the lpid_counter can then be a static int in the
-   file that implements this routine */
-#define MPIDI_VC_Init(vc_, pg_, rank_)		\
-{						\
-    (vc_)->state = MPIDI_VC_STATE_INACTIVE;	\
-    MPIU_Object_set_ref((vc_), 0);		\
-    (vc_)->handle = MPID_VCONN;                 \
-    (vc_)->pg = (pg_);				\
-    (vc_)->pg_rank = (rank_);			\
-    MPIDI_VC_Get_next_lpid(&(vc_)->lpid);	\
-    MPIDI_VC_Init_seqnum_send(vc_);		\
-    MPIDI_VC_Init_seqnum_recv(vc_);		\
-    MPIU_DBG_PrintVCState(vc_);                 \
-}
 
-/* Note: In the current implementation, the mpid_xsend.c routines that
-   make use of MPIDI_VC_FAI_send_seqnum are all protected by the 
-   SINGLE_CS_ENTER/EXIT macros, so all uses of this macro are 
-   alreay within a critical section when needed.  If/when we move to
-   a finer-grain model, we'll need to examine whether this requires
-   a separate lock. */
-#if defined(MPID_USE_SEQUENCE_NUMBERS)
-#       define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)	\
-        {							\
-	    (seqnum_out_) = (vc_)->seqnum_send++;		\
-	}
-#else
-#    define MPIDI_VC_FAI_send_seqnum(vc_, seqnum_out_)
-#endif
 
 #define MPIDI_VC_add_ref( _vc )                                 \
     { MPIU_Object_add_ref( _vc );                               \
@@ -834,7 +808,6 @@ int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win * win_ptr, int requested_lock);
 int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 
-
 #define MPIDI_CH3I_DATATYPE_IS_PREDEFINED(type, predefined) \
     if ((HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) || \
         (type == MPI_FLOAT_INT) || (type == MPI_DOUBLE_INT) || \
@@ -842,7 +815,6 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
 	(type == MPI_LONG_DOUBLE_INT)) \
         predefined = 1; \
     else predefined = 0;
-
 
 int MPIDI_CH3I_Progress_finalize(void);
 
@@ -1286,7 +1258,8 @@ int MPIDI_CH3U_Finalize_sshm(void);
   consideration may need to be given to packet ordering
   if the channel has made guarantees about ordering.
 E*/
-int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPID_Request ** rreqp);
+int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, 
+			       MPID_Request ** rreqp);
 
 /*@
   MPIDI_CH3U_Handle_recv_req - Process a receive request for which all of the 

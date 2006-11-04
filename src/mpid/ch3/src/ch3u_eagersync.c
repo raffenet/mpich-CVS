@@ -41,7 +41,6 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
     MPID_Request *sreq = *sreq_p;
     
     sreq->cc = 2;
-    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     sreq->dev.OnDataAvail = 0;
     
     MPIDI_Pkt_init(es_pkt, MPIDI_CH3_PKT_EAGER_SYNC_SEND);
@@ -150,7 +149,6 @@ int MPIDI_CH3_EagerSyncZero(MPID_Request **sreq_p, int rank, int tag,
     
     sreq->cc = 2;
     MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
-    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     sreq->dev.OnDataAvail = 0;
     
     MPIDI_Pkt_init(es_pkt, MPIDI_CH3_PKT_EAGER_SYNC_SEND);

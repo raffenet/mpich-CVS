@@ -14,10 +14,23 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq,
 			       int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
+    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
 
+    /* Use the associated function rather than switching on the old ca field */
+    /* Routines can call the attached function directly */
+#if 1
+    reqFn = sreq->dev.OnDataAvail;
+    if (!reqFn) {
+	MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+	MPIDI_CH3U_Request_complete(sreq);
+    }
+    else {
+	mpi_errno = reqFn( vc, sreq, complete );
+    }
+#else
     switch(sreq->dev.ca)
     {
 	case MPIDI_CH3_CA_COMPLETE:
@@ -52,6 +65,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq,
 	}
 	/* --END ERROR HANDLING-- */
     }
+#endif
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);

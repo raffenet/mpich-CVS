@@ -70,7 +70,6 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     {
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending zero length message");
 
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	sreq->dev.OnDataAvail = 0;
 	
 	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
@@ -106,8 +105,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 						  data_sz, rank, tag, 
 						  comm, context_offset );
 	/* If we're not complete, then add a reference to the datatype */
-	if (sreq && (sreq->dev.ca != MPIDI_CH3_CA_COMPLETE &&
-		     sreq->dev.OnDataAvail)) {
+	if (sreq && sreq->dev.OnDataAvail) {
 	    sreq->dev.datatype_ptr = dt_ptr;
 	    MPID_Datatype_add_ref(dt_ptr);
 	}

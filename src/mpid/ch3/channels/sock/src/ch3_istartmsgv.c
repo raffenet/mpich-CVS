@@ -40,7 +40,6 @@ static MPID_Request * create_request(MPID_IOV * iov, int iov_count,
     sreq->dev.iov[iov_offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb);
     sreq->dev.iov[iov_offset].MPID_IOV_LEN -= nb;
     sreq->dev.iov_count = iov_count;
-    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     sreq->dev.OnDataAvail = 0;
 
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);

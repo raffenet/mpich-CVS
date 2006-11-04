@@ -93,14 +93,6 @@ MPIDI_CH3I_VC;
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
-
-/*
- * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
- */
-#define MPIDI_CH3_CA_ENUM			\
-MPIDI_CH3I_CA_END_SOCK_CHANNEL
-
-
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */

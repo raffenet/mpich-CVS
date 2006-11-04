@@ -6,6 +6,15 @@
 
 #include "mpidimpl.h"
 
+/* FIXME: Explain the contents of this file */
+/*
+ * A first guess.  This file contains routines to manage memory-to-memory
+ * copies of buffers described by MPI datatypes
+ */
+
+/* MPIDI_COPY_BUFFER_SZ is the size of the buffer that is allocated when 
+   copying from one non-contiguous buffer to another.  In this case, an 
+   intermediate contiguous buffer is used of this size */
 #if !defined(MPIDI_COPY_BUFFER_SZ)
 #define MPIDI_COPY_BUFFER_SZ 16384
 #endif

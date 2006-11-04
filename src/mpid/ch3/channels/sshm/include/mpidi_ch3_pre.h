@@ -226,15 +226,6 @@ typedef struct MPIDI_CH3I_VC
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
 
-/*
- * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
- *
- * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or receive) needs to be handled.
- */
-#define MPIDI_CH3_CA_ENUM			\
-MPIDI_CH3I_CA_HANDLE_PKT,			\
-MPIDI_CH3I_CA_END_SSHM_CHANNEL
-
 #define MPIDI_CH3_REQUEST_KIND_DECL \
 MPIDI_CH3I_IOV_WRITE_REQUEST, \
 MPIDI_CH3I_IOV_READ_REQUEST, \
@@ -243,16 +234,16 @@ MPIDI_CH3I_RTS_IOV_READ_REQUEST
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL									\
-struct MPIDI_CH3I_Request									\
-{												\
-    /* iov_offset points to the current head element in the IOV */				\
-    int iov_offset;										\
-												\
+#define MPIDI_CH3_REQUEST_DECL						\
+struct MPIDI_CH3I_Request						\
+{									\
+    /* iov_offset points to the current head element in the IOV */	\
+    int iov_offset;							\
+									\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
-    MPIDI_CH3_Pkt_t pkt;									\
-                                                                                                \
-    struct MPID_Request *req;						                        \
+    MPIDI_CH3_Pkt_t pkt;						\
+                                                                        \
+    struct MPID_Request *req;						\
 } ch;
 
 typedef struct MPIDI_CH3I_Progress_state
@@ -272,31 +263,42 @@ typedef struct MPIDI_CH3I_Alloc_mem_list_t {
 /*
  * MPIDI_CH3_WIN_DECL (additions to MPID_Win)
  */
-/* shm_structs - array of shm structs containing shm keys and base addresses of windows in 
+/* shm_structs - array of shm structs containing shm keys and base addresses 
+   of windows in 
                  shared memory of all processes
-   offsets - offset of address passed to win_create from base of allocated shared memory.
+		 offsets - offset of address passed to win_create from base of 
+		 allocated \shared memory.
              array (one for each process)
-   locks - pointer to an shm struct containing the key and base address of shared memory 
-           for the locks. Allocated and initialized by rank 0. The first comm_size entries 
-           starting from locks->addr contain the MPIDU_Process_lock_t type for each process.
-           The next comm_size entries contain the shared lock state for each process.
-   pt_rma_excl_lock - set to 1 if this process has called MPI_Win_lock(exclusive)
-   pscw_shm_structs - array of shm structs containing the shm keys and base addresses of 
-                      the shared memory (of size 2*comm_size bytes) used by other processes 
-                      for pscw synchronization. The first comm_size bytes is used to synchronize 
-                      the start epoch, and the next comm_size bytes for the end epoch
+   locks - pointer to an shm struct containing the key and base address of 
+   shared memory 
+   for the locks. Allocated and initialized by rank 0. The first 
+   comm_size entries 
+           starting from locks->addr contain the MPIDU_Process_lock_t type 
+	   for each process.
+           The next comm_size entries contain the shared lock state for each 
+	   process.
+    pt_rma_excl_lock - set to 1 if this process has called 
+	   MPI_Win_lock(exclusive)
+   pscw_shm_structs - array of shm structs containing the shm keys and base 
+   addresses of 
+                      the shared memory (of size 2*comm_size bytes) used by 
+		      other processes 
+                      for pscw synchronization. The first comm_size bytes 
+		      is used to synchronize 
+                      the start epoch, and the next comm_size bytes for the 
+		      end epoch
    epoch_grp_ptr, epoch_grp_ranks_in_win - used for post-start-complete-wait 
 */
 
-#define MPIDI_CH3_WIN_DECL									\
-MPIDI_CH3I_Shmem_block_request_result *shm_structs;						\
-void **offsets;									                \
-MPIDI_CH3I_Shmem_block_request_result *locks;							\
-int pt_rma_excl_lock;								                \
-MPIDI_CH3I_Shmem_block_request_result *pscw_shm_structs;					\
-MPID_Group *access_epoch_grp_ptr;								\
-int *access_epoch_grp_ranks_in_win;								\
-MPID_Group *exposure_epoch_grp_ptr;								\
+#define MPIDI_CH3_WIN_DECL						\
+MPIDI_CH3I_Shmem_block_request_result *shm_structs;			\
+void **offsets;						                \
+MPIDI_CH3I_Shmem_block_request_result *locks;				\
+int pt_rma_excl_lock;					                \
+MPIDI_CH3I_Shmem_block_request_result *pscw_shm_structs;		\
+MPID_Group *access_epoch_grp_ptr;					\
+int *access_epoch_grp_ranks_in_win;					\
+MPID_Group *exposure_epoch_grp_ptr;					\
 int *exposure_epoch_grp_ranks_in_win;
 
 /*

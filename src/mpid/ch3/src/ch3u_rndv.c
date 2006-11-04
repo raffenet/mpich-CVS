@@ -56,7 +56,6 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 	MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"  contiguous rndv data, data_sz="
 		       MPIDI_MSG_SZ_FMT, data_sz);
 		
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	sreq->dev.OnDataAvail = 0;
 	
 	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char*)sreq->dev.user_buf + dt_true_lb);
@@ -268,7 +267,6 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		    "sending contiguous rndv data, data_sz=" MPIDI_MSG_SZ_FMT, 
 					    data_sz));
 	
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
 	sreq->dev.OnDataAvail = 0;
 	
 	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);

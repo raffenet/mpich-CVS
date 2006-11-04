@@ -34,7 +34,8 @@
 #define FUNCNAME MPIDI_CH3_iSendv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, 
+		     int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
@@ -56,31 +57,36 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
     }
 #endif
 
-    /* The mm channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The ssm channel uses a fixed length header, the size of which is the 
+       maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
 
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
-	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
+	/* Connection already formed.  If send queue is empty attempt to send 
+	   data, queuing any unsent data. */
 	if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
 	{
 	    int nb;
-	    MPIDU_Sock_size_t snb;
 
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue empty, attempting to write"));
 	    
-	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
+	    /* MT - need some signalling to lock down our right to use the 
+	       channel, thus insuring that the progress engine does
                also try to write */
 
-	    /* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
-               as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
+	    /* FIXME: the current code only agressively writes the first IOV. 
+	       Eventually it should be changed to agressively write
+               as much as possible.  Ideally, the code would be shared between 
+	       the send routines and the progress engine. */
 	    if (vc->ch.bShm)
 	    {
 		mpi_errno = MPIDI_CH3I_SHM_writev(vc, iov, n_iov, &nb);
 	    }
 	    else
 	    {
+		MPIDU_Sock_size_t snb;
 		mpi_errno = MPIDU_Sock_writev(vc->ch.sock, iov, n_iov, &snb);
 		nb = snb;
 	    }
@@ -127,7 +133,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		if (offset == n_iov)
 		{
 		    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete, calling MPIDI_CH3U_Handle_send_req()"));
+		    MPIDI_DBG_PRINTF((55, FCNAME, "write complete"));
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
 			MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
@@ -184,10 +190,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	update_request(sreq, iov, n_iov, 0, 0);
 	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	}
+	if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {

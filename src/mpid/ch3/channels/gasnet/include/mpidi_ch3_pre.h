@@ -49,12 +49,6 @@ typedef struct MPIDI_CH3I_VC
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC gasnet;
 
 
-/*
- * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
- */
-#define MPIDI_CH3_CA_ENUM			\
-MPIDI_CH3I_CA_END_GASNET_CHANNEL
-
 typedef enum MPIDI_CH3I_RNDV_state
 {
     MPIDI_CH3_RNDV_NEW,
@@ -84,26 +78,26 @@ struct MPIDI_CH3I_Request						\
 } gasnet;
 
 #if 0
-#define DUMP_REQUEST(req) do {							\
-    int i;									\
-    MPIDI_DBG_PRINTF((55, FCNAME, "request %p\n", (req)));			\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  handle = %d\n", (req)->handle));		\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  ref_count = %d\n", (req)->ref_count));	\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  cc = %d\n", (req)->cc));			\
-    for (i = 0; i < (req)->iov_count; ++i)					\
-        MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov[%d] = (%p, %d)\n", i,		\
-                (req)->dev.iov[i].MPID_IOV_BUF,					\
-                (req)->dev.iov[i].MPID_IOV_LEN));				\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov_count = %d\n",			\
-			 (req)->dev.iov_count));				\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.ca = %d\n", (req)->dev.ca));		\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.state = 0x%x\n", (req)->dev.state));	\
-    MPIDI_DBG_PRINTF((55, FCNAME, "    type = %d\n",				\
-		      MPIDI_Request_get_type(req)));				\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  gasnet.rndv_state = %d\n",			\
-		      (req)->gasnet.rndv_state));				\
-    MPIDI_DBG_PRINTF((55, FCNAME, "  gasnet.remote_req_id = %d\n",		\
-		      (req)->gasnet.remote_req_id));				\
+#define DUMP_REQUEST(req) do {						\
+    int i;								\
+    MPIDI_DBG_PRINTF((55, FCNAME, "request %p\n", (req)));		\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  handle = %d\n", (req)->handle));	\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  ref_count = %d\n", (req)->ref_count));\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  cc = %d\n", (req)->cc));		\
+    for (i = 0; i < (req)->iov_count; ++i)				\
+        MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov[%d] = (%p, %d)\n", i,	\
+                (req)->dev.iov[i].MPID_IOV_BUF,				\
+                (req)->dev.iov[i].MPID_IOV_LEN));			\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov_count = %d\n",		\
+			 (req)->dev.iov_count));			\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.ca = %d\n", (req)->dev.ca));	\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.state = 0x%x\n", (req)->dev.state));\
+    MPIDI_DBG_PRINTF((55, FCNAME, "    type = %d\n",			\
+		      MPIDI_Request_get_type(req)));			\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  gasnet.rndv_state = %d\n",		\
+		      (req)->gasnet.rndv_state));			\
+    MPIDI_DBG_PRINTF((55, FCNAME, "  gasnet.remote_req_id = %d\n",	\
+		      (req)->gasnet.remote_req_id));			\
 } while (0)
 #else
 #define DUMP_REQUEST(req) do { } while (0)

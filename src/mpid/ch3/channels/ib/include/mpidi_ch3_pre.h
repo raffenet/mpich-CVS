@@ -114,15 +114,6 @@ typedef struct MPIDI_CH3I_VC
 
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
 
-/*
- * MPIDI_CH3_CA_ENUM (additions to MPIDI_CA_t)
- *
- * MPIDI_CH3I_CA_HANDLE_PKT - The completion of a packet request (send or
- * receive) needs to be handled.
- */
-#define MPIDI_CH3_CA_ENUM			\
-MPIDI_CH3I_CA_HANDLE_PKT,			\
-MPIDI_CH3I_CA_END_IB,
 
 #define MPIDI_CH3I_RELOAD_SENDER   0x1
 #define MPIDI_CH3I_RELOAD_RECEIVER 0x2
