@@ -130,6 +130,7 @@ static int IOLabelWriteLine( int fd, int rdwr, void *data )
 
     MPIE_SYSCALL(n,read,( fd, buf, 1024 ));
     if (n == 0) {
+	/* If read blocks, then returning a 0 is end-of-file */
 	return 1;  /* ? EOF */
     }
 

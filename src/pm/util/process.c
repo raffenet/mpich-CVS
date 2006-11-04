@@ -888,11 +888,19 @@ int MPIE_ForwardSignal( int sig )
  * This routine contains the action to take on an abnormal exit from
  * a managed process.  The normal action is to kill all of the other processes 
  */
+static volatile int haveAbended = 0;     
 int MPIE_OnAbend( ProcessUniverse *p )
 {
     if (!p) p = &pUniv;
+    /* Remember that we've abended (this allows an easy check outside of the
+       signal handler that may invoke this) */
+    haveAbended = 1;
     MPIE_KillUniverse( p );
     return 0;
+}
+int MPIE_HasAbended( void )
+{
+    return haveAbended;
 }
 
 int MPIE_ForwardCommonSignals( void )

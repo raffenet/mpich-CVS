@@ -170,6 +170,7 @@ int MPIE_OnAbend( ProcessUniverse * );
 
 int MPIE_SetupSingleton( ProcessUniverse * );
 
+int MPIE_HasAbended(void);
 int MPIE_SignalWorld( ProcessWorld *, int );
 int MPIE_KillWorld( ProcessWorld * );
 int MPIE_KillUniverse( ProcessUniverse * );

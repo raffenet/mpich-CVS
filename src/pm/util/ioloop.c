@@ -138,8 +138,6 @@ int MPIE_IOLoop( int timeoutSeconds )
     fd_set readfds, writefds;
     int    (*handler)(int,int,void*);
     struct timeval tv;
-    int    activefds = 0;
-
 
     /* Loop on the fds, with the timeout */
     TimeoutInit( timeoutSeconds );
@@ -151,12 +149,10 @@ int MPIE_IOLoop( int timeoutSeconds )
 	FD_ZERO( &writefds );
 	/* maxfd is the maximum active fd */
 	maxfd = -1;
-	activefds = 0;
 	for (i=0; i<=maxFD; i++) {
 	    if (handlesByFD[i].handler) {
 		fd = handlesByFD[i].fd;
 		if (handlesByFD[i].rdwr & IO_READ) {
-		    activefds++;
 		    FD_SET( fd, &readfds );
 		    maxfd = i;
 		}
