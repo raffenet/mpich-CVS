@@ -81,7 +81,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 			 "send queue empty, attempting to write");
 	    
 	    MPIU_DBG_PKT(vc->ch.conn,hdr,"istartmsg");
-	    /* MT - need some signalling to lock down our right to use the 
+	    /* MT: need some signalling to lock down our right to use the 
 	       channel, thus insuring that the progress engine does
                not also try to write */
 	    rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb);

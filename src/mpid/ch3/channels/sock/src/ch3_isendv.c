@@ -10,7 +10,8 @@
 #define FUNCNAME update_request
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, int iov_offset, MPIU_Size_t nb)
+static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count,
+			   int iov_offset, MPIU_Size_t nb)
 {
     int i;
     MPIDI_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
@@ -27,7 +28,8 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt;
     }
-    sreq->dev.iov[iov_offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb);
+    sreq->dev.iov[iov_offset].MPID_IOV_BUF = 
+	(MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb );
     sreq->dev.iov[iov_offset].MPID_IOV_LEN -= nb;
     sreq->dev.iov_count = iov_count;
 
@@ -55,7 +57,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq,
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIU_DBG_STMT(CH3_CHANNEL,VERBOSE,
 	 MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF));
-
 
     if (vc->ch.state == MPIDI_CH3I_VC_STATE_CONNECTED) /* MT */
     {
