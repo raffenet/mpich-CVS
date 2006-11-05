@@ -262,16 +262,16 @@
     MPIU_ERR_SETANDSTMT(err,MPI_ERR_GROUP,goto fn_fail,"**groupnull");\
 }else { MPIR_ERRTEST_VALID_HANDLE(group,MPID_GROUP,err,MPI_ERR_GROUP,"**group");}
 
-#define MPIR_ERRTEST_COMM(comm_, err_)							\
-{											\
-    if ((comm_) == MPI_COMM_NULL)							\
-    {											\
-	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_COMM,;, "**commnull");			\
-    }											\
-    else										\
-    {											\
+#define MPIR_ERRTEST_COMM(comm_, err_)					\
+{									\
+    if ((comm_) == MPI_COMM_NULL)					\
+    {									\
+	MPIU_ERR_SETANDSTMT((err_), MPI_ERR_COMM,;, "**commnull");	\
+    }									\
+    else								\
+    {									\
 	MPIR_ERRTEST_VALID_HANDLE((comm_), MPID_COMM, (err_), MPI_ERR_COMM, "**comm");	\
-    }											\
+    }									\
 }
 
 #define MPIR_ERRTEST_WIN(win_, err_)					\
