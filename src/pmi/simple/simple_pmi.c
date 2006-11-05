@@ -1218,6 +1218,16 @@ static int PMII_Set_from_port( int fd, int id )
  *   stdio=[yes|no]
  *   kvsname=<string>
  *
+ * The client then issues the init command (see PMII_getmaxes)
+ *
+ * cmd=init pmi_version=<val> pmi_subversion=<val>
+ *
+ * and expects to receive a 
+ *
+ * cmd=response_to_init rc=0 pmi_version=<val> pmi_subversion=<val> 
+ *
+ * (This is the usual init sequence).
+ *
  */
 /* ------------------------------------------------------------------------- */
 /* This is a special routine used to re-initialize PMI when it is in 
