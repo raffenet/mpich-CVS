@@ -92,46 +92,6 @@ extern int g_nLockSpinCount;
 #error *** No yield function specified ***
 #endif
 
-#ifdef USE_SLEEP_YIELD
-/* Define MPIDU_Sleep_yield() */
-extern int MPIDI_Sleep_yield_count;
-extern int MPIDI_Sleep_yield_counts[10];
-static inline void MPIDU_Sleep_yield()
-{
-#ifdef HAVE_WIN32_SLEEP
-    Sleep(MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count]);
-#elif defined(HAVE_USLEEP)
-    usleep(MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count]);
-#elif defined(HAVE_SELECT)
-    struct timeval t;
-    t.tv_sec = 0;
-    t.tv_usec = MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count];
-    select(0,0,0,0,&t);
-#elif defined(HAVE_SLEEP)
-    sleep(MPIDI_Sleep_yield_counts[MPIDI_Sleep_yield_count]);
-#else
-#error *** No function available to implement sleep_yield ***
-#endif
-
-    if (MPIDI_Sleep_yield_count < 9)
-	MPIDI_Sleep_yield_count++;
-}
-#endif
-
-/*
-#ifdef HAVE_WIN32_SLEEP
-#define MPIDU_Sleep_yield() Sleep(200)
-#elif defined(HAVE_USLEEP)
-#define MPIDU_Sleep_yield() usleep(200000)
-#elif defined(HAVE_SELECT)
-#define MPIDU_Sleep_yield() { struct timeval t; t.tv_sec = 0; t.tv_usec = 200000; select(0,0,0,0,&t); }
-#elif defined(HAVE_SLEEP)
-#define MPIDU_Sleep_yield() sleep(1)
-#else
-#error *** No function available to implement sleep_yield ***
-#endif
-*/
-
 #if defined(HAVE_SPARC_INLINE_PROCESS_LOCKS)
 typedef int MPIDU_Process_lock_t;
 #error 'process locks are not supported for Solaris.  Developers should see req 2033'
