@@ -240,6 +240,17 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
 	    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 	}
+	else if (vc->state == MPIDI_VC_STATE_CLOSE_ACKED) {
+	    /* FIXME: This situation has been seen with the ssm device,
+	       when running on a single process.  It may indicate that the
+	       close protocol, for shared memory connections, can
+	       occasionally reach this state when both sides start
+	       closing the connection.  We will act as if this is
+	       duplicate information can be ignored (rather than triggering
+	       the Assert in the next case) */
+	    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,
+			 "Saw CLOSE_ACKED while already in that state");
+	}
 	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
 	{
 	    /* FIXME: Debugging */
@@ -247,7 +258,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		printf( "Unexpected state %d in vc %x\n", vc->state, (int)vc);
 		fflush(stdout);
 	    }
-	    /*	    MPIU_Assert(vc->state == MPIDI_VC_STATE_ACTIVE); */
+	    MPIU_Assert(vc->state == MPIDI_VC_STATE_ACTIVE);
 	    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
                      "received close(FALSE) from %d, moving to REMOTE_CLOSE.",
 				   vc->pg_rank);
