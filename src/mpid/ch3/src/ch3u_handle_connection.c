@@ -250,6 +250,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	       the Assert in the next case) */
 	    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,
 			 "Saw CLOSE_ACKED while already in that state");
+	    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
 	}
 	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
 	{
