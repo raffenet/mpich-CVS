@@ -251,6 +251,8 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,
 			 "Saw CLOSE_ACKED while already in that state");
 	    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
+	    /* We need this terminate to decrement the outstanding closes */
+	    mpi_errno = MPIDI_CH3_Connection_terminate(vc);
 	}
 	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
 	{
@@ -265,8 +267,6 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 				   vc->pg_rank);
 	    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_REMOTE_CLOSE);
 	    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
-	    /* We need this terminate to decrement the outstanding closes */
-	    mpi_errno = MPIDI_CH3_Connection_terminate(vc);
 	}
     }
     else
