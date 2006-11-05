@@ -57,7 +57,8 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 		    /* MPIU_Object_set_ref(vc, 0); ??? */
 
 		    /*
-		     * FIXME: The VC used in connect accept has a NULL process group
+		     * FIXME: The VC used in connect accept has a NULL 
+		     * process group
 		     */
 		    if (vc->pg != NULL && vc->ref_count == 0)
 		    { 
@@ -90,9 +91,11 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 
 		default:
 		{
-		    MPIU_DBG_MSG_D(CH3_CONNECT,TYPICAL,"Unhandled connection state %d when closing connection",vc->state);
+		    MPIU_DBG_MSG_D(CH3_CONNECT,TYPICAL,
+           "Unhandled connection state %d when closing connection",vc->state);
 		    mpi_errno = MPIR_Err_create_code(
-			MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|unhandled_connection_state",
+			MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, 
+                        MPI_ERR_INTERN, "**ch3|unhandled_connection_state",
 			"**ch3|unhandled_connection_state %p %d", vc, event);
 		    break;
 		}
@@ -148,7 +151,8 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
 		 * writing 
 		 * we need to initiate the close protocol on the read side 
 		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
-		 || ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected) );
+		 || ((vc->state == MPIDI_VC_STATE_INACTIVE) && 
+		     vc->ch.shm_read_connected) );
 #else
     MPIU_Assert( vc->state == MPIDI_VC_STATE_ACTIVE || 
 		 vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );
@@ -160,9 +164,9 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
     /* MT: this is not thread safe */
     MPIDI_Outstanding_close_ops += 1;
     MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
-				  "sending close(%s) on vc (pg=%p) %p to rank %d, ops = %d", 
-				  close_pkt->ack ? "TRUE" : "FALSE", vc->pg, vc, 
-				  rank, MPIDI_Outstanding_close_ops));
+		  "sending close(%s) on vc (pg=%p) %p to rank %d, ops = %d", 
+		  close_pkt->ack ? "TRUE" : "FALSE", vc->pg, vc, 
+		  rank, MPIDI_Outstanding_close_ops));
 		    
 
     /*
@@ -213,7 +217,8 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	
 	MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"sending close(TRUE) to %d",
 		       vc->pg_rank);
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), 
+					&resp_sreq);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 				"**ch3|send_close_ack");
@@ -230,14 +235,19 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
 	{
 	    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
-			   "received close(FALSE) from %d, moving to CLOSE_ACKED.",
-			   vc->pg_rank);
+		   "received close(FALSE) from %d, moving to CLOSE_ACKED.",
+		   vc->pg_rank);
 	    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
 	    vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 	}
 	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
 	{
-	    MPIU_Assert(vc->state == MPIDI_VC_STATE_ACTIVE);
+	    /* FIXME: Debugging */
+	    if (vc->state != MPIDI_VC_STATE_ACTIVE) {
+		printf( "Unexpected state %d in vc %x\n", vc->state, (int)vc);
+		fflush(stdout);
+	    }
+	    /*	    MPIU_Assert(vc->state == MPIDI_VC_STATE_ACTIVE); */
 	    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
                      "received close(FALSE) from %d, moving to REMOTE_CLOSE.",
 				   vc->pg_rank);
@@ -250,7 +260,8 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,
                        "received close(TRUE) from %d, moving to CLOSE_ACKED.", 
 			       vc->pg_rank);
-	MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
+	MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || 
+		     vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
 	MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
 	
 	vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
