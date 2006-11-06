@@ -592,7 +592,8 @@ static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
 	}
 
 	MPID_Progress_start(&progress_state);
-	MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Waiting for %d close operations",
+	MPIU_DBG_MSG_D(CH3_DISCONNECT,VERBOSE,
+		       "Waiting for %d close operations",
 		       nPending);
 	mpi_errno = MPID_Progress_wait(&progress_state);
 	/* --BEGIN ERROR HANDLING-- */

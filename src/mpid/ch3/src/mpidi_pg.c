@@ -996,7 +996,7 @@ int MPIDI_PG_Close_VCs( void )
     while (pg) {
 	int i, inuse;
 
-	MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Closing vcs for pg %s",
+	MPIU_DBG_MSG_S(CH3_DISCONNECT,VERBOSE,"Closing vcs for pg %s",
 		       (char *)pg->id );
 
 
@@ -1038,7 +1038,7 @@ int MPIDI_PG_Close_VCs( void )
                     MPIDI_PG_release_ref(pg, &inuse);
                 }
 
-		MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+		MPIU_DBG_MSG_FMT(CH3_DISCONNECT,VERBOSE,(MPIU_DBG_FDEST,
 		     "vc=%p: not sending a close to %d, vc in state %s", vc,i,
 		     MPIDI_VC_GetStateString(vc->state)));
 	    }
