@@ -56,13 +56,6 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 
 	first = 0;
 	last  = SEGMENT_IGNORE_LAST;
-	
-	MPID_Segment_count_contig_blocks(segp,
-					 first,
-					 &last,
-					 &count);
-
-	datatype_ptr->n_contig_blocks = count;
 
 	MPID_Segment_free(segp);
 

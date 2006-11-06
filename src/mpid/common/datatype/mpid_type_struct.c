@@ -259,6 +259,7 @@ int MPID_Type_struct(int count,
 	return mpi_errno;
     }
 
+    new_dtp->n_contig_blocks = 0;
     for (i=0; i < count; i++)
     {
 	int is_builtin =
@@ -290,6 +291,8 @@ int MPID_Type_struct(int count,
 	    tmp_true_ub = tmp_ub;
 
 	    size += tmp_el_sz * blocklength_array[i];
+
+	    new_dtp->n_contig_blocks++;
 	}
 	else
 	{
@@ -309,6 +312,8 @@ int MPID_Type_struct(int count,
 	    tmp_true_ub = tmp_ub + (old_dtp->true_ub - old_dtp->ub);
 
 	    size += old_dtp->size * blocklength_array[i];
+
+	    new_dtp->n_contig_blocks += old_dtp->n_contig_blocks;
 	}
 
 	/* element size and type */

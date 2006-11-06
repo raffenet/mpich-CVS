@@ -117,6 +117,8 @@ int MPID_Type_indexed(int count,
 	new_dtp->alignsize    = el_sz; /* ??? */
 	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
+
+	new_dtp->n_contig_blocks = count;
     }
     else
     {
@@ -140,6 +142,8 @@ int MPID_Type_indexed(int count,
 	new_dtp->has_sticky_ub = old_dtp->has_sticky_ub;
 	new_dtp->element_size  = el_sz;
 	new_dtp->eltype        = el_type;
+
+	new_dtp->n_contig_blocks = old_dtp->n_contig_blocks * count;
     }
 
 

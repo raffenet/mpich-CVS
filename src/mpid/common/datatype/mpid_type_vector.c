@@ -154,6 +154,8 @@ int MPID_Type_vector(int count,
 	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
 
+	new_dtp->n_contig_blocks = count;
+
 	eff_stride = (strideinbytes) ? stride : (stride * el_sz);
     }
     else /* user-defined base type (oldtype) */ {
@@ -179,6 +181,8 @@ int MPID_Type_vector(int count,
 	new_dtp->n_elements   = count * blocklength * old_dtp->n_elements;
 	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
+
+	new_dtp->n_contig_blocks = old_dtp->n_contig_blocks * count;
 
 	eff_stride = (strideinbytes) ? stride : (stride * old_dtp->extent);
 
