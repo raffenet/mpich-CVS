@@ -152,13 +152,13 @@ class MPDMan(object):
         self.default_kvsname = sub('\-','_',self.default_kvsname)  # chg node-0 to node_0
         self.KVSs[self.default_kvsname] = {}
         cli_env = {}
+        cli_env['MPICH_INTERFACE_HOSTNAME'] = os.environ['MPICH_INTERFACE_HOSTNAME']
+        cli_env['MPICH_INTERFACE_HOSTNAME_R%d' % self.myRank] = os.environ['MPICH_INTERFACE_HOSTNAME']
         for k in self.clientPgmEnv.keys():
             if k.startswith('MPI_APPNUM'):
                 self.appnum = self.clientPgmEnv[k]    # don't put in application env
             else:
                 cli_env[k] = self.clientPgmEnv[k]
-                if k == 'MPICH_INTERFACE_HOSTNAME':
-                    cli_env['MPICH_INTERFACE_HOSTNAME_R%d' % self.myRank] = cli_env[k]
         self.kvs_next_id = 1
         self.jobEndingEarly = 0
         self.pmiCollectiveJob = 0

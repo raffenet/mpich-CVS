@@ -1217,10 +1217,6 @@ class MPD(object):
         for ranks in envvars.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
-                if msg.has_key('MPICH_ifhn'):
-                    envvars[ranks]['MPICH_INTERFACE_HOSTNAME'] = msg['MPICH_ifhn']
-                else:
-                    envvars[ranks]['MPICH_INTERFACE_HOSTNAME'] = self.myIfhn
                 pgmEnvVars = dumps(envvars[ranks])
                 break
         limits = msg['limits']
@@ -1242,6 +1238,10 @@ class MPD(object):
                 pgmUmask = umasks[ranks]
                 break
         man_env = {}
+        if msg['ifhns'].has_key(currRank):
+            man_env['MPICH_INTERFACE_HOSTNAME'] = msg['ifhns'][currRank]
+        else:
+            man_env['MPICH_INTERFACE_HOSTNAME'] = self.myIfhn
         man_env.update(os.environ)    # may only want to mov non-MPD_ stuff
         man_env['MPDMAN_MYHOST'] = self.myHost
         man_env['MPDMAN_MYIFHN'] = self.myIfhn
