@@ -88,14 +88,15 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_BSEND         = 0x400,
 		      MPIU_DBG_OTHER         = 0x800,
 		      MPIU_DBG_CH3_CONNECT   = 0x1000,
-		      MPIU_DBG_CH3_PROGRESS  = 0x2000,
-		      MPIU_DBG_CH3_CHANNEL   = 0x4000,
-		      MPIU_DBG_CH3_OTHER     = 0x8000,
-		      MPIU_DBG_CH3           = 0xf000,   /* alias for all Ch3*/
-                      MPIU_DBG_NEM_SOCK_FUNC = 0x10000,
-                      MPIU_DBG_NEM_SOCK_DET  = 0x20000,
-		      MPIU_DBG_VC            = 0x40000,
-		      MPIU_DBG_REFCOUNT      = 0x80000,
+		      MPIU_DBG_CH3_DISCONNECT= 0x2000,
+		      MPIU_DBG_CH3_PROGRESS  = 0x4000,
+		      MPIU_DBG_CH3_CHANNEL   = 0x8000,
+		      MPIU_DBG_CH3_OTHER     = 0x10000,
+		      MPIU_DBG_CH3           = 0x1f000, /* alias for all Ch3*/
+                      MPIU_DBG_NEM_SOCK_FUNC = 0x20000,
+                      MPIU_DBG_NEM_SOCK_DET  = 0x40000,
+		      MPIU_DBG_VC            = 0x80000,
+		      MPIU_DBG_REFCOUNT      = 0x100000,
 		      MPIU_DBG_ALL           = (~0) };   /* alias for all */
 
 extern int MPIU_DBG_ActiveClasses;

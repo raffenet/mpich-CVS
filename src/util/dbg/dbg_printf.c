@@ -436,6 +436,7 @@ static const MPIU_DBG_ClassName MPIU_Classnames[] = {
     { MPIU_DBG_BSEND,         "BSEND",         "bsend" },
     { MPIU_DBG_OTHER,         "OTHER",         "other" },
     { MPIU_DBG_CH3_CONNECT,   "CH3_CONNECT",   "ch3_connect" },
+    { MPIU_DBG_CH3_DISCONNECT,"CH3_DISCONNECT","ch3_disconnect" },
     { MPIU_DBG_CH3_PROGRESS,  "CH3_PROGRESS",  "ch3_progress" },
     { MPIU_DBG_CH3_CHANNEL,   "CH3_CHANNEL",   "ch3_channel" },
     { MPIU_DBG_CH3_OTHER,     "CH3_OTHER",     "ch3_other" },
