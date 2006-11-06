@@ -218,7 +218,10 @@ man:
 	-@for cmd in ${PYTHON_SOURCE} ; do \
 	    currdir=`pwd` ; cd ${srcdir} &&  pydoc $$cmd | txt2man -t $$cmd -s 1 -v "mpd cmds" | awk ' !/Help on module/ { print } ' > $$currdir/$$cmd.1 ; \
 	done
-	# example:  nroff -man mpd.1 | less
+# (Note to makefile maintainers: not all make programs accept comments in
+# the commands for a target; all Makefile comments must begin in the first
+# column)
+# example:  nroff -man mpd.1 | less
 
 install-man:
 	-@for cmd in ${PYTHON_SOURCE} ; do \
