@@ -11,9 +11,8 @@
    a request.  Because it may be used to queue a partial packet, we include
    a "bytes-sent-so-far" (nb) parameter.
 */
-static int createAndEnqueueSend( MPIDI_VC_t *vc, void *pkt, 
-				 MPIDI_msg_sz_t pkt_sz, int nb,
-				 MPID_Request **sreq_ptr )
+static int createRequest( void *pkt, MPIDI_msg_sz_t pkt_sz, int nb,
+			  MPID_Request **sreq_ptr )
 {
     MPID_Request * sreq;
     int            mpi_errno = MPI_SUCCESS;
@@ -34,7 +33,6 @@ static int createAndEnqueueSend( MPIDI_VC_t *vc, void *pkt,
     sreq->ch.iov_offset   = 0;
     sreq->dev.OnDataAvail = 0;
     *sreq_ptr = sreq;
-    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
  fn_fail:
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_AND_ENQUEUE_REQUEST);
     return mpi_errno;
@@ -96,9 +94,9 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz,
 		else
 		{
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
-		    mpi_errno = createAndEnqueueSend( vc, pkt, pkt_sz, nb, 
-						      &sreq );
+		    mpi_errno = createRequest( pkt, pkt_sz, nb, &sreq );
 		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
 		    if (vc->ch.bShm) {
 			vc->ch.send_active = sreq;
 		    }
@@ -139,8 +137,9 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz,
 	else
 	{
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send in progress, request enqueued"));
-	    mpi_errno = createAndEnqueueSend( vc, pkt, pkt_sz, 0, &sreq );
+	    mpi_errno = createRequest( pkt, pkt_sz, 0, &sreq );
 	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	    MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	}
     }
     else if (vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
@@ -150,16 +149,18 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz,
 	/* Form a new connection */
 
 	/* queue the data so it can be sent after the connection is formed */
-	mpi_errno = createAndEnqueueSend( vc, pkt, pkt_sz, 0, &sreq );
+	mpi_errno = createRequest( pkt, pkt_sz, 0, &sreq );
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
 	MPIDI_CH3I_VC_post_connect(vc);
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
-	mpi_errno = createAndEnqueueSend( vc, pkt, pkt_sz, 0, &sreq );
+	mpi_errno = createRequest( pkt, pkt_sz, 0, &sreq );
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
     }
     else
     {
