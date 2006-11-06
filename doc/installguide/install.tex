@@ -42,18 +42,20 @@
     Mathematical, Information, and Computational Sciences Division
     subprogram of the Office of Advanced Scientific Computing Research,
     SciDAC Program, Office of Science, U.S. Department of Energy, under
-    Contract
-    W-31-109-ENG-38.}\\
-  Version 1.0.4\\
+    Contract DE-AC02-06CH11357.}\\
+  Version 1.0.5\\
   Mathematics and Computer Science Division\\
   Argonne National Laboratory}
 
 \author{William Gropp\\
 Ewing Lusk\\
 David Ashton\\
+Pavan Balaji\\
 Darius Buntinas\\
 Ralph Butler\\
 Anthony Chan\\
+Jayesh Krishna\\
+Guillaume Mercier\\
 Rob Ross\\
 Rajeev Thakur\\
 Brian Toonen}
@@ -165,7 +167,7 @@ If your tar doesn't accept the z option, use
 \end{verbatim}
 Let us assume that the directory where you do this is
 \texttt{/home/you/libraries}.  It will now contain a subdirectory named
-\texttt{mpich2-1.0.4}.
+\texttt{mpich2-1.0.5}.
 
 \item
 Choose an installation directory (the default is \texttt{/usr/local/bin)}:
@@ -185,7 +187,7 @@ that this also be separate from the source directory, so that the
 source directories remain
 clean and can be reused to build other copies on other machines.
 \begin{verbatim}
-    mkdir /tmp/you/mpich2-1.0.4
+    mkdir /tmp/you/mpich2-1.0.5
 \end{verbatim}
 
 \item
@@ -197,8 +199,8 @@ important options to consider.
 Configure MPICH2, specifying the installation directory, and running
 the \texttt{configure} script in the source directory:
 \begin{verbatim}
-    cd  /tmp/you/mpich2-1.0.4
-    /home/you/libraries/mpich2-1.0.4/configure \
+    cd  /tmp/you/mpich2-1.0.5
+    /home/you/libraries/mpich2-1.0.5/configure \
             -prefix=/home/you/mpich2-install |& tee configure.log
 \end{verbatim}
 where the \texttt{$\backslash$} means that this is really one line.  (On
@@ -379,7 +381,7 @@ started.  From each machine, after starting the mpd, you can do
 \end{verbatim}
 to see which machines are in the ring so far.  More details on
 \texttt{mpdboot} and other options for starting the mpd's are in
-\texttt{mpich2-1.0.4/src/pm/mpd/README}.
+\texttt{mpich2-1.0.5/src/pm/mpd/README}.
 
 In case of persistent difficulties getting the ring of mpd's up and
 running on the machines you want, please see Appendix~\ref{app:mpd}.
@@ -428,13 +430,13 @@ in the MPI-2 standard.
 
 % There are some examples in the install
 % directory, which you have already put in your path, as well as in
-% the directory \texttt{mpich2-1.0.4/examples}.  
+% the directory \texttt{mpich2-1.0.5/examples}.  
 % One of them is the classic \texttt{cpi}
 % example, which computes the value of $\pi$ by numerical integration in
 % parallel.   
 As part of the build process for MPICH2, a simple program to compute the value
 of $\pi$ by numerical integration is created in the
-\texttt{mpich2-1.0.4/examples} directory.  If the current directory is the top
+\texttt{mpich2-1.0.5/examples} directory.  If the current directory is the top
 level MPICH2 build directory, then you can run this program with
 \begin{verbatim}
     mpiexec -n 5 examples/cpi
@@ -647,7 +649,7 @@ The supported methods include:
 
 \begin{description}
 \item[ch3:sock]This is the default communication method.  It uses sockets for
-  all communications between processes.  As of MPICH2 version 1.0.4, it is the
+  all communications between processes.  As of MPICH2 version 1.0.5, it is the
   only communication method that enables \texttt{MPI\_THREAD\_MULTIPLE}.
 \item[ch3:ssm]This method uses sockets between nodes and shared memory within
 a node.
@@ -1106,7 +1108,7 @@ buffer, sending it as a contiguous buffer, and then unpacking it into the
 destination buffer.  An example of this from the MPI-1 standard illustrates
 the use of MPI datatypes to transpose a matrix ``on the fly,'' and one test in
 \texttt{test/mpi/perf} checks that the MPI implementation performs well in
-this case (MPICH2 1.0.4 does not pass this test; this problem will be fixed in
+this case (MPICH2 1.0.5 does not pass this test; this problem will be fixed in
 a subsequent release of MPICH2).
 
 \section{MPE}
@@ -1591,7 +1593,7 @@ To run some programs in parallel:
     n1 $  mpiexec -l -n 4 PATH_TO_MPICH2_EXAMPLES/cpi
 \end{verbatim}
 where \texttt{PATH\_TO\_MPICH2\_EXAMPLES} is the path to the
-\texttt{mpich2-1.0.4/examples} directory.
+\texttt{mpich2-1.0.5/examples} directory.
 
 To bring down the ring of mpds:
 \begin{verbatim}
