@@ -97,12 +97,14 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
     while (len)
     {
 	length = min(len, MPIDI_CH3I_PACKET_SIZE);
-	/*writeq->packet[index].offset = 0; the reader guarantees this is reset to zero */
+	/*writeq->packet[index].offset = 0; 
+	  the reader guarantees this is reset to zero */
 	writeq->packet[index].num_bytes = length;
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
 	memcpy(writeq->packet[index].data, buf, length);
 	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
-	MPIU_DBG_PRINTF(("shm_write: %d bytes in packet %d\n", writeq->packet[index].num_bytes, index));
+	MPIU_DBG_PRINTF(("shm_write: %d bytes in packet %d\n", 
+			 writeq->packet[index].num_bytes, index));
 	MPID_WRITE_BARRIER();
 	writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 	buf = (char *) buf + length;
@@ -129,7 +131,8 @@ int MPIDI_CH3I_SHM_write(MPIDI_VC_t * vc, void *buf, int len, int *num_bytes_ptr
 #define FUNCNAME MPIDI_CH3I_SHM_writev
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_ptr)
+int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, 
+			  int *num_bytes_ptr)
 {
 #ifdef MPICH_DBG_OUTPUT
     int mpi_errno;
@@ -157,7 +160,8 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 
     MPIU_DBG_PRINTF(("writing to write_shmq %p\n", writeq));
 #ifdef USE_IOV_LEN_2_SHORTCUT
-    if (n == 2 && (iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN) < MPIDI_CH3I_PACKET_SIZE)
+    if (n == 2 && (iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN) < 
+	MPIDI_CH3I_PACKET_SIZE)
     {
 	MPIDI_DBG_PRINTF((60, FCNAME, "writing %d bytes to write_shmq %08p packet[%d]", iov[0].MPID_IOV_LEN + iov[1].MPID_IOV_LEN, writeq, index));
 	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
@@ -249,7 +253,8 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 		    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 		}
 	    }
-	    dest_pos = (unsigned char *)(writeq->packet[index].data) + num_bytes;
+	    dest_pos = (unsigned char *)
+		(writeq->packet[index].data) + num_bytes;
 	    dest_avail = MPIDI_CH3I_PACKET_SIZE - num_bytes;
 	}
 	if (dest_avail == 0)
@@ -258,7 +263,8 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	    writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 	    index = writeq->tail_index = 
 		(writeq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	    MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
+	    MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", 
+			      writeq->tail_index));
 	    if (writeq->packet[index].avail == MPIDI_CH3I_PKT_FILLED)
 	    {
 		*num_bytes_ptr = total;
@@ -276,7 +282,8 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int *num_bytes_p
 	writeq->packet[index].avail = MPIDI_CH3I_PKT_FILLED;
 	writeq->tail_index = 
 	    (writeq->tail_index + 1) % MPIDI_CH3I_NUM_PACKETS;
-	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", writeq->tail_index));
+	MPIDI_DBG_PRINTF((60, FCNAME, "write_shmq tail = %d", 
+			  writeq->tail_index));
     }
 
     *num_bytes_ptr = total;
@@ -335,14 +342,17 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	recv_count = sreq->dev.rdma_iov_count;
 
 	/*
-	printf("shm_rdma: writing %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
+	printf("shm_rdma: writing %d send buffers into %d recv buffers.\n", 
+	send_count, recv_count);fflush(stdout);
 	for (i=0; i<send_count; i++)
 	{
-	    printf("shm_rdma: send buf[%d] = %p, len = %d\n", i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
+	    printf("shm_rdma: send buf[%d] = %p, len = %d\n", i, 
+	    send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
 	}
 	for (i=0; i<recv_count; i++)
 	{
-	    printf("shm_rdma: recv buf[%d] = %p, len = %d\n", i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
+	    printf("shm_rdma: recv buf[%d] = %p, len = %d\n", i,
+	    recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
 	}
 	fflush(stdout);
 	*/
@@ -356,9 +366,11 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	    while (sbuf_len)
 	    {
 		len = MPIDU_MIN(sbuf_len, rbuf_len);
-		/*printf("writing %d bytes to remote process.\n", len);fflush(stdout);*/
+		/*printf("writing %d bytes to remote process.\n", len);
+		  fflush(stdout);*/
 #ifdef HAVE_WINDOWS_H
-		if (!WriteProcessMemory(vc->ch.hSharedProcessHandle, rbuf, sbuf, len, &num_written))
+		if (!WriteProcessMemory(vc->ch.hSharedProcessHandle, rbuf, 
+					sbuf, len, &num_written))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "WriteProcessMemory failed", GetLastError());
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
@@ -373,10 +385,13 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 #else
 
 #ifdef HAVE_PROC_RDMA_WRITE
-		/* write is not implemented in the /proc device. It is considered a security hole.  You can recompile a Linux
-		 * kernel with this function enabled and then define HAVE_PROC_RDMA_WRITE and this code will work.
+		/* write is not implemented in the /proc device. It is 
+		 * considered a security hole.  You can recompile a Linux
+		 * kernel with this function enabled and then define 
+		 * HAVE_PROC_RDMA_WRITE and this code will work.
 		 */
-		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(rbuf), SEEK_SET);
+		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, 
+				OFF_T_CAST(rbuf), SEEK_SET);
 		if (uOffset != OFF_T_CAST(rbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
@@ -385,7 +400,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    return mpi_errno;
 		}
 
-		num_written = write(vc->ch.nSharedProcessFileDescriptor, sbuf, len);
+		num_written = write(vc->ch.nSharedProcessFileDescriptor, 
+				    sbuf, len);
 		if (num_written < 1)
 		{
 		    if (num_written == -1)
@@ -395,12 +411,15 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			return mpi_errno;
 		    }
-		    ptrace(PTRACE_PEEKDATA, vc->ch.nSharedProcessID, rbuf + len - num_written, 0);
+		    ptrace(PTRACE_PEEKDATA, vc->ch.nSharedProcessID, 
+			   rbuf + len - num_written, 0);
 		}
 #else
 # error 'Do not use this code'		
-		/* Do not use this code.  Using PTRACE_POKEDATA for rdma writes gives horrible performance.
-		 * This code is only provided for correctness to show that the put model will run.
+		/* Do not use this code.  Using PTRACE_POKEDATA for rdma 
+		 * writes gives horrible performance.
+		 * This code is only provided for correctness to show that the 
+		 * put model will run.
 		 */
 		do
                 {
@@ -408,7 +427,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    rbuf2 = (int*)rbuf;
 		    for (n=0; n<len/sizeof(int); n++)
 		    {
-			if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, rbuf2, &((int*)sbuf)[n]) != 0)
+			if (ptrace(PTRACE_POKEDATA, vc->ch.nSharedProcessID, 
+				   rbuf2, &((int*)sbuf)[n]) != 0)
 			{
 			    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ptrace pokedata failed", errno);
 			    /* printf("EPERM = %d, ESRCH = %d, EIO = %d, EFAULT = %d\n", EPERM, ESRCH, EIO, EFAULT);fflush(stdout); */
@@ -453,7 +473,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 #endif
 
 #endif
-		/*printf("wrote %d bytes to remote process\n", num_written);fflush(stdout);*/
+		/*printf("wrote %d bytes to remote process\n", num_written);
+		  fflush(stdout);*/
 		if (num_written < (SIZE_T)rbuf_len)
 		{
 		    rbuf = rbuf + num_written;
@@ -475,7 +496,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    if ( (i != (send_count - 1)) || (sbuf_len != 0) )
 		    {
 #ifndef HAVE_WINDOWS_H
-			mpi_errno = MPIDI_SHM_DetachProc( vc->ch.nSharedProcessID );
+			mpi_errno = MPIDI_SHM_DetachProc( 
+			    vc->ch.nSharedProcessID );
 			if (mpi_errno) {
 			    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
 			    return mpi_errno;
@@ -484,7 +506,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 			/* the recv iov needs to be reloaded */
 			if (sbuf_len != 0)
 			{
-			    sreq->dev.iov[i].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)sbuf;
+			    sreq->dev.iov[i].MPID_IOV_BUF = 
+				(MPID_IOV_BUF_CAST)sbuf;
 			    sreq->dev.iov[i].MPID_IOV_LEN = sbuf_len;
 			}
 			sreq->ch.iov_offset = i;
@@ -492,7 +515,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 			/* send the reload packet to the receiver */
 			MPIDI_Pkt_init(reload_pkt, MPIDI_CH3_PKT_RELOAD);
 			reload_pkt->send_recv = MPIDI_CH3_PKT_RELOAD_RECV;
-			mpi_errno = MPIDI_CH3_iStartMsg(vc, reload_pkt, sizeof(*reload_pkt), &reload_sreq);
+			mpi_errno = MPIDI_CH3_iStartMsg(
+			    vc, reload_pkt, sizeof(*reload_pkt), &reload_sreq);
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
 			{
@@ -524,7 +548,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	/* update the sender's request */
 	reqFn = sreq->dev.OnDataAvail;
 	if (!reqFn) {
-	    MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+	    MPIU_Assert(MPIDI_Request_get_type(sreq) != 
+			MPIDI_REQUEST_TYPE_GET_RESP);
 	    MPIDI_CH3U_Request_complete(sreq);
 	    complete = TRUE;
 	}
@@ -554,7 +579,8 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	    /* --END ERROR HANDLING-- */
 	    if (reload_sreq != NULL)
 	    {
-		/* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+		/* The sender doesn't need to know when the packet has 
+		   been sent.  So release the request immediately */
 		MPID_Request_release(reload_sreq);
 	    }
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
@@ -627,14 +653,17 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	siov_offset = rreq->dev.rdma_iov_offset;
 
 	/*
-	printf("shm_rdma: reading %d send buffers into %d recv buffers.\n", send_count, recv_count);fflush(stdout);
+	printf("shm_rdma: reading %d send buffers into %d recv buffers.\n", 
+	send_count, recv_count);fflush(stdout);
 	for (i=siov_offset; i<send_count; i++)
 	{
-	    printf("shm_rdma: send buf[%d] = %p, len = %d\n", i, send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
+	    printf("shm_rdma: send buf[%d] = %p, len = %d\n", i, 
+	    send_iov[i].MPID_IOV_BUF, send_iov[i].MPID_IOV_LEN);
 	}
 	for (i=0; i<recv_count; i++)
 	{
-	    printf("shm_rdma: recv buf[%d] = %p, len = %d\n", i, recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
+	    printf("shm_rdma: recv buf[%d] = %p, len = %d\n", i, 
+	    recv_iov[i].MPID_IOV_BUF, recv_iov[i].MPID_IOV_LEN);
 	}
 	fflush(stdout);
 	*/
@@ -651,20 +680,23 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 #ifdef HAVE_WINDOWS_H
 		if (!ReadProcessMemory(vc->ch.hSharedProcessHandle, sbuf, rbuf, len, &num_read))
 		{
-		    /*printf("ReadProcessMemory failed, error %d\n", GetLastError());*/
+		    /*printf("ReadProcessMemory failed, error %d\n", 
+		      GetLastError());*/
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "ReadProcessMemory failed", GetLastError());
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 		    return mpi_errno;
 		}
 		if (num_read == -1)
 		{
-		    /*printf("ReadProcessMemory read -1 bytes.\n");fflush(stdout);*/
+		    /*printf("ReadProcessMemory read -1 bytes.\n");
+		      fflush(stdout);*/
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s", "ReadProcessMemory returned -1 bytes written");
 		    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
 		    return mpi_errno;
 		}
 #else
-		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, OFF_T_CAST(sbuf), SEEK_SET);
+		uOffset = lseek(vc->ch.nSharedProcessFileDescriptor, 
+				OFF_T_CAST(sbuf), SEEK_SET);
 		if (uOffset != OFF_T_CAST(sbuf))
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %s %d", "lseek failed", errno);
@@ -741,7 +773,9 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 			/* --END ERROR HANDLING-- */
 			if (reload_rreq != NULL)
 			{
-			    /* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+			    /* The sender doesn't need to know when the packet 
+			       has been sent.  So release the request 
+			       immediately */
 			    MPID_Request_release(reload_rreq);
 			}
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
@@ -785,7 +819,8 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	    /* --END ERROR HANDLING-- */
 	    if (reload_rreq != NULL)
 	    {
-		/* The sender doesn't need to know when the packet has been sent.  So release the request immediately */
+		/* The sender doesn't need to know when the packet has been 
+		   sent.  So release the request immediately */
 		MPID_Request_release(reload_rreq);
 	    }
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
@@ -814,7 +849,9 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 #define FUNCNAME MPIDI_CH3I_SHM_read_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_VC_t **vc_pptr, int *num_bytes_ptr, shm_wait_t *shm_out)
+int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, 
+				 MPIDI_VC_t **vc_pptr, int *num_bytes_ptr, 
+				 shm_wait_t *shm_out)
 {
     int mpi_errno = MPI_SUCCESS;
     void *mem_ptr;
@@ -858,10 +895,12 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 	    index = shm_ptr->head_index;
 	    pkt_ptr = &shm_ptr->packet[index];
 
-	    /* if the packet at the head index is available, the queue is empty */
+	    /* if the packet at the head index is available, the queue is 
+	       empty */
 	    if (pkt_ptr->avail == MPIDI_CH3I_PKT_EMPTY)
 		continue;
-	    MPID_READ_BARRIER(); /* no loads after this line can occur before the avail flag has been read */
+	    MPID_READ_BARRIER(); /* no loads after this line can occur before 
+				    the avail flag has been read */
 
 	    working = TRUE;
 	    MPIU_DBG_PRINTF(("MPIDI_CH3I_SHM_read_progress: reading from queue %p\n", shm_ptr));
@@ -1311,7 +1350,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 			}
 
 			rreq = recv_vc_ptr->ch.recv_active;
-			/* free the request used to receive the rts packet and iov data */
+			/* free the request used to receive the rts packet 
+			   and iov data */
 			MPIU_Object_set_ref(rreq, 0);
 			MPIDI_CH3_Request_destroy(rreq);
 
@@ -1445,7 +1485,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout, MPIDI_
 #define FUNCNAME MPIDI_CH3I_SHM_post_read
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*rfn)(int, void*))
+int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, 
+			     int (*rfn)(int, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
 
@@ -1465,7 +1506,8 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, int (*rfn)(int,
 #define FUNCNAME MPIDI_CH3I_SHM_post_readv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(int, void*))
+int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, 
+			      int (*rfn)(int, void*))
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 #ifdef USE_SHM_IOV_COPY
@@ -1498,7 +1540,8 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, int (*rfn)(i
 #endif
     vc->ch.read.total = 0;
 #ifdef USE_SHM_IOV_COPY
-    /* This isn't necessary if we require the iov to be valid for the duration of the operation */
+    /* This isn't necessary if we require the iov to be valid for the 
+       duration of the operation */
     MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
     memcpy(vc->ch.read.iov, iov, sizeof(MPID_IOV) * n);
     MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);

@@ -65,7 +65,8 @@ int MPIDU_CH3I_SetupListener( MPIDU_Sock_set_t sock_set )
 	return mpi_errno;
     }
 
-    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting listener connect state to CONN_STATE_LISTENING");
+    MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,
+		 "Setting listener connect state to CONN_STATE_LISTENING");
     MPIDI_CH3I_listener_conn->sock	  = NULL;
     MPIDI_CH3I_listener_conn->vc	  = NULL;
     MPIDI_CH3I_listener_conn->state	  = CONN_STATE_LISTENING;
