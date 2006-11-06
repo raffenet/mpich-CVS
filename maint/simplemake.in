@@ -591,6 +591,7 @@ sub ReadMfile {
         # Look for reserved forms:
         #lib([\w-]*)_SOURCES = names
         #lib([\w-]*)_DIR = name
+	#install_local_DIR = name(s)
         #SUBDIRS = names
         #DOC_SUBDIRS = names
 	#DOCDESTDIRS = kind:dir [, kind:dir ]*
@@ -674,6 +675,9 @@ sub ReadMfile {
 	    print "Setting libdir{$1} to $2/\n";
             $libdir{$1}  = "$2/";
         }
+	elsif (/^install_local_DIR\s*=\s*(.*)\s*$/) {
+	    $install_local_dirs = $1;
+	}
 	elsif (/^doc_([\w-]*)_SOURCES\s*=\s*(.*)\s*$/) {
 	    # Lowercase the type
 	    $docsrc{lc($1)} = $2;
@@ -1640,6 +1644,7 @@ sub ClearVars {
     @install_subdirs = ();
     %install_dirs = ();
     %optinstall_files = ();
+    $install_local_dirs = "";
     $gIssuedInstallLocal = 0;
     %external_libraries = ();
     $found_profilelib = 0;
@@ -3481,9 +3486,24 @@ sub TargetInstall {
 	#
 	# If there is an install-local target, invoke it here:
 	if (defined($usertargets{"install-local"}) && !$gIssuedInstallLocal) {
+	    if ($install_local_dirs ne "") {
+		foreach my $dir (split(/\s+/,$install_local_dirs)) {
+		    foreach $checkdir (split(/\s+/,$required_dirs{$dir})) {
+			if ($checkdir ne "" && !defined($dirschecked{$checkdir})) {
+			    $dirschecked{$checkdir} = 1;
+			    print FD "\tif [ ! -d \${DESTDIR}\${$checkdir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$checkdir} ; fi$newline";
+			}
+		    }
+		    if ($dir ne "" && !defined($dirschecked{$dir})) {
+			$dirschecked{$dir} = 1;
+			print FD "\tif [ ! -d \${DESTDIR}\${$dir} ] ; then \$(MKDIR_P) \${DESTDIR}\${$dir} ; fi$newline";
+		    }
+		}
+	    }
 	    print FD "\t\${MAKE} install-local$newline";
 	    $gIssuedInstallLocal = 1;
 	}
+
 	foreach $file (split(/\s+/,$install_files{$kind})) {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
