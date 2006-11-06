@@ -22,7 +22,7 @@
  * request.
  */
 
-/* NOTE - The completion action associated with a request created by CH3_iStartMsgv() is alway MPIDI_CH3_CA_COMPLETE.  This
+/* NOTE - The completion action associated with a request created by CH3_iStartMsgv() is alway null (onDataAvail = 0).  This
    implies that CH3_iStartMsgv() can only be used when the entire message can be described by a single iovec of size
    MPID_IOV_LIMIT. */
     
@@ -100,7 +100,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	    }
 	    sreq->ch.iov_offset = 0;
 	    sreq->dev.iov_count = remaining_n_iov;
-	    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	    sreq->dev.OnDataAvail = 0;
 	    sreq->ch.vc = vc;
 	    if ( iov == remaining_iov )
 	    {
@@ -137,7 +137,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 
 	sreq->ch.iov_offset = 0;
 	sreq->dev.iov_count = n_iov;
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.OnDataAvail = 0;
 	sreq->ch.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
     }

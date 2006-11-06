@@ -590,7 +590,7 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 
 		    if (dt_contig)
 		    {
-			sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+			sreq->dev.OnDataAvail = 0;
 			iov[1].MPID_IOV_BUF = (char *)sreq->dev.user_buf + dt_true_lb;
 			iov[1].MPID_IOV_LEN = data_sz;
 			iov_n = 2;
@@ -1145,7 +1145,7 @@ MPID_Request *  MPIDI_CH3_Progress_ipoke_with_matching (int source, int tag, MPI
 
 			    if (dt_contig)
 				{
-				    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+				    sreq->dev.OnDataAvail = 0;
 				    iov[1].MPID_IOV_BUF = (char *)sreq->dev.user_buf + dt_true_lb;
 				    iov[1].MPID_IOV_LEN = data_sz;
 				    iov_n = 2;

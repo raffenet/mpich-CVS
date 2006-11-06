@@ -84,7 +84,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	sreq->dev.iov_count = 1;
 	sreq->ch.iov_offset = 0;
 	sreq->ch.vc = vc;
-	sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
+	sreq->dev.OnDataAvail = 0;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
 	*sreq_ptr = sreq;
 	
