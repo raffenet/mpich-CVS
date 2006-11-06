@@ -552,10 +552,12 @@ if ($do_dependencies eq "static") {
 # =========================================================================
 # Read Makefile.sm
 sub ReadMfile {
-    $Mfile = $_[0];
+    my $Mfile = $_[0];
+    my $linecount = 0;
     open (MFILE,"<$Mfile" ) || die "Could not open $Mfile\n";
     &ClearVars;
     while (<MFILE>) {
+	$linecount++;
 	s/\r//g;              # Remove \r for DOS
 	$origline = $_;
 	# Remove trailing newline (we had trouble with chomp on DOS)
@@ -570,11 +572,21 @@ sub ReadMfile {
 	    }
 	    $nextline = <MFILE>;
 	    $nextline =~ s/\r//g; # Remove \r for DOS
+	    $linecount++;
 	    $origline .= $nextline;
 	    #chomp $nextline;
 	    $nextline =~ s/[\r\n]*$//; 
             $_ .= $nextline;
         }
+
+	# Check for portability problems
+	# Check for a blank line that starts with a tab
+	if (/^\t\s*$/) {
+	    print STDERR "File $curdir$Mfile contains a blank line beginning with a tab\nat line $linecount.  Some make programs will fail with a syntax error.\n";
+	}
+	if (/^\t#/) {
+	    print STDERR "File $curdir$Mfile contains a comment line beginning with a tab\nat line $linecount.  Some make programs will fail if this comment is part\nof a command script in a target\n";
+	}
 
         # Look for reserved forms:
         #lib([\w-]*)_SOURCES = names

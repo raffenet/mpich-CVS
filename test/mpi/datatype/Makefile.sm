@@ -88,7 +88,7 @@ sizedtypes_SOURCES = sizedtypes.c
 sizedtypes_LDADD = ../util/mtest.o
 
 contigstruct_SOURCES = contigstruct.c
-		 
+
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
 

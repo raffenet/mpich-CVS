@@ -94,7 +94,7 @@ mpifnoext.h: ../f77/mpif.h
 	rm -f mpifnoext.h
 	sed -e 's/^C/\!/g' -e '/EXTERNAL/d' \
 		-e '/DOUBLE PRECISION/d' ../f77/mpif.h > mpifnoext.h
-	
+
 # To ensure that f90 can be used before a make-install step, we copy
 # the library to the build directory (just like we do with the module files)
 all-postamble:

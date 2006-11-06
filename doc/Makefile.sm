@@ -6,7 +6,7 @@ DEVELOPER_SUBDIRS = pmi namepub
 userdocs:
 	for dir in $(DOC_SUBDIRS) ; do \
 	    (cd $$dir && $(MAKE) ) ; done
-	
+
 devdocs:
 	for dir in $(DEVELOPER_SUBDIRS) ; do \
 	    (cd $$dir && $(MAKE) ) ; done
