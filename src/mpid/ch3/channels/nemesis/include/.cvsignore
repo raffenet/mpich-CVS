@@ -6,6 +6,7 @@ config.log
 config.status
 config.system
 localdefs
+mpidi_ch3i_nemesis_conf.h
 *conf.h.in
 *.o
 *.lo

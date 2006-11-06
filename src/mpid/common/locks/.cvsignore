@@ -15,4 +15,5 @@ Makefile
 *.da
 *.gcov
 .deps
+.libstamp*
 .state-cache

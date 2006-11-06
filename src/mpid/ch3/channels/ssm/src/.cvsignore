@@ -9,4 +9,5 @@ Makefile.in
 *.gcda
 *.gcno
 .deps
+.libstamp*
 .state-cache

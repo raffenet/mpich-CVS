@@ -16,4 +16,5 @@ localdefs
 *Release*
 *.cache
 .deps
+.libstamp*
 .state-cache
