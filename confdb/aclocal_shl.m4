@@ -192,19 +192,9 @@ dnl Other, such as solaris-cc
     enable_sharedlibs=no
     ;;  
 esac
-# Not all systems use .so as the extension for shared libraries (cygwin
-# and OSX are two important examples).  If we did not set the SHLIB_EXT,
-# then try and determine it.  We need this to properly implement
-# clean steps that look for libfoo.$SHLIB_EXT .
-if test "$SHLIB_EXT" = "unknown" ; then
-    osname=`uname -s`
-    case $osname in 
-        *Darwin*|*darwin*) SHLIB_EXT=dylib
-        ;;	
-        *CYGWIN*|*cygwin*) SHLIB_EXT=dll
-        ;;
-   esac
-fi
+# Check for the shared-library extension
+PAC_CC_SHLIB_EXT
+dnl
 AC_SUBST(CC_SHL)
 AC_SUBST(C_LINK_SHL)
 AC_SUBST(C_LINKPATH_SHL)
@@ -280,4 +270,26 @@ AC_DEFUN(PAC_CC_SUBDIR_SHLIBS,[
 		AC_MSG_WARN([libtool selected for shared library support but LIBTOOL is not defined])
             fi
 	fi
+])
+dnl
+dnl
+dnl PAC_CC_SHLIB_EXT - get the extension for shared libraries
+dnl Set the variable SHLIB_EXT if it is other than unknown.
+dnl
+AC_DEFUN([PAC_CC_SHLIB_EXT],[
+# Not all systems use .so as the extension for shared libraries (cygwin
+# and OSX are two important examples).  If we did not set the SHLIB_EXT,
+# then try and determine it.  We need this to properly implement
+# clean steps that look for libfoo.$SHLIB_EXT .
+if test "$SHLIB_EXT" = "unknown" ; then
+    osname=`uname -s`
+    case $osname in 
+        *Darwin*|*darwin*) SHLIB_EXT=dylib
+        ;;	
+        *CYGWIN*|*cygwin*) SHLIB_EXT=dll
+        ;;
+	*Linux*|*LINUX*|*SunOS*) SHLIB_EXT=so
+	;;
+   esac
+fi
 ])

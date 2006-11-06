@@ -2260,6 +2260,11 @@ if test "$enable_debuginfo" = "yes" ; then
         # Try to determine how to build the tv shared library
 	AC_MSG_CHECKING([for how to build shared library for debugger interface])
         PAC_CC_SHAREDLIBS(,CC_SHL_DBG,C_LINK_SHL_DBG)
+	PAC_CC_SHLIB_EXT
+	if test "$SHLIB_EXT" = "unknown" ; then
+	    # Guess that the extension is .so
+	    SHLIB_EXT=so
+	fi
 	if test "$CC_SHL_DBG" = true ; then
 	    AC_MSG_RESULT([none found])
             AC_MSG_WARN([Debugger support requires shared libraries])      
