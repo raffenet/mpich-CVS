@@ -141,7 +141,7 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version}/src/pm && rm -rf forker rmpd ompd )
 	( cd tmpdir/$(PACKAGE)-$(version)/src/pm/mpd && rm -f Zeroconf.py)
 	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels && rm -rf ib rdma gasnet)
-	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels/nemesis/nemesis/net_mod && rm -rf elan_module newtcp_module )
+	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels/nemesis/nemesis/net_mod && rm -rf elan_module newtcp_module sctp )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && rm -rf archive )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
