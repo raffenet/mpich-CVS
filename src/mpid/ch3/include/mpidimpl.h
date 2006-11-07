@@ -1445,6 +1445,7 @@ int MPIDI_CH3_RecvRndv( MPIDI_VC_t *, MPID_Request * );
 
 /* Handler routines to continuing after an IOV is processed (assigned to the
    OnDataAvail field in the device part of a request) */
+int MPIDI_CH3_ReqHandler_RecvComplete( MPIDI_VC_t *, MPID_Request *, int * );
 int MPIDI_CH3_ReqHandler_UnpackUEBufComplete( MPIDI_VC_t *, MPID_Request *,
 					      int * );
 int MPIDI_CH3_ReqHandler_ReloadIOV( MPIDI_VC_t *, MPID_Request *, int * );
