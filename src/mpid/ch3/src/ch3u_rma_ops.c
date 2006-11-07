@@ -15,8 +15,9 @@
 #define FUNCNAME MPIDI_Win_create
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info, 
-                    MPID_Comm *comm_ptr, MPID_Win **win_ptr, MPIDI_RMAFns *RMAFns)
+int MPIDI_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
+		     MPID_Comm *comm_ptr, MPID_Win **win_ptr, 
+		     MPIDI_RMAFns *RMAFns)
 {
     int mpi_errno=MPI_SUCCESS, i, comm_size, rank;
     MPI_Aint *tmp_buf;
@@ -61,21 +62,24 @@ int MPIDI_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     
     /* allocate memory for the base addresses, disp_units, and
        completion counters of all processes */ 
-    MPIU_CHKPMEM_MALLOC((*win_ptr)->base_addrs, void **, comm_size*sizeof(void *), 
+    MPIU_CHKPMEM_MALLOC((*win_ptr)->base_addrs, void **,
+			comm_size*sizeof(void *), 
 			mpi_errno, "(*win_ptr)->base_addrs");
 
     MPIU_CHKPMEM_MALLOC((*win_ptr)->disp_units, int *, comm_size*sizeof(int), 
 			mpi_errno, "(*win_ptr)->disp_units");
 
-    MPIU_CHKPMEM_MALLOC((*win_ptr)->all_win_handles, MPI_Win *, comm_size*sizeof(MPI_Win), 
+    MPIU_CHKPMEM_MALLOC((*win_ptr)->all_win_handles, MPI_Win *, 
+			comm_size*sizeof(MPI_Win), 
 			mpi_errno, "(*win_ptr)->all_win_handles");
     
-    MPIU_CHKPMEM_MALLOC((*win_ptr)->pt_rma_puts_accs, int *, comm_size*sizeof(int), 
+    MPIU_CHKPMEM_MALLOC((*win_ptr)->pt_rma_puts_accs, int *, 
+			comm_size*sizeof(int), 
 			mpi_errno, "(*win_ptr)->pt_rma_puts_accs");
     for (i=0; i<comm_size; i++)	(*win_ptr)->pt_rma_puts_accs[i] = 0;
     
-    /* get the addresses of the windows, window objects, and completion counters
-       of all processes.  allocate temp. buffer for communication */
+    /* get the addresses of the windows, window objects, and completion
+       counters of all processes.  allocate temp. buffer for communication */
     MPIU_CHKLMEM_MALLOC(tmp_buf, MPI_Aint *, 3*comm_size*sizeof(MPI_Aint),
 			mpi_errno, "tmp_buf");
     
@@ -119,8 +123,8 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
 {
     int mpi_errno=MPI_SUCCESS, total_pt_rma_puts_accs, i, *recvcnts, comm_size;
     MPID_Comm *comm_ptr;
-    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(1);
+    MPIU_THREADPRIV_DECL;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_FREE);
         
@@ -134,7 +138,8 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
     MPID_Comm_get_ptr( (*win_ptr)->comm, comm_ptr );
     comm_size = comm_ptr->local_size;
         
-    MPIU_CHKLMEM_MALLOC(recvcnts, int *, comm_size*sizeof(int), mpi_errno, "recvcnts");
+    MPIU_CHKLMEM_MALLOC(recvcnts, int *, comm_size*sizeof(int), mpi_errno, 
+			"recvcnts");
     for (i=0; i<comm_size; i++)  recvcnts[i] = 1;
         
     mpi_errno = NMPI_Reduce_scatter((*win_ptr)->pt_rma_puts_accs, 
@@ -201,8 +206,8 @@ int MPIDI_Put(void *origin_addr, int origin_count, MPI_Datatype
     MPID_Datatype *dtp;
     MPI_Aint dt_true_lb;
     MPIDI_msg_sz_t data_sz;
-    MPIU_THREADPRIV_DECL;
     MPIU_CHKPMEM_DECL(1);
+    MPIU_THREADPRIV_DECL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PUT);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_PUT);
@@ -243,7 +248,8 @@ int MPIDI_Put(void *origin_addr, int origin_count, MPI_Datatype
 	    curr_ptr = curr_ptr->next;
 	}
 	
-	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), mpi_errno, "RMA operation entry");
+	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), 
+			    mpi_errno, "RMA operation entry");
 	if (prev_ptr != NULL)
 	    prev_ptr->next = new_ptr;
 	else 
@@ -302,8 +308,8 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
     MPI_Aint dt_true_lb;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
-    MPIU_THREADPRIV_DECL;
     MPIU_CHKPMEM_DECL(1);
+    MPIU_THREADPRIV_DECL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_GET);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_GET);
@@ -343,7 +349,8 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
 	    curr_ptr = curr_ptr->next;
 	}
 	
-	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), mpi_errno, "RMA operation entry");
+	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), 
+			    mpi_errno, "RMA operation entry");
 	if (prev_ptr != NULL)
 	{
 	    prev_ptr->next = new_ptr;
@@ -408,9 +415,9 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
     MPI_Aint dt_true_lb;
     MPIDI_RMA_ops *curr_ptr, *prev_ptr, *new_ptr;
     MPID_Datatype *dtp;
-    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
     MPIU_CHKPMEM_DECL(1);
+    MPIU_THREADPRIV_DECL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_ACCUMULATE);
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_ACCUMULATE);
@@ -443,13 +450,15 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	
 	if (op == MPI_REPLACE)
 	{
-	    mpi_errno = MPIR_Localcopy(origin_addr, origin_count, origin_datatype,
-				       (char *) win_ptr->base + win_ptr->disp_unit *
-				       target_disp, target_count, target_datatype); 
+	    mpi_errno = MPIR_Localcopy(origin_addr, origin_count, 
+				origin_datatype,
+				(char *) win_ptr->base + win_ptr->disp_unit *
+				target_disp, target_count, target_datatype); 
 	    goto fn_exit;
 	}
 	
-	MPIU_ERR_CHKANDJUMP1((HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN), mpi_errno, MPI_ERR_OP, "**opnotpredefined",
+	MPIU_ERR_CHKANDJUMP1((HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN), 
+			     mpi_errno, MPI_ERR_OP, "**opnotpredefined",
 			     "**opnotpredefined %d", op );
 	
 	/* get the function by indexing into the op table */
@@ -481,12 +490,13 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 		
 		mpi_errno = NMPI_Type_get_true_extent(target_datatype, 
 						      &true_lb, &true_extent);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 		
 		MPID_Datatype_get_extent_macro(target_datatype, extent); 
 		
-		MPIU_CHKLMEM_MALLOC(tmp_buf, void *, target_count * (MPIR_MAX(extent,true_extent)), mpi_errno,
-				    "temporary buffer");
+		MPIU_CHKLMEM_MALLOC(tmp_buf, void *, 
+			target_count * (MPIR_MAX(extent,true_extent)), 
+			mpi_errno, "temporary buffer");
 		/* adjust for potential negative lower bound in datatype */
 		tmp_buf = (void *)((char*)tmp_buf - true_lb);
 		
@@ -505,12 +515,15 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	    MPID_Datatype_get_ptr(target_datatype, dtp);
 	    vec_len = dtp->n_contig_blocks * target_count + 1; 
 	    /* +1 needed because Rob says so */
-	    MPIU_CHKLMEM_MALLOC(dloop_vec, DLOOP_VECTOR *, vec_len * sizeof(DLOOP_VECTOR), mpi_errno, "dloop vector");
+	    MPIU_CHKLMEM_MALLOC(dloop_vec, DLOOP_VECTOR *, 
+				vec_len * sizeof(DLOOP_VECTOR), 
+				mpi_errno, "dloop vector");
 	    
 	    MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
 	    
 	    source_buf = (tmp_buf != NULL) ? tmp_buf : origin_addr;
-	    target_buf = (char *) win_ptr->base + win_ptr->disp_unit * target_disp;
+	    target_buf = (char *) win_ptr->base + 
+		win_ptr->disp_unit * target_disp;
 	    type = dtp->eltype;
 	    type_size = MPID_Datatype_get_basic_size(type);
 	    for (i=0; i<vec_len; i++)
@@ -535,7 +548,8 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 	    curr_ptr = curr_ptr->next;
 	}
 	
-	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), mpi_errno, "RMA operation entry");
+	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), 
+			    mpi_errno, "RMA operation entry");
 	if (prev_ptr != NULL)
 	{
 	    prev_ptr->next = new_ptr;
