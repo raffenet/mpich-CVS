@@ -42,7 +42,6 @@
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->ch.iov_offset = offset; \
     sreq->dev.iov_count = count; \
-    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE; \
     sreq->dev.OnDataAvail = 0;\
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
 }
@@ -63,7 +62,7 @@
    memory for a request.  This seems like a flaw in the CH3 API. */
 
 /* NOTE - The completion action associated with a request created by
-   CH3_iStartMsgv() is alway MPIDI_CH3_CA_COMPLETE.  This implies that
+   CH3_iStartMsgv() always has OnDataAvail == 0.  This implies that
    CH3_iStartMsgv() can only be used when the entire message can be described
    by a single iovec of size MPID_IOV_LIMIT. */
     
@@ -71,7 +70,8 @@
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Request **sreq_ptr)
+int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, 
+			 MPID_Request **sreq_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;

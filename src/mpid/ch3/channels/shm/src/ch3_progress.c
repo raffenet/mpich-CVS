@@ -74,7 +74,6 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
     vc->ch.req->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t); \
     vc->ch.req->dev.iov_count = 1; \
     vc->ch.req->ch.iov_offset = 0; \
-    vc->ch.req->dev.ca = MPIDI_CH3I_CA_HANDLE_PKT; \
     vc->ch.req->dev.OnDataAvail = MPIDI_CH3_SHM_ReqHandler_PktComplete;
     vc->ch.recv_active = vc->ch.req; \
     MPIDI_CH3I_SHM_post_read(vc, &vc->ch.req->ch.pkt, sizeof(MPIDI_CH3_Pkt_t), NULL); \
