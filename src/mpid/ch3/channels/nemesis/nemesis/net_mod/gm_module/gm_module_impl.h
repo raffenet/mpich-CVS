@@ -9,7 +9,6 @@
 #include <gm.h>
 #include "mpid_nem_impl.h"
 #include "gm_module.h"
-#include <linux/types.h>
 
 #define UNIQUE_ID_LEN 6 /* why doesn't GM define this? */
 

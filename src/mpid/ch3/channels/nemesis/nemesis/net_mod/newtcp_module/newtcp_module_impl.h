@@ -9,7 +9,6 @@
 
 #include "mpid_nem_impl.h"
 #include "newtcp_module.h"
-#include <linux/types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

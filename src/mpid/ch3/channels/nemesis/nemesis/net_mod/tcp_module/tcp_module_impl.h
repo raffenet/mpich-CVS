@@ -8,7 +8,6 @@
 #define TCP_MODULE_IMPL_H
 #include "mpid_nem_impl.h"
 #include "tcp_module.h"
-#include <linux/types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

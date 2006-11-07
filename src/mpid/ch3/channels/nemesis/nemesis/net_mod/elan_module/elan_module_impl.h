@@ -9,7 +9,6 @@
 
 #include <elan.h>
 #include "mpid_nem_impl.h"
-#include <linux/types.h>
 
 #define MPID_NEM_ELAN_SLOT_SIZE     MPID_NEM_CELL_PAYLOAD_LEN
 #define MPID_NEM_ELAN_NUM_SLOTS     MPID_NEM_NUM_CELLS

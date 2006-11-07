@@ -10,8 +10,6 @@
 #include "sctp_module.h"
 #include "all_hash.h"
 #include "sctp_module_queue.h"
-/* #include <linux/types.h> */ /* not needed for SCTP */
-/* #include <sys/types.h>  */ /* not needed for SCTP */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/sctp.h>

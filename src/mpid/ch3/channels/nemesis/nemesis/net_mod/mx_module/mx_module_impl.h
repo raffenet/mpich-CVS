@@ -8,7 +8,6 @@
 #define MX_MODULE_IMPL_H
 #include <myriexpress.h>
 #include "mpid_nem_impl.h"
-#include <linux/types.h>
 
 #define MPID_NEM_CELL_LEN_MX          (32*1024)
 #define MPID_NEM_CELL_PAYLOAD_LEN_MX  (MPID_NEM_CELL_LEN_MX - sizeof(void *))
