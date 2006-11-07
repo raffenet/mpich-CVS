@@ -22,10 +22,10 @@
 @*/
 int MPID_Type_commit(MPI_Datatype *datatype_p)
 {
-    int count, mpi_errno=MPI_SUCCESS;
-    MPI_Aint first, last;
+    int           mpi_errno=MPI_SUCCESS;
+    MPI_Aint      first, last;
     MPID_Datatype *datatype_ptr;
-    MPID_Segment *segp;
+    MPID_Segment  *segp;
 
     MPIU_Assert(HANDLE_GET_KIND(*datatype_p) != HANDLE_KIND_BUILTIN);
 
