@@ -1,4 +1,20 @@
 ===============================================================================
+			       Changes in 1.0.5
+===============================================================================
+
+- An SCTP channel has been added to the CH3 device. This was
+implemented by Brad Penoff, Univ. of British Columbia.
+
+- Bugs related to dynamic processes have been fixed.
+
+- Performance-related fixes have been added to derived datatypes and
+collective communication.
+
+- Many other bug fixes and code cleanup.  A full list of changes is available 
+  at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_5changes.htm . 
+
+
+===============================================================================
 			       Changes in 1.0.4
 ===============================================================================
 
