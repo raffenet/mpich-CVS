@@ -73,11 +73,12 @@ PMPI_LOCAL void MPIR_Call_finalize_callbacks( int min_prio, int max_prio )
     int i, j;
     for (j=fstack_max_priority; j>=min_prio; j--) {
 	for (i=fstack_sp-1; i>=0; i--) {
-	    if (fstack[i].f && fstack[i].priority == j) 
+	    if (fstack[i].f && fstack[i].priority == j) {
 		fstack[i].f( fstack[i].extra_data );
+		fstack[i].f = 0;
+	    }
 	}
     }
-    fstack_sp = 0;
 }
 #else
 #ifndef USE_WEAK_SYMBOLS
