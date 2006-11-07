@@ -9,7 +9,7 @@
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
-- The sock and ssm channels are the only channels that implements dynamic 
+- The sock and ssm channels are the only channels that implement dynamic 
   process support (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, 
   etc.) under Unix.  All other channels will experience failures for tests 
   exercising dynamic process functionality.  Under Windows, the sock, ssm, 
@@ -72,6 +72,18 @@
   of changes relatively small; only in a few places in the ADI3 code 
   (primarily the MPID_Recv, MPID_Irecv, and persisistent receive request
   routines) are changes needed.  
+
+- To enable the use of singleton init with more than one process, e.g., 
+  to allow starting two processes as singletons and then have them connect
+  using MPI_Comm_connect/MPI_Comm_accept, it was necessary to change the part
+  of the PMI wire prototcol that implemented the singleton init actions.
+  The "gforker" process manager is the only process manager that supports
+  singleton init in the 1.0.5 release.  We plan to extend support to the
+  mpd process manager in a subsequent release.
+
+- There are significant changes to the ch3 code base.  We expect further
+  changes in the next release, particularly to reduce latency and 
+  eliminate "copy and paste" code, in order to ease maintenance and tuning.
 
 -------------------------------------------------------------------------------
                         Issues From Previous Releases (1.0.4)
