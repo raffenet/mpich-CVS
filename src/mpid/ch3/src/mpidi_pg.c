@@ -261,7 +261,9 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 	    /*
 	    for (i=0; i<pg->size; i++)
 	    {
-		printf("[%s%d]freeing vc%d - %p (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, i, &pg->vct[i], pg->id);fflush(stdout);
+		printf("[%s%d]freeing vc%d - %p (%s)\n", MPIU_DBG_parent_str, 
+		MPIR_Process.comm_world->rank, i, &pg->vct[i], pg->id);
+		fflush(stdout);
 	    }
 	    */
 	    if (verbose) {
@@ -270,6 +272,9 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 	    }
 	    MPIDI_PG_Destroy_fn(pg);
 	    MPIU_Free(pg->vct);
+	    if (pg->connData) {
+		MPIU_Free(pg->connData);
+	    }
 	    MPIU_Free(pg);
 
 	    goto fn_exit;
