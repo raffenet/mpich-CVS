@@ -103,7 +103,7 @@ AC_SUBST(MPILIBNAME)
 
 AC_CHECK_HEADERS( sys/types.h sys/wait.h signal.h unistd.h stdlib.h errno.h stdarg.h pthread.h sys/socket.h sys/stat.h ctype.h )
 AC_CHECK_HEADERS( math.h stdio.h termios.h string.h sys/stat.h malloc.h uuid/uuid.h )
-AC_CHECK_HEADERS( md5.h openssl/md5.h )
+AC_CHECK_HEADERS( stddef.h md5.h openssl/md5.h )
 AC_CHECK_FUNCS( sigaction usleep CFUUIDCreate uuid_generate setenv md5_calc )
 AC_SEARCH_LIBS( uuid_generate, uuid )
 AC_MSG_CHECKING([for poll stdin capability])
@@ -158,6 +158,9 @@ AC_CHECK_FUNCS(MD5)
 AC_SEARCH_LIBS( md5_calc, md5 )
 AC_MSG_CHECKING([for md5_calc function])
 AC_TRY_COMPILE([
+#ifdef HAVE_STDDEF_H
+ #include <stddef.h>
+#endif
 #include <md5.h>
 ],[unsigned char hash[16];
 unsigned char c='a';
