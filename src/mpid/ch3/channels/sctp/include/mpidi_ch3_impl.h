@@ -17,12 +17,7 @@
 #define MAXHOSTNAMELEN 256
 #endif
 
-/* myct: MODULE DEF */
-#define SCTP
-
 typedef int (* MPIDU_Sock_progress_update_func_t)(MPIU_Size_t num_bytes, void * user_ptr);
-
-typedef struct sctp_sndrcvinfo sctp_rcvinfo;
 
 typedef struct MPIDU_Sock_ifaddr_t {
     int len, type;
@@ -32,42 +27,40 @@ typedef struct MPIDU_Sock_ifaddr_t {
 #define MPIDU_SOCK_ERR_NOMEM -1
 #define MPIDU_SOCK_ERR_TIMEOUT -2
 
-/* myct: hash table entry */
+/*  hash table entry */
 typedef struct hash_entry
 {
     sctp_assoc_t assoc_id;
     MPIDI_VC_t * vc;
 } MPIDI_CH3I_Hash_entry;
 
-/* myct: global hash table */
-HASH* MPIDI_CH3I_assocID_table;
+/* global hash table */
+extern HASH* MPIDI_CH3I_assocID_table;
 
 /* one_to_many socket */
-int MPIDI_CH3I_onetomany_fd;
+extern int MPIDI_CH3I_onetomany_fd;
 
 /* number of items in the sendq's */
-int sendq_total;
+extern int sendq_total;
 
 extern int MPIDI_CH3I_listener_port;
 
 /* used for dynamic processes */
-MPIDI_VC_t * MPIDI_CH3I_dynamic_tmp_vc;
-int MPIDI_CH3I_dynamic_tmp_fd;
+extern MPIDI_VC_t * MPIDI_CH3I_dynamic_tmp_vc;
+extern int MPIDI_CH3I_dynamic_tmp_fd;
 
-
-/* myct: determine the stream # of a req */
-/* brad : want to avoid stream zero (since it's invalid in SCTP) as well as the highest
- *    stream number in case we ever want to have a control stream.
+/* determine the stream # of a req */
+/*  want to avoid stream zero so we can use it as a control stream.
  *    also, we want to use context so that collectives don't cause head-of-line blocking
  *    for p2p...
  */
 /*#define Req_Stream_from_match(match) (match.tag)%MPICH_SCTP_NUM_STREAMS*/
-/* brad: the following keeps stream s.t. 1 <= stream <= MPICH_SCTP_NUM_REQS_ACTIVE */
+/* the following keeps stream s.t. 1 <= stream <= MPICH_SCTP_NUM_REQS_ACTIVE */
 #define Req_Stream_from_match(match) (abs((match.tag) + (match.context_id))% MPICH_SCTP_NUM_REQS_ACTIVE)+1
 #define REQ_Stream(req) Req_Stream_from_match(req->dev.match)
 int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
 
-/* myct: may 9, initialize stream */
+/* initialize stream */
 #define STREAM_INIT(x) \
 {\
     x-> vc = NULL;\
@@ -78,7 +71,7 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
     x-> sendQ_tail = NULL;\
 }
 
-/* myct: use of STREAM macros to allow change of logic in future */
+/* use of STREAM macros to allow change of logic in future */
 #define SEND_CONNECTED(vc, x) vc->ch.stream_table[x].have_sent_pg_id
 #define SEND_ACTIVE(vc, x) vc->ch.stream_table[x].send_active
 #define RECV_ACTIVE(vc, x) vc->ch.stream_table[x].recv_active
@@ -86,25 +79,8 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
 #define VC_SENDQ_TAIL(vc, x) vc->ch.stream_table[x].sendQ_tail
 #define VC_IOV(vc, x) vc->ch.stream_table[x].iov
 
-
 /* MT - not thread safe! */
-#define MPIDI_CH3I_SendQ_enqueue(vc, req)				\
-{									\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));  \
-    sendq_total++; \
-    req->dev.next = NULL;						\
-    if (VC_SENDQ(vc,REQ_Stream(req)) != NULL)		      	\
-    {									\
-	VC_SENDQ_TAIL(vc, REQ_Stream(req))->dev.next = req;				\
-    }									\
-    else								\
-    {									\
-	VC_SENDQ(vc, REQ_Stream(req)) = req;					\
-    }									\
-    VC_SENDQ_TAIL(vc, REQ_Stream(req)) = req;						\
-}
-
-/* myct: enqueue to a specific stream */
+/*  enqueue to a specific stream */
 #define MPIDI_CH3I_SendQ_enqueue_x(vc, req, x)                \
 {                                                           \
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=%p req=0x%08x", vc, req->handle));  \
@@ -122,19 +98,7 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
 }
 
 /* MT - not thread safe! */
-#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)				\
-{									\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));\
-    sendq_total++; \
-    req->dev.next = VC_SENDQ(vc, REQ_Stream(req));					\
-    if (VC_SENDQ_TAIL(vc, REQ_Stream(req)) == NULL)					\
-    {									\
-	VC_SENDQ_TAIL(vc, REQ_Stream(req)) = req;					\
-    }									\
-    VC_SENDQ(vc, REQ_Stream(req)) = req;						\
-}
-
-/* myct: enqueue to a particular stream */
+/*  enqueue to a particular stream */
 #define MPIDI_CH3I_SendQ_enqueue_head_x(vc, req, x)				\
 {									\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=%p req=0x%08x", vc, req->handle));\
@@ -148,21 +112,11 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
 }
 
 
-    /* MT - not thread safe! */
-#define MPIDI_CH3I_SendQ_dequeue(vc)					\
-{									\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, VC_SENDQ(vc,x)->handle));\
-    sendq_total--; \
-    VC_SENDQ(vc, REQ_Stream(req)) = VC_SENDQ(vc, REQ_Stream(req))->dev.next;   \
-    if (VC_SENDQ(vc, REQ_Stream(req)) == NULL)					\
-    {									\
-        VC_SENDQ_TAIL(vc, REQ_Stream(req)) = NULL;					\
-    }									\
-}
-
+/* MT - not thread safe! */
 #define MPIDI_CH3I_SendQ_dequeue_x(vc, x)					\
 {									\
     MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=%p req=0x%08x", vc, VC_SENDQ(vc,x)->handle));\
+    MPIU_Assert(sendq_total > 0);\
     sendq_total--; \
     VC_SENDQ(vc, x) = VC_SENDQ(vc, x)->dev.next;\
     if (VC_SENDQ(vc, x) == NULL)					\
@@ -171,17 +125,11 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
     }									\
 }
 
-
-#define MPIDI_CH3I_SendQ_head(vc) (vc->ch.sendq_head)
-
-/* myct: sendQ head for specific stream */
+/*  sendQ head for specific stream */
 #define MPIDI_CH3I_SendQ_head_x(vc, x) (VC_SENDQ(vc, x))
-
-#define MPIDI_CH3I_SendQ_empty(vc) (VC_SENDQ(vc, 0) == NULL)
-
 #define MPIDI_CH3I_SendQ_empty_x(vc, x) (VC_SENDQ(vc, x) == NULL)
 
-/* myct: posted IOV macros */
+/*  posted IOV macros */
 #define POST_IOV(x) (x->write.iov.ptr)
 #define POST_IOV_CNT(x) (x->write.iov.iov_count)
 #define POST_IOV_OFFSET(x) (x->write.iov.offset)
@@ -191,10 +139,10 @@ int Req_Stream_from_pkt_and_req(MPIDI_CH3_Pkt_t * pkt, MPID_Request * sreq);
 #define POST_BUF_MAX(x) (x->write.buf.max)
 #define POST_UPDATE_FN(x) (x)
 
-/* myct: determine if SCTP_WAIT should keep spinning */
+/*  determine if SCTP_WAIT should keep spinning */
 #define SPIN(x) (x == 0)? FALSE : TRUE
 
-/* myct: we need a global event queue */
+/*  global event queue */
 
 #define MPIDU_SCTP_EVENTQ_POOL_SIZE 20
 
@@ -229,9 +177,9 @@ struct MPIDU_Sctp_eventq_elem {
     struct MPIDU_Sctp_eventq_elem* next;
 };
 
-/* myct: we need global event queues, because we no longer have sock_set */
-struct MPIDU_Sctp_eventq_elem* eventq_head;
-struct MPIDU_Sctp_eventq_elem* eventq_tail;
+/* need global event queues, because we no longer have sock_set */
+extern struct MPIDU_Sctp_eventq_elem* eventq_head;
+extern struct MPIDU_Sctp_eventq_elem* eventq_tail;
 
 
 int MPIDU_Sctp_event_enqueue(MPIDU_Sctp_op_t op, MPIU_Size_t num_bytes, 
@@ -243,7 +191,7 @@ void MPIDU_Sctp_free_eventq_mem(void);
 
 void print_SCTP_event(struct MPIDU_Sctp_event * eventp);
 
-/* myct: for send queue */
+/*  send queue */
 void MPIDU_Sctp_stream_init(MPIDI_VC_t* vc, MPID_Request* req, int stream);
 
 int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
@@ -253,8 +201,7 @@ int MPIDU_Sctp_writev(MPIDI_VC_t* vc, struct iovec* data,int iovcnt,
 int MPIDU_Sctp_write(MPIDI_VC_t* vc, void* buf, MPIU_Size_t len, 
 		     int stream_no, int ppid, MPIU_Size_t* num_written);
 
-int readv_from_advbuf(MPID_IOV* iovp, int iov_cnt, char* from, int bytes_read);
-int read_from_advbuf(char* from, char* to, int nbytes, int offset);
+int readv_from_advbuf(MPID_Request* req, char* from, int bytes_read);
 
 inline int MPIDU_Sctp_post_writev(MPIDI_VC_t* vc, MPID_Request* sreq, int offset,
 				  MPIDU_Sock_progress_update_func_t fn, int stream_no);
@@ -267,6 +214,11 @@ int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 /* used in ch3_init.c and ch3_progress.c . sock equivalents in util/sock */
 int MPIDU_Sctp_wait(int fd, int timeout, MPIDU_Sctp_event_t * event);
 int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event);
+int MPIDI_CH3U_Get_business_card_sctp(char **value, int *length);
+int MPIDU_Sctp_get_conninfo_from_bc( const char *bc, 
+				     char *host_description, int maxlen,
+				     int *port, MPIDU_Sock_ifaddr_t *ifaddr, 
+				     int *hasIfaddr );
 
 
 /* BUFFER management routines/structs */
@@ -285,7 +237,7 @@ inline void BufferList_init(BufferNode_t* node);
 int inline buf_init(BufferNode_t* node);
 int inline buf_clean(BufferNode_t* node);
 inline char* request_buffer(int size, BufferNode_t** node);
-int inline update_size(BufferNode_t* node, int size);
+void inline update_size(BufferNode_t* node, int size);
 #define remain_size(x) x-> free_space
 
 
@@ -298,8 +250,7 @@ int MPIDI_CH3I_Progress_init(int pg_size);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
 
-
-/* myct: Apr3 global sendQ stuff */
+/*  global sendQ stuff */
 typedef struct gb_sendQ_head {
     struct MPID_Request* head;
     struct MPID_Request* tail;
@@ -308,11 +259,10 @@ typedef struct gb_sendQ_head {
 
 extern GLB_SendQ_Head Global_SendQ;
 
-/* myct: global sendQ enqueue */
-/* link list may not be a good choice */
+/*  global sendQ enqueue */
 
-/* myct: malloc is not needed, because ch portion of the REQ has all the info 
- * we need: vc, stream */
+/*  malloc is not needed, because ch portion of the REQ has all the info 
+ *   we need: vc, stream */
 
 #define Global_SendQ_enqueue(vc, req, x) {               \
         req->ch.vc = vc;                        \
@@ -329,7 +279,7 @@ extern GLB_SendQ_Head Global_SendQ;
 	Global_SendQ.count++;			\
 }
 
-/* myct: init global sendQ */
+/*  init global sendQ */
 #define Global_SendQ_init() {                   \
 	Global_SendQ.count = 0;			\
 	Global_SendQ.head = NULL;		\
@@ -339,7 +289,7 @@ extern GLB_SendQ_Head Global_SendQ;
 #define Global_SendQ_head() (Global_SendQ.head)
 #define Global_SendQ_count() (Global_SendQ.count)
 
-/* myct: this is dequeue + pop */
+/*  dequeue + pop */
 #define Global_SendQ_dequeue(x) {                                       \
 	if(Global_SendQ.count) {					\
 	        x = Global_SendQ.head;                               \
@@ -366,5 +316,10 @@ typedef struct perf_struct {
 /* Connection setup OPT */
 #define CONNECT_THRESHOLD 2
 
+
+/* Memory copy optimization */
+
+/* Nemesis memcpy opt. can go here */
+#define MEMCPY(to, from, nb) memcpy(to, from, nb)
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

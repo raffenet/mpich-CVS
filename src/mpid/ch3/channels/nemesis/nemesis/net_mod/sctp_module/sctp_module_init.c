@@ -18,6 +18,8 @@ static MPID_nem_sctp_socket_bufsz = 0;
 int MPID_nem_sctp_onetomany_fd = -1;
 int MPID_nem_sctp_port = 0;
 HASH* MPID_nem_sctp_assocID_table;
+MPIDI_VC_t * MPIDI_CH3I_dynamic_tmp_vc;
+int MPIDI_CH3I_dynamic_tmp_fd;
 
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
@@ -239,6 +241,10 @@ static int init_sctp (MPIDI_PG_t *pg_p)
     {
         MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**nomem") ;  /* FIXME define error code */
     }    
+
+    /* initialize variables for dynamic processes */
+    MPIDI_CH3I_dynamic_tmp_vc = NULL;
+    MPIDI_CH3I_dynamic_tmp_fd = -1;
     
  fn_exit:
     return mpi_errno;
@@ -374,8 +380,42 @@ MPID_nem_sctp_module_connect_to_root (const char *business_card, MPIDI_VC_t *new
 {
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+
+    /* TODO fill in connect_to_root body based on this pseudocode */
+    
+    /* assert that new_vc->pg == NULL */
+    /* assert that new_vc->ch.fd == -1 */
+    /* create new socket for new_vc->ch.fd */
+    /* MPIDI_CH3I_dynamic_tmp_vc = new_vc; */
+    /* MPIDI_CH3I_dynamic_tmp_fd = new_vc->ch.fd; */
+    /* obtain to_address from business_card contents */
+    /* create business_card for new socket */
+    /* prepare sending the business card to the server */
+    /* write business card to the server on a control stream specific for accept */
+    /* block on tmp_fd until server ACKs */
+    /* set to_address based on contents of the ACK */
+    
     return mpi_errno;
 }
+
+/* MPIDI_CH3_CHANNEL_AVOIDS_SELECT is defined so we need this for dynamic processes */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Complete_Acceptq_dequeue
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
+MPIDI_CH3_Complete_Acceptq_dequeue (MPIDI_VC_t *vc) {
+
+    if(vc != NULL) {
+        MPIU_Assert(MPIDI_CH3I_dynamic_tmp_vc == NULL);
+        
+        MPIDI_CH3I_dynamic_tmp_vc = vc;
+        MPIDI_CH3I_dynamic_tmp_fd = vc->ch.fd;
+    }
+    
+    return MPI_SUCCESS;
+}
+
 
 /* build sockaddr_in based on hostname and port in the bizcard */
 #undef FUNCNAME
@@ -466,8 +506,11 @@ MPID_nem_sctp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc->ch.stream_table[i].have_recv_pg_id = HAVE_NOT_RECV_PG_ID;
     }
 
-    /* current design has a single one-to-many socket, but this could change */
-    vc->ch.fd = MPID_nem_sctp_onetomany_fd;
+    /* use single one-to-many socket for non-temporary VCs (as in connect/accept) */
+    if(vc->pg)
+        vc->ch.fd = MPID_nem_sctp_onetomany_fd;
+    else
+        vc->ch.fd = -1;
     
     /* populate the sockaddr_in based on the business card */
     mpi_errno = get_sockaddr_in_from_bc (business_card, &(vc->ch.to_address));

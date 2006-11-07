@@ -25,6 +25,9 @@ MPID_nem_sctp_module_finalize ()
 
     mpi_errno = MPID_nem_sctp_module_send_finalize();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    /* close single one-to-many socket */
+    close(MPID_nem_sctp_onetomany_fd); /* FIXME check for errors */
     
  fn_exit:
     return mpi_errno;

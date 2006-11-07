@@ -18,7 +18,11 @@ int sctp_open_dgm_socket() {
   return socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
 }
 
-int buf_size(int fd) {
+#undef FUNCNAME
+#define FUNCNAME buf_size
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int buf_size(int fd) {
   int bufsz;
   socklen_t bufsz_len = sizeof(bufsz);
 
@@ -31,7 +35,11 @@ int buf_size(int fd) {
  * bind_from_file (For multi-homing)
  * This function tries to bind additional IPs from a file
  */
-int bind_from_file(char* fName, int sockfd, int port) {
+#undef FUNCNAME
+#define FUNCNAME bind_from_file
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int bind_from_file(char* fName, int sockfd, int port) {
   int rc = MPI_SUCCESS;
   FILE* fptr = NULL;
   char emName[10];
@@ -51,7 +59,11 @@ int bind_from_file(char* fName, int sockfd, int port) {
       addr.sin_family = AF_INET;
       addr.sin_addr.s_addr = inet_addr(emIP);
       addr.sin_port = htons((unsigned short) port);
-      
+
+#ifdef FREEBSD
+      addr.sin_len = sizeof(struct sockaddr);
+#endif      
+
       if(sctp_bindx(sockfd, (struct sockaddr*) &addr,
 		    1, SCTP_BINDX_ADD_ADDR) < 0)
 	goto fn_error;
@@ -223,7 +235,11 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
 
 }
 
-/* myct: sctp_writev, implementation got from LKSCTP_TOOL src */
+/* sctp_writev, implementation got from lksctp src */
+#undef FUNCNAME
+#define FUNCNAME sctp_writev
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
 		    struct sockaddr *to,
 		    socklen_t tolen __attribute__((unused)),
@@ -267,50 +283,57 @@ ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
    
 }
 
-int sctp_readv(int s, struct iovec *data, int iovcnt, struct sockaddr *from,
+#undef FUNCNAME
+#define FUNCNAME sctp_readv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int sctp_readv(int s, struct iovec *data, int iovcnt, struct sockaddr *from,
 		 socklen_t *fromlen, struct sctp_sndrcvinfo *sinfo,
 		 int *msg_flags)
 {
-	int error;
-	struct msghdr inmsg;
-	char incmsg[CMSG_SPACE(sizeof(struct sctp_sndrcvinfo))];
-	struct cmsghdr *cmsg = NULL;
+  int error;
+  struct msghdr inmsg;
+  char incmsg[CMSG_SPACE(sizeof(struct sctp_sndrcvinfo))];
+  struct cmsghdr *cmsg = NULL;
+  
+  memset(&inmsg, 0, sizeof (inmsg));
 
-	memset(&inmsg, 0, sizeof (inmsg));
-
-	inmsg.msg_name = from;
-	inmsg.msg_namelen = *fromlen;
-	inmsg.msg_iov = data;
-	inmsg.msg_iovlen = iovcnt;
-	inmsg.msg_control = incmsg;
-	inmsg.msg_controllen = sizeof(incmsg);
-
-	error = recvmsg(s, &inmsg, 0);
-	if (error < 0)
-		return error;
-
-	*fromlen = inmsg.msg_namelen;
-	*msg_flags = inmsg.msg_flags;
-
-	if (!sinfo)
-		return error;
-
-	for (cmsg = CMSG_FIRSTHDR(&inmsg); cmsg != NULL;
-				 cmsg = CMSG_NXTHDR(&inmsg, cmsg)){
-		if ((IPPROTO_SCTP == cmsg->cmsg_level) &&
-		    (SCTP_SNDRCV == cmsg->cmsg_type))
-			break;
-	}
-
-        /* Copy sinfo. */
-	if (cmsg)
-		memcpy(sinfo, CMSG_DATA(cmsg), sizeof(struct sctp_sndrcvinfo));
-
-	return (error);
+  inmsg.msg_name = from;
+  inmsg.msg_namelen = *fromlen;
+  inmsg.msg_iov = data;
+  inmsg.msg_iovlen = iovcnt;
+  inmsg.msg_control = incmsg;
+  inmsg.msg_controllen = sizeof(incmsg);
+  
+  error = recvmsg(s, &inmsg, 0);
+  if (error < 0)
+    return error;
+  
+  *fromlen = inmsg.msg_namelen;
+  *msg_flags = inmsg.msg_flags;
+  
+  if (!sinfo)
+    return error;
+  
+  for (cmsg = CMSG_FIRSTHDR(&inmsg); cmsg != NULL;
+       cmsg = CMSG_NXTHDR(&inmsg, cmsg)){
+    if ((IPPROTO_SCTP == cmsg->cmsg_level) &&
+	(SCTP_SNDRCV == cmsg->cmsg_type))
+      break;
+  }
+  
+  /* Copy sinfo. */
+  if (cmsg)
+    memcpy(sinfo, CMSG_DATA(cmsg), sizeof(struct sctp_sndrcvinfo));
+  
+  return (error);
 }
 
 
-
+#undef FUNCNAME
+#define FUNCNAME giveMeSockAddr
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int giveMeSockAddr(unsigned char ifaddr[], int port, struct sockaddr_in* addr) {
 
   memset(addr, 0, sizeof(addr));
@@ -325,17 +348,66 @@ int giveMeSockAddr(unsigned char ifaddr[], int port, struct sockaddr_in* addr) {
 /*
  * sctp_recvmsg wrapper
  */
-int sctp_recv(int fd, char* buffer, int cnt, struct sctp_sndrcvinfo* sri, 
+#undef FUNCNAME
+#define FUNCNAME sctp_recv
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int sctp_recv(int fd, char* buffer, int cnt, sctp_rcvinfo* sri, 
 	      int* msg_flags, int* read) {
 
-  struct sockaddr from;
+  struct sockaddr_storage from;
   socklen_t fromlen = sizeof(from);
-  
-  errno = 0;
+  int flags, offset = 0;
+  int total_read = 0;
+  int temp_read = 0;
 
-  *read = sctp_recvmsg(fd,
-	       buffer, cnt, &from,
-	       &fromlen, sri, msg_flags);
+  sctp_rcvinfo prev_info;
+  int loop = 0;
+
+  while(TRUE) {
+    flags = 0;
+    temp_read = 0;
+    errno = 0;
+    fromlen = sizeof(from);
+
+    prev_info = *sri;
+
+    temp_read = sctp_recvmsg(fd,
+	       buffer+offset, cnt, (struct sockaddr*) &from,
+	       &fromlen, sri, &flags);
+
+    if(offset == 0 && errno == EAGAIN) {
+      total_read = 0;
+      break;
+    }
+
+    if(temp_read > 0) {
+
+      /* ASSERT time */
+      if(loop) {
+	MPIU_Assert(prev_info.sinfo_stream == sri->sinfo_stream);
+	MPIU_Assert(prev_info.sinfo_assoc_id == sri->sinfo_assoc_id);
+      }
+
+      offset += temp_read;
+      total_read += temp_read;
+    }
+
+    if(MSG_EOR & flags) {
+      MPIU_Assert(flags & MSG_EOR);
+      break;
+    }
+
+    loop++;
+    break; /* looping assumes that partial delivery continues on the same stream
+            *   and association until MSG_EOR is found.  This isn't the case for
+            *   lksctp.  This break can be commented out as an optimization for
+            *   other stacks.
+            */
+  }
+  
+  *msg_flags = flags;
+  *read = total_read;
 
   return errno;
 }
@@ -344,6 +416,10 @@ int sctp_recv(int fd, char* buffer, int cnt, struct sctp_sndrcvinfo* sri,
  * sctp_sendmsg wrapper
  * preliminary implementation: CHUNK is defined in sctp_common.h
  */
+#undef FUNCNAME
+#define FUNCNAME my_sctp_send
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t stream, int ppid) {
 
   int byte_sent = 0;
@@ -357,6 +433,7 @@ int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t st
 
     send_cnt = (temp_cnt > CHUNK)? CHUNK : cnt;
 
+    errno = 0;
     error = sctp_sendmsg(fd, buffer+offset, send_cnt, to, sizeof(*to), ppid, 0, stream, 0, 0);
 
     byte_sent += (error > 0)? error : 0;
@@ -379,6 +456,10 @@ int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t st
  * sctp_fd_block
  * change block mode of a fd
  */
+#undef FUNCNAME
+#define FUNCNAME sctp_setblock
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int sctp_setblock(int fd, int mode) {
 
   int result = 0;

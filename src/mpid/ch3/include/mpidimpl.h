@@ -708,7 +708,11 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns * );
    queues */
 int MPIDI_CH3I_Acceptq_enqueue(MPIDI_VC_t * vc, int port_name_tag);
 int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag);
-
+#ifdef MPIDI_CH3_CHANNEL_AVOIDS_SELECT
+int MPIDI_CH3_Complete_Acceptq_dequeue(MPIDI_VC_t * vc);
+#else
+#define MPIDI_CH3_Complete_Acceptq_dequeue(vc)  MPI_SUCCESS
+#endif
 /*--------------------------
   END MPI PORT SECTION 
   --------------------------*/

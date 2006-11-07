@@ -18,7 +18,6 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
 
     sreq = MPID_Request_create();
-    /*MPIU_Assert(sreq != NULL);*/
     /* --BEGIN ERROR HANDLING-- */
     if (sreq == NULL)
 	return NULL;
@@ -30,7 +29,6 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
     sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb);
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->dev.iov_count = 1;
-    sreq->dev.ca = MPIDI_CH3_CA_COMPLETE;
     
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
     return sreq;
@@ -49,8 +47,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
-
-    /* myct: additional vars */
     int stream_no, ppid;
     MPIDI_CH3_Pkt_t* pkt;
 
@@ -64,16 +60,16 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     if (hdr_sz > sizeof(MPIDI_CH3_Pkt_t))
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**arg", 0);
-	goto fn_exit;
+	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 #endif
 
-    /* The SOCK channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The sctp channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr);
 
-    /* myct: find out stream no. */
+    /* find out stream no. */
     pkt = (MPIDI_CH3_Pkt_t*) hdr;
     stream_no = Req_Stream_from_pkt_and_req(pkt, *sreq_ptr);  /* brad: don't know pkt type here so pass it in */
     ppid = 0;
@@ -83,6 +79,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (!SEND_ACTIVE(vc, stream_no)) /* MT */
 	{
+	    MPIU_Assert(MPIDI_CH3I_SendQ_empty_x(vc, stream_no));
+
 	    MPIU_Size_t nb;
 	    int rc;
 
@@ -90,7 +88,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	    
 	    /* MT - need some signalling to lock down our right to use the channel, thus insuring that the progress engine does
                not also try to write */
-	    /* rc = MPIDU_Sock_write(vc->ch.sock, hdr, hdr_sz, &nb); */
 	    rc = MPIDU_Sctp_write(vc, hdr, hdr_sz, stream_no, ppid, &nb);
 	    
 	    if (rc == MPI_SUCCESS)
@@ -104,7 +101,6 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 		}
 		else
 		{
-		    /* myct: this block has not been tested yet */
 		    MPIDI_DBG_PRINTF((55, FCNAME, "partial write of %d bytes, request enqueued at head", nb));
 		    sreq = create_request(hdr, hdr_sz, nb);
 
@@ -113,10 +109,11 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 		    {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 							 "**nomem", 0);
-			goto fn_exit;
+			goto fn_fail;
 		    }
 		    /* --END ERROR HANDLING-- */
-		    /* myct: put in in Global SendQ */
+                    
+		    /* put in in Global SendQ */
 		    MPIDU_Sctp_post_write(vc, sreq, hdr_sz-nb, hdr_sz-nb, NULL, stream_no); 
 
 		    MPIDI_DBG_PRINTF((55, FCNAME, "posting write, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
@@ -127,7 +124,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
 							 "**ch3|sock|postwrite", "ch3|sock|postwrite %p %p %p", /* FIXME change error code */
 							 sreq, vc->ch, vc);
-			goto fn_exit;
+			goto fn_fail;
 		    }
 		    /* --END ERROR HANDLING-- */
 		}
@@ -135,16 +132,15 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sock_write failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "ERROR - MPIDU_Sctp_write failed, rc=%d", rc));
 		sreq = MPID_Request_create();
 		if (sreq == NULL)
 		{
 		    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		    goto fn_exit;
+		    goto fn_fail;
 		}
 		sreq->kind = MPID_REQUEST_SEND;
 		sreq->cc = 0;
-		/* TODO: Create an appropriate error message based on the return value */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	    }
 	    /* --END ERROR HANDLING-- */
@@ -157,10 +153,10 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	    if (sreq == NULL)
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-		goto fn_exit;
+		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
-	    MPIDI_CH3I_SendQ_enqueue_x(vc, sreq, stream_no);  /* brad : do we need SendQ_enqueue AND enqueue_send? */
+	    MPIDI_CH3I_SendQ_enqueue_x(vc, sreq, stream_no);
 	}
     }
     else if (SEND_CONNECTED(vc, stream_no) == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
@@ -173,23 +169,27 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	    goto fn_exit;
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
         
-	/* Form a new connection */
-        /* brad : we want to only call this once per association (i.e. not per stream) */
+	/* Form a new connection, called once per association (i.e. not per stream) */
         if(vc->ch.pkt == NULL)
-            MPIDI_CH3I_VC_post_connect(vc);  /* FIXME handle error */
-	
-	//MPIDI_CH3I_SendQ_enqueue_x(vc, sreq, stream_no);
-	// myct: enqueue a control packet request here!!        
+        {
+            mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                goto fn_fail;
+            }
+            /* --END ERROR HANDLING-- */
+        }
+        
 	MPIDU_Sctp_stream_init(vc, sreq, stream_no);
     }
     else if (vc->ch.state != MPIDI_CH3I_VC_STATE_FAILED)
     {
-        /* brad : when would we ever reach here now? */
-        
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "forming connection, request enqueued"));
 	sreq = create_request(hdr, hdr_sz, 0);
@@ -197,11 +197,10 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	    goto fn_exit;
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
-	//MPIDI_CH3I_SendQ_enqueue(vc, sreq);
-	MPIDU_Sctp_stream_init(vc, sreq, stream_no);  /* FIXME SendQ_enqueue vs enqueue_send */        
+	MPIDU_Sctp_stream_init(vc, sreq, stream_no);
     }
     /* --BEGIN ERROR HANDLING-- */
     else
@@ -212,7 +211,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 	if (sreq == NULL)
 	{
 	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	    goto fn_exit;
+	    goto fn_fail;
 	}
 	sreq->kind = MPID_REQUEST_SEND;
 	sreq->cc = 0;
@@ -226,4 +225,8 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     return mpi_errno;
+ fn_fail:
+    /* --BEGIN ERROR HANDLING-- */    
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */    
 }

@@ -11,9 +11,7 @@
 #include <string.h>
 #endif
 
-/* myct: added for SCTP */
 #include "sctp_common.h"
-
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
@@ -32,15 +30,12 @@ static inline int stream_post_sendq_req(MPIDI_VC_t * vc, int stream);
 static inline int connection_post_send_pkt(MPIDI_VC_t * vc, int stream);
 static inline int connection_post_recv_pkt(MPIDI_VC_t * vc, int stream);
 static inline void connection_post_send_pkt_and_pgid(MPIDI_VC_t * vc, int stream);
-/* static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb); */
 static inline int adjust_posted_iov(SCTP_IOV* post_ptr, MPIU_Size_t nb);
 
-/* receive buffer since we never know what stream or association data will arrive */
-/* static char sctp_advbuf[READ_AMOUNT]; */   /* i.e. larger than the socket receive buffer */
 /* sri contains association ID and stream number, etc. */
 static sctp_rcvinfo sctp_sri;
 
-/* added for SCTP.  May be moved to mpid/common later (if used elsewhere) */
+/* may be moved to mpid/common later (if used elsewhere) */
 static int MPIDU_Sctpi_socket_bufsz = 0;
 
 GLB_SendQ_Head Global_SendQ;
@@ -48,6 +43,7 @@ GLB_SendQ_Head Global_SendQ;
 BufferNode_t FirstBufferNode;
 
 static int MPIDU_Sctp_init(void);
+/* these are used in more than one place in ch3:sctp but not promoted to util yet */
 /* static int MPIDU_Sctp_wait(int fd, int timeout, MPIDU_Sctp_event_t * event); */
 /* static int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event); */
 static int MPIDU_Sctp_post_close(MPIDI_VC_t * vc);
@@ -56,6 +52,7 @@ static int MPIDU_Sctp_finalize(void);
 inline static int read_from_advbuf_and_adjust(MPIDI_VC_t* vc, int stream, int amount,
 					      char* src, MPID_Request* rreq);
 
+/* extern in mpidi_ch3_impl.h */
 int MPIDI_CH3I_listener_port;
 
 #undef FUNCNAME
@@ -98,11 +95,6 @@ int MPIDI_CH3_Progress_test(void)
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 				"**ch3|sock|handle_sock_event");
 	}
-    }
-    else if (MPIR_ERR_GET_CLASS(mpi_errno) == MPIDU_SOCK_ERR_TIMEOUT)
-    {
-	mpi_errno = MPI_SUCCESS;
-	goto fn_exit;
     }
     else {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**progress_sock_wait");
@@ -199,7 +191,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
     while (progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count);
 
     /*
-     * We could continue to call MPIU_Sock_wait in a non-blocking fashion 
+     * We could continue to call MPIU_Sctp_wait in a non-blocking fashion 
      * and process any other events; however, this would not
      * give the application a chance to post new receives, and thus could 
      * result in an increased number of unexpected messages
@@ -276,7 +268,6 @@ int MPIDI_CH3I_Progress_init(int pg_size)
     MPIDI_CH3I_dynamic_tmp_vc = NULL;
     MPIDI_CH3I_dynamic_tmp_fd = -1;
     
-    
     mpi_errno = MPIDU_Sctp_init();
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -318,42 +309,13 @@ int MPIDI_CH3I_Progress_finalize(void)
     
     /* added code to close one-to-many socket here to simplify MPIDI_CH3_Channel_close */
     if (close(MPIDI_CH3I_onetomany_fd) == -1) {    
-        mpi_errno--;/*FIXME need new error code */
-        goto fn_fail;
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
     }    
 
-    /* no concept of listener for SCTP  */
-    
-    /* Shut down the listener */
-/*     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock); */
-/*     if (mpi_errno != MPI_SUCCESS) { */
-/* 	MPIU_ERR_POP(mpi_errno); */
-/*     } */
-    
-/*     MPID_Progress_start(&progress_state); */
-/*     while(MPIDI_CH3I_listener_conn != NULL) */
-/*     { */
-/* 	mpi_errno = MPID_Progress_wait(&progress_state); */
-	
-/*     } */
-/*     MPID_Progress_end(&progress_state); */
-    
-    /* FIXME: Cleanly shutdown other socks and free connection structures. (close protocol?) */
-
-
-    /*
-     * MT: in a multi-threaded environment, finalize() should signal any 
-     * thread(s) blocking on MPIDU_Sock_wait() and wait for
-     * those * threads to complete before destroying the progress engine data structures.
-     */
-
-/*     MPIDU_Sock_destroy_set(MPIDI_CH3I_sock_set); */
-/*     MPIDU_Sock_finalize(); */
-
-    /* brad : destroy eventq */
+    /* destroy eventq */
     MPIDU_Sctp_finalize();
 
-    /* myct: finalize hash table */
+    /* finalize hash table */
     hash_free(MPIDI_CH3I_assocID_table);
 
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
@@ -387,9 +349,9 @@ void MPIDI_CH3I_Progress_wakeup(void)
 #define FUNCNAME MPIDI_CH3I_Get_business_card
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Get_business_card(char *value, int length)
+int MPIDI_CH3I_Get_business_card(int myRank, char *value, int length)
 {
-    return my_MPIDI_CH3U_Get_business_card_sock(&value, &length);
+    return MPIDI_CH3U_Get_business_card_sctp(&value, &length);
 }
 
 
@@ -397,7 +359,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 #define FUNCNAME MPIDI_CH3I_Progress_handle_sctp_event
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/* static */ int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event)
+int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event)
 {
     int complete;
     int mpi_errno = MPI_SUCCESS;
@@ -524,9 +486,9 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 			
 		int actual_bytes_read = event-> num_bytes;
 
-		// if recv active is NULL, we are waiting for a pkt/(pkt+msg)
+		/* if recv active is NULL, we are waiting for a pkt/(pkt+msg) */
 		if(rreq == NULL) {
-		    /* FIXME brad : what if not a full pkt (!MSG_EOR)? */
+		    /* FIXME  what if not a full pkt (!MSG_EOR)? */
 		    
 		    MPIU_Assert(num_bytes >= sizeof(MPIDI_CH3_Pkt_t));
 			
@@ -537,7 +499,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
                     /* need to do ACCEPT stuff if this is an initial pkt */
                     if(pkt-> type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
                     {
-                        /* I don't know if this can happen here... */
+                        /* don't know if this can happen here... */
                         event->op_type = MPIDU_SCTP_OP_ACCEPT;
                         mpi_errno = MPIDI_CH3I_Progress_handle_sctp_event(event);
                         goto fn_exit;
@@ -600,6 +562,15 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 		
 		if(MPIDI_CH3I_VC_STATE_CONNECTING == SEND_CONNECTED(vc, stream_no)) {
 		    SEND_CONNECTED(vc, stream_no) = MPIDI_CH3I_VC_STATE_CONNECTED;
+#if 0
+                    /* this code sets a threshold for the number of connection pkts sent
+                     *   before setting them all to connected.  Connection pkts are required
+                     *   so that the assoc_id -> VC hash can be appropriately populated.  To
+                     *   be 100% sure, a separate connection pkt should be sent for each
+                     *   stream.  This code is an optimization to only send connection pkts
+                     *   up to a particular threshold.
+                     */                    
+                     
 		    vc->ch.send_init_count++;
 
 		    if(vc->ch.send_init_count >= CONNECT_THRESHOLD) {
@@ -610,65 +581,14 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 			}
 			vc->ch.send_init_count = -1;
 		    }
+#endif
 		}
 		
 		stream_post_sendq_req(vc, stream_no);
 
-	    } else /* more data to send */ {
-		printf("this part not tested yet\n");
-			
-		/* force to finish sending the send active one!! */
-		for(;;){
-		    iovp = sreq->dev.iov;  /* FIXME connection_iov? */
-			
-		    mpi_errno = MPIDU_Sctp_writev(vc, iovp, sreq->dev.iov_count,
-                                                  stream_no, 0, &nb);
-			
-		    /* --BEGIN ERROR HANDLING-- */
-		    if (mpi_errno != MPI_SUCCESS) {
-			/* mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, */
-			    /* 							     "**ch3|sock|immedwrite", "ch3|sock|immedwrite %p %p %p", */
-			/* 							     sreq, conn, conn->vc); */
-			goto fn_fail;
-		    }
-		    /* --END ERROR HANDLING-- */
-			
-		    /* MPIDI_DBG_PRINTF((55, FCNAME, "immediate writev, vc=0x%p, sreq=0x%08x, nb=%d", */
-		    /* 					  conn->vc, sreq->handle, nb)); */
-		    
-		    if (nb > 0 && adjust_iov(&iovp, &sreq->dev.iov_count, nb)) {
-			mpi_errno = MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
-			if (mpi_errno != MPI_SUCCESS) {
-			    MPIU_ERR_POP(mpi_errno);
-			}
-			
-			if (complete) {
-			    /*  need to reset active  */
-			    SEND_ACTIVE(vc, stream_no) = NULL;
-                            
-			    break;
-			}
-		    }
-		    else
-			{
-			    MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
-			    /* put it back to sendQ */
-			    /* the offset is wrong, needs to be changed */
-			    MPIDU_Sctp_post_writev(vc, sreq, sreq->dev.iov_count,
-                                                   NULL, stream_no);
-			    
-			    /* --BEGIN ERROR HANDLING-- */
-			    if (mpi_errno != MPI_SUCCESS) {
-				/* mpi_errno = MPIR_Err_create_code( */
-				/* 				    mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|postwrite", */
-				/* 				    "ch3|sock|postwrite %p %p %p", sreq, conn, conn->vc); */
-				goto fn_fail;
-			    }
-				    /* --END ERROR HANDLING-- */
-			    
-			    break;
-			}
-		}
+	    } else /* more data to send */ {	
+		MPIDU_Sctp_post_writev(vc, sreq, 0, NULL, stream_no);
+ 	
 	    } 
                         
 	    break;
@@ -678,18 +598,84 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 	{
 
             MPIDI_VC_t* vc = (MPIDI_VC_t*) event-> user_ptr;  /* points to VC for close */
+            
+            MPIU_Assert(vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
 
+            if(vc == MPIDI_CH3I_dynamic_tmp_vc) {
+                MPIU_Assert(MPIDI_CH3I_dynamic_tmp_fd == vc->ch.fd);
+
+                close(MPIDI_CH3I_dynamic_tmp_fd);
+                MPIDI_CH3I_dynamic_tmp_fd = -1;
+                MPIDI_CH3I_dynamic_tmp_vc = NULL;
+
+                /* free vc->ch.pkt, unneeded so far as initial assertion above holds */            
+                if(vc->ch.pkt)
+                    MPIU_Free(vc->ch.pkt);
+                vc->ch.pkt = NULL;
+                
+            } else {
+                /* not a temporary VC */
+
+                if(vc->ref_count == 0 && vc->pg != NULL  && vc->pg->ref_count == 1 ) {
+                    /* MPIDI_PG_Destroy will be called in the upcall below, so do the
+                     *  necessary steps since this VC will be destroyed.
+                     */
+                    /* this can happen either in finalize or MPI_Comm_disconnect (or both with an
+                     *  intermediate MPI_Connect/Accept!)
+                     */
+                
+                    /* free vc->ch.pkt, unneeded so far as initial assertion above holds */            
+                    if(vc->ch.pkt)
+                        MPIU_Free(vc->ch.pkt);
+                    vc->ch.pkt = NULL;
+                    
+                } else {
+                    /* reset the VC as if it is new */
+
+                    int i,loop;
+                    MPIDI_CH3I_SCTP_Stream_t* str_ptr = NULL;
+                    MPID_IOV* iov_ptr = NULL;
+                    MPIDI_CH3_Pkt_t* temp = vc->ch.pkt;    
+
+                    /* reset state in stream table for sending connection pkts */
+                    for(i = 0; i < MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT; i++) {
+                        str_ptr = &(vc->ch.stream_table[i]);
+                        /* requires nothing outstanding on this VC */
+                        MPIU_Assert(str_ptr->sendQ_head == NULL);
+                        MPIU_Assert(str_ptr->send_active == NULL);
+                        MPIU_Assert(str_ptr->recv_active == NULL);
+                        STREAM_INIT(str_ptr);
+                    }
+
+                    /* reset relevant channel fields so connection pkts will be resent */
+                    vc->ch.state =  MPIDI_CH3I_VC_STATE_UNCONNECTED;
+                    vc->ch.send_init_count = 0;
+
+                    /* if we've called MPIDI_CH3I_VC_post_connect, reset iov's for connection pkt */
+                    if(temp) {
+                        /* FIXME done elsewhere so add this to a function */
+                        for(loop=0; loop < MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT; loop++) {
+                            iov_ptr = VC_IOV(vc, loop);
+                            iov_ptr[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) temp;
+                            iov_ptr[0].MPID_IOV_LEN = (int) sizeof(*temp);
+                            
+                            iov_ptr[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) MPIDI_Process.my_pg->id;
+                            iov_ptr[1].MPID_IOV_LEN = temp-> sc_open_req.pg_id_len;		       	
+                        }
+                    }
+                    
+                }
+                
+                /* nothing left is sent/recv'd on vc in upcall. remove from assoc_id -> VC hash  */
+                hash_delete(MPIDI_CH3I_assocID_table, vc->ch.sinfo_assoc_id);
+
+            }
+                
             mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
             if(mpi_errno != MPI_SUCCESS)
                 goto fn_fail;
 
-            /* free vc->ch.pkt */
-            if(vc->ch.pkt)
-                MPIU_Free(vc->ch.pkt);
-            vc->ch.pkt = NULL;
 
-            /* TODO  add asserts? */
-            	    
 	    break;
 	}
 	
@@ -727,12 +713,15 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
 
         /* VC marked as temporary (that what a NULL PG means) */
         MPIDI_VC_Init(vc, NULL, 0);
-        MPIDI_CH3_VC_Init(vc);  /* TODO check success */
+        MPIDI_CH3_VC_Init(vc);
 
+        /* set the port_name_tag on this VC for verification later */
+        vc->ch.port_name_tag = pkt->sc_conn_accept.port_name_tag;        
+            
         /* data after pkt contains bizcard */
         data_ptr += sizeof(MPIDI_CH3_Pkt_t);
             
-        mpi_errno = my_MPIDU_Sock_get_conninfo_from_bc( data_ptr, host_description,
+        mpi_errno = MPIDU_Sctp_get_conninfo_from_bc( data_ptr, host_description,
                                                         sizeof(host_description),
                                                         &port, &ifaddr, &hasIfaddr );
         if(mpi_errno) {
@@ -761,12 +750,10 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
              *  have just been in the progress engine and received the accept request.
              *  Currently, we go ahead and create the new socket and ack to the
              *  connector with this new sockets info.  However, MPIDI_CH3I_dynamic_tmp_fd
-             *  should not be set until this is dequeued from the acceptQ... which occurs
-             *  in MPIDI_CH3_Complete_unidirectional_connection2
+             *  should not be set until this is dequeued from the acceptQ...
              */
             
             int tmp_fd, no_nagle, suggested_port, real_port;
-	    int port_name_tag;
             struct sctp_event_subscribe evnts;
             MPIU_Size_t nb;
 
@@ -785,15 +772,15 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
                                      0, 5, suggested_port, no_nagle,
                                      &MPIDU_Sctpi_socket_bufsz, &evnts, &tmp_fd,
                                      &real_port) == -1) {
-                /* FIXME define error code */
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+                                                 __LINE__, MPI_ERR_OTHER, "**fail", 0);                
                 goto fn_fail;
             }
             vc->ch.fd = tmp_fd;
 
             /*  the global tmp_fd shouldn't be set until dequeued from the accept
-             *   queue since we only allow one to occur at a time (and like
-             *   multiple_ports, they may happen out of order). now done in
-             *   MPIDI_CH3_Complete_unidirectional_connection2
+             *   queue since we only allow one to occur at a time (and like the
+             *   spawn/multiple_ports test, they may happen out of order).
              */
 /*             MPIDI_CH3I_dynamic_tmp_fd = tmp_fd; */
 
@@ -803,7 +790,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
              */
             suggested_port = MPIDI_CH3I_listener_port;
             MPIDI_CH3I_listener_port = real_port;
-            mpi_errno = MPIDI_CH3I_Get_business_card(bizcard, MPI_MAX_PORT_NAME);
+            mpi_errno = MPIDI_CH3I_Get_business_card(-1, bizcard, MPI_MAX_PORT_NAME);
             /* --BEGIN ERROR HANDLING-- */
             if (mpi_errno != MPI_SUCCESS) {
                 /* FIXME define error code */
@@ -817,7 +804,6 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             MPIDI_Pkt_init(&conn_acc_pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT); 
             conn_acc_pkt.sc_conn_accept.bizcard_len = (int) strlen(bizcard) + 1; 
             conn_acc_pkt.sc_conn_accept.port_name_tag = pkt->sc_conn_accept.port_name_tag;
-            port_name_tag = pkt->sc_conn_accept.port_name_tag);
             conn_acc_pkt.sc_conn_accept.ack = 1; /* this IS an ACK */
 
             /* get the iov ready */
@@ -839,7 +825,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
                 /* --END ERROR HANDLING-- */
                 
                 /* deliberately avoid nb < 0 */
-                if(nb > 0 && adjust_iov(&iovp, &iov_cnt, nb)) { /* static in ch3_progress.c */
+                if(nb > 0 && adjust_iov(&iovp, &iov_cnt, nb)) {
                     /* done sending */
                     break;
                 }
@@ -847,7 +833,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
             
                 
             /* put into acceptq and signal completion so upcalls in ch3u_port.c work */
-            MPIDI_CH3I_Acceptq_enqueue(vc,port_name_tag);
+            MPIDI_CH3I_Acceptq_enqueue(vc, pkt->sc_conn_accept.port_name_tag);
 	    MPIDI_CH3_Progress_signal_completion();
         }      
                         
@@ -856,8 +842,7 @@ int MPIDI_CH3I_Get_business_card(char *value, int length)
     
     default:
 	
-	/* event has NO info at all, this is not an error */
-	//printf("default handle event \n");
+	/* event has NO info at all, this is not an error (used by MPI_Test) */
 
 	break;
 
@@ -869,7 +854,7 @@ fn_exit:
  fn_fail:
     goto fn_exit;
 }
-/* end MPIDI_CH3I_Progress_handle_sock_event() */
+/* end MPIDI_CH3I_Progress_handle_sctp_event() */
 
 
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
@@ -919,8 +904,8 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 
 #define MPIDI_MAX_KVS_KEY_LEN      256
 
-/* myct: post_connect only retrieves the IP/PORT info from KVS now.
- * it can also send the connection packet, but not required to do it now */ 
+/*  post_connect only retrieves the IP/PORT info from KVS now.
+ *   it can also send the connection packet, but not required to do so now */ 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_VC_post_connect
 #undef FCNAME
@@ -973,7 +958,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
             MPIU_ERR_POP(mpi_errno);
         }
 
-        mpi_errno = my_MPIDU_Sock_get_conninfo_from_bc( val, host_description,
+        mpi_errno = MPIDU_Sctp_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
 						 &port, &ifaddr, &hasIfaddr );
         if(mpi_errno) {
@@ -997,16 +982,11 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     temp-> sc_open_req.pg_id_len = (int) strlen(MPIDI_Process.my_pg->id) + 1; 
     temp-> sc_open_req.pg_rank = MPIR_Process.comm_world->rank;
 
-    int loop = 0; /* stream 0 is valid! */
+    int loop;
     MPID_IOV* iov_ptr = NULL;
 
-    // myct: loop invariant may be wrong. stream starts from 1
-    /* any reason we need this per stream? */
-
-    /* myct: mar27, this loop may not be needed, because connection_iov 
-     * is used for something more general now
-     */
-    for(loop; loop < MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT; loop++) {
+    /* this loop may not be needed, because connection_iov is used for something more general now...  */
+    for(loop=0; loop < MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT; loop++) {
 	iov_ptr = VC_IOV(vc, loop);
 	iov_ptr[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) temp;
 	iov_ptr[0].MPID_IOV_LEN = (int) sizeof(*temp);
@@ -1015,7 +995,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	iov_ptr[1].MPID_IOV_LEN = temp-> sc_open_req.pg_id_len;		       	
     }
 
-    /* myct: optimization. init control stream purposely */
+    /* init control stream early purposely */
     MPIDU_Sctp_stream_init(vc, NULL, MPICH_SCTP_CTL_STREAM);
     
 
@@ -1031,9 +1011,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     /* --END ERROR HANDLING-- */
 }
 /* end MPIDI_CH3I_VC_post_connect() */
-
-/* myct: doesn't need this. we don't have anything dynamically allocated */
-/* brad: don't understand this comment... */
 
 #undef FUNCNAME
 #define FUNCNAME stream_post_sendq_req
@@ -1063,65 +1040,6 @@ static inline int stream_post_sendq_req(MPIDI_VC_t * vc, int stream)
 
 
 #undef FUNCNAME
-#define FUNCNAME connection_post_send_pkt_and_pgid
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline void connection_post_send_pkt_and_pgid(MPIDI_VC_t * vc, int stream)
-{
-    int mpi_errno;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
-    
-    /* conn->iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &conn->pkt; */
-/*     conn->iov[0].MPID_IOV_LEN = (int) sizeof(conn->pkt); */
-
-/*     conn->iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) MPIDI_Process.my_pg->id; */
-/*     conn->iov[1].MPID_IOV_LEN = (int) strlen(MPIDI_Process.my_pg->id) + 1; */
-
-/*     mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->iov, 2, NULL); */
-/*     if (mpi_errno != MPI_SUCCESS) { */
-/* 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**fail"); */
-/*     } */
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
-}
-
-/* duplicate existed in sctp_util.c so made it non-static */
-
-/* #undef FUNCNAME */
-/* #define FUNCNAME adjust_iov */
-/* #undef FCNAME */
-/* #define FCNAME MPIU_QUOTE(FUNCNAME) */
-/* static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb) */
-/* { */
-/*     MPID_IOV * const iov = *iovp; */
-/*     const int count = *countp; */
-/*     int offset = 0; */
-    
-/*     while (offset < count) */
-/*     { */
-/* 	if (iov[offset].MPID_IOV_LEN <= nb) */
-/* 	{ */
-/* 	    nb -= iov[offset].MPID_IOV_LEN; */
-/* 	    offset++; */
-/* 	} */
-/* 	else */
-/* 	{ */
-/* 	    iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) iov[offset].MPID_IOV_BUF + nb); */
-/* 	    iov[offset].MPID_IOV_LEN -= nb; */
-/* 	    break; */
-/* 	} */
-/*     } */
-
-/*     *iovp += offset; */
-/*     *countp -= offset; */
-
-/*     return (*countp == 0); */
-/* } */
-/* /\* end adjust_iov() *\/ */
-
-#undef FUNCNAME
 #define FUNCNAME MPIDU_Sctp_init
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
@@ -1142,7 +1060,7 @@ static int MPIDU_Sctp_init(void) {
     
     if (MPIDI_CH3I_onetomany_fd == -1)
     {
-        /* See if a socket buffer size is specified */
+        /* see if a socket buffer size is specified */
         
 	env = getenv("MPICH_SCTP_BUFFER_SIZE");
 	if (env)
@@ -1172,6 +1090,8 @@ static int MPIDU_Sctp_init(void) {
 			     0, 5, port, no_nagle,
 			     &MPIDU_Sctpi_socket_bufsz, &evnts, &MPIDI_CH3I_onetomany_fd,
 				&MPIDI_CH3I_listener_port) == -1) {
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+                                             __LINE__, MPI_ERR_OTHER, "**fail", 0);
 	    goto fn_fail;
 	}
 	
@@ -1192,19 +1112,12 @@ static int MPIDU_Sctp_init(void) {
     /* --END ERROR HANDLING-- */   
 }
 
-
-/* myct: scheduling smartness can be implement here */
-static int schedule_func(){
-    return 0;
-}
-
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sctp_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/* static */ int MPIDU_Sctp_wait(int fd, int timeout, MPIDU_Sctp_event_t * event)
+int MPIDU_Sctp_wait(int fd, int timeout, MPIDU_Sctp_event_t * event)
 {
-    /* set event->num_bytes to correspond to sctp_recvmsg return val */
     int msg_flags, error, recv_amount, stream_loop, buf_sz;
     MPIU_Size_t sz;
     int mpi_errno = MPI_SUCCESS;
@@ -1220,10 +1133,8 @@ static int schedule_func(){
     if(MPIDI_CH3I_dynamic_tmp_fd != -1)
         timeout = 0;
     
-    /* buffer stuff */
+    /* recv buffer */
     BufferNode_t* bf_node = NULL;
-
-    /* END buffer stuff */
   
     while(MPIDU_Sctp_event_dequeue(event) != MPI_SUCCESS) {
 
@@ -1237,6 +1148,7 @@ static int schedule_func(){
 	BufferList_init(&FirstBufferNode);
 
 	while((buf_ptr = request_buffer(CHUNK, &bf_node))) {
+
 	    error = sctp_recv(fd, buf_ptr, CHUNK, &sctp_sri,
 				    &msg_flags, &recv_amount);
 
@@ -1245,10 +1157,18 @@ static int schedule_func(){
 	    }
 
             
-	    /* TODO check success */
-	    MPIDU_Sctp_event_enqueue(MPIDU_SCTP_OP_READ,
+	    mpi_errno = MPIDU_Sctp_event_enqueue(MPIDU_SCTP_OP_READ,
 				     recv_amount, &sctp_sri, fd, buf_ptr,
 				     NULL, msg_flags, MPI_SUCCESS);
+            /* --BEGIN ERROR HANDLING-- */
+            if (mpi_errno != MPI_SUCCESS)
+            {
+                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+                                                 __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                goto fn_fail;
+            }
+            /* --END ERROR HANDLING-- */
+            
                 
 	    update_size(bf_node, recv_amount);
 	    
@@ -1295,7 +1215,7 @@ static int schedule_func(){
 		    mpi_errno = MPIDU_Sctp_writev(vc, POST_IOV(iov_ptr),
 						  POST_IOV_CNT(iov_ptr), req->ch.stream, 0, &sz);
 		} else {
-		    /* myct: NOT iov. do a simple write */
+		    /*  NOT an iov. do a simple write */
 		    mpi_errno = MPIDU_Sctp_write(vc, POST_BUF(iov_ptr),
 						 POST_BUF_MIN(iov_ptr), req->ch.stream, 0, &sz);
 		    
@@ -1314,7 +1234,7 @@ static int schedule_func(){
 		    MPIDI_DBG_PRINTF((50, FCNAME, "wrote: %d bytes @ strm: %d", sz, req->ch.stream));
 		}
 		else {
-		    /* myct: need to put it back to globalSendQ, doesn't need to post again*/
+		    /* need to put it back to globalSendQ, doesn't need to post again */
 		    Global_SendQ_enqueue(vc, req, stream_loop);
 		}
 	    }
@@ -1323,17 +1243,19 @@ static int schedule_func(){
 
 	/* WRITE LOOP ends */
 
-	/* myct: can't spin forever */
+	/* can't spin forever */
 	if(!SPIN(timeout))
 	    break;
 
     } 
 
 
-    /* myct: set fd to NON_BLOCK again */
+    /* set fd to NON_BLOCK again */
     sctp_setblock(fd, 0);
 
-    return MPI_SUCCESS;
+ fn_exit:
+ fn_fail:
+    return mpi_errno;
 
 }
 
@@ -1345,14 +1267,10 @@ static int schedule_func(){
 static inline int adjust_posted_iov(SCTP_IOV* post_ptr, MPIU_Size_t nb) {
 
     int complete = 0;
-    MPID_IOV* iovp = NULL;
-    int iov_cnt;
     int min_bytes = 0;
 
     if(POST_IOV_FLAG(post_ptr)){
-	iovp = POST_IOV(post_ptr);
-	iov_cnt = POST_IOV_CNT(post_ptr);
-	complete = adjust_iov(&iovp, &iov_cnt,
+	complete = adjust_iov(&POST_IOV(post_ptr), &POST_IOV_CNT(post_ptr),
 			      nb);
     } else {
 	min_bytes = POST_BUF_MIN(post_ptr);
@@ -1371,13 +1289,19 @@ static inline int adjust_posted_iov(SCTP_IOV* post_ptr, MPIU_Size_t nb) {
     return complete;
 }
 
-
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sctp_post_close
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 static int MPIDU_Sctp_post_close(MPIDI_VC_t * vc)
 {
-    /* sock enqueues an MPIDU_SOCK_OP_CLOSE event... */
     return MPIDU_Sctp_event_enqueue(MPIDU_SCTP_OP_CLOSE, 0, NULL, vc->ch.fd, vc, 0, 0, 0);
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDU_Sctp_finalize
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 static int MPIDU_Sctp_finalize(void)
 {
     /* need to free eventq  */
@@ -1389,6 +1313,10 @@ static int MPIDU_Sctp_finalize(void)
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME read_from_advbuf_and_adjust
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 inline static int read_from_advbuf_and_adjust(MPIDI_VC_t* vc, int stream, int amount,
 				       char* src, MPID_Request* rreq) {
 
@@ -1400,10 +1328,10 @@ inline static int read_from_advbuf_and_adjust(MPIDI_VC_t* vc, int stream, int am
     char *src_ptr;
 
     if(rreq) {
-	nb = readv_from_advbuf(iovp, rreq->dev.iov_count, 
+	nb = readv_from_advbuf(rreq, 
 			       src, amount);
-	
-	done = adjust_iov(&iovp, &rreq->dev.iov_count, nb);
+
+	done = adjust_req(rreq, nb);
 	
 	if(done) {
             
@@ -1443,10 +1371,15 @@ inline static int read_from_advbuf_and_adjust(MPIDI_VC_t* vc, int stream, int am
                  */
                 src_ptr = src;
                 src_ptr += nb;
-                nb = readv_from_advbuf(iovp, rreq->dev.iov_count, 
+
+		/* need to reset, because preceeding adjust_iov changed it */
+		iovp = rreq->dev.iov;
+                nb = readv_from_advbuf(rreq,
 			       src_ptr, amount - nb);
-                done = adjust_iov(&iovp, &rreq->dev.iov_count, nb);
+
+		done = adjust_req(rreq, nb);
                 
+                /* the remaining code is kinda recursive... */
                 if(done) {
             
 #if 1
@@ -1467,6 +1400,7 @@ inline static int read_from_advbuf_and_adjust(MPIDI_VC_t* vc, int stream, int am
 #endif
                 }
             }
+	    
             if(complete)
             {
                 RECV_ACTIVE(vc, stream) = NULL;
@@ -1484,18 +1418,11 @@ inline static int read_from_advbuf_and_adjust(MPIDI_VC_t* vc, int stream, int am
     goto fn_exit;
 }
 
-int MPIDI_CH3_Pending(MPIDI_VC_t* vc) {
 
-    int i = 0;
-    for(i; i < MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT; i++) {
-	if(vc->ch.stream_table[i].sendQ_head)
-	    return TRUE;
-    }
-
-    return FALSE;
-}
-
-
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Channel_close
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIDI_CH3_Channel_close( void )
 {
     /* When called, Outstanding_close_ops in ch3u_handle_connection should be zero */
@@ -1504,16 +1431,18 @@ int MPIDI_CH3_Channel_close( void )
      */
     int mpi_errno = MPI_SUCCESS;
 
-    /* sept29: is this code dated now that close is moved to MPIDI_CH3I_Progress_finalize ? */
+    /*  is this code dated now that close is moved to MPIDI_CH3I_Progress_finalize for the
+     *   one-to-many socket and OP_CLOSE in the event handler?
+     */
        
     /* still have items in the sendQ so handle them before close */
+    
     while(sendq_total)  /* FIXME might need to be more sophisticated with multiple fd's */
                         /*    For example, if the sendq_total is non-zero, we could have
                          *    writes outstanding on multiple fd's (the "normal" one and
                          *    the tmp one used for dynamic procs)
                          */
     {
-/*         printf("sendQ not empty\n"); */
         int mpi_errno = MPI_SUCCESS;
         MPIDU_Sctp_event_t event2;
         mpi_errno = MPIDU_Sctp_wait(MPIDI_CH3I_onetomany_fd, MPIDU_SCTP_INFINITE_TIME,
@@ -1531,56 +1460,6 @@ int MPIDI_CH3_Channel_close( void )
         }
     }
                    
-    if(MPIDI_CH3I_dynamic_tmp_vc) {
-        /*  be sure to not close prematurely when a close pkt is received from
-         *  a recently disconnected VC on the main onetomany socket
-         */
-        if(MPIDI_CH3I_dynamic_tmp_vc->state == MPIDI_VC_STATE_INACTIVE) {
-            
-        /* when using a tmp VC for dynamic processes, close the socket
-         *  and reset variables since we only do one connect/accept pair at a time.
-         */
-            close(MPIDI_CH3I_dynamic_tmp_fd); /* FIXME check for errors */
-            MPIDI_CH3I_dynamic_tmp_vc = NULL;
-            MPIDI_CH3I_dynamic_tmp_fd = -1;
-        }
-    }
-    /* close single one-to-many socket when all close ops are receieved on
-     *  "normal" VC usage.  only close this if all VCs in all PGs are INACTIVE
-     */
-    else
-    {
-        /* moved to MPIDI_CH3I_Progress_finalize */
-        
-/*         MPIDI_PG_t * pg; */
-/*         MPIDI_VC_t * vc; */
-/*         int i, pg_size; */
-
-/*         MPIDI_PG_Iterate_reset(); */
-/*         MPIDI_PG_Get_next(&pg); */
-/*         while(pg) { */
-/*             i=0; */
-/*             pg_size = pg->size; */
-/*             while(i < pg_size) { */
-/*                 if(pg->vct[i].state != MPIDI_VC_STATE_INACTIVE) */
-/*                 { */
-/*                     goto fn_exit;  /\* exit and don't close *\/ */
-/*                 } */
-/*                 i++; */
-/*             } */
-/*             MPIDI_PG_Get_next(&pg); */
-/*         } */
-
-/*         /\* FIXME - this will close the socket if all VCs are inactive */
-/*          *            and we're not in finalize.  This should only happen */
-/*          *            in finalize so this should be moved to */
-/*          *            MPIDI_CH3I_Progress_finalize */
-/*          *\/ */
-/*         if (close(MPIDI_CH3I_onetomany_fd) == -1) {     */
-/*             mpi_errno--;/\*FIXME need new error code *\/ */
-/*             goto fn_fail; */
-/*         } */
-    }
 
  fn_exit:
     return mpi_errno;

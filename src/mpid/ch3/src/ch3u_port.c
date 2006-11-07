@@ -1299,6 +1299,8 @@ int MPIDI_CH3I_Acceptq_dequeue(MPIDI_VC_t ** vc, int port_name_tag)
 	    q_item = q_item->next;
 	}
     }
+    
+    mpi_errno = MPIDI_CH3_Complete_Acceptq_dequeue(*vc);
 
     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,
 	      (MPIU_DBG_FDEST,"vc=%p:Dequeuing accept connection with tag %d",

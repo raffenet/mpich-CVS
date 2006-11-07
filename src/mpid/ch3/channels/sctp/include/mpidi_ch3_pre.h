@@ -10,8 +10,7 @@
 #include "sctp_common.h"
 
 #define MPIDI_CH3_HAS_CHANNEL_CLOSE
-#define MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
-#define MPIDI_CH3_CHANNEL_FREES_TMP_VC
+#define MPIDI_CH3_CHANNEL_AVOIDS_SELECT
 
 /* These macros unlock shared code */
 /* #define MPIDI_CH3_USES_SOCK */
@@ -92,7 +91,7 @@ typedef enum MPIDI_CH3I_VC_state
 MPIDI_CH3I_VC_state_t;
 
 
-/* myct: stream state */
+/* stream state */
 typedef enum SCTP_Stream_state {
     SCTP_Stream_state_recv_pkt,
     SCTP_Stream_state_recv_data
@@ -104,8 +103,8 @@ SCTP_Stream_state_t;
  */
 #define MPICH_SCTP_NUM_REQS_ACTIVE 10
 
-/* We want to allocated one more so that stream zero isn't a special case since
- *  it is not allowed in SCTP.  We define a new constant in case we want to ever use
+/* We want to allocated one more so that stream zero is used as a control stream
+ *  here in ch3:sctp.  We define a new constant in case we want to ever use
  *  more than one control stream.
  */
 
@@ -122,20 +121,15 @@ SCTP_Stream_state_t;
 
 #define MPIDU_SCTP_INFINITE_TIME -1
 
-/* TODO sept 12 : these comments are out of date (and wrong)! */
-
 /* We want to allocated one more so that stream zero isn't a special case since
- *  it is not allowed in SCTP.  We define a new constant in case we want to ever use
+ *  it is used as a control stream.  We define a new constant in case we want to ever use
  *  more than one control stream.
  */
 #define MPICH_SCTP_NUM_STREAMS_TO_INIT MPICH_SCTP_NUM_STREAMS + 1
 
+typedef struct sctp_sndrcvinfo sctp_rcvinfo;
+
 typedef struct my_iov {
-    //MPID_IOV iov[2];
-    /* struct iovec* iov; */
-/*     int iov_count; */
-/*     int offset; */
-/*     int is_iov; */
     char write_iov_flag;
 
     union {
@@ -153,7 +147,7 @@ typedef struct my_iov {
 
 } SCTP_IOV;
 
-/* myct: May 9, Stream struct */
+/* stream struct */
 typedef struct MPIDI_CH3I_SCTP_Stream {
     struct MPIDI_VC* vc;                       /* 1-to-1 relationship, probably not needed */
     char have_sent_pg_id;
@@ -172,7 +166,9 @@ typedef struct MPIDI_CH3I_VC
      */    
     MPIDI_CH3I_VC_state_t state;
 
-    /* myct: stream table, each stream is independent */
+    int port_name_tag;
+ 
+    /* stream table, each stream is independent */
     struct MPIDI_CH3I_SCTP_Stream stream_table[MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT];
     
     /* file descriptor for one-to-many SCTP socket.  Will be identical to listener
@@ -187,13 +183,13 @@ typedef struct MPIDI_CH3I_VC
                      *  the first message AFTER it does an accept)
                      */
 
-    /* myct: target address */
+    /* target address */
     struct sockaddr_in to_address;
 
-    /* myct: notion of POST */
+    /* notion of POST */
     SCTP_IOV posted_iov[MPICH_SCTP_NUM_REQS_ACTIVE_TO_INIT];
 
-    /* myct: connection packet (MPIDI_CH3_Pkt_t) */
+    /* connection packet (MPIDI_CH3_Pkt_t) */
     union MPIDI_CH3_Pkt* pkt;
 
     unsigned short send_init_count;

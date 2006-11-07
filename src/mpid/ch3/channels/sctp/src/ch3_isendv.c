@@ -43,8 +43,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 {
     int mpi_errno = MPI_SUCCESS;
     int complete;
-    
-    // myct: added fields
     MPIDI_CH3_Pkt_t * pkt;
     int stream_no, ppid;
 
@@ -70,11 +68,11 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
     /* --END ERROR HANDLING-- */
 #endif
 
-    /* The sock channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
+    /* The sctp channel uses a fixed length header, the size of which is the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF);
 
-    /* myct: find out stream no. */
+    /* find out stream no. */
     pkt = (MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF;
     stream_no = Req_Stream_from_pkt_and_req(pkt, sreq);
     ppid = 0;
@@ -84,6 +82,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	/* Connection already formed.  If send queue is empty attempt to send data, queuing any unsent data. */
 	if (!SEND_ACTIVE(vc, stream_no)) /* MT */ /* FIXME check specific sendQ and send_active */
 	{
+	    MPIU_Assert(MPIDI_CH3I_SendQ_empty_x(vc, stream_no));
+
 	    MPIU_Size_t nb;
 	    int rc;
 
@@ -94,8 +94,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 
 	    /* FIXME: the current code only agressively writes the first IOV.  Eventually it should be changed to agressively write
                as much as possible.  Ideally, the code would be shared between the send routines and the progress engine. */
-	    //rc = MPIDU_Sock_writev(vc->ch.sock, iov, n_iov, &nb);
-            /* brad : what's the relation between iov/n_iov vs. req->dev.iov/req->dev.iov_count ? */
 	    rc = MPIDU_Sctp_writev(vc, iov, n_iov, stream_no, ppid, &nb);
 
 	    if (rc == MPI_SUCCESS)
@@ -138,13 +136,9 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		    MPIDI_CH3U_Handle_send_req(vc, sreq, &complete);
 		    if (!complete)
 		    {
-			//Global_SendQ_enqueue(vc, sreq, stream_no);
-			//MPIDI_CH3I_SendQ_enqueue_head(vc, sreq); /* FIXME enqueue x */
-			
 			MPIDI_DBG_PRINTF((55, FCNAME, "posting writev, vc=0x%p, sreq=0x%08x", vc, sreq->handle));
 			
-			/* this may be wrong */
-			Global_SendQ_enqueue(vc, sreq, stream_no);
+			MPIDU_Sctp_post_writev(vc, sreq, 0, NULL, stream_no);
 			
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS)
@@ -158,18 +152,12 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 		}
 	    }
 	    /* --BEGIN ERROR HANDLING-- */
-	    else if (MPIR_ERR_GET_CLASS(rc) == MPIDU_SOCK_ERR_NOMEM)
-	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sock_writev failed, out of memory"));
-		sreq->status.MPI_ERROR = MPIR_ERR_MEMALLOCFAILED;
-	    }
 	    else
 	    {
 		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sock_writev failed, rc=%d", rc));
 		/* Connection just failed.  Mark the request complete and return an error. */
 		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_FAILED");
 		vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
-		/* TODO: Create an appropriate error message based on the return value (rc) */
 		sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 		 /* MT - CH3U_Request_complete performs write barrier */
 		MPIDI_CH3U_Request_complete(sreq);
@@ -181,8 +169,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	    MPIDI_DBG_PRINTF((55, FCNAME, "send queue not empty, enqueuing"));
 	    update_request(sreq, iov, n_iov, 0, 0);
 	    
-	    /* myct: should be enqueue x */
-	    MPIDI_CH3I_SendQ_enqueue_x(vc, sreq, stream_no); /* FIXME enqueue x */
+	    MPIDI_CH3I_SendQ_enqueue_x(vc, sreq, stream_no);
 	}
     }
     else if (SEND_CONNECTED(vc, stream_no) == MPIDI_CH3I_VC_STATE_UNCONNECTED)
@@ -191,8 +178,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  enqueuing request"));
 	update_request(sreq, iov, n_iov, 0, 0);
 
-	//MPIDI_CH3I_SendQ_enqueue(vc, sreq);  /* FIXME enqueue x */
-
 	if(vc->ch.pkt == NULL)
         {
             mpi_errno = MPIDI_CH3I_VC_post_connect(vc);
@@ -200,6 +185,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
             if (mpi_errno != MPI_SUCCESS)
             {
                 mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+                goto fn_fail;
             }
             /* --END ERROR HANDLING-- */
         }
@@ -207,30 +193,30 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	MPIDU_Sctp_stream_init(vc, sreq, stream_no);
     }
     else if (SEND_CONNECTED(vc, stream_no) != MPIDI_CH3I_VC_STATE_FAILED)
-    {
-        /* brad : do we ever get here in SCTP? */
-        
+    {        
 	/* Unable to send data at the moment, so queue it for later */
 	MPIDI_DBG_PRINTF((55, FCNAME, "still connecting.  enqueuing request"));
 	update_request(sreq, iov, n_iov, 0, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq); /* FIXME enqueue x */
+	MPIDI_CH3I_SendQ_enqueue_x(vc, sreq, stream_no); /* FIXME enqueue x */
     }
     /* --BEGIN ERROR HANDLING-- */
     else
     {
-        /* brad : do we ever get here in SCTP? */
-        
 	MPIDI_DBG_PRINTF((55, FCNAME, "connection failed"));
 	/* Connection failed.  Mark the request complete and return an error. */
-	/* TODO: Create an appropriate error message */
 	sreq->status.MPI_ERROR = MPI_ERR_INTERN;
 	/* MT - CH3U_Request_complete performs write barrier */
 	MPIDI_CH3U_Request_complete(sreq);
     }
     /* --END ERROR HANDLING-- */
 
+ fn_exit:
     MPIDI_DBG_PRINTF((50, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
+ fn_fail:
+    /* --BEGIN ERROR HANDLING-- */    
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */    
 }
 

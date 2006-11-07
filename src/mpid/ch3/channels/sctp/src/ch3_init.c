@@ -6,21 +6,42 @@
 
 #include "mpidi_ch3_impl.h"
 
-// myct: we need the NUM_STREAM def
+
+/* extern'd in mpidi_ch3_impl.h */
+
+  /* assocID -> VC hash */
+HASH* MPIDI_CH3I_assocID_table;
+
+  /* lone socket for standard communications */
+int MPIDI_CH3I_onetomany_fd;
+
+  /* number of items waiting to be sent (all VCs) */
+int sendq_total;
+
+  /* event queue */
+struct MPIDU_Sctp_eventq_elem* eventq_head;
+struct MPIDU_Sctp_eventq_elem* eventq_tail;
+
+  /* for dynamic processes */
+MPIDI_VC_t * MPIDI_CH3I_dynamic_tmp_vc;
+int MPIDI_CH3I_dynamic_tmp_fd;
+
+
+
+/* need the NUM_STREAM def */
 #include "mpidi_ch3_pre.h"
 
-static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, 
+static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank, 
 				char **bc_val_p, int *val_max_sz_p);
 static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name, 
                                           MPIDI_VC_t ** new_vc);
 
 
 /*
- *  MPIDI_CH3_Init  - makes socket specific initializations.  Most of this 
- *                    functionality is in the MPIDI_CH3U_Init_sock upcall 
- *                    because the same tasks need to be done for the ssh 
- *                    (sock + shm) channel.  
+ *  MPIDI_CH3_Init  - makes sctp specific initializations.  Most of this 
+ *                    functionality is in the MPIDI_CH3U_Init_sctp upcall 
+ *                    because the same tasks may need to be done for  
+ *                    future (sctp + ?) channels.  
  */
 
 #undef FUNCNAME
@@ -31,9 +52,8 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
 {
     int mpi_errno = MPI_SUCCESS;
     char *publish_bc_orig = NULL;
-    char *bc_key = NULL;
     char *bc_val = NULL;
-    int val_max_remaining, key_max_sz;
+    int val_max_remaining;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
@@ -42,26 +62,32 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
     if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
 
     /* Initialize the business card */
-    mpi_errno = my_MPIDI_CH3I_BCInit( pg_rank, &publish_bc_orig, &bc_key, &bc_val,
-				   &val_max_remaining );
+    mpi_errno = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    publish_bc_orig = bc_val;
+
+
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* Currently, this "upcall" is a static within this file but later this could
      *  go with all the others in the ch3/util directory.
      */
     /* initialize aspects specific to sctp  */
-    mpi_errno = MPIDI_CH3U_Init_sctp(has_parent, pg_p, pg_rank,
-				     &publish_bc_orig, &bc_key, &bc_val, 
+    mpi_errno = MPIDI_CH3U_Init_sctp(has_parent, pg_p, pg_rank, &bc_val, 
 				     &val_max_remaining);
+
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    /* Set the connection information in our process group 
+       (publish the business card ) */
+    MPIDI_PG_SetConnInfo( pg_rank, (const char *)publish_bc_orig );
+
+    MPIDI_CH3I_BCFree( publish_bc_orig );
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
     return mpi_errno;
- fn_fail:
-    if (bc_key != NULL) {
-        MPIU_Free(bc_key);
-    }
+ fn_fail:   
     if (publish_bc_orig != NULL) {
         MPIU_Free(publish_bc_orig);
     }           
@@ -70,6 +96,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
 
 /* This function simply tells the CH3 device to use the defaults for the 
    MPI Port functions */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_PortFnsInit
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns ) 
 {
     MPIU_UNREFERENCED_ARG(portFns);
@@ -78,12 +108,20 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
 
 /* This function simply tells the CH3 device to use the defaults for the 
    MPI-2 RMA functions */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_RMAFnsInit
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a ) 
 { 
     return 0;
 }
 
 /* Perform the channel-specific vc initialization */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_VC_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
 
     int i = 0;
@@ -97,22 +135,28 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     vc->ch.fd = MPIDI_CH3I_onetomany_fd;
     vc->ch.pkt = NULL;
     vc->ch.pg_id = NULL;
-
     vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-
     vc->ch.send_init_count = 0;
    
-    return 0;
+    return MPI_SUCCESS;
 }
 
 /* Select the routine that uses sctp to connect two communicators
-   using a socket */
+   using a temporary socket */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Connect_to_root
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_Connect_to_root(const char * port_name, 
 			      MPIDI_VC_t ** new_vc)
 {
     return MPIDI_CH3I_Connect_to_root_sctp( port_name, new_vc );
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Connect_to_root_sctp
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name, 
 			      MPIDI_VC_t ** new_vc)
 {
@@ -145,6 +189,9 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
 			     0, 5, port, no_nagle,
 			     &bufsz, &evnts, &tmp_fd,
                              &real_port) == -1) {
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME,
+                                         __LINE__, MPI_ERR_OTHER, "**fail", 0);
+        
         /* FIXME define error code */
         goto fn_fail;
     }
@@ -154,7 +201,7 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
 		   port_name );
 
     /* obtain the sockaddr_in from the business card */
-    mpi_errno = my_MPIDU_Sock_get_conninfo_from_bc( port_name, host_description,
+    mpi_errno = MPIDU_Sctp_get_conninfo_from_bc( port_name, host_description,
 						 sizeof(host_description),
 						 &port, &ifaddr, &hasIfaddr );
     if (mpi_errno) {
@@ -175,7 +222,7 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
      */
     port = MPIDI_CH3I_listener_port;
     MPIDI_CH3I_listener_port = real_port;
-    mpi_errno = MPIDI_CH3I_Get_business_card(bizcard, MPI_MAX_PORT_NAME);
+    mpi_errno = MPIDI_CH3I_Get_business_card(-1, bizcard, MPI_MAX_PORT_NAME);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) {
         /* FIXME define error code */
@@ -213,13 +260,13 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
         /* --END ERROR HANDLING-- */
 
         /* deliberately avoid nb < 0 */
-        if(nb > 0 && adjust_iov(&iovp, &iov_cnt, nb)) { /* static in ch3_progress.c */
+        if(nb > 0 && adjust_iov(&iovp, &iov_cnt, nb)) {
             /* done sending */
             break;
         }
     }
 
-    /* for dynamic procs, we only progress on one fd... */
+    /* for dynamic procs, we only progress one tmp connection at a time... */
     MPIU_Assert(MPIDI_CH3I_dynamic_tmp_vc == NULL);
     MPIDI_CH3I_dynamic_tmp_fd = tmp_fd;
 
@@ -256,9 +303,29 @@ static int MPIDI_CH3I_Connect_to_root_sctp(const char * port_name,
     goto fn_exit;    
 }
 
+/* MPIDI_CH3_CHANNEL_AVOIDS_SELECT is defined so we need this for dynamic processes */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Complete_Acceptq_dequeue
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Complete_Acceptq_dequeue(MPIDI_VC_t *vc) {
+
+    if(vc != NULL) {
+        MPIU_Assert(MPIDI_CH3I_dynamic_tmp_vc == NULL);
+        
+        MPIDI_CH3I_dynamic_tmp_vc = vc;
+        MPIDI_CH3I_dynamic_tmp_fd = vc->ch.fd;
+    }
+    
+    return MPI_SUCCESS;
+}
+
 /* This "upcall" is (temporarily?) a static here, and may be in ch3/util later. */
-static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
-                         char **publish_bc_p, char **bc_key_p, 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3U_Init_sctp
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank, 
 			 char **bc_val_p, int *val_max_sz_p) {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -277,38 +344,12 @@ static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
     sendq_total = 0;    
     for (p = 0; p < pg_size; p++) {
-	MPIDI_CH3_VC_Init(&(pg_p->vct[p]));  /* TODO check success */
+	MPIDI_CH3_VC_Init(&(pg_p->vct[p]));
     }    
 
-    /* This function actually will work for SCTP if we use the MPIDI_CH3I_listener_port */
-    mpi_errno = my_MPIDI_CH3U_Get_business_card_sock(bc_val_p, val_max_sz_p);
+    mpi_errno = MPIDI_CH3U_Get_business_card_sctp(bc_val_p, val_max_sz_p);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**init_buscard");
-    }
-
-    MPIDI_PG_GetConnKVSname(&pg_p->ch.kvs_name);
-
-    /* might still have something to add (e.g. ssm channel) so don't publish */
-    if (publish_bc_p != NULL)
-    {
-	// myct: PMI success is 0
-	pmi_errno = PMI_KVS_Put(pg_p->ch.kvs_name, *bc_key_p, *publish_bc_p);
-	if (pmi_errno != 0) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_put",
-				 "**pmi_kvs_put %d", pmi_errno);
-	}
-	pmi_errno = PMI_KVS_Commit(pg_p->ch.kvs_name);
-
-	if (pmi_errno != 0) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_kvs_commit",
-				 "**pmi_kvs_commit %d", pmi_errno);
-	}
-
-	pmi_errno = PMI_Barrier();
-	if (pmi_errno != 0) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_barrier",
-				 "**pmi_barrier %d", pmi_errno);
-	}
     }
 
  fn_exit:
@@ -327,13 +368,20 @@ static int MPIDI_CH3U_Init_sctp(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     /* --END ERROR HANDLING-- */
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_PG_Init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
 {
     return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_VC_GetStateString
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 const char * MPIDI_CH3_VC_GetStateString( int state )
 {
-
-    return "urmom";
+    return NULL;
 }

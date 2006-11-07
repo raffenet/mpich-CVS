@@ -58,6 +58,9 @@ extern int MPID_nem_sctp_port; /* needed for init and bizcards */
 /*   hash table for association ID -> VC */
 extern HASH* MPID_nem_sctp_assocID_table;
 
+/*   for tmp connection with dynamic process (and no select()) */
+extern MPIDI_VC_t * MPIDI_CH3I_dynamic_tmp_vc;
+extern int MPIDI_CH3I_dynamic_tmp_fd;
 
 /* functions */
 

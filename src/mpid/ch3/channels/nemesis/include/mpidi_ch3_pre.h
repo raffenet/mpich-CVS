@@ -33,6 +33,9 @@
 
 #if(MPID_NEM_NET_MODULE == MPID_NEM_SCTP_MODULE)
 
+#define MPIDI_CH3_HAS_CHANNEL_CLOSE
+#define MPIDI_CH3_CHANNEL_AVOIDS_SELECT
+
     /* TODO make all of these _ and make all of these adjustable using env var */
 #define MPICH_SCTP_NUM_STREAMS 1
 #define _MPICH_SCTP_SOCKET_BUFSZ 233016  /* _ because not to confuse with env var */

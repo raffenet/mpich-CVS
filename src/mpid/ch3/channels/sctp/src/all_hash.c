@@ -1,30 +1,3 @@
-/*
- * Copyright (c) 2001-2002 The Trustees of Indiana University.  
- *                         All rights reserved.
- * Copyright (c) 1998-2001 University of Notre Dame. 
- *                         All rights reserved.
- * Copyright (c) 1994-1998 The Ohio State University.  
- *                         All rights reserved.
- * 
- * This file is part of the LAM/MPI software package.  For license
- * information, see the LICENSE file in the top level directory of the
- * LAM/MPI source distribution.
- * 
- * $HEADER$
- *	Software for Humanity
- *	RBD
- *
- *	This program is freely distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	$Id$
- *
- *	Function:	- generic hash table management code
- *			- fully dynamic version
- *			- table entry must have int4 key as first field
- */
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -205,7 +178,7 @@ ah_insert(HASH *ahd, void *elem)
 }
 
 /* 
- * myct: this hash insert will expand if out of slot
+ *  this hash insert will expand if out of slots
  */
 int
 ah_insert_with_expand(HASH *ahd, void *elem) {

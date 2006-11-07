@@ -23,13 +23,13 @@
 #define MPIDI_CH3_Request_add_ref(req_)					\
 {									\
     MPIU_Assert(HANDLE_GET_MPI_KIND((req_)->handle) == MPID_REQUEST);	\
-    MPIR_Request_add_ref(req_);						\
+    MPIU_Object_add_ref(req_);						\
 }
 
 #define MPIDI_CH3_Request_release_ref(req_, req_ref_count_)		\
 {									\
     MPIU_Assert(HANDLE_GET_MPI_KIND((req_)->handle) == MPID_REQUEST);	\
-    MPIR_Request_release_ref((req_), (req_ref_count_));			\
+    MPIU_Object_release_ref((req_), (req_ref_count_));			\
     MPIU_Assert((req_)->ref_count >= 0);				\
 }
 

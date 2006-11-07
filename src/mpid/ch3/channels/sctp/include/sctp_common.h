@@ -31,11 +31,6 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
 
 int sctp_open_dgm_socket();
 
-
-int sctp_recvMsg(char* buffer, int nbytes);
-
-int sctp_sendMsg(char* buffer, int nbytes);
-
 ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
 		    struct sockaddr *to,
 		    socklen_t tolen __attribute__((unused)),
@@ -46,5 +41,12 @@ ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
 		    u_int32_t context );
 
 int giveMeSockAddr(unsigned char ifaddr[], int port, struct sockaddr_in* addr);
+
+int sctp_recv(int fd, char* buffer, int cnt, struct sctp_sndrcvinfo* sri, 
+	      int* msg_flags, int* read);
+int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t stream, int ppid);
+int sctp_setblock(int fd, int mode);
+
+
 
 #endif

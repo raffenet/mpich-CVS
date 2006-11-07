@@ -189,8 +189,25 @@ static inline int recv_progress()
                     /* TODO In a multi-stream design, data may be a connection
                      *  pkt arriving on an existing association but a new stream.
                      */
+
+                    /* TODO Implement accept side of dynamic processes based on this
+                     *        pseudo-code.
+                     */
+                    /* if recv'd from (accept) control stream
+                     *     malloc MPIDI_VC_t
+                     *     MPIDI_VC_Init(vc, NULL, 0) and other init...
+                     *     extract port_name_tag from msg
+                     *     extract business_card from msg, set vc->ch.to_address
+                     *     open new socket, set to vc->ch.fd
+                     *     construct new business_card based on vc->ch.fd
+                     *     prepare to send new business_card
+                     *     ACK new business_card
+                     *     MPIDI_CH3I_Acceptq_enqueue(vc, port_name_tag);
+                     *     MPIDI_CH3_Progress_signal_completion();
+                     */
                     
-                    /* put cell on the process recv queue */
+                    /* else
+                     *     put cell on the process recv queue */
                     MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, v_cell);                    
                 }                
             }
@@ -224,3 +241,32 @@ int MPID_nem_sctp_module_poll (MPID_nem_poll_dir_t in_or_out)
     goto fn_exit;
 }
 
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Channel_close
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Channel_close( void )
+{
+    /* When called, Outstanding_close_ops in ch3u_handle_connection should be zero */
+    /* WARNING! : Outstanding_close_ops can be zero prematurely if MPI_Comm_disconnect
+     *              is called.
+     */
+    int mpi_errno = MPI_SUCCESS;
+    
+    if(MPIDI_CH3I_dynamic_tmp_vc) {
+        /*  be sure to not close prematurely when a close pkt is received from
+         *  a recently disconnected VC on the main onetomany socket
+         */
+        if(MPIDI_CH3I_dynamic_tmp_vc->state == MPIDI_VC_STATE_INACTIVE) {
+            
+        /* when using a tmp VC for dynamic processes, close the socket
+         *  and reset variables since we only do one connect/accept pair at a time.
+         */
+            close(MPIDI_CH3I_dynamic_tmp_fd); /* FIXME check for errors */
+            MPIDI_CH3I_dynamic_tmp_vc = NULL;
+            MPIDI_CH3I_dynamic_tmp_fd = -1;
+        }
+    }
+    
+}

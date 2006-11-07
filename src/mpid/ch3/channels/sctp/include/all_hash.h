@@ -1,23 +1,3 @@
-/* 
- * Copyright (c) 2001-2002 The Trustees of Indiana University.  
- *                         All rights reserved.
- * Copyright (c) 1998-2001 University of Notre Dame. 
- *                         All rights reserved.
- * Copyright (c) 1994-1998 The Ohio State University.  
- *                         All rights reserved.
- * 
- * This file is part of the LAM/MPI software package.  For license
- * information, see the LICENSE file in the top level directory of the
- * LAM/MPI source distribution.
- * 
- * $HEADER$
- *
- * $Id$
- * 
- *	Function:	- generic hash table templates and constants
- *			- for both the static and dynamic versions
- */
-
 #ifndef _ALLHASH
 #define _ALLHASH
 
@@ -89,10 +69,10 @@ extern void		*ah_find(HASH *ahd, int4 key);
 extern void		*ah_find_elm(HASH *ahd, void *elem);
 extern void		*ah_next(HASH *ahd, void *elem);
 
-/* myct: insert with expand if necessary */
+/* insert with expand if necessary */
 extern int ah_insert_with_expand(HASH *ahd, void *elem);
 
-/* myct: nicer macro names */
+/* nicer macro names */
 #define hash_insert(a, b)              ah_insert_with_expand(a, b)
 #define hash_init(a, b, c, d)          ah_init(a, b, c, d)
 #define hash_find(a, b)                ah_find(a, b)
