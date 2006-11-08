@@ -5142,6 +5142,13 @@ AC_OUTPUT_COMMANDS([
    cp src/env/mpich2version bin/mpich2version ;
    chmod a+x bin/mpich2version])
 
+# move the parkill command into the bin directory of the build tree
+AC_OUTPUT_COMMANDS([
+   chmod a+x src/env/parkill ;
+   if test ! -d bin  ; then mkdir bin ; fi 
+   cp src/env/parkill bin/parkill ;
+   chmod a+x bin/parkill])
+
 # Move the mpio.h file into the build directories for testing
 #export top_srcdir
 #export enable_romio
@@ -5261,6 +5268,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/env/mpif90.conf \
 	  src/env/mpif90.bash \
           src/env/mpich2version \
+	  src/env/parkill \
 	  src/env/Makefile\
 	  src/util/createshlib \
           src/mpi/Makefile \
