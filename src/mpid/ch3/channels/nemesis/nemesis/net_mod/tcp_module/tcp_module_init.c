@@ -177,7 +177,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             MPIU_ERR_CHKANDJUMP2 (nodes[grank].desc == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|accept", "**sock|poll|accept %d %s", errno, strerror (errno));
             {
                 struct sockaddr_in sid;
-                size_t sidlen = sizeof(sid);
+                socklen_t sidlen = sizeof(sid);
                 getsockname(nodes[grank].desc, (struct sockaddr *)&sid, &sidlen);
             }
             
@@ -213,7 +213,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             MPIU_ERR_CHKANDJUMP4 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock_connect", "**sock_connect %s %d %s %d", s, port_num, strerror (errno), errno);
             {
                 struct sockaddr_in sid;
-                size_t sidlen = sizeof(sid);
+                socklen_t sidlen = sizeof(sid);
                 getsockname(nodes[grank].desc, (struct sockaddr *)&sid, &sidlen);
             }
 #ifdef TRACE

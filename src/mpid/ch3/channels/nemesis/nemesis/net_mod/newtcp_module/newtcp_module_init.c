@@ -98,7 +98,7 @@ int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int 
     int ret;
     struct sockaddr_in sock_id;
     struct hostent *hp = NULL;
-    size_t len;
+    socklen_t len;
     char ipaddr_str[INET_ADDRSTRLEN];
     const char *p;
 
