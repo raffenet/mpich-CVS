@@ -6,6 +6,8 @@
 
 #include "tcp_module_impl.h"
 
+int MPID_nem_alt_tcp_module_poll (MPID_nem_poll_dir_t in_or_out);
+
 /* #define TRACE */
   
 #undef FUNCNAME

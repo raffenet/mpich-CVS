@@ -41,8 +41,8 @@ typedef struct nodes_struct
 
 typedef struct tcp_internal
 {
-   fd_set  set;
    int     max_fd;
+   fd_set  set;
    int    *ext_ranks;
    node_t *nodes;
    int     n_pending_send;

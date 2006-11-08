@@ -22,7 +22,7 @@ mpid_nem_tcp_internal_t MPID_nem_tcp_internal_vars = {0};
 static int init_tcp (MPIDI_PG_t *pg_p) 
 {
     int           mpi_errno = MPI_SUCCESS;
-    int           ret;
+    int           ret = 0;
     int           pmi_errno;
     int           numprocs  = MPID_nem_mem_region.ext_procs;
     unsigned int  len       = sizeof(struct sockaddr_in);
@@ -61,6 +61,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             /*     if the environment var is not set, low_port and high_port are unchanged */
             low_port = high_port = 0;
             MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
+            MPIU_ERR_CHKANDJUMP (low_port < 0 || low_port > high_port, mpi_errno, MPI_ERR_OTHER, "**badportrange");
 
             /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available address */
             for (port = low_port; port <= high_port; ++port)
@@ -123,6 +124,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             /*     if the environment var is not set, low_port and high_port are unchanged */
             low_port = high_port = 0;
             MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
+            MPIU_ERR_CHKANDJUMP (low_port < 0 || low_port > high_port, mpi_errno, MPI_ERR_OTHER, "**badportrange");
 
             /* if MPICH_PORT_RANGE is not set, low_port and high_port are 0 so bind will use any available address */
             for (port = low_port; port <= high_port; ++port)

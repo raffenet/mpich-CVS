@@ -7,7 +7,6 @@
 #include "mpidimpl.h"
 #include "mpid_nem_queue.h"
 #include "my_papi_defs.h"
-#include "rdtsc.h"
 
 
 #define USE_MPICH2

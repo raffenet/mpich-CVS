@@ -26,7 +26,6 @@ MPID_nem_tcp_module_finalize ()
         char buff[NEM_TCP_BUF_SIZE] = TCP_END_STRING;
         int index;
         int grank;
-        int is_master = 0;
 
 #ifdef TRACE
         fprintf(stderr,"[%i] --- TCP END PENDING SEND \n",MPID_nem_mem_region.rank);

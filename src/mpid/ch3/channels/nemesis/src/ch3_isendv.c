@@ -22,7 +22,6 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
     int mpi_errno = MPI_SUCCESS;
     int again = 0;
     int j;
-    int complete;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
@@ -77,20 +76,34 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	}
 	else
 	{
-	    mpi_errno = MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
-	    if (!complete)
-	    {
-		sreq->ch.iov_offset = 0;
-		sreq->ch.vc = vc;
-		MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
-		MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
-		MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
-	    }
+            int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+            
+            reqFn = sreq->dev.OnDataAvail;
+            if (!reqFn)
+            {
+                MPIU_Assert (MPIDI_Request_get_type (sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+                MPIDI_CH3U_Request_complete (sreq);
+                MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
+            }
             else
             {
-                MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
+                int complete = 0;
+                
+                mpi_errno = reqFn (vc, sreq, &complete);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+                if (!complete)
+                {
+                    sreq->ch.iov_offset = 0;
+                    sreq->ch.vc = vc;
+                    MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
+                    MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
+                    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+                }
+                else
+                {
+                    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
+                }
             }
         }    
     }

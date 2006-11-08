@@ -273,26 +273,46 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	    }
 	    else
 	    {
-		complete = 0;
-		mpi_errno = MPIDI_CH3U_Handle_send_req (sreq->ch.vc, sreq, &complete);
-		if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-	    
-		if (complete)
-		{
-		    MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
-		    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+                int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+                
+                reqFn = sreq->dev.OnDataAvail;
+                if (!reqFn)
+                {
+                    MPIU_Assert (MPIDI_Request_get_type (sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+                    MPIDI_CH3U_Request_complete (sreq);
+                    
+                    MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
+                    MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
                     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                        int i;
-                        for (i = 0; i < MPID_IOV_LIMIT; ++i)
-                            sreq->dev.iov[i].MPID_IOV_LEN = 0;
-                    });
+                            int i;
+                            for (i = 0; i < MPID_IOV_LIMIT; ++i)
+                                sreq->dev.iov[i].MPID_IOV_LEN = 0;
+                        });
                 }
-		else
-		{
-		    sreq->ch.iov_offset = 0;
-                    MPIU_Assert (sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
-		}
+                else
+                {
+                    complete = 0;
+                    mpi_errno = reqFn (sreq->ch.vc, sreq, &complete);
+                    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+                    if (complete)
+                    {
+                        MPIDI_CH3I_SendQ_dequeue (CH3_NORMAL_QUEUE);
+                        MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+                        MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
+                        MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+                                int i;
+                                for (i = 0; i < MPID_IOV_LIMIT; ++i)
+                                    sreq->dev.iov[i].MPID_IOV_LEN = 0;
+                            });
+                    }
+                    else
+                    {
+                        sreq->ch.iov_offset = 0;
+                        MPIU_Assert (sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
+                    }
+                }            
 	    }
 	}
     }

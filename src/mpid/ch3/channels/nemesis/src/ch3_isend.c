@@ -18,7 +18,6 @@
 int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_sz_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
     int again = 0;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
@@ -44,8 +43,20 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 	}
 	else
 	{
-	    mpi_errno = MPIDI_CH3U_Handle_send_req (vc, sreq, &complete);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+            
+            reqFn = sreq->dev.OnDataAvail;
+            if (!reqFn)
+            {
+                MPIU_Assert (MPIDI_Request_get_type (sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+                MPIDI_CH3U_Request_complete (sreq);
+            }
+            else
+            {
+                int complete = 0;
+                mpi_errno = reqFn (vc, sreq, &complete);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            }
 	}
     }
     else
