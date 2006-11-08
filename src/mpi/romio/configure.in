@@ -720,6 +720,8 @@ fi
 ])
 if test "$pac_cv_int_hold_pointer" != yes ; then
     AC_DEFINE(INT_LT_POINTER,1,[Define if int smaller than pointer])
+    dnl Switch to a conforming name (start with HAVE or USE)
+    AC_DEFINE(HAVE_INT_LT_POINTER,1,[Define if int smaller than pointer])
 fi
 #
 dnl The original ROMIO configure used a set of complex tests here; this
