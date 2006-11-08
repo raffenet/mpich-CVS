@@ -75,8 +75,11 @@ static int MPID_Type_struct_alignsize(int count,
 			    tmp_alignsize = HAVE_MAX_DOUBLE_FP_ALIGNMENT;
 		    }
 		    else {
+			/* HAVE_MAX_FP_ALIGNMENT may not be defined, hence commented */
+				/*
 			if (tmp_alignsize > HAVE_MAX_FP_ALIGNMENT)
 			    tmp_alignsize = HAVE_MAX_FP_ALIGNMENT;
+				*/
 		    }
 #elif defined(HAVE_MAX_FP_ALIGNMENT)
 		    if (tmp_alignsize > HAVE_MAX_FP_ALIGNMENT)
