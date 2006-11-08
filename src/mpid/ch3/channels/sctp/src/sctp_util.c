@@ -332,17 +332,10 @@ int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
     
     if (r <= 0) {  /* error */
 
-      switch(errno) {
-      case EAGAIN:
-
-      case ENOMEM:
-
+      if(errno == EAGAIN || errno == ENOMEM || r == 0)
 	break;
-
-      default:
+      else
 	goto fn_fail;
-
-      }
 
     } else {  /* r > 0 */
 
@@ -358,6 +351,7 @@ int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
  fn_exit:
   return (nwritten >= 0)? MPI_SUCCESS : -1;
  fn_fail:
+  *nb = nwritten;
   nwritten = -1;
   perror("MPIDU_Sctp_writev");
   goto fn_exit;
