@@ -27,11 +27,6 @@ extern MPID_Request ** const MPID_Recvq_posted_head_ptr;
 extern MPID_Request ** const MPID_Recvq_unexpected_head_ptr; 
 extern MPID_Request ** const MPID_Recvq_posted_tail_ptr;
 extern MPID_Request ** const MPID_Recvq_unexpected_tail_ptr;
-#else
-MPID_Request ** const MPID_Recvq_posted_head_ptr = 0;
-MPID_Request ** const MPID_Recvq_unexpected_head_ptr =0; 
-MPID_Request ** const MPID_Recvq_posted_tail_ptr = 0;
-MPID_Request ** const MPID_Recvq_unexpected_tail_ptr = 0;
 #endif
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
