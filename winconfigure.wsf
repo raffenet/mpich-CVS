@@ -336,6 +336,11 @@ Next
   len_doublecplx      = "10"
   len_2dc             = "20"
 
+' Special C++ Datatypes to support Fortran datatypes within C++ 
+  len_bool			= "01"
+  len_complex			= "08"
+  len_double_complex		= "10"
+  len_long_double_complex	= "10"
 
 Function CreateDtypeDictionary(byref types, str, b64)
 	dim regEx, Match, Matches
@@ -854,6 +859,12 @@ else
 	missing_datatypes = missing_datatypes & "MPI_2DOUBLE_COMPLEX" & vbCrLf
 	MPI_2DOUBLE_COMPLEX   = "0x" + mpi_datatype_prefix + len_2dc        + "25"
 end if
+
+' Special C++ Datatypes to support Fortran datatypes within C++ 
+MPIR_CXX_BOOL 			= "0x" + mpi_datatype_prefix + len_bool 		+ "33"
+MPIR_CXX_COMPLEX		= "0x" + mpi_datatype_prefix + len_complex		+ "34"
+MPIR_CXX_DOUBLE_COMPLEX 	= "0x" + mpi_datatype_prefix + len_double_complex	+ "35"
+MPIR_CXX_LONG_DOUBLE_COMPLEX	= "0x" + mpi_datatype_prefix + len_long_double_complex	+ "36"
 
 if missing_datatypes <> "" then
 	MsgBox "Missing datatypes:" & vbCrLf & missing_datatypes
@@ -2224,6 +2235,42 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@INCLUDE_MPICXX_H@", "#include ""mpicxx.h""")
 			Case "@FORTRAN_BINDING@"
 				str = Replace(str, "@FORTRAN_BINDING@", "1")
+			Case "@INCLUDE_MPIDDEFS_H@"
+				str = Replace(str, "@INCLUDE_MPIDDEFS_H@", "/* No device specific defs */")
+			Case "@GNUC_VERSION@"
+				str = Replace(str, "@GNUC_VERSION@", "0")
+			Case "@GNUC_MINORVERSION@"
+				str = Replace(str, "@GNUC_MINORVERSION", "0")
+			Case "@MPIR_CXX_BOOL@"
+				str = Replace(str, "@MPIR_CXX_BOOL@", MPIR_CXX_BOOL)
+			Case "@MPIR_CXX_COMPLEX@"
+				str = Replace(str, "@MPIR_CXX_COMPLEX@", MPIR_CXX_COMPLEX)
+			Case "@MPIR_CXX_DOUBLE_COMPLEX@"
+				str = Replace(str, "@MPIR_CXX_DOUBLE_COMPLEX@", MPIR_CXX_DOUBLE_COMPLEX)
+			Case "@MPIR_CXX_LONG_DOUBLE_COMPLEX@"
+				str = Replace(str, "@MPIR_CXX_LONG_DOUBLE_COMPLEX@", MPIR_CXX_LONG_DOUBLE_COMPLEX)
+			Case "@FORTRAN_MPI_OFFSET@"
+				str = Replace(str, "@FORTRAN_MPI_OFFSET@", "INTEGER")
+			Case "@mpe_c99_stdint_inc@"
+				str = Replace(str, "@mpe_c99_stdint_inc@", "/* #include <stdint.h> */")
+			Case "@mpe_c99_pridxx_inc@"
+				str = Replace(str, "@mpe_c99_pridxx_inc@", "/* #include <inttypes.h> */")
+			Case "@mpe_int8_t@"
+				str = Replace(str, "@mpe_int8_t@", "__int8")
+			Case "@mpe_int16_t@"
+				str = Replace(str, "@mpe_int16_t@", "__int16")
+			Case "@mpe_int32_t@"
+				str = Replace(str, "@mpe_int32_t@", "__int32")
+			Case "@mpe_int64_t@"
+				str = Replace(str, "@mpe_int64_t@", "__int64")
+			Case "@mpe_int8_fmt@"
+				str = Replace(str, "@mpe_int8_fmt@", """%hhd""")
+			Case "@mpe_int16_fmt@"
+				str = Replace(str, "@mpe_int16_fmt@", """%hd""")
+			Case "@mpe_int32_fmt@"
+				str = Replace(str, "@mpe_int32_fmt@", """%ld""")
+			Case "@mpe_int64_fmt@"
+				str = Replace(str, "@mpe_int64_fmt@", """%lld""")
 			Case Else
 				unhandled_ats = unhandled_ats & Match & vbNewLine
 		End Select
@@ -3050,6 +3097,44 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("/* #undef HAVE_INET_PTON */")
 				Case "_LARGE_FILES"
 					fout.WriteLine("/* #undef _LARGE_FILES */")
+				Case "HAVE_MAX_DOUBLE_FP_ALIGNMENT"
+					fout.WriteLine("#define HAVE_MAX_DOUBLE_FP_ALIGNMENT 8")
+				Case "HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT"
+					fout.WriteLine("#define HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT 8")
+				Case "SIZEOF_BOOL"
+					fout.WriteLine("#define SIZEOF_BOOL 1")
+				Case "SIZEOF_COMPLEX"
+					fout.WriteLine("#define SIZEOF_COMPLEX 8")
+				Case "SIZEOF_DOUBLECOMPLEX"
+					fout.WriteLine("#define SIZEOF_DOUBLECOMPLEX 16")
+				Case "SIZEOF_LONGDOUBLECOMPLEX"
+					fout.WriteLine("#define SIZEOF_LONGDOUBLECOMPLEX 16")
+				Case "size_t"
+					fout.WriteLine("#define size_t unsigned")
+				Case "HAVE_UTIL_SHM"
+					fout.WriteLine("#undef HAVE_UTIL_SHM")
+				Case "HAVE_UTIL_SOCK"
+					fout.WriteLine("#undef HAVE_UTIL_SOCK")
+				Case "MPI_AINT_IS_LONG_INT"
+					fout.WriteLine("#define MPI_AINT_IS_LONG_INT 1")
+				Case "MPI_AINT_IS_LONG_LONG_INT"
+					fout.WriteLine("#define MPI_AINT_IS_LONG_LONG_INT 0")
+				Case "pid_t"
+					fout.WriteLine("#define pid_t int")
+				Case "CLOG_IMPL"
+					fout.WriteLine("#undef CLOG_IMPL")
+				Case "FIX_STDINT_ORDER"
+					fout.WriteLine("#undef FIX_STDINT_ORDER")
+				Case "HAVE_CRAY_FCD_STRING"
+					fout.WriteLine("#undef HAVE_CRAY_FCD_STRING")
+				Case "HAVE_CRAY_FCD_LOGICAL"
+					fout.WriteLine("#undef HAVE_CRAY_FCD_LOGICAL")
+				Case "HAVE_MPI_SPAWN"
+					fout.WriteLine("#undef HAVE_MPI_SPAWN")
+				Case "MAKE_SAFE_PMPI_CALL"
+					fout.WriteLine("#undef MAKE_SAFE_PMPI_CALL")
+				Case "HAVE_MPI_NAMING"
+					fout.WriteLine("#undef HAVE_MPI_NAMING")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -3124,6 +3209,9 @@ fout.WriteLine("#define HAVE_LONGTOPTR")
 fout.WriteLine("#define HAVE_INTTOPTR")
 fout.WriteLine("#define HAVE_AINTTOPTR")
 fout.WriteLine("#endif")
+' Define so that we can test whether the mpichconf.h file has been included 
+fout.WriteLine(" /* Define so that we can test whether the mpichconf.h has been included */")
+fout.WriteLine("#define HAVE_MPICHCONF 1")
 If Not bRemoveFortran Then
 	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
 	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
@@ -3171,6 +3259,10 @@ fout.WriteLine("#define HAVE_LONGTOPTR")
 fout.WriteLine("#define HAVE_INTTOPTR")
 fout.WriteLine("#define HAVE_AINTTOPTR")
 fout.WriteLine("#endif")
+' Define so that we can test whether the mpichconf.h file has been included 
+fout.WriteLine(" /* Define so that we can test whether the mpichconf.h has been included */")
+fout.WriteLine("#define HAVE_MPICHCONF 1")
+
 If Not bRemoveFortran Then
 	fout.WriteLine("/* Define to #define MPIR_F_TRUE/FALSE to F77_TRUE/FALSE_VALUE */")
 	fout.WriteLine("#define F77_USE_BOOLEAN_LITERALS 1")
@@ -3589,7 +3681,22 @@ If f.FolderExists("src\mpe2") Then
 	End If
 
 End If
+If f.FolderExists("src\mpe2\src\logging\include") Then
+        '
+        ' clog_inttypes.h
+        ' 
 
+	If f.FileExists("src\mpe2\src\logging\include\clog_inttypes.h.in") Then
+		cEcho "Creating src\mpe2\src\logging\include\clog_inttypes.h"
+		Set fin = f.OpenTextFile("src\mpe2\src\logging\include\clog_inttypes.h.in")
+		Set fout = f.CreateTextFile("src\mpe2\src\logging\include\clog_inttypes.h")
+		contents = fin.ReadAll()
+		contents = ReplaceAts(contents, false, false)
+		fout.Write(contents)
+		fin.Close()
+		fout.Close()	
+	End If
+End If
 '
 ' mpe_thread.h
 '
@@ -3633,6 +3740,7 @@ If f.FileExists("src\util\thread\mpe_thread_conf.h.in") Then
 Else
 	cEcho "Skipping file: mpe_thread_conf.h"
 End If
+
 
 '
 ' mpid_thread.h
