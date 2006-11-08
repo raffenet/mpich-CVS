@@ -26,6 +26,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq,
     if (!reqFn) {
 	MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
 	MPIDI_CH3U_Request_complete(sreq);
+        *complete = 1;
     }
     else {
 	mpi_errno = reqFn( vc, sreq, complete );
