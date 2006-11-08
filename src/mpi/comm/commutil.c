@@ -543,11 +543,13 @@ void MPIR_Free_contextid( int context_id )
     /* --END ERROR HANDLING-- */
 
     /* Check that this context id has been allocated */
-    if ( 0 && (context_mask[idx] & (0x1 << bitpos)) != 0) {
-	printf( "context id = %d\n", context_id );
+#if 0
+    /* FIXME: This test should be included */
+    if ( (context_mask[idx] & (0x1 << bitpos)) != 0) {
 	MPID_Abort( 0, MPI_ERR_INTERN, 1, 
 		    "In MPIR_Free_contextid, the context id is not in use" );
     }
+#endif
     /* MT: Note that this update must be done atomically in the multithreaded
        case.  In the "one, single lock" implementation, that lock is indeed
        held when this operation is called. */
