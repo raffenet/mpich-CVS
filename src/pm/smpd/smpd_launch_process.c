@@ -1000,7 +1000,8 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
 		goto CLEANUP;
 	    }
 	    listener_context->state = SMPD_PMI_LISTENING;
-	    nError = MPIDU_Sock_get_host_description(host_description, 256);
+	    /* Adding process rank since the interface for MPIDU_Sock_get_host_description changed */
+	    nError = MPIDU_Sock_get_host_description(process->rank, host_description, 256);
 	    if (nError != MPI_SUCCESS)
 	    {
 		smpd_err_printf("MPIDU_Sock_get_host_description failed,\nsock error: %s\n", get_sock_error_string(nError));
