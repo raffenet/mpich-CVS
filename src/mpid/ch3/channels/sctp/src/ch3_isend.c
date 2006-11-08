@@ -30,7 +30,7 @@ static void update_request(MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_s
 int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr, MPIDI_msg_sz_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
+    int complete = TRUE;
     int stream_no, ppid;
     MPIDI_CH3_Pkt_t* pkt;
 

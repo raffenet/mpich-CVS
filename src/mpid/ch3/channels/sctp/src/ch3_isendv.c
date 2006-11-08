@@ -42,7 +42,7 @@ static void update_request(MPID_Request * sreq, MPID_IOV * iov, int iov_count, i
 int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS;
-    int complete;
+    int complete = TRUE;
     MPIDI_CH3_Pkt_t * pkt;
     int stream_no, ppid;
 

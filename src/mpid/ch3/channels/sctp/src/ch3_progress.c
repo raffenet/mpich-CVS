@@ -361,7 +361,7 @@ int MPIDI_CH3I_Get_business_card(int myRank, char *value, int length)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event)
 {
-    int complete;
+    int complete = TRUE;
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     

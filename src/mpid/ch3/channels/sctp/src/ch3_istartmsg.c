@@ -29,6 +29,7 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz, MPIU_Siz
     sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb);
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->dev.iov_count = 1;
+    sreq->dev.OnDataAvail = 0;
     
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST);
     return sreq;
