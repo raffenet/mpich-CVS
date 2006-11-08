@@ -1,3 +1,9 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2001 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
 /* 
  * This file contains code that is no longer used.  This code may have been 
  * used for some experiments.  Any documentation on this code is included in 
