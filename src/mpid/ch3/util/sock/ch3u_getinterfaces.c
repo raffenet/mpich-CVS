@@ -18,7 +18,10 @@
 #include "mpidi_ch3_impl.h"
 
 #include <stdlib.h>
-#include <netdb.h>
+
+#ifdef HAVE_NETDB_H
+ #include <netdb.h>
+#endif
 
 /* We set dbg_ifname to 1 to help debug the choice of interface name 
    used when determining which interface to advertise to other processes 
