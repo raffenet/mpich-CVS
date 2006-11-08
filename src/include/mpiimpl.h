@@ -1811,7 +1811,8 @@ extern MPICH_PerThread_t MPIR_Thread;
 */
 #define MPIU_THREADPRIV_INITKEY
 #define MPIU_THREADPRIV_INIT 
-#define MPIU_THREADPRIV_DECL 
+/* Empty declarations are not allowed in C. However multiple decls are allowed */
+#define MPIU_THREADPRIV_DECL extern MPICH_PerThread_t MPIR_Thread
 #define MPIU_THREADPRIV_GET
 #define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread._a)
 
