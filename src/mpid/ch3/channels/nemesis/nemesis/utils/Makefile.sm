@@ -1,1 +1,1 @@
-SUBDIRS = monitor
+SUBDIRS = monitor replacements

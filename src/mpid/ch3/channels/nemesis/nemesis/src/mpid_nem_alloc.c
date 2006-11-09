@@ -9,6 +9,11 @@
 #include <unistd.h>
 #include <errno.h>
 
+#if defined (HAVE_SYSV_SHARED_MEM)
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#endif
+
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_seg_create
 #undef FCNAME
@@ -193,7 +198,6 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
     static int key = 0;
     void *buf;
     struct shmid_ds ds;
-    int ret;
     MPIU_CHKPMEM_DECL(1);
     
     do
@@ -235,7 +239,6 @@ MPID_nem_attach_shared_memory (char **buf_p, const int length, const char handle
 {
     int mpi_errno = MPI_SUCCESS;
     void *buf;
-    int ret;
     int shmid;
     struct shmid_ds ds;
     char *endptr;

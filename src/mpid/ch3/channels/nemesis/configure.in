@@ -270,28 +270,12 @@ if test "$enable_checkpointing" != "no" ; then
     AC_DEFINE(ENABLED_CHECKPOINTING, 1, [Define to enable nemesis checkpointing])
 fi
 
-# Check whether x86 asm and 32-bit push instructions are available
-# so we know whether mmx_copy.s will compile
-AC_MSG_CHECKING([for gcc __asm__ and pentium 32-bit push instruction])
-AC_TRY_RUN([
-int main(int argc, char *argv[])
-{
-    int ret;
-    __asm__ __volatile__ ("mov $1, %%eax \n"
-			  "push %%eax \n"
-			  "mov $0, %%eax \n"
-			  "pop %%eax \n"
-			  : "=a" (ret));
-    return (ret == 1) ? 0 : -1;
-}
-], AC_MSG_RESULT(yes)
-   AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM_32_PUSH, 1,[Define if using gcc on a system with Pentium and 32-bit push instructions])
-   mmx_copy_s="mmx_copy.s",
-   AC_MSG_RESULT(no)
-   mmx_copy_s="", AC_MSG_RESULT(not checking when cross compiling)
-)
+# handle missing mkstemp, or missing mkstemp declaration
+AC_CHECK_FUNCS(mkstemp)
+AC_CHECK_FUNCS(rand)
+AC_CHECK_FUNCS(srand)
 
-
+# check how to allocate shared memory
 AC_ARG_WITH(shared-memory, [--with-shared-memory[=auto|sysv|mmap] - create shared memory using sysv or mmap (dafault is auto)],,
     with_shared_memory=auto)
 
@@ -317,6 +301,11 @@ if test "$with_shared_memory" = auto -o "$with_shared_memory" = sysv; then
         AC_MSG_ERROR([cannot support shared memory:  need either sysv shared memory functions or mmap in order to support shared memory])
     fi
 fi
+
+if test "$found_sysv_shm_funcs" = yes ; then
+   AC_CHECK_FUNCS(strtoll, , AC_MSG_ERROR([cannot find strtoll function needed by sysv shared memory implementation]))
+fi
+
 
 # These are defines to turn on different optimizations.  Turn them off only for testing
 AC_DEFINE(MPID_NEM_INLINE,1,[Define to turn on the inlining optimizations in Nemesis code])
@@ -344,4 +333,4 @@ dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
 
-AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile  nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/none_module/Makefile localdefs)
+AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile  nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/none_module/Makefile localdefs)
