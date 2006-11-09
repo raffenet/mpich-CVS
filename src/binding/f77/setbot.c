@@ -19,9 +19,12 @@
 #define mpirinitc2_ mpirinitc2
 #endif
 /* These functions are called from Fortran so only need prototypes in 
-   this file */
+   this file.  Note that the last argument is a character array, so
+   we need to include the elements of the Fortran character "dope vector".
+*/
 FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *, void *, void *, void *, 
-                                         void *, void * );
+                                         void *, void * FORT_MIXED_LEN_DECL
+					 FORT_END_LEN_DECL );
 FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char * );
 
 #ifndef F77_USE_BOOLEAN_LITERALS
@@ -49,7 +52,9 @@ void *MPI_F_ARGVS_NULL      = 0;
 
 
 FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *a, void *b, void *c, void *d, 
-                                         void *e, void *f )
+                                         void *e, 
+					 void *f FORT_MIXED_LEN(d1)
+                                         FORT_END_LEN(d1) )
 {
     MPIR_F_MPI_BOTTOM     = a;
     MPIR_F_MPI_IN_PLACE   = b;
