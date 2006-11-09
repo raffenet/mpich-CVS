@@ -273,6 +273,25 @@ before \texttt{mpi.h} is included, or add the definition
 to the command line (this will cause the MPI versions of \texttt{SEEK\_SET}
 etc. to be skipped).
 
+%% Heading: C++ and Errors in Nullcomm::Clone
+%% Filename: cxxvirtfunc
+%% End
+Some users, particularly with older C++ compilers, may see error messages
+of the form
+\begin{verbatim}
+"error C2555: 'MPI::Nullcomm::Clone' : overriding virtual function differs from
+'MPI::Comm::Clone' only by return type or calling convention".
+\end{verbatim}
+This is caused by the compiler not implementing part of the C++ standard.  
+To work around this problem, add the definition
+\begin{verbatim}
+    -DHAVE_NO_VARIABLE_RETURN_TYPE_SUPPORT
+\end{verbatim}
+to the \texttt{CXXFLAGS} variable or add a
+\begin{verbatim}
+#define HAVE_NO_VARIABLE_RETURN_TYPE_SUPPORT 1
+\end{verbatim}
+before including \texttt{mpi.h}.
 
 % ----------------------------------------------------------------------------
 %% Section: Running MPI Programs
