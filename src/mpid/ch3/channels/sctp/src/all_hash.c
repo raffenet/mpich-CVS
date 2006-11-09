@@ -198,10 +198,11 @@ ah_insert_with_expand(HASH *ahd, void *elem) {
     if(ah_expand(ahd, newsize))
       return (LAMERROR);
     
-    // try again
+    /* try again */
     result = ah_insert(ahd, elem);
-  } else 
-    return result;
+  } 
+
+  return result;
 
 }
 

@@ -36,7 +36,7 @@ struct ah_desc {			/* hash table descriptor */
 	int4		ah_mode;	/* mode of operation */
 	int4		*ah_lru;	/* table of LRU counters */
 	void		*ah_table;	/* ptr to the hash table */
-	int		(*ah_cmp)();	/* comparison function */
+	int		(*ah_cmp)(void*, void*);	/* comparison function */
 };
 
 /*
@@ -64,9 +64,9 @@ extern int		ah_expand(HASH *ahd, int4 newsize);
 extern int		ah_insert(HASH *ahd, void *elem);
 extern int		ah_kick(HASH *ahd, void *elem);
 extern void		ah_free(HASH *ahd);
-extern void		ah_setcmp(HASH *ahd, int (*cmp)());
+extern void		ah_setcmp(HASH *ahd, int (*cmp)(void*, void*));
 extern void		*ah_find(HASH *ahd, int4 key);
-extern void		*ah_find_elm(HASH *ahd, void *elem);
+extern void		*ah_find_elem(HASH *ahd, void *elem);
 extern void		*ah_next(HASH *ahd, void *elem);
 
 /* insert with expand if necessary */

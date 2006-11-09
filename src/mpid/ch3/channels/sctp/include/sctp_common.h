@@ -7,6 +7,7 @@
 #include <netinet/sctp.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
@@ -17,19 +18,17 @@
 #include <arpa/inet.h>
 #endif
 
-
 #define SOCK_ERROR -1
 
-//#define CHUNK 64000
 #define CHUNK 64*1024
 
-// open a scto many-to-one socket
+/* open a scto many-to-one socket */
 int sctp_open_dgm_socket2(int num_stream, int block_mode,
 			 int listen_back_log, int port, int nagle,
 			 int* buffer_size, struct sctp_event_subscribe* evnts,
 			 int* fd, int* real_port);
 
-int sctp_open_dgm_socket();
+int sctp_open_dgm_socket(void);
 
 ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
 		    struct sockaddr *to,
