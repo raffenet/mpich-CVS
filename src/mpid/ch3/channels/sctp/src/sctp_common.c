@@ -433,11 +433,10 @@ int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t st
   int offset = 0;
   int send_cnt = 0;
   int temp_cnt = cnt;
-  char* ptr = buffer;
 
   while(temp_cnt) {
 
-    send_cnt = (temp_cnt > CHUNK)? CHUNK : cnt;
+    send_cnt = (temp_cnt > CHUNK)? CHUNK : temp_cnt;
 
     errno = 0;
     error = sctp_sendmsg(fd, buffer+offset, send_cnt, to, sizeof(*to), ppid, 0, stream, 0, 0);
@@ -445,9 +444,9 @@ int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t st
     byte_sent += (error > 0)? error : 0;
 
     if(error == -1) {
-      if(errno == EAGAIN) {       
+        if(errno == EAGAIN)
+            error = 0;
         break;
-      }
     }
 
     offset += byte_sent;

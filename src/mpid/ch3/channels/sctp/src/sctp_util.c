@@ -366,18 +366,15 @@ int MPIDU_Sctp_write(MPIDI_VC_t* vc, void* buf, MPIU_Size_t len,
 
   int err = MPI_SUCCESS;
   ssize_t nb;
+  
+  nb = my_sctp_send(vc->ch.fd, buf, len,
+                      (struct sockaddr *) &(vc->ch.to_address), stream_no, ppid);    
 
-  do {
-
-    nb = my_sctp_send(vc->ch.fd, buf, len,
-                      (struct sockaddr *) &(vc->ch.to_address), stream_no, ppid);
-    
-  }while(nb == -1 && errno == EINTR);
-
-  if(nb > 0)
+  *num_written = 0;
+  if(nb >= 0)
     *num_written = nb;
-  else if(errno == EAGAIN || errno == EWOULDBLOCK)
-    *num_written = 0;
+  else
+    perror("MPIDU_Sctp_write");
 
   return (nb >= 0)? MPI_SUCCESS: -1;
 }

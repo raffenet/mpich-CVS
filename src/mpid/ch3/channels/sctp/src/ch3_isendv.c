@@ -154,7 +154,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, int n
 	    /* --BEGIN ERROR HANDLING-- */
 	    else
 	    {
-		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sock_writev failed, rc=%d", rc));
+		MPIDI_DBG_PRINTF((55, FCNAME, "MPIDU_Sctp_writev failed, rc=%d", rc));
 		/* Connection just failed.  Mark the request complete and return an error. */
 		MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Setting state to VC_STATE_FAILED");
 		vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;

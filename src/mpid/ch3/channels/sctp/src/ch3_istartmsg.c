@@ -72,7 +72,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz, MPID
 
     /* find out stream no. */
     pkt = (MPIDI_CH3_Pkt_t*) hdr;
-    stream_no = Req_Stream_from_pkt_and_req(pkt, *sreq_ptr);  /* brad: don't know pkt type here so pass it in */
+    stream_no = Req_Stream_from_pkt_and_req(pkt, *sreq_ptr);  /*  don't know pkt type here so pass it in */
     ppid = 0;
 
     if (SEND_CONNECTED(vc, stream_no) == MPIDI_CH3I_VC_STATE_CONNECTED)

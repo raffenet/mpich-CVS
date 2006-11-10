@@ -68,6 +68,7 @@ int MPIDI_CH3_Progress_test(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
 
 #   if (MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE)
+/* this is not supported for ch3:sctp at the moment but here as a reminder */
     {
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
 	{
@@ -138,6 +139,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 #   endif
 	
 #   if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+/* this is not supported for ch3:sctp at the moment but here as a reminder */
     {
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
 	{
@@ -335,13 +337,16 @@ int MPIDI_CH3I_Progress_finalize(void)
 
 
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+/* not supported in ch3:sctp for this initial release but here as
+ * a reminder for the future.
+ */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_wakeup
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3I_Progress_wakeup(void)
 {
-    MPIDU_Sock_wakeup(MPIDI_CH3I_sock_set);
+  /*  MPIDU_Sock_wakeup(MPIDI_CH3I_sock_set); */
 }
 #endif
 
