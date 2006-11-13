@@ -268,12 +268,11 @@ int ADIOI_Snprintf( char *str, size_t size, const char *format, ... )
 
 	    case 'p':
 	    {
-		int val;
+		void *val;
 		char tmp[20];
 		char *t = tmp;
-		/* Get the argument, of integer type */
-		val = va_arg( list, int );
-		sprintf( tmp, "%p", (void *)val );
+		val = va_arg( list, void * );
+		sprintf( tmp, "%p", val );
 		if (width > 0) {
 		    int tmplen = strlen(tmp);
 		    /* If a width was specified, pad with spaces on the
