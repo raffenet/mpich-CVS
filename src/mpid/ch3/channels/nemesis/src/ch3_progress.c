@@ -59,6 +59,9 @@ int MPIDI_CH3I_Progress (int is_blocking)
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     int mpi_errno = MPI_SUCCESS;
     int complete;
+#ifndef ENABLE_NO_SCHED_YIELD
+    int pollcount = 0;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -80,6 +83,14 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	}
 	else
 	{
+#ifndef ENABLE_NO_SCHED_YIELD
+            if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
+            {
+                pollcount = 0;
+                sched_yield();
+            }
+            ++pollcount;
+#endif
 	    mpi_errno = MPID_nem_mpich2_test_recv (&cell, &in_fbox);
 	}
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -306,10 +317,10 @@ int MPIDI_CH3I_Progress (int is_blocking)
                     MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
                     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                            int i;
-                            for (i = 0; i < MPID_IOV_LIMIT; ++i)
-                                sreq->dev.iov[i].MPID_IOV_LEN = 0;
-                        });
+                        int i;
+                        for (i = 0; i < MPID_IOV_LIMIT; ++i)
+                            sreq->dev.iov[i].MPID_IOV_LEN = 0;
+                    });
                 }
                 else
                 {
@@ -323,10 +334,10 @@ int MPIDI_CH3I_Progress (int is_blocking)
                         MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
                         MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
                         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                                int i;
-                                for (i = 0; i < MPID_IOV_LIMIT; ++i)
-                                    sreq->dev.iov[i].MPID_IOV_LEN = 0;
-                            });
+                            int i;
+                            for (i = 0; i < MPID_IOV_LIMIT; ++i)
+                                sreq->dev.iov[i].MPID_IOV_LEN = 0;
+                        });
                     }
                     else
                     {
