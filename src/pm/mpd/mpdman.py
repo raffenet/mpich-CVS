@@ -212,7 +212,11 @@ class MPDMan(object):
                               'spawned_id' : os.environ['MPDMAN_SPAWNED'] }
                 self.conSock.send_dict_msg(msgToSend)
                 msg = self.conSock.recv_dict_msg()
-                if msg['cmd'] != 'preput_info_for_child':
+                # If there is a failure in the connection, this
+                # receive will fail and if not handled, cause mpdman 
+                # to fail.  For now, we just check on a empty or unexpected
+                # message
+                if not msg or msg['cmd'] != 'preput_info_for_child':
                     mpd_print(1,'invalid msg from parent :%s:' % msg)
                     sys.exit(-1)
                 try:

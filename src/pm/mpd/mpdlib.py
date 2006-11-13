@@ -11,7 +11,7 @@ from  cPickle   import  dumps, loads
 from  types     import  TupleType
 from  traceback import  extract_tb, extract_stack, format_list
 from  re        import  sub, split
-from  errno     import  EINTR, ECONNRESET, EISCONN
+from  errno     import  EINTR, ECONNRESET, EISCONN, ECONNREFUSED
 from  md5       import  new as md5new
 from  time      import  sleep
 from  random    import  randrange, random
@@ -147,8 +147,17 @@ def mpd_trace_calls(frame,event,args):
     if frame.f_code.co_name not in mpd_procedures_to_trace:
         return None
     args_info = apply(inspect.formatargvalues,inspect.getargvalues(frame))
-    print '%s: ENTER %s in %s at line %d; ARGS=%s' % \
+    # Be VERY careful here; under AIX, it looked like EINTR is 
+    # possible within print (!).  
+    while (1):
+        try:
+            print '%s: ENTER %s in %s at line %d; ARGS=%s' % \
           (mpd_my_id,frame.f_code.co_name,frame.f_code.co_filename,frame.f_lineno,args_info)
+            break
+        except os.error, errinfo:
+            if errinfo[0] != EINTR:
+                raise os.error, errinfo
+    # end of while
     return mpd_trace_returns
 
 def mpd_trace_returns(frame,event,args):
@@ -165,7 +174,12 @@ def mpd_sockpair():
     rc = sock1.sock.listen(5)
     port1 = sock1.sock.getsockname()[1]
     sock2 = MPDSock()
+    #
+    # We have encountered situations where the connection fails; as this is
+    # a connection to this process, we retry a few times in that case
+    #
     try:
+        connAttempts = 0
         while (1):
             try:
                 rc = sock2.sock.connect(('localhost',port1))
@@ -175,7 +189,10 @@ def mpd_sockpair():
                 # next iteration, returns EISCONN.
                 if errinfo[0] == EISCONN:
                     break
-                if errinfo[0] != EINTR:
+                if errinfo[0] == ECONNREFUSED and connAttempts < 10:
+                    connAttempts += 1
+                    sleep(random())
+                elif errinfo[0] != EINTR:
                     mpd_print(1,"connect %d %s" % (errinfo[0],errinfo[1]))
                     raise socket.error, errinfo
 	# End of the while
@@ -185,6 +202,7 @@ def mpd_sockpair():
         # or EADDRINUSE.  In that case, we may need to do something else
 	mpd_print(1,"connect error with %d %s" % (errinfo[0],errinfo[1]))
         # Should this only attempt on ECONNREFUSED, ENETUNREACH, EADDRNOTAVAIL
+        # FIXME: Does this need a try/except?  
         rc = sock2.sock.connect(('',port1))
     # Accept can fail on EINTR, so we handle that here
     while (1):
