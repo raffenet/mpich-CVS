@@ -194,6 +194,7 @@ def mpiexec():
                  'args'           : {},
                  'limits'         : {},
                  'envvars'        : {},
+                 'ifhns'          : {},
                }
 
     if parmdb['inXmlFilename']:
@@ -773,13 +774,13 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
     defaultHostForArgset = host
     while loRange <= argsetHiRange:
         host = defaultHostForArgset
-        ifhn = ''
         if machineFileInfo:
             if len(machineFileInfo) <= hiRange:
                 print 'too few entries in machinefile'
                 sys.exit(-1)
             host = machineFileInfo[loRange]['host']
             ifhn = machineFileInfo[loRange]['ifhn']
+            msgToMPD['ifhns'][loRange] = ifhn
             for i in range(loRange+1,hiRange+1):
                 if machineFileInfo[i]['host'] != host  or  machineFileInfo[i]['ifhn'] != ifhn:
                     hiRange = i - 1
@@ -821,10 +822,8 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
         for envvar in localEnv.keys():
             envToSend[envvar] = localEnv[envvar]
         if usize:
-            envToSend['MPI_UNIVERSE_SIZE'] = '%s' % (usize)
-        envToSend['MPI_APPNUM'] = '%s' % '%s' % str(appnum)
-        if ifhn:
-            msgToMPD['MPICH_ifhn'] = '%s' % (ifhn)
+            envToSend['MPI_UNIVERSE_SIZE'] = str(usize)
+        envToSend['MPI_APPNUM'] = str(appnum)
         msgToMPD['envvars'][(loRange,hiRange)] = envToSend
 
         loRange = hiRange + 1

@@ -152,13 +152,13 @@ class MPDMan(object):
         self.default_kvsname = sub('\-','_',self.default_kvsname)  # chg node-0 to node_0
         self.KVSs[self.default_kvsname] = {}
         cli_env = {}
+        cli_env['MPICH_INTERFACE_HOSTNAME'] = os.environ['MPICH_INTERFACE_HOSTNAME']
+        cli_env['MPICH_INTERFACE_HOSTNAME_R%d' % self.myRank] = os.environ['MPICH_INTERFACE_HOSTNAME']
         for k in self.clientPgmEnv.keys():
             if k.startswith('MPI_APPNUM'):
                 self.appnum = self.clientPgmEnv[k]    # don't put in application env
             else:
                 cli_env[k] = self.clientPgmEnv[k]
-                if k == 'MPICH_INTERFACE_HOSTNAME':
-                    cli_env['MPICH_INTERFACE_HOSTNAME_R%d' % self.myRank] = cli_env[k]
         self.kvs_next_id = 1
         self.jobEndingEarly = 0
         self.pmiCollectiveJob = 0
@@ -226,6 +226,11 @@ class MPDMan(object):
                     mpd_print(1,'spawned: bad msg from con; got: %s' % (msg) )
                     sys.exit(-1)
                 self.universeSize = msg['ring_ncpus']
+                # if the rshSock is closed, we'll get an AttributeError 
+                # exception about 'int' has no attribute 'send_dict_msg'
+                # FIXME: Does every use of a sock on which send_dict_msg
+                # is used need an "if xxxx.rhsSock:" test first?
+                # Is there an else for those cases?
                 self.ring.rhsSock.send_dict_msg(msg)  # forward it on
             else:
                 msgToSend = { 'cmd' : 'man_checking_in' }
@@ -1279,7 +1284,9 @@ class MPDMan(object):
                     pass
         elif msg['cmd'] == 'stdin_from_user':
             msg['src'] = self.myId
-            self.ring.rhsSock.send_dict_msg(msg)
+            if self.ring.rhsSock:
+                # Only send to rhs if that sock is open
+                self.ring.rhsSock.send_dict_msg(msg)
             if in_stdinRcvrs(self.myRank,self.stdinDest):
                 try:
                     if msg.has_key('eof'):
@@ -1294,7 +1301,9 @@ class MPDMan(object):
         elif msg['cmd'] == 'stdin_dest':
             self.stdinDest = msg['stdin_procs']
             msg['src'] = self.myId
-            self.ring.rhsSock.send_dict_msg(msg)
+            if self.ring.rhsSock:
+                # Only send to rhs if that sock is open
+                self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'tv_ready':
             self.tvReady = 1
             msg['src'] = self.myId

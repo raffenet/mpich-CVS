@@ -11,7 +11,7 @@ from  cPickle   import  dumps, loads
 from  types     import  TupleType
 from  traceback import  extract_tb, extract_stack, format_list
 from  re        import  sub, split
-from  errno     import  EINTR, ECONNRESET
+from  errno     import  EINTR, ECONNRESET, EISCONN
 from  md5       import  new as md5new
 from  time      import  sleep
 from  random    import  randrange, random
@@ -50,6 +50,12 @@ mpd_my_hostname = ''
 # NOTE: mpd_handle_signal must be called by the user, e.g. in his own signal handler
 mpd_signum = 0
 mpd_zc = 0
+
+# For easier debugging, we provide this variable that is used in the
+# mpd_print calls.  This makes it a little easier to debug problems involving
+# communication with other processes, such as handling EINTR from signals.
+global mpd_dbg_level
+mpd_dbg_level = 0
 
 def mpd_set_my_id(myid=''):
     global mpd_my_id
@@ -160,11 +166,36 @@ def mpd_sockpair():
     port1 = sock1.sock.getsockname()[1]
     sock2 = MPDSock()
     try:
-        rc = sock2.sock.connect(('localhost',port1))
-    except:
+        while (1):
+            try:
+                rc = sock2.sock.connect(('localhost',port1))
+                break
+            except socket.error, errinfo:
+                # In some cases, connect will return EINTR and then on the
+                # next iteration, returns EISCONN.
+                if errinfo[0] == EISCONN:
+                    break
+                if errinfo[0] != EINTR:
+                    mpd_print(1,"connect %d %s" % (errinfo[0],errinfo[1]))
+                    raise socket.error, errinfo
+	# End of the while
+    except socket.error, errinfo:
         # we have seen at least one machine that needs it this way
+        # We've seen a failure here; it could be EINPROGRESS, EALREADY, 
+        # or EADDRINUSE.  In that case, we may need to do something else
+	mpd_print(1,"connect error with %d %s" % (errinfo[0],errinfo[1]))
+        # Should this only attempt on ECONNREFUSED, ENETUNREACH, EADDRNOTAVAIL
         rc = sock2.sock.connect(('',port1))
-    (sock3,addr) = sock1.sock.accept()
+    # Accept can fail on EINTR, so we handle that here
+    while (1):
+        try:
+            (sock3,addr) = sock1.sock.accept()
+            break
+        except socket.error, errinfo:
+            if errinfo[0] != EINTR:
+                mpd_print(1,"connect %d %s" % (errinfo[0],errinfo[1]))
+                raise socket.error, errinfo
+    # end of while
     sock3 = MPDSock(sock=sock3)
     sock1.close()
     return (sock2,sock3)
@@ -336,43 +367,103 @@ class MPDSock(object):
         return data
     def recv_dict_msg(self,timeout=None):
         global mpd_signum
+        mpd_print(mpd_dbg_level, \
+                  "Entering recv_dict_msg with timeout=%s" % (str(timeout)))
         msg = {}
         readyToRecv = 0
         if timeout:
             try:
-                mpd_signum = 0
-                (readyToRecv,unused1,unused2) = select.select([self.sock],[],[],timeout)
+		# Loop while we get EINTR.
+                # FIXME: In some cases, we may want to exit if 
+	        # the signal was SIGINT.  We need to restart if 
+                # we see SIGCLD
+                while 1:
+                    try:
+		        mpd_signum = 0
+                        (readyToRecv,unused1,unused2) = select.select([self.sock],[],[],timeout)
+                        break;
+                    except os.error, errinfo:
+                        if errinfo[0] == EINTR:
+                            # Retry interrupted system calls
+                            pass
+                        else:
+                            raise os.error, errinfo
+                # End of the while(1)
             except select.error, errinfo:
                 if errinfo[0] == EINTR:
                     if mpd_signum == signal.SIGINT  or  mpd_signum == signal.SIGALRM:
+                        mpd_print(0,"sigint/alrm check");
                         pass   # assume timedout; returns {} below
+                    elif mpd_signum == signal.SIGCLD:
+                        mpd_print_tb(1,"mishandling sigchild in recv_dict_msg, errinfo=:%s" % (errinfo) )
+                    else:
+                        mpd_print_tf(1,"Unhandled EINTR: errinfo=%s" % (errinfo) )
                 else:
-                    print '%s: select error: %s' % (mpd_my_id,os.strerror(errinfo[0]))
+                    mpd_print(1, '%s: select error: %s' % (mpd_my_id,os.strerror(errinfo[0])))
             except KeyboardInterrupt, errinfo:
                 # print 'recv_dict_msg: keyboard interrupt during select'
+                mpd_print(0,"KeyboardInterrupt");
                 return msg
             except Exception, errinfo:
-                print 'recv_dict_msg: exception during select %s :%s:' % \
-                      ( errinfo.__class__, errinfo)
+                mpd_print(1, 'recv_dict_msg: exception during select %s :%s:' % \
+                      ( errinfo.__class__, errinfo))
                 return msg
         else:
             readyToRecv = 1
         if readyToRecv:
+            mpd_print(mpd_dbg_level,"readyToRecv");
             try:
-                pickledLen = self.sock.recv(8)
+                while (1):
+                    try:
+                        pickledLen = self.sock.recv(8)
+                        # FIXME: Shouldn't this block until there is a
+                        # message unless it raises an exception.
+                        # Is no message an EOF, and in that case, 
+                        # do we really want to immediately delete
+                        # the corresponding entry?
+                        #if not pickledLen:
+			#    mpd_print(1,"continuing because recv failed")
+                        #    continue
+                        break
+                    except socket.error,errinfo:
+                        if errinfo[0] == EINTR:
+                            mpd_print(mpd_dbg_level,"Saw EINTR")
+                            pass
+			elif errinfo[0] == ECONNRESET:
+                            mpd_print(0,"Saw ECONNRESET, ignore (return null msg)")
+			    return msg;
+                        else:
+                            mpd_print_tb(1,"recv_dict_msg: sock.recv(8): errinfo=:%s:" % (errinfo))
+                            raise socket.error,errinfo
+                # end of while(1)
+                if not pickledLen:
+                    mpd_print(0,"no pickeled len")
                 if pickledLen:
                     pickledLen = int(pickledLen)
                     pickledMsg = ''
                     lenLeft = pickledLen
                     while lenLeft:
-                        recvdMsg = self.sock.recv(lenLeft)
+                        while (1):
+                            try:
+                                recvdMsg = self.sock.recv(lenLeft)
+                                break
+                            except socket.error,errinfo:
+                                if errinfo[0] == EINTR:
+                                    pass
+                                else:
+                                    mpd_print_tb(1,"recv_dict_msg: sock.recv(8): errinfo=:%s:" % (errinfo))
+                                    raise socket.error,errinfo
+                        # end of while(1)            
+
                         pickledMsg += recvdMsg
                         lenLeft -= len(recvdMsg)
                     msg = loads(pickledMsg)
             except socket.error, errinfo:
                 if errinfo[0] == EINTR:
+                    mpd_print(1, "Unhandled EINTR on sock.recv")
                     return msg
                 elif errinfo[0] == ECONNRESET:   # connection reset (treat as eof)
+                    mpd_print(mpd_dbg_level,"Connection reset")
                     pass   # socket.error: (104, 'Connection reset by peer')
                 else:
                     mpd_print_tb(1,'recv_dict_msg: socket error: errinfo=:%s:' % (errinfo))
@@ -381,6 +472,11 @@ class MPDSock(object):
             except Exception, errmsg:
                 mpd_print_tb(1, 'recv_dict_msg failed on sock %s errmsg=:%s:' % \
                              (self.name,errmsg) )
+        if mpd_dbg_level:
+            if msg:
+                mpd_print(1,"Returning with non-null msg")
+	    else:
+                mpd_print(1,"Returning with null msg" )
         return msg
     def recv_char_msg(self):
         return self.recv_one_line()  # use leading len later
@@ -390,6 +486,7 @@ class MPDSock(object):
             c = self.sock.recv(1)
         except socket.error, errinfo:
             if errinfo[0] == EINTR:   # sigchld, sigint, etc.
+                print "Unhandled EINTR in sock.recv\n";
                 return msg
             elif errinfo[0] == ECONNRESET:   # connection reset (treat as eof)
                 return msg

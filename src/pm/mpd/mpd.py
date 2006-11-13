@@ -73,6 +73,7 @@ from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair,
                           mpd_print, mpd_get_my_username, mpd_close_zc, \
                           mpd_get_groups_for_username, mpd_uncaught_except_tb, \
                           mpd_set_procedures_to_trace, mpd_trace_calls, \
+                          mpd_dbg_level, \
                           MPDSock, MPDListenSock, MPDConListenSock, \
                           MPDStreamHandler, MPDRing, MPDParmDB
 from  mpdman      import  MPDMan
@@ -714,6 +715,8 @@ class MPD(object):
                 deleted = 0
                 for manPid in self.activeJobs[jobid]:
                     if sock == self.activeJobs[jobid][manPid]['socktoman']:
+			mpd_print(mpd_dbg_level,\
+                                  "Deleting %s %d" % (str(jobid),manPid))
                         del self.activeJobs[jobid][manPid]
                         if len(self.activeJobs[jobid]) == 0:
                             del self.activeJobs[jobid]
@@ -731,6 +734,9 @@ class MPD(object):
             self.streamHandler.del_handler(sock)
             sock.close()
             return
+	# Who asks, and why?  
+        # We have a failure that deletes the spawnerManPid from the
+	# activeJobs[jobid] variable. 
         if msg['cmd'] == 'client_info':
             jobid = msg['jobid']
             manPid = msg['manpid']
@@ -738,9 +744,17 @@ class MPD(object):
             if msg['spawner_manpid']  and  msg['rank'] == 0:
                 if msg['spawner_mpd'] == self.myId:
                     spawnerManPid = msg['spawner_manpid']
-                    spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
-                    msgToSend = { 'cmd' : 'spawn_done_by_mpd', 'rc' : 0, 'reason' : '' }
-                    spawnerManSock.send_dict_msg(msgToSend)
+		    mpd_print(mpd_dbg_level,\
+                       "About to check %s:%s" % (str(jobid),str(spawnerManPid)))
+
+                    if not self.activeJobs[jobid].has_key(spawnerManPid):
+                        mpd_print(0,"Missing %d in %s" % (spawnerManPid,str(jobid)))
+                    elif not self.activeJobs[jobid][spawnerManPid].has_key('socktoman'):
+                        mpd_print(0,"Missing socktoman!")
+                    else:
+                        spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
+                        msgToSend = { 'cmd' : 'spawn_done_by_mpd', 'rc' : 0, 'reason' : '' }
+                        spawnerManSock.send_dict_msg(msgToSend)
                 else:
                     self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'spawn':
@@ -755,6 +769,7 @@ class MPD(object):
             msg['gdb'] = 0
             msg['gdba'] = ''
             msg['totalview'] = 0
+            msg['ifhns'] = {}
             self.spawnQ.append(msg)
         elif msg['cmd'] == 'publish_name':
             self.pmi_published_names[msg['service']] = msg['port']
@@ -1217,10 +1232,6 @@ class MPD(object):
         for ranks in envvars.keys():
             (lo,hi) = ranks
             if currRank >= lo  and  currRank <= hi:
-                if msg.has_key('MPICH_ifhn'):
-                    envvars[ranks]['MPICH_INTERFACE_HOSTNAME'] = msg['MPICH_ifhn']
-                else:
-                    envvars[ranks]['MPICH_INTERFACE_HOSTNAME'] = self.myIfhn
                 pgmEnvVars = dumps(envvars[ranks])
                 break
         limits = msg['limits']
@@ -1242,6 +1253,10 @@ class MPD(object):
                 pgmUmask = umasks[ranks]
                 break
         man_env = {}
+        if msg['ifhns'].has_key(currRank):
+            man_env['MPICH_INTERFACE_HOSTNAME'] = msg['ifhns'][currRank]
+        else:
+            man_env['MPICH_INTERFACE_HOSTNAME'] = self.myIfhn
         man_env.update(os.environ)    # may only want to mov non-MPD_ stuff
         man_env['MPDMAN_MYHOST'] = self.myHost
         man_env['MPDMAN_MYIFHN'] = self.myIfhn
@@ -1310,6 +1325,7 @@ class MPD(object):
                                            'username' : username,
                                            'clipid' : -1,    # until report by man
                                            'socktoman' : toManSock }
+        mpd_print(mpd_dbg_level,"Created entry for %s %d" % (str(jobid),manPid) )
     def launch_mpdman_via_fork(self,msg,man_env):
         man_env['MPDMAN_HOW_LAUNCHED'] = 'FORK'
         currRank = int(man_env['MPDMAN_RANK'])
