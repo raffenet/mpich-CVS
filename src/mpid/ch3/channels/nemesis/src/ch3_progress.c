@@ -94,6 +94,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
             
 	    if (in_fbox)
 	    {
+                MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
                 /* This packet must be the first packet of a new message */
                 MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
                 MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
@@ -102,12 +103,15 @@ int MPIDI_CH3I_Progress (int is_blocking)
                 MPIU_Assert (vc->ch.recv_active == NULL);
 
 #if 0
+#if 0
 		{ MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
-		mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
+                    mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
 		}
 #else		    
 		mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
 #endif
+#endif
+		mpi_errno = pktArray[pkt->type] (vc, pkt, &rreq);
 		if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                 
                 /* Channel fields don't get initialized on request creation, init them here */
@@ -119,15 +123,16 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	    }
 	    else
 	    {
+                MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
 		MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
 		
 		rreq = vc->ch.recv_active;
                 MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                    if (rreq)
-                    {
-                        MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv cont pkt");
-                    }
-                });
+                        if (rreq)
+                        {
+                            MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv cont pkt");
+                        }
+                    });
 
 		if (!rreq)
 		{
@@ -136,12 +141,15 @@ int MPIDI_CH3I_Progress (int is_blocking)
                     MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 		    
 #if 0
+#if 0
 		    { MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
-		    mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
+                        mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
 		    }
 #else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
 #endif
+#endif
+                    mpi_errno = pktArray[pkt->type] (vc, pkt, &rreq);
 		    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                     
                     /* Channel fields don't get initialized on request creation, init them here */
@@ -192,8 +200,21 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		    }
 		    else
 		    {				       
-			mpi_errno = MPIDI_CH3U_Handle_recv_req (vc, rreq, &complete);
-                        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                        int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+
+                        reqFn = rreq->dev.OnDataAvail;
+                        if (!reqFn)
+                        {
+                            MPIU_Assert(MPIDI_Request_get_type(rreq)!=MPIDI_REQUEST_TYPE_GET_RESP);
+                            MPIDI_CH3U_Request_complete(rreq);
+                            complete = TRUE;
+			}
+                        else
+                        {   
+                            mpi_errno = reqFn (vc, rreq, &complete);
+                            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                        }
+                        
 			if (!complete)
 			{
                             rreq->ch.iov_offset = 0;
@@ -203,10 +224,10 @@ int MPIDI_CH3I_Progress (int is_blocking)
 			{
                             MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, ".... complete");
                             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                                int i;
-                                for (i = 0; i < MPID_IOV_LIMIT; ++i)
-                                    rreq->dev.iov[i].MPID_IOV_LEN = 0;
-                            });
+                                    int i;
+                                    for (i = 0; i < MPID_IOV_LIMIT; ++i)
+                                        rreq->dev.iov[i].MPID_IOV_LEN = 0;
+                                });
                             
                             vc->ch.recv_active = NULL;
                             
@@ -215,9 +236,9 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		}
 		while (payload_len && !complete);
                 MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                    if (payload_len)
-                        MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "data left %d", payload_len);
-                });
+                        if (payload_len)
+                            MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "data left %d", payload_len);
+                    });
 	    }
 
 	    if (!in_fbox)
@@ -234,17 +255,17 @@ int MPIDI_CH3I_Progress (int is_blocking)
         
 	sreq = MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE];
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-            if (sreq)
-                MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: cont sreq");
-        });
+                if (sreq)
+                    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: cont sreq");
+            });
 	if (!sreq)
 	{
 	    sreq = MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE);
             MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                if (sreq)
-                    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: new sreq ");
-            });
+                    if (sreq)
+                        MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: new sreq ");
+                });
             
 	}
         
@@ -1499,9 +1520,13 @@ int MPIDI_CH3I_Progress_init(void)
 
     /* Initialize the code to handle incoming packets */
     mpi_errno = MPIDI_CH3_PktHandler_Init( pktArray, MPIDI_CH3_PKT_END_CH3+1 );
-    
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
