@@ -8,7 +8,7 @@
 usage: mpd [--host=<host> --port=<portnum>] [--noconsole]
            [--trace] [--echo] [--daemon] [--bulletproof] --ncpus=<ncpus>
            [--ifhn=<interface-hostname>] [--listenport=<listenport>]
-           [--pid=<pidfilename>] [-zc]
+           [--pid=<pidfilename>] [-zc] [--debug]
 
 Some long parameter names may be abbreviated to their first letters by using
   only one hyphen and no equal sign:
@@ -22,6 +22,7 @@ Some long parameter names may be abbreviated to their first letters by using
 --noconsole is useful for running 2 mpds on the same machine; only one of
   them will accept mpd commands
 --trace yields lots of traces thru mpd routines; currently too verbose
+--debug turns on some debugging prints; currently not verbose enough
 --echo causes the mpd echo its listener port by which other mpds may connect
 --daemon causes mpd to run backgrounded, with no controlling tty
 --bulletproof says to turn bulletproofing on (experimental)
@@ -328,6 +329,7 @@ class MPD(object):
         except:
             pass
     def get_parms_from_cmdline(self):
+        global mpd_dbg_level
         argidx = 1
         while argidx < len(sys.argv):
             if sys.argv[argidx] == '--help':
@@ -440,6 +442,9 @@ class MPD(object):
                 argidx += 2
             elif sys.argv[argidx] == '-t'  or  sys.argv[argidx] == '--trace':
                 self.parmdb[('cmdline','MPD_TRACE_FLAG')] = 1
+                argidx += 1
+            elif sys.argv[argidx] == '--debug':
+                mpd_dbg_level = 1
                 argidx += 1
             elif sys.argv[argidx] == '-n'  or  sys.argv[argidx] == '--noconsole':
                 self.parmdb[('cmdline','MPD_CONSOLE_FLAG')] = 0
@@ -736,7 +741,9 @@ class MPD(object):
             return
 	# Who asks, and why?  
         # We have a failure that deletes the spawnerManPid from the
-	# activeJobs[jobid] variable. 
+	# activeJobs[jobid] variable.   The temporary work-around is
+        # to ignore this request if the target process is no longer 
+	# in the activeJobs table.
         if msg['cmd'] == 'client_info':
             jobid = msg['jobid']
             manPid = msg['manpid']
@@ -798,6 +805,7 @@ class MPD(object):
             mpd_print(1, 'INVALID request from man msg=:%s:' % (msg) )
             msgToSend = { 'cmd' : 'invalid_request' }
             sock.send_dict_msg(msgToSend)
+
     def handle_lhs_input(self,sock):
         msg = self.ring.lhsSock.recv_dict_msg()
         if not msg:    # lost lhs; don't worry
@@ -1057,6 +1065,7 @@ class MPD(object):
                     self.ring.rhsSock.send_dict_msg(msg)
         else:
             mpd_print(1, 'unrecognized cmd from lhs: %s' % (msg) )
+
     def handle_rhs_input(self,sock):
         if self.allExiting:
             return
@@ -1134,6 +1143,7 @@ class MPD(object):
         else:
             mpd_print(1, 'unexpected from rhs; msg=:%s:' % (msg) )
         return
+
     def do_mpdrun(self,msg):
         if self.parmdb['MPD_LOGFILE_TRUNC_SZ'] >= 0:
             try:
@@ -1348,7 +1358,10 @@ class MPD(object):
         man_env['MPDMAN_LHS_PORT'] = str(manEntryPort)
         man_env['MPDMAN_MY_LISTEN_FD'] = str(manListenSock.fileno())
         man_env['MPDMAN_MY_LISTEN_PORT'] = str(manListenPort)
+        mpd_print(mpd_dbg_level,"About to get sockpair for mpdman")
         (toManSock,toMpdSock) = mpd_sockpair()
+        mpd_print(mpd_dbg_level,"Found sockpair (%d,%d) for mpdman" % \
+                                (toManSock.fileno(), toMpdSock.fileno()) )
         toManSock.name = 'to_man'
         toMpdSock.name = 'to_mpd'  ## to be used by mpdman below
         man_env['MPDMAN_TO_MPD_FD'] = str(toMpdSock.fileno())
@@ -1394,6 +1407,8 @@ class MPD(object):
             mpdman = MPDMan()
             mpdman.run()
             sys.exit(0)  # do NOT do cleanup (eliminated atexit handlers above)
+        # After the fork, if we're the parent, close the other side of the
+        # mpdpair sockets, as well as the listener socket
         manListenSock.close()
         toMpdSock.close()
         return (manPid,toManSock)

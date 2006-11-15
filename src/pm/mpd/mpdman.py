@@ -25,6 +25,7 @@ from urllib   import quote
 from mpdlib   import mpd_set_my_id, mpd_print, mpd_read_nbytes,  \
                      mpd_sockpair, mpd_get_ranks_in_binary_tree, \
                      mpd_get_my_username, mpd_set_cli_app,       \
+                     mpd_dbg_level,                              \
                      MPDSock, MPDListenSock, MPDStreamHandler, MPDRing
 
 try:
@@ -287,6 +288,8 @@ class MPDMan(object):
         self.numDone = 0
         self.numWithIO = 2    # stdout and stderr so far
         self.numConndWithIO = 2
+        # FIXME: This is the old singleton approach, which didn't allow 
+        # for more than one process to be a singleton
         if self.singinitPORT:
             self.pmiListenSock = 0
             self.pmiSock = MPDSock(name='pmi')
@@ -718,6 +721,7 @@ class MPDMan(object):
                     self.pmiSock.send_char_msg(pmiMsgToSend)
         else:
             mpd_print(1, 'unexpected msg recvd on lhsSock :%s:' % msg )
+
     def handle_rhs_input(self,sock):
         msg = self.ring.rhsSock.recv_dict_msg()  #### NOT USING msg; should I ?
         mpd_print(0000, 'rhs died' )

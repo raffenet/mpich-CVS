@@ -163,7 +163,16 @@ def mpd_trace_calls(frame,event,args):
 def mpd_trace_returns(frame,event,args):
     global mpd_my_id
     if event == 'return':
-        print '%s: EXIT %s at line %d ' % (mpd_my_id,frame.f_code.co_name,frame.f_lineno)
+        # Be VERY careful here; under AIX, it looked like EINTR is 
+        # possible within print (!).  
+        while (1):
+            try:
+                print '%s: EXIT %s at line %d ' % (mpd_my_id,frame.f_code.co_name,frame.f_lineno)
+                break
+            except os.error, errinfo:
+                if errinfo[0] != EINTR:
+                    raise os.error, errinfo
+        # end of while
         return None
     else:
         return mpd_trace_returns
@@ -176,7 +185,8 @@ def mpd_sockpair():
     sock2 = MPDSock()
     #
     # We have encountered situations where the connection fails; as this is
-    # a connection to this process, we retry a few times in that case
+    # a connection to this process, we retry a few times in that case 
+    # (seen on AIX)
     #
     try:
         connAttempts = 0
@@ -190,6 +200,7 @@ def mpd_sockpair():
                 if errinfo[0] == EISCONN:
                     break
                 if errinfo[0] == ECONNREFUSED and connAttempts < 10:
+                    mpd_print(mpd_debug_level,"Retrying on connection refused")
                     connAttempts += 1
                     sleep(random())
                 elif errinfo[0] != EINTR:
@@ -202,8 +213,18 @@ def mpd_sockpair():
         # or EADDRINUSE.  In that case, we may need to do something else
 	mpd_print(1,"connect error with %d %s" % (errinfo[0],errinfo[1]))
         # Should this only attempt on ECONNREFUSED, ENETUNREACH, EADDRNOTAVAIL
-        # FIXME: Does this need a try/except?  
-        rc = sock2.sock.connect(('',port1))
+        # FIXME: Does this need a try/except?
+        while 1:
+            try:  
+                rc = sock2.sock.connect(('',port1))
+                break
+            except socket.error, errinfo:
+                if errinfo[0] == EISCONN:
+                    break
+                elif errinfo[0] != EINTR:
+                    mpd_print(1,"connect %d %s" % (errinfo[0],errinfo[1]))
+                    raise socket.error, errinfo
+        # end of while
     # Accept can fail on EINTR, so we handle that here
     while (1):
         try:
@@ -330,8 +351,26 @@ class MPDSock(object):
         return self.sock.getsockname()
     def fileno(self):
         return self.sock.fileno()
+
     def connect(self,*args):
-        self.sock.connect(*args)
+        # We handle EINTR in this method, unless it appears that a
+        # SIGINT or SIGALRM are delivered.  In that case, we do not
+        # complete the connection (FIXME: make sure that all uses of this
+        # do the right thing in that case).
+        while 1:
+            try:
+                self.sock.connect(*args)
+                break
+            except sock.error, errinfo:
+                if errinfo[0] == EINTR:   # sigchld, sigint, etc.
+                    if mpd_signum == signal.SIGINT  or  mpd_signum == signal.SIGALRM:
+                        break
+                    else:
+                        continue
+                else:
+                    raise sock.error, errinfo
+        # end of while
+
     def accept(self,name='accepter'):
         global mpd_signum
         newsock = 0
@@ -537,6 +576,8 @@ class MPDSock(object):
         return msg
     def send_dict_msg(self,msg,errprint=0):
         pickledMsg = dumps(msg) 
+        # FIXME: Does this automatically handle EINTR, or does it need an
+        # except os.error, errinfo: and check on errinfo[0] == EINTR
         try:
             self.sendall( "%08d%s" % (len(pickledMsg),pickledMsg) )
         except Exception, errmsg:
