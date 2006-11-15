@@ -170,9 +170,12 @@ def mpiexec():
             configLines = [ x.strip() + ' : '  for x in configLines if x[0] != '#' ]
             tempargv = []
             for line in configLines:
+                line = 'mpddummyarg ' + line  # gets pitched in shells that can't handle --
                 (shellIn,shellOut) = \
                     os.popen4("/bin/sh -c 'for a in $*; do echo _$a; done' -- %s" % (line))
                 for shellLine in shellOut:
+                    if shellLine.startswith('_mpddummyarg'):
+                        continue
                     tempargv.append(shellLine[1:].strip())    # 1: strips off the leading _
 	    tempargv = [sys.argv[0]] + tempargv[0:-1]   # strip off the last : I added
             collect_args(tempargv,localArgSets)
