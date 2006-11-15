@@ -237,10 +237,8 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
     size_t n32 = (n) >> 5;
     size_t nleft = (n) & (32-1);
     
-    //    printf ("\n1src = %p dst = %p n32 = %ld\n", dst, src, n32);
     if (n32)
     {
-	//printf ("n32 = %ld\n", n32);
 	__asm__ __volatile__ (".align 16  \n"
 		      "1:  \n"
 		      "mov (%1), %%r8  \n"
@@ -261,10 +259,8 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
 		      : : "r8", "r9" /*, "memory" is this needed? */);
     }
     
-    //   printf ("2src = %p dst = %p nleft = %ld\n", dst, src, nleft);
     if (nleft)
     {
-	//printf ("nleft = %ld\n", nleft);
 	memcpy ((void *)dst, (void *)src, nleft);
     }
 }
