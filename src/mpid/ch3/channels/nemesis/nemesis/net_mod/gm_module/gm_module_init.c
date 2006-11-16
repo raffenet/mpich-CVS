@@ -272,14 +272,10 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     int mpi_errno = MPI_SUCCESS;
     int ret;
 
-    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &vc->ch.port_id, vc->ch.unique_id);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno) {
-	MPIU_ERR_POP (mpi_errno);
-    }
-    /* --END ERROR HANDLING-- */
+    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &vc->ch.gm_port_id, vc->ch.gm_unique_id);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)vc->ch.unique_id, &vc->ch.node_id);
+    ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)vc->ch.gm_unique_id, &vc->ch.gm_node_id);
     /* --BEGIN ERROR HANDLING-- */
     if (ret != GM_SUCCESS)
     {

@@ -79,6 +79,8 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
 
+    int node_id;
+
     enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
 
 
@@ -86,9 +88,9 @@ typedef struct MPIDI_CH3I_VC
 #error Error in definition of MPID_NEM_*_MODULE macros
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_NO_MODULE)
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_GM_MODULE)
-    unsigned port_id;
-    unsigned node_id; 
-    unsigned char unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
+    unsigned gm_port_id;
+    unsigned gm_node_id; 
+    unsigned char gm_unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_MX_MODULE)  
     unsigned int       remote_endpoint_id; /* uint32_t equivalent */
     unsigned long long remote_nic_id;      /* uint64_t equivalent */
@@ -96,7 +98,6 @@ typedef struct MPIDI_CH3I_VC
     void *rxq_ptr_array; 
     int   vpid;
 #elif (MPID_NEM_NET_MODULE == MPID_NEM_TCP_MODULE)
-    int node_id; 
     int desc;
     struct sockaddr_in sock_id;
     int left2write;
@@ -200,6 +201,35 @@ struct MPIDI_CH3I_Request			\
 
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_enqueued(x)
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_dequeued(x)
+
+typedef struct MPIDI_CH3I_comm
+{
+    int local_size;      /* number of local procs in this comm */
+    int local_rank;      /* my rank among local procs in this comm */
+    int *local_ranks;    /* list of ranks of procs local to this node */
+    int external_size;   /* number of procs in external set */
+    int external_rank;   /* my rank among external set, or -1 if I'm not in external set */
+    int *external_ranks; /* list of ranks of procs in external set */
+    struct MPID_nem_barrier_vars *barrier_vars; /* shared memory variables used in barrier */
+}
+MPIDI_CH3I_comm_t;
+
+#ifdef ENABLED_SHM_COLLECTIVES
+#define HAVE_DEV_COMM_HOOK
+#define MPID_Dev_comm_create_hook(comm_) do {           \
+        int _mpi_errno;                                 \
+        _mpi_errno = MPIDI_CH3I_comm_create (comm_);    \
+        if (_mpi_errno) MPIU_ERR_POP (_mpi_errno);      \
+    } while(0)
+
+#define MPID_Dev_comm_destroy_hook(comm_) do {          \
+        int _mpi_errno;                                 \
+        _mpi_errno = MPIDI_CH3I_comm_destroy (comm_);   \
+        if (_mpi_errno) MPIU_ERR_POP (_mpi_errno);      \
+    } while(0)
+
+#endif
+#define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
 

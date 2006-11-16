@@ -90,6 +90,19 @@ typedef struct MPID_nem_seg_info
 #define MPID_NEM_IS_LOCAL(grank) (MPID_nem_mem_region.local_ranks[grank] != MPID_NEM_NON_LOCAL)
 #define MPID_NEM_LOCAL_RANK(grank) (MPID_nem_mem_region.local_ranks[grank])
 
+#define MPID_NEM_NUM_BARRIER_VARS 16
+typedef struct MPID_nem_barrier_vars
+{
+    volatile int context_id;
+    volatile int usage_cnt;
+    volatile int cnt;
+    char padding0[MPID_NEM_CACHE_LINE_LEN - sizeof(int)];
+    volatile int sig0;
+    volatile int sig;
+    char padding1[MPID_NEM_CACHE_LINE_LEN - 2* sizeof(int)];
+}
+MPID_nem_barrier_vars_t;
+
 typedef struct MPID_nem_mem_region
 {
     MPID_nem_seg_t              memory;
@@ -98,6 +111,8 @@ typedef struct MPID_nem_mem_region
     int                         map_lock;
     pid_t                      *pid;
     int                         num_local;
+    int                         num_nodes;
+    int                        *node_ids;
     int                         num_procs;
     int                        *local_procs; /* local_procs[lrank] gives the global rank of proc with local rank lrank */
     int                         local_rank;    
@@ -112,6 +127,7 @@ typedef struct MPID_nem_mem_region
     MPID_nem_barrier_t         *barrier;
     MPID_nem_queue_ptr_t        my_freeQ;
     MPID_nem_queue_ptr_t        my_recvQ;
+    MPID_nem_barrier_vars_t    *barrier_vars;
     int                         rank;
     struct MPID_nem_mem_region *next;
 } MPID_nem_mem_region_t, *MPID_nem_mem_region_ptr_t;
@@ -123,6 +139,8 @@ extern MPID_nem_mem_region_t *MPID_nem_mem_region_ptr;
 #else /* MEM_REGION_IN_HEAP */
 extern MPID_nem_mem_region_t MPID_nem_mem_region;
 #endif /* MEM_REGION_IN_HEAP */
+
+
 
 
 #endif /* MPID_NEM_DEFS_H */

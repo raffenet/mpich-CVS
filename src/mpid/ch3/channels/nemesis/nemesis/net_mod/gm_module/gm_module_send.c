@@ -135,7 +135,7 @@ MPID_nem_gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
     if (MPID_nem_module_gm_num_send_tokens)
     {
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
-	mpi_errno = send_cell (vc->ch.node_id, vc->ch.port_id, cell, datalen);
+	mpi_errno = send_cell (vc->ch.gm_node_id, vc->ch.gm_port_id, cell, datalen);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues16));
 	--MPID_nem_module_gm_num_send_tokens;
@@ -146,8 +146,8 @@ MPID_nem_gm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 
 	DO_PAPI3 (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues15));
 	e = MPID_nem_gm_module_queue_alloc (send);
-	e->node_id = vc->ch.node_id;
-	e->port_id = vc->ch.port_id;
+	e->node_id = vc->ch.gm_node_id;
+	e->port_id = vc->ch.gm_port_id;
 	e->type = SEND_TYPE_CELL;
 	e->u.cell = (MPID_nem_cell_t *)cell;
 	

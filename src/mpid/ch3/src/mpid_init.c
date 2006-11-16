@@ -122,7 +122,8 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 	MPID_VCR_Dup(&pg->vct[p], &comm->vcr[p]);
     }
 
-    
+    MPID_Dev_comm_create_hook (comm);
+
     /*
      * Initialize the MPI_COMM_SELF object
      */

@@ -63,6 +63,35 @@ static inline void *MPID_NEM_CAS (volatile void *ptr, void *oldv, void *newv)
 #endif
 }
 
+static inline int MPID_NEM_CAS_INT (volatile int *ptr, int oldv, int newv)
+{
+#ifdef HAVE_GCC_AND_PENTIUM_ASM
+    int prev;
+    __asm__ __volatile__ ("lock ; cmpxchg %1,%2"
+                          : "=a" (prev)
+                          : "q" (newv), "m" (*ptr), "0" (oldv)
+                          : "memory");
+    return prev;
+#elif defined(HAVE_GCC_AND_X86_64_ASM)
+    int prev;
+    __asm__ __volatile__ ("lock ; cmpxchg %1,%2"
+                          : "=a" (prev)
+                          : "q" (newv), "m" (*ptr), "0" (oldv)
+                          : "memory");
+    return prev;   
+#elif defined(HAVE_GCC_AND_IA64_ASM)
+    int prev;
+    __asm__ __volatile__ ("mov ar.ccv=%1;;"
+                          "cmpxchg.rel %0=[%2],%3,ar.ccv"
+                          : "=r"(prev)
+                          : "rO"(oldv), "r"(ptr), "r"(newv)
+                          : "memory");
+    return prev;   
+#else
+#error No compare-and-swap function defined for this architecture
+#endif
+}
+
 static inline int MPID_NEM_FETCH_AND_ADD (volatile int *ptr, int val)
 {
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
@@ -143,7 +172,7 @@ static inline int MPID_NEM_FETCH_AND_INC (volatile int *ptr)
 #endif
 }
 
-static inline void MPID_NEM_ATOMIC_INC (int *ptr)
+static inline void MPID_NEM_ATOMIC_INC (volatile int *ptr)
 {
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
     __asm__ __volatile__ ("lock ; incl %0"
@@ -166,7 +195,7 @@ static inline void MPID_NEM_ATOMIC_INC (int *ptr)
 #endif
 }
 
-static inline void MPID_NEM_ATOMIC_DEC (int *ptr)
+static inline void MPID_NEM_ATOMIC_DEC (volatile int *ptr)
 {
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
     __asm__ __volatile__ ("lock ; decl %0"

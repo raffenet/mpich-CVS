@@ -40,4 +40,9 @@ int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq);
 
 #include "mpid_nem_post.h"
 
+/* communicator creation/descruction hooks */
+
+int MPIDI_CH3I_comm_create (MPID_Comm *new_comm);
+int MPIDI_CH3I_comm_destroy (MPID_Comm *new_comm);
+
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */

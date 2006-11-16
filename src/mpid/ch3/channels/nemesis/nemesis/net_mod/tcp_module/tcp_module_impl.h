@@ -28,7 +28,6 @@ typedef struct MPID_nem_tcp_module_internal_queue
 
 typedef struct nodes_struct
 {
-    int                node_id; 
     int                desc;
     struct sockaddr_in sock_id;
     int                left2write;

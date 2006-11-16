@@ -86,6 +86,9 @@ int MPID_Finalize(void)
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
+
+    MPID_Dev_comm_destroy_hook(MPIR_Process.comm_world);
+
     mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_world->vcrt,0);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);

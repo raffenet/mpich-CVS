@@ -26,7 +26,7 @@ static int intcompar (const void *a, const void *b) { return *(int *)a - *(int *
 
 char *MPID_nem_asymm_base_addr = 0;
 
-static int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank);
+static int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank, int *num_nodes, int **node_ids);
 
 int
 MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
@@ -41,20 +41,22 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 int
 _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 {
-    int                   mpi_errno       = MPI_SUCCESS;
-    int                   pmi_errno;
-    int                   num_procs       = pg_p->size;
-    pid_t                 my_pid;
-    int                   ret;
-    int                   num_local = -1;
-    int                  *local_procs = NULL;
-    int                   local_rank = -1;
-    int                   global_size;
-    int                   index, index2, size;
-    int                   i;
-    char                 *publish_bc_orig = NULL;
-    char                 *bc_val          = NULL;
-    int                   val_max_remaining;
+    int    mpi_errno       = MPI_SUCCESS;
+    int    pmi_errno;
+    int    num_procs       = pg_p->size;
+    pid_t  my_pid;
+    int    ret;
+    int    num_local       = -1;
+    int   *local_procs     = NULL;
+    int    local_rank      = -1;
+    int    global_size;
+    int    index, index2, size;
+    int    i;
+    char  *publish_bc_orig = NULL;
+    char  *bc_val          = NULL;
+    int    val_max_remaining;
+    int    num_nodes;
+    int   *node_ids;    
     MPIU_CHKPMEM_DECL(4);
     
     /* Initialize the business card */
@@ -67,7 +69,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
     MPID_nem_hostname[MAX_HOSTNAME_LEN-1] = '\0';
 
-    mpi_errno = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank);
+    mpi_errno = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank, &num_nodes, &node_ids);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
 
@@ -75,10 +77,12 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region_ptr, MPID_nem_mem_region_t *, sizeof(MPID_nem_mem_region_t), mpi_errno, "mem_region");
 #endif /* MEM_REGION_IN_HEAP */
     
-    MPID_nem_mem_region.num_seg        = 6;
+    MPID_nem_mem_region.num_seg        = 7;
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.seg, MPID_nem_seg_info_ptr_t, MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t), mpi_errno, "mem_region segments");
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.pid, pid_t *, num_local * sizeof(pid_t), mpi_errno, "mem_region pid list");
     MPID_nem_mem_region.rank           = pg_rank;
+    MPID_nem_mem_region.num_nodes      = num_nodes;
+    MPID_nem_mem_region.node_ids       = node_ids;
     MPID_nem_mem_region.num_local      = num_local;
     MPID_nem_mem_region.num_procs      = num_procs;
     MPID_nem_mem_region.local_procs    = local_procs;
@@ -114,7 +118,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 				 (sizeof(int))                       +
 				 ((MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t))))+   
 		   (MAX((num_local * ((num_local-1) * sizeof(MPID_nem_fastbox_t))) , MPID_NEM_ASYMM_NULL_VAL)) +
-		   sizeof (MPID_nem_barrier_t));
+		   sizeof (MPID_nem_barrier_t) + MPID_NEM_NUM_BARRIER_VARS * sizeof (MPID_nem_barrier_vars_t));
 
 #ifdef FORCE_ASYM
     {
@@ -191,6 +195,14 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[5]), size);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
+    /* Shared Collectives Barrier vars */
+    size = MPID_NEM_NUM_BARRIER_VARS * sizeof(MPID_nem_barrier_vars_t);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[6]), size);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    mpi_errno = MPID_nem_barrier_vars_init ((MPID_nem_barrier_vars_t *)(MPID_nem_mem_region.seg[6].addr));
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    MPID_nem_mem_region.barrier_vars = (MPID_nem_barrier_vars_t *)(MPID_nem_mem_region.seg[6].addr);
+    
     /* set up barrier region */
     mpi_errno = MPID_nem_barrier_init ((MPID_nem_barrier_t *)(MPID_nem_mem_region.seg[5].addr));	
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -364,21 +376,26 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-get_local_procs (int global_rank, int num_global, int *num_local, int **local_procs, int *local_rank)
+get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_procs_p, int *local_rank_p, int *num_nodes_p, int **node_ids_p)
 {
 #if defined (ENABLED_NO_LOCAL)
 #warning shared-memory communication disabled
     /* used for debugging only */
     /* return an array as if there are no other processes on this processor */
     int mpi_errno = MPI_SUCCESS;
-    MPIU_CHKPMEM_DECL(1);
+    int i;
+    MPIU_CHKPMEM_DECL(2);
 
-    *num_local = 1;
-    
-    MPIU_CHKPMEM_MALLOC (*local_procs, int *, *num_local * sizeof (int), mpi_errno, "local proc array");
-    **local_procs = global_rank;
+    *num_local_p = 1;
+    *local_rank_p = 0;
+    *num_nodes_p = num_global;
 
-    *local_rank = 0;
+    MPIU_CHKPMEM_MALLOC (*local_procs_p, int *, *num_local_p * sizeof (int), mpi_errno, "local proc array");
+    **local_procs_p = global_rank;
+
+    MPIU_CHKPMEM_MALLOC (*node_ids_p, int *, num_global * sizeof (int), mpi_errno, "node_ids array");
+    for (i = 0; i < num_global; ++i)
+        node_ids_p[i] = [i];
     
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
@@ -397,21 +414,21 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     MPIU_CHKPMEM_DECL(1);
 
     /* get an array of all processes on this node */
-    pmi_errno = PMI_Get_clique_size (num_local);
+    pmi_errno = PMI_Get_clique_size (num_local_p);
     MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_get_clique_size", "**pmi_get_clique_size %d", pmi_errno);
     
-    MPIU_CHKPMEM_MALLOC (*local_procs, int *, *num_local * sizeof (int), mpi_errno, "local proc array");
+    MPIU_CHKPMEM_MALLOC (*local_procs_p, int *, *num_local_p * sizeof (int), mpi_errno, "local proc array");
 
-    pmi_errno = PMI_Get_clique_ranks (*local_procs, *num_local);
+    pmi_errno = PMI_Get_clique_ranks (*local_procs_p, *num_local_p);
     MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_get_clique_ranks", "**pmi_get_clique_ranks %d", pmi_errno);
 
     /* make sure it's sorted  so that ranks are consistent between processes */
-    qsort (*local_procs, *num_local, sizeof (**local_procs), intcompar);
+    qsort (*local_procs_p, *num_local_p, sizeof (**local_procs_p), intcompar);
 
     /* find our local rank */
-    lrank_p = bsearch (&global_rank, *local_procs, *num_local, sizeof (**local_procs), intcompar);
+    lrank_p = bsearch (&global_rank, *local_procs_p, *num_local_p, sizeof (**local_procs_p), intcompar);
     MPIU_ERR_CHKANDJUMP (lrank_p == NULL, mpi_errno, MPI_ERR_OTHER, "**not_in_local_ranks");
-    *local_rank = lrank_p - *local_procs;
+    *local_rank_p = lrank_p - *local_procs_p;
 
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
@@ -427,11 +444,17 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     int *procs;
-    int i;
+    int i, j;
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
     char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
-    MPIU_CHKPMEM_DECL(1);
+    char **node_names;
+    char *node_name_buf;
+    int *node_ids;
+    int num_nodes;
+    int num_local;
+    MPIU_CHKPMEM_DECL(2);
+    MPIU_CHKLMEM_DECL(2);
 
     mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -451,19 +474,28 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
 
     /* Gather hostnames */
     MPIU_CHKPMEM_MALLOC (procs, int *, num_global * sizeof (int), mpi_errno, "local process index array");
+    MPIU_CHKPMEM_MALLOC (node_ids, int *, num_global * sizeof (int), mpi_errno, "node_ids");
+    MPIU_CHKLMEM_MALLOC (node_names, char **, num_global * sizeof (char*), mpi_errno, "node_names");
+    MPIU_CHKLMEM_MALLOC (node_name_buf, char *, num_global * MPID_NEM_MAX_KEY_VAL_LEN * sizeof(char), mpi_errno, "node_name_buf");
 
-    *num_local = 0;
+    num_nodes = 0;
+    for (i = 0; i < num_global; ++i)
+    {
+        node_names[i] = &node_name_buf[i * MPID_NEM_MAX_KEY_VAL_LEN];
+        node_names[i][0] = '\0';
+    }
+    
+    num_local = 0;
 
     for (i = 0; i < num_global; ++i)
     {
-	memset (val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
 	memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
 	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", i);
 
-	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+	pmi_errno = PMI_KVS_Get (kvs_name, key, node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN);
         MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 	
-	if (!strncmp (MPID_nem_hostname, val, MPID_NEM_MAX_KEY_VAL_LEN)
+	if (!strncmp (MPID_nem_hostname, node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN)
 #if defined (ENABLED_ODD_EVEN_CLIQUES)
             /* Used for debugging on a single machine: Odd procs on a
                node are seen as local to each other, and even procs on
@@ -473,27 +505,53 @@ get_local_procs (int global_rank, int num_global, int *num_local, int **local_pr
             )
 	{
 	    if (i == global_rank)
-		*local_rank = *num_local;
-	    procs[*num_local] = i;
-	    ++*num_local;
-	}	
-    }
+		*local_rank_p = num_local;
+	    procs[num_local] = i;
+	    ++num_local;
+	}
 
-    MPIU_Assert (*num_local > 0); /* there's always at least one process */
+        /* find the node_id for this process, or create a new one */
+        /* FIXME: need a better algorithm -- this one does O(N^2) strncmp()s! */
+        for (j = 0; j < num_nodes; ++j)
+            if (!strncmp (node_names[j], node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN))
+                break;
+        if (j == num_nodes)
+            ++num_nodes;
+        else
+            node_names[num_nodes][0] = '\0';
+        node_ids[i] = j;
+    }
+    
+#if defined (ENABLED_ODD_EVEN_CLIQUES)
+    /* create new processes for all odd numbered processes */
+    /* this may leave nodes ids with no processes assigned to them, but I think this is OK*/
+    for (i = 0; i < num_global; ++i)
+        if (i & 0x1)
+            node_ids[i] += num_nodes;
+    num_nodes *= 2;
+#endif        
+
+
+    MPIU_Assert (num_local > 0); /* there's always at least one process */
     
     /* reduce size of local process array */
-    *local_procs = MPIU_Realloc (procs, *num_local * sizeof (int));
+    *local_procs_p = MPIU_Realloc (procs, num_local * sizeof (int));
     /* --BEGIN ERROR HANDLING-- */
-    if (*local_procs == NULL)
+    if (*local_procs_p == NULL)
     {
-        MPIU_CHKMEM_SETERR (mpi_errno, *num_local * sizeof (int), "local process index array");
+        MPIU_CHKMEM_SETERR (mpi_errno, num_local * sizeof (int), "local process index array");
         goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
+    *num_local_p = num_local;
+    *node_ids_p = node_ids;
+    *num_nodes_p = num_nodes;
+    
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
-    return mpi_errno;
+     MPIU_CHKLMEM_FREEALL();
+   return mpi_errno;
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
@@ -515,7 +573,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
     vc->ch.send_seqno = 0;
-    
+
     /* We do different things for vcs in the COMM_WORLD pg vs other pgs
        COMM_WORLD vcs may use shared memory, and already have queues allocated
     */
@@ -524,12 +582,14 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	/* This vc is in COMM_WORLD */
 	vc->ch.is_local = MPID_NEM_IS_LOCAL (vc->lpid);
 	vc->ch.free_queue = MPID_nem_mem_region.FreeQ[vc->lpid]; /* networks and local procs have free queues */    
+        vc->ch.node_id = MPID_nem_mem_region.node_ids[vc->lpid];
     }
     else
     {
 	/* this vc is the result of a connect */
 	vc->ch.is_local = 0;
 	vc->ch.free_queue = net_free_queue;
+        vc->ch.node_id = -1; /* we're not using shared memory, so assume we're on our own node */
     }
     
     if (vc->ch.is_local)

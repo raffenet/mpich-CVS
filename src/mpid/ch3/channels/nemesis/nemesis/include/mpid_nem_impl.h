@@ -24,6 +24,8 @@ int MPID_nem_seg_alloc( MPID_nem_seg_ptr_t, MPID_nem_seg_info_ptr_t, int);
 int MPID_nem_check_alloc(int);
 int MPID_nem_mpich2_init (int ckpt_restart);
 int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_again);
+int MPID_nem_coll_barrier_init (void);
+
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPI_SUCCESS)
 
@@ -41,6 +43,9 @@ int MPID_nem_attach_shared_memory (char **buf_p, const int length, const char ha
 int MPID_nem_remove_shared_memory (const char handle[]);
 /* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
 int MPID_nem_detach_shared_memory (const char *buf_p, const int length);
+
+/* initialize shared-memory MPI_Barrier variables */
+int MPID_nem_barrier_vars_init (MPID_nem_barrier_vars_t *barrier_region);
 
 static inline void
 MPID_nem_waitforlock (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
