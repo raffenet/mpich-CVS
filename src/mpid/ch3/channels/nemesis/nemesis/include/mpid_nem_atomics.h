@@ -81,11 +81,27 @@ static inline int MPID_NEM_CAS_INT (volatile int *ptr, int oldv, int newv)
     return prev;   
 #elif defined(HAVE_GCC_AND_IA64_ASM)
     int prev;
-    __asm__ __volatile__ ("mov ar.ccv=%1;;"
-                          "cmpxchg.rel %0=[%2],%3,ar.ccv"
-                          : "=r"(prev)
-                          : "rO"(oldv), "r"(ptr), "r"(newv)
-                          : "memory");
+
+    switch (sizeof(int)) /* this case statement should be optimized out */
+    {
+    case 8:
+        __asm__ __volatile__ ("mov ar.ccv=%1;;"
+                              "cmpxchg8.rel %0=[%2],%3,ar.ccv"
+                              : "=r"(prev)
+                              : "rO"(oldv), "r"(ptr), "r"(newv)
+                              : "memory");
+        break;
+    case 4:
+        __asm__ __volatile__ ("mov ar.ccv=%1;;"
+                              "cmpxchg4.rel %0=[%2],%3,ar.ccv"
+                              : "=r"(prev)
+                              : "rO"(oldv), "r"(ptr), "r"(newv)
+                              : "memory");
+        break;
+    default:
+        MPIU_Assert (0);
+    }
+    
     return prev;   
 #else
 #error No compare-and-swap function defined for this architecture
