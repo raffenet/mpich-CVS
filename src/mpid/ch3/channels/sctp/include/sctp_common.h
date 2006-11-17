@@ -33,11 +33,12 @@ int sctp_open_dgm_socket(void);
 ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
 		    struct sockaddr *to,
 		    socklen_t tolen __attribute__((unused)),
-		    u_int32_t ppid,
-		    u_int32_t flags,
-		    u_int16_t stream_no,
-		    u_int32_t timetolive,
-		    u_int32_t context );
+		    unsigned long ppid,
+		    unsigned long flags,
+		    unsigned short stream_no,
+		    unsigned long timetolive,
+		    unsigned long context,
+		    int total );
 
 int giveMeSockAddr(unsigned char ifaddr[], int port, struct sockaddr_in* addr);
 

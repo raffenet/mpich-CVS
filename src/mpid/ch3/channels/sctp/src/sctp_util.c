@@ -317,7 +317,7 @@ int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
       /* a short/eager message */
       byte_sent = sz;
       r = sctp_writev(fd, data, iovcnt,
-		      (struct sockaddr *) to, sizeof(*to), ppid, 0, stream, 0, 0);
+		      (struct sockaddr *) to, sizeof(*to), ppid, 0, stream, 0, 0, sz);
     } else {
       byte_sent = MPIR_MIN(CHUNK,data->iov_len);
       
@@ -325,7 +325,7 @@ int MPIDU_Sctp_writev_fd(int fd, struct sockaddr_in * to, struct iovec* ldata,
 
       r = sctp_sendmsg(fd, data->iov_base, byte_sent, (struct sockaddr *) to,
 		       sizeof(*to), ppid, 0, stream, 0, 0);
-      
+
     }
     
     /* update iov's (adjust_iov is static and does not handle errors and "errors" (EAGAIN)) */

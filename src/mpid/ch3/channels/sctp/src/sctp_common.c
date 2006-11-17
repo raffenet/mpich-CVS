@@ -249,12 +249,35 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
 ssize_t sctp_writev(int s, struct iovec *data, int iovcnt,const
 		    struct sockaddr *to,
 		    socklen_t tolen __attribute__((unused)),
-		    u_int32_t ppid,
-		    u_int32_t flags,
-		    u_int16_t stream_no,
-		    u_int32_t timetolive,
-		    u_int32_t context ){
-  
+		    unsigned long ppid,
+		    unsigned long flags,
+		    unsigned short stream_no,
+		    unsigned long timetolive,
+		    unsigned long context,
+                    int total ){
+
+#ifdef MPICH_SCTP_CONCATENATES_IOVS
+    /* required for Solaris since struct msghdr has no msg_control field */
+    
+    int current_cnt=0 , total_offset=0, byte_sent;
+    char *send_buf = (char *) malloc(total);  /* FIXME assumes success */
+    
+    /* combine all iovcnt's into one message.  write all or nothing */
+    while(current_cnt < iovcnt) {
+        memcpy(send_buf+total_offset, data[current_cnt].iov_base, data[current_cnt].iov_len);
+        total_offset += data[current_cnt].iov_len;
+        current_cnt++;
+    }
+
+    byte_sent = sctp_sendmsg(s, send_buf, total, (struct sockaddr *) to, sizeof(*to), ppid,
+                 flags, stream_no, timetolive, context);
+    free(send_buf);
+    
+    return byte_sent;
+}
+
+#else
+/* avoids copying.  uses iovec directly */
   struct msghdr outmsg;
   struct iovec iov;
   char outcmsg[CMSG_SPACE(sizeof(struct sctp_sndrcvinfo))];
@@ -334,6 +357,8 @@ static int sctp_readv(int s, struct iovec *data, int iovcnt, struct sockaddr *fr
   
   return (error);
 }
+#endif /* MPICH_SCTP_CONCATENATES_IOVS */
+
 
 
 #undef FUNCNAME
