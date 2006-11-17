@@ -24,9 +24,11 @@ struct MPID_NS_Handle { int dummy; };    /* unused for now */
 int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
 {
     static const char FCNAME[] = "MPID_NS_Create";
+    static struct MPID_NS_Handle nsHandleWithNoData;
 
     MPIU_UNREFERENCED_ARG(info_ptr);
-    *handle_ptr = NULL;		/* The name service needs no local data */
+    /* MPID_NS_Create() should always create a valid handle */
+    *handle_ptr = &nsHandleWithNoData;	/* The name service needs no local data */
     return 0;
 }
 
