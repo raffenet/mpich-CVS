@@ -112,6 +112,7 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
     goto fn_fail;
 
   /* init num streams */
+  memset(&initm, 0, sizeof(initm));
   initm.sinit_num_ostreams = num_stream;
   initm.sinit_max_instreams = num_stream;
   if (setsockopt(*fd, IPPROTO_SCTP, SCTP_INITMSG, &initm, sizeof(initm))) {
