@@ -15,6 +15,7 @@ bsend3
 bsend4
 isendself
 bsendfrag
+cancelrecv
 errinstatta
 errinstatts
 errinstatwa

@@ -13,6 +13,7 @@ bsend3_SOURCES       = bsend3.c
 bsend4_SOURCES       = bsend4.c
 bsend5_SOURCES       = bsend5.c
 bsendalign_SOURCES   = bsendalign.c
+cancelrecv_SOURCES   = cancelrecv.c
 isendself_SOURCES    = isendself.c
 sendself_SOURCES     = sendself.c
 eagerdt_SOURCES      = eagerdt.c
