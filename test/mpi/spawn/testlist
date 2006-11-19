@@ -25,4 +25,4 @@ disconnect3 3
 # There's a problem with mpd that causes concurrent_spawns to cause problems
 # with mpd, leading to many runaway concurrent_spawn processes.  This 
 # test is being disabled until mpd is fixed.
-#concurrent_spawns 1 timeLimit=30
+concurrent_spawns 1 timeLimit=30
