@@ -3,6 +3,7 @@
 *Release*
 Makefile.in
 Makefile
+summary.xml
 *.o
 ircpi
 test1
