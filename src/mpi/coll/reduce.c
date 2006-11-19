@@ -52,7 +52,8 @@
 
    For the non-power-of-two case, assuming the root is not one of the
    odd-numbered processes that get excluded in the reduce-scatter,
-   Cost = (2.floor(lgp)+1).alpha + (2.((p-1)/p) + 1).n.beta + n.(1+(p-1)/p).gamma
+   Cost = (2.floor(lgp)+1).alpha + (2.((p-1)/p) + 1).n.beta + 
+           n.(1+(p-1)/p).gamma
 
 
    For short messages, user-defined ops, and count < pof2, we use a
@@ -73,7 +74,8 @@
 */
 
 /* begin:nested */
-/* not declared static because a machine-specific function may call this one in some cases */
+/* not declared static because a machine-specific function may call this one 
+   in some cases */
 int MPIR_Reduce ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -141,24 +143,27 @@ int MPIR_Reduce (
     /* Create a temporary buffer */
 
     mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb, &true_extent);  
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     MPID_Datatype_get_extent_macro(datatype, extent);
 
-    MPIU_CHKLMEM_MALLOC(tmp_buf, void *, count*(MPIR_MAX(extent,true_extent)), mpi_errno, "temporary buffer");
+    MPIU_CHKLMEM_MALLOC(tmp_buf, void *, count*(MPIR_MAX(extent,true_extent)),
+			mpi_errno, "temporary buffer");
     /* adjust for potential negative lower bound in datatype */
     tmp_buf = (void *)((char*)tmp_buf - true_lb);
     
     /* If I'm not the root, then my recvbuf may not be valid, therefore
        I have to allocate a temporary one */
     if (rank != root) {
-	MPIU_CHKLMEM_MALLOC(recvbuf, void *, count*(MPIR_MAX(extent,true_extent)), mpi_errno, "receive buffer");
+	MPIU_CHKLMEM_MALLOC(recvbuf, void *, 
+			    count*(MPIR_MAX(extent,true_extent)), 
+			    mpi_errno, "receive buffer");
         recvbuf = (void *)((char*)recvbuf - true_lb);
     }
 
     if ((rank != root) || (sendbuf != MPI_IN_PLACE)) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf,
                                    count, datatype);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     }
 
     MPID_Datatype_get_size_macro(datatype, type_size);
@@ -198,7 +203,7 @@ int MPIR_Reduce (
                 mpi_errno = MPIC_Send(recvbuf, count, 
                                       datatype, rank-1,
                                       MPIR_REDUCE_TAG, comm);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 
                 /* temporarily set the rank to -1 so that this
                    process does not pariticipate in recursive
@@ -210,7 +215,7 @@ int MPIR_Reduce (
                                       datatype, rank+1,
                                       MPIR_REDUCE_TAG, comm,
                                       MPI_STATUS_IGNORE);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+ 		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 
                 /* do the reduction on received data. */
                 /* This algorithm is used only for predefined ops
@@ -289,7 +294,7 @@ int MPIR_Reduce (
                                           recv_cnt, datatype, dst,
                                           MPIR_REDUCE_TAG, comm,
                                           MPI_STATUS_IGNORE);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+ 		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 
                 /* tmp_buf contains data received in this step.
                    recvbuf contains data accumulated so far */
@@ -418,7 +423,7 @@ int MPIR_Reduce (
                                           send_cnt, datatype,  
                                           dst, MPIR_REDUCE_TAG, 
                                           comm);
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                     break;
                 }
                 else {
@@ -430,7 +435,7 @@ int MPIR_Reduce (
                                           recv_cnt, datatype, dst,
                                           MPIR_REDUCE_TAG, comm,
                                           MPI_STATUS_IGNORE);
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 }
                 
                 if (newrank > newdst) send_idx = recv_idx;
@@ -489,7 +494,7 @@ int MPIR_Reduce (
                     source = (source + lroot) % comm_size;
                     mpi_errno = MPIC_Recv (tmp_buf, count, datatype, source, 
                                            MPIR_REDUCE_TAG, comm, &status);
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
                     /* The sender is above us, so the received buffer must be
                        the second argument (in the noncommutative case). */
@@ -514,7 +519,7 @@ int MPIR_Reduce (
                             (*uop)(recvbuf, tmp_buf, &count, &datatype);
                         mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                    recvbuf, count, datatype);
-			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                     }
                 }
             }
@@ -524,7 +529,7 @@ int MPIR_Reduce (
                 source = ((relrank & (~ mask)) + lroot) % comm_size;
                 mpi_errno  = MPIC_Send( recvbuf, count, datatype, 
                                         source, MPIR_REDUCE_TAG, comm );
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+ 		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 break;
             }
             mask <<= 1;
@@ -542,7 +547,7 @@ int MPIR_Reduce (
                 mpi_errno = MPIC_Recv ( recvbuf, count, datatype, 0, 
                                         MPIR_REDUCE_TAG, comm, &status);
             }
-            MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         }
     }
         
@@ -609,7 +614,7 @@ int MPIR_Reduce_inter (
         mpi_errno = MPIC_Recv(recvbuf, count, datatype, 0,
                               MPIR_REDUCE_TAG, comm, &status);
         MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr ); 
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     }
     else {
         /* remote group. Rank 0 allocates temporary buffer, does
@@ -621,7 +626,7 @@ int MPIR_Reduce_inter (
         if (rank == 0) {
             mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
                                                   &true_extent);
-            MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
             MPID_Datatype_get_extent_macro(datatype, extent);
 	    MPIU_CHKLMEM_MALLOC(tmp_buf, void *, count*(MPIR_MAX(extent,true_extent)), mpi_errno, "temporary buffer");
@@ -638,7 +643,7 @@ int MPIR_Reduce_inter (
         /* now do a local reduce on this intracommunicator */
         mpi_errno = MPIR_Reduce(sendbuf, tmp_buf, count, datatype,
                                 op, 0, newcomm_ptr);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
         if (rank == 0)
 	{
@@ -646,7 +651,7 @@ int MPIR_Reduce_inter (
             mpi_errno = MPIC_Send(tmp_buf, count, datatype, root,
                                   MPIR_REDUCE_TAG, comm); 
             MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
-            MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**fail");
+	    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         }
     }
 
@@ -843,7 +848,8 @@ int MPI_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
     {
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, 
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
-	"**mpi_reduce", "**mpi_reduce %p %p %d %D %O %d %C", sendbuf, recvbuf, count, datatype, op, root, comm);
+	"**mpi_reduce", "**mpi_reduce %p %p %d %D %O %d %C", sendbuf, recvbuf, 
+				     count, datatype, op, root, comm);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

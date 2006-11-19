@@ -102,9 +102,11 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag,
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (count != 0) {
-		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", 
+				     mpi_errno);
 		/* NOTE: MPI_STATUSES_IGNORE != NULL */
-		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
+		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", 
+				     mpi_errno);
 	    }
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
@@ -124,7 +126,8 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag,
     /* Convert MPI request handles to a request object pointers */
     if (count > MPID_REQUEST_PTR_ARRAY_SIZE)
     {
-	MPIU_CHKLMEM_MALLOC_ORJUMP(request_ptrs, MPID_Request **, count * sizeof(MPID_Request *), mpi_errno, "request pointers");
+	MPIU_CHKLMEM_MALLOC_ORJUMP(request_ptrs, MPID_Request **, 
+		 count * sizeof(MPID_Request *), mpi_errno, "request pointers");
     }
 
     n_completed = 0;

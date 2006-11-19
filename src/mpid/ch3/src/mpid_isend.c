@@ -27,7 +27,8 @@
 #define FUNCNAME MPID_Isend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, 
+	       int tag, MPID_Comm * comm, int context_offset,
                MPID_Request ** request)
 {
     MPIDI_msg_sz_t data_sz;
@@ -65,7 +66,8 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 	goto fn_exit;
     }
 
-    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, 
+			    dt_true_lb);
     
     MPIDI_Comm_get_vc(comm, rank, &vc);
     
