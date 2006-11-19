@@ -27,7 +27,8 @@
 #   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
 #endif
 
-#if defined(HAVE_GETHOSTNAME) && defined(NEEDS_GETHOSTNAME_DECL) && !defined(gethostname)
+#if defined(HAVE_GETHOSTNAME) && defined(NEEDS_GETHOSTNAME_DECL) && \
+   !defined(gethostname)
 int gethostname(char *name, size_t len);
 # endif
 
@@ -188,6 +189,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (sreq_)->cc_ptr		   = &(sreq_)->cc;              \
     MPIR_Comm_add_ref(comm);					\
     (sreq_)->status.MPI_ERROR	   = MPI_SUCCESS;               \
+    (sreq_)->status.cancelled	   = FALSE;		        \
     (sreq_)->dev.state = 0;                                     \
     (sreq_)->dev.cancel_pending = FALSE;                        \
     (sreq_)->dev.match.rank = rank;				\
@@ -648,14 +650,14 @@ extern char *MPIU_DBG_parent_str;
 #define MPIDI_ERR_PRINTF(e) MPIDI_err_printf e
 
 #if defined(HAVE_CPP_VARARGS)
-#   define MPIDI_dbg_printf(level, func, fmt, args...)							\
-    {													\
+#   define MPIDI_dbg_printf(level, func, fmt, args...)			\
+    {									\
     	MPIU_dbglog_printf("[%d] %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
     }
-#   define MPIDI_err_printf(func, fmt, args...)									\
-    {														\
+#   define MPIDI_err_printf(func, fmt, args...)				\
+    {									\
     	MPIU_Error_printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
-    	fflush(stdout);												\
+    	fflush(stdout);							\
     }
 #endif
 
@@ -783,8 +785,9 @@ int MPIDI_Free_mem(void *ptr);
 
 /* optional channel-specific */
 void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr);
-int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info, 
-                    MPID_Comm *comm_ptr, MPID_Win **win_ptr, MPIDI_RMAFns *RMAFns);
+int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, 
+			 MPID_Info *info, MPID_Comm *comm_ptr, 
+			 MPID_Win **win_ptr, MPIDI_RMAFns *RMAFns);
 int MPIDI_CH3_Free_mem(void *ptr);
 void MPIDI_CH3_Cleanup_mem(void);
 int MPIDI_CH3_Win_free(MPID_Win **win_ptr);
@@ -1145,7 +1148,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request, MPIDI_Message_match *);
 MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int, int, int, int * found);
 int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
 MPID_Request * MPIDI_CH3U_Recvq_FDP(MPIDI_Message_match * match);
-MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, int * found);
+MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, 
+					   int * found);
 
 #if 0
 /* FIXME: These are macros! Why do they have prototypes */
@@ -1154,13 +1158,16 @@ void MPIDI_CH3U_Request_increment_cc(MPID_Request * req, int * was_incomplete);
 void MPIDI_CH3U_Request_decrement_cc(MPID_Request * req, int * incomplete);
 #endif
 
-int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, MPID_IOV * const iov, int * const iov_n);
+int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, 
+				     MPID_IOV * const iov, int * const iov_n);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
 int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
 
-void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, MPI_Datatype sdt, int * smpi_errno,
-			    void * const rbuf, int rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
+void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, 
+			    MPI_Datatype sdt, int * smpi_errno,
+			    void * const rbuf, int rcount, MPI_Datatype rdt, 
+			    MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
 int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
 int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreqp);
 int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreqp);
@@ -1219,7 +1226,7 @@ int MPIDI_CH3_Abort(int exit_code, char * error_msg);
 /* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be 
    executed by two or more channels */
 int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
-                         char **bc_val_p, int *val_max_sz_p);                         
+                         char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t * pg_p, int pg_rank,
                          char **bc_val_p, int *val_max_sz_p);
 
@@ -1318,7 +1325,8 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
   MPIDI_CH3_Init - Initialize the channel implementation.
 
   Input Parameters:
-+ has_parent - boolean value that is true if this MPI job was spawned by another set of MPI processes
++ has_parent - boolean value that is true if this MPI job was spawned by 
+  another set of MPI processes
 . pg_ptr - the new process group representing MPI_COMM_WORLD
 - pg_rank - my rank in the process group
 
