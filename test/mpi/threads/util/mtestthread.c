@@ -16,7 +16,7 @@
 int MTest_Start_thread(THREAD_RETURN_TYPE (*fn)(void *p),void *arg)
 {
     HANDLE hThread;
-    hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)fn, NULL, 0, NULL);
+    hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)fn, (LPVOID)arg, 0, NULL);
     if (hThread == NULL)
     {
 	return GetLastError();
