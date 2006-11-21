@@ -60,6 +60,9 @@ class MPDMan(object):
         self.spawnInProgress = 0
         if self.spawned:
             self.myId = self.myId + '_s'
+        # Note that in the spawned process case, this id for the mpdman
+        # will not be unique (it needs something like the world number
+        # or the pid of the mpdman process itself)
         mpd_set_my_id(myid=self.myId)
         self.clientPgm = os.environ['MPDMAN_CLI_PGM']
         mpd_set_cli_app(self.clientPgm)

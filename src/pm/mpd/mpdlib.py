@@ -57,6 +57,10 @@ mpd_zc = 0
 global mpd_dbg_level
 mpd_dbg_level = 0
 
+def mpd_set_dbg_level(flag):
+    global mpd_dbg_level
+    mpd_dbg_level = flag
+
 def mpd_set_my_id(myid=''):
     global mpd_my_id
     mpd_my_id = myid
@@ -83,8 +87,23 @@ def mpd_print(*args):
     printLine = '%s (%s %d): ' % (mpd_my_id,callingProc,callingLine)
     for arg in args[1:]:
         printLine = printLine + str(arg)
-    print printLine
-    sys.stdout.flush()
+    # We've seen an EINTR on the flush here
+    while 1:
+        try:
+            print printLine
+            break
+        except os.error, errinfo:
+            if errinfo[0] != EINTR:
+                raise os.error, errinfo
+    # end of while
+    while 1:
+        try:
+            sys.stdout.flush()
+            break
+        except os.error, errinfo:
+	    if errinfo[0] != EINTR:
+                raise os.error, errinfo
+    # end of while
     if syslog_module_available:
         syslog.syslog(syslog.LOG_INFO,printLine)
 
@@ -361,14 +380,14 @@ class MPDSock(object):
             try:
                 self.sock.connect(*args)
                 break
-            except sock.error, errinfo:
+            except socket.error, errinfo:
                 if errinfo[0] == EINTR:   # sigchld, sigint, etc.
                     if mpd_signum == signal.SIGINT  or  mpd_signum == signal.SIGALRM:
                         break
                     else:
                         continue
                 else:
-                    raise sock.error, errinfo
+                    raise socket.error, errinfo
         # end of while
 
     def accept(self,name='accepter'):
@@ -424,6 +443,8 @@ class MPDSock(object):
         return data
     def recv_dict_msg(self,timeout=None):
         global mpd_signum
+        global mpd_dbg_level
+
         mpd_print(mpd_dbg_level, \
                   "Entering recv_dict_msg with timeout=%s" % (str(timeout)))
         msg = {}
@@ -487,14 +508,14 @@ class MPDSock(object):
                             mpd_print(mpd_dbg_level,"Saw EINTR")
                             pass
 			elif errinfo[0] == ECONNRESET:
-                            mpd_print(0,"Saw ECONNRESET, ignore (return null msg)")
+                            mpd_print(mpd_dbg_level,"Saw ECONNRESET, ignore (return null msg)")
 			    return msg;
                         else:
                             mpd_print_tb(1,"recv_dict_msg: sock.recv(8): errinfo=:%s:" % (errinfo))
                             raise socket.error,errinfo
                 # end of while(1)
                 if not pickledLen:
-                    mpd_print(0,"no pickeled len")
+                    mpd_print(mpd_dbg_level,"no pickeled len")
                 if pickledLen:
                     pickledLen = int(pickledLen)
                     pickledMsg = ''
@@ -531,7 +552,7 @@ class MPDSock(object):
                              (self.name,errmsg) )
         if mpd_dbg_level:
             if msg:
-                mpd_print(1,"Returning with non-null msg")
+                mpd_print(1,"Returning with non-null msg, length = %d, head = %s" % (pickledLen,pickledMsg[0:32].replace('\n','<NL>') ) )
 	    else:
                 mpd_print(1,"Returning with null msg" )
         return msg
@@ -574,17 +595,36 @@ class MPDSock(object):
                     break
             msg += c
         return msg
-    def send_dict_msg(self,msg,errprint=0):
+ 
+    # The default behavior on an error needs to be to handle and/or report
+    # it.  Otherwise, we all waste time trying to figure out why 
+    # the code is silently failing.  I've set the default for errprint 
+    # to YES rather than NO.
+    def send_dict_msg(self,msg,errprint=1):
         pickledMsg = dumps(msg) 
         # FIXME: Does this automatically handle EINTR, or does it need an
         # except os.error, errinfo: and check on errinfo[0] == EINTR
         try:
-            self.sendall( "%08d%s" % (len(pickledMsg),pickledMsg) )
+            while 1:
+                try:
+                    self.sendall( "%08d%s" % (len(pickledMsg),pickledMsg) )
+                    break
+                except socket.error, errmsg:
+                    if errmsg[0] != EINTR:
+                        raise socket.error, errmsg
+            # end of While
         except Exception, errmsg:
             mpd_print_tb(errprint,'send_dict_msg: sock=%s errmsg=:%s:' % (self.name,errmsg))
-    def send_char_msg(self,msg,errprint=0):
+    def send_char_msg(self,msg,errprint=1):
         try:
-            self.sock.sendall(msg)
+            while 1:
+                try:
+                    self.sock.sendall(msg)
+                    break
+                except socket.error, errmsg:
+                    if errmsg[0] != EINTR:
+                        raise socket.error, errmsg
+            # end of While
         except Exception, errmsg:
             mpd_print_tb(errprint,'send_char_msg: sock=%s errmsg=:%s:' % (self.name,errmsg))
 

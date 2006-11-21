@@ -74,7 +74,7 @@ from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair,
                           mpd_print, mpd_get_my_username, mpd_close_zc, \
                           mpd_get_groups_for_username, mpd_uncaught_except_tb, \
                           mpd_set_procedures_to_trace, mpd_trace_calls, \
-                          mpd_dbg_level, \
+                          mpd_dbg_level, mpd_set_dbg_level, \
                           MPDSock, MPDListenSock, MPDConListenSock, \
                           MPDStreamHandler, MPDRing, MPDParmDB
 from  mpdman      import  MPDMan
@@ -444,7 +444,7 @@ class MPD(object):
                 self.parmdb[('cmdline','MPD_TRACE_FLAG')] = 1
                 argidx += 1
             elif sys.argv[argidx] == '--debug':
-                mpd_dbg_level = 1
+                mpd_set_dbg_level(1)
                 argidx += 1
             elif sys.argv[argidx] == '-n'  or  sys.argv[argidx] == '--noconsole':
                 self.parmdb[('cmdline','MPD_CONSOLE_FLAG')] = 0
