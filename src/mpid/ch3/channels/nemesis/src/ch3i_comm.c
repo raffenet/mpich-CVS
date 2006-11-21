@@ -133,6 +133,8 @@ int MPIDI_CH3I_comm_create (MPID_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
 
+    comm->ch.barrier_vars = NULL;
+
     mpi_errno = find_local_and_external (comm, &comm->ch.local_size, &comm->ch.local_rank, &comm->ch.local_ranks,
                                          &comm->ch.external_size, &comm->ch.external_rank, &comm->ch.external_ranks);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -153,12 +155,45 @@ int MPIDI_CH3I_comm_destroy (MPID_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (comm->ch.barrier_vars && MPID_NEM_FETCH_AND_ADD (&comm->ch.barrier_vars->usage_cnt, -1) == 1)
-            comm->ch.barrier_vars->context_id = NULL_CONTEXT_ID;
+    if (comm->ch.barrier_vars && MPID_NEM_FETCH_AND_DEC (&comm->ch.barrier_vars->usage_cnt) == 1)
+    {
+	MPID_NEM_WRITE_BARRIER();
+	comm->ch.barrier_vars->context_id = NULL_CONTEXT_ID;
+    }
     if (comm->ch.local_size)
         MPIU_Free (comm->ch.local_ranks);
     if (comm->ch.external_size)
         MPIU_Free (comm->ch.external_ranks);
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+#undef FUNCNAME
+#define FUNCNAME alloc_barrier_vars
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int alloc_barrier_vars (MPID_Comm *comm, MPID_nem_barrier_vars_t **vars)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int i;
+    int c;
+    
+    for (i = 0; i < MPID_NEM_NUM_BARRIER_VARS; ++i)
+    {
+	c = MPID_NEM_CAS_INT (&MPID_nem_mem_region.barrier_vars[i].context_id, NULL_CONTEXT_ID, comm->context_id);
+        if (c == NULL_CONTEXT_ID || c == comm->context_id)
+        {
+            *vars = &MPID_nem_mem_region.barrier_vars[i];
+	    MPID_NEM_WRITE_BARRIER();
+            MPID_NEM_ATOMIC_INC (&(*vars)->usage_cnt);
+            goto fn_exit;
+        }
+    }
+
+    *vars = NULL;
     
  fn_exit:
     return mpi_errno;
@@ -262,18 +297,20 @@ static int barrier (MPID_Comm *comm_ptr)
     {
         /* there are only local procs -- do shared memory barrier only */
         int prev;
-        int sense = barrier_vars->sig;
-        
-        prev = MPID_NEM_FETCH_AND_ADD (&barrier_vars->cnt, 1);
+        int sense;
+
+        sense = barrier_vars->sig;
+	MPID_NEM_READ_BARRIER();
+
+        prev = MPID_NEM_FETCH_AND_INC (&barrier_vars->cnt);
         if (prev == local_size - 1)
         {
             barrier_vars->cnt = 0;
-            barrier_vars->sig = 1 - sense;
             MPID_NEM_WRITE_BARRIER();
+            barrier_vars->sig = 1 - sense;
         }
         else
         {
-            MPID_NEM_WRITE_BARRIER();
             while (barrier_vars->sig == sense)
                 BUSY_WAIT();
         }
@@ -305,8 +342,8 @@ static int barrier (MPID_Comm *comm_ptr)
         {
             barrier_vars->sig0 = 0;
             barrier_vars->cnt = 0;
-            barrier_vars->sig = 1 - barrier_vars->sig;
-            MPID_NEM_WRITE_BARRIER();
+	    MPID_NEM_WRITE_BARRIER();
+	    barrier_vars->sig = 1 - barrier_vars->sig;
         }
     }
     else
@@ -315,12 +352,16 @@ static int barrier (MPID_Comm *comm_ptr)
            counter is 1 (i.e., only root is left), set sig0 to signal
            root.  Then, wait on signal variable. */
         int prev;
-        int sense = barrier_vars->sig;
-        
-        prev = MPID_NEM_FETCH_AND_ADD (&barrier_vars->cnt, 1);
+        int sense;
+        sense = barrier_vars->sig;
+	MPID_NEM_READ_BARRIER();
+
+        prev = MPID_NEM_FETCH_AND_INC (&barrier_vars->cnt);
         if (prev == local_size - 2)  /* - 2 because it's the value before we added 1 and we're not waiting for root */
-            barrier_vars->sig0 = 1;
-        MPID_NEM_WRITE_BARRIER();
+	{
+	    MPID_NEM_WRITE_BARRIER();
+	    barrier_vars->sig0 = 1;
+	}
 
         while (barrier_vars->sig == sense)
             BUSY_WAIT();
@@ -335,35 +376,6 @@ static int barrier (MPID_Comm *comm_ptr)
 
 
 #undef FUNCNAME
-#define FUNCNAME alloc_barrier_vars
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int alloc_barrier_vars (MPID_Comm *comm, MPID_nem_barrier_vars_t **vars)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int i;
-    int c;
-    
-    for (i = 0; i < MPID_NEM_NUM_BARRIER_VARS; ++i)
-    {
-        c = MPID_NEM_CAS_INT (&MPID_nem_mem_region.barrier_vars[i].context_id, NULL_CONTEXT_ID, comm->context_id);
-        if (c == -1 || c == comm->context_id)
-        {
-            *vars = &MPID_nem_mem_region.barrier_vars[i];
-            MPID_NEM_ATOMIC_INC (&comm->ch.barrier_vars->usage_cnt);
-            goto fn_exit;
-        }
-    }
-
-    *vars = NULL;
-    
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
 #define FUNCNAME MPID_nem_barrier_vars_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -376,6 +388,7 @@ int MPID_nem_barrier_vars_init (MPID_nem_barrier_vars_t *barrier_region)
         for (i = 0; i < MPID_NEM_NUM_BARRIER_VARS; ++i)
         {
             barrier_region[i].context_id = NULL_CONTEXT_ID;
+            barrier_region[i].usage_cnt = 0;
             barrier_region[i].cnt = 0;
             barrier_region[i].sig0 = 0;
             barrier_region[i].sig = 0;

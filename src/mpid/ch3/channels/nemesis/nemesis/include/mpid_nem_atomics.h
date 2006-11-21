@@ -92,14 +92,15 @@ static inline int MPID_NEM_CAS_INT (volatile int *ptr, int oldv, int newv)
                               : "memory");
         break;
     case 4:
-        __asm__ __volatile__ ("mov ar.ccv=%1;;"
-                              "cmpxchg4.rel %0=[%2],%3,ar.ccv"
+        __asm__ __volatile__ ("zxt4 %1=%1;;" /* don't want oldv sign-extended to 64 bits */
+			      "mov ar.ccv=%1;;"
+			      "cmpxchg4.rel %0=[%2],%3,ar.ccv"
                               : "=r"(prev)
-                              : "rO"(oldv), "r"(ptr), "r"(newv)
+			      : "r0"(oldv), "r"(ptr), "r"(newv)
                               : "memory");
         break;
     default:
-        MPIU_Assert (0);
+        MPIU_Assertp (0);
     }
     
     return prev;   
@@ -188,6 +189,20 @@ static inline int MPID_NEM_FETCH_AND_INC (volatile int *ptr)
 #endif
 }
 
+static inline int MPID_NEM_FETCH_AND_DEC (volatile int *ptr)
+{
+#ifdef HAVE_GCC_AND_IA64_ASM
+    int val;
+    __asm__ __volatile__ ("fetchadd4.rel %0=[%1],%2"
+                  : "=r"(val) : "r"(ptr), "i" (-1)
+                  : "memory");
+    return val;
+#else
+    /* default implementation */
+    return MPID_NEM_FETCH_AND_ADD (ptr, -1);
+#endif
+}
+
 static inline void MPID_NEM_ATOMIC_INC (volatile int *ptr)
 {
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
@@ -267,8 +282,8 @@ static inline void MPID_NEM_ATOMIC_DEC (volatile int *ptr)
 #define MPID_NEM_READ_WRITE_BARRIER()
 
 #elif defined(HAVE_GCC_AND_IA64_ASM)
-#define MPID_NEM_WRITE_BARRIER()
-#define MPID_NEM_READ_BARRIER()
+#define MPID_NEM_WRITE_BARRIER() __asm__ __volatile__  ("mf" ::: "memory" )
+#define MPID_NEM_READ_BARRIER() __asm__ __volatile__  ("mf" ::: "memory" )
 #define MPID_NEM_READ_WRITE_BARRIER() __asm__ __volatile__  ("mf" ::: "memory" )
 
 #else
