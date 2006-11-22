@@ -473,14 +473,18 @@ environment, you would use
 \begin{verbatim}
     mpiexec -genvnone -env FOO BAR -n 50 a.out
 \end{verbatim}
+In the case of MPD, we currently make an exception for the \texttt{PATH}
+environment variable, which is always passed through.  This exception
+was added to make it unnecessary to explicitly pass this variable in the
+default case.
 
 A list of environment variable names whose values are
 to be copied from the current environment can be given with the
 \texttt{-envlist} (respectively, \texttt{-genvlist}) parameter; for example,
 \begin{verbatim}
-    mpiexec -genvnone -envlist PATH,LD_SEARCH_PATH -n 50 a.out
+    mpiexec -genvnone -envlist HOME,LD_LIBRARY_PATH -n 50 a.out
 \end{verbatim}
-sets the \texttt{PATH} and \texttt{LD\_LIBRARY\_PATH} in the environment
+sets the \texttt{HOME} and \texttt{LD\_LIBRARY\_PATH} in the environment
 of the \texttt{a.out} processes to their values in the environment where
 \texttt{mpiexec} is being run.  In this situation you can't have commas
 in the environment variable names, although of course they are permitted
@@ -566,6 +570,19 @@ sends \texttt{stdin} to processes 0, 1, 2, and 3.
 
 The default, if \texttt{-s} is not specified, is to send
 \texttt{mpiexec}'s \texttt{stdin} to process 0 only.
+
+The redirection of \texttt{-stdin} through \texttt{mpiexec} to various MPI
+processes is intended primarily for interactive use.  Because of the
+complexity of buffering large amounts of data at various processes that
+may not have read it yet, the redirection of large amounts of data to
+\texttt{mpiexec}'s \texttt{stdin} is discouraged, and may cause
+unexpected results.  That is, 
+\begin{verbatim}
+    mpiexec -s all -n 5 a.out < bigfile
+\end{verbatim}
+should not be used if \texttt{bigfile} is more than a few lines long.
+Have one of the processes open the file and read it instead.  The
+functions in MPI-IO may be useful for this purpose.
 
 % the following is obsolete
 % \item[\texttt{-kx}] is used only for debugging.  The \texttt{mpd}
