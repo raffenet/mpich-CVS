@@ -458,7 +458,7 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
 fi
 
 dnl The following does not work as expected because
-dnl AC_SUBDIRS_CONFIG sets the "precious" variables like CFLAGS from the
+dnl AC_CONFIG_SUBDIRS sets the "precious" variables like CFLAGS from the
 dnl settings recorded at the top of the configure. That means CFLAGS cannot
 dnl be inherit from the mpich2's configure enviroment.
 dnl
@@ -642,6 +642,11 @@ if test -s $srcdir/$slog2_dirname/configure ; then
         slog2_enable_softerror=yes
         export slog2_enable_softerror
         selected_pkgs="$selected_pkgs slog2"
+        if test "$MPI_IMPL" = "MPICH" -o "$MPI_IMPL" = "MPICH2" ; then
+            dnl  Disable the SAMPLE code in slog2sdk for MPICH2
+            slog2_enable_sample=no
+            export slog2_enable_sample
+        fi
         AC_CONFIG_SUBDIRS(src/slog2sdk)
     fi
 fi
