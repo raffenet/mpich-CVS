@@ -551,17 +551,12 @@ chmod u+x $UNINSTALLFILE
 # Install the SLOG-2 tools if they exist
 # Don't set the prefix if the default is chosen.
 if [ -x $libbuild_dir/../src/slog2sdk/sbin/install-package ] ; then
-    if [ "$prefix_override" = "1" ] ; then
-        ( cd $libbuild_dir/../src/slog2sdk && \
-          ./sbin/install-package -prefix=$prefix -uninstall=$UNINSTALLFILE \
-                                 -mode=$MODE -xmode=$XMODE -dmode=$DMODE \
-                                 -copymode=core )
-    else
-        ( cd $libbuild_dir/../src/slog2sdk && \
-          ./sbin/install-package -uninstall=$UNINSTALLFILE \
-                                 -mode=$MODE -xmode=$XMODE -dmode=$DMODE \
-                                 -copymode=core )
+    install_opts="-mode=$MODE -xmode=$XMODE -dmode=$DMODE -copymode=core"
+    install_opts="-uninstall=$UNINSTALLFILE $install_opts"
+    if [ "$prefix_override" = 1 ] ; then
+        install_opts="-prefix=$prefix $install_opts"
     fi
+    ( cd $libbuild_dir/../src/slog2sdk && ./sbin/install-package $install_opts )
 fi
 
 #  Clean up the example directories
