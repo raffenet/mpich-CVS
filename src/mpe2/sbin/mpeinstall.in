@@ -320,6 +320,7 @@ else
             -e "s%^MPI_F77\([ ]*\)=\([ ]*\).*\$%MPI_F77\1=\2$bindir/mpif77%g" \
             -e "s%^MPE_INCDIR\([ ]*\)=\([ ]*\).*\$%MPE_INCDIR\1=\2$includedir%g" \
             -e "s%^MPE_LIBDIR\([ ]*\)=\([ ]*\).*\$%MPE_LIBDIR\1=\2$libdir%g" \
+            -e "s%^MPE_BINDIR\([ ]*\)=\([ ]*\).*\$%MPE_BINDIR\1=\2$bindir%g" \
             -e "s%^MPE_ETCDIR\([ ]*\)=\([ ]*\).*\$%MPE_ETCDIR\1=\2$sysconfdir%g" \
             -e "s%^MPE_SBINDIR\([ ]*\)=\([ ]*\).*\$%MPE_SBINDIR\1=\2$sbindir%g" \
             $1 > $dest
@@ -327,6 +328,7 @@ else
             sed \
             -e "s%^MPE_INCDIR\([ ]*\)=\([ ]*\).*\$%MPE_INCDIR\1=\2$includedir%g" \
             -e "s%^MPE_LIBDIR\([ ]*\)=\([ ]*\).*\$%MPE_LIBDIR\1=\2$libdir%g" \
+            -e "s%^MPE_BINDIR\([ ]*\)=\([ ]*\).*\$%MPE_BINDIR\1=\2$bindir%g" \
             -e "s%^MPE_ETCDIR\([ ]*\)=\([ ]*\).*\$%MPE_ETCDIR\1=\2$sysconfdir%g" \
             -e "s%^MPE_SBINDIR\([ ]*\)=\([ ]*\).*\$%MPE_SBINDIR\1=\2$sbindir%g" \
             $1 > $dest
