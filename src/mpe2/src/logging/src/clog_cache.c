@@ -296,7 +296,7 @@ void CLOG_Cache_open4readwrite( CLOG_Cache_t *cache, const char *filename )
 
     CLOG_Preamble_read( cache->preamble, cache->local_fd );
     if ( cache->preamble->commtable_fptr < CLOG_PREAMBLE_SIZE ) {
-        fprintf( stderr, __FILE__":CLOG_Cache_open4read() - Warning!\n"
+        fprintf( stderr, __FILE__":CLOG_Cache_open4readwrite() - Warning!\n"
                          "\t""Invalid commtable_fptr, "i64fmt", < "
                          "CLOG_PREAMBLE_SIZE, %d.\n"
                          "\t""This program can fix this incomplete logfile.\n",
@@ -310,7 +310,7 @@ void CLOG_Cache_open4readwrite( CLOG_Cache_t *cache, const char *filename )
                      != cache->is_runtime_bigendian );
     ierr = CLOG_CommSet_read( cache->commset, cache->local_fd, do_byte_swap );
     if ( ierr <= 0 ) {
-        fprintf( stderr, __FILE__":CLOG_Cache_open4read() - Warning!\n"
+        fprintf( stderr, __FILE__":CLOG_Cache_open4readwrite() - Warning!\n"
                          "\t""CLOG_CommSet_read() return an error code, %d.\n"
                          "\t""This program can fix this incomplete logfile.\n",
                          ierr );
