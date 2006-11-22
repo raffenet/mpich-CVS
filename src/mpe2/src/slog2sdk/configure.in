@@ -384,7 +384,7 @@ AC_ARG_ENABLE(clog,
 [--enable-clog                      - Build CLOG related wrappers, e.g.
                                      clog2TOslog2, clog2print....
                                      The default is enable=yes.],
-,enable_clog=yes)
+,enable_clog=${slog2_enable_clog:-yes})
 
 AC_ARG_WITH(oldsource,
 [--with-oldsource=OLD_SRCDIR        - Build the old jar files from the given OLD
