@@ -9,7 +9,7 @@
                               Known Deficiencies
 -------------------------------------------------------------------------------
 
-- The sock and ssm channels are the only channels that implement dynamic 
+- The sock, sctp, and ssm channels are the only channels that implement dynamic 
   process support (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, 
   etc.) under Unix.  All other channels will experience failures for tests 
   exercising dynamic process functionality.  Under Windows, the sock, ssm, 
@@ -59,6 +59,27 @@
 - --enable-sharedlibs=gcc does not work on Solaris because of difference
   between the GNU ld program and the Solaris ld program
 
+- For the initial release, the sctp channel is fully supported for
+  FreeBSD and Mac OS X.  As of the time of this release, bugs in the
+  stack currently existed in the Linux kernel, and will hopefully soon be 
+  resolved. 
+
+  The sctp channel is known to currently not work under Solaris and Windows.
+
+  For Solaris, the SCTP API available in the kernel of standard
+  Solaris 10 is a subset of the standard API used by the sctp channel.
+  Cooperation with the Sun SCTP developers to support ch3:sctp under
+  Solaris for future releases is currently ongoing.  
+
+  For Windows, no known kernel-based SCTP stack for Windows currently
+  exists.
+
+  An alternative for Linux, FreeBSD, Mac OS X, Solaris and Windows is
+  the user-based SCTP stack available at 
+  http://www.sctp.de/sctp-download.html ; it is currently being
+  evaluated for use with a future MPICH2 release.
+  
+  
 -------------------------------------------------------------------------------
 			Issues for Developers
 -------------------------------------------------------------------------------

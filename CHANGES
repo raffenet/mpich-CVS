@@ -3,7 +3,8 @@
 ===============================================================================
 
 - An SCTP channel has been added to the CH3 device. This was
-  implemented by Brad Penoff, Univ. of British Columbia.
+  implemented by Brad Penoff and Mike Tsai, Univ. of British Columbia.
+  Their group's webpage is located at http://www.cs.ubc.ca/labs/dsg/mpi-sctp/ .
 
 - Bugs related to dynamic processes have been fixed.
 

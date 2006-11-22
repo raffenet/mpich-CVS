@@ -421,6 +421,61 @@ and connect/accept are not yet implemented.  Performance in some areas
 is still suboptimal.
 
 
+The SCTP channel is a new channel using the Stream Control
+Transmission Protocol.  SCTP is a new transport protocol available on
+most operating systems using standard commodity hardware.  For some
+background, this article answers "Why is SCTP needed given TCP and UDP
+are widely available?" :
+http://www.isoc.org/briefings/017/index.shtml
+
+This channel supports regular MPI-1 operations as well as dynamic
+processes and RMA from MPI-2; it currently does not offer support for
+multiple threads.
+
+Configure the sctp channel by putting
+
+--with-device=ch3:sctp
+
+on the configure command line.
+
+If the SCTP include files and libraries are not in the normal search
+paths, you can specify them with the --with-sctp-include= and
+--with-sctp-lib= options, or the --with-sctp=  option if lib/ and
+include/ are in the same directory.
+
+SCTP stack specific instructions:
+
+  For FreeBSD 7 and onward, SCTP comes with CURRENT and is enabled with
+  the "option SCTP" in the kernel configuration file.  For FreeBSD
+  6.x, kernel patches and instructions can be downloaded at
+  http://www.sctp.org/download.html .  These kernels place the lib and
+  include in /usr, so nothing needs to be specified for --with-sctp
+  since /usr is often in the default search path.
+
+  For Mac OS X, the SCTP Network Kernel Extension (NKE) can be
+  downloaded at http://sctp.fh-muenster.de/sctp-nke.html .  This places
+  the lib and include in /usr, so nothing needs to be specified for
+  --with-sctp since /usr is often in the default search path.
+
+  For Linux, SCTP comes with the default kernel from 2.4.23 and later as
+  a module.  This module can be loaded as root using "modprobe sctp".
+  After this is loaded,  you can verify it is loaded using "lsmod".
+  Once loaded, the SCTP socket lib and include files must be downloaded
+  and installed from http://lksctp.sourceforge.net/ .  The location must
+  then be passed into --with-sctp.  This bundle is called lksctp-tools
+  and is available for download off their website.
+
+  For Solaris, SCTP comes with the default Solaris 10 kernel; the lib
+  and include in /usr, so nothing needs to be specified for --with-sctp
+  since /usr is often in the default search path.  In order to compile
+  under Solaris, CFLAGS must have -DMPICH_SCTP_CONCATENATES_IOVS set
+  when running MPICH2's configure script.
+
+This is the initial release of the SCTP channel, so feedback is
+welcomed.  All MPI features except multithreading are supported.  Some
+performance optimizations could surely exist for this channel and will
+be investigated for future releases.
+
 
 VPATH Builds
 ============
