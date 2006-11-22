@@ -36,10 +36,10 @@ sharedir=$datadir
 gui_libdir="`echo $prefix | sed -e 's%\(.*\)/[^/]*/[^/]*$%\1/lib%'`"
 
 # Determine this package's name
-tmpname="`echo $top_srcdir | sed -e 's%\(.*\)/\([^/]*\)%\2%'`"
-pkgname="`echo $tmpname | sed -e 'y%abcdefghijklmnopqrstuvwxyz/%ABCDEFGHIJKLMNOPQRSTUVWXYZ_%'`"
-if [ "x$pkgname" = "x" ] ; then
-    pkgname="TRACE-IMPL"
+pkgname="`echo $top_srcdir | sed -e 's%\(.*\)/\([^/]*\)%\2%'`"
+titlename="`echo $pkgname | sed -e 'y%abcdefghijklmnopqrstuvwxyz/%ABCDEFGHIJKLMNOPQRSTUVWXYZ_%'`"
+if [ "x$titlename" = "x" ] ; then
+    titlename="TRACE-IMPL"
 fi
 
 MAKE="@MAKE@"
@@ -112,7 +112,7 @@ for arg in "$@" ; do
         -softchmod)               chmodfailmode="soft" ;;
         -help|-u|-usage|-h)
 cat <<EOF
-Install $pkgname into $prefix.
+Install $titlename into $prefix.
 -prefix=path     - Destination directory.
 -uninstall=file  - File to append uninstall information to
 -mode=nnnn       - mode for regular files.  Default is $MODE .
@@ -301,7 +301,7 @@ else
     if [ -f $dest ] ; then $Show $RM $dest ; fi
     if [ $just_testing = 0 ] ; then
         sed \
-        -e "s%^TRACE_LIBDIR=.*%TRACE_LIBDIR=$libdir%g" \
+        -e "s%^TRACE_LIBDIR=.*%TRACE_LIBDIR=$libdir/$pkgname%g" \
         -e "s%^GUI_LIBDIR=.*%GUI_LIBDIR=$libdir%g" \
         $1 > $dest
         rc=$?
@@ -373,25 +373,24 @@ fi
 uninstall_dirname=`dirname $UNINSTALLFILE`
 if [ "$uninstall_dirname" = "$DESTDIR$sbindir" ] ; then
     if [ ! -d $DESTDIR$sbindir ] ; then
-        echo "Creating ${pkgname}'s sbin"
+        echo "Creating ${titlename}'s sbin"
         MkDir $sbindir
     fi
 fi
 
 if [ ! -d $DESTDIR$sharedir ] ; then
-    echo "Creating ${pkgname}'s share"
+    echo "Creating ${titlename}'s share"
     MkDir $sharedir
 fi
 
-# Install libraries
-for type in lib share ; do
+for type in share ; do
     fromdir_name=${type}build_dir
     todir_name=${type}dir
     eval fromdir_value=\$"$fromdir_name"
     eval todir_value=\$"$todir_name"
     if [ -n "$fromdir_value" ] ; then
         if [ -d $fromdir_value ] ; then
-            echo "Installing ${pkgname}'s $type"
+            echo "Installing ${titlename}'s $type"
             if [ $verbose = 1 ] ; then
                 echo "$fromdir_value -> $DESTDIR$todir_value"
             fi
@@ -400,14 +399,20 @@ for type in lib share ; do
     fi
 done
 
-cd $libbuild_dir/../src && $MAKE INSTALL_LIBSO LIBDIR=$libdir
+# Install libraries
+if [ ! -d $DESTDIR$libdir/$pkgname ] ; then
+    echo "Creating ${titlename}'s lib"
+    MkDir $libdir/$pkgname
+fi
+
+cd $libbuild_dir/../src && $MAKE INSTALL_LIBSO LIBDIR=$libdir/$pkgname
 
 EXEFILES="@EXEFILES@"
 
 # Install utility programs
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
-        echo "Installing ${pkgname}'s bin"
+        echo "Installing ${titlename}'s bin"
         if [ $verbose = 1 ] ; then
             echo "$binbuild_dir -> $DESTDIR$bindir"
         fi
@@ -453,7 +458,7 @@ for dir in $dirlist ; do
 done
 
 #
-echo "Installed ${pkgname} in $prefix"
+echo "Installed ${titlename} in $prefix"
 echo "$UNINSTALLFILE may be used to remove the installation"
 #
 if [ $errs -gt 0 ] ; then
