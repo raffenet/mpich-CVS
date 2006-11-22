@@ -40,10 +40,10 @@ etcdir=$sysconfdir
 sharedir=$datadir
 
 # Determine this package's name
-tmpname="`echo $top_srcdir | sed -e 's%\(.*\)/\([^/]*\)%\2%'`"
-pkgname="`echo $tmpname | sed -e 'y%abcdefghijklmnopqrstuvwxyz/%ABCDEFGHIJKLMNOPQRSTUVWXYZ_%'`"
-if [ "x$pkgname" = "x" ] ; then
-    pkgname="SLOG-2/Jumpshot-4"
+pkgname="`echo $top_srcdir | sed -e 's%\(.*\)/\([^/]*\)%\2%'`"
+titlename="`echo $pkgname | sed -e 'y%abcdefghijklmnopqrstuvwxyz/%ABCDEFGHIJKLMNOPQRSTUVWXYZ_%'`"
+if [ "x$titlename" = "x" ] ; then
+    titlename="SLOG-2/Jumpshot-4"
 fi
 
 MAKE="@MAKE@"
@@ -121,7 +121,7 @@ for arg in "$@" ; do
         -softchmod)               chmodfailmode="soft" ;;
         -help|-u|-usage|-h)
 cat <<EOF
-Install ${pkgname} into $prefix.
+Install ${titlename} into $prefix.
 -prefix=path     - Destination directory.
 -uninstall=file  - File to append uninstall information to
 -mode=nnnn       - permission mode for regular files.  Default is $MODE .
@@ -390,14 +390,14 @@ fi
 uninstall_dirname=`dirname $UNINSTALLFILE`
 if [ "$uninstall_dirname" = "$DESTDIR$sbindir" ] ; then
     if [ ! -d $DESTDIR$sbindir ] ; then
-        echo "Creating ${pkgname}'s sbin"
+        echo "Creating ${titlename}'s sbin"
         MkDir $sbindir
     fi
 fi
 
 if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
     if [ ! -d $DESTDIR$sharedir ] ; then
-        echo "Creating ${pkgname}'s share"
+        echo "Creating ${titlename}'s share"
         MkDir $sharedir
     fi
 
@@ -408,7 +408,7 @@ if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
         eval todir_value=\$"$todir_name"
         if [ -n "$fromdir_value" ] ; then
             if [ -d $fromdir_value ] ; then
-                echo "Installing ${pkgname}'s $type"
+                echo "Installing ${titlename}'s $type"
                 if [ $verbose = 1 ] ; then
                     echo "$fromdir_value -> $DESTDIR$todir_value"
                 fi
@@ -422,7 +422,7 @@ if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
     EXEFILES="@EXEFILES@"
     if [ -n "$binbuild_dir" ] ; then
         if [ -d $binbuild_dir ] ; then
-            echo "Creating ${pkgname}'s bin"
+            echo "Creating ${titlename}'s bin"
             MkDir $bindir
             for exefile in $EXEFILES ; do
                 if [ -x $binbuild_dir/$exefile ] ; then
@@ -459,44 +459,22 @@ if [ "$UNINSTALLFILE" != "/dev/null" ] ; then
     chmod u+x $UNINSTALLFILE
 fi
 
-# Install subpackages as specified in $PKGS
-if [ "$copymode" = "core" ] ; then
-    for pkg in $PKGS ; do
-        if [ -d $binbuild_dir/../$pkg ] ; then
-            if [ "X$pkg" = "Xtrace_rlog" ] ; then
-                ( cd $binbuild_dir/../$pkg && \
-                  if [ -x ./sbin/install-package ] ; then \
-                      ./sbin/install-package -prefix=$prefix \
-                                             -uninstall=$UNINSTALLFILE \
-                                             -mode=$MODE -xmode=$XMODE \
-                                             -dmode=$DMODE ; \
-                  fi )
-            fi
-        fi
-    done
+base_install_opts="-mode=$MODE -xmode=$XMODE -dmode=$DMODE"
+base_install_opts="-uninstall=$UNINSTALLFILE $base_install_opts"
+if [ "$prefix_override" = 1 ] ; then
+    install_opts="-prefix=$prefix $base_install_opts"
+else
+    install_opts="$base_install_opts"
 fi
 
-if [ "$copymode" = "all" ] ; then
+# Install subpackages as specified in $PKGS
+if [ "$copymode" = "all" -o "$copymode" = "core" ] ; then
     for pkg in $PKGS ; do
         if [ -d $binbuild_dir/../$pkg ] ; then
-            if [ "X$pkg" = "Xtrace_rlog" ] ; then
-                ( cd $binbuild_dir/../$pkg && \
-                  if [ -x ./sbin/install-package ] ; then \
-                      ./sbin/install-package -prefix=$prefix \
-                                             -uninstall=$UNINSTALLFILE \
-                                             -mode=$MODE -xmode=$XMODE \
-                                             -dmode=$DMODE ; \
-                  fi )
-            else
-                ( cd $binbuild_dir/../$pkg && \
-                  if [    -x ./sbin/install-package \
-                       -a -d $DESTDIR$sharedir ] ; then \
-                      ./sbin/install-package -prefix=$sharedir/$pkg \
-                                             -uninstall=$UNINSTALLFILE \
-                                             -mode=$MODE -xmode=$XMODE \
-                                             -dmode=$DMODE ; \
-                  fi )
-            fi
+            ( cd $binbuild_dir/../$pkg && \
+              if [ -x ./sbin/install-package ] ; then \
+                  ./sbin/install-package $install_opts ; \
+              fi )
         fi
     done
 fi
@@ -513,7 +491,7 @@ for dir in $dirlist ; do
 done
 
 #
-echo "Installed ${pkgname} in $DESTDIR$prefix"
+echo "Installed ${titlename} in $DESTDIR$prefix"
 echo "$UNINSTALLFILE may be used to remove the installation"
 #
 if [ $errs -gt 0 ] ; then
