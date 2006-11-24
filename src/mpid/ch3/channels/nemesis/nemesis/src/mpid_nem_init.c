@@ -395,7 +395,7 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
 
     MPIU_CHKPMEM_MALLOC (*node_ids_p, int *, num_global * sizeof (int), mpi_errno, "node_ids array");
     for (i = 0; i < num_global; ++i)
-        node_ids_p[i] = [i];
+        node_ids_p[i] = i;
     
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
