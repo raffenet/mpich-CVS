@@ -1,7 +1,7 @@
                       MPE (Multi-Processing Environment)
                       ----------------------------------
 
-                          Version 2.4.1. January, 2006
+                          Version 2.4.3. November, 2006
 
                     Mathematics and Computer Science Division
                            Argonne National Laboratory
@@ -312,9 +312,8 @@ For HP-UX's MPI implementation,
     make install PREFIX=${MPE_INSTALL_DIR}
     make installcheck PREFIX=${MPE_INSTALL_DIR}
 
-MPE's Fortran support on HP-UX's MPI is NOT working yet.  So to get MPI 
-Fortran code to generate logfile, you could use HP-UX's libfmpi.a if it
-is there.  Here is the configure options.
+If MPE's Fortran support on HP-UX's MPI is NOT working, try using
+HP-UX's libfmpi.a if it is there.  Here is the configure options.
 
     ${MPE_SRC_DIR}/configure --with-mpicc=mpicc \
                              --with-mpif77=mpif77 \
@@ -571,6 +570,23 @@ After the successful configure, do make and make install.
 
      make
      make install PREFIX=${MPE_INSTALL_DIR}
+
+
+For older MacOSX's MPICH2 which is built with gcc and gfortran:
+
+    ${MPE_SRC_DIR}/configure MPI_CC=${MPICH2_INSTALL_DIR}/bin/mpicc      \
+                             MPI_F77=${MPICH2_INSTALL_DIR}/bin/mpif77    \
+                             CC=gcc F77=gfortran                         \
+                             MPI_LIBS="  -lSystemStubs -lSystem -ldl"    \
+                             --prefix=<MPE_INSTALL_DIR>
+    make
+    make install
+    make installcheck
+    make installcheck-all MPERUN="${MPICH2_INSTALL_DIR}/bin/mpiexec -n 4"
+
+where MPI_LIBS="  -lSystemStubs -lSystem -ldl" is needed to get fortran
+program to link correctly if the mpif77 does not have the linking flags.
+This seems to be necessary for some older gcc/gfortran combination on MaxOSX.
 
 
 III. c) Miscellaneous Info about the Build System.
