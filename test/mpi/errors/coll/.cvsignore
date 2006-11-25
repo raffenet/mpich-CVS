@@ -1,4 +1,6 @@
 noalias
+rerr
+bcastlength
 Makefile.in
 Makefile
 *.o
