@@ -156,7 +156,8 @@ int MPIDI_CH3U_Recvq_FU(int source, int tag, int context_id, MPI_Status *s)
 #define FUNCNAME MPIDI_CH3U_Recvq_FDU
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request sreq_id, MPIDI_Message_match * match)
+MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request sreq_id, 
+				    MPIDI_Message_match * match)
 {
     MPID_Request * rreq;
     MPID_Request * prev_rreq;
@@ -336,8 +337,8 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag,
 /*
  * MPIDI_CH3U_Recvq_DP()
  *
- * Given an existing request, dequeue that request from the posted queue, or return NULL if the request was not in the posted
- * queued
+ * Given an existing request, dequeue that request from the posted queue, or 
+ * return NULL if the request was not in the posted queued
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Recvq_DP
