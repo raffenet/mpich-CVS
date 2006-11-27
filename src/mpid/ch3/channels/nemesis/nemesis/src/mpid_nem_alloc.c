@@ -328,26 +328,25 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
     int fd;
     struct stat buf;
     int ret;
-    MPIU_CHKPMEM_DECL(1);
+    const char dev_fname[] = "/dev/shm/nemesis_shar_tmpXXXXXX";
+    const char tmp_fname[] = "/tmp/nemesis_shar_tmpXXXXXX";
+    MPIU_CHKPMEM_DECL(2);
 
 
     /* create a file */
     /* use /dev/shm if it's there, otherwise put file in /tmp */
-    if (stat ("/dev/shm", &buf) == 0 && S_ISDIR (buf.st_mode))
-    {
-        const char fname[] = "/dev/shm/nemesis_shar_tmpXXXXXX";
-        MPIU_CHKPMEM_MALLOC (*handle, char *, sizeof (fname), mpi_errno, "shared memory handle");
-        memcpy (*handle, fname, sizeof (fname));
-    }
-    else
-    {
-        const char fname[] = "/tmp/nemesis_shar_tmpXXXXXX";
-        MPIU_CHKPMEM_MALLOC (*handle, char *, sizeof (fname), mpi_errno, "shared memory handle");
-        memcpy (*handle, fname, sizeof (fname));
-    }
-    
+    MPIU_CHKPMEM_MALLOC (*handle, char *, sizeof (dev_fname), mpi_errno, "shared memory handle");
+    memcpy (*handle, dev_fname, sizeof (dev_fname));
     fd = mkstemp (*handle);
-    MPIU_ERR_CHKANDJUMP2 (fd == -1, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "mkstmp", strerror (errno));
+    if (fd == -1)
+    {
+	/* creating in /dev/shm failed, fall back to /tmp.  If that doesn't work, give up. */
+	MPIU_Free (*handle);
+	MPIU_CHKPMEM_MALLOC (*handle, char *, sizeof (tmp_fname), mpi_errno, "shared memory handle");
+	memcpy (*handle, tmp_fname, sizeof (tmp_fname));
+	fd = mkstemp (*handle);
+	MPIU_ERR_CHKANDJUMP2 (fd == -1, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "mkstmp", strerror (errno));
+    }
 
     /* set file to "length" bytes */
     ret = lseek (fd, length-1, SEEK_SET);
