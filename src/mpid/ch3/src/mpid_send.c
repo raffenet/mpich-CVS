@@ -8,11 +8,6 @@
 
 /* FIXME - HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
 
-/* FIXME: This should share the rendezvous and eager code with 
-   the related operations in MPID_Rsend (always eager) and MPID_Ssend
-   (always rendezvous, though an eager sync mode is possible, it isn't
-   worth the effort). */
-
 /*
  * MPID_Send()
  */
