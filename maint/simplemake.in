@@ -3542,16 +3542,18 @@ sub TargetInstall {
 	    #print FD "\t\@-test -d $srcdir && cd $srcdir && for name in * ; do \\
 	    print FD "\t\@if test -d $srcdir && cd $srcdir ; then \\
 \t for name in * ; do \\
+\t  if [ \"\$\$name\" = \"*\" ] ; then continue ; fi ; \\
 \t  if [ -f \$\$name ] ; then \\
 \t    echo \"$this_install_choice \$\$name \${DESTDIR}\${$dir}/\$\$name\" ; \\
 \t    $this_install_choice \$\$name \${DESTDIR}\${$dir}/\$\$name ; \\
 \t  elif [ -d \$\$name ] ; then \\
 \t    if [ ! -d \${DESTDIR}\${$dir}/\$\$name ] ; then \$(MKDIR_P) \${DESTDIR}\${$dir}/\$\$name ; fi ;\\
 \t    ( cd \$\$name && for name2 in * ; do \\
+\t        if [ \"\$\$name2\" = \"*\" ] ; then continue ; fi ; \\
 \t        if [ -f \$\$name2 ] ; then \\
 \t            echo \"$this_install_choice \$\$name2 \${DESTDIR}\${$dir}/\$\$name/\$\$name2\" ; \\
 \t            $this_install_choice \$\$name2 \${DESTDIR}\${$dir}/\$\$name/\$\$name2 ; \\
-\t        else \\
+\t        elif [ -d \$\$name2 ] ; then  \\
 \t            echo \"cp -rp \$\$name2 \${DESTDIR}\${$dir}/\$\$name\" ; \\
 \t            cp -rp \$\$name2 \${DESTDIR}\${$dir}/\$\$name ; \\
 \t        fi \\
