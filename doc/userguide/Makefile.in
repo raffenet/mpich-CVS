@@ -17,6 +17,8 @@ user.dvi: user.tex faqsum.tex $(srcdir)/user.bib
 	(cd .. && ln -s $(srcdir)/../mpiman.sty mpiman.sty) ; fi
 	@if [ ! -s user.bib ] ; then \
 	 ln -s $(srcdir)/user.bib user.bib ; fi
+	@if [ ! -s user.tex ] ; then ln -sf $(srcdir)/user.tex ; fi
+	@if [ ! -s faqsum.tex ] ; then ln -sf $(srcdir)/faqsum.tex ; fi
 	-latex user.tex
 	-bibtex user 
 	-latex user.tex
