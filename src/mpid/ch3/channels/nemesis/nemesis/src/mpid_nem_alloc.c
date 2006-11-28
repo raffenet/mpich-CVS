@@ -301,7 +301,9 @@ MPID_nem_detach_shared_memory (const char *buf_p, const int length)
     int ret;
 
     ret = shmdt (buf_p);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**detach_shar_mem", "**detach_shar_mem %s %s", "shmdt", strerror (errno));
+    /* I'm ignoring the return code here to work around an bug with
+       gm-1 when a sysv shared memory region is registered. -db */
+    /* MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**detach_shar_mem", "**detach_shar_mem %s %s", "shmdt", strerror (errno));*/
 
  fn_exit:
     return mpi_errno;
