@@ -1599,7 +1599,7 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
    (i.e. ring wrap has occurred), then the append is not performed. and error1
    is returned (although it may include the class of error2 if the class of
    error1 was MPI_ERR_OTHER). */
-int MPIR_Err_combine_codes(const int error1, const int error2)
+int MPIR_Err_combine_codes(int error1, int error2)
 {
     int error1_code = error1;
     int error2_code = error2;
