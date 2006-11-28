@@ -3200,7 +3200,7 @@ if test "$enable_f77" = yes ; then
         # We have a problem
         AC_MSG_WARN([Unable to determine size of a DOUBLE PRECISION type; using 8])
         # We make the length 8*2 (in hex)
-        len_doublecplx="10"
+        len_doublecplx="16"
     fi
     len=$len_doublecplx
     #
