@@ -82,7 +82,7 @@ MPID_nem_tcp_module_poll_send( void )
 		{
 
                     /* write() returned an error */
-                    MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror (errno));
+                    MPIU_ERR_CHKANDJUMP1 (errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror (errno));
 		}
 	    }
 	}
