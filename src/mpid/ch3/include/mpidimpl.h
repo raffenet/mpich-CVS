@@ -417,6 +417,8 @@ int MPIDI_PG_GetConnString( MPIDI_PG_t *, int, char *, int );
 int MPIDI_PG_Dup_vcr( MPIDI_PG_t *, int, MPIDI_VC_t ** );
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
+int MPIU_PG_Printall( FILE * );
+int MPIDI_PG_CheckForSingleton( void );
 
 /* CH3_PG_Init allows the channel to pre-initialize the process group */
 int MPIDI_CH3_PG_Init( MPIDI_PG_t * );
@@ -722,7 +724,6 @@ int MPIDI_CH3_Complete_Acceptq_dequeue(MPIDI_VC_t * vc);
 /* part of mpid_vc.c, this routine completes any pending operations 
    on a communicator */
 int MPIDI_CH3U_Comm_FinishPending( MPID_Comm * );
-
 
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
@@ -1426,14 +1427,18 @@ int MPIDI_CH3_PktPrint_EagerSyncAck( FILE *fp, MPIDI_CH3_Pkt_t *pkt );
 #endif
 
 /* Routines to create packets (used in implementing MPI communications */
-int MPIDI_CH3_EagerNoncontigSend( MPID_Request **, int,  const void *, int, 
+int MPIDI_CH3_EagerNoncontigSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
+				  const void *, int, 
 				  MPI_Datatype, int, int, int, MPID_Comm *, 
 				  int );
-int MPIDI_CH3_EagerContigSend( MPID_Request **, int, const void *, int, int, 
+int MPIDI_CH3_EagerContigSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
+			       const void *, int, int, 
 			       int, MPID_Comm *, int );
-int MPIDI_CH3_EagerContigShortSend( MPID_Request **, int, const void *, int, 
+int MPIDI_CH3_EagerContigShortSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
+				    const void *, int, 
 				    int, int, MPID_Comm *, int );
-int MPIDI_CH3_EagerContigIsend( MPID_Request **, int, const void *, int, int, 
+int MPIDI_CH3_EagerContigIsend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
+				const void *, int, int, 
 				int, MPID_Comm *, int );
 
 

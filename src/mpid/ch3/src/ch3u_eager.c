@@ -18,7 +18,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* MPIDI_CH3_EagerNoncontigSend - Eagerly send noncontiguous data */
 int MPIDI_CH3_EagerNoncontigSend( MPID_Request **sreq_p, 
-				  int reqtype, 
+				  MPIDI_CH3_Pkt_type_t reqtype, 
 				  const void * buf, int count, 
 				  MPI_Datatype datatype, int data_sz, 
 				  int rank, 
@@ -109,7 +109,7 @@ int MPIDI_CH3_EagerNoncontigSend( MPID_Request **sreq_p,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p, 
-			       int reqtype, 
+			       MPIDI_CH3_Pkt_type_t reqtype, 
 			       const void * buf, int data_sz, int rank, 
 			       int tag, MPID_Comm * comm, int context_offset )
 {
@@ -171,7 +171,7 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p, 
-				    int reqtype, 
+				    MPIDI_CH3_Pkt_type_t reqtype, 
 				    const void * buf, int data_sz, int rank, 
 				    int tag, MPID_Comm * comm, 
 				    int context_offset )
@@ -237,7 +237,7 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_EagerContigIsend( MPID_Request **sreq_p, 
-				int reqtype, 
+				MPIDI_CH3_Pkt_type_t reqtype, 
 				const void * buf, int data_sz, int rank, 
 				int tag, MPID_Comm * comm, int context_offset )
 {

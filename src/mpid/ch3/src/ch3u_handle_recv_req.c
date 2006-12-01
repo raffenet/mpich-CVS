@@ -39,12 +39,9 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq,
         mpi_errno = reqFn( vc, rreq, complete );
     }
 
-  fn_exit:
     in_routine = FALSE;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_RECV_REQ);
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 /* ----------------------------------------------------------------------- */

@@ -35,8 +35,7 @@ typedef MPI_Aint MPIDI_msg_sz_t;
 #endif
 
 /* Include definitions from the channel which must exist before items in this 
-   file (mpidimpl.h) or the file it includes
-   (mpiimpl.h) can be defined. */
+   file (mpidpre.h) or the file it includes (mpiimpl.h) can be defined. */
 #include "mpidi_ch3_pre.h"
 
 /* FIXME: Who defines this name */

@@ -21,7 +21,6 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq,
 
     /* Use the associated function rather than switching on the old ca field */
     /* Routines can call the attached function directly */
-#if 1
     reqFn = sreq->dev.OnDataAvail;
     if (!reqFn) {
 	MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
@@ -31,44 +30,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq,
     else {
 	mpi_errno = reqFn( vc, sreq, complete );
     }
-#else
-    switch(sreq->dev.ca)
-    {
-	case MPIDI_CH3_CA_COMPLETE:
-	{
-            if (MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_GET_RESP)
-	    { 
-		mpi_errno = MPIDI_CH3_ReqHandler_GetSendRespComplete( 
-		    vc, sreq, complete );
-            }
-	    else {
-		/* mark data transfer as complete and decrement CC */
-		MPIDI_CH3U_Request_complete(sreq);
-		*complete = TRUE;
-	    }
 
-	    break;
-	}
-	
-	case MPIDI_CH3_CA_RELOAD_IOV:
-	{
-	    mpi_errno = MPIDI_CH3_ReqHandler_SendReloadIOV( vc, sreq, 
-							    complete );
-	    break;
-	}
-	/* --BEGIN ERROR HANDLING-- */
-	default:
-	{
-	    *complete = FALSE;
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN, "**ch3|badca",
-					     "**ch3|badca %d", sreq->dev.ca);
-	    break;
-	}
-	/* --END ERROR HANDLING-- */
-    }
-#endif
-
-  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
     return mpi_errno;
 }
