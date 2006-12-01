@@ -634,7 +634,8 @@ static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo
 	if (MPIR_Err_is_fatal(event_mpi_errno))
 	{
 	    /*
-	     * A serious error occurred.  There is no guarantee that the data structures are still intact.  Therefore, we avoid
+	     * A serious error occurred.  There is no guarantee that the data 
+	     * structures are still intact.  Therefore, we avoid
 	     * modifying them.
 	     */
 	    mpi_errno = event_mpi_errno;

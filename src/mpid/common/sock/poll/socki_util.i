@@ -681,8 +681,8 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	    pollinfos[elem].elem = elem;
 	    pollinfos[elem].sock = NULL;
 	    pollinfos[elem].sock_id = -1;
-	    pollinfos[elem].type = 0;
-	    pollinfos[elem].state = 0;
+	    pollinfos[elem].type  = MPIDU_SOCKI_TYPE_FIRST;
+	    pollinfos[elem].state = MPIDU_SOCKI_TYPE_FIRST;
 #	    ifdef MPICH_IS_THREADED
 	    {
 		pollinfos[elem].pollfd_events = 0;
@@ -699,8 +699,8 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     MPIU_Assert(sock_set->pollinfos[avail_elem].fd == -1);
     MPIU_Assert(sock_set->pollinfos[avail_elem].sock == NULL);
     MPIU_Assert(sock_set->pollinfos[avail_elem].sock_id == -1);
-    MPIU_Assert(sock_set->pollinfos[avail_elem].type == 0);
-    MPIU_Assert(sock_set->pollinfos[avail_elem].state == 0);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].type == MPIDU_SOCKI_TYPE_FIRST);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].state == MPIDU_SOCKI_TYPE_FIRST);
 #   ifdef MPICH_IS_THREADED
     {
 	MPIU_Assert(sock_set->pollinfos[avail_elem].pollfd_events == 0);
@@ -799,11 +799,11 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
     /*
      * Remove entry from the poll list and mark the entry as free
      */
-    pollinfo->fd = -1;
-    pollinfo->sock = NULL;
+    pollinfo->fd      = -1;
+    pollinfo->sock    = NULL;
     pollinfo->sock_id = -1;
-    pollinfo->type = 0;
-    pollinfo->state = 0;
+    pollinfo->type    = MPIDU_SOCKI_TYPE_FIRST;
+    pollinfo->state   = MPIDU_SOCKI_TYPE_FIRST;
 #   ifdef MPICH_IS_THREADED
     {
 	pollinfo->pollfd_events = 0;
