@@ -115,44 +115,19 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
     
     *flag = FALSE;
 
-    /* FIXME: Who defines this value? */
-#   if defined(USE_MPID_PROGRESS_AVOIDANCE)
-    {
-	if (*request_ptr->cc_ptr == 0)
-	{
-	    mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
-	    *flag = TRUE;
-	    if (mpi_errno == MPI_SUCCESS)
-	    {
-		goto fn_exit;
-	    }
-	    else
-	    {
-		/* --BEGIN ERROR HANDLING-- */
-		goto fn_fail;
-		/* --END ERROR HANDLING-- */
-	    }
-	}
-    }
-#   endif    
-
+    /* If the request is already completed AND we want to avoid calling
+     the progress engine, we could make the call to MPID_Progress_test
+     conditional on the request not being completed. */
     mpi_errno = MPID_Progress_test();
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     if (*request_ptr->cc_ptr == 0)
     {
-	mpi_errno = MPIR_Request_complete(request, request_ptr, status, &active_flag);
+	mpi_errno = MPIR_Request_complete(request, request_ptr, status, 
+					  &active_flag);
 	*flag = TRUE;
-	if (mpi_errno == MPI_SUCCESS)
-	{
-	    goto fn_exit;
-	}
-	else
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
-	}
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	/* Fall through to the exit */
     }
 
     /* ... end of body of routine ... */
@@ -167,11 +142,13 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_test",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_test",
 	    "**mpi_test %p %p %p", request, flag, status);
     }
 #   endif
-    mpi_errno = MPIR_Err_return_comm(request_ptr ? request_ptr->comm : 0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(request_ptr ? request_ptr->comm : NULL, 
+				     FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
