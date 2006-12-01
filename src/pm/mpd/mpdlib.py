@@ -560,11 +560,21 @@ class MPDSock(object):
         return self.recv_one_line()  # use leading len later
     def recv_one_line(self):
         msg = ''
+	# A failure with EINTR was observed here, so a loop to retry on 
+        # EINTR has been added
         try:
-            c = self.sock.recv(1)
+            while 1:
+                try:
+                    c = self.sock.recv(1)
+                    break
+                except socket.error, errinfo:
+                    if errinfo[0] != EINTR:
+                        raise socket.error, errinfo
+            # end of while
         except socket.error, errinfo:
             if errinfo[0] == EINTR:   # sigchld, sigint, etc.
-                print "Unhandled EINTR in sock.recv\n";
+                # This should no longer happen (handled above)
+                mpd_print_tb( 1,  "Unhandled EINTR in sock.recv" );
                 return msg
             elif errinfo[0] == ECONNRESET:   # connection reset (treat as eof)
                 return msg
