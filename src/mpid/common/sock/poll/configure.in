@@ -152,22 +152,28 @@ AC_SEARCH_LIBS(gethostbyname,nsl,,,$saveLIBS)
 TCP_LIBS="$TCP_LIBS $LIBS"
 LIBS="$saveLIBS $LIBS"
 #
-# Check for socklen_t .  If undefined, define it as int
-AC_CACHE_CHECK([whether socklen_t is defined],
-pac_cv_have_socklen_t,[
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>]
-typedef double socklen_t;,[socklen_t a;],pac_cv_have_socklen_t=no,pac_cv_have_socklen_t=yes)])
-if test "$pac_cv_have_socklen_t" = no ; then
-    AC_DEFINE(socklen_t,int,[Define if socklen_t is not defined])
-fi
+# Check first for sys/socket.h .  We check not only for existence but whether
+# it can be compiled (!), as we have seen some problems with this.
 AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/socket.h>
 ],[int a;],ac_cv_header_sys_socket_h=yes,ac_cv_header_sys_socket_h=no)
 if test "$ac_cv_header_sys_socket_h" = yes ; then
     AC_DEFINE(HAVE_SYS_SOCKET_H,1,[Define if you have the <sys/socket.h> header file.])
+fi
+# Check for socklen_t .  If undefined, define it as int
+# (note the conditional inclusion of sys/socket.h)
+AC_CACHE_CHECK([whether socklen_t is defined],
+pac_cv_have_socklen_t,[
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+]
+typedef double socklen_t;,[socklen_t a;],pac_cv_have_socklen_t=no,pac_cv_have_socklen_t=yes)])
+if test "$pac_cv_have_socklen_t" = no ; then
+    AC_DEFINE(socklen_t,int,[Define if socklen_t is not defined])
 fi
 AC_SUBST(TCP_LIBS)
 
