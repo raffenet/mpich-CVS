@@ -469,7 +469,7 @@ int my_sctp_send(int fd, char* buffer, int cnt, struct sockaddr *to, uint16_t st
 
     byte_sent += (error > 0)? error : 0;
 
-    if(error == -1) {
+    if(error <= 0) {
         if(errno == EAGAIN)
             error = 0;
         break;
