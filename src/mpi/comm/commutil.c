@@ -347,12 +347,17 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
      within another MPI routine before calling the CS_ENTER macro */
     MPIR_Nest_incr();
 
+    /* The SINGLE_CS_ENTER/EXIT macros are commented out because this
+       routine shold always be called from within a routine that has 
+       already entered the single critical section.  However, in a 
+       finer-grained approach, these macros indicate where atomic updates
+       to the shared data structures must be protected. */
     /* We lock only around access to the mask.  If another thread is
        using the mask, we take a mask of zero */
     MPIU_DBG_MSG_FMT( COMM, VERBOSE, (MPIU_DBG_FDEST,
          "Entering; shared state is %d:%d", mask_in_use, lowestContextId ) );
     while (context_id == 0) {
-	MPIU_THREAD_SINGLE_CS_ENTER("context_id");
+	/* MPIU_THREAD_SINGLE_CS_ENTER("context_id"); */
 	if (initialize_context_mask) {
 	    MPIR_Init_contextid();
 	}
@@ -372,7 +377,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	    lowestContextId = comm_ptr->context_id;
 	    MPIU_DBG_MSG( COMM, VERBOSE, "Copied local_mask" );
 	}
-	MPIU_THREAD_SINGLE_CS_EXIT("context_id");
+	/* MPIU_THREAD_SINGLE_CS_EXIT("context_id"); */
 	
 	/* Now, try to get a context id */
 	/* Comm must be an intracommunicator */
@@ -387,7 +392,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 
 	if (own_mask) {
 	    /* There is a chance that we've found a context id */
-	    MPIU_THREAD_SINGLE_CS_ENTER("context_id");
+	    /* MPIU_THREAD_SINGLE_CS_ENTER("context_id"); */
 	    /* Find_context_bit updates the context array if it finds a match */
 	    context_id = MPIR_Find_context_bit( local_mask );
 	    MPIU_DBG_MSG_D( COMM, VERBOSE, 
@@ -400,11 +405,23 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 		    /* Else leave it alone; there is another thread waiting */
 		}
 	    }
-	    /* else we did not find a context id. Give up the mask in case
-	       there is another thread (with a lower context id) waiting for
-	       it */
+	    else {
+		/* else we did not find a context id. Give up the mask in case
+		   there is another thread (with a lower context id) waiting for
+		   it.
+		   We need to ensure that any other threads have the 
+		   opportunity to run.  We do this by releasing the single
+		   mutex, yielding, and then reaquiring the mutex.
+		   We might want to do something more sophisticated, such
+		   as using a condition variable (if we know for sure that
+		   there is another thread on this process that is waiting).
+		*/
+		MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+		MPID_Thread_yield();
+		MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+	    }
 	    mask_in_use = 0;
-	    MPIU_THREAD_SINGLE_CS_EXIT("context_id");
+	    /* MPIU_THREAD_SINGLE_CS_EXIT("context_id"); */
 	}
     }
 
