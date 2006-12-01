@@ -92,7 +92,7 @@ static void dbg_init(void)
 {
     char * envstr;
     
-    MPIUI_dbg_state = 0;
+    MPIUI_dbg_state = MPIU_DBG_STATE_NONE;
 
     /* FIXME: This should use MPIU_Param_get_string */
     envstr = getenv("MPICH_DBG_OUTPUT");
@@ -113,15 +113,18 @@ static void dbg_init(void)
      */
     if (strstr(envstr, "stdout"))
     {
-	MPIUI_dbg_state |= MPIU_DBG_STATE_STDOUT;
+	MPIUI_dbg_state = (MPIU_dbg_state_t)( MPIU_DBG_STATE_STDOUT | 
+					      MPIUI_dbg_state );
     }
     if (strstr(envstr, "memlog"))
     {
-	MPIUI_dbg_state |= MPIU_DBG_STATE_MEMLOG;
+	MPIUI_dbg_state = (MPIU_dbg_state_t)( MPIU_DBG_STATE_MEMLOG |
+					      MPIUI_dbg_state );
     }
     if (strstr(envstr, "file"))
     {
-	MPIUI_dbg_state |= MPIU_DBG_STATE_FILE;
+	MPIUI_dbg_state = (MPIU_dbg_state_t) ( MPIU_DBG_STATE_FILE |
+					       MPIUI_dbg_state );
     }
 
     /* If memlog is enabled, the we need to allocate some memory for it */
@@ -141,7 +144,8 @@ static void dbg_init(void)
 	}
 	else
 	{
-	    MPIUI_dbg_state &= ~MPIU_DBG_STATE_MEMLOG;
+	    MPIUI_dbg_state = (MPIU_dbg_state_t)( MPIUI_dbg_state & 
+						  ~MPIU_DBG_STATE_MEMLOG );
 	}
     }
 }
