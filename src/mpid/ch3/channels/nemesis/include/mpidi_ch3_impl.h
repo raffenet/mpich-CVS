@@ -14,10 +14,6 @@
 #include <assert.h>
 #endif
 
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
 extern void *MPIDI_CH3_packet_buffer;
 extern int MPIDI_CH3I_my_rank;
 

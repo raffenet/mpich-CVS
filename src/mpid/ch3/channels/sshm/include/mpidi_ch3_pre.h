@@ -41,6 +41,7 @@
 
 #define MPIDI_MAX_SHM_NAME_LENGTH 100
 
+/* for MAXHOSTNAMELEN under Linux ans OSX */
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif

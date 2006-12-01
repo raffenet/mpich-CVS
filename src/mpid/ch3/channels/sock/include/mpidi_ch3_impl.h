@@ -12,10 +12,6 @@
 #include "mpidimpl.h"
 #include "ch3usock.h"
 
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
 /* This is all socket connection definitions */
 
     /* MT - not thread safe! */

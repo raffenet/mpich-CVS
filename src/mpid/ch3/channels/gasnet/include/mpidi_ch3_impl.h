@@ -17,10 +17,6 @@ extern int MPIDI_CH3I_my_rank;
 #include <assert.h>
 #endif
 
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
 extern int MPIDI_CH3I_inside_handler;
 extern gasnet_token_t MPIDI_CH3I_gasnet_token;
 

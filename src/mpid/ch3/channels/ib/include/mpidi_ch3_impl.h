@@ -37,11 +37,6 @@
 #include <errno.h>
 #endif
 
-/* This value is defined in sys/param.h under Linux but in netdb.h 
-   under Solaris */
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
 typedef struct MPIDI_CH3I_Process_s
 {
     MPIDI_PG_t * pg;

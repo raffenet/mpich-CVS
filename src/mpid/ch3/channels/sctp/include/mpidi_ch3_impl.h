@@ -13,10 +13,6 @@
 
 #include "all_hash.h"
 
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
 typedef int (* MPIDU_Sock_progress_update_func_t)(MPIU_Size_t num_bytes, void * user_ptr);
 
 typedef struct MPIDU_Sock_ifaddr_t {

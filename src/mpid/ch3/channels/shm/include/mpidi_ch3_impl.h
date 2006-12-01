@@ -98,12 +98,6 @@
 #define MPID_READ_WRITE_BARRIER()
 #endif
 
-/* This value is defined in sys/param.h under Linux but in netdb.h 
-   under Solaris */
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
-#endif
-
 #define MPIDI_CH3I_NUM_PACKETS          16
 #define MPIDI_CH3I_PACKET_SIZE         (16*1024)
 #define MPIDI_CH3I_PKT_AVAILABLE        0
