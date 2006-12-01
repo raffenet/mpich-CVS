@@ -50,6 +50,7 @@
 int MPI_Pcontrol(const int level, ...)
 {
     int mpi_errno = MPI_SUCCESS;
+    va_list list;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PCONTROL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -60,7 +61,11 @@ int MPI_Pcontrol(const int level, ...)
     
     /* This is a dummy routine that does nothing.  It is intended for 
        use by the user (or a tool) with the profiling interface */
-    MPIU_UNREFERENCED_ARG(level);
+    /* We include a reference to va_start and va_end to (a) quiet some
+       compilers that warn when they are not present and (b) show how to 
+       access any optional arguments */
+    va_start( list, level );
+    va_end( list );
 
     /* ... end of body of routine ... */
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_PCONTROL);
