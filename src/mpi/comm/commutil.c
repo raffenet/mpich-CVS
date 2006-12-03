@@ -423,6 +423,12 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 	    mask_in_use = 0;
 	    /* MPIU_THREAD_SINGLE_CS_EXIT("context_id"); */
 	}
+	else {
+	    /* As above, force this thread to yield */
+	    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+	    MPID_Thread_yield();
+	    MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+	}
     }
 
     MPIU_DBG_MSG_S(COMM,VERBOSE,"Context mask = %s",MPIR_ContextMaskToStr());
@@ -576,47 +582,6 @@ void MPIR_Free_contextid( int context_id )
 			"Freed context %d, mask[%d] bit %d\n", 
 			context_id, idx, bitpos ) );
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_FREE_CONTEXTID);
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Register_contextid
-#undef FCNAME
-#define FCNAME "MPIR_Register_contextid"
-/* 
- * Try to reserve context id.  If it is already in use, return a non-zero
- * value.
- */
-int MPIR_Register_contextid( int context_id )
-{
-    int idx, bitpos;
-    int mpi_errno = MPI_SUCCESS;
-
-    /* Convert the context id to the bit position */
-    context_id >>= 2;       /* Remove the shift of a factor of four */
-    idx    = context_id / 32;
-    bitpos = context_id % 32;
-
-    /* --BEGIN ERROR HANDLING-- */
-    if (idx < 0 || idx >= MAX_CONTEXT_MASK) {
-	MPID_Abort( 0, MPI_ERR_INTERN, 1, 
-		    "In MPIR_Register_contextid, idx is out of range" );
-    }
-    /* --END ERROR HANDLING-- */
-    /* MT: Note that this update must be done atomically in the multithreaded
-       case.  In the "one, single lock" implementation, that lock is indeed
-       held when this operation is called. */
-    if ( (context_mask[idx] & (0x1 << bitpos)) != 0) {
-	MPIU_ERR_SET1(mpi_errno,MPI_ERR_INTERN,
-		      "**contextIdInUse","**contextIdInUse %d",context_id );
-    }
-    else {
-	context_mask[idx] &= ~(0x1 << bitpos);
-
-	MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
-		       "Reserved context %d, mask[%d] bit %d\n", 
-		       context_id, idx, bitpos ) );
-    }
-    return mpi_errno;
 }
 
 /*
