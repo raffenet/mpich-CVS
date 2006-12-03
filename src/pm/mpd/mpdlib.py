@@ -11,7 +11,7 @@ from  cPickle   import  dumps, loads
 from  types     import  TupleType
 from  traceback import  extract_tb, extract_stack, format_list
 from  re        import  sub, split
-from  errno     import  EINTR, ECONNRESET, EISCONN, ECONNREFUSED
+from  errno     import  EINTR, ECONNRESET, EISCONN, ECONNREFUSED, EPIPE
 from  md5       import  new as md5new
 from  time      import  sleep
 from  random    import  randrange, random
