@@ -325,11 +325,18 @@ fi
 AC_SUBST(master_top_srcdir)
 
 AC_CHECK_HEADERS(string.h sys/time.h time.h stdlib.h sys/socket.h wait.h errno.h)
-# Check whether socklen_t is defined
-AC_CACHE_CHECK([whether socklen_t is defined in sys/socket.h],
-pac_cv_have_socklen_t,[AC_TRY_COMPILE([#include <sys/socket.h>],[socklen_t a;],
-pac_cv_have_socklen_t=yes,pac_cv_have_socklen_t=no)])
-if test "$pac_cv_have_socklen_t" = "yes" ; then
+# Check for socklen_t .  
+# (note the conditional inclusion of sys/socket.h)
+AC_CACHE_CHECK([whether socklen_t is defined (in sys/socket.h if present)],
+pac_cv_have_socklen_t,[
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+]
+typedef struct { double a; int b; } socklen_t;,[socklen_t a;a.a=1.0;],pac_cv_have_socklen_t=no,pac_cv_have_socklen_t=yes)])
+if test "$pac_cv_have_socklen_t" = yes ; then
     AC_DEFINE(HAVE_SOCKLEN_T,1,[Define if socklen_t is available])
 fi
 AC_SUBST(MPILIBNAME)
