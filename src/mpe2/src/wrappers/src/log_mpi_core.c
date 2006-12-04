@@ -1,3 +1,4 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
    (C) 2001 by Argonne National Laboratory.
        See COPYRIGHT in top-level directory.
@@ -37,6 +38,11 @@ char *alloca ();
 #endif
 #if defined( STDC_HEADERS ) || defined( HAVE_STRING_H )
 #include <string.h>
+#endif
+
+#ifdef HAVE_STDARG_H
+/* Needed for va_start/end in MPI_Pcontrol */
+#include <stdarg.h>
 #endif
 
 /* Enable memory tracing.  This requires MPICH's mpid/util/tr2.c codes */
@@ -5529,23 +5535,18 @@ int * top_type;
   Still to do: in some cases, must log communicator operations even if
   logging is off.
  */
-#if defined(__STDC__) || defined(__cplusplus) || defined(HAVE_PROTOTYPES) || \
-    defined(PCONTROL_NEEDS_CONST)
-#ifdef HAVE_NO_C_CONST
-int MPI_Pcontrol( int level, ... )
-#else
 int MPI_Pcontrol( const int level, ... )
-#endif
-#else
-#ifdef HAVE_NO_C_CONST
-int MPI_Pcontrol( level )
-int level;
-#else
-int MPI_Pcontrol(const int level, ...)
-#endif
-#endif
 {
+#ifdef HAVE_STDARG_H    
+    /* Some compilers are unhappy if routines with stdargs (...) don't 
+       include va_start/end */
+    va_list list;
+    va_start( list, level );
     is_mpilog_on = level;
+    va_end( list );
+#else
+    is_mpilog_on = level;
+#endif
     return MPI_SUCCESS;
 }
 
