@@ -166,7 +166,7 @@ MPID_nem_tcp_module_poll_recv( void )
                             if(nodes[grank].left2read_head == MPID_NEM_OPT_HEAD_LEN)
                             {	      
                                 nodes[grank].left2read_head = 0;
-                                if (pkt->mpich2.datalen > 0)
+                                if (pkt->mpich2.datalen > MPID_NEM_OPT_SIZE)
                                 {
                                     nodes[grank].left2read = pkt->mpich2.datalen - MPID_NEM_OPT_SIZE; 
                                     do 
@@ -197,6 +197,15 @@ MPID_nem_tcp_module_poll_recv( void )
                                     }
                                     continue;
                                 }
+                                else
+                                {
+                                    nodes[grank].left2read = 0;
+                                    MPID_nem_tcp_internal_queue_dequeue (&nodes[grank].internal_free_queue, &cell);
+                                    MPID_nem_queue_enqueue (MPID_nem_process_recv_queue, cell);	      
+                                    MPID_nem_tcp_internal_vars.n_pending_recv--;
+                                    continue;
+                                }
+                                
                             }
 #ifdef TRACE
                             else
