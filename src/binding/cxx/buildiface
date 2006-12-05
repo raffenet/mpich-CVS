@@ -2387,16 +2387,15 @@ void Register_datarep( const char *datarep,
 		       Datarep_extent_function *extent_fn,
 		       void *orig_extra_state )
 {
-    int err;
     MPIR_Datarep_data *ldata = new(MPIR_Datarep_data);
-    ldata->read_fn = read_fn;
-    ldata->write_fn = write_fn;
-    ldata->extent_fn = extent_fn;
+    ldata->read_fn          = read_fn;
+    ldata->write_fn         = write_fn;
+    ldata->extent_fn        = extent_fn;
     ldata->orig_extra_state = orig_extra_state;
-    err = MPI_Register_datarep( (char *)datarep, 
+    MPIX_CALL(MPI_Register_datarep( (char *)datarep, 
 				MPIR_Call_datarep_read_fn,
 				MPIR_Call_datarep_write_fn, 
-				MPIR_Call_datarep_extent_fn, (void *)ldata );
+				MPIR_Call_datarep_extent_fn, (void *)ldata ));
     /* Because datareps are never freed, the space allocated in this
        routine for ldata will never be freed */
 }
