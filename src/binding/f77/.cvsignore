@@ -6,6 +6,7 @@ mpi_fortconf.h.in
 mpi_fortconf.h
 mpif_bottom.h
 setbotf.f
+setbot.c
 mpif77.conf
 mpif77
 *.o
