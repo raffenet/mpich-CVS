@@ -2399,6 +2399,10 @@ PAC_C_VOLATILE
 PAC_C_RESTRICT
 AC_C_INLINE
 PAC_C_GNU_ATTRIBUTE
+# We need to check for the endianess in order to implement the
+# "external32" representations.  This defines "WORDS_BIGENDIAN when
+# the system is bigendian.
+AC_C_BIGENDIAN(,AC_DEFINE(WORDS_LITTLEENDIAN,1,[Define if words are little endian]))
 
 # We only need this test if we are using Fortran
 if test "$enable_f77" ; then
