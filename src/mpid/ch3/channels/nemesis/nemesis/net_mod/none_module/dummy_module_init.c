@@ -37,3 +37,8 @@ MPID_nem_dummy_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     return 0;
 }
+
+int MPID_nem_dummy_module_vc_terminate (MPIDI_VC_t *vc)
+{
+    return MPI_SUCCESS;
+}

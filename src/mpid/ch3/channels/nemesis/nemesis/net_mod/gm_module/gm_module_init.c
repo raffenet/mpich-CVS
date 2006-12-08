@@ -287,3 +287,12 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
  fn_fail:
     return mpi_errno;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_gm_module_vc_terminate
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_gm_module_vc_terminate (MPIDI_VC_t *vc)
+{
+    return MPI_SUCCESS;
+}

@@ -297,3 +297,12 @@ int MPID_nem_newtcp_module_bind (int sockfd)
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_vc_terminate
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_vc_terminate (MPIDI_VC_t *vc)
+{
+    return MPI_SUCCESS;
+}

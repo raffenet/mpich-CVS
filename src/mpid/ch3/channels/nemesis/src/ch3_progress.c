@@ -1562,8 +1562,17 @@ int MPIDI_CH3I_Progress_finalize(void)
 int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    mpi_errno = MPID_nem_net_module_vc_terminate(vc);
+    if(mpi_errno) MPIU_ERR_POP(mpi_errno);
+
     mpi_errno = MPIDI_CH3U_Handle_connection (vc, MPIDI_VC_EVENT_TERMINATED);
+    if(mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 /* end MPIDI_CH3_Connection_terminate() */
 
