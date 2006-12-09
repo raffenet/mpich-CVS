@@ -475,10 +475,13 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    }
 		    break;
 		case DLOOP_KIND_INDEXED:
-		    /* only use index piecefn if at start of the index type */
+		    /* only use index piecefn if at start of the index type.
+		     *   count test checks that we're on first block.
+		     *   block test checks that we haven't made progress on first block.
+		     */
 		    if (indexfn &&
-			cur_elmp->orig_block == cur_elmp->curblock &&
-			cur_elmp->orig_count == cur_elmp->curcount)
+			cur_elmp->orig_count == cur_elmp->curcount &&
+			cur_elmp->curblock == DLOOP_STACKELM_INDEXED_BLOCKSIZE(cur_elmp, 0))
 		    {
 			/* TODO: RELAX CONSTRAINT ON COUNT? */
 			myblocks = cur_elmp->loop_p->loop_params.i_t.total_blocks;
@@ -604,8 +607,6 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		 * of the current block, or we're processing as many blocks as
 		 * we like starting at the beginning of one.
 		 */
-		DLOOP_Assert(myblocks == cur_elmp->curblock ||
-		       cur_elmp->curblock == cur_elmp->orig_block);
 
 		switch (cur_elmp->loop_p->kind & DLOOP_KIND_MASK) {
 		    case DLOOP_KIND_INDEXED:
