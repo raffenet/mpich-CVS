@@ -12,14 +12,14 @@
 
 #include "pmutilconf.h"
 #include <stdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
 #endif
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 #include <string.h>
 #include <ctype.h>

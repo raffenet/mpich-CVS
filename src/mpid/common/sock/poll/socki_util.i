@@ -682,7 +682,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 	    pollinfos[elem].sock = NULL;
 	    pollinfos[elem].sock_id = -1;
 	    pollinfos[elem].type  = MPIDU_SOCKI_TYPE_FIRST;
-	    pollinfos[elem].state = MPIDU_SOCKI_TYPE_FIRST;
+	    pollinfos[elem].state = MPIDU_SOCKI_STATE_FIRST;
 #	    ifdef MPICH_IS_THREADED
 	    {
 		pollinfos[elem].pollfd_events = 0;
@@ -700,7 +700,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
     MPIU_Assert(sock_set->pollinfos[avail_elem].sock == NULL);
     MPIU_Assert(sock_set->pollinfos[avail_elem].sock_id == -1);
     MPIU_Assert(sock_set->pollinfos[avail_elem].type == MPIDU_SOCKI_TYPE_FIRST);
-    MPIU_Assert(sock_set->pollinfos[avail_elem].state == MPIDU_SOCKI_TYPE_FIRST);
+    MPIU_Assert(sock_set->pollinfos[avail_elem].state == MPIDU_SOCKI_STATE_FIRST);
 #   ifdef MPICH_IS_THREADED
     {
 	MPIU_Assert(sock_set->pollinfos[avail_elem].pollfd_events == 0);

@@ -243,7 +243,9 @@ int MPIDU_Sock_destroy_set(struct MPIDU_Sock_set * sock_set)
      */
     MPIU_Free(sock_set);
     
+#ifdef USE_SOCK_VERIFY
   fn_exit:
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_DESTROY_SET);
     return mpi_errno;
 }

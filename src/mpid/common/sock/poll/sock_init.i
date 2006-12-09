@@ -64,7 +64,9 @@ int MPIDU_Sock_finalize(void)
 	MPIDU_Socki_free_eventq_mem();
     }
 
+#ifdef USE_SOCK_VERIFY
   fn_exit:
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_FINALIZE);
     return mpi_errno;
 }

@@ -11,6 +11,9 @@
 #include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
+/* 
+ * Define these two names to enable debugging output.  
+ */
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
 
@@ -980,6 +983,7 @@ static int MPID_Segment_blkidx_unpack_to_buf(DLOOP_Offset *blocks_p,
 
     el_size = MPID_Datatype_get_basic_size(el_type);
 
+    /* FIXME: Add debug output */
     while (blocks_left) {
 	cbufp = (char *) bufp + rel_off + offsetarray[curblock];
 

@@ -30,6 +30,8 @@
 
 /* Use the memory definitions from mpich2/src/include */
 #include "mpimem.h"
+/* Use the MPI error message routines from mpich2/src/include */
+#include "mpibase.h"
 
 #define MAXVALLEN 1024
 #define MAXKEYLEN   32

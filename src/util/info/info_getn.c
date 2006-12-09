@@ -47,9 +47,11 @@ Output Parameters:
 @*/
 int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
 {
+#ifdef HAVE_ERROR_CHECKING
+    static const char FCNAME[] = "MPI_Info_get_nkeys";
+#endif
     MPID_Info *info_ptr=0;
     int      n;
-    static const char FCNAME[] = "MPI_Info_get_nkeys";
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INFO_GET_NKEYS);
 
@@ -103,21 +105,24 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NKEYS);
     MPIU_THREAD_SINGLE_CS_EXIT("info");
     return mpi_errno;
     
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_info_get_nkeys",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_info_get_nkeys",
 	    "**mpi_info_get_nkeys %I %p", info, nkeys);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+#   endif
 }

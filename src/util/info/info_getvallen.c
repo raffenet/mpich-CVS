@@ -52,7 +52,9 @@
 int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 {
     MPID_Info *curr_ptr, *info_ptr=0;
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Info_get_valuelen";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INFO_GET_VALUELEN);
 
@@ -88,10 +90,13 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
             if (mpi_errno) goto fn_fail;
 	    
 	    /* Check key */
-	    MPIU_ERR_CHKANDJUMP((!key), mpi_errno, MPI_ERR_INFO_KEY, "**infokeynull");
+	    MPIU_ERR_CHKANDJUMP((!key), mpi_errno, MPI_ERR_INFO_KEY, 
+				"**infokeynull");
 	    keylen = (int)strlen(key);
-	    MPIU_ERR_CHKANDJUMP((keylen > MPI_MAX_INFO_KEY), mpi_errno, MPI_ERR_INFO_KEY, "**infokeylong");
-	    MPIU_ERR_CHKANDJUMP((keylen == 0), mpi_errno, MPI_ERR_INFO_KEY, "**infokeyempty");
+	    MPIU_ERR_CHKANDJUMP((keylen > MPI_MAX_INFO_KEY), mpi_errno, 
+				MPI_ERR_INFO_KEY, "**infokeylong");
+	    MPIU_ERR_CHKANDJUMP((keylen == 0), mpi_errno, MPI_ERR_INFO_KEY, 
+				"**infokeyempty");
 
 	    MPIR_ERRTEST_ARGNULL(valuelen, "valuelen", mpi_errno);
             MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
@@ -117,21 +122,24 @@ int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_VALUELEN);
     MPIU_THREAD_SINGLE_CS_EXIT("info");
     return mpi_errno;
     
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_info_get_valuelen",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_info_get_valuelen",
 	    "**mpi_info_get_valuelen %I %s %p %p", info, key, valuelen, flag);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+#   endif
 }

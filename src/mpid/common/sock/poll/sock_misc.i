@@ -229,7 +229,9 @@ int MPIDU_Sock_set_user_ptr(struct MPIDU_Sock * sock, void * user_ptr)
     }
     /* --END ERROR HANDLING-- */
 
+#ifdef USE_SOCK_VERIFY
   fn_exit:
+#endif
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_SET_USER_PTR);
     return mpi_errno;
 }
