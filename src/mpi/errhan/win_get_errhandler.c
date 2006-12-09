@@ -48,7 +48,9 @@
 @*/
 int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Win_get_errhandler";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
@@ -101,21 +103,24 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
     MPIU_THREAD_SINGLE_CS_EXIT("errhan");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_get_errhandler",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_win_get_errhandler",
 	    "**mpi_win_get_errhandler %W %p", win, errhandler);
     }
-#   endif
     mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

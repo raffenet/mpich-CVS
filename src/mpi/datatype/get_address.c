@@ -27,6 +27,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Get_address
+#undef FCNAME
+#define FCNAME "MPI_Get_address"
 
 /*@
    MPI_Get_address - Get the address of a location in memory 
@@ -67,7 +69,6 @@ Output Parameter:
 @*/
 int MPI_Get_address(void *location, MPI_Aint *address)
 {
-    static const char FCNAME[] = "MPI_Get_address";
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_ADDRESS);
 
@@ -110,20 +111,23 @@ int MPI_Get_address(void *location, MPI_Aint *address)
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ADDRESS);
     return mpi_errno;
     
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_get_address",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_get_address",
 	    "**mpi_get_address %p %p", location, address);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

@@ -56,7 +56,9 @@
 int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, 
 			      MPI_Group group2, int *ranks2)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Group_translate_ranks";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
@@ -169,22 +171,26 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1,
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_TRANSLATE_RANKS);
     MPIU_THREAD_SINGLE_CS_EXIT("group");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_group_translate_ranks",
-	    "**mpi_group_translate_ranks %G %d %p %G %p", group1, n, ranks1, group2, ranks2);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_group_translate_ranks",
+	    "**mpi_group_translate_ranks %G %d %p %G %p", 
+	    group1, n, ranks1, group2, ranks2);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }
 

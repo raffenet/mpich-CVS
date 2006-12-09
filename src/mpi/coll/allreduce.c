@@ -88,7 +88,11 @@ MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[] = {
 */
 
 
-/* not declared static because a machine-specific function may call this one in some cases */
+/* not declared static because a machine-specific function may call this one 
+   in some cases */
+#undef FCNAME 
+#define FCNAME "MPIR_Allreduce"
+
 int MPIR_Allreduce ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -97,7 +101,6 @@ int MPIR_Allreduce (
     MPI_Op op, 
     MPID_Comm *comm_ptr )
 {
-    static const char FCNAME[] = "MPIR_Allreduce";
     int is_homogeneous;
 #ifdef MPID_HAS_HETERO
     int rc;
@@ -481,7 +484,10 @@ int MPIR_Allreduce (
 }
 
 
-/* not declared static because a machine-specific function may call this one in some cases */
+/* not declared static because a machine-specific function may call this one 
+   in some cases */
+#undef FCNAME
+#define FCNAME "MPIR_Allreduce_inter"
 int MPIR_Allreduce_inter ( 
     void *sendbuf, 
     void *recvbuf, 
@@ -498,7 +504,6 @@ int MPIR_Allreduce_inter (
    We don't do local reduces first and then intercommunicator
    broadcasts because it would require allocation of a temporary buffer. 
 */
-    static const char FCNAME[] = "MPIR_Allreduce_inter";
     int rank, mpi_errno, root;
     MPID_Comm *newcomm_ptr = NULL;
     MPIU_THREADPRIV_DECL;
@@ -559,6 +564,7 @@ int MPIR_Allreduce_inter (
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Allreduce
+#undef FCNAME
 
 /*@
 MPI_Allreduce - Combines values from all processes and distributes the result

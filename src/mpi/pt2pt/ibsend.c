@@ -215,11 +215,13 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
     *request = MPI_REQUEST_NULL; /* FIXME: should we be setting the request at all in the case of an error? */
-#   ifdef HAVE_ERROR_HANDLING
+#   ifdef HAVE_ERROR_REPORTING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_ibsend",
-	    "**mpi_ibsend %p %d %D %i %t %C %p", buf, count, datatype, dest, tag, comm, request);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_ibsend",
+	    "**mpi_ibsend %p %d %D %i %t %C %p", 
+	    buf, count, datatype, dest, tag, comm, request);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

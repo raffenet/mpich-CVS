@@ -26,6 +26,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_rank
+#undef FCNAME
+#define FCNAME "MPI_Comm_rank"
 
 /*@
 
@@ -47,7 +49,6 @@ Output Argument:
 @*/
 int MPI_Comm_rank( MPI_Comm comm, int *rank ) 
 {
-    static const char FCNAME[] = "MPI_Comm_rank";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = 0;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_RANK);
@@ -92,20 +93,23 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_RANK);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_rank",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_comm_rank",
 	    "**mpi_comm_rank %C %p", comm, rank);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

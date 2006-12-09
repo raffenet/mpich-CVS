@@ -21,12 +21,6 @@
 #define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
 #endif
 
-/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
-   the MPI routines */
-#ifndef MPICH_MPI_FROM_PMPI
-#undef MPI_Type_create_darray
-#define MPI_Type_create_darray PMPI_Type_create_darray
-
 PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 			       int dim,
 			       int ndims,
@@ -49,6 +43,13 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				MPI_Datatype type_old,
 				MPI_Datatype *type_new,
 				MPI_Aint *st_offset); 
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Type_create_darray
+#define MPI_Type_create_darray PMPI_Type_create_darray
+
 
 
 PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,

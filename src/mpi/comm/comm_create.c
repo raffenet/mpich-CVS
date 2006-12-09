@@ -116,6 +116,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        Creating the context id is collective over the *input* communicator,
        so it must be created before we decide if this process is a 
        member of the group */
+    /* In the multi-threaded case, MPIR_Get_contextid assumes that the
+       calling routine already holds the single criticial section */
     new_context_id = MPIR_Get_contextid( comm_ptr );
     MPIU_ERR_CHKANDJUMP(new_context_id == 0, mpi_errno, MPI_ERR_OTHER, 
 			"**toomanycomm" );

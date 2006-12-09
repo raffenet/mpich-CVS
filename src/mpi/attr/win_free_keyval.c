@@ -47,7 +47,9 @@
 @*/
 int MPI_Win_free_keyval(int *win_keyval)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Win_free_keyval";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_Keyval *keyval_ptr = NULL;
     int          in_use;
@@ -98,21 +100,24 @@ int MPI_Win_free_keyval(int *win_keyval)
 
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_FREE_KEYVAL);
     MPIU_THREAD_SINGLE_CS_EXIT("attr");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_free_keyval", 
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_win_free_keyval", 
 	    "**mpi_win_free_keyval %p", win_keyval);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

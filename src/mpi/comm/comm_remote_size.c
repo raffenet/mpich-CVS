@@ -27,6 +27,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_remote_size
+#undef FCNAME
+#define FCNAME "MPI_Comm_remote_size"
 
 /*@
 
@@ -50,7 +52,6 @@ Output Parameter:
 @*/
 int MPI_Comm_remote_size(MPI_Comm comm, int *size)
 {
-    static const char FCNAME[] = "MPI_Comm_remote_size";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_REMOTE_SIZE);
@@ -99,21 +100,24 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_REMOTE_SIZE);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_remote_size",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_comm_remote_size",
 	    "**mpi_comm_remote_size %C %p", comm, size);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }
 

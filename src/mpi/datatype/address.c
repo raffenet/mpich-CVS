@@ -27,6 +27,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Address
+#undef FCNAME
+#define FCNAME "MPI_Address"
 
 /*@
     MPI_Address - Gets the address of a location in memory  
@@ -57,7 +59,6 @@ The replacement for this routine is 'MPI_Get_address'.
 @*/
 int MPI_Address( void *location, MPI_Aint *address )
 {
-    static const char FCNAME[] = "MPI_Address";
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ADDRESS);
 
@@ -80,7 +81,7 @@ int MPI_Address( void *location, MPI_Aint *address )
     /* ... body of routine ...  */
     
     /* SX_4 needs to set CHAR_PTR_IS_ADDRESS 
-       The reason is that it computes the different in two pointers in
+       The reason is that it computes the difference in two pointers in
        an "int", and addresses typically have the high (bit 31) bit set;
        thus the difference, when cast as MPI_Aint (long), is sign-extended, 
        making the absolute address negative.  Without a copy of the C 
@@ -100,20 +101,23 @@ int MPI_Address( void *location, MPI_Aint *address )
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_ADDRESS);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_address",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_address",
 	    "**mpi_address %p %p", location, address);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

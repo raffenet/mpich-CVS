@@ -217,7 +217,8 @@ int MPIR_Barrier( MPID_Comm *comm_ptr )
 #endif
 
 
-/* not declared static because a machine-specific function may call this one in some cases */
+/* not declared static because a machine-specific function may call this one 
+   in some cases */
 int MPIR_Barrier_inter( MPID_Comm *comm_ptr )
 {
     static const char FCNAME[] = "MPIR_Barrier_inter";
@@ -402,7 +403,8 @@ int MPI_Barrier( MPI_Comm comm )
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_barrier", "**mpi_barrier %C", comm);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_barrier", "**mpi_barrier %C", comm);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

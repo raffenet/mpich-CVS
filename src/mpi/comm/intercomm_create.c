@@ -21,6 +21,9 @@
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
+PMPI_LOCAL int MPID_LPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
+				       int local_lpids[] );
+
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Intercomm_create
 #define MPI_Intercomm_create PMPI_Intercomm_create
@@ -433,6 +436,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPIU_DBG_MSG_FMT(COMM,VERBOSE,
           (MPIU_DBG_FDEST,"About to get contextid (commsize=%d) on %d",
 		  comm_ptr->local_size, comm_ptr->rank ));
+    /* In the multi-threaded case, MPIR_Get_contextid assumes that the
+       calling routine already holds the single criticial section */
     recvcontext_id = MPIR_Get_contextid( comm_ptr );
     if (recvcontext_id == 0) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**toomanycomm");

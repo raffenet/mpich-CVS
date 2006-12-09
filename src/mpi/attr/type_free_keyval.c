@@ -46,7 +46,9 @@ Input Parameter:
 @*/
 int MPI_Type_free_keyval(int *type_keyval)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Type_free_keyval";
+#endif
     MPID_Keyval *keyval_ptr = NULL;
     int          in_use;
     int          mpi_errno = MPI_SUCCESS;
@@ -64,7 +66,8 @@ int MPI_Type_free_keyval(int *type_keyval)
         {
 	    MPIR_ERRTEST_ARGNULL(type_keyval, "type_keyval", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    MPIR_ERRTEST_KEYVAL(*type_keyval, MPID_DATATYPE, "datatype", mpi_errno);
+	    MPIR_ERRTEST_KEYVAL(*type_keyval, MPID_DATATYPE, "datatype", 
+				mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(*type_keyval, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
@@ -97,21 +100,24 @@ int MPI_Type_free_keyval(int *type_keyval)
 
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_FREE_KEYVAL);
     MPIU_THREAD_SINGLE_CS_EXIT("attr");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_free_keyval", 
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_type_free_keyval", 
 	    "**mpi_type_free_keyval %p", type_keyval);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

@@ -61,7 +61,9 @@
 @*/
 int MPI_Query_thread( int *provided )
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Query_thread";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_QUERY_THREAD);
 
@@ -84,20 +86,23 @@ int MPI_Query_thread( int *provided )
     *provided = MPIR_Process.thread_provided;
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_QUERY_THREAD);
     return mpi_errno;
     
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_query_thread",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+	    "**mpi_query_thread",
 	    "**mpi_query_thread %p", provided);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

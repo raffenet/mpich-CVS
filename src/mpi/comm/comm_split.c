@@ -181,6 +181,8 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
        be used by each (disjoint) collections of processes.  The
        processes whose color is MPI_UNDEFINED will return the 
        context id to the pool */
+    /* In the multi-threaded case, MPIR_Get_contextid assumes that the
+       calling routine already holds the single criticial section */
     new_context_id = MPIR_Get_contextid( comm_ptr );
     if (new_context_id == 0) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 

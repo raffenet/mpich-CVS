@@ -53,7 +53,9 @@ and 'MPI_UNEQUAL' otherwise
 @*/
 int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Group_compare";
+#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
@@ -152,16 +154,17 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
     MPIU_THREAD_SINGLE_CS_EXIT("group");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_group_compare",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_group_compare",
 	    "**mpi_group_compare %G %G %p", group1, group2, result);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

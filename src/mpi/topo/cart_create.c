@@ -35,7 +35,9 @@
 int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[], 
 		      const int periods[], int reorder, MPI_Comm *comm_cart )
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPIR_Cart_create";
+#endif
     int       i, newsize, rank, nranks, mpi_errno = MPI_SUCCESS;
     MPID_Comm *newcomm_ptr = NULL;
     MPIR_Topology *cart_ptr = NULL;
@@ -174,7 +176,9 @@ We ignore 'reorder' info currently.
 int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
 		    int reorder, MPI_Comm *comm_cart)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Cart_create";
+#endif
     int       mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CART_CREATE);
@@ -243,14 +247,16 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     }
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CART_CREATE);
     MPIU_THREAD_SINGLE_CS_EXIT("topo");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
@@ -258,8 +264,8 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	    "**mpi_cart_create %C %d %p %p %d %p", comm_old, ndims, dims, 
 	    periods, reorder, comm_cart);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

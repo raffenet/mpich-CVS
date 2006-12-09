@@ -21,18 +21,18 @@
 #define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
 #endif
 
-/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
-   the MPI routines */
-#ifndef MPICH_MPI_FROM_PMPI
-#undef MPI_Get_elements
-#define MPI_Get_elements PMPI_Get_elements
-
 PMPI_LOCAL int MPIR_Type_get_basic_type_elements(int *bytes_p,
 						 int count,
 						 MPI_Datatype datatype);
 PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 				      int count,
 				      MPI_Datatype datatype);
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#undef MPI_Get_elements
+#define MPI_Get_elements PMPI_Get_elements
 
 /* NOTE: I think that this is in here so that we don't get two copies of it
  * in the case where we don't have weak symbols.
@@ -282,6 +282,8 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Get_elements
+#undef FCNAME
+#define FCNAME "MPI_Get_elements"
 
 /*@
    MPI_Get_elements - get_elements
@@ -304,7 +306,6 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 @*/
 int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
-    static const char FCNAME[] = "MPI_Get_elements";
     int mpi_errno = MPI_SUCCESS, byte_count;
     MPID_Datatype *datatype_ptr = NULL;
 
@@ -406,21 +407,24 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_ELEMENTS);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_get_elements",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_get_elements",
 	    "**mpi_get_elements %p %D %p", status, datatype, elements);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }
 

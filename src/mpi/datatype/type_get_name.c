@@ -106,7 +106,9 @@ static mpi_names_t mpi_maxloc_names[] = {
 
 int MPIR_Datatype_init_names( void ) 
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPIR_Datatype_init_names";
+#endif
     int mpi_errno = MPI_SUCCESS;
     int i;
     MPID_Datatype *datatype_ptr = NULL;
@@ -270,7 +272,8 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_get_name", 
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_type_get_name", 
 	    "**mpi_type_get_name %D %p %p", datatype, type_name, resultlen);
     }
 #   endif

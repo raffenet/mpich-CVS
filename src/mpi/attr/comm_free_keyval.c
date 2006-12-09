@@ -49,7 +49,9 @@ Key values are global (they can be used with any and all communicators)
 @*/
 int MPI_Comm_free_keyval(int *comm_keyval)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Comm_free_keyval";
+#endif
     MPID_Keyval *keyval_ptr = NULL;
     int          in_use;
     int          mpi_errno = MPI_SUCCESS;
@@ -67,7 +69,8 @@ int MPI_Comm_free_keyval(int *comm_keyval)
         {
 	    MPIR_ERRTEST_ARGNULL(comm_keyval, "comm_keyval", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    MPIR_ERRTEST_KEYVAL(*comm_keyval, MPID_COMM, "communicator", mpi_errno);
+	    MPIR_ERRTEST_KEYVAL(*comm_keyval, MPID_COMM, "communicator", 
+				mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(*comm_keyval, mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
@@ -100,21 +103,24 @@ int MPI_Comm_free_keyval(int *comm_keyval)
 
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE_KEYVAL);
     MPIU_THREAD_SINGLE_CS_EXIT("attr");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_free_keyval",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_comm_free_keyval",
 	    "**mpi_comm_free_keyval %p", comm_keyval);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

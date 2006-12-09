@@ -27,6 +27,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Type_lb
+#undef FCNAME
+#define FCNAME "MPI_Type_lb"
 
 /*@
     MPI_Type_lb - Returns the lower-bound of a datatype
@@ -52,7 +54,6 @@ The replacement for this routine is 'MPI_Type_Get_extent'.
 @*/
 int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
 {
-    static const char FCNAME[] = "MPI_Type_lb";
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_LB);
@@ -102,20 +103,23 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
 
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_LB);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_type_lb",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_type_lb",
 	    "**mpi_type_lb %D %p", datatype, displacement);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }

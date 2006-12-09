@@ -27,6 +27,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Group_rank
+#undef FCNAME
+#define FCNAME "MPI_Group_rank"
 
 /*@
 
@@ -50,7 +52,6 @@ process is not a member (integer)
 @*/
 int MPI_Group_rank(MPI_Group group, int *rank)
 {
-    static const char FCNAME[] = "MPI_Group_rank";
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_RANK);
@@ -94,21 +95,24 @@ int MPI_Group_rank(MPI_Group group, int *rank)
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_RANK);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE,FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_group_rank",
+	    mpi_errno, MPIR_ERR_RECOVERABLE,FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_group_rank",
 	    "**mpi_group_rank %G %p", group, rank);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }
 

@@ -251,6 +251,8 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
        have a valid (almost - see comm_create_hook) communicator.
     */
     /* printf( "About to get context id \n" ); fflush( stdout ); */
+    /* In the multi-threaded case, MPIR_Get_contextid assumes that the
+       calling routine already holds the single criticial section */
     new_context_id = MPIR_Get_contextid( newcomm_ptr );
     MPIU_ERR_CHKANDJUMP(new_context_id == 0,mpi_errno,MPI_ERR_OTHER,
 			"**toomanycomm" );

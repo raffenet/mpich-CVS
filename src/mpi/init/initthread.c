@@ -392,10 +392,11 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_HANDLING
+#   ifdef HAVE_ERROR_REPORTING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_init_thread",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_init_thread",
 	    "**mpi_init_thread %p %p %d %p", argc, argv, required, provided);
     }
 #   endif

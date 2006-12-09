@@ -48,7 +48,9 @@
 @*/
 int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 {
+#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_File_set_errhandler";
+#endif
     int mpi_errno = MPI_SUCCESS;
     int in_use;
     MPID_Errhandler *errhan_ptr = NULL, *old_errhandler_ptr;
@@ -57,7 +59,6 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("errhan");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
 
 #ifdef MPI_MODE_RDONLY
@@ -67,7 +68,8 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    /* FIXME: check for a valid file handle (fh) before converting to a pointer */
+	    /* FIXME: check for a valid file handle (fh) before converting to 
+	       a pointer */
 	    MPIR_ERRTEST_ERRHANDLER(errhandler, mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
@@ -125,25 +127,27 @@ int MPI_File_set_errhandler(MPI_File file, MPI_Errhandler errhandler)
     
     /* ... end of body of routine ... */
 
+#ifdef HAVE_ERROR_CHECKING
   fn_exit:
+#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_FILE_SET_ERRHANDLER);
-    MPIU_THREAD_SINGLE_CS_EXIT("errhan");
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_file_set_errhandler",
 	    "**mpi_file_set_errhandler %F %E", file, errhandler);
     }
-#   endif
+    /* FIXME: Is this obsolete now? */
 #ifdef MPI_MODE_RDONLY
     mpi_errno = MPIO_Err_return_file( file, mpi_errno );
 #endif
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }
 

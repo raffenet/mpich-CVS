@@ -27,6 +27,8 @@
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_call_errhandler
+#undef FCNAME
+#define FCNAME "MPI_Comm_call_errhandler"
 
 /*@
    MPI_Comm_call_errhandler - Call the error handler installed on a 
@@ -50,7 +52,6 @@
 @*/
 int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 {
-    static const char FCNAME[] = "MPI_Comm_call_errhandler";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPIU_THREADPRIV_DECL;
@@ -82,7 +83,8 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            /* Validate comm_ptr; if comm_ptr is not value, it will be reset to null */
+            /* Validate comm_ptr; if comm_ptr is not value, it will be reset
+	       to null */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
@@ -139,16 +141,17 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     return mpi_errno;
 
-  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
+  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_call_errhandler",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_comm_call_errhandler",
 	    "**mpi_comm_call_errhandler %C %d", comm, errorcode);
     }
-#   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
+#   endif
     /* --END ERROR HANDLING-- */
 }
