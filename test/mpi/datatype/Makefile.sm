@@ -56,6 +56,8 @@ unusual-noncontigs_SOURCES = unusual-noncontigs.c
 
 pairtype-pack_SOURCES = pairtype-pack.c
 
+struct-ezhov_SOURCES = struct-ezhov.c
+
 pairtype-size-extent_SOURCES = pairtype-size-extent.c
 
 localpack_SOURCES = localpack.c
