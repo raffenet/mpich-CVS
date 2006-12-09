@@ -231,7 +231,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 	sreq = MPID_Request_create();
 	if (sreq == NULL)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+			    FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    goto fn_exit;
 	}
 	sreq->kind = MPID_REQUEST_SEND;

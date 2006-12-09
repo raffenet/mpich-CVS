@@ -302,6 +302,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (req_)->dev.cancel_pending = TRUE;			\
 }
 
+/* FIXME: Why does this have a side effect? */
 #define MPIDI_Request_recv_pending(req_, recv_pending_)	\
     {								\
  	*(recv_pending_) = --(req_)->dev.recv_pending_count;	\
@@ -565,12 +566,20 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
 /* If there is no support for dynamic processes, there will be no
    channel-specific connection state */
 #ifdef USE_DBG_LOGGING
+
 #ifdef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 #define MPIDI_CH3_VC_GetStateString( _c ) "none"
 #else
 /* FIXME: This duplicates a value in util/sock/ch3usock.h */
 const char *MPIDI_CH3_VC_GetStateString(int);
 #endif
+
+/* These tw routines are in mpidi_pg.c and are used to print the 
+   connection string (which is attached to a process group) */
+int MPIDI_PrintConnStr( const char *file, int line, 
+			const char *label, const char *str );
+int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line, 
+			      const char *label, const char *str );
 #endif
 
 /* These macros simplify and unify the debugging of changes in the
@@ -1220,8 +1229,6 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
 E*/
 int MPIDI_CH3_Abort(int exit_code, char * error_msg);
 
-
-
 /* FIXME: Move these prototypes into header files in the appropriate 
    util directories  */
 /* added by brad.  upcalls for MPIDI_CH3_Init that contain code which could be 
@@ -1287,6 +1294,12 @@ int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
 @*/
 int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq, 
 			       int * complete);
+
+/* Handle_send_req invokes the action (method/function) when data 
+   becomes available.  It is an obsolete routine; the completion 
+   function should be invoked directly.  */
+int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPID_Request * sreq, 
+			       int *complete);
 
 int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event);
 
@@ -1362,6 +1375,10 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 /* Here are the packet handlers */
 int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				   MPID_Request ** );
+#ifdef USE_EAGER_SHORT
+int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+					 MPID_Request ** );
+#endif
 int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				    MPID_Request ** );
 int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 

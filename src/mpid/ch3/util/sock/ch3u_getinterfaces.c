@@ -164,7 +164,9 @@ static int MPIDI_CH3U_GetIPInterface( MPIDU_Sock_ifaddr_t *ifaddr, int *found )
     int nfound = 0, foundLocalhost = 0;
     /* We predefine the LSB and MSB localhost addresses */
     unsigned int localhost = 0x0100007f;
+#ifdef WORDS_BIGENDIAN
     unsigned int MSBlocalhost = 0x7f000001;
+#endif
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {

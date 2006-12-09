@@ -1199,6 +1199,10 @@ int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *pktArray[],
     }
     pktArray[MPIDI_CH3_PKT_EAGER_SEND] = 
 	MPIDI_CH3_PktHandler_EagerSend;
+#ifdef USE_EAGER_SHORT
+    pktArray[MPIDI_CH3_PKT_EAGERSHORT_SEND] = 
+	MPIDI_CH3_PktHandler_EagerShortSend;
+#endif
     pktArray[MPIDI_CH3_PKT_READY_SEND] = 
 	MPIDI_CH3_PktHandler_ReadySend;
     pktArray[MPIDI_CH3_PKT_EAGER_SYNC_SEND] = 

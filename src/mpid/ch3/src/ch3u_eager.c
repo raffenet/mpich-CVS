@@ -157,6 +157,7 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
     return mpi_errno;
 }
 
+#ifdef USE_EAGER_SHORT
 /* Send a short contiguous eager message.  We'll want to optimize (and possibly
    inline) this 
 
@@ -167,7 +168,7 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
    have a smaller payload.
 */
 #undef FUNCNAME
-#define FUNCNAME MPIDI_EagerContigSend
+#define FUNCNAME MPIDI_EagerContigShortSend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p, 
@@ -183,6 +184,7 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
 	&upkt.eagershort_send;
     MPID_Request *sreq = *sreq_p;
     
+    printf( "Sending short eager\n"); fflush(stdout);
     MPIDI_Pkt_init(eagershort_pkt, reqtype);
     eagershort_pkt->match.rank	     = comm->rank;
     eagershort_pkt->match.tag	     = tag;
@@ -215,15 +217,198 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
     }
-    if (sreq != NULL)
-    {
+    if (sreq != NULL) {
+	printf( "Surprise, did not complete send of eagershort (starting connection?)\n" ); fflush(stdout);
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
+	/*	sreq->OnDataAvail = 0; */
     }
 
  fn_fail:    
     return mpi_errno;
 }
+
+/* This is the matching handler for the EagerShort message defined above */
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_PktHandler_EagerShortSend
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
+					 MPID_Request **rreqp )
+{
+    MPIDI_CH3_Pkt_eagershort_send_t * eagershort_pkt = &pkt->eagershort_send;
+    MPID_Request * rreq;
+    int found;
+    int mpi_errno = MPI_SUCCESS;
+
+    printf( "Receiving short eager!\n" ); fflush(stdout);
+    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+	"received eagershort send pkt, rank=%d, tag=%d, context=%d",
+	eagershort_pkt->match.rank, 
+	eagershort_pkt->match.tag, eagershort_pkt->match.context_id));
+	    
+    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&eagershort_pkt->match, &found);
+    if (rreq == NULL) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
+    }
+    
+    (rreq)->status.MPI_SOURCE = (eagershort_pkt)->match.rank;
+    (rreq)->status.MPI_TAG    = (eagershort_pkt)->match.tag;
+    (rreq)->status.count      = (eagershort_pkt)->data_sz;
+    (rreq)->dev.recv_data_sz  = (eagershort_pkt)->data_sz;
+    MPIDI_Request_set_seqnum((rreq), (eagershort_pkt)->seqnum);
+    MPIDI_Request_set_msg_type((rreq), MPIDI_REQUEST_EAGER_MSG);
+
+    *rreqp = rreq;
+
+    /* Extract the data from the packet */
+
+    if (rreq->dev.recv_data_sz == 0) {
+	MPIDI_CH3U_Request_complete(rreq);
+	*rreqp = NULL;
+    }
+    else {
+	if (found) {
+	    int dt_contig;
+	    MPI_Aint dt_true_lb;
+	    MPIDI_msg_sz_t userbuf_sz;
+	    MPID_Datatype * dt_ptr;
+	    MPIDI_msg_sz_t data_sz;
+
+	    printf( "Found eager short message\n" ); fflush(stdout);
+
+	    /* Make sure that we handle the general (non-contiguous)
+	       datatypes correctly while optimizing for the 
+	       special case */
+ 	    /* mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq ); */
+	    /* Here begins the code from receive_found */
+	    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, 
+				    dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
+		
+	    if (rreq->dev.recv_data_sz <= userbuf_sz) {
+		data_sz = rreq->dev.recv_data_sz;
+	    }
+	    else {
+		MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+		    "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
+						    MPIDI_MSG_SZ_FMT,
+				 rreq->dev.recv_data_sz, userbuf_sz));
+		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+                     MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
+		     "**truncate", "**truncate %d %d %d %d", 
+		     rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, 
+		     rreq->dev.recv_data_sz, userbuf_sz );
+		rreq->status.count = userbuf_sz;
+		data_sz = userbuf_sz;
+	    }
+
+	    if (dt_contig && data_sz == rreq->dev.recv_data_sz) {
+		/* user buffer is contiguous and large enough to store the
+		   entire message.  We can just copy the code */
+
+		printf( "Copying %d bytes\n", data_sz ); fflush(stdout);
+		/* Copy the payload. We could optimize this 
+		   if data_sz & 0x3 == 0 
+		   (copy (data_sz >> 2) ints, inline that since data size is 
+		   currently limited to 4 ints */
+		{
+		    unsigned char const * restrict p = 
+			(unsigned char *)eagershort_pkt->data;
+		    unsigned char * restrict bufp = 
+			(unsigned char *)(char*)(rreq->dev.user_buf) + dt_true_lb;
+		    int i;
+		    for (i=0; i<data_sz; i++) {
+			*bufp++ = *p++;
+		    }
+		}
+		/* FIXME: We want to set the OnDataAvail to the appropriate 
+		   function, which depends on whether this is an RMA 
+		   request or a pt-to-pt request. */
+		rreq->dev.OnDataAvail = 0;
+		/* rreq->dev.recv_pending_count = 1; */
+		MPIDI_CH3U_Request_complete(rreq);
+	    }
+	    else {
+		MPIDI_msg_sz_t data_sz, last;
+		/* user buffer is not contiguous.  Use the segment
+		   code to unpack it, handling various errors and 
+		   exceptional cases */
+		printf( "Surprise!\n" ); fflush(stdout);
+		MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
+				  rreq->dev.datatype, &rreq->dev.segment, 0);
+
+		data_sz = rreq->dev.recv_data_sz;
+		last    = data_sz;
+		MPID_Segment_unpack( &rreq->dev.segment, 0, 
+				     &last, eagershort_pkt->data );
+		if (last != data_sz) {
+		    /* --BEGIN ERROR HANDLING-- */
+		    /* received data was not entirely consumed by unpack() 
+		       because too few bytes remained to fill the next basic
+		       datatype */
+		    rreq->status.count = (int)last;
+		    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
+			 "**dtypemismatch", 0);
+		    /* --END ERROR HANDLING-- */
+		}
+		/* FIXME: We want to set the OnDataAvail to the appropriate 
+		   function, which depends on whether this is an RMA 
+		   request or a pt-to-pt request. */
+		rreq->dev.OnDataAvail = 0;
+		MPIDI_CH3U_Request_complete(rreq);
+	    }
+	}
+	else {
+	    MPIDI_msg_sz_t data_sz;
+	    /* This is easy; copy the data into a temporary buffer.
+	       To begin with, we use the same temporary location as
+	       is used in receiving eager unexpected data.
+	     */
+	    /* FIXME: When eagershort is enabled, provide a preallocated
+               space for short messages (which is used even if eager short
+	       is not used), since we don't want to have a separate check
+	       to figure out which buffer we're using (or perhaps we should 
+	       have a free-buffer-pointer, which can be null if it isn't
+               a buffer that we've allocated). */
+	    data_sz = rreq->dev.recv_data_sz;
+	    rreq->dev.tmpbuf = MPIU_Malloc(data_sz);
+	    if (!rreq->dev.tmpbuf) {
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	    }
+	    rreq->dev.tmpbuf_sz = data_sz;
+ 	    /* Copy the payload. We could optimize this if data_sz & 0x3 == 0 
+	       (copy (data_sz >> 2) ints, inline that since data size is 
+	       currently limited to 4 ints */
+	    {
+		unsigned char const * restrict p = 
+		    (unsigned char *)eagershort_pkt->data;
+		unsigned char * restrict bufp = 
+		    (unsigned char *)rreq->dev.tmpbuf;
+		int i;
+		for (i=0; i<data_sz; i++) {
+		    *bufp++ = *p++;
+		}
+	    }
+	    printf( "Unexpected eager short\n" ); fflush(stdout);
+	    /* The request is still complete (in the sense of 
+	       having all data) */
+	    MPIDI_CH3U_Request_complete(rreq);
+	    
+	}
+
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
+		     "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGERSHORT_SEND");
+	}
+    }
+
+ fn_fail:
+    return mpi_errno;
+}
+
+#endif
 
 /* Send a contiguous eager message that can be cancelled (e.g., 
    a nonblocking eager send).  We'll want to optimize (and possibly
@@ -354,68 +539,6 @@ int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     return mpi_errno;
 }
 
-#if 0
-int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-					 MPID_Request **rreqp )
-{
-    MPIDI_CH3_Pkt_eagershort_send_t * eagershort_pkt = &pkt->eagershort_send;
-    MPID_Request * rreq;
-    int found;
-    int mpi_errno = MPI_SUCCESS;
-    
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-	"received eagershort send pkt, rank=%d, tag=%d, context=%d",
-	eagershort_pkt->match.rank, 
-	eagershort_pkt->match.tag, eagershort_pkt->match.context_id));
-	    
-    rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&eagershort_pkt->match, &found);
-    if (rreq == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
-    }
-    
-    (rreq)->status.MPI_SOURCE = (eagershort_pkt)->match.rank;
-    (rreq)->status.MPI_TAG = (eagershort_pkt)->match.tag;
-    (rreq)->status.count = (eagershort_pkt)->data_sz;
-    (rreq)->dev.recv_data_sz = (eagershort_pkt)->data_sz;
-    MPIDI_Request_set_seqnum((rreq), (eagershort_pkt)->seqnum);
-    MPIDI_Request_set_msg_type((rreq), MPIDI_REQUEST_EAGER_MSG);
-
-    *rreqp = rreq;
-
-    /* Extract the data from the packet */
-    /* FIXME: This is incorrect; do not use Post_data */
-    /* FIXME: What is the logic here?  On an eager receive, the data
-       should be available already, and we should be optimizing
-       for short messages */
-
-    if (rreq->dev.recv_data_sz == 0) {
-	MPIDI_CH3U_Request_complete(req);
-	*rreqp = NULL;
-    }
-    else {
-#error 'these must be fixed to not use post_data_receive_xxx '
-	if (found) {
-	    /* Make sure that we handle the general (non-contiguous)
-	       datatypes correctly while optimizing for the 
-	       special case */
-	    mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq );
-	}
-	else {
-	    /* This is easy; copy the data into a temporary buffer */
-	    mpi_errno = MPIDI_CH3U_Post_data_receive_unexpected( rreq );
-	}
-
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
-			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
-	}
-    }
-
- fn_fail:
-    return mpi_errno;
-}
-
-#endif
 
 int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 				    MPID_Request **rreqp )

@@ -110,11 +110,20 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
     
     /* FIXME: flow control: limit number of outstanding eager messsages 
        containing data and need to be buffered by the receiver */
-
+#ifdef USE_EAGER_SHORT
+    if (dt_contig && data_sz <= MPIDI_EAGER_SHORT_SIZE) {
+	mpi_errno = MPIDI_CH3_EagerContigShortSend( &sreq, 
+					       MPIDI_CH3_PKT_EAGERSHORT_SEND,
+					       (char *)buf + dt_true_lb,
+					       data_sz, rank, tag, comm, 
+					       context_offset );
+    }
+    else
+#endif
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	
 	MPIDI_CH3_EAGER_MAX_MSG_SIZE) {
 	if (dt_contig) {
-	    mpi_errno = MPIDI_CH3_EagerContigSend( &sreq, 
+ 	    mpi_errno = MPIDI_CH3_EagerContigSend( &sreq, 
 						   MPIDI_CH3_PKT_EAGER_SEND,
 						   (char *)buf + dt_true_lb,
 						   data_sz, rank, tag, comm, 

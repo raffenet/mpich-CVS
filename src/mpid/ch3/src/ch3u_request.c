@@ -102,7 +102,7 @@ MPID_Request * MPID_Request_create()
 
 /* FIXME: We need a lighter-weight version of this to avoid all of the
    extra checks.  One posibility would be a single, no special case (no 
-   comm, datatype, or srbuff to check) and a more general (check everything)
+   comm, datatype, or srbuf to check) and a more general (check everything)
    version.  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Request_destroy
@@ -528,7 +528,8 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	    /* move any remaining data to the beginning of the buffer.  
 	       Note: memmove() is used since the data regions could
                overlap. */
-	    memmove(rreq->dev.tmpbuf, (char *) rreq->dev.tmpbuf + (last - rreq->dev.segment_first), rreq->dev.tmpbuf_off);
+	    memmove(rreq->dev.tmpbuf, (char *) rreq->dev.tmpbuf + 
+		    (last - rreq->dev.segment_first), rreq->dev.tmpbuf_off);
 	}
 	rreq->dev.segment_first = last;
     }
@@ -591,7 +592,8 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	       would last = unpack?  If not we should return an error 
 	       (unless configured with --enable-fast) */
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	    memcpy((char *)rreq->dev.user_buf + dt_true_lb, rreq->dev.tmpbuf, unpack_sz);
+	    memcpy((char *)rreq->dev.user_buf + dt_true_lb, rreq->dev.tmpbuf,
+		   unpack_sz);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	}
 	else

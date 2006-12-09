@@ -61,7 +61,10 @@ MPIDI_CH3_Pkt_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_ready_send_t;
-
+/* Enable the use of data within the message packet for small messages */
+/* #define USE_EAGER_SHORT  */
+#define MPIDI_EAGER_SHORT_INTS 4
+#define MPIDI_EAGER_SHORT_SIZE 16
 typedef struct MPIDI_CH3_Pkt_eagershort_send
 {
     MPIDI_CH3_Pkt_type_t type;  /* XXX - uint8_t to conserve space ??? */
@@ -70,7 +73,7 @@ typedef struct MPIDI_CH3_Pkt_eagershort_send
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum;
 #endif
-    int  data[4];               /* FIXME: Experimental for now */
+    int  data[MPIDI_EAGER_SHORT_INTS];    /* FIXME: Experimental for now */
 }
 MPIDI_CH3_Pkt_eagershort_send_t;
 
