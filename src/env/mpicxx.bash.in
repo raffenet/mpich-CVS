@@ -111,6 +111,11 @@ for arg in "$@" ; do
     CXX=`echo A$arg | sed -e 's/A-cxx=//g'`
     addarg=no
     ;;
+    # Backwards compatibility for MPICH1 - scripts
+    -CC=*)
+    CXX=`echo A$arg | sed -e 's/A-CC=//g'`
+    addarg=no
+    ;;
     -show)
     addarg=no
     Show=echo
