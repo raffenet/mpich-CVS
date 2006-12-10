@@ -6,7 +6,7 @@
  */
 
 #include <elan.h>
-#include <capability.h>
+#include <elan/capability.h>
 #include <elanctrl.h>
 #include "mpidimpl.h"
 #include "mpid_nem_impl.h"
