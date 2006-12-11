@@ -124,13 +124,15 @@ int MPIDI_SHM_ReadProcessMemory( int fd, int pid,
 /* Initialize for reading and writing to the designated process */
 int MPIDI_SHM_InitRWProc( pid_t pid, int *phandle )
 {
+	int mpi_errno = MPI_SUCCESS;
     *phandle =
 	OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | 
 		    PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
 		    FALSE, pid);
     if (*phandle == NULL) {
 	int err = GetLastError();
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", info.pg_rank, err);
+	/* mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", info.pg_rank, err); */
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", pid, err);
     }
     return mpi_errno;
 }
