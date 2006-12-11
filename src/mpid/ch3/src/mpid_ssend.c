@@ -87,7 +87,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     {
 	/* Note that the sreq was created above */
 	mpi_errno = MPIDI_CH3_RndvSend( &sreq, buf, count, datatype, dt_contig,
-					data_sz, rank, tag, comm, 
+					data_sz, dt_true_lb, rank, tag, comm, 
 					context_offset );
 	/* Note that we don't increase the ref cound on the datatype
 	   because this is a blocking call, and the calling routine 

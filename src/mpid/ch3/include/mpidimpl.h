@@ -1369,6 +1369,7 @@ int MPIDI_GetTagFromPort( const char *, int * );
 /* Implement the send side of a rendevous send */
 int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count, 
 			MPI_Datatype datatype, int dt_contig, int data_sz, 
+			MPI_Aint dt_true_lb,
 			int rank, 
 			int tag, MPID_Comm * comm, int context_offset );
 
@@ -1460,7 +1461,7 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **, MPIDI_CH3_Pkt_type_t,
 
 
 int MPIDI_CH3_RndvSend( MPID_Request **, const void *, int, MPI_Datatype, 
-			int, int, int, int, MPID_Comm *, int );
+			int, int, MPI_Aint, int, int, MPID_Comm *, int );
 
 int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **, const void *, int, 
 				      MPI_Datatype, int, int, MPI_Aint,
