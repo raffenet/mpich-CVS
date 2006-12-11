@@ -169,6 +169,9 @@ if test "${with_qsnet_include}" != "yes" -a "${with_qsnet_include}" != "no" ; th
 fi,)
     
 if test "${nemesis_network}" == "elan" ; then
+echo "=== You're about to use the experimental Nemesis/Elan network module." 
+echo "=== This module has not been thoroughly tested and some performance issues remain."
+
     AC_CHECK_HEADER([elan.h], , [
 	AC_MSG_ERROR(['elan.h not found.  Did you specify --with-elan= or --with-elan-include=? or --with-qsnet-include=?'])
     ])
