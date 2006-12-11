@@ -51,7 +51,8 @@
     }
 #else
 #   define MPIU_Assert(a_)
-#   define MPIU_AssertDecl(a_) 
+/* Empty decls not allowed in C */
+#   define MPIU_AssertDecl(a_) a_
 #endif
 
 /*
