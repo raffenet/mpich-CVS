@@ -402,6 +402,15 @@ The default network is TCP.
   the normal search paths, you can specify them with the
   --with-mx-include= and --with-mx-lib= options, or the --with-mx=
   option if lib/ and include/ are in the same directory.
+  (Note : There are known performance issues with this module.)
+
+  To use the Qsnet/Elan network, use the --with-device=ch3:elan 
+  configure option. Specific paths can be specified with:
+  --with-elan-include= (path to the elan include files),
+  --with-elan-lib= (path to the elan libs) and (if needed)
+  --with-qsnet-include= (path to the qsnet include files).
+  (Note : This module is still in *experimental* state. It has not 
+  been thoroughly tested and performance issues remain.)
 
   Using the --enable-fast configure option significantly improves
   intra-node performance.
