@@ -81,7 +81,6 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     MPID_nem_newtcp_module_send_q_element_t *e;
     MPIU_CHKPMEM_DECL(2);
 
-    MPIDI_NEMTCP_FUNC_ENTER;
     pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell); /* cast away volatile */
 
     pkt->mpich2.datalen = datalen;
@@ -154,7 +153,6 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     
  fn_exit:
     MPIU_CHKPMEM_COMMIT();    
-    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  enqueue_cell_and_exit:
     /* enqueue cell on send queue and exit */

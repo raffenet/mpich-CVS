@@ -34,11 +34,12 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     int mpi_errno = MPI_SUCCESS;
     int ret;
     int i;
-    MPIDI_NEMTCP_STATE_DECL;  
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
 
     /* set up listener socket */
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
-    MPIDI_NEMTCP_FUNC_ENTER;
     g_lstn_plfd.fd = g_lstn_sc.fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     MPIU_ERR_CHKANDJUMP2 (g_lstn_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
 
@@ -80,7 +81,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     MPID_nem_newtcp_module_poll_init();
 
  fn_exit:
-    MPIDI_NEMTCP_FUNC_EXIT;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
     return mpi_errno;
  fn_fail:
@@ -101,8 +102,10 @@ int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int 
     socklen_t len;
     char ipaddr_str[INET_ADDRSTRLEN];
     const char *p;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
 
-    MPIDI_NEMTCP_FUNC_ENTER;
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     /* The business card consists of the numeric ip address (represented as a string), and the port id */
     
@@ -134,7 +137,7 @@ int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int 
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
         }
 /*         fprintf(stdout, FCNAME " Exit failure\n"); fflush(stdout); */
-        MPIDI_NEMTCP_FUNC_EXIT;
+        MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
         return mpi_errno;
     }
 
@@ -151,13 +154,13 @@ int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int 
             MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
         }
 /*         fprintf(stdout, FCNAME " Exit failure\n"); fflush(stdout); */
-        MPIDI_NEMTCP_FUNC_EXIT;
+        MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
         return mpi_errno;
     }
 /*     printf("MPID_nem_newtcp_module_get_business_card. port=%d\n", sock_id.sin_port); */
  fn_fail:
 /*     fprintf(stdout, "MPID_nem_newtcp_module_get_business_card Exit, mpi_errno=%d\n", mpi_errno); fflush(stdout); */
-    MPIDI_NEMTCP_FUNC_EXIT;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
     return mpi_errno;
 }
 
@@ -168,9 +171,11 @@ int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int 
 int MPID_nem_newtcp_module_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_NEMTCP_FUNC_ENTER;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_CONNECT_TO_ROOT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_CONNECT_TO_ROOT);
     mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
-    MPIDI_NEMTCP_FUNC_EXIT;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_CONNECT_TO_ROOT);
     return mpi_errno;
 }
 
@@ -182,8 +187,10 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
     struct in_addr addr;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
-    MPIDI_NEMTCP_FUNC_ENTER;
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
+
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
 
     memset (&vc->ch.sock_id, 0, sizeof(vc->ch.sock_id));
@@ -204,7 +211,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     
  fn_exit:
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
-    MPIDI_NEMTCP_FUNC_EXIT;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
     return mpi_errno;
  fn_fail:
 /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
@@ -222,8 +229,10 @@ static int get_addr_port_from_bc (const char *business_card, struct in_addr *add
     int mpi_errno = MPI_SUCCESS;
     int ret;
     char ipaddr_str[INET_ADDRSTRLEN];
+    MPIDI_STATE_DECL(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_GET_ADDR_PORT_FROM_BC);
     
-    MPIDI_NEMTCP_FUNC_ENTER;
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_ADDR_KEY, ipaddr_str, INET_ADDRSTRLEN);
     MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
@@ -237,7 +246,7 @@ static int get_addr_port_from_bc (const char *business_card, struct in_addr *add
 
  fn_exit:
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
-    MPIDI_NEMTCP_FUNC_EXIT;
+    MPIDI_FUNC_EXIT(MPID_STATE_GET_ADDR_PORT_FROM_BC);
     return mpi_errno;
  fn_fail:
 /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
@@ -258,11 +267,13 @@ int MPID_nem_newtcp_module_bind (int sockfd)
     int ret;
     struct sockaddr_in sin;
     int port, low_port, high_port;
-    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_BIND);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_BIND);
+   
     low_port = 0;
     high_port = 0;
 
-    MPIDI_NEMTCP_FUNC_ENTER;
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     MPIU_GetEnvRange( "MPICH_PORT_RANGE", &low_port, &high_port );
     MPIU_ERR_CHKANDJUMP (low_port < 0 || low_port > high_port, mpi_errno, MPI_ERR_OTHER, "**badportrange");
@@ -290,7 +301,7 @@ int MPID_nem_newtcp_module_bind (int sockfd)
 /*     if (ret == 0) */
 /*         fprintf(stdout, "sockfd=%d  port=%d bound\n", sockfd, port); */
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
-    MPIDI_NEMTCP_FUNC_EXIT;
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_BIND);
     return mpi_errno;
  fn_fail:
 /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */

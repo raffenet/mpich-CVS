@@ -430,7 +430,6 @@ static inline int recv_progress (void)
     MPID_nem_cell_ptr_t v_cell;
     MPID_nem_cell_t *cell; /* non-volatile cell */
 
-    MPIDI_NEMTCP_FUNC_ENTER;
     /* Copy any packets from overflow buf into cells first */
     if (recv_overflow_buf.start)
     {
@@ -487,7 +486,6 @@ static inline int recv_progress (void)
 
 
  fn_exit:
-    MPIDI_NEMTCP_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure"));

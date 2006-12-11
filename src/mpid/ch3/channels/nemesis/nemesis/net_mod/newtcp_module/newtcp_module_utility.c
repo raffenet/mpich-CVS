@@ -136,7 +136,6 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
 {
     int rc = MPID_NEM_NEWTCP_MODULE_SOCK_NOEVENT;
 
-    MPIDI_NEMTCP_FUNC_ENTER;
     if (plfd->revents & POLLERR) 
     {
 	rc = MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF;
@@ -159,7 +158,6 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
 	rc = MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED;
     }
  fn_exit:
-    MPIDI_NEMTCP_FUNC_EXIT;
     return rc;
 }
 
@@ -176,7 +174,6 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
     int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0;
     size_t n = sizeof(error);
 
-    MPIDI_NEMTCP_FUNC_ENTER;
     n = sizeof(error);
     if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) 
     {
@@ -191,6 +188,5 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
     else
         rc = TRUE;
  fn_exit:
-    MPIDI_NEMTCP_FUNC_EXIT;
     return rc;
 }
