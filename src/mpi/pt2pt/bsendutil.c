@@ -468,6 +468,7 @@ static void MPIR_Bsend_check_active( void )
 		 need to advance other, incomplete communication.  */
 		MPID_Progress_state progress_state;
 		MPID_Progress_start(&progress_state);
+		MPID_Progress_test( );
 		MPID_Progress_end(&progress_state);
 	    }
 	}
