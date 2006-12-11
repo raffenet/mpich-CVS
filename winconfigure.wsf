@@ -3394,7 +3394,7 @@ If f.FileExists("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in") Th
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in", false)
 	fout.WriteLine("#define USE_BUSY_LOCKS")
 	fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
-	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("/* #define MPIDI_CH3_CHANNEL_RNDV */")
 	fout.WriteLine("#define USE_RDMA_GET")
 	fout.WriteLine("#define USE_SHM_RDMA_GET")
 	Call WriteFooter(fout)
@@ -3405,7 +3405,7 @@ If f.FileExists("src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in") Th
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\shm\include\mpidi_ch3i_shm_conf.h.in", true)
 	fout.WriteLine("#define USE_BUSY_LOCKS")
 	fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
-	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("/* #define MPIDI_CH3_CHANNEL_RNDV */")
 	fout.WriteLine("#define USE_RDMA_GET")
 	fout.WriteLine("#define USE_SHM_RDMA_GET")
 	Call WriteFooter(fout)
@@ -3444,7 +3444,7 @@ If f.FileExists("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in") Th
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in", false)
 	fout.WriteLine("#define USE_PERSISTENT_SHARED_MEMORY")
 	fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
-	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("/* #define MPIDI_CH3_CHANNEL_RNDV */")
 	fout.WriteLine("#define USE_RDMA_GET")
 	fout.WriteLine("#define USE_SHM_RDMA_GET")
 	Call WriteFooter(fout)
@@ -3455,7 +3455,7 @@ If f.FileExists("src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in") Th
 	Call AddDefinitions(fout, "src\mpid\ch3\channels\ssm\include\mpidi_ch3i_ssm_conf.h.in", true)
 	fout.WriteLine("#define USE_PERSISTENT_SHARED_MEMORY")
 	fout.WriteLine("#define HAVE_SHARED_PROCESS_READ")
-	fout.WriteLine("#define MPIDI_CH3_CHANNEL_RNDV")
+	fout.WriteLine("/* #define MPIDI_CH3_CHANNEL_RNDV */")
 	fout.WriteLine("#define USE_RDMA_GET")
 	fout.WriteLine("#define USE_SHM_RDMA_GET")
 	Call WriteFooter(fout)
@@ -4706,6 +4706,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("# MPICH2")
 	mfile.WriteLine
+	extra_flags = " /DWORDS_LITTLEENDIAN "
 	CreateRules f.GetFolder("src\mpi"), trimlength
 	CreateRules f.GetFolder("src\mpid\common\datatype"), trimlength
 	CreateRules f.GetFolder("src\util\mem"), trimlength
