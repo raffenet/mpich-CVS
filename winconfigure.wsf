@@ -340,7 +340,7 @@ Next
   len_bool			= "01"
   len_complex			= "08"
   len_double_complex		= "10"
-  len_long_double_complex	= "10"
+  len_long_double_complex	= "20"
 
 Function CreateDtypeDictionary(byref types, str, b64)
 	dim regEx, Match, Matches
@@ -3110,7 +3110,7 @@ Sub AddDefinitions( fout, filename, b64 )
 				Case "SIZEOF_LONGDOUBLECOMPLEX"
 					fout.WriteLine("#define SIZEOF_LONGDOUBLECOMPLEX 16")
 				Case "size_t"
-					fout.WriteLine("#define size_t unsigned")
+					fout.WriteLine("/* #define size_t unsigned */")
 				Case "HAVE_UTIL_SHM"
 					fout.WriteLine("#undef HAVE_UTIL_SHM")
 				Case "HAVE_UTIL_SOCK"
@@ -4364,14 +4364,14 @@ Function GenBuild()
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ssm RLOG=1")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=shm")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=shm RLOG=1")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=sshm RLOG=1")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install RLOG=1")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI")
-	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI RLOG=1")
-'	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=essm")
-'	bfile.WriteLine("nmake %SILENT% /NOLOGO CHANNEL=essm RLOG=1")
+	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=sshm")
+	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=sshm RLOG=1")
+	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install")
+	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=ib IB=IBAL IB_PATH=c:\ibal\src\base IB_PATH_LIB=c:\ibal\Install RLOG=1")
+	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI")
+	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=ib IB=VAPI RLOG=1")
+'	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=essm")
+'	bfile.WriteLine("REM nmake %SILENT% /NOLOGO CHANNEL=essm RLOG=1")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO cxx")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO fort")
 	bfile.WriteLine("nmake %SILENT% /NOLOGO gfort")
@@ -4500,6 +4500,7 @@ Function GenBuild()
 	mfile.WriteLine(" /I..\src\mpid\ch3\channels\$(CHANNEL)\src \")
 	mfile.WriteLine(" /I..\src\mpid\common\sock \")
 	mfile.WriteLine(" /I..\src\mpid\common\sock\iocp \")
+	mfile.WriteLine(" /I..\src\mpid\ch3\util\sock \")
 	mfile.WriteLine(" /I..\src\mpi\romio\mpi-io \")
 	mfile.WriteLine(" /I..\src\mpi\romio\adio\include \")
 	mfile.WriteLine(" /I..\src\mpid\common\datatype \")
@@ -4723,6 +4724,7 @@ Function GenBuild()
 	CreateRules f.GetFolder("src\util\info"), trimlength
 '	CreateRules f.GetFolder("src\util\timing"), trimlength
 	CreateRules f.GetFolder("src\util\logging\common"), trimlength
+	CreateRules f.GetFolder("src\util\param"), trimlength
 	' Insert rules for romio manually since romio is not build with Makefile.sm files
 	mfile.WriteLine("{..\src\mpi\romio\adio\ad_ntfs}.c{$(OUTDIR)}.obj:")
 	mfile.WriteLine("    $(cc) $(cflags) /Fo""$(OUTDIR)\\"" /Fd""$(OUTDIR)\\"" $**")
@@ -4758,6 +4760,7 @@ Function GenBuild()
 	CreateObjs "mpich2", f.GetFolder("src\util\info"), trimlength, false, false
 '	CreateObjs "mpich2", f.GetFolder("src\util\timing"), trimlength, false, false
 	CreateObjs "mpich2", f.GetFolder("src\util\logging\common"), trimlength, false, false
+	CreateObjs "mpich2", f.GetFolder("src\util\param"), trimlength, false, false
 	mfile.WriteLine(" \" & vbCrLf & "	$(OUTDIR)\ad_ntfs.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_ntfs_close.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_ntfs_done.obj \")
@@ -4907,8 +4910,10 @@ Function GenBuild()
 	CreateRules f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\sock"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\shm"), trimlength
+	CreateRules f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength, true, false
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\shm"), trimlength, false, false
+	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength, false, false
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\sock"), trimlength, false, true
 
 	mfile.WriteLine
@@ -4916,7 +4921,9 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "SHM_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\shm"), trimlength
-	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\channels\shm"), trimlength, true, true
+	CreateRules f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength
+	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\channels\shm"), trimlength, true, false
+	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength, false, true
 
 	mfile.WriteLine
 	mfile.WriteLine("# ch3sshm")
@@ -4954,6 +4961,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(SOCK_OUTDIR)\mpich2$(P)$(D).dll: $(ch3sock_objs) $(mpich2_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(ch3sock_objs) $(mpich2_objs) $(mpich2_libs) $(rlog_libs) $(common_libs) -out:$(SOCK_OUTDIR)\mpich2$(P)$(D).dll /DEF:..\mpich2.def")
+	mfile.WriteLine("	mt.exe -manifest $(SOCK_OUTDIR)\mpich2$(P)$(D).dll.manifest -outputresource:$(SOCK_OUTDIR)\mpich2$(P)$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("!ELSE")
 	mfile.WriteLine
@@ -4961,12 +4969,12 @@ Function GenBuild()
 	mfile.WriteLine("channel_objs = $(ch3ssm_objs)")
 	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""shm""")
 	mfile.WriteLine("channel_objs = $(ch3shm_objs)")
-	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""sshm""")
-	mfile.WriteLine("channel_objs = $(ch3sshm_objs)")
-'	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""essm""")
-'	mfile.WriteLine("channel_objs = $(ch3essm_objs)")
-	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""ib""")
-	mfile.WriteLine("channel_objs = $(ch3ib_objs)")
+	mfile.WriteLine("# !ELSEIF ""$(CHANNEL)"" == ""sshm""")
+	mfile.WriteLine("# channel_objs = $(ch3sshm_objs)")
+'	mfile.WriteLine("# !ELSEIF ""$(CHANNEL)"" == ""essm""")
+'	mfile.WriteLine("# channel_objs = $(ch3essm_objs)")
+	mfile.WriteLine("# !ELSEIF ""$(CHANNEL)"" == ""ib""")
+	mfile.WriteLine("# channel_objs = $(ch3ib_objs)")
 	mfile.WriteLine("!ELSEIF ""$(CHANNEL)"" == ""mt""")
 	mfile.WriteLine("channel_objs = $(ch3mt_objs)")
 	mfile.WriteLine("!ELSE")
@@ -4977,6 +4985,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll: $(channel_objs) $(mpich2_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(channel_objs) $(mpich2_objs) $(mpich2_libs) $(rlog_libs) $(common_libs) -out:$(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll /DEF:..\mpich2.def")
+	mfile.WriteLine("	mt.exe -manifest $(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll.manifest -outputresource:$(OUTDIR)\mpich2$(CHANNEL)$(P)$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("!ENDIF")
 
@@ -5037,6 +5046,7 @@ Function GenBuild()
 	CreateObjs "fort", f.GetFolder("src\binding\f77"), trimlength, true, true
 	mfile.WriteLine("$(FORT_OUTDIR)\fmpich2$(D).dll: $(fort_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(fort_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\binding\f77\mpich2f.def -out:$(FORT_OUTDIR)\fmpich2$(D).dll")
+	mfile.WriteLine("	mt.exe -manifest $(FORT_OUTDIR)\fmpich2$(D).dll.manifest -outputresource:$(FORT_OUTDIR)\fmpich2$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("fort: $(FORT_OUTDIR) $(FORT_OUTDIR)\fmpich2$(D).dll")
 	mfile.WriteLine
@@ -5054,6 +5064,7 @@ Function GenBuild()
 	CreateObjs "gfort", f.GetFolder("src\binding\f77"), trimlength, true, true
 	mfile.WriteLine("$(GFORT_OUTDIR)\fmpich2g$(D).dll: $(gfort_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(gfort_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\binding\f77\mpich2fg.def -out:$(GFORT_OUTDIR)\fmpich2g$(D).dll")
+	mfile.WriteLine("	mt.exe -manifest $(GFORT_OUTDIR)\fmpich2g$(D).dll.manifest -outputresource:$(GFORT_OUTDIR)\fmpich2g$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("gfort: $(GFORT_OUTDIR) $(GFORT_OUTDIR)\fmpich2g$(D).dll")
 	mfile.WriteLine
@@ -5104,6 +5115,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(SFORT_OUTDIR)\fmpich2s$(D).dll: $(sfort_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(sfort_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\binding\f77\mpich2fs.def -out:$(SFORT_OUTDIR)\fmpich2s$(D).dll")
+	mfile.WriteLine("	mt.exe -manifest $(SFORT_OUTDIR)\fmpich2s$(D).dll.manifest -outputresource:$(SFORT_OUTDIR)\fmpich2s$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("sfort: $(SFORT_OUTDIR) $(SFORT_OUTDIR)\fmpich2s$(D).dll")
 	mfile.WriteLine
@@ -5119,6 +5131,7 @@ Function GenBuild()
 	CreateObjs "mpi", f.GetFolder("src\util\multichannel"), trimlength, true, true
 	mfile.WriteLine("$(MPI_OUTDIR)\mpich2mpi$(D).dll: $(mpi_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(mpi_objs) $(common_libs) /DEF:..\mpi.def -out:$(MPI_OUTDIR)\mpich2mpi$(D).dll /IMPLIB:$(MPI_OUTDIR)\mpi$(D).lib")
+	mfile.WriteLine("	mt.exe -manifest $(MPI_OUTDIR)\mpich2mpi$(D).dll.manifest -outputresource:$(MPI_OUTDIR)\mpich2mpi$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("mpi: $(MPI_OUTDIR) $(MPI_OUTDIR)\mpich2mpi$(D).dll")
 
@@ -5140,6 +5153,9 @@ Function GenBuild()
 	mfile.WriteLine("{..\src\mpe2\src\logging\src}.c{$(MPE_OUTDIR)}.obj:")
 	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
 	mfile.WriteLine
+	mfile.WriteLine("$(MPE_OUTDIR)\mpe_thread_win.obj: ..\src\util\thread\mpe_thread_win.c")
+	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
+	mfile.WriteLine
 	mfile.WriteLine("mpe_objs = \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog_block.obj \")
@@ -5153,10 +5169,15 @@ Function GenBuild()
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog_timer.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog_util.obj \")
 	mfile.WriteLine("   $(MPE_OUTDIR)\clog_uuid.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\clog_cache.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\clog_joiner.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_logf.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_thread_win.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_log.obj")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_OUTDIR)\mpe$(D).dll: $(mpe_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\mpe2\mpe.def -out:$(MPE_OUTDIR)\mpe$(D).dll /IMPLIB:$(MPE_OUTDIR)\mpe$(D).lib")
+	mfile.WriteLine("	mt.exe -manifest $(MPE_OUTDIR)\mpe$(D).dll.manifest -outputresource:$(MPE_OUTDIR)\mpe$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("mpe: $(MPE_OUTDIR) $(MPE_OUTDIR)\mpe$(D).dll")
 
@@ -5164,13 +5185,15 @@ Function GenBuild()
 	mfile.WriteLine("# MPE wrapper")
 	mfile.WriteLine
 	mfile.WriteLine("{..\src\mpe2\src\wrappers\src}.c{$(MPE_WRAP_OUTDIR)}.obj:")
-	mfile.WriteLine("    $(cc) $(cflags)  /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /I..\src\mpe2\src\wrappers\include /Fo""$(MPE_WRAP_OUTDIR)\\"" /Fd""$(MPE_WRAP_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags) /DUSE_STDARG  /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /I..\src\mpe2\src\wrappers\include /Fo""$(MPE_WRAP_OUTDIR)\\"" /Fd""$(MPE_WRAP_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("mpe_wrap_objs = \")
-	mfile.WriteLine("	$(MPE_WRAP_OUTDIR)\log_mpi_core.obj")
+	mfile.WriteLine("	$(MPE_WRAP_OUTDIR)\log_mpi_core.obj \")
+	mfile.WriteLine("	$(MPE_WRAP_OUTDIR)\mpe_proff.obj")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll: $(mpe_wrap_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_wrap_objs) $(MPI_OUTDIR)\mpi$(D).lib $(MPE_OUTDIR)\mpe$(D).lib $(common_libs) /DEF:..\src\mpe2\src\wrappers\mpewrap.def -out:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll /IMPLIB:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).lib")
+	mfile.WriteLine("	mt.exe -manifest $(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll.manifest -outputresource:$(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("mpe_wrap: $(MPE_WRAP_OUTDIR) $(MPE_WRAP_OUTDIR)\mpich2mpe$(D).dll")
 
@@ -5195,13 +5218,14 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(RLOG_OUTDIR)\irlog2rlog.exe: $(irlog_objs) $(rlog_objs) $(mpich2_objs)")
 	mfile.WriteLine("	$(link) $(conlflags) $(irlog_objs) $(rlog_objs) $(mpich2_objs) $(ch3sock_objs) $(common_libs) -out:""$(RLOG_OUTDIR)\irlog2rlog.exe"" $(mpich2_libs)")
+	mfile.WriteLine("	mt.exe -manifest $(RLOG_OUTDIR)\irlog2rlog.exe.manifest -outputresource:$(RLOG_OUTDIR)\irlog2rlog.exe;1")
 	mfile.WriteLine
 	mfile.WriteLine("# create special rules for the TraceInput.dll source files since they need to include Java paths")
 	mfile.WriteLine("$(RLOG_OUTDIR)\logformat_trace_InputLog.obj: ..\src\util\logging\rlog\logformat_trace_InputLog.c")
-	mfile.WriteLine("    $(cc) $(cflags) /I..\src\mpe2\src\slog2sdk\src\logformat\trace /Ic:\j2sdk1.4.2_06\include /Ic:\j2sdk1.4.2_06\include\win32 /Fo""$(RLOG_OUTDIR)\\"" /Fd""$(RLOG_OUTDIR)\\"" ..\src\util\logging\rlog\logformat_trace_InputLog.c")
+	mfile.WriteLine("    $(cc) $(cflags) /I..\src\mpe2\src\slog2sdk\src\logformat\trace /Ic:\progra~1\Java\jdk1.5.0_08\include /Ic:\progra~1\Java\jdk1.5.0_08\include\win32 /Fo""$(RLOG_OUTDIR)\\"" /Fd""$(RLOG_OUTDIR)\\"" ..\src\util\logging\rlog\logformat_trace_InputLog.c")
 	mfile.WriteLine
 	mfile.WriteLine("$(RLOG_OUTDIR)\trace_input.obj: ..\src\util\logging\rlog\trace_input.c")
-	mfile.WriteLine("    $(cc) $(cflags) /I..\src\mpe2\src\slog2sdk\src\logformat\trace /Ic:\j2sdk1.4.2_06\include /Ic:\j2sdk1.4.2_06\include\win32 /Fo""$(RLOG_OUTDIR)\\"" /Fd""$(RLOG_OUTDIR)\\"" ..\src\util\logging\rlog\trace_input.c")
+	mfile.WriteLine("    $(cc) $(cflags) /I..\src\mpe2\src\slog2sdk\src\logformat\trace /Ic:\progra~1\Java\jdk1.5.0_08\include /Ic:\progra~1\Java\jdk1.5.0_08\include\win32 /Fo""$(RLOG_OUTDIR)\\"" /Fd""$(RLOG_OUTDIR)\\"" ..\src\util\logging\rlog\trace_input.c")
 	mfile.WriteLine
 	mfile.WriteLine("trace_input_objs = \")
 	mfile.WriteLine("	$(RLOG_OUTDIR)\logformat_trace_InputLog.obj \")
@@ -5209,6 +5233,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(RLOG_OUTDIR)\TraceInput.dll: $(trace_input_objs) $(rlog_objs) $(mpich2_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(trace_input_objs) $(rlog_objs) $(mpich2_objs) $(ch3sock_objs) $(common_libs) -out:$(RLOG_OUTDIR)\TraceInput.dll /IMPLIB:$(RLOG_OUTDIR)\TraceInput.lib $(mpich2_libs)")
+	mfile.WriteLine("	mt.exe -manifest $(RLOG_OUTDIR)\TraceInput.dll.manifest -outputresource:$(RLOG_OUTDIR)\TraceInput.dll;2")
 	mfile.WriteLine
 	mfile.WriteLine("TraceInput: $(RLOG_OUTDIR) $(RLOG_OUTDIR)\TraceInput.dll")
 	mfile.WriteLine
@@ -5235,6 +5260,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(BIN_OUTDIR)\mpiexec.exe: $(mpiexec_objs) $(mpich2_objs)")
 	mfile.WriteLine("	$(link) $(conlflags) $(mpiexec_objs) $(mpich2_objs) $(ch3sock_objs) $(common_libs) -out:$(BIN_OUTDIR)\mpiexec.exe $(mpich2_libs)")
+	mfile.WriteLine("	mt.exe -manifest $(BIN_OUTDIR)\mpiexec.exe.manifest -outputresource:$(BIN_OUTDIR)\mpiexec.exe;1")
 	mfile.WriteLine
 	mfile.WriteLine("mpiexec: $(BIN_OUTDIR) $(BIN_OUTDIR)\mpiexec.exe")
 
@@ -5258,6 +5284,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(BIN_OUTDIR)\smpd.exe: $(smpd_objs) $(mpich2_objs)")
 	mfile.WriteLine("	$(link) $(conlflags) $(smpd_objs) $(mpich2_objs) $(ch3sock_objs) $(common_libs) -out:$(BIN_OUTDIR)\smpd.exe $(mpich2_libs)")
+	mfile.WriteLine("	mt.exe -manifest $(BIN_OUTDIR)\smpd.exe.manifest -outputresource:$(BIN_OUTDIR)\smpd.exe;1")
 	mfile.WriteLine
 	mfile.WriteLine("smpd: $(BIN_OUTDIR) $(BIN_OUTDIR)\smpd.exe")
 
@@ -5269,6 +5296,7 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(GCC_OUTDIR)\impgen.exe: $(GCC_OUTDIR)\gccimpgen.obj")
 	mfile.WriteLine("	$(link) $(conlflags) $(GCC_OUTDIR)\gccimpgen.obj $(common_libs) -out:$(GCC_OUTDIR)\impgen.exe")
+	mfile.WriteLine("	mt.exe -manifest $(GCC_OUTDIR)\impgen.exe.manifest -outputresource:$(GCC_OUTDIR)\impgen.exe;1")
 	mfile.WriteLine
 	mfile.WriteLine("impgen: $(GCC_OUTDIR) $(GCC_OUTDIR)\impgen.exe")
 	mfile.WriteLine
