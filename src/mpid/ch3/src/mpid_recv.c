@@ -154,7 +154,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 
 	/* FIXME: We do not need to add a datatype reference if
 	   the request is blocking.  This is currently added because
-	   of the actions that are taken when a request is freed. */
+	   of the actions that are taken when a request is freed. 
+	   (specifically, the datatype and comm both have their refs
+	   decremented, and are freed if the refs are zero) */
 	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	{
 	    MPID_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
