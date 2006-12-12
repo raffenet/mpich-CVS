@@ -1,5 +1,6 @@
-The hash table implementation in LAM/MPI was used for ch3:sctp.  This includes
-the files src/all_hash.c and include/all_hash.h .
+The hash table implementation from LAM/MPI was used in the ch3:sctp
+channel. This includes the files src/all_hash.c and include/all_hash.h
+in this directory.
 
 Software License for LAM/MPI
 
