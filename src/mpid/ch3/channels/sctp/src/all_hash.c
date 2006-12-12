@@ -4,6 +4,31 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/*
+ * Copyright (c) 2001-2002 The Trustees of Indiana University.
+ *                         All rights reserved.
+ * Copyright (c) 1998-2001 University of Notre Dame.
+ *                         All rights reserved.
+ * Copyright (c) 1994-1998 The Ohio State University.
+ *                         All rights reserved.
+ *
+ * Parts of this file were part of the LAM/MPI software package.  For license
+ * information, see the LICENSE-LAM file in .. (one directory up).
+ *
+ *      Software for Humanity
+ *      RBD
+ *
+ *      This program is freely distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *      Original file by Brian Barrett but slightly modified here.
+ *
+ *      Function:       - generic hash table management code
+ *                      - fully dynamic version
+ *                      - table entry must have int4 key as first field
+ */
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>

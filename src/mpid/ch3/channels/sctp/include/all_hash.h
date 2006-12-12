@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2001-2002 The Trustees of Indiana University.
+ *                         All rights reserved.
+ * Copyright (c) 1998-2001 University of Notre Dame.
+ *                         All rights reserved.
+ * Copyright (c) 1994-1998 The Ohio State University.
+ *                         All rights reserved.
+ *
+ * Parts of this file were part of the LAM/MPI software package.  For license
+ * information, see the LICENSE-LAM file in .. (one directory up).
+ *
+ * Original file by Brian Barrett but slightly modified here.
+ *
+ *      Function:       - generic hash table templates and constants
+ *                      - for both the static and dynamic versions
+ */
+
 #ifndef _ALLHASH
 #define _ALLHASH
 
