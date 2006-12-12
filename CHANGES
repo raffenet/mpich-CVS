@@ -11,6 +11,10 @@
 - Performance-related fixes have been added to derived datatypes and
   collective communication.
 
+- Updates to the Nemesis channel
+
+- Fixes to thread safety for the ch3:sock channel
+
 - Many other bug fixes and code cleanup.  A full list of changes is available 
   at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_5changes.htm . 
 
