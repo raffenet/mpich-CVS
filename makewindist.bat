@@ -163,6 +163,8 @@ devenv.com mpich2.sln /project cxx /build Debug
 if %errorlevel% NEQ 0 goto BUILDERROR
 devenv.com src\util\logging\rlog\rlogtools.sln /build Release
 if %errorlevel% NEQ 0 goto BUILDERROR
+devenv.com mpich2.sln /build fmpe
+if %errorlevel% NEQ 0 goto BUILDERROR
 cd maint
 call makegcclibs.bat
 cd ..
