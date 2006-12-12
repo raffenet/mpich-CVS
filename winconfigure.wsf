@@ -3135,6 +3135,26 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#undef MAKE_SAFE_PMPI_CALL")
 				Case "HAVE_MPI_NAMING"
 					fout.WriteLine("#undef HAVE_MPI_NAMING")
+				Case "HAVE_INT_LT_POINTER"
+					If b64 Then
+						fout.WriteLine("#define HAVE_INT_LT_POINTER 1")
+					Else
+						fout.WriteLine("#undef HAVE_INT_LT_POINTER")
+					End If
+				Case "HAVE_ANY_INT32_T_ALIGNMENT"
+					fout.WriteLine("#define HAVE_ANY_INT32_T_ALIGNMENT 1")
+				Case "HAVE_ANY_INT64_T_ALIGNMENT"
+					fout.WriteLine("#define HAVE_ANY_INT64_T_ALIGNMENT 1")
+				Case "WORDS_LITTLEENDIAN"
+					fout.WriteLine("#define WORDS_LITTLEENDIAN 1")
+				Case "HAVE_STRUCT_IFCONF"
+					fout.WriteLine("#undef HAVE_STRUCT_IFCONF")
+				Case "USE_SVIDSOURCE_FOR_IFCONF"
+					fout.WriteLine("#undef USE_SVIDSOURCE_FOR_IFCONF")
+				Case "HAVE_SYSCTL"
+					fout.WriteLine("#undef HAVE_SYSCTL")
+				Case "HAVE_SYS_SYSCTL_H"
+					fout.WriteLine("#undef HAVE_SYS_SYSCTL_H")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
 					unhandled_definitions = unhandled_definitions & define & vbNewLine
@@ -4706,7 +4726,6 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("# MPICH2")
 	mfile.WriteLine
-	extra_flags = " /DWORDS_LITTLEENDIAN "
 	CreateRules f.GetFolder("src\mpi"), trimlength
 	CreateRules f.GetFolder("src\mpid\common\datatype"), trimlength
 	CreateRules f.GetFolder("src\util\mem"), trimlength
