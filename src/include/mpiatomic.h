@@ -35,6 +35,8 @@
    __asm__ __volatile__ ( "xor %%eax,%%eax; lock; decl %0 ; setnz %%al"	\
                         : "=m" (*count_ptr) , "=a" (nzflag) :: "memory", "cc" )
 
+/* FIXME: %ebx cannot be used when shared libraries are built (the
+   register is reserved for the PIC code in gcc) */
 #define MPID_Atomic_fetch_and_incr(count_ptr_, count_old_)	\
     __asm__ __volatile__ ("0: movl %0, %%eax;"			\
 			  "movl %%eax, %%ebx;"			\
