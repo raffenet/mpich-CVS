@@ -4651,6 +4651,7 @@ Function GenBuild()
 	mfile.WriteLine("MPI_OUTDIR = $(CPU)\$(CFG)\mpi")
 	mfile.WriteLine("RLOG_OUTDIR = $(CPU)\$(CFG)\rlog")
 	mfile.WriteLine("MPE_OUTDIR = $(CPU)\$(CFG)\mpe")
+	mfile.WriteLine("FMPE_OUTDIR = $(CPU)\$(CFG)\fmpe")
 	mfile.WriteLine("MPE_WRAP_OUTDIR = $(CPU)\$(CFG)\mpe_wrap")
 	mfile.WriteLine("GCC_OUTDIR = $(CPU)\$(CFG)\gcc")
 	mfile.WriteLine
@@ -4683,6 +4684,9 @@ Function GenBuild()
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_OUTDIR) :")
 	mfile.WriteLine("	if not exist ""$(MPE_OUTDIR)\$(NULL)"" mkdir $(MPE_OUTDIR)")
+	mfile.WriteLine
+	mfile.WriteLine("$(FMPE_OUTDIR) :")
+	mfile.WriteLine("	if not exist ""$(FMPE_OUTDIR)\$(NULL)"" mkdir $(FMPE_OUTDIR)")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_WRAP_OUTDIR) :")
 	mfile.WriteLine("	if not exist ""$(MPE_WRAP_OUTDIR)\$(NULL)"" mkdir $(MPE_WRAP_OUTDIR)")
@@ -4717,6 +4721,7 @@ Function GenBuild()
 	mfile.WriteLine("	if exist $(MPI_OUTDIR)\$(NULL) rd /s /q $(MPI_OUTDIR)")
 	mfile.WriteLine("	if exist $(RLOG_OUTDIR)\$(NULL) rd /s /q $(RLOG_OUTDIR)")
 	mfile.WriteLine("	if exist $(MPE_OUTDIR)\$(NULL) rd /s /q $(MPE_OUTDIR)")
+	mfile.WriteLine("	if exist $(FMPE_OUTDIR)\$(NULL) rd /s /q $(FMPE_OUTDIR)")
 	mfile.WriteLine("	if exist $(MPE_WRAP_OUTDIR)\$(NULL) rd /s /q $(MPE_WRAP_OUTDIR)")
 	mfile.WriteLine("	if exist $(GCC_OUTDIR)\$(NULL) rd /s /q $(GCC_OUTDIR)")
 	mfile.WriteLine
@@ -5195,11 +5200,40 @@ Function GenBuild()
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_thread_win.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_log.obj")
 	mfile.WriteLine
+	mfile.WriteLine("{..\src\mpe2\src\logging\src}.c{$(FMPE_OUTDIR)}.obj:")
+	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /DF77_NAME_UPPER /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(FMPE_OUTDIR)\\"" /Fd""$(FMPE_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	mfile.WriteLine("$(FMPE_OUTDIR)\mpe_thread_win.obj: ..\src\util\thread\mpe_thread_win.c")
+	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /DF77_NAME_UPPER /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(FMPE_OUTDIR)\\"" /Fd""$(FMPE_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	mfile.WriteLine("fmpe_objs = \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_block.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_buffer.obj \")
+	mfile.WriteLine("   $(FMPE_OUTDIR)\clog_commset.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_merger.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_preamble.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_print.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_record.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_sync.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_timer.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_util.obj \")
+	mfile.WriteLine("   $(FMPE_OUTDIR)\clog_uuid.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_cache.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_joiner.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\mpe_logf.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\mpe_thread_win.obj \")
+	mfile.WriteLine("	$(FMPE_OUTDIR)\mpe_log.obj")
+	mfile.WriteLine
 	mfile.WriteLine("$(MPE_OUTDIR)\mpe$(D).dll: $(mpe_objs)")
 	mfile.WriteLine("	$(link) $(dlllflags) $(mpe_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\mpe2\mpe.def -out:$(MPE_OUTDIR)\mpe$(D).dll /IMPLIB:$(MPE_OUTDIR)\mpe$(D).lib")
 	mfile.WriteLine("	mt.exe -manifest $(MPE_OUTDIR)\mpe$(D).dll.manifest -outputresource:$(MPE_OUTDIR)\mpe$(D).dll;2")
 	mfile.WriteLine
-	mfile.WriteLine("mpe: $(MPE_OUTDIR) $(MPE_OUTDIR)\mpe$(D).dll")
+	mfile.WriteLine("$(FMPE_OUTDIR)\fmpe$(D).dll: $(fmpe_objs)")
+	mfile.WriteLine("	$(link) $(dlllflags) $(fmpe_objs) $(MPI_OUTDIR)\mpi$(D).lib $(common_libs) /DEF:..\src\mpe2\fmpe.def -out:$(FMPE_OUTDIR)\fmpe$(D).dll /IMPLIB:$(FMPE_OUTDIR)\fmpe$(D).lib")
+	mfile.WriteLine("	mt.exe -manifest $(FMPE_OUTDIR)\fmpe$(D).dll.manifest -outputresource:$(FMPE_OUTDIR)\fmpe$(D).dll;2")
+	mfile.WriteLine
+	mfile.WriteLine("mpe: $(MPE_OUTDIR) $(MPE_OUTDIR)\mpe$(D).dll $(FMPE_OUTDIR)\fmpe$(D).dll ")
 
 	mfile.WriteLine
 	mfile.WriteLine("# MPE wrapper")
