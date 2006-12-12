@@ -10,7 +10,8 @@
 #define FUNCNAME MPID_Probe
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, MPI_Status * status)
+int MPID_Probe(int source, int tag, MPID_Comm * comm, int context_offset, 
+	       MPI_Status * status)
 {
     MPID_Progress_state progress_state;
     const int context = comm->context_id + context_offset;
