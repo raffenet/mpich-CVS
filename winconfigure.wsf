@@ -2213,7 +2213,7 @@ Function ReplaceAts( str, use_f77, b64 )
 				If b64 then
 					str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER*8")
 				Else
-					str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER")
+					str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER (KIND=8)")
 				End If
 			Case "@PCONTROL_LIST@"
 				'str = Replace(str, "@PCONTROL_LIST@", "")
