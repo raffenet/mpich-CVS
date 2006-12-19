@@ -62,8 +62,6 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	/* Message was found in the unexepected queue */
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"request found in unexpected queue");
 
-	MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
-	
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
 	    int recv_pending;
@@ -75,6 +73,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	       acknowledgement back to the sender. */
 	    if (MPIDI_Request_get_sync_send_flag(rreq))
 	    {
+		MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
 		mpi_errno = MPIDI_CH3_EagerSyncAck( vc, rreq );
 		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    }
@@ -84,6 +83,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	    {
 		/* All of the data has arrived, we need to copy the data and 
 		   then free the buffer and the request. */
+		/* FIXME: if the user buffer is contiguous, just move the
+		   data without using a separate routine call */
 		if (rreq->dev.recv_data_sz > 0)
 		{
 		    MPIDI_CH3U_Request_unpack_uebuf(rreq);
@@ -108,6 +109,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
 	{
+	    MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
+	
 	    mpi_errno = MPIDI_CH3_RecvRndv( vc, rreq );
 	    if (mpi_errno) MPIU_ERR_POP( mpi_errno );
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
