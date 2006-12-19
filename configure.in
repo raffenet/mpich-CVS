@@ -2145,6 +2145,18 @@ AC_SUBST(ETAGSADD)
 export ETAGS
 export ETAGSADD
 
+# Check for the killall program; this can be used in some of the tests
+# in test/commands
+AC_CHECK_PROGS(KILLALL,killall,true)
+
+# Does xargs need the -r option to handle the case where the input 
+# is empty (gnu utils do, Mac OSX does not accept -r)
+xargs_out=`echo "" | xargs ls | wc -l | sed -e 's/ //g'`
+if test "$xargs_out" != "0" ; then
+    XARGS_NODATA_OPT=-r
+fi
+AC_SUBST(XARGS_NODATA_OPT)
+
 # Check for broken handling of common symbols.  There are two fixes:
 # Force ranlib to handle correctly (ranlib -c on some BSD and MAC OS platforms)
 # or force gcc to not generate common symbols if using gcc (-fno-common).

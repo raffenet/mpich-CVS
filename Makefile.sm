@@ -149,9 +149,12 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && rm -rf archive )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
+	( cd tmpdir/${PACKAGE}-${version}/maint && rm -f config.log config.status )
 	( cd tmpdir/${PACKAGE}-${version} && rm -f unusederr.txt )
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'autom4te.cache' \
-	  -print | xargs -r rm -rf)
+	  -print | xargs @XARGS_NODATA_OPT@ rm -rf)
+	( cd tmpdir/${PACKAGE}-${version} && find . -name '.state-cache' \
+	  -print | xargs @XARGS_NODATA_OPT@ rm -rf)
 	( cd tmpdir/${PACKAGE}-${version} && rm -rf src/mpe2/src/slog2sdk/doc/jumpshot-4/tex  )
 	if [ "$(doc)" = "yes" ] ; then \
 	    cp -r tmpdir/${PACKAGE}-${version} tmpdir2 ; \
@@ -174,7 +177,7 @@ dist-with-version:
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'CVS' -print | \
-	    xargs -r rm -rf )
+	    xargs @XARGS_NODATA_OPT@ rm -rf )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 
 	rm -rf tmpdir
