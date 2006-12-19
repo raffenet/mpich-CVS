@@ -32,6 +32,14 @@ if (!defined($ENV{"MPIEXEC_TIMEOUT"})) {
     $ENV{"MPIEXEC_TIMEOUT"} = 20;
 }
 
+#
+# Get a way to kill processes
+my $killall = '@KILLALL@';
+my $myusername = "";
+if (defined($ENV{'LOGNAME'})) {
+    $myusername = $ENV{'LOGNAME'};
+}
+
 # -------------------------------------------------------------------------
 if (defined($ENV{'XMLFILE'})) {
     $xmlOutput = 1;
@@ -387,6 +395,12 @@ if (-x "stdintest") {
 	&ReportError( "Program stdintest failed with return $rc" );
 	$errors ++;
     }
+    # Because some mpiexec programs fail to properly handle these stdio
+    # tests, we add a step to kill the test program if mpiexec failed
+    # to remove it.
+    if ($killall ne "true" && $myusername ne "") {
+	system "$killall -u $myusername stdintest";
+    }
     # Compare the expected output
     if (-s "out.txt") {
 	&CheckEchoedOutput;
@@ -409,6 +423,12 @@ if (-x "stdintest") {
     if ($rc != 0) {
 	&ReportError( "Program stdintest (3 processes) failed with return $rc" );
 	$errors ++;
+    }
+    # Because some mpiexec programs fail to properly handle these stdio
+    # tests, we add a step to kill the test program if mpiexec failed
+    # to remove it.
+    if ($killall ne "true" && $myusername ne "") {
+	system "$killall -u $myusername stdintest";
     }
     # Compare the expected output
     if (-s "out.txt") {
@@ -452,6 +472,12 @@ if (-x "stdintest2") {
     if ($rc != 0) {
 	&ReportError( "Program stdintest2 failed with return $rc" );
 	$errors ++;
+    }
+    # Because some mpiexec programs fail to properly handle these stdio
+    # tests, we add a step to kill the test program if mpiexec failed
+    # to remove it.
+    if ($killall ne "true" && $myusername ne "") {
+	system "$killall -u $myusername stdintest2";
     }
     # Compare the expected output
     if (-s "out.txt") {
