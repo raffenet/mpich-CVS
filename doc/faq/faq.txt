@@ -237,6 +237,16 @@ of ifort.
 
 If you do not need Fortran 90, you can configure with \texttt{--disable-f90}.
 
+%% Heading: Q: The build fails when I use parallel make
+%% Filename: parmake
+%% End
+Parallel make (often invoked with \texttt{make -j4}) will cause several 
+job steps in the build process to update the same library file
+(\texttt{libmpich.a}) concurrently.  Unfortunately, neither the
+\texttt{ar} nor the \texttt{ranlib} programs correctly handle
+this case, and the result is a corrupted library.  For now, the
+solution is to not use a parallel make when building MPICH2.
+
 % ----------------------------------------------------------------------------
 %% Section: Windows version of MPICH2
 %% Heading: I am having trouble installing and using the Windows version of MPICH2
