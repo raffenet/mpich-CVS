@@ -77,7 +77,7 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 
 		    /* MT: this is not thread safe */
 		    MPIDI_Outstanding_close_ops -= 1;
-		    MPIU_DBG_MSG_D(CH3_DISCONNECT,VERBOSE,
+		    MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
              "outstanding close operations = %d", MPIDI_Outstanding_close_ops);
 	    
 		    if (MPIDI_Outstanding_close_ops == 0)
@@ -163,7 +163,7 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
     
     /* MT: this is not thread safe */
     MPIDI_Outstanding_close_ops += 1;
-    MPIU_DBG_MSG_FMT(CH3_DISCONNECT,VERBOSE,(MPIU_DBG_FDEST,
+    MPIU_DBG_MSG_FMT(CH3_DISCONNECT,TYPICAL,(MPIU_DBG_FDEST,
 		  "sending close(%s) on vc (pg=%p) %p to rank %d, ops = %d", 
 		  close_pkt->ack ? "TRUE" : "FALSE", vc->pg, vc, 
 		  rank, MPIDI_Outstanding_close_ops));
@@ -192,6 +192,7 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
     
     if (sreq != NULL) {
 	MPID_Request_release(sreq);
+	printf( "Panic 1\n" ); fflush(stdout);
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_VC_SENDCLOSE);
@@ -215,7 +216,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CLOSE);
 	resp_pkt->ack = TRUE;
 	
-	MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"sending close(TRUE) to %d",
+	MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,"sending close(TRUE) to %d",
 		       vc->pg_rank);
 	mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), 
 					&resp_sreq);
@@ -227,6 +228,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	if (resp_sreq != NULL)
 	{
 	    MPID_Request_release(resp_sreq);
+	    printf( "Panic 2\n" ); fflush(stdout);
 	}
     }
     
@@ -234,7 +236,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     {
 	if (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE)
 	{
-	    MPIU_DBG_MSG_D(CH3_DISCONNECT,VERBOSE,
+	    MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
 		   "received close(FALSE) from %d, moving to CLOSE_ACKED.",
 		   vc->pg_rank);
 	    MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
@@ -249,10 +251,12 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	       closing the connection.  We will act as if this is
 	       duplicate information can be ignored (rather than triggering
 	       the Assert in the next case) */
-	    MPIU_DBG_MSG(CH3_DISCONNECT,VERBOSE,
+	    MPIU_DBG_MSG(CH3_DISCONNECT,TYPICAL,
 			 "Saw CLOSE_ACKED while already in that state");
 	    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
 	    /* We need this terminate to decrement the outstanding closes */
+	    /* For example, with sockets, Connection_terminate will close
+	       the socket */
 	    mpi_errno = MPIDI_CH3_Connection_terminate(vc);
 	}
 #endif
@@ -263,7 +267,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		printf( "Unexpected state %d in vc %x\n", vc->state, (int)vc);
 		fflush(stdout);
 	    }
-	    MPIU_DBG_MSG_D(CH3_DISCONNECT,VERBOSE,
+	    MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
                      "received close(FALSE) from %d, moving to REMOTE_CLOSE.",
 				   vc->pg_rank);
 	    MPIU_Assert(vc->state == MPIDI_VC_STATE_ACTIVE);
@@ -273,7 +277,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     else
     {
-	MPIU_DBG_MSG_D(CH3_DISCONNECT,VERBOSE,
+	MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
                        "received close(TRUE) from %d, moving to CLOSE_ACKED.", 
 			       vc->pg_rank);
 	MPIU_Assert (vc->state == MPIDI_VC_STATE_LOCAL_CLOSE || 
@@ -281,6 +285,8 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPIU_DBG_VCSTATECHANGE(vc,VC_STATE_CLOSE_ACKED);
 	
 	vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
+	/* For example, with sockets, Connection_terminate will close
+	   the socket */
 	mpi_errno = MPIDI_CH3_Connection_terminate(vc);
     }
     
@@ -321,7 +327,7 @@ int MPIDI_CH3U_VC_WaitForClose( void )
 
     MPID_Progress_start(&progress_state);
     while(MPIDI_Outstanding_close_ops > 0) {
-	MPIU_DBG_MSG_D(CH3_DISCONNECT,VERBOSE,
+	MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
 		       "Waiting for %d close operations",
 		       MPIDI_Outstanding_close_ops);
 	mpi_errno = MPID_Progress_wait(&progress_state);
