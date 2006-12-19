@@ -341,8 +341,11 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		rreq->dev.OnDataAvail = 0;
 		/* rreq->dev.recv_pending_count = 1; */
 		/* rreq->dev.recv_pending_count = 1; */
-		printf( "pending count is %d\n", rreq->dev.recv_pending_count );
-		fflush(stdout);
+		if (rreq->dev.recv_pending_count != 1) {
+		    printf( "pending count is %d\n",
+			    rreq->dev.recv_pending_count );
+		    fflush(stdout);
+		}
 		MPIDI_CH3U_Request_complete(rreq);
 	    }
 	    else {
