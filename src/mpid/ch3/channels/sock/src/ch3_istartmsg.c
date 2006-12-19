@@ -19,7 +19,6 @@ static MPID_Request * create_request(void * hdr, MPIDI_msg_sz_t hdr_sz,
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_REQUEST);
 
     sreq = MPID_Request_create();
-    /*MPIU_Assert(sreq != NULL);*/
     /* --BEGIN ERROR HANDLING-- */
     if (sreq == NULL)
 	return NULL;
