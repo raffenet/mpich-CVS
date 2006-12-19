@@ -800,7 +800,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 					"because ack on OPEN_CRECV was false");
 	    conn->state = CONN_STATE_CLOSING;
 	    /* FIXME: What does post close do here? */
-	    MPIDU_Sock_post_close(conn->sock);
+	    mpi_errno = MPIDU_Sock_post_close(conn->sock);
 	}
     }
     /* --BEGIN ERROR HANDLING-- */
@@ -1173,7 +1173,7 @@ static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     conn->send_active = MPIDI_CH3I_SendQ_head(conn->vc); /* MT */
     if (conn->send_active != NULL)
     {
-	MPIU_DBG_MSG_P(CH3,TYPICAL,"conn=%p: Posting message from connection send queue", conn );
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"conn=%p: Posting message from connection send queue", conn );
 	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
