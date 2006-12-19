@@ -47,7 +47,9 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
     MPIDI_VC_FAI_send_seqnum(vc, seqnum);
     MPIDI_Pkt_set_seqnum(rts_pkt, seqnum);
     MPIDI_Request_set_seqnum(sreq, seqnum);
-    
+
+    MPIU_DBG_MSGPKT(vc,tag,rts_pkt->match.context_id,rank,data_sz,"Rndv");
+
 #ifdef MPIDI_CH3_CHANNEL_RNDV
 
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Rendezvous send using iStartRndvMsg");
@@ -166,6 +168,9 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
  "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
 	      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, 
               rts_pkt->match.context_id, rts_pkt->data_sz));
+    MPIU_DBG_MSGPKT(vc,rts_pkt->match.tag,rts_pkt->match.context_id,
+		    rts_pkt->match.rank,rts_pkt->data_sz,
+		    "ReceivedRndv");
 
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
     if (rreq == NULL) {

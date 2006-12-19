@@ -51,6 +51,7 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
     es_pkt->data_sz = data_sz;
 
     MPIDI_Comm_get_vc(comm, rank, &vc);
+    MPIU_DBG_MSGPKT(vc,tag,es_pkt->match.context_id,rank,data_sz,"EagerSync");
     
     iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)es_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*es_pkt);
@@ -163,6 +164,7 @@ int MPIDI_CH3_EagerSyncZero(MPID_Request **sreq_p, int rank, int tag,
     MPIDI_Pkt_set_seqnum(es_pkt, seqnum);
     MPIDI_Request_set_seqnum(sreq, seqnum);
     
+    MPIU_DBG_MSGPKT(vc,tag,es_pkt->match.context_id,rank,0,"EagerSync0");
     mpi_errno = MPIDI_CH3_iSend(vc, sreq, es_pkt, sizeof(*es_pkt));
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -233,6 +235,9 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
      "received eager sync send pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d",
 	      es_pkt->sender_req_id, es_pkt->match.rank, es_pkt->match.tag, 
               es_pkt->match.context_id));
+    MPIU_DBG_MSGPKT(vc,es_pkt->match.tag,es_pkt->match.context_id,
+		    es_pkt->match.rank,es_pkt->data_sz,
+		    "ReceivedEagerSync");
 	    
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&es_pkt->match, &found);
     if (rreq == NULL) {
