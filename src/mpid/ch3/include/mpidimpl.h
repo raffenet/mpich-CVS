@@ -632,10 +632,16 @@ int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line,
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,\
       "vc=%p,conn=%p: Using vc for %s", _vc, (_vc)->ch.conn, _msg ))
 #define MPIU_DBG_PKT(_conn,_pkt,_msg) \
-     MPIU_DBG_MSG_FMT(CH3,TYPICAL,(MPIU_DBG_FDEST,\
+     MPIU_DBG_MSG_FMT(CH3_OTHER,TYPICAL,(MPIU_DBG_FDEST,\
      "conn=%p: %s %s", _conn, _msg, MPIDI_Pkt_GetDescString( _pkt ) ))
 
 const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt );
+
+/* These macros help trace communication headers */
+#define MPIU_DBG_MSGPKT(_vc,_tag,_contextid,_dest,_size,_kind)	\
+    MPIU_DBG_MSG_FMT(CH3_MSG,TYPICAL,(MPIU_DBG_FDEST,\
+		      "%s: vc=%x, tag=%d, context=%d, dest=%d, datasz=%d",\
+		      _kind,_vc,_tag,_contextid,_dest,_size) )
 
 /* FIXME: Switch this to use the common debug code */
 void MPIDI_dbg_printf(int, char *, char *, ...);
